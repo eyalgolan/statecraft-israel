@@ -56,7 +56,7 @@ public class PlayerTextTests
     [Fact]
     public void TheMapActionStartDateIsShownInTheDayMonthYearFormat()
     {
-        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var c = RealContentTests.Legacy();
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
         var reason = MapActions.Check(c, s, MapActions.Housing, 0, 0);
         Assert.Equal("Transit camps and housing projects can be placed from 1 January 1950", reason);
@@ -193,7 +193,8 @@ public class PlayerTextTests
             housing |= r.Why.Any(w => w.System == "map" && w.Target == MapActions.Housing);
             s = r.State;
         }
-        Assert.True(budget && camp && housing, $"the script ran every command (budget {budget}, camp {camp}, housing {housing})");
+        // R-PROJ-004: the GDD loop refuses every map action, so only legacy content builds a camp and housing.
+        Assert.True(budget && (c.IsGdd || camp && housing), $"the script ran every command (budget {budget}, camp {camp}, housing {housing})");
         Assert.True(appointable.SetEquals(appointedOffices), $"every appointable office was filled: missing {string.Join(", ", appointable.Except(appointedOffices))}");
         Assert.True(c.Policies.All(p => policiesSet.Contains(p.Id)), $"every policy was set: missing {string.Join(", ", c.Policies.Select(p => p.Id).Except(policiesSet))}");
         Assert.Contains(causes, w => w.Message.StartsWith("Borrowed ", StringComparison.Ordinal));
@@ -258,7 +259,8 @@ public class PlayerTextTests
         var s = Simulation.NewGame(Real, 1, Mode.Historical);
         var why = new List<Cause>();
         SecuritySystem.SetMobilization(Real, s, 0, why);                  // below the floor: the ladder message
-        var texts = why.Select(w => w.Message).Append(MapActions.Check(Real, s, MapActions.Housing, 0, 0)!).ToList();   // before map actions open
+        var legacy = RealContentTests.Legacy();   // R-PROJ-004: only the legacy loop still checks a map action's dates
+        var texts = why.Select(w => w.Message).Append(MapActions.Check(legacy, Simulation.NewGame(legacy, 1, Mode.Historical), MapActions.Housing, 0, 0)!).ToList();   // before map actions open
         foreach (var phrase in SimPhrases) Assert.Contains(texts, t => t.Contains(phrase));
     }
 
@@ -284,8 +286,10 @@ public class PlayerTextTests
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
-                // A hex "(q, r)" and a corridor's "segment N" (R-COR-001, Q-SENS-1) are names, not amounts.
-                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+", ""), @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                // A hex "(q, r)" or "hex q,r", a corridor's "segment N" (R-COR-001, Q-SENS-1) and a unit's "unit N" are names, not
+                // amounts; movement points and people are units (the enemy's step 1 lines, R-ENEMY-001, reach the reference run).
+                var named = Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+|hex -?\d+,-?\d+|[Uu]nits? \d+(, \d+)*|\d[\d,]* (movement points|people)", "");
+                if (Regex.IsMatch(Regex.Replace(named, @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))

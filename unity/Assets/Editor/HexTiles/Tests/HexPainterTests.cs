@@ -539,4 +539,390 @@ public class HexPainterTests
             foreach (var placement in ctx.Placements) yield return placement;
         }
     }
+    [Test]
+    public void RebuildingAHexReleasesOnlyItsOwnedUnitAssets()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var board = Board(Hex(0, 0, prototype: ""), Hex(1, 0, prototype: ""));
+        var (root, _) = HexBoardBuilder.Build(board, null, options: new HexBoardBuilder.Options { PerHex = true });
+        string sharedPath = "Assets/__HexPainterShared-" + Guid.NewGuid().ToString("N") + ".mat";
+        Material? createdMaterial = null;
+        try
+        {
+            var state = root.GetComponent<HexBoardState>();
+            var owner = root.GetComponent<HexBoardAssets>();
+            var units = root.transform.Find(HexBoardBuilder.UnitsName);
+            var oldHolder = new GameObject(HexBoardBuilder.UnitName(0, 0));
+            oldHolder.transform.SetParent(units, false);
+            // Empty model is guaranteed missing by HexModels.Prefab's public contract, independently of local assets.
+            Assert.That(HexModels.Prefab(""), Is.Null);
+            var oldUnit = new HexUnit { Members = new List<HexUnitMember> { new HexUnitMember { Model = "", StandIn = StandIn.Box } } };
+            var motion = new HexUnitMotion(oldUnit, new[] { (0, 0) }, state.Surface, oldHolder.transform);
+            motion.Pose(0f, false);
+            var oldMaterial = motion.Objects.Single().GetComponent<MeshRenderer>().sharedMaterial;
+            Assert.That(oldHolder.GetComponentInParent<HexBoardAssets>(), Is.SameAs(owner));
+            Assert.That(oldMaterial != null, Is.True, "the old fallback must really exist");
+            Assert.That(AssetDatabase.Contains(oldMaterial), Is.False, "this is a generated stand-in, not an imported shared asset");
+            int oldId = oldMaterial!.GetInstanceID();
+            var primitiveMesh = motion.Objects.Single().GetComponent<MeshFilter>().sharedMesh;
+            Assert.That(primitiveMesh != null, Is.True, "the primitive must have a shared mesh");
+            var untouchedHolder = new GameObject(HexBoardBuilder.UnitName(1, 0));
+            untouchedHolder.transform.SetParent(units, false);
+            var untouched = new HexUnitMotion(oldUnit, new[] { (1, 0) }, state.Surface, untouchedHolder.transform);
+            untouched.Pose(0f, false);
+            var untouchedMaterial = untouched.Objects.Single().GetComponent<MeshRenderer>().sharedMaterial;
+            Assert.That(untouchedMaterial != null, Is.True);
+            Assert.That(untouchedMaterial, Is.Not.SameAs(oldMaterial), "each unit owns a distinct fallback");
+            Assert.That(untouched.Objects.Single().GetComponent<MeshFilter>().sharedMesh, Is.SameAs(primitiveMesh));
+            createdMaterial = HexMaterials.New(HexMaterials.Lit);
+            AssetDatabase.CreateAsset(createdMaterial, sharedPath);
+            var importedMaterial = AssetDatabase.LoadAssetAtPath<Material>(sharedPath)
+                ?? throw new InvalidOperationException("the created shared material asset must load before the edit");
+            Assert.That(AssetDatabase.Contains(importedMaterial), Is.True, "the shared-material control must be a real asset");
+            int importedId = importedMaterial.GetInstanceID();
+            string importedPath = AssetDatabase.GetAssetPath(importedMaterial);
+            string importedGuid = AssetDatabase.AssetPathToGUID(sharedPath, AssetPathToGUIDOptions.OnlyExistingAssets);
+            Assert.That(importedPath, Is.EqualTo(sharedPath));
+            Assert.That(importedGuid, Is.Not.Empty);
+            var loadedBefore = AssetDatabase.LoadAssetAtPath<Material>(sharedPath);
+            Assert.That(loadedBefore != null, Is.True);
+            UnityEngine.Debug.Log($"PAINTERASSET before createdId={createdMaterial.GetInstanceID()} originalId={importedId} loadedId={loadedBefore!.GetInstanceID()} guid={importedGuid} path={importedPath} unityEqual={loadedBefore == importedMaterial} managedEqual={ReferenceEquals(loadedBefore, importedMaterial)}");
+            var importedRenderer = new GameObject("shared-imported-material", typeof(MeshRenderer));
+            importedRenderer.transform.SetParent(oldHolder.transform, false);
+            importedRenderer.GetComponent<MeshRenderer>().sharedMaterial = importedMaterial;
+
+            // Change uses the real write-back + RebuildHex path; no type registry/private ownership seam is replaced.
+            HexPainter.Change(root, HexPainter.OverridesPath(dir, "t"), 0, 0, "unit", "sandwich_truck");
+            Assert.That(oldHolder == null, Is.True, "the old unit's hierarchy must be removed");
+            var current = units.Find(HexBoardBuilder.UnitName(0, 0));
+            Assert.That(current != null, Is.True, "the replacement unit must exist");
+            var currentMaterials = current!.GetComponentsInChildren<Renderer>(true).SelectMany(r => r.sharedMaterials).ToArray();
+            Assert.That(currentMaterials.Length, Is.GreaterThan(0));
+            Assert.That(currentMaterials.All(m => m != null), Is.True, "the replacement must keep valid materials");
+            UnityEngine.Debug.Log($"PAINTERMATERIAL oldId={oldId} oldAlive={oldMaterial != null} currentMaterials={currentMaterials.Length} currentAlive={currentMaterials.All(m => m != null)}");
+            Assert.That(oldMaterial == null, Is.True, "removed unit fallback material must be released, not retained by the board owner");
+            Assert.That(primitiveMesh != null, Is.True, "a shared primitive mesh must survive the removed unit");
+            Assert.That(untouchedHolder != null && untouchedMaterial != null, Is.True, "another unit and its material must survive");
+            Assert.That(untouched.Objects.Single().GetComponent<MeshRenderer>().sharedMaterial, Is.SameAs(untouchedMaterial));
+            Assert.That(importedMaterial != null && AssetDatabase.Contains(importedMaterial), Is.True, "imported shared materials must survive");
+            var loadedAfter = AssetDatabase.LoadAssetAtPath<Material>(sharedPath);
+            Assert.That(loadedAfter != null, Is.True, "the imported material must still load");
+            string afterGuid = AssetDatabase.AssetPathToGUID(sharedPath, AssetPathToGUIDOptions.OnlyExistingAssets);
+            string afterPath = AssetDatabase.GetAssetPath(loadedAfter);
+            UnityEngine.Debug.Log($"PAINTERASSET after originalId={importedMaterial!.GetInstanceID()} loadedId={loadedAfter!.GetInstanceID()} guid={afterGuid} path={afterPath} unityEqual={loadedAfter == importedMaterial} managedEqual={ReferenceEquals(loadedAfter, importedMaterial)}");
+            Assert.That(importedMaterial!.GetInstanceID(), Is.EqualTo(importedId), "the original native material must survive");
+            Assert.That(afterGuid, Is.EqualTo(importedGuid));
+            Assert.That(afterPath, Is.EqualTo(importedPath));
+            Assert.That(loadedAfter == importedMaterial, Is.True, "the path must resolve to the same native Unity material");
+        }
+        finally
+        {
+            root.GetComponent<HexBoardAssets>().Teardown();
+            Object.DestroyImmediate(root);
+            AssetDatabase.DeleteAsset(sharedPath);
+            if (createdMaterial != null) Object.DestroyImmediate(createdMaterial);
+        }
+    }
+
+    [Test]
+    public void PainterPreviewHierarchyIsExcludedFromAnOrdinarySceneSave()
+    {
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        string token = Guid.NewGuid().ToString("N");
+        string id = "__PainterSave-" + token;
+        string jsonPath = HexPainter.BoardsFolder + "/" + id + ".json";
+        string scenePath = "Assets/__PainterSave-" + token + ".unity";
+        string previewName = "PainterPreview-" + token;
+        string markerName = "PainterOrdinaryMarker-" + token;
+        GameObject? preview = null, secondPreview = null, ordinaryBoard = null;
+        try
+        {
+            var file = new HexBoardFile { id = id, hexes = new[] { Hex(0, 0, prototype: "", unit: "sandwich_truck") } };
+            File.WriteAllText(jsonPath, JsonUtility.ToJson(file));
+            AssetDatabase.ImportAsset(jsonPath, ImportAssetOptions.ForceSynchronousImport);
+            // This is the same public load path the window calls, with no synthetic hide flags or private seam.
+            preview = HexPainter.Load(id);
+            Assert.That(preview != null, Is.True);
+            secondPreview = HexPainter.Load(id);
+            ordinaryBoard = new GameObject("PainterOrdinaryBoard-" + token);
+            var ordinaryState = ordinaryBoard.AddComponent<HexBoardState>();
+            var previewObjects = preview!.GetComponentsInChildren<Transform>(true)
+                .Concat(secondPreview.GetComponentsInChildren<Transform>(true)).Select(t => t.gameObject).ToArray();
+            Assert.That(previewObjects.Length, Is.GreaterThan(1), "the real preview must include descendants");
+            for (int i = 0; i < previewObjects.Length; i++) previewObjects[i].name = previewName + "-" + i.ToString("D4");
+            string[] previewNames = previewObjects.Select(go => go.name).ToArray();
+            var state = preview.GetComponent<HexBoardState>();
+            var expectedStates = new[] { state, secondPreview.GetComponent<HexBoardState>(), ordinaryState };
+            var loaded = HexPainter.LoadedBoards();
+            Assert.That(loaded.Select(s => s.GetInstanceID()), Is.EquivalentTo(expectedStates.Select(s => s.GetInstanceID())),
+                "the window snapshot must contain both real previews and the ordinary scene board once each");
+            Assert.That(loaded.Select(s => s.GetInstanceID()).Distinct().Count(), Is.EqualTo(loaded.Length));
+            var localCentre = HexGeometry.Centre(0, 0, HexScale.HexM);
+            localCentre.y = state.Surface.Height(localCentre);
+            var ray = new Ray(preview.transform.TransformPoint(localCentre) + Vector3.up * 10000f, Vector3.down);
+            Physics.SyncTransforms();
+            Assert.That(Physics.RaycastAll(ray, 20000f).Any(h => h.collider.transform.IsChildOf(preview.transform)), Is.True,
+                "preview terrain must remain in the physics scene after editor save flags");
+            Assert.That(HexPainter.Pick(preview, ray), Is.EqualTo((0, 0)), "the public painter pick must keep working");
+            Assert.That(preview.activeInHierarchy, Is.True);
+            var marker = new GameObject(markerName);
+            Assert.That(marker.hideFlags, Is.EqualTo(HideFlags.None));
+            bool saved = EditorSceneManager.SaveScene(scene, scenePath);
+            Assert.That(saved, Is.True, "the ordinary scene save must actually succeed");
+            string yaml = File.ReadAllText(scenePath);
+            Assert.That(yaml.Contains(markerName), Is.True, "positive control: ordinary scene objects must be serialized");
+            string[] serializedPreviewNames = previewNames.Where(name => yaml.Contains(name)).ToArray();
+            bool previewSerialized = serializedPreviewNames.Length > 0;
+            string yamlHash;
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+                yamlHash = BitConverter.ToString(hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(yaml))).Replace("-", "").ToLowerInvariant();
+            UnityEngine.Debug.Log($"PAINTERSCENE saved={saved} previewFlags={preview.hideFlags} previewSerialized={previewSerialized} previewObjects={previewObjects.Length} serializedNames={string.Join(",", serializedPreviewNames)} markerSerialized={yaml.Contains(markerName)} yamlSHA256={yamlHash} path={scenePath}");
+            Assert.That(previewSerialized, Is.False, "no painter preview root or descendant may be serialized by an ordinary scene save");
+            foreach (var old in loaded)
+            {
+                old.GetComponent<HexBoardAssets>()?.Teardown();
+                Object.DestroyImmediate(old.gameObject);
+            }
+            Assert.That(preview == null && secondPreview == null && ordinaryBoard == null, Is.True,
+                "the materialized window snapshot must unload every discovered board");
+            Assert.That(marker != null, Is.True, "unloading boards must leave unrelated scene objects alive");
+        }
+        finally
+        {
+            if (preview != null)
+            {
+                preview.GetComponent<HexBoardAssets>().Teardown();
+                Object.DestroyImmediate(preview);
+            }
+            if (secondPreview != null)
+            {
+                secondPreview.GetComponent<HexBoardAssets>().Teardown();
+                Object.DestroyImmediate(secondPreview);
+            }
+            if (ordinaryBoard != null) Object.DestroyImmediate(ordinaryBoard);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            AssetDatabase.DeleteAsset(scenePath);
+            AssetDatabase.DeleteAsset(jsonPath);
+        }
+    }
+
+}
+
+// Real domain-reload regression: generated native ownership survives reload until actual preview teardown.
+[Serializable]
+public sealed class PainterDomainReloadTests
+{
+    const string PendingKey = "Statecraft.Tests.PainterDomainReload.Pending";
+    static readonly string DomainNonce = Guid.NewGuid().ToString("N");
+    [Serializable] sealed class Config { public string token = ""; }
+    [Serializable] sealed class AssetRef
+    {
+        public int id; public string name = "", type = "";
+    }
+    [Serializable] sealed class Record
+    {
+        public string token = "", nonce = "", boardId = "", jsonPath = "", materialPath = "", materialGuid = "";
+        public int previewId, stateId, markerId, sharedMeshId;
+        public AssetRef createdControl = new AssetRef();
+        public AssetRef[] owned = Array.Empty<AssetRef>();
+    }
+    [SerializeField] string evidence = ""; // TF1.6 restores serializable fixture fields after the actual domain reload.
+    string Evidence
+    {
+        get
+        {
+            const string prefix = "statecraft-painter-domain-";
+            var full = Path.GetFullPath(evidence);
+            var name = Path.GetFileName(full);
+            var parent = Path.GetDirectoryName(full);
+            var temp = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (parent != temp || !name.StartsWith(prefix, StringComparison.Ordinal)
+                || !Guid.TryParseExact(name.Substring(prefix.Length), "N", out _))
+                throw new InvalidOperationException("invalid owned domain-reload evidence path");
+            return full;
+        }
+    }
+    string RecordPath => Path.Combine(Evidence, "before-reload.json");
+    Config Settings => JsonUtility.FromJson<Config>(File.ReadAllText(Path.Combine(Evidence, "config.json")));
+    Record Before => JsonUtility.FromJson<Record>(File.ReadAllText(RecordPath));
+    static string Key(string token) => "Statecraft.PainterDomainProbe." + token;
+    static UnityEngine.Object? Native(int id) => id == 0 ? null : Resources.FindObjectsOfTypeAll<UnityEngine.Object>()
+        .FirstOrDefault(o => o != null && o.GetInstanceID() == id);
+    static bool Alive(AssetRef a)
+    {
+        var o = Native(a.id);
+        return o != null && o.name == a.name && o.GetType().FullName == a.type;
+    }
+
+    [UnityEngine.TestTools.UnitySetUp]
+    public System.Collections.IEnumerator RequestAnActualDomainReload()
+    {
+        // A new fixture allocates its own checkpoint; TF restores only this field across the actual reload.
+        if (string.IsNullOrEmpty(evidence))
+        {
+            var token = Guid.NewGuid().ToString("N");
+            Assert.That(SessionState.GetString(PendingKey, ""), Is.Empty, "unfinished domain fixture must not be mistaken for a new reload");
+            var path = Path.Combine(Path.GetTempPath(), "statecraft-painter-domain-" + token);
+            Assert.That(Directory.Exists(path) || File.Exists(path), Is.False, "new fixture evidence path must be fresh");
+            evidence = path;
+            Directory.CreateDirectory(Evidence);
+            SessionState.SetString(PendingKey, evidence);
+            File.WriteAllText(Path.Combine(Evidence, "config.json"), JsonUtility.ToJson(new Config { token = token }));
+        }
+        if (!File.Exists(RecordPath))
+        {
+            var cfg = Settings;
+            Assert.That(cfg.token, Does.Match("^[a-f0-9]{32}$"));
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var rec = new Record { token = cfg.token, nonce = DomainNonce, boardId = "000Domain-" + cfg.token };
+            rec.jsonPath = HexPainter.BoardsFolder + "/" + rec.boardId + ".json";
+            rec.materialPath = "Assets/__DomainControl-" + cfg.token + ".mat";
+            // Save the cleanup paths before any Unity object creation.
+            File.WriteAllText(RecordPath, JsonUtility.ToJson(rec, true));
+            var file = new HexBoardFile { id = rec.boardId, hexes = new[] { new BoardHex { q = 0, r = 0, prototype = "" } } };
+            File.WriteAllText(rec.jsonPath, JsonUtility.ToJson(file));
+            AssetDatabase.ImportAsset(rec.jsonPath, ImportAssetOptions.ForceSynchronousImport);
+            var preview = HexPainter.Load(rec.boardId);
+            preview.name = "DomainPreview-" + cfg.token;
+            rec.previewId = preview.GetInstanceID();
+            var state = preview.GetComponent<HexBoardState>() ?? throw new InvalidOperationException("loaded preview lacks HexBoardState");
+            rec.stateId = state.GetInstanceID();
+            File.WriteAllText(RecordPath, JsonUtility.ToJson(rec, true));
+            var sea = preview.transform.Find("HexBoardSea");
+            Assert.That(sea != null, Is.True);
+            if (sea == null) throw new InvalidOperationException("loaded preview lacks sea");
+            var holder = new GameObject("DomainFallback-" + cfg.token);
+            holder.transform.SetParent(preview.transform, false);
+            Assert.That(HexModels.Prefab(""), Is.Null);
+            var motion = new HexUnitMotion(new HexUnit { Members = new List<HexUnitMember> {
+                new HexUnitMember { Model = "", StandIn = StandIn.Box } } }, new[] { (0, 0) }, state.Surface, holder.transform);
+            motion.Pose(0f, false);
+            var fallback = motion.Objects.Single();
+            rec.sharedMeshId = fallback.GetComponent<MeshFilter>().sharedMesh.GetInstanceID();
+            // These four actual references are created and registered by BuildSea/BuildGround/HexUnitMotion.
+            UnityEngine.Object[] owned = { sea.GetComponent<MeshFilter>().sharedMesh,
+                sea.GetComponent<MeshRenderer>().sharedMaterial, state.Terrain,
+                fallback.GetComponent<MeshRenderer>().sharedMaterial };
+            rec.owned = owned.Select((o, i) =>
+            {
+                Assert.That(o != null && !EditorUtility.IsPersistent(o), Is.True);
+                if (o == null) throw new InvalidOperationException("known generated asset is missing");
+                o.name = "DomainOwned-" + cfg.token + "-" + i;
+                return new AssetRef { id = o.GetInstanceID(), name = o.name, type = o.GetType().FullName ?? o.GetType().Name };
+            }).ToArray();
+            var marker = new GameObject("DomainOrdinary-" + cfg.token);
+            rec.markerId = marker.GetInstanceID();
+            Assert.That(marker.hideFlags, Is.EqualTo(HideFlags.None));
+            var created = HexMaterials.New(HexMaterials.Lit);
+            created.name = "DomainImported-" + cfg.token;
+            rec.createdControl = new AssetRef { id = created.GetInstanceID(), name = created.name, type = created.GetType().FullName ?? created.GetType().Name };
+            File.WriteAllText(RecordPath, JsonUtility.ToJson(rec, true));
+            AssetDatabase.CreateAsset(created, rec.materialPath);
+            rec.createdControl.name = created.name;
+            File.WriteAllText(RecordPath, JsonUtility.ToJson(rec, true));
+            var imported = AssetDatabase.LoadAssetAtPath<Material>(rec.materialPath);
+            Assert.That(imported != null && AssetDatabase.Contains(imported), Is.True);
+            marker.AddComponent<MeshRenderer>().sharedMaterial = imported;
+            rec.materialGuid = AssetDatabase.AssetPathToGUID(rec.materialPath, AssetPathToGUIDOptions.OnlyExistingAssets);
+            Assert.That(rec.materialGuid, Is.Not.Empty);
+            File.WriteAllText(RecordPath, JsonUtility.ToJson(rec, true));
+            SessionState.SetString(Key(rec.token), DomainNonce);
+            UnityEngine.Debug.Log("DOMAINPROBE requesting actual reload " + JsonUtility.ToJson(rec));
+            EditorUtility.RequestScriptReload();
+            yield return new UnityEngine.TestTools.WaitForDomainReload();
+        }
+        Assert.That(SessionState.GetString(PendingKey, ""), Is.EqualTo(evidence), "fixture checkpoint must survive the actual reload");
+        var before = Before;
+        Assert.That(SessionState.GetString(Key(before.token), ""), Is.EqualTo(before.nonce));
+        Assert.That(DomainNonce, Is.Not.EqualTo(before.nonce), "a real managed domain reload must change the static nonce");
+        UnityEngine.Debug.Log($"DOMAINPROBE actualReload=True oldNonce={before.nonce} newNonce={DomainNonce}");
+    }
+
+    [Test]
+    public void GeneratedAssetsAreReleasedWhenTheReloadedPreviewIsDestroyed()
+    {
+        var rec = Before;
+        Assert.That(DomainNonce, Is.Not.EqualTo(rec.nonce));
+        var preview = Native(rec.previewId) as GameObject;
+        var state = Native(rec.stateId) as HexBoardState;
+        bool previewWasAlive = preview != null;
+        bool boardNull = state == null || state.Board == null;
+        var beforeAlive = rec.owned.Where(Alive).Select(a => a.name).ToArray();
+        var marker = Native(rec.markerId) as GameObject;
+        Assert.That(marker != null && marker.name == "DomainOrdinary-" + rec.token, Is.True,
+            "ordinary scene positive control must survive the domain-only reload");
+        var imported = AssetDatabase.LoadAssetAtPath<Material>(rec.materialPath);
+        Assert.That(imported != null && AssetDatabase.Contains(imported), Is.True);
+        Assert.That(AssetDatabase.AssetPathToGUID(rec.materialPath, AssetPathToGUIDOptions.OnlyExistingAssets), Is.EqualTo(rec.materialGuid));
+        bool sharedBefore = Native(rec.sharedMeshId) != null;
+        UnityEngine.Debug.Log($"DOMAINPROBE afterReload previewAlive={preview != null} stateBoardNull={boardNull} ownedAlive={string.Join(",", beforeAlive)} sharedBeforeDestroy={sharedBefore}");
+        // Board=null or a preview already removed by reload is recorded, not called a bug: the documented UX reloads it.
+        if (preview != null)
+        {
+            Assert.That(preview.name, Is.EqualTo("DomainPreview-" + rec.token));
+            Object.DestroyImmediate(preview); // actual HexBoardAssets.OnDestroy/Teardown, never a simulated owned-list clear
+        }
+        var retained = rec.owned.Where(Alive).Select(a => a.name).ToArray();
+        TestContext.WriteLine("DOMAINLIFETIME " + JsonUtility.ToJson(new Observation {
+            previewAliveAfterReload = previewWasAlive, stateBoardNull = boardNull, retained = retained,
+            ownedAliveBeforeDestroy = beforeAlive, sharedBeforeDestroy = sharedBefore }));
+        File.WriteAllText(Path.Combine(Evidence, "lifetime-observation.json"), JsonUtility.ToJson(new Observation {
+            previewAliveAfterReload = previewWasAlive, stateBoardNull = boardNull, retained = retained,
+            ownedAliveBeforeDestroy = beforeAlive, sharedBeforeDestroy = sharedBefore }, true));
+        UnityEngine.Debug.Log($"DOMAINPROBE afterDestroy retained={string.Join(",", retained)} ordinaryAlive={marker != null} importedAlive={imported != null}");
+        Assert.That(marker != null, Is.True);
+        Assert.That(imported != null && AssetDatabase.Contains(imported), Is.True);
+        Assert.That(AssetDatabase.AssetPathToGUID(rec.materialPath, AssetPathToGUIDOptions.OnlyExistingAssets), Is.EqualTo(rec.materialGuid));
+        if (sharedBefore) Assert.That(Native(rec.sharedMeshId) != null, Is.True, "a shared primitive alive after reload must survive preview destruction");
+        Assert.That(retained, Is.Empty, "generated native assets must be released by reloaded preview teardown");
+    }
+    [Serializable] sealed class Observation
+    {
+        public bool previewAliveAfterReload, stateBoardNull, sharedBeforeDestroy;
+        public string[] retained = Array.Empty<string>(), ownedAliveBeforeDestroy = Array.Empty<string>();
+    }
+
+    [TearDown]
+    public void RemoveOnlyThisDiagnosticsOwnedObjectsAndAssets()
+    {
+        if (string.IsNullOrEmpty(evidence)) return;
+        var ownedDirectory = Evidence;
+        try
+        {
+        if (!File.Exists(RecordPath)) return;
+        var rec = Before;
+        var preview = Native(rec.previewId) as GameObject;
+        if (preview != null && preview.name == "DomainPreview-" + rec.token) Object.DestroyImmediate(preview);
+        var marker = Native(rec.markerId) as GameObject;
+        if (marker != null && marker.name == "DomainOrdinary-" + rec.token) Object.DestroyImmediate(marker);
+        // Explicit cleanup after recording the result: only the exact named nonpersistent objects this fixture created.
+        foreach (var a in rec.owned)
+        {
+            var o = Native(a.id);
+            if (o != null && Alive(a) && !EditorUtility.IsPersistent(o)) Object.DestroyImmediate(o);
+        }
+        AssetDatabase.DeleteAsset(rec.materialPath);
+        var created = Native(rec.createdControl.id);
+        if (Alive(rec.createdControl) && created != null && !EditorUtility.IsPersistent(created)) Object.DestroyImmediate(created);
+        AssetDatabase.DeleteAsset(rec.jsonPath);
+        SessionState.EraseString(Key(rec.token));
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+        finally
+        {
+            foreach (var file in new[] { "config.json", "before-reload.json", "lifetime-observation.json" })
+            {
+                var path = Path.Combine(ownedDirectory, file);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            // Preserve unknown files instead of recursively deleting a directory after a failed fixture.
+            if (Directory.Exists(ownedDirectory))
+            {
+                Assert.That(Directory.GetFileSystemEntries(ownedDirectory), Is.Empty, "unexpected domain fixture evidence must be preserved");
+                Directory.Delete(ownedDirectory);
+            }
+            if (SessionState.GetString(PendingKey, "") == evidence) SessionState.EraseString(PendingKey);
+            evidence = "";
+        }
+    }
 }

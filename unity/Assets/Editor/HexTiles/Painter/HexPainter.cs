@@ -81,10 +81,19 @@ namespace Statecraft.HexTiles.Painter
             return state.Board.Hexes.ContainsKey(k) ? k : null;
         }
 
+        /// <summary>A snapshot of loaded scene boards, including unsaved painter previews. Never includes added
+        /// persistent assets or prefab-stage contents; materialized before the window destroys any board.</summary>
+        public static HexBoardState[] LoadedBoards() => UnityEngine.Object.FindObjectsByType<HexBoardState>(FindObjectsSortMode.None)
+            .Concat(Resources.FindObjectsOfTypeAll<HexBoardState>().Where(s =>
+                (s.gameObject.hideFlags & HideFlags.DontSaveInEditor) != 0 && !EditorUtility.IsPersistent(s.gameObject)
+                && UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(s.gameObject) == null))
+            .Distinct().ToArray();
+
         /// <summary>Builds board <paramref name="id"/> (with its overrides) in the open scene, one object per hex.</summary>
         public static GameObject Load(string id)
         {
             var root = HexBoardBuilder.Build(HexBoard.Load(id), Capture.HexBoardCapture.Ground, options: new HexBoardBuilder.Options { PerHex = true }).root;
+            root.hideFlags |= HideFlags.DontSaveInEditor;
             Physics.SyncTransforms();   // so Pick's rays meet the new terrain's collider
             return root;
         }

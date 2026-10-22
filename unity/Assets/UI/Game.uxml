@@ -17,6 +17,7 @@
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-timeline" text="Timeline" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="hourglass" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-objectives" text="Objectives" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="flag" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
@@ -148,13 +149,28 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
+                    <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
+                    <ui:Button name="info-move" />
+                    <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
+                    <ui:Button name="info-fortify" />
+                    <ui:Button name="info-hold" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
+                <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
+                <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
                  second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
             <ui:VisualElement name="info-gdd" class="info-gdd" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
+        </ui:VisualElement>
+        <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
+             the bottom left (the info panel starts right of the lane). Icon-only as the side menu: each one's name is its text,
+             drawn clear, and its tooltip (HoverTip). After the info panel in the tree, so Tab reaches them after its actions. -->
+        <ui:VisualElement name="community-column" class="community-column" picking-mode="Ignore">
+            <ui:Button name="hud-star" text="Star on GitHub" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="star" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-report" text="Report a bug or idea" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="speech" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-share" text="Share" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="share" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
         <!-- The decision layer under the top bar (decision cards, 2026-10-13): while an event is open a dim backdrop blocks the
              map and the panels under it, and the card sits in the middle, up to 1040 px wide, with a 16:9 media header (the
@@ -311,6 +327,12 @@
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <ui:VisualElement name="screen-timeline" class="panel screen screen-wide">
+            <ui:VisualElement class="screen-header"><ui:Label name="timeline-screen-title" class="title" /></ui:VisualElement>
+            <ui:VisualElement class="timeline-columns timeline-headings"><ui:Label name="timeline-yours-heading" /><ui:Label name="timeline-record-heading" /></ui:VisualElement>
+            <ui:ScrollView name="timeline-list" class="grow" />
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
         <!-- A short guide to the existing loop (#1041). It is a normal side-menu screen, so ScreenNav owns opening and closing. -->
         <ui:VisualElement name="screen-how-to-play" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label name="how-to-play-title" text="How to play" class="title" /></ui:VisualElement>
@@ -368,7 +390,6 @@
                     <ui:Button name="settings-language-he" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
             <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />
@@ -507,20 +528,28 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
-             The share links show only where the browser cannot share the picture itself. Before the toast. -->
+             A preview of that picture, the Share/Download button, then Copy (#1238), which puts the picture, or the post
+             text, on the clipboard, with a line under it that says which. Then the site buttons in the owner's order (#1237);
+             the notes show once the picture downloaded, where the browser cannot share it itself. Before the toast. -->
         <ui:VisualElement name="share-layer" class="share-layer">
             <ui:VisualElement name="share-panel" class="panel share-panel">
                 <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
+                <ui:VisualElement name="share-preview" class="share-preview" />
                 <ui:Label name="share-post" class="share-post" />
                 <ui:Button name="share-go" class="share-go" />
+                <ui:Button name="share-copy" class="share-go" />
+                <ui:Label name="share-copied" class="muted share-copied" />
+                <ui:VisualElement class="row share-sites">
+                    <ui:Button name="share-x" />
+                    <ui:Button name="share-facebook" />
+                    <ui:Button name="share-instagram" />
+                    <ui:Button name="share-whatsapp" />
+                    <ui:Button name="share-telegram" />
+                    <ui:Button name="share-linkedin" />
+                </ui:VisualElement>
+                <ui:Label name="share-instagram-note" class="muted share-instagram-note" />
                 <ui:VisualElement name="share-fallback" class="share-fallback">
                     <ui:Label name="share-attach" text="These sites can't take a picture through a link: attach the downloaded picture to your post." class="muted share-attach" />
-                    <ui:VisualElement class="row share-sites">
-                        <ui:Button name="share-x" />
-                        <ui:Button name="share-facebook" />
-                        <ui:Button name="share-whatsapp" />
-                        <ui:Button name="share-linkedin" />
-                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="row share-actions"><ui:Button name="share-close" text="Close" /></ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />

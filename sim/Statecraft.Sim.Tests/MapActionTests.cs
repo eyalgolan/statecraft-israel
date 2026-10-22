@@ -89,6 +89,30 @@ public class MapActionTests
         Assert.Equal("Transit camps and housing projects can be placed from 1 June 1948", reason.Text);
     }
 
+    /// <summary>R-PROJ-004: the GDD loop refuses both legacy map actions with a reason, on hexes the legacy loop accepts, and
+    /// refunds their Attention: the turn ends as if they had not been ordered. City projects replace them (R-PROJ-001).</summary>
+    [Fact]
+    public void TheGddLoopRefusesMapActions()
+    {
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd()));
+        Assert.True(c.IsGdd);
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        s.Date = new DateTime(1948, 6, 1);   // map_actions_from in the fixture
+        s.Policies["maabarot"] = 1.0;
+        Assert.Null(MapActions.Check(C, Ready(), "transit_camp", 2, 0));   // the legacy loop accepts both here
+        Assert.Null(MapActions.Check(C, Ready(), "housing", 1, 1));
+        var reason = MapActions.CheckReason(c, s, "housing", 1, 1);
+        Assert.NotNull(reason);
+        Assert.Equal("gdd_loop", reason!.Kind);
+        Assert.Empty(reason.Values);
+        Assert.Equal("Map actions are not part of this game: start a city project instead", reason.Text);
+        Assert.Equal("gdd_loop", MapActions.CheckReason(c, s, "no_such_action", 1, 1)!.Kind);   // the guard comes before the id is read
+        var r = Simulation.Step(c, s, new Command[] { new MapAction("transit_camp", 2, 0), new MapAction("housing", 1, 1) });
+        Assert.Equal(new[] { reason.Text, reason.Text }, r.Rejected.Select(x => x.Reason));
+        Assert.Empty(r.State.Placements);
+        Assert.Equal(Simulation.Step(c, s, new Command[0]).State.Hash(), r.State.Hash());   // Attention refunded, nothing built
+    }
+
     [Fact]
     public void TransitCampsNeedTheMaabarotPolicy()
     {
@@ -172,7 +196,7 @@ public class MapActionTests
     [Fact]
     public void JaffaAndTelAvivShareAHexAndBuildingThereWorks()
     {
-        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var c = RealContentTests.Legacy();
         var jaffa = c.SettlementHexes.Single(x => x.Id == "jaffa");
         var tlv = c.SettlementHexes.Single(x => x.Id == "tel_aviv");
         Assert.Equal((-3, 19), (tlv.Q, tlv.R));
@@ -214,7 +238,7 @@ public class MapActionTests
     [Fact]
     public void RealContentOpensCampsWithTheMaabarotDecision()
     {
-        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var c = RealContentTests.Legacy();
         var s = GoldenRun.Play(c, new DateTime(1950, 9, 1));
         var tlv = c.SettlementHexes.Single(x => x.Id == "tel_aviv");
         Assert.Null(MapActions.Check(c, s, "transit_camp", tlv.Q, tlv.R));

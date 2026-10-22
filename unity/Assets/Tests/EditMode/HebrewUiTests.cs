@@ -280,7 +280,7 @@ public class HebrewUiTests
         ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
         ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-        ("nav-why", "hud.nav.why"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
         ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         ("event-draft", "event.draft"),
         ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
@@ -292,10 +292,11 @@ public class HebrewUiTests
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
-        ("settings-language-label", "settings.language"), ("settings-language-note", "settings.language.note"),
+        ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"),
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169
+        ("hud-star", "community.star"), ("hud-report", "feedback.open"), ("hud-share", "share.open"),   // #1236
         ("feedback-intro", "feedback.intro"), ("feedback-bug", "feedback.bug"), ("feedback-feature", "feedback.feature"),
         ("feedback-itch", "feedback.itch"), ("feedback-close", "report.close"),
         ("settings-share", "share.open"), ("turn-report-share", "share.open"), ("share-title", "share.title"),   // #1170

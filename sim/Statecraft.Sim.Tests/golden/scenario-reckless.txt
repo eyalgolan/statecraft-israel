@@ -1,4 +1,4 @@
-1949-01-15;11400714819323200433;Historical;8;
+1949-01-15;4354685564936847302;Historical;8;
 ind{
   food_supply=0.59921875 [3FE32CCCCCCCCCCD]
   housing=0.41912251055925737 [3FDAD2E738F7A4A9]
@@ -43,10 +43,10 @@ pop{
   veterans=656752.739703733 [41240AE17ABA729C]
 sit[
 treasury=0 [0000000000000000]
-debt=34.960591926047705 [40417AF4AD1D9699]
+debt=20.9605919260477 [4034F5E95A3B2D31]
 fx=80.85238326859616 [4054368D728D91CC]
-rung=5;cf=40;
-mob=1 [3FF0000000000000]
+rung=5;cf=0;
+mob=0.8 [3FE999999999999A]
 stab=0.5917932390134901 [3FE2EFF85FF1D1BA]
 att=4 [4010000000000000]
 fired[
@@ -98,5 +98,20 @@ city{
   tel_aviv=248,106,255,106,9,c0.3458823529411765 [3FD622EFBC895623]
   tiberias=6,2,6,2,0,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
+units[
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+next=14
 food=2253,751,0
 arms=12

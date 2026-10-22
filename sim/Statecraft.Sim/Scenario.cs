@@ -22,7 +22,7 @@ namespace Statecraft.Sim
     /// Kinds: set_policy (policy, level), allocate_budget (shares: {office: share}), choose_event_option (event, option),
     /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
     /// (city, role, count), train (city, track, count), cancel_training (cohort), pioneer_work (unit, action, site), stop_work
-    /// (unit), move (unit, q, r; GDD content only), unit_order (unit, order; GDD content only). A turn with no
+    /// (unit), move (unit, q, r; GDD content only), unit_order (unit, order, and q, r for an attack; GDD content only). A turn with no
     /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
     {
@@ -65,10 +65,10 @@ namespace Statecraft.Sim
             ["map_action"] = new[] { "action", "q", "r" }, ["assign_workers"] = new[] { "city", "role", "count" },
             ["train"] = new[] { "city", "track", "count" }, ["cancel_training"] = new[] { "cohort" },
             ["pioneer_work"] = new[] { "unit", "action", "site" }, ["stop_work"] = new[] { "unit" },
-            ["unit_order"] = new[] { "unit", "order" },
+            ["unit_order"] = new[] { "unit", "order", "q", "r" },   // q and r: an attack's hex only (R-COMBAT-001)
             ["start_project"] = new[] { "project", "city", "q", "r" }, ["cancel_project"] = new[] { "project" },
             ["move"] = new[] { "unit", "q", "r" },
-            ["buy_arms"] = new[] { "count" },
+            ["buy_arms"] = new[] { "count" }, ["resolve_capture"] = new[] { "settlement", "outcome" },
         };
 
         public static IReadOnlyCollection<string> Kinds => Allowed.Keys;
@@ -98,11 +98,12 @@ namespace Statecraft.Sim
                 case "cancel_training": return new CancelTraining(Whole(c, "cohort"));
                 case "pioneer_work": return new PioneerWork(Whole(c, "unit"), Str(c, "action"), Str(c, "site"));
                 case "stop_work": return new StopWork(Whole(c, "unit"));
-                case "unit_order": return new UnitOrder(Whole(c, "unit"), Str(c, "order"));
+                case "unit_order": return new UnitOrder(Whole(c, "unit"), Str(c, "order"), c.ContainsKey("q") ? Whole(c, "q") : (int?)null, c.ContainsKey("r") ? Whole(c, "r") : (int?)null);
                 case "start_project": return new StartProject(Str(c, "project"), Str(c, "city"), Whole(c, "q"), Whole(c, "r"));
                 case "cancel_project": return new CancelProject(Whole(c, "project"));
                 case "move": return new Move(Whole(c, "unit"), Whole(c, "q"), Whole(c, "r"));
                 case "buy_arms": return new BuyArms(Whole(c, "count"));
+                case "resolve_capture": return new ResolveCapture(Str(c, "settlement"), Str(c, "outcome"));
                 default: throw new InvalidDataException($"command kind '{kind}' has no builder");
             }
         }
@@ -142,10 +143,10 @@ namespace Statecraft.Sim
             SecurityOrder o => o.Delta.ToString(CultureInfo.InvariantCulture), Appoint a => $"{a.Office} {a.Person}", MapAction m => $"{m.Action} {m.Q},{m.R}",
             AssignWorkers w => $"{w.City} {w.Role} {w.Count}", Train t => $"{t.City} {t.Track} {t.Count}", CancelTraining t => t.Cohort.ToString(CultureInfo.InvariantCulture),
             PioneerWork p => FormattableString.Invariant($"{p.Unit} {p.Action} {p.Site}"), StopWork w => w.Unit.ToString(CultureInfo.InvariantCulture),
-            UnitOrder o => FormattableString.Invariant($"{o.Unit} {o.Order}"),
+            UnitOrder o => FormattableString.Invariant($"{o.Unit} {o.Order}") + (o.Q is int q && o.R is int r ? FormattableString.Invariant($" {q},{r}") : ""),
             StartProject p => FormattableString.Invariant($"{p.ProjectKind} {p.City} {p.Q},{p.R}"), CancelProject p => p.Project.ToString(CultureInfo.InvariantCulture),
             Move m => FormattableString.Invariant($"{m.Unit} {m.Q},{m.R}"),
-            BuyArms a => a.Count.ToString(CultureInfo.InvariantCulture),
+            BuyArms a => a.Count.ToString(CultureInfo.InvariantCulture), ResolveCapture r => $"{r.Settlement} {r.Outcome}",
             _ => c.Kind,
         };
     }

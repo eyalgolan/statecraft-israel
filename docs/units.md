@@ -66,10 +66,11 @@ Not in the slice:
 
 Normal play draws one token per unit from two inputs: the sim's state and `content/map/units_1948.yaml`.
 - **The state** gives the date, the security level and the reserve call-up (`GameState.Date`, `Rung`, `Mobilization`).
-  Nothing else in the sim describes the military: it has no formations and no positions (design:
-  `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
-- **The data file** is map-only. `ContentLoader` never reads it, so the content hash and the goldens do not move
-  (`UnitsInPlayTests.TheUnitFileDoesNotMoveTheContentHash`). The WebGL manifest ships it.
+  Since Phase 5 PR 4 it also holds the starting forces (below), and since Phase 5 PR 14 the GDD loop's army tokens come
+  from them (below, "Tokens from the state"; design: `docs/superpowers/specs/2026-10-11-units-in-play-design.md`).
+- **The data file** is read by both. The sim reads the rows a new game starts a unit from (`StartingForces`; Q-START-1,
+  owner, 15 October 2026), so the file is in the content hash and moves the goldens
+  (`StartingForcesTests.TheUnitFileEntersTheContentHash`). The WebGL manifest ships it.
 
 Code:
 - `UnitData`: the file.
@@ -148,8 +149,8 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
   those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
   A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
-  bundle draws nothing. Three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May strength; owner,
-  17 October 2026, #226), under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
+  bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
+  strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
   window's first day (#226, ruling 9; `control_hexes_1948_49.yaml`). The card leaves out Israel's call-up line. The
   goldens do not move. Tests: `UnitsInPlayTests.OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived`,
   `UnitFiguresTests.TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive`.
@@ -169,21 +170,81 @@ turns up." The figures are the brigade table of `research_notes/M4 war mode/war-
 1948 war article, whose size column cites Ben-Gurion's War Diaries (Arabic edition, 1994, p. 303). The table gives no
 date; `as_of` is 15 May 1948, the day the ruling gives the strengths for.
 
+**Ben-Gurion's diary for 15 May 1948 (#1240).** The owner's ruling of 21 October 2026 replaces seven of the table's
+figures with the diary's for the day, a primary source: the Ben-Gurion Archive's English transcription, item 221910
+([Wayback copy](https://web.archive.org/web/20240203024717/https://bengurionarchive.bgu.ac.il/en/node/8733), checked
+2026-10-21): "Palmach – about 6,000, of whom 1,300 are in Harel [...], 1,300 in the Negev, 1,200 in the north, 1,000
+women; Golani has 3,573 + 522 paid recruits; Carmeli 2,289; Alexandroni 3,588; Kiriati 2,504; Givati 3,229; Etsiyyoni
+3,166 – the total for all brigades is about 24,400." Golani counts the 522 paid recruits (4 units either way); Harel and
+Negev, Palmach brigades, take the diary's Palmach in Harel and in the Negev. en.wiki's table stays as each row's second
+source. A person has checked the seven figures against the page, so the rows are `fact-checked`.
+
 | Row | Strength (15 May) |
 |---|---|
-| Golani | 4,500 |
-| Carmeli | 2,000 |
-| Alexandroni | 5,200 |
-| Kiryati | 1,400 |
-| Givati | 5,000 |
-| Harel | 1,400 |
+| Golani | 4,095 (diary: 3,573 + 522 paid recruits; the table gave 4,500) |
+| Carmeli | 2,289 (diary; the table gave 2,000) |
+| Alexandroni | 3,588 (diary; the table gave 5,200) |
+| Kiryati | 2,504 (diary; the table gave 1,400) |
+| Givati | 3,229 (diary; the table gave 5,000) |
+| Harel | 1,300 (diary, the Palmach in Harel; the table gave 1,400) |
 | Yiftach | 4,500 (the table counts some Golani men in it) |
-| Negev | 2,400 |
+| Negev | 1,300 (diary, the Palmach in the Negev; the table gave 2,400) |
 
-- **No figure, no strength:** Etzioni, the 7th, the 8th and Oded have no size in the note, so their rows give none and
-  stay `status: draft`.
-- **Still map-only:** the sim does not read the file yet, so the goldens do not move. Phase 5 PR 4's sim reading follows.
+- **No figure, no strength:** the 8th and Oded have no size in the note, so their rows give none and stay `status: draft`.
+- **Etzioni and the 7th (#1241):** Etzioni gives 3,166 on 15 May 1948 from Ben-Gurion's diary, the same page as the
+  seven rows above, which are `fact-checked`; Etzioni stays `status: to_verify` until a person checks the figure.
+  The 7th gives 1,650, its men in Operation Bin Nun Alef, dated 24 May 1948, the day its Hulda window opens: a
+  secondary figure, so `status: to_verify` (`research_notes/GDD phase 5/later-brigades-1241.md`).
+  Yiftach's 4,500 stays until a person settles the note's conflict (4,500, about 2,000 or 1,200).
+- **The sim reads them** since Phase 5 PR 4: see "The starting forces" below.
 - Tests: `test_idf_brigade_strengths_are_secondary_and_to_verify` (Python) and `UnitsInPlayTests` (EditMode).
+
+### The starting forces (Phase 5 PR 4, #743)
+
+A Historical game on 15 May 1948 starts with one sim unit per row that is not hidden, is an army row, has a 15 May
+strength and has an anchor window covering the day (docs/rules/mvp.md R-UNIT-006; owner, 20 October 2026, #743: "all five
+defaults"). The unit stands on the hex holding the anchor's coordinates, by the map's own projection and rounding
+(`HexPicker`, `tools/hexgrid.py`), precomputed by `tools/unit_anchor_hexes.py` into `content/map/unit_anchor_hexes.yaml`
+(rerun it after changing an anchor); the token may still stand one hex away (`UnitPlacer`), which is presentation.
+- **Types:** every IDF brigade is a `veteran_soldier`. Each Arab side with a starting row has one infantry type, a labelled
+  design value with 3 movement points: `egyptian_army`, `arab_legion` (Jordan), `syrian_army`, `iraqi_army`,
+  `arab_liberation_army`. These ids are the sim's, not names shown to the player (Q-UI-2, Q-START-4).
+- **Strength** is the row's people in 1,000-person population units, the nearest unit with a half up, never below 1.
+- **Who starts:** Golani 4, Carmeli 2 (at Haifa, its sector seat), Alexandroni 4, Kiryati 3, Givati 3, Harel 1,
+  Etzioni 3 (Jerusalem), Negev 1 (#1240, #1241); Egypt 10, the Arab Legion 5, Syria 3, Iraq 3, the ALA 4. Nothing starts
+  for Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (hidden), or the squadron and the two ships
+  (tokens only, Q-UNIT-5).
+- **Arrivals (R-UNIT-009, #1241):** a row whose strength is dated after 15 May, with an anchor window covering that day,
+  arrives on that day: in the resolution of the monthly turn that reaches it, on that anchor's hex, with that strength. Its
+  unit id is reserved at the start, after the starting rows, so unit i is still row i. Today that is the 7th: 2 units at
+  Hulda from the 15 June 1948 turn.
+- **Release gate:** every row the sim starts a unit from must be `fact-checked` before a shareable build carries it
+  (Q-START-3). `Statecraft.Cli --release-gate`, `Build -shareable` and `tools/package_release.py` refuse until then, and
+  name the rows; today that is Etzioni and the 7th (#1241), since the owner checked the other twelve on 21 October 2026
+  (#1240).
+- Tests: `StartingForcesTests` (dotnet) and `UnitsInPlayTests.TheStartMatchesTheMap` (EditMode).
+
+### Tokens from the state (Phase 5 PR 14, #753)
+
+In the GDD loop (`systems.loop: gdd`, the real content) the army tokens come from `GameState.Units`, not from the rows'
+dated windows (`UnitRoster.FromState`; impact plan §2.6). The legacy loop keeps the rows and the call-up until D-E1
+deletes it.
+- **One token per military unit** whose row is on the map, grouped per hex ((q, r) order). Unit i of a new game is the
+  starting force `Content.StartingForces[i]` (R-UNIT-006), and that row gives the card, the flag, the headgear and the
+  vehicles. A halutz, or a unit with no row, draws no token. An Arab force's token still waits for its Collection figure.
+- **The sim hex is authoritative.** A unit on its starting hex stands on its starting anchor's spot (UnitPlacer's one-hex
+  offset still clears the town kits and the roads). A unit that moved stands within one hex of its new hex, off the
+  hexes the other tokens hold; that spot is placed once and cached, so a rebuild places only the units that moved. Its
+  card names no place (no source does) and gives the row's sources.
+- **Figures follow Q-UI-3** (owner, 15 October 2026; #226): 3 at two thirds or more of full strength, 2 at a third or
+  more, 1 below that. Full strength is the sourced strength the unit started with (Q-UNIT-4), so a new game draws three
+  figures on every token whatever the call-up, and losses take figures away. So the card leaves out the call-up: an army
+  token's card has no national line, and the squadron's gives the security level alone ("Security level 5 of 5"), which
+  still sets whether it flies.
+- **The squadron and the ships** are tokens only (Q-UNIT-5): they still come from their rows' windows.
+- So from 15 May 1948 the map draws the thirteen starting forces where the sim holds them, and the 7th from its arrival,
+  on its arrival anchor. A row with no sim unit (Yiftach, whose window opens later) draws no token in the GDD loop.
+- Tests: `UnitsFromStateTests` (EditMode).
 
 ### The 1948 Collection on the tokens (#665)
 
@@ -196,8 +257,9 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 |---|---|---|---|
 | C04 sabra pioneer | an Israeli rifleman in the bush hat (the uniform default's first figure; the showcase trio's first) | #507's pairing | always |
 | C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
-| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first and third, the showcase's third | the Negev headgear photographs (Sources) | always |
-| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel | a presentation choice: the default's third figure is not sourced | always |
+| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third | the Negev headgear photographs (Sources) | always |
+| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel and Yiftach | a presentation choice: the default's third figure is not sourced | always |
+| #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
@@ -214,8 +276,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
   clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
   camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
-  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
-  stay far.
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier
+  has no rig and keeps his still far model too. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
@@ -345,9 +407,21 @@ checks every anchor and logs each spot and its distance.
   never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
   person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
   `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
-- It also gives the national values the token reflects ("Reserve call-up 80% · security level 5 of 5") and the source
+- It also gives the national values the token reflects on Israel's cards (legacy loop: "Reserve call-up 80% · security level
+  5 of 5"; in the GDD loop only the squadron's card has one, "Security level 5 of 5", see above) and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
-- It has no orders; a button opens the Defence screen.
+- A button opens the Defence screen. In the GDD loop the card also gives the Move order (GDD Phase 5 PR 15, slice 1,
+  #754; Q-UI-2's name, "Move" / "תנועה"). The button shows only when `Movement.Reachable` has a hex for the unit (the
+  token's sim unit is its row's starting force, `UnitCard.SimUnit`), and not once the game is over. Pressing it lights
+  exactly those hexes (`MapScene.ShowReachable`, a band half the selection's width); a click on a lit hex queues the
+  sim's `Move` through `SimBridge` and the card says the move waits for End turn; any other click, a second press, a
+  turn or another selection ends the pick. The sim refuses a move that is no longer possible at End turn with its own
+  reason. Slice 2 adds Fortify and Hold (Q-UI-2's "Fortify" / "ביצור", "Hold" / "החזקה"): each button shows only where
+  the sim's `Orders.Check` takes the order, and where it does not, the card shows the sim's reason as the sim gives it
+  (in English for now, as the End turn toast does). A press queues the sim's `UnitOrder` through `SimBridge` (one standing
+  order per unit: Hold replaces a queued Fortify, and either replaces a queued attack) and the card says when it takes
+  effect. Tests: `UnitOrdersTests`,
+  `InfoPanelLayoutTests.TheUnitCardWithItsOrdersFitsEveryWindow`.
 
 **The Avia S-199** (`UnitModels.AviaS199`; type `avia-s199-101sqn-1948`):
 - The Bf 109G airframe, 8.94 m long with a 9.92 m span, with the Jumo 211F's wide three-blade paddle propeller and the

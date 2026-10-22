@@ -3460,3 +3460,50 @@ warmth guard now compares each material with the same material in promo 02.
 - **Where main stands** (d031af36, 3 WebGL `?shot` captures, spread 0.0000): sand 0.2952 (-0.085, paler and less
   orange) and sea -0.2000 (+0.060, less blue; 0.008 short of the band's edge): both outside their bands, so `art_checkpoint.sh` exits 3 on main until
   the art follow-up on #695 lands. This section only sets the measure.
+
+
+## Issue #391 QA record, 19 October 2026
+
+Technical checks on main `9e57134201f74412bf3d7513e26b600a9c760f5c`, macOS 27.0.1 arm64,
+Unity 6000.3.25f1. No grade, shader, threshold or asset changed. This is an agent-run QA record, not the
+person's judgement of judea30 requested in #391; that remains pending before closing the issue.
+
+The three existing `GradeTests` passed: `ColourBlindPlayersStillTellCoastAndSelectionApart`,
+`ColourBlindPlayersTellTheBorderStylesApart` and `ColourBlindPlayersTellTheNeutralBandFromBothSides`.
+EditMode XML: 3 total, 3 passed, 0 failed, 0 skipped; exit 0 and 0 C# warnings/errors. These are the existing
+simulated-vision checks at their sampled points, not a human accessibility or full-suite sign-off.
+`MapCapture.Promo -extraPose judea30:35.10:31.85:30000:10` also completed: six 1920x1080 editor renders
+(gameplay03, diorama02, judea30, each Mobile and PC).
+
+WebGL reused the unmodified local buildB from the Firefox #437 check, built from the same 9e source;
+every file was checked against its original SHA256 manifest. Two `web_check.py --query golden&shot`
+attempts exited 1: gameplay03 received 624 of 625 chunks, so the collector rejected `SHOT done`. Both failed
+logs and partial capture sets were kept. Collecting the console through the existing `headed.Browser` CDP
+connection, headless, instead of stderr then completed all 13 shots through the same `web_check.ShotCollector`:
+all PNG SHA256s and 1920x1080 sizes verified, all 8 manifest goldens matched, exit 0. The standalone transport
+harness and exact commands are included in the contribution's PR description. No repository tool changed;
+the successful CDP run does not turn the two failed stderr runs into passes or establish their exact cause.
+
+Current `art_compare.py` completed with exit 0. Its WebGL diorama02 material guards, using the existing
+`MATERIAL_MASK` and bands from T77 above:
+
+| Material | Measured warmth | Promo band | Result |
+|---|---|---|---|
+| Sand | 0.3130 | [0.3037, 0.4556] | PASS |
+| Sea | -0.2337 | [-0.3119, -0.2080] | PASS |
+
+The HUD-masked diorama02 saturation was 0.4192, below 0.48. Whole-frame warmth was 0.1486 (HUD-masked 0.1664),
+above the issue's old 0.145 top (and T74's masked 0.151 top). As T77 specifies, those whole-frame warmth bands
+are information only, not the current material gate. Neither the old band nor the current bands were adjusted.
+
+For a reproducible diagnostic, dark non-blue pixels (B<=R, Rec.709 luma 0.06–0.30 on sRGB/255, outside
+`HUD_MASK`) gave judea30 median-colour hues 27.5 degrees on Mobile and 26.4 on PC. This selection also includes
+wood, props and their shadows; it is not terrain segmentation or the older bare-terrain probe. These numbers
+cannot replace a person's look, and no new hue tolerance or human acceptance is inferred. The full measurement
+script, counts, RGB medians and image hashes accompany the PR; the older before/after results in #391 remain
+attributed to their original authors and heads.
+
+Captures and colour-blind comparison images were retained locally with hashes. Left panels of comparisons
+are in-engine captures at the source above; right panels are the existing AI-generated promo references,
+not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
+human review flag, licence declaration or release gate changed.

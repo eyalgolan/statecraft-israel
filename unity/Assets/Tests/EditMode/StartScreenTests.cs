@@ -449,23 +449,24 @@ public class StartScreenTests
     [UnityTest]
     public IEnumerator ASaveFrom1950KeepsTheLiveHudOutOfReach()
     {
-        var g = GameSession.New(C, 9, Mode.Historical);
-        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(C, g.State));
+        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
+        var g = GameSession.New(legacy, 9, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
         var store = TempStore();
         store.WriteAutosave(g.Save.Write());
         using var ui = new RenderedUi();
-        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+        var bridge = new SimBridge(GameStart.Begin(legacy, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
         var owned = new List<IDisposable>();
         try
         {
             ui.Root.Q("root").RemoveFromClassList("loading");
             owned.Add(new HudPresenter(ui.Root, bridge, Text));
             owned.Add(new ScreenNav(ui.Root));
-            var info = new InfoPanelPresenter(ui.Root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
             var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
             var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
             var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
-            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             var start = new StartScreenPresenter(ui.Root, newGame, resumed); owned.Add(start);
             start.Show();
@@ -616,6 +617,54 @@ public class StartScreenTests
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
+    }
+
+    /// <summary>tools/web_check.py clicks the screen's buttons where ?navlog says they are (--startscreen, --persistence):
+    /// the NAV line names every shown button (Continue only with a save; the recording's button once its row shows), each
+    /// at its own centre to half a pixel as a fraction of the window; the last line logged is the current layout; and
+    /// without ?navlog nothing is logged.</summary>
+    [UnityTest]
+    public IEnumerator UnderNavlogItLogsWhereEachShownButtonIs()
+    {
+        var wasNav = DiagLog.Nav;
+        var logged = new List<string>();
+        void Capture(string message, string trace, LogType type) { if (message.Contains(" start buttons ")) logged.Add(message); }
+        Application.logMessageReceived += Capture;
+        try
+        {
+            foreach (var save in new[] { false, true })
+            {
+                DiagLog.Nav = true; logged.Clear();
+                using var rig = new Rig(save ? WithSave(TempStore(), 1) : TempStore());
+                for (int i = 0; i < 6; i++) yield return null;
+                var line = rig.Start.ButtonCentres();
+                Assert.IsNotNull(line, $"save={save}: the screen is laid out");
+                Assert.IsNotEmpty(logged, $"save={save}: a NAV line is logged");
+                StringAssert.IsMatch(@"^NAV f=\d+ t=\d+ start buttons ", logged[^1]);
+                Assert.AreEqual(line, logged[^1].Substring(logged[^1].IndexOf("start buttons ", StringComparison.Ordinal)), "the last line is the current layout");
+                var window = rig.Ui.Root.panel.visualTree.worldBound;
+                var centres = Regex.Matches(line!, @"(\S+)=([0-9.]+),([0-9.]+)").Cast<Match>().ToDictionary(m => m.Groups[1].Value,
+                    m => new Vector2(window.xMin + window.width * float.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
+                                     window.yMin + window.height * float.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture)));
+                var shown = save ? StartScreenPresenter.Buttons : StartScreenPresenter.Buttons.Where(b => b != "start-continue").ToArray();
+                CollectionAssert.AreEqual(shown, centres.Keys, $"save={save}: {line}");
+                foreach (var (name, at) in centres.Select(kv => (kv.Key, kv.Value)))
+                {
+                    var r = rig.Ui.Q<Button>(name).worldBound;
+                    Assert.AreEqual(r.center.x, at.x, 0.5f, $"save={save}: {name} x ({r})");
+                    Assert.AreEqual(r.center.y, at.y, 0.5f, $"save={save}: {name} y ({r})");
+                    Assert.IsTrue(r.Contains(at) && window.Contains(at), $"save={save}: {name}'s centre {at} is on it and in the window");
+                }
+            }
+            DiagLog.Nav = false; logged.Clear();
+            using (var quiet = new Rig(TempStore()))
+            {
+                for (int i = 0; i < 6; i++) yield return null;
+                Assert.IsNotNull(quiet.Start.ButtonCentres(), "precondition: laid out");
+                Assert.IsEmpty(logged, "without ?navlog nothing is logged");
+            }
+        }
+        finally { Application.logMessageReceived -= Capture; DiagLog.Nav = wasNav; }
     }
 
     // --- The scene ---------------------------------------------------------------------------------------------------

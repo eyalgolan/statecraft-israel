@@ -15,6 +15,24 @@ public class RealContentTests
         return Path.Combine(dir?.FullName ?? throw new DirectoryNotFoundException("content/people.yaml not found above test dir"), "content");
     }
 
+    /// <summary>The real content with the GDD loop switch taken out of eras.yaml: the legacy loop, where the map actions
+    /// still run (R-PROJ-004 refuses them in the GDD loop; D-E1 keeps the legacy code until it is deleted). Unity's tests
+    /// use the same content (SimBridgeGddTests.Legacy).</summary>
+    public static Content Legacy()
+    {
+        const string loop = "    systems: { loop: gdd }\n";
+        var dir = ContentRoot();
+        Assert.Contains(loop, File.ReadAllText(Path.Combine(dir, "eras.yaml")));   // the switch to take out
+        var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        return ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(dir, rel);
+            if (!File.Exists(path)) return null;
+            var text = File.ReadAllText(path);
+            return rel == "eras.yaml" ? text.Replace(loop, "") : text;
+        }, events);
+    }
+
     static readonly Content C = ContentLoader.Load(ContentRoot());
     static readonly DateTime Checked = new DateTime(2026, 10, 9);
 
@@ -28,12 +46,31 @@ public class RealContentTests
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
-    // R-CTRL-001: rows ship only after research, a person's check and sensitivity review.
+    // R-CTRL-001: the six rows the owner approved on 19 October 2026 and filled on 21 October 2026 (#793), Gaza excluded.
+    // Each stays draft until a person checks its sources; the ruling writes no review status.
     [Fact]
-    public void SettlementTargetsAreSensitivityReviewed()
+    public void SettlementTargetsAreTheSixApprovedDraftRows()
     {
-        Assert.Empty(C.SettlementTargets);
-        Assert.All(C.SettlementTargets, target => Assert.Equal(ReleaseGate.ReviewedStatus, target.Status));
+        Assert.Equal(new[] { "acre", "beersheba", "jaffa", "lod", "nazareth", "ramla" },
+            C.SettlementTargets.Select(t => t.Id).OrderBy(x => x, StringComparer.Ordinal));
+        Assert.All(C.SettlementTargets, target => Assert.Equal("draft", target.Status));
+    }
+
+    // R-CTRL-001 with #796: capture applies only to a target on mvp.enemy_held_localities. The five Arab-held targets are
+    // on it; Jaffa is Israeli-held at the start (what-if only, #793); Gaza is enemy-held but not a target.
+    [Fact]
+    public void FiveTargetsAreCapturableAndJaffaAndGazaAreNot()
+    {
+        var enemyHeld = C.RulesAt(new DateTime(1948, 5, 15)).Mvp!.EnemyHeldLocalities;
+        var targets = C.SettlementTargets.Select(t => t.Id).ToList();
+        foreach (var id in new[] { "acre", "nazareth", "lod", "ramla", "beersheba" })
+            Assert.Contains(id, enemyHeld);
+        Assert.Contains("jaffa", targets);
+        Assert.DoesNotContain("jaffa", enemyHeld);
+        Assert.Contains("gaza", enemyHeld);
+        Assert.DoesNotContain("gaza", targets);
+        Assert.Equal(new[] { "acre", "beersheba", "lod", "nazareth", "ramla" },
+            targets.Where(enemyHeld.Contains).OrderBy(x => x, StringComparer.Ordinal));
     }
 
     [Fact]
@@ -106,9 +143,15 @@ public class RealContentTests
         foreach (var g in C.Governments) { Assert.Equal("fact-checked", g.Status); Assert.NotEmpty(g.Sources); }
         foreach (var a in C.Aliyah) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
         foreach (var a in C.PopulationAnchors) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
+        // #791's cards remain drafts until the human source/sensitivity reviews. Other records keep the gate.
+        // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
+        var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
+        Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
+        Assert.Empty(ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
-            Assert.Equal(ReleaseGate.SensitiveEvents(C).Contains(e.Id) ? ReleaseGate.ReviewedStatus : "fact-checked", e.Status);
+            Assert.Equal(objectiveDrafts.Contains(e.Id) ? "draft"
+                : ReleaseGate.SensitiveEvents(C).Contains(e.Id) ? ReleaseGate.ReviewedStatus : "fact-checked", e.Status);
             Assert.NotEmpty(e.Sources);
         }
         var all = C.People.SelectMany(p => p.Offices.SelectMany(t => t.Sources))

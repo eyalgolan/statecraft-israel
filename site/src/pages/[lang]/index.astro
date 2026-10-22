@@ -8,6 +8,7 @@ import ContributorsGrid from '../../components/ContributorsGrid.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
 import { capture, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
 import { posts } from '../../lib/devlog';
+import { gameVersion } from '../../lib/repo';
 
 export const getStaticPaths = () => languages.map((lang) => ({ params: { lang } }));
 const lang = Astro.params.lang as Lang;
@@ -39,7 +40,7 @@ const jsonLd = {
   applicationCategory: 'Game',
   operatingSystem: 'Web browser',
   inLanguage: 'en',
-  softwareVersion: '0.1.0',
+  softwareVersion: gameVersion(),
   author: { '@type': 'Person', name: 'Eyal Golan' },
   license: 'https://opensource.org/licenses/MIT',
   sameAs: [REPO],

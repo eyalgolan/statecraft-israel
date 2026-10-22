@@ -6,6 +6,10 @@
 // An unused arm disarms itself after 1.5 s, and a new press on the canvas (pointerdown) disarms it at once: a tap shorter
 // than a frame is released before Unity arms the listener, and a stray click would otherwise share or download (#1182
 // review, as on #1178). Nothing leaves the page unless the player shares or downloads it.
+// Copy (#1238) arms the same kind of release listener; on the release it writes the kept picture to the clipboard, and
+// where the browser refuses the picture (no ClipboardItem or no image/png, a denied permission, an iframe without
+// clipboard-write) it copies the post text instead, then through a hidden textarea (execCommand), which some iframes
+// still allow. StatecraftShareCopied tells the panel which one landed: 1 the picture, 2 the text, 3 neither, 0 not yet.
 mergeInto(LibraryManager.library, {
   StatecraftShareKeep: function (pngPtr, length, namePtr) {
     var bytes = HEAPU8.slice(pngPtr, pngPtr + length);
@@ -56,6 +60,57 @@ mergeInto(LibraryManager.library, {
     // Reset here, not on the release: the panel asks StatecraftShareFailed after this press, and after an earlier
     // refused sheet it would read that old refusal and show the links before this share has run.
     window.statecraftShareFailed = false;
+    canvas.addEventListener("pointerup", go);
+    canvas.addEventListener("pointerdown", disarm);
+    document.addEventListener("keyup", go);
+    window.statecraftShareDisarm = disarm;
+    timer = setTimeout(disarm, 1500);
+  },
+  StatecraftShareCopied: function () { return window.statecraftShareCopied || 0; },
+  StatecraftShareCopyOnRelease: function (textPtr) {
+    var text = UTF8ToString(textPtr);
+    if (typeof window === "undefined") return;
+    if (window.statecraftShareDisarm) window.statecraftShareDisarm();
+    var canvas = document.querySelector("#unity-canvas") || document;
+    var timer;
+    var disarm = function () {
+      clearTimeout(timer);
+      canvas.removeEventListener("pointerup", go);
+      canvas.removeEventListener("pointerdown", disarm);
+      document.removeEventListener("keyup", go);
+      window.statecraftShareDisarm = null;
+    };
+    var done = function (result) { window.statecraftShareCopied = result; };
+    // The textarea takes the focus for the copy; the game's canvas gets it back, or its keys stop working.
+    var legacyCopy = function () {
+      var focused = document.activeElement, area = document.createElement("textarea"), ok = false;
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed"; area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      area.remove();
+      if (focused && focused.focus) focused.focus();
+      return ok;
+    };
+    var copyText = function () {
+      var write;
+      try { write = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(); }
+      catch (e) { write = Promise.reject(e); }   // some browsers throw at once instead of rejecting
+      write.then(function () { done(2); }, function () { done(legacyCopy() ? 2 : 3); });
+    };
+    var go = function () {
+      disarm();
+      var file = window.statecraftShareFile;
+      var picture = file && navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem !== "undefined"
+        && !(ClipboardItem.supports && !ClipboardItem.supports("image/png"));
+      if (!picture) { copyText(); return; }
+      try { navigator.clipboard.write([new ClipboardItem({ "image/png": file })]).then(function () { done(1); }, copyText); }
+      catch (e) { copyText(); }
+    };
+    // Reset on the press, as statecraftShareFailed is: the panel starts asking right after it.
+    window.statecraftShareCopied = 0;
     canvas.addEventListener("pointerup", go);
     canvas.addEventListener("pointerdown", disarm);
     document.addEventListener("keyup", go);

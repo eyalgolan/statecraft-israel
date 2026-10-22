@@ -8,7 +8,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>A small vector icon drawn with Painter2D (no image asset), in the promo's style (promo/final/03): a gold coin
     /// for the Treasury, figures for Immigration and Public Support, a blue shield for Security, a globe for International
-    /// Standing, a banknote for Foreign Currency, two linked rings for Social cohesion, gold line icons for the screen buttons, a star and the GitHub mark for "Star on GitHub" (#1168), and a terrain sign per biome. Each
+    /// Standing, a banknote for Foreign Currency, two linked rings for Social cohesion, gold line icons for the screen buttons, a star and the GitHub mark for "Star on GitHub" (#1168), a speech bubble and the share sign for the map screen's Report and Share icons (#1236), and a terrain sign per biome. Each
     /// glyph is drawn in a 24 x 24 design box, scaled to the element's content box and centred in it. In UXML:
     /// <c>&lt;Statecraft.Game.UI.UiIcon glyph="coin" /&gt;</c>. An unknown glyph draws nothing.</summary>
     [UxmlElement]
@@ -42,7 +42,7 @@ namespace Statecraft.Game.UI
         {
             ["coin"] = Coin, ["people"] = People, ["crowd"] = Crowd, ["shield"] = Shield, ["globe"] = Globe, ["banknote"] = Banknote, ["rings"] = Rings,
             ["columns"] = Columns, ["scales"] = Scales, ["helmet"] = Helmet, ["question"] = Question, ["book"] = Book, ["restart"] = Restart, ["gear"] = Gear,
-            ["hourglass"] = Hourglass, ["star"] = Star, ["mark-github"] = MarkGithub,
+            ["hourglass"] = Hourglass, ["star"] = Star, ["mark-github"] = MarkGithub, ["speech"] = Speech, ["share"] = Share,
             ["region"] = Region, ["house"] = House, ["village"] = Village, ["flag"] = Flag,
             ["peaks"] = Peaks, ["skyline"] = Skyline, ["ledger"] = Ledger,
             ["biome-sea"] = Waves, ["biome-lake"] = Waves, ["biome-coastal_plain"] = Plain, ["biome-hills"] = Hills,
@@ -298,6 +298,33 @@ namespace Statecraft.Game.UI
         // one closed outline in the same 24 x 24 box, written out as absolute cubic segments (its lines and its corner arcs
         // as cubics), so Painter2D fills it without an SVG parser. Filled in the gold glyphs' colour.
         static void Star(Painter2D p, Func<float, float, Vector2> at, float s, Color gold) => FillCubics(p, at, StarPath, gold);
+
+        /// <summary>A speech bubble with two lines of text in it (Report a bug or idea, #1236), in gold line: a rounded box with
+        /// a tail at its lower left.</summary>
+        static void Speech(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
+        {
+            p.strokeColor = gold; p.lineWidth = 1.8f * s;
+            const float l = 3.2f, t = 4.2f, r = 20.8f, b = 16.4f, k = 2.6f;   // the box and its corner radius
+            p.BeginPath();
+            p.MoveTo(at(l + k, t)); p.LineTo(at(r - k, t)); p.Arc(at(r - k, t + k), k * s, Angle.Degrees(270), Angle.Degrees(360));
+            p.LineTo(at(r, b - k)); p.Arc(at(r - k, b - k), k * s, Angle.Degrees(0), Angle.Degrees(90));
+            p.LineTo(at(10.4f, b)); p.LineTo(at(6.2f, 20.4f)); p.LineTo(at(6.8f, b)); p.LineTo(at(l + k, b));
+            p.Arc(at(l + k, b - k), k * s, Angle.Degrees(90), Angle.Degrees(180));
+            p.LineTo(at(l, t + k)); p.Arc(at(l + k, t + k), k * s, Angle.Degrees(180), Angle.Degrees(270));
+            p.ClosePath(); p.Stroke();
+            p.lineWidth = 1.4f * s;
+            p.BeginPath(); p.MoveTo(at(7.4f, 8.6f)); p.LineTo(at(16.6f, 8.6f)); p.Stroke();
+            p.BeginPath(); p.MoveTo(at(7.4f, 12.2f)); p.LineTo(at(13.6f, 12.2f)); p.Stroke();
+        }
+
+        /// <summary>The share sign (Share, #1236): three gold nodes, one on the left and two on the right, joined by two lines.</summary>
+        static void Share(Painter2D p, Func<float, float, Vector2> at, float s, Color gold)
+        {
+            p.strokeColor = gold; p.lineWidth = 1.8f * s;
+            p.BeginPath(); p.MoveTo(at(17.4f, 5.8f)); p.LineTo(at(6.6f, 12f)); p.LineTo(at(17.4f, 18.2f)); p.Stroke();
+            p.fillColor = gold;
+            foreach (var (x, y) in new[] { (17.6f, 5.6f), (6.4f, 12f), (17.6f, 18.4f) }) { Circle(p, at(x, y), 3.1f * s); p.Fill(); }
+        }
 
         static void MarkGithub(Painter2D p, Func<float, float, Vector2> at, float s, Color gold) => FillCubics(p, at, MarkGithubPath, gold);
 

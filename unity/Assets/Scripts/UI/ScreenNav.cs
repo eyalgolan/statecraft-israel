@@ -4,16 +4,16 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, How to play, Objectives and Settings screens, one at a time; pressing the open
+    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, Timeline, How to play, Objectives and Settings screens, one at a time; pressing the open
     /// screen's button again closes it. Every press toggles, synchronously, with no debounce: two presses in one frame (a
     /// double click, or a click plus Enter) open and close again, so the result depends only on the number of presses
     /// (HudTests.TwoPressesInOneFrameToggleTwice; playtest 1, item 11).</summary>
     public sealed class ScreenNav : System.IDisposable
     {
-        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "how-to-play", "objectives", "settings" };
+        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "timeline", "how-to-play", "objectives", "settings" };
         /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
         public const string OpenClass = "nav-open";
-        /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence) is
+        /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence, Timeline) is
         /// open: Statecraft.uss hides the info panel it covers, so its buttons take no focus and no clicks.</summary>
         public const string WideOpenClass = "wide-screen-open", WideClass = "screen-wide";
         /// <summary>The class on the "root" element while any screen is open: Statecraft.uss hides the decision layer under it,
@@ -49,6 +49,7 @@ namespace Statecraft.Game.UI
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
             r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
+            r.Q(CommunityIconsPresenter.ColumnName)?.SetEnabled(!(start || outcome || report));   // Star, Report, Share (#1236): in the same lane
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
             bool infoCovered = start || full || modal || outcome || report || r.ClassListContains(WideOpenClass);
             r.Q("info-panel")?.SetEnabled(!infoCovered);

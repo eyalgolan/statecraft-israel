@@ -1,4 +1,5 @@
 #nullable enable
+using System.Linq;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -32,9 +33,8 @@ namespace Statecraft.Game.UI
             {
                 var row = new VisualElement { name = "objectives-row-" + o.Id };
                 row.AddToClassList("objectives-row");
-                // A new objective (#791) with no strings key yet still shows, under its objectives.yaml name.
-                var key = "objectives.name." + o.Id;
-                var name = new Label(text.Has(key) ? text[key] : o.Name);
+                // The name is objectives.yaml's own, in the UI's language (#1208), so a new objective (#791) needs no strings key.
+                var name = new Label(ContentNames.Of(text, bridge.Content.Objectives.Single(x => x.Id == o.Id)));
                 name.AddToClassList("objectives-name");
                 var status = new Label(o.Completed is System.DateTime done
                     ? text.Format("objectives.done", Date(done), Date(o.Historical))

@@ -184,6 +184,46 @@ def test_the_repos_map_overrides_file_reads():
     assert isinstance(terrain, dict) and isinstance(locations, dict)
 
 
+def test_a_settlement_moved_into_the_crop_is_kept(tmp_path):
+    base, _ = mb.build_board(mb.parse([]))
+    assert all(h["note"] != "rosh_pinna" for h in base["hexes"])
+    target = next(h for h in base["hexes"] if h["terrain"] != "water" and not h["note"] and not h["env"])
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: rosh_pinna\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, _ = mb.build_board(mb.parse(["--map-overrides", str(ov)]))
+    after = {(h["q"], h["r"]): h for h in moved["hexes"]}
+    assert after[(target["q"], target["r"])]["note"] == "rosh_pinna"
+    tel_aviv = next(h for h in base["hexes"] if h["note"] == "tel_aviv")
+    assert after[(tel_aviv["q"], tel_aviv["r"])]["note"] == "tel_aviv"
+
+
+def test_a_settlement_moved_out_of_the_crop_is_omitted(tmp_path):
+    base, _ = mb.build_board(mb.parse([]))
+    assert any(h["note"] == "tel_aviv" for h in base["hexes"])
+    inside = {(h["q"], h["r"]) for h in base["hexes"]}
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    target = next(h for h in hexes if h["land"] and (h["q"], h["r"]) not in inside)
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: tel_aviv\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, _ = mb.build_board(mb.parse(["--map-overrides", str(ov)]))
+    assert all(h["note"] != "tel_aviv" for h in moved["hexes"])
+
+
+def test_a_settlement_moved_out_of_an_empty_crop_is_omitted(tmp_path):
+    args = ["--lat", "0", "1", "--lon", "0", "1"]
+    base, _ = mb.build_board(mb.parse(args))
+    assert base["hexes"] == []
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    target = next(h for h in hexes if h["land"])
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: rosh_pinna\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, owner = mb.build_board(mb.parse(args + ["--map-overrides", str(ov)]))
+    assert moved["hexes"] == [] and owner == {}
+
+
 def test_the_built_in_mode_writes_no_regions(tmp_path):
     out = tmp_path / "central.json"
     mb.main(["--id", "central_israel", "--out", str(out)])
