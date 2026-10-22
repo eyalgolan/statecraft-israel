@@ -52,8 +52,8 @@ namespace Statecraft.Sim
 
         /// <summary>R-MOVE-006: moves the unit, spending the path's cost from what <paramref name="spent"/> says it has used this
         /// turn (R-MOVE-001). Refused, state untouched, for an unknown or enemy unit, one that cannot move or is already there,
-        /// water or a hex off the map, an enemy unit's hex (entering it is an attack, Q-MOVE-3), an enemy-held locality
-        /// (R-MOVE-005), a hex full of the unit's side (R-MOVE-003), or a hex out of reach this turn. With <paramref name="enemy"/>
+        /// water or a hex off the map, an enemy unit's hex (entering it is an attack, Q-MOVE-3), an enemy-held locality that
+        /// is not a target (R-MOVE-005), a hex full of the unit's side (R-MOVE-003), or a hex out of reach this turn. With <paramref name="enemy"/>
         /// the enemy AI orders its own unit through the same checks, the sides swapped (R-ENEMY-001).</summary>
         internal static string? Move(Content c, GameState s, int unitId, int q, int r, Dictionary<int, int> spent, List<Cause> why, bool enemy = false)
         {
@@ -64,7 +64,7 @@ namespace Statecraft.Sim
             if (u.Q == q && u.R == r) return "That unit is already there";
             if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
             if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x) != enemy)) return "An enemy unit holds that hex";
-            if (NoEntry(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
+            if (Closed(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
             var (dist, _) = Search(c, s, u, points - used);
@@ -100,6 +100,18 @@ namespace Statecraft.Sim
             return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
         }
 
+        /// <summary>R-MOVE-005 in Phase 6 (#1304): the hexes a move and its path may not enter. For the player, those of
+        /// mvp.enemy_held_localities that are not curated targets (settlement_targets.yaml), so a target can be captured in play
+        /// (the owner's #793 ruling) while the rest, Gaza today, stay closed; for the enemy, <see cref="NoEntry"/>'s mirror
+        /// unchanged. Raid's withdrawal and combat retreat still read <see cref="NoEntry"/>, so neither ends on an enemy-held
+        /// place.</summary>
+        static HashSet<(int Q, int R)> Closed(Content c, GameState s, bool enemy)
+        {
+            if (enemy) return NoEntry(c, s, true);
+            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities.Except(c.SettlementTargets.Select(t => t.Id));
+            return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+        }
+
         /// <summary>R-ENEMY-002: the furthest hex the unit can reach this turn on its cheapest path to (<paramref name="q"/>,
         /// <paramref name="r"/>), by the same search as Move, or null when no path leads there or its first step is out of reach.</summary>
         internal static (int Q, int R)? Toward(Content c, GameState s, Unit u, int q, int r)
@@ -130,14 +142,14 @@ namespace Statecraft.Sim
         /// <summary>R-MOVE-001, R-MOVE-002, R-MOVE-004, R-MOVE-005, R-MOVE-007: the cheapest cost of every hex within
         /// <paramref name="budget"/> points from the unit's hex, and the hex each is entered from. A path enters only land hexes,
         /// at their biome's cost or, from a hex of the same built corridor segment, at the kind's cost when that is lower, and
-        /// never an enemy unit's hex or an enemy-held locality's; passing next to either costs nothing extra (no zone of
+        /// never an enemy unit's hex or a closed enemy-held locality's (<see cref="Closed"/>); passing next to either costs nothing extra (no zone of
         /// control, Q-MOVE-4). Hexes leave the frontier in (cost, q, r) order and neighbours are tried in the fixed
         /// <see cref="Neighbours"/> order, so a hex reached at the same cost twice keeps the first, and the path is the same
         /// every run. Stacking limits only where a move ends, so it is not checked here.</summary>
         static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(Content c, GameState s, Unit u, int budget)
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
-            var blocked = NoEntry(c, s, IsEnemy(u));
+            var blocked = Closed(c, s, IsEnemy(u));
             var built = BuiltSegments(c, s);
             foreach (var x in s.Units.Values) if (IsEnemy(x) != IsEnemy(u)) blocked.Add((x.Q, x.R));
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };

@@ -96,15 +96,16 @@ namespace Statecraft.Sim
 
         /// <summary>The smoke-orders golden's one order (GDD Phase 5 PR 15, #754), what the WebGL ?smoke-orders run's
         /// GameRoot.SmokeOrders gives through the unit card: Move for the lowest-id unit Movement.Reachable has a hex for,
-        /// to the first of those hexes in Reachable's (q, r) order. Here, so Unity's run and the tests pick the same order.</summary>
+        /// to the first of those hexes in Reachable's (q, r) order that is not an enemy-held place (Movement.NoEntry), so the
+        /// golden stays a plain move and captures nothing (#1304 opened the target towns). Here, so Unity's run and the tests
+        /// pick the same order.</summary>
         public static Move SmokeMove(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            var places = Movement.NoEntry(c, s);
             foreach (var id in s.Units.Keys)   // a SortedList: in id order
-            {
-                var reach = Movement.Reachable(c, s, id);
-                if (reach.Count > 0) { var (q, r) = reach.Keys.First(); return new Move(id, q, r); }
-            }
+                foreach (var (q, r) in Movement.Reachable(c, s, id).Keys)
+                    if (!places.Contains((q, r))) return new Move(id, q, r);
             throw new InvalidOperationException("the smoke-orders run needs a unit that can move");
         }
 

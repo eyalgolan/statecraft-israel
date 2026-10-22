@@ -42,7 +42,7 @@ public class RaidTests
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
         Assert.Equal((2, 0), (result.State.Units[2].Q, result.State.Units[2].R));
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
-        Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));   // the player may not walk back in (R-MOVE-005)
+        Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));   // no withdrawal ends on it (R-CTRL-010)
     }
 
     // R-CTRL-010 (Q-RAID-1 (a), "residents unchanged"): Raid changes the units' hexes and removes the record, and nothing

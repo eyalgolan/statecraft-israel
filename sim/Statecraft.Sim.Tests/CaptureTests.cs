@@ -181,4 +181,61 @@ public class CaptureTests
         Assert.Equal(2, s.Settlements.Count);
         Assert.Equal(rng, s.RngState);
     }
+
+    // R-MOVE-005 in Phase 6 (#1304; the owner's #793 ruling that the targets "can be captured in play"): a player unit may
+    // move onto an enemy-held target's hex, Reachable lists it, a path may run through it, and the unit that ends its move
+    // there with no enemy unit on it captures the place at turn end (R-CTRL-004), through the whole resolver.
+    [Fact]
+    public void APlayerUnitMayEnterAnEnemyHeldTargetAndCaptureIt()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 0));
+        Assert.Equal(1, Movement.Reachable(c, s, 1)[(1, 0)]);
+        Assert.Equal(new[] { (1, 0), (2, 0) }, Movement.Path(c, s, 1, 2, 0));   // through town_a, not round it for 3
+        var result = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0) });
+        Assert.Empty(result.Rejected);
+        Assert.Equal((1, 0), (result.State.Units[1].Q, result.State.Units[1].R));
+        var ctrl = Assert.Single(result.State.Settlements);
+        Assert.Equal("town_a", ctrl.Key);
+        Assert.Equal(SettlementControl.AwaitingChoice, ctrl.Value.State);
+    }
+
+    // R-MOVE-005 in Phase 6 (#1304): an enemy-held place that is not a target (Gaza's case, Q-TGT-1 (a)) stays closed:
+    // Move is refused, Reachable leaves it out and no path runs through it.
+    [Fact]
+    public void AnEnemyHeldPlaceThatIsNotATargetStaysClosed()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 3, 2));
+        var reach = Movement.Reachable(c, s, 1);
+        Assert.False(reach.ContainsKey((4, 2)));
+        Assert.Equal(3, reach[(5, 2)]);   // round town_e by (4, 1) and (5, 1), not through it for 2
+        Assert.DoesNotContain((4, 2), Movement.Path(c, s, 1, 5, 2));
+        var result = Simulation.Step(c, s, new Command[] { new Move(1, 4, 2) });
+        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible", Assert.Single(result.Rejected).Reason);
+        Assert.Equal((3, 2), (result.State.Units[1].Q, result.State.Units[1].R));
+        Assert.Empty(result.State.Settlements);
+    }
+
+    // #1304's done-when on the shipped content, so a change to settlement_targets.yaml cannot quietly reopen Gaza or close Acre:
+    // a player unit beside Acre (a target) can reach it, and none beside Gaza (not one) can.
+    [Fact]
+    public void RealContentGazaStaysClosedAndAcreIsReachable()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var type = Simulation.NewGame(c, 1, Mode.Historical).Units.Values.First(u => u.Side == "israel").Type;
+        (int Q, int R) Hex(string id) { var h = c.SettlementHexes.Single(x => x.Id == id); return (h.Q, h.R); }
+        bool Reaches(string id)   // from any of the six hexes around it (some are sea or too far on the real map)
+        {
+            var (q, r) = Hex(id);
+            return new[] { (1, 0), (-1, 0), (0, 1), (0, -1), (1, -1), (-1, 1) }.Any(d =>
+            {
+                var s = With(c, new Unit(900, type, q + d.Item1, r + d.Item2, side: "israel", strength: 2));
+                foreach (var uid in s.Units.Where(x => (x.Value.Q, x.Value.R) == (q, r)).Select(x => x.Key).ToList()) s.Units.Remove(uid);   // an enemy unit's hex is refused first
+                return Movement.Reachable(c, s, 900).ContainsKey((q, r));
+            });
+        }
+        Assert.False(Reaches("gaza"));
+        Assert.True(Reaches("acre"));
+    }
 }

@@ -237,11 +237,15 @@ public class SliceSmokeTests
     {
         var start = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
         var move = GoldenRun.SmokeMove(Real, start);
-        Assert.Equal(Movement.Reachable(Real, start, move.Unit).Keys.First(), (move.Q, move.R));   // a hex the card lights
+        var reach = Movement.Reachable(Real, start, move.Unit).Keys;
+        var places = Movement.NoEntry(Real, start);
+        Assert.Contains(reach.First(), places);   // the first lit hex, Nazareth, is a place (#1304) ...
+        Assert.Equal(reach.First(h => !places.Contains(h)), (move.Q, move.R));   // ... so the move skips it
         var end = GoldenRun.PlaySmokeOrders(Real);
         var expected = GoldenManifest.Expected("smoke-orders");   // read before an update rewrites the manifest
         if (GoldenManifest.UpdateRequested) GoldenManifest.Update("smoke-orders", end.Hash());
         Assert.Equal((move.Q, move.R), (end.Units[move.Unit].Q, end.Units[move.Unit].R));   // the order took effect
+        Assert.Empty(end.Settlements);   // a plain move: no golden captures a place (docs/determinism.md)
         Assert.NotEqual(Simulation.Step(Real, start, new List<Command>()).State.Hash(), end.Hash());   // and shows in the hash
         Assert.Equal(expected, end.Hash());
     }
