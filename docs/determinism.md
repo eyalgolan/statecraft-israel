@@ -66,6 +66,20 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
   --expect "SMOKE OK 5 turns 1948-10-15 71a4cef0f81439c475e5e8a4e36bea9296f14287bc894cbc90efc4d2714348d1"
 ```
 
+`smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
+`-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
+hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
+10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order (7,11) and presses End
+Turn: `SMOKE ORDERS OK 1948-06-15 4c9916304b71a66c989494a80b0e9b70db98a26f4697e29066425b77539743ee`.
+`GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
+prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
+attack slices can add their orders to it. Check a WebGL build with:
+
+```
+uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
+  --expect "SMOKE ORDERS OK 1948-06-15 4c9916304b71a66c989494a80b0e9b70db98a26f4697e29066425b77539743ee"
+```
+
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
 `[sit]` and so on), against a committed snapshot of the run's final state: `sim/Statecraft.Sim.Tests/golden/hash1950.txt`
 and `hash1952.txt`, written by `GameState.Describe()`, which uses the same writer as `Hash()` (so the two cannot list
@@ -141,7 +155,7 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, and the scenario lines above). The .NET tests
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, `smoke-orders`, and the scenario lines above). The .NET tests
 compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
 - `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
 - this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
@@ -371,6 +385,7 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-cautious | `e45c5429` | same as reckless (was `230791a1`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-absorb-first | `64bdd93b` | same as reckless (was `de176931`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-defeat | `54ec7d6b` | same as reckless; the defeat is unchanged (was `7404295a`) |
+| GDD Phase 5 PR 15 slice 4 (#754) | smoke-orders | `98422be8` | new: one turn from the golden seed whose only order is unit 0 (Golani) moving from 10,9 to 7,11, given through the unit card in the browser run; no other golden moves |
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1950 | `f70d7cc2` | R-WAR-002: the GDD loop refuses the call-up order, so HistoricalAI sends none, and the call-up follows the rung down to its minimum the turn an event lowers it: 40% on the first truce's rung 4 (15 August 1948) and 5% on the armistices' rung 2 (15 April 1949), each a turn before HistoricalAI's order used to. Only the debt line moves, IL 87.5m to 81.8m. R-WAR-003: the ceasefire clock never starts, which this run's end state does not show (rung 2, `cf=0` either way) (was `d14a4899`) |
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1952 | `ca78893d` | same as 1950: only the debt line, IL 211.9m to 206.1m; the 1950-51 rise stays inside the Michaely anchor's tolerance (EconomyCalibrationTests) (was `3bacd2b1`) |
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | mvp-end | `ca78893d` | same as 1952 (was `3bacd2b1`) |
@@ -379,3 +394,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-reckless | `57b3c29d` | the scenario's `set_mobilization: 1.0` order is gone (the GDD loop refuses it), so the call-up is the war rung's 80% (`mob` 1 to 0.8, debt IL 35.0m to 21.0m), and `cf=40` to `cf=0` as in cautious (was `030817e3`) |
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-absorb-first | `912504be` | the scenario sends no call-up order, so on main the 80% call-up stayed after the armistices; now it follows rung 2 down to 5% (`mob` 0.8 to 0.05, debt IL 316.4m to 272.9m) (was `64bdd93b`) |
 | GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-defeat | `109b0a5e` | the retired full call-up is replaced by 120 Arms bought on credit on the first turn (`arms` 12 to 132), and the call-up follows the armistices to 5% (`mob` 1 to 0.05). The debt passes the ceiling in July 1951 (was April) and ends at IL 281.6m (was 339.1m); the defeat is unchanged: `defeat_economy` on 15 January 1952 after three exhausted turns (was `54ec7d6b`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | smoke-orders | `4c991630` | R-WAR-003: the ceasefire clock never starts, so the one-turn run ends on `cf=0` (was `cf=48`); nothing else moves (was `98422be8`) |

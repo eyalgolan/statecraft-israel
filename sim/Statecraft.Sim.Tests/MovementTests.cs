@@ -360,6 +360,18 @@ public class MovementTests
         Assert.Equal((file, field), (ex.File, ex.Field));
         Assert.Contains(message, ex.Message);
     }
+}
+
+// The 16 ms budget is a wall-clock one, so the test must not share the CPU with the parallel test classes (main's CI saw
+// 21.94 ms on a 4-vCPU runner against about 2.7 ms alone, #1303): a DisableParallelization collection runs after them, alone.
+[CollectionDefinition("Perf", DisableParallelization = true)]
+public class PerfCollection { }
+
+[Collection("Perf")]
+public class MovementPerfTests
+{
+    readonly ITestOutputHelper _out;
+    public MovementPerfTests(ITestOutputHelper output) { _out = output; }
 
     // Performance (spec §2.5): a Reachable for a fast unit on each of the real game's 25 settlement hexes, on the 870-hex
     // board, stays under one Step's 16 ms WebGL budget. Measured on .NET, best of five runs; the margin is printed.

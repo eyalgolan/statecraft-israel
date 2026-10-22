@@ -415,14 +415,18 @@ public class SaveGameTests
         var real = RealContentTests.ContentRoot();
         Assert.True(File.Exists(Path.Combine(real, "map", "settlement_population_1945.yaml")));
         var copy = Path.Combine(Path.GetTempPath(), "statecraft-nopop-" + Guid.NewGuid().ToString("N"));
-        foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+        try
         {
-            var rel = Path.GetRelativePath(real, f);
-            if (rel.Replace('\\', '/') == "map/settlement_population_1945.yaml") continue;
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
-            File.Copy(f, Path.Combine(copy, rel));
+            foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(real, f);
+                if (rel.Replace('\\', '/') == "map/settlement_population_1945.yaml") continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
+                File.Copy(f, Path.Combine(copy, rel));
+            }
+            Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
         }
-        Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
+        finally { if (Directory.Exists(copy)) Directory.Delete(copy, true); }
     }
 
     /// <summary>content/map/localities_1948.yaml (the 1948 localities and Bedouin camp areas the map's kits and labels draw)

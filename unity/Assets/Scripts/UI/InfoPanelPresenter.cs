@@ -233,6 +233,13 @@ namespace Statecraft.Game.UI
         /// its 1948 sub-district; then each armistice line in force through it.</summary>
         public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date)
         {
+            // Isolate a Hebrew date from the surrounding English fallback names: otherwise the row's
+            // LTR paragraph can place its day before its year/month (the mixed-language #558 browser regression).
+            string DateText(System.DateTime signed)
+            {
+                var value = Control1948.DateText(signed, k => text[k]);
+                return UiDirection.HasRightToLeft(value) ? "\u2067" + value + "\u2069" : value;
+            }
             var parts = new List<string>();
             var zone = regions.ZoneAt(q, r, date);
             var control = ControlText(regions, text, q, r, date);
@@ -240,10 +247,10 @@ namespace Statecraft.Game.UI
             if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
-            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, MapRegions.DateText(zone.Signed)));
+            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, DateText(zone.Signed)));
             else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
             foreach (var l in regions.LinesAt(q, r, date))
-                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, MapRegions.DateText(l.Signed)));
+                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, DateText(l.Signed)));
             return string.Join("\n", parts);
         }
 

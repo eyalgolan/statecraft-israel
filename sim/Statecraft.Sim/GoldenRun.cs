@@ -93,5 +93,28 @@ namespace Statecraft.Sim
                 s = Simulation.Step(c, s, SmokeOrders(c, s)).State;
             return s;
         }
+
+        /// <summary>The smoke-orders golden's one order (GDD Phase 5 PR 15, #754), what the WebGL ?smoke-orders run's
+        /// GameRoot.SmokeOrders gives through the unit card: Move for the lowest-id unit Movement.Reachable has a hex for,
+        /// to the first of those hexes in Reachable's (q, r) order. Here, so Unity's run and the tests pick the same order.</summary>
+        public static Move SmokeMove(Content c, GameState s)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            foreach (var id in s.Units.Keys)   // a SortedList: in id order
+            {
+                var reach = Movement.Reachable(c, s, id);
+                if (reach.Count > 0) { var (q, r) = reach.Keys.First(); return new Move(id, q, r); }
+            }
+            throw new InvalidOperationException("the smoke-orders run needs a unit that can move");
+        }
+
+        /// <summary>The smoke-orders golden: the golden seed, Historical mode, one turn whose only order is <see cref="SmokeMove"/>
+        /// (the turn's events go to their ministers).</summary>
+        public static GameState PlaySmokeOrders(Content c)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var s = Simulation.NewGame(c, Seed, Mode.Historical);
+            return Simulation.Step(c, s, new Command[] { SmokeMove(c, s) }).State;
+        }
     }
 }
