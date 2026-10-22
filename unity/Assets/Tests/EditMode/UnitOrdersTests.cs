@@ -46,7 +46,7 @@ public class UnitOrdersTests
         var id = C.StartingForces.ToList().FindIndex(f => f.Row == "golani");
         Assert.GreaterOrEqual(id, 0, "precondition: Golani is a starting force");
         Assert.AreEqual(id, UnitCard.SimUnit(C, s, golani));
-        Assert.IsNull(UnitCard.SimUnit(C, s, Units.Single(u => u.Id == "etzioni")), "Etzioni has no starting force (#1205)");
+        Assert.IsNull(UnitCard.SimUnit(C, s, Units.Single(u => u.Id == "yiftach")), "Yiftach has no starting force (its window does not cover the start, #1241)");
         s.Units.Remove(id);
         Assert.IsNull(UnitCard.SimUnit(C, s, golani), "a unit no longer in the state");
         Assert.IsNull(UnitCard.SimUnit(SimBridgeGddTests.Legacy, s, golani), "the legacy loop has no starting forces");
@@ -254,5 +254,76 @@ public class UnitOrdersTests
             Assert.IsFalse(go.GetComponent<MeshRenderer>().enabled);
         }
         finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>The smoke-orders golden (slice 4): GameRoot.SmokeOrders hides turn 1's event card, gives GoldenRun.SmokeMove
+    /// through the unit card (a click on the unit, Move, a click on the lit hex), ends the turn with End Turn, and ends on the state the sim's
+    /// PlaySmokeOrders pins in the golden manifest.</summary>
+    [Test]
+    public void TheSmokeOrdersRunGivesItsMoveThroughTheCardAndEndsOnTheGolden()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            using var toast = new ToastPresenter(ui.Root, bridge, Text);
+            using var hud = new HudPresenter(ui.Root, bridge, Text);   // wires End Turn
+            using var card = new EventCardPresenter(ui.Root, bridge, Text, null);
+            Assert.IsTrue(ui.Root.Q("root").ClassListContains(EventCardPresenter.OpenClass), "precondition: turn 1's card is open, as in the player");
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable);
+            var log = new List<string>();
+            var run = GameRoot.SmokeOrders(ui.Root, bridge, layer, (q, r) => GameRoot.OnHexClicked(map, layer, info, q, r), log.Add);
+            while (run.MoveNext()) { }
+            var golden = GoldenRun.PlaySmokeOrders(C);
+            Assert.AreEqual(System.FormattableString.Invariant($"SMOKE ORDERS OK {golden.Date:yyyy-MM-dd} {golden.Hash()}"), log.Last(), string.Join("\n", log));
+            var move = (Move)bridge.LastBatch.Single();
+            var expected = GoldenRun.SmokeMove(C, GameSession.New(C, GoldenRun.Seed, Mode.Historical).State);
+            Assert.AreEqual((expected.Unit, expected.Q, expected.R), (move.Unit, move.Q, move.R), "the one order End Turn sent");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>A click that misses the lit hex queues no Move: the smoke-orders run fails and ends no turn.</summary>
+    [Test]
+    public void ASmokeOrdersRunWhoseMoveIsNotQueuedFails()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            using var hud = new HudPresenter(ui.Root, bridge, Text);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null);
+            int clicks = 0, turn = bridge.State.Turn;
+            var log = new List<string>();
+            var run = GameRoot.SmokeOrders(ui.Root, bridge, layer, (q, r) => { if (clicks++ == 0) GameRoot.OnHexClicked(map, layer, info, q, r); }, log.Add);
+            while (run.MoveNext()) { }
+            StringAssert.StartsWith("SMOKE FAIL", log.Last(), string.Join("\n", log));
+            Assert.IsFalse(log.Any(l => l.StartsWith("SMOKE ORDERS OK")));
+            Assert.AreEqual(turn, bridge.State.Turn, "no turn ended");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>"smoke-orders" is its own whole flag: it starts the one-turn run and is not the "smoke" flag.</summary>
+    [Test]
+    public void SmokeOrdersIsItsOwnFlag()
+    {
+        var none = new string[0];
+        Assert.IsTrue(GameRoot.SmokeOrdersRequested("http://localhost/?smoke-orders", none, true));
+        Assert.IsTrue(GameRoot.SmokeOrdersRequested("http://localhost/?golden&smoke-orders", none, true));
+        Assert.IsFalse(GameRoot.SmokeOrdersRequested("http://localhost/?smoke-orders-x", none, true));
+        Assert.IsFalse(GameRoot.SmokeOrdersRequested("http://localhost/?smoke=5", none, true));
+        Assert.AreEqual(0, GameRoot.SmokeTurns("http://localhost/?smoke-orders", none, true), "not the smoke flag");
+        Assert.IsTrue(GameRoot.SmokeOrdersRequested(null, new[] { "Statecraft", "-smoke-orders" }, false));
+        Assert.IsFalse(GameRoot.SmokeOrdersRequested("http://localhost/?smoke-orders", new[] { "Statecraft" }, false), "desktop reads only the command line");
     }
 }

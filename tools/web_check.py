@@ -8,7 +8,9 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 1392f3eb726172c284555b2bcacc0be3f8d9e33d19306dfc3baf0e2c63fe249b" --expect "GOLDEN OK hash1952 cc96cd0a8d50a7693300ef887673c7ccfc18dac6d4dcaa9f52ed2ed09062eda5"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 d14a4899a1e068bf238f84f4e8fe06270b5164b2c6ba62f2fef399fd7eaada8e" --expect "GOLDEN OK hash1952 3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 98422be8eca2981e191fde3a7aaf28fdef269203cee2f6dfe7a7cddb770f7133"
+  (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
@@ -341,6 +343,12 @@ class Server(http.server.ThreadingHTTPServer):
     time per host in Chrome; on a loaded machine the accept thread lags, a connection is reset and the boot fails
     (BOOT FAIL <file>: Unknown Error). 128 is macOS's kern.ipc.somaxconn."""
     request_queue_size = 128
+
+    def handle_error(self, request, client_address):
+        # Closing the browser cancels outstanding responses. Keep other server failures visible.
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
 
 
 def serve(root: Path, port: int = 0) -> Server:

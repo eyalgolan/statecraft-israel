@@ -69,10 +69,10 @@ public class UnitsInPlayTests
     public void TheStartMatchesTheMap()
     {
         var hexes = MapBuilder.LoadHexes(Path.Combine(Paths.Content, "map", "hexes.json"));
-        var start = C.Rules.Start.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        Assert.AreEqual(12, C.StartingForces.Count, "the twelve sourced forces of 15 May 1948 (#743)");
+        Assert.AreEqual(14, C.StartingForces.Count, "the thirteen sourced forces of 15 May 1948 (#743, #1241) and the 7th's arrival (R-UNIT-009)");
         foreach (var f in C.StartingForces)
         {
+            var start = (f.Arrives ?? C.Rules.Start).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             var row = Units.Single(u => u.Id == f.Row);
             Assert.IsNull(row.Hidden, f.Row);
             Assert.AreEqual(UnitData.Army, row.Service, f.Row);
@@ -808,10 +808,10 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
-            // The GDD loop draws the sim's units (GDD Phase 5 PR 14): seven brigades and the two ships; Etzioni has no sim unit.
-            Assert.AreEqual(9, layer.Tokens.Count);
+            // The GDD loop draws the sim's units (GDD Phase 5 PR 14): eight brigades and the two ships; the 7th arrives from the 15 June turn (R-UNIT-009).
+            Assert.AreEqual(10, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
-            Assert.AreEqual(9, tokens.childCount);
+            Assert.AreEqual(10, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
             Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full strength (Q-UI-3)");
             var badge = kiryati.Find("Badge");
@@ -927,6 +927,31 @@ public class UnitsInPlayTests
         var u = ProseUnit(commander: "");
         u.FirstCommanderHe = "מפקד בדיקה"; // past the loader, which refuses this row (BadHebrewProseNamesTheProblem)
         Assert.AreEqual("מיקום: \u200ETest Place\u200E\nTest sector", ProseCard(u, He).Body);
+    }
+
+    /// <summary>#1292: the Hebrew card names a formed or since date's month in Hebrew (date.month_*), as the event cards'
+    /// dates do; a date in prose keeps its English (no row has a Hebrew one), and the English card is unchanged.</summary>
+    [TestCase("March 1948", "24 May 1948", "הוקמה: מרץ 1948", "מאז ‎24‎ במאי ‎1948‎")]
+    [TestCase("Late 1947", "the first half of May 1948", "הוקמה: ‎Late 1947‎", "מאז ‎the first half of May 1948‎")]
+    public void TheHebrewCardNamesTheMonthsOfItsDatesInHebrew(string formed, string since, string formedLine, string sinceText)
+    {
+        var u = ProseUnit();
+        u.Formed = formed; u.Anchors[0].Since = since;
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains(formedLine, body);
+        StringAssert.Contains(sinceText, body);
+        StringAssert.Contains($"At Test Place since {since}\nFormed {formed}\n", ProseCard(u, Text).Body);
+    }
+
+    /// <summary>#1292, the issue's example: the Negev Brigade's Hebrew card has no English month name left.</summary>
+    [Test]
+    public void TheNegevBrigadesHebrewCardHasNoEnglishMonth()
+    {
+        var u = Units.Single(x => x.Id == "negev");
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains("הוקמה: מרץ 1948", body);
+        StringAssert.Contains("מאז מרץ 1948", body);
+        StringAssert.DoesNotContain("March", body);
     }
 
     // hidden: the rows with "anchors: []" reach the source checks, which run after the anchors'.

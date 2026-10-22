@@ -36,6 +36,8 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
     units = content / "map" / "units_1948.yaml"
     forces = "fact-checked" if forces_checked else "draft"
     units.write_text(re.sub(r"(?m)^  status: .*$", f"  status: {forces}", units.read_text(encoding="utf-8")), encoding="utf-8")
+    targets = content / "settlement_targets.yaml"   # #793's rows, as the owner's review would leave them (Q-TGT-3 (b))
+    targets.write_text(re.sub(r"(?m)^    status: .*$", f"    status: {status}", targets.read_text(encoding="utf-8")), encoding="utf-8")
     photo_manifest(build, reviewed=photos_reviewed)
     return build
 

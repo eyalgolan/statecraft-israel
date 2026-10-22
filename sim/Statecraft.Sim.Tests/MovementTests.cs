@@ -369,7 +369,7 @@ public class MovementTests
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         foreach (var h in c.SettlementHexes) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "armoured_car", h.Q, h.R, side: "israel")); }
-        Assert.Equal(25 + c.StartingForces.Count, s.Units.Count);   // with the starting forces (R-UNIT-006): the enemy's hexes block
+        Assert.Equal(25 + c.StartingForces.Count(f => f.Arrives == null), s.Units.Count);   // with the starting forces (R-UNIT-006): the enemy's hexes block
         var best = double.MaxValue;
         var listed = 0;
         for (int run = 0; run < 5; run++)

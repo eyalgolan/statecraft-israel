@@ -292,8 +292,8 @@ public class EnemyAITests
     }
 
     // R-ENEMY-006: a standing attack ends on a truce turn even when the unit moves on its script (owner's repro, #1263). On
-    // the 15 May 1948 turn Givati (unit 4) goes to -7,24 and the Negev (unit 6) to -10,27, and Egypt (unit 7) attacks the
-    // Negev. On the 15 June turn Givati goes back to -5,23, Egypt marches on its script to -9,27, and without the guard its
+    // the 15 May 1948 turn Givati goes to -7,24 and the Negev to -10,27, and Egypt attacks the Negev (ids looked up by row,
+    // #1241). On the 15 June turn Givati goes back to -5,23, Egypt marches on its script to -9,27, and without the guard its
     // standing attack destroyed the Negev at 900% inside the first truce. The golden seed: the Negev survives the first turn
     // at 2, its start before #1240 (Ben-Gurion's diary gives it 1, which the first turn's attack destroys), so it is set here.
     [Fact]
@@ -301,22 +301,23 @@ public class EnemyAITests
     {
         var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
         Assert.Equal(new DateTime(1948, 5, 15), s.Date);
-        Assert.Equal(("givati", "negev", "egyptian_expeditionary_force"),
-            (Real.StartingForces[4].Row, Real.StartingForces[6].Row, Real.StartingForces[7].Row));
-        var negev = s.Units[6];
+        int givati = Real.StartingForces.FindIndex(f => f.Row == "givati");
+        int negevId = Real.StartingForces.FindIndex(f => f.Row == "negev");
+        int egypt = Real.StartingForces.FindIndex(f => f.Row == "egyptian_expeditionary_force");
+        var negev = s.Units[negevId];
         Assert.Equal(1, negev.Strength);
-        s.Units[6] = new Unit(negev.Id, negev.Type, negev.Q, negev.R, negev.Service, negev.Side, 2, negev.Order, negev.OrderTarget);
-        var first = Simulation.Step(Real, s, new Command[] { new Move(4, -7, 24), new Move(6, -10, 27) });
-        Assert.Contains(first.Why, x => x.Message == "Unit 7 will attack hex -10,27");
+        s.Units[negevId] = new Unit(negev.Id, negev.Type, negev.Q, negev.R, negev.Service, negev.Side, 2, negev.Order, negev.OrderTarget);
+        var first = Simulation.Step(Real, s, new Command[] { new Move(givati, -7, 24), new Move(negevId, -10, 27) });
+        Assert.Contains(first.Why, x => x.Message == $"Unit {egypt} will attack hex -10,27");
         s = first.State;
         Assert.Equal(new DateTime(1948, 6, 15), s.Date);
-        Assert.True(s.Units.ContainsKey(6), "the Negev fell on the 15 May turn");
-        Assert.Equal((Combat.Attack, "-10,27"), (s.Units[7].Order, s.Units[7].OrderTarget));   // the attack stands
-        var strength = s.Units[6].Strength;
-        var step = Simulation.Step(Real, s, new Command[] { new Move(4, -5, 23) });
-        Assert.Equal((-9, 27), (step.State.Units[7].Q, step.State.Units[7].R));   // Egypt moved on its script
-        Assert.True(step.State.Units.ContainsKey(6), "the Negev was destroyed");
-        Assert.Equal(strength, step.State.Units[6].Strength);
+        Assert.True(s.Units.ContainsKey(negevId), "the Negev fell on the 15 May turn");
+        Assert.Equal((Combat.Attack, "-10,27"), (s.Units[egypt].Order, s.Units[egypt].OrderTarget));   // the attack stands
+        var strength = s.Units[negevId].Strength;
+        var step = Simulation.Step(Real, s, new Command[] { new Move(givati, -5, 23) });
+        Assert.Equal((-9, 27), (step.State.Units[egypt].Q, step.State.Units[egypt].R));   // Egypt moved on its script
+        Assert.True(step.State.Units.ContainsKey(negevId), "the Negev was destroyed");
+        Assert.Equal(strength, step.State.Units[negevId].Strength);
     }
 
     // R-ENEMY-006: the truce windows are the sourced ones, half-open: the first truce from 11 June to 8 July 1948 and the

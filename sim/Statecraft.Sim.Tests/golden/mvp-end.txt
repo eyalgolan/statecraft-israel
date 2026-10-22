@@ -140,13 +140,15 @@ units[
   2:veteran_soldier@0,15|side=israel|strength=4
   3:veteran_soldier@-3,19|side=israel|strength=3
   4:veteran_soldier@-5,23|side=israel|strength=3
-  6:veteran_soldier@-9,27|side=israel|strength=1
-  7:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
-  8:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
-  9:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
-  10:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
-  11:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
-  13:veteran_halutz@-3,19/6
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+  15:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-06-15
   beit_kama_field=done,1951-10-15
@@ -157,12 +159,12 @@ site{
   mefalsim=done,1951-02-15
   reim=done,1951-07-15
 cproj[
-  14:housing@tel_aviv,-4,20/done,1949-10-15
-  15:housing@tel_aviv,-3,19/done,1950-06-15
-  16:housing@tel_aviv,-3,20/done,1951-02-15
-  17:housing@tel_aviv,-2,18/done,1951-10-15
-  18:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
-next=19
+  16:housing@tel_aviv,-4,20/done,1949-10-15
+  17:housing@tel_aviv,-3,19/done,1950-06-15
+  18:housing@tel_aviv,-3,20/done,1951-02-15
+  19:housing@tel_aviv,-2,18/done,1951-10-15
+  20:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
+next=21
 obj{
   yishuvim=1951-07-15
 food=2734,1390,0

@@ -20,7 +20,9 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   only; stored values, gameplay and completion dates are unchanged.
 - **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
   positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
-  target list is empty, so no golden captures a place.
+  list has six targets (#793), and no golden captures a place: the five enemy-held ones are no-entry hexes for player
+  units (R-MOVE-005), and the reference player's unit on Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa
+  is not enemy-held at the start.
 - **Answering a capture (Raid and withdraw):** the units on the place leave in ascending id, each to the first free hex in
   the fixed neighbour order, and the captures still waiting at the game's end resolve in ordinal id order, with no RNG
   draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). No golden captures a place, so none answers one.
@@ -39,9 +41,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `1392f3eb726172c284555b2bcacc0be3f8d9e33d19306dfc3baf0e2c63fe249b` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `cc96cd0a8d50a7693300ef887673c7ccfc18dac6d4dcaa9f52ed2ed09062eda5` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `cc96cd0a8d50a7693300ef887673c7ccfc18dac6d4dcaa9f52ed2ed09062eda5` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `d14a4899a1e068bf238f84f4e8fe06270b5164b2c6ba62f2fef399fd7eaada8e` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -50,7 +52,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 11c41014a5ed74f783bc2fa0af99ee86830d162d5e71c883318e36f68f47b9b4`.
+ministers): `SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -61,7 +63,21 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 11c41014a5ed74f783bc2fa0af99ee86830d162d5e71c883318e36f68f47b9b4"
+  --expect "SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755"
+```
+
+`smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
+`-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
+hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
+10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order (7,11) and presses End
+Turn: `SMOKE ORDERS OK 1948-06-15 98422be8eca2981e191fde3a7aaf28fdef269203cee2f6dfe7a7cddb770f7133`.
+`GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
+prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
+attack slices can add their orders to it. Check a WebGL build with:
+
+```
+uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
+  --expect "SMOKE ORDERS OK 1948-06-15 98422be8eca2981e191fde3a7aaf28fdef269203cee2f6dfe7a7cddb770f7133"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -139,7 +155,7 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, and the scenario lines above). The .NET tests
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, `smoke-orders`, and the scenario lines above). The .NET tests
 compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
 - `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
 - this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
@@ -361,3 +377,12 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 5 PR 10: the enemy AI, part 1 (#749) | scenario-reckless | `d6fd9e89` | same as cautious (was `574c8a19`) |
 | GDD Phase 5 PR 10: the enemy AI, part 1 (#749) | scenario-mvp-absorb-first | `de176931` | same as cautious (was `ac5f51bb`) |
 | GDD Phase 5 PR 10: the enemy AI, part 1 (#749) | scenario-mvp-defeat | `7404295a` | the units as in cautious; the engagement's draw comes before the delegated events' draws, so a delegated `iraqi_exodus` resolves to `pace` (was `airlift`), and housing, international standing, morale and stability follow. The defeat is unchanged (was `f2ad1114`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | 1950 | `d14a4899` | Etzioni's sourced 15 May strength (3,166, Ben-Gurion's diary) starts it under R-UNIT-006 as unit 5 (strength 3, Jerusalem's 0,23), so Harel and every later starting force take the next id (Harel 6, Egypt 8, the Legion 9, Syria 10). The 7th Brigade's reserved id 13 is the first after the starting rows; it arrives on the 15 June 1948 turn (its row's 24 May 1948 strength, 1,650 = 2, at Hulda's -4,23) and stands there. Every later id moves up by two (`next=18`). Nothing else in the snapshot moves: the enemy's scripted marches, the fortify orders and the Legion's 15 October 1948 engagement that destroys Harel are as on main, and the RNG and the Arms are unchanged (was `1392f3eb`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | 1952 | `3bacd2b1` | same as 1950: the ids and the two units only (was `cc96cd0a`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | mvp-end | `3bacd2b1` | same as 1952 (was `cc96cd0a`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | smoke5 | `7559f30c` | same: the ids and the two units only (was `11c41014`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-reckless | `030817e3` | same: the ids and the two units only (was `d6fd9e89`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-cautious | `e45c5429` | same as reckless (was `230791a1`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-absorb-first | `64bdd93b` | same as reckless (was `de176931`) |
+| #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-defeat | `54ec7d6b` | same as reckless; the defeat is unchanged (was `7404295a`) |
+| GDD Phase 5 PR 15 slice 4 (#754) | smoke-orders | `98422be8` | new: one turn from the golden seed whose only order is unit 0 (Golani) moving from 10,9 to 7,11, given through the unit card in the browser run; no other golden moves |
