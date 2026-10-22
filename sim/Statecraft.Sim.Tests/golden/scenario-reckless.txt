@@ -1,30 +1,30 @@
-1949-01-15;4354685564936847302;Historical;8;
+1949-04-15;4354685564936847302;Historical;11;
 ind{
-  food_supply=0.59921875 [3FE32CCCCCCCCCCD]
-  housing=0.41912251055925737 [3FDAD2E738F7A4A9]
-  intl_standing=0.38999999999999996 [3FD8F5C28F5C28F5]
-  morale=0.5049852054802675 [3FE028D6BBD00D04]
-  security=0.4636917724609376 [3FDDAD204189374E]
+  food_supply=0.5700000000000001 [3FE23D70A3D70A3E]
+  housing=0.38982590078831036 [3FD8F2E855C1400A]
+  intl_standing=0.55 [3FE199999999999A]
+  morale=0.5145186479281915 [3FE076EFCFC1143D]
+  security=0.4523487165069581 [3FDCF34807F23CCB]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
   maabarot=0 [0000000000000000]
   rationing=1 [3FF0000000000000]
 eff{
-  border_villages_secure=0.033691772460937505 [3FA1400C49BA5E36]
-  building_houses=0.0722834300994873 [3FB2812AB851EB85]
-  food_lifts_cohesion=0.059140625 [3FAE47AE147AE148]
-  homes_lift_morale=0.06197826633453369 [3FAFBB9D85F06F69]
-  rationing_feeds=0.19921875 [3FC9800000000000]
+  border_villages_secure=0.03234871650695801 [3FA09002CEEE0F3D]
+  building_houses=0.0781137126982212 [3FB3FF42A16872B0]
+  food_lifts_cohesion=0.03998046875000001 [3FA47851EB851EBA]
+  homes_lift_morale=0.06141436009563127 [3FAF71B3F83B234E]
+  rationing_feeds=0.17 [3FC5C28F5C28F5C3]
   rationing_grates=-0.15 [BFC3333333333333]
-  safety_lifts_morale=0.04317108886718751 [3FA61A855DA27288]
-  work_lifts_cohesion=0.04069522527854631 [3FA4D6012B597372]
+  safety_lifts_morale=0.04519983509826662 [3FA7246ECB10342D]
+  work_lifts_cohesion=0.03792398398429362 [3FA36AC5BDE4A4AD]
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
-  intl_standing=-0.11000000000000004 [BFBC28F5C28F5C2C]
-  morale=-0.10000000000000009 [BFB99999999999A0]
-  security=0.13000000000000012 [3FC0A3D70A3D70A8]
+  intl_standing=0.050000000000000044 [3FA99999999999A0]
+  morale=-0.07000000000000006 [BFB1EB851EB851F0]
+  security=0.1200000000000001 [3FBEB851EB851EC0]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -35,22 +35,25 @@ bud{
   labour_minister=0.1 [3FB999999999999A]
   prime_minister=0.15 [3FC3333333333333]
 pop{
-  africa=9739.110001692712 [40C3058E1489145A]
-  america_oceania=535.0499244151753 [4080B8663EC59399]
-  asia=7512.155402122331 [40BD5827C86EF924]
-  europe=81633.61444656934 [40F3EE19D4C5ED07]
-  unknown=12145.947428858311 [40C7B8F945594CDE]
-  veterans=656752.739703733 [41240AE17ABA729C]
+  africa=19463.392190725444 [40D301D919A720E5]
+  america_oceania=888.4378761355052 [408BC380C5340D8D]
+  asia=25236.449380098522 [40D8A51CC2A4BEA8]
+  europe=112094.44437567116 [40FB5DE71C29A9EC]
+  unknown=13605.290002933149 [40CA92A51ED0ECCF]
+  veterans=659531.4296791082 [41242096DBFEE66B]
 sit[
 treasury=0 [0000000000000000]
-debt=24.360591926047697 [40385C4FC0A19396]
-fx=80.85238326859616 [4054368D728D91CC]
-rung=5;cf=0;
-mob=0.8 [3FE999999999999A]
-stab=0.5917932390134901 [3FE2EFF85FF1D1BA]
+debt=40.587931893724964 [40444B415A2FE97B]
+fx=90.22947100954694 [40568EAFA72C5897]
+rung=2;cf=0;
+mob=0.05 [3FA999999999999A]
+stab=0.5744408218619746 [3FE261D1B7EC4E2D]
 att=4 [4010000000000000]
 fired[
   altalena
+  armistice_egypt
+  armistice_jordan
+  armistice_lebanon
   bernadotte_assassination
   elections_1949
   first_truce
@@ -65,12 +68,13 @@ fired[
   second_truce
   sinai_withdrawal
 pending[
-  sinai_withdrawal
-  rhodes_talks
-  elections_1949
+  armistice_lebanon
+  armistice_jordan
 chosen{
   altalena=enforce
+  armistice_egypt=sign
   bernadotte_assassination=outlaw
+  elections_1949=hold
   first_truce=refuse
   idf_founding=one_army
   jerusalem_ceasefire=keep
@@ -79,24 +83,26 @@ chosen{
   operation_hiram=stop_at_ceasefire
   operation_horev=launch
   operation_yoav=stop_at_ceasefire
+  rhodes_talks=send_delegation
   second_truce=comply
+  sinai_withdrawal=withdraw
 appt{
 under=;
 map[
 mapturn=0001-01-01:0;
 over=
 city{
-  hadera=12,5,12,5,1,c0.35 [3FD6666666666666]
-  haifa=99,42,101,42,4,c0.347029702970297 [3FD635BC123FDF8E]
-  jerusalem=84,29,86,29,4,c0.3465116279069767 [3FD62D3F1B62D3F1]
-  netanya=12,5,12,5,1,c0.35 [3FD6666666666666]
-  petah_tikva=22,10,22,10,1,c0.35 [3FD6666666666666]
-  rehovot=13,5,13,5,1,c0.35 [3FD6666666666666]
-  rishon_lezion=10,5,10,5,1,c0.35 [3FD6666666666666]
+  hadera=12,5,13,5,1,c0.3384615384615384 [3FD5A95A95A95A95]
+  haifa=99,42,112,42,5,c0.3099074502230443 [3FD3D5860EDFA98B]
+  jerusalem=84,29,95,29,4,c0.3076727623013407 [3FD3B0E918FD1245]
+  netanya=12,5,13,5,1,c0.3384615384615384 [3FD5A95A95A95A95]
+  petah_tikva=22,10,24,10,2,c0.33097826086956517 [3FD52EBF7187CA92]
+  rehovot=13,5,14,5,1,c0.3285714285714285 [3FD5075075075074]
+  rishon_lezion=10,5,10,5,2,c0.35 [3FD6666666666666]
   rosh_pinna=1,0,1,0,0,c0.35 [3FD6666666666666]
-  safed=2,1,2,1,0,c0.35 [3FD6666666666666]
-  tel_aviv=248,106,255,106,9,c0.3458823529411765 [3FD622EFBC895623]
-  tiberias=6,2,6,2,0,c0.35 [3FD6666666666666]
+  safed=2,1,2,1,1,c0.35 [3FD6666666666666]
+  tel_aviv=248,106,281,106,12,c0.3059752977620755 [3FD395196A51680F]
+  tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
   zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
 units[
   0:veteran_soldier@10,9|side=israel|strength=4
@@ -113,5 +119,5 @@ units[
   12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
   13:veteran_soldier@-4,23|side=israel|strength=2
 next=14
-food=2253,751,0
+food=2427,809,0
 arms=12

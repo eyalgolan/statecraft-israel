@@ -53,7 +53,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 d449bf194d94e882d36b899079ce573094ea710327db7ac6e84939632c46bf85`.
+ministers): `SMOKE OK 5 turns 1948-10-15 bc2ab42b43bab8f19eb9b25368a3d4da5f2d3fdfed092b480c8d2738b035a298`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -64,7 +64,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 d449bf194d94e882d36b899079ce573094ea710327db7ac6e84939632c46bf85"
+  --expect "SMOKE OK 5 turns 1948-10-15 bc2ab42b43bab8f19eb9b25368a3d4da5f2d3fdfed092b480c8d2738b035a298"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -72,14 +72,14 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
 10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
 place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
-`SMOKE ORDERS OK 1948-06-15 ee6bfee561120532416c1aff2cd7cd741256aaafb443d19b414031356b680ae6`.
+`SMOKE ORDERS OK 1948-06-15 9f224bd44792f73f393a8ec8f552f20d3bc3c05ab26d08d1b58762b2bf075114`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
 attack slices can add their orders to it. Check a WebGL build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
-  --expect "SMOKE ORDERS OK 1948-06-15 ee6bfee561120532416c1aff2cd7cd741256aaafb443d19b414031356b680ae6"
+  --expect "SMOKE ORDERS OK 1948-06-15 9f224bd44792f73f393a8ec8f552f20d3bc3c05ab26d08d1b58762b2bf075114"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -111,7 +111,7 @@ scripted command passes. A command the sim rejects fails the test with the date,
 fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln --filter ScenarioTests` (it adds the
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
 command; its snapshot diff in the PR shows what moved, and the commit message says why. All four play the real content.
-`cautious` and `reckless` stay in 1948, so they move only when a 1948 rule or event does; `mvp-absorb-first` (GDD Phase 1
+`cautious` and `reckless` run through March 1949, setting rationing on the first turn after its office opens; `mvp-absorb-first` (GDD Phase 1
 PR 3) fills Tel Aviv's jobs on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
@@ -407,3 +407,7 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-mvp-absorb-first | `d6d47fd8` | same; debt alone rises by IL 8.2m (was `912504be`) |
 | GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-mvp-defeat | `584a828a` | same; debt alone rises by IL 17.8m; the defeat is unchanged (was `109b0a5e`) |
 | GDD Phase 7 PR 6, slice 1: the score's parts (R-SCORE-001, #809) | scenario-mvp-absorb-first | `6aa49f62` | the state keeps the score's parts as they score, a new `scoreparts=` line (objective points, timing bonuses, prisoner points): `scoreparts=100,0,0` beside `score=100`. Nothing else moves; the other goldens score nothing, so they keep their hashes (was `d6d47fd8`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | smoke5 | `bc2ab42b` | the rationing policy and its two effects leave the state before 10 March 1949, so their keys (all at 0 in this run) leave the hashed state; no value moves (was `d449bf19`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | smoke-orders | `9f224bd4` | same as smoke5 (was `ee6bfee5`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-cautious | `f672a0f3` | rationing can no longer be set on 15 May 1948, so the scenario sets it (0.4) on the first turn the office exists (15 March 1949) and runs to 15 April 1949 (was 15 January 1949) so it acts; the snapshot moves with the three extra turns (was `95982cf8`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
