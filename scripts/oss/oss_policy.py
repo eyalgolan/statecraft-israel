@@ -47,7 +47,7 @@ CONFLICT_MARKER = re.compile(r"^(<{7}|\|{7}|>{7}) ")
 MAX_FILE_BYTES = 10 * 1024 * 1024
 
 REQUIRED_FILES: tuple[str, ...] = (
-    "LICENSE", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
+    "LICENSE", "LICENSES/MIT.txt", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
     "LICENSES/YamlDotNet-MIT.txt", "LICENSING.md", "NOTICE", "THIRD-PARTY-NOTICES.md", "ASSETS.yaml",
     "README.md", "README.he.md", "BUILDING.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md",
     "TRADEMARK.md", "CHANGELOG.md", "docs/CONTENT_POLICY.md",

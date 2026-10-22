@@ -147,7 +147,7 @@ flowchart RL
 
 ## רישיון
 
-קוד: MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
+קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
 
 על בעיות אבטחה מדווחים באופן פרטי, ראו [<span dir="ltr">SECURITY.md</span>](SECURITY.md). קוד ההתנהגות: [<span dir="ltr">CODE_OF_CONDUCT.md</span>](CODE_OF_CONDUCT.md).
 

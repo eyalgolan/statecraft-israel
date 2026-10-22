@@ -33,7 +33,7 @@ const en = {
   'nav.privacy': 'Privacy',
   'footer.more': 'More',
   'footer.repo': 'Source code on GitHub',
-  'footer.licence': 'Code MIT. Art and docs CC BY 4.0. Game content CC BY-SA 4.0. AI-generated images CC0.',
+  'footer.licence': 'Code PolyForm Noncommercial 1.0.0. Art and docs CC BY 4.0. Game content CC BY-SA 4.0. AI-generated images CC0.',
   'footer.notaffiliated': 'An independent open-source project. Not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted.',
   'footer.privacy': 'No analytics and no cookies.',
 
@@ -95,7 +95,7 @@ const he: Dict = {
   'nav.privacy': 'פרטיות',
   'footer.more': 'עוד',
   'footer.repo': 'קוד המקור ב־GitHub',
-  'footer.licence': 'קוד: MIT. אמנות ומסמכים: CC BY 4.0. תוכן המשחק: CC BY-SA 4.0. תמונות שנוצרו בבינה מלאכותית: CC0.',
+  'footer.licence': 'קוד: PolyForm Noncommercial 1.0.0. אמנות ומסמכים: CC BY 4.0. תוכן המשחק: CC BY-SA 4.0. תמונות שנוצרו בבינה מלאכותית: CC0.',
   'footer.notaffiliated': 'פרויקט קוד פתוח עצמאי. אין לו קשר ל־Firaxis, ל־2K, למדינת ישראל או לאדם כלשהו המופיע בו, והם אינם תומכים בו.',
   'footer.privacy': 'בלי כלי אנליטיקה ובלי עוגיות.',
 
