@@ -839,6 +839,9 @@ namespace Statecraft.Sim
         /// <summary>The Arms a unit of an artillery type spends each time it fires (R-COMBAT-007; Q-ARTY-1). Required on an
         /// artillery type, null on any other.</summary>
         public int? ArmsPerFire { get; set; }
+        /// <summary>The Arms a group of a trained military type other than the recruit takes when its training starts
+        /// (R-UNIT-008; Q-ARTY-3). The recruit's is rules.yaml mvp.arms_per_recruit_group (R-ARMS-003); null on every other type.</summary>
+        public int? TrainingArms { get; set; }
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>

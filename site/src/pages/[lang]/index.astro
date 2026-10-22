@@ -5,6 +5,7 @@ import Figure from '../../components/Figure.astro';
 import VideoFacade from '../../components/VideoFacade.astro';
 import MediaLabel from '../../components/MediaLabel.astro';
 import ContributorsGrid from '../../components/ContributorsGrid.astro';
+import ShareControls from '../../components/ShareControls.astro';
 import { type Lang, languages, href, t, REPO, formatDate, asset } from '../../i18n/ui';
 import { capture, concept, flythrough, trailer, gameplay, gameplayVideo, captureDateIso, heroShot } from '../../lib/media';
 import { posts } from '../../lib/devlog';
@@ -137,6 +138,7 @@ const features = [
       ? 'המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים. המסגור שלו ישראלי, ואף ציטוט אינו בדוי. זה אב־טיפוס מוקדם.'
       : 'The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, and no quotes are invented. It is an early prototype.'}
       {' '}<a href={href(lang, 'history/sources')}>{t(lang, 'nav.sources')}</a></p>
+    <ShareControls lang={lang} url={abs(href(lang))} />
   </div></section>
 
   {/* The real gameplay clip, behind a click: the hero is a clean still, so the first screen loads no video. */}

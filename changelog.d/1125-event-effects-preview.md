@@ -1,0 +1,1 @@
+- Prepare localized event-option effect preview data and text formatting for the pending card integration (Refs #1125, #811).
