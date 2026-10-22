@@ -1,0 +1,48 @@
+{
+  "number": 13,
+  "id": "generated-1948-13-egyptian-spitfire",
+  "name": "Egyptian Spitfire",
+  "geometry_model_id": "3bced78c-274b-4af7-aed8-0b995b87c37c",
+  "source_glb_sha256": "6b67d358e04c398559e87399b55b987d0fefa1d970966a979e26cad148c57c2e",
+  "source_image_sha256": "e03262480be1eecc1a66d5752012124d24d0350bb98f95336d6cee98f4149644",
+  "triangles_source": 7177,
+  "triangles_export_reimport": 7177,
+  "fbx_sha256": "0567f0e82deda13de1463d7a721345b11379ab2b4d0c307c7862a30bf46bdb43",
+  "texture_sha256": "d9684bf24f94cb54672736e18481683f28144e11f854aaaaa73c5a5549900e94",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.4182129502296448,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.4182129502296448,
+      0.32177734375
+    ],
+    "size": [
+      0.9995118379592896,
+      0.8364259004592896,
+      0.32177734375
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "b8f04c887838542c157173abbb5fd598304793e49b43f6709ba27d70c2a65777",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [
+    "Generated paint, markings and subtype details need owner/content review."
+  ],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

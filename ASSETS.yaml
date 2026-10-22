@@ -115,6 +115,28 @@ rules:
     status: verified
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
+  # --- Generated vehicle review candidates (22 October 2026) ---
+  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-13-egyptian-spitfire/*"
+    licence: CC0-1.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    status: verified
+    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
+  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-14-syrian-renault-r35/*"
+    licence: CC0-1.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    status: verified
+    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
+  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-16-egyptian-dakota-c47/*"
+    licence: CC0-1.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    status: verified
+    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
   # --- Fonts ---
   - glob: "unity/Assets/UI/Fonts/EBGaramond-*.ttf"
     licence: OFL-1.1

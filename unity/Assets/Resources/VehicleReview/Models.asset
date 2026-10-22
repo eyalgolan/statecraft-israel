@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16529f7b4684507af10a6d560d1a628, type: 3}
+  m_Name: Models
+  m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.VehicleReview.VehicleReviewCatalog
+  entries:
+  - id: generated-1948-13-egyptian-spitfire
+    label: Egyptian Spitfire candidate
+    near: {fileID: 2565606210955489021, guid: 77f90a32581804ee682cc675146d6661, type: 3}
+    far: {fileID: 4813193380417257728, guid: 6b85e857371f342ceb64ad5e2a095f95, type: 3}
+    longSideM: 4704
+  - id: generated-1948-14-syrian-renault-r35
+    label: Syrian Renault R35 candidate
+    near: {fileID: 480870365931156546, guid: 6da622919d00d4ac38532fa7b1824177, type: 3}
+    far: {fileID: 2349330835141316561, guid: a4423b2214d0046e9a4cab7304d131af, type: 3}
+    longSideM: 1744.3999
+  - id: generated-1948-16-egyptian-dakota-c47
+    label: Egyptian Dakota C-47 candidate
+    near: {fileID: 7319601827409436142, guid: ff39ad0d7f0524e088aff862951b0656, type: 3}
+    far: {fileID: 8315800334405780451, guid: 4b7e9da424135489aa20cfe566466166, type: 3}
+    longSideM: 4704

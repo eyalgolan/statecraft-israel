@@ -1,0 +1,48 @@
+{
+  "number": 14,
+  "id": "generated-1948-14-syrian-renault-r35",
+  "name": "Syrian Renault R35",
+  "geometry_model_id": "9b87d05b-2354-4ce2-8969-6c856ac2e09d",
+  "source_glb_sha256": "b842c074f8a3bf5095b24ac1d9a7e384ba4cbac56452af10910c400914bf2271",
+  "source_image_sha256": "f7cbc63da3842115abe19bb610ee4bab4ab13092852e2c7b68597f58848cbba7",
+  "triangles_source": 6329,
+  "triangles_export_reimport": 6329,
+  "fbx_sha256": "a0230ada07d3b70a31975ba44956641c150ed9570f4eb875d6b542c737abe1c8",
+  "texture_sha256": "b7ebeea92a7b2a0c6fae63da4da768cc47e5657587f3eacfc9842b5e35dd0c65",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.28344735503196716,
+      -0.4997559189796448,
+      0.0
+    ],
+    "max": [
+      0.28344735503196716,
+      0.4997559189796448,
+      0.54736328125
+    ],
+    "size": [
+      0.5668947100639343,
+      0.9995118379592896,
+      0.54736328125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "08ce3c7b11c7eb305eba957af93292050b911785eff866bf1d338acef6cf880e",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [
+    "Generated paint, markings and subtype details need owner/content review."
+  ],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}

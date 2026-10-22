@@ -1,0 +1,48 @@
+{
+  "number": 16,
+  "id": "generated-1948-16-egyptian-dakota-c47",
+  "name": "Egyptian Dakota C47",
+  "geometry_model_id": "01377dc9-a051-4991-a492-86c856201fea",
+  "source_glb_sha256": "cc191b7f8c53a92eee593fc65dba32a7928f13f0d27c200428d1815856e168aa",
+  "source_image_sha256": "0beac34e18b6028179cfeff17b3357ecc1db686d97369d1b2b30fc46b38eeb2d",
+  "triangles_source": 6854,
+  "triangles_export_reimport": 6854,
+  "fbx_sha256": "730878fab23fe1cbed035b76bc59b691b7973bbd042ee75df4fefc267cb1f092",
+  "texture_sha256": "3a7c8f032425c36c5ca7dd657402c0e38098588d5f7f6ff0afd45892047da5f9",
+  "normalized_bounds_blender_z_up": {
+    "min": [
+      -0.4997559189796448,
+      -0.4299317002296448,
+      0.0
+    ],
+    "max": [
+      0.4997559189796448,
+      0.4299317002296448,
+      0.25048828125
+    ],
+    "size": [
+      0.9995118379592896,
+      0.8598634004592896,
+      0.25048828125
+    ]
+  },
+  "texture": {
+    "original_dimensions": [
+      4096,
+      4096
+    ],
+    "original_embedded_sha256": "f6211855f58ffacf62afb97c6a00e5e246877dbddc0f96ce896532a42812f82d",
+    "runtime_dimensions": [
+      512,
+      512
+    ],
+    "quality": 88,
+    "resampling": "Pillow LANCZOS",
+    "plaster_atlas": false
+  },
+  "source_caveats": [
+    "Generated paint, markings and subtype details need owner/content review."
+  ],
+  "qa_status": "offline_geometry_texture_roundtrip_passed; Unity import/render and owner art review pending",
+  "export_units": "FBX_SCALE_UNITS; UnitScaleFactor100; object local scale1"
+}
