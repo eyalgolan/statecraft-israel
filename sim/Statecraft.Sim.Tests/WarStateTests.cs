@@ -5,9 +5,9 @@ using Xunit;
 
 namespace Statecraft.Sim.Tests
 {
-    /// <summary>#750's first slice (D-C4; Q-WAR-1 to Q-WAR-4): R-WAR-002 retires the call-up and the security order in the
-    /// GDD loop, and the clock half of R-WAR-003 retires the 52-week countdown there; an event's set_rung still moves the
-    /// rung. The legacy loop keeps all of them while the code exists (D-E1; SecurityTests pins the legacy clock).</summary>
+    /// <summary>#750's first slice (D-C4; Q-WAR-1, Q-WAR-2, Q-WAR-4): R-WAR-002 retires the call-up and the security order
+    /// in the GDD loop, where the call-up follows the rung instead, and R-WAR-003's clock half retires the 52-week clock
+    /// there; an event's set_rung still moves the rung. The legacy loop keeps all of them while the code exists (D-E1; SecurityTests pins the legacy clock).</summary>
     public class WarStateTests
     {
         static Content Gdd(Dictionary<string, string>? extra = null) => ContentLoader.Load(Fixture.Write(Fixture.Gdd(extra)));
@@ -66,6 +66,21 @@ namespace Statecraft.Sim.Tests
             Assert.DoesNotContain(r.Why, w => w.Target == "ceasefire");
         }
 
+        // R-WAR-003 (the slice's clock half): the clock never starts in the GDD loop, so no screen can promise a ceasefire
+        // the sim will not impose; the legacy loop starts its 52 weeks on entering full war.
+        [Fact]
+        public void TheGddLoopStartsNoCeasefireClock()
+        {
+            var c = Gdd();
+            var s = Simulation.NewGame(c, 42, Mode.Historical);
+            Assert.Equal(5, s.Rung);
+            Assert.Equal(0, s.CeasefireWeeksLeft);
+            Assert.Equal(0, SecuritySystem.CeasefireWeeksAfter(c, s.Date, 4, 0, 5));
+            var legacy = ContentLoader.Load(Fixture.Write());
+            Assert.Equal(legacy.Rules.CeasefireWeeks, Simulation.NewGame(legacy, 42, Mode.Historical).CeasefireWeeksLeft);
+            Assert.Equal(legacy.Rules.CeasefireWeeks, SecuritySystem.CeasefireWeeksAfter(legacy, s.Date, 4, 0, 5));
+        }
+
         const string RungEvent = @"
 id: rung
 title: A choice
@@ -89,6 +104,33 @@ options:
             var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("rung", "history") });
             Assert.Empty(r.Rejected);
             Assert.Equal(3, r.State.Rung);
+        }
+
+        // R-WAR-002 (the owner's condition on #1148): with the call-up order retired, the reserves follow the rung down. A
+        // rung an event sets lowers the call-up to that rung's rung_min_mobilization, as HistoricalAI's order did in the
+        // legacy loop, so the 1949 armistices still send the army home (EconomyCalibrationTests keeps the debt anchor).
+        [Fact]
+        public void TheReservesGoHomeWithTheRungInTheGddLoop()
+        {
+            var c = Gdd(new Dictionary<string, string> { ["events/rung.yaml"] = RungEvent });
+            var s = Simulation.NewGame(c, 1, Mode.Historical);
+            Assert.Equal(0.8, s.Mobilization);   // the rung-5 floor at the start
+            var r = Simulation.Step(c, s, new Command[] { new ChooseEventOption("rung", "history") });
+            Assert.Equal(3, r.State.Rung);
+            Assert.Equal(c.Rules.RungMinMobilization[2], r.State.Mobilization);
+            Assert.Contains(r.Why, w => w.Target == "mobilization" && w.Message == "Reserves sent home: call-up lowered to 15%, the minimum for security level 3");
+        }
+
+        // The legacy loop keeps the call-up as a lever: a lower rung leaves it where the player put it.
+        [Fact]
+        public void TheLegacyLoopLeavesTheCallUpWhenTheRungFalls()
+        {
+            var c = ContentLoader.Load(Fixture.Write());
+            var s = Simulation.NewGame(c, 42, Mode.Historical);
+            var r = Simulation.Step(c, s, new Command[] { new SecurityOrder(-2) });
+            Assert.Empty(r.Rejected);
+            Assert.Equal(3, r.State.Rung);
+            Assert.Equal(0.8, r.State.Mobilization);
         }
 
         // D-E1: the legacy loop keeps both orders and the clock while the code exists.

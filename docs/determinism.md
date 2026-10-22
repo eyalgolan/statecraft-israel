@@ -41,9 +41,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `d14a4899a1e068bf238f84f4e8fe06270b5164b2c6ba62f2fef399fd7eaada8e` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `f70d7cc2d9438c3b0859a957842fae9a456198d1a1160f962b61fec5b28af0df` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `ca78893d57bd7235dd923f29b611e0c12e99d702312c24b5bfc72ac82b3d14bf` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `ca78893d57bd7235dd923f29b611e0c12e99d702312c24b5bfc72ac82b3d14bf` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -52,7 +52,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755`.
+ministers): `SMOKE OK 5 turns 1948-10-15 71a4cef0f81439c475e5e8a4e36bea9296f14287bc894cbc90efc4d2714348d1`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -63,7 +63,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755"
+  --expect "SMOKE OK 5 turns 1948-10-15 71a4cef0f81439c475e5e8a4e36bea9296f14287bc894cbc90efc4d2714348d1"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -371,3 +371,11 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-cautious | `e45c5429` | same as reckless (was `230791a1`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-absorb-first | `64bdd93b` | same as reckless (was `de176931`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-defeat | `54ec7d6b` | same as reckless; the defeat is unchanged (was `7404295a`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1950 | `f70d7cc2` | R-WAR-002: the GDD loop refuses the call-up order, so HistoricalAI sends none, and the call-up follows the rung down to its minimum the turn an event lowers it: 40% on the first truce's rung 4 (15 August 1948) and 5% on the armistices' rung 2 (15 April 1949), each a turn before HistoricalAI's order used to. Only the debt line moves, IL 87.5m to 81.8m. R-WAR-003: the ceasefire clock never starts, which this run's end state does not show (rung 2, `cf=0` either way) (was `d14a4899`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1952 | `ca78893d` | same as 1950: only the debt line, IL 211.9m to 206.1m; the 1950-51 rise stays inside the Michaely anchor's tolerance (EconomyCalibrationTests) (was `3bacd2b1`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | mvp-end | `ca78893d` | same as 1952 (was `3bacd2b1`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | smoke5 | `71a4cef0` | the smoke run sends no call-up order, so on main the 80% call-up stayed through the first truce; now it follows rung 4 down to 40%. Only `mob` (0.8 to 0.4) and the debt (IL 8.9m to 2.9m) move (was `7559f30c`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-cautious | `d6e7cea0` | the call-up follows the truce's rung down and back up (debt IL 27.0m to 21.0m), and the ceasefire clock never starts (`cf=40` to `cf=0`) (was `e45c5429`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-reckless | `57b3c29d` | the scenario's `set_mobilization: 1.0` order is gone (the GDD loop refuses it), so the call-up is the war rung's 80% (`mob` 1 to 0.8, debt IL 35.0m to 21.0m), and `cf=40` to `cf=0` as in cautious (was `030817e3`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-absorb-first | `912504be` | the scenario sends no call-up order, so on main the 80% call-up stayed after the armistices; now it follows rung 2 down to 5% (`mob` 0.8 to 0.05, debt IL 316.4m to 272.9m) (was `64bdd93b`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-defeat | `109b0a5e` | the retired full call-up is replaced by 120 Arms bought on credit on the first turn (`arms` 12 to 132), and the call-up follows the armistices to 5% (`mob` 1 to 0.05). The debt passes the ceiling in July 1951 (was April) and ends at IL 281.6m (was 339.1m); the defeat is unchanged: `defeat_economy` on 15 January 1952 after three exhausted turns (was `54ec7d6b`) |

@@ -163,13 +163,14 @@ namespace Statecraft.Game.UI
                 PersonCard.Fill(card, "lead-" + Leaders[i], c, s, seat.Holder, titles, seat.Appointed, text, portraits, LeaderPortrait);
             }
             var ceasefire = screen.Q<Label>("ceasefire");
-            if (s.Rung == 5 && target == 5) ceasefire.text = text.Format("defence.ceasefire", s.CeasefireWeeksLeft);
+            if (c.IsGdd) ceasefire.text = "";   // the GDD loop retires the clock (R-WAR-003): no ceasefire to promise
+            else if (s.Rung == 5 && target == 5) ceasefire.text = text.Format("defence.ceasefire", s.CeasefireWeeksLeft);
             else if (s.Rung == 5) ceasefire.text = text["defence.ceasefire_stops"];                       // a lowering is queued
             else if (target == 5) ceasefire.text = text.Format("defence.ceasefire_starts", SecuritySystem.CeasefireWeeksAfter(c, s.Date, s.Rung, s.CeasefireWeeksLeft, target));
             else ceasefire.text = "";
             ceasefire.style.display = ceasefire.text == "" ? DisplayStyle.None : DisplayStyle.Flex;
             // The call-up and the security order are retired in the GDD loop (R-WAR-002): hide the four controls
-            // that would queue a refused order. The ceasefire clock's label above stays.
+            // that would queue a refused order.
             var lever = c.IsGdd ? DisplayStyle.None : DisplayStyle.Flex;
             escalate.style.display = lever; deEscalate.style.display = lever; mobUp.style.display = lever; mobDown.style.display = lever;
             screen.Q<Label>("order-pending").text = delta == 0 ? "" : text.Format("defence.order", s.Rung, target);

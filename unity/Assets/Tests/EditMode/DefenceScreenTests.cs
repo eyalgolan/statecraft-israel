@@ -61,7 +61,7 @@ public class DefenceScreenTests
             Assert.IsFalse(ui.Q<VisualElement>("rung-2").ClassListContains("rung-current"));
             for (int rung = 1; rung <= 5; rung++)   // the GDD game plays monthly turns on every rung (R-TURN-001)
                 Assert.AreEqual("turns of a month", ui.Q<Label>($"rung-{rung}-turn").text, $"rung {rung}");
-            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);   // no clock in the GDD loop (R-WAR-003)
             Assert.AreEqual("Minister of Defense David Ben-Gurion · Chief of Staff Yaakov Dori", ui.Q<Label>("defence-command").text);
             Assert.AreEqual("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
             Assert.AreEqual("Costs IL 48.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
@@ -137,18 +137,27 @@ public class DefenceScreenTests
         }
     }
 
-    /// <summary>R-WAR-002 (#750): the GDD loop refuses the call-up and the security order, so the Defence screen
-    /// hides the four lever controls there; the ceasefire clock's label stays
-    /// (TheLadderShowsFullWarWithTheCeasefireClock pins its text).</summary>
+    /// <summary>R-WAR-002 and R-WAR-003 (#750): the GDD loop refuses the call-up and the security order and has no
+    /// ceasefire clock, so the Defence screen hides the four lever controls and the ceasefire line there. The legacy
+    /// loop keeps all of them, with the clock's 52 weeks.</summary>
     [Test]
     public void TheGddLoopHidesTheRetiredLevers()
     {
+        var levers = new[] { "escalate", "de-escalate", "mob-up", "mob-down" };
         var (ui, _, _) = Open();
         using (ui)
         {
-            foreach (var id in new[] { "escalate", "de-escalate", "mob-up", "mob-down" })
+            foreach (var id in levers)
                 Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(id).style.display.value, id);
-            Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("ceasefire").style.display.value);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);
+        }
+        var (legacy, _, _) = OpenLegacy();
+        using (legacy)
+        {
+            foreach (var id in levers)
+                Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Button>(id).style.display.value, id);
+            Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Label>("ceasefire").style.display.value);
+            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", legacy.Q<Label>("ceasefire").text);
         }
     }
 

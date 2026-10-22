@@ -1,15 +1,17 @@
-# A player who overspends and turns down every source of foreign currency (GDD Phase 7 PR 5, D-B5): the war rung's
-# 0.8 call-up stays in force (R-WAR-002, #750: the GDD loop refuses set_mobilization, which this scenario used to
-# order at full), and the player takes the non-historical option of each foreign currency card (no austerity, clothing
-# rationing relaxed, no reparations claim, donations instead of Israel Bonds). The debt passes the ceiling in August
-# 1951, foreign currency runs out the same month, food imports stop, and after three turn ends with Money and Food
-# both exhausted the game ends with defeat_economy on 15 January 1952 (R-END-001, R-END-002), the game's last day: a
-# defeat on the last turn is a defeat. A balance change that delays the third empty turn makes this run end as
-# mvp_ended, and DefeatTests says so.
+# A player who overspends and turns down every source of foreign currency (GDD Phase 7 PR 5, D-B5): 120 Arms bought on
+# credit on the first turn (IL 120m; the full call-up this scenario used to order is retired in the GDD loop, R-WAR-002,
+# #750), then the non-historical option of each foreign currency card (no austerity, clothing rationing relaxed, no
+# reparations claim, donations instead of Israel Bonds). The debt passes the ceiling in July 1951, foreign currency
+# runs out in August, food imports stop, and after three turn ends with Money and Food both exhausted the game ends
+# with defeat_economy on 15 January 1952 (R-END-001, R-END-002), the game's last day: a defeat on the last turn is a
+# defeat. A balance change that delays the third empty turn makes this run end as mvp_ended, and DefeatTests says so.
 # It plays the real content, so it moves whenever a rule or value it reaches changes.
 name: mvp-defeat
 until: 1952-01-15
 steps:
+  - on: 1948-05-15
+    commands:
+      - { kind: buy_arms, count: 120 }
   - on: 1949-05-15
     commands:
       - { kind: choose_event_option, event: austerity_1949, option: decline }
