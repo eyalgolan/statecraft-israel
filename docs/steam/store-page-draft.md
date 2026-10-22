@@ -231,7 +231,7 @@ What each statement rests on:
 
 | Statement | Record | Status |
 | --- | --- | --- |
-| Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `verified` (docs/ai-disclosure.md, 21 October 2026); D-D decided 2026-10-14 (PR #565) for the free, non-commercial game; a paid release needs the commercial-rights check or a new image |
+| Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `verified` (docs/ai-disclosure.md, 21 October 2026); D-D decided 2026-10-14 (PR #565) for the free, non-commercial game; there is no paid release ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)), so its commercial-rights check does not come up |
 | 14 silent illustration clips on decision cards and 7 outcome clips at End Turn | `unity/Assets/StreamingAssets/video/*.mp4`, 21 rows in docs/ai-disclosure.md: 12 made with Veo 3.1 or Veo 3.1 Fast through ElevenLabs, 9 with Seedance 2.0 through Dreamina (`austerity_1949`, `first_new_yishuv` and `iraqi_exodus`, each loop and outcome, `operation_horev` loop and outcome, `maabarot_policy-outcome`); PRs #454, #466 and #1102 | Rows `verified` under D-V, which covers free, commercial and paid builds |
 | Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No caption burned into the video: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The game's UI still labels every clip "AI-generated illustration" while it plays (`event.ai_label` in `unity/Assets/UI/strings.en.yaml`, shown by `EventCardPresenter` in place of the photo credit and by `OutcomePresenter` on the End Turn clip). The nine Dreamina clips keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips were reviewed by the owner: `ten_days`, `operation_yoav` and the `operation_horev` outcome on 2026-10-14 (G4), the `altalena` loop and outcome and the `operation_horev` loop on 2026-10-20 (#1102; docs/event-videos.md) |
 | Text drafted with AI, each fact checked by a person | README.md "AI use"; CONTENT_POLICY section 2, rule 6 | Stated project rule |
@@ -276,10 +276,10 @@ Facts this draft could not settle. Each is flagged above instead of being assert
 8. **Capsule art and the name.** The kit makes a wordmark: "Statecraft: Israel" in EB Garamond SemiBold, cream on
    transparency (`library_logo_1280w.png`). Whether it becomes the project's logo for TRADEMARK.md ("when there is
    one") is the owner's call.
-9. **Start-screen painting in a paid release.** D-D was decided on 14 October 2026 (PR #565) for free, non-commercial
-   distribution. The game is free (O2), so this matters only if that changes: before any paid release, the owner
-   confirms commercial rights for the Dreamina plan used, or replaces the image. The current painting was made on
-   ElevenLabs but used the Dreamina painting as its composition reference, and falls under the same caveat.
+9. **Start-screen painting in a paid release.** Settled (owner, 22 October 2026, [#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)): "there is not going to be a paid release, everything is going to stay free and expanded over time."
+   D-D was decided on 14 October 2026 (PR #565) for free, non-commercial distribution, so its check before a paid
+   release never comes up. The current painting was made on ElevenLabs but used the Dreamina painting as its
+   composition reference, and D-D covers it the same way.
 10. **"1948 war" or "Liberation War"** in English, and **"מלחמת השחרור" or "מלחמת העצמאות"** in Hebrew.
 11. **The Hebrew wording** listed at the end of section 3, and the whole Hebrew text, by a native speaker.
 12. **Platform.** The desktop builds (O1, O7) were made on the owner's Mac for M2 on 14 October 2026 (`v0.1.0-rc.0`).
@@ -389,10 +389,11 @@ coming-soon-kit.md section 2. The README's 1568 x 882 shots stay too small. No A
    developer holds rights to everything shown, including the in-game portraits still marked `owner-verify`.
 6. **D-D, the start-screen painting.** Decided (owner, 2026-10-14, PR #565): Dreamina output is approved for free,
    non-commercial distribution and CC0 marking. The game is free (O2), so the painting can ship on the Coming Soon page
-   and in the free build. **Paid-release caveat, still standing:** before any paid release, the owner confirms
-   commercial rights for the Dreamina plan used, or replaces the image.
+   and in the free build. Its caveat for a paid release no longer applies: there is no paid release (owner, 22 October
+   2026, [#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)).
 7. **Free or paid.** Decided (owner, 2026-10-14, O2): "free". The Steam setup is "This is a free product". README.md
-   and TRADEMARK.md say the game is free and non-commercial (#521).
+   and TRADEMARK.md say the game is free and non-commercial (#521). On 22 October 2026 the owner ruled out a paid
+   release altogether ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)).
 8. **Languages.** English only, or Hebrew listed as "Game Support Only" as the report suggests, given that Hebrew is
    not enabled in the build.
 9. **Desktop build.** Needed for a Steam release, not for the page. The plan is
