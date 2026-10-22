@@ -143,14 +143,14 @@ public class HexUnitTests
             "height and widest side in the prefab's units. facing: mean nearest distance of the proto's vertices to the near",
             "prefab's under quarter turns (0 least = same facing). Written by HexUnitTests.",
             "",
-            $"{"figure",-58} {"tris",6} {"seeThru",8} {"backFirst",9} {"height",7} {"width",7} {"bind seeThru",13} {"bind h",7}",
+            $"{"figure".PadRight(58)} {"tris",6} {"seeThru",8} {"backFirst",9} {"height",7} {"width",7} {"bind seeThru",13} {"bind h",7}",
         };
         void Row(string name, GameObject? go)
         {
-            if (go == null) { lines.Add($"{name,-58} (missing)"); return; }
+            if (go == null) { lines.Add($"{name.PadRight(58)} (missing)"); return; }
             var r = HexMeshCheck.OfFigure(go); var s = HexMeshCheck.FigureSize(go);
             var rb = HexMeshCheck.OfFigure(go, false); var sb = HexMeshCheck.FigureSize(go, false);
-            lines.Add($"{name,-58} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.BackFirstShare,9:P2} {s.y,7:F3} {Mathf.Max(s.x, s.z),7:F3} {rb.SeeThroughShare,13:P2} {sb.y,7:F3}");
+            lines.Add($"{name.PadRight(58)} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.BackFirstShare,9:P2} {s.y,7:F3} {Mathf.Max(s.x, s.z),7:F3} {rb.SeeThroughShare,13:P2} {sb.y,7:F3}");
         }
         foreach (var (id, figure, level) in HexModels.FigureAliases)
         {
