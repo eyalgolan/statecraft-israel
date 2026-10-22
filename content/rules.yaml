@@ -202,11 +202,12 @@ mvp:
   # the 2:1 row of combat_table, the first where the defenders can be made to retreat. Not a historical figure.
   enemy_attack_ratio_percent: 200        # DESIGN VALUE: owner-set balance, not a historical figure (D-G7, Q-ENEMY-2: the least attack : defence ratio an enemy unit attacks at, percent)
   # Prisoners (R-POW-002, R-POW-004, R-POW-005; Q-POW-2, Q-POW-4, Q-POW-5, owner, 15 October 2026, #375). The amounts are
-  # agent defaults posted on #751 (https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6318787961) for
-  # the owner to set or accept; none is a historical figure. A prisoner unit eats the ration any population unit eats (one
-  # Food is one unit's food for a month, R-FOOD-001). A return scores a tenth of an objective (D-B6) per unit. The player's
-  # soldiers held cost one month of income_per_job_per_year (0.06 / 12) a unit, in Money, so Q-CIV-3 keeps the Food
-  # shortfall as its one cohesion exemption.
+  # agent defaults posted on #751 (https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6318787961)
+  # and accepted by the owner as design values (owner, 21 October 2026, #751:
+  # https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6321366548); none is a historical figure. A prisoner
+  # unit eats the ration any population unit eats (one Food is one unit's food for a month, R-FOOD-001). A return scores a
+  # tenth of an objective (D-B6) per unit. The player's soldiers held cost one month of income_per_job_per_year (0.06 /
+  # 12) a unit, in Money, so Q-CIV-3 keeps the Food shortfall as its one cohesion exemption.
   food_per_prisoner_unit: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-C2, Q-POW-5: Food a population unit of prisoners eats a turn)
   prisoner_shortfall_cohesion: 0.01      # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-POW-5: Social cohesion lost per unit of the prisoners' Food not given)
   points_per_prisoner_unit_returned: 10  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6, Q-POW-2: points per population unit of prisoners returned)

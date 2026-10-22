@@ -54,12 +54,15 @@ namespace Statecraft.Game.Map.Collection
 
         public const string TelAviv = "tel-aviv-white-city-v1", Jerusalem = "jerusalem-stone-city-v1", Haifa = "haifa-port-city-v1",
             Moshava = "moshava-town-v1", Nahalal = "nahalal-moshav-v1", Kibbutz = "kibbutz-compound-v2", StoneVillage = "stone-village-v1",
-            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1";
+            Maabara = "maabara-camp-v1", Shikun = "shikun-housing-v1", Jerusalem3D = "jerusalem-stone-city-v1-3denhance";
 
-        /// <summary>By settlement id first (#507's mapping).</summary>
+        /// <summary>By settlement id first (#507's mapping). Jerusalem stands as #336's second take of the stone city
+        /// (<see cref="Jerusalem3D"/>, Tal Heuberger, #886) for the whole game: the owner, 21 October 2026, on #708
+        /// (issuecomment-6323524970), "it is Jerusalem's only far-zoom model for the whole game. The first model stays in the
+        /// repository, unused on the map. No date switch". #507's <see cref="Jerusalem"/> is therefore not placed.</summary>
         public static readonly IReadOnlyDictionary<string, string> ById = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem, ["haifa"] = Haifa,
+            ["tel_aviv"] = TelAviv, ["jerusalem"] = Jerusalem3D, ["haifa"] = Haifa,
             ["petah_tikva"] = Moshava, ["rishon_lezion"] = Moshava, ["zikhron_yaakov"] = Moshava,
             ["rosh_pinna"] = Moshava, ["rehovot"] = Moshava, ["hadera"] = Moshava,
         };
