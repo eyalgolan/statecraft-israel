@@ -13,7 +13,8 @@ namespace Statecraft.Game.UI
     /// built there, and the two map actions (transit camp, housing project) with the reason when one is not possible
     /// (MapActions.Check). Tile yields are deliberately not shown (owner decision, M3 rulings 2). A selected unit
     /// (<see cref="ShowUnit"/>) shows its card instead (<see cref="UnitCard"/>), with a button to the Defence screen (owner
-    /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify, Hold and Attack orders (GDD Phase 5 PR 15, #754).</summary>
+    /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify, Hold and Attack orders (GDD Phase 5 PR 15, #754),
+    /// and Send home after the unit's front signs its armistice (#1309).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
         /// <summary>The class of a fact row (Game.uxml): a sign, then the fact's line; hidden while the line is empty.</summary>
@@ -25,8 +26,8 @@ namespace Statecraft.Game.UI
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
-        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton;
-        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold, onAttack;
+        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton, sendHomeButton;
+        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold, onAttack, onSendHome;
         readonly System.Func<PlacedToken?> selectedUnit;
         bool unitMode;
         /// <summary>Lights the hexes the Move or Attack pick offers on the map (none: clears them); null: nothing is drawn.</summary>
@@ -110,6 +111,10 @@ namespace Statecraft.Game.UI
             onAttack = () => TogglePick(attack: true);
             attackButton.clicked += onAttack;
             attackButton.text = text["unit.order.attack"];
+            sendHomeButton = panel.Q<Button>("info-send-home");
+            onSendHome = () => GiveOrder(Demobilization.SendHome);
+            sendHomeButton.clicked += onSendHome;
+            sendHomeButton.text = text["unit.order.send_home"];
             bridge.Changed += Render;
             panel.parent?.RegisterCallback<GeometryChangedEvent>(OnHudGeometry);
             Render();
@@ -118,7 +123,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; EndPick(); }
+        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -239,8 +244,8 @@ namespace Statecraft.Game.UI
             return unit == null || bridge.State.GameOver != null ? null : UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token.Unit);
         }
 
-        /// <summary>Fortify's or Hold's button: queues the sim's standing order for the shown unit (one per unit: the other is
-        /// replaced). A refusal is raised by the bridge (Refused); the card redraws either way.</summary>
+        /// <summary>Fortify, Hold or Send home's button: queues the sim's order for the shown unit (one per unit: another
+        /// UnitOrder is replaced). A refusal is raised by the bridge (Refused); the card redraws either way.</summary>
         void GiveOrder(string order)
         {
             if (!(OrderUnit() is int id)) return;
@@ -412,19 +417,24 @@ namespace Statecraft.Game.UI
             var attacks = AttackTargets();
             attackButton.style.display = attacks is { } at && at.hexes.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             foreach (var why in attacks?.refused ?? new List<string>()) if (own && !refusals.Contains(why)) refusals.Add(why);
+            // Send home (#1309): Demobilization.Check is the complete eligibility rule. A refusal hides the order and adds
+            // no card copy; the player sees it only after the relevant armistice makes the order available.
+            var sendHomeWhy = orderUnit is int du ? Demobilization.Check(c, s, du) : null;
+            sendHomeButton.style.display = orderUnit != null && sendHomeWhy == null ? DisplayStyle.Flex : DisplayStyle.None;
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
                 var card = UnitCard.For(unit.Value, s, text, c.IsGdd);
                 panel.EnableInClassList("info-empty", false);
                 // The orders' state under the card's lines: the pick asks for a hex (an attack's with each lit hex's odds, Q-UI-1);
-                // a queued Move, Fortify, Hold or Attack waits for End turn (an attack's with its hex's odds).
+                // a queued Move, Fortify, Hold, Attack or Send home waits for End turn (an attack's with its hex's odds).
                 var order = pick is { attack: true } ap ? string.Join("\n", new[] { text["unit.attack_pick"] }.Concat(ap.hexes.Select(h => Odds(ap.unit, h.q, h.r))).Where(x => x != ""))
                     : pick != null ? text["unit.move_pick"]
                     : moves is { } m && bridge.QueuedLike(new Move(m.unit, 0, 0)) != null ? text["unit.move_queued"] : "";
                 var standing = orderUnit is int su && bridge.QueuedLike(new UnitOrder(su, Orders.Hold)) is UnitOrder given
                     ? given.Order == Orders.Fortify ? text["unit.fortify_queued"] : given.Order == Orders.Hold ? text["unit.hold_queued"]
-                    : given.Order == Combat.Attack && given.Q is int gq && given.R is int gr ? text["unit.attack_queued"] + "\n" + Odds(su, gq, gr) : "" : "";
+                    : given.Order == Combat.Attack && given.Q is int gq && given.R is int gr ? text["unit.attack_queued"] + "\n" + Odds(su, gq, gr)
+                    : given.Order == Demobilization.SendHome ? text["unit.send_home_queued"] : "" : "";
                 var lines = new[] { card.Body, order, standing }.Where(x => x != "");
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
                 ShowLocalities("");
