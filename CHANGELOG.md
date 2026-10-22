@@ -44,6 +44,15 @@ checks this (see `CONTRIBUTING.md`).
   force's sector stays English: no Hebrew spelling of "Ma'ad" was found.
 - A built training camp (Camp 80, Tzrifin) draws a camp kit on its site, a fenced yard with rows of barracks and an open
   parade ground, instead of a kibbutz; a built yishuv keeps its rural kit (#792). No golden moves.
+- Simulation: the "Send home" unit order (R-UNIT-005, refs #1309) - after the armistice on the unit's front, a unit
+  leaves the map and its people join the nearest city as civilians without a job. Refused while that armistice is
+  unsigned; a unit fighting no front waits for any armistice. No automatic demobilisation.
+- The war state's last slice: R-WAR-004 pins that military actions move no parameter in the GDD loop - attacks,
+  attacks refused in a truce and moves (the sim has no frontier, Q-MOVE-4, so crossing one is a move), with their
+  losses, leave International Support and Social cohesion exactly where a turn without them does (Q-CIV-3,
+  "No effect in Phase 5"); the prisoners' Food-shortfall cohesion cost is the one exemption. The behaviour was
+  already true; the slice adds the rule and its
+  regression/mutation test. Refs #750.
 - Accessibility: a whole GDD turn plays from the keyboard (refs #41). Enter on a city panel button (Train, Assign,
   Build) keeps the focus on it instead of dropping it, and Tab onto a Cabinet list's scroll bar no longer raises an
   error. EditMode tests pin the focus order of the event card and End Turn, and play the turn with keys only.
