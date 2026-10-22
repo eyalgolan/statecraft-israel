@@ -23,9 +23,9 @@ Items marked **[confirm]** are in the "To confirm" list in section 5 or the open
 
 ## 1. Short description (DRAFT)
 
-> You are Israel's prime minister on 15 May 1948. A turn-based strategy game about the state's first years, 1948 to 1951: fight the war, house and employ the immigrants, and build the country on a real map, with sourced history. Money, arms and food never cover all of it. What comes first?
+> You are Israel's prime minister on 15 May 1948. A turn-based strategy game about the state's first years, 1948 to January 1952: fight the war, house and employ the immigrants, and build the country on a real map, with sourced history. Money, arms and food never cover all of it. What comes first?
 
-That is 288 characters. The report gives no limit for this field, so this draft assumes 300 characters **[confirm]**.
+That is 296 characters (it was 288 with "1948 to 1951"). The report gives no limit for this field, so this draft assumes 300 characters **[confirm]**.
 The shape follows the report's recommendation: role, place and year, genre, a closing question.
 
 ## 2. About this game, English (FINAL DRAFT for the owner, updated 14 October 2026)
@@ -38,6 +38,12 @@ exist (M2; Windows and macOS passed the player check, Linux is pending). The tex
 the page to show launch content and the launch (O10) is the GDD's MVP, which is not playable yet. Open decision 2 in
 section 8 (which game the page leads with) still applies.
 
+**Refreshed on 21 October 2026** against `main` at `65ea0e6a` (Steam Direct fee paid; the app does not exist yet).
+Four facts changed: the game ends on 15 January 1952, after 44 monthly turns (GDD, "MVP runs from 15 May 1948 to
+15 January 1952"; `content/rules.yaml` `mvp.end`); the map shows sides from the first turn, not from 11 June (#686);
+both sides now start with their sourced forces of 15 May 1948 (#1186); and the game has three AI sound effects
+(docs/ai-disclosure.md). The first platform is Windows (owner, 21 October 2026; see the notes below). The rest of "In the build today" still describes the build of 14 October.
+
 Steam's rules, from the report: the description may contain no links (the website goes in the Basic Info website
 field), and the page may show only what will be in the game at launch, with planned content marked as not yet
 released.
@@ -45,7 +51,7 @@ released.
 > **You are the prime minister of Israel on 15 May 1948.**
 >
 > Statecraft: Israel is a free, open-source, turn-based strategy game about governing the new state in its first years,
-> from 15 May 1948 to the end of 1951: the 1948 war, the austerity period and the mass immigration of those years.
+> from 15 May 1948 to 15 January 1952: the 1948 war, the austerity period and the mass immigration of those years.
 > There is never enough money, arms or food for everything, and each choice is paid for somewhere else.
 >
 > **History with sources**
@@ -54,15 +60,16 @@ released.
 > - You face real decisions at their real dates, such as the First Truce, the Altalena affair and the Bernadotte
 >   assassination, through to the foreign-currency crisis of 1951. Most event cards carry an archival photograph.
 > - The map is real terrain, built from elevation and climate data, with the towns, villages, Bedouin camps, railways
->   and roads of 1948, and boats off the coast. From 11 June 1948 it colours the land by who held it, from the front
->   lines of an Israel State Archives map; each 1949 armistice line appears from the date of its agreement.
+>   and roads of 1948, and boats off the coast. From the first turn, 15 May 1948, it colours the land by who held it,
+>   from the front lines of an Israel State Archives map (for the first weeks adjusted with a CIA map of 18 May 1948);
+>   each 1949 armistice line appears from the date of its agreement.
 > - The "Why?" panel shows what changed in a turn and what caused each change.
 > - The framing is Israeli, and the game says so. It is not neutral, and it does not present contested narratives as
 >   parallel accounts.
 >
 > **In the build today**
 >
-> - Play from 15 May 1948 to the end of 1951, on Windows or macOS.
+> - Play from 15 May 1948 to 15 January 1952, on Windows.
 > - Appoint and replace real ministers, such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real
 >   coalition.
 > - Divide a small budget between security, immigrant absorption, the ma'abarot transit camps and austerity.
@@ -73,7 +80,9 @@ released.
 >
 > **In development for launch (not in the build yet)**
 >
-> - One month per turn, from 15 May 1948 to January 1952.
+> - One month per turn, from 15 May 1948 to 15 January 1952.
+> - Both sides start with their sourced forces of 15 May 1948: seven Israeli brigades, and the Egyptian, Syrian
+>   and Iraqi forces, the Arab Legion and the Arab Liberation Army.
 > - People are the scarce resource. A civilian can take a job, train as a soldier or train as a pioneer (halutz), and
 >   the same people cannot do all three.
 > - Cities with housing and jobs. Adding room and improving housing conditions are separate projects.
@@ -89,8 +98,9 @@ released.
 > **What it is not**
 >
 > An early prototype, built in the open. The settlements and trees on the map are still placeholder art. There is no
-> diplomacy, no music and nothing after 1951. The only audio is the archival 1948 recording of David Ben-Gurion
-> reading the Declaration on the start screen (Israel State Archives), played only when you press its button.
+> diplomacy, no music and nothing after January 1952. The sound is three short AI-generated effects (a card opening,
+> an order refused, a turn ending) and the archival 1948 recording of David Ben-Gurion reading the Declaration on the
+> start screen (Israel State Archives), played only when you press its button.
 >
 > The game deals with war, terror and the Holocaust as historical events, through text and archival photographs,
 > without graphic violence. It is an independent project, not affiliated with or endorsed by the State of Israel or
@@ -103,7 +113,11 @@ Notes on this text:
   "In development" restates only what the GDD fixes, plus G1 (the Burma Road joins objective 3). It leaves out
   everything the GDD marks Open, Proposal or TBD: costs, durations, point values, how ministers are chosen and what
   they do, the role of the coalition, combat rules, and the whole settlement-control system.
-- The platforms follow M2: Windows and macOS passed. Linux has not passed in CI yet, so it is not named (see To confirm 12).
+- **Platforms: Windows first (owner, 21 October 2026, in the coordinator session).** The MVP release is web only and the desktop players come after it (RELEASING.md:5, #905), so
+  no desktop build for Steam exists yet. Windows comes first because it needs no signing (O4), while macOS
+  needs signing and notarization with the owner's Apple credentials (#905, item 2) and Linux has not passed the player
+  check in CI (To confirm 12). If the owner picks more platforms, add them here, in section 3 and in
+  [coming-soon-kit.md, section 6](coming-soon-kit.md#6-tags-languages-and-platforms).
 - The sentence about concept-art captions was dropped: this kit's capsules and screenshots are all real engine
   output, so no image on the page is concept art unless the owner adds one (section 7).
 - The GDD says "Liberation War". README.md says "the 1948 war". The text keeps README.md's term **[confirm]**.
@@ -117,14 +131,16 @@ is not a line-by-line translation of section 2. Two facts for the owner: the gam
 asked for by hand (`-lang he` on desktop, `?lang=he` on the web; #193), and the event and content text is English only
 until #55; and the report recommends listing Hebrew on Steam as "Game Support Only" **[confirm]**. Updated on 14
 October 2026 to match section 2 (free and open source, the colours by side, the boats, the platforms, the launch dates,
-the Burma Road); the added sentences need the same native-speaker review.
+the Burma Road); the added sentences need the same native-speaker review. Updated again on 21 October 2026 with the
+same facts as section 2 (the end date, the sides from the first turn, the starting forces, the sound effects, the
+platform); the changed lines are listed for the native read in #564.
 
 <div dir="rtl">
 
 > **אתם ראש הממשלה ב־15 במאי 1948.**
 >
 > <span dir="ltr">Statecraft: Israel</span> הוא משחק אסטרטגיה מבוסס־תורות, חינמי ובקוד פתוח, על ניהול המדינה בשנותיה
-> הראשונות, מ־15 במאי 1948 ועד סוף 1951: מלחמת השחרור, תקופת הצנע והעלייה ההמונית של אותן שנים. אין מספיק כסף, נשק ומזון לכל מה שצריך, ועל כל החלטה משלמים במקום
+> הראשונות, מ־15 במאי 1948 ועד 15 בינואר 1952: מלחמת השחרור, תקופת הצנע והעלייה ההמונית של אותן שנים. אין מספיק כסף, נשק ומזון לכל מה שצריך, ועל כל החלטה משלמים במקום
 > אחר.
 >
 > **היסטוריה עם מקורות**
@@ -133,14 +149,15 @@ the Burma Road); the added sentences need the same native-speaker review.
 > - אתם מכריעים בהחלטות אמיתיות במועדן האמיתי, כמו ההפוגה הראשונה, פרשת אלטלנה ורצח ברנדוט, ועד משבר המטבע הזר של
 >   1951. ברוב כרטיסי האירועים יש צילום ארכיון.
 > - המפה היא מפת שטח אמיתית, שנבנתה מנתוני גובה ואקלים, ועליה העיירות, הכפרים, מאהלי הבדואים, מסילות הברזל והדרכים של
->   1948, וסירות מול החוף. מ־11 ביוני 1948 היא צובעת את השטח לפי מי שהחזיק בו, על פי קווי החזית במפה של ארכיון
->   המדינה, וכל קו של שביתת הנשק של 1949 מופיע מהתאריך של ההסכם שלו.
+>   1948, וסירות מול החוף. מהתור הראשון, 15 במאי 1948, היא צובעת את השטח לפי מי שהחזיק בו, על פי קווי החזית במפה
+>   של ארכיון המדינה (בשבועות הראשונים בתיקון לפי מפת CIA מ־18 במאי 1948), וכל קו של שביתת הנשק של 1949 מופיע
+>   מהתאריך של ההסכם שלו.
 > - לוח "למה?" מפרט מה השתנה בתור ומה גרם לכל שינוי.
 > - המסגור ישראלי, והמשחק אומר זאת במפורש. הוא אינו ניטרלי, ואינו מציג נרטיבים שנויים במחלוקת כגרסאות מקבילות.
 >
 > **מה יש בגרסה היום**
 >
-> - משחקים מ־15 במאי 1948 ועד סוף 1951, ב־Windows או ב־macOS.
+> - משחקים מ־15 במאי 1948 ועד 15 בינואר 1952, ב־Windows.
 > - ממנים ומחליפים שרים אמיתיים, כמו דוד בן־גוריון, אליעזר קפלן ומשה שרת, בתוך קואליציה אמיתית.
 > - מחלקים תקציב זעום בין ביטחון, קליטת עלייה, המעברות והצנע.
 > - מנהלים את הביטחון על סולם הסלמה של חמש דרגות, מאיום שגרתי ועד מלחמה כוללת, ומגייסים מילואים.
@@ -149,7 +166,9 @@ the Burma Road); the added sentences need the same native-speaker review.
 >
 > **בפיתוח לקראת ההשקה (עוד לא בגרסה)**
 >
-> - כל תור הוא חודש, מ־15 במאי 1948 ועד ינואר 1952.
+> - כל תור הוא חודש, מ־15 במאי 1948 ועד 15 בינואר 1952.
+> - שני הצדדים פותחים ב־15 במאי 1948 בכוחות שלהם לפי המקורות: שבע חטיבות ישראליות, וכוחות מצרים, סוריה ועיראק,
+>   הלגיון הערבי וצבא ההצלה.
 > - האנשים הם המשאב שחסר. אזרח יכול לעבוד, להתאמן כחייל או לצאת להכשרה ולהיות חלוץ, ואי אפשר לעשות את שלושתם
 >   באותם אנשים.
 > - ערים עם דיור ומקומות עבודה. הוספת מקום ושיפור תנאי הדיור הם שני פרויקטים נפרדים.
@@ -165,8 +184,9 @@ the Burma Road); the added sentences need the same native-speaker review.
 > **מה עוד אין**
 >
 > זה אב־טיפוס מוקדם שנבנה בקוד פתוח. היישובים והעצים במפה הם עדיין אמנות זמנית. אין דיפלומטיה, אין מוזיקה ואין דבר
-> אחרי 1951. הקול היחיד במשחק הוא ההקלטה הארכיונית מ־1948 של דוד בן־גוריון קורא את ההכרזה, במסך הפתיחה (ארכיון
-> המדינה), והיא מושמעת רק כשלוחצים על הכפתור שלה.
+> אחרי ינואר 1952. הצלילים במשחק הם שלושה אפקטים קצרים שנוצרו בבינה מלאכותית (כרטיס שנפתח, פקודה שנדחתה, תור
+> שהסתיים) וההקלטה הארכיונית מ־1948 של דוד בן־גוריון קורא את ההכרזה, במסך הפתיחה (ארכיון המדינה), והיא מושמעת רק
+> כשלוחצים על הכפתור שלה.
 >
 > המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים, בטקסט ובצילומי ארכיון ובלי אלימות גרפית. זה פרויקט עצמאי, ואין לו קשר למדינת ישראל או לאדם כלשהו
 > המופיע בו, והם אינם תומכים בו.
@@ -184,22 +204,24 @@ most **[confirm]**.
 
 The text for Steam's generative-AI fields, formatted field by field, is in
 [coming-soon-kit.md, section 4](coming-soon-kit.md#4-ai-content-disclosure-steam-fields). It was regenerated from
-`uv run scripts/oss/ai_disclosure.py` on `main` at `c0a38256` (identical to the committed `docs/ai-disclosure.md`). The
-public summary it ends with is repeated here:
+`uv run scripts/oss/ai_disclosure.py` on `main` at `65ea0e6a` on 21 October 2026 (identical to the committed
+`docs/ai-disclosure.md`; the first version, of 14 October at `c0a38256`, had 14 clips and no AI sound or models). The
+public summary, brought up to the same facts, is repeated here:
 
-> **In the game.** The painting behind the start screen is AI-generated. On 11 decision cards, an optional
+> **In the game.** The painting behind the start screen is AI-generated. On 14 decision cards, an optional
 > "Illustration" switch plays a short, silent, AI-generated video loop in place of the card's archival photograph, and
-> when you order the historical option of three events (the transit camps, the Hula works, Operation Horev), a 3.5-second
-> silent AI-generated clip plays once at End Turn. The 14 clips show no recognisable real person. While one plays, the
-> game labels it "AI-generated illustration" (in place of the photograph's credit on a card, and on the End Turn clip);
-> no caption is burned into the video itself, and the four made with Dreamina keep Dreamina's own small "AI" mark in a
-> corner. Event and content text was
-> drafted with AI, and every fact in it is checked by a person against its cited source. The game has no music. Its
-> only audio is the archival 1948 recording of David Ben-Gurion reading the Declaration (Israel State Archives), which
-> is not AI. The portraits and the event photographs are archival photographs, not AI images, and the terrain is built
+> when you order the historical option of seven events (among them the transit camps, the Hula works and Operation
+> Horev), a 3.5-second silent AI-generated clip plays once at End Turn. The 21 clips show no recognisable real person.
+> While one plays, the game labels it "AI-generated illustration" (in place of the photograph's credit on a card, and on
+> the End Turn clip); no caption is burned into the video itself, and the nine made with Dreamina keep Dreamina's own
+> small "AI" mark in a corner. The three short sound effects (a card opening, an order refused, a turn ending) are
+> AI-generated, and so are the 3D models of people, vehicles, ships, animals, towns and buildings, made with an AI 3D
+> tool from AI concept images. Event and content text was drafted with AI, and every fact in it is checked by a person
+> against its cited source. The game has no music. The archival 1948 recording of David Ben-Gurion reading the
+> Declaration (Israel State Archives) is not AI. The portraits and the event photographs are archival photographs, not AI images, and the terrain is built
 > from real elevation data. The game does not generate content with AI while you play.
 >
-> **On this store page.** The capsules, the library art and all screenshots are captured from the game's own engine;
+> **On this store page.** The capsules, the library art, the event cover and all screenshots are captured from the game's own engine;
 > the title on them is set in the EB Garamond typeface. A screenshot of the start screen, or of a decision card with
 > the Illustration switch on, would show the AI content described above; none of this kit's screenshots does.
 > [Only if a cinematic trailer is added:] The cinematic teaser was made with AI video, voice and music tools and is
@@ -209,12 +231,14 @@ What each statement rests on:
 
 | Statement | Record | Status |
 | --- | --- | --- |
-| Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `owner-verify`; D-D decided 2026-10-14 (PR #565) for the free, non-commercial game; a paid release needs the commercial-rights check or a new image |
-| 11 silent illustration clips on decision cards and 3 outcome clips at End Turn | `unity/Assets/StreamingAssets/video/*.mp4`, 14 rows in ASSETS.yaml: 10 made with Veo 3.1 or Veo 3.1 Fast through ElevenLabs, 4 with Seedance 2.0 through Dreamina (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`); PRs #454 and #466 | Rows `verified` under D-V, which covers free, commercial and paid builds |
-| Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No caption burned into the video: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The game's UI still labels every clip "AI-generated illustration" while it plays (`event.ai_label` in `unity/Assets/UI/strings.en.yaml`, shown by `EventCardPresenter` in place of the photo credit and by `OutcomePresenter` on the End Turn clip). The four Dreamina clips (`austerity_1949`, `iraqi_exodus`, `maabarot_policy-outcome`, `operation_horev-outcome`) keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips (`ten_days`, `operation_yoav`, the `operation_horev` outcome) were reviewed by the owner on 2026-10-14 (G4) |
+| Start-screen painting is AI-generated | `unity/Assets/UI/StartScreen/declaration-hall.jpg` in ASSETS.yaml: ElevenLabs Image API, GPT Image 2.5, with a Dreamina painting as its composition reference | Row is `verified` (docs/ai-disclosure.md, 21 October 2026); D-D decided 2026-10-14 (PR #565) for the free, non-commercial game; there is no paid release ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)), so its commercial-rights check does not come up |
+| 14 silent illustration clips on decision cards and 7 outcome clips at End Turn | `unity/Assets/StreamingAssets/video/*.mp4`, 21 rows in docs/ai-disclosure.md: 12 made with Veo 3.1 or Veo 3.1 Fast through ElevenLabs, 9 with Seedance 2.0 through Dreamina (`austerity_1949`, `first_new_yishuv` and `iraqi_exodus`, each loop and outcome, `operation_horev` loop and outcome, `maabarot_policy-outcome`); PRs #454, #466 and #1102 | Rows `verified` under D-V, which covers free, commercial and paid builds |
+| Clips are AI-generated, silent, opt-in, no recognisable real person | [docs/event-videos.md](../event-videos.md); provenance in ASSETS.yaml (`ai_generated: true` on every clip) and [docs/ai-disclosure.md](../ai-disclosure.md) | Silence is enforced by the encoder. No caption burned into the video: owner ruling of 2026-10-14 ([DECISIONS](../oss/DECISIONS.md) G4). The game's UI still labels every clip "AI-generated illustration" while it plays (`event.ai_label` in `unity/Assets/UI/strings.en.yaml`, shown by `EventCardPresenter` in place of the photo credit and by `OutcomePresenter` on the End Turn clip). The nine Dreamina clips keep Dreamina's own small "AI" watermark: owner ruling "Keep the badge" (G5). The sensitive clips were reviewed by the owner: `ten_days`, `operation_yoav` and the `operation_horev` outcome on 2026-10-14 (G4), the `altalena` loop and outcome and the `operation_horev` loop on 2026-10-20 (#1102; docs/event-videos.md) |
 | Text drafted with AI, each fact checked by a person | README.md "AI use"; CONTENT_POLICY section 2, rule 6 | Stated project rule |
 | Code written with AI agents | README.md "AI use" | Steam's form is about content players see, not tools, so this sentence is optional |
-| No music; the only audio is the archival recording on the start screen, not AI | PR #465, merged: `unity/Assets/StreamingAssets/audio/declaration-1948-isa-00113hj.wav`, behind a "Play the recording" button; README.md "Sound: no AI sound" | Shipped. Its ASSETS.yaml row is `owner-verify` under D-R, whose part (a) is still open |
+| Three AI sound effects | `unity/Assets/Resources/Audio/event-card.ogg`, `refused.ogg`, `turn-ended.ogg`: ElevenLabs Sound Effects, 3 rows in docs/ai-disclosure.md; played by `GameAudio` | Rows `verified`. README.md:179 still says "no AI sound", which is out of date |
+| No music; the archival recording on the start screen is not AI | PR #465, merged: `unity/Assets/StreamingAssets/audio/declaration-1948-isa-00113hj.wav`, behind a "Play the recording" button | Shipped. Its ASSETS.yaml row is now `verified` (D-R, owner, 17 October 2026) |
+| 3D models made with an AI 3D tool | `unity/Assets/Art/Collection/*` and `unity/Assets/Art/Settlements/Prototype/Models/b*`: Tripo Studio, from AI concept images, rows under "Other" in docs/ai-disclosure.md | Rows `verified`. Some Collection models are "Imported, not yet placed"; disclosed all the same, since Valve asks about everything in the build |
 | Portraits and event photographs are not AI | LICENSING.md, NOTICE | Portrait rights are a separate open decision (D-P) |
 | Nothing generated live | README.md, docs/ai-disclosure.md | "Keep the statement only while it remains true" (RELEASING.md) |
 | Capsule art is not AI | This kit's capsules are engine renders plus the EB Garamond title ([coming-soon-kit.md](coming-soon-kit.md)); `promo/final/01` to `08` (AI) are not used | Concept art goes on the page only if the owner adds it, captioned, with the disclosure's store-page paragraph extended |
@@ -238,9 +262,9 @@ Facts this draft could not settle. Each is flagged above instead of being assert
    build's content.
 3. **Hebrew text in the game.** The Hebrew interface strings exist but are not enabled. The repository does not
    record whether they were translated with AI. If Hebrew ships, the disclosure and the language list both change.
-4. **Sound.** Settled for the text: the Israel State Archives recording of the Declaration shipped with PR #465. Its
-   ASSETS.yaml row is `owner-verify` under D-R, whose part (a) is still open. If music or other sound is added before
-   release (issue #39), the "no music" sentence goes and the source of that audio is disclosed.
+4. **Sound.** Settled for the text: the Israel State Archives recording of the Declaration shipped with PR #465, and
+   three AI sound effects (ElevenLabs) are in the game and disclosed (21 October 2026). If music is added before
+   release (issue #39), the "no music" sentence goes and its source is disclosed.
 5. **Demo2's voices and score.** This draft did not read the production files under `promo/`. "AI video, voice and
    music tools" comes from the report, which says demo2 uses ElevenLabs premade voices and ElevenLabs Music. Confirm
    against the final cut.
@@ -252,16 +276,18 @@ Facts this draft could not settle. Each is flagged above instead of being assert
 8. **Capsule art and the name.** The kit makes a wordmark: "Statecraft: Israel" in EB Garamond SemiBold, cream on
    transparency (`library_logo_1280w.png`). Whether it becomes the project's logo for TRADEMARK.md ("when there is
    one") is the owner's call.
-9. **Start-screen painting in a paid release.** D-D was decided on 14 October 2026 (PR #565) for free, non-commercial
-   distribution. The game is free (O2), so this matters only if that changes: before any paid release, the owner
-   confirms commercial rights for the Dreamina plan used, or replaces the image. The current painting was made on
-   ElevenLabs but used the Dreamina painting as its composition reference, and falls under the same caveat.
+9. **Start-screen painting in a paid release.** Settled (owner, 22 October 2026, [#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)): "there is not going to be a paid release, everything is going to stay free and expanded over time."
+   D-D was decided on 14 October 2026 (PR #565) for free, non-commercial distribution, so its check before a paid
+   release never comes up. The current painting was made on ElevenLabs but used the Dreamina painting as its
+   composition reference, and D-D covers it the same way.
 10. **"1948 war" or "Liberation War"** in English, and **"מלחמת השחרור" or "מלחמת העצמאות"** in Hebrew.
 11. **The Hebrew wording** listed at the end of section 3, and the whole Hebrew text, by a native speaker.
 12. **Platform.** The desktop builds (O1, O7) were made on the owner's Mac for M2 on 14 October 2026 (`v0.1.0-rc.0`).
     M2's CI player golden check ([run 38637103937](https://github.com/eyalgolan/statecraft-israel/actions/runs/38637103937))
     passed Windows and both macOS slices; the Linux player crashed headless on CI (fix PR #581), so Linux stays pending
     until a CI run passes. The OS list is in [coming-soon-kit.md, section 6](coming-soon-kit.md#6-tags-languages-and-platforms).
+    Since then the owner moved the desktop players after the MVP (RELEASING.md:5, #905), so the owner chose
+    Windows first on 21 October 2026 (section 2 notes).
 13. **The store text is itself AI-drafted.** Sections 1 to 3 were written by an AI agent for the owner to edit. Whether
     that needs a line in the disclosure is the owner's call once the text is final.
 
@@ -306,7 +332,8 @@ report. Files under `promo/demo*` are local, not in the repository, and were lis
 All made from real engine renders with the title in EB Garamond, not from `promo/final/01` (AI): the owner chose real
 captures for itch.io, and this keeps the page's art free of AI. Header 920 x 430, small 462 x 174, main 1232 x 706,
 vertical 748 x 896, library capsule 600 x 900, library header 920 x 430, library hero 3840 x 1240 (no text) and the
-library logo (1280 px wide, transparent), plus the two Community icons (shortcut 256 x 256, app icon 184 x 184).
+library logo (1280 px wide, transparent), plus the two Community icons (shortcut 256 x 256, app icon 184 x 184) and the event cover (800 x 450, added 21 October
+2026).
 The page background (optional, 1438 x 810) is not made: Steam builds one from
 the last screenshot if none is uploaded.
 
@@ -353,17 +380,22 @@ coming-soon-kit.md section 2. The README's 1568 x 882 shots stay too small. No A
    launch as a fully working MVP from 15 May 1948 to January 1952 that looks like demo2. That points to the GDD game, but
    which game the page shows before that build exists is still the owner's call.
 3. **Whether the page may open before the release gates.** RELEASING.md's checklist says to finish the gates first.
-   Opening earlier is an amendment the owner records.
+   Opening earlier is an amendment the owner made on 21 October 2026: a line in
+   RELEASING.md's store-page checklist that lets the Coming Soon page open before the MVP, since the page ships no
+   build.
 4. **Whether an AI cinematic may be the second trailer.** RELEASING.md says trailers come from the real build only.
    Demo2 needs a recorded amendment, and its final cut.
-5. **D-P, the portraits.** Open. It blocks `promo/final/04` and `08`, and it bears on Steam's requirement that the
-   developer holds rights to everything shown, including the in-game portraits still marked `owner-verify`.
+5. **D-P, the portraits.** Decided (owner, 17 Oct 2026, [DECISIONS](../oss/DECISIONS.md) D-P): "Accept for free
+   release". The 6 remaining GPO portraits are accepted for free, non-commercial distribution, and there is no paid
+   release (#30). No row in `ASSETS.portraits.yaml` is still `owner-verify`. `promo/final/04` and `08` still derive
+   from the GPO photographs; the ruling names the in-game portraits, not those two images.
 6. **D-D, the start-screen painting.** Decided (owner, 2026-10-14, PR #565): Dreamina output is approved for free,
    non-commercial distribution and CC0 marking. The game is free (O2), so the painting can ship on the Coming Soon page
-   and in the free build. **Paid-release caveat, still standing:** before any paid release, the owner confirms
-   commercial rights for the Dreamina plan used, or replaces the image.
+   and in the free build. Its caveat for a paid release no longer applies: there is no paid release (owner, 22 October
+   2026, [#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)).
 7. **Free or paid.** Decided (owner, 2026-10-14, O2): "free". The Steam setup is "This is a free product". README.md
-   and TRADEMARK.md say the game is free and non-commercial (#521).
+   and TRADEMARK.md say the game is free and non-commercial (#521). On 22 October 2026 the owner ruled out a paid
+   release altogether ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)).
 8. **Languages.** English only, or Hebrew listed as "Game Support Only" as the report suggests, given that Hebrew is
    not enabled in the build.
 9. **Desktop build.** Needed for a Steam release, not for the page. The plan is

@@ -21,6 +21,17 @@ public class DefenceScreenTests
         return (ui, bridge, new DefencePresenter(ui.Root, bridge, Text));
     }
 
+    /// <summary>The same screen on the legacy loop (the real content without the loop switch): the call-up and the
+    /// security order live there now (R-WAR-002), so their tests play a legacy session.</summary>
+    static (UiTestKit ui, SimBridge bridge, DefencePresenter defence) OpenLegacy()
+    {
+        var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        var bridge = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
+        new ToastPresenter(ui.Root, bridge, Text);
+        return (ui, bridge, new DefencePresenter(ui.Root, bridge, Text));
+    }
+
     /// <summary>In Hebrew the command line and the leaders' cards show the content's Hebrew names and titles (#558).</summary>
     [Test]
     public void InHebrewTheLeadersAreNamedInHebrew()
@@ -50,7 +61,7 @@ public class DefenceScreenTests
             Assert.IsFalse(ui.Q<VisualElement>("rung-2").ClassListContains("rung-current"));
             for (int rung = 1; rung <= 5; rung++)   // the GDD game plays monthly turns on every rung (R-TURN-001)
                 Assert.AreEqual("turns of a month", ui.Q<Label>($"rung-{rung}-turn").text, $"rung {rung}");
-            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", ui.Q<Label>("ceasefire").text);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);   // no clock in the GDD loop (R-WAR-003)
             Assert.AreEqual("Minister of Defense David Ben-Gurion · Chief of Staff Yaakov Dori", ui.Q<Label>("defence-command").text);
             Assert.AreEqual("80% of reserves called up (level 5 needs at least 80%)", ui.Q<Label>("mob-level").text);
             Assert.AreEqual("Costs IL 48.0m a year in pay and lost work", ui.Q<Label>("mob-cost").text);
@@ -61,7 +72,7 @@ public class DefenceScreenTests
     [Test]
     public void OrdersAreQueuedAndTheTurnCarriesThemOut()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -80,7 +91,7 @@ public class DefenceScreenTests
     [Test]
     public void PressingBackToTodaysLevelWithdrawsTheOrder()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -93,7 +104,7 @@ public class DefenceScreenTests
     [Test]
     public void RaisingTheLevelShowsTheCallUpTheSimWillForce()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -115,7 +126,7 @@ public class DefenceScreenTests
     [Test]
     public void AnOrderTheAttentionCannotPayForIsRefusedWithTheReason()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             Assert.IsNull(bridge.Queue(new SetPolicy(C.Policies[0].Id, 0.5)));
@@ -123,6 +134,30 @@ public class DefenceScreenTests
             ui.Press("de-escalate");
             Assert.AreEqual("Not done: Not enough attention (need 2.0, have 0.0)", ui.Q<Label>("toast").text);
             Assert.AreEqual("", ui.Q<Label>("order-pending").text);
+        }
+    }
+
+    /// <summary>R-WAR-002 and R-WAR-003 (#750): the GDD loop refuses the call-up and the security order and has no
+    /// ceasefire clock, so the Defence screen hides the four lever controls and the ceasefire line there. The legacy
+    /// loop keeps all of them, with the clock's 52 weeks.</summary>
+    [Test]
+    public void TheGddLoopHidesTheRetiredLevers()
+    {
+        var levers = new[] { "escalate", "de-escalate", "mob-up", "mob-down" };
+        var (ui, _, _) = Open();
+        using (ui)
+        {
+            foreach (var id in levers)
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(id).style.display.value, id);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value);
+        }
+        var (legacy, _, _) = OpenLegacy();
+        using (legacy)
+        {
+            foreach (var id in levers)
+                Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Button>(id).style.display.value, id);
+            Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Label>("ceasefire").style.display.value);
+            Assert.AreEqual("If full war goes on, the UN imposes a ceasefire in 52 weeks", legacy.Q<Label>("ceasefire").text);
         }
     }
 
@@ -144,7 +179,7 @@ public class DefenceScreenTests
     [Test]
     public void CallUpCanBeRaisedButNotPast100Percent()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             for (int i = 0; i < 6; i++) ui.Press("mob-up");
@@ -158,7 +193,7 @@ public class DefenceScreenTests
     [Test]
     public void TheCeasefireClockCountsDownEachTurn()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             bridge.EndTurn();   // a monthly turn counts 4 weeks (SecuritySystem.Weeks) since the GDD cutover
@@ -170,7 +205,7 @@ public class DefenceScreenTests
     [Test]
     public void AQueuedDropFromFullWarSaysTheClockStops()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -184,7 +219,7 @@ public class DefenceScreenTests
     [Test]
     public void AQueuedRaiseToFullWarShowsTheClockItWillStart()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");

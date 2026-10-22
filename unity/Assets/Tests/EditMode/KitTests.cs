@@ -180,13 +180,13 @@ public class KitTests
         return doc;
     }
 
-    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits.</summary>
+    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits: the routes drawn at the start (#786).</summary>
     static IReadOnlyList<(List<Vector2> line, float halfWidth)> Corridors(MapScene map)
     {
         var inputs = Statecraft.Game.Boot.GameInputs.MapFromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         var b = HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta;
         var routes = Statecraft.Game.Map.Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (b.lon0, b.lon1, b.lat0, b.lat1), _ => { });
-        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, routes);
+        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, Statecraft.Game.Map.Routes.RouteLayer.KitRoutes(routes));
     }
 
     /// <summary>Owner rulings 2026-10-11 and 2026-10-12: the 271 places of 1,000+ people beside the 25 game settlements, as Arab village and
@@ -540,7 +540,9 @@ public class KitTests
         Assert.AreEqual("Sha'ab", tsv.Places.Single(p => p.Settlement.Id == "shaab").Today, "owner rule: Sha'ab is a living local council");
         Assert.IsTrue(tsv.Places.Single(p => p.Settlement.Id == "nesher").Mixed);
         Assert.AreEqual("ביסאן", tsv.Places.Single(p => p.Settlement.Id == "beit_shean").NameHe, "#558: the 1948 form, as the English shows it");
-        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#558: no sourced Hebrew name, so none");
+        Assert.AreEqual("נענה", tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#1219: the he.wiki-sourced name");
+        Assert.AreEqual("סאלחיה", tsv.Places.Single(p => p.Settlement.Id == "al_salihiyya").NameHe, "#1313: the sourced name");
+        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "al_ghazzawiyya").NameHe, "#558: no sourced Hebrew name, so none");
     }
 
     /// <summary>A malformed runtime row is an error naming the file and the line.</summary>

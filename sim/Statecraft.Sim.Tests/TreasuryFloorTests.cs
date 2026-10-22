@@ -21,7 +21,10 @@ public class TreasuryFloorTests
             Assert.True(s.Treasury >= 0, $"turn {s.Turn} ({s.Date:yyyy-MM-dd}): Treasury {s.Treasury}");
             if (firstDebt == null && s.Debt > 0) firstDebt = s.Turn;
         }
-        Assert.Equal(4, firstDebt);   // 15 September 1948: the HUD's "-IL 1.5m" is 0 cash and IL 1.5m debt
+        // 15 October 1948: 0 cash and IL 5.4m debt. It was turn 4 (15 September, IL 1.5m) while HistoricalAI's call-up order
+        // sent the reserves home a turn after the first truce; the GDD loop now lowers the call-up with the rung (R-WAR-002),
+        // which made it turn 5. The Israeli formations' Money upkeep (R-UNIT-010, #1130) brings it back to turn 4.
+        Assert.Equal(4, firstDebt);
     }
 
     // R-MONEY-003: an event's cost is a payment like any other. With IL 0.4m in the Treasury, the IL 1m claim on Germany
@@ -52,7 +55,7 @@ public class TreasuryFloorTests
         var why = new List<Cause>();
         Assert.Null(EventSystem.Choose(Real, s, "reparations_claim", "claim", why));
         var money = why.Where(x => x.Target == "treasury" || x.Target == "debt").Select(x => x.Message).ToList();
-        Assert.Equal(new[] { "Money -IL 1.0m (A Claim on Germany)", "Borrowed IL 0.6m for A Claim on Germany" }, money);
+        Assert.Equal(new[] { "Money IL -1.0m (A Claim on Germany)", "Borrowed IL 0.6m for A Claim on Germany" }, money);
     }
 
     // R-MONEY-003: an event that brings money in adds it to the Treasury and borrows nothing, debt or no debt.

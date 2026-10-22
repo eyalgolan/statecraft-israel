@@ -88,6 +88,30 @@ public class DecisionCardTests
 
     static readonly (int w, int h)[] Tiers = { (1920, 1080), (960, 1080) };
 
+    [UnityTest]
+    public IEnumerator ThePhotoAspectFollowsPaddingWithoutAnOuterResize()
+    {
+        using var r = new Rig(1024, 1024, "law_of_return", photos: true);
+        yield return Frames(6);
+        var card = r.CardElement;
+        var photo = r.Root.Q("event-photo");
+        Assert.IsTrue(r.Card.PhotoAlt != null, "precondition: the photograph shows");
+        Assert.AreEqual(16f, card.resolvedStyle.paddingLeft, 0.5f, "precondition: the two-row padding");
+        Assert.AreEqual(photo.layout.width / EventCardPresenter.MediaAspect, photo.layout.height, 2.5f,
+            "precondition: the settled header has its aspect ratio");
+        var outer = card.layout;
+        var before = photo.layout.width;
+
+        // #649: the one-row padding takes 48 px from the content, without changing the card's outer width.
+        card.style.paddingLeft = 40f;
+        card.style.paddingRight = 40f;
+        yield return Frames(6);
+        Assert.AreEqual(outer.width, card.layout.width, 0.5f, "the outer width did not change");
+        Assert.AreEqual(before - 48f, photo.layout.width, 1.5f, "the header follows the new content width (panel pixel rounding)");
+        Assert.AreEqual(photo.layout.width / EventCardPresenter.MediaAspect, photo.layout.height, 2.5f,
+            $"header {photo.layout.width}x{photo.layout.height}, card {card.layout}, original {outer}");
+    }
+
     /// <summary>#380: the taller two- and three-row bars raise the centred card (the event layer keeps room at its bottom), and
     /// the backdrop must still reach the window's bottom and right edges, so no strip of map stays live under an open card.</summary>
     [UnityTest]
@@ -345,7 +369,7 @@ public class DecisionCardTests
 
     /// <summary>A mouse press as the player makes it: pointer down (which also gives the button the focus), then the
     /// button's Clickable fires `clicked` on pointer up. UiTestKit.Press is the keyboard's Submit instead.</summary>
-    static void PressWithPointer(Button b)
+    internal static void PressWithPointer(Button b)
     {
         b.Focus();
         using (var down = PointerDownEvent.GetPooled()) { down.target = b; b.SendEvent(down); }

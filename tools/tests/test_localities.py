@@ -96,27 +96,35 @@ def flagged_ids(places):
 def test_hebrew_names_are_the_1948_forms_with_their_sources():
     """#558, owner 2026-10-14: name_he is the 1948 form matching the English name. Where it is not the place's Wikidata
     label (a row source), it carries name_he_sources: an https he.wiki page, read on the day given. The places with no
-    Hebrew source have no name_he, and the runtime file carries name_he for the map."""
+    Hebrew source have no name_he, and the runtime file carries name_he for the map. The 2026-10-21 batch (#1219 item 3)
+    sourced eight of the thirteen from he.wiki articles that name the village; the 2026-10-22 batch sourced three more
+    from the owner's widened rule (he.wiki, moreshet-map.org.il or the Israel Antiquities Authority; not Zochrot);
+    the last two, Ni'ilya and Ghazawiya, came from the he.wiki subdistrict lists later the same day."""
     by = {p["id"]: p for p in PLACES}
     assert {i: by[i]["name_he"] for i in ("beit_shean", "kiryat_ata", "pardes_hanna_karkur", "tarshiha", "al_majdal", "caesarea")} == {
         "beit_shean": "ביסאן", "kiryat_ata": "כפר אתא", "pardes_hanna_karkur": "פרדס חנה", "tarshiha": "תרשיחא",
         "al_majdal": "אל-מג'דל", "caesarea": "קיסריה"}
     with_sources = {p["id"] for p in PLACES if "name_he_sources" in p}
-    assert with_sources == {"beit_shean", "kiryat_ata", "pardes_hanna_karkur", "tarshiha", "al_majdal"}
+    assert with_sources == {"beit_shean", "kiryat_ata", "pardes_hanna_karkur", "tarshiha", "al_majdal",
+                            "naana", "simsim_gaza", "al_jiyya", "al_mansi", "az_zakariyya", "al_qubayba_hebron",
+                            "al_sawafir_al_gharbiyya", "al_naima",
+                            "al_salihiyya", "karatiyya", "al_zuq_al_tahtani", "niilya", "al_ghazzawiyya"}
     # The review flag (#564, owner 2026-10-15): agent-checked until a native speaker reads the name, then removed.
     assert all(by[i]["name_he"] and by[i]["name_he_review"] == "agent-checked" for i in flagged_ids(PLACES))
+    # Read dates: the 2026-10-14 batch (#558) and the #1219 item 3 batches of 2026-10-21 (he.wiki) and 2026-10-22
+    # (the owner's widened rule: moreshet-map.org.il or the Israel Antiquities Authority besides he.wiki; not Zochrot).
+    allowed = ("https://he.wikipedia.org/", "https://moreshet-map.org.il/", "https://hadashot.iaa.org.il/")
     for i in with_sources:
         assert by[i]["name_he"], i
         for s in by[i]["name_he_sources"]:
-            assert set(s) == {"url", "checked"} and s["url"].startswith("https://he.wikipedia.org/") and str(s["checked"]) == "2026-10-14"
-    assert {p["id"] for p in PLACES if not p.get("name_he")} == {
-        "naana", "al_salihiyya", "karatiyya", "simsim_gaza", "niilya", "al_naima", "al_jiyya", "al_mansi", "az_zakariyya",
-        "al_qubayba_hebron", "al_zuq_al_tahtani", "al_sawafir_al_gharbiyya", "al_ghazzawiyya"}
+            assert set(s) == {"url", "checked"} and s["url"].startswith(allowed) \
+                and str(s["checked"]) in ("2026-10-14", "2026-10-21", "2026-10-22")
+    assert {p["id"] for p in PLACES if not p.get("name_he")} == set()
     import localities_bake
     rows = {r.split("\t")[1]: r.split("\t") for r in localities_bake.bake((MAP / "localities_1948.yaml").read_text(encoding="utf-8")).splitlines()
             if r.startswith("place\t")}
     assert rows["beit_shean"][localities_bake.PLACE_COLUMNS.index("name_he")] == "ביסאן"
-    assert rows["naana"][localities_bake.PLACE_COLUMNS.index("name_he")] == ""
+    assert rows["naana"][localities_bake.PLACE_COLUMNS.index("name_he")] == "נענה"
 
 
 def test_start_of_game_only_no_later_fate():

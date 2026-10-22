@@ -75,7 +75,9 @@ namespace Statecraft.Game.UI
         static bool Settled(VisualElement target)
         {
             var view = target.GetFirstAncestorOfType<ScrollView>();
-            if (view == null) return true;
+            // The view's own scroll bar takes Tab too (#41, keyboard-only turn): it is always in sight, and ScrollTo throws
+            // for anything outside the content.
+            if (view == null || !view.contentContainer.Contains(target)) return true;
             Rect r = target.worldBound, v = view.contentViewport.worldBound;
             if (!LaidOut(r) || !LaidOut(v)) return false;
             if (r.yMin >= v.yMin - 0.5f && r.yMax <= v.yMax + 0.5f && r.xMin >= v.xMin - 0.5f && r.xMax <= v.xMax + 0.5f) return true;

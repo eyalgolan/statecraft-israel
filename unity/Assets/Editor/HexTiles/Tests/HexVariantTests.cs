@@ -78,19 +78,25 @@ public class HexVariantTests
         Assert.That((info.Kind, info.Region), Is.EqualTo(("farm", "")));
     }
 
-    /// <summary>Recorded on 4841e34c, before the bases were opened for subclassing (FlatSurface, three hexes and seeds).</summary>
+    /// <summary>Recorded on 4841e34c, before the bases were opened for subclassing (FlatSurface, three hexes and seeds), then
+    /// re-recorded on a clean checkout after main's #1160 sized a missing model's footprint by its stand-in: the same tiles
+    /// on the same code, but without the git-ignored local models (Resources/HexSandbox, Resources/SettlementPrototypes)
+    /// some trees no longer fit and the rest shift. With those models present #1160 changes nothing, so the test is ignored
+    /// there rather than pinned twice.</summary>
     static readonly Dictionary<string, string> Before = new Dictionary<string, string>
     {
-        ["wheat_fields"] = "7/23/c963a9126fcda602 13/21/a3a8abb68d2e9e51 10/23/707b2b297d9d6cad",
-        ["grazing_land"] = "22/0/b303d42811dfdb4e 22/0/238e7036bd426a72 22/0/9f69bea9b6e841ec",
-        ["citrus_orchard"] = "27/6/0a7122b3de0e8c78 27/6/bc917ef820cb84c7 27/6/485aa7a3b49d0fe9",
-        ["olive_terraces"] = "31/171/c33d9a14e7606093 32/171/8e2163498c39fc58 35/171/2b99f44e723e1e83",
-        ["pine_forest"] = "58/18/4e445ba81e4eb140 53/18/d0fccc37a3e8f5fe 51/18/17fbc0a3f973c6bd",
+        ["wheat_fields"] = "6/23/8dc0de48cc6e25f0 11/21/0ec106c62c81994e 8/23/0b8b66bfd537c34d",
+        ["grazing_land"] = "22/0/1389752806d94528 22/0/312ddbb3232f3c2b 22/0/fece2adb178546f6",
+        ["citrus_orchard"] = "27/6/3fc025f769e42c67 27/6/1ec6cc42eb7d765f 27/6/c992d3cc18de5d6c",
+        ["olive_terraces"] = "29/171/d46f8a175d59dccf 31/171/0f0b67936ea68a16 35/171/48024bc52f4d25e9",
+        ["pine_forest"] = "53/18/3856750dc7f51f71 49/18/6b8d058df492107b 47/18/8811cda5be0a88f3",
     };
 
     [TestCase("wheat_fields"), TestCase("grazing_land"), TestCase("citrus_orchard"), TestCase("olive_terraces"), TestCase("pine_forest")]
     public void BaseTileBuildsAsBefore(string id)
     {
+        if (Resources.LoadAll<GameObject>("HexSandbox").Length > 0 || Resources.LoadAll<GameObject>("SettlementPrototypes").Length > 0)
+            Assert.Ignore("recorded without the local models; with them the stand-in footprints (#1160) do not apply");
         string now = Fingerprints(id);
         Assert.That(now, Is.EqualTo(Before[id]), $"{id} now builds {now}");
     }

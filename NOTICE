@@ -151,6 +151,9 @@ CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
 - first_new_yishuv.jpg: Boris Carmi / Meitar Collection / National Library of Israel / The Pritzker Family National
   Photography Collection, CC BY 4.0, graded and cropped.
   https://commons.wikimedia.org/wiki/File:Mefalsim_(997009452698205171.jpg
+- absorb_immigrants.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family
+  National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Haifa_(997008136781905171).jpg
 Public domain or CC0 (credited as a courtesy):
 - second_truce.jpg: Ben Merk / Anefo, Nationaal Archief (Anefo 934-6899) · CC0 · graded and cropped.
   https://commons.wikimedia.org/wiki/File:Graaf_Bernadotte_op_Schiphol,_Bestanddeelnr_934-6899.jpg
@@ -160,6 +163,16 @@ Public domain or CC0 (credited as a courtesy):
   and cropped.
   https://commons.wikimedia.org/wiki/File:Photograph_of_President_Truman_in_the_Oval_Office,_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg
 
+Opening cutscene photographs (unity/Assets/UI/Opening/; per-file records in ASSETS.yaml), draft candidates for #530.
+Each is adapted: graded and cropped, as the event-card photographs. CC BY 4.0
+(https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
+- opening_europe.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg
+- opening_arab_countries.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg
+- opening_yemen.jpg: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives, CC BY 4.0, graded and cropped.
+  https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg
+
 Fonts: EB Garamond, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/OFL.txt). Frank Ruhl Libre, Copyright 2015 The
 Frank Ruhl Libre Project Authors, SIL Open Font License 1.1 (unity/Assets/UI/Fonts/FrankRuhlLibre/OFL.txt).
 
@@ -168,7 +181,9 @@ published in Iton Rishmi (Official Gazette) No. 1, and the official English tran
 Affairs (https://www.gov.il/en/pages/declaration-of-establishment-state-of-israel). An official State publication, in the
 public domain; sources in docs/sources/declaration-1948/.
 
-Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MIT (LICENSES/YamlDotNet-MIT.txt), and
+Builds also contain YamlDotNet, Copyright (c) Antoine Aubry and contributors, MIT (LICENSES/YamlDotNet-MIT.txt), two
+Octicons drawn in code (star-fill and mark-github, the start screen's Star on GitHub button), Copyright (c) 2026 GitHub
+Inc., MIT (LICENSES/Octicons-MIT.txt), and
 the Unity runtime, used under the Unity Terms of Service. The Unity runtime includes the ICU data file that
 UI Toolkit's advanced text generator uses (Hebrew on the start screen): Copyright (c) 2016 and later Unicode, Inc. and
 others, Unicode License v3 (https://www.unicode.org/license.txt).
@@ -178,3 +193,7 @@ of the recording of the ceremony of 14 May 1948, recorded by Ralph Hellinger of 
 ISA-Collections-Recordings-00113hj, used under the Israel State Archives terms of use
 (https://catalog.archives.gov.il/en/terms-of-use/). Credit shown with it: "Recording: Ralph Hellinger, Israel State
 Archives".
+
+Burma Road objective card: Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped
+Source: https://commons.wikimedia.org/wiki/File:Meitar_Collection_(997008137268105171.jpg
+Licence: https://creativecommons.org/licenses/by/4.0/

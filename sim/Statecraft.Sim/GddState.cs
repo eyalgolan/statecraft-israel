@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Statecraft.Sim
 {
     /// <summary>One settlement's control state. Residents are a state, inhabited (the default) or depopulated, never a count
     /// or a combatant field (Q-CAP-2 (b); R-CTRL-003). Immutable so <see cref="GameState.Clone"/> can copy the containing map
     /// shallowly.</summary>
-    public sealed class SettlementControl
+    public sealed partial class SettlementControl
     {
         public string Owner { get; }
         public string State { get; }
@@ -49,8 +50,8 @@ namespace Statecraft.Sim
         /// Craftsmen take the jobs first (R-CRAFT-002).</summary>
         public int Employed { get; }
         public int Refugees { get; }
-        /// <summary>The recruits who finished basic training here (GDD "Progression"; R-TRAIN-003). A count until Phase 5 makes
-        /// soldiers units.</summary>
+        /// <summary>Legacy city recruit count, retained for canonical compatibility. New training completes into
+        /// State.Units (R-TRAIN-003), never this field; saves replay their command log rather than city snapshots.</summary>
         public int Recruits { get; }
         /// <summary>The craftsmen trained here (D-D4; R-CRAFT-001): a count, not movable units (D-A2), and not part of
         /// <see cref="Civilians"/>.</summary>
@@ -121,10 +122,13 @@ namespace Statecraft.Sim
         /// <summary>The unit's standing order and what it names, or "" for none (R-UNIT-001). Later Phase 5 PRs set them.</summary>
         public string Order { get; }
         public string OrderTarget { get; }
+        /// <summary>The city whose housing includes this formation (R-HOUSE-003, Q-HOUSE-5), independent of its current hex.
+        /// Empty for units without a known home, including pioneers.</summary>
+        public string HomeCity { get; }
 
-        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "")
+        public Unit(int id, string type, int q, int r, int service = 0, string side = "", int strength = 0, string order = "", string orderTarget = "", string homeCity = "")
         {
-            Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget;
+            Id = id; Type = type; Q = q; R = r; Service = service; Side = side; Strength = strength; Order = order; OrderTarget = orderTarget; HomeCity = homeCity;
         }
 
         /// <summary>The record as the state hash writes it. Each field after the hex is written only when it is not at its
@@ -135,7 +139,8 @@ namespace Statecraft.Sim
             + (Side == "" ? "" : "|side=" + Side)
             + (Strength == 0 ? "" : "|strength=" + Strength.ToString(CultureInfo.InvariantCulture))
             + (Order == "" ? "" : "|order=" + Order)
-            + (OrderTarget == "" ? "" : "|target=" + OrderTarget);
+            + (OrderTarget == "" ? "" : "|target=" + OrderTarget)
+            + (HomeCity == "" ? "" : "|home=" + HomeCity);
     }
 
     /// <summary>A group of a city's people in training (GDD "Progression"; R-TRAIN-001): <see cref="Count"/> population units
@@ -243,5 +248,55 @@ namespace Statecraft.Sim
         public string Canonical() => string.Format(CultureInfo.InvariantCulture, "{0}:{1}@{2},{3},{4}/", Id, Kind, City, Q, R)
             + (BuiltOn is DateTime on ? "done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
                 : TurnsLeft.ToString(CultureInfo.InvariantCulture) + (Progress == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Progress).ToString("X16", CultureInfo.InvariantCulture)));
+    }
+
+    /// <summary>Work on one corridor segment (R-COR-001 to R-COR-003): <see cref="Unit"/> building it with
+    /// <see cref="Progress"/> turns of work done, or, once <see cref="BuiltOn"/> is set, built on that date. Immutable.</summary>
+    public sealed class SegmentWork
+    {
+        /// <summary>The halutz unit building the segment; null once it is built (unit ids start at 0).</summary>
+        public int? Unit { get; }
+        /// <summary>Turns of work done (spec section 2.2: "segment progress").</summary>
+        public int Progress { get; }
+        /// <summary>Fractional work carried to the next turn (R-MIN-002), omitted from the hash while zero.</summary>
+        public double Carry { get; }
+        /// <summary>The end date of the turn the segment was built on; null while it is being built.</summary>
+        public DateTime? BuiltOn { get; }
+
+        /// <summary>A segment being built (<paramref name="builtOn"/> null) needs its unit; a built segment has none.</summary>
+        public SegmentWork(int? unit, int progress, DateTime? builtOn, double carry = 0)
+        {
+            if ((builtOn == null) != (unit != null)) throw new ArgumentException("a segment being built has a unit, and a built segment has none", nameof(unit));
+            Unit = unit; Progress = progress; BuiltOn = builtOn; Carry = carry;
+        }
+
+        /// <summary>"b,UNIT,PROGRESS" while building, with nonzero carry appended as IEEE bits; "done,yyyy-MM-dd" once built.</summary>
+        public string Canonical() => BuiltOn is DateTime on
+            ? "done," + on.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            : string.Format(CultureInfo.InvariantCulture, "b,{0},{1}", Unit, Progress)
+                + (Carry == 0 ? "" : "," + BitConverter.DoubleToInt64Bits(Carry).ToString("X16", CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>A corridor some of whose segments are being built or built (corridors.yaml; R-COR-001 to R-COR-003): one
+    /// entry per segment of the corridor, in index order, null for a segment not started. A corridor with no started
+    /// segment has no record. Immutable; a change replaces the record.</summary>
+    public sealed class CorridorWork
+    {
+        public string Id { get; }
+        public IReadOnlyList<SegmentWork?> Segments { get; }
+
+        public CorridorWork(string id, SegmentWork?[] segments) { Id = id; Segments = (SegmentWork?[])segments.Clone(); }
+
+        /// <summary>The same corridor with segment <paramref name="index"/> (0-based) replaced; null when no segment is left
+        /// with a record.</summary>
+        public CorridorWork? With(int index, SegmentWork? work)
+        {
+            var a = Segments.ToArray();
+            a[index] = work;
+            return a.All(x => x == null) ? null : new CorridorWork(Id, a);
+        }
+
+        /// <summary>"id=SEG;SEG;...", each segment "-" when not started.</summary>
+        public string Canonical() => Id + "=" + string.Join(";", Segments.Select(x => x?.Canonical() ?? "-"));
     }
 }

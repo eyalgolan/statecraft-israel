@@ -31,8 +31,8 @@ public class HebrewValuesTests
     [Test]
     public void AValueInAHebrewTemplateIsWrappedInLeftToRightMarks()
     {
-        Assert.AreEqual("כסף " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL 3.0m" + Lrm + " · מטבע חוץ " + Lrm + "-$4.2m" + Lrm,
-            He.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"));
+        Assert.AreEqual("כסף " + Lrm + "$12.0m" + Lrm + " · חוב " + Lrm + "IL 3.0m" + Lrm + " · מטבע חוץ " + Lrm + "$-4.2m" + Lrm,
+            He.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"));
         Assert.AreEqual("מ־" + Lrm + "15 May 1948" + Lrm + " עד " + Lrm + "1 June 1948" + Lrm, He.Format("why.turn", "15 May 1948", "1 June 1948"));
         // A format item keeps its format: the value is formatted, then wrapped.
         Assert.AreEqual("תשומת לב " + Lrm + "2.5" + Lrm + " מתוך " + Lrm + "10.0" + Lrm, He.Format("hud.attention", 2.5, 10.0));
@@ -55,8 +55,8 @@ public class HebrewValuesTests
         var appointed = He.Format("card.appointed_name", "דוד בן־גוריון");
         Assert.AreEqual("דוד בן־גוריון (מינוי שלך)", appointed);
         Assert.IsTrue(UiDirection.RightToLeft(appointed), appointed);
-        var amount = He.Format("hud.say_million", "-IL ", "3.0");
-        Assert.AreEqual(Lrm + "-IL " + Lrm + Lrm + "3.0" + Lrm + " מיליון", amount);
+        var amount = He.Format("hud.say_million", "IL -", "3.0");
+        Assert.AreEqual(Lrm + "IL -" + Lrm + Lrm + "3.0" + Lrm + " מיליון", amount);
         Assert.AreEqual("כסף: " + amount + ", קיטון של " + Lrm + "IL " + Lrm + Lrm + "4.0" + Lrm + " מיליון מאז התור הקודם",
             He.Format("hud.say_down", "כסף", amount, He.Format("hud.say_million", "IL ", "4.0")));
     }
@@ -95,7 +95,7 @@ public class HebrewValuesTests
         var en = En;
         var keys = Keys(UiPaths.Strings);
         Assert.Greater(keys.Count, 100, "the keys are read");
-        var args = new object[] { "-$4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
+        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
         foreach (var key in keys)
         {
             string expected;
@@ -105,7 +105,7 @@ public class HebrewValuesTests
             CollectionAssert.AreEqual(Encoding.UTF8.GetBytes(expected), Encoding.UTF8.GetBytes(got), key);
             Assert.AreEqual(-1, got.IndexOf(Lrm, StringComparison.Ordinal), key);
         }
-        Assert.AreEqual("Money $12.0m · debt IL 3.0m · foreign currency -$4.2m", en.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"));
+        Assert.AreEqual("Money $12.0m · debt IL 3.0m · foreign currency $-4.2m", en.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"));
         Assert.AreEqual("15 May 1948 to 1 June 1948", en.Format("why.turn", "15 May 1948", "1 June 1948"));
     }
 
@@ -115,7 +115,7 @@ public class HebrewValuesTests
     public void TakingTheMarksOutOfAnyHebrewLineGivesTheOldTextBack()
     {
         var he = He;
-        var args = new object[] { "-$4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
+        var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
         int wrapped = 0;
         foreach (var key in Keys(UiPaths.StringsHebrew))
         {
@@ -342,20 +342,55 @@ public class HebrewValuesTests
         Assert.IsTrue(dateMarked, "marked, \"15 May 1948\" is drawn as one run, as it is on its own");
     }
 
-    /// <summary>The lines the game shows (#543's "done when"): Hebrew budget.money with negative foreign currency draws its
-    /// minus on the left of the dollar, and Hebrew why.turn draws "15 May 1948" as one run.</summary>
+    /// <summary>The lines the game shows (#543's "done when"; sign style from #1107): Hebrew budget.money with negative
+    /// foreign currency draws "$-4.2m" as one left-to-right run - the dollar leads, the minus sits next to the number -
+    /// and Hebrew why.turn draws "15 May 1948" as one run.</summary>
     [UnityTest]
-    public IEnumerator InAHebrewLineTheMinusIsLeftOfItsDollarAndTheDateIsOneRun()
+    public IEnumerator InAHebrewLineTheDollarLeadsItsMinusAndTheDateIsOneRun()
     {
         using var r = new Rendered(
-            He.Format("budget.money", "$12.0m", "IL 3.0m", "-$4.2m"),
+            He.Format("budget.money", "$12.0m", "IL 3.0m", "$-4.2m"),
             He.Format("why.turn", "15 May 1948", "1 June 1948"),
             "15 May 1948");
         yield return r.Draw();
         Assert.AreEqual(LanguageDirection.RTL, r.Labels[0].languageDirection, r.Labels[0].text);
         Assert.AreEqual(LanguageDirection.RTL, r.Labels[1].languageDirection, r.Labels[1].text);
-        int minus = LeftmostInkHeight(r.Row(0));
-        Assert.Less(minus, FontSize / 5, $"the leftmost glyph of the line (its last value, '-$4.2m') is the minus ({minus}px tall), not the dollar");
+        int dollar = LeftmostInkHeight(r.Row(0));
+        Assert.Greater(dollar, FontSize / 5, $"the leftmost glyph of the line (its last value, '$-4.2m') is the dollar ({dollar}px tall); the minus sits next to the number");
         Assert.IsTrue(Found(r.Row(1), r.Row(2)), $"\"15 May 1948\" is drawn as one run, as it is on its own: its words {Show(Words(r.Row(2)))}, the line's {Show(Words(r.Row(1)))}");
+    }
+
+    /// <summary>The attack's odds on the unit card (#754), each line read right to left: the strength line has "133%" at its
+    /// left end (the sign on the number's right, not "%133"), and a band line has its faces ("1") at its right end and what
+    /// the defenders lose ("1,000") at its left end.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheAttackOddsReadRightToLeft()
+    {
+        using var r = new Rendered(
+            He.Format("unit.attack_odds", "10,10", 133),
+            He.Format("unit.attack_band", 1, 6, 0, 1000),
+            "133%", "1,000", "1");
+        yield return r.Draw();
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[0].languageDirection, r.Labels[0].text);
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[1].languageDirection, r.Labels[1].text);
+        List<(int Start, int End)> odds = Words(r.Row(0)), band = Words(r.Row(1));
+        Assert.IsTrue(DrawsAt(r.Row(0), 0, r.Row(2)), $"the strength line starts on the left with \"133%\": its words {Show(odds)}, \"133%\" {Show(Words(r.Row(2)))}");
+        Assert.IsTrue(DrawsAt(r.Row(1), 0, r.Row(3)), $"the band starts on the left with \"1,000\": its words {Show(band)}, \"1,000\" {Show(Words(r.Row(3)))}");
+        Assert.IsTrue(DrawsAt(r.Row(1), band.Count - 1, r.Row(4)), $"the band ends on the right with \"1\": its words {Show(band)}");
+    }
+
+    /// <summary>Whether <paramref name="line"/>, from its word <paramref name="first"/> (left to right), draws
+    /// <paramref name="part"/>'s words: the same widths and gaps to a pixel, and alike ink (a "%" is a word of its own here).</summary>
+    static bool DrawsAt(float[,] line, int first, float[,] part)
+    {
+        var l = Words(line); var p = Words(part);
+        if (first < 0 || first + p.Count > l.Count) return false;
+        for (int k = 0; k < p.Count; k++)
+        {
+            int lw = l[first + k].End - l[first + k].Start, pw = p[k].End - p[k].Start;
+            if (Math.Abs(lw - pw) > 1 || !Same(line, l[first + k].Start, part, p[k].Start, pw + 1)) return false;
+            if (k > 0 && Math.Abs((l[first + k].Start - l[first + k - 1].End) - (p[k].Start - p[k - 1].End)) > 1) return false;
+        }
+        return true;
     }
 }

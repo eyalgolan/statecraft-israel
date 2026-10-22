@@ -406,12 +406,14 @@ def build_board(a):
     rank = {'city': 0, 'town': 1, 'arab_town': 1, 'moshav': 2, 'kibbutz': 2}
     owner = {}
     for s in sorted(game, key=lambda s: (rank.get(s.get('type'), 3), s['id'])):
-        if not in_box(s): continue
-        h = nearest(s['lon'], s['lat']); k = (h['q'], h['r'])
+        if not in_box(s) and s['id'] not in moved: continue
         if s['id'] in moved:   # moved by the map editor: that hex, as the game map has it
             k = moved[s['id']]
             if k not in cells or env_of(k): continue
+            h = cells[k]
             if k not in owner: owner[k] = s; continue
+        else:
+            h = nearest(s['lon'], s['lat']); k = (h['q'], h['r'])
         if env_of(k): continue
         if k in owner or not h['land']:
             free = [(k[0] + dq, k[1] + dr) for dq, dr in NEIGHBOURS]

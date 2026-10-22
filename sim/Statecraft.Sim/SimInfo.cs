@@ -2,6 +2,6 @@ namespace Statecraft.Sim
 {
     public static class SimInfo
     {
-        public const string Version = "0.1.2";
+        public const string Version = "0.2.1";
     }
 }

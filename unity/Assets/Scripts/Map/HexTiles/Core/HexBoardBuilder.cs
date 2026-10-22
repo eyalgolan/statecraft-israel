@@ -119,7 +119,7 @@ namespace Statecraft.HexTiles
             if (env.Count > 0) HexBoardRenderer.Emit(pieces, env, assets, EnvName(q, r));
             var units = root.transform.Find(UnitsName);
             var oldUnit = units.Find(UnitName(q, r));
-            if (oldUnit != null) Object.DestroyImmediate(oldUnit.gameObject);
+            if (oldUnit != null) Release(oldUnit.gameObject, assets);
             if (h.unit != "") BuildUnit(h, state.Surface, Holder(units, UnitName(q, r)));
             Repaint(state, HexGeometry.Centre(q, r, HexScale.HexM));
             return report;
@@ -349,13 +349,14 @@ namespace Statecraft.HexTiles
     [ExecuteAlways]
     public sealed class HexBoardAssets : MonoBehaviour
     {
-        readonly List<Object> owned = new List<Object>();
+        [SerializeField, HideInInspector] List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
         /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>
         public void Release(Object? o) { if (o != null && owned.Remove(o)) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); } }
         /// <summary>Runs when the board is destroyed, last registered first (e.g. restoring the real map's heights).</summary>
         public void OnTeardown(Action undo) => teardown.Add(undo);
+        internal void ForgetTeardown(Action undo) => teardown.Remove(undo);
         void OnDestroy() => Teardown();
 
         /// <summary>Restores everything the board changed, now and once (Destroy is deferred to the frame's end, so a
@@ -385,8 +386,12 @@ namespace Statecraft.HexTiles
     public static class HexBoardRenderer
     {
         public static Transform Emit(Transform root, IEnumerable<HexPlacement> placements, HexBoardAssets assets, string name = HexBoardBuilder.PiecesName)
+            => Emit(root, placements, assets, name, null);
+
+        internal static Transform Emit(Transform root, IEnumerable<HexPlacement> placements, HexBoardAssets assets, string name, Func<string, GameObject?>? prefabOf)
         {
             var parent = new GameObject(name).transform; parent.SetParent(root, false);
+            var streamed = new List<HexPlacement>();
             var groups = new Dictionary<Material, List<CombineInstance>>();
             var parts = new Dictionary<(string, Fit), HexModels.Part[]>();
             var tints = new Dictionary<Color, Material>();
@@ -427,7 +432,9 @@ namespace Statecraft.HexTiles
             foreach (var p in placements)
             {
                 var id = HexModels.Resolve(p.Model, p.Position);
-                var prefab = p.StandIn == StandIn.Flat ? null : HexModels.Prefab(id);
+                if (prefabOf == null && HexCollectionFigures.Available && p.StandIn != StandIn.Flat
+                    && HexModels.CollectionAlias(id, out _, out _)) { streamed.Add(p); continue; }
+                var prefab = p.StandIn == StandIn.Flat ? null : (prefabOf ?? HexModels.Prefab)(id);
                 if (prefab != null && HexModels.Skinned(prefab))
                 {
                     var go = Object.Instantiate(prefab, parent);
@@ -458,6 +465,11 @@ namespace Statecraft.HexTiles
                 go.transform.SetParent(parent, false);
                 go.GetComponent<MeshFilter>().sharedMesh = mesh;
                 go.GetComponent<MeshRenderer>().sharedMaterial = m;
+            }
+            if (streamed.Count > 0)
+            {
+                var figures = new GameObject("Hex streamed placements"); figures.transform.SetParent(parent, false);
+                figures.AddComponent<HexStreamedPlacements>().Initialise(streamed, assets);
             }
             return parent;
         }

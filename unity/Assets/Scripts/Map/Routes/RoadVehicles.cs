@@ -95,6 +95,7 @@ namespace Statecraft.Game.Map.Routes
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
         DateTime date;
+        IReadOnlyDictionary<string, IReadOnlyList<bool>>? built;
         string? drawnKey;
         bool lastClose;
 
@@ -109,19 +110,21 @@ namespace Statecraft.Game.Map.Routes
             layer.map = map; layer.terrain = map.Terrain.terrainData; layer.terrainOrigin = map.Terrain.transform.position;
             foreach (var route in routes)
                 if (Plans.Any(p => p.Route == route.Id)) layer.lines[route.Id] = RouteLayer.Drawn(map.Frame, route);
-            layer.ShowAt(date);
+            layer.ShowAt(date, map.RouteSegmentsBuilt);
             return layer;
         }
 
         /// <summary>Shows the vehicles as at <paramref name="at"/>. The game calls it on every state change, so it lays them
-        /// out again only when what it would draw changes: the plans in force, the control period, or a model arriving.</summary>
-        public void ShowAt(DateTime at)
+        /// out again only when what it would draw changes: the plans in force, the control period, or a model arriving.
+        /// In the GDD loop (<paramref name="segmentsBuilt"/> given, as RouteLayer.ShowAt has it, #792) a plan on a corridor's
+        /// route is in force only once every segment of that route is built, so no vehicle drives on road not drawn yet.</summary>
+        public void ShowAt(DateTime at, IReadOnlyDictionary<string, IReadOnlyList<bool>>? segmentsBuilt = null)
         {
-            date = at;
+            date = at; built = segmentsBuilt;
             var stream = Stream;
             if (stream != null)
                 foreach (var plan in Plans)
-                    if (plan.Covers(at) && asked.Add(plan.Model)) { var id = plan.Model; stream(id, CollectionDetail.Near, p => OnModel(id, p)); }
+                    if (InForce(plan) && asked.Add(plan.Model)) { var id = plan.Model; stream(id, CollectionDetail.Near, p => OnModel(id, p)); }
             Rebuild();
         }
 
@@ -134,13 +137,18 @@ namespace Statecraft.Game.Map.Routes
             Rebuild();
         }
 
+        /// <summary>The plan's dates cover the current date and, in the GDD loop, its route is not a corridor's or is built
+        /// end to end.</summary>
+        bool InForce(Plan plan) =>
+            plan.Covers(date) && (built == null || !built.TryGetValue(plan.Route, out var b) || b.All(s => s));
+
         /// <summary>What the layer would draw on the current date, as a key: the control period, the plans in force and the
         /// models that have arrived.</summary>
         string Key()
         {
             var control = map != null ? map.Control : null;
             var period = control?.PeriodOn(date)?.Id ?? "none";
-            return period + "|" + string.Concat(Plans.Select(p => p.Covers(date) ? "1" : "0")) + "|"
+            return period + "|" + string.Concat(Plans.Select(p => InForce(p) ? "1" : "0")) + "|"
                 + string.Concat(Plans.Select(p => prefabs.TryGetValue(p.Model, out var g) && g != null ? "1" : "0"));
         }
 
@@ -163,7 +171,7 @@ namespace Statecraft.Game.Map.Routes
             for (int planIndex = 0; planIndex < Plans.Count; planIndex++)
             {
                 var plan = Plans[planIndex];
-                if (!plan.Covers(date) || !lines.TryGetValue(plan.Route, out var line)) continue;
+                if (!InForce(plan) || !lines.TryGetValue(plan.Route, out var line)) continue;
                 prefabs.TryGetValue(plan.Model, out var prefab);
                 for (int n = 0; n < plan.Count; n++)
                 {

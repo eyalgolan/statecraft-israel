@@ -924,6 +924,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "ZoomKeys",
+                    "type": "Value",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c06",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Orbit",
                     "type": "Value",
                     "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c05",
@@ -1087,6 +1096,72 @@
                     "action": "Zoom",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "PlusMinus",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c50",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomKeys",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c51",
+                    "path": "<Keyboard>/minus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ZoomKeys",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c52",
+                    "path": "<Keyboard>/equals",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ZoomKeys",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Numpad",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c53",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ZoomKeys",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c54",
+                    "path": "<Keyboard>/numpadMinus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ZoomKeys",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c55",
+                    "path": "<Keyboard>/numpadPlus",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "ZoomKeys",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 },
                 {
                     "name": "QE",

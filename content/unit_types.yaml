@@ -1,12 +1,15 @@
 # The GDD v0.1 population and unit types (GDD "Population and units"; docs/rules/mvp.md R-TRAIN-001 to R-TRAIN-003).
-# D-A2: civilians, refugees and recruits are counts per city; a halutz is a movable unit. Every number below is a design
+# D-A2: civilians and refugees are counts per city; recruits and halutzim are movable units. Every number below is a design
 # value: the owner's balance, set or accepted in review (Q-CUT-1, owner, 15 October 2026: "Labelled design values"), not
 # a historical figure. DesignValuesTests lists them all (R-LOOP-005).
 types:
   - { id: civilian, kind: population }
   - { id: refugee, kind: population }
   - id: recruit                          # civilian to recruit, through basic training (GDD "Progression")
-    kind: population                     # a count per city until Phase 5
+    kind: unit                           # one formation per cohort, strength = its population units (Q-UNIT-1)
+    side: israel
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1; owner accepted #1130, 19 October 2026)
     facility: military_camp
     training_turns: 3                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3)
     training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3: IL millions per group)
@@ -22,8 +25,62 @@ types:
     training_turns: 3                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3)
     training_cost: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A3, D-D4: Q-CRAFT-3, IL millions per group)
 # Phase 5's military types (R-UNIT-001; Q-UNIT-1, owner, 15 October 2026; #741, owner, 18 October 2026: "all defaults").
-# A side and a class only: movement points come with movement (Phase 5 PR 5), strength from the unit's sourced row or
-# its cohort (Q-UNIT-4) and upkeep with Phase 5 PR 3. The recruit stays a count per city until PR 3; the enemy types come in PR 4.
-  - { id: veteran_soldier, kind: unit, side: israel, class: infantry }
-  - { id: artillery, kind: unit, side: israel, class: artillery }
-  - { id: armoured_car, kind: unit, side: israel, class: armour }
+# A side, a class and movement points (Phase 5 PR 5, R-MOVE-001); strength comes from the unit's sourced row or its cohort
+# (Q-UNIT-4). All Israeli military formations pay rules.yaml mvp.military_upkeep_per_turn; enemy types come in PR 4.
+# Movement points were proposed in PR #1073 (#744; Q-MOVE-1, owner, 15 October 2026: "Take all recommendations") and
+# accepted by the owner as design values on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259021508). At about 8.7 km between hex centres, 3 plain hexes is about 26 km a monthly turn, an operational pace; the
+# armoured car carries more (Q-ARTY-2) and the guns fewer.
+  - id: veteran_soldier
+    kind: unit
+    side: israel
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: points a turn)
+  - id: artillery
+    kind: unit
+    side: israel
+    class: artillery
+    movement_points: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: points a turn)
+    # Artillery's combat role (R-COMBAT-007; Q-ARTY-1, owner, 15 October 2026: "Take all recommendations"). Proposed on
+    # #748 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6315145696) and accepted by the owner
+    # as design values on 21 October 2026 (https://github.com/eyalgolan/statecraft-israel/issues/748#issuecomment-6317339304).
+    # Range 2 is the smallest that differs from an infantry attack: the guns stand one hex behind the unit that attacks.
+    # At about 8.7 km a hex it is a game value, not a gun's reach. A firing costs twice an infantry attack's Arms.
+    range: 2                             # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: hexes to the hex it supports an attack on)
+    arms_per_fire: 2                     # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-ARTY-1: Arms each firing spends)
+    combat_percent: 200                  # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-1: percent of its strength in combat)
+  - id: armoured_car
+    kind: unit
+    side: israel
+    class: armour
+    movement_points: 5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, Q-ARTY-2: points a turn)
+    # R-COMBAT-008 (Q-ARTY-2): its own combat factor and no other rule. Accepted by the owner on #748, 21 October 2026.
+    combat_percent: 150                  # DESIGN VALUE: owner-set balance, not a historical figure (D-G5, Q-ARTY-2: percent of its strength in combat)
+# The Arab forces' types (Phase 5 PR 4, R-UNIT-006; #743, owner, 20 October 2026: "one labelled design-value infantry type
+# per Arab side that has a row, 3 movement points"). One type per side whose units_1948.yaml rows start a unit; the
+# Lebanese row is hidden, and the local forces have no row yet. The ids are the sim's, not names shown to the player (those
+# stay with Q-UI-2 and Q-START-4). Their movement points equal veteran_soldier's.
+  - id: egyptian_army
+    kind: unit
+    side: egypt
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: arab_legion
+    kind: unit
+    side: jordan
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: syrian_army
+    kind: unit
+    side: syria
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: iraqi_army
+    kind: unit
+    side: iraq
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)
+  - id: arab_liberation_army
+    kind: unit
+    side: ala
+    class: infantry
+    movement_points: 3                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1, #743: points a turn)

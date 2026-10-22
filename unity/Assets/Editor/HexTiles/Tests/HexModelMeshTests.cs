@@ -150,9 +150,9 @@ public class HexModelMeshTests
             "nonMan: edges of 3+ faces (the shipped meshes have thousands of T-junction and crack edges that never show).",
             "Written by HexModelMeshTests.",
             "",
-            $"{"mesh",-58} {"tris",6} {"seeThru",8} {"backFirst",9} {"open",6} {"offBase",8} {"nonMan",7}",
+            $"{"mesh".PadRight(58)} {"tris",6} {"seeThru",8} {"backFirst",9} {"open",6} {"offBase",8} {"nonMan",7}",
         };
-        void Row(string name, HexMeshCheck.Result r) => lines.Add($"{name,-58} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.BackFirstShare,9:P2} {r.Open,6} {r.OpenOffBase,8} {r.NonManifold,7}");
+        void Row(string name, HexMeshCheck.Result r) => lines.Add($"{name.PadRight(58)} {r.Triangles,6} {r.SeeThroughShare,8:P2} {r.BackFirstShare,9:P2} {r.Open,6} {r.OpenOffBase,8} {r.NonManifold,7}");
         lines.Add("-- local sandbox prefabs (Resources/HexSandbox, git-ignored) --");
         foreach (var go in Resources.LoadAll<GameObject>("HexSandbox").Where(g => g.name.StartsWith("hq_") || g.name.StartsWith("kit_")).OrderBy(g => g.name, System.StringComparer.Ordinal))
             Row("sandbox:" + go.name, HexMeshCheck.Of(go));
@@ -168,7 +168,7 @@ public class HexModelMeshTests
         foreach (var id in ResolvedBuildings())
         {
             var prefab = HexModels.Prefab(id);
-            if (prefab == null) { lines.Add($"{id,-58} (stand-in)"); continue; }
+            if (prefab == null) { lines.Add($"{id.PadRight(58)} (stand-in)"); continue; }
             Row(id + " -> " + prefab.name, HexMeshCheck.Of(prefab));
         }
         lines.Add("-- facing: sandbox prefab vs drawn town model, mean nearest distance (unit frame) per turn --");
@@ -194,7 +194,7 @@ public class HexModelMeshTests
     static List<string> BudgetLines()
     {
         var lines = new List<string> { "-- triangles per building tile at hex (2,-1), seed 1948, by the level the aliases draw --",
-            $"{"tile",-22} {"budget",7} {"sandbox",8} {"all full",9} {"all mid",8} {"mid where whole",16}" };
+            $"{"tile".PadRight(22)} {"budget",7} {"sandbox",8} {"all full",9} {"all mid",8} {"mid where whole",16}" };
         var set = HexModels.TownSet();
         if (set == null) return lines;
         var alias = HexModels.TownAliases.ToDictionary(a => a.id, a => a.town);
@@ -221,7 +221,7 @@ public class HexModelMeshTests
                 sandbox = ctx.Placements.Sum(p => p.StandIn == StandIn.Flat ? 12 : HexModels.Triangles(p.Model, p.StandIn, p.Position));
             }
             finally { HexModels.DrawTownModels = true; HexModels.Clear(); }
-            lines.Add($"{id,-22} {proto.TriangleBudget,7} {sandbox,8} {Sum(_ => false),9} {Sum(_ => true),8} {Sum(MidWhole),16}");
+            lines.Add($"{id.PadRight(22)} {proto.TriangleBudget,7} {sandbox,8} {Sum(_ => false),9} {Sum(_ => true),8} {Sum(MidWhole),16}");
         }
         return lines;
     }

@@ -18,7 +18,7 @@ public class CitiesContentTests
         var c = Load();
         var city = Assert.Single(c.Cities);
         Assert.Equal(("town_a", 12, 8, 10, 6), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
-        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz", "craftsman" }, c.UnitTypes.Select(t => t.Id));
+        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz", "craftsman", "veteran_soldier" }, c.UnitTypes.Select(t => t.Id));
         var halutz = c.UnitTypes.Single(t => t.Id == "halutz");
         Assert.Equal(("unit", "hakhshara", 3, 0.25), (halutz.Kind, halutz.Facility, halutz.TrainingTurns, halutz.TrainingCost));
         Assert.Equal("", c.UnitTypes.Single(t => t.Id == "civilian").Facility);

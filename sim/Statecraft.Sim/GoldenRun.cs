@@ -16,13 +16,13 @@ namespace Statecraft.Sim
         /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change: the value
         /// is pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt, and STATECRAFT_UPDATE_GOLDEN=1 dotnet test rewrites
         /// both (docs/determinism.md). Say why in the commit message.</summary>
-        public const string Hash1950 = "e3c76f5f6fc45e4941a4499afd2e5c226a4677a651f39c6cef789447d123267a";
+        public const string Hash1950 = "f3ec68b734a3beb24df9a873e0400f0253aed48f3cde2ea12415f1890dcaa5b0";
 
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951). The GDD game ends on
         /// 15 January 1952 (R-LOOP-004), the first turn on or after Until1952, so this is also the mvp-end run.</summary>
-        public const string Hash1952 = "37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde";
+        public const string Hash1952 = "6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 
@@ -92,6 +92,30 @@ namespace Statecraft.Sim
             for (int turn = 0; turn < turns && s.Date < Until1952 && s.GameOver == null; turn++)
                 s = Simulation.Step(c, s, SmokeOrders(c, s)).State;
             return s;
+        }
+
+        /// <summary>The smoke-orders golden's one order (GDD Phase 5 PR 15, #754), what the WebGL ?smoke-orders run's
+        /// GameRoot.SmokeOrders gives through the unit card: Move for the lowest-id unit Movement.Reachable has a hex for,
+        /// to the first of those hexes in Reachable's (q, r) order that is not an enemy-held place (Movement.NoEntry), so the
+        /// golden stays a plain move and captures nothing (#1304 opened the target towns). Here, so Unity's run and the tests
+        /// pick the same order.</summary>
+        public static Move SmokeMove(Content c, GameState s)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var places = Movement.NoEntry(c, s);
+            foreach (var id in s.Units.Keys)   // a SortedList: in id order
+                foreach (var (q, r) in Movement.Reachable(c, s, id).Keys)
+                    if (!places.Contains((q, r))) return new Move(id, q, r);
+            throw new InvalidOperationException("the smoke-orders run needs a unit that can move");
+        }
+
+        /// <summary>The smoke-orders golden: the golden seed, Historical mode, one turn whose only order is <see cref="SmokeMove"/>
+        /// (the turn's events go to their ministers).</summary>
+        public static GameState PlaySmokeOrders(Content c)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            var s = Simulation.NewGame(c, Seed, Mode.Historical);
+            return Simulation.Step(c, s, new Command[] { SmokeMove(c, s) }).State;
         }
     }
 }

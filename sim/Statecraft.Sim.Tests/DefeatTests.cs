@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
-/// <summary>The economic defeat (GDD Phase 7 PR 5, D-B5; #8): Money is exhausted when the debt is at or above
+/// <summary>The defeat (GDD Phase 7 PR 5, D-B5; #8). The economic half: Money is exhausted when the debt is at or above
 /// mvp.debt_ceiling (Q-DEF-1) and Food when the national stock is 0 (R-END-001); after mvp.defeat_turns consecutive turn
 /// ends with both, the game ends with defeat_economy (Q-DEF-2, N = 3), and a turn with either one not exhausted resets the
-/// count (R-END-002). The war loss waits for Phase 5's enemy units (#749).</summary>
+/// count (R-END-002). The war loss (R-END-003): an enemy military unit holding a GDD city's hex at the turn's end ends the
+/// game at once with defeat_war (Q-WAR-5; Q-DEF-3: one turn is enough, any of the GDD cities, truces included).</summary>
 public class DefeatTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
@@ -140,11 +141,19 @@ public class DefeatTests
         Assert.Contains(reason, e.Message);
     }
 
-    // R-END-002 (plan risk 3): the reference run and the Historical-mode run with no orders reach 15 January 1952 and
-    // are never defeated, so the existing goldens do not move.
+    // R-END-002 (plan risk 3), R-END-003: the reference run and the Historical-mode run with no orders reach
+    // 15 January 1952 and are never defeated, so the existing goldens do not move. The war-loss assertion guards a
+    // sourced enemy start on a city's hex (plan PR 5, Review focus 3): reaching the MVP end also proves it, since one
+    // enemy unit on a city's hex at any turn end would end the run as a defeat.
     [Fact]
     public void TheHistoricalRunIsNeverDefeated()
     {
+        var cities = new HashSet<(int Q, int R)>();
+        foreach (var city in Real.Cities)
+        {
+            var h = Real.SettlementHexes.First(x => x.Id == city.Id);
+            cities.Add((h.Q, h.R));
+        }
         foreach (var (name, orders) in new (string, Func<GameState, IReadOnlyList<Command>>)[]
                  {
                      ("reference", s => GoldenRun.Orders(Real, s)),
@@ -156,11 +165,62 @@ public class DefeatTests
             {
                 s = Simulation.Step(Real, s, orders(s)).State;
                 Assert.True(s.ExhaustedTurns == 0, $"{name}: Money and Food both exhausted on {s.Date:yyyy-MM-dd}");
+                var onACity = s.Units.Values.FirstOrDefault(u => u.Side != "" && u.Side != Movement.PlayerSide && cities.Contains((u.Q, u.R)));
+                Assert.True(onACity == null, $"{name}: enemy unit {onACity?.Id} holds a city's hex on {s.Date:yyyy-MM-dd}");
             }
             Assert.Equal(GameOverCodes.MvpEnded, s.GameOver);
             Assert.Equal(Real.End, s.Date);
         }
     }
+
+    // R-END-003: an enemy military unit on a GDD city's hex at the turn's end ends the game at once, on the first turn
+    // it happens. The fixture's town_a is on (1, 0).
+    [Fact]
+    public void AnEnemyInACityEndsTheGame()
+    {
+        var c = GddWithArmy();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Units.Add(1, new Unit(1, "enemy", 1, 0, side: "egypt", strength: 3));
+        var r = Simulation.Step(c, s, Array.Empty<Command>());
+        Assert.Equal(GameOverCodes.DefeatWar, r.State.GameOver);
+        Assert.Contains(r.Why, w => w.System == "era" && w.Target == GameOverCodes.DefeatWar);
+        // The game is over: an order is refused with the reason, and the turn does not advance.
+        var after = Simulation.Step(c, r.State, new Command[] { new SetMobilization(0.5) });
+        Assert.Single(after.Rejected);
+        Assert.Equal(r.State.Date, after.State.Date);
+
+        // The player's own unit or a halutz on the hex, or an enemy next to the city, ends nothing (R-UNIT-001: a
+        // halutz has no side).
+        foreach (var u in new Unit[]
+                 {
+                     new Unit(1, "soldier", 1, 0, side: "israel", strength: 3),
+                     new Unit(1, "halutz", 1, 0),
+                     new Unit(1, "enemy", 2, 0, side: "egypt", strength: 3),
+                 })
+        {
+            var t2 = Simulation.NewGame(c, 1, Mode.Historical);
+            t2.Units.Add(u.Id, u);
+            Assert.Null(Step(c, t2).GameOver);
+        }
+
+        // The economic count is read first, so a turn that ends the game both ways keeps defeat_economy.
+        var b = Simulation.NewGame(c, 1, Mode.Historical);
+        Broke(b); Starving(b);
+        b = Step(c, Step(c, b));
+        Assert.Equal(2, b.ExhaustedTurns);
+        b.Units.Add(1, new Unit(1, "enemy", 1, 0, side: "egypt", strength: 3));
+        Assert.Equal(GameOverCodes.DefeatEconomy, Step(c, b).GameOver);
+    }
+
+    /// <summary>The GDD fixture with a military type per side (fixture values); town_a is on (1, 0) of a coastal plain.</summary>
+    static Content GddWithArmy() => ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+    {
+        ["unit_types.yaml"] = Fixture.GddUnitTypes
+            + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+            + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n",
+        ["map/hexes.json"] = MovementTests.Board(),
+        ["corridors.yaml"] = "corridors: []\n",
+    })));
 
     // R-END-001, R-END-002: scenario-mvp-defeat overspends and refuses foreign currency until it is defeated.
     [Fact]

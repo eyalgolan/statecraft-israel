@@ -81,9 +81,8 @@ namespace Statecraft.Sim
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
             EconomySystem.PayOrBorrow(c, s, cost, "for training", why);
-            // PLACEHOLDER (owner question, #377): trainees leave the civilians, and housing (R-CITY-004) counts civilians only,
-            // so their places are free for waiting refugees while they train. Social cohesion (R-CITY-005) also moves: its
-            // employed share is employed over civilians, so it rises when civilians without work leave for training.
+            // R-HOUSE-003: trainees remain housed as a cohort, and recruits keep their home city's housing as formations.
+            // A pioneer unit leaves city housing; a craftsman remains. The employed share also reads the new counts.
             s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees);
             var id = s.NextId++;
             // The plan's reading of D-A6, not part of the owner's ruling: the turn of the order is the first training turn, so
@@ -122,8 +121,8 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-TRAIN-003, step 4 of the turn (spec 2026-10-12 section 2.3, D-A6): in ascending id, each cohort has one turn
-        /// less to go. One that reaches 0 leaves the state: recruits and craftsmen join the city's counts (R-CRAFT-001), and
-        /// halutzim become one movable unit per group at the city's settlement hex, taking the next ids in turn.</summary>
+        /// less to go. One that reaches 0 leaves the state: a recruit cohort becomes one military formation with its count
+        /// as strength (R-UNIT-003), craftsmen join the city's count, and halutzim become one unit per group at its hex.</summary>
         public static void Progress(Content c, GameState s, List<Cause> why)
         {
             foreach (var k in s.Cohorts.Values.ToList())
@@ -132,7 +131,14 @@ namespace Statecraft.Sim
                 s.Cohorts.Remove(k.Id);
                 var type = c.UnitTypes.First(t => t.Id == k.Type);
                 var name = PlayerText.Settlement(c, k.City);
-                if (type.Kind == "unit")
+                if (type.Id == "recruit")
+                {
+                    var hex = c.SettlementHexes.First(h => h.Id == k.City);
+                    var id = s.NextId++;
+                    s.Units.Add(id, new Unit(id, type.Id, hex.Q, hex.R, side: type.Side, strength: k.Count, homeCity: k.City));
+                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type.Facility)} and are recruits"));
+                }
+                else if (type.Kind == "unit")
                 {
                     var hex = c.SettlementHexes.First(h => h.Id == k.City);   // every settlement has one (ValidateMap)
                     for (int i = 0; i < k.Count; i++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, type.Id, hex.Q, hex.R)); }
@@ -143,12 +149,6 @@ namespace Statecraft.Sim
                     var x = s.Cities[k.City];
                     s.Cities[k.City] = x.WithCraftsmen(x.Craftsmen + k.Count);
                     why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type.Facility)} and are craftsmen"));
-                }
-                else
-                {
-                    var x = s.Cities[k.City];
-                    s.Cities[k.City] = x.WithRecruits(x.Recruits + k.Count);
-                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type.Facility)} and are recruits"));
                 }
             }
         }

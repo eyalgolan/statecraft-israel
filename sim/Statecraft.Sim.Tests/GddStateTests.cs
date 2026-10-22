@@ -39,9 +39,11 @@ public class GddStateTests
             ("units[", x => x.Units.Add(1, new Unit(1, "halutz", -3, 19))),
             ("train[", x => x.Cohorts.Add(2, new Cohort(2, "recruit", "tel_aviv", 3, 2))),
             ("site{", x => x.Sites["mefalsim"] = new SiteWork("mefalsim", 1, 5, null)),
+            ("corr{", x => x.Corridors["burma_road"] = new CorridorWork("burma_road", new SegmentWork?[] { null, new SegmentWork(1, 2, null) })),
             ("next=", x => x.NextId = 2),
             ("obj{", x => x.Objectives["first_new_yishuv"] = new DateTime(1949, 3, 15)),
             ("score=", x => x.Score = 5),
+            ("scoreparts=", x => x.ScoreTimingBonuses = 5),
         };
         foreach (var (label, set) in steps)
         {
@@ -92,6 +94,20 @@ public class GddStateTests
         Assert.Equal("1:veteran_halutz@0,0/6", new Unit(1, "veteran_halutz", 0, 0, 6).Canonical());
     }
 
+    // R-LOOP-002, R-COR-002: a corridor's segments in index order, each unstarted, being built or built.
+    [Fact]
+    public void ACorridorIsHashedSegmentBySegment()
+    {
+        var w = new CorridorWork("burma_road", new SegmentWork?[] { null, new SegmentWork(4, 2, null), new SegmentWork(null, 3, new DateTime(1948, 12, 15)) });
+        Assert.Equal("burma_road=-;b,4,2;done,1948-12-15", w.Canonical());
+        Assert.Throws<ArgumentException>(() => new SegmentWork(null, 1, null));   // a segment being built has its unit
+        Assert.Throws<ArgumentException>(() => new SegmentWork(0, 1, new DateTime(1949, 3, 15)));
+        string H(CorridorWork x) { var s = new GameState(); s.Corridors[x.Id] = x; return s.Hash(); }
+        var all = new[] { w, new CorridorWork("b", w.Segments.ToArray()), new CorridorWork("burma_road", new SegmentWork?[] { null, new SegmentWork(5, 2, null), w.Segments[2] }),
+                          new CorridorWork("burma_road", new SegmentWork?[] { null, new SegmentWork(4, 3, null), w.Segments[2] }), new CorridorWork("burma_road", new SegmentWork?[] { w.Segments[1], null, w.Segments[2] }) };
+        Assert.Equal(all.Length, new HashSet<string>(Array.ConvertAll(all, H)).Count);
+    }
+
     // R-SITE-003: a built site holds no unit. Unit ids start at 0, so "no unit" is null, never 0: unit 0 is free once its
     // site is built, and a record cannot be built and have a unit, or be building without one.
     [Fact]
@@ -140,13 +156,14 @@ public class GddStateTests
         a.Units.Add(1, new Unit(1, "halutz", 0, 0));
         a.Cohorts.Add(2, new Cohort(2, "recruit", "x", 1, 1));
         a.Sites["s"] = new SiteWork("s", 1, 1, null);
+        a.Corridors["c"] = new CorridorWork("c", new SegmentWork?[] { new SegmentWork(1, 1, null) });
         a.Objectives["o"] = new DateTime(1949, 1, 1);
         a.NextId = 2; a.Score = 3;
         var before = a.Hash();
         var b = a.Clone();
-        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Cohorts.Clear(); b.Sites.Clear(); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
+        b.Cities["y"] = a.Cities["x"]; b.Units.Add(2, a.Units[1]); b.Cohorts.Clear(); b.Sites.Clear(); b.Corridors.Clear(); b.Objectives.Clear(); b.NextId = 9; b.Score = 9;
         Assert.Equal(before, a.Hash());
-        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Cohorts); Assert.Single(a.Sites); Assert.Single(a.Objectives);
+        Assert.Single(a.Cities); Assert.Single(a.Units); Assert.Single(a.Cohorts); Assert.Single(a.Sites); Assert.Single(a.Corridors); Assert.Single(a.Objectives);
     }
 
     [Fact]

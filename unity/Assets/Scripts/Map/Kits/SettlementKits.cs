@@ -64,12 +64,14 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>One thing a kit placed, for the tests' and the docs' town census: a building (<see cref="Placed.Kind"/>
         /// "building", or "wing" for a block's lower part), a street palm ("palm": its crown's square, its height) or a
         /// landmark (its name: "mosque", "clock_tower", ...), with its
-        /// world footprint (centre, yaw in degrees, width and depth in m), its wall height (m) and wall colour.</summary>
+        /// world footprint (centre, yaw in degrees, width and depth in m), its wall height (m) and wall colour; a landmark's
+        /// close copy (issue #1032, <see cref="Result.CloseLandmarks"/>) also its ground level <see cref="Y"/>, the
+        /// level its height stands over.</summary>
         public readonly struct Placed
         {
-            public readonly string Id, Kind; public readonly Vector2 C; public readonly float Yaw, W, D, H; public readonly Color32 Wall;
-            public Placed(string id, string kind, Vector2 c, float yaw, float w, float d, float h, Color32 wall)
-            { Id = id; Kind = kind; C = c; Yaw = yaw; W = w; D = d; H = h; Wall = wall; }
+            public readonly string Id, Kind; public readonly Vector2 C; public readonly float Yaw, W, D, H, Y; public readonly Color32 Wall;
+            public Placed(string id, string kind, Vector2 c, float yaw, float w, float d, float h, Color32 wall, float y = 0f)
+            { Id = id; Kind = kind; C = c; Yaw = yaw; W = w; D = d; H = h; Wall = wall; Y = y; }
             /// <summary>Harbour works stand in the sea by design; everything else stands on land.</summary>
             public bool InSea => Kind == "port" || Kind == "breakwater";
         }
@@ -115,6 +117,10 @@ namespace Statecraft.Game.Map.Kits
             /// mesh without the buildings and with the models' plinths (KitMesh.ToCloseMesh), by the kit mesh's name; none
             /// where nothing would be left.</summary>
             public Dictionary<string, Mesh> Close = new Dictionary<string, Mesh>();
+            /// <summary>Issue #1032: every kit landmark as the close mesh draws it, at the models' world scale
+            /// (SettlementKits.AtWorldScale): its kind, its anchor, and its copy's box (width along x, depth along z, height
+            /// over its ground level Y), in placement order.</summary>
+            public List<Placed> CloseLandmarks = new List<Placed>();
         }
 
         /// <summary>Side of the square tiles the localities' and camps' buildings are merged into (the trees' tile size).</summary>
@@ -128,11 +134,11 @@ namespace Statecraft.Game.Map.Kits
         {
             kibbutzHalls = farmSheds = 0;
             var result = new Result();
-            models = result.Models; places = new Dictionary<string, Settlement>(); onceGiven = new HashSet<string>();
+            models = result.Models; closeLandmarks = result.CloseLandmarks; places = new Dictionary<string, Settlement>(); onceGiven = new HashSet<string>();
             foreach (var s in towns) places[s.Id] = s;
             foreach (var s in localities) places[s.Id] = s;
             try { return Build(towns, localities, camps, ground, columns, result); }
-            finally { models = null; places = null; onceGiven = null; }
+            finally { models = null; closeLandmarks = null; places = null; onceGiven = null; }
         }
 
         static Result Build(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
@@ -215,8 +221,9 @@ namespace Statecraft.Game.Map.Kits
                 }
                 var km = townMeshes[s.Id];
                 // A Negev lookout's buildings stand in its walled yard, a landmark (SettlementKits.Outpost.cs, #32): no houses round it.
+                // Nor round a camp's barracks (SettlementKits.Camp.cs, #792).
                 System.Func<int>? scatter = null, palms = null;
-                int n = landmarks[s.Id] + (NegevOutpost(s) ? 0
+                int n = landmarks[s.Id] + (NegevOutpost(s) || MilitaryCamp(s) ? 0
                     : PlaceHouses(s, centres[s.Id], ground, km, lots, ref rnd, merged, out scatter, out palms));   // towns round 2: plot lattices
                 gameTowns.Add((s, km, n, scatter, palms));
             }

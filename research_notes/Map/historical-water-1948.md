@@ -306,3 +306,110 @@ action its target without dated land flags.
   [`MapBuilder.cs`](../../unity/Assets/Scripts/Map/MapBuilder.cs), [`GDD.md`](../../docs/GDD.md),
   [chapters spec §10](../../docs/superpowers/specs/2026-10-10-chapters-architecture-design.md),
   [GDD impact plan](../../docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md).
+
+## Draft addition: source sheets and reproducible tracing plan (2026-10-21)
+
+Status: source research and a tracing proposal only. No outline has been digitised. The purpose of this addition is to
+answer the 20 October 2026 issue comment: replace hex-shaped approximations with traced Dead Sea, Lake Hula and Hula
+swamp geometry. All pages and image headers below were checked on 2026-10-21.
+
+### Source decision
+
+Use the two 1:100,000 Dead Sea sheets and the two 1:20,000 Hula composites as the tracing masters. Use the 1946
+1:250,000 sheets as the whole-area cross-check. This is a 10/10 decision because the master sheets are the closest
+reached editions with substantially more detail, a stated public-domain basis, printed Palestine Grid coordinates and
+enough resolution to trace without inventing geometry. The 1:250,000 maps alone are not detailed enough for the Hula
+swamp edge, and Palestine Exploration Fund sheets are decades too early and incomplete at the eastern edge.
+
+#### Dead Sea candidates
+
+| Fitness | Exact sheet and date | Stable page or file | Rights statement on the page | Raster resolution | Georeferenced? |
+|---|---|---|---|---:|---|
+| **Master, north and the north end of the Lisan** | Survey of Palestine, 1:100,000, Sheet 13, **Dead Sea**, published 1945 | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Dead_Sea_(FL60505868_3809558).jpg) | “This work created by the United Kingdom Government is in the public domain.” | 15,736 x 12,498 px | No embedded georeference is stated. The scan has a printed Palestine Grid from E 165,000 to 210,000 and N 80,000 to 120,000, so it can be georeferenced directly. |
+| **Master, Lisan and southern basin** | Survey of Palestine, 1:100,000, Sheet 16, **Jebel Usdum**, printed August 1948, with the sheet note “Revised ... by S. of P. 1945” | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Jebel_Usdum_(FL60507500_3809640).jpg) | “This work created by the United Kingdom Government is in the public domain.” | 17,096 x 13,194 px | No embedded georeference is stated. The scan has a printed Palestine Grid from E 165,000 to 210,000 and N 40,000 to 80,000. |
+| Cross-check | Survey of Palestine, 1:250,000, **Palestine, Sheet 2**, 1946 | [Palestine Open Maps viewer](https://palopenmaps.org/en/maps?basemap=pal250k1946), [source JPEG](https://www.dropbox.com/s/bdxszqss4ozkqpv/250k-46-Palestine-02.jpg?dl=1) | “All of the maps on this website are considered public domain” | 15,746 x 17,150 px | Yes in the Palestine Open Maps tiled layer. Its [sheet index](https://github.com/PalOpenMaps/pom-data/blob/55fe58c45d53f7bce6045659e19286d30c544288/raw-data/sheets.csv) gives WGS84 bounds 34.2700718, 30.94781033 to 35.74175878, 32.12256799. The source JPEG does not state an embedded CRS. |
+
+The 1945 Sheet 13 catalog date and the 1948 Sheet 16 publication date and revision note are stated on their Commons
+pages. Their Commons metadata labels each file “Public domain”. Palestine Open Maps identifies its layer as “Palestine,
+1:250,000, 1946”, publishes the per-sheet bounds above, and states both that the maps are public domain and that the
+site combines sheets into navigable layers ([about page](https://palopenmaps.org/en/about), [layer
+metadata](https://github.com/PalOpenMaps/pom-data/blob/55fe58c45d53f7bce6045659e19286d30c544288/raw-data/layers.csv)).
+
+#### Lake Hula and swamp candidates
+
+| Fitness | Exact sheet and date | Stable page or file | Rights statement on the page | Raster resolution | Georeferenced? |
+|---|---|---|---|---:|---|
+| **Master, lake and southern marsh** | Survey of Palestine, 1:20,000, **Lake Hula, Sheets 20-27 and 21-27 composite**. Printed 1941; the margin says “Overprint - Revision of July 1942” | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_20--27-21--27_(FL189893608_2367636).jpg), [Palestine Open Maps JPEG](https://www.dropbox.com/sh/qos20k3m2np6a7y/AABf7_f7NfRxmhV-G9T6F3-aa/20-27%2021-27-Lake%20Hula.jpg?dl=1) | “This work created by the United Kingdom Government is in the public domain.” | 7,762 x 8,418 px | Yes in the Palestine Open Maps tiled layer and sheet index; not embedded in the Commons JPEG. Printed grid extent: E 200,000 to 211,000, N 270,000 to 280,000. |
+| **Master, northern marsh** | Survey of Palestine, 1:20,000, **Es Salihiya, Sheets 20-28 and 21-28 composite**. Printed 1941; the margin says “Overprint - Revision of July 1942” | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Palestine_20--28-21--28_(FL189893611_2367636).jpg), [Palestine Open Maps JPEG](https://www.dropbox.com/sh/qos20k3m2np6a7y/AAAoV53bKmECal5j6yZpEOhla/20-28%2021-28-Es%20Salihiya.jpg?dl=1) | “This work created by the United Kingdom Government is in the public domain.” | 10,270 x 8,430 px | Yes in the Palestine Open Maps tiled layer and sheet index; not embedded in the Commons JPEG. Printed grid extent: E 199,000 to 214,000, N 280,000 to 290,000. |
+| Dated cross-check | Survey of Palestine, 1:250,000, **Palestine, Sheet 1**, 1946 | [Palestine Open Maps viewer](https://palopenmaps.org/en/maps?basemap=pal250k1946), [source JPEG](https://www.dropbox.com/s/1kq4svksyby0erb/250k-46-Palestine-01.jpg?dl=1) | “All of the maps on this website are considered public domain” | 15,871 x 17,225 px | Yes in the Palestine Open Maps tiled layer. Its [sheet index](https://github.com/PalOpenMaps/pom-data/blob/55fe58c45d53f7bce6045659e19286d30c544288/raw-data/sheets.csv) gives WGS84 bounds 34.25916339, 32.02991599 to 35.7487307, 33.29473275. The source JPEG does not state an embedded CRS. |
+| Cross-check | Survey of Palestine, 1:100,000, Sheet 3, **Safad**, additions and corrections 1943, printed 1944 | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Safad_(FL54735303_3808468).jpg) | “This work created by the United Kingdom Government is in the public domain.” | 14,407 x 11,475 px | No embedded georeference is stated; the printed Palestine Grid supplies control points. The sheet contains the lake but stops at N 280,000, through the marsh. |
+| Cross-check | Survey of Palestine, 1:100,000, Sheet 1, **Metulla**, 1943 | [Wikimedia Commons, NLI scan](https://commons.wikimedia.org/wiki/File:Survey_of_Palestine,_Metulla_(FL54735262_3808331).jpg) | “This work created by the United Kingdom Government is in the public domain.” | 17,346 x 12,942 px | No embedded georeference is stated; the printed Palestine Grid supplies control points. It covers the portion north of the Safad sheet. |
+| Older corroboration only | Palestine Exploration Fund, **Palestine Exploration Map, Sheet IV**, surveyed in the 1870s and dated 1880 | [David Rumsey item](https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240970~5512346%3ASheet-IV--Palestine-Exploration-Map), [Commons scan](https://commons.wikimedia.org/wiki/File:Survey_of_Western_Palestine_1880.04.jpg) | Commons labels the file public domain | 7,587 x 6,525 px on Commons | Yes in the Palestine Open Maps 1:63,000 tiled layer. It is not suitable as the master: it predates 1948 by decades and does not provide the complete eastern outline needed here. |
+
+The two 1:20,000 masters show the open-water shoreline and continuous marsh symbols on adjoining sides of the N 280,000
+sheet boundary. Their printed dates were read on the scans. A 2024 open-access *Journal of Paleolimnology* article also
+identifies Sheets 20-27 and 21-27 as a 1941 Survey of Palestine source for the historical Hula Lake map ([article and
+map citation](https://link.springer.com/article/10.1007/s10933-023-00301-z)). The Commons catalog gives the broader
+series range 1928-1947, so the printed 1941 and July 1942 statements, not the broad catalog range, should be recorded in
+the geometry provenance.
+
+Palestine Open Maps lists the Lake Hula composite at WGS84 bounds 35.53302066, 33.02498694 to 35.6512045,
+33.1147912, and Es Salihiya at 35.52263388, 33.11517791 to 35.68382947, 33.20483466 ([sheet
+index](https://github.com/PalOpenMaps/pom-data/blob/55fe58c45d53f7bce6045659e19286d30c544288/raw-data/sheets.csv)).
+Its [about page](https://palopenmaps.org/en/about) says the source maps are public domain. The dedicated source scans are
+preferable to tracing the web tiles because their printed grid, edition text and full pixel resolution remain visible.
+
+### Reproducible tracing method
+
+1. Download only the four master scans from their Commons pages into a working directory outside the repository. Record
+   the Commons page revision, retrieval date, original filename, byte length and SHA-256 in a provenance manifest. Do
+   not use a screenshot or a browser-resampled preview.
+2. In QGIS Georeferencer, assign the printed grid to **EPSG:28191, Palestine 1923 / Palestine Grid**. EPSG identifies
+   28191 as the metre-based Cassini-Soldner CRS used for topographic mapping ([EPSG record](https://epsg.io/28191)).
+   Use a first-order polynomial transformation, save the QGIS `.points` files and write GeoTIFFs outside the repository.
+3. Enter these printed-grid control points, then add every clearly readable 5 km grid intersection around each feature:
+
+   | Sheet | Required corner points (E, N metres) | Additional check points |
+   |---|---|---|
+   | Dead Sea 13 | (165000, 80000), (210000, 80000), (165000, 120000), (210000, 120000) | (175000, 90000), (195000, 100000), (205000, 110000) |
+   | Jebel Usdum 16 | (165000, 40000), (210000, 40000), (165000, 80000), (210000, 80000) | (175000, 50000), (195000, 60000), (205000, 70000) |
+   | Lake Hula 20-27/21-27 | (200000, 270000), (211000, 270000), (200000, 280000), (211000, 280000) | (205000, 275000), (210000, 275000) |
+   | Es Salihiya 20-28/21-28 | (199000, 280000), (214000, 280000), (199000, 290000), (214000, 290000) | (205000, 285000), (210000, 285000) |
+
+   The map border, not the paper edge, is the control-point target. Preserve QGIS's residual table. Inspect the two
+   shared N 80,000 and N 280,000 seams at full resolution and correct a mispicked point rather than rubber-sheeting the
+   shoreline to force a match. QGIS documents GCP entry and transformation selection in its [Georeferencer user
+   guide](https://documentation.qgis.org/3.44/en/docs/user_manual/managing_data_source/georeferencer.html).
+4. Trace in the EPSG:28191 master project at the native scan scale:
+   - `dead_sea_open_water`: follow the water tint/shoreline across Sheets 13 and 16, snap the seam at N 80,000, keep the
+     Lisan as land, preserve the open strait west of it, and stop at the mapped southern shore. Do not absorb the mapped
+     sabkha or salt pans into the lake.
+   - `hula_open_water`: follow the hard lake shoreline on the Lake Hula composite.
+   - `hula_marsh`: follow the outer envelope of printed marsh symbols across the Lake Hula and Es Salihiya composites.
+     Share the lake/marsh boundary exactly so the output cannot reproduce the rejected 2.8 km land gap.
+5. Keep a GeoPackage as the editable master. Export an RFC 7946 GeoJSON polygon layer in EPSG:4326 and a second
+   `water_vertices.geojson` point layer. Each ordered point gets `feature_id`, `ring_index`, `vertex_index`, `source_id`,
+   `sheet`, `sheet_date`, `scan_x_px`, `scan_y_px`, `trace_basis` (`shoreline-line` or `marsh-symbol-envelope`) and
+   `checked`. Generate polygon rings from the ordered vertex layer so every polygon vertex has explicit provenance.
+6. Validate by overlaying the export on the Palestine Open Maps 1946 1:250,000 layer. Check that the Lisan remains land,
+   the western strait remains open, the Hula lake touches the marsh, all rings are valid, the Sheet 13/16 and Hula sheet
+   seams have no spike or gap, and a round-trip from EPSG:4326 back to EPSG:28191 preserves the vertices. Record, but do
+   not silently simplify away, disagreements between the detailed master and the 1:250,000 cross-check.
+
+### Remaining geometry gaps
+
+- No 1946-1948 edition of the 1:20,000 Hula composites was reached. The best detailed masters are the July 1942
+  revisions. The 1944 Safad sheet, 1943 Metulla sheet and 1946 1:250,000 Sheet 1 are cross-checks, not replacements for
+  the missing later 1:20,000 edition.
+- The open-water shoreline is drawn as a line, but the swamp is shown with repeated marsh symbols rather than a closed
+  surveyed boundary. `hula_marsh` will therefore be a documented interpretation of the symbol envelope, not a claimed
+  cadastral boundary.
+- The sheets do not identify a season or an exact survey day for the water edge. A single 1948 mask cannot encode the
+  seasonal flooded-area range already recorded in section 1.3.
+- No source reached in this pass gives a traceable polygon for the approximately 350 ha Hula reserve left wet after
+  drainage. That remains a separate gap for the drained mask.
+- The PEF Sheet IV is useful only as an older west-side corroboration. PEF Sheet XXVI is largely blank in the Dead Sea
+  area and cannot supply the Lisan or southern-basin outline.
+- Palestine Open Maps publishes georeferenced tiles and sheet bounds, but this pass did not find its original GCP lists
+  or transformation residuals. The reproducible build should therefore retain its own QGIS `.points` files and residual
+  tables rather than treating the web mosaic as undocumented ground truth.
