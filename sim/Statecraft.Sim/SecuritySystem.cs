@@ -29,9 +29,11 @@ namespace Statecraft.Sim
         public static double EffectiveMobilization(Content c, DateTime date, int rung, double level) => Math.Max(level, MinMobilization(c, date, rung));
 
         /// <summary>Weeks left on the UN ceasefire clock after moving from <paramref name="fromRung"/> (with
-        /// <paramref name="weeksLeft"/> on the clock) to <paramref name="toRung"/>: entering full war starts it, leaving ends it.</summary>
+        /// <paramref name="weeksLeft"/> on the clock) to <paramref name="toRung"/>: entering full war starts it, leaving ends it.
+        /// The GDD loop retires the clock (R-WAR-003, Q-WAR-2 (b)), so there it never starts.</summary>
         public static int CeasefireWeeksAfter(Content c, DateTime date, int fromRung, int weeksLeft, int toRung)
         {
+            if (c.IsGdd) return 0;
             toRung = ClampRung(toRung);
             if (toRung != 5) return 0;
             return fromRung != 5 ? c.RulesAt(date).CeasefireWeeks : weeksLeft;
@@ -46,6 +48,7 @@ namespace Statecraft.Sim
             if (rung != s.Rung) why.Add(new Cause("security", "rung", rung - s.Rung, FormattableString.Invariant($"Security level {s.Rung} to {rung}")));
             s.Rung = rung;
             RaiseToFloor(c, s, why);
+            if (c.IsGdd) SendHomeToFloor(c, s, why);
         }
 
         /// <summary>Returns null on success, or the reason the order was rejected.</summary>
@@ -69,6 +72,20 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>R-WAR-002: the GDD loop retires the call-up order, so the call-up follows the rung down to its minimum,
+        /// as HistoricalAI's order did (the army demobilised after the 1949 armistices). The debt calibration rests on it
+        /// (EconomyCalibrationTests).</summary>
+        static void SendHomeToFloor(Content c, GameState s, List<Cause> why)
+        {
+            var rung = ClampRung(s.Rung);
+            var floor = MinMobilization(c, s.Date, rung);
+            if (s.Mobilization > floor)
+            {
+                why.Add(new Cause("security", "mobilization", floor - s.Mobilization, FormattableString.Invariant($"reserves sent home: call-up lowered to {PlayerText.Percent(floor)}, the minimum for security level {rung}")));
+                s.Mobilization = floor;
+            }
+        }
+
         public static void Apply(Content c, GameState s, TurnLength len, List<Cause> why) => Apply(c, s, Weeks(len), why);
 
         /// <summary>True while the country is at full war: rung 5, the ladder's top. The war state the sim already keeps (the
@@ -76,9 +93,12 @@ namespace Statecraft.Sim
         public static bool AtFullWar(GameState s) => s.Rung == 5;
 
         /// <summary>Counts the ceasefire clock down by <paramref name="weeks"/> (a whole turn's weeks, or the whole weeks of
-        /// an adjusted turn at an era's end) while the country is at full war.</summary>
+        /// an adjusted turn at an era's end) while the country is at full war. The GDD loop retires the 52-week clock
+        /// (R-WAR-003): the call is a no-op there (the clock never starts, so it must not count down and impose a ceasefire
+        /// at once), and only an event's set_rung moves the rung.</summary>
         public static void Apply(Content c, GameState s, int weeks, List<Cause> why)
         {
+            if (c.IsGdd) return;
             if (!AtFullWar(s)) return;
             s.CeasefireWeeksLeft = Math.Max(0, s.CeasefireWeeksLeft - weeks);
             if (s.CeasefireWeeksLeft == 0)

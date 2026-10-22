@@ -18,11 +18,11 @@ public class PrisonersTests
         + "  - { id: irregular, kind: unit, side: ala, class: infantry, movement_points: 3 }\n"
         + "  - { id: egypt_gun, kind: unit, side: egypt, class: artillery, movement_points: 2, range: 2, arms_per_fire: 3, combat_percent: 200 }\n";
 
-    static string Card(string id, string front, string from) => $@"
+    static string Card(string id, string front, string from, string anchor = "hard") => $@"
 id: {id}
 title: Prisoners exchanged
 text: The prisoners are exchanged.
-anchor: hard
+anchor: {anchor}
 prisoners: {front}
 from: {from}
 to: 1950-01-01
@@ -223,9 +223,26 @@ options:
         var c = Load();
         var s = Simulation.NewGame(c, 1, Mode.Historical);
         s.PrisonersHeld["ala"] = 1;   // no front's card returns them
-        for (int i = 0; i < 4; i++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        // 16 weekly turns end after the fixture cards' 1 July window opens, so only the Prisoners.Held filter keeps them back.
+        for (int i = 0; i < 16; i++) s = Simulation.Step(c, s, Array.Empty<Command>()).State;
+        Assert.True(s.Date > new DateTime(1948, 7, 1));
         Assert.DoesNotContain("pow_egypt", s.FiredEvents);
         Assert.DoesNotContain("pow_jordan", s.FiredEvents);
+    }
+
+    // R-POW-004: delegating an exchange card draws no RNG, like an objective's card. A soft-anchored card, because a hard-anchored
+    // one takes its historical option without a draw anyway and would hide the missing exemption.
+    [Fact]
+    public void AnExchangeCardResolvesWithoutAnRngDraw()
+    {
+        var c = Load(new Dictionary<string, string> { ["pow_egypt.yaml"] = Card("pow_egypt", "egypt", "1948-07-01", "soft") });
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.PrisonersHeld["egypt"] = 3;
+        s = UntilCard(c, s, "pow_egypt").State;
+        var before = s.RngState;
+        EventSystem.Delegate(c, s, new List<Cause>());
+        Assert.Empty(s.PendingEvents);
+        Assert.Equal(before, s.RngState);
     }
 
     // R-POW-002 (Q-POW-5): prisoners eat food_per_prisoner_unit a unit in step 7, after the nation and the import.
