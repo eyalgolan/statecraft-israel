@@ -1,0 +1,34 @@
+{
+  "kind": "Actual saved Unity character-review scene: one fixed ALA walk proof; not campaign/player/WebGL footage",
+  "method": "Statecraft.Game.EditorTools.Generated1948CharacterReviewEvidence.ProofGround",
+  "scene": "Assets/Generated1948CharacterReview.unity",
+  "pose": {
+    "character": "figure-ala-infantry-1948-v1",
+    "motion": "walk",
+    "sample_seconds": 0.6,
+    "camera": "front detail,12-degree orthographic"
+  },
+  "light_and_global_settings_changed": false,
+  "before_probe": {
+    "bake_false_transformed_min_y": 0.001465023,
+    "indexed_min_y": 0.001465023,
+    "renderer_world_bounds_min_y": 0.3043351,
+    "bake_true_transformed_min_y": 0.4559107
+  },
+  "final_proof": {
+    "bake_false_transformed_min_y": -0.443859,
+    "indexed_min_y": -0.443859,
+    "renderer_world_bounds_min_y": -0.1471432,
+    "bake_true_local_min_y": -0.5515448,
+    "bake_true_transformed_min_y": 0.008446991
+  },
+  "skin_lossy_scale": [
+    1.533019,
+    1.53302,
+    1.53302
+  ],
+  "diagnosis": "On this scaled delivered skin, default BakeMesh(false) followed by full TransformPoint disagreed with visible geometry and the renderer world envelope. Explicit useScale:true gives the samples used for stage grounding. The independent renderer-bounds/floor assertion and final image check the rendered result rather than relying only on the same bake computation.",
+  "validation": "Final scene test1/1passed, checking all7 rigs after idle and walk sampling against the actual floor surface and actual renderer world bounds. Zero-bias/no-shadow diagnostic variants did not resolve the original gap; no permanent light or pipeline changes were made.",
+  "image": "images/generated-1948-character-review-scene-proof.jpg",
+  "prior_64_frames": "Diagnostic development captures only; not final floor-contact evidence."
+}

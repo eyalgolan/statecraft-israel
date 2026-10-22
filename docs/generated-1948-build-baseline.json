@@ -1,0 +1,50 @@
+{
+  "baseline_commit": "4d92aff9eb162ad24ebc25db7baf05041a9e16c1",
+  "feature_commit_tested": "9cfc65261f5546f0b318371de5fba78cc4c221d0",
+  "editor": "6000.3.25f1 (e1dba0a9aba4)",
+  "collections": "2.6.8",
+  "test": "CollectionImportTests.BuildBundlesWritesTheChecksBesideTheShippedBundles",
+  "baseline_result": "Failed",
+  "baseline_total": "1",
+  "baseline_failed": "1",
+  "branch_same_failure": true,
+  "errors": [
+    "NativeList.cs(850,24): CS7036: missing required safety parameter of NativeArray<T>.ReadOnly.ReadOnly(void*, int, ref AtomicSafetyHandle)",
+    "NativeList.cs(864,24): CS7036: missing required safety parameter of NativeArray<T>.ReadOnly.ReadOnly(void*, int, ref AtomicSafetyHandle)"
+  ],
+  "identical_inputs": [
+    {
+      "path": "unity/Packages/manifest.json",
+      "baseline_sha256": "f91268ae76002e3798b46a860e803072a6b519533ebe13ec2d600136821192b4",
+      "branch_sha256": "f91268ae76002e3798b46a860e803072a6b519533ebe13ec2d600136821192b4",
+      "identical": true
+    },
+    {
+      "path": "unity/Packages/packages-lock.json",
+      "baseline_sha256": "90469bee477eafff88500e0e7dbfda72402a1c2d041f3db8fb1fe436d06d75a9",
+      "branch_sha256": "90469bee477eafff88500e0e7dbfda72402a1c2d041f3db8fb1fe436d06d75a9",
+      "identical": true
+    },
+    {
+      "path": "unity/ProjectSettings/ProjectVersion.txt",
+      "baseline_sha256": "4a18b4936a9f83ec28b32cf336e6f62f6b00ddf12a48c792feac779add1380f3",
+      "branch_sha256": "4a18b4936a9f83ec28b32cf336e6f62f6b00ddf12a48c792feac779add1380f3",
+      "identical": true
+    },
+    {
+      "path": "unity/Assets/Editor/CollectionImport.cs",
+      "baseline_sha256": "c99b27bb5aa886d2fd9ea33159c7ca26f7be3f8158615f41893bc0a2246fac26",
+      "branch_sha256": "c99b27bb5aa886d2fd9ea33159c7ca26f7be3f8158615f41893bc0a2246fac26",
+      "identical": true
+    },
+    {
+      "path": "unity/Library/PackageCache/com.unity.collections@84e8eb3fc12e/Unity.Collections/NativeList.cs",
+      "baseline_sha256": "0ee7b93f7abd13571aa32a6970bf7866137643ea74c970d7b8b119c5e18b5bc1",
+      "branch_sha256": "0ee7b93f7abd13571aa32a6970bf7866137643ea74c970d7b8b119c5e18b5bc1",
+      "identical": true
+    }
+  ],
+  "preparation": "Unchanged base in separate detached checkout; standard tools/build_sim_for_unity.py with .NET10.0.401 before test. No generated feature assets, package edits or toolchain upgrades.",
+  "scope_conclusion": "The asset branch did not introduce this reproduced failure. Exact vendor/toolchain or local-installation cause remains unestablished.",
+  "fix_status": "No speculative safety-define workaround, package patch, upgrade or blanket bypass applied."
+}

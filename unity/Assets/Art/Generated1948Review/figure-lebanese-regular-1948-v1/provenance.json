@@ -1,0 +1,28 @@
+{
+  "asset": "figure-lebanese-regular-1948-v1",
+  "source_number": 21,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "b84b4e45e954fdf9bcdd568caf761bb763f7a5b4945957fe54ec9bde8bde8748",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "review only; no deployment or global civilian substitution",
+  "files": {
+    "figure-lebanese-regular-1948-v1-near.fbx": "3cf692cc672fb25725dc5978efbc19933b52b6d7e5bfd8b2fccbac9b5a523f9c",
+    "figure-lebanese-regular-1948-v1-walk.fbx": "cefe3c827cf3af50f64d4e1a8fb385eac13c7b41a3de84c963a9bf83b0bf47b9",
+    "figure-lebanese-regular-1948-v1-far.fbx": "9195025fdd130dde0ce3638d2d560b556893531bbd4e9f347a89549536e44b0f",
+    "figure-lebanese-regular-1948-v1_basecolor.jpg": "5a905b06b6030d0d8054e9520d2c8c818f0580aaa331444866179a9bd407ff8a"
+  },
+  "provider_model_id": "6f415898-3172-4e42-9824-133a31c66a04",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 6948,
+  "bones": 67,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

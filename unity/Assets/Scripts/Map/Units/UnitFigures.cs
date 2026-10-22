@@ -29,6 +29,8 @@ namespace Statecraft.Game.Map.Units
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
             PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
+            SyrianInfantry = "figure-syrian-infantry-1948-v1",
+            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2";
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
@@ -63,13 +65,15 @@ namespace Statecraft.Game.Map.Units
             [Soldier1948] = UnitData.WoolCap,
         };
 
-        /// <summary>An Arab force's figures, by its side: the Arab Legion (C08) for Transjordan's army, the irregular (C09) for
-        /// the Arab Liberation Army, "an irregular army" of volunteers (https://en.wikipedia.org/wiki/Arab_Liberation_Army,
-        /// checked 2026-10-18). Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
-        /// No other side has a figure, so its rows stay off the map (<see cref="UnitRoster.OnMap"/>).</summary>
+        /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, ALA and
+        /// Iraqi identities; C08 stays with Jordan and C09 with local irregulars. A mapping supplies art only: no local-force
+        /// row is authored here. Egypt awaits an approved representation of its simultaneous bases, and Lebanon's hidden
+        /// row remains off the map (<see cref="UnitRoster.OnMap"/>).
+        /// Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["jordan"] = ArabLegion, ["ala"] = Irregular,
+            ["jordan"] = ArabLegion, ["local_arab_forces"] = Irregular,
+            ["syria"] = SyrianInfantry, ["ala"] = AlaInfantry, ["iraq"] = IraqiInfantry,
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"

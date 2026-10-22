@@ -15,11 +15,14 @@ namespace Statecraft.Game.Map.Collection
     /// and ten models offered only in #336, by Tal Heuberger: eight figures (issue #708; owner, 18 October 2026: "the 8 figures
     /// in #708 can be merged without his license line"), the pioneer farmer and a second Jerusalem town (issue #886; owner,
     /// 19 October 2026: "Yes, both"), placed by CivilianPeople, UnitFigures (the soldier) and TownLandmarks (the second
-    /// Jerusalem, the city's only far-zoom model) (#708). Every model is placed but two, each by an owner ruling: b21, which
+    /// Jerusalem, the city's only far-zoom model) (#708). Three independently generated 1948 infantry join the people bundle
+    /// through their own rigging/export pipeline, with separate Syrian, ALA and Iraqi figure mappings. The Egyptian figure
+    /// stays in review until its simultaneous bases have an approved map representation.
+    /// Every model is placed but two, each by an owner ruling: b21, which
     /// waits for a sourced location (owner: wait), and #507's first Jerusalem, kept in the repository unused on the map
     /// (owner, 21 October 2026, #708).
-    /// They are slimmed by
-    /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
+    /// The original fifty #507/#336 models are slimmed by tools/slim_collection.py; the three new infantry are exported
+    /// separately to the same runtime caps. All live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
     /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
     /// (<see cref="CollectionStream"/>), so the first download does not grow. A category is one bundle, so a placement
     /// downloads only its own kind. The buildings of #659 can join as one more bundle by adding a row here.</summary>
@@ -84,6 +87,9 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
+                // Generated 1948 infantry: separate figures for the existing Syrian, ALA and Iraqi forces.
+                "figure-syrian-infantry-1948-v1",
+                "figure-ala-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
             }),
             (Vehicles, new[]
             {
@@ -125,6 +131,8 @@ namespace Statecraft.Game.Map.Collection
             "figure-draught-horse-idle-1948-v2", "figure-sheep-idle-1948-v1",
             "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
+            "figure-syrian-infantry-1948-v1",
+            "figure-ala-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
         };
 
         public static IEnumerable<string> Ids => Bundles.SelectMany(b => b.Ids);

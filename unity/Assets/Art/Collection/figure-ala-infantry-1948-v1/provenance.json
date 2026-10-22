@@ -1,0 +1,28 @@
+{
+  "asset": "figure-ala-infantry-1948-v1",
+  "source_number": 19,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "existing faction formation",
+  "files": {
+    "figure-ala-infantry-1948-v1-near.fbx": "6d7083847b9f300da118393d5cc7e3fbd6fee9fff298a5542a78883fb1d045c2",
+    "figure-ala-infantry-1948-v1-walk.fbx": "7cea04dcaa6857bf02c8c60a97150c4c505eadaa56ee9eb29cd822116cd887e3",
+    "figure-ala-infantry-1948-v1-far.fbx": "65216b9286acb257d00af23b374be378da2e6e311926c955c6f6f763bcb1202e",
+    "figure-ala-infantry-1948-v1_basecolor.jpg": "c2cc64df0c94046423cd2c5e1f42ba039720820cfd318741f39de557dfbb6dd2"
+  },
+  "provider_model_id": "5745fb8a-0d14-4488-a06e-59e7bfaacf78",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7480,
+  "bones": 65,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

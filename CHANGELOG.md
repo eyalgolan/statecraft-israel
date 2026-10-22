@@ -8,6 +8,8 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+- Add distinct Syrian, ALA and Iraqi infantry to their existing formations and a playable seven-character review scene with idle/walk controls; preserve historical deployment data and original figures.
+
 ## [0.2.1] - 2026-10-22
 
 ### Fixed

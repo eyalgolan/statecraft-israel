@@ -4,6 +4,8 @@ figures offered only in #336 (issue #708; owner ruling of 18 October 2026: "the 
 license line"), with #886's pioneer farmer and Jerusalem variant from #336 (owner, 19 October 2026: "Yes, both"), into
 the files the game ships, so only reduced meshes and compressed colour maps enter the repository
 (owner, 15 October 2026: "Plain git, slimmed first"; no masters, no Git LFS).
+This converter owns only the original #507/#336 source IDs below. Independently generated infantry use their own
+rigging/export pipeline and are not inputs here, even though the runtime catalog streams them in the same bundle.
 
   uv run --no-project --python 3.13 --with bpy==5.2.2 --with pillow==12.3.0 python -I tools/slim_collection.py \\
       --src <folder holding #507's Models/<id>/ folders> --out unity/Assets/Art/Collection

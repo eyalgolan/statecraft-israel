@@ -1,0 +1,28 @@
+{
+  "asset": "figure-iraqi-infantry-1948-v1",
+  "source_number": 20,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "existing faction formation",
+  "files": {
+    "figure-iraqi-infantry-1948-v1-near.fbx": "39156b10041b0a3695730befcf450da3ff281e5bf7f1e899eb591c8377e507f8",
+    "figure-iraqi-infantry-1948-v1-walk.fbx": "4793c5325cea861c71b316ad8f7bbe5825b5caff38bf60ed5d119ac46fbfdda5",
+    "figure-iraqi-infantry-1948-v1-far.fbx": "3abe789c990536e4f615db995e6abc3bd991783467dee2c3ad95604dc98427bd",
+    "figure-iraqi-infantry-1948-v1_basecolor.jpg": "67426b3e76f132a27da76b9cac2e94058a2d7a71e600f35c34d90c44ce47fc32"
+  },
+  "provider_model_id": "14f2a010-b22a-43a5-9029-0385dd7cec2d",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7569,
+  "bones": 67,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

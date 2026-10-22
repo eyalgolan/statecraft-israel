@@ -1,0 +1,143 @@
+{
+  "kind": "Actual Unity game-map renders; editor, no HUD; not a WebGL/player capture",
+  "state": "1948-05-15",
+  "contentHash": "5a890d25446e7dbe04bb464500d3e719579c5c5bd56882d69191cbc405e391b7",
+  "seed": "1948",
+  "utc": "2026-10-22T19:46:04.9305940Z",
+  "width": 1920,
+  "height": 1080,
+  "baseline": "Original C09 ALA mapping; original Legion unchanged",
+  "overrides": "In-memory catalog entries only; restored in finally; no assets or scenes saved",
+  "frames": [
+    {
+      "file": "ala20-after.png",
+      "label": "ALA: current own-side infantry versus previous C09",
+      "version": "after",
+      "quality": "PC",
+      "town": "",
+      "changedModel": "figure-ala-infantry-1948-v1",
+      "lookAt": {
+        "x": 125573.8828125,
+        "y": 3957.62939453125,
+        "z": 408723.125
+      },
+      "cameraPosition": {
+        "x": 123341.5078125,
+        "y": 19278.517578125,
+        "z": 396062.6875
+      },
+      "cameraEuler": {
+        "x": 50.0,
+        "y": 9.999999046325684,
+        "z": 0.0
+      },
+      "distanceM": 20000.0,
+      "fov": 35.0,
+      "pitch": 50.0,
+      "yaw": 10.0,
+      "submittedTownInstances": 1208,
+      "submittedTownTriangles": 230728
+    },
+    {
+      "file": "ala60-after.png",
+      "label": "ALA at gameplay zoom",
+      "version": "after",
+      "quality": "PC",
+      "town": "",
+      "changedModel": "figure-ala-infantry-1948-v1",
+      "lookAt": {
+        "x": 125573.8828125,
+        "y": 3957.62939453125,
+        "z": 408723.125
+      },
+      "cameraPosition": {
+        "x": 118876.75,
+        "y": 49920.296875,
+        "z": 370741.78125
+      },
+      "cameraEuler": {
+        "x": 50.0,
+        "y": 9.999999046325684,
+        "z": 0.0
+      },
+      "distanceM": 60000.0,
+      "fov": 35.0,
+      "pitch": 50.0,
+      "yaw": 10.0,
+      "submittedTownInstances": 0,
+      "submittedTownTriangles": 0
+    },
+    {
+      "file": "ala20-before.png",
+      "label": "ALA: current own-side infantry versus previous C09",
+      "version": "before",
+      "quality": "PC",
+      "town": "",
+      "changedModel": "figure-ala-infantry-1948-v1",
+      "lookAt": {
+        "x": 125573.8828125,
+        "y": 3957.62939453125,
+        "z": 408723.125
+      },
+      "cameraPosition": {
+        "x": 123341.5078125,
+        "y": 19278.517578125,
+        "z": 396062.6875
+      },
+      "cameraEuler": {
+        "x": 50.0,
+        "y": 9.999999046325684,
+        "z": 0.0
+      },
+      "distanceM": 20000.0,
+      "fov": 35.0,
+      "pitch": 50.0,
+      "yaw": 10.0,
+      "submittedTownInstances": 1208,
+      "submittedTownTriangles": 230728
+    },
+    {
+      "file": "ala60-before.png",
+      "label": "ALA at gameplay zoom",
+      "version": "before",
+      "quality": "PC",
+      "town": "",
+      "changedModel": "figure-ala-infantry-1948-v1",
+      "lookAt": {
+        "x": 125573.8828125,
+        "y": 3957.62939453125,
+        "z": 408723.125
+      },
+      "cameraPosition": {
+        "x": 118876.75,
+        "y": 49920.296875,
+        "z": 370741.78125
+      },
+      "cameraEuler": {
+        "x": 50.0,
+        "y": 9.999999046325684,
+        "z": 0.0
+      },
+      "distanceM": 60000.0,
+      "fov": 35.0,
+      "pitch": 50.0,
+      "yaw": 10.0,
+      "submittedTownInstances": 0,
+      "submittedTownTriangles": 0
+    }
+  ],
+  "afterModels": [
+    "netanya:B13aTwoStorey=10",
+    "netanya:B28WaterTower=1",
+    "netanya:NetanyaBalcony2026=11",
+    "netanya:NetanyaPorch2026=3",
+    "tiberias:B17CourtyardHouse=24",
+    "tiberias:TiberiasStone2026=27"
+  ],
+  "beforeModels": [
+    "netanya:B13aTwoStorey=27",
+    "netanya:B28WaterTower=1",
+    "tiberias:B17CourtyardHouse=51"
+  ],
+  "scope": "Unchanged ALA before/after evidence from the combined integration. This category branch adds a playable character-review scene; that scene needs its own validation and captures."
+}

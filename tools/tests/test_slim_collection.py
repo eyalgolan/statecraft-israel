@@ -1,5 +1,6 @@
-"""tools/slim_collection.py (issue #664) slims the same models, in the same categories, that the game's catalog
-(unity/Assets/Scripts/Map/Collection/CollectionCatalog.cs) streams; the caps match the Unity import tests."""
+"""The original #507/#336 models retain their canonical slimming inputs and runtime categories.
+The catalog also streams independently generated infantry, outside that converter; all use the import caps.
+"""
 import re
 from pathlib import Path
 
@@ -11,6 +12,12 @@ REPO = Path(__file__).resolve().parents[2]
 CATALOG = REPO / "unity/Assets/Scripts/Map/Collection/CollectionCatalog.cs"
 IMPORT_TESTS = REPO / "unity/Assets/Tests/EditMode/CollectionImportTests.cs"
 
+# These characters have their own generated sources and rigging/export pipeline, not #507/#336 FBX inputs.
+GENERATED_PEOPLE = [
+    "figure-syrian-infantry-1948-v1",
+    "figure-ala-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+]
+
 
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
@@ -20,10 +27,18 @@ def catalog_bundles() -> dict[str, list[str]]:
     return bundles
 
 
-def test_the_tool_slims_the_50_models_the_catalog_streams():
+def test_the_original_50_slim_inputs_and_generated_infantry_partition_the_catalog():
     bundles = catalog_bundles()
-    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS, "Towns": slim.TOWNS}
+    assert bundles == {
+        "People": slim.PEOPLE + GENERATED_PEOPLE,
+        "Vehicles": slim.VEHICLES,
+        "Animals": slim.ANIMALS,
+        "Towns": slim.TOWNS,
+    }
     assert len(slim.IDS) == len(set(slim.IDS)) == 50
+    assert not set(GENERATED_PEOPLE) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
+    assert "figure-egyptian-infantry-1948-v1" not in sum(bundles.values(), []), "Egyptian art stays in review"
+    assert "figure-egyptian-infantry-1948-v1" not in slim.IDS
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
 
 

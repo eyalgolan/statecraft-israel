@@ -1,0 +1,28 @@
+{
+  "asset": "figure-local-arab-irregular-1948-v1",
+  "source_number": 24,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "9cc53176b1c00a41ea7d9afc7712aa3aecc0de11247a1abe1f7bdab1e9a387d7",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "review only; no deployment or global civilian substitution",
+  "files": {
+    "figure-local-arab-irregular-1948-v1-near.fbx": "b1c01346078b0d224fe7a9f90e8d389764ca787a26ace6af661832d01436c5e7",
+    "figure-local-arab-irregular-1948-v1-walk.fbx": "540c6191a96aede278359ba77e719ff87f7807929e83b30524cb2c10835fe204",
+    "figure-local-arab-irregular-1948-v1-far.fbx": "6172ded469774f5e68c99aaa9345cbb0681e9929551cee6e2a33241fef511266",
+    "figure-local-arab-irregular-1948-v1_basecolor.jpg": "40d443aa07bb885e3adbec973704a57d713c2dd46d938485841325cde61b9757"
+  },
+  "provider_model_id": "df89407e-1955-4eb9-b0e2-5b40f4fee9cd",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7508,
+  "bones": 67,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

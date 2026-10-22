@@ -243,10 +243,8 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." Tal Heuberger's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: Tal Heuberger's
-    /// unit models count as reviewed and approved): the Arab Legion and the Arab Liberation Army. Every other side's rows
-    /// stay data only, on every day of the war, and the placer gives them no spot (so the kits clear no ground for them).
-    /// The two forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
+    /// no placeholder art." Each deployed force has its own figure; Egypt awaits a map representation, Lebanon's hidden row and local forces without a row
+    /// stay off the map. The forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
     /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
     public void OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived()
@@ -254,7 +252,7 @@ public class UnitsInPlayTests
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
-        var drawn = new[] { "arab_legion", "arab_liberation_army" };
+        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force" };
         CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
@@ -277,7 +275,7 @@ public class UnitsInPlayTests
             var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
             Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
-        CollectionAssert.AreEquivalent(drawn, seen, "both forces stand on the map on their sourced days");
+        CollectionAssert.AreEquivalent(drawn, seen, "the four forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
         var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();

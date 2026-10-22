@@ -1,0 +1,28 @@
+{
+  "asset": "figure-syrian-infantry-1948-v1",
+  "source_number": 18,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "014f00a2bc50b1dbe9915af46e5caada48637b71aa4986b8a9d14d34055c1f89",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "existing faction formation",
+  "files": {
+    "figure-syrian-infantry-1948-v1-near.fbx": "5988f296e660bbb19a63409a09d163abe22cc8ec806c1545a29b38975931f531",
+    "figure-syrian-infantry-1948-v1-walk.fbx": "e394231fe8a3529292ad0d958beac258681eb93f31ebe705cb8f8afbd858a9a2",
+    "figure-syrian-infantry-1948-v1-far.fbx": "fec4f4f945a390acb93b038d6f7bbaba5d3ec81872a12792f677ecbbb7dbb6c1",
+    "figure-syrian-infantry-1948-v1_basecolor.jpg": "48a745ba9924c7eaf143db2db72410a02c0c47ab265c39dcf4e36d0d8a6866ff"
+  },
+  "provider_model_id": "68adee8c-a678-4960-944b-639240e8038e",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7616,
+  "bones": 65,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

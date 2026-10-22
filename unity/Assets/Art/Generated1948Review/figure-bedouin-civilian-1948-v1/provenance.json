@@ -1,0 +1,28 @@
+{
+  "asset": "figure-bedouin-civilian-1948-v1",
+  "source_number": 22,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "941d0f7e435b238ee8098abc4be665dec62e34a9b4cd3d824c5fb45385f01c88",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "review only; no deployment or global civilian substitution",
+  "files": {
+    "figure-bedouin-civilian-1948-v1-near.fbx": "4b877283fce894ff37717cc26d1c7e97d9eb1b047b935676fc5a34f252551476",
+    "figure-bedouin-civilian-1948-v1-walk.fbx": "991f85bd75cbe0beb18c68b742a3fe19bcd5819e95e545bdb418507d1f463b2a",
+    "figure-bedouin-civilian-1948-v1-far.fbx": "5d53c727ec0233eb750c6e19c2f61ec85ada6e07dde77757b0d076ea2cb19c2c",
+    "figure-bedouin-civilian-1948-v1_basecolor.jpg": "e406e6fa940267748716e715587fe1e244ac466289e42faa154f9119aee07e93"
+  },
+  "provider_model_id": "b3e14af5-3fb5-464d-afc4-02f7642f2827",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7306,
+  "bones": 67,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}

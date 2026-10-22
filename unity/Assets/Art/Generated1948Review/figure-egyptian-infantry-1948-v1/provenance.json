@@ -1,0 +1,28 @@
+{
+  "asset": "figure-egyptian-infantry-1948-v1",
+  "source_number": 17,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "7470a17c90b62af78ad225aaa2073c05686748f39819d46089d57ac831b66ab5",
+  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "review only: existing Egyptian force has simultaneous overlapping Isdud/Majdal base anchors; no placement decision invented",
+  "files": {
+    "figure-egyptian-infantry-1948-v1-near.fbx": "9d60e109aba42ee07da49faa2db8c0e87fe10f94673fd2aac9346626a3af8200",
+    "figure-egyptian-infantry-1948-v1-walk.fbx": "73d9d626d3da6686985f36a61fd005a795c7e3949055d6b887488b72b63a9682",
+    "figure-egyptian-infantry-1948-v1-far.fbx": "9f0eeb18fb7eeb3eee7c65f847a57057d540f85eb23d324633def22b459f8387",
+    "figure-egyptian-infantry-1948-v1_basecolor.jpg": "e1888778ff605870159f3aadf898a77d26b6e30e905d545d97559705b04d0f34"
+  },
+  "provider_model_id": "446ca561-c4e6-4d07-93b6-0c29baf69672",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7282,
+  "bones": 65,
+  "source_animation_actions": [
+    "idle",
+    "walk"
+  ],
+  "runtime_controller_actions": [
+    "idle"
+  ]
+}
