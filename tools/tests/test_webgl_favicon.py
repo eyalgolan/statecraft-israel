@@ -35,8 +35,9 @@ def test_webgl_template_links_a_local_multisize_icon():
 def test_favicon_is_served_at_template_relative_url():
     server = wc.serve(TEMPLATE)
     try:
-        base = f"http://localhost:{server.server_address[1]}"
-        with urlopen(base + "/favicon.ico") as response:
+        # serve()'s own address, not "localhost" (Windows tries ::1 first, where nothing listens), and a timeout.
+        host, port = server.server_address[:2]
+        with urlopen(f"http://{host}:{port}/favicon.ico", timeout=10) as response:
             assert response.status == 200
             assert response.read() == (TEMPLATE / "favicon.ico").read_bytes()
     finally:

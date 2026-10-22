@@ -1,4 +1,3 @@
-import fcntl
 import json
 import os
 import plistlib
@@ -10,7 +9,10 @@ from pathlib import Path
 
 import pytest
 
-import unity_postmerge as up
+# unity_postmerge is Mac tooling that locks with flock; fcntl does not exist on Windows, so the module skips there.
+fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (unity_postmerge uses flock); not on Windows")
+
+import unity_postmerge as up  # noqa: E402
 
 SHA = "0123456789abcdef0123456789abcdef01234567"
 PREV = "fedcba9876543210fedcba9876543210fedcba98"
