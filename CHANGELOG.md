@@ -8,6 +8,53 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-22
+
+### Fixed
+- Clicking a unit's badge, the dark square with its symbol that floats over the unit, now opens that unit's card with its
+  orders, as clicking the unit itself does. Before, the click went to the land behind the badge, so the card showed that
+  hex and a unit could not be given a Move from its badge (#1341).
+- Closing a screen (Cabinet, Budget, Objectives and the rest) with its X by mouse or touch no longer lights up its button
+  in the left column and pops up the button's name beside it. Closed from the keyboard, the focus still goes back to
+  that button and its name still shows (#1323).
+- Trained recruit formations keep counting toward their home city's housing after graduation, movement and veteran
+  promotion. The home survives standing orders, attacks, retreats, withdrawals and save replay; a formation that survives combat
+  counts at its remaining strength. Pioneer units still leave city housing (refs #742, #1130; Q-HOUSE-5).
+- Clicks on the opt-in hex board use its displayed ground instead of the lowered terrain beneath it, so oblique
+  near-edge clicks select the visible hex. Sea holes and ground outside the board still use the real map (refs #18).
+
+### Added
+- Completed recruit cohorts become one military formation each, conserving their population strength. Israeli military
+  formations pay Money upkeep in step 7, borrowing a shortfall without ongoing Arms consumption; recruits promote after
+  service, preserving their identity and orders. Initial upkeep IL 0.05m per formation per turn, six service turns, and
+  recruit movement 3 are owner-accepted design values; military event grants await a separate strength/side/source schema
+  (19 October 2026; refs #742, #1130).
+- GDD Phase 4 PR 8, slice 1: in the GDD loop the map draws a corridor's route by its built segments (refs #792). The
+  Burma Road, the Haifa–Tel Aviv rail link and the Tel Aviv–Netanya road appear one segment at a time as the halutzim
+  build them, at any date; outside the GDD loop they keep their dates. The route index lists each corridor segment's
+  index range (route ribbon bake version 4, runtime route file version 4).
+- The score's parts (R-SCORE-001; refs #809, slice 1): the sim keeps what the score is made of as it scores, objective
+  points, timing bonuses and points for prisoners returned, and `ScoreParts.For` reads them; they always add up to the
+  score. Two objectives completed on one turn record and fire their cards in `objectives.yaml`'s order (R-OBJ-007,
+  Q-CARD-2), not by id, and the objective lists follow that order too. The `scenario-mvp-absorb-first` golden moves
+  (a new `scoreparts=` line); no other golden moves.
+- Hebrew UI: unit cards show their place (28 anchors), first commander (8 rows) and sector (20 of 21 rows) in Hebrew,
+  and the 7 dates written as prose through the new optional `formed_he` and `since_he` (#1292). Every Hebrew name
+  follows its he.wiki article, and every new text is `agent-checked` until a native speaker reads it (#564). The Iraqi
+  force's sector stays English: no Hebrew spelling of "Ma'ad" was found.
+- A built training camp (Camp 80, Tzrifin) draws a camp kit on its site, a fenced yard with rows of barracks and an open
+  parade ground, instead of a kibbutz; a built yishuv keeps its rural kit (#792). No golden moves.
+- Accessibility: a whole GDD turn plays from the keyboard (refs #41). Enter on a city panel button (Train, Assign,
+  Build) keeps the focus on it instead of dropping it, and Tab onto a Cabinet list's scroll bar no longer raises an
+  error. EditMode tests pin the focus order of the event card and End Turn, and play the turn with keys only.
+- The capture dialog, GDD Phase 6 PR 10 (#802): when a settlement the player has captured awaits a decision, a dialog in
+  the decision card's place names it and lists the options the sim's `SettlementControl.CaptureOptions` offers, in the
+  sim's order, each with a one-line plain description and the sim's preview of what it changes at once. Nothing is
+  pre-selected, and there is no picture, sound or video. A choice queues `ResolveCapture` and takes effect at End turn;
+  Hide or Escape leaves the decision waiting. Only Raid and withdraw is offered until Occupy and Deport are built. The
+  dialog's wording waits for the owner's sensitivity review, and the Hebrew for a native speaker's read (#564). The
+  shipped target list is still empty, so no game shows the dialog yet.
+
 ## [0.2.0] - 2026-10-22
 
 ### Fixed
