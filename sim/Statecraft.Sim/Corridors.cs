@@ -119,6 +119,12 @@ namespace Statecraft.Sim
             }
         }
 
+        /// <summary>The turns, this one included, in which <paramref name="unit"/> completes a segment's <paramref name="left"/>
+        /// whole turns and <paramref name="carry"/> as <see cref="Advance"/> counts them (Projects.TurnsToBuild at the corridors
+        /// multiplier). Changes no state; a new order passes the kind's turns (Projects.Terms) and zero carry (#792).</summary>
+        public static int TurnsToBuild(Content c, GameState s, int unit, int left, double carry) =>
+            Projects.TurnsToBuild(c, s, unit, "corridors", left, carry);
+
         /// <summary>R-COR-003: a corridor is complete when every one of its segments is built, in any order.</summary>
         public static bool IsComplete(Content c, GameState s, string corridor)
         {

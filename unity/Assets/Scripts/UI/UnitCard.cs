@@ -8,7 +8,7 @@ using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify and Hold, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
+    /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify, Hold and Attack, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
     /// its name, number and service; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an

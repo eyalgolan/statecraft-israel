@@ -54,7 +54,7 @@ namespace Statecraft.Sim
             s.Units[unitId] = order == Fortify ? With(u, Fortifying, here) : With(u, Hold, "");
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, order == Fortify
                 ? $"Unit {unitId} is fortifying hex {here}; it is fortified from the end of the turn"
-                : $"Unit {unitId} holds hex {here}"));
+                : $"Unit {unitId} holds hex {here}", enemy ? order : ""));
             return null;
         }
 

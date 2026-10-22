@@ -379,6 +379,107 @@ public class FirstTurnGuideTests
         Assert.IsNull(info.Selected, "and no hex");
     }
 
+    // --- Each step with what it explains (owner's report on v0.1.4) ---------------------------------------------------
+
+    /// <summary>The first card's first option, pressed as a click would.</summary>
+    static void AnswerTheCard() => UiTestKit.Press(Ui.Q("event-options").Query<Button>().First());
+
+    /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
+    /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
+    /// guide goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
+    [Test]
+    public void AnsweringTheCardOnItsStepGoesOnToTheNext()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!; var card = game.Card!;
+        for (int i = 0; i < FirstTurnGuidePresenter.EventStep; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        Assert.AreEqual(FirstTurnGuidePresenter.EventStep, guide.Step, "precondition: the event step");
+        Assert.IsTrue(card.Shown != null && !card.Collapsed, "precondition: its card open");
+        AnswerTheCard();
+        Assert.IsNull(card.Shown, "precondition: the opening turn has one card, now answered");
+        Assert.IsTrue(guide.IsOpen);
+        Assert.AreEqual(Array.IndexOf(FirstTurnGuidePresenter.Steps, "objectives"), guide.Step, "the guide goes on to Objectives");
+        Assert.AreEqual(En.Format("guide.step", 6, 6), Ui.Q<Label>("guide-count").text, "the count the player was shown stays");
+        Assert.AreEqual(En["guide.objectives.title"], Ui.Q<Label>("guide-title").text);
+        Assert.AreSame(Ui.Q<Button>("guide-next"), Ui.Q("root").focusController.focusedElement, "Next has the focus again");
+    }
+
+    /// <summary>Path B: the card was answered before the guide reaches its event step (a returning player opening it from How
+    /// to play, or one who answered it under the guide): there is no card to explain, so the step is left out and the
+    /// guide counts five steps.</summary>
+    [Test]
+    public void WithNoCardTheEventStepIsLeftOut()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!; var card = game.Card!;
+        guide.Close();
+        AnswerTheCard();
+        Assert.IsNull(card.Shown, "precondition: no card left this turn");
+        UiTestKit.Press(Ui.Q<Button>("nav-how-to-play")); UiTestKit.Press(Ui.Q<Button>("how-to-play-guide"));
+        Assert.IsTrue(guide.IsOpen);
+        var seen = new List<string>();
+        for (int shown = 1; guide.IsOpen; shown++)
+        {
+            seen.Add(FirstTurnGuidePresenter.Steps[guide.Step]);
+            Assert.AreEqual(En.Format("guide.step", shown, 5), Ui.Q<Label>("guide-count").text, $"step {shown} of five");
+            Assert.AreEqual(En[shown == 5 ? "guide.done" : "guide.next"], Ui.Q<Button>("guide-next").text);
+            Assert.LessOrEqual(shown, 5, "five steps, then Done");
+            UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        }
+        CollectionAssert.AreEqual(new[] { "attention", "city", "training", "move", "objectives" }, seen);
+    }
+
+    /// <summary>The city or unit the guide shows for steps 2 to 4 is put away when the guide moves on to a step that does not
+    /// explain it (the event card, Objectives), with or without a card, so no stale panel stays under the later steps.</summary>
+    [Test]
+    public void LeavingTheMoveStepPutsItsUnitCardAway([Values(false, true)] bool cardAnswered)
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!; var info = game.Info!; var units = game.Units!;
+        if (cardAnswered) { guide.Close(); AnswerTheCard(); guide.Open(); }
+        var move = Array.IndexOf(FirstTurnGuidePresenter.Steps, "move");
+        for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        Assert.IsTrue(info.ShowsUnit && units.Selected != null, "precondition: the move step shows a unit's card");
+        UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        Assert.AreEqual(cardAnswered ? "objectives" : "event", FirstTurnGuidePresenter.Steps[guide.Step]);
+        Assert.IsFalse(info.ShowsUnit, "the unit's card is put away");
+        Assert.IsNull(units.Selected, "and its unit unselected, as the guide found it");
+        Assert.IsNull(info.Selected, "with no hex shown either");
+    }
+
+    /// <summary>A closed or disposed guide takes no notice of the game changing (it listens to SimBridge.Changed only while it
+    /// lives, and acts on it only while it is open).</summary>
+    [Test]
+    public void AClosedGuideIgnoresTheGameChanging()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        var guide = game.Guide!;
+        for (int i = 0; i < FirstTurnGuidePresenter.EventStep; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        AnswerTheCard();
+        Assert.IsFalse(guide.IsOpen, "closed, it stays closed");
+        Assert.AreEqual(-1, guide.Step);
+        Assert.IsFalse(Ui.Q("root").ClassListContains(FirstTurnGuidePresenter.OpenClass));
+
+        using var rig = new Rig(En);
+        var bridge = rig.Bridge;
+        var lone = new FirstTurnGuidePresenter(rig.Ui.Root, En, null, rig.Card, bridge: bridge);
+        lone.Dispose();
+        rig.Guide.Open();                                               // another guide open on the same HUD (the root's class)
+        for (int i = 0; i < FirstTurnGuidePresenter.EventStep; i++) rig.Guide.Next();
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
+        Assert.AreEqual(-1, lone.Step, "the disposed guide was not called");
+    }
+
     // --- Presentation only ------------------------------------------------------------------------------------------
 
     /// <summary>The whole guide, by itself, through How to play, through every step, Skip and Escape: the state hash, the

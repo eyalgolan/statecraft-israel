@@ -68,10 +68,18 @@ namespace Statecraft.Sim
         public static int TurnsToBuild(Content c, GameState s, int unit, Site site, int left, double carry)
         {
             if (site == null) throw new ArgumentNullException(nameof(site));
+            return TurnsToBuild(c, s, unit, SystemOf(site), left, carry);
+        }
+
+        /// <summary><see cref="TurnsToBuild(Content, GameState, int, Site, int, double)"/> for work scaled by
+        /// <paramref name="system"/>'s minister multiplier: a site's (SystemOf), or a corridor segment's
+        /// (Corridors.TurnsToBuild, #792).</summary>
+        public static int TurnsToBuild(Content c, GameState s, int unit, string system, int left, double carry)
+        {
             if (left < 1) throw new ArgumentOutOfRangeException(nameof(left));
             if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry));
             var r = c.RulesAt(s.Date).Mvp!;
-            var m = EffectsSystem.GddSystemMultiplier(c, s, r, SystemOf(site));
+            var m = EffectsSystem.GddSystemMultiplier(c, s, r, system);
             if (!(m > 0) || double.IsInfinity(m)) throw new InvalidOperationException("Site progress multiplier must be finite and positive");
             var u = s.Units[unit];
             for (int turns = 1; ; turns = checked(turns + 1))
@@ -166,6 +174,9 @@ namespace Statecraft.Sim
             BuildCamp => (r.BuildCampCost!.Value, r.BuildCampTurns!.Value),
             PlowFields => (r.PlowFieldsCost!.Value, r.PlowFieldsTurns),
             DrySwamp => (r.DrySwampCost!.Value, r.DrySwampTurns!.Value),
+            // A corridor segment's kind (R-COR-001, R-COR-002): what Corridors.Start charges and Corridors.Advance takes (#792).
+            Corridors.BuildRoad => (r.RoadSegmentCost, r.RoadSegmentTurns),
+            Corridors.BuildRail => (r.RailSegmentCost, r.RailSegmentTurns),
             _ => (r.BuildYishuvCost, r.BuildYishuvTurns),
         };
 

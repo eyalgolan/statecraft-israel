@@ -16,7 +16,9 @@ using UnityEngine.UIElements;
 /// <summary>GDD Phase 5 PR 15 (#754): the unit card's orders. Slice 1, Move: the card offers Move only when the sim's
 /// Movement.Reachable has a hex for the unit; pressing it lights exactly those hexes on the map, a click on one queues the
 /// sim's Move through SimBridge, and a click anywhere else ends the pick and selects as before. Slice 2, Fortify and Hold:
-/// each shows only where the sim's Orders.Check takes it, else the sim's reason, and a press queues the sim's UnitOrder.</summary>
+/// each shows only where the sim's Orders.Check takes it, else the sim's reason, and a press queues the sim's UnitOrder.
+/// Slice 3, Attack: shown only where the sim's Combat.Check takes some hex; pressing it lights those hexes with
+/// Combat.Preview's strength ratio and Combat.Outcomes' bands for each (Q-UI-1), and a click on one queues the attack.</summary>
 public class UnitOrdersTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -232,6 +234,144 @@ public class UnitOrdersTests
         Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim takes the order the card queued");
         Assert.AreEqual(Orders.Hold, bridge.State.Units[id].Order);
         info.Dispose();
+    }
+
+    /// <summary>Gives the state the Arms for an attack and, when Golani has no enemy in reach (the sim's Combat.Check takes no
+    /// hex), puts the first enemy sim unit on the first free land hex next to it; returns Golani's sim id.</summary>
+    internal static int EnemyInGolanisReach(GameState s)
+    {
+        var id = C.StartingForces.ToList().FindIndex(f => f.Row == "golani");
+        s.Arms = 1000;
+        if (Targets(s, id).Count > 0) return id;
+        var g = s.Units[id];
+        var enemy = s.Units.Values.First(u => u.Side != "" && u.Side != Movement.PlayerSide);
+        var at = new[] { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) }.Select(d => (q: g.Q + d.Item1, r: g.R + d.Item2))
+            .First(h => C.HexAt(h.q, h.r)?.Land == true && !s.Units.Values.Any(u => (u.Q, u.R) == h));
+        s.Units[enemy.Id] = new Unit(enemy.Id, enemy.Type, at.q, at.r, enemy.Service, enemy.Side, enemy.Strength);
+        return id;
+    }
+
+    /// <summary>The hexes the card offers for an attack: every unit's hex the sim's Combat.Check takes.</summary>
+    static List<(int q, int r)> Targets(GameState s, int unit) =>
+        s.Units.Values.Select(u => (u.Q, u.R)).Distinct().Where(h => Combat.Check(C, s, unit, h.Item1, h.Item2) == null).ToList();
+
+    /// <summary>Slice 3 (#754): for every unit with a sim unit, Israel's and the enemy's, the card shows Attack only where
+    /// the sim's Combat.Check takes some hex, and on Israel's units the sim's reason for each hex in reach it refuses (an
+    /// enemy's card gives none, as for Fortify and Hold). With no Arms, Golani
+    /// (an enemy in its reach) has no Attack and shows the sim's reason; once the game is over no card has one.</summary>
+    [Test]
+    public void TheCardOffersAttackOnlyWhereTheSimTakesAHex()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var id = EnemyInGolanisReach(g.State);
+        var tokens = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Where(t => UnitCard.SimUnit(C, g.State, t.Unit) != null).ToList();
+        // An enemy with a card next to Golani, so an enemy's card has a hex in reach the sim refuses ("not yours").
+        var foe = UnitCard.SimUnit(C, g.State, tokens.First(t => t.Unit.Side != UnitData.Israel).Unit)!.Value;
+        var gq = g.State.Units[id].Q; var gr = g.State.Units[id].R;
+        var next = new[] { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) }.Select(d => (q: gq + d.Item1, r: gr + d.Item2))
+            .First(h => C.HexAt(h.q, h.r)?.Land == true && !g.State.Units.Values.Any(u => (u.Q, u.R) == h));
+        var f = g.State.Units[foe];
+        g.State.Units[foe] = new Unit(f.Id, f.Type, next.q, next.r, f.Service, f.Side, f.Strength);
+        Assert.IsNotNull(Combat.Preview(C, g.State, foe, gq, gr), "precondition: Golani is in an enemy card's reach");
+        PlacedToken? shown = null;
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
+        var attack = ui.Q<Button>("info-attack");
+        var offered = new HashSet<bool>();
+        foreach (var token in tokens)
+        {
+            shown = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+            info.ShowUnit();
+            var u = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var has = Targets(g.State, u).Count > 0;
+            offered.Add(has);
+            Assert.AreEqual(has ? DisplayStyle.Flex : DisplayStyle.None, attack.style.display.value, token.Unit.Id);
+            foreach (var h in g.State.Units.Values.Select(x => (x.Q, x.R)).Distinct().Where(h => Combat.Preview(C, g.State, u, h.Item1, h.Item2) != null))
+                if (Combat.Check(C, g.State, u, h.Item1, h.Item2) is string why)
+                    if (token.Unit.Side == UnitData.Israel) StringAssert.Contains(why, ui.Q<Label>("info-reason").text, $"{token.Unit.Id}: the sim's reason");
+                    else StringAssert.DoesNotContain(why, ui.Q<Label>("info-reason").text, $"{token.Unit.Id}: no reason on an enemy's card");
+        }
+        CollectionAssert.AreEquivalent(new[] { true, false }, offered, "precondition: some cards offer Attack and some do not");
+        shown = new PlacedToken(tokens.Single(t => t.Unit.Id == "golani"), new AnchorSpot(0, 0, 0, 0, false));
+        info.ShowUnit();
+        Assert.AreEqual("Attack", attack.text, "Q-UI-2's approved name");
+        var at = Targets(g.State, id)[0];
+        g.State.Arms = 0;
+        info.ShowUnit();
+        var short_ = Combat.Check(C, g.State, id, at.q, at.r);
+        Assert.IsNotNull(short_, "precondition: no Arms");
+        Assert.AreEqual(DisplayStyle.None, attack.style.display.value, "no Arms for an attack");
+        StringAssert.Contains(short_, ui.Q<Label>("info-reason").text, "the sim's reason");
+        g.State.Arms = 1000;
+        g.State.GameOver = GameOverCodes.MvpEnded;
+        info.ShowUnit();
+        Assert.AreEqual(DisplayStyle.None, attack.style.display.value, "no orders once the game is over");
+        info.Dispose();
+    }
+
+    /// <summary>Attack lights exactly the hexes Combat.Check takes, and the card gives each its units' names with
+    /// Combat.Preview's strength ratio and Combat.Outcomes' bands for its row (Q-UI-1). A click on an unlit hex queues
+    /// nothing; a click on a lit one queues UnitOrder(unit, attack, q, r) through SimBridge and the card says the attack
+    /// waits for End turn, with that hex's odds; the sim takes the queued attack at End turn.</summary>
+    [Test]
+    public void AttackShowsEachTargetsOddsAndAClickOnOneQueuesTheAttack()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var id = EnemyInGolanisReach(bridge.State);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var lit = new List<IReadOnlyCollection<(int q, int r)>>();
+            var towns = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, towns,
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: hexes => { lit.Add(hexes.ToList()); map.ShowReachable(hexes); },
+                unitName: u => "Unit-" + u);
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var attack = ui.Q<Button>("info-attack");
+            string Lines() => ui.Q<Label>("info-settlements").text;
+            string Odds(int q, int r)
+            {
+                var p = Combat.Preview(C, bridge.State, id, q, r)!.Value;
+                var bands = Combat.Outcomes(C, bridge.State, p.Row).Select(b => Text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+                    b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
+                var names = string.Join(", ", bridge.State.Units.Values.Where(u => (u.Q, u.R) == (q, r)).Where(u => u.Side != "" && u.Side != Movement.PlayerSide).Select(u => "Unit-" + u.Id));
+                return Text.Format("unit.attack_odds", names, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
+            }
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(attack);
+            var targets = Targets(bridge.State, id);
+            Assert.IsNotEmpty(targets, "precondition");
+            CollectionAssert.AreEquivalent(targets, lit.Last(), "the lit hexes are the ones Combat.Check takes");
+            StringAssert.Contains(Text["unit.attack_pick"], Lines());
+            foreach (var (q, r) in targets) StringAssert.Contains(Odds(q, r), Lines());
+            StringAssert.Contains("strength ratio", Lines());
+            // An unlit hex: nothing queued, the pick ends.
+            var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
+            Assert.IsFalse(targets.Contains((tlv.Q, tlv.R)), "precondition");
+            GameRoot.OnHexClicked(map, layer, info, tlv.Q, tlv.R);
+            Assert.IsEmpty(lit.Last());
+            Assert.IsEmpty(bridge.Queued);
+            // A lit hex: the sim's attack is queued and the card keeps the unit, with the order's line and its odds.
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(attack);
+            var at = targets[0];
+            GameRoot.OnHexClicked(map, layer, info, at.q, at.r);
+            var queued = bridge.Queued.OfType<UnitOrder>().Single();
+            Assert.AreEqual((id, Combat.Attack, (int?)at.q, (int?)at.r), (queued.Unit, queued.Order, queued.Q, queued.R));
+            Assert.IsEmpty(lit.Last());
+            Assert.IsTrue(info.ShowsUnit);
+            Assert.IsFalse(Lines().Contains(Text["unit.attack_pick"]), Lines());
+            StringAssert.Contains(Text["unit.attack_queued"], Lines());
+            StringAssert.Contains(Odds(at.q, at.r), Lines());
+            Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim takes the attack the card queued");
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>The overlay draws one band per hex given (two rings of MapBuilder.RingVertices each) and hides when given

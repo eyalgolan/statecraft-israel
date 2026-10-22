@@ -9,6 +9,7 @@ checks this (see `CONTRIBUTING.md`).
 ## [Unreleased]
 
 ### Fixed
+- The event photograph keeps its 16:9 header when card padding changes without an outer resize (#649).
 - The map info panel formats armistice zone and line dates in the selected UI language, reusing the existing date strings and isolating Hebrew dates inside English fallback rows; English output and agreement data are unchanged (refs #558).
 
 ## [0.1.4] - 2026-10-22

@@ -13,7 +13,8 @@ namespace Statecraft.Game.UI
     /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001, R-CAMP-001) and Cancel
     /// (R-TRAIN-002). On a site's hex (sites.yaml: a yishuv, camp, field or swamp site, #1124), its state, and Build with each idle pioneer
     /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
-    /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002).</para>
+    /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002). The same for each corridor segment through the hex: Build
+    /// road or Build railway (R-COR-001 to R-COR-003, #792).</para>
     /// <para>On any hex a city can build on (Projects.CitiesFor, #1122): the city that builds (the player picks when several
     /// can), and Build for each content project kind with its cost and turns (Projects.CityTurnsToBuild), disabled with the sim's own refusal
     /// (Projects.CheckCityReason) worded in the UI's language; or the project there, with its turns left and Cancel, or the
@@ -56,6 +57,17 @@ namespace Statecraft.Game.UI
                     host.Add(part);
                     Site(part, bridge, text, site, Work(site)!.Value);
                 }
+                // #792: each corridor segment through the hex (corridors.yaml; a hex where two segments meet is in both). Not on a
+                // city's own hex, whose column is full (InfoPanelLayoutTests): every segment has another hex.
+                if (!cityHere)
+                    foreach (var d in c.Corridors)
+                        for (int i = 0; i < d.Segments.Count; i++)
+                            if (d.Segments[i].Hexes.Any(h => h[0] == q && h[1] == r))
+                            {
+                                var part = new VisualElement { name = $"corridor-part-{d.Id}-{i + 1}" };
+                                host.Add(part);
+                                Segment(part, bridge, text, d, i);
+                            }
                 CityProjects(projects, bridge, text, q, r, townName, cityHere);
             }
             host.style.display = host.childCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;
@@ -175,6 +187,45 @@ namespace Statecraft.Game.UI
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }
             else Line(host, "site-state", text.Format("site.built" + key, Date(text, work.BuiltOn.Value)));
+        }
+
+        /// <summary>A corridor segment (#792, R-COR-001 to R-COR-003): its name, and Build road or Build railway (its corridor's
+        /// kind) with each idle pioneer group, with the kind's cost and the unit's own turns (Projects.Terms,
+        /// Corridors.TurnsToBuild); or its turns left and Stop while it is built; or the day it was built. The order is
+        /// PioneerWork(unit, action, "corridor:N"), SimBridge's corridor key.</summary>
+        static void Segment(VisualElement host, SimBridge bridge, UiText text, CorridorDef d, int index)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            var action = d.Kind == Corridors.Rail ? Corridors.BuildRail : Corridors.BuildRoad;
+            var target = d.Id + ":" + (index + 1).ToString(CultureInfo.InvariantCulture);
+            var terms = Projects.Terms(c.RulesAt(s.Date).Mvp!, action);   // the loader requires the rules in the GDD loop
+            var name = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(d.NameHe) ? d.NameHe : d.Name;
+            Line(host, "corridor-name", text.Format("corridor.segment", name, index + 1));
+            s.Corridors.TryGetValue(d.Id, out var corridor);
+            var work = corridor?.Segments[index];
+            if (work == null)
+            {
+                var idle = s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)).ToList();
+                if (idle.Count == 0) Line(host, "corridor-no-halutz", text["site.no_halutz"]);
+                // One unit a segment (Q-COR-4): once a group is ordered here, the others' Build is off, as the sim would refuse it.
+                var taken = bridge.Queued.OfType<PioneerWork>().Any(w => w.Site == target);
+                foreach (var u in idle)
+                {
+                    var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, target)) is PioneerWork p && p.Site == target;
+                    Button(host, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
+                            : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
+                                Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
+                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
+                }
+            }
+            else if (work.BuiltOn == null)
+            {
+                var unit = work.Unit!.Value;   // a segment being built names its unit (SegmentWork)
+                Line(host, "corridor-state", text.Format("site.building", Group(text, s, unit), Turns(text, Corridors.TurnsToBuild(c, s, unit, terms.Turns - work.Progress, work.Carry))));
+                var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
+                Button(host, "corridor-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
+            }
+            else Line(host, "corridor-state", text.Format("corridor.built", Date(text, work.BuiltOn.Value)));
         }
 
         /// <summary>The city projects of hex (q, r) (#1122). A project there shows its state and, while it is built, Cancel
