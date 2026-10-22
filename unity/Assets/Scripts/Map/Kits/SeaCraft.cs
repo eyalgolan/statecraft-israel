@@ -7,8 +7,8 @@ namespace Statecraft.Game.Map.Kits
     /// <summary>The boats on the Mediterranean, as promo 03 draws them (refs #388): white-sailed craft under way off the coast
     /// and craft moored in and off the harbours of Jaffa, Tel Aviv and Haifa. Craft of the period: lateen-rigged and
     /// gaff-rigged sailing and fishing boats, and a small coastal steamer at anchor off Haifa's breakwater; no motor
-    /// launches or modern craft. Like the buildings, sizes are symbolic: a felucca is drawn about a quarter of a hex across
-    /// (2 km at the default scale), as the promo's boats are, so it reads at the gameplay zoom. One static mesh under the
+    /// launches or modern craft. Each boat is its real length at the one world scale of every model (SettlementKits.ModelScale,
+    /// 24x, the owner on #1094): a 12 m felucca is about 290 m, 1.4 of the steam train's locomotive cars. One static mesh under the
     /// kits' root, drawn with Kit.mat, so the "kits" toggle covers it. Seeded: the same map draws the same boats.</summary>
     public static class SeaCraft
     {
@@ -23,9 +23,10 @@ namespace Statecraft.Game.Map.Kits
             public Vector2 Forward { get { float a = Yaw * Mathf.Deg2Rad; return new Vector2(Mathf.Cos(a), Mathf.Sin(a)); } }
         }
 
-        /// <summary>Lengths in the kits' landmark metres (x KitScale.Landmarks): a felucca 34, a cutter 30, the steamer 46, a
-        /// moored boat 16; a felucca is about a quarter of a hex across at the default scale.</summary>
-        static float LengthOf(Kind k) => k switch { Kind.Felucca => 34f, Kind.Cutter => 30f, Kind.Steamer => 46f, _ => 16f } * KitScale.Landmarks;
+        /// <summary>A boat's length (world m): its real length (design values for craft of the period, not sourced: a felucca
+        /// 12 m, a cutter 10, the coastal steamer 50, a moored fishing boat 8; #1086's fishing boat is 10) times
+        /// SettlementKits.ModelScale. Before #1094 they were the kits' landmark metres x 60, a felucca 2,040 m.</summary>
+        static float LengthOf(Kind k) => k switch { Kind.Felucca => 12f, Kind.Cutter => 10f, Kind.Steamer => 50f, _ => 8f } * SettlementKits.ModelScale;
 
         /// <summary>The coasts the boats under way sail off: a point on the shore (lon, lat), the direction out to sea (world
         /// x, z) and how many boats. Jaffa's, Tel Aviv's and Haifa's are the points the settlement kits build those ports at
@@ -69,7 +70,7 @@ namespace Statecraft.Game.Map.Kits
                 {
                     var kind = rnd.Value() < 0.6f ? Kind.Felucca : Kind.Cutter;
                     float L = LengthOf(kind);
-                    var c = s + seaward * rnd.Range(OffshoreNearM, OffshoreM) * m + along * rnd.Range(-2.2f, 2.2f) * L;
+                    var c = s + seaward * rnd.Range(OffshoreNearM, OffshoreM) * m + along * rnd.Range(-AlongM, AlongM) * m;
                     var craft = new Craft(kind, c, Heading(ref rnd, 35f), L, place);
                     if (!Clear(craft, ground, works, list, 0.5f * L) || NearPort(c, ports, 0.8f * L)) continue;
                     list.Add(craft); put++;
@@ -86,6 +87,11 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>How far out the boats under way sail (world m at the default landmark scale, 60): from past the surf to the
         /// edge of the gameplay pose's view of the coast.</summary>
         internal const float OffshoreNearM = 2400f, OffshoreM = 7500f;
+
+        /// <summary>How far along the coast either side of its point a boat under way may sail (world m at the default landmark
+        /// scale): 2.2 felucca lengths when a felucca was 2,040 m, kept when the boats shrank to the train scale (#1094) so
+        /// they still spread along the coast instead of bunching off its point.</summary>
+        const float AlongM = 4500f;
 
         /// <summary>A harbour's water as the settlement kits record it: Jaffa's a circle (its breakwater's centre and radius,
         /// SettlementKits.Port), Tel Aviv's and Haifa's a box (centre, width east-west, depth north-south). Returns how far

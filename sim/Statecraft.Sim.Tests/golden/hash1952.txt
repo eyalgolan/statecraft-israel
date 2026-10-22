@@ -1,4 +1,4 @@
-1952-01-15;1948;Historical;44;
+1952-01-15;11400714819323200433;Historical;44;
 ind{
   food_supply=0.8555635490815091 [3FEB60C6CEDE8D7F]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
@@ -45,7 +45,7 @@ sit[
   fx_crisis
   housing_crisis
 treasury=0 [0000000000000000]
-debt=211.89012071283815 [406A7C7BDE6EE43A]
+debt=206.14012071283815 [4069C47BDE6EE43A]
 fx=-12.990431328096559 [C029FB19D0A63796]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
@@ -135,7 +135,20 @@ city{
   tiberias=6,2,13,2,0,c0 [0000000000000000]
   zikhron_yaakov=2,1,4,1,0,c0 [0000000000000000]
 units[
-  1:veteran_halutz@-3,19/6
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+  15:veteran_halutz@-3,19/6
 site{
   beit_kama=done,1949-06-15
   beit_kama_field=done,1951-10-15
@@ -146,14 +159,13 @@ site{
   mefalsim=done,1951-02-15
   reim=done,1951-07-15
 cproj[
-  2:housing@tel_aviv,-4,20/done,1949-10-15
-  3:housing@tel_aviv,-3,19/done,1950-06-15
-  4:housing@tel_aviv,-3,20/done,1951-02-15
-  5:housing@tel_aviv,-2,18/done,1951-10-15
-  6:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
-next=7
+  16:housing@tel_aviv,-4,20/done,1949-10-15
+  17:housing@tel_aviv,-3,19/done,1950-06-15
+  18:housing@tel_aviv,-3,20/done,1951-02-15
+  19:housing@tel_aviv,-2,18/done,1951-10-15
+  20:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
+next=21
 obj{
-  first_new_yishuv=1951-02-15
-score=100
+  yishuvim=1951-07-15
 food=2734,1390,0
 arms=12

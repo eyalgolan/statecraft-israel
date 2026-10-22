@@ -23,8 +23,12 @@
 #                the label is a later name (Beisan, Kfar Ata, Pardes Hanna) or there was none (Tarshiha), the 1948 Hebrew form
 #                and the he.wiki page that gives it are in name_he_sources ({url, checked}); Majdal cites he.wiki's article
 #                on the town.
-#                Thirteen villages have no Hebrew label or article and no name_he: the map keeps the English (#558).
-#                name_he_review: agent-checked on those five rows: an AI agent checked the name against its sources and no
+#                Thirteen villages have no Hebrew label or article (#558). Eight have a name_he from a he.wiki page
+#                (2026-10-21, #1219 item 3). Three more have one from the sources the owner allowed on 2026-10-21
+#                (#1219): Salihiya and Karatiya from moreshet-map.org.il battle pages, Zuq et Tahtani from an Israel
+#                Antiquities Authority final report (2026-10-22). Ni'ilya and Ghazawiya keep the English: their only
+#                Hebrew forms so far are Zochrot's, which the ruling does not allow.
+#                name_he_review: agent-checked on the rows with a sourced name_he: an AI agent checked the name against its sources and no
 #                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
 #   reviewed_by/on  a person's sign-off beside status (a place or a camp row), their GitHub handle and the day, both or
 #                neither; only that person writes them (owner, 15 October 2026, #375; docs/HISTORIAN_REVIEW.md).
@@ -2668,6 +2672,11 @@ places:
 - id: naana
   name: Na'ana
   name_basis: vs1945
+  name_he: נענה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נען
+    checked: '2026-10-21'
   name_ar: النعاني
   lon: 34.8733
   lat: 31.8722
@@ -3840,6 +3849,11 @@ places:
   name: Salihiya
   name_basis: vs1945
   name_ar: الصالحية
+  name_he: סאלחיה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://moreshet-map.org.il/step-3/בלימת-צבא-סוריה-במשמר-הירדן/סאלחיה/
+    checked: '2026-10-22'
   lon: 35.6124
   lat: 33.1673
   kind: arab_village
@@ -4517,6 +4531,11 @@ places:
   name: Karatiya
   name_basis: vs1945
   name_ar: كرتيا
+  name_he: כרתיא
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://moreshet-map.org.il/step-4/מבצע-אנ-פאר/כרתיא/
+    checked: '2026-10-22'
   lon: 34.7258
   lat: 31.6436
   kind: arab_village
@@ -4589,6 +4608,11 @@ places:
 - id: simsim_gaza
   name: Sumsum
   name_basis: vs1945
+  name_he: סימסים
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/גברעם
+    checked: '2026-10-21'
   name_ar: سمسم
   lon: 34.6072
   lat: 31.5672
@@ -5180,6 +5204,11 @@ places:
 - id: al_naima
   name: Na'ima
   name_basis: vs1945
+  name_he: אל-נאעמה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/תל_נעמה
+    checked: '2026-10-21'
   name_ar: الناعمة، فلسطين
   lon: 35.595
   lat: 33.1882
@@ -5373,6 +5402,11 @@ places:
 - id: al_jiyya
   name: Jiya
   name_basis: vs1945
+  name_he: אל-ג'יה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/גיאה
+    checked: '2026-10-21'
   name_ar: الجِيّة
   lon: 34.5975
   lat: 31.6272
@@ -5463,6 +5497,11 @@ places:
 - id: al_mansi
   name: Mansi
   name_basis: vs1945
+  name_he: מנסי
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/מדרך_עוז
+    checked: '2026-10-21'
   name_ar: المنسي
   lon: 35.1727
   lat: 32.5949
@@ -5586,6 +5625,11 @@ places:
 - id: az_zakariyya
   name: Zakariya
   name_basis: vs1945
+  name_he: זכריה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/זכריה_(מושב)
+    checked: '2026-10-21'
   name_ar: قرية زكريا
   lon: 34.9472
   lat: 31.7084
@@ -6191,6 +6235,11 @@ places:
 - id: al_qubayba_hebron
   name: Qubeiba
   name_basis: vs1945
+  name_he: אל-קוביבה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/לכיש_(מושב)
+    checked: '2026-10-21'
   name_ar: القبيبة، الخليل
   lon: 34.8545
   lat: 31.5705
@@ -6286,6 +6335,11 @@ places:
   name: Zuq et Tahtani
   name_basis: vs1945
   name_ar: الزوق التحتاني
+  name_he: זוק אל-תחתני
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://hadashot.iaa.org.il/report_detail.aspx?id=20766&mag_id=122
+    checked: '2026-10-22'
   lon: 35.6011
   lat: 33.215
   kind: arab_village
@@ -6455,6 +6509,11 @@ places:
 - id: al_sawafir_al_gharbiyya
   name: Sawafir el Gharbiya
   name_basis: vs1945
+  name_he: אלסוואפיר אלע'רביה
+  name_he_review: agent-checked
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/משואות_יצחק
+    checked: '2026-10-21'
   name_ar: السوافير الغربية
   lon: 34.7031
   lat: 31.6992

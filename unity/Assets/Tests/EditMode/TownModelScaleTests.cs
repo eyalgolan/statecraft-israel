@@ -36,18 +36,22 @@ public class TownModelScaleTests
         M.B04aStoneBalconies, M.B04bLoadingDoors, M.B07DiningHall, M.B23Winery, M.B24Barn, M.B32CargoShed,
     };
 
-    static List<SettlementKits.ModelInstance> Models(out MapScene map)
+    static List<SettlementKits.ModelInstance> Models(out MapScene map) => Built(out map, out _).Models;
+
+    /// <summary>The map's settlements built; their meshes destroyed, except the close meshes when <paramref name="keepClose"/>
+    /// (the caller destroys those).</summary>
+    static SettlementKits.Result Built(out MapScene map, out List<SettlementKits.Placed> placed, bool keepClose = false)
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
         var g = new KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
-        var built = SettlementKits.Build(map.Settlements, map.Localities.Select(p => p.Settlement).ToList(), new List<Localities.Area>(), g, out _);
+        var built = SettlementKits.Build(map.Settlements, map.Localities.Select(p => p.Settlement).ToList(), new List<Localities.Area>(), g, out placed);
         foreach (var k in built.Towns) UnityEngine.Object.DestroyImmediate(k.mesh);
         foreach (var t in built.Tiles) UnityEngine.Object.DestroyImmediate(t.mesh);
-        foreach (var c in built.Close.Values) UnityEngine.Object.DestroyImmediate(c);
-        return built.Models;
+        if (!keepClose) foreach (var c in built.Close.Values) UnityEngine.Object.DestroyImmediate(c);
+        return built;
     }
 
     /// <summary>A placed model's four ground corners (world x/z) and its height (m): its mesh-space box through its matrix.</summary>
@@ -171,5 +175,161 @@ public class TownModelScaleTests
                 }
         TestContext.WriteLine(byTowns.Count == 0 ? "no overlaps" : string.Join("; ", byTowns.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key}: {kv.Value}")));
         CollectionAssert.IsEmpty(byTowns.Keys.Take(15), $"{byTowns.Values.Sum()} overlapping pairs between settlements");
+    }
+
+    /// <summary>Issue #1032: each kit landmark's real height (m), the tallest part the kit draws for it, read off the kit's
+    /// own parts (SettlementKits.Landmarks.cs, .Moshav.cs, .Outpost.cs). The harbour works (low, in the sea), the Haram's
+    /// platform (ground, sized in metres to hold the Old City's lots) and the palms (trees) are not buildings and keep the
+    /// kit's size.</summary>
+    static readonly Dictionary<string, float> LandmarkRealM = new Dictionary<string, float>
+    {
+        ["mosque"] = 30.5f,            // the minaret's 26 m shaft and its 4.5 m cap
+        ["village_mosque"] = 14f,      // the hall's 5.5 m, the minaret's 7.9 m and its parapet
+        ["church"] = 32f,              // the nave's 12 m, the belfry's 14 m and its 6 m roof
+        ["clock_tower"] = 31.5f,
+        ["lighthouse"] = 16.7f,
+        ["white_tower"] = 31.2f,       // five storeys of 27 m, the lantern and its dome
+        ["citadel"] = 33.5f,           // the minaret and its cap
+        ["dome_of_the_rock"] = 25.6f,  // its walls and drum (19 m at 30x) and its dome (11 m at 18x): 768 m at 30x
+        ["al_aqsa"] = 37.2f,           // its hall and its dome, 595 m over the platform at 16x
+        ["walls"] = 9.9f,              // Suleiman's walls and their parapet at 100x
+        ["wall_tower"] = 13f,          // a tower by a gate (the others 11.6 m)
+        ["gate"] = 13f,
+        ["public_building"] = 6.8f,    // Nahalal's hall: 1.3 storeys and its gable
+        ["outpost_yard"] = 10.5f,      // the lookout tower and its cap
+    };
+
+    /// <summary>Issue #1032 (follow-up to #1030): the kit landmarks (mosques, domes, church towers, walls, lighthouses, the
+    /// Jaffa clock tower) drew up close at the kits' 60x and 100x, so they towered over the 24x house models. Up close every
+    /// kit landmark stands at the models' rule, real height x <see cref="SettlementKits.ModelScale"/> (the locomotive's car
+    /// over the reference house): between 0.45 and 1.15 of it. A landmark is never drawn bigger up close than far off, so
+    /// the floor lets the ones fitted smaller keep their size: the Haram's Al-Aqsa and the citadel (16x and 20x, fitted to
+    /// the symbolic Old City) and the village mosques at Tel Aviv's street crossings (#318, about 12x); a scale that
+    /// collapsed by half fails. Above 1.15 is the kit's own scale coming back (a mosque's minaret stands on its own ground,
+    /// a little above or below the hall's). Every landmark the census records has its close copy.</summary>
+    [Test]
+    public void EveryKitLandmarkStandsAtTheModelsScaleUpClose()
+    {
+        var built = Built(out _, out var placed);
+        var close = built.CloseLandmarks;
+        float scale = SettlementKits.ModelScale;
+        Assert.AreEqual(LocoM / SettlementKits.ReferenceHouseM, scale, 0.01f, "the locomotive rule");
+        var bad = new List<string>();
+        foreach (var l in close)
+        {
+            if (!LandmarkRealM.TryGetValue(l.Kind, out var real)) { bad.Add($"{l.Id} {l.Kind}: no real height listed"); continue; }
+            float k = l.H / (real * scale);
+            if (k < 0.45f || k > 1.15f) bad.Add($"{l.Id} {l.Kind}: {l.H:0} m tall up close, {k:0.00} of {real} m x {scale:0}");
+        }
+        foreach (var kind in LandmarkRealM.Keys)
+        {
+            if (kind == "walls" || kind == "wall_tower") continue;   // the census records the circuit once, the kit draws it in pieces
+            int want = placed.Count(p => p.Kind == kind), got = close.Count(l => l.Kind == kind);
+            if (want != got) bad.Add($"{kind}: {want} in the census, {got} up close");
+        }
+        TestContext.WriteLine(string.Join("; ", close.GroupBy(l => l.Kind).OrderBy(g => g.Key)
+            .Select(g => $"{g.Key} x{g.Count()} {g.Max(l => l.H):0} m ({g.Max(l => l.H) / (LandmarkRealM.TryGetValue(g.Key, out var r) ? r : 1f):0.0}x)")));
+        CollectionAssert.IsSubsetOf(LandmarkRealM.Keys, close.Select(l => l.Kind).Distinct().ToList(), "every kind of kit landmark is on the map");
+        CollectionAssert.IsEmpty(bad.Take(15), $"{bad.Count} landmarks off the models' scale");
+    }
+
+    /// <summary>Issue #1032, the owner's review of #1048: the close mesh itself draws each kit landmark at the models' scale,
+    /// not only its record. KitMesh.CloseCopy cuts the kit-scale landmark (CutEnd) and draws the shrunk copy instead; without
+    /// the cut the 60x or 100x original stands in the close mesh beside its copy and towers over the 24x houses again. So
+    /// round each close landmark's anchor no close-mesh vertex stands higher than its copy's top (its ground level Y plus
+    /// its height H, 1 m for float rounding), or a neighbouring copy's whose circle meets it. The circle is the copy's
+    /// smaller half side, so a neighbour's palm or plinth stays out; a wall piece's circle (its thickness, mid-length) holds
+    /// no vertex and is skipped, its towers and gates are checked.</summary>
+    [Test]
+    public void TheCloseMeshDrawsEveryKitLandmarkAtItsCopysHeight()
+    {
+        var built = Built(out _, out _, keepClose: true);
+        try
+        {
+            // Every close mesh's vertices, bucketed on a 200 m grid. The close meshes keep no CPU copy (UploadMeshData), so
+            // their positions are read back from the vertex buffer.
+            const float Cell = 200f;
+            var grid = new Dictionary<(int, int), List<Vector3>>();
+            foreach (var m in built.Close.Values)
+                foreach (var v in Positions(m))
+                {
+                    var key = (Mathf.FloorToInt(v.x / Cell), Mathf.FloorToInt(v.z / Cell));
+                    if (!grid.TryGetValue(key, out var l)) grid[key] = l = new List<Vector3>();
+                    l.Add(v);
+                }
+            var bad = new List<string>();
+            int checkedSites = 0;
+            foreach (var l in built.CloseLandmarks)
+            {
+                float r = 0.5f * Mathf.Min(l.W, l.D), top = float.MinValue;
+                for (int x = Mathf.FloorToInt((l.C.x - r) / Cell); x <= Mathf.FloorToInt((l.C.x + r) / Cell); x++)
+                    for (int z = Mathf.FloorToInt((l.C.y - r) / Cell); z <= Mathf.FloorToInt((l.C.y + r) / Cell); z++)
+                        if (grid.TryGetValue((x, z), out var cell))
+                            foreach (var v in cell)
+                                if ((new Vector2(v.x, v.z) - l.C).sqrMagnitude <= r * r) top = Mathf.Max(top, v.y);
+                if (top == float.MinValue) continue;
+                checkedSites++;
+                // A neighbouring copy whose circle meets this one (a gate beside its tower, on higher ground) may stand higher.
+                float limit = built.CloseLandmarks.Where(o => (o.C - l.C).magnitude < r + 0.5f * Mathf.Min(o.W, o.D)).Max(o => o.Y + o.H);
+                if (top > limit + 1f) bad.Add($"{l.Id} {l.Kind}: the close mesh stands {top - l.Y:0} m over its ground, its copy {l.H:0} m");
+            }
+            TestContext.WriteLine($"{checkedSites} of {built.CloseLandmarks.Count} landmark sites checked");
+            Assert.Greater(checkedSites, built.CloseLandmarks.Count * 3 / 4, "most landmark sites have close-mesh vertices");
+            CollectionAssert.IsEmpty(bad.Take(15), $"{bad.Count} landmarks drawn above their copy in the close mesh");
+        }
+        finally { foreach (var c in built.Close.Values) UnityEngine.Object.DestroyImmediate(c); }
+    }
+
+    /// <summary>A mesh's vertex positions, read back from its vertex buffer when it keeps no CPU copy.</summary>
+    static Vector3[] Positions(Mesh m)
+    {
+        if (m.isReadable) return m.vertices;
+        // The readback needs the editor's graphics device (not -nographics) and float32 x 3 positions (SetVertices).
+        Assert.AreEqual(UnityEngine.Rendering.VertexAttributeFormat.Float32, m.GetVertexAttributeFormat(UnityEngine.Rendering.VertexAttribute.Position), m.name);
+        Assert.AreEqual(3, m.GetVertexAttributeDimension(UnityEngine.Rendering.VertexAttribute.Position), m.name);
+        int s = m.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.Position);
+        int off = m.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.Position) / 4, stride = m.GetVertexBufferStride(s) / 4;
+        using var buf = m.GetVertexBuffer(s);
+        var raw = new float[m.vertexCount * stride];
+        buf.GetData(raw);
+        var p = new Vector3[m.vertexCount];
+        for (int i = 0; i < p.Length; i++) p[i] = new Vector3(raw[i * stride + off], raw[i * stride + off + 1], raw[i * stride + off + 2]);
+        return p;
+    }
+
+    /// <summary>The products of two plot sides of 1 to <see cref="SettlementKits.MaxPerSide"/>: the counts a full grid holds.</summary>
+    static readonly HashSet<int> GridCounts = new HashSet<int>(
+        Enumerable.Range(1, SettlementKits.MaxPerSide).SelectMany(a => Enumerable.Range(1, SettlementKits.MaxPerSide).Select(b => a * b)));
+
+    /// <summary>Issue #1032: a kit plot's models no longer sit in a regular grid (they read as regular clusters): each is
+    /// turned a little off the plot (up to <see cref="SettlementKits.MaxTurnDeg"/>) and moved within its cell, the group is
+    /// off the plot's centre, and some cells are left empty (a varied count, a street through the plot). Seeded: two builds
+    /// place every model at the same matrix; and no two models of one plot overlap.</summary>
+    [Test]
+    public void APlotsModelsAreSeededAndNotARegularGrid()
+    {
+        var a = Models(out _); var b = Models(out _);
+        Assert.AreEqual(a.Count, b.Count, "two builds place as many models");
+        for (int i = 0; i < a.Count; i++)
+            if (a[i].Model != b[i].Model || a[i].M != b[i].M) Assert.Fail($"model {i} ({a[i].Id} {a[i].Model}) differs between two builds");
+        var plots = a.GroupBy(m => (m.Id, m.Plot)).Where(g => g.Count() > 1).Select(g => g.ToList()).ToList();
+        Assert.Greater(plots.Count, 500);
+        int turned = 0, offCentre = 0, uneven = 0;
+        var bad = new List<string>();
+        foreach (var g in plots)
+        {
+            var plot = g[0].Plot;
+            if (g.Select(m => Mathf.Round(m.Yaw * 10f)).Distinct().Count() > 1) turned++;
+            if ((g.Aggregate(Vector2.zero, (s, m) => s + m.C) / g.Count - plot).magnitude > 1f) offCentre++;
+            if (!GridCounts.Contains(g.Count)) uneven++;
+            for (int i = 0; i < g.Count; i++)
+                for (int j = i + 1; j < g.Count; j++)
+                    if (Overlap(Box(g[i]).quad, Box(g[j]).quad, 1f)) bad.Add($"{g[i].Id} at {plot}: {g[i].Model} and {g[j].Model} overlap");
+        }
+        TestContext.WriteLine($"{plots.Count} plots with several models: {turned} turned, {offCentre} off centre, {uneven} with a count no grid holds");
+        Assert.Greater(turned, plots.Count / 2, "the models are turned off their plot");
+        Assert.Greater(offCentre, plots.Count / 2, "the groups are off their plot's centre");
+        Assert.Greater(uneven, plots.Count / 10, "some cells are left empty");
+        CollectionAssert.IsEmpty(bad.Take(15), $"{bad.Count} overlapping models within a plot");
     }
 }

@@ -582,6 +582,39 @@ public class TopBarTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>#1089 (the owner's ruling, 20 October 2026): on a phone held upright the three-row bar shrinks to fit its rows,
+    /// so no empty band lies between the stats and the map. Its last row (the screen buttons, Attention and End Turn) ends at
+    /// the bar's bottom, the panels under it move up with it (they start at most the stylesheet's 16 px below it; the panel's
+    /// pixel snapping reads it as 14 to 17), and at 390x844 it is at most 440 px tall (the snapping reads 440 as 440.8, hence
+    /// the 441 bound, not an overshoot); in both languages, with turn 1's values and with the widest.</summary>
+    [UnityTest]
+    public IEnumerator OnAPhoneTheBarEndsAtItsLastRow()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var widest in new[] { false, true })
+                foreach (var (w, h) in new[] { (390, 844), (360, 800), (375, 667) })
+                    yield return Rendered(w, h, hebrew, (root, text) =>
+                    {
+                        string at = $"{(hebrew ? "he" : "en")} {w}x{h}{(widest ? " widest" : " turn 1")}";
+                        if (!root.Q("root").ClassListContains(HudPresenter.ThreeRowClass)) { problems.Add($"{at}: precondition: the three-row bar"); return; }
+                        var barEl = root.Q("top-bar");
+                        var bar = barEl.worldBound;
+                        var s = barEl.resolvedStyle;
+                        float last = barEl.Children().Where(k => k.resolvedStyle.position == Position.Relative && Shown(k))
+                                          .Max(k => k.worldBound.yMax + k.resolvedStyle.marginBottom);
+                        float slack = bar.yMax - s.paddingBottom - s.borderBottomWidth - last;
+                        var turnBox = root.Q(className: "turn-box").worldBound;
+                        var column = root.Q("left-column").worldBound;
+                        TestContext.WriteLine($"{at}: bar {barEl.layout.height:0.0} px, last row ends {slack:0.0} px above its bottom, turn box {turnBox}, column top {column.yMin - bar.yMax:0.0} px below it");
+                        if (slack > 1f) problems.Add($"{at}: an empty band of {slack:0.0} px between the bar's last row and its bottom {bar.yMax:0.0}");
+                        if (!Inside(turnBox, bar)) problems.Add($"{at}: Attention and End Turn {turnBox} leave the bar {bar}");
+                        if (column.yMin < bar.yMax - 0.5f || column.yMin > bar.yMax + 18f) problems.Add($"{at}: the column starts {column.yMin - bar.yMax:0.0} px below the bar, not about 16");
+                        if (w == 390 && barEl.layout.height > 441f) problems.Add($"{at}: the bar is {barEl.layout.height:0.0} px, over the 440 px maximum");
+                    }, widest: widest);
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>The audit's Tab order is kept: the side-menu screens, New Game, End Turn, then the
     /// minimap's buttons.</summary>
     [UnityTest]
@@ -592,7 +625,7 @@ public class TopBarTests
             {
                 var order = root.Query<Button>().ToList().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0)
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
                     order, (hebrew ? "he" : "en") + ": the Tab order");
             }, widest: false);
     }

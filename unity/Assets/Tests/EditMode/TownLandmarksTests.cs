@@ -41,7 +41,7 @@ public class TownLandmarksTests
 
     static readonly string[] Towns =
     {
-        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1-3denhance", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
         "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
     };
 
@@ -66,7 +66,7 @@ public class TownLandmarksTests
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
-        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them");
+        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708)");
         foreach (var id in Towns) Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(id), id);
         Assert.AreEqual(TownLandmarks.TelAviv, TownLandmarks.ById["tel_aviv"]);
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
@@ -85,6 +85,28 @@ public class TownLandmarksTests
         Assert.IsNull(TownLandmarks.ModelFor(MapActions.Housing, new DateTime(1949, 11, 15)), "not on the 15 November 1949 turn");
         Assert.AreEqual(TownLandmarks.Shikun, TownLandmarks.ModelFor(MapActions.Housing, new DateTime(1949, 12, 15)), "from the 15 December 1949 turn");
         Assert.IsNull(TownLandmarks.ModelFor("no_such_action", new DateTime(1951, 1, 1)));
+    }
+
+    /// <summary>The owner, 21 October 2026, on #708 (issuecomment-6323524970): #336's second Jerusalem (#886) "is Jerusalem's
+    /// only far-zoom model for the whole game. The first model stays in the repository, unused on the map. No date switch".
+    /// It streams from the towns bundle and stands on Jerusalem's core on every date; #507's first Jerusalem is never asked for.</summary>
+    [Test]
+    public void JerusalemIsTheSecondStoneCityOnEveryDate()
+    {
+        Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(TownLandmarks.Jerusalem3D));
+        Assert.AreEqual(TownLandmarks.Jerusalem3D, TownLandmarks.ById["jerusalem"]);
+        CollectionAssert.DoesNotContain(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).ToList(), TownLandmarks.Jerusalem,
+            "#507's first Jerusalem stays in the repository, unused on the map");
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var map = OpenMap();
+        foreach (var date in new[] { content.Rules.Start, new DateTime(1949, 4, 15), new DateTime(1951, 12, 15) })
+        {
+            var t = TownLandmarks.ShowAt(map, date, Array.Empty<Placement>(), content)!;
+            CollectionAssert.DoesNotContain(asked.Select(a => a.id).ToList(), TownLandmarks.Jerusalem, "the first Jerusalem is never asked for");
+            AnswerAll();
+            Assert.AreEqual(TownLandmarks.Jerusalem3D, t.Placed.Single(p => p.Key == "jerusalem").Model, $"{date:d MMM yyyy}");
+            Assert.IsTrue(t.Seats.ContainsKey("jerusalem"), "on its core");
+        }
     }
 
     /// <summary>The towns with a whole-town model, in the file's order.</summary>
@@ -187,7 +209,7 @@ public class TownLandmarksTests
 
     /// <summary>The swap with #700's building models: the landmarks draw where TownModelLayer draws the kits' far view and
     /// hide where it draws the building models (TownModelLayer.CloseAt: in below CloseEnterM, out above CloseExitM), with
-    /// the same hysteresis, at the start view (120 km), the gameplay view (60 km), both sides of the band and the closest
+    /// the same hysteresis, at the start view (90 km), the gameplay view (60 km), both sides of the band and the closest
     /// zoom.</summary>
     [Test]
     public void TheLandmarksSwapWithTheBuildingModelsAtTheThreshold()
@@ -201,7 +223,7 @@ public class TownLandmarksTests
         var tel = map.KitFootprints.First(f => f.id == "tel_aviv").centre;
         foreach (var (d, close, why) in new[]
         {
-            (120000f, false, "the start view"), (60000f, false, "the gameplay view"),
+            (90000f, false, "the start view"), (60000f, false, "the gameplay view"),
             (TownModelLayer.CloseEnterM + 1000f, false, "inside the band, coming in"), (TownModelLayer.CloseEnterM - 1000f, true, "past the threshold"),
             (TownModelLayer.CloseExitM - 2000f, true, "inside the band, going out"), (TownModelLayer.CloseExitM + 1000f, false, "out of the band"),
             (CameraController.MinDistance, true, "the closest zoom"),
@@ -333,6 +355,30 @@ public class TownLandmarksTests
         }
         TestContext.WriteLine(string.Join("; ", lines));
         Assert.Greater(Vector3.Angle(Vector3.up, t.Seats["degania_alef"].Normal), 0.5f, "Degania Alef leans with its slope");
+    }
+
+    /// <summary>#588 (owner, 18 October 2026, option (a), "Clearing doesn't move the core"): a unit clearing's ground in a
+    /// town counts as if it still held plots, so the token's clearing does not pull the whole-town model's core away from
+    /// it (Carmeli's in Haifa pushed Haifa's model into the bay). A town's plots on a 100 m grid with a hole cut where a
+    /// clearing stands keep the core of the whole grid; without the clearing the core moves off it.</summary>
+    [Test]
+    public void AUnitClearingDoesNotMoveATownsCore()
+    {
+        var centre = new Vector2(10000f, 10000f);
+        var clearing = (centre: centre + new Vector2(250f, 0f), radius: 200f);
+        var all = new List<Vector2>();
+        for (int i = -6; i <= 6; i++) for (int k = -6; k <= 6; k++) all.Add(centre + new Vector2(100f * i, 100f * k));
+        var holed = all.Where(p => (p - clearing.centre).magnitude >= clearing.radius).ToList();
+        Assert.Less(holed.Count, all.Count, "the clearing takes plots");
+        var none = new (Vector2, float)[0];
+        bool Dry(float x, float z) => false;
+        var whole = TownLandmarks.CoreOf(centre, 1500f, all, none, new Vector2[0], Dry);
+        var kept = TownLandmarks.CoreOf(centre, 1500f, holed, new[] { clearing }, new Vector2[0], Dry);
+        var moved = TownLandmarks.CoreOf(centre, 1500f, holed, none, new Vector2[0], Dry);
+        Assert.Greater((moved.centre - whole.centre).magnitude, 10f, "without the clearing's ground the core moves away from it");
+        Assert.Less((kept.centre - whole.centre).magnitude, 5f, "with it the core stays where the full town's is");
+        // The grid ties at the core's edge, so which edge plots make the share shifts its radius by a few metres.
+        Assert.AreEqual(whole.radius, kept.radius, 0.03f * whole.radius, "and keeps its size");
     }
 
     [Test]

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Globalization;
 using System.Linq;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
@@ -8,40 +9,57 @@ namespace Statecraft.Game.UI
 {
     /// <summary>GDD Phase 1 PR 8 (#381): the info panel's part for the GDD loop (Content.IsGdd), built into the
     /// <see cref="HostName"/> element on every render.
-    /// <para>On a city hex (State.Cities), its counts (housing, jobs, refugees waiting, recruits) and training cohorts with
+    /// <para>On a city hex (State.Cities), its counts (housing, overflow, jobs, craftsmen, refugees waiting, recruits) and training cohorts with
     /// their turns left, the Assign stepper (R-CITY-001), Train for each facility the city has (R-TRAIN-001, R-CAMP-001) and Cancel
-    /// (R-TRAIN-002). On a yishuv site's hex (sites.yaml, Projects.IsYishuvSite), its state, and Build with each idle pioneer
+    /// (R-TRAIN-002). On a site's hex (sites.yaml: a yishuv, camp, field or swamp site, #1124), its state, and Build with each idle pioneer
     /// group (Projects.IsPioneer: a halutz or a veteran one), with the rules' cost and the unit's own turns (Projects.TurnsToBuild;
     /// R-SITE-001, R-VET-002), or Stop while it is built (R-SITE-002).</para>
+    /// <para>On any hex a city can build on (Projects.CitiesFor, #1122): the city that builds (the player picks when several
+    /// can), and Build for each content project kind with its cost and turns (Projects.CityTurnsToBuild), disabled with the sim's own refusal
+    /// (Projects.CheckCityReason) worded in the UI's language; or the project there, with its turns left and Cancel, or the
+    /// day it was finished (R-PROJ-001 to R-PROJ-003).</para>
     /// <para>Every number is the sim's, and every order goes through the bridge's queue: the sim rules on it when the turn
     /// runs. No rule lives here: the limits are the sim's public helpers (Cities.MaxWorkers, Training.Available), asked with
     /// the queue, and a button is disabled only where the sim would refuse that order, or another one in the queue, anyway.</para></summary>
     public static class GddHexPanel
     {
         public const string HostName = "info-gdd";
-        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row";
+        /// <summary>The city-project part's host (#1122), in the hex's facts column: the GDD column beside it is already full on a city's
+        /// own hex, and the facts column has room (InfoPanelLayoutTests).</summary>
+        public const string ProjectsHostName = "info-projects";
+        /// <summary>On the city's own hex, on a stacked bar or a short window, the project part folds behind this toggle
+        /// ("City projects (N)") and the list it opens (owner ruling on #1150, 21 Oct 2026; Statecraft.uss .city-projects-list).</summary>
+        public const string ToggleName = "city-projects-toggle", ListName = "city-projects-list", OpenClass = "info-projects-open";
+        const string LineClass = "info-gdd-line", RowClass = "info-gdd-row", PairsClass = "info-gdd-pairs";
 
         public static void Hide(VisualElement host) { host.Clear(); host.style.display = DisplayStyle.None; }
 
-        /// <summary>Builds the hex's GDD part into <paramref name="host"/> (hidden when there is none) and returns the
-        /// designated site's name in the UI's language when the hex holds one, else null.</summary>
-        public static string? Render(VisualElement host, SimBridge bridge, UiText text, int q, int r)
+        /// <summary>Builds the hex's GDD part into <paramref name="host"/> and its city projects into <paramref name="projects"/>
+        /// (each hidden when there is none) and returns the designated site's name in the UI's language when the hex holds one,
+        /// else null. <paramref name="townName"/> names a city in the UI's language (InfoPanelPresenter's town names).</summary>
+        public static string? Render(VisualElement host, VisualElement projects, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
         {
-            host.Clear();
+            host.Clear(); projects.Clear();
             var c = bridge.Content; var s = bridge.State;
             string? title = null;
             if (c.IsGdd)
             {
                 foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
                     City(host, bridge, text, at.Id);
-                var site = c.Sites.FirstOrDefault(x => x.Q == q && x.R == r && Projects.IsYishuvSite(x));
-                if (site != null)
+                var cityHere = host.childCount > 0;
+                // A hex may hold two sites, a yishuv or the Hula swamp and the field it readies (R-FIELD-001, R-SWAMP-001): each
+                // gets its own part, the one to finish first on top, and its name is the title (#1124).
+                foreach (var site in c.Sites.Where(x => x.Q == q && x.R == r && Work(x) != null).OrderBy(x => x.Kinds.Contains(Projects.FieldKind)))
                 {
-                    title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
-                    Site(host, bridge, text, site);
+                    title ??= Name(text, site);
+                    var part = new VisualElement { name = "site-part-" + site.Id };
+                    host.Add(part);
+                    Site(part, bridge, text, site, Work(site)!.Value);
                 }
+                CityProjects(projects, bridge, text, q, r, townName, cityHere);
             }
             host.style.display = host.childCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            projects.style.display = projects.childCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             return title;
         }
 
@@ -55,8 +73,16 @@ namespace Statecraft.Game.UI
             Line(host, "city-housing", city.Condition is double condition
                 ? text.Format("city.housing_condition", housed, capacity, PlayerText.Percent(condition))
                 : text.Format("city.housing", housed, capacity));
-            Line(host, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
-            Line(host, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            // #1121: the craftsmen (R-CRAFT-001) beside Jobs, as they fill ordinary jobs (R-CRAFT-002), and the overflow
+            // (R-HOUSE-002, Cities.Overflow) beside the refugees waiting, the other people without housing. Each pair shares a
+            // row (the labels keep their width and the row wraps only when they do not fit, Statecraft.uss), so on a short
+            // window the panel stays clear of the left column (InfoPanelLayoutTests). Bare counts, like the Jobs line, to fit.
+            var jobs = Row(host, "city-jobs-row"); jobs.AddToClassList(PairsClass);
+            Line(jobs, "city-jobs", text.Format("city.jobs", city.Employed, city.JobSlots));
+            Line(jobs, "city-craftsmen", text.Format("city.craftsmen", city.Craftsmen));
+            var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
+            Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
+            Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
             Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
@@ -98,14 +124,34 @@ namespace Statecraft.Game.UI
             if (bridge.QueuedLike(new AssignWorkers(city, "job", 0)) is Command order) bridge.Withdraw(order);
         }
 
-        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site)
+        /// <summary>The pioneer action a site is for, as Projects.Start matches them (R-SITE-001, R-CAMP-001, R-FIELD-001,
+        /// R-SWAMP-001), and the suffix of its strings; null for a site no pioneer work is for. A site of two kinds would get
+        /// the first here; sites.yaml has none.</summary>
+        static (string Action, string Key)? Work(Statecraft.Sim.Site site) =>
+            Projects.IsYishuvSite(site) ? (Projects.BuildYishuv, "")
+            : Projects.IsCamp(site) ? (Projects.BuildCamp, "_camp")
+            : site.Kinds.Contains(Projects.FieldKind) ? (Projects.PlowFields, "_field")
+            : site.Kinds.Contains(Projects.SwampKind) ? (Projects.DrySwamp, "_swamp")
+            : ((string, string)?)null;
+
+        static string Name(UiText text, Statecraft.Sim.Site site) =>
+            text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
+
+        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind)
         {
             var c = bridge.Content; var s = bridge.State;
+            var (action, key) = kind;
             s.Sites.TryGetValue(site.Id, out var work);
             if (work == null)
             {
-                Line(host, "site-state", text["site.available"]);
-                var rules = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
+                // The sim refuses to plow while the hex's yishuv or swamp is unfinished: the same helper Projects.Start asks.
+                if (action == Projects.PlowFields && Projects.YishuvToBuildFirst(c, s, site) is Statecraft.Sim.Site first)
+                {
+                    Line(host, "site-state", text.Format(first.Kinds.Contains(Projects.SwampKind) ? "site.waits_swamp" : "site.waits_yishuv", Name(text, first)));
+                    return;
+                }
+                Line(host, "site-state", text["site.available" + key]);
+                var terms = Projects.Terms(c.RulesAt(s.Date).Mvp!, action);   // the loader requires the rules in the GDD loop
                 var idle = s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && !Projects.IsBusy(s, u.Id)).ToList();
                 if (idle.Count == 0) Line(host, "site-no-halutz", text["site.no_halutz"]);
                 // One unit builds a site (question 15): once a group is ordered here, the others' Build is off, as the sim
@@ -114,21 +160,114 @@ namespace Statecraft.Game.UI
                 foreach (var u in idle)
                 {
                     // PioneerWork and StopWork share the unit's key: an order for this unit at this site is this button's.
-                    var ordered = bridge.QueuedLike(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id)) is PioneerWork p && p.Site == site.Id;
+                    var ordered = bridge.QueuedLike(new PioneerWork(u.Id, action, site.Id)) is PioneerWork p && p.Site == site.Id;
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
-                            : text.Format("site.build", Group(text, s, u.Id), PlayerText.Money(c, "treasury", rules.BuildYishuvCost),
-                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, rules.BuildYishuvTurns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, Projects.BuildYishuv, site.Id))).SetEnabled(!ordered && !taken);
+                            : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
+                                Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
+                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
-                Line(host, "site-state", text.Format("site.building", Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
+                Line(host, "site-state", text.Format("site.building" + key, Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
-                Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
+                Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
             }
-            else Line(host, "site-state", text.Format("site.built", Date(text, work.BuiltOn.Value)));
+            else Line(host, "site-state", text.Format("site.built" + key, Date(text, work.BuiltOn.Value)));
+        }
+
+        /// <summary>The city projects of hex (q, r) (#1122). A project there shows its state and, while it is built, Cancel
+        /// (R-PROJ-002). Else, for the cities in reach (Projects.CitiesFor; none: nothing shows), the city that builds: the one
+        /// the player picked on this hex, else the queued order's, else the nearest. Build for each kind queues StartProject for
+        /// that city and hex, one order a hex (SimBridge's key, so another kind or city replaces it); the Attention is the
+        /// bridge's, which refuses an order it cannot pay for as for every order. On a city's own hex (<paramref name="cityHere"/>)
+        /// the cities and the kinds go into the ListName list under the ToggleName toggle, which the stylesheet shows only on a
+        /// stacked bar or a short window (InfoPanelPresenter.ShortClass) and which opens and closes the list there.</summary>
+        static void CityProjects(VisualElement host, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName, bool cityHere)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            string Kind(string id) => PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == id)));
+            if (Projects.CityProjectAt(s, q, r) is CityProject project)
+            {
+                if (project.BuiltOn is DateTime built)
+                {
+                    Line(host, "city-project-state", text.Format("city.project_built", Kind(project.Kind), townName(project.City), Date(text, built)));
+                    return;
+                }
+                Line(host, "city-project-state", text.Format("city.project_building", Kind(project.Kind), townName(project.City), Turns(text, Projects.CityTurnsToBuild(c, s, project.Kind, project.TurnsLeft, project.Progress))));
+                var cancelled = bridge.QueuedLike(new CancelProject(project.Id)) != null;
+                Button(host, "city-project-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
+                    () => bridge.Queue(new CancelProject(project.Id))).SetEnabled(!cancelled);
+                return;
+            }
+            var cities = Projects.CitiesFor(c, s, q, r);
+            if (cities.Count == 0 || c.ProjectKinds.Count == 0) return;
+            var queued = bridge.QueuedLike(new StartProject("", "", q, r)) as StartProject;
+            // Owner ruling on #1150 (21 Oct 2026): under the city's own part the full list ran into the left column on a stacked
+            // bar or a short window, so there it folds behind one toggle; a refusal is then one tap away. The open state is the
+            // host's class, kept across renders (InfoPanelPresenter.Show closes it for a newly chosen hex).
+            var list = host;
+            if (cityHere)
+            {
+                Button(host, ToggleName, text.Format("city.projects_toggle", c.ProjectKinds.Count), () => host.ToggleInClassList(OpenClass));
+                list = new VisualElement { name = ListName };
+                list.AddToClassList(ListName);
+                host.Add(list);
+            }
+            // The pick lives on the host, which the panel keeps across renders; it is for this hex only.
+            var city = host.userData is ValueTuple<int, int, string> pick && pick.Item1 == q && pick.Item2 == r && cities.Contains(pick.Item3) ? pick.Item3
+                : queued != null && cities.Contains(queued.City) ? queued.City : cities[0];
+            // The city's line and, when several can build, the pick on one row, so the part stays short (InfoPanelLayoutTests).
+            if (cities.Count == 1) Line(list, "city-project-for", text.Format("city.project_for", townName(city)));
+            else
+            {
+                var row = Row(list, "city-project-cities");
+                Line(row, "city-project-for", text.Format("city.project_for", townName(city)));
+                foreach (var id in cities)
+                    Button(row, "city-project-city-" + id, townName(id), () =>
+                    {
+                        host.userData = (q, r, id);
+                        host.Clear();
+                        CityProjects(host, bridge, text, q, r, townName, cityHere);
+                        // The pressed button is rebuilt (and now disabled): the focus stays in the row, for the keyboard.
+                        host.Q("city-project-cities")?.Query<Button>().Where(b => b.enabledSelf).First()?.Focus();
+                    }).SetEnabled(id != city);
+            }
+            var refusals = c.ProjectKinds.Select(k => Projects.CheckCityReason(c, s, k.Id, city, q, r)).ToList();
+            var words = refusals.Select(x => x == null ? null : ReasonText(x, text, c, townName)).ToList();
+            // Every kind refused for one reason (not land, a placement there, the turn's limit): said once, with no buttons,
+            // as the map actions do (#398). A kind this city lacks the resource for (R-PROJ-005: the winery outside Rishon
+            // LeZion) does not split that line into one per kind.
+            var shared = words.Where((x, i) => refusals[i]?.Kind != "no_resource").ToList();
+            if (words.All(x => x != null) && shared.Count > 0 && shared.Distinct().Count() == 1) { Line(list, "city-project-reason", shared[0]!); return; }
+            // A kind the sim refuses shows its reason alone, which names the kind (no disabled Build above it: one line, not two).
+            for (int i = 0; i < c.ProjectKinds.Count; i++)
+            {
+                var k = c.ProjectKinds[i];
+                if (words[i] != null) { Line(list, $"city-project-{k.Id}-reason", words[i]!); continue; }
+                var ordered = queued != null && queued.ProjectKind == k.Id && queued.City == city;
+                Button(list, "city-project-" + k.Id, ordered ? text.Format("city.project_ordered", ContentNames.Of(text, k))
+                        : text.Format("city.project_start", ContentNames.Of(text, k), PlayerText.Money(c, "treasury", k.Cost), Turns(text, Projects.CityTurnsToBuild(c, s, k.Id, k.Turns, 0))),
+                    () => bridge.Queue(new StartProject(k.Id, city, q, r))).SetEnabled(!ordered);
+            }
+        }
+
+        /// <summary>A city-project refusal (Projects.CheckCityReason) in the UI's language: the map actions' strings where the
+        /// sim's English is theirs, else city.project_reason.*. The sim's English for the kinds this panel cannot meet: an
+        /// unknown kind or city, a distance (CitiesFor lists only the cities in reach) or another project on the hex (its
+        /// state shows instead).</summary>
+        static string ReasonText(MapActionReason reason, UiText text, Content c, Func<string, string> townName)
+        {
+            switch (reason.Kind)
+            {
+                case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
+                case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
+                case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), reason.Values[1],
+                    ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
+                case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
+                default: return reason.Text;
+            }
         }
 
         /// <summary>"1 group" or "n groups" (population groups, D-A1), in the UI's language.</summary>

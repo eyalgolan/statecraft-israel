@@ -26,6 +26,7 @@ options:
         delta: 0.1
   - id: wait
     text: Wait for rain
+    alternative: { basis: design }
 status: draft
 ";
 
@@ -49,7 +50,7 @@ status: draft
     // I1: a key written with no value deserialises to null.
     [Theory]
     [InlineData("events/drought.yaml", "tags: [economy]", "tags:", "events[drought].tags", "must be a list")]
-    [InlineData("events/drought.yaml", "options:\n  - id: ration\n    text: Ration water\n    historical: true\n    effects:\n      - target: food_supply\n        delta: 0.1\n  - id: wait\n    text: Wait for rain\n", "options:\n", "events[drought].options", "must be a list")]
+    [InlineData("events/drought.yaml", "options:\n  - id: ration\n    text: Ration water\n    historical: true\n    effects:\n      - target: food_supply\n        delta: 0.1\n  - id: wait\n    text: Wait for rain\n    alternative: { basis: design }\n", "options:\n", "events[drought].options", "must be a list")]
     [InlineData("events/drought.yaml", "    effects:\n      - target: food_supply\n        delta: 0.1\n", "    effects:\n", "events[drought].options[ration].effects", "must be a list")]
     [InlineData("people.yaml", "    offices:\n      - office: defense_minister\n        from: 1949-01-01\n      - office: finance_minister\n        from: 1948-05-14\n", "    offices:\n", "people[def_two].offices", "must be a list")]
     [InlineData("legislatures.yaml", "seats: { alpha: 4, beta: 6 }", "seats:", "legislatures[house].seats", "must be a map")]
@@ -68,7 +69,7 @@ status: draft
     public void FirstNullFieldReportedIsOrdinallyFirst()
     {
         var two = Event.Replace("tags: [economy]", "tags:").Replace(
-            "options:\n  - id: ration\n    text: Ration water\n    historical: true\n    effects:\n      - target: food_supply\n        delta: 0.1\n  - id: wait\n    text: Wait for rain\n", "options:\n");
+            "options:\n  - id: ration\n    text: Ration water\n    historical: true\n    effects:\n      - target: food_supply\n        delta: 0.1\n  - id: wait\n    text: Wait for rain\n    alternative: { basis: design }\n", "options:\n");
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string> { ["drought.yaml"] = two })));
         Assert.Equal("events[drought].options", ex.Field);
     }

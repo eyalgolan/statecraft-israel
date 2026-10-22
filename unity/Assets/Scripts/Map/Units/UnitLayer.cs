@@ -71,6 +71,19 @@ namespace Statecraft.Game.Map.Units
         /// changes nothing and returns at once (GameRoot calls it every frame). Cleared when the tokens are rebuilt.</summary>
         (Vector3 eye, Quaternion rotation)? facedFor;
 
+        /// <summary>The GDD loop's anchors for units that moved off their starting hex (UnitRoster.FromState), one per row and
+        /// sim hex, and their spots: placed once, the first time a unit stands there, so a rebuild after a move places only
+        /// the units that moved (#563's spot cache, GDD Phase 5 PR 14). The spots drawn from are <see cref="spots"/> with these.
+        /// A cached spot keeps off the hexes other tokens held when it was placed, not those they take later: two tokens can
+        /// then share a hex until stacks are drawn together.</summary>
+        readonly Dictionary<(string row, int q, int r), UnitAnchor> movedAnchors = new Dictionary<(string, int, int), UnitAnchor>();
+        readonly Dictionary<UnitAnchor, AnchorSpot> movedSpots = new Dictionary<UnitAnchor, AnchorSpot>();
+        /// <summary>Moved anchors made since the last placement (each is placed once, spot or not).</summary>
+        readonly HashSet<UnitAnchor> movedNew = new HashSet<UnitAnchor>();
+        Dictionary<UnitAnchor, AnchorSpot>? drawSpots;
+        /// <summary>How many moved units' anchors the layer has placed (each once; the tests read it).</summary>
+        public int MovedSpotsPlaced { get; private set; }
+
         /// <summary>The tokens drawn now, in the data's order.</summary>
         public IReadOnlyList<PlacedToken> Tokens => placed;
         /// <summary>Every anchor's spot, from the data alone.</summary>
@@ -238,13 +251,47 @@ namespace Statecraft.Game.Map.Units
         public bool Show(Content content, GameState state)
         {
             shownContent = content; shownState = state;
-            var now = UnitRoster.Build(units, content, state, UnitFigures.Arrived);
+            // The GDD loop draws the army from the sim's units (GDD Phase 5 PR 14); the legacy loop keeps the rows and the call-up.
+            var now = content.IsGdd
+                ? UnitRoster.FromState(units, content, state, UnitFigures.Arrived, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
+                : UnitRoster.Build(units, content, state, UnitFigures.Arrived);
             if (roster != null && roster.SequenceEqual(now)) return false;
             roster = now;
-            placed = UnitPlacer.Place(now, spots);
+            PlaceMoved(now);
+            placed = UnitPlacer.Place(now, drawSpots ?? spots);
             Rebuild();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             return true;
+        }
+
+        /// <summary>The anchor of <paramref name="row"/>'s unit on sim hex (<paramref name="q"/>, <paramref name="r"/>) after a
+        /// move: the hex's centre, no place name and no sources (the card then gives the row's), with the starting anchor's
+        /// window. The same object every time, so the roster compares equal and the spot is placed once.</summary>
+        UnitAnchor MovedAnchor(Content content, UnitEntry row, UnitAnchor start, int q, int r)
+        {
+            if (movedAnchors.TryGetValue((row.Id, q, r), out var a)) return a;
+            var hex = content.HexAt(q, r);
+            if (hex == null) return start;   // the sim never moves a unit off the map; stay drawn where it started
+            a = new UnitAnchor { Lon = hex.Lon, Lat = hex.Lat, From = start.From, To = start.To };
+            movedAnchors[(row.Id, q, r)] = a;
+            movedNew.Add(a);
+            return a;
+        }
+
+        /// <summary>Places the moved units' anchors in <paramref name="tokens"/> that have no spot yet, as UnitPlacer places
+        /// any anchor (within one hex, clear of the town kits and the roads), off the hexes the other drawn tokens hold.</summary>
+        void PlaceMoved(List<UnitToken> tokens)
+        {
+            var fresh = tokens.Where(t => movedNew.Remove(t.Anchor)).ToList();
+            if (fresh.Count == 0) return;
+            var taken = tokens.Select(t => spots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
+                .Where(s => s != null).Select(s => (s!.Value.Q, s.Value.R)).ToList();
+            var entries = fresh.Select(t => new UnitEntry { Id = t.Unit.Id, Side = t.Unit.Side, Service = t.Unit.Service, Anchors = new List<UnitAnchor> { t.Anchor } }).ToList();
+            foreach (var kv in ground.Place(entries, XZ(map), Debug.LogWarning, taken)) movedSpots[kv.Key] = kv.Value;
+            MovedSpotsPlaced += fresh.Count;
+            drawSpots = new Dictionary<UnitAnchor, AnchorSpot>(spots.Count + movedSpots.Count);
+            foreach (var kv in spots) drawSpots[kv.Key] = kv.Value;
+            foreach (var kv in movedSpots) drawSpots[kv.Key] = kv.Value;
         }
 
         /// <summary>A Collection model arrived: draws the tokens again if it lets a new one show (an Arab force's figure).</summary>

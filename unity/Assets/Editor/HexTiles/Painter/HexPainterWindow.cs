@@ -291,7 +291,7 @@ namespace Statecraft.HexTiles.Painter
         public void UnloadAll()
         {
             Switches.Clear();
-            foreach (var old in FindObjectsByType<HexBoardState>(FindObjectsSortMode.None)) Unload(old.gameObject);
+            foreach (var old in HexPainter.LoadedBoards()) Unload(old.gameObject);
             root = null; selected = null;
         }
 

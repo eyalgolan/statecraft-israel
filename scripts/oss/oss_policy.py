@@ -68,9 +68,10 @@ PROVENANCE_GLOBS: tuple[str, ...] = ("content/map/*", "unity/Assets/StreamingAss
 
 # "Israel State Archives terms of use": the archive's own licence for its catalogue items (Ben-Gurion's 1948 recording,
 # unity/Assets/StreamingAssets/audio/; ASSETS.yaml records the terms and their open questions; the row stays owner-verify).
+# Owner, 20 Oct 2026: written ElevenLabs permission to publish the three #1112 audio files in this repo.
 ALLOWED_LICENCES = frozenset({"MIT", "CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "OFL-1.1", "Public-Domain",
                               "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License",
-                              "Israel State Archives terms of use", "unknown"})
+                              "Israel State Archives terms of use", "LicenseRef-ElevenLabs-Owner-Permission", "unknown"})
 STATUSES = frozenset({"verified", "owner-verify"})
 RULE_KEYS = ("glob", "licence", "source", "status")
 

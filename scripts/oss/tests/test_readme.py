@@ -45,10 +45,10 @@ def test_concept_art_opens_what_is_this_captioned_as_concept_art():
 def test_real_dated_screenshots_in_a_one_plus_two_plus_two_grid():
     text = read("README.md")
     assert images(text)[1:7] == [CLIP] + GRID
-    assert re.search(r"Real gameplay, build \d+\.\d+\.\d+, \d{4}-\d{2}-\d{2}, commit [0-9a-f]{7}\.", text)
+    assert re.search(r"Real gameplay, main at [0-9a-f]{7}, \d{4}-\d{2}-\d{2}\.", text)
     for path, width in zip(GRID, ("820", "405", "405", "405", "405")):
         assert re.search(rf'<img src="{re.escape(path)}"[^>]*width="{width}"', text), path
-    assert re.search(r"Real screenshots from build \d+\.\d+\.\d+ \(M3\), \d{4}-\d{2}-\d{2}\.", text)
+    assert re.search(r"Real screenshots, main at [0-9a-f]{7}, \d{4}-\d{2}-\d{2}[.;]", text)
 
 
 def test_note_says_independent_free_and_non_commercial_before_what_is_this():
@@ -92,9 +92,9 @@ def test_roadmap_phase_1_progress_matches_in_both_readmes():
     assert en and he and en.groups() == he.groups()
 
 
-def test_play_is_run_locally_with_hosted_build_planned_for_m4():
+def test_play_links_the_itch_build_and_running_locally():
     play = section(read("README.md"), "## Play")
-    assert "planned for M4" in play and "BUILDING.md" in play and "TODO" not in read("README.md")
+    assert "https://eyalgolan.itch.io/statecraft-israel" in play and "BUILDING.md" in play and "TODO" not in read("README.md")
 
 
 def test_build_section_pins_unity_and_points_to_building():
@@ -151,8 +151,9 @@ def test_contributing_links_the_issue_filters_and_the_open_issues():
 
 def test_hebrew_readme_keeps_the_english_facts():
     he = read("README.he.md")
-    shot_date = re.search(r"Real screenshots from build [^,]+, (\d{4}-\d{2}-\d{2})\.", read("README.md")).group(1)
-    for fact in ("15 במאי 1948", "M3", "0.1.0", shot_date, "M4", "CC BY-SA 4.0", "CC0", "Firaxis", "2K", "1936",
+    shot_build, shot_date = re.search(r"Real screenshots, main at ([0-9a-f]{7}), (\d{4}-\d{2}-\d{2})[.;]",
+                                      read("README.md")).groups()
+    for fact in ("15 במאי 1948", "M3", shot_build, shot_date, "M4", "CC BY-SA 4.0", "CC0", "Firaxis", "2K", "1936",
                  "6000.3.25f1", "docs/CONTENT_POLICY.md", "historical_accuracy.yml", "SECURITY.md"):
         assert fact in he, fact
     assert "חינמי ולא מסחרי" in he and "גרסה מסחרית" not in he  # free and non-commercial

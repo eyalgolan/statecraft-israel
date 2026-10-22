@@ -119,7 +119,7 @@ namespace Statecraft.HexTiles
             if (env.Count > 0) HexBoardRenderer.Emit(pieces, env, assets, EnvName(q, r));
             var units = root.transform.Find(UnitsName);
             var oldUnit = units.Find(UnitName(q, r));
-            if (oldUnit != null) Object.DestroyImmediate(oldUnit.gameObject);
+            if (oldUnit != null) Release(oldUnit.gameObject, assets);
             if (h.unit != "") BuildUnit(h, state.Surface, Holder(units, UnitName(q, r)));
             Repaint(state, HexGeometry.Centre(q, r, HexScale.HexM));
             return report;
@@ -349,7 +349,7 @@ namespace Statecraft.HexTiles
     [ExecuteAlways]
     public sealed class HexBoardAssets : MonoBehaviour
     {
-        readonly List<Object> owned = new List<Object>();
+        [SerializeField, HideInInspector] List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
         /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>

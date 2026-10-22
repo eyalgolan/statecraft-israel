@@ -34,6 +34,8 @@ hud.nav.budget: "תקציב"
 hud.nav.defence: "ביטחון"
 hud.nav.why: "למה?"
 hud.nav.how_to_play: "איך משחקים"
+# For the native reviewer (#564)
+hud.nav.objectives: "יעדים"
 hud.nav.settings: "הגדרות"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
@@ -54,6 +56,32 @@ how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה 
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
 how_to_play.end_turn: "סיום התור מבצע את ההוראות שלכם ומעביר לחודש הבא. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
 how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
+# The Objectives screen (#1189). For the native reviewer (#564).
+objectives.title: "יעדים"
+objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
+objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
+# How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
+how_to_play.guide: "הצגת המדריך לתור הראשון"
+# The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
+# For the native reviewer (#564).
+guide.step: "שלב {0} מתוך {1}"
+guide.next: "הבא"
+guide.done: "סיום"
+guide.skip: "דילוג על המדריך"
+guide.attention.title: "תשומת לב"
+guide.attention.text: "רוב ההוראות עולות תשומת לב. כאן מוצג כמה נשאר לכם בתור הזה. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא."
+guide.city.title: "דיור ומשרות בעיר"
+guide.city.text: "בחרו עיר כדי לראות את הדיור והמשרות בה. הכפתורים + ו־− קובעים כמה אנשים עובדים, ובהם בעלי מלאכה. ההוראה מתבצעת בסיום התור."
+guide.training.title: "אימון והכשרה"
+guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא עבודה כמגויסים. בהכשרה (מחנה הכשרה לחלוצים) אפשר להכשיר אותם כחלוצים שבונים יישובים. הכפתורים מציגים עלות ומשך הכשרה."
+# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's, unit.move_pick's
+# and unit.move_queued's terms. For the native reviewer (#564).
+guide.move.title: "תנועת יחידה"
+guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על תנועה ובחרו משושה מואר. היחידה תנוע בסיום התור."
+guide.event.title: "כרטיס אירוע"
+guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
+guide.objectives.title: "יעדים"
+guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
 # The Settings screen (#40). "On" / "Off" as a switch's state, not a command. For the native reviewer (#564).
 settings.title: "הגדרות"
 settings.tiltshift: "טשטוש בחלק העליון ובחלק התחתון של המפה"
@@ -65,10 +93,55 @@ settings.quality: "איכות גרפית"
 settings.quality.auto: "אוטומטית"
 settings.quality.high: "גבוהה"
 settings.quality.low: "נמוכה"
-# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). The note
-# says that the event cards are not translated yet (#55). For the native reviewer (#564).
+# The sound effects' volume (#39, GameAudio), in three steps. Singular, as the native reviewer (Beri) chose on
+# 19 Oct 2026. For the native reviewer (#564).
+settings.sound: "צליל"
+settings.sound.off: "כבוי"
+settings.sound.low: "חלש"
+settings.sound.high: "חזק"
+# The language choice (#1036); the languages' names are on their buttons, in themselves (SettingsPresenter). For the
+# native reviewer (#564).
 settings.language: "שפה"
-settings.language.note: "כרטיסי האירועים באנגלית בלבד בינתיים."
+# The UI scale choice (#40): "the size of the interface"; its buttons are numbers (100%, 125%, 150%). For the native
+# reviewer (#564).
+settings.uiscale: "גודל הממשק"
+# The Community row and the start screen's button (#1168): "קהילה" for the row; the button is a noun phrase ("marking
+# with a star on GitHub"), like the other buttons, so no verb agrees with the player's gender; GitHub in Hebrew letters,
+# as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1178 (20 Oct 2026). For
+# the native reviewer (#564).
+settings.community: "קהילה"
+community.star: "סימון בכוכב בגיטהאב"
+# "Report a bug or idea" (#1169, FeedbackPresenter): the button and the panel's title ("a report of a bug or an idea"),
+# its note ("the form opens with these lines already filled in; nothing is sent before the sending on GitHub"), and the
+# three choices, all noun phrases or impersonal forms, so no verb agrees with the player's gender; GitHub and itch in
+# Hebrew letters, as the static texts carry no Latin (HebrewUiTests). Approved by Beri, a native speaker, on #1179
+# (20 Oct 2026). For the native reviewer (#564).
+feedback.open: "דיווח על באג או רעיון"
+feedback.intro: "הטופס נפתח עם השורות האלה כבר ממולאות. שום דבר לא נשלח לפני השליחה בגיטהאב."
+feedback.bug: "דיווח על באג"
+feedback.feature: "הצעה לתכונה חדשה"
+feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק באיץ׳"
+# "Share" (#1170, SharePresenter): the button and the panel's title ("sharing a picture from the game"), the post, Share,
+# "downloading the picture", and the note ("these sites do not take a picture through a link: the downloaded picture is
+# to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
+# Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
+# it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
+# on #1182 (20 Oct 2026). For the native reviewer (#564).
+share.open: "שיתוף"
+share.title: "שיתוף תמונה מהמשחק"
+share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי בקוד פתוח. {0}, תור {1}. לשחק: {2}"
+share.native: "שיתוף"
+share.download: "הורדת התמונה"
+share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
+share.instagram: "לאינסטגרם אין קישור לשיתוף: התמונה הורדה, ויש לפרסם אותה מאפליקציית אינסטגרם."
+# Copy (#1238): the button ("copying"), "the picture was copied", "the text was copied", and the failure ("copying is
+# not possible here; the picture can still be shared or downloaded with the button above"). Agent-drafted.
+# Approved by Beri, a native speaker, on #1253 (21 Oct 2026).
+# For the native reviewer (#564).
+share.copy: "העתקה"
+share.copied_picture: "התמונה הועתקה"
+share.copied_text: "הטקסט הועתק"
+share.copy_failed: "לא ניתן להעתיק כאן. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
 event.draft: "טיוטה"
 start.source: "מתוך ההכרזה על הקמת מדינת ישראל (עיתון רשמי מס׳ 1, 14 במאי 1948) ותרגומה הרשמי לאנגלית. הציור נוצר בבינה מלאכותית."
 # The recordist's name as the Israel State Archives spells it in its own description of item
@@ -97,6 +170,10 @@ event.objective_early_one: "הושלם ב־{0}; בהיסטוריה ב־{1}; מו
 event.objective_on_time: "הושלם בזמן, כמו בהיסטוריה."
 event.objective_late: "הושלם באיחור של {0} חודשים לעומת ההיסטוריה."
 event.objective_late_one: "הושלם באיחור של חודש אחד לעומת ההיסטוריה."
+# A consequence card's banner and the rejoin line (#954). For the native reviewer (#564).
+event.alt_origin: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1}). בהיסטוריה: {2}."
+event.alt_origin_no_record: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1})."
+event.rejoin: "חוזר למסלול ההיסטורי."
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
 start.loading: "טוען את ההקלטה…"
@@ -123,6 +200,8 @@ order.kind.pioneer_work: "עבודה חלוצית"
 order.kind.site: "אתר"
 # A city project (#735; Q-UI-2's approved "מיזם דיור" for housing, with עירוני for any kind). For the native reviewer (#564).
 order.kind.city_project: "מיזם עירוני"
+# For the native reviewer (#564): "a segment of a road or a railway" (#786).
+order.kind.corridor_segment: "קטע של כביש או מסילה"
 order.invalid: "הפקודה אינה תקפה"
 # order.failed: the turn failed and SimBridge.EndTurn cleared the queue, so the player gives the orders again (#622;
 # maintainer, 15 October 2026). For the native reviewer (#564).
@@ -182,6 +261,15 @@ report.intro: "מה השתנה בסרגל העליון, ומה הסיבות הע
 report.line: "{0}: שינוי של {1}"
 report.all: "הכול במסך למה?"
 report.close: "סגירה"
+# The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
+end.title: "המשחק הסתיים"
+end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
+end.outcome.defeat_economy: "הכסף והמזון אזלו."
+end.objective_done: "יעד {0}: הושלם ב־{1}; בהיסטוריה ב־{2}"
+end.objective_open: "יעד {0}: לא הושלם; בהיסטוריה ב־{1}"
+end.parameter: "{0}: {1}"
+end.population: "אוכלוסייה: {0}"
+end.population_history: "אוכלוסייה: {0}; לפי הלמ״ס {2} ב־{1}"
 cabinet.coalition: "קואליציה: {0} מתוך {1} {3} · יציבות {2}"
 cabinet.vacant: "(פנוי)"
 cabinet.person: "{0} · {1} · כישורים {2}, נאמנות {3}"
@@ -342,10 +430,25 @@ unit.aircraft.spitfire: "ספיטפייר LF Mk IXe"
 unit.flying: "{0}, בטיסה מעל הבסיס"
 unit.parked: "{0}, על הקרקע בבסיס"
 unit.national: "גיוס מילואים {0} · רמת ביטחון {1} מתוך 5"
+# The squadron card's footer in the GDD loop: the security level alone (#753). For the native reviewer (#564).
+unit.security: "רמת ביטחון {0} מתוך 5"
 unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
+# The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
+unit.order.move: "תנועה"
+# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
+unit.move_pick: "בחרו משושה מואר שאליו היחידה תנוע"
+# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
+unit.move_queued: "ניתנה פקודת תנועה: היחידה תנוע בסיום התור"
+# Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
+unit.order.fortify: "ביצור"
+unit.order.hold: "החזקה"
+# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
+unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
+# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
+unit.hold_queued: "ניתנה פקודת החזקה: היחידה תחזיק במשושה שלה בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
 newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף אחרי התור הבא."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."
@@ -364,7 +467,13 @@ save.write_failed: "לא ניתן היה לשמור את המשחק."
 # The info panel in the GDD loop (GddHexPanel, #381); the GDD's Hebrew for Halutz (חלוץ) and Hakhshara (הכשרה).
 city.housing: "דיור: {0} מתוך {1}"
 city.housing_condition: "דיור: {0} מתוך {1}, מצב {2}"
+# The people beyond the city's housing, in groups (R-HOUSE-002, #1121): new wording, no approved term. For the native
+# reviewer (#564).
+city.overflow: "חריגה מהדיור: {0}"
 city.jobs: "משרות: {0} מתוך {1} מאוישות"
+# The approved word for craftsman, בעל מלאכה (Q-UI-2, #375), in the plural, with a count of groups (#1121). For the
+# native reviewer (#564).
+city.craftsmen: "בעלי מלאכה: {0}"
 city.refugees: "פליטים ממתינים: {0}"
 city.recruits: "מגויסים: {0}"
 city.workers: "בעבודה: {0}"
@@ -380,6 +489,20 @@ city.groups: "{0} קבוצות"
 city.turns_one: "תור אחד"
 city.turns: "{0} תורות"
 city.cancel_ordered: "הביטול הוזמן"
+# City projects on the chosen hex (#1122). The kind names come from content/projects.yaml name_he, nouns ("מעברה"), so
+# every sentence takes them as nouns; "הקמת" keeps the order line's gender neutral. The resource id in no_resource has no
+# Hebrew name yet (no content kind requires one). For the native reviewer (#564).
+city.project_for: "מיזם עבור {0}"
+city.project_start: "הקמת {0}: {1}, {2}"
+city.project_ordered: "הוזמנה הקמת {0}"
+city.project_building: "{0} עבור {1}: עוד {2}"
+city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
+city.project_reason.no_resource: "ב־{0} אין {1} עבור {2}"
+# turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
+city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
+# The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
+# number of kinds. For the native reviewer (#564).
+city.projects_toggle: "מיזמי העיר ({0})"
 site.available: "אתר ייעודי ליישוב חדש"
 site.group: "קבוצת חלוצים {0}"
 site.build: "הקמת יישוב עם {0}: {1}, {2}"
@@ -388,3 +511,36 @@ site.building: "בבנייה בידי {0}: עוד {1}"
 site.stop: "עצירת הבנייה (הכסף שהוצא לא יוחזר)"
 site.built: "נוסד ב־{0}"
 site.ordered: "הוזמן"
+# The camp, field and swamp sites' parts (#1124): one set a kind, as the yishuv's above. "Training camp" as מחנה אימונים,
+# plowing as חריש, draining as ייבוש; the waits_ lines avoid the place's gender ("after X is built" as "after building X").
+# Approved by Beri, a native speaker, on #1133 (19 Oct 2026). For the native reviewer (#564).
+site.available_camp: "אתר ייעודי למחנה אימונים"
+site.build_camp: "הקמת מחנה אימונים עם {0}: {1}, {2}"
+site.building_camp: "בבנייה בידי {0}: עוד {1}"
+site.stop_camp: "עצירת הבנייה (הכסף שהוצא לא יוחזר)"
+site.built_camp: "נבנה ב־{0}"
+site.available_field: "אדמה לשדות, מוכנה לחריש"
+site.build_field: "חריש שדות עם {0}: {1}, {2}"
+site.building_field: "בחריש בידי {0}: עוד {1}"
+site.stop_field: "עצירת החריש (הכסף שהוצא לא יוחזר)"
+site.built_field: "נחרש ב־{0}"
+site.waits_yishuv: "אפשר יהיה לחרוש אחרי הקמת {0}"
+site.waits_swamp: "אפשר יהיה לחרוש אחרי ייבוש {0}"
+site.available_swamp: "ביצה לייבוש"
+site.build_swamp: "ייבוש הביצה עם {0}: {1}, {2}"
+site.building_swamp: "בייבוש בידי {0}: עוד {1}"
+site.stop_swamp: "עצירת הייבוש (הכסף שהוצא לא יוחזר)"
+site.built_swamp: "יובש ב־{0}"
+
+# Timeline screen (#955). Hebrew drafts: agent-checked, native review pending (#564).
+timeline.title: "הדרך שלך והרצף ההיסטורי"
+timeline.yours: "הדרך שלך"
+timeline.record: "הרצף ההיסטורי"
+timeline.no_record: "אין תשובה מתועדת אחת"
+timeline.rejoined: "חזרה לרצף ההיסטורי"
+nav.timeline: "ציר הזמן"
+
+# Q-ALT-7: after the choice only; GDD195 identifies design assumptions. Hebrew drafts: agent-checked; native review pending (#564).
+timeline.alt_proposed: "לא אומץ. הוצע בידי {0}, {1}."
+timeline.alt_debated: "לא אומץ. נדון בידי {0}, {1}."
+timeline.alt_design: "הנחת תכנון."

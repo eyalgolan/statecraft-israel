@@ -351,6 +351,91 @@ public class GameSceneTests
         return new Vector2(p.x, p.y);   // projected, not the screen centre: the frame below the top bar is off-centre (TopBarInset)
     }
 
+    /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click). Hovering Tel Aviv's
+    /// hex or its name pill lights the pill (GameRoot.HoverCity); a hex with no city lights nothing. A click on the hex and a
+    /// click on the pill each open the city panel, the pill's also where the land under the pill is another hex.</summary>
+    [UnityTest]
+    public IEnumerator ACitysHexAndItsNamePillBothOpenTheCityPanel()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var cam = Camera.main!;
+        var rt = new RenderTexture(1920, 1080, 0);
+        var camRt = new RenderTexture(1920, 1080, 24);   // the camera fills the panel, as in the game (MapLabelsPresenter)
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        try
+        {
+            doc.panelSettings = ps;
+            cam.targetTexture = camRt;
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(Inputs, 0);
+            var ui = doc.rootVisualElement;
+            HideTheOpeningCard(ui);
+            var pointer = Object.FindFirstObjectByType<MapPointer>();
+            var c = Inputs.Content;
+            var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+            var label = ui.Q<Label>("label-tel_aviv");
+            var host = ui.Q<VisualElement>(GddHexPanel.HostName);
+            var onHex = AimAtTelAviv();
+            for (int i = 0; i < 30 && !(label.resolvedStyle.width > 0); i++) yield return null;
+            root.Labels!.Refresh(force: true); yield return null;
+            root.Labels.Refresh(force: true); yield return null;
+            Assert.AreEqual(Visibility.Visible, label.parent.style.visibility.value, "precondition: Tel Aviv is named");
+
+            // The land under a screen point (camera pixels), asked of the terrain alone, as a click without the pills would be.
+            (int q, int r)? Land(Vector2 px) =>
+                map.Terrain.GetComponent<TerrainCollider>().Raycast(cam.ScreenPointToRay(px), out var hit, 1_000_000f) ? MapPointer.Pick(map, hit.point) : ((int, int)?)null;
+            var panel = ui.panel; float h = Screen.height;
+            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
+            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
+            float scale = ui.panel.visualTree.worldBound.width / camRt.width;
+            Vector2 CameraPixel(Vector2 p) => new Vector2(p.x / scale, camRt.height - p.y / scale);
+
+            // The hex.
+            Assert.AreEqual((tlv.Q, tlv.R), Land(onHex), "precondition: the probe is on Tel Aviv's hex");
+            Assert.AreEqual("tel_aviv", root.HoverCity(onHex), "the pointer over Tel Aviv's hex");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights Tel Aviv's pill");
+            Assert.IsTrue(pointer.HandleClick(onHex));
+            Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
+            Assert.AreEqual(DisplayStyle.Flex, host.style.display.value, "a click on the hex opens the city panel");
+
+            // A hex with no city: the sea off Tel Aviv.
+            var sea = onHex + new Vector2(-250f, 0f);
+            var seaHex = Land(sea);
+            Assert.IsNotNull(seaHex, "precondition: the sea probe is on the map");
+            Assert.IsFalse(c.SettlementHexes.Any(x => (x.Q, x.R) == seaHex!.Value && root.Bridge!.State.Cities.ContainsKey(x.Id)), "precondition: no city there");
+            Assert.IsNull(root.HoverCity(sea), "no city under the pointer");
+            Assert.IsFalse(label.ClassListContains(MapLabelsPresenter.HoverClass), "Tel Aviv's pill is out");
+            Assert.IsTrue(pointer.HandleClick(sea));
+            Assert.AreNotEqual(DisplayStyle.Flex, host.style.display.value, "precondition: the panel shows the sea, no city");
+
+            // The pill: a point of it over another hex, so only the pill can make it Tel Aviv's click.
+            var pill = label.worldBound;
+            var points = new[] { pill.center, new Vector2(pill.xMin + 2f, pill.yMin + 2f), new Vector2(pill.xMax - 2f, pill.yMin + 2f),
+                new Vector2(pill.xMin + 2f, pill.yMax - 2f), new Vector2(pill.xMax - 2f, pill.yMax - 2f) };
+            var off = points.Where(p => Land(CameraPixel(p)) is (int q, int r) && (q, r) != (tlv.Q, tlv.R)).Cast<Vector2?>().FirstOrDefault();
+            Assert.IsNotNull(off, $"precondition: some point of the pill {pill} lies over another hex than Tel Aviv's");
+            var onPill = ScreenFor(off!.Value);
+            Assert.AreEqual("tel_aviv", root.HoverCity(onPill), "the pointer over Tel Aviv's pill");
+            Assert.IsTrue(label.ClassListContains(MapLabelsPresenter.HoverClass), "lights the pill");
+            Assert.IsTrue(pointer.HandleClick(onPill), "the pill takes the click");
+            Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
+            Assert.AreEqual(DisplayStyle.Flex, host.style.display.value, "a click on the pill opens the city panel");
+        }
+        finally
+        {
+            cam.targetTexture = null;
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (ps != null) Object.DestroyImmediate(ps);
+            if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+            if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
+        }
+    }
+
     // One label each presenter writes on every change: HUD, toast, info panel, Why, Budget, Defence, Cabinet, event card
     // (the card writes its title while an event is open, so the test opens one first).
     static readonly string[] Watched = { "year", "toast", "info-title", "why-turn", "budget-money", "mob-level", "cabinet-coalition", "event-title" };
@@ -501,7 +586,7 @@ public class GameSceneTests
     public void PlacementsAreRedrawnOnlyWhenTheyChange()
     {
         var root = Boot();
-        var c = Inputs.Content;
+        var c = SimBridgeGddTests.Legacy;   // the map actions build only in the legacy loop (R-PROJ-004)
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
         var bridge = root.Bridge!;
@@ -521,6 +606,67 @@ public class GameSceneTests
         bridge.EndTurn();
         Assert.IsTrue(camp == null, "housing replacing the camp is redrawn");
         Assert.IsNotNull(layer.Cast<Transform>().SingleOrDefault(t => t.name == $"{MapActions.Housing}_{tlv.Q}_{tlv.R}"));
+    }
+
+    // #1123: a built city project is drawn on its hex as its kind's placement; one still being built is not, and its
+    // completion redraws the layer though State.Placements did not change.
+    [Test]
+    public void BuiltCityProjectsAreDrawnAndUnfinishedOnesAreNot()
+    {
+        var root = Boot();
+        var c = Inputs.Content;
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
+        var bridge = root.Bridge!;
+        bridge.Replace(g);
+        var layer = Object.FindFirstObjectByType<PlacementLayer>().transform;
+        bool Drawn(string kind, int q, int r) => layer.Cast<Transform>().Any(t => t.name == $"{kind}_{q}_{r}");
+        var placements = bridge.State.Placements.Count;
+        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var near = c.Hexes.First(h => MapActions.Distance(h.Q, h.R, tlv.Q, tlv.R) == 1
+            && Projects.CheckCity(c, bridge.State, MapActions.Housing, "tel_aviv", h.Q, h.R) == null);
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.TransitCamp, "tel_aviv", tlv.Q, tlv.R)));
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.Housing, "tel_aviv", near.Q, near.R)));
+        bridge.EndTurn();
+        var camp = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.TransitCamp && p.Q == tlv.Q && p.R == tlv.R);
+        var housing = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.Housing && p.Q == near.Q && p.R == near.R);
+        // The minister multiplier scales the progress (#1147; 0.81 here), so the camp's one turn can take two: end turns until it is built.
+        for (int i = 0; i < 10 && bridge.State.CityProjects[camp.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[camp.Id].BuiltOn, "the transit camp is built");
+        Assert.IsNull(bridge.State.CityProjects[housing.Id].BuiltOn, "the housing, six turns at the same multiplier, is not");
+        Assert.AreEqual(placements, bridge.State.Placements.Count, "a city project is not a legacy placement");
+        Assert.AreEqual(placements + 1, layer.childCount, "the built camp is drawn beside the placements");
+        Assert.IsTrue(Drawn(MapActions.TransitCamp, tlv.Q, tlv.R), "the built camp is drawn on its hex");
+        Assert.IsFalse(Drawn(MapActions.Housing, near.Q, near.R), "unfinished housing is not drawn as built");
+        for (int i = 0; i < 10 && bridge.State.CityProjects[housing.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[housing.Id].BuiltOn);
+        Assert.AreEqual(placements, bridge.State.Placements.Count);
+        Assert.IsTrue(Drawn(MapActions.Housing, near.Q, near.R), "finishing the housing redraws the layer");
+        Assert.IsTrue(Drawn(MapActions.TransitCamp, tlv.Q, tlv.R));
+    }
+
+    // #1275: a transit camp built as a city project (the GDD loop) brings its ma'abara landmark, as a legacy placement does.
+    [Test]
+    public void ACampBuiltAsACityProjectShowsItsLandmark()
+    {
+        var root = Boot();
+        var c = Inputs.Content;
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
+        var bridge = root.Bridge!;
+        bridge.Replace(g);
+        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        var key = $"{MapActions.TransitCamp}_{tlv.Q}_{tlv.R}";
+        Assert.IsNull(bridge.Queue(new StartProject(MapActions.TransitCamp, "tel_aviv", tlv.Q, tlv.R)));
+        bridge.EndTurn();
+        var camp = bridge.State.CityProjects.Values.Single(p => p.Kind == MapActions.TransitCamp && p.Q == tlv.Q && p.R == tlv.R);
+        for (int i = 0; i < 10 && bridge.State.CityProjects[camp.Id].BuiltOn == null; i++) bridge.EndTurn();
+        Assert.IsNotNull(bridge.State.CityProjects[camp.Id].BuiltOn, "the transit camp is built");
+        Assert.IsFalse(bridge.State.Placements.Any(p => p.Q == tlv.Q && p.R == tlv.R), "the camp is a city project, not a legacy placement");
+        var landmarks = Object.FindFirstObjectByType<Statecraft.Game.Map.Collection.TownLandmarks>();
+        Assert.IsNotNull(landmarks);
+        Assert.AreEqual(1, landmarks.Wanted.Count(w => w.Key == key && w.Model == Statecraft.Game.Map.Collection.TownLandmarks.Maabara),
+            "the built camp's ma'abara landmark is wanted");
     }
 
     // Amendment A2: the smoke run answers a pending event by pressing the card's option button.

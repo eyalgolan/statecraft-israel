@@ -1,28 +1,28 @@
-1949-06-15;11400714819323200433;Historical;13;
+1950-01-15;4354685564936847302;Historical;20;
 ind{
-  food_supply=0.7200000000000001 [3FE70A3D70A3D70B]
-  housing=0.3475166797185584 [3FD63DB6998D2A6E]
-  intl_standing=0.7600000000000002 [3FE851EB851EB854]
-  morale=0.49803308924391254 [3FDFDFC62DA83896]
-  security=0.500599903035164 [3FE004EA167D566E]
+  food_supply=0.8886718750000001 [3FEC700000000001]
+  housing=0.4168186644627783 [3FDAAD28310EB8D1]
+  intl_standing=0.8100000000000003 [3FE9EB851EB851EE]
+  morale=0.5555776683207759 [3FE1C74AD17A6BDF]
+  security=0.5042220244102726 [3FE022963A187B2A]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
   maabarot=0 [0000000000000000]
   rationing=1 [3FF0000000000000]
 eff{
-  border_villages_secure=0.03559990303516388 [3FA23A26868DB8BB]
-  building_houses=0.08114833839274943 [3FB4C62333858794]
-  food_lifts_cohesion=0.047495117187500005 [3FA85147AE147AE2]
-  homes_lift_morale=0.05778026214101628 [3FAD955FE07FFC50]
-  rationing_feeds=0.17 [3FC5C28F5C28F5C3]
+  border_villages_secure=0.03922202441027243 [3FA414E8C040046D]
+  building_houses=0.08452919104400287 [3FB5A3B47F17614D]
+  food_lifts_cohesion=0.08774605560302737 [3FB67686872B020E]
+  homes_lift_morale=0.06608777300513563 [3FB0EB20D7B8F7AC]
+  rationing_feeds=0.33867187500000007 [3FD5ACCCCCCCCCCE]
   rationing_grates=-0.15 [BFC3333333333333]
-  safety_lifts_morale=0.049817294571876544 [3FA981A705EC3DAE]
-  work_lifts_cohesion=0.032940415343519776 [3FA0DD90ED3BF121]
+  safety_lifts_morale=0.050367774522404846 [3FA9C9CE10B12AF4]
+  work_lifts_cohesion=0.04137606519020815 [3FA52F3E5DA880D9]
 shift{
   food_supply=0.15000000000000002 [3FC3333333333334]
   housing=0 [0000000000000000]
-  intl_standing=0.26000000000000023 [3FD0A3D70A3D70A8]
+  intl_standing=0.3100000000000003 [3FD3D70A3D70A3DC]
   morale=-0.09000000000000008 [BFB70A3D70A3D710]
   security=0.16500000000000015 [3FC51EB851EB8524]
 bud{
@@ -35,29 +35,32 @@ bud{
   labour_minister=0.1 [3FB999999999999A]
   prime_minister=0.15 [3FC3333333333333]
 pop{
-  africa=26076.53167905079 [40D97722070791C7]
-  america_oceania=1128.7559880551275 [4091A30621BB93C2]
-  asia=37290.593872499 [40E235530100E626]
-  europe=132807.37455827303 [4100363AFF186869]
-  unknown=14597.23556687349 [40CC829E270E28D5]
-  veterans=661390.4179891739 [41242F1CD602AD50]
+  africa=48923.0534756348 [40E7E361B61288D3]
+  america_oceania=1997.5820321044844 [409F3654003957EE]
+  asia=79306.74669995306 [40F35CABF27BA665]
+  europe=204367.90335393153 [4108F27F3A11A045]
+  unknown=18021.68780893306 [40D1996C050FC259]
+  veterans=667938.2378207468 [4124624479C3A414]
 sit[
 treasury=0 [0000000000000000]
-debt=59.72606782031707 [404DDCEFCA53784C]
-fx=94.29191537516759 [405792AEBDD362D7]
+debt=272.9253282829867 [40710ECE250797DE]
+fx=94.52989672613671 [4057A1E9D3F540F0]
 rung=2;cf=0;
-mob=0.8 [3FE999999999999A]
-stab=0.5736568241454453 [3FE25B658E5A9F03]
+mob=0.05 [3FA999999999999A]
+stab=0.5662904231863636 [3FE21F0D17F3F327]
 att=4 [4010000000000000]
 fired[
+  absorb_immigrants
   altalena
   armistice_egypt
   armistice_jordan
   armistice_lebanon
+  armistice_syria
   austerity_1949
   bernadotte_assassination
   elections_1949
   first_truce
+  frumkin_commission
   idf_founding
   jerusalem_ceasefire
   jerusalem_military_government
@@ -70,11 +73,14 @@ fired[
   sinai_withdrawal
   ten_days
 pending[
+  absorb_immigrants
+  frumkin_commission
 chosen{
   altalena=enforce
   armistice_egypt=sign
   armistice_jordan=sign
   armistice_lebanon=sign
+  armistice_syria=sign
   austerity_1949=impose
   bernadotte_assassination=outlaw
   elections_1949=hold
@@ -93,20 +99,296 @@ chosen{
 appt{
 under=;
 map[
-mapturn=0001-01-01:0;
+mapturn=1949-02-15:1;
 over=
 city{
-  hadera=12,5,14,5,1,c0.30549450549450546 [3FD38D38D38D38D3]
-  haifa=99,42,119,42,5,c0.26271460756874115 [3FD0D050EDEC1C23]
-  jerusalem=84,29,101,29,5,c0.26099666612029404 [3FD0B42B5C568228]
-  netanya=12,5,13,5,2,c0.3153846153846153 [3FD42F42F42F42F3]
-  petah_tikva=22,10,26,10,2,c0.2899013377926421 [3FD28DBE5738B4FD]
-  rehovot=13,5,15,5,1,c0.29785714285714276 [3FD3101767DCE433]
-  rishon_lezion=10,5,11,5,2,c0.32272727272727275 [3FD4A7904A7904A8]
+  hadera=17,5,17,5,1,c0.3140659340659341 [3FD419A800E674CE]
+  haifa=114,47,147,47,4,c0.2679405853387653 [3FD125F044D34520]
+  jerusalem=109,34,124,34,4,c0.41148744702792434 [3FDA55CF71ECC413]
+  netanya=17,5,17,5,1,c0.3025274725274725 [3FD35C9C302968FC]
+  petah_tikva=32,10,32,10,2,c0.3499013377926421 [3FD664C894A958D4]
+  rehovot=18,5,18,5,2,c0.3078571428571427 [3FD3B3EE721A54D6]
+  rishon_lezion=15,5,14,5,2,c0.26811188811188813 [3FD128BEC3C6FFEE]
   rosh_pinna=1,0,1,0,0,c0.35 [3FD6666666666666]
   safed=2,1,2,1,1,c0.35 [3FD6666666666666]
-  tel_aviv=248,106,301,90,11,c0.25696059790315773 [3FD0720ADD16B2E4],jobs=manual
-  tiberias=6,2,6,2,1,c0.35 [3FD6666666666666]
+  tel_aviv=248,106,129,90,10,c0.35 [3FD6666666666666],jobs=manual
+  tiberias=6,2,8,2,1,c0.18928571428571433 [3FC83A83A83A83AA]
   zikhron_yaakov=2,1,2,1,1,c0.35 [3FD6666666666666]
-food=2556,852,0
+units[
+  0:veteran_soldier@10,9|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+  21:halutz@-3,19
+  22:halutz@-3,19
+  23:halutz@-3,19
+  24:halutz@-3,19
+  25:halutz@-3,19
+  26:halutz@-3,19
+  27:halutz@-3,19
+  28:halutz@-3,19
+  29:halutz@-3,19
+  30:halutz@-3,19
+  31:halutz@-3,19
+  32:halutz@-3,19
+  33:halutz@-3,19
+  34:halutz@-3,19
+  35:halutz@-3,19
+  36:halutz@-3,19
+  37:halutz@-3,19
+  38:halutz@-3,19
+  39:halutz@-3,19
+  40:halutz@-3,19
+  41:halutz@-3,19
+  42:halutz@-3,19
+  43:halutz@-3,19
+  44:halutz@-3,19
+  45:halutz@-3,19
+  46:halutz@-3,19
+  47:halutz@-3,19
+  48:halutz@-3,19
+  49:halutz@-3,19
+  50:halutz@-3,19
+  51:halutz@-3,19
+  52:halutz@-3,19
+  53:halutz@-3,19
+  54:halutz@-3,19
+  55:halutz@-3,19
+  56:halutz@-3,19
+  57:halutz@-3,19
+  58:halutz@-3,19
+  59:halutz@-3,19
+  60:halutz@-3,19
+  61:halutz@-3,19
+  62:halutz@-3,19
+  63:halutz@-3,19
+  64:halutz@-3,19
+  65:halutz@-3,19
+  66:halutz@-3,19
+  67:halutz@-3,19
+  68:halutz@-3,19
+  69:halutz@-3,19
+  70:halutz@-3,19
+  71:halutz@-3,19
+  72:halutz@-3,19
+  73:halutz@-3,19
+  74:halutz@-3,19
+  75:halutz@-3,19
+  76:halutz@-3,19
+  77:halutz@-3,19
+  78:halutz@-3,19
+  79:halutz@-3,19
+  80:halutz@-3,19
+  81:halutz@-3,19
+  82:halutz@-3,19
+  83:halutz@-3,19
+  84:halutz@-3,19
+  85:halutz@-3,19
+  86:halutz@-3,19
+  87:halutz@-3,19
+  88:halutz@-3,19
+  89:halutz@-3,19
+  90:halutz@-3,19
+  91:halutz@-3,19
+  92:halutz@-3,19
+  93:halutz@-3,19
+  94:halutz@-3,19
+  95:halutz@-3,19
+  96:halutz@-3,19
+  97:halutz@-3,19
+  98:halutz@-3,19
+  99:halutz@-3,19
+  100:halutz@-3,19
+  101:halutz@-3,19
+  102:halutz@-3,19
+  103:halutz@-3,19
+  104:halutz@-3,19
+  105:halutz@-3,19
+  106:halutz@-3,19
+  107:halutz@-3,19
+  108:halutz@-3,19
+  109:halutz@-3,19
+  110:halutz@-3,19
+  111:halutz@-3,19
+  112:halutz@-3,19
+  113:halutz@-3,19
+  114:halutz@-3,19
+  115:halutz@-3,19
+  116:halutz@-3,19
+  117:halutz@-3,19
+  118:halutz@-3,19
+  119:halutz@-3,19
+  120:halutz@-3,19
+  121:halutz@-3,19
+  122:halutz@-3,19
+  123:halutz@-3,19
+  124:halutz@-3,19
+  125:halutz@-3,19
+  126:halutz@-3,19
+  127:halutz@-3,19
+  128:halutz@-3,19
+  129:halutz@-3,19
+  130:halutz@-3,19
+  131:halutz@-3,19
+  132:halutz@-3,19
+  133:halutz@-3,19
+  134:halutz@-3,19
+  135:halutz@-3,19
+  136:halutz@-3,19
+  137:halutz@-3,19
+  138:halutz@-3,19
+  139:halutz@-3,19
+  140:halutz@-3,19
+  141:halutz@-3,19
+  142:halutz@-3,19
+  143:halutz@-3,19
+  144:halutz@-3,19
+  145:halutz@-3,19
+  146:halutz@-3,19
+  147:halutz@-3,19
+  148:halutz@-3,19
+  149:halutz@-3,19
+  150:halutz@-3,19
+  151:halutz@-3,19
+  152:halutz@-3,19
+  153:halutz@-3,19
+  154:halutz@-3,19
+  155:halutz@-3,19
+  156:halutz@-3,19
+  157:halutz@-3,19
+  158:halutz@-3,19
+  159:halutz@-3,19
+  160:halutz@-3,19
+  161:halutz@-3,19
+  162:halutz@-3,19
+  163:halutz@-3,19
+  164:halutz@-3,19
+  165:halutz@-3,19
+  166:halutz@-3,19
+  167:halutz@-3,19
+  168:halutz@-3,19
+  169:halutz@-3,19
+  170:halutz@-3,19
+  171:halutz@-3,19
+  172:halutz@-3,19
+  173:halutz@-3,19
+  174:halutz@-3,19
+  175:halutz@-3,19
+  176:halutz@-3,19
+  177:halutz@-3,19
+  178:halutz@-3,19
+  190:halutz@-3,19
+  191:halutz@-3,19
+  192:halutz@-3,19
+  193:halutz@-3,19
+  194:halutz@-3,19
+  195:halutz@-3,19
+  196:halutz@-3,19
+  197:halutz@-3,19
+  198:halutz@-3,19
+  199:halutz@-3,19
+  200:halutz@-3,19
+  201:halutz@-3,19
+  202:halutz@-3,19
+  203:halutz@-3,19
+  204:halutz@-3,19
+  205:halutz@-3,19
+  206:halutz@-3,19
+  207:halutz@-3,19
+  208:halutz@-3,19
+  209:halutz@-3,19
+  210:halutz@-3,19
+  211:halutz@-3,19
+  212:halutz@-3,19
+  213:halutz@-3,19
+  214:halutz@-3,19
+  215:halutz@-3,19
+  216:halutz@-3,19
+  217:halutz@-3,19
+  218:halutz@-3,19
+  219:halutz@-3,19
+  220:halutz@-3,19
+  221:halutz@-3,19
+  222:halutz@-3,19
+  223:halutz@-3,19
+  224:halutz@-3,19
+  225:halutz@-3,19
+  226:halutz@-3,19
+  227:halutz@-3,19
+  228:halutz@-3,19
+  229:halutz@-3,19
+  230:halutz@-3,19
+  231:halutz@-3,19
+  232:halutz@-3,19
+  233:halutz@-3,19
+  234:halutz@-3,19
+  235:halutz@-3,19
+  236:halutz@-3,19
+  237:halutz@-3,19
+  238:halutz@-3,19
+  239:halutz@-3,19
+  240:halutz@-3,19
+  241:halutz@-3,19
+  242:halutz@-3,19
+  243:halutz@-3,19
+  244:halutz@-3,19
+  245:halutz@-3,19
+  246:halutz@-3,19
+  247:halutz@-3,19
+  248:halutz@-3,19
+  249:halutz@-3,19
+  250:halutz@-3,19
+  251:halutz@-3,19
+  252:halutz@-3,19
+  253:halutz@-3,19
+  254:halutz@-3,19
+  255:halutz@-3,19
+  256:halutz@-3,19
+  257:halutz@-3,19
+  258:halutz@-3,19
+  259:halutz@-3,19
+  260:halutz@-3,19
+  261:halutz@-3,19
+  262:halutz@-3,19
+  263:halutz@-3,19
+  264:halutz@-3,19
+  265:halutz@-3,19
+  266:halutz@-3,19
+  267:halutz@-3,19
+  268:halutz@-3,19
+  269:halutz@-3,19
+  270:halutz@-3,19
+  271:halutz@-3,19
+  272:halutz@-3,19
+cproj[
+  15:housing@haifa,5,8/done,1949-02-15
+  16:housing@haifa,4,9/done,1949-02-15
+  17:housing@haifa,5,9/done,1949-03-15
+  18:industry@haifa,6,8/done,1949-03-15
+  19:housing@jerusalem,0,22/done,1949-04-15
+  20:housing@jerusalem,1,22/done,1949-04-15
+  179:housing@jerusalem,-1,23/done,1949-05-15
+  180:housing@jerusalem,1,23/done,1949-06-15
+  181:industry@jerusalem,-1,24/done,1949-06-15
+  182:housing@petah_tikva,-2,18/done,1949-07-15
+  183:housing@petah_tikva,-1,18/done,1949-07-15
+  184:housing@rehovot,-4,20/done,1949-08-15
+  185:housing@hadera,2,12/done,1949-08-15
+  186:housing@netanya,0,15/done,1949-09-15
+  187:housing@jerusalem,0,23/done,1949-09-15
+  188:housing@rishon_lezion,-4,21/done,1949-10-15
+next=273
+obj{
+  absorb_immigrants=1950-01-15
+score=100
+food=3003,1001,0
 arms=12

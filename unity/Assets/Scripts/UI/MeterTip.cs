@@ -9,10 +9,11 @@ namespace Statecraft.Game.UI
     /// <summary>Each top-bar number explains itself (#1037): while the pointer is over a meter, or after a tap on it (a
     /// touchscreen has no hover), a tip under the bar gives the meter in words (its tooltip, HudModel.Spoken: the value
     /// and this turn's change) and the turn's main causes, which are the sim's own messages (HudModel.Causes). A second
-    /// tap on the same meter closes it, a tap on another moves it, and End Turn closes it. It shows only while the meter
-    /// can take the pointer, so a report or an outcome clip over the bar hides it. The tip is centred under the meter
-    /// and kept inside the window. Nothing is computed here; the tip takes no clicks. Its two labels are the meter's words
-    /// in the UI's language and the causes, which the sim gives in English (#55), so each takes its own direction.</summary>
+    /// tap on the same meter closes it, a tap on another moves it, and a tap anywhere else or End Turn closes it; a mouse
+    /// click pins nothing, as the mouse hovers (#1108). It shows only while the meter can take the pointer, so a report or
+    /// an outcome clip over the bar hides it. The tip is centred under the meter and kept inside the window. Nothing is
+    /// computed here; the tip takes no clicks. Its two labels are the meter's words in the UI's language and the causes,
+    /// which the sim gives in English (#55), so each takes its own direction.</summary>
     public sealed class MeterTip : IDisposable
     {
         public const string TipName = "meter-tip";
@@ -23,6 +24,8 @@ namespace Statecraft.Game.UI
         readonly List<VisualElement> meters = new List<VisualElement>();
         readonly EventCallback<PointerEnterEvent> onEnter; readonly EventCallback<PointerLeaveEvent> onLeave;
         readonly EventCallback<ClickEvent> onClick; readonly EventCallback<GeometryChangedEvent> onTipGeometry;
+        readonly EventCallback<PointerDownEvent> onPress; readonly VisualElement pressScope;
+        readonly UnityEngine.InputSystem.InputAction mapPress;
         readonly Action<IReadOnlyList<Statecraft.Sim.Rejection>> onTurn;
         VisualElement? hovered, pinned, shownFor;
 
@@ -32,7 +35,18 @@ namespace Statecraft.Game.UI
             words = tip.Q<Label>("meter-tip-words"); causesLine = tip.Q<Label>("meter-tip-causes");
             onEnter = e => { hovered = (VisualElement)e.currentTarget; Refresh(); };
             onLeave = e => { if (hovered == e.currentTarget) hovered = null; Refresh(); };
-            onClick = e => { var m = (VisualElement)e.currentTarget; pinned = pinned == m ? null : m; Refresh(); };
+            // #1108: a mouse click pinned the tip, so it outlived the pointer's leave; the mouse has hover, only a tap pins. A
+            // click still drops a tap's pin (a touchscreen laptop), as the press handler leaves presses on meters alone.
+            // (PointerType is spelled out: UnityEngine.PointerType has the same name.)
+            onClick = e =>
+            {
+                var m = (VisualElement)e.currentTarget;
+                pinned = e.pointerType == UnityEngine.UIElements.PointerType.mouse ? null : pinned == m ? null : m;
+                Refresh();
+            };
+            // A tapped tip closes on the next tap anywhere: a press on the UI is heard at the panel's root before any control
+            // takes it. A press on a meter is left to its click (move, close).
+            onPress = e => { if (pinned == null || OnAMeter(e.target as VisualElement)) return; pinned = null; Refresh(); };
             onTipGeometry = _ => Place();
             onTurn = _ => { pinned = null; Refresh(); };
             foreach (var m in meters)
@@ -41,8 +55,29 @@ namespace Statecraft.Game.UI
                 this.meters.Add(m);
             }
             tip.RegisterCallback(onTipGeometry);
+            pressScope = root.panel?.visualTree ?? root;   // a HUD built off a panel (some tests) has no panel root
+            pressScope.RegisterCallback(onPress, TrickleDown.TrickleDown);
+            // #1184: a press with no element under it (the map) never reaches the panel, as the event system sends a pointer
+            // event only to a panel that picks an element there. The device's own press closes the tip then; a press on the UI
+            // stays the panel's (onPress, the meters' clicks), or a second tap on the meter would close and reopen it.
+            mapPress = new UnityEngine.InputSystem.InputAction("meter-tip-map-press", UnityEngine.InputSystem.InputActionType.Button, "<Pointer>/press");
+            mapPress.performed += OnMapPress;
+            mapPress.Enable();
             bridge.TurnEnded += onTurn;
             Hide();
+        }
+
+        void OnMapPress(UnityEngine.InputSystem.InputAction.CallbackContext ctx)
+        {
+            if (pinned == null || !(ctx.control.device is UnityEngine.InputSystem.Pointer p)) return;
+            if (UiPointer.IsOverUi(tip.panel, p.position.ReadValue(), Screen.height)) return;
+            pinned = null; Refresh();
+        }
+
+        bool OnAMeter(VisualElement? e)
+        {
+            foreach (var m in meters) if (e != null && (m == e || m.Contains(e))) return true;
+            return false;
         }
 
         /// <summary>The meter the tip is shown for, or null.</summary>
@@ -95,6 +130,8 @@ namespace Statecraft.Game.UI
             foreach (var m in meters) { m.UnregisterCallback(onEnter); m.UnregisterCallback(onLeave); m.UnregisterCallback(onClick); }
             meters.Clear();
             tip.UnregisterCallback(onTipGeometry);
+            pressScope.UnregisterCallback(onPress, TrickleDown.TrickleDown);
+            mapPress.performed -= OnMapPress; mapPress.Dispose();
             bridge.TurnEnded -= onTurn;
             hovered = pinned = null;
             Hide();

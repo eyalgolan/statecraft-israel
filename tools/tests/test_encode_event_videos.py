@@ -49,11 +49,14 @@ def test_provenance_stays_ai_generated_on_every_row():
         assert assets["unity/Assets/StreamingAssets/video/" + r["file"]]["ai_generated"] is True, r["file"]
 
 
-def test_the_owner_reviewed_exactly_the_three_sensitive_clips():
+def test_the_owner_reviewed_exactly_the_six_sensitive_clips():
     """Owner ruling of 14 October 2026: the three sensitive clips (operation_yoav, ten_days, the operation_horev outcome)
-    are reviewed; no other row changes."""
+    are reviewed. Owner ruling of 20 October 2026 (#1102, "looks good" after watching the shots): the altalena loop and
+    outcome (A27) and the operation_horev loop (A05). No other row changes."""
     rows = ev.load_rows()
-    assert sorted(r["file"] for r in rows if r["sensitive"]) == ["operation_horev-outcome.mp4", "operation_yoav.mp4", "ten_days.mp4"]
+    assert sorted(r["file"] for r in rows if r["sensitive"]) == [
+        "altalena-outcome.mp4", "altalena.mp4", "operation_horev-outcome.mp4", "operation_horev.mp4", "operation_yoav.mp4",
+        "ten_days.mp4"]
     assert all(r["sensitivity_reviewed"] is r["sensitive"] for r in rows)
 
 
@@ -136,11 +139,17 @@ def test_an_outcome_row_cuts_its_recorded_window_and_decimates_a_dreamina_shot()
 # light text, made the box 14 to 95 levels darker and its gradient 1.1 to 21 times the strip's; main's captioned files
 # fail both tests below. A deliberate re-encode updates these from tools/encode_event_videos.py's output.
 CAPTION_FREE = {
+    "altalena-outcome.mp4": ("3290235920ee9d1dc2359b85effe168ab272140a3c15551323686098aec804a0", -6.4, 0.79),
+    "altalena.mp4": ("37d2e740653c056c3eb5e682911ee9bb591c0eb94519fbda894ed232c50a2909", -7.1, 0.83),
+    "austerity_1949-outcome.mp4": ("a67fe90992ccedb57f1d217d881635f9906068076033aa2da2419b485d6b2b67", -3.1, 0.92),
     "austerity_1949.mp4": ("a478e52f6348d99b748ab240c56770051fe8ca0eee2d53b3922e66cf7b0f0a9e", -3.6, 0.90),
+    "first_new_yishuv-outcome.mp4": ("2cb387974086e75ea7bb671799c4243e2ec17b2e2da41ec3f0e9cbd09f1399a7", -1.1, 0.65),
+    "first_new_yishuv.mp4": ("b9dcf95f9f85e7519ed5848d0a95f988e86e072a0a57cb2c60a64aa33598dd2b", -0.5, 0.39),
     "first_truce.mp4": ("eb98b8d679a97a4e74b26e3fd40398c3fc656a2990768a4a07fe86c45fef2356", -3.5, 1.18),
     "frumkin_commission.mp4": ("80c038d76e897362ed15c058513d539458cd9033823b5d03b6dc715f76562975", 1.5, 1.05),
     "hula_drainage-outcome.mp4": ("36bf04a1003e2d0f632241bf126399d31f7f78d321a8ea08c7c9e643f9c18332", -15.0, 1.85),
     "hula_drainage.mp4": ("3b8dff2b62ebc1c73ce93783511a277fdd851661e0ab3a35db0e661e9199038c", -9.8, 4.05),
+    "iraqi_exodus-outcome.mp4": ("19ed032b29d947eb1405ad0f18ac7546b13fd157de7c0840745ca1840348e534", -10.8, 0.76),
     "iraqi_exodus.mp4": ("6395a6cb62844395102741fe4eed50f4775e40a00b1ac4984f59ed64252fad39", -11.6, 0.27),
     "jerusalem_ceasefire.mp4": ("5c92dff877abb9d3683f81367a8c5d6056d5af0bb40483ce030ef0d16f4722a1", 2.8, 0.94),
     "latrun_proposal.mp4": ("d46f0ca640935bc681abbb8f9cc3607d362700ff4e4f306811fb043f1e211f58", -3.0, 0.79),
@@ -148,6 +157,7 @@ CAPTION_FREE = {
     "maabarot_policy-outcome.mp4": ("479eef410859e096efe635bfc1ad17a2f5dd87183ebfc010cf0c7c7bce53079e", -26.1, 0.14),
     "maabarot_policy.mp4": ("60f7c69437ab7d938eab9a16a0287862decf1439f47f7636b233d8c1d192afd4", -8.1, 0.80),
     "operation_horev-outcome.mp4": ("34bf30e2144af91402eb1f2ff608dd7fdc337431ce59e739eeebb94cadfbcd31", -22.6, 0.30),
+    "operation_horev.mp4": ("9bb6c15d62fba4b0612148e305d21623eccc35d580ad36689c39ae558c20fbc5", -20.2, 0.30),
     "operation_yoav.mp4": ("023706cf59ede4e3937bc6e3713b19fce6255dde863236633c05ea1b6bb7d507", 25.3, 1.03),
     "ten_days.mp4": ("c1a121199fefafaa0ae4af5ef53e1b5e60a005c65e89ffbf61273d725fa1dfff", 10.0, 0.43),
 }

@@ -107,7 +107,7 @@ place	tammun	Tammun	טמון	Tammun	טמון	35.3858	32.2842	village	mosque	0	20
 place	aqraba	Aqraba	עקרבה	Aqraba	עקרבה	35.3436	32.1264	village	mosque	0	2060	draft	2026-10-11	3
 place	asira_ash_shamaliya	Asira esh Shamaliya	עסירה א-שמאלייה	Asira ash-Shamaliya	עסירה א-שמאלייה	35.267	32.2507	village	mosque	0	2060	draft	2026-10-11	3
 place	daliyat_al_karmel	Dalyat el Karmil	דאלית אל-כרמל	Daliyat al-Karmel	דאלית אל-כרמל	35.0494	32.6931	village	none	0	2060	draft	2026-10-11	3
-place	naana	Na'ana				34.8733	31.8722	village	mosque	0	2060	draft	2026-10-11	3
+place	naana	Na'ana	נענה			34.8733	31.8722	village	mosque	0	2060	draft	2026-10-11	3
 place	bat_yam	Bat Yam	בת ים	Bat Yam	בת ים	34.7503	32.0231	town	water_tower	0	2000	draft	2026-10-11	3
 place	al_qubab	Qubab	אל קובאב			34.9542	31.8666	village	mosque	0	1980	draft	2026-10-11	3
 place	qaqun	Qaqun	קאקון			34.9953	32.36	village	mosque	0	1970	draft	2026-10-11	3
@@ -155,7 +155,7 @@ place	tarqumiyah	Tarqumiya	תרקומיא	Tarqumiyah	תרקומיא	35.0131	31.5
 place	burqin	Birqin	בורקין	Burqin	בורקין	35.2603	32.4556	village	mosque	0	1540	draft	2026-10-11	3
 place	qalansawe	Qalansuwa	קלנסווה	Qalansawe	קלנסווה	34.9811	32.285	village	mosque	0	1540	draft	2026-10-11	3
 place	al_kabri	Kabri	כאברי			35.1509	33.0155	village	mosque	0	1530	draft	2026-10-11	3
-place	al_salihiyya	Salihiya				35.6124	33.1673	village	mosque	0	1520	draft	2026-10-11	3
+place	al_salihiyya	Salihiya	סאלחיה			35.6124	33.1673	village	mosque	0	1520	draft	2026-10-11	3
 place	beit_jann	Beit Jann	בית ג׳ן	Bayt Jann	בית ג׳ן	35.3794	32.9653	village	none	0	1520	draft	2026-10-11	3
 place	binyamina	Binyamina	בנימינה			34.945	32.5222	town	water_tower	0	1520	draft	2026-10-11	2
 place	majdal_yaba	Majdal Yaba	מג'דל יאבא			34.9569	32.0808	village	mosque	0	1520	draft	2026-10-11	3
@@ -183,10 +183,10 @@ place	beit_safafa	Beit Safafa	בית צפאפא	Beit Safafa	בית צפאפא	35
 place	al_mazraa_ash_sharqiya	Mazra'a esh Sharqiya	מזרעה א-שרקיה	Al-Mazra'a ash-Sharqiya	מזרעה א-שרקיה	35.2731	32.0033	village	mosque	0	1400	draft	2026-10-11	3
 place	kafr_yasif	Kafr Yasif	כפר יאסיף	Kafr Yasif	כפר יאסיף	35.1653	32.9547	village	church	0	1400	draft	2026-10-11	3
 place	majd_al_krum	Majd el Kurum	מג׳ד אל־כרום	Majd al-Krum	מג׳ד אל־כרום	35.2569	32.9214	village	mosque	0	1400	draft	2026-10-11	3
-place	karatiyya	Karatiya				34.7258	31.6436	village	mosque	0	1370	draft	2026-10-11	3
+place	karatiyya	Karatiya	כרתיא			34.7258	31.6436	village	mosque	0	1370	draft	2026-10-11	3
 place	biddya	Bidya	בידיה	Biddya	בידיה	35.0775	32.1142	village	mosque	0	1360	draft	2026-10-11	3
 place	meithalun	Meithalun	מיית'לון	Meithalun	מיית'לון	35.2733	32.3492	village	mosque	0	1360	draft	2026-10-11	3
-place	simsim_gaza	Sumsum				34.6072	31.5672	village	mosque	0	1360	draft	2026-10-11	3
+place	simsim_gaza	Sumsum	סימסים			34.6072	31.5672	village	mosque	0	1360	draft	2026-10-11	3
 place	turan	Tur'an	טורעאן	Tur'an	טורעאן	35.3757	32.7769	village	mosque	0	1350	draft	2026-10-11	3
 place	nazla	Nazla	נזלה	Nazla	נזלה	34.4822	31.5328	village	mosque	0	1330	draft	2026-10-11	3
 place	taybeh_ramallah	Taiyiba	טייבה	Taybeh	טייבה	35.3003	31.9544	village	church	0	1330	draft	2026-10-11	3
@@ -210,7 +210,7 @@ place	magdiel	Magdiel	מגדיאל	Hod HaSharon	הוד השרון	34.9027	32.161
 place	al_sindiyana	Sindiyana	אל-סינדיאנה			35.0023	32.5568	village	mosque	0	1250	draft	2026-10-11	3
 place	dayr_al_qassi	Deir el Qasi	דיר אל-קאסי			35.325	33.0352	village	mosque	0	1250	draft	2026-10-11	3
 place	qibya	Qibya	קיביה	Qibya	קיביה	35.0097	31.9775	village	mosque	0	1250	draft	2026-10-11	3
-place	al_naima	Na'ima				35.595	33.1882	village	mosque	0	1240	draft	2026-10-11	3
+place	al_naima	Na'ima	אל-נאעמה			35.595	33.1882	village	mosque	0	1240	draft	2026-10-11	3
 place	amka	Amqa	עמקה			35.1633	32.9794	village	mosque	0	1240	draft	2026-10-11	3
 place	ash_shuyukh	Shuyukh	אל שיוח'	Al-Shuyukh	אל שיוח'	35.1499	31.5781	village	mosque	0	1240	draft	2026-10-11	3
 place	bayt_nuba	Beit Nuba	בית נובא			35.0325	31.8533	village	mosque	0	1240	draft	2026-10-11	3
@@ -218,16 +218,16 @@ place	beit_furik	Beit Furik	בית פוריכ	Beit Furik	בית פוריכ	35.33
 place	ghuwayr_abu_shusha	Ghuweir Abu Shusha	ע'ויר אבו שושה			35.5094	32.8535	village	mosque	0	1240	draft	2026-10-11	3
 place	jammain	Jamma'in	ג'מאעין	Jamma'in	ג'מאעין	35.2008	32.1311	village	mosque	0	1240	draft	2026-10-11	3
 place	kafr_qaddum	Kafr Qaddum	כפר קדום	Kafr Qaddum	כפר קדום	35.1428	32.2217	village	mosque	0	1240	draft	2026-10-11	3
-place	al_jiyya	Jiya				34.5975	31.6272	village	mosque	0	1230	draft	2026-10-11	3
+place	al_jiyya	Jiya	אל-ג'יה			34.5975	31.6272	village	mosque	0	1230	draft	2026-10-11	3
 place	yagur	Yagur	יגור	Yagur	יגור	35.0772	32.7415	kibbutz	water_tower	0	1220	draft	2026-10-11	3
 place	yalo	Yalu	יאלו			35.0226	31.8405	village	mosque	0	1220	draft	2026-10-11	3
 place	qatra	Qatra	קטרה			34.7777	31.8229	village	mosque	0	1210	draft	2026-10-11	3
-place	al_mansi	Mansi				35.1727	32.5949	village	mosque	0	1200	draft	2026-10-11	3
+place	al_mansi	Mansi	מנסי			35.1727	32.5949	village	mosque	0	1200	draft	2026-10-11	3
 place	burin	Burin	בורין	Burin	בורין	35.2497	32.1842	village	mosque	0	1200	draft	2026-10-11	3
 place	azzoun	Azzun	עזון	Azzun	עזון	35.0596	32.1765	village	mosque	0	1190	draft	2026-10-11	3
 place	deir_istiya	Deir Istiya	דיר איסתיא	Deir Istiya	דיר איסתיא	35.14	32.1306	village	mosque	0	1190	draft	2026-10-11	3
 place	hittin	Hittin	חיטין			35.4538	32.8076	village	mosque	0	1190	draft	2026-10-11	3
-place	az_zakariyya	Zakariya				34.9472	31.7084	village	mosque	0	1180	draft	2026-10-11	3
+place	az_zakariyya	Zakariya	זכריה			34.9472	31.7084	village	mosque	0	1180	draft	2026-10-11	3
 place	jusayr	Juseir	ג'וסר			34.7708	31.6569	village	mosque	0	1180	draft	2026-10-11	3
 place	al_muzayria	Muzeiri'a	אל-מוזירע			34.9496	32.0491	village	mosque	0	1160	draft	2026-10-11	3
 place	al_jauna	Ja'una	ג'עוני			35.5327	32.9716	village	mosque	0	1150	draft	2026-10-11	3
@@ -252,18 +252,18 @@ place	saliha	Saliha	צליחא			35.4722	33.0752	village	mosque	0	1070	draft	202
 place	yafa_an_naseriyye	Yafa	יפיע	Yafa an-Naseriyye	יפיע	35.2753	32.6869	village	mosque	0	1070	draft	2026-10-11	3
 place	yasur	Yasur	יאצור			34.748	31.7656	village	mosque	0	1070	draft	2026-10-11	3
 place	al_eizariya	Eizariya	אלעיזריה	Al-Eizariya	אלעיזריה	35.2644	31.77	village	mosque	0	1060	draft	2026-10-11	3
-place	al_qubayba_hebron	Qubeiba				34.8545	31.5705	village	mosque	0	1060	draft	2026-10-11	3
+place	al_qubayba_hebron	Qubeiba	אל-קוביבה			34.8545	31.5705	village	mosque	0	1060	draft	2026-10-11	3
 place	bayt_tima	Beit Tima	בית טימא			34.6392	31.6233	village	mosque	0	1060	draft	2026-10-11	3
 place	irtah	Irtah	אירתח	Irtah	אירתח	35.0166	32.2977	village	mosque	0	1060	draft	2026-10-11	2
 place	tell_nablus	Tell	תל	Tell	תל	35.2129	32.2007	village	mosque	0	1060	draft	2026-10-11	3
-place	al_zuq_al_tahtani	Zuq et Tahtani				35.6011	33.215	village	mosque	0	1050	draft	2026-10-11	3
+place	al_zuq_al_tahtani	Zuq et Tahtani	זוק אל-תחתני			35.6011	33.215	village	mosque	0	1050	draft	2026-10-11	3
 place	battir	Battir	בתיר	Battir	בתיר	35.1367	31.7247	village	mosque	0	1050	draft	2026-10-11	3
 place	fassuta	Fassuta	פסוטה	Fassuta	פסוטה	35.3058	33.0494	village	mosque	0	1050	draft	2026-10-11	3
 place	kuwaykat	Kuweikat	כויכאת			35.1465	32.9711	village	mosque	0	1050	draft	2026-10-11	3
 place	beit_liqya	Beit Liqya	בית ליקיא	Beit Liqya	בית ליקיא	35.0669	31.8692	village	mosque	0	1040	draft	2026-10-11	3
 place	ein_mahil	Ein Mahil	עין מאהל	Ein Mahil	עין מאהל	35.3522	32.723	village	mosque	0	1040	draft	2026-10-11	3
 place	sarafand_al_kharab	Sarafand el Kharab	סרפנד אל-חרב			34.8056	31.9363	village	mosque	0	1040	draft	2026-10-11	3
-place	al_sawafir_al_gharbiyya	Sawafir el Gharbiya				34.7031	31.6992	village	mosque	0	1030	draft	2026-10-11	3
+place	al_sawafir_al_gharbiyya	Sawafir el Gharbiya	אלסוואפיר אלע'רביה			34.7031	31.6992	village	mosque	0	1030	draft	2026-10-11	3
 place	julis_2	Julis	ג'וליס			34.6535	31.6817	village	mosque	0	1030	draft	2026-10-11	3
 place	al_ghazzawiyya	Ghazawiya				35.5415	32.5021	village	mosque	0	1020	draft	2026-10-11	3
 place	ashdot_yaakov	Ashdot Ya'akov	אשדות יעקב	Ashdot Ya'akov	אשדות יעקב	35.5819	32.6581	kibbutz	water_tower	0	1020	draft	2026-10-11	3

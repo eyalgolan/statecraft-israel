@@ -37,6 +37,7 @@ targets:
     [Theory]
     [InlineData("town_a", "unknown", ".id", "is not an arab_town row of map/settlements_1948.yaml")]
     [InlineData("    q: 1\n", "    q: 0\n", ".q", "is not a land hex")]
+    [InlineData("    r: 0\n", "    r: 1\n", ".q", "is not town_a's hex in map/settlement_hexes.yaml")]
     [InlineData("    operation: fixture_operation\n", "", ".operation", "required")]
     [InlineData("    sources: [{ url: \"https://example.org/operation\", checked: 2026-10-18 }]\n", "", ".sources", "needs at least one source")]
     [InlineData(", checked: 2026-10-18", "", ".sources[0]", "needs an https url and a checked date")]
@@ -57,6 +58,15 @@ targets:
             new Dictionary<string, string> { ["settlement_targets.yaml"] = Target })));
         Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
         Assert.Equal("targets[town_a].id", ex.Field);
+    }
+
+    // Q-TGT-3 (b) (#783, #1274): a shareable build waits until every target row is sensitivity-reviewed.
+    [Fact]
+    public void TheReleaseGateWaitsForEverySettlementTargetToBeReviewed()
+    {
+        Assert.Empty(ReleaseGate.SettlementTargetsUnchecked(ContentLoader.Load(Fixture.Write(WithTargets(Target)))));
+        var draft = ContentLoader.Load(Fixture.Write(WithTargets(Target.Replace("status: sensitivity-reviewed", "status: draft"))));
+        Assert.Equal(new[] { "town_a" }, ReleaseGate.SettlementTargetsUnchecked(draft));
     }
 
     [Fact]

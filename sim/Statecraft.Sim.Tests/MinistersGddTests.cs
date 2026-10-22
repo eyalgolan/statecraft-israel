@@ -8,7 +8,7 @@ using Xunit;
 /// docs/superpowers/plans/2026-10-15-gdd-phase-7.md): R-MIN-001 (each named system reads its office's multiplier,
 /// Q-MIN-1), R-MIN-002 (the multiplier scales output and progress per turn, rounded by the one stated rule: floor with
 /// carry, so no fraction of a turn or a person enters the state, Q-MIN-2) and R-MIN-003 (an ended office reads its named
-/// successor, or is neutral 1.0 with none, Q-MIN-3). Corridors and military training stay unmapped until #870 and #742.</summary>
+/// successor, or is neutral 1.0 with none, Q-MIN-3). Military training stays unmapped until #742.</summary>
 public class MinistersGddTests
 {
     /// <summary>The base GDD fixture plus the three offices of the slice, each with a budget line, and the
@@ -46,6 +46,17 @@ offices:
     loyalty: 5
     offices:
       - office: agriculture_minister
+        from: 1948-05-14
+";
+
+    static readonly string AbleLabour = @"
+  - id: able_labour
+    name: Able Labour
+    living: false
+    competence: 10
+    loyalty: 9
+    offices:
+      - office: labour_minister
         from: 1948-05-14
 ";
 
@@ -233,6 +244,7 @@ offices:
             ["field_work"] = "agriculture_minister",
             ["yishuv_work"] = "agriculture_minister",
             ["absorption"] = "immigration_minister",
+            ["corridors"] = "transportation_minister",
         }, m);
     }
 
@@ -292,4 +304,36 @@ offices:
         Assert.NotNull(s.Sites[site.Id].BuiltOn);
     }
 
+
+    // #1150 (owner review): a city project's forecast is AdvanceCity's count at its kind's minister multiplier, for a new
+    // order and for every turn under way, so the info panel's Build and turns-left lines say the turn it is built on.
+    [Theory]
+    [InlineData("housing", false)]
+    [InlineData("housing", true)]
+    [InlineData("industry", false)]
+    public void AScaledCityProjectForecastMatchesEveryRemainingTurn(string kind, bool able)
+    {
+        var c = able ? Town(AbleLabour, budget: "labour_minister") : Town();
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.NotEqual(1.0, EffectsSystem.GddSystemMultiplier(c, s, c.RulesAt(s.Date).Mvp!, Projects.SystemOfKind(kind)));
+        int Forecast(int left, double carry)
+        {
+            var hash = s.Hash();
+            var result = Projects.CityTurnsToBuild(c, s, kind, left, carry);
+            Assert.Equal(hash, s.Hash()); // a forecast never advances the real state
+            return result;
+        }
+        var forecasts = new List<int> { Forecast(c.ProjectKinds.Single(x => x.Id == kind).Turns, 0) };
+        s = Step(c, s, new StartProject(kind, "town_a", 1, 1)).State;
+        var id = s.CityProjects.Values.Single().Id;
+        int actual = 1;
+        while (s.CityProjects[id].BuiltOn == null && actual < 20)
+        {
+            var p = s.CityProjects[id];
+            forecasts.Add(Forecast(p.TurnsLeft, p.Progress));
+            s = Step(c, s).State; actual++;
+        }
+        Assert.NotNull(s.CityProjects[id].BuiltOn);
+        for (int i = 0; i < forecasts.Count; i++) Assert.Equal(actual - i, forecasts[i]);
+    }
 }

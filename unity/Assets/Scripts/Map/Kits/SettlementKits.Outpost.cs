@@ -23,7 +23,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>A Negev lookout at <paramref name="heart"/>, on the settlement's grid angle: the walled yard with its gate,
         /// the lookout tower in one corner, the living quarters along the opposite side and the service buildings along a
         /// third, all flat-roofed. One lot for the whole yard; nothing is built when no free dry spot takes it. Returns how
-        /// many things were built (the yard, the tower and the four buildings, or 0).</summary>
+        /// many things were built (the yard, the tower and the four buildings, or 0). Up close (issue #1032) the yard, its
+        /// tower and its rooms are copied as one landmark at the models' scale, so they keep their places in the yard.</summary>
         static int NegevOutpostKit(Settlement s, Vector2 heart, KitGround ground, KitMesh km, Lots lots)
         {
             float m = KitScale.Houses, side = OutpostSide * m, half = 0.5f * side;
@@ -31,6 +32,7 @@ namespace Statecraft.Game.Map.Kits
             float yaw = GridYaw(s.Id), a = yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             Vector2 At(float u, float v) => c + new Vector2(u * ca - v * sa, u * sa + v * ca) * m;
             var stone = C(0.80f, 0.74f, 0.63f); var concrete = C(0.86f, 0.84f, 0.79f); var roof = C(0.72f, 0.70f, 0.66f);
+            var start = km.CutStart();
             // The wall: four sides, the +v one broken by the gate (3 m wide, on the -u side of the middle).
             float h = 0.5f * OutpostSide, t = OutpostWallT;
             var pieces = new (float u, float v, float w, float d)[]
@@ -71,6 +73,7 @@ namespace Statecraft.Game.Map.Kits
                 Record(s.Id, i == 0 ? "dining_hall" : "building", p, yaw, w * m, d * m, bh, concrete);
                 if (i == 0) kibbutzHalls++;
             }
+            AtWorldScale(s.Id, "outpost_yard", km, start, c, ground.Y(c.x, c.y), m);   // #1032: the whole yard, as one landmark
             return 2 + rooms.Length;
         }
     }

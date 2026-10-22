@@ -7,7 +7,8 @@ namespace Statecraft.Game
     /// <summary>Where the autosave lives (spec section 7: autosave every turn). On WebGL it is a fixed folder under the
     /// /idbfs IndexedDB mount, not Application.persistentDataPath, because that path hashes the page's URL and itch.io
     /// serves every upload from a new URL, which would hide old saves (tech notes section 3). The template sets
-    /// autoSyncPersistentDataPath, so closing the file persists it. Writes go to a .tmp file first, then replace.</summary>
+    /// autoSyncPersistentDataPath, so closing the file queues an asynchronous persist. GameStart acknowledges the
+    /// IndexedDB commit separately. Writes go to a .tmp file first, then replace.</summary>
     public class SaveStore
     {
         public const string WebDirectory = "/idbfs/statecraft-saves";

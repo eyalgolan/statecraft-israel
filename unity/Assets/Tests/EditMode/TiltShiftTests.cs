@@ -94,7 +94,7 @@ public class TiltShiftTests
     public void TheFarBandIsLighterAtTheGameplayZoom()
     {
         Assert.AreEqual(TiltShift.FarGameplayStrength, TiltShift.FarStrength(PromoPose.Gameplay03.Distance), 1e-6f);
-        Assert.AreEqual(TiltShift.FarGameplayStrength, TiltShift.FarStrength(120000f), 1e-6f, "CameraRig's starting zoom");
+        Assert.AreEqual(TiltShift.FarGameplayStrength, TiltShift.FarStrength(90000f), 1e-6f, "CameraRig's starting zoom");
         Assert.AreEqual(1f, TiltShift.FarStrength(CameraController.MaxDistance), 1e-6f, "the overview keeps it in full");
         Assert.Less(TiltShift.FarStrength(200000f), 1f); Assert.Greater(TiltShift.FarStrength(200000f), TiltShift.FarGameplayStrength);
         var p = TiltShift.Params(0.09f, 60000f);
@@ -109,7 +109,7 @@ public class TiltShiftTests
     {
         Assert.That(TiltShift.NearGameplayStrength, Is.InRange(0.5f, 0.9f), "lighter than before, but a tilt-shift");
         Assert.AreEqual(TiltShift.NearGameplayStrength, TiltShift.NearStrength(PromoPose.Gameplay03.Distance), 1e-6f);
-        Assert.AreEqual(TiltShift.NearGameplayStrength, TiltShift.NearStrength(120000f), 1e-6f, "CameraRig's starting zoom");
+        Assert.AreEqual(TiltShift.NearGameplayStrength, TiltShift.NearStrength(90000f), 1e-6f, "CameraRig's starting zoom");
         Assert.AreEqual(0f, TiltShift.NearStrength(CameraController.MaxDistance), 1e-6f, "none at the overview");
         Assert.Less(TiltShift.NearStrength(200000f), TiltShift.NearGameplayStrength); Assert.Greater(TiltShift.NearStrength(200000f), 0f);
         Assert.AreEqual(0.35f, TiltShift.FarGameplayStrength, "the far band is the #390 ruling's");
@@ -180,9 +180,9 @@ public class TiltShiftTests
     }
 
     /// <summary>Issue #390, the owner's ruling (2026-10-13): a lighter tilt-shift at the gameplay zoom, so the far towns and
-    /// tokens stay readable, as on promo 03, whose far edge is only gently soft. At gameplay03 (60 km) and at the
-    /// starting zoom (CameraRig's 120 km, the README map), under the web tier's top bar, the far band keeps at least 60% of
-    /// its local contrast (4abb64f kept 14-25%: a smear). Promo 03's far band, measured against its own focus band and
+    /// tokens stay readable, as on promo 03, whose far edge is only gently soft. At gameplay03 (60 km), the starting zoom
+    /// (CameraRig's 90 km, #1062) and the README map's 120 km, under the web tier's top bar, the far band keeps at least
+    /// 60% of its local contrast (4abb64f kept 14-25%: a smear). Promo 03's far band, measured against its own focus band and
     /// compared with the same ratio on a sharp frame of ours, keeps about 37%, so 60% is at least as readable.</summary>
     [UnityTest]
     public IEnumerator TheFarBandStaysReadableAtTheGameplayZoom()
@@ -193,7 +193,7 @@ public class TiltShiftTests
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         try
         {
-            foreach (var distance in new[] { PromoPose.Gameplay03.Distance, 120000f })   // 120 km: CameraRig's starting zoom
+            foreach (var distance in new[] { PromoPose.Gameplay03.Distance, 90000f, 120000f })   // 90 km: CameraRig's starting zoom; 120 km: the README map
             {
                 PromoPose.Gameplay03.Apply(rig, map.Frame); rig.Distance = distance; rig.TopInset = 0.09f; rig.Apply();
                 TiltShift.Enabled = false; var sharp = RenderSample.Render(cam, 960, 540);

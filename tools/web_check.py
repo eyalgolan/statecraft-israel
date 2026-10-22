@@ -8,16 +8,19 @@ fail on a failure line or a timeout. Uses Chrome for Testing from the Playwright
 --enable-logging=stderr --v=1 as INFO:CONSOLE... "text", source: ...
 
 Usage (from the repo root):
-  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 e3c76f5f6fc45e4941a4499afd2e5c226a4677a651f39c6cef789447d123267a" --expect "GOLDEN OK hash1952 37866907babc55e9477320db32467d1314aa59c8fe86d4d4ad82d8db61731fde"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "golden" --expect "GOLDEN OK hash1950 f70d7cc2d9438c3b0859a957842fae9a456198d1a1160f962b61fec5b28af0df" --expect "GOLDEN OK hash1952 ca78893d57bd7235dd923f29b611e0c12e99d702312c24b5bfc72ac82b3d14bf"
+  uv run tools/web_check.py unity/Builds/Web-disabled --query "smoke-orders" --expect "SMOKE ORDERS OK 1948-06-15 4c9916304b71a66c989494a80b0e9b70db98a26f4697e29066425b77539743ee"
+  (the smoke-orders golden: one Move given through the unit card, docs/determinism.md)
 Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --fail REGEX (default: GOLDEN FAIL|SMOKE FAIL|BOOT FAIL),
 --timeout SECONDS (default 300), --stall SECONDS (fail when no console message arrives for that long; 0 = off),
 --swiftshader (software WebGL when there is no GPU), --dpr N (default 1), --shots DIR (reassemble the player's
 "SHOT" console lines, from ?shot, into DIR/<pose>.png; a "SHOT done" with an unfinished shot fails the run),
---persistence (play one normal turn, reload and Continue after a settling delay, then play another turn and reload
-immediately; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
+--persistence (play one normal turn, wait for its matching IndexedDB commit, reload and Continue, then play another
+turn and reload as soon as its matching commit arrives; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
 recording and waits for RECORDING playing; then End turn must log TURN 1; any console Exception, RECORDING failed or
-BOOT FAIL fails the run; add --query lang=he for the Hebrew layout).
+BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
+buttons where its "start buttons" line says they are (StartButtons).
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
 (Emulation.setDeviceMetricsOverride: --window-size alone gives a 1920x937 viewport in --headless=new), and the run
 fails on any "res=" line, or any screenshot, of another size. --viewport WxH checks another window - 390x844 is the
@@ -341,6 +344,12 @@ class Server(http.server.ThreadingHTTPServer):
     (BOOT FAIL <file>: Unknown Error). 128 is macOS's kern.ipc.somaxconn."""
     request_queue_size = 128
 
+    def handle_error(self, request, client_address):
+        # Closing the browser cancels outstanding responses. Keep other server failures visible.
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            return
+        super().handle_error(request, client_address)
+
 
 def serve(root: Path, port: int = 0) -> Server:
     server = Server(("127.0.0.1", port), functools.partial(Handler, directory=str(root)))
@@ -373,27 +382,112 @@ def drain(inbox: queue.Queue) -> list:
             return batch
 
 
-# Button centres in CSS pixels of the fixed 1920x1080 viewport, measured on headless captures of this branch's WebGL
-# build: the start screen's New game (alone, a fresh profile) and Continue (beside New game, a saved game), and the top
-# bar's End turn (clickable while the first event card is open). Keys do not work here: Enter sent over CDP before any
-# click reaches no Unity button, and after New game the first event card, not End turn, takes the focus.
-NEW_GAME, CONTINUE, END_TURN = (960, 1002), (840, 1002), (1840, 45)
-# The same buttons in the Hebrew layout (?lang=he), measured the same way: the top bar is mirrored, so End turn is at the
-# left, and Play the recording sits left of its credit line. Play the recording in the English layout too.
-PLAY_RECORDING, PLAY_RECORDING_HE, END_TURN_HE = (812, 940), (851, 940), (80, 45)
+# The top bar's End turn (clickable while the first event card is open) in CSS pixels of the fixed 1920x1080 viewport,
+# measured on headless captures, and in the Hebrew layout (?lang=he: the top bar is mirrored, so End turn is at the left).
+# Keys do not work here: Enter sent over CDP before any click reaches no Unity button, and after New game the first event
+# card, not End turn, takes the focus.
+END_TURN, END_TURN_HE = (1840, 45), (80, 45)
+# The start screen's buttons are not measured: their row changes as buttons are added (#1178's Star on GitHub moved New
+# game off the viewport's centre), so the game says where they are. Under ?navlog, StartScreenPresenter.ButtonCentres logs
+# each shown button's centre as a fraction of the window, again whenever the layout moves it:
+#   NAV f=4 t=4094 start buttons start-new-game=0.4167,0.9278 start-star=0.5833,0.9278 start-listen=0.4229,0.8704
+NEW_GAME, CONTINUE, PLAY_RECORDING = "start-new-game", "start-continue", "start-listen"
+START_BUTTONS = re.compile(r"^NAV f=\d+ t=\d+ start buttons (.+)$")
+START_BUTTON = re.compile(r"(\S+)=(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)")
+NAVLOG = "navlog"
 GAME_STATE = re.compile(r"^GAME OK (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
 TURN_STATE = re.compile(r"^TURN (\d+) (\d{4}-\d{2}-\d{2}) hash ([0-9a-f]+)$")
+SAVE_STATE = re.compile(r"^AUTOSAVE (PENDING|OK|FAIL) ([1-9]\d*) (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$")
+
+
+class StartButtons:
+    """Where the start screen's buttons are: the latest "start buttons" line (START_BUTTONS), fed from the stderr reader
+    thread, so a click uses the layout logged while its driver was waiting. `point` maps a button's centre onto the
+    viewport in CSS pixels, waiting up to `wait` seconds for it, and fails at once (not a stall) when it never comes."""
+
+    def __init__(self, viewport: tuple[int, int], wait: float = 10.0, clock=time.monotonic, sleep=time.sleep):
+        self.viewport, self.wait, self.clock, self.sleep = viewport, wait, clock, sleep
+        self.lock, self.centres = threading.Lock(), {}
+
+    def feed(self, text: str) -> None:
+        m = START_BUTTONS.match(text)
+        if m:
+            centres = {name: (float(x), float(y)) for name, x, y in START_BUTTON.findall(m.group(1))}
+            with self.lock:
+                self.centres = centres
+
+    def clear(self) -> None:
+        """Forgets the layout: before a reload, so the new page's line is waited for."""
+        with self.lock:
+            self.centres = {}
+
+    def point(self, name: str) -> tuple[int, int]:
+        deadline = self.clock() + self.wait
+        while True:
+            with self.lock:
+                centre, known = self.centres.get(name), sorted(self.centres)
+            if centre is not None:
+                break
+            if self.clock() >= deadline:
+                raise ValueError(f"START SCREEN FAIL no centre for {name} within {self.wait:.0f} s (logged: "
+                                 f"{', '.join(known) or 'no start buttons line'}; the page needs ?{NAVLOG})")
+            self.sleep(0.1)
+        fx, fy = centre
+        if not (0 < fx < 1 and 0 < fy < 1):
+            raise ValueError(f"START SCREEN FAIL {name} is outside the window: centre at {fx:g}, {fy:g} of it")
+        return round(fx * self.viewport[0]), round(fy * self.viewport[1])
+
+
+def click_button(action, buttons: StartButtons, name: str) -> None:
+    """A left click on a start-screen button where the game says it is; printed, so a stalled run shows where it clicked."""
+    x, y = buttons.point(name)
+    print(f"click {name} at ({x}, {y})")
+    action(f"click:{x},{y}")
 
 
 class PersistenceCheck:
     """Drives and checks the two reloads of issue #910. `action` is Page.command (injected, so the unit tests need no
     browser); a reload keeps the page's profile and origin, so its IndexedDB autosave."""
 
-    def __init__(self, action, settle=time.sleep):
-        self.action, self.settle = action, settle
-        self.stage, self.saved, self.done = "first_boot", None, False
+    def __init__(self, action, buttons: StartButtons, settle=time.sleep, now=time.monotonic, save_timeout=15.0):
+        self.action, self.buttons, self.settle, self.now, self.save_timeout = action, buttons, settle, now, save_timeout
+        self.stage, self.saved, self._done = "first_boot", None, False
+        self.pending, self.acknowledged, self.deadline = None, None, None
+
+    @property
+    def done(self) -> bool:
+        # watch polls this even when no more console lines arrive.
+        if self.deadline is not None and self.now() >= self.deadline:
+            raise ValueError(f"PERSISTENCE FAIL no matching IndexedDB commit within {self.save_timeout:g}s: "
+                             f"{self.saved}; pending receipt {self.pending}")
+        return self._done
+
+    def _reload_when_durable(self) -> None:
+        if self.stage not in ("first_commit", "second_commit"):
+            return
+        if self.pending is None or self.pending[1:] != self.saved or self.acknowledged != self.pending:
+            return
+        first = self.stage == "first_commit"
+        self.deadline = None
+        self.stage = "settled_reload" if first else "immediate_reload"
+        self.buttons.clear()
+        self.action("reload")
 
     def feed(self, text: str) -> None:
+        _ = self.done  # fail a missing acknowledgement before processing later diagnostics
+        receipt = SAVE_STATE.match(text)
+        if receipt:
+            kind, generation, date, turn, digest = receipt.groups()
+            value = (int(generation), date, int(turn), digest)
+            if kind == "FAIL":
+                raise ValueError(f"PERSISTENCE FAIL IndexedDB autosave failed: {value}")
+            if kind == "PENDING":
+                if self.pending is None or value[0] > self.pending[0]:
+                    self.pending, self.acknowledged = value, None
+            elif value == self.pending:
+                self.acknowledged = value
+            self._reload_when_durable()
+            return
         game, turn = GAME_STATE.match(text), TURN_STATE.match(text)
         if game:
             state, kind = (game.group(1), int(game.group(2)), game.group(3)), "GAME"
@@ -404,38 +498,40 @@ class PersistenceCheck:
         if self.stage == "first_boot" and kind == "GAME":
             self._turn(state, 0, "first boot (a fresh profile has no save)")
             self.settle(3)                       # the start screen lays out and takes input
-            self.click(NEW_GAME)                 # normal mode: no ?smoke and no ?nostart
+            self.click(NEW_GAME)
             self.settle(2)
-            self.click(END_TURN)
             self.stage = "first_turn"
+            self.click(END_TURN)
         elif self.stage == "first_turn" and kind == "TURN":
             self._turn(state, 1, "first End turn after New game")
-            self.saved = state
-            self.settle(2)                       # ordinary reload: give IDBFS autosync time to settle
-            self.action("reload")
-            self.stage = "settled_reload"
+            self.saved, self.stage = state, "first_commit"
+            self.deadline = self.now() + self.save_timeout
+            self._reload_when_durable()
         elif self.stage == "settled_reload" and kind == "GAME":
             self._same(state, "settled")
             print(f"PERSISTENCE settled reload OK {state[0]} turn {state[1]} hash {state[2]}")
+            # A new page starts its generation counter again; old-page receipts cannot acknowledge its save.
+            self.pending, self.acknowledged = None, None
             self.settle(3)
             self.click(CONTINUE)
             self.settle(2)
-            self.click(END_TURN)
             self.stage = "second_turn"
+            self.click(END_TURN)
         elif self.stage == "second_turn" and kind == "TURN":
-            # Continue must have resumed the reloaded game: its next turn, not a new game's turn 1 (a click on the wrong
-            # button would otherwise pass).
             self._turn(state, self.saved[1] + 1, "End turn after Continue")
-            self.saved = state
-            self.action("reload")                # deliberately no settling delay after the TURN acknowledgement
-            self.stage = "immediate_reload"
+            self.saved, self.stage = state, "second_commit"
+            self.deadline = self.now() + self.save_timeout
+            self._reload_when_durable()
         elif self.stage == "immediate_reload" and kind == "GAME":
             self._same(state, "immediate")
             print(f"PERSISTENCE immediate reload OK {state[0]} turn {state[1]} hash {state[2]}")
-            self.done = True
+            self._done = True
 
-    def click(self, point: tuple[int, int]) -> None:
-        self.action(f"click:{point[0]},{point[1]}")
+    def click(self, target: str | tuple[int, int]) -> None:
+        if isinstance(target, str):
+            click_button(self.action, self.buttons, target)
+        else:
+            self.action(f"click:{target[0]},{target[1]}")
 
     @staticmethod
     def _turn(state, expected: int, what: str) -> None:
@@ -457,11 +553,12 @@ def query_value(query: str, key: str) -> str | None:
 
 class StartScreenCheck:
     """Issue #908: the start screen of a fresh profile, as a player meets it (no automation flag skips it). New game
-    (after Play the recording when `recording`) and End turn must reach the map's first turn. `action` is Page.command."""
+    (after Play the recording when `recording`) and End turn must reach the map's first turn. `action` is Page.command;
+    `buttons` says where the start screen's buttons are."""
 
-    def __init__(self, action, recording: bool, hebrew: bool, settle=time.sleep):
-        self.action, self.recording, self.settle = action, recording, settle
-        self.play, self.end_turn = (PLAY_RECORDING_HE, END_TURN_HE) if hebrew else (PLAY_RECORDING, END_TURN)
+    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, settle=time.sleep):
+        self.action, self.recording, self.buttons, self.settle = action, recording, buttons, settle
+        self.end_turn = END_TURN_HE if hebrew else END_TURN
         self.stage, self.done = "boot", False
 
     def feed(self, text: str) -> None:
@@ -471,7 +568,7 @@ class StartScreenCheck:
                 raise ValueError(f"START SCREEN FAIL the first boot is turn {game.group(2)}, not a fresh game")
             self.settle(3)                       # the start screen lays out and takes input
             if self.recording:
-                self.click(self.play)
+                self.click(PLAY_RECORDING)
                 self.stage = "recording"
             else:
                 self.new_game()
@@ -491,8 +588,11 @@ class StartScreenCheck:
         self.click(self.end_turn)
         self.stage = "turn"
 
-    def click(self, point: tuple[int, int]) -> None:
-        self.action(f"click:{point[0]},{point[1]}")
+    def click(self, target: str | tuple[int, int]) -> None:
+        if isinstance(target, str):
+            click_button(self.action, self.buttons, target)
+        else:
+            self.action(f"click:{target[0]},{target[1]}")
 
 
 def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=time.sleep, on_text=None, stall=0,
@@ -523,7 +623,8 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
         if status == "fail":
             print(f"FAIL: {texts[-1]}")
             return 1
-        if status == "pass" and (complete is None or complete()):
+        finished = complete is None or complete()  # poll the deadline while other expectations are pending too
+        if status == "pass" and finished:
             if passes_at is None:
                 passes_at = now() + grace
             if now() >= passes_at:
@@ -557,16 +658,24 @@ START_SCREEN_FAILS = r"BOOT FAIL|Exception|RECORDING failed"
 DRIVER_GRACE = 3.0
 
 
-def run_plan(a, command):
+def page_query(a) -> str:
+    """The page's query: --query, plus ?navlog for the runs that click the start screen (StartButtons). navlog only logs:
+    it skips nothing, so the start screen is still the one a player meets."""
+    if not (a.startscreen or a.persistence) or query_value(a.query, NAVLOG) is not None:
+        return a.query
+    return f"{a.query}&{NAVLOG}" if a.query else NAVLOG
+
+
+def run_plan(a, command, buttons: StartButtons):
     """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
-    Page.command."""
+    Page.command; `buttons` is fed the console by the caller."""
     if a.persistence and a.startscreen:
         raise ValueError("--persistence and --startscreen are separate runs")
     if a.startscreen:
-        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he")
+        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons)
         fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
     elif a.persistence:
-        driver, fail, what = PersistenceCheck(command), a.fail, "the end of the --persistence run"
+        driver, fail, what = PersistenceCheck(command, buttons), a.fail, "the end of the --persistence run"
     else:
         return None, re.compile(a.fail), {}
     return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
@@ -602,6 +711,7 @@ def main() -> int:
         sys.exit(str(e))
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
+    buttons = StartButtons((w, h))
 
     def on_text(text: str) -> bool:
         err = res_error(text, res)
@@ -611,7 +721,8 @@ def main() -> int:
     try:
         chrome = find_chrome()
         server = serve(a.build)
-        url = f"http://localhost:{server.server_address[1]}/index.html" + (f"?{a.query}" if a.query else "")
+        query = page_query(a)
+        url = f"http://localhost:{server.server_address[1]}/index.html" + (f"?{query}" if query else "")
         proc = subprocess.Popen([str(chrome), *chrome_flags(profile, a.swiftshader, a.dpr), "about:blank"],
                                 stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True, errors="replace")
         inbox: queue.Queue = queue.Queue()
@@ -620,6 +731,9 @@ def main() -> int:
         def read():
             for raw in iter(proc.stderr.readline, ""):
                 for line in rejoin.feed(raw):
+                    console = CONSOLE.search(line)
+                    if console:
+                        buttons.feed(console.group(1))     # here, not in watch: a driver waiting in settle() sees it
                     inbox.put(line)
             for line in rejoin.flush():
                 inbox.put(line)
@@ -629,7 +743,7 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr, a.mobile)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
-            driver, fail, plan = run_plan(a, page.command)
+            driver, fail, plan = run_plan(a, page.command, buttons)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)

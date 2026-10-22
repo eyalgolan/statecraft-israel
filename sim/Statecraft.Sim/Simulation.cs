@@ -18,6 +18,7 @@ namespace Statecraft.Sim
             PopulationSystem.Init(c, s);
             Cities.Init(c, s);
             Pools.Init(c, s);
+            StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
             AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);
@@ -69,7 +70,7 @@ namespace Statecraft.Sim
             s.Turn++;
             if (s.GameOver == null && s.Date >= end)
             {
-                // the legacy report (#19) will come before this once it exists
+                // #19's legacy report is EndReport.For, which the end screen reads once GameOver is set (D-H4)
                 s.GameOver = end == c.Eras[c.Eras.Count - 1].To ? GameOverCodes.EraEnded : GameOverCodes.MvpEnded;
                 why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver)));
             }
@@ -99,13 +100,17 @@ namespace Statecraft.Sim
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, List<Cause> why, List<Rejection> rejected)
         {
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
+            var spent = new Dictionary<int, int>();   // movement points each unit has used this turn (R-MOVE-001)
             foreach (var cmd in commands)
             {
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
                 // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
                 if (AttentionSystem.IsGddKind(cmd.Kind) && !c.IsGdd) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
+                // The call-up and the security order are retired in the GDD loop (R-WAR-002): refused the same way,
+                // before charging, so the state and the Attention are unchanged.
+                if (c.IsGdd && (cmd is SetMobilization || cmd is SecurityOrder)) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
                 var before = s.Attention;
-                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, why);
+                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, why);
                 if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
             }
         }
@@ -113,7 +118,7 @@ namespace Statecraft.Sim
         /// <summary>Returns null when the command was carried out (a lost vote counts: it consumes the RNG draw and is
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
-        static string? Execute(Content c, GameState s, Command cmd, List<Cause> why)
+        static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent, List<Cause> why)
         {
             switch (cmd)
             {
@@ -172,12 +177,19 @@ namespace Statecraft.Sim
                     return Projects.Start(c, s, p.Unit, p.Action, p.Site, why);
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
+                case UnitOrder o:
+                    if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
+                    return o.Q != null || o.R != null ? "That order names no hex" : Orders.Give(c, s, o.Unit, o.Order, why);
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);
                 case CancelProject p:
                     return Projects.CancelCity(c, s, p.Project, why);
+                case Move m:
+                    return Movement.Move(c, s, m.Unit, m.Q, m.R, spent, why);
                 case BuyArms a:
                     return Pools.BuyArms(c, s, a.Count, why);
+                case ResolveCapture x:
+                    return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

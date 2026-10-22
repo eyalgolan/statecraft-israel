@@ -32,6 +32,17 @@ namespace Statecraft.Game.Map
                 Render(lastPlacements, lastContent, lastMap);
         }
 
+        /// <summary>What the layer draws for a state (#1123): its placements, then each built city project whose kind has a look
+        /// here, as a placement of that kind on its hex dated the day it was built (project kind ids are the map actions' ids).
+        /// A project still being built is left out, so it never looks finished; so is a kind with no approved art (industry).</summary>
+        internal static List<Placement> Drawn(IEnumerable<Placement> placements, IEnumerable<CityProject> projects)
+        {
+            var list = new List<Placement>(placements);
+            foreach (var p in projects)
+                if (p.BuiltOn is System.DateTime on && Look.ContainsKey(p.Kind)) list.Add(new Placement(p.Kind, p.Q, p.R, on));
+            return list;
+        }
+
         public void Render(IEnumerable<Placement> placements, Content content, MapScene map)
         {
             var cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
