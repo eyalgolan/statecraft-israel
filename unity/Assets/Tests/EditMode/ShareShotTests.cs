@@ -25,7 +25,7 @@ public class ShareShotTests
     [Test]
     public void ThePostNamesTheGameTheDateTheTurnAndTheItchPage()
     {
-        Assert.AreEqual("I'm running Israel in 1948 in Statecraft: Israel, a free open-source strategy game. 15 May 1948, turn 0. "
+        Assert.AreEqual("I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. 15 May 1948, turn 0. "
             + "Play: https://eyalgolan.itch.io/statecraft-israel", ShareShot.Text(En, "15 May 1948", 0));
         var he = ShareShot.Text(He, "15 במאי 1948", 3);
         StringAssert.Contains("15 במאי 1948", he);

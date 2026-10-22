@@ -108,19 +108,21 @@ public class LocalityNameTests
     }
 
     /// <summary>#899: under Hebrew each 1948 locality is named by its name_he (Beisan is ביסאן), and by the English name where the
-    /// row has none (Ghazawiya). Where the Hebrew 1948 name and the Hebrew today name are one word (Umm el Fahm and Umm al-Fahm
-    /// are both אום אל-פחם: 48 rows that would otherwise show a today name), the "today" part would repeat the name, so it is left out. English is unchanged.</summary>
+    /// row has none (since #1344 every row has one, so a copy of Ghazawiya's row without it stands in). Where the Hebrew
+    /// 1948 name and the Hebrew today name are one word (Umm el Fahm and Umm al-Fahm are both אום אל-פחם: 48 rows that would otherwise show a today name), the "today" part would repeat the name, so it is left out. English is unchanged.</summary>
     [Test]
     public void TheHebrewPanelNamesEach1948LocalityByItsHebrewName()
     {
         var by = map.Localities.ToDictionary(p => p.Settlement.Id);
         var (beisan, salihiyya, ghazawiya, naana, fahm) = (by["beit_shean"], by["al_salihiyya"], by["al_ghazzawiyya"], by["naana"], by["umm_al_fahm"]);
-        Assert.IsNull(ghazawiya.NameHe, "Ghazawiya has no Hebrew name");
+        Assert.AreEqual("אל-גזאוויה", ghazawiya.NameHe, "#1344: the he.wiki-sourced name");
+        var unnamed = new Localities.Place { Settlement = ghazawiya.Settlement, Today = ghazawiya.Today, TodayHe = ghazawiya.TodayHe };
         Assert.AreEqual("סאלחיה", salihiyya.NameHe, "#1313: the sourced name");
         Assert.AreEqual("נענה", naana.NameHe, "#1219: the he.wiki-sourced name");
         Assert.AreEqual(fahm.NameHe, fahm.TodayHe, "one Hebrew word for 1948 and today");
         Assert.AreEqual("יישובים ב-1948: ביסאן (היום: בית שאן)", InfoPanelPresenter.LocalitiesText(He, new[] { beisan }));
-        Assert.AreEqual(He.Format("info.localities", "Ghazawiya"), InfoPanelPresenter.LocalitiesText(He, new[] { ghazawiya }));   // Format marks the Latin run
+        Assert.AreEqual("יישובים ב-1948: אל-גזאוויה", InfoPanelPresenter.LocalitiesText(He, new[] { ghazawiya }));
+        Assert.AreEqual(He.Format("info.localities", "Ghazawiya"), InfoPanelPresenter.LocalitiesText(He, new[] { unnamed }));   // Format marks the Latin run
         Assert.AreEqual("יישובים ב-1948: סאלחיה", InfoPanelPresenter.LocalitiesText(He, new[] { salihiyya }));
         Assert.AreEqual("יישובים ב-1948: נענה", InfoPanelPresenter.LocalitiesText(He, new[] { naana }));
         Assert.AreEqual("יישובים ב-1948: אום אל-פחם", InfoPanelPresenter.LocalitiesText(He, new[] { fahm }));

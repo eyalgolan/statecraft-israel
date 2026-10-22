@@ -1121,6 +1121,7 @@ namespace Statecraft.Sim
                     // Training (R-TRAIN-001) needs a place to train; values without one would be read by nothing.
                     if (x.TrainingTurns != 0) throw new ContentException(uf, at + ".training_turns", "only a type with a facility trains");
                     if (x.TrainingCost != 0) throw new ContentException(uf, at + ".training_cost", "only a type with a facility trains");
+                    if (x.TrainingArms != null) throw new ContentException(uf, at + ".training_arms", "only a type with a facility trains");
                     continue;
                 }
                 if (!TrainingFacilities.Contains(x.Facility)) throw new ContentException(uf, at + ".facility", $"unknown facility '{x.Facility}' (military_camp, hakhshara or industry)");
@@ -1131,6 +1132,13 @@ namespace Statecraft.Sim
                 // Q-CRAFT-1 (owner, 15 October 2026): a craftsman trains in a city with a completed industry project.
                 if (x.Id == Training.Craftsman && x.Facility != Training.Industry)
                     throw new ContentException(uf, at + ".facility", "a craftsman trains at industry (Q-CRAFT-1)");
+                // R-UNIT-008 (Q-ARTY-3): a trained military type pays Arms a group; the recruit's is rules.yaml's
+                // arms_per_recruit_group (R-ARMS-003), so a second value on it would be read by nothing.
+                if (x.Side != "" && x.Id != "recruit")
+                {
+                    if (!(x.TrainingArms >= 1)) throw new ContentException(uf, at + ".training_arms", "required for a trained military type, at least 1");
+                }
+                else if (x.TrainingArms != null) throw new ContentException(uf, at + ".training_arms", "only a trained military type other than the recruit takes its own Arms");
                 if (x.TrainingTurns < 1) throw new ContentException(uf, at + ".training_turns", "must be >= 1");
                 if (!(x.TrainingCost >= 0 && IsFinite(x.TrainingCost))) throw new ContentException(uf, at + ".training_cost", "must be a finite number >= 0");
             }
