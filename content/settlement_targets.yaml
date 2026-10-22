@@ -4,8 +4,10 @@
 # The list ships with the six rows the owner approved for list and sensitivity suitability on 19 October 2026
 # (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6267660409), filled by the owner's go-ahead of
 # 21 October 2026 (#793). Gaza is excluded. The rows come from research_notes/GDD phase 6/settlement-targets.md, which keeps
-# the historical accounts, conflicts and source gaps. Every row stays `status: draft`: a person's check of the sources is
-# still pending, and each `checked` date is the research packet's (18 October 2026), not a new check.
+# the historical accounts, conflicts and source gaps. The owner sensitivity-reviewed the six rows and checked each row's
+# operation against its sources (#793, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840): each is `status: sensitivity-reviewed` (Q-TGT-3 (b)). The
+# Morris link is a bibliographic record, not the book's text. Each `checked` date stays the research packet's
+# (18 October 2026).
 # The game annotations of that ruling (residents' default outcome; Jaffa what-if only) are not fields of this file.
 # Capture applies only to a target also on mvp.enemy_held_localities (rules.yaml): jaffa is not, since it is Israeli-held
 # at the start, so it is captured only if an alternate-timeline card returns it to Arab control. lod and ramla share a hex.
@@ -17,7 +19,8 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed
   - id: acre
     q: 7
     r: 6
@@ -25,7 +28,8 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed
   - id: nazareth
     q: 7
     r: 10
@@ -33,7 +37,8 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed
   - id: lod
     q: -3
     r: 21
@@ -43,7 +48,8 @@ targets:
       - { url: "https://archives.mod.gov.il/sites/English/Exhibitions/Pages/Yitzhak-Rabin.aspx", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Danny.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed
   - id: ramla
     q: -3
     r: 21
@@ -53,7 +59,8 @@ targets:
       - { url: "https://archives.mod.gov.il/sites/English/Exhibitions/Pages/Yitzhak-Rabin.aspx", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Danny.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed
   - id: beersheba
     q: -9
     r: 31
@@ -62,4 +69,5 @@ targets:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Yoav.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    status: draft
+    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    status: sensitivity-reviewed

@@ -718,4 +718,137 @@ public class CityPanelTests
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("event-objective").style.display.value, "with its objective line");
         Assert.IsNotEmpty(ui.Q<Label>("event-objective").text);
     }
+
+    // #792 (GDD Phase 4 PR 8, item 2): Build road and Build railway on a corridor segment's hex, as the sim's
+    // PioneerWork(unit, build_road | build_rail, "corridor:N"), with the cost and turns from the sim (Projects.Terms,
+    // Corridors.TurnsToBuild). Each segment through the hex has its own part.
+
+    static (int q, int r) SegmentHex(string corridor, int n, int i = 0)
+    {
+        var h = C.Corridors.Single(x => x.Id == corridor).Segments[n - 1].Hexes[i];
+        return (h[0], h[1]);
+    }
+
+    static VisualElement SegmentBox(UiTestKit ui, string corridor, int n) => ui.Root.Q<VisualElement>($"corridor-part-{corridor}-{n}");
+
+    [Test]
+    public void ASegmentHexOffersBuildRoadToEachIdleGroupWithTheSimsNumbers()
+    {
+        using var ui = new UiTestKit();
+        int a = -1, b = -1;
+        var bridge = Bridge(En, s => { a = AddHalutz(s); b = AddHalutz(s); });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = SegmentHex("burma_road", 1);
+        panel.Show(q, r);
+        var box = SegmentBox(ui, "burma_road", 1);
+        Assert.IsNotNull(box, "the segment through the hex has its part");
+        Assert.AreEqual(En.Format("corridor.segment", "Burma Road", 1), box.Q<Label>("corridor-name").text);
+        var terms = Projects.Terms(C.RulesAt(bridge.State.Date).Mvp!, Corridors.BuildRoad);
+        var turns = Corridors.TurnsToBuild(C, bridge.State, a, terms.Turns, 0);
+        var button = box.Q<Button>($"corridor-build-{a}");
+        Assert.AreEqual(En.Format("corridor.build_road", En.Format("site.group", 1), PlayerText.Money(C, "treasury", terms.Cost), GddHexPanel.Turns(En, turns)), button.text);
+        StringAssert.Contains(En.Format("site.group", 2), box.Q<Button>($"corridor-build-{b}").text, "every idle group has its button");
+        UiTestKit.Press(button);
+        var order = bridge.QueuedLike(new StopWork(a)) as PioneerWork;
+        Assert.AreEqual((Corridors.BuildRoad, "burma_road:1"), (order?.Action, order?.Site), "the order goes through the bridge's corridor:N key");
+        box = SegmentBox(ui, "burma_road", 1);
+        Assert.AreEqual(En["site.ordered"], box.Q<Button>($"corridor-build-{a}").text);
+        Assert.IsFalse(box.Q<Button>($"corridor-build-{b}").enabledSelf, "one group builds a segment: the sim would refuse a second order");
+        var result = bridge.EndTurn();
+        Assert.IsEmpty(result.Rejected, "the sim takes the order");
+        Assert.AreEqual(a, result.State.Corridors["burma_road"].Segments[0]?.Unit);
+    }
+
+    [Test]
+    public void AHexOnARailwayOffersBuildRailwayAndShowsEverySegmentThroughIt()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var bridge = Bridge(En, s => a = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = SegmentHex("tlv_haifa_rail", 1, 1);
+        Assert.AreEqual((q, r), SegmentHex("tlv_netanya_road", 2), "precondition: the rail link and the Netanya road share the hex");
+        panel.Show(q, r);
+        Assert.IsNotNull(SegmentBox(ui, "tlv_netanya_road", 1));
+        Assert.IsNotNull(SegmentBox(ui, "tlv_netanya_road", 2));
+        var rail = SegmentBox(ui, "tlv_haifa_rail", 1);
+        var terms = Projects.Terms(C.RulesAt(bridge.State.Date).Mvp!, Corridors.BuildRail);
+        Assert.AreEqual(En.Format("corridor.build_rail", En.Format("site.group", 1), PlayerText.Money(C, "treasury", terms.Cost),
+            GddHexPanel.Turns(En, Corridors.TurnsToBuild(C, bridge.State, a, terms.Turns, 0))), rail.Q<Button>($"corridor-build-{a}").text);
+        UiTestKit.Press(rail.Q<Button>($"corridor-build-{a}"));
+        var order = bridge.QueuedLike(new StopWork(a)) as PioneerWork;
+        Assert.AreEqual((Corridors.BuildRail, "tlv_haifa_rail:1"), (order?.Action, order?.Site));
+        Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim takes the railway order");
+    }
+
+    [TestCase(0d)]
+    [TestCase(0.75d)]
+    public void ASegmentBeingBuiltShowsTheSimsTurnsLeftAndStop(double carry)
+    {
+        using var ui = new UiTestKit();
+        int vet = -1;
+        var bridge = Bridge(En, s => { vet = AddHalutz(s, Projects.VeteranType); s.Corridors["burma_road"] = new CorridorWork("burma_road", new SegmentWork?[] { new SegmentWork(vet, 2, null, carry), null, null, null }); });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = SegmentHex("burma_road", 1);
+        panel.Show(q, r);
+        var box = SegmentBox(ui, "burma_road", 1);
+        var left = Projects.Terms(C.RulesAt(bridge.State.Date).Mvp!, Corridors.BuildRoad).Turns - 2;
+        Assert.AreEqual(En.Format("site.building", En.Format("site.group", 1), GddHexPanel.Turns(En, Corridors.TurnsToBuild(C, bridge.State, vet, left, carry))), box.Q<Label>("corridor-state").text);
+        Assert.IsNull(box.Q<Button>($"corridor-build-{vet}"), "a segment being built takes no Build order (the sim refuses it)");
+        UiTestKit.Press(box.Q<Button>("corridor-stop"));
+        Assert.IsNotNull(bridge.QueuedLike(new StopWork(vet)) as StopWork, "Stop queues StopWork");
+    }
+
+    [Test]
+    public void ABuiltSegmentShowsItsDateAndTakesNoOrder()
+    {
+        using var ui = new UiTestKit();
+        int a = -1;
+        var on = new DateTime(1948, 9, 1);
+        var bridge = Bridge(He, s => { a = AddHalutz(s); s.Corridors["burma_road"] = new CorridorWork("burma_road", new SegmentWork?[] { new SegmentWork(null, 6, on), null, null, null }); });
+        using var panel = Panel(ui, bridge, He);
+        var (q, r) = SegmentHex("burma_road", 1);
+        panel.Show(q, r);
+        var box = SegmentBox(ui, "burma_road", 1);
+        Assert.AreEqual(He.Format("corridor.segment", C.Corridors.Single(x => x.Id == "burma_road").NameHe, 1), box.Q<Label>("corridor-name").text, "the Hebrew name");
+        Assert.AreEqual(He.Format("corridor.built", He.Format("date.day_month_year", 1, He["date.month_9"], 1948)), box.Q<Label>("corridor-state").text);
+        Assert.IsNull(box.Q<Button>($"corridor-build-{a}"), "a built segment takes no Build order (the sim refuses it)");
+    }
+
+    [Test]
+    public void AGroupBuildingASegmentIsNotOfferedAnother()
+    {
+        using var ui = new UiTestKit();
+        int busy = -1, idle = -1;
+        var bridge = Bridge(En, s => { busy = AddHalutz(s); idle = AddHalutz(s); s.Corridors["burma_road"] = new CorridorWork("burma_road", new SegmentWork?[] { null, null, null, new SegmentWork(busy, 1, null) }); });
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = SegmentHex("burma_road", 1);
+        panel.Show(q, r);
+        var box = SegmentBox(ui, "burma_road", 1);
+        Assert.IsNull(box.Q<Button>($"corridor-build-{busy}"), "a group with a project is not idle (D-D6)");
+        Assert.IsNotNull(box.Q<Button>($"corridor-build-{idle}"));
+    }
+
+    [Test]
+    public void EverySegmentIsOfferedOnAHexWithoutACity()
+    {
+        // A city's own hex already fills the panel's GDD column (InfoPanelLayoutTests), so a segment shows on its other hexes.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsTrue(C.Corridors.Any(d => d.Segments.Any(x => x.Hexes.Any(h => (h[0], h[1]) == CityHex))), "precondition: a corridor starts on Tel Aviv's hex");
+        Assert.IsNull(ui.Root.Query<VisualElement>().Where(x => x.name != null && x.name.StartsWith("corridor-part-")).First(), "no corridor part on a city's hex");
+        foreach (var d in C.Corridors)
+            for (int n = 1; n <= d.Segments.Count; n++)
+            {
+                var found = false;
+                foreach (var h in d.Segments[n - 1].Hexes)
+                {
+                    panel.Show(h[0], h[1]);
+                    if (SegmentBox(ui, d.Id, n)?.Q<Button>() != null) { found = true; break; }
+                }
+                Assert.IsTrue(found, $"{d.Id}:{n} has a hex that offers Build");
+            }
+    }
 }

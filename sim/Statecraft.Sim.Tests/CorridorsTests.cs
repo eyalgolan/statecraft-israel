@@ -269,9 +269,10 @@ public class CorridorsTests
         Assert.Empty(Step(c, s, ReferencePlayer.Commands(c, s).ToArray()).Rejected);
     }
 
-    static Content TransportationTown()
+    static Content TransportationTown(Func<string, string>? rules = null)
     {
         var files = Fixture.Gdd();
+        if (rules != null) files["rules.yaml"] = rules(files["rules.yaml"]);
         files["offices.yaml"] = Fixture.Files["offices.yaml"] + @"  - id: transportation_minister
     title: Minister of Transportation
 ";
@@ -321,6 +322,29 @@ public class CorridorsTests
         Assert.Equal(s.Date, built.BuiltOn);
         Assert.False(Projects.IsBusy(s, ids[0]));
         Assert.Equal(new SegmentWork(null, 3, s.Date).Canonical(), built.Canonical());
+    }
+
+    // #792: the cost and turns the map's Build road and Build railway orders show are what Start charges and Advance takes.
+    // The road and rail values differ from the yishuv's here, so a helper that fell back to them would fail.
+    [Theory]
+    [InlineData(false, 6)]   // 0.75 a turn, then 1.5 once a veteran after 4 turns of service: 0.75, 1.5, 2.25, 3, 4.5, 6
+    [InlineData(true, 4)]    // a veteran, 2 x 0.75 a turn: 1.5, 3, 4.5, 6
+    public void TheSegmentTermsAndTurnsAreTheOnesTheSimUses(bool veteran, int turns)
+    {
+        var c = TransportationTown(x => x.Replace("road_segment_turns: 3", "road_segment_turns: 5").Replace("road_segment_cost: 1.5", "road_segment_cost: 2.5")
+            .Replace("rail_segment_turns: 2", "rail_segment_turns: 4").Replace("rail_segment_cost: 3", "rail_segment_cost: 3.5"));
+        var s = WithHalutzim(c, 1, out var ids);
+        if (veteran) s.Units[ids[0]] = new Unit(ids[0], Projects.VeteranType, 1, 0, 4);
+        Assert.Equal((2.5, 5), Projects.Terms(c.Rules.Mvp!, Corridors.BuildRoad));
+        Assert.Equal((3.5, 4), Projects.Terms(c.Rules.Mvp!, Corridors.BuildRail));
+        Assert.Equal(turns, Corridors.TurnsToBuild(c, s, ids[0], 5, 0));
+        var r = Step(c, s, Road(ids[0]));
+        Assert.Equal(Step(c, s).State.Treasury - 2.5, r.State.Treasury, 9);
+        var seg = r.State.Corridors["road_a"].Segments[0]!;
+        Assert.Equal(turns - 1, Corridors.TurnsToBuild(c, r.State, ids[0], 5 - seg.Progress, seg.Carry));   // the turns left
+        var n = 1;
+        while (r.State.Corridors["road_a"].Segments[0]!.BuiltOn == null && n < 10) { r = Step(c, r.State); n++; }
+        Assert.Equal(turns, n);
     }
 
     [Fact]

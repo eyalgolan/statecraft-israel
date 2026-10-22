@@ -41,7 +41,7 @@ public class TownLandmarksTests
 
     static readonly string[] Towns =
     {
-        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
+        "tel-aviv-white-city-v1", "jerusalem-stone-city-v1-3denhance", "haifa-port-city-v1", "moshava-town-v1", "nahalal-moshav-v1",
         "kibbutz-compound-v2", "stone-village-v1", "maabara-camp-v1", "shikun-housing-v1",
     };
 
@@ -66,7 +66,7 @@ public class TownLandmarksTests
     public void EveryTownModelIsUsedAndEachIsInTheStreamedTownsBundle()
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
-        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them");
+        CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708)");
         foreach (var id in Towns) Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(id), id);
         Assert.AreEqual(TownLandmarks.TelAviv, TownLandmarks.ById["tel_aviv"]);
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
@@ -85,6 +85,28 @@ public class TownLandmarksTests
         Assert.IsNull(TownLandmarks.ModelFor(MapActions.Housing, new DateTime(1949, 11, 15)), "not on the 15 November 1949 turn");
         Assert.AreEqual(TownLandmarks.Shikun, TownLandmarks.ModelFor(MapActions.Housing, new DateTime(1949, 12, 15)), "from the 15 December 1949 turn");
         Assert.IsNull(TownLandmarks.ModelFor("no_such_action", new DateTime(1951, 1, 1)));
+    }
+
+    /// <summary>The owner, 21 October 2026, on #708 (issuecomment-6323524970): #336's second Jerusalem (#886) "is Jerusalem's
+    /// only far-zoom model for the whole game. The first model stays in the repository, unused on the map. No date switch".
+    /// It streams from the towns bundle and stands on Jerusalem's core on every date; #507's first Jerusalem is never asked for.</summary>
+    [Test]
+    public void JerusalemIsTheSecondStoneCityOnEveryDate()
+    {
+        Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(TownLandmarks.Jerusalem3D));
+        Assert.AreEqual(TownLandmarks.Jerusalem3D, TownLandmarks.ById["jerusalem"]);
+        CollectionAssert.DoesNotContain(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).ToList(), TownLandmarks.Jerusalem,
+            "#507's first Jerusalem stays in the repository, unused on the map");
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var map = OpenMap();
+        foreach (var date in new[] { content.Rules.Start, new DateTime(1949, 4, 15), new DateTime(1951, 12, 15) })
+        {
+            var t = TownLandmarks.ShowAt(map, date, Array.Empty<Placement>(), content)!;
+            CollectionAssert.DoesNotContain(asked.Select(a => a.id).ToList(), TownLandmarks.Jerusalem, "the first Jerusalem is never asked for");
+            AnswerAll();
+            Assert.AreEqual(TownLandmarks.Jerusalem3D, t.Placed.Single(p => p.Key == "jerusalem").Model, $"{date:d MMM yyyy}");
+            Assert.IsTrue(t.Seats.ContainsKey("jerusalem"), "on its core");
+        }
     }
 
     /// <summary>The towns with a whole-town model, in the file's order.</summary>

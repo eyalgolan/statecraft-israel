@@ -280,7 +280,7 @@ public class HebrewUiTests
         ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
         ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
-        ("nav-why", "hud.nav.why"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
+        ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
         ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
         ("event-draft", "event.draft"),
         ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
@@ -376,7 +376,7 @@ public class HebrewUiTests
     }
 
     /// <summary>#880: in Hebrew every map name pill shows its row's name_he, and its English name where the row has none (a
-    /// 1948 locality such as Salihiya); an English restart puts the English names back. #1008: a GDD v0.2 map location
+    /// 1948 locality such as Ghazawiya); an English restart puts the English names back. #1008: a GDD v0.2 map location
     /// (content/map/locations_1948.yaml) is named in both languages too, and the one with a settlement's id (jerusalem)
     /// names that settlement's pill: "מערב ירושלים", "West Jerusalem".</summary>
     [Test]
@@ -393,7 +393,8 @@ public class HebrewUiTests
         Assert.AreEqual("תל אביב", Ui.Q<Label>("label-tel_aviv").text);
         Assert.AreEqual("נשר", Ui.Q<Label>("label-nesher").text, "a 1948 locality with a name_he");
         Assert.AreEqual("נענה", Ui.Q<Label>("label-naana").text, "#1219: Na'ana has a sourced name_he now");
-        Assert.AreEqual("Salihiya", Ui.Q<Label>("label-al_salihiyya").text, "no name_he: the English name stays");
+        Assert.AreEqual("סאלחיה", Ui.Q<Label>("label-al_salihiyya").text, "#1313: Salihiya has a sourced name_he now");
+        Assert.AreEqual("Ghazawiya", Ui.Q<Label>("label-al_ghazzawiyya").text, "no name_he: the English name stays");
         var locations = Inputs.Content.MapLocations.ToDictionary(l => l.Id);
         Assert.AreEqual("מערב ירושלים", Ui.Q<Label>("label-jerusalem").text, "#1008: Jerusalem's pill is West Jerusalem's");
         foreach (var s in map.Settlements)

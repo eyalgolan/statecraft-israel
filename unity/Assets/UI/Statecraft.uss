@@ -222,15 +222,16 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    full height (the bar draws over its top), shown and taking the pointer only while the decision card is open. */
 .event-gutter { display: none; position: absolute; left: 0; top: 112px; bottom: 0; width: 72px; background-color: rgba(5, 9, 18, 0.55); }
 .event-modal .event-gutter { display: flex; }
-.left-column .rail-button { width: 45px; height: 45px; margin: 0 0 3px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
+.left-column .rail-button { width: 40px; height: 40px; margin: 0 0 2px 0; padding: 0; font-size: 1px; color: rgba(0, 0, 0, 0); }
 .left-column .rail-button:hover, .left-column .rail-button:focus, .left-column .nav-open { color: rgba(0, 0, 0, 0); }
-/* Seven discs since Objectives (#1189). On the one-row bar: 45 px, 3 px apart, so the column still ends at 112 + 336 px
-   (six 50 px discs 6 px apart, #1041: the same), above the info panel's top (456 px) in a short, wide window
-   (InfoPanelLayoutTests), and at least 29 screen px in the smallest one-row window (1366x657). The narrow, two-row and
-   three-row tiers keep their discs (50 px; 60 px on a phone): the column starts lower there, the info panel is far
-   below it, and 960x600 needs 50 px for the 24 screen px floor (LeftColumnTests). The column keeps its 56 px width, so
-   the backdrop, the screens and the toast keep their places. */
-.left-column .rail-button .nav-disc { top: 0; left: 0; width: 45px; height: 45px; padding: 10.5px; border-radius: 22.5px; }
+/* Eight discs with Timeline (#955) after Objectives (#1189). On the one-row bar: 40 px, 2 px apart, so the column still
+   ends at 112 + 336 px (seven 45 px discs 3 px apart, #1189, and six 50 px discs 6 px apart, #1041: the same), above the
+   info panel's top (456 px) in a short, wide window (InfoPanelLayoutTests), and at least 26 screen px in the smallest
+   one-row window (1366x657), over the 24 screen px floor. The glyph keeps its 24 px through the smaller padding. The
+   narrow, two-row and three-row tiers keep their discs (50 px; 60 px on a phone): the column starts lower there, the info
+   panel is far below it, and 960x600 needs 50 px for the 24 screen px floor (LeftColumnTests). The column keeps its 56 px
+   width, so the backdrop, the screens and the toast keep their places. */
+.left-column .rail-button .nav-disc { top: 0; left: 0; width: 40px; height: 40px; padding: 8px; border-radius: 20px; }
 .hud-narrow .left-column > .rail-button { width: 50px; height: 50px; margin: 0 0 6px 0; }
 .hud-narrow .left-column > .rail-button .nav-disc { width: 50px; height: 50px; padding: 11px; border-radius: 25px; }
 /* A screen with something to do this turn (#1109, HudPresenter.ActionClass): a small gold dot on the disc's upper right,
@@ -994,3 +995,16 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .info-gdd-pairs > .info-gdd-line { margin-right: 0; margin-left: 14px; }
 .hud-two-row .info-panel.info-gdd-shown { width: 452px; flex-wrap: wrap; }
 .hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }
+
+/* #955: paired answers remain side by side, wrapping within equal columns. */
+.timeline-columns { flex-direction: row; align-items: stretch; }
+.timeline-columns > Label { flex-basis: 0; flex-grow: 1; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: normal; }
+.lang-he .timeline-columns { flex-direction: row-reverse; }
+.timeline-headings { flex-shrink: 0; margin-bottom: 8px; color: var(--gold-light); }
+.timeline-row { flex-shrink: 0; border-bottom-width: 1px; border-color: var(--gold-dim); padding: 10px 4px; }
+.timeline-line { white-space: normal; }
+#timeline-title { color: var(--gold-light); margin-bottom: 6px; }
+#timeline-date { font-size: 16px; }
+.timeline-diverged { border-left-width: 3px; padding-left: 8px; }
+.lang-he .timeline-diverged { border-left-width: 0; border-right-width: 3px; padding-left: 4px; padding-right: 8px; }
+#timeline-difference, #timeline-rejoined { color: var(--gold-light); }

@@ -13,7 +13,7 @@ namespace Statecraft.Game.UI
     /// built there, and the two map actions (transit camp, housing project) with the reason when one is not possible
     /// (MapActions.Check). Tile yields are deliberately not shown (owner decision, M3 rulings 2). A selected unit
     /// (<see cref="ShowUnit"/>) shows its card instead (<see cref="UnitCard"/>), with a button to the Defence screen (owner
-    /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify and Hold orders (GDD Phase 5 PR 15, #754).</summary>
+    /// ruling, 2026-10-11) and, in the GDD loop, the Move, Fortify, Hold and Attack orders (GDD Phase 5 PR 15, #754).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
         /// <summary>The class of a fact row (Game.uxml): a sign, then the fact's line; hidden while the line is empty.</summary>
@@ -25,15 +25,19 @@ namespace Statecraft.Game.UI
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
-        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton;
-        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold;
+        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton;
+        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold, onAttack;
         readonly System.Func<PlacedToken?> selectedUnit;
         bool unitMode;
-        /// <summary>Lights the hexes the Move pick offers on the map (none: clears them); null: nothing is drawn.</summary>
+        /// <summary>Lights the hexes the Move or Attack pick offers on the map (none: clears them); null: nothing is drawn.</summary>
         readonly System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable;
-        /// <summary>While the player picks a Move's hex: the unit, the hexes Movement.Reachable gave (the only ones a click
-        /// takes), and the session and turn they were read on (a turn or a load ends the pick, as the hexes change).</summary>
-        (int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn)? pick;
+        /// <summary>While the player picks a Move's or an Attack's hex: the unit, the hexes the sim gave (Movement.Reachable's,
+        /// or those Combat.Check takes: the only ones a click takes), the session and turn they were read on (a turn or a
+        /// load ends the pick, as the hexes change), and whether it is the attack's.</summary>
+        (int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack)? pick;
+        /// <summary>A sim unit's name on screen, for the attack's targets (GameRoot: its token's card title); null, or no
+        /// name, gives the hex's coordinates.</summary>
+        readonly System.Func<int, string?>? unitName;
         readonly Label title, subtitle, region, settlements, localitiesLabel, placement, reason;
         readonly System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt;
         readonly UiIcon thumb;
@@ -60,12 +64,15 @@ namespace Statecraft.Game.UI
         /// title, the "Settlements" line and that note (#899), or with the English name where it has none (null: English
         /// names).</param>
         /// <param name="showReachable">Lights the hexes a Move can go to while the player picks one, and clears them with none
-        /// (GameRoot: MapScene.ShowReachable; null: the pick still works, with nothing lit).</param>
+        /// (GameRoot: MapScene.ShowReachable; null: the pick still works, with nothing lit). The Attack pick lights its hexes
+        /// with it too.</param>
+        /// <param name="unitName">A sim unit's name on screen, by id (GameRoot: its token's card title), for the Attack pick's
+        /// targets (null: the hex's coordinates).</param>
         public InfoPanelPresenter(VisualElement root, SimBridge bridge, UiText text, IReadOnlyDictionary<string, string> settlementNames,
             ScreenNav? nav = null, System.Func<PlacedToken?>? selectedUnit = null, MapRegions? regions = null,
             System.Func<int, int, IReadOnlyList<Statecraft.Game.Map.Kits.Localities.Place>>? localitiesAt = null,
             System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
-            System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null)
+            System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, System.Func<int, string?>? unitName = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
             this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt; this.townHex = townHex;
@@ -87,13 +94,18 @@ namespace Statecraft.Game.UI
             defenceButton.text = text["unit.defence"];
             this.showReachable = showReachable;
             moveButton = panel.Q<Button>("info-move");
-            onMove = ToggleMovePick;
+            onMove = () => TogglePick(attack: false);
             moveButton.clicked += onMove;
             moveButton.text = text["unit.order.move"];
             fortifyButton = panel.Q<Button>("info-fortify"); holdButton = panel.Q<Button>("info-hold");
             onFortify = () => GiveOrder(Orders.Fortify); onHold = () => GiveOrder(Orders.Hold);
             fortifyButton.clicked += onFortify; holdButton.clicked += onHold;
             fortifyButton.text = text["unit.order.fortify"]; holdButton.text = text["unit.order.hold"];
+            this.unitName = unitName;
+            attackButton = panel.Q<Button>("info-attack");
+            onAttack = () => TogglePick(attack: true);
+            attackButton.clicked += onAttack;
+            attackButton.text = text["unit.order.attack"];
             bridge.Changed += Render;
             panel.parent?.RegisterCallback<GeometryChangedEvent>(OnHudGeometry);
             Render();
@@ -102,7 +114,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; EndPick(); }
+        public void Dispose() { bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -164,15 +176,55 @@ namespace Statecraft.Game.UI
             return reach.Count == 0 ? null : (id, reach);
         }
 
-        /// <summary>Move's button: starts the pick (the reachable hexes lit), or ends it when pressed again.</summary>
-        void ToggleMovePick()
+        /// <summary>The shown unit's sim id, the hexes its attack can name (each unit's hex the sim's Combat.Check takes: the
+        /// sim's answer, nothing reckoned here), and the sim's reasons for the hexes it refuses that Combat.Preview gives odds
+        /// for (an enemy in the unit's reach: no Arms for it, or the attack it already has). Null when the unit can take no
+        /// order (OrderUnit).</summary>
+        (int unit, List<(int q, int r)> hexes, List<string> refused)? AttackTargets()
         {
-            if (pick != null) { EndPick(); Render(); return; }
-            if (!(MoveTargets() is { } moves)) return;
-            var hexes = moves.hexes.Keys.Select(h => (h.Q, h.R)).ToList();
-            pick = (moves.unit, new HashSet<(int q, int r)>(hexes), bridge.Session, bridge.State.Turn);
-            showReachable?.Invoke(hexes);
+            if (!(OrderUnit() is int id)) return null;
+            var c = bridge.Content; var s = bridge.State;
+            var hexes = new List<(int q, int r)>(); var refused = new List<string>();
+            foreach (var (q, r) in s.Units.Values.Select(u => (u.Q, u.R)).Distinct())
+            {
+                var why = Combat.Check(c, s, id, q, r);
+                if (why == null) hexes.Add((q, r));
+                else if (Combat.Preview(c, s, id, q, r) != null && !refused.Contains(why)) refused.Add(why);
+            }
+            return (id, hexes, refused);
+        }
+
+        /// <summary>Move's or Attack's button: starts its pick (the sim's hexes lit), or ends it when pressed again; a press
+        /// of the other ends the open pick and starts its own.</summary>
+        void TogglePick(bool attack)
+        {
+            var again = pick?.attack == attack;
+            EndPick();
+            (int unit, List<(int q, int r)> hexes)? offer = null;
+            if (!again && attack && AttackTargets() is { } a && a.hexes.Count > 0) offer = (a.unit, a.hexes);
+            if (!again && !attack && MoveTargets() is { } m) offer = (m.unit, m.hexes.Keys.Select(h => (h.Q, h.R)).ToList());
+            if (offer is { } o)
+            {
+                pick = (o.unit, new HashSet<(int q, int r)>(o.hexes), bridge.Session, bridge.State.Turn, attack);
+                showReachable?.Invoke(o.hexes);
+            }
             Render();
+        }
+
+        /// <summary>Q-UI-1's preview of the shown unit's attack on (q, r), for the card: the defenders' names and the sim's
+        /// strength ratio (Combat.Preview), then its combat_table row's outcome bands (Combat.Outcomes); empty where Preview
+        /// has none. Every number is the sim's, read on the state as it is: attacks queued for this turn and not yet stepped
+        /// are not in it (as for Fortify and Hold), so End turn can still refuse one with the sim's reason.</summary>
+        string Odds(int unit, int q, int r)
+        {
+            var c = bridge.Content; var s = bridge.State;
+            if (!(Combat.Preview(c, s, unit, q, r) is { } p)) return "";
+            // The enemy units there (Combat's defenders: a side, not Israel's; Check has made sure there is one).
+            var names = s.Units.Values.Where(u => u.Q == q && u.R == r && u.Side != "" && u.Side != Movement.PlayerSide).Select(u => unitName?.Invoke(u.Id)).Where(n => !string.IsNullOrEmpty(n)).ToList();
+            var who = names.Count > 0 ? string.Join(", ", names) : string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r);
+            var bands = Combat.Outcomes(c, s, p.Row).Select(b => text.Format(b.Retreat ? "unit.attack_band_retreat" : "unit.attack_band",
+                b.Faces, b.Of, b.AttackersLose, b.DefendersLose));
+            return text.Format("unit.attack_odds", who, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
         }
 
         /// <summary>The shown unit's sim id, or null when it can take no order: no unit card, no sim unit for it, or the game
@@ -199,15 +251,16 @@ namespace Statecraft.Game.UI
             showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
         }
 
-        /// <summary>A map click while the player picks a Move's hex (GameRoot.OnHexClicked asks first): on a lit hex it queues
-        /// the sim's Move through the bridge and returns true (the click is taken, the card stays); anywhere else it only ends
-        /// the pick and returns false, so the click selects as usual. False when no pick is open.</summary>
-        public bool PickMoveTarget(int q, int r)
+        /// <summary>A map click while the player picks a Move's or an Attack's hex (GameRoot.OnHexClicked asks first): on a lit
+        /// hex it queues the sim's Move, or its UnitOrder(unit, attack, q, r), through the bridge and returns true (the click is
+        /// taken, the card stays); anywhere else it only ends the pick and returns false, so the click selects as usual. False
+        /// when no pick is open.</summary>
+        public bool PickTarget(int q, int r)
         {
             if (!(pick is { } p)) return false;
             EndPick();
             if (!p.hexes.Contains((q, r))) return false;
-            bridge.Queue(new Move(p.unit, q, r));   // a refusal is raised by the bridge (Refused)
+            bridge.Queue(p.attack ? new UnitOrder(p.unit, Combat.Attack, q, r) : (Command)new Move(p.unit, q, r));   // a refusal is raised by the bridge (Refused)
             Render();   // the card drops the pick line either way: a refused Queue raises no Changed
             return true;
         }
@@ -233,6 +286,13 @@ namespace Statecraft.Game.UI
         /// its 1948 sub-district; then each armistice line in force through it.</summary>
         public static string RegionText(MapRegions regions, UiText text, int q, int r, System.DateTime date)
         {
+            // Isolate a Hebrew date from the surrounding English fallback names: otherwise the row's
+            // LTR paragraph can place its day before its year/month (the mixed-language #558 browser regression).
+            string DateText(System.DateTime signed)
+            {
+                var value = Control1948.DateText(signed, k => text[k]);
+                return UiDirection.HasRightToLeft(value) ? "\u2067" + value + "\u2069" : value;
+            }
             var parts = new List<string>();
             var zone = regions.ZoneAt(q, r, date);
             var control = ControlText(regions, text, q, r, date);
@@ -240,10 +300,10 @@ namespace Statecraft.Game.UI
             if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
-            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, MapRegions.DateText(zone.Signed)));
+            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, DateText(zone.Signed)));
             else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
             foreach (var l in regions.LinesAt(q, r, date))
-                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, MapRegions.DateText(l.Signed)));
+                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, DateText(l.Signed)));
             return string.Join("\n", parts);
         }
 
@@ -344,16 +404,23 @@ namespace Statecraft.Game.UI
                 button.style.display = orderUnit != null && why == null ? DisplayStyle.Flex : DisplayStyle.None;
                 if (why != null && own && !refusals.Contains(why)) refusals.Add(why);
             }
+            // Attack (#754): offered where the sim's Combat.Check takes some hex; its refusals in reach show as the others'.
+            var attacks = AttackTargets();
+            attackButton.style.display = attacks is { } at && at.hexes.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            foreach (var why in attacks?.refused ?? new List<string>()) if (own && !refusals.Contains(why)) refusals.Add(why);
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
                 var card = UnitCard.For(unit.Value, s, text, c.IsGdd);
                 panel.EnableInClassList("info-empty", false);
-                // The orders' state under the card's lines: the pick asks for a hex; a queued Move, Fortify or Hold waits for End turn.
-                var order = pick != null ? text["unit.move_pick"]
+                // The orders' state under the card's lines: the pick asks for a hex (an attack's with each lit hex's odds, Q-UI-1);
+                // a queued Move, Fortify, Hold or Attack waits for End turn (an attack's with its hex's odds).
+                var order = pick is { attack: true } ap ? string.Join("\n", new[] { text["unit.attack_pick"] }.Concat(ap.hexes.Select(h => Odds(ap.unit, h.q, h.r))).Where(x => x != ""))
+                    : pick != null ? text["unit.move_pick"]
                     : moves is { } m && bridge.QueuedLike(new Move(m.unit, 0, 0)) != null ? text["unit.move_queued"] : "";
                 var standing = orderUnit is int su && bridge.QueuedLike(new UnitOrder(su, Orders.Hold)) is UnitOrder given
-                    ? given.Order == Orders.Fortify ? text["unit.fortify_queued"] : given.Order == Orders.Hold ? text["unit.hold_queued"] : "" : "";
+                    ? given.Order == Orders.Fortify ? text["unit.fortify_queued"] : given.Order == Orders.Hold ? text["unit.hold_queued"]
+                    : given.Order == Combat.Attack && given.Q is int gq && given.R is int gr ? text["unit.attack_queued"] + "\n" + Odds(su, gq, gr) : "" : "";
                 var lines = new[] { card.Body, order, standing }.Where(x => x != "");
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
                 ShowLocalities("");

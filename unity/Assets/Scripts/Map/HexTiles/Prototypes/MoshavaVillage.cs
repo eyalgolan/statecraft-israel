@@ -17,13 +17,13 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The water tower is the kibbutz tile's b28 tower (sandbox:kit_kibbutz_4); where it is missing, the Palm stand-in
     /// draws instead, its silhouette (a thin shaft under a wide crown) the nearest to a tank on a column.</summary>
-    [HexPrototype("moshava_village")]
+    [HexPrototype("moshava_village", Kind = "town")]
     public sealed class MoshavaVillage : IHexPrototype
     {
         public string Title => "Moshava farming colony (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 60000;
+        public int TriangleBudget => 120000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 106k on the israel board and the test hex
 
         // Explicit kit ids, not "kit_moshava*": the wildcard would also pick kit_moshava_3, which is the barn.
         const string Farmhouse = "sandbox:kit_moshava", TwoStorey = "sandbox:kit_moshava_2", Barn = "sandbox:kit_moshava_3",

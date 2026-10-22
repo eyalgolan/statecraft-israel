@@ -76,7 +76,7 @@ namespace Statecraft.Sim
             s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget);
             spent[unitId] = used + cost;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), cost,
-                FormattableString.Invariant($"Unit {unitId} moved to hex {q},{r} for {cost} movement points")));
+                FormattableString.Invariant($"Unit {unitId} moved to hex {q},{r} for {cost} movement points"), enemy ? Kind : ""));
             if (u.Order == "fortify")
                 why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0,
                     $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified"));

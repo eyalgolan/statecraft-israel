@@ -83,3 +83,11 @@ Unity_v*.alf
 .idea/
 unity/obj/
 unity/MemoryCaptures/
+
+# Existing local hex art used by opt-in previews; source/licence review stays with its asset batch.
+unity/Assets/Art/Settlements/Prototype/HexSandboxModels/
+unity/Assets/Art/Settlements/Prototype/HexSandboxModels.meta
+unity/Assets/Art/Settlements/Prototype/HexSandboxGround/
+unity/Assets/Art/Settlements/Prototype/HexSandboxGround.meta
+unity/Assets/Art/Settlements/Prototype/Resources/
+unity/Assets/Art/Settlements/Prototype/Resources.meta

@@ -57,16 +57,17 @@ namespace Statecraft.HexTiles
         public static IHexUnitType Create(string id) =>
             All.TryGetValue(id, out var t) ? (IHexUnitType)Activator.CreateInstance(t)! : throw new KeyNotFoundException($"no hex unit type '{id}' (known: {string.Join(", ", All.Keys)})");
 
-        /// <summary>A formation of <paramref name="models"/> cycled over HexUnitScale.Characters figures: rows of 3, 2, 3
-        /// (a wedge), spaced HexUnitScale.FigureSpacing, all facing forward.</summary>
-        public static HexUnit Squad(string title, params string[] models)
+        /// <summary>HexUnitScale.Characters figures of one <paramref name="model"/> (Tal, 19 October 2026: a character unit is
+        /// one character type, never a mix): rows of 3, 2, 3 (a wedge), spaced HexUnitScale.FigureSpacing, all facing
+        /// forward.</summary>
+        public static HexUnit Squad(string title, string model)
         {
             var unit = new HexUnit { Title = title };
             var slots = new[] { (-1f, 1f), (0f, 1.15f), (1f, 1f), (-0.5f, 0f), (0.5f, 0f), (-1f, -1f), (0f, -0.85f), (1f, -1f) };
             for (int i = 0; i < HexUnitScale.Characters; i++)
                 unit.Members.Add(new HexUnitMember
                 {
-                    Model = models[i % models.Length], StandIn = StandIn.Figure,
+                    Model = model, StandIn = StandIn.Figure,
                     Offset = new Vector2(slots[i].Item1, slots[i].Item2) * HexUnitScale.FigureSpacing,
                     HeightShare = HexUnitScale.FigureHeight, CycleShare = HexUnitScale.FigureHeight * HexUnitScale.StridePerHeight,
                 });
@@ -82,12 +83,12 @@ namespace Statecraft.HexTiles
     }
 
     /// <summary>Moves a unit along a path of hex centres. Presentation only: the simulation decides the move (A to B);
-    /// this glides the group between centres, turning smoothly at each, and drives each member's clip by distance
-    /// travelled (stride-locked: the feet and wheels never slide), with the idle clip when it stands. Tripo clips are
-    /// exported in place (no root motion), so position is the code's and every move ends exactly on a hex centre.</summary>
+    /// this glides the group between centres, turning smoothly at each. Editor/Legacy clips sample by distance; player
+    /// non-Legacy figures keep their authored Animator playback (runtime stride sampling is not provided here). Tripo
+    /// clips are exported in place, so position is the code's and every move ends exactly on a hex centre.</summary>
     public sealed class HexUnitMotion
     {
-        sealed class Live { public HexUnitMember M = null!; public GameObject Go = null!, Rig = null!; public AnimationClip? Move, Idle; public float Scale; }
+        sealed class Live { public HexUnitMember M = null!; public GameObject Go = null!, Rig = null!; public AnimationClip? Move, Idle; public float Scale; public GameObject? Prefab; }
 
         readonly List<Live> live = new List<Live>();
         readonly List<Vector3> path;
@@ -97,6 +98,12 @@ namespace Statecraft.HexTiles
         public float ModelYaw = 0f;
 
         readonly float facing;
+        readonly Transform visualParent;
+        readonly HexCollectionFigures models;
+        readonly HexBoardAssets? streamedAssets;
+        Material? fallbackMaterial;
+        float lastDistance;
+        bool lastMoving;
         public IReadOnlyList<GameObject> Objects => live.Select(l => l.Go).ToList();
 
         /// <summary><paramref name="facingDeg"/> is the heading (degrees from north) of a unit standing on a one-hex path.</summary>
@@ -105,39 +112,71 @@ namespace Statecraft.HexTiles
             this.surface = surface; size = sizeM; facing = facingDeg;
             path = hexes.Select(h => HexGeometry.Centre(h.q, h.r, sizeM)).ToList();
             for (int i = 1; i < path.Count; i++) length += Vector3.Distance(path[i - 1], path[i]);
-            Material? fallbackMaterial = null;
-            foreach (var m in unit.Members)
+            visualParent = parent;
+            HexUnitFigureRefresh? refresh = null;
+            if (HexCollectionFigures.Available && unit.Members.Any(m => HexModels.CollectionAlias(m.Model, out _, out _)))
             {
-                var prefab = HexModels.Prefab(m.Model);
-                GameObject go;
-                if (prefab != null)
-                {
-                    go = Object.Instantiate(prefab, parent);
-                }
-                else
-                {
-                    go = GameObject.CreatePrimitive(m.StandIn == StandIn.Box ? PrimitiveType.Cube : PrimitiveType.Capsule);
-                    go.transform.SetParent(parent, false);
-                    Object.DestroyImmediate(go.GetComponent<Collider>());
-                    if (fallbackMaterial == null)
-                    {
-                        var assets = parent.GetComponentInParent<HexBoardAssets>() ?? parent.gameObject.AddComponent<HexBoardAssets>();
-                        fallbackMaterial = assets.Own(HexMaterials.New(HexMaterials.Lit));
-                    }
-                    go.GetComponent<MeshRenderer>().sharedMaterial = fallbackMaterial;
-                }
-                var b = HexModels.Bounds(go);
-                float scale = m.ByWidth ? m.HeightShare * sizeM / Mathf.Max(b.size.x, b.size.z) : m.HeightShare * sizeM / Mathf.Max(b.size.y, 1e-4f);
-                go.transform.localScale = Vector3.one * scale;
-                var animator = go.GetComponentInChildren<Animator>();
-                var clips = animator != null && animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.animationClips : Array.Empty<AnimationClip>();
-                live.Add(new Live
-                {
-                    M = m, Go = go, Rig = animator != null ? animator.gameObject : go, Scale = scale,
-                    Move = clips.FirstOrDefault(c => c.name.IndexOf("walk", StringComparison.OrdinalIgnoreCase) >= 0) ?? clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) < 0),
-                    Idle = clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) >= 0),
-                });
+                var holder = new GameObject("Hex streamed unit"); holder.transform.SetParent(parent, false);
+                visualParent = holder.transform;
+                streamedAssets = holder.AddComponent<HexBoardAssets>();
+                refresh = holder.AddComponent<HexUnitFigureRefresh>();
             }
+            models = new HexCollectionFigures(() => { if (refresh != null) refresh.Dirty(); });
+            if (refresh != null) refresh.Initialise(models, RefreshFigures, streamedAssets!, parent.GetComponentInParent<HexBoardAssets>());
+            foreach (var member in unit.Members)
+            {
+                var l = new Live { M = member }; live.Add(l);
+                SetModel(l, models.Prefab(member.Model));
+            }
+        }
+
+        void SetModel(Live l, GameObject? prefab)
+        {
+            GameObject go;
+            if (prefab != null) go = Object.Instantiate(prefab, visualParent);
+            else
+            {
+                go = GameObject.CreatePrimitive(l.M.StandIn == StandIn.Box ? PrimitiveType.Cube : PrimitiveType.Capsule);
+                go.transform.SetParent(visualParent, false);
+                Object.DestroyImmediate(go.GetComponent<Collider>());
+                if (fallbackMaterial == null)
+                {
+                    var assets = visualParent.GetComponentInParent<HexBoardAssets>() ?? visualParent.gameObject.AddComponent<HexBoardAssets>();
+                    fallbackMaterial = assets.Own(HexMaterials.New(HexMaterials.Lit));
+                }
+                go.GetComponent<MeshRenderer>().sharedMaterial = fallbackMaterial;
+            }
+            var b = HexModels.Bounds(go);
+            float scale = l.M.ByWidth ? l.M.HeightShare * size / Mathf.Max(b.size.x, b.size.z) : l.M.HeightShare * size / Mathf.Max(b.size.y, 1e-4f);
+            go.transform.localScale = Vector3.one * scale;
+            var animator = go.GetComponentInChildren<Animator>();
+            var clips = animator != null && animator.runtimeAnimatorController != null ? animator.runtimeAnimatorController.animationClips : Array.Empty<AnimationClip>();
+            if (l.Go != null)
+            {
+                l.Go.SetActive(false);
+                if (Application.isPlaying) Object.Destroy(l.Go); else Object.DestroyImmediate(l.Go);
+            }
+            l.Prefab = prefab; l.Go = go; l.Rig = animator != null ? animator.gameObject : go; l.Scale = scale;
+            l.Move = clips.FirstOrDefault(c => c.name.IndexOf("walk", StringComparison.OrdinalIgnoreCase) >= 0)
+                ?? clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) < 0);
+            l.Idle = clips.FirstOrDefault(c => c.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        void RefreshFigures()
+        {
+            if (visualParent == null) return;
+            foreach (var l in live)
+            {
+                if (l.Go == null) continue;
+                var prefab = models.Prefab(l.M.Model);
+                if (prefab != l.Prefab) SetModel(l, prefab);
+            }
+            if (fallbackMaterial != null && live.All(l => l.Go == null || l.Prefab != null))
+            {
+                streamedAssets?.Release(fallbackMaterial);
+                fallbackMaterial = null;
+            }
+            Pose(lastDistance, lastMoving);
         }
 
         /// <summary>Total path length in metres.</summary>
@@ -147,10 +186,12 @@ namespace Statecraft.HexTiles
         public Vector3 Pose(float distance, bool moving)
         {
             distance = Mathf.Clamp(distance, 0f, length);
+            lastDistance = distance; lastMoving = moving;
             var (centre, heading) = Along(distance);
             var turn = Quaternion.Euler(0f, heading, 0f);
             foreach (var l in live)
             {
+                if (l.Go == null) continue;
                 var p = centre + turn * new Vector3(l.M.Offset.x * size, 0f, l.M.Offset.y * size);
                 p.y = surface.Height(p);
                 // Board space: the units' parent sits in the board root (or at the origin for a board on its own).
@@ -159,7 +200,7 @@ namespace Statecraft.HexTiles
                 if (clip == null) continue;
                 float cycle = l.M.CycleShare * size;
                 float t = moving ? Mathf.Repeat(distance / cycle, 1f) * clip.length : 0f;
-                clip.SampleAnimation(l.Rig, t);   // clips are authored on the Animator's object
+                HexStandIns.SampleClip(clip, l.Rig, t);   // clips are authored on the Animator's object
             }
             return new Vector3(centre.x, surface.Height(centre), centre.z);
         }
