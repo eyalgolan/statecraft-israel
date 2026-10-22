@@ -9,12 +9,12 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The capture dialog (GDD Phase 6 PR 10, #802; docs/gdd/settlement-control.md): when a settlement's record
     /// awaits the player's choice (SettlementControl.AwaitingChoice), the first such place in the sim's ordinal order, with
-    /// its name in the UI's language, its target row's operation line, and one button per option that
-    /// SettlementControl.CaptureOptions offers, in the helper's order: the option's name (the GDD's words, Q-UI-1 (b)), its
-    /// plain description, and the helper's preview of what it changes at once (Q-UI-2 (a)). An option the helper refuses
-    /// (today Occupy, #798, and Deport, #800, "not built yet") is not shown, so a newly built one appears by itself. The
-    /// dialog holds no order, cost or rule of its own (Q-TECH-5): it formats the sim's numbers as the top bar does, and
-    /// nothing more.
+    /// its name in the UI's language and one button per option that SettlementControl.CaptureOptions offers, in the
+    /// helper's order: the option's name (the GDD's words, Q-UI-1 (b)), its plain description, and the helper's preview of
+    /// what it changes at once (Q-UI-2 (a)). The target row's operation line is not shown (owner, 22 October 2026, #1317).
+    /// An option the helper refuses (today Occupy, #798, and Deport, #800, "not built yet") is not shown, so a newly built
+    /// one appears by itself. The dialog holds no order, cost or rule of its own (Q-TECH-5): it formats the sim's numbers
+    /// as the top bar does, and nothing more.
     /// <para>It sits in the decision card's place and style (Game.uxml "capture-card"), modal like it (OpenClass; ScreenNav.
     /// DisableCovered), and waits while a decision card is open: one window at a time. A choice is an order
     /// (ResolveCapture, through SimBridge.Queue): it takes effect at End Turn, and the dialog goes on to the next capture.
@@ -29,7 +29,7 @@ namespace Statecraft.Game.UI
         /// <summary>The class on each option button, beside the decision card's EventCardPresenter.OptionClass look.</summary>
         public const string OptionClass = "capture-option";
 
-        readonly VisualElement card, layer, hudRoot, options; readonly Label title, operation, intro, none, count;
+        readonly VisualElement card, layer, hudRoot, options; readonly Label title, intro, none, count;
         readonly Button hide, reopen; readonly Button? endTurn;
         readonly SimBridge bridge; readonly UiText text; readonly EventCardPresenter? eventCard;
         readonly IReadOnlyDictionary<string, string>? namesHe;
@@ -61,7 +61,7 @@ namespace Statecraft.Game.UI
             optionsFor = helper ?? SettlementControl.CaptureOptions;
             card = root.Q<VisualElement>("capture-card"); layer = card.parent; hudRoot = root.Q("root") ?? root;
             endTurn = hudRoot.Q<Button>("end-turn");
-            title = card.Q<Label>("capture-title"); operation = card.Q<Label>("capture-operation");
+            title = card.Q<Label>("capture-title");
             intro = card.Q<Label>("capture-intro"); none = card.Q<Label>("capture-none"); count = card.Q<Label>("capture-count");
             options = card.Q<VisualElement>("capture-options");
             hide = card.Q<Button>("capture-hide"); reopen = layer.Q<Button>("capture-reopen");
@@ -120,8 +120,6 @@ namespace Statecraft.Game.UI
             var id = Shown;
             var name = ContentNames.Settlement(text, c, id, namesHe);
             title.text = name;
-            operation.text = c.SettlementTargets.FirstOrDefault(t => t.Id == id)?.Operation ?? "";
-            operation.style.display = operation.text.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             intro.text = text.Format("capture.intro", name);
             reopen.text = text.Format("capture.reopen", name);
             Offered = optionsFor(c, s, id).Where(o => o.Refusal == null && o.Preview != null).ToList();

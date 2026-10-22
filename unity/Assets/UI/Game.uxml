@@ -217,13 +217,12 @@
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
             <!-- The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter): in the decision card's place and style,
-                 shown while no decision card is open. The place's name, its target row's operation, and the options the sim
-                 offers (SettlementControl.CaptureOptions), in the sim's order, each with its plain description and the sim's
-                 preview of what it changes at once. No picture, no sound, no video. The text and the options scroll together
+                 shown while no decision card is open. The place's name and the options the sim offers
+                 (SettlementControl.CaptureOptions), in the sim's order, each with its plain description and the sim's preview
+                 of what it changes at once. No picture, no sound, no video. The text and the options scroll together
                  on a short window; Hide stays in view. Focus order: the card, the options, Hide. -->
             <ui:VisualElement name="capture-card" class="panel event-card capture-card">
                 <ui:Label name="capture-title" class="title event-title" />
-                <ui:Label name="capture-operation" class="muted event-office capture-operation" />
                 <ui:VisualElement class="gold-rule" />
                 <ui:ScrollView name="capture-scroll" class="event-scroll capture-scroll">
                     <ui:Label name="capture-intro" class="event-text" />

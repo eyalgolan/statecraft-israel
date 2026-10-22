@@ -17,7 +17,8 @@ using UnityEngine.UIElements;
 /// offers, in its order, each with the sim's preview; nothing is pre-selected; a choice queues ResolveCapture through
 /// SimBridge; Escape hides it without choosing; it plays no sound and shows no video; a decision card goes first. The
 /// target rows here are test fixtures on the real content (Lydda and Ramle, which share a hex), with a made-up operation
-/// line: the real target list ships empty until its research and review are done.</summary>
+/// line (the content requires one; the dialog does not show it): the real target list ships empty until its research and
+/// review are done.</summary>
 public class CaptureDialogTests
 {
     const string Operation = "Fixture operation (a test value, not a source)";
@@ -153,7 +154,8 @@ public class CaptureDialogTests
             Assert.AreEqual("lod", r.Dialog.Shown);
             Assert.IsTrue(r.Shows("capture-card"), "the dialog shows");
             Assert.AreEqual("Lydda", r.Root.Q<Label>("capture-title").text, "the place's name (settlements_1948.yaml)");
-            Assert.AreEqual(Operation, r.Root.Q<Label>("capture-operation").text, "the target row's operation line");
+            Assert.IsFalse(r.Root.Q("capture-card").Query<Label>().ToList().Any(l => l.text.Contains(Operation)),
+                "the target row's operation line is not shown (owner, 22 October 2026, #1317)");
             Assert.AreEqual(En.Format("capture.intro", "Lydda"), r.Root.Q<Label>("capture-intro").text);
             Assert.IsTrue(r.Hud.ClassListContains(CaptureDialogPresenter.OpenClass) && r.Hud.ClassListContains(EventCardPresenter.ModalClass),
                 "the root says the dialog is open, and it is modal like the decision card");

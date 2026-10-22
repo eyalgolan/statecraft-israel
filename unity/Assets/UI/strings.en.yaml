@@ -175,7 +175,7 @@ capture.option.occupy: "Occupy"
 capture.option.deport: "Deport"
 capture.about.raid: "The units leave at once, and the place is under enemy control again. Its residents are unchanged."
 capture.about.occupy: "One unit stays and holds the place for a set number of turns, at a Money cost each turn. Its residents are not affected."
-capture.about.deport: "The residents are expelled and become refugees outside your control. Social cohesion and International support fall, and International support keeps falling for the rest of the game."
+capture.about.deport: "The residents are displaced, and the place is depopulated. Social cohesion and International support fall, and International support keeps falling for the rest of the game."
 # The heading over the changes, one per line in the turn report's form (report.line: the caption, then the change as the
 # top bar would show it), or the line when nothing changes.
 capture.changes: "Changes at once:"
