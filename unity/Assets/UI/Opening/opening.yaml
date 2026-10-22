@@ -43,7 +43,8 @@ panels:
       alt: "Jewish detainees with their bundles and crates in front of the huts of a detention camp on Cyprus, February 1949."
       crop: [0.505, 0.56, 0.98]
       sensitive: true
-      sensitivity_reviewed: false
+      # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+      sensitivity_reviewed: true
       note: "Commons title 'מחנות המעצר בקפריסין' (the detention camps in Cyprus), dated February 1949, the last months of the camps, not 1946-47. About 15 identifiable adults, posed, no distress shown. Commons also files it under 'Meitar Collection (review needed)': a person should confirm the NLI record (digital ID 997008136325305171) before it ships. Alternate: Cyprus_(997008136324405171).jpg (the queue at the wire gate)."
   - id: arab_countries
     title: The Arab countries
@@ -71,7 +72,8 @@ panels:
       alt: "Immigrants from Iraq carry blankets and bundles away from the plane that brought them to Lydda airport, April 1951."
       crop: [0.495, 0.58, 0.99]
       sensitive: true
-      sensitivity_reviewed: false
+      # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+      sensitivity_reviewed: true
       note: "Commons title 'עולים מעירק מגיעים לארץ' (immigrants from Iraq arrive in the country), April 1951. It shows arrival, not departure. Three identifiable men in front. Not from the DDT-spraying frames of the same series. Alternate: Ben_Gurion_International_Airport_(997008136549705171).jpg (a family off a Near East Air Transport plane; children prominent)."
   - id: yemen
     title: Yemen
@@ -98,7 +100,8 @@ panels:
       alt: "Yemenite Jewish immigrants wait with their bundles in the shade of a four-engined plane at Aden airport, May 1950."
       crop: [0.47, 0.6, 0.94]
       sensitive: true
-      sensitivity_reviewed: false
+      # The owner's sensitivity review: approved for use: https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+      sensitivity_reviewed: true
       note: "Commons title 'הטיסה חזרה מעדן, תימן במהלך מבצע \"מרבד הקסמים\"' (the flight back from Aden, Yemen, during Operation Magic Carpet), 12-28 May 1950; Commons identifies the plane as Douglas C-54 NC67548. No identifiable faces. The square original is cropped to 16:9 (sky and foreground trimmed, the car at the right edge cut). Its Commons credit line adds 'Israel State Archives' (template 'Meitar Collection/credit line2'), so the credit here does too; a person should confirm that is not a GPO photograph (CONTENT_POLICY section 4 refuses GPO). Alternate: Aden_(997008137190505171.jpg (stairs to the plane)."
 closing:
   text: "Between 15 May 1948 and the end of 1951, 687,624 immigrants arrived. You start on 15 May 1948."

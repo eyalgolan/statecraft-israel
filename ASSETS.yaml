@@ -663,7 +663,8 @@ rules:
   - glob: "unity/Assets/UI/Opening/opening_europe.jpg"
     licence: CC-BY-4.0
     source: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
-    status: owner-verify
+    # The owner approved this photograph for use (licence and provenance): https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+    status: verified
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
@@ -672,7 +673,8 @@ rules:
   - glob: "unity/Assets/UI/Opening/opening_arab_countries.jpg"
     licence: CC-BY-4.0
     source: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
-    status: owner-verify
+    # The owner approved this photograph for use (licence and provenance): https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+    status: verified
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
@@ -681,7 +683,8 @@ rules:
   - glob: "unity/Assets/UI/Opening/opening_yemen.jpg"
     licence: CC-BY-4.0
     source: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"
-    status: owner-verify
+    # The owner approved this photograph for use (licence and provenance): https://github.com/eyalgolan/statecraft-israel/pull/1093#issuecomment-6338281251
+    status: verified
     artist: "Benno Rothenberg"
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
