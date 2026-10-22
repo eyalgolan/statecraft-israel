@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Game.Boot;
 using UnityEngine;
@@ -17,7 +18,8 @@ namespace Statecraft.Game.UI
     /// press never wipes the save (#175, B6). Continue and Escape withdraw an open request.
     /// While it shows, the root has OpenClass (Statecraft.uss hides the HUD under it, so Tab reaches only these buttons)
     /// and <c>shownChanged</c> is told, so GameRoot can stop the camera keys. The panel's source line says the painting is
-    /// AI-generated.</summary>
+    /// AI-generated. Beside New game, "Star on GitHub" opens the repository in a new tab (#1168, ExternalLink). Under ?navlog it
+    /// logs where its buttons are (ButtonCentres), so tools/web_check.py clicks them wherever the layout puts them.</summary>
     public sealed class StartScreenPresenter : IDisposable
     {
         /// <summary>On the "root" element while the start screen shows.</summary>
@@ -51,6 +53,14 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onGeometry;
         readonly Action onContinue, onNewGame, onStarted;
         readonly PressSource presses;
+        readonly Action unbindStar;
+        readonly Button starButton;
+        readonly EventCallback<GeometryChangedEvent> onLaidOut;
+        readonly VisualElement[] laidOut;
+        string? loggedCentres;
+
+        /// <summary>The buttons ButtonCentres reports, by name.</summary>
+        public static readonly string[] Buttons = { "start-continue", "start-new-game", "start-star", "start-listen" };
 
         /// <summary>Continue is offered: the session continues the autosave.</summary>
         public bool Resumed { get; private set; }
@@ -78,7 +88,11 @@ namespace Statecraft.Game.UI
             {
                 screen.Q<Label>("start-source").text = text["start.source"];
                 continueButton.text = text["start.continue"]; newGameButton.text = text["start.new_game"];
+                screen.Q<Button>("start-star").text = text["community.star"];
             }
+            starButton = screen.Q<Button>("start-star");
+            unbindStar = ExternalLink.Bind(starButton, ExternalLink.Repository);   // #1168
+            starButton.generateVisualContent += PaintStarSigns;
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
@@ -91,6 +105,48 @@ namespace Statecraft.Game.UI
             screen.RegisterCallback(onGeometry);
             panel.RegisterCallback(onGeometry);                // the panel's height decides where it goes
             presses = new PressSource(screen);
+            // ?navlog: a button moves when it, its row, the panel (bottom-anchored, it grows upward) or the body moves.
+            onLaidOut = _ => LogCentres();
+            laidOut = new[] { screen, body, panel, screen.Q("start-recording"), screen.Q("start-actions") }
+                .Concat(Buttons.Select(n => (VisualElement)screen.Q<Button>(n))).ToArray();
+            foreach (var e in laidOut) e.RegisterCallback(onLaidOut);
+        }
+
+        /// <summary>Each shown button's centre as a fraction of the panel's width and height, in Buttons' order:
+        /// "start buttons start-new-game=0.4167,0.9278 start-star=0.5833,0.9278 ..." (invariant culture). A fraction maps
+        /// onto the browser's viewport at any DPR or panel scale; tools/web_check.py clicks there (--startscreen,
+        /// --persistence). Null while the screen is closed or not laid out.</summary>
+        public string? ButtonCentres()
+        {
+            var window = screen.panel?.visualTree.worldBound ?? Rect.zero;
+            if (!IsOpen || float.IsNaN(window.width) || window.width <= 0 || window.height <= 0) return null;
+            var parts = new List<string>();
+            foreach (var name in Buttons)
+            {
+                var b = screen.Q<Button>(name);
+                var r = b.worldBound;
+                if (!Displayed(b) || float.IsNaN(r.width) || r.width <= 0 || r.height <= 0) continue;
+                parts.Add(FormattableString.Invariant(
+                    $"{name}={(r.center.x - window.xMin) / window.width:0.0000},{(r.center.y - window.yMin) / window.height:0.0000}"));
+            }
+            return parts.Count == 0 ? null : "start buttons " + string.Join(" ", parts);
+        }
+
+        static bool Displayed(VisualElement e)
+        {
+            for (var v = e; v != null; v = v.hierarchy.parent)
+                if (v.resolvedStyle.display == DisplayStyle.None) return false;
+            return true;
+        }
+
+        /// <summary>Under ?navlog (DiagLog.Nav): logs ButtonCentres on a NAV line whenever it changes while the screen shows.</summary>
+        void LogCentres()
+        {
+            if (!DiagLog.Nav) return;
+            var centres = ButtonCentres();
+            if (centres == null || centres == loggedCentres) return;
+            loggedCentres = centres;
+            DiagLog.NavLine(centres);
         }
 
         public bool IsOpen => hudRoot.ClassListContains(OpenClass);
@@ -120,6 +176,7 @@ namespace Statecraft.Game.UI
             if (!IsOpen) return;
             recording?.Stop();
             hudRoot.RemoveFromClassList(OpenClass);
+            loggedCentres = null;
             ScreenNav.DisableCovered(hudRoot);
             var focused = screen.focusController?.focusedElement as VisualElement;
             if (focused != null && screen.Contains(focused))
@@ -182,6 +239,21 @@ namespace Statecraft.Game.UI
         /// <summary>The start body's top and bottom padding together in the band layout (Statecraft.uss .start-band .start-body).</summary>
         const float BodyPadding = 32f;
 
+        /// <summary>Star on GitHub's star and GitHub mark (#1168), side by side in the button's left padding (the right in
+        /// Hebrew; Statecraft.uss .start-star keeps 80 px for them), painted into the button so it stays a leaf sized by its
+        /// text (UiIcon.Paint). Lit while the button has the keyboard focus, as the other gold signs.</summary>
+        static void PaintStarSigns(MeshGenerationContext m)
+        {
+            const float Size = 22f, Edge = 18f, Gap = 6f;
+            var e = m.visualElement;
+            bool rtl = UiLanguage.Within(e), lit = UiIcon.IsFocused(e);
+            float y = (e.layout.height - Size) / 2f;
+            float first = rtl ? e.layout.width - Edge - Size : Edge;
+            float second = rtl ? first - Gap - Size : first + Size + Gap;
+            UiIcon.Paint(m, "star", new Rect(first, y, Size, Size), lit);
+            UiIcon.Paint(m, "mark-github", new Rect(second, y, Size, Size), lit);
+        }
+
         public void Dispose()
         {
             Hide(giveFocus: false);
@@ -189,9 +261,12 @@ namespace Statecraft.Game.UI
             continueButton.clicked -= onContinue;
             newGameButton.clicked -= onNewGame;
             newGame.Started -= onStarted;
+            unbindStar();
+            starButton.generateVisualContent -= PaintStarSigns;
             screen.UnregisterCallback(onCancel);
             screen.UnregisterCallback(onGeometry);
             panel.UnregisterCallback(onGeometry);
+            foreach (var e in laidOut) e.UnregisterCallback(onLaidOut);
         }
     }
 }

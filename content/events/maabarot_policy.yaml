@@ -2,6 +2,12 @@
 id: maabarot_policy
 title: Transit Camps
 text: 'The immigrant camps, which house and feed new arrivals free of charge, are overflowing. Levi Eshkol of the Jewish Agency Settlement Department proposes transit camps near towns and work, where residents earn their own living. {prime_minister} must decide.'
+# For the native reviewer (#564): מעברות, לוי אשכול, המחלקה להתיישבות and הסוכנות היהודית follow he.wiki
+# (https://he.wikipedia.org/wiki/מעברה, "ראש המחלקה להתיישבות של הסוכנות"; https://he.wikipedia.org/wiki/לוי_אשכול;
+# https://he.wikipedia.org/wiki/הסוכנות_היהודית).
+title_he: מעברות
+text_he: 'מחנות העולים, המספקים לעולים החדשים מגורים ומזון ללא תשלום, עולים על גדותיהם. לוי אשכול מהמחלקה להתיישבות של הסוכנות היהודית מציע מעברות סמוך ליישובים ולמקומות עבודה, שבהן התושבים יתפרנסו מעבודתם. ההחלטה בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Eshkol raised the camps' crisis at the Jewish Agency executive on 27 March 1950 and proposed transit housing two weeks
@@ -13,6 +19,7 @@ to: 1950-06-01
 options:
   - id: maabarot
     text: Build transit camps where residents work for their living
+    text_he: להקים מעברות שבהן התושבים יעבדו לפרנסתם
     historical: true
     recommended: true
     set_policy: { maabarot: 1.0 }
@@ -22,6 +29,8 @@ options:
       - { target: treasury, delta: 2 }
   - id: keep_camps
     text: Keep the free-board immigrant camps
+    text_he: להשאיר את מחנות העולים המספקים מגורים ומזון ללא תשלום
+    alternative: { basis: design }
     effects:
       - { target: housing, delta: -0.03 }
       - { target: treasury, delta: -4 }

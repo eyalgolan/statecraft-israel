@@ -2,6 +2,11 @@
 id: idf_founding
 title: One Army
 text: 'The Irgun and Lehi still keep their own armed units. {defense_minister} proposes an order that establishes the Israel Defense Forces and forbids any armed force other than the IDF.'
+# For the native reviewer (#564): names follow the Ministry of Defense's "הקמת צה"ל" page and he.wiki usage
+# (אצ"ל, לח"י, צה"ל): https://archives.mod.gov.il/Exhib/BenGurion/tzahal/Pages/default.aspx
+title_he: צבא אחד
+text_he: 'אצ"ל ולח"י עדיין מחזיקים יחידות חמושות משלהם. הצעת {defense_minister} היא פקודה המקימה את צבא הגנה לישראל ואוסרת על קיומו של כוח מזוין כלשהו מלבד צה"ל.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: defense_minister
@@ -20,6 +25,7 @@ to: 1948-06-01
 options:
   - id: one_army
     text: Issue the order and bring every armed force into the IDF
+    text_he: לפרסם את הפקודה ולשלב כל כוח חמוש בצה"ל
     historical: true
     recommended: true
     effects:
@@ -27,6 +33,8 @@ options:
   - id: separate_units
     # Game assumption: the notes name no one who argued for this; it is the status quo the order ended.
     text: Leave the Irgun and Lehi units outside the IDF for now
+    text_he: 'להותיר לעת עתה את יחידות האצ"ל והלח"י מחוץ לצה"ל'
+    alternative: { basis: design }
     effects:
       - { target: security, delta: -0.015 }
 sources:

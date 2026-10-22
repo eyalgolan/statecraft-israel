@@ -56,7 +56,7 @@ public class PlayerTextTests
     [Fact]
     public void TheMapActionStartDateIsShownInTheDayMonthYearFormat()
     {
-        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var c = RealContentTests.Legacy();
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
         var reason = MapActions.Check(c, s, MapActions.Housing, 0, 0);
         Assert.Equal("Transit camps and housing projects can be placed from 1 January 1950", reason);
@@ -193,7 +193,8 @@ public class PlayerTextTests
             housing |= r.Why.Any(w => w.System == "map" && w.Target == MapActions.Housing);
             s = r.State;
         }
-        Assert.True(budget && camp && housing, $"the script ran every command (budget {budget}, camp {camp}, housing {housing})");
+        // R-PROJ-004: the GDD loop refuses every map action, so only legacy content builds a camp and housing.
+        Assert.True(budget && (c.IsGdd || camp && housing), $"the script ran every command (budget {budget}, camp {camp}, housing {housing})");
         Assert.True(appointable.SetEquals(appointedOffices), $"every appointable office was filled: missing {string.Join(", ", appointable.Except(appointedOffices))}");
         Assert.True(c.Policies.All(p => policiesSet.Contains(p.Id)), $"every policy was set: missing {string.Join(", ", c.Policies.Select(p => p.Id).Except(policiesSet))}");
         Assert.Contains(causes, w => w.Message.StartsWith("Borrowed ", StringComparison.Ordinal));
@@ -258,7 +259,8 @@ public class PlayerTextTests
         var s = Simulation.NewGame(Real, 1, Mode.Historical);
         var why = new List<Cause>();
         SecuritySystem.SetMobilization(Real, s, 0, why);                  // below the floor: the ladder message
-        var texts = why.Select(w => w.Message).Append(MapActions.Check(Real, s, MapActions.Housing, 0, 0)!).ToList();   // before map actions open
+        var legacy = RealContentTests.Legacy();   // R-PROJ-004: only the legacy loop still checks a map action's dates
+        var texts = why.Select(w => w.Message).Append(MapActions.Check(legacy, Simulation.NewGame(legacy, 1, Mode.Historical), MapActions.Housing, 0, 0)!).ToList();   // before map actions open
         foreach (var phrase in SimPhrases) Assert.Contains(texts, t => t.Contains(phrase));
     }
 
@@ -280,11 +282,14 @@ public class PlayerTextTests
         foreach (var w in AllCauses(Real))
         {
             // Every number in the line must carry the unit (fix round 2, N3): strip the unit tokens; no digit may remain.
-            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?(IL |\$)\d+\.\dm", ""), @"\d"))
+            if (money.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"(IL |\$)[+-]?\d+\.\dm", ""), @"\d"))
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
-                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)", ""), @"[+-]?(IL |\$)\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                // A hex "(q, r)" or "hex q,r", a corridor's "segment N" (R-COR-001, Q-SENS-1) and a unit's "unit N" are names, not
+                // amounts; movement points and people are units (the enemy's step 1 lines, R-ENEMY-001, reach the reference run).
+                var named = Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+|hex -?\d+,-?\d+|[Uu]nits? \d+(, \d+)*|\d[\d,]* (movement points|people)", "");
+                if (Regex.IsMatch(Regex.Replace(named, @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))
@@ -300,13 +305,13 @@ public class PlayerTextTests
     {
         Assert.Equal("IL 18.6m", PlayerText.Money(Real, "treasury", 18.6));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("+IL 1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
-        Assert.Equal("-$0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
+        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.004));
         Assert.Equal(30.0, PlayerText.Scale(0.3), 9);
         Assert.Equal("55%", PlayerText.Percent(0.55));
         Assert.Equal("+4.1%", PlayerText.PercentChange(0.041));
-        Assert.Equal("Money -IL 2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
+        Assert.Equal("Money IL -2.0m", PlayerText.Change(Real, "treasury", -2));   // R-MONEY-001
         Assert.Equal("Social cohesion +5.0%", PlayerText.Change(Real, "morale", 0.05));
         Assert.Equal("Foreign currency", PlayerText.Target(Real, "fx_reserves"));
     }
@@ -365,7 +370,7 @@ public class PlayerTextTests
     // ---- Fix round 2 (N2): one sign style, unsigned zero, no NaN ----
 
     [Fact]
-    public void ZeroIsUnsignedAndTheSignGoesBeforeTheCurrency()
+    public void ZeroIsUnsignedAndTheSignSitsNextToTheNumber()
     {
         Assert.Equal("0%", PlayerText.Percent(-0.004));
         Assert.Equal("55%", PlayerText.Percent(0.55));
@@ -376,15 +381,15 @@ public class PlayerTextTests
         Assert.Equal("-4.0%", PlayerText.PercentChange(-0.04));
         Assert.Equal("+5%", PlayerText.PercentChange(0.05, 0));
         Assert.Equal("0%", PlayerText.PercentChange(-0.004, 0));
-        Assert.Equal("-IL 3.0m", PlayerText.Money(Real, "treasury", -3));
+        Assert.Equal("IL -3.0m", PlayerText.Money(Real, "treasury", -3));
         Assert.Equal("IL 0.0m", PlayerText.Money(Real, "treasury", -0.04));
         // #398 review N2: the parts Money is built from, for the top bar's words ("IL 18.6 million").
         Assert.Equal(("-", "IL ", "3.0"), PlayerText.MoneyParts(Real, "treasury", -3));
         Assert.Equal(("", "IL ", "0.0"), PlayerText.MoneyParts(Real, "treasury", -0.04));
         Assert.Equal(("", "$", "41.5"), PlayerText.MoneyParts(Real, "fx_reserves", 41.46));
         Assert.Equal("$41.5m", PlayerText.Money(Real, "fx_reserves", 41.5));
-        Assert.Equal("+IL 1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
-        Assert.Equal("-$0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
+        Assert.Equal("IL +1.2m", PlayerText.MoneyChange(Real, "treasury", 1.23));
+        Assert.Equal("$-0.4m", PlayerText.MoneyChange(Real, "fx_reserves", -0.4));
         Assert.Equal("$0.0m", PlayerText.MoneyChange(Real, "fx_reserves", -0.04));
         Assert.Equal("IL 0.0m", PlayerText.MoneyChange(Real, "treasury", 0.04));
     }

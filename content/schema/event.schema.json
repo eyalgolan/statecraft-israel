@@ -72,11 +72,15 @@
     "kind": { "enum": ["historical", "consequence", "reconvergence"], "description": "Default historical. consequence: a soft card that exists only on a road not taken (R-ALT-005 to R-ALT-008). reconvergence: a real outside event that may carry variants (R-ALT-010)." },
     "title": { "type": "string", "minLength": 1, "description": "May contain office placeholders such as {prime_minister}." },
     "text": { "type": "string", "minLength": 1, "description": "May contain office placeholders. No invented quotes." },
+    "title_he": { "type": "string", "minLength": 1, "description": "The title in Hebrew (#1064). An event with Hebrew text has title_he, text_he and every option's text_he, or none of them (the UI keeps the English). Same placeholders as the English." },
+    "text_he": { "type": "string", "minLength": 1, "description": "The text in Hebrew (#1064): the English meaning, no added facts. Same placeholders as the English." },
+    "text_he_review": { "type": "string", "enum": ["agent-checked"], "description": "Review flag of the event's Hebrew text (title_he, text_he and the options' text_he). agent-checked: an AI agent wrote or checked the text and no person has read it yet (CONTENT_POLICY section 2, rule 6; review in #564). Leave out once a native speaker has reviewed it." },
     "tags": { "type": "array", "items": { "type": "string" }, "description": "holocaust, terror, massacre, war-casualties and displacement are sensitive. A displacement option cannot raise Money, Food, Arms, Social cohesion, International Support or score (R-EFX-007), and the event must be sensitivity-reviewed before release (R-GATE-001)." },
     "anchor": { "enum": ["hard", "soft"], "description": "Default soft. A hard anchor needs a historical option." },
     "office": { "$ref": "#/definitions/id", "description": "The office the event goes to when the player does not answer." },
     "objective": { "$ref": "#/definitions/id", "description": "The objective (objectives.yaml) whose completion card this is. It fires only once that objective is completed, and has exactly one option." },
     "site": { "$ref": "#/definitions/id", "description": "A swamp site (sites.yaml) whose works this event is about. In the GDD loop it fires only while that site is being worked; the legacy loop ignores it." },
+    "prisoners": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front whose prisoners this exchange card returns (R-POW-004). It fires only while that front holds prisoners or the player's soldiers, and has exactly one option. Jordan's card also returns the Iraqi prisoners." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
     "conditions": {
@@ -104,6 +108,7 @@
         "properties": {
           "id": { "$ref": "#/definitions/id" },
           "text": { "type": "string", "minLength": 1 },
+          "text_he": { "type": "string", "minLength": 1, "description": "The option's text in Hebrew (#1064), under the event's text_he_review." },
           "historical": { "type": "boolean" },
           "recommended": { "type": "boolean" },
           "rejoin": { "$ref": "#/definitions/id", "description": "A consequence card's option that returns the course to the record of this event (R-ALT-009)." },
@@ -151,6 +156,11 @@
               "then": { "properties": { "delta": { "minimum": -1, "maximum": 1 } } },
               "else": { "properties": { "delta": { "type": "integer", "minimum": -2147483647, "maximum": 2147483647 } } }
             }
+          },
+          "unlock_projects": {
+            "type": "array",
+            "description": "R-EFX-008 (GDD loop only): projects.yaml ids of locked kinds this option makes available to StartProject. A sensitive event may not unlock (R-EFX-005).",
+            "items": { "type": "string", "minLength": 1 }
           },
           "alternative": { "$ref": "#/definitions/alternative" }
         }

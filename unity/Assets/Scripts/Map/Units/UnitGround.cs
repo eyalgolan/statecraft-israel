@@ -109,9 +109,10 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>Every anchor's spot (UnitPlacer.PlaceAll) on this ground.</summary>
-        public Dictionary<UnitAnchor, AnchorSpot> Place(IReadOnlyList<UnitEntry> units, Func<double, double, Vector2> toXZ, Action<string>? skipped) =>
+        public Dictionary<UnitAnchor, AnchorSpot> Place(IReadOnlyList<UnitEntry> units, Func<double, double, Vector2> toXZ, Action<string>? skipped,
+            IEnumerable<(int q, int r)>? taken = null) =>
             UnitPlacer.PlaceAll(units, hexes, HexSizeM, (lon, lat) => { var v = toXZ(lon, lat); return (v.x, v.y); },
                 (service, x, z, compact, inTown, ax, az) => Clear(service, new Vector2((float)x, (float)z), compact, inTown, new Vector2((float)ax, (float)az)),
-                (x, z) => TownOverlap(new Vector2((float)x, (float)z), compact: true), skipped);
+                (x, z) => TownOverlap(new Vector2((float)x, (float)z), compact: true), skipped, taken);
     }
 }

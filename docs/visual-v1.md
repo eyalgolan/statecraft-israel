@@ -1645,8 +1645,9 @@ and the calm and swells are also behind `seatexture`.
   - Each hull, plus a margin, lies in open sea and meets no breakwater or mole piece. The kits now record each piece as
     a "breakwater" in the census. `SeaCraftTests.NoHullEverMeetsABreakwaterOrMole` sweeps five landmark scales and 16
     draws each.
-  - Sizes are symbolic, like the buildings: a felucca is 34 landmark metres (2 km at the default scale), a quarter of a
-    hex across, about promo 03's share.
+  - Each boat is its real length x `SettlementKits.ModelScale` (the train's 24x, #1094): a felucca 12 m (about 290 m), a
+    cutter 10, a moored fishing boat 8, the coastal steamer 50 (about 1,200 m). Design values, not sourced. Before #1094
+    a felucca was 34 landmark metres (2 km at the default scale).
   - Every boat heads east or west, give or take 35 degrees, so the north-looking gameplay camera sees its sails side-on.
   - The sails are lit as cloth turned mostly to the sky (each face's normal tipped up by 0.7). Lit as flat plates, the
     face the camera saw was often the one turned from the sun, and the sails read grey.

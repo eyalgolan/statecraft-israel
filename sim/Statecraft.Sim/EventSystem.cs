@@ -31,6 +31,9 @@ namespace Statecraft.Sim
                 // R-SWAMP-002: an event about a site's works waits for those works, and stops once the site is built (drained).
                 // The legacy loop reads no sites, so it ignores the key and the legacy goldens hold.
                 .Where(e => e.Site == "" || !c.IsGdd || (s.Sites.TryGetValue(e.Site, out var works) && works.BuiltOn == null))
+                // R-POW-004: a front's exchange card waits for prisoners held either way. Only the GDD loop takes any, so the
+                // legacy loop never fires one.
+                .Where(e => e.Prisoners == "" || Prisoners.Held(s, e.Prisoners))
                 // A late fire can come after a dated indicator's window has ended (chapters design 3.2): a condition on it is not met.
                 .Where(e => e.Conditions.All(k => s.Indicators.TryGetValue(k.Indicator, out var v)
                                                && (!k.Min.HasValue || v >= k.Min.Value) && (!k.Max.HasValue || v <= k.Max.Value)))
@@ -135,12 +138,17 @@ namespace Statecraft.Sim
                 var applied = housing - city.HousingCapacity + jobs - city.JobSlots;
                 why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})"));
             }
+            // R-EFX-008: after the city effects. A kind already unlocked stays so, with no second cause.
+            foreach (var kind in o.UnlockProjects)
+                if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})"));
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
                 why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
+            // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
+            if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
         }
 
         /// <summary>A late-fired event can be resolved after a dated record's window has ended (chapters design 3.2): an
@@ -159,6 +167,9 @@ namespace Statecraft.Sim
         static string Granted(UnitGrant g, string place) =>
             FormattableString.Invariant($"{g.N} {g.Type} unit{(g.N == 1 ? "" : "s")} at {place}");
 
+        static string Unlocked(Content c, string kind) =>
+            $"{PlayerText.Capitalised(c.ProjectKinds.First(k => k.Id == kind).Name)} can now be built";
+
         static string CityChange(Content c, string city, string field, double delta) =>
             field == ConditionField
                 ? $"{PlayerText.Settlement(c, city)}: housing condition {PlayerText.PercentChange(delta)}"
@@ -174,6 +185,7 @@ namespace Statecraft.Sim
                 .Select(fx => new Cause("events", fx.Target, fx.Delta, PlayerText.Change(c, fx.Target, fx.Delta))).ToList();
             lines.AddRange(o.GrantUnits.Select(g => new Cause("events", g.Type, g.N, Granted(g, GrantPlace(c, g).Name))));
             lines.AddRange(o.CityEffects.Select(x => new Cause("events", x.City + "." + x.Field, x.Delta, CityChange(c, x.City, x.Field, x.Delta))));
+            lines.AddRange(o.UnlockProjects.Select(k => new Cause("events", k, 1, Unlocked(c, k))));
             lines.AddRange(o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal)
                 .Select(k => new Cause("events", k.Key, k.Value, $"{PlayerText.Target(c, k.Key)} set to {PlayerText.Percent(k.Value)}")));
             if (o.SetRung.HasValue) lines.Add(new Cause("events", "rung", o.SetRung.Value, FormattableString.Invariant($"Security level set to {o.SetRung.Value}")));
@@ -202,7 +214,7 @@ namespace Statecraft.Sim
             {
                 var e = Get(c, id);
                 var minister = DelegatedTo(c, s, e);
-                if (e.Objective != "")
+                if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
                 {
                     Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why);
                     continue;

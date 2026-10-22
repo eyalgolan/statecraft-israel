@@ -2,6 +2,11 @@
 id: elections_1949
 title: Electing the Constituent Assembly
 text: 'The Provisional State Council has set the Constituent Assembly at 120 seats, elected nationwide by proportional representation, and a national registration taken under curfew on 8 November built the voters'' roll. Postponed because of the war, the vote is set for 25 January.'
+# For the native reviewer (#564): Hebrew terminology and date follow he.wiki "הבחירות לאספה המכוננת":
+# https://he.wikipedia.org/wiki/הבחירות_לאספה_המכוננת
+title_he: הבחירות לאספה המכוננת
+text_he: 'מועצת המדינה הזמנית קבעה כי באספה המכוננת יהיו 120 מושבים, שייבחרו בבחירות ארציות יחסיות, ומפקד ארצי שנערך תחת עוצר ב־8 בנובמבר שימש לבניית פנקס הבוחרים. ההצבעה, שנדחתה בשל המלחמה, נקבעה ל־25 בינואר.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # The Declaration of Independence required elected institutions by 1 October 1948 (quoted by Harpaz, p. 187); the vote
@@ -26,6 +31,7 @@ to: 1949-01-26
 options:
   - id: hold
     text: Hold the election on 25 January
+    text_he: לקיים את הבחירות ב־25 בינואר
     historical: true
     recommended: true
     effects:

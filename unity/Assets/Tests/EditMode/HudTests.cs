@@ -87,7 +87,7 @@ public class HudTests
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
         Assert.AreEqual(PlayerText.Money(C, "treasury", -bridge.State.Debt), m.Treasury.Value);
-        StringAssert.Contains("-IL", m.Treasury.Value);
+        StringAssert.Contains("IL -", m.Treasury.Value);
     }
 
     /// <summary>#681 (owner, 16 October 2026: "keep one top-bar figure and label it as net (cash minus debt)"): the Money
@@ -107,7 +107,7 @@ public class HudTests
         Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
         StringAssert.StartsWith(caption + ":", meter.tooltip);
         Assert.AreEqual(PlayerText.Money(C, "treasury", bridge.State.Treasury - bridge.State.Debt), ui.Q<Label>("treasury-value").text);
-        StringAssert.Contains("-IL", ui.Q<Label>("treasury-value").text);
+        StringAssert.Contains("IL -", ui.Q<Label>("treasury-value").text);
     }
 
     // ---- The score (#380): only in the GDD loop, from GameState.Score ----
@@ -249,6 +249,116 @@ public class HudTests
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("toast").style.display.value);
     }
 
+    /// <summary>ScreenNav's motion as the test run found it (off in edit mode), put back after every test: an assertion
+    /// inside a nested coroutine skips the outer one's finally.</summary>
+    static readonly System.Func<bool> PlayModeMotion = ScreenNav.Moves;
+    [TearDown] public void StillWindows() => ScreenNav.Moves = PlayModeMotion;
+
+    /// <summary>Yields until <paramref name="done"/> holds, at most 3 s: an edit-mode panel updates its styles and layout
+    /// only now and then, not on every yield.</summary>
+    static IEnumerator Until(System.Func<bool> done)
+    {
+        var t0 = Time.realtimeSinceStartup;
+        while (!done() && Time.realtimeSinceStartup - t0 < 3f) yield return null;
+    }
+
+    /// <summary>#1106: a window (a side-menu screen, the decision card) opens in ScreenNav.OpeningClass, small and
+    /// transparent, for one layout, then grows and fades in over 0.5 s; on close it shrinks over 0.3 s (ClosingClass), out
+    /// of reach, and leaves the layout when that transition ends. An EditMode panel does not run the transitions' clock,
+    /// so the test checks the classes, the resolved transitions, and sends the transitions' ends itself.</summary>
+    static IEnumerator OpensAndCloses(VisualElement window, System.Action open, System.Action close, string what)
+    {
+        open();
+        Assert.AreEqual(DisplayStyle.Flex, window.style.display.value, what + " shows at once");
+        Assert.IsTrue(window.ClassListContains(ScreenNav.OpeningClass), what + " starts small and transparent");
+        Assert.IsTrue(ScreenNav.IsOpen(window), what + " is open");
+        yield return Until(() => !window.ClassListContains(ScreenNav.OpeningClass));
+        Assert.IsFalse(window.ClassListContains(ScreenNav.OpeningClass), what + ": the start state lasts one layout, then it grows");
+        yield return Until(() => window.resolvedStyle.transitionDuration.First().value > 0.4f);
+        Assert.AreEqual(0.5f, window.resolvedStyle.transitionDuration.First().value, 1e-4, what + ": scale-up and fade-in, 0.5 s");
+        CollectionAssert.AreEquivalent(new[] { "scale", "opacity" }, window.resolvedStyle.transitionProperty.Select(p => p.ToString()), what);
+        close();
+        Assert.IsTrue(window.ClassListContains(ScreenNav.ClosingClass), what + " shrinks");
+        Assert.IsFalse(ScreenNav.IsOpen(window), what + " counts as closed while it shrinks");
+        Assert.IsFalse(window.enabledSelf, what + ": out of reach while it shrinks (#400)");
+        Assert.AreEqual(DisplayStyle.Flex, window.style.display.value, what + " stays in view while it shrinks");
+        yield return Until(() => window.resolvedStyle.transitionDuration.First().value < 0.4f);
+        Assert.AreEqual(0.3f, window.resolvedStyle.transitionDuration.First().value, 1e-4, what + ": scale-down, 0.3 s");
+        Assert.AreEqual("scale", window.resolvedStyle.transitionProperty.Single().ToString(), what + ": a scale-down, no fade");
+        End(window, "opacity");                                   // the grow's fade, when it closes within 0.5 s of opening
+        Assert.AreEqual(DisplayStyle.Flex, window.style.display.value, what + ": only the end of the shrink hides it");
+        open();                                                   // opened again while it shrinks: it grows back from there
+        Assert.IsFalse(window.ClassListContains(ScreenNav.ClosingClass), what + " grows back");
+        Assert.IsFalse(window.ClassListContains(ScreenNav.OpeningClass), what + ": from where it is, not from the start state");
+        Assert.IsTrue(window.enabledSelf && ScreenNav.IsOpen(window), what + " is open and in reach again");
+        End(window, "scale");                                     // the interrupted shrink's end, late: ignored
+        Assert.AreEqual(DisplayStyle.Flex, window.style.display.value, what + " stays open");
+        close();
+        End(window, "scale");
+        Assert.AreEqual(DisplayStyle.None, window.style.display.value, what + " leaves the layout when the shrink ends");
+        Assert.IsFalse(window.ClassListContains(ScreenNav.ClosingClass), what);
+        open(); close();                                          // closed before its first layout (two presses in one frame)
+        Assert.AreEqual(DisplayStyle.None, window.style.display.value, what + ": nothing to shrink from, it hides at once");
+        Assert.IsFalse(window.ClassListContains(ScreenNav.OpeningClass) || window.ClassListContains(ScreenNav.ClosingClass), what);
+    }
+
+    /// <summary>Sends the end of a transition of <paramref name="property"/> on <paramref name="window"/>, as the panel does.</summary>
+    static void End(VisualElement window, string property)
+    {
+        using var e = TransitionEndEvent.GetPooled(new StylePropertyName(property), 0.3);
+        e.target = window; window.SendEvent(e);
+    }
+
+    [UnityTest]
+    public IEnumerator WindowsScaleUpAndFadeInWhenTheyOpenAndScaleDownWhenTheyClose()
+    {
+        ScreenNav.Moves = () => true;   // play mode's motion; StillWindows puts it back (an EditMode panel ticks only now and then: Until)
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        foreach (var s in ScreenNav.Screens)
+            yield return OpensAndCloses(ui.Q<VisualElement>("screen-" + s), () => ui.Press("nav-" + s), () => ui.Press("nav-" + s), s);
+        using var card = new EventCardPresenter(ui.Root, NewBridge(), Text, null);   // a new game opens on a decision
+        var element = ui.Q<VisualElement>("event-card");
+        card.Collapse();
+        yield return Until(() => element.style.display.value == DisplayStyle.None);
+        yield return OpensAndCloses(element, card.Reopen, card.Collapse, "the decision card");
+    }
+
+    /// <summary>#1175 review: a window closed while it still grows (within 0.5 s of opening) retargets the scale
+    /// transition, and the panel sends a TransitionCancelEvent for the grow. That must not hide it: it shrinks, and only the
+    /// shrink's end or ScreenNav's safety net (ClosingNetMs) takes it out of the layout.</summary>
+    [UnityTest]
+    public IEnumerator AWindowClosedWhileItGrowsStillShrinks()
+    {
+        ScreenNav.Moves = () => true;   // StillWindows puts it back
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        var screen = ScreenNav.Screens.First();
+        var window = ui.Q<VisualElement>("screen-" + screen);
+        ui.Press("nav-" + screen);
+        yield return Until(() => !window.ClassListContains(ScreenNav.OpeningClass));
+        ui.Press("nav-" + screen);                                // closed mid-grow
+        var closedAt = Time.realtimeSinceStartup;
+        using (var e = TransitionCancelEvent.GetPooled(new StylePropertyName("scale"), 0.2))
+        {
+            e.target = window; window.SendEvent(e);               // the grow, cancelled by the shrink
+        }
+        Assert.AreEqual(DisplayStyle.Flex, window.style.display.value, "the cancelled grow does not hide it: it shrinks");
+        Assert.IsTrue(window.ClassListContains(ScreenNav.ClosingClass), "still shrinking");
+        // a quiet EditMode panel runs its scheduler (the safety net) only on player-loop requests (SafeAreaTests)
+        while (window.style.display.value != DisplayStyle.None && Time.realtimeSinceStartup - closedAt < 3f)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            yield return null;
+        }
+        // a scale TransitionEndEvent from the panel (EndClosing) or the safety net (ClosingNetMs), whichever comes first:
+        // on a busy machine the panel's end can come well before ClosingNetMs (0.30 s in #1216, 0.06 s in a rerun under
+        // load), so only the end state is asserted, not the elapsed time
+        Assert.AreEqual(DisplayStyle.None, window.style.display.value, "a transition end or the safety net hides it");
+        Assert.IsFalse(window.ClassListContains(ScreenNav.ClosingClass) || window.ClassListContains(ScreenNav.OpeningClass),
+            "it leaves the layout through Hide");
+    }
+
     [Test]
     public void NavigationOpensOneScreenAtATime()
     {
@@ -367,7 +477,7 @@ public class HudTests
         var now = bridge.State;
         prev.Treasury = now.Treasury - now.Debt + prev.Debt - 5;          // up by 5
         hud.Render();
-        Assert.AreEqual("+IL 5.0m", ui.Q<Label>("treasury-delta").text);
+        Assert.AreEqual("IL +5.0m", ui.Q<Label>("treasury-delta").text);
         Assert.IsTrue(ui.Q<Label>("treasury-delta").ClassListContains("delta-up"));
         Assert.IsFalse(ui.Q<Label>("treasury-delta").ClassListContains("delta-down"));
         prev.Treasury = now.Treasury - now.Debt + prev.Debt + 0.04;       // down by 0.04: rounds to zero, never "-0.0"
@@ -569,9 +679,9 @@ public class HudTests
         prev.Indicators["security"] = now.Indicators["security"] - 0.05;    // up 5 points
         prev.Treasury = now.Treasury - now.Debt + prev.Debt + 3;            // down by 3
         var m = HudModel.From(bridge, Text);
-        Assert.AreEqual("-$2.0m", m.Fx.Delta);
+        Assert.AreEqual("$-2.0m", m.Fx.Delta);
         Assert.AreEqual("+5%", m.Security.Delta);
-        Assert.AreEqual("-IL 3.0m", m.Treasury.Delta);
+        Assert.AreEqual("IL -3.0m", m.Treasury.Delta);
     }
 
     /// <summary>Fix round 2 (N4, N5): no script rescales a sim number for display itself: 0..1 values go through
@@ -587,6 +697,7 @@ public class HudTests
         ("RouteLayer.cs", "CorridorMarginM = 100f", "a clearance in map metres that kit buildings and trees keep from a route (geometry, not a displayed number)"),
         ("CameraController.cs", "PixelsPerNotch = 100f", "wheel pixels in one mouse notch, to scale the browser's wheel events (input, not a displayed number)"),
         ("WildlifeLayer.cs", "MinimumCliffElevationM = 100f", "a real elevation in metres an ibex hex must reach (placement, not a displayed number)"),
+        ("SettingsPresenter.cs", "Level(int percent) => percent / 100.0", "the UI scale's stored percents (#40) to the level PlayerText.Percent formats (1.25 for 125%); it never formats text itself"),
     };
 
     [Test]
@@ -755,14 +866,14 @@ public class HudTests
         now.Debt = now.Treasury + 3;                                         // net -3.0
         prev.Debt = prev.Treasury - 1;                                       // net +1.0 before: down by 4
         m = HudModel.From(bridge, Text);
-        Assert.AreEqual("Money: -IL 3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
+        Assert.AreEqual("Money: IL -3.0 million, down IL 4.0 million since last turn", HudModel.Spoken(Text, "Money", m.Treasury));
         using var ui = new UiTestKit();
         var he = He;
         new HudPresenter(ui.Root, bridge, he);
         var said = ui.Q<VisualElement>("meter-treasury").tooltip;
-        // The values carry left-to-right marks (U+200E, #543), so the minus stays on the left of "IL" in a right-to-left line.
-        Assert.AreEqual("כסף (נטו): \u200E-IL \u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
-        Assert.AreEqual("כסף (נטו): -IL 3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
+        // The values carry left-to-right marks (U+200E, #543), so the value stays one left-to-right run - "IL -3.0" with the minus next to the number - in a right-to-left line.
+        Assert.AreEqual("כסף (נטו): \u200EIL -\u200E\u200E3.0\u200E מיליון, קיטון של \u200EIL \u200E\u200E4.0\u200E מיליון מאז התור הקודם", said);
+        Assert.AreEqual("כסף (נטו): IL -3.0 מיליון, קיטון של IL 4.0 מיליון מאז התור הקודם", said.Replace("\u200E", ""));
         foreach (var id in MeterIds)
         {
             var tip = ui.Q<VisualElement>("meter-" + id).tooltip;

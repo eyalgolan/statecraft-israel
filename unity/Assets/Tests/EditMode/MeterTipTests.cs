@@ -21,10 +21,13 @@ public class MeterTipTests
 
     static void Enter(VisualElement e) { using var ev = PointerEnterEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = e.worldBound.center }); ev.target = e; e.SendEvent(ev); }
     static void Leave(VisualElement e) { using var ev = PointerLeaveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = Vector2.zero }); ev.target = e; e.SendEvent(ev); }
-    static void Tap(VisualElement e) { using var ev = ClickEvent.GetPooled(); ev.target = e; e.SendEvent(ev); }
+    internal static void Tap(VisualElement e) { using var ev = ClickEvent.GetPooled(); ev.target = e; e.SendEvent(ev); }
+    static void MouseClick(VisualElement e) { using var ev = ClickEvent.GetPooled(new Event { type = EventType.MouseUp, mousePosition = e.worldBound.center }); ev.target = e; e.SendEvent(ev); }
+    /// <summary>A finger going down on <paramref name="e"/>; on the map, with nothing under it, the panel sends it to its root.</summary>
+    static void Press(VisualElement e) { using var ev = PointerDownEvent.GetPooled(new Touch { fingerId = 0, phase = TouchPhase.Began }); ev.target = e; e.SendEvent(ev); }
 
     /// <summary>Shown only when MeterTip set it so (an unset inline display reads as Flex, the default).</summary>
-    static bool Shown(VisualElement tip) => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
+    internal static bool Shown(VisualElement tip) => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
     static string Words(VisualElement root) => root.Q<Label>("meter-tip-words").text;
     static string CausesLine(VisualElement root) => root.Q<Label>("meter-tip-causes").text;
 
@@ -95,8 +98,41 @@ public class MeterTipTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>#1108: a mouse has hover, so a click on a number does not pin its tip and leaving hides it; a tapped tip closes
+    /// on the next tap anywhere (the map, another control), while a tap on a number still moves or closes it.</summary>
+    [UnityTest]
+    public IEnumerator AClickedTipHidesOnLeaveAndATappedTipOnTheNextTapAnywhere()
+    {
+        var problems = new List<string>();
+        yield return Rendered(1280, 720, false, Check);
+
+        IEnumerator Check(VisualElement root, SimBridge bridge, UiText text)
+        {
+            var tip = root.Q(MeterTip.TipName);
+            VisualElement money = root.Q("meter-treasury"), security = root.Q("meter-security");
+            Enter(money); MouseClick(money); Leave(money);
+            if (Shown(tip)) problems.Add("a mouse click keeps the tip after the pointer leaves");
+            foreach (var (where, e) in new[] { ("the map", root.panel.visualTree), ("another control", root.Q("end-turn")) })
+            {
+                Tap(money);
+                if (!Shown(tip)) { problems.Add($"precondition: a tap shows the tip (before {where})"); continue; }
+                Press(e);
+                if (Shown(tip)) problems.Add($"a tap on {where} does not close a tapped tip");
+            }
+            Tap(money);
+            Press(security); Tap(security);
+            if (!Shown(tip) || !Words(root).StartsWith(security.tooltip)) problems.Add($"a tap on another number does not move the tip: '{Words(root)}'");
+            Press(security); Tap(security);
+            if (Shown(tip)) problems.Add("a second tap on the number does not close the tip");
+            Tap(money); Press(security); MouseClick(security);
+            if (Shown(tip)) problems.Add("a mouse click on a number does not drop a tap's pin (a touchscreen laptop)");
+            yield break;
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>Renders Game.uxml at w x h with the HUD after one turn, then runs <paramref name="check"/>, which may wait frames.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, System.Func<VisualElement, SimBridge, UiText, IEnumerator> check)
+    internal static IEnumerator Rendered(int w, int h, bool hebrew, System.Func<VisualElement, SimBridge, UiText, IEnumerator> check)
     {
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -124,5 +160,44 @@ public class MeterTipTests
             hud.Dispose();
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
+    }
+}
+
+/// <summary>#1184: a tap on the bare map never reaches the panel (the event system sends a pointer event only to a panel
+/// that has an element under it), so MeterTip's press on the panel root does not hear it. A tapped tip still closes on it,
+/// through the touchscreen itself; a tap on the UI is left to the panel (a second tap on the meter must not reopen it).
+/// InputTestFixture runs the devices in edit mode; the edit-mode panel gets no pointer events at all, as the map's press.</summary>
+public class MeterTipBareMapTests : UnityEngine.InputSystem.InputTestFixture
+{
+    [UnityTest]
+    public IEnumerator ATappedTipClosesOnATapOnTheBareMap()
+    {
+        var touch = UnityEngine.InputSystem.InputSystem.AddDevice<UnityEngine.InputSystem.Touchscreen>();
+        var problems = new List<string>();
+        yield return MeterTipTests.Rendered(390, 844, false, Check);
+
+        IEnumerator Check(VisualElement root, SimBridge bridge, UiText text)
+        {
+            var tip = root.Q(MeterTip.TipName);
+            var money = root.Q("meter-treasury");
+            // screen points (y up) with and without an element under them, by the same test as the map's clicks (UiPointer)
+            Vector2? bare = null, onUi = null;
+            for (int y = 0; y < Screen.height; y += 10)
+                for (int x = 0; x < Screen.width; x += 10)
+                {
+                    var p = new Vector2(x, y);
+                    if (UiPointer.IsOverUi(root.panel, p, Screen.height)) onUi ??= p; else bare ??= p;
+                }
+            if (bare == null || onUi == null) { problems.Add($"precondition: the {Screen.width}x{Screen.height} screen has bare map ({bare}) and UI ({onUi})"); yield break; }
+            int id = 1;
+            void TapAt(Vector2 at) { BeginTouch(id, at); EndTouch(id, at); id++; }
+            MeterTipTests.Tap(money);
+            if (!MeterTipTests.Shown(tip)) problems.Add("precondition: a tap pins the tip");
+            TapAt(onUi.Value);
+            if (!MeterTipTests.Shown(tip)) problems.Add("a touch on the UI closed the tip itself: the panel's press (or the meter's click) decides that");
+            TapAt(bare.Value);
+            if (MeterTipTests.Shown(tip)) problems.Add("a tap on the bare map does not close a tapped tip");
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 }

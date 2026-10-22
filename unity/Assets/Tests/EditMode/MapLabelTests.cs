@@ -530,6 +530,46 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>#1063 (player report: cities are hard to pick on the map): a city's name pill is a click target. PillAtLayer
+    /// finds the shown game settlement's pill under a point, and none off every pill or where a pill is hidden; Highlight
+    /// lights that one pill (HoverClass, a lighter fill) and puts it out again. English and Hebrew alike.</summary>
+    [UnityTest]
+    public IEnumerator ThePillUnderThePointerIsFoundAndLit()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var hd = new HdPanel(cam);
+            if (hebrew) (hd.Root.Q("root") ?? hd.Root).AddToClassList(UiLanguage.HebrewClass);
+            var labels = new MapLabelsPresenter(hd.Root, map, cam, hebrew: hebrew);
+            string lang = hebrew ? "he" : "en";
+            try
+            {
+                Pose(34.99, 32.80, 40000f);
+                yield return Settle(labels);
+                var haifa = labels.Labels.Single(l => l.name == "label-haifa");
+                Assert.IsTrue(Shown(labels.Slots.Single(x => x.name == "slot-haifa")), lang + ": Haifa is named at 40 km");
+                var container = hd.Root.Q<VisualElement>(MapLabelsPresenter.ContainerName).worldBound.position;
+                var centre = haifa.worldBound.center - container;
+                Assert.AreEqual("haifa", labels.PillAtLayer(centre), lang + ": the pointer over Haifa's pill");
+                Assert.IsNull(labels.PillAtLayer(new Vector2(-50f, -50f)), lang + ": off every pill");
+                var fill = haifa.resolvedStyle.backgroundColor;
+                labels.Highlight("haifa"); yield return null;
+                Assert.IsTrue(haifa.ClassListContains(MapLabelsPresenter.HoverClass), lang + ": Haifa's pill is lit");
+                Assert.AreEqual(1, labels.Labels.Count(l => l.ClassListContains(MapLabelsPresenter.HoverClass)), lang + ": that pill alone");
+                Assert.AreNotEqual(fill, haifa.resolvedStyle.backgroundColor, lang + ": the lit pill has another fill");
+                labels.Highlight(null); yield return null;
+                Assert.IsFalse(labels.Labels.Any(l => l.ClassListContains(MapLabelsPresenter.HoverClass)), lang + ": put out");
+                Assert.AreEqual(fill, haifa.resolvedStyle.backgroundColor, lang + ": its own fill again");
+
+                Pose(34.78, 31.25, 40000f);   // Beersheba: Haifa is off screen
+                yield return Settle(labels);
+                Assert.IsFalse(Shown(labels.Slots.Single(x => x.name == "slot-haifa")), lang + ": precondition, Haifa's pill is hidden");
+                Assert.AreNotEqual("haifa", labels.PillAtLayer(centre), lang + ": a hidden pill is no target");
+            }
+            finally { labels.Dispose(); hd.Dispose(); }
+        }
+    }
+
     /// <summary>Owner decision on #897 (17 October 2026, "Yes, mirror it"): in the Hebrew UI the tier badge sits at the start of
     /// the Hebrew name, which is the pill's right; inside the pill and clear of the name. The English pill keeps it on the left.
     /// Pinned at every window size of InfoPanelLayoutTests and on one pill per anchor (Haifa centre, Safed right, Petah Tikva

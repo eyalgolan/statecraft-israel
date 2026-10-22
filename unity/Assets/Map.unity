@@ -531,7 +531,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.Map.CameraRig
   LookAt: {x: 0, y: 0, z: 0}
-  Distance: 120000
+  Distance: 90000
   Yaw: 0
 --- !u!81 &1996827303
 AudioListener:

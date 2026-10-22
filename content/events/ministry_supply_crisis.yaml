@@ -2,6 +2,11 @@
 id: ministry_supply_crisis
 title: Closing the Ministry of Rationing
 text: 'Mapai is divided over closing the Ministry of Rationing and Supply, and {prime_minister} wants a businessman, Ya''akov Geri, who is not a Knesset member, at Trade and Industry. Under the law of the time, adding a minister means the government must resign and win a new vote of confidence.'
+# For the native reviewer (#564): מפא״י, משרד האספקה והקיצוב, יעקב גרי and משרד המסחר והתעשייה follow he.wiki
+# (https://he.wikipedia.org/wiki/הממשלה_השנייה; https://he.wikipedia.org/wiki/יעקב_גרי).
+title_he: סגירת משרד האספקה והקיצוב
+text_he: 'מפא״י חלוקה בשאלת סגירת משרד האספקה והקיצוב, והמועמד של {prime_minister} לתפקיד שר המסחר והתעשייה הוא איש העסקים יעקב גרי, שאינו חבר כנסת. לפי החוק באותה עת, צירוף שר מחייב את הממשלה להתפטר ולקבל מחדש את אמון הכנסת.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Ben-Gurion resigned on 15 October 1950; the same coalition was approved 69-42 on 1 November 1950.
@@ -10,12 +15,22 @@ to: 1950-11-01
 options:
   - id: restructure
     text: Resign, close the ministry and form a new government
+    text_he: להתפטר, לסגור את המשרד ולהקים ממשלה חדשה
     historical: true
     recommended: true
     effects:
       - { target: morale, delta: 0.02 }
   - id: keep_ministry
     text: Keep the ministry and the cabinet as they are
+    text_he: להשאיר את המשרד ואת הממשלה ללא שינוי
+    # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: debated
+      by: "Mapai, the Prime Minister's party"
+      # First day of the source's range (October 1950), approximate: owner ruling of 18 October 2026 (#949).
+      date: 1950-10-01
+      sources:
+        - { url: "https://web.archive.org/web/20120307095248/http://www.knesset.gov.il/review/ReviewPage.aspx?kns=1&lng=3", checked: 2026-10-17 }
     effects:
       - { target: morale, delta: -0.03 }
 sources:
