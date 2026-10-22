@@ -523,9 +523,13 @@ city.recruits: "מגויסים: {0}"
 city.workers: "בעבודה: {0}"
 city.train_recruit: "אימון מגויסים: קבוצה אחת, {0}, {1}"
 city.train_halutz: "הכשרת חלוצים: קבוצה אחת, {0}, {1}"
+# Craft training (R-CRAFT-001, #1357), with city.craftsmen's approved בעל מלאכה in the plural. For the native reviewer (#564).
+city.train_craftsman: "הכשרת בעלי מלאכה: קבוצה אחת, {0}, {1}"
 city.train_ordered: "הוזמנו {0}"
 city.track_recruit: "מגויסים"
 city.track_halutz: "חלוצים"
+# For the native reviewer (#564).
+city.track_craftsman: "בעלי מלאכה"
 city.cohort: "{0}: {1} באימון, עוד {2}"
 city.cancel: "ביטול"
 city.groups_one: "קבוצה אחת"

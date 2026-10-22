@@ -269,6 +269,46 @@ public class CityPanelTests
     }
 
     [Test]
+    public void EveryTrainableTypeHasThePanelsStringsInBothLanguages()
+    {
+        // #1357: the panel words a Train button as city.train_<type> and a cohort as city.track_<type>, for every type with a
+        // facility; a missing key throws (UiText) and the whole city panel fails to open. A new trainable type needs both.
+        var trainable = C.UnitTypes.Where(t => t.Facility != "").Select(t => t.Id).ToList();
+        CollectionAssert.Contains(trainable, Training.Craftsman, "precondition: the craftsman trains at a facility (R-CRAFT-001)");
+        var missing = (from strings in new[] { ("strings.en.yaml", En), ("strings.he.yaml", He) }
+                       from id in trainable
+                       from key in new[] { "city.train_" + id, "city.track_" + id }
+                       where !strings.Item2.Has(key)
+                       select $"{strings.Item1}: {key}").ToList();
+        Assert.IsEmpty(missing, string.Join(", ", missing));
+    }
+
+    [Test]
+    public void ACityWithAFinishedIndustryProjectOffersCraftTraining([Values] bool hebrew)
+    {
+        // #1357, R-CRAFT-001: a completed industry project gives its city the craftsman's Train button and its cohorts' rows.
+        var t = hebrew ? He : En;
+        var type = C.UnitTypes.Single(x => x.Id == Training.Craftsman);
+        Assert.IsFalse(C.Cities.Single(x => x.Id == City).Facilities.Contains(Training.Industry), "precondition: Tel Aviv's industry comes from the project");
+        using var ui = new UiTestKit();
+        int cohort = -1;
+        var bridge = Bridge(t, s =>
+        {
+            var id = s.NextId++;
+            s.CityProjects.Add(id, new CityProject(id, Training.Industry, City, CityHex.q, CityHex.r, 1).Built(s.Date));
+            cohort = s.NextId++;
+            s.Cohorts.Add(cohort, new Cohort(cohort, Training.Craftsman, City, 2, 3));
+        });
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual(t.Format("city.train_craftsman", PlayerText.Money(C, "treasury", type.TrainingCost), GddHexPanel.Turns(t, type.TrainingTurns)),
+            ui.Q<Button>("city-train-craftsman").text);
+        Assert.AreEqual(t.Format("city.cohort", t["city.track_craftsman"], GddHexPanel.Groups(t, 2), GddHexPanel.Turns(t, 3)), ui.Q<Label>($"city-cohort-{cohort}").text);
+        UiTestKit.Press(ui.Q<Button>("city-train-craftsman"));
+        Assert.IsNotNull(bridge.QueuedLike(new Train(City, Training.Craftsman, 1)), "the press queues craft training");
+    }
+
+    [Test]
     public void ACohortShowsItsTurnsLeftAndCancelQueuesCancelTraining()
     {
         using var ui = new UiTestKit();
