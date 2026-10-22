@@ -170,6 +170,7 @@ namespace Statecraft.Game.UI
         readonly List<Button> closes = new List<Button>();
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly EventCallback<GeometryChangedEvent> onGeometry;
+        readonly PressSource presses;
 
         /// <summary>A layer over the screens that takes Escape first (GameRoot: the report panel, #1169, and the share panel, #1170): true when it used the
         /// key, and the open screen under it stays open. This handler trickles down from the root, so it runs before the layer's own.</summary>
@@ -185,6 +186,7 @@ namespace Statecraft.Game.UI
             root.RegisterCallback(onCancel, TrickleDown.TrickleDown);
             onGeometry = e => FitCloseButtons();
             root.RegisterCallback(onGeometry);
+            presses = new PressSource(root);
             foreach (var s in Screens)
             {
                 var screen = s;
@@ -194,10 +196,12 @@ namespace Statecraft.Game.UI
                 hooks.Add((b, h));
 
                 // an X on the screen itself closes it: a phone has no Escape, and re-tapping the lit rail button is not
-                // discoverable (playtest v0.1.1). The same Close() as Escape, so the focus return is identical.
+                // discoverable (playtest v0.1.1). The same Close as Escape: pressed from the keyboard, the focus returns as
+                // after Escape; pressed with the pointer it moves nowhere (PointerBlur's rule), else the rail button would
+                // light up and show its tip (#1323).
                 var header = root.Q("screen-" + screen)?.Q(className: "screen-header");
                 if (header == null) continue;
-                var x = new Button(() => Close()) { name = "screen-close-" + screen, text = "X" };
+                var x = new Button(() => Close(handFocus: presses.ByKeyboard)) { name = "screen-close-" + screen, text = "X" };
                 x.AddToClassList("screen-close");
                 header.Add(x);
                 closes.Add(x);
@@ -253,6 +257,7 @@ namespace Statecraft.Game.UI
             closes.Clear();
             root.UnregisterCallback(onCancel, TrickleDown.TrickleDown);
             root.UnregisterCallback(onGeometry);
+            presses.Dispose();
             var r = root.Q("root") ?? root;
             r.RemoveFromClassList(WideOpenClass); r.RemoveFromClassList(ScreenOpenClass);
             DisableCovered(root);
@@ -261,14 +266,17 @@ namespace Statecraft.Game.UI
         /// <summary>Closes the open screen (Escape); false when none was open. When the focus was on the screen's contents it
         /// goes to the screen's top-bar button, so the next Tab carries on from there (#41 M1); an open decision card
         /// takes it instead (EventCardPresenter, when its cover closes).</summary>
-        public bool Close()
+        public bool Close() => Close(handFocus: true);
+
+        /// <param name="handFocus">False when the screen's X was pressed with the pointer: the focus is not handed on.</param>
+        bool Close(bool handFocus)
         {
             if (Current == null) return false;
             var screen = root.Q<VisualElement>("screen-" + Current); var button = root.Q<Button>("nav-" + Current);
             var focused = root.panel?.focusController?.focusedElement as VisualElement;
             var inside = focused != null && (focused == screen || screen.Contains(focused));
             Open(null);
-            if (inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
+            if (handFocus && inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
             return true;
         }
 
