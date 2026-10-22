@@ -375,8 +375,9 @@ public class HebrewUiTests
         }
     }
 
-    /// <summary>#880: in Hebrew every map name pill shows its row's name_he, and its English name where the row has none (a
-    /// 1948 locality such as Ghazawiya); an English restart puts the English names back. #1008: a GDD v0.2 map location
+    /// <summary>#880: in Hebrew every map name pill shows its row's name_he, and its English name where the row has none; an
+    /// English restart puts the English names back. Since #1344 every 1948 locality has a name_he (Ghazawiya's is
+    /// אל-גזאוויה), so the fallback is checked by clearing one row's name_he and starting again. #1008: a GDD v0.2 map location
     /// (content/map/locations_1948.yaml) is named in both languages too, and the one with a settlement's id (jerusalem)
     /// names that settlement's pill: "מערב ירושלים", "West Jerusalem".</summary>
     [Test]
@@ -394,7 +395,7 @@ public class HebrewUiTests
         Assert.AreEqual("נשר", Ui.Q<Label>("label-nesher").text, "a 1948 locality with a name_he");
         Assert.AreEqual("נענה", Ui.Q<Label>("label-naana").text, "#1219: Na'ana has a sourced name_he now");
         Assert.AreEqual("סאלחיה", Ui.Q<Label>("label-al_salihiyya").text, "#1313: Salihiya has a sourced name_he now");
-        Assert.AreEqual("Ghazawiya", Ui.Q<Label>("label-al_ghazzawiyya").text, "no name_he: the English name stays");
+        Assert.AreEqual("אל-גזאוויה", Ui.Q<Label>("label-al_ghazzawiyya").text, "#1344: Ghazawiya has a sourced name_he now");
         var locations = Inputs.Content.MapLocations.ToDictionary(l => l.Id);
         Assert.AreEqual("מערב ירושלים", Ui.Q<Label>("label-jerusalem").text, "#1008: Jerusalem's pill is West Jerusalem's");
         foreach (var s in map.Settlements)
@@ -402,6 +403,10 @@ public class HebrewUiTests
         foreach (var l in locations.Values) Assert.AreEqual(l.NameHe, Ui.Q<Label>("label-" + l.Id).text, l.Id);
         foreach (var p in map.Localities)
             Assert.AreEqual(string.IsNullOrWhiteSpace(p.NameHe) ? p.Settlement.Name : p.NameHe, Ui.Q<Label>("label-" + p.Settlement.Id).text, p.Settlement.Id);
+        // No row lacks a name_he now: clear Ghazawiya's on this build's copy, and the pill falls back to the English name.
+        map.Localities.Single(p => p.Settlement.Id == "al_ghazzawiyya").NameHe = null;
+        game.Begin(Inputs, 0);
+        Assert.AreEqual("Ghazawiya", Ui.Q<Label>("label-al_ghazzawiyya").text, "no name_he: the English name stays");
 
         game.Language = UiLanguage.English;
         game.Begin(Inputs, 0);
