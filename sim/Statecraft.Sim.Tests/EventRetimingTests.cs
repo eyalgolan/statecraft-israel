@@ -25,9 +25,8 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567 section 4 item 8: all but two of the 33 events fire in the historical monthly run (#567's 31, the first new yishuv
-    /// card, R-OBJ-003, and absorb_immigrants, #1039). Before the re-timing, sinai_withdrawal and rhodes_talks never fired (Horev's card came after both
-    /// windows had closed). Since GDD Phase 4 PR 5 every event but absorb_immigrants and hula_drainage, which needs the player's works (R-SWAMP-002).</summary>
+    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 35 ordinary events
+    /// except the four conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
     {
@@ -36,10 +35,11 @@ public class EventRetimingTests
         var record = C.Events.Where(e => e.Kind != EventKinds.Consequence).ToList();
         // R-SWAMP-002: hula_drainage fires only while the player's works at the Hula are in progress, and the reference
         // player drains no swamp, so the run never shows it. absorb_immigrants (#1039) is raised only when its objective
-        // completes (R-OBJ-004), and the reference player never completes it in this run.
+        // completes (R-OBJ-004), and the reference player never completes it in this run. The corridor parts also
+        // remain unfinished (R-OBJ-005), so neither of their completion cards is expected.
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
-        Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "hula_drainage" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(33, record.Count);
+        Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
+        Assert.Equal(35, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -69,7 +69,7 @@ public class EventRetimingTests
     [InlineData("austerity_1949", "1949-05-15")]
     [InlineData("armistice_syria", "1949-08-15")]
     [InlineData("frumkin_commission", "1950-01-15")]
-    [InlineData("first_new_yishuv", "1950-03-15")]                 // R-OBJ-003: the turn the reference player builds Mefalsim (1949-09-15 before Kiryat Shmona and Beit Shemesh joined the sites, #785; 1950-03-15 before GDD Phase 4 PR 6's veteran; 1949-03-15 before GDD Phase 4 PR 1, when it was the only site; 1949-06-15 before GDD Phase 3 PR 1)
+    [InlineData("first_new_yishuv", "1951-07-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791)
     [InlineData("maabarot_policy", "1950-04-15")]
     [InlineData("law_of_return", "1950-07-15")]
     [InlineData("clothing_rationing_1950", "1950-07-15")]
@@ -103,7 +103,7 @@ public class EventRetimingTests
     public static bool TooLong((DateTime From, DateTime To, int Months, bool AtWar) g) => g.Months > (g.AtWar ? MaxMonthsAtWar : MaxMonths);
 
     /// <summary>The owner's numbers (Q-CUT-8: "6 months, 2 in wartime"), pinned on both sides of each limit, and the real run's
-    /// longest stretches, which sit exactly on them: a limit raised or lowered fails here.</summary>
+    /// observed longest stretches; the boundary cases still catch a limit raised or lowered.</summary>
     // R-TURN-003
     [Fact]
     public void TheLimitsAreSixMonthsAndTwoAtWar()
@@ -115,7 +115,7 @@ public class EventRetimingTests
         Assert.False(TooLong(G(2, true)));
         Assert.True(TooLong(G(3, true)));
         var gaps = Gaps(Run);
-        Assert.Equal(6, gaps.Where(g => !g.AtWar).Max(g => g.Months));   // 15 May to 15 November 1951
+        Assert.Equal(5, gaps.Where(g => !g.AtWar).Max(g => g.Months));   // objective 3 now adds its yishuvim card in July 1951 (#791)
         Assert.Equal(2, gaps.Where(g => g.AtWar).Max(g => g.Months));    // 15 July to 15 September 1948, 15 January to 15 March 1949
     }
 

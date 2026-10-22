@@ -20,7 +20,7 @@ uv run tools/build_sim_for_unity.py              # the sim DLLs Unity loads (bui
 export UNITY="/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity"   # macOS path
 # Windows: "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"; Linux: ~/Unity/Hub/Editor/6000.3.25f1/Editor/Unity
 "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression disabled -logFile "$PWD/unity-build-web.log"
-python3 -m http.server 8000 --directory unity/Builds/Web-disabled   # then open http://localhost:8000/
+python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled   # then open http://localhost:8000/
 ```
 
 Desktop players (macOS IL2CPP; Linux and Windows on Mono, built from the Mac) and their build record come from

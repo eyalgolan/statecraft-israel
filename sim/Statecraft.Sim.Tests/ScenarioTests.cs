@@ -89,6 +89,16 @@ public class ScenarioTests
         Assert.Equal(90, sc.Play(For(sc)).Cities["tel_aviv"].Employed);
     }
 
+    // R-OBJ-004: the absorb-first scenario reaches the million-person gate with no more than 10% overflow and at least
+    // 40% of civilians employed, so the objective is complete in the scenario's final state (#738).
+    [Fact]
+    public void TheMvpScenarioCompletesTheAbsorbObjective()
+    {
+        var sc = Scenario.Parse(File.ReadAllText(Path.Combine(Dir(), "mvp-absorb-first.yaml")));
+        var s = sc.Play(For(sc));
+        Assert.Equal(new DateTime(1950, 1, 15), s.Objectives["absorb_immigrants"]);
+    }
+
     /// <summary>The `content: mvp` key went with the overlay at the cutover: a scenario that still names it fails to parse.</summary>
     [Fact]
     public void TheRetiredContentKeyIsRefused() =>

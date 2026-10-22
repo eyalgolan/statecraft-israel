@@ -2,6 +2,12 @@
 id: second_truce
 title: The Second Truce
 text: 'The Security Council has found a threat to the peace under Article 39 of the Charter and ordered a cease-fire within three days, and an immediate cease-fire in Jerusalem. {prime_minister} must decide whether Israel complies.'
+# For the native reviewer (#564): ההפוגה השנייה, מועצת הביטחון and האו״ם follow he.wiki "מבצע חירם"
+# (https://he.wikipedia.org/wiki/מבצע_חירם); מגילת האו״ם follows he.wiki
+# (https://he.wikipedia.org/wiki/מגילת_האומות_המאוחדות).
+title_he: ההפוגה השנייה
+text_he: 'מועצת הביטחון קבעה שקיים איום על השלום לפי סעיף 39 למגילת האו״ם, והורתה על הפסקת אש בתוך שלושה ימים ועל הפסקת אש מיידית בירושלים. ההחלטה אם ישראל תציית בידי {prime_minister}.'
+text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 # Security Council Resolution 54, 15 July 1948 (S/902), 7-1 with 3 abstentions (the resolution as published by the UN).
@@ -18,6 +24,7 @@ to: 1948-07-19
 options:
   - id: comply
     text: Comply with the cease-fire
+    text_he: לציית לצו הפסקת האש
     historical: true
     recommended: true
     # Three months of truce: prolonged conflict (monthly turns) until the next offensive.
@@ -27,6 +34,8 @@ options:
   - id: defy
     # Game assumption: the notes name no advocate for defying the resolution.
     text: Defy the order and keep fighting
+    text_he: להפר את הצו ולהמשיך בלחימה
+    alternative: { basis: design }
     effects:
       - { target: intl_standing, delta: -0.10 }
       - { target: security, delta: 0.01 }

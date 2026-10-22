@@ -102,6 +102,7 @@ from: 1948-05-15
 options:
   - id: ration
     text: Ration food
+    alternative: { basis: design }
     recommended: true
     effects:
       - target: food_supply
@@ -304,12 +305,14 @@ from: 1948-05-15
 options:
   - id: hold_north
     text: Hold the north
+    alternative: { basis: design }
     recommended: true
   - id: accept_line
     text: Accept the line
     historical: true
   - id: push_on
     text: Push on
+    alternative: { basis: design }
 ";
 
     [Fact]

@@ -17,6 +17,8 @@ namespace Statecraft.Sim
         public const string CoalitionCollapse = "coalition_collapse";
         /// <summary>Money and Food were both exhausted for mvp.defeat_turns turn ends in a row (R-END-002; D-B5).</summary>
         public const string DefeatEconomy = "defeat_economy";
+        /// <summary>An enemy military unit holds a GDD city's hex at the turn's end (R-END-003; Q-WAR-5, Q-DEF-3).</summary>
+        public const string DefeatWar = "defeat_war";
     }
 
     public enum Mode { Historical, Open }
@@ -70,6 +72,11 @@ namespace Statecraft.Sim
         public SortedDictionary<string, SiteWork> Sites = new SortedDictionary<string, SiteWork>(StringComparer.Ordinal);
         /// <summary>The city projects being built or built, by id (R-PROJ-001). A cancelled project leaves.</summary>
         public SortedList<int, CityProject> CityProjects = new SortedList<int, CityProject>();
+        /// <summary>The corridors with a segment being built or built, by corridor id (ordinal; R-COR-001). A corridor with no
+        /// started segment has no record.</summary>
+        public SortedDictionary<string, CorridorWork> Corridors = new SortedDictionary<string, CorridorWork>(StringComparer.Ordinal);
+        /// <summary>The locked projects.yaml kinds an event option has unlocked (R-EFX-008), by id (ordinal).</summary>
+        public SortedSet<string> UnlockedProjects = new SortedSet<string>(StringComparer.Ordinal);
         /// <summary>The next id a new unit, training cohort or city project takes (they share it). Ids are never reused.</summary>
         public int NextId;
         /// <summary>The date each completed objective was completed, by objective id (ordinal).</summary>
@@ -89,6 +96,13 @@ namespace Statecraft.Sim
         public int ExhaustedTurns;
         /// <summary>The national Arms stock (R-ARMS-001; D-G6): one Arms is the equipment package for one 1,000-person recruit group. Never below 0.</summary>
         public int Arms;
+        /// <summary>The enemy prisoners held, in population units, by the side of the unit that surrendered (R-POW-001; impact
+        /// plan section 4.3). Only a surrender in combat adds to it; only a front's exchange card takes from it (R-POW-004).</summary>
+        public SortedDictionary<string, int> PrisonersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The prisoners returned so far, in population units, by side (R-POW-004).</summary>
+        public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
+        public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
 
         public double TotalPopulation => Population.Values.Sum();
 
@@ -112,8 +126,13 @@ namespace Statecraft.Sim
             c.Cohorts = new SortedList<int, Cohort>(Cohorts);
             c.Sites = new SortedDictionary<string, SiteWork>(Sites, StringComparer.Ordinal);
             c.CityProjects = new SortedList<int, CityProject>(CityProjects);
+            c.Corridors = new SortedDictionary<string, CorridorWork>(Corridors, StringComparer.Ordinal);
+            c.UnlockedProjects = new SortedSet<string>(UnlockedProjects, StringComparer.Ordinal);
             c.Objectives = new SortedDictionary<string, DateTime>(Objectives, StringComparer.Ordinal);
             c.Settlements = new SortedDictionary<string, SettlementControl>(Settlements, StringComparer.Ordinal);
+            c.PrisonersHeld = new SortedDictionary<string, int>(PrisonersHeld, StringComparer.Ordinal);
+            c.PrisonersReturned = new SortedDictionary<string, int>(PrisonersReturned, StringComparer.Ordinal);
+            c.SoldiersHeld = new SortedDictionary<string, int>(SoldiersHeld, StringComparer.Ordinal);
             return c;
         }
 
@@ -201,6 +220,8 @@ namespace Statecraft.Sim
             if (Cohorts.Count > 0) Section("train", '[', ']', Cohorts.Values.Select(x => x.Canonical()));
             if (Sites.Count > 0) Section("site", '{', '}', Sites.Values.Select(x => x.Canonical()));
             if (CityProjects.Count > 0) Section("cproj", '[', ']', CityProjects.Values.Select(x => x.Canonical()));
+            if (Corridors.Count > 0) Section("corr", '{', '}', Corridors.Values.Select(x => x.Canonical()));
+            if (UnlockedProjects.Count > 0) Section("unlocked", '[', ']', UnlockedProjects);
             if (NextId != 0) { Sep(); Nl(); sb.Append("next=").Append(NextId.ToString(CultureInfo.InvariantCulture)); }
             if (Objectives.Count > 0)
                 Section("obj", '{', '}', Objectives.Select(kv => kv.Key + "=" + kv.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
@@ -215,6 +236,11 @@ namespace Statecraft.Sim
             }
             if (ExhaustedTurns != 0) { Sep(); Nl(); sb.Append("exhausted=").Append(ExhaustedTurns.ToString(CultureInfo.InvariantCulture)); }
             if (Arms != 0) { Sep(); Nl(); sb.Append("arms=").Append(Arms.ToString(CultureInfo.InvariantCulture)); }
+            // Prisoners (R-POW-001 to R-POW-005): written only once a surrender has happened, so a run with none hashes as before.
+            IEnumerable<string> Counts(SortedDictionary<string, int> m) => m.Select(kv => kv.Key + "=" + kv.Value.ToString(CultureInfo.InvariantCulture));
+            if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
+            if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
+            if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
             return sb.ToString();
         }
     }

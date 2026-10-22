@@ -30,19 +30,28 @@ namespace Statecraft.Sim
             return r.ObjectivePoints!.Value + (int)bonus;
         }
 
+        /// <summary>The Objectives screen's reading (#1189): one row per objective, in id order (as the loader sorts them),
+        /// done or not, with the player's completion date when it is done and the historical reference date. No score: the
+        /// owner's ruling for the screen (20 October 2026). A pure reading: it writes nothing, so the hash stays put.</summary>
+        public static IReadOnlyList<ObjectiveStatus> Status(Content c, GameState s) =>
+            c.Objectives.Select(o => new ObjectiveStatus(o.Id, o.Name, s.Objectives.TryGetValue(o.Id, out var done) ? done : (DateTime?)null,
+                o.ReferenceDate)).ToList();
+
         /// <summary>Step 11 of the GDD turn (spec 2026-10-12 §2.3, D-A6): records, in id order, every objective whose condition
         /// holds, completed on <paramref name="next"/>, the turn's end date (R-OBJ-001). <paramref name="r"/> is the rules of
         /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
         public static void Complete(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
             foreach (var o in c.Objectives)   // ordered by id (the loader)
-                if (Holds(s, o)) Record(c, s, r, o.Id, next, why);
+                if (Holds(c, s, o)) Record(c, s, r, o.Id, next, why);
         }
 
-        /// <summary>Whether the objective's condition holds: the immigrants are absorbed (R-OBJ-004), or its site is built
-        /// (R-SITE-003).</summary>
-        static bool Holds(GameState s, Objective o) =>
+        /// <summary>Whether the objective's condition holds: the immigrants are absorbed (R-OBJ-004), its site is built
+        /// (R-SITE-003), or every segment/site named by an infrastructure part is built (R-OBJ-005).</summary>
+        static bool Holds(Content c, GameState s, Objective o) =>
             o.CompletesWhen!.Absorbed is AbsorbCondition a ? Absorbed(s, a)
+            : o.CompletesWhen.CorridorComplete != "" ? Corridors.IsComplete(c, s, o.CompletesWhen.CorridorComplete)
+            : o.CompletesWhen.SitesBuilt.Count > 0 ? o.CompletesWhen.SitesBuilt.All(id => s.Sites.TryGetValue(id, out var site) && site.BuiltOn != null)
             : s.Sites.TryGetValue(o.CompletesWhen.SiteBuilt, out var w) && w.BuiltOn != null;
 
         /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population (the national count,
@@ -72,12 +81,35 @@ namespace Statecraft.Sim
         {
             if (!c.IsGdd || s.Objectives.ContainsKey(id)) return false;
             var o = c.Objectives.FirstOrDefault(x => x.Id == id) ?? throw new ArgumentException($"unknown objective '{id}'", nameof(id));
-            var points = Points(r, date, o.ReferenceDate);
+            var bonus = (int)Math.Min((long)r.ObjectiveBonusCap!.Value,
+                (long)r.ObjectiveBonusPerMonth!.Value * MonthsEarly(date, o.ReferenceDate));
+            // R-OBJ-006: standalone objectives receive their base as before. A parent objective's base is paid with the
+            // last part, after every other part in the same group has already been recorded. The current part is included
+            // explicitly because it is written below.
+            var basePoints = (o.PartOf == "" || c.Objectives.Where(x => x.PartOf == o.PartOf)
+                .All(x => x.Id == o.Id || s.Objectives.ContainsKey(x.Id))) ? r.ObjectivePoints!.Value : 0;
+            var points = basePoints + bonus;
             s.Objectives[id] = date;
             s.Score += points;
             // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).
             why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
             return true;
+        }
+    }
+
+    /// <summary>One row of <see cref="Objectives.Status"/>: the objective's id and name, the date the player completed it (null
+    /// until then) and the date of the real event.</summary>
+    public sealed class ObjectiveStatus
+    {
+        public string Id { get; }
+        public string Name { get; }
+        public DateTime? Completed { get; }
+        public DateTime Historical { get; }
+        public bool Done => Completed != null;
+
+        public ObjectiveStatus(string id, string name, DateTime? completed, DateTime historical)
+        {
+            Id = id; Name = name; Completed = completed; Historical = historical;
         }
     }
 }

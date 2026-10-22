@@ -21,8 +21,8 @@ invariants:
     value: debt
     when: end
     min: 100
-    max: 400
-    reason: "Internal debt rose IL 98.4m over 1950-51 (Michaely 1975, Table 5-2), and the budget is financed by borrowing (EconomyCalibrationTests). Wide band around the current run; R-WAR-002 (Refs #750) keeps the 0.8 war call-up in force through 1950-51, pushing end-debt to ~352 until the war-state work (Refs #747) restores demobilisation."
+    max: 300
+    reason: "Internal debt rose IL 98.4m over 1950-51 (Michaely 1975, Table 5-2), and the budget is financed by borrowing (EconomyCalibrationTests). Wide band around the current run."
 
   - name: population-stays-in-range
     run: 1952

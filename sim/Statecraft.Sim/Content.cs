@@ -115,6 +115,15 @@ namespace Statecraft.Sim
         /// <see cref="Person.TitleHeForm"/> is feminine (the loader makes sure every office such a person holds has one),
         /// else <see cref="TitleHe"/>. Empty when the office has no Hebrew title (the UI then keeps the English).</summary>
         public string TitleHeFor(Person? holder) => holder?.TitleHeForm == TitleHeForms.Feminine ? TitleHeF : TitleHe;
+        /// <summary>The days the Hebrew titles hold (#1219, owner on #1224, 21 October 2026): from TitleHeFrom (inclusive) to
+        /// TitleHeUntil (exclusive), like the office's own from/until; null leaves that side open. A title that names one
+        /// ministry, while the office runs on under others, holds only while that ministry existed; outside the window the UI
+        /// keeps the English, as for an office with no title_he.</summary>
+        public DateTime? TitleHeFrom { get; set; }
+        public DateTime? TitleHeUntil { get; set; }
+        /// <summary><see cref="TitleHeFor"/> on <paramref name="date"/>: empty outside TitleHeFrom..TitleHeUntil.</summary>
+        public string TitleHeOn(Person? holder, DateTime date) =>
+            (TitleHeFrom.HasValue && date < TitleHeFrom.Value) || (TitleHeUntil.HasValue && date >= TitleHeUntil.Value) ? "" : TitleHeFor(holder);
         /// <summary>Historical record only: no Cabinet seat, player appointment or gameplay responsibility. Defaults false for existing offices.</summary>
         public bool HistoricalOnly { get; set; }
         /// <summary>True when several people may hold the office on the same day (Minister without Portfolio, a second
@@ -518,6 +527,10 @@ namespace Statecraft.Sim
         public double? HakhsharaUpkeepPerYear { get; set; }
         /// <summary>The day the cities start taking arrivals: the census day their start values count (R-CITY-003, Q-ARRV-3).</summary>
         public DateTime CityArrivalsFrom { get; set; }
+        /// <summary>The GDD system to office map (R-MIN-001, D-H3, Q-MIN-1): the office whose
+        /// <see cref="EffectsSystem.Multiplier(Content, GameState, string)"/> scales each named system. A system the map does
+        /// not name is neutral. Read on the turn's date.</summary>
+        public Dictionary<string, string> MinisterSystems { get; set; } = new Dictionary<string, string>();
         /// <summary>The day the GDD game ends (R-LOOP-004; D-E5, 15 January 1952 in the real content), or null for the last
         /// era's end. Read from rules.yaml through <see cref="Content.End"/>; the same in every era.</summary>
         public DateTime? End { get; set; }
@@ -544,6 +557,14 @@ namespace Statecraft.Sim
         /// <summary>Food units a plowed field adds to the national stock each turn, in step 6 (R-FIELD-002; Q-FIELD-3). Required
         /// in the GDD loop, so a missing key is never read as 0.</summary>
         public int? FieldFoodPerTurn { get; set; }
+        /// <summary>Turns a road segment takes, counting the turn it was ordered in (R-COR-002; Q-COR-6, a design value).</summary>
+        public int RoadSegmentTurns { get; set; }
+        /// <summary>IL millions a road segment costs, paid in full when it starts (R-COR-001; Q-COR-6, a design value).</summary>
+        public double RoadSegmentCost { get; set; }
+        /// <summary>Turns a rail segment takes (R-COR-002; Q-COR-6, a design value).</summary>
+        public int RailSegmentTurns { get; set; }
+        /// <summary>IL millions a rail segment costs (R-COR-001; Q-COR-6, a design value).</summary>
+        public double RailSegmentCost { get; set; }
         /// <summary>Points for each completed objective (R-OBJ-002; D-B6, #456).</summary>
         public int? ObjectivePoints { get; set; }
         /// <summary>Bonus points for each calendar month an objective is completed before its reference date's month (R-OBJ-002; D-B2, #456).</summary>
@@ -581,12 +602,65 @@ namespace Statecraft.Sim
         /// <summary>The debt, in IL millions, at or above which Money is exhausted (R-END-001; D-B5, Q-DEF-1). Required in the
         /// GDD loop, a finite number >= 0.</summary>
         public double? DebtCeiling { get; set; }
+        /// <summary>A fortified unit's defence, in percent of its strength (R-ORDER-002; D-G4, Q-HOLD-1). Required in the GDD
+        /// loop, at least 1. Combat (Phase 5 PR 8) reads it through Orders.DefencePercent.</summary>
+        public int? FortifyDefencePercent { get; set; }
+        /// <summary>A holding unit's defence, in percent of its strength (R-ORDER-003; D-G4, Q-HOLD-2). Required in the GDD
+        /// loop, at least 1.</summary>
+        public int? HoldDefencePercent { get; set; }
         /// <summary>A minister whose loyalty is below this carries a delegated decision out half-heartedly (R-EVT-003; #107,
         /// owner, 18 October 2026). Required in the GDD loop, 0 to 10 (0: nobody is below it).</summary>
         public int? DelegationLoyaltyFloor { get; set; }
+        /// <summary>The movement points it costs to enter a hex of each land biome of map/hexes.json (R-MOVE-001; Q-MOVE-1).
+        /// Lake and sea have none: they are impassable. The loader requires one for every land biome in the GDD loop.</summary>
+        public Dictionary<string, int> MoveCost { get; set; } = new Dictionary<string, int>();
+        /// <summary>The most units of one side a hex holds (R-MOVE-003; Q-MOVE-3). Required in the GDD loop, at least 1.</summary>
+        public int? StackLimit { get; set; }
+        /// <summary>The movement points a step costs between two hexes of one built road segment, or of one built rail segment,
+        /// when lower than the terrain's (R-MOVE-007; Q-MOVE-2). Required in the GDD loop, at least 1.</summary>
+        public int? RoadMoveCost { get; set; }
+        /// <inheritdoc cref="RoadMoveCost"/>
+        public int? RailMoveCost { get; set; }
+        /// <summary>The settlements (settlements_1948.yaml ids) whose hexes no player unit may enter or cross before Phase 6
+        /// (R-MOVE-005; Q-CIV-1). The owner sets the list.</summary>
+        public List<string> EnemyHeldLocalities { get; set; } = new List<string>();
+        /// <summary>The Arms each of the player's units spends on an attack, paid when it resolves (R-COMBAT-004; D-G6,
+        /// Q-COMBAT-4). Required in the GDD loop, &gt;= 0.</summary>
+        public int? ArmsPerAttack { get; set; }
+        /// <summary>A defender's strength in percent for its hex's land biome (R-COMBAT-002; D-G3, Q-COMBAT-2: the defender's
+        /// biome modifies the ratio). The loader requires one for every land biome in the GDD loop, each &gt;= 1.</summary>
+        public Dictionary<string, int> CombatTerrainPercent { get; set; } = new Dictionary<string, int>();
+        /// <summary>The combat table (R-COMBAT-002, R-COMBAT-003; D-G3, Q-COMBAT-1): its rows in ascending
+        /// <see cref="CombatRow.MinRatioPercent"/>, the first at 0. Required in the GDD loop.</summary>
+        public List<CombatRow> CombatTable { get; set; } = new List<CombatRow>();
+        /// <summary>The least Combat.Preview ratio, in percent, at which an enemy unit on its goals attacks an adjacent player
+        /// unit (R-ENEMY-003; D-G7, Q-ENEMY-2). Required in the GDD loop, at least 1.</summary>
+        public int? EnemyAttackRatioPercent { get; set; }
         /// <summary>The share of each numeric effect a delegated option applies when its minister is below the loyalty floor
         /// (R-EVT-003; #107). Required in the GDD loop, 0 to 1.</summary>
         public double? DisloyalEffectShare { get; set; }
+        /// <summary>Food each population unit of prisoners eats a turn, in step 7 (R-POW-002; Q-POW-5). Required in the GDD loop, &gt;= 0.</summary>
+        public int? FoodPerPrisonerUnit { get; set; }
+        /// <summary>Social cohesion lost for each unit of the prisoners' Food the stock cannot give (R-POW-002; Q-POW-5).
+        /// Required in the GDD loop, &gt;= 0.</summary>
+        public double? PrisonerShortfallCohesion { get; set; }
+        /// <summary>Points scored for each population unit of prisoners returned (R-POW-004; Q-POW-2). Required in the GDD loop, &gt;= 0.</summary>
+        public int? PointsPerPrisonerUnitReturned { get; set; }
+        /// <summary>IL millions the Treasury pays a turn for each population unit of the player's soldiers held (R-POW-005;
+        /// Q-POW-4). Required in the GDD loop, &gt;= 0.</summary>
+        public double? HeldSoldierCostPerTurn { get; set; }
+    }
+
+    /// <summary>One row of rules.yaml mvp.combat_table (R-COMBAT-002, R-COMBAT-003): it applies from an attack : defence
+    /// ratio of <see cref="MinRatioPercent"/> percent up to the next row's. Each list has one entry per face of the
+    /// engagement's one draw, all the same length: the population units the attackers and the defenders lose, and 1 where
+    /// the defenders that are left retreat.</summary>
+    public sealed class CombatRow
+    {
+        public int MinRatioPercent { get; set; }
+        public List<int> AttackerLoss { get; set; } = new List<int>();
+        public List<int> DefenderLoss { get; set; } = new List<int>();
+        public List<int> DefenderRetreats { get; set; } = new List<int>();
     }
 
     /// <summary>A kind of city project (projects.yaml; GDD "Cities and construction"; R-PROJ-001 to R-PROJ-003): permanent
@@ -596,6 +670,14 @@ namespace Statecraft.Sim
         public string Id { get; set; } = "";
         /// <summary>The phrase the player reads in a sentence ("a transit camp").</summary>
         public string Name { get; set; } = "";
+        /// <summary>The Hebrew UI's name for the kind, a noun ("מעברה"), or "" for none: the UI then shows <see cref="Name"/>
+        /// (#1122, owner ruling 3). A draft until a native speaker reviews it (#564).</summary>
+        public string NameHe { get; set; } = "";
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); "" once reviewed.</summary>
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>Whether the row sets name_he_review at all, so a blank flag is refused rather than read as "reviewed".</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         /// <summary>IL millions, paid in full at the start (Q-PROJ-1).</summary>
         public double Cost { get; set; }
         /// <summary>Turns to build, the turn of the order the first (D-A3).</summary>
@@ -609,6 +691,8 @@ namespace Statecraft.Sim
         /// <summary>A city resource the city must have (cities.yaml `resources:`), or "" for none: a specialised industry such as
         /// the winery, which needs vineyards (R-PROJ-005, D-D8).</summary>
         public string Requires { get; set; } = "";
+        /// <summary>Whether StartProject refuses this kind until an event option unlocks it (R-EFX-008). Default false.</summary>
+        public bool Locked { get; set; }
     }
 
     /// <summary>A designated site (sites.yaml; docs/GDD.md "Pioneer work": building is allowed only at designated spots, and a
@@ -642,6 +726,33 @@ namespace Statecraft.Sim
         /// <summary>True when the file has the key at all, even blank.</summary>
         [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
         string? reviewedOn;
+    }
+
+    /// <summary>A corridor (corridors.yaml, GDD Phase 4 PR 2): a road or a railway the pioneers build segment by segment
+    /// (R-COR-001 to R-COR-003). Sourced facts and the derived hexes only: the Money and turns are rules (MvpRules).</summary>
+    public sealed class CorridorDef
+    {
+        public string Id { get; set; } = "";
+        /// <summary>road or rail: which action builds it (build_road, build_rail) and which rules price it.</summary>
+        public string Kind { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string NameHe { get; set; } = "";
+        /// <summary>The map route (map/routes_1948.yaml) the corridor follows. Map-only: the sim reads the hexes, and
+        /// tools/tests/test_corridor_hexes.py checks the route exists and the hexes are its traced line's.</summary>
+        public string Route { get; set; } = "";
+        /// <summary>In order along the route; numbered from 1 in orders and on screen (corridor:segment).</summary>
+        public List<SegmentDef> Segments { get; set; } = new List<SegmentDef>();
+        public List<Source> Sources { get; set; } = new List<Source>();
+        public string Status { get; set; } = "";
+    }
+
+    /// <summary>One segment of a corridor: the hexes its stretch of the traced line crosses, in order, ending at the route
+    /// waypoint <see cref="To"/> (map data, never shown: Q-SENS-1).</summary>
+    public sealed class SegmentDef
+    {
+        public string To { get; set; } = "";
+        /// <summary>[q, r] pairs, generated by tools/corridor_hexes.py.</summary>
+        public List<List<int>> Hexes { get; set; } = new List<List<int>>();
     }
 
     /// <summary>One start value of a city (cities.yaml), with what it is (R-CITY-006): `sourced` (read from the source named),
@@ -712,6 +823,18 @@ namespace Statecraft.Sim
         public string Side { get; set; } = "";
         /// <summary>A military type's class: infantry, artillery or armour, or "" for a type that is not military (R-UNIT-001).</summary>
         public string Class { get; set; } = "";
+        /// <summary>The movement points a unit of this type has each turn (R-MOVE-001; Q-MOVE-1), or 0 for a type that does not
+        /// move. Required on a military type.</summary>
+        public int MovementPoints { get; set; }
+        /// <summary>The percent a unit of this military type's strength counts for in combat, attacking and defending
+        /// (R-COMBAT-007, R-COMBAT-008; Q-ARTY-1, Q-ARTY-2), or null for 100.</summary>
+        public int? CombatPercent { get; set; }
+        /// <summary>An artillery type's range in hexes: it supports an attack on an enemy hex this far away (R-COMBAT-007;
+        /// Q-ARTY-1). Required on an artillery type, null on any other.</summary>
+        public int? Range { get; set; }
+        /// <summary>The Arms a unit of an artillery type spends each time it fires (R-COMBAT-007; Q-ARTY-1). Required on an
+        /// artillery type, null on any other.</summary>
+        public int? ArmsPerFire { get; set; }
     }
 
     /// <summary>One stretch of a budget line's ownership (rules.yaml budget_owners): from this day (inclusive) the office owns the line.</summary>
@@ -830,6 +953,8 @@ namespace Statecraft.Sim
     {
         public string Id { get; set; } = "";
         public string Text { get; set; } = "";
+        /// <summary>The option's text in Hebrew (#1064), under the event's text_he_review; empty when the event has none.</summary>
+        public string TextHe { get; set; } = "";
         public bool Historical { get; set; }
         public bool Recommended { get; set; }
         public List<OptionEffect> Effects { get; set; } = new List<OptionEffect>();
@@ -840,6 +965,8 @@ namespace Statecraft.Sim
         public List<UnitGrant> GrantUnits { get; set; } = new List<UnitGrant>();
         /// <summary>R-EFX-004: changes to a city's housing capacity, job slots or housing condition, in list order (D-H2, Q-HFX-1).</summary>
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
+        /// <summary>R-EFX-008: locked projects.yaml kinds this option makes available, in list order (D-H2, Q-HFX-1).</summary>
+        public List<string> UnlockProjects { get; set; } = new List<string>();
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
         /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
@@ -893,6 +1020,16 @@ namespace Statecraft.Sim
         public string Kind { get; set; } = EventKinds.Historical;
         public string Title { get; set; } = "";
         public string Text { get; set; } = "";
+        /// <summary>The title and text in Hebrew (#1064, owner on #55: all content text in Hebrew now). Both empty when the event
+        /// has no Hebrew; otherwise every option has its <see cref="EventOption.TextHe"/> too (the loader checks). The UI shows
+        /// the English wherever one is empty.</summary>
+        public string TitleHe { get; set; } = "";
+        public string TextHe { get; set; } = "";
+        /// <summary>"agent-checked" while the Hebrew text waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string TextHeReview { get => textHeReview ?? ""; set => textHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool TextHeReviewGiven => textHeReview != null;
+        string? textHeReview;
         public List<string> Tags { get; set; } = new List<string>();
         public string Anchor { get; set; } = "soft";
         public string Office { get; set; } = "";
@@ -925,6 +1062,10 @@ namespace Statecraft.Sim
         /// only while that site is being worked (R-SWAMP-002; Q-SWAMP-2). The legacy loop reads no sites and ignores it.
         /// Empty for every other event.</summary>
         public string Site { get; set; } = "";
+        /// <summary>The front (one of Prisoners.Fronts) whose prisoners this card returns (R-POW-004; Q-POW-3): it fires only
+        /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
+        /// Empty for every other event.</summary>
+        public string Prisoners { get; set; } = "";
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }
@@ -935,14 +1076,28 @@ namespace Statecraft.Sim
     public sealed class Objective
     {
         public string Id { get; set; } = "";
+        /// <summary>The objective this record is one part of. Empty for a standalone objective. Parts record and earn their
+        /// timing bonuses separately, while the parent objective's base points are paid only when its last part completes
+        /// (R-OBJ-005, R-OBJ-006).</summary>
+        public string PartOf { get; set; } = "";
         /// <summary>The name the player reads (in the Why list).</summary>
         public string Name { get; set; } = "";
+        /// <summary>The Hebrew name (#1187), an agent translation of <see cref="Name"/> while it waits for a native
+        /// speaker's review (#564); empty means none yet (the UI keeps the English).</summary>
+        public string NameHe { get; set; } = "";
+        /// <summary>"agent-checked" while <see cref="NameHe"/> waits for a native speaker's review (#564); empty once reviewed.</summary>
+        public string NameHeReview { get => nameHeReview ?? ""; set => nameHeReview = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank flag is an error, not a review.</summary>
+        [YamlIgnore] public bool NameHeReviewGiven => nameHeReview != null;
+        string? nameHeReview;
         /// <summary>What completes it, checked at the end of every GDD turn (R-OBJ-001).</summary>
         public ObjectiveCondition? CompletesWhen { get; set; }
         /// <summary>The date the real event happened: completing earlier earns the timing bonus (R-OBJ-002).</summary>
         public DateTime ReferenceDate { get; set; }
         /// <summary>The id of the card event (content/events/), which names this objective back in its `objective` key.</summary>
         public string Card { get; set; } = "";
+        /// <summary>Sources for a part's historical reference date. Required for objective parts (R-OBJ-005).</summary>
+        public List<Source> Sources { get; set; } = new List<Source>();
     }
 
     /// <summary>What completes an objective (objectives.yaml completes_when): exactly one kind.</summary>
@@ -952,6 +1107,10 @@ namespace Statecraft.Sim
         public string SiteBuilt { get; set; } = "";
         /// <summary>The cities have absorbed the immigrants (R-OBJ-004, D-B4).</summary>
         public AbsorbCondition? Absorbed { get; set; }
+        /// <summary>A corridor (corridors.yaml): complete once every segment is built (R-OBJ-005, R-COR-003).</summary>
+        public string CorridorComplete { get; set; } = "";
+        /// <summary>Designated yishuv sites (sites.yaml): complete once every listed site is built (R-OBJ-005).</summary>
+        public List<string> SitesBuilt { get; set; } = new List<string>();
     }
 
     /// <summary>R-OBJ-004 (D-B4; owner, 18 October 2026, #738, option (a)): once the Jewish population has reached
@@ -1110,10 +1269,15 @@ namespace Statecraft.Sim
         public List<CityStart> Cities = new List<CityStart>();
         /// <summary>The GDD population and unit types (unit_types.yaml). Empty in the legacy loop.</summary>
         public List<UnitType> UnitTypes = new List<UnitType>();
+        /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
+        /// of a new game is the i-th. Empty in the legacy loop.</summary>
+        public List<StartingForce> StartingForces = new List<StartingForce>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
         public List<ProjectKind> ProjectKinds = new List<ProjectKind>();
+        /// <summary>The corridors (corridors.yaml), in file order; empty in the legacy loop.</summary>
+        public List<CorridorDef> Corridors = new List<CorridorDef>();
         /// <summary>The objectives (objectives.yaml), ordered by id. Read in both loops, since their cards are events; only the
         /// GDD loop completes them. Empty when the content has no objectives.yaml.</summary>
         public List<Objective> Objectives = new List<Objective>();

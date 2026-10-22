@@ -62,7 +62,7 @@ These are the decisions made while building M3 where the spec or plan was silent
   - There is no silent id fallback.
 - **One formatting rule each for dates, money and scale.**
   - Dates read "15 May 1948" through one formatter.
-  - Money carries a unit (IL or $) from the content money list, with one sign style ("-IL 3.0m") for values and changes.
+  - Money carries a unit (IL or $) from the content money list, with one sign style for values and changes. The style was "-IL 3.0m"; since 19 October 2026 (player feedback, #1107) the sign sits next to the number: "IL -3.0m".
   - Indicators use one 0–100 display scale through one helper.
   - Vacant offices read "(vacant)".
   - Cause lines are sentence-case.

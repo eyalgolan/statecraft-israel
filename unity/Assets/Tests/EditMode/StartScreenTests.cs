@@ -252,6 +252,44 @@ public class StartScreenTests
         Assert.IsFalse(Directory.Exists(store.Directory) && Directory.GetFiles(store.Directory).Length > 0);
     }
 
+    /// <summary>#1168: the start screen's "Star on GitHub" asks to open exactly the repository, once per press (mouse or
+    /// keyboard), through the injectable opener; the screen stays open.</summary>
+    [Test]
+    public void TheStarButtonOpensTheRepositoryAndLeavesTheScreenOpen()
+    {
+        var opened = new List<string>();
+        ExternalLink.Opener = opened.Add;
+        try
+        {
+            using var rig = new Rig(TempStore());
+            var star = rig.Ui.Q<Button>("start-star");
+            Assert.AreEqual("Star on GitHub", star.text);
+            SettingsScreenTests.PressWithPointer(star);
+            CollectionAssert.AreEqual(new[] { "https://github.com/eyalgolan/statecraft-israel" }, opened, "a click");
+            rig.Ui.Press("start-star");
+            Assert.AreEqual(2, opened.Count, "Enter or Space");
+            Assert.IsTrue(rig.Start.IsOpen, "the screen stays open");
+        }
+        finally { ExternalLink.Opener = ExternalLink.Default; }
+    }
+
+    /// <summary>#1169: the start screen's "Report a bug or idea" opens the report panel over the start screen, which stays
+    /// open under it and is out of Tab's reach until the panel closes.</summary>
+    [Test]
+    public void TheReportButtonOpensThePanelOverTheScreen()
+    {
+        using var rig = new Rig(TempStore());
+        using var feedback = new FeedbackPresenter(rig.Ui.Root, null, "0.1.0 / content ab12");
+        Assert.AreEqual("Report a bug or idea", rig.Ui.Q<Button>("start-report").text);
+        rig.Ui.Press("start-report");
+        Assert.IsTrue(feedback.IsOpen);
+        Assert.IsTrue(rig.Start.IsOpen, "the start screen stays under it");
+        Assert.IsFalse(rig.Ui.Q<VisualElement>("start-screen").enabledSelf, "out of Tab's reach");
+        rig.Ui.Press("feedback-close");
+        Assert.IsTrue(rig.Ui.Q<VisualElement>("start-screen").enabledSelf);
+        Assert.IsTrue(rig.Start.IsOpen);
+    }
+
     [Test]
     public void ContinueShowsOnlyWithASaveAndLoadsIt()
     {
@@ -339,7 +377,7 @@ public class StartScreenTests
         var cont = rig.Ui.Q<Button>("start-continue");
         cont.Focus();
         Assert.AreSame(cont, rig.Ui.Root.focusController?.focusedElement, "Continue has the focus");
-        // Tab walks the screen's buttons only: Continue, New Game and the recording's button.
+        // Tab walks the screen's buttons only: Continue, New Game, the recording's button, Star on GitHub (#1168) and Report a bug or idea (#1169).
         var seen = new List<string>();
         for (int i = 0; i < 4; i++)
         {
@@ -349,7 +387,7 @@ public class StartScreenTests
             seen.Add((rig.Ui.Root.focusController.focusedElement as VisualElement)?.name ?? "none");
         }
         Assert.AreEqual("start-new-game", seen[0], "Tab moves from Continue to New Game: " + string.Join(", ", seen));
-        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
+        Assert.IsTrue(seen.All(n => n == "start-continue" || n == "start-new-game" || n == "start-listen" || n == "start-star" || n == "start-report"), "Tab stays on the screen's buttons: " + string.Join(", ", seen));
         CollectionAssert.Contains(seen, "start-listen", "Tab reaches the recording's button: " + string.Join(", ", seen));
         rig.Ui.Press("start-continue");
         yield return null; yield return null;
@@ -411,23 +449,24 @@ public class StartScreenTests
     [UnityTest]
     public IEnumerator ASaveFrom1950KeepsTheLiveHudOutOfReach()
     {
-        var g = GameSession.New(C, 9, Mode.Historical);
-        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(C, g.State));
+        var legacy = SimBridgeGddTests.Legacy;   // the live Build buttons are the legacy loop's (R-PROJ-004)
+        var g = GameSession.New(legacy, 9, Mode.Historical);
+        while (g.State.Date < new DateTime(1950, 8, 1) || g.State.PendingEvents.Count == 0) g.Step(HistoricalAI.Commands(legacy, g.State));
         var store = TempStore();
         store.WriteAutosave(g.Save.Write());
         using var ui = new RenderedUi();
-        var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+        var bridge = new SimBridge(GameStart.Begin(legacy, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
         var owned = new List<IDisposable>();
         try
         {
             ui.Root.Q("root").RemoveFromClassList("loading");
             owned.Add(new HudPresenter(ui.Root, bridge, Text));
             owned.Add(new ScreenNav(ui.Root));
-            var info = new InfoPanelPresenter(ui.Root, bridge, Text, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, legacy.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)); owned.Add(info);
             var card = new EventCardPresenter(ui.Root, bridge, Text, null); owned.Add(card);
             var toast = new ToastPresenter(ui.Root, bridge, Text); owned.Add(toast);
             var newGame = new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 5UL); owned.Add(newGame);
-            var tlv = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+            var tlv = legacy.SettlementHexes.Single(x => x.Id == "tel_aviv");
             info.Show(tlv.Q, tlv.R);
             var start = new StartScreenPresenter(ui.Root, newGame, resumed); owned.Add(start);
             start.Show();
@@ -540,7 +579,7 @@ public class StartScreenTests
                     Assert.GreaterOrEqual(panel.yMin, window.yMin + painted * 0.5f - 0.5f, $"{at}: the panel {panel} covers the painting's upper half");
                 }
                 if (h > w) Assert.IsTrue(root.Q("start-screen").ClassListContains(StartScreenPresenter.BandClass), $"{at}: a phone held upright stacks the painting over the panel");
-                var lines = new[] { "start-title", "start-he-proclamation", "start-en-proclamation", "start-he-date", "start-en-date", "start-source", "start-actions" };
+                var lines = new[] { "start-title", "start-he-proclamation", "start-en-proclamation", "start-he-date", "start-en-date", "start-source", "start-actions", "start-community" };
                 foreach (var name in lines)
                 {
                     var r = R(name);
@@ -557,6 +596,20 @@ public class StartScreenTests
                     Assert.GreaterOrEqual(r.height, 40f, $"{at}: {b} is a usable target");
                 }
                 Assert.IsFalse(R("start-continue").Overlaps(R("start-new-game")), at);
+                // #1168 review: Star on GitHub is New game's size, beside it or (in a narrow window) wrapped under it, and
+                // secondary in colour: no fill and no gold edge.
+                var star = R("start-star");
+                Assert.IsTrue(Inside(star, R("start-actions")) && Inside(star, panel), $"{at}: the Star button {star} is with New game, inside the panel");
+                var onePixel = Mathf.Max(0.5f, window.width / w + 0.01f);   // a scaled panel snaps each edge to a screen pixel
+                Assert.AreEqual(R("start-new-game").height, star.height, onePixel, $"{at}: the Star button is New game's height");
+                Assert.AreEqual(R("start-new-game").width, star.width, onePixel, $"{at}: the Star button is New game's width");
+                Assert.IsFalse(star.Overlaps(R("start-new-game")) || star.Overlaps(R("start-continue")), $"{at}: the Star button overlaps a button");
+                var starStyle = root.Q("start-star").resolvedStyle; var newGameStyle = root.Q("start-new-game").resolvedStyle;
+                Assert.AreEqual(newGameStyle.fontSize, starStyle.fontSize, $"{at}: the Star button's text is New game's size");
+                Assert.Less(starStyle.backgroundColor.a, 0.01f, $"{at}: the Star button has no fill (secondary to New game)");
+                Assert.AreNotEqual(newGameStyle.borderTopColor, starStyle.borderTopColor, $"{at}: the Star button's edge is not New game's gold");
+                Assert.IsTrue(Inside(R("start-report"), R("start-community")), $"{at}: the Report button {R("start-report")} is in its row");   // #1169
+                Assert.IsFalse(R("start-report").Overlaps(star), at);
             }
             finally
             {
@@ -564,6 +617,54 @@ public class StartScreenTests
                 Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
             }
         }
+    }
+
+    /// <summary>tools/web_check.py clicks the screen's buttons where ?navlog says they are (--startscreen, --persistence):
+    /// the NAV line names every shown button (Continue only with a save; the recording's button once its row shows), each
+    /// at its own centre to half a pixel as a fraction of the window; the last line logged is the current layout; and
+    /// without ?navlog nothing is logged.</summary>
+    [UnityTest]
+    public IEnumerator UnderNavlogItLogsWhereEachShownButtonIs()
+    {
+        var wasNav = DiagLog.Nav;
+        var logged = new List<string>();
+        void Capture(string message, string trace, LogType type) { if (message.Contains(" start buttons ")) logged.Add(message); }
+        Application.logMessageReceived += Capture;
+        try
+        {
+            foreach (var save in new[] { false, true })
+            {
+                DiagLog.Nav = true; logged.Clear();
+                using var rig = new Rig(save ? WithSave(TempStore(), 1) : TempStore());
+                for (int i = 0; i < 6; i++) yield return null;
+                var line = rig.Start.ButtonCentres();
+                Assert.IsNotNull(line, $"save={save}: the screen is laid out");
+                Assert.IsNotEmpty(logged, $"save={save}: a NAV line is logged");
+                StringAssert.IsMatch(@"^NAV f=\d+ t=\d+ start buttons ", logged[^1]);
+                Assert.AreEqual(line, logged[^1].Substring(logged[^1].IndexOf("start buttons ", StringComparison.Ordinal)), "the last line is the current layout");
+                var window = rig.Ui.Root.panel.visualTree.worldBound;
+                var centres = Regex.Matches(line!, @"(\S+)=([0-9.]+),([0-9.]+)").Cast<Match>().ToDictionary(m => m.Groups[1].Value,
+                    m => new Vector2(window.xMin + window.width * float.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
+                                     window.yMin + window.height * float.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture)));
+                var shown = save ? StartScreenPresenter.Buttons : StartScreenPresenter.Buttons.Where(b => b != "start-continue").ToArray();
+                CollectionAssert.AreEqual(shown, centres.Keys, $"save={save}: {line}");
+                foreach (var (name, at) in centres.Select(kv => (kv.Key, kv.Value)))
+                {
+                    var r = rig.Ui.Q<Button>(name).worldBound;
+                    Assert.AreEqual(r.center.x, at.x, 0.5f, $"save={save}: {name} x ({r})");
+                    Assert.AreEqual(r.center.y, at.y, 0.5f, $"save={save}: {name} y ({r})");
+                    Assert.IsTrue(r.Contains(at) && window.Contains(at), $"save={save}: {name}'s centre {at} is on it and in the window");
+                }
+            }
+            DiagLog.Nav = false; logged.Clear();
+            using (var quiet = new Rig(TempStore()))
+            {
+                for (int i = 0; i < 6; i++) yield return null;
+                Assert.IsNotNull(quiet.Start.ButtonCentres(), "precondition: laid out");
+                Assert.IsEmpty(logged, "without ?navlog nothing is logged");
+            }
+        }
+        finally { Application.logMessageReceived -= Capture; DiagLog.Nav = wasNav; }
     }
 
     // --- The scene ---------------------------------------------------------------------------------------------------

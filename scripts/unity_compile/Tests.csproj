@@ -7,7 +7,7 @@
   <ItemGroup>
     <Reference Include="$(Editor)/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/*.dll" Private="false" />
     <Reference Include="$(Editor)/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/Facades/*.dll" Private="false" />
-    <Reference Include="$(Lib)/ScriptAssemblies/UnityEngine.TestRunner.dll;$(Lib)/ScriptAssemblies/UnityEditor.TestRunner.dll" Private="false" />
+    <Reference Include="$(Lib)/ScriptAssemblies/UnityEngine.TestRunner.dll;$(Lib)/ScriptAssemblies/UnityEditor.TestRunner.dll;$(Lib)/ScriptAssemblies/Unity.InputSystem.TestFramework.dll" Private="false" />
     <Reference Include="$(Lib)/PackageCache/com.unity.ext.nunit@*/net40/unity-custom/nunit.framework.dll" Private="false" />
     <ProjectReference Include="Game.csproj" />
     <Compile Include="$(Src)/Assets/Tests/EditMode/**/*.cs" />

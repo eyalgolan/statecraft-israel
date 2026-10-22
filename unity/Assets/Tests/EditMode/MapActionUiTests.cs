@@ -14,7 +14,8 @@ using UnityEngine.UIElements;
 
 public class MapActionUiTests
 {
-    static readonly Content C = ContentLoader.Load(Paths.Content);
+    // The legacy loop: the GDD loop refuses every map action and offers no Build button (R-PROJ-004).
+    static readonly Content C = SimBridgeGddTests.Legacy;
     static readonly HexFile Hexes = MapBuilder.LoadHexes(Path.Combine(Paths.Content, "map", "hexes.json"));
     static readonly System.Collections.Generic.List<Settlement> Towns =
         SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName)));
@@ -57,7 +58,7 @@ public class MapActionUiTests
     {
         using var ui = new UiTestKit();
         var info = Panel(ui, At(new DateTime(1949, 6, 1)));
-        Assert.AreEqual("Click the map to inspect a hex", ui.Q<Label>("info-title").text);
+        Assert.AreEqual(Text["info.hint"], ui.Q<Label>("info-title").text);
         var tlv = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
         info.Show(tlv.Q, tlv.R);
         Assert.AreEqual("Tel Aviv", ui.Q<Label>("info-title").text);
@@ -186,6 +187,46 @@ public class MapActionUiTests
             var expected = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
             Assert.AreEqual(expected.x, box.position.x, 1f); Assert.AreEqual(expected.z, box.position.z, 1f);
             Assert.AreEqual((tlv.Q, tlv.R), MapPointer.Pick(map, box.position));
+        }
+        finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
+    }
+
+    // #1123: a built city project is drawn on its recorded hex as its kind's placement; one still being built, and a kind
+    // with no approved art (industry), are not; the legacy placements are drawn as before.
+    [Test]
+    public void BuiltCityProjectsAreDrawnOnTheirHexes()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        try
+        {
+            new GameObject("TestMainCamera") { tag = "MainCamera" }.AddComponent<Camera>();
+            var map = new GameObject("MapScene").AddComponent<MapScene>();
+            map.Configure(AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Terrain.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SettlementMarker.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/HexSelection.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Sea.mat"),
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/MapFrame.mat"));
+            map.Build();
+            var layer = new GameObject("Placements").AddComponent<PlacementLayer>();
+            var hexes = C.SettlementHexes.Select(s => (s.Id, s.Q, s.R)).GroupBy(h => (h.Q, h.R)).Select(g => g.First()).Take(5).ToList();
+            var built = new DateTime(1950, 9, 30);
+            var legacy = new[] { new Placement(MapActions.Housing, hexes[0].Q, hexes[0].R, new DateTime(1950, 8, 26)) };
+            var projects = new[]
+            {
+                new CityProject(1, MapActions.Housing, hexes[1].Id, hexes[1].Q, hexes[1].R, 0, built),
+                new CityProject(2, MapActions.TransitCamp, hexes[2].Id, hexes[2].Q, hexes[2].R, 0, built),
+                new CityProject(3, MapActions.Housing, hexes[3].Id, hexes[3].Q, hexes[3].R, 4),           // being built
+                new CityProject(4, "industry", hexes[4].Id, hexes[4].Q, hexes[4].R, 0, built),            // no approved art
+            };
+            CollectionAssert.AreEqual(legacy, PlacementLayer.Drawn(legacy, new CityProject[0]), "no projects: the placements as they are");
+            layer.Render(PlacementLayer.Drawn(legacy, projects), C, map);
+            CollectionAssert.AreEquivalent(new[]
+            {
+                $"housing_{hexes[0].Q}_{hexes[0].R}", $"housing_{hexes[1].Q}_{hexes[1].R}", $"transit_camp_{hexes[2].Q}_{hexes[2].R}",
+            }, layer.transform.Cast<Transform>().Select(t => t.name).ToList());
+            var box = layer.transform.Cast<Transform>().Single(t => t.name == $"housing_{hexes[1].Q}_{hexes[1].R}");
+            Assert.AreEqual((hexes[1].Q, hexes[1].R), MapPointer.Pick(map, box.position), "drawn on the project's recorded hex");
+            Assert.AreEqual(built, PlacementLayer.Drawn(legacy, projects)[1].Date, "dated the day it was built");
         }
         finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
     }
@@ -438,12 +479,34 @@ public class MapActionUiTests
         Assert.AreEqual(0, clicks);
     }
 
+    /// <summary>R-PROJ-004: the GDD game (the real content) offers no legacy Build button and no map-action reason, before
+    /// 1950 or after it: the sim refuses every map action there, and city projects replace them.</summary>
+    [Test]
+    public void TheGddLoopShowsNoMapActionButtons()
+    {
+        var gdd = ContentLoader.Load(Paths.Content);
+        Assert.IsTrue(gdd.IsGdd);
+        var g = GameSession.New(gdd, GoldenRun.Seed, Mode.Historical);
+        using var ui = new UiTestKit();
+        var info = new InfoPanelPresenter(ui.Root, new SimBridge(g, Text), Text, Towns.ToDictionary(t => t.Id, t => t.Name));
+        var tlv = gdd.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        foreach (var date in new[] { new DateTime(1949, 6, 1), new DateTime(1950, 8, 1) })
+        {
+            while (g.State.Date < date) g.Step(HistoricalAI.Commands(gdd, g.State));
+            info.Show(tlv.Q, tlv.R);
+            foreach (var b in new[] { "build-camp", "build-housing" })
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Button>(b).style.display.value, $"{b} on {date:yyyy-MM-dd}");
+            Assert.AreEqual("", ui.Q<Label>("info-reason").text, $"no map-action reason on {date:yyyy-MM-dd}");
+        }
+        info.Dispose();
+    }
+
     /// <summary>eras.yaml systems.map_actions (#58): an action the era does not allow has no button and no reason; with
     /// both allowed both show. Played on a copy of the content, switching the list between renders.</summary>
     [Test]
     public void OnlyTheErasMapActionsHaveButtons()
     {
-        var c = ContentLoader.Load(Paths.Content);
+        var c = SimBridgeGddTests.LoadLegacy();
         var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
         while (g.State.Date < new DateTime(1950, 8, 1)) g.Step(HistoricalAI.Commands(c, g.State));
         using var ui = new UiTestKit();
