@@ -248,12 +248,12 @@ namespace Statecraft.Game.UI
                 if (key == "move") showUnit?.Invoke(); else showCity?.Invoke();
             }
             // The panel is placed once this frame's layout has run (the city or unit just shown has its size only then), and
-            // hidden until then, so it never shows for a frame in the half its target is about to take (steps 2 and 3).
+            // transparent until then, so it never shows for a frame in the half its target is about to take (steps 2 and 3).
             shownFrame = Frame();
             if (shownFrame < 0) Place();   // EditMode: laid out on demand
             else
             {
-                dock.style.visibility = Visibility.Hidden;
+                dock.style.opacity = 0f;   // transparent, not hidden: a hidden Next could not take the focus below
                 ring.style.display = DisplayStyle.None;   // nor the ring round the last step's target
                 layer.schedule.Execute(PlaceWhenLaidOut);
             }
@@ -319,7 +319,7 @@ namespace Statecraft.Game.UI
             if (!IsOpen) return;
             if (shownFrame >= 0 && Frame() == shownFrame) return;   // not before the step's layout (PlaceWhenLaidOut)
             shownFrame = -1;
-            dock.style.visibility = StyleKeyword.Null;
+            dock.style.opacity = StyleKeyword.Null;
             ApplyTextFloor();
             var area = TargetArea();
             ring.style.display = area == null ? DisplayStyle.None : DisplayStyle.Flex;
