@@ -15,18 +15,20 @@ If you're unsure where to start, open an issue first and describe what you want 
 
 ## Licence of your contribution
 
-There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed under this repository's licences, as GitHub's Terms of Service (section D.6) also say:
+There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed as follows:
 
-- code under [MIT](LICENSE);
+- **code:** to the project maintainer, Eyal Golan, under [MIT](LICENSES/MIT.txt), which lets him give permission for commercial use; everyone else gets it with the rest of the code, under [PolyForm Noncommercial 1.0.0](LICENSE);
 - `content/` under [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt);
 - other original material under [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 
+For `content/` and the other original material this is "inbound = outbound", as GitHub's Terms of Service (section D.6) also say. For code it is not: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0 (the owner's decision of 22 October 2026). This wording is the owner's choice, not legal advice, and it should be checked by a lawyer.
+
 [LICENSING.md](LICENSING.md) lists which licence covers each path. Only contribute work you have the right to license this way. If you add a third-party file, include its source and licence. Material from the Unity Asset Store is never accepted.
 
-**The licence line in the pull request.** The template's last box, "I contribute this under the repository's licences for the paths it changes", is asked of everyone; please tick it.
+**The licence line in the pull request.** The template's last box, "I contribute this under the terms in `CONTRIBUTING.md`", is asked of everyone; please tick it.
 
-- **Code or docs only:** the maintainer may merge without the tick, relying on GitHub's Terms of Service, section D.6 ("inbound = outbound"). That means every changed path is in `sim/`, `tools/`, `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/` or `promo/*.py` (code, MIT), or is one of the other `unity/Assets/` files (UI text and layout such as `strings.*.yaml`, `*.uxml` and `*.uss`, materials, shaders, `.meta` files, prefabs, scenes, `.asset` files and `WebGLTemplates/`) outside `Settings/`, `StreamingAssets/`, `UI/Fonts/` and `UI/Portraits/` and other than a Shader Graph, or in `docs/` (except `docs/sources/`), `research_notes/`, `reports/`, `changelog.d/` or a root `*.md` file other than `LICENSING.md` and `THIRD-PARTY-NOTICES.md` (docs). No image, audio, video, 3D model, font, PDF or other binary file anywhere.
-- **Everything else needs the tick:** `content/`, `ASSETS.yaml`, the licence and notice files, art, audio, video, models, fonts, `unity/Assets/Settings/`, `unity/Assets/StreamingAssets/`, `unity/Assets/UI/Fonts/`, `unity/Assets/UI/Portraits/`, Shader Graphs, `site/`, `spikes/`, `unity/Packages/`, `unity/ProjectSettings/` and any other path. A pull request that mixes the two needs it too.
+- **Docs only:** the maintainer may merge without the tick, relying on GitHub's Terms of Service, section D.6 ("inbound = outbound"). That means every changed path is in `docs/` (except `docs/sources/`), `research_notes/`, `reports/`, `changelog.d/` or a root `*.md` file other than `LICENSING.md` and `THIRD-PARTY-NOTICES.md`, or is one of the UI text and layout files of the CC BY 4.0 row: `unity/Assets/UI/*.uxml`, `*.uss` and `strings.en.yaml`. No image, audio, video, 3D model, font, PDF or other binary file anywhere.
+- **Everything else needs the tick, code included:** code comes in under MIT to the maintainer, which is not the licence it goes out under, so GitHub's terms do not cover it. That means `sim/`, `tools/`, `scripts/`, `.github/`, `.gitignore`, `promo/*.py` and every `unity/Assets/` file of the code row (scripts, tests, scenes, prefabs, `.meta` files, `strings.he.yaml`, `WebGLTemplates/` and the rest), as well as `content/`, `ASSETS.yaml`, the licence and notice files, art, audio, video, models, fonts, materials, shaders, `.asset` files, `unity/Assets/Settings/`, `unity/Assets/StreamingAssets/`, `unity/Assets/UI/Fonts/`, `unity/Assets/UI/Portraits/`, Shader Graphs, `site/`, `spikes/`, `unity/Packages/`, `unity/ProjectSettings/` and any other path. A pull request that mixes the two needs it too.
 
 These are the owner's decisions of 22 October 2026 (D2 in [docs/oss/DECISIONS.md](docs/oss/DECISIONS.md)).
 
