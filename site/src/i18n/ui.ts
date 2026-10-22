@@ -12,6 +12,13 @@ export type Page = (typeof pages)[number];
 
 const en = {
   'site.name': 'Statecraft: Israel',
+  'share.label': 'Share this game',
+  'share.native': 'Share',
+  'share.copy': 'Copy link',
+  'share.copied': 'Link copied.',
+  'share.unavailable': 'Sharing is unavailable. Use Copy link instead.',
+  'share.manual': 'Copy this link manually.',
+  'share.url': 'Page link',
   'site.tagline': 'A turn-based strategy game about governing Israel from 15 May 1948. Open source, with a source for every historical fact.',
   'lang.other': 'עברית',
   'lang.other.label': 'Hebrew version of this page',
@@ -74,6 +81,13 @@ type Dict = Record<keyof typeof en, string>;
 
 const he: Dict = {
   'site.name': 'Statecraft: Israel',
+  'share.label': 'שיתוף המשחק',
+  'share.native': 'שיתוף',
+  'share.copy': 'העתקת קישור',
+  'share.copied': 'הקישור הועתק.',
+  'share.unavailable': 'השיתוף אינו זמין. השתמשו בהעתקת קישור.',
+  'share.manual': 'העתיקו את הקישור ידנית.',
+  'share.url': 'קישור לעמוד',
   'site.tagline': 'משחק אסטרטגיה מבוסס־תורות על ניהול מדינת ישראל מ־15 במאי 1948. קוד פתוח, ולכל עובדה היסטורית יש מקור.',
   'lang.other': 'English',
   'lang.other.label': 'הגרסה האנגלית של העמוד',
