@@ -1,0 +1,107 @@
+# The opening cutscene (GDD Phase 7 PR 10, #530): three still panels after New Game, one per origin, each a short
+# sourced paragraph and an archival photograph in the event-card frame, then a closing line (owner, #784: Q-OPEN-1 and
+# Q-OPEN-2 on 17 Oct 2026; Q-OPEN-3 (a), Q-OPEN-4 (b) and Q-OPEN-5 (c) on 18 Oct 2026, "Accept the drafts").
+# Like event-images.yaml, this file is for the Unity UI only. It is NOT game content: it reads and changes no sim state,
+# so it stays out of content/ and the content hash (plan, PR 10 "Files": "a sourced YAML file under unity/Assets/UI/").
+#
+# STATUS: AI DRAFT. Claude gathered every line below from the sources listed with it; no person has checked them yet,
+# so no source carries a `checked:` date and the file's status is `draft` (docs/CONTENT_POLICY.md section 2, rules 1
+# and 6). Before anything here is shown to a player:
+#   1. a person opens every source and confirms it supports its sentence, then adds `checked: <day>` to that source;
+#   2. the owner does the sensitivity review of the texts and the three photographs (sensitivity_reviewed stays false
+#      until then; each photograph's ASSETS.yaml row is owner-verify, which the release gate refuses).
+# The presenter, the en/he strings and the EditMode tests are slice B of #530; the Hebrew goes to the #564 review once
+# the English is approved.
+#
+# Photographs: made with tools/event_images.py's own grade() and encode() (the same crop, 16:9 resize, levels and
+# navy-sepia tone as the event cards; nothing else changed). Its main() reads only event-images.yaml, whose rows must
+# be content events, so the three rows live here instead. Originals fetched from each row's `original` URL; SHA-1 and
+# size match the Commons API. Licence, artist and credit line read from each Commons file page (licence template
+# {{Cc-by-4.0}} and the Meitar credit-line template) via the Commons API on 2026-10-19 by Claude, not by a person.
+status: draft
+panels:
+  - id: europe
+    title: Europe
+    text: "After the Holocaust, at the start of 1947, about 210,000 Jews were living as displaced persons, most of them in the American zone of Germany. Britain deported Jews who came to the Land of Israel against its immigration limits to detention camps on Cyprus; from August 1946 to February 1949, about 53,000 passed through them. Once the state was founded, about two-thirds of the displaced persons went to Israel."
+    # No arrivals figure: CBS counts by country of birth and has no displaced-persons or Cyprus category, so a Europe
+    # number would not mean "survivors" (#784 draft, Q-OPEN-5).
+    arrivals: []
+    sources:
+      - url: "https://www.yadvashem.org/articles/general/displaced-persons-camps.html"
+        supports: "'at the beginning of 1947 the number of Jewish displaced persons stabilized at around 210,000. Most of them - about 175,000 - were in Germany in the American zone'; 'With the establishment of the State of Israel about two-thirds of the DPs emigrated to Israel'"
+      - url: "https://portal.ehri-project.eu/units/us-005544-cyp_45_49"
+        supports: "JDC Cyprus collection: 'the British government began deporting Jews who came to Palestine in violation of the White Paper of 1939 to the island of Cyprus. From August 1946 to February 1949, the deportees ... lived behind barbed wire in 12 detention camps. During this period, approximately 53,000 Jews passed through the camps'"
+    image:
+      file: opening_europe.jpg
+      commons: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
+      original: "https://upload.wikimedia.org/wikipedia/commons/d/da/Cyprus_%28997008136325305171%29.jpg"
+      sha1: 1e7a4adec5a2b2213adff7d36eea158b1b2eb79c
+      original_size: [936, 649]
+      licence: CC-BY-4.0
+      artist: "Benno Rothenberg"
+      credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+      alt: "Jewish detainees with their bundles and crates in front of the huts of a detention camp on Cyprus, February 1949."
+      crop: [0.505, 0.56, 0.98]
+      sensitive: true
+      sensitivity_reviewed: false
+      note: "Commons title 'מחנות המעצר בקפריסין' (the detention camps in Cyprus), dated February 1949, the last months of the camps, not 1946-47. About 15 identifiable adults, posed, no distress shown. Commons also files it under 'Meitar Collection (review needed)': a person should confirm the NLI record (digital ID 997008136325305171) before it ships. Alternate: Cyprus_(997008136324405171).jpg (the queue at the wire gate)."
+  - id: arab_countries
+    title: The Arab countries
+    text: "In 1948 more than 135,000 Jews lived in Iraq. In March 1950 Iraq allowed them to leave only if they gave up their citizenship, and in March 1951 it froze the assets of those who had. The airlift, Operation Ezra and Nehemiah, began in May 1950, and by January 1952 some 120,000 Iraqi Jews had come to Israel. From Morocco, Libya, Egypt, Tunisia and other Arab lands, tens of thousands more came in the same years."
+    # CBS Publication 1365, Table 5, column "15 V 1948 - 1951", by country of birth.
+    arrivals:
+      - { country: Iraq, count: 123371 }
+      - { country: Morocco, count: 28263 }
+    sources:
+      - url: "https://israeled.org/airlift-iraqi-jews-begins/"
+        supports: "Center for Israel Education: 'In 1948, Iraq had more than 135,000 Jews'; 19 May 1950, 'The first two flights of Operation Ezra and Nehemiah ... leave Baghdad'; 'the first of some 120,000 Jews who make aliyah by January 1952 after the Iraqi government makes a temporary change in the law to allow Jews to emigrate, as long as they renounce their Iraqi citizenship'"
+      - url: "https://en.wikipedia.org/w/index.php?title=Operation_Ezra_and_Nehemiah&oldid=1377092685"
+        supports: "'In March 1950, the Iraqi government ... passed a special bill of one-year duration permitting Jewish emigration on condition that Jews renounce their Iraqi citizenship' (the exact day of the law differs between sources, so the text gives only the month); 'On 10 March 1951 ... the government enacted a new law which extended the emigration period whilst also blocking the assets of Jews who had given up their citizenship' (the same page, citing Meir-Glitzenstein 2004, p. 206; a secondary source, the law's own name and text not seen by Claude, so a person should check it against the primary law or a scholarly source)"
+      - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
+        supports: "Table 5 (printed pages 38-39), column 15 V 1948 - 1951: Iraq 123,371; Morocco 28,263; Libya 30,972; Egypt, Sudan 16,028; Tunisia 13,293; Algeria 3,810 (the 'tens of thousands more' line)"
+    image:
+      file: opening_arab_countries.jpg
+      commons: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
+      original: "https://upload.wikimedia.org/wikipedia/commons/6/60/Ben_Gurion_International_Airport_%28997008136550505171%29.jpg"
+      sha1: 15d3f27e3e1fe214cb470dffa84fdf0bbec1aae4
+      original_size: [1914, 1346]
+      licence: CC-BY-4.0
+      artist: "Benno Rothenberg"
+      credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+      alt: "Immigrants from Iraq carry blankets and bundles away from the plane that brought them to Lydda airport, April 1951."
+      crop: [0.495, 0.58, 0.99]
+      sensitive: true
+      sensitivity_reviewed: false
+      note: "Commons title 'עולים מעירק מגיעים לארץ' (immigrants from Iraq arrive in the country), April 1951. It shows arrival, not departure. Three identifiable men in front. Not from the DDT-spraying frames of the same series. Alternate: Ben_Gurion_International_Airport_(997008136549705171).jpg (a family off a Near East Air Transport plane; children prominent)."
+  - id: yemen
+    title: Yemen
+    text: "In 1949 the ruler of Yemen let its Jews leave. Operation On Wings of Eagles, known as Magic Carpet, flew them from British-ruled Aden to Israel, with the American Jewish Joint Distribution Committee. When the last two planes landed at Lydda on 24 September 1950, about 49,000 Yemenite Jews had been flown to Israel (the operation's own count, from its start in December 1948). The CBS table counts 48,315 people born in Yemen or Aden who arrived from 15 May 1948 through 1951."
+    # CBS counts Aden with Yemen (Table 5, note 7).
+    arrivals:
+      - { country: "Yemen, including the former Aden", count: 48315 }
+    sources:
+      - url: "https://en.wikipedia.org/w/index.php?title=Operation_Magic_Carpet_(Yemen)&oldid=1374658937"
+        supports: "'Operation Magic Carpet is the widely known nickname for Operation On Wings of Eagles ... conducted by Israel between 16 December 1948 and 24 September 1950 to take in approximately 49,000 Yemenite Jews'; 'In 1949, Ahmad reversed the long-standing ban on emigration and allowed the Jews of Yemen to leave'; flights 'from Aden Colony'; 'the Joint Distribution Committee took over the task of moving them out of Aden by air'; 'The operation ended on 24 September 1950, when the last two aircraft reached Lydda Airport'"
+      - url: "https://www.jta.org/archive/j-d-c-s-operation-magic-carpet-ends-as-last-yemenite-jews-land-at-israel-airport"
+        supports: "JTA, 25 September 1950: 'The Joint Distribution Committee's historic Operation Magic Carpet is scheduled to come to an end tonight with the landing of the last two plane-loads ... flown from Aden'; 'After the last planes land at Lydda airport'"
+      - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
+        supports: "Table 5, column 15 V 1948 - 1951: Yemen (7) 48,315; note 7, 'Incl. the former Aden'"
+    image:
+      file: opening_yemen.jpg
+      commons: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"
+      original: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Aden_%28997008136749905171%29.jpg"
+      sha1: 661307d44f6144e97b1925a366053a636f52afff
+      original_size: [1305, 1281]
+      licence: CC-BY-4.0
+      artist: "Benno Rothenberg"
+      credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives · CC BY 4.0 · graded and cropped"
+      alt: "Yemenite Jewish immigrants wait with their bundles in the shade of a four-engined plane at Aden airport, May 1950."
+      crop: [0.47, 0.6, 0.94]
+      sensitive: true
+      sensitivity_reviewed: false
+      note: "Commons title 'הטיסה חזרה מעדן, תימן במהלך מבצע \"מרבד הקסמים\"' (the flight back from Aden, Yemen, during Operation Magic Carpet), 12-28 May 1950; Commons identifies the plane as Douglas C-54 NC67548. No identifiable faces. The square original is cropped to 16:9 (sky and foreground trimmed, the car at the right edge cut). Its Commons credit line adds 'Israel State Archives' (template 'Meitar Collection/credit line2'), so the credit here does too; a person should confirm that is not a GPO photograph (CONTENT_POLICY section 4 refuses GPO). Alternate: Aden_(997008137190505171.jpg (stairs to the plane)."
+closing:
+  text: "Between 15 May 1948 and the end of 1951, 687,624 immigrants arrived. You start on 15 May 1948."
+  sources:
+    - url: "https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf"
+      supports: "Table 5, GRAND TOTAL, column 15 V 1948 - 1951: 687,624 (the same total as the four rows of content/aliyah.yaml)"
