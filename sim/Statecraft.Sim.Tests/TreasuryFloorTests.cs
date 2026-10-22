@@ -21,7 +21,9 @@ public class TreasuryFloorTests
             Assert.True(s.Treasury >= 0, $"turn {s.Turn} ({s.Date:yyyy-MM-dd}): Treasury {s.Treasury}");
             if (firstDebt == null && s.Debt > 0) firstDebt = s.Turn;
         }
-        Assert.Equal(4, firstDebt);   // 15 September 1948: the HUD's "IL -1.5m" is 0 cash and IL 1.5m debt
+        // 15 October 1948: 0 cash and IL 5.4m debt. It was turn 4 (15 September, IL 1.5m) while HistoricalAI's call-up order
+        // sent the reserves home a turn after the first truce; the GDD loop now lowers the call-up with the rung (R-WAR-002).
+        Assert.Equal(5, firstDebt);
     }
 
     // R-MONEY-003: an event's cost is a payment like any other. With IL 0.4m in the Treasury, the IL 1m claim on Germany

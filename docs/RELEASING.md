@@ -28,10 +28,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    golden_expect=(); while read -r name hash; do [[ -z "$name" || "$name" == \#* ]] || golden_expect+=(--expect "GOLDEN OK $name $hash"); done < sim/Statecraft.Sim.Tests/golden/manifest.txt
-   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 d14a4899a1e068bf238f84f4e8fe06270b5164b2c6ba62f2fef399fd7eaada8e"
-   # and "GOLDEN OK hash1952 3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85"
+   # one GOLDEN OK line per manifest golden (#394), e.g. "GOLDEN OK hash1950 f70d7cc2d9438c3b0859a957842fae9a456198d1a1160f962b61fec5b28af0df"
+   # and "GOLDEN OK hash1952 ca78893d57bd7235dd923f29b611e0c12e99d702312c24b5bfc72ac82b3d14bf"
    uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755"
+     --expect "SMOKE OK 5 turns 1948-10-15 71a4cef0f81439c475e5e8a4e36bea9296f14287bc894cbc90efc4d2714348d1"
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-gzip --startscreen new --query lang=he --timeout 300 --stall 90
@@ -61,7 +61,7 @@ macOS IL2CPP parity check is not an MVP release gate.
    "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -decompressionFallback -shareable -out Builds/Web-pages -logFile "$PWD/unity-build-web-pages.log"
    git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset
    uv run tools/web_check.py unity/Builds/Web-pages --query "golden&smoke=5" "${golden_expect[@]}" \
-     --expect "SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755"
+     --expect "SMOKE OK 5 turns 1948-10-15 71a4cef0f81439c475e5e8a4e36bea9296f14287bc894cbc90efc4d2714348d1"
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen recording --timeout 300 --stall 90
    uv run tools/web_check.py unity/Builds/Web-pages --startscreen new --query lang=he --timeout 300 --stall 90
