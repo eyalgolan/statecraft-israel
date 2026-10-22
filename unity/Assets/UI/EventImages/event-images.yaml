@@ -368,5 +368,19 @@ images:
     alt: "The opening of the Road of Valour, December 1948."
     crop: [0.5, 0.5, 1.0]
     sensitive: true
+    sensitivity_reviewed: true
+    note: "Owner-selected original (#791, 18 October 2026); the ceremony also commemorated the fallen. Owner sign-off, 21 October 2026 (coordinator session): the photograph from #1226 is approved. Original SHA-1 and Commons credit/licence verified 21 October 2026; VRTS ticket 2021092910005788."
+  - event: absorb_immigrants
+    file: absorb_immigrants.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Haifa_(997008136781905171).jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/0/06/Haifa_%28997008136781905171%29.jpg"
+    sha1: d36e8aaecf1122c11d7b07d9ab33e96ad187133a
+    original_size: [1281, 1273]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "New immigrants from Romania come down a ship's gangway at Haifa port, June 1951."
+    crop: [0.5, 0.5, 1.0]
+    sensitive: false
     sensitivity_reviewed: false
-    note: "Owner-selected original (#791, 18 October 2026); the ceremony also commemorated the fallen. Sensitivity review remains pending. Original SHA-1 and Commons credit/licence verified 21 October 2026; VRTS ticket 2021092910005788."
+    note: "The objective card absorb_immigrants (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). NLI title 'עולים מטרנסילבניה רומניה מגיעים באוניה לנמל חיפה' (immigrants from Transylvania, Romania, arrive by ship at Haifa port), description 'עולים חדשים יורדים מכבש הספינה' (new immigrants come down the ship's gangway), taken 25 June 1951; NLI archive ARC. 4* 2068 / 6027. A generic arrival, not the card's own date (the card is December 1949). Unnamed adults on the gangway and men in uniform caps at its foot; no child, nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-21. Owner sign-off, 21 October 2026 (coordinator session): approved for the objective 2 card (#1268). Not a sensitive picture, so sensitivity_reviewed stays false (docs/event-images.md: only the sensitive pictures need that flag)."

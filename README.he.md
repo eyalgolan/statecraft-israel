@@ -57,7 +57,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 ## מה המצב היום?
 
-***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.1.3](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.3), גרסת טרום־הפצה); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
+***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.1.4](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.1.4), גרסת טרום־הפצה); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
 
 מסמך התכנון המחייב הוא עכשיו [<span dir="ltr">docs/GDD.md</span>](docs/GDD.md) (גרסה 0.2, 17 באוקטובר 2026, באנגלית): תורות של חודש, שבהם בונים ומגינים על ישראל בשנים 1948 עד 1951 בעזרת יחידות, ערים ובנייה, ובוחרים שרים. המשחק שאפשר לשחק היום הוא המשחק שמתואר למעלה. התורות החודשיים, תשומת הלב, הערים והאימון כבר בפנים; יחידות בפיקודכם, קרב ושליטה ביישובים עוד לא ניתנים למשחק, ו[תוכנית הבנייה](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) מכניסה אותו בשלבים.
 
@@ -87,7 +87,7 @@ flowchart RL
 | 0 | החלטות הבעלים בסעיפים הפתוחים ב־GDD | בתהליך: ההחלטות של שלב 1 התקבלו | [#375](https://github.com/eyalgolan/statecraft-israel/issues/375) |
 | 1 | פרוסה ראשונה מאחורי מתג: עיר אחת (תל אביב), אימון, יישוב חדש אחד וכרטיס יעד אחד | הושלם: 8 מתוך 8 PRs מוזגו | [#374](https://github.com/eyalgolan/statecraft-israel/issues/374) |
 | 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | בתהליך: הכול מלבד הסרגל העליון של חמשת המשאבים | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
-| 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | בתהליך: 5 מתוך 8 PRs מוזגו | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
+| 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | הושלם: 8 מתוך 8 PRs מוזגו | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בתהליך: 5 מתוך 8 PRs מוזגו | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
 | 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 4 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
 | 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בתהליך: 2 מתוך 12 PRs מוזגו | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |

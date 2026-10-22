@@ -202,9 +202,9 @@ public class EventVideoTests
         CollectionAssert.AreEqual(new[] { "operation_yoav", "ten_days", "altalena", "operation_horev" }, Rows.Where(x => x.SensitivityReviewed).Select(x => x.Event).ToArray(),
             "the owner's reviews of 2026-10-14 and 2026-10-20, and nothing else");
         CollectionAssert.IsEmpty(EventVideoMapping.SensitiveUnreviewed(Rows));
-        // Isolate the clip gate from draft event reviews; never change the shipped content or shared C.
-        StringAssert.Contains("burma_road_complete", (string?)gate.Invoke(null,
-            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, Rows }));
+        // Isolate the clip gate from the other content gates (the starting forces' rows); never change the shipped content or shared C.
+        StringAssert.DoesNotContain("illustration clips", (string?)gate.Invoke(null,
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, Rows }) ?? "");
         var reviewedContent = BuildGateTests.Checked();
         foreach (var e in reviewedContent.Events)
             if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;

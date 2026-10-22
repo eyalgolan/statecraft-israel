@@ -62,6 +62,7 @@ public class DesignValuesTests
         ("rules.yaml", "attention_cost.unit_order"),     // R-ORDER-001, #746 (D-A6)
         ("rules.yaml", "mvp.delegation_loyalty_floor"),   // R-EVT-003, #107
         ("rules.yaml", "mvp.disloyal_effect_share"),
+        ("rules.yaml", "mvp.enemy_attack_ratio_percent"),   // R-ENEMY-003, #749 (Q-ENEMY-2)
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
         // housing is its start people and its job slots its start employed; seven towns with no CBS working share take
         // the national one. The census people and the five CBS shares are sourced, not design values (R-CITY-006).
@@ -169,6 +170,7 @@ public class DesignValuesTests
         ("unit_types.yaml", "types[arab_liberation_army].movement_points"),   // #743, owner, 20 October 2026
         // The national Arms pool (Phase 2 PR 3b; #781, owner 18 October 2026: "Approve as drafted").
         ("rules.yaml", "attention_cost.buy_arms"),
+        ("rules.yaml", "attention_cost.resolve_capture"),   // #797 (Q-TECH-3): proposed, for owner override
         ("rules.yaml", "mvp.arms_start"),
         ("rules.yaml", "mvp.arms_price"),
         ("rules.yaml", "mvp.arms_per_recruit_group"),

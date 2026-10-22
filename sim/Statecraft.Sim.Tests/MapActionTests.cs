@@ -106,6 +106,7 @@ public class MapActionTests
         Assert.Equal("gdd_loop", reason!.Kind);
         Assert.Empty(reason.Values);
         Assert.Equal("Map actions are not part of this game: start a city project instead", reason.Text);
+        Assert.Equal("gdd_loop", MapActions.CheckReason(c, s, "no_such_action", 1, 1)!.Kind);   // the guard comes before the id is read
         var r = Simulation.Step(c, s, new Command[] { new MapAction("transit_camp", 2, 0), new MapAction("housing", 1, 1) });
         Assert.Equal(new[] { reason.Text, reason.Text }, r.Rejected.Select(x => x.Reason));
         Assert.Empty(r.State.Placements);

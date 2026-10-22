@@ -42,13 +42,13 @@ public class StartingForcesTests
     {
         Assert.Equal(new[]
         {
-            ("golani", "Yavne'el", "veteran_soldier", "israel", 5, 10, 9),
+            ("golani", "Yavne'el", "veteran_soldier", "israel", 4, 10, 9),
             ("carmeli", "Haifa", "veteran_soldier", "israel", 2, 5, 8),
-            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 5, 0, 15),
-            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 1, -3, 19),
-            ("givati", "Gedera", "veteran_soldier", "israel", 5, -5, 23),
+            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 4, 0, 15),
+            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 3, -3, 19),
+            ("givati", "Gedera", "veteran_soldier", "israel", 3, -5, 23),
             ("harel", "Sha'ar HaGai", "veteran_soldier", "israel", 1, -2, 23),
-            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 2, -9, 27),
+            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 1, -9, 27),
             ("egyptian_expeditionary_force", "Gaza", "egyptian_army", "egypt", 10, -11, 27),
             ("arab_legion", "Ramallah", "arab_legion", "jordan", 5, 0, 22),
             ("syrian_army", "South of Lake Tiberias, before Samakh", "syrian_army", "syria", 3, 10, 10),
@@ -169,11 +169,12 @@ public class StartingForcesTests
         Assert.Throws<NotSupportedException>(() => Simulation.NewGame(Real, GoldenRun.Seed, Mode.Open));
 
     // R-UNIT-006, Q-START-3 (#743, owner, 20 October 2026): a shareable build waits until every row the sim starts a unit
-    // from is fact-checked.
+    // from is fact-checked. The owner person-checked the twelve real ones on 21 October 2026 (#1240), so none waits.
     [Fact]
     public void TheReleaseGateWaitsForEveryStartingRowToBeFactChecked()
     {
-        Assert.Equal(Real.StartingForces.Select(f => f.Row).OrderBy(x => x, StringComparer.Ordinal), ReleaseGate.StartingForcesUnchecked(Real));
+        Assert.Equal(12, Real.StartingForces.Count);
+        Assert.Empty(ReleaseGate.StartingForcesUnchecked(Real));
         var c = Load(Row("b", "israel", 20), Row("a", "israel", 20, q: 2, status: "fact-checked"));
         Assert.Equal(new[] { "b" }, ReleaseGate.StartingForcesUnchecked(c));
     }

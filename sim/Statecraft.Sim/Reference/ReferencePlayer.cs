@@ -5,7 +5,7 @@ using System.Linq;
 namespace Statecraft.Sim.Reference
 {
     /// <summary>Test policy for the GDD goldens (D-A7): a stated simple policy, not game AI and not historical. It sends
-    /// HistoricalAI's orders and no AssignWorkers (R-CITY-009's default fills the jobs, and an order would turn it off), then
+    /// HistoricalAI's orders (so it answers every capture with Raid and never Deport, Q-REF-1 (a), R-CTRL-009) and no AssignWorkers (R-CITY-009's default fills the jobs, and an order would turn it off), then
     /// has each of Israel's units with no attack, in id order, attack the first neighbouring hex (in the fixed order) whose
     /// enemy units it meets at <see cref="AttackRatioPercent"/> percent or better by the combat preview, while the Arms last
     /// for every standing attack and the new one (R-COMBAT-001, R-COMBAT-004), then,

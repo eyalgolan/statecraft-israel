@@ -286,8 +286,10 @@ public class PlayerTextTests
                 bad.Add("money without a unit: " + w.Message);
             if (w.System == "map")   // "Built a housing project: cost IL 6.0m, Housing +3.0%, ...": every number with its unit
             {
-                // A hex "(q, r)" and a corridor's "segment N" (R-COR-001, Q-SENS-1) are names, not amounts.
-                if (Regex.IsMatch(Regex.Replace(Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+", ""), @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
+                // A hex "(q, r)" or "hex q,r", a corridor's "segment N" (R-COR-001, Q-SENS-1) and a unit's "unit N" are names, not
+                // amounts; movement points and people are units (the enemy's step 1 lines, R-ENEMY-001, reach the reference run).
+                var named = Regex.Replace(w.Message, @"\(-?\d+, -?\d+\)|segment \d+|hex -?\d+,-?\d+|[Uu]nits? \d+(, \d+)*|\d[\d,]* (movement points|people)", "");
+                if (Regex.IsMatch(Regex.Replace(named, @"(IL |\$)[+-]?\d+\.\dm|[+-]?\d+(\.\d)?%", ""), @"\d"))
                     bad.Add("map line number without a unit: " + w.Message);
             }
             else if (indicators.Contains(w.Target) && Regex.IsMatch(Regex.Replace(w.Message, @"[+-]?\d+(\.\d)?%", ""), @"\d"))

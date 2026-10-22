@@ -56,7 +56,8 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Why a shareable build may not be made, or null: every event with a sensitive tag needs the owner's
         /// sensitivity review first (status sensitivity-reviewed; docs/m3-release.md, M3 final review I4), every row the
-        /// starting forces come from must be fact-checked (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), and so does every
+        /// starting forces come from must be fact-checked (ReleaseGate.StartingForcesUnchecked; R-UNIT-006), every settlement
+        /// target row sensitivity-reviewed (ReleaseGate.SettlementTargetsUnchecked; Q-TGT-3 (b)), and so does every
         /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
         /// illustration clip (<paramref name="clips"/>, event-videos.yaml; docs/event-videos.md). See
         /// <see cref="EventImageRefusal"/> for <paramref name="catalogFileExists"/> and <paramref name="mapping"/>.</summary>
@@ -71,6 +72,10 @@ namespace Statecraft.Game.EditorTools
             if (Statecraft.Sim.ReleaseGate.StartingForcesUnchecked(c) is { Count: > 0 } forces)
                 reasons.Add("a shareable build needs these starting forces' rows fact-checked: " + string.Join(", ", forces)
                     + " (status: fact-checked in content/map/units_1948.yaml; see docs/units.md)");
+            // Q-TGT-3 (b) (#783): a settlement target row ships only after a person's sensitivity review.
+            if (Statecraft.Sim.ReleaseGate.SettlementTargetsUnchecked(c) is { Count: > 0 } targets)
+                reasons.Add("a shareable build needs these settlement targets sensitivity-reviewed: " + string.Join(", ", targets)
+                    + " (status: sensitivity-reviewed in content/settlement_targets.yaml; see docs/gdd/settlement-control.md)");
             if (EventImageRefusal(photos, catalogFileExists, mapping) is string pictures) reasons.Add(pictures);
             if (clips != null && EventVideoMapping.SensitiveUnreviewed(clips) is { Count: > 0 } openClips)
                 reasons.Add("a shareable build needs the owner's sensitivity review of the illustration clips: " + string.Join(", ", openClips)

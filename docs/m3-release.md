@@ -256,7 +256,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 
 | Event | Tags | What to review |
 |---|---|---|
-| `burma_road_complete` | `war-casualties` | **Pending.** Objective 3 completion card and selected Road of Valour photograph (#791); draft, not sensitivity-reviewed. Blocks shareable builds until owner review. |
+| `burma_road_complete` | `war-casualties` | Objective 3 completion card and selected Road of Valour photograph (#791). The owner approved the photograph (#1226) and the card's text as written on 21 October 2026 ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636)); it is `sensitivity-reviewed`. |
 | `altalena` | security, war-casualties | Jews killed by Jews: 16 Irgun and 3 IDF dead (in the YAML comment, not the card) |
 | `ten_days` | security, war-casualties | Lydda and Ramle are shown as a military operation only (Lydda airport, the Jerusalem road); leaving out the population's flight and expulsion is an editorial choice the notes flag for explicit approval |
 | `operation_yoav` | security, war-casualties | the Hebron-hills decision; military text only |

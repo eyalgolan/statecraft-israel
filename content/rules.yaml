@@ -22,6 +22,7 @@ attention_cost:
   cancel_project: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: cancel_training's cost)
   move: 0                                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
+  resolve_capture: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; Q-TECH-3: one key, so Raid, Occupy and Deport cost the same; proposed on #797)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
 # turns from 15 May 1948 end on the 15th of each month.
 turn_lengths: [month, month, month, month, month]
@@ -195,6 +196,11 @@ mvp:
       attacker_loss: [1, 0, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
       defender_loss: [1, 1, 1, 2, 2, 2]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
       defender_retreats: [0, 1, 1, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+  # The enemy's simple goals (R-ENEMY-003; Q-ENEMY-2, owner, 15 October 2026, #375: "Take all recommendations"). PROPOSED in
+  # Phase 5 PR 10 (#749) under "Agents propose design values"; the owner may override it. An enemy unit off its script
+  # attacks an adjacent player unit when the attack preview's ratio reaches this, else it holds its hex fortified. 200 is
+  # the 2:1 row of combat_table, the first where the defenders can be made to retreat. Not a historical figure.
+  enemy_attack_ratio_percent: 200        # DESIGN VALUE: owner-set balance, not a historical figure (D-G7, Q-ENEMY-2: the least attack : defence ratio an enemy unit attacks at, percent)
   # Prisoners (R-POW-002, R-POW-004, R-POW-005; Q-POW-2, Q-POW-4, Q-POW-5, owner, 15 October 2026, #375). The amounts are
   # agent defaults posted on #751 (https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6318787961) for
   # the owner to set or accept; none is a historical figure. A prisoner unit eats the ration any population unit eats (one

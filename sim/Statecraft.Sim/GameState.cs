@@ -17,6 +17,8 @@ namespace Statecraft.Sim
         public const string CoalitionCollapse = "coalition_collapse";
         /// <summary>Money and Food were both exhausted for mvp.defeat_turns turn ends in a row (R-END-002; D-B5).</summary>
         public const string DefeatEconomy = "defeat_economy";
+        /// <summary>An enemy military unit holds a GDD city's hex at the turn's end (R-END-003; Q-WAR-5, Q-DEF-3).</summary>
+        public const string DefeatWar = "defeat_war";
     }
 
     public enum Mode { Historical, Open }
