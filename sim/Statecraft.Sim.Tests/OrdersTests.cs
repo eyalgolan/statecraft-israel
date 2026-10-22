@@ -53,7 +53,7 @@ public class OrdersTests
         var c = Load();
         var s = With(c, Soldier(1, 2, 1));
         var given = s.Clone();
-        Assert.Null(Orders.Give(given, 1, Orders.Fortify, new List<Cause>()));
+        Assert.Null(Orders.Give(c, given, 1, Orders.Fortify, new List<Cause>()));
         Assert.Equal(Orders.Fortifying, given.Units[1].Order);
         Assert.Equal(100, Defence(c, given, 1));   // the turn it is given
 
@@ -88,27 +88,29 @@ public class OrdersTests
     }
 
     // R-ORDER-003: hold acts on the unit itself and nothing around it: an enemy unit next to it and one past it keep their
-    // hexes through the turn, and neither they nor a player unit beside it change their defence. Enemy moves come with the
-    // enemy AI (Phase 5 PR 10); nothing in hold stops one.
+    // hexes through the turn, and a player unit beside it keeps its defence. The enemy units fortify by their own AI
+    // (R-ENEMY-003, below the attack ratio here), not because of the hold; nothing in hold stops an enemy move.
     [Fact]
     public void HoldNeverIntercepts()
     {
         var c = Load();
-        var s = With(c, Soldier(1, 2, 1), Soldier(2, 3, 1), Enemy(3, 1, 1), Enemy(4, 0, 1));
+        static Unit Strong(Unit u) => new Unit(u.Id, u.Type, u.Q, u.R, side: u.Side, strength: u.Side == "israel" ? 5 : 1);
+        var s = With(c, Strong(Soldier(1, 2, 1)), Strong(Soldier(2, 3, 1)), Strong(Enemy(3, 1, 1)), Strong(Enemy(4, 0, 1)));
         var r = Simulation.Step(c, s, new Command[] { new UnitOrder(1, Orders.Hold) });
         Assert.Empty(r.Rejected);
         Assert.Equal(120, Defence(c, r.State, 1));   // the fixture's hold percent, on its own hex
         foreach (var id in new[] { 2, 3, 4 })
         {
-            Assert.Equal(100, Defence(c, r.State, id));
-            Assert.Equal((s.Units[id].Q, s.Units[id].R, ""), (r.State.Units[id].Q, r.State.Units[id].R, r.State.Units[id].Order));
+            var order = id == 2 ? "" : Orders.Fortify;   // the enemy's own fortify, set at the turn's end (R-ENEMY-003)
+            Assert.Equal(id == 2 ? 100 : 150, Defence(c, r.State, id));
+            Assert.Equal((s.Units[id].Q, s.Units[id].R, order), (r.State.Units[id].Q, r.State.Units[id].R, r.State.Units[id].Order));
         }
     }
 
     // R-ORDER-001: refusals leave the state as it was.
     [Theory]
     [InlineData(9, "fortify", "There is no such unit")]
-    [InlineData(1, "attack", "That order is not known")]
+    [InlineData(1, "advance", "That order is not known")]   // attack is known since #747 (CombatTests)
     [InlineData(5, "hold", "Only a military unit takes that order")]
     [InlineData(3, "hold", "That unit is not yours")]
     [InlineData(2, "hold", "That unit already has that order")]
@@ -116,9 +118,38 @@ public class OrdersTests
     {
         var c = Load();
         var s = With(c, Soldier(1, 2, 1), new Unit(2, "soldier", 3, 1, side: "israel", order: Orders.Hold), Enemy(3, 0, 1), new Unit(5, "halutz", 4, 1));
+        var before = s.Describe();
+        Assert.Equal(reason, Orders.Check(c, s, unit, order));   // the unit card asks before it offers the order (#754)
+        Assert.Equal(before, s.Describe());
         var r = Simulation.Step(c, s, new Command[] { new UnitOrder(unit, order) });
         Assert.Equal(reason, Assert.Single(r.Rejected).Reason);
         Assert.Equal(Simulation.Step(c, s, new Command[0]).State.Describe(), r.State.Describe());
+    }
+
+    // R-ORDER-001: Check is null exactly where Give takes the order (the unit card offers it, #754), and changes nothing.
+    [Fact]
+    public void CheckIsNullForAnOrderGiveTakes()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1), new Unit(2, "soldier", 3, 1, side: "israel", order: Orders.Hold));
+        var before = s.Describe();
+        Assert.Null(Orders.Check(c, s, 1, Orders.Fortify));
+        Assert.Null(Orders.Check(c, s, 1, Orders.Hold));
+        Assert.Null(Orders.Check(c, s, 2, Orders.Fortify));
+        Assert.Equal(before, s.Describe());
+        Assert.Empty(Simulation.Step(c, s, new Command[] { new UnitOrder(1, Orders.Fortify), new UnitOrder(2, Orders.Fortify) }).Rejected);
+    }
+
+    // R-ENEMY-001: with enemy, Check runs the same checks with the sides swapped, as Give does for the enemy AI: the enemy's
+    // unit is taken, the player's is not.
+    [Fact]
+    public void CheckForTheEnemySwapsTheSides()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1), Enemy(3, 0, 1));
+        Assert.Null(Orders.Check(c, s, 3, Orders.Fortify, enemy: true));
+        Assert.Equal("That unit is not yours", Orders.Check(c, s, 1, Orders.Fortify, enemy: true));
+        Assert.Null(Orders.Give(c, s, 3, Orders.Fortify, new List<Cause>(), enemy: true));
     }
 
     // R-ORDER-001: fortify again on the hex it is fortifying is refused; the legacy loop refuses the order before charging.

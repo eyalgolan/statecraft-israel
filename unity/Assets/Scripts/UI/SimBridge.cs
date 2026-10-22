@@ -63,6 +63,7 @@ namespace Statecraft.Game.UI
             StartProject p => FormattableString.Invariant($"project:{p.Q},{p.R}"),
             CancelProject x => FormattableString.Invariant($"unproject:{x.Project}"),
             Move m => FormattableString.Invariant($"move:{m.Unit}"),
+            ResolveCapture r => "capture:" + r.Settlement,
             _ => c.Kind,
         };
 
@@ -124,11 +125,11 @@ namespace Statecraft.Game.UI
                         ?? Unknown("training", t.Track, Content.UnitTypes.Where(x => !string.IsNullOrEmpty(x.Facility)).Select(x => x.Id));
                 case CancelTraining x:
                     return Unknown("cohort", x.Cohort.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Cohorts.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                // Pioneer work (#378, corridors #786): ids only; the sim refuses a busy unit, a built site or segment, a kind
+                // Pioneer work (#378, camp/field/swamp #1124, corridors #786): ids only; the sim refuses a busy unit, a built site or segment, a kind
                 // mismatch or a short Treasury with its own reason. A corridor action names "corridor:N", N from 1.
                 case PioneerWork w:
                     return Unknown("unit", w.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
-                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv, Corridors.BuildRoad, Corridors.BuildRail })
+                        ?? Unknown("pioneer_work", w.Action, new[] { Projects.BuildYishuv, Projects.BuildCamp, Projects.PlowFields, Projects.DrySwamp, Corridors.BuildRoad, Corridors.BuildRail })
                         ?? (Corridors.IsAction(w.Action)
                             ? Unknown("corridor_segment", w.Site, Content.Corridors.SelectMany(x => Enumerable.Range(1, x.Segments.Count).Select(n => x.Id + ":" + n.ToString(System.Globalization.CultureInfo.InvariantCulture))))
                             : Unknown("site", w.Site, Content.Sites.Select(x => x.Id)));
@@ -145,6 +146,9 @@ namespace Statecraft.Game.UI
                     return Unknown("city_project", x.Project.ToString(System.Globalization.CultureInfo.InvariantCulture), State.CityProjects.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                 // Buying Arms (#781): no ids; the sim refuses a count below one itself.
                 case BuyArms _: return null;
+                // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
+                // its own reason and never throws on the id. The capture dialog is PR 10.
+                case ResolveCapture _: return null;
                 default: return text["order.invalid"];
             }
         }

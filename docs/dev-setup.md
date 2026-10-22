@@ -79,5 +79,5 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
   forward). Never script, `open -a` or AppleScript the Unity editor itself.
 - A player build rewrites some URP asset and player-setting fields as build-time caches; drop them afterwards with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`.
-- Play a build locally: `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
+- Play a build locally: `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`, then open http://localhost:8000/.
   A gzip or Brotli build needs `Content-Encoding`; serve it with web_check's handler (command in `docs/m3-release.md`).

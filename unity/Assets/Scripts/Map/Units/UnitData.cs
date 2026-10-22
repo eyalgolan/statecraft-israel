@@ -17,10 +17,31 @@ namespace Statecraft.Game.Map.Units
         public string Checked { get; set; } = "";
     }
 
+    /// <summary>The optional Hebrew counterpart of one English card text (#558): the Hebrew, the sources of its proper
+    /// names, and "agent-checked" until a native Hebrew speaker reviews it (#564). Each key records that it was given, so
+    /// a present-but-blank key is an error rather than read as left out (<see cref="UnitData.Parse"/>).</summary>
+    public sealed class UnitHebrewText
+    {
+        public string? Text { get => text; set { text = value; TextGiven = true; } }
+        public bool TextGiven { get; private set; }
+        string? text;
+        public List<UnitSource>? Sources { get => sources; set { sources = value; SourcesGiven = true; } }
+        public bool SourcesGiven { get; private set; }
+        List<UnitSource>? sources;
+        public string? Review { get => review; set { review = value; ReviewGiven = true; } }
+        public bool ReviewGiven { get; private set; }
+        string? review;
+    }
+
     /// <summary>Where a unit stood: a named place for a dated window [From, To).</summary>
     public sealed class UnitAnchor
     {
         public string Place { get; set; } = "";
+        /// <summary>The place in Hebrew (#558), shown only in the Hebrew card; the English <see cref="Place"/> where absent.</summary>
+        [YamlIgnore] public UnitHebrewText PlaceHebrew { get; } = new UnitHebrewText();
+        public string? PlaceHe { get => PlaceHebrew.Text; set => PlaceHebrew.Text = value; }
+        public List<UnitSource>? PlaceHeSources { get => PlaceHebrew.Sources; set => PlaceHebrew.Sources = value; }
+        public string? PlaceHeReview { get => PlaceHebrew.Review; set => PlaceHebrew.Review = value; }
         public double Lon { get; set; }
         public double Lat { get; set; }
         public string From { get; set; } = "";
@@ -116,7 +137,17 @@ namespace Statecraft.Game.Map.Units
         public UnitStrength? Strength { get; set; }
         public string? Formed { get; set; }
         public string? FirstCommander { get; set; }
+        /// <summary>The first commander in Hebrew (#558), only beside an English <see cref="FirstCommander"/>.</summary>
+        [YamlIgnore] public UnitHebrewText FirstCommanderHebrew { get; } = new UnitHebrewText();
+        public string? FirstCommanderHe { get => FirstCommanderHebrew.Text; set => FirstCommanderHebrew.Text = value; }
+        public List<UnitSource>? FirstCommanderHeSources { get => FirstCommanderHebrew.Sources; set => FirstCommanderHebrew.Sources = value; }
+        public string? FirstCommanderHeReview { get => FirstCommanderHebrew.Review; set => FirstCommanderHebrew.Review = value; }
         public string Sector { get; set; } = "";
+        /// <summary>The sector in Hebrew (#558), shown only in the Hebrew card; the English <see cref="Sector"/> where absent.</summary>
+        [YamlIgnore] public UnitHebrewText SectorHebrew { get; } = new UnitHebrewText();
+        public string? SectorHe { get => SectorHebrew.Text; set => SectorHebrew.Text = value; }
+        public List<UnitSource>? SectorHeSources { get => SectorHebrew.Sources; set => SectorHebrew.Sources = value; }
+        public string? SectorHeReview { get => SectorHebrew.Review; set => SectorHebrew.Review = value; }
         public bool WikipediaOnly { get; set; }
         public string Status { get; set; } = "";
         /// <summary>A person's sign-off beside the status (#375, "humans only"): both or neither, a GitHub handle and a day;
@@ -140,11 +171,21 @@ namespace Statecraft.Game.Map.Units
         public List<UnitAircraft>? Aircraft { get; set; }
         public List<UnitSource>? Sources { get; set; }
 
-        /// <summary>Every source of the row: its Hebrew name's and its facts' (<see cref="FactSources"/>).</summary>
+        /// <summary>Every source of the row: its Hebrew name's, its Hebrew card texts' (#558) and its facts'
+        /// (<see cref="FactSources"/>).</summary>
         public IEnumerable<UnitSource> AllSources()
         {
             foreach (var s in NameHeSources) yield return s;
+            foreach (var h in HebrewTexts()) if (h.Sources != null) foreach (var s in h.Sources) yield return s;
             foreach (var s in FactSources()) yield return s;
+        }
+
+        /// <summary>The row's Hebrew card texts: its anchors' places, its first commander and its sector (#558).</summary>
+        IEnumerable<UnitHebrewText> HebrewTexts()
+        {
+            foreach (var a in Anchors) yield return a.PlaceHebrew;
+            yield return FirstCommanderHebrew;
+            yield return SectorHebrew;
         }
 
         /// <summary>The sources of the row's facts: its own, its anchors', its aircraft's, its headgear's, its vehicles',
@@ -227,7 +268,8 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Parses and checks the file. Every problem throws InvalidDataException naming the file and the unit: YAML
         /// syntax, unknown or duplicate keys, a bad or duplicate id, an unknown service, side or aircraft type, a missing name or
         /// sector, a bad date or an empty window, an anchor off the globe or without a source, a source without url or
-        /// check date, a drawn unit with no anchors, or an air unit without aircraft.</summary>
+        /// check date, a drawn unit with no anchors, an air unit without aircraft, or a bad Hebrew card text (#558,
+        /// <see cref="ValidateHebrewText"/>).</summary>
         public static List<UnitEntry> Parse(string yaml, string file = DefaultFileName)
         {
             UnitFile doc;
@@ -249,6 +291,8 @@ namespace Statecraft.Game.Map.Units
                 if (!((IList<string>)Sides).Contains(u.Side)) throw new InvalidDataException($"{at} has unknown side '{u.Side}' ({string.Join(", ", Sides)})");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
                 ValidateHebrewName(u, at);
+                ValidateHebrewText(u.FirstCommanderHebrew, "first_commander", u.FirstCommander, at);
+                ValidateHebrewText(u.SectorHebrew, "sector", u.Sector, at);
                 if (u.Echelon != null && !((IList<string>)Echelons).Contains(u.Echelon)) throw new InvalidDataException($"{at} has unknown echelon '{u.Echelon}' ({string.Join(", ", Echelons)})");
                 if (u.Side != Israel && (u.Echelon == null || u.Strength == null)) throw new InvalidDataException($"{at} is a row of {u.Side}, so it needs an echelon and a strength (#570)");
                 if (u.Strength != null)
@@ -273,6 +317,7 @@ namespace Statecraft.Game.Map.Units
                 {
                     if (a == null || string.IsNullOrWhiteSpace(a.Place)) throw new InvalidDataException($"{at} an anchor has no place");
                     var where = $"{at} anchor '{a.Place}'";
+                    ValidateHebrewText(a.PlaceHebrew, "place", a.Place, where);
                     Window(where, a.From, a.To, toRequired: true);
                     if (!(a.Lon >= -180 && a.Lon <= 180 && a.Lat >= -90 && a.Lat <= 90)) throw new InvalidDataException($"{where} has bad coordinates");
                     if (a.Precision != null && a.Precision != "month") throw new InvalidDataException($"{where} precision must be 'month' or left out");
@@ -350,6 +395,26 @@ namespace Statecraft.Game.Map.Units
             }
             if (!Regex.IsMatch(u.NameHe, "[א-ת]")) throw new InvalidDataException($"{at} name_he must contain Hebrew letters");
             if (u.NameHeSources.Count == 0) throw new InvalidDataException($"{at} name_he_sources is empty");
+        }
+
+        /// <summary>A Hebrew card text (#558) beside its English <paramref name="field"/>: never without the English (a
+        /// Hebrew text adds no line the English row lacks), in Hebrew letters, with its sources, and agent-checked or no
+        /// review line; a key that is present but blank, and sources or a review flag without the text, are errors.</summary>
+        static void ValidateHebrewText(UnitHebrewText h, string field, string? english, string at)
+        {
+            var he = field + "_he";
+            if (h.ReviewGiven && h.Review != "agent-checked")
+                throw new InvalidDataException($"{at} {he}_review must be agent-checked, or left out once reviewed");
+            if (!h.TextGiven)
+            {
+                if (h.SourcesGiven) throw new InvalidDataException($"{at} {he}_sources is set without {he}");
+                if (h.ReviewGiven) throw new InvalidDataException($"{at} {he}_review is set without {he}");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(h.Text)) throw new InvalidDataException($"{at} {he} is blank (give the Hebrew, or leave the key out)");
+            if (string.IsNullOrWhiteSpace(english)) throw new InvalidDataException($"{at} {he} is set without {field}");
+            if (!Regex.IsMatch(h.Text, "[א-ת]")) throw new InvalidDataException($"{at} {he} must contain Hebrew letters");
+            if (h.Sources == null || h.Sources.Count == 0) throw new InvalidDataException($"{at} {he}_sources is empty");
         }
 
         static void Window(string where, string? from, string? to, bool toRequired)

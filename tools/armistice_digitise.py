@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = ["numpy==2.5.3", "scipy==1.17.1", "pillow==12.3.0", "shapely==2.2.0", "rasterio==1.5.2", "pyproj==3.8.0",
-#                 "scikit-image==0.26.0", "pypdf==5.4.0"]
+#                 "scikit-image==0.26.0", "pypdf==6.21.1"]
 # ///
 """Digitises the 1949 armistice lines that the primary sources allow, as true lines (not hex-snapped), into
 content/map/armistice_lines_1949.geojson. Owner rulings (2026-10-11): the lines come from the four General Armistice
@@ -197,6 +197,27 @@ def check(path: Path, src: dict) -> None:
         raise SystemExit(f"{path}: sha256 {got}, expected {src['sha256']} ({src['url']})")
 
 
+def jpeg_as_pypdf5(jpeg: bytes):
+    """A JPEG stream decoded as pypdf 5.x decoded a /DCTDecode image (#1251): decoded by Pillow, saved again as a JPEG with
+    Pillow's defaults, and that copy decoded. pypdf 6.3 and later return the first decode, which moves pixels on the ISA
+    and khan_yunis scans; the committed lines were digitised on these pixels, so the tools keep them."""
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.open(io.BytesIO(jpeg), formats=("JPEG",)).save(buf, format="JPEG")
+    return Image.open(io.BytesIO(buf.getvalue()), formats=("JPEG",))
+
+
+def pdf_page_image(pdf: Path, page: int):
+    """The largest image on a PDF page (0-based) as a Pillow image; a /DCTDecode image goes through jpeg_as_pypdf5, the
+    others (CCITT, JPX: the same pixels on pypdf 5.4.0 and 6.21.1) through pypdf."""
+    from pypdf import PdfReader
+    im = max(PdfReader(pdf).pages[page].images, key=lambda im: im.image.size[0] * im.image.size[1])
+    xobj = im.indirect_reference.get_object()
+    if xobj.get("/Filter") == "/DCTDecode":
+        return jpeg_as_pypdf5(xobj.get_data())
+    return im.image
+
+
 def grid_fit(img_v: np.ndarray, img_h: np.ndarray, sheet: dict, px_per_km, thr: float, along: int, detrend: bool,
              tols=(0.15, 0.08, 0.05, 0.05)) -> dict:
     """Fits E and N (km) as affine functions of scan pixels from the map's drawn 1-km grid lines: in bands across each
@@ -294,12 +315,10 @@ def syria_line(pdf: Path, log) -> tuple[list, dict]:
     """The Armistice Demarcation Line: the colour scan's green line, registered on the Annex I points and traced between
     them; returns [(E, N)] vertices (Palestine-grid km) and diagnostics."""
     from PIL import Image
-    from pypdf import PdfReader
     from scipy import ndimage as ndi
     from skimage.graph import route_through_array
     Image.MAX_IMAGE_PIXELS = None
-    page = PdfReader(pdf).pages[13]
-    img = max(page.images, key=lambda im: im.image.size[0] * im.image.size[1]).image.convert("RGB")
+    img = pdf_page_image(pdf, 13).convert("RGB")
     rgb = np.asarray(img).astype(np.int16)
     gray = rgb.mean(axis=2).astype(np.float32)
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
@@ -563,15 +582,13 @@ MV_GAPS = ("The signed map draws the demarcation line only in pieces: on sheet 1
 def egypt_1950(sheet1: Path, sheet2: Path, log) -> dict:
     """The demarcation line as drawn on the two signed sheets of S/1471, traced between waypoints."""
     from PIL import Image
-    from pypdf import PdfReader
     from scipy import ndimage as ndi
     from shapely.geometry import LineString
     Image.MAX_IMAGE_PIXELS = None
     d1 = ~np.asarray(Image.open(sheet1).convert("1"))
     f1 = grid_fit(d1.astype(np.float32), d1.astype(np.float32),
                   {"y": (470, 9900), "x": (390, 4300), "anchor": ((772, 2000, 101.0), (2000, 850, 123.0))}, 390.0, 0.3, 150, True)
-    page = PdfReader(sheet2).pages[0]
-    g2 = np.asarray(max(page.images, key=lambda im: im.image.size[0] * im.image.size[1]).image.convert("L")).astype(np.float32)
+    g2 = np.asarray(pdf_page_image(sheet2, 0).convert("L")).astype(np.float32)
     f2 = grid_fit(ndi.uniform_filter1d(g2, 25, axis=1) - g2, ndi.uniform_filter1d(g2, 25, axis=0) - g2,
                   {"y": (470, 6700), "x": (210, 3100), "anchor": ((193, 2000, 80.0), (1500, 452, 90.0))}, (295.0, 295.0), 6.0, 120, False)
     d2 = g2 < 110

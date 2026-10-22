@@ -16,7 +16,8 @@ public class SimBridgeGddTests
     /// <summary>The legacy loop: the real content without eras.yaml's loop switch (the real game runs gdd since the cutover).</summary>
     internal static readonly Content Legacy = LoadLegacy();
 
-    static Content LoadLegacy()
+    /// <summary>A fresh copy of the legacy content, for a test that changes it.</summary>
+    internal static Content LoadLegacy()
     {
         const string loop = "    systems: { loop: gdd }\n";
         var dir = Paths.Content;

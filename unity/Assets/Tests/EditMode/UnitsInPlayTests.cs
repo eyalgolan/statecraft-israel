@@ -22,6 +22,9 @@ public class UnitsInPlayTests
     static List<UnitEntry> Units => UnitData.Parse(CommittedYaml);
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static readonly DateTime LastArmistice = new DateTime(1949, 7, 20);
+    /// <summary>The starting rows the owner person-checked on 21 October 2026 (#1240); a row added later is not covered.</summary>
+    static readonly HashSet<string> PersonChecked = new HashSet<string> { "alexandroni", "arab_legion", "arab_liberation_army", "carmeli",
+        "egyptian_expeditionary_force", "givati", "golani", "harel", "iraqi_expeditionary_force", "kiryati", "negev", "syrian_army" };
 
     static IEnumerable<string> Ids(IEnumerable<UnitToken> tokens) => tokens.Select(t => t.Unit.Id);
 
@@ -42,22 +45,42 @@ public class UnitsInPlayTests
 
     // ---- The data -----------------------------------------------------------------------------------------------
 
-    /// <summary>Map-only: the sim's content hash is the same with and without the unit file (so it cannot move the
-    /// goldens), and the WebGL manifest ships it (the player reads it).</summary>
+    /// <summary>The sim reads the unit file for the starting forces (R-UNIT-006; Q-START-1), so it is in the content hash and
+    /// the goldens follow it; the WebGL manifest ships it (the player reads it).</summary>
     [Test]
-    public void TheUnitFileDoesNotMoveTheContentHash()
+    public void TheUnitFileEntersTheContentHash()
     {
-        var copy = Path.Combine(Path.GetTempPath(), "statecraft-nounits-" + Guid.NewGuid().ToString("N"));
+        var copy = Path.Combine(Path.GetTempPath(), "statecraft-units-" + Guid.NewGuid().ToString("N"));
         try
         {
             Statecraft.Game.Boot.ContentManifest.Copy(Paths.Content, copy);
             var file = Path.Combine(copy, "map", UnitData.DefaultFileName);
             Assert.IsTrue(File.Exists(file), "the manifest copies the unit file");
-            File.Delete(file);
-            Assert.AreEqual(ContentLoader.Load(Paths.Content).Hash, ContentLoader.Load(copy).Hash);
+            File.AppendAllText(file, "# a comment changes the file\n");
+            Assert.AreNotEqual(ContentLoader.Load(Paths.Content).Hash, ContentLoader.Load(copy).Hash);
             CollectionAssert.Contains(Statecraft.Game.Boot.ContentManifest.Collect(Paths.Content), "map/" + UnitData.DefaultFileName);
         }
         finally { if (Directory.Exists(copy)) Directory.Delete(copy, true); }
+    }
+
+    /// <summary>R-UNIT-006: the sim's starting hexes are the hexes the map computes for the same rows' anchors (HexPicker,
+    /// the map's own lon/lat to hex). The token may still stand one hex away (UnitPlacer); the sim's hex is the anchor's.</summary>
+    [Test]
+    public void TheStartMatchesTheMap()
+    {
+        var hexes = MapBuilder.LoadHexes(Path.Combine(Paths.Content, "map", "hexes.json"));
+        Assert.AreEqual(14, C.StartingForces.Count, "the thirteen sourced forces of 15 May 1948 (#743, #1241) and the 7th's arrival (R-UNIT-009)");
+        foreach (var f in C.StartingForces)
+        {
+            var start = (f.Arrives ?? C.Rules.Start).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var row = Units.Single(u => u.Id == f.Row);
+            Assert.IsNull(row.Hidden, f.Row);
+            Assert.AreEqual(UnitData.Army, row.Service, f.Row);
+            Assert.AreEqual(f.Side, row.Side, f.Row);
+            var anchor = row.Anchors.First(a => string.CompareOrdinal(a.From, start) <= 0 && string.CompareOrdinal(start, a.To) < 0);
+            Assert.AreEqual(anchor.Place, f.Anchor, f.Row);
+            Assert.AreEqual(HexPicker.FromLonLat(anchor.Lon, anchor.Lat, hexes.bounds, hexes.hex_size_km), (f.Q, f.R), f.Row);
+        }
     }
 
     /// <summary>Review C1: every window ends for a reason. A source-based end cites its source and says which; any other
@@ -91,8 +114,9 @@ public class UnitsInPlayTests
             .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
         foreach (var u in units)
         {
-            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`".
-            Assert.AreEqual(u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
+            // Owner, 20 October 2026, #743: an IDF brigade's secondary-source strength "carries `status: to_verify`"; the twelve
+            // starting rows the owner person-checked on 21 October 2026 (#1240) are fact-checked.
+            Assert.AreEqual(PersonChecked.Contains(u.Id) ? "fact-checked" : u.Side == UnitData.Israel && u.Strength != null ? "to_verify" : "draft", u.Status, u.Id);
             Assert.AreEqual(UnitData.IsWikipediaOnly(u), u.WikipediaOnly, $"{u.Id}: wikipedia_only must say whether every source is Wikipedia or Wikidata");
             foreach (var s in u.AllSources())
                 Assert.LessOrEqual(UnitData.Day(s.Checked), DateTime.Today, $"{u.Id}: {s.Url} checked in the future");
@@ -537,7 +561,7 @@ public class UnitsInPlayTests
             var checkedFigures = 0; float worstFloat = 0f;
             foreach (var d in new[] { new DateTime(1948, 5, 29), new DateTime(1948, 6, 5), new DateTime(1948, 7, 12), new DateTime(1948, 12, 4) })
             {
-                layer.Show(C, StateAt(d, 5, 0.8));
+                layer.Show(SimBridgeGddTests.Legacy, StateAt(d, 5, 0.8));   // the legacy loop: the war's tokens by date
                 foreach (var f in map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetComponentsInChildren<Transform>().Where(t => t.name.StartsWith("Rifleman")))
                 {
                     var p = f.position; float lowest = float.MaxValue;
@@ -600,7 +624,7 @@ public class UnitsInPlayTests
             int figures = 0, hidden = 0;
             foreach (var d in OrchardDates)
             {
-                layer.Show(C, StateAt(d, 5, 0.8));
+                layer.Show(SimBridgeGddTests.Legacy, StateAt(d, 5, 0.8));   // the legacy loop: the war's tokens by date
                 var feet = FigureFeet(map);
                 Assert.Greater(feet.Count, 0, $"{d:yyyy-MM-dd}: figures are drawn");
                 var through = veg.Drawable().Where(t => UnderAFigure(t.kind, t.m, feet)).ToList();
@@ -627,7 +651,7 @@ public class UnitsInPlayTests
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
             foreach (var d in OrchardDates.Concat(new[] { new DateTime(1948, 7, 25) }))
             {
-                layer.Show(C, StateAt(d, 5, 0.8));
+                layer.Show(SimBridgeGddTests.Legacy, StateAt(d, 5, 0.8));   // the legacy loop: the war's tokens by date
                 var feet = FigureFeet(map);
                 int expected = veg.Planted().Count(t => UnderAFigure(t.kind, t.m, feet));
                 Assert.AreEqual(expected, veg.Hidden, $"{d:yyyy-MM-dd}: exactly the trees under the shown figures are left out");
@@ -726,7 +750,8 @@ public class UnitsInPlayTests
         {
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
             var day = new DateTime(1948, 5, 29);
-            layer.Show(C, StateAt(day, 5, 0.8));
+            // The legacy loop, whose roster follows the dates and the call-up (the GDD loop draws the sim's units).
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(day, 5, 0.8));
             var cam = Camera.main; Assert.IsNotNull(cam, "the default scene's camera");
             var tokensRoot = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
             Dictionary<string, Vector3> Figures() => tokensRoot.Cast<Transform>().SelectMany(t => t.Cast<Transform>().Where(x => x.name.StartsWith("Rifleman"))
@@ -744,8 +769,8 @@ public class UnitsInPlayTests
             Assert.Greater(at90.Count, 10, "the figures of 29 May 1948 (not a vacuous pass)");
             // A roster change and back, the camera still at yaw 90: Rebuild faces the new tokens to it.
             var fewer = StateAt(day, 5, 0.3);
-            Assert.IsTrue(layer.Show(C, fewer), "the call-up changes the roster");
-            Assert.IsTrue(layer.Show(C, StateAt(day, 5, 0.8)), "and back");
+            Assert.IsTrue(layer.Show(SimBridgeGddTests.Legacy, fewer), "the call-up changes the roster");
+            Assert.IsTrue(layer.Show(SimBridgeGddTests.Legacy, StateAt(day, 5, 0.8)), "and back");
             AssertStill(at90, "rebuilt at yaw 90");
             // A second camera at yaw 0 renders: the badges and flags face it, the figures stay turned for the game camera.
             other.transform.SetPositionAndRotation(cam.transform.position, Quaternion.Euler(CameraRig.Pitch, 0f, 0f));
@@ -783,11 +808,12 @@ public class UnitsInPlayTests
             Assert.IsTrue(layer.Show(C, session.State));
             Assert.AreEqual(before, session.State.Hash(), "drawing the units changed the state");
             Assert.IsFalse(layer.Show(C, session.State), "the same roster draws nothing new");
+            // The GDD loop draws the sim's units (GDD Phase 5 PR 14): eight brigades and the two ships; the 7th arrives from the 15 June turn (R-UNIT-009).
             Assert.AreEqual(10, layer.Tokens.Count);
             var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
             Assert.AreEqual(10, tokens.childCount);
             var kiryati = tokens.Find("kiryati");
-            Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full call-up");
+            Assert.AreEqual(3, kiryati.Cast<Transform>().Count(t => t.name.StartsWith("Rifleman")), "three riflemen at full strength (Q-UI-3)");
             var badge = kiryati.Find("Badge");
             Assert.IsNotNull(badge, "the promo's badge over every token");
             Assert.AreEqual(2, badge.GetComponentsInChildren<MeshRenderer>().Length, "a plate and a glyph");
@@ -839,6 +865,128 @@ public class UnitsInPlayTests
         var placed = new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default);
         var state = StateAt(C.Rules.Start, 5, 0.8);
         Assert.AreEqual(u.Name, UnitCard.For(placed, state, he).Title);
+    }
+
+    // ---- Optional Hebrew card prose (#558) -------------------------------------------------------------------------
+    // Test-only fixtures: the Hebrew below is placeholder text ("test place", "test commander", "test sector"), not a
+    // translation of any real row and not a historical source. content/map/units_1948.yaml carries none of these keys yet.
+
+    const string HeSource = "[{url: 'https://he.example.org/a', checked: '2026-10-19'}]";
+    const string PlaceHe = "place_he: מקום בדיקה, place_he_sources: " + HeSource + ", place_he_review: agent-checked, ";
+    const string CommanderHe = "first_commander_he: מפקד בדיקה, first_commander_he_sources: " + HeSource + ", first_commander_he_review: agent-checked, ";
+    const string SectorHe = "sector_he: גזרת בדיקה, sector_he_sources: " + HeSource + ", sector_he_review: agent-checked, ";
+
+    /// <summary>A one-unit file with the three English prose fields, an anchor whose only source is Wikipedia, and the
+    /// given Hebrew counterparts (any of <see cref="PlaceHe"/>, <see cref="CommanderHe"/>, <see cref="SectorHe"/>).</summary>
+    static UnitEntry ProseUnit(string placeHe = "", string unitHe = "", string commander = "first_commander: Test Commander, ")
+        => UnitData.Parse("units:\n- {id: a, name: A, number: '1', service: army, side: israel, " + commander + unitHe
+            + "sector: Test sector, status: draft, wikipedia_only: true, anchors: [{place: Test Place, " + placeHe
+            + "lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, "
+            + "sources: [{url: 'https://en.wikipedia.org/wiki/X', checked: '2026-10-11'}]}]}", "u.yaml")[0];
+
+    static UnitCard ProseCard(UnitEntry u, UiText text)
+        => UnitCard.For(new PlacedToken(new UnitToken(u, u.Anchors[0], 0, "", false), default), StateAt(C.Rules.Start, 5, 0.8), text);
+
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    /// <summary>#558: the three Hebrew counterparts load beside the English and show in the Hebrew card only; the English
+    /// card is the same as for the row without them, and their sources join the footer without clearing the draft note.</summary>
+    [Test]
+    public void TheHebrewProseShowsInTheHebrewCardAndTheEnglishCardIsUnchanged()
+    {
+        var u = ProseUnit(PlaceHe, CommanderHe + SectorHe);
+        Assert.AreEqual(("מקום בדיקה", "מפקד בדיקה", "גזרת בדיקה"), (u.Anchors[0].PlaceHe, u.FirstCommanderHe, u.SectorHe));
+        Assert.AreEqual(("agent-checked", "agent-checked", "agent-checked"), (u.Anchors[0].PlaceHeReview, u.FirstCommanderHeReview, u.SectorHeReview));
+        var he = ProseCard(u, He);
+        Assert.AreEqual("מיקום: מקום בדיקה\nמפקד ראשון: מפקד בדיקה\nגזרת בדיקה", he.Body);
+        var english = ProseCard(u, Text);
+        var plain = ProseCard(ProseUnit(), Text);
+        Assert.AreEqual((plain.Title, plain.Subtitle, plain.Body, plain.Note), (english.Title, english.Subtitle, english.Body, english.Note));
+        Assert.AreEqual("At Test Place\nFirst commander: Test Commander\nTest sector", english.Body);
+        StringAssert.Contains("he.example.org", he.Footer, "the Hebrew text's sources are listed, as name_he's are");
+        StringAssert.Contains("he.example.org", english.Footer, "in both languages, as name_he's are");
+        Assert.AreEqual(He["unit.draft_wikipedia"], he.Note, "a Hebrew text's source does not check a fact (#902)");
+        Assert.IsTrue(UnitData.IsWikipediaOnly(u));
+    }
+
+    /// <summary>#558: each Hebrew field falls back to its own English value when it is left out, whatever the other two do.
+    /// (The Hebrew strings wrap an English value in left-to-right marks, U+200E, as they do on main.)</summary>
+    [TestCase("", CommanderHe + SectorHe, "מיקום: \u200ETest Place\u200E\nמפקד ראשון: מפקד בדיקה\nגזרת בדיקה")]
+    [TestCase(PlaceHe, SectorHe, "מיקום: מקום בדיקה\nמפקד ראשון: \u200ETest Commander\u200E\nגזרת בדיקה")]
+    [TestCase(PlaceHe, CommanderHe, "מיקום: מקום בדיקה\nמפקד ראשון: מפקד בדיקה\nTest sector")]
+    [TestCase("", "", "מיקום: \u200ETest Place\u200E\nמפקד ראשון: \u200ETest Commander\u200E\nTest sector")]
+    public void EachHebrewFieldFallsBackToItsOwnEnglish(string placeHe, string unitHe, string body)
+    {
+        Assert.AreEqual(body, ProseCard(ProseUnit(placeHe, unitHe), He).Body);
+    }
+
+    /// <summary>#558 (owner, 19 October 2026): a Hebrew commander never adds the line the English row does not have.</summary>
+    [Test]
+    public void AHebrewCommanderWithoutTheEnglishAddsNoLine()
+    {
+        var u = ProseUnit(commander: "");
+        u.FirstCommanderHe = "מפקד בדיקה"; // past the loader, which refuses this row (BadHebrewProseNamesTheProblem)
+        Assert.AreEqual("מיקום: \u200ETest Place\u200E\nTest sector", ProseCard(u, He).Body);
+    }
+
+    /// <summary>#1292: the Hebrew card names a formed or since date's month in Hebrew (date.month_*), as the event cards'
+    /// dates do; a date in prose keeps its English (no row has a Hebrew one), and the English card is unchanged.</summary>
+    [TestCase("March 1948", "24 May 1948", "הוקמה: מרץ 1948", "מאז ‎24‎ במאי ‎1948‎")]
+    [TestCase("Late 1947", "the first half of May 1948", "הוקמה: ‎Late 1947‎", "מאז ‎the first half of May 1948‎")]
+    public void TheHebrewCardNamesTheMonthsOfItsDatesInHebrew(string formed, string since, string formedLine, string sinceText)
+    {
+        var u = ProseUnit();
+        u.Formed = formed; u.Anchors[0].Since = since;
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains(formedLine, body);
+        StringAssert.Contains(sinceText, body);
+        StringAssert.Contains($"At Test Place since {since}\nFormed {formed}\n", ProseCard(u, Text).Body);
+    }
+
+    /// <summary>#1292, the issue's example: the Negev Brigade's Hebrew card has no English month name left.</summary>
+    [Test]
+    public void TheNegevBrigadesHebrewCardHasNoEnglishMonth()
+    {
+        var u = Units.Single(x => x.Id == "negev");
+        var body = ProseCard(u, He).Body;
+        StringAssert.Contains("הוקמה: מרץ 1948", body);
+        StringAssert.Contains("מאז מרץ 1948", body);
+        StringAssert.DoesNotContain("March", body);
+    }
+
+    // hidden: the rows with "anchors: []" reach the source checks, which run after the anchors'.
+    const string ProseRow = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, hidden: h, ";
+    const string ProseAnchor = "anchors: [{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}], ";
+
+    // Orphans: a Hebrew text, its sources or its review flag without what it belongs to.
+    [TestCase(ProseRow + CommanderHe + "anchors: []}", "first_commander_he is set without first_commander")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he_sources: " + HeSource + ", anchors: []}", "first_commander_he_sources is set without first_commander_he")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he_review: agent-checked, anchors: []}", "first_commander_he_review is set without first_commander_he")]
+    [TestCase(ProseRow + "sector_he_sources: " + HeSource + ", anchors: []}", "sector_he_sources is set without sector_he")]
+    [TestCase(ProseRow + "sector_he_review: agent-checked, anchors: []}", "sector_he_review is set without sector_he")]
+    [TestCase(ProseRow + ProseAnchor + "place_he_sources: " + HeSource + "}]}", "place_he_sources is set without place_he")]
+    [TestCase(ProseRow + ProseAnchor + "place_he_review: agent-checked}]}", "place_he_review is set without place_he")]
+    // Present but blank: an empty or null key is an error, never read as "left out".
+    [TestCase(ProseRow + "sector_he: '', anchors: []}", "sector_he is blank")]
+    [TestCase(ProseRow + "sector_he: ~, anchors: []}", "sector_he is blank")]
+    [TestCase(ProseRow + ProseAnchor + "place_he: '  '}]}", "place_he is blank")]
+    [TestCase(ProseRow + "first_commander: C, first_commander_he: מפקד, first_commander_he_sources: ~, anchors: []}", "first_commander_he_sources is empty")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [], anchors: []}", "sector_he_sources is empty")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: " + HeSource + ", sector_he_review: '', anchors: []}", "sector_he_review must be agent-checked")]
+    [TestCase(ProseRow + "sector_he_review: ~, anchors: []}", "sector_he_review must be agent-checked")]
+    // Invalid metadata and text.
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: " + HeSource + ", sector_he_review: reviewed, anchors: []}", "sector_he_review must be agent-checked")]
+    [TestCase(ProseRow + "sector_he: Sector, sector_he_sources: " + HeSource + ", anchors: []}", "sector_he must contain Hebrew letters")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [{url: 'http://x.org', checked: '2026-10-19'}], anchors: []}", "without an https url")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he_sources: [{url: 'https://x.org'}], anchors: []}", "source https://x.org: checked")]
+    // Only the three meanings: other Hebrew keys are unknown, and a key twice is refused.
+    [TestCase(ProseRow + "formed: '1948', formed_he: '1948', anchors: []}", "Property 'formed_he' not found")]
+    [TestCase(ProseRow + "sector_he: גזרה, sector_he: גזרה, anchors: []}", "duplicate key sector_he")]
+    public void BadHebrewProseNamesTheProblem(string yaml, string expected)
+    {
+        var e = Assert.Throws<InvalidDataException>(() => UnitData.Parse(yaml, "u.yaml"));
+        StringAssert.StartsWith("u.yaml:", e.Message);
+        StringAssert.Contains(expected, e.Message);
     }
 
     /// <summary>Review I1: "since" only from a sourced start; never the game's first day.</summary>
@@ -899,7 +1047,7 @@ public class UnitsInPlayTests
             var words = ui.Q<VisualElement>("info-panel").Query<Label>().ToList().Select(l => l.text).ToList();
             Assert.AreEqual("Golani Brigade", ui.Q<Label>("info-title").text);
             Assert.IsTrue(words.Any(w => w.Contains("At Yavne'el since February 1948")), string.Join(" | ", words));
-            Assert.IsTrue(words.Any(w => w.Contains("Reserve call-up 80%") && w.Contains("security level 5")), string.Join(" | ", words));
+            Assert.IsFalse(words.Any(w => w.Contains("Reserve call-up")), "the GDD loop: the call-up no longer sets the figures (#1205) | " + string.Join(" | ", words));
             Assert.IsTrue(words.Any(w => w.Contains("Wikipedia only")), "a Wikipedia-only position says it is a draft");
             Assert.AreEqual(DisplayStyle.None, ui.Q<Button>("build-camp").style.display.value, "no orders on a unit");
             var defence = ui.Q<Button>("info-defence");
@@ -940,11 +1088,12 @@ public class UnitsInPlayTests
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
             var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), null,
                 () => layer.Selected is string id ? layer.Tokens.First(p => p.Token.Unit.Id == id) : (PlacedToken?)null);
-            layer.Show(C, StateAt(new DateTime(1948, 7, 12), 5, 0.8));
+            // The legacy loop, whose roster follows the dates and the call-up (the GDD loop draws the sim's units).
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 7, 12), 5, 0.8));
             var yiftach = layer.Tokens.Single(p => p.Token.Unit.Id == "yiftach");
             GameRoot.OnHexClicked(map, layer, info, yiftach.Q, yiftach.R);
             Assert.IsTrue(info.ShowsUnit);
-            layer.Show(C, StateAt(new DateTime(1948, 7, 24), 5, 0.8));   // Operation Dani is over
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 7, 24), 5, 0.8));   // Operation Dani is over
             Assert.IsNull(layer.Selected);
             Assert.IsNull(map.Terrain.transform.Find(UnitLayer.RootName).Find("SelectionRing"));
             info.Render();

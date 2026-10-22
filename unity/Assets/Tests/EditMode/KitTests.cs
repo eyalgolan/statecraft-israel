@@ -540,7 +540,8 @@ public class KitTests
         Assert.AreEqual("Sha'ab", tsv.Places.Single(p => p.Settlement.Id == "shaab").Today, "owner rule: Sha'ab is a living local council");
         Assert.IsTrue(tsv.Places.Single(p => p.Settlement.Id == "nesher").Mixed);
         Assert.AreEqual("ביסאן", tsv.Places.Single(p => p.Settlement.Id == "beit_shean").NameHe, "#558: the 1948 form, as the English shows it");
-        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#558: no sourced Hebrew name, so none");
+        Assert.AreEqual("נענה", tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#1219: the he.wiki-sourced name");
+        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "al_salihiyya").NameHe, "#558: no sourced Hebrew name, so none");
     }
 
     /// <summary>A malformed runtime row is an error naming the file and the line.</summary>

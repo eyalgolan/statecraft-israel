@@ -18,7 +18,7 @@ namespace Statecraft.Sim
 
         /// <summary>The six axial directions in tools/hexgrid.py's NEIGHBOURS order, the fixed order of hexes.json's layout
         /// (R-MOVE-002).</summary>
-        static readonly (int Q, int R)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
+        internal static readonly (int Q, int R)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != PlayerSide;
 
@@ -53,17 +53,18 @@ namespace Statecraft.Sim
         /// <summary>R-MOVE-006: moves the unit, spending the path's cost from what <paramref name="spent"/> says it has used this
         /// turn (R-MOVE-001). Refused, state untouched, for an unknown or enemy unit, one that cannot move or is already there,
         /// water or a hex off the map, an enemy unit's hex (entering it is an attack, Q-MOVE-3), an enemy-held locality
-        /// (R-MOVE-005), a hex full of the unit's side (R-MOVE-003), or a hex out of reach this turn.</summary>
-        internal static string? Move(Content c, GameState s, int unitId, int q, int r, Dictionary<int, int> spent, List<Cause> why)
+        /// (R-MOVE-005), a hex full of the unit's side (R-MOVE-003), or a hex out of reach this turn. With <paramref name="enemy"/>
+        /// the enemy AI orders its own unit through the same checks, the sides swapped (R-ENEMY-001).</summary>
+        internal static string? Move(Content c, GameState s, int unitId, int q, int r, Dictionary<int, int> spent, List<Cause> why, bool enemy = false)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
-            if (IsEnemy(u)) return "That unit is not yours";
+            if (IsEnemy(u) != enemy) return "That unit is not yours";
             var points = Points(c, u);
             if (points == 0) return "That unit cannot move";
             if (u.Q == q && u.R == r) return "That unit is already there";
             if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
-            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x))) return "An enemy unit holds that hex";
-            if (NoEntry(c, s).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
+            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x) != enemy)) return "An enemy unit holds that hex";
+            if (NoEntry(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
             var (dist, _) = Search(c, s, u, points - used);
@@ -83,18 +84,32 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-MOVE-003: the refusal when (q, r) already holds stack_limit units of <paramref name="u"/>'s side, else null.</summary>
-        static string? Full(Content c, GameState s, Unit u, int q, int r)
+        internal static string? Full(Content c, GameState s, Unit u, int q, int r)
         {
             var limit = c.RulesAt(s.Date).Mvp!.StackLimit!.Value;   // the loader requires it in the GDD loop
             var held = s.Units.Values.Count(x => x.Id != u.Id && x.Side == u.Side && x.Q == q && x.R == r);
             return held >= limit ? FormattableString.Invariant($"That hex already holds {held} units of that side, the most one hex can hold") : null;
         }
 
-        /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities.</summary>
-        static HashSet<(int Q, int R)> NoEntry(Content c, GameState s)
+        /// <summary>R-MOVE-005: the hexes of mvp.enemy_held_localities. For the enemy (R-ENEMY-001, the rule's mirror) every
+        /// other locality's hex, so no enemy move ends on a player's locality while enemy capture (Q-TGT-2 (c)) is unbuilt.</summary>
+        internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
-            return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            var held = new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
+            return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
+        }
+
+        /// <summary>R-ENEMY-002: the furthest hex the unit can reach this turn on its cheapest path to (<paramref name="q"/>,
+        /// <paramref name="r"/>), by the same search as Move, or null when no path leads there or its first step is out of reach.</summary>
+        internal static (int Q, int R)? Toward(Content c, GameState s, Unit u, int q, int r)
+        {
+            var (dist, prev) = Search(c, s, u, int.MaxValue);
+            if (!dist.ContainsKey((q, r)) || (u.Q, u.R) == (q, r)) return null;
+            var points = Points(c, u);
+            var h = (q, r);
+            while (dist[h] > points) h = prev[h];
+            return h == (u.Q, u.R) ? ((int, int)?)null : h;
         }
 
         /// <summary>R-MOVE-007: the hexes of each built corridor segment (a segment not started or being built is no road yet),
@@ -122,9 +137,9 @@ namespace Statecraft.Sim
         static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(Content c, GameState s, Unit u, int budget)
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
-            var blocked = NoEntry(c, s);
+            var blocked = NoEntry(c, s, IsEnemy(u));
             var built = BuiltSegments(c, s);
-            foreach (var x in s.Units.Values) if (IsEnemy(x)) blocked.Add((x.Q, x.R));
+            foreach (var x in s.Units.Values) if (IsEnemy(x) != IsEnemy(u)) blocked.Add((x.Q, x.R));
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };
             var prev = new Dictionary<(int Q, int R), (int Q, int R)>();
             var frontier = new SortedSet<(int Cost, int Q, int R)> { (0, u.Q, u.R) };

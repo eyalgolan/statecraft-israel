@@ -142,7 +142,7 @@ namespace Statecraft.Game.UI
                 var holder = Cabinet.Holder(c, s, o.Id);
                 var who = o.From.HasValue && s.Date < o.From.Value ? text.Format("budget.not_established", Statecraft.Game.Map.Control1948.DateText(o.From.Value, k => text[k]))   // PlayerText.Date is always English (#701)
                     : holder == null ? text["budget.vacant"] : ContentNames.Of(text, holder);
-                ((Label)row[0]).text = text.Format("budget.office", ContentNames.Of(text, o, holder), who);
+                ((Label)row[0]).text = text.Format("budget.office", ContentNames.Of(text, o, holder, s.Date), who);
                 ((Label)row[2]).text = text.Format("budget.share", PlayerText.Percent(share));
                 ((Label)row[4]).text = text.Format("budget.factor", PlayerText.Percent(EffectsSystem.BudgetFactor(draft, office)));
             }

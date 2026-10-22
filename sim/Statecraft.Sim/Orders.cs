@@ -26,18 +26,31 @@ namespace Statecraft.Sim
         static Unit With(Unit u, string order, string target) =>
             new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, order, target);
 
-        /// <summary>R-ORDER-001: gives the unit its standing order, replacing any other. Fortify names the unit's hex and starts
-        /// as Fortifying; hold names nothing, as it acts where the unit is. Refused, state untouched, for an unknown order or
-        /// unit, a unit with no side (a halutz), an enemy unit, or the order it already has.</summary>
-        internal static string? Give(GameState s, int unitId, string order, List<Cause> why)
+        /// <summary>R-ORDER-001's refusals: null when <see cref="Give"/> takes the order, else the reason shown to the player.
+        /// Changes nothing: the unit card asks it before it offers fortify or hold (#754). Refused for an unknown order or
+        /// unit, a unit with no side (a halutz), an enemy unit, hold for artillery (R-COMBAT-007: it never holds ground,
+        /// Q-ARTY-1), or the order it already has. With <paramref name="enemy"/> the enemy AI orders its own unit through the
+        /// same checks, the sides swapped (R-ENEMY-001). The legacy loop's refusal is Simulation.Step's, before Give, so Check
+        /// does not give it.</summary>
+        public static string? Check(Content c, GameState s, int unitId, string order, bool enemy = false)
         {
             if (order != Fortify && order != Hold) return "That order is not known";
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (u.Side == "") return "Only a military unit takes that order";
-            if (u.Side != PlayerSide) return "That unit is not yours";
-            var here = Hex(u);
-            var already = order == Hold ? u.Order == Hold : (u.Order == Fortify || u.Order == Fortifying) && u.OrderTarget == here;
-            if (already) return "That unit already has that order";
+            if ((u.Side != PlayerSide) != enemy) return "That unit is not yours";
+            if (order == Hold && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass) return "Artillery does not hold ground";
+            var already = order == Hold ? u.Order == Hold : (u.Order == Fortify || u.Order == Fortifying) && u.OrderTarget == Hex(u);
+            return already ? "That unit already has that order" : null;
+        }
+
+        /// <summary>R-ORDER-001: gives the unit its standing order, replacing any other. Fortify names the unit's hex and starts
+        /// as Fortifying; hold names nothing, as it acts where the unit is. Refused, state untouched, with <see cref="Check"/>'s
+        /// reason.</summary>
+        internal static string? Give(Content c, GameState s, int unitId, string order, List<Cause> why, bool enemy = false)
+        {
+            var refused = Check(c, s, unitId, order, enemy);
+            if (refused != null) return refused;
+            var u = s.Units[unitId]; var here = Hex(u);
             s.Units[unitId] = order == Fortify ? With(u, Fortifying, here) : With(u, Hold, "");
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, order == Fortify
                 ? $"Unit {unitId} is fortifying hex {here}; it is fortified from the end of the turn"

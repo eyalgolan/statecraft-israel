@@ -62,7 +62,7 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   ```
   uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-gzip')).serve_forever()"
   ```
-  The uncompressed build also works with `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`.
+  The uncompressed build also works with `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`.
 - **Console lines a browser check can rely on:**
   - `GAME OK <date> turn <n> hash <state hash>` at start (a new game, or the autosave continued).
   - `TURN <n> <date> hash <state hash>` after every End Turn.
@@ -250,12 +250,13 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the seven ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the eight ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
 | Event | Tags | What to review |
 |---|---|---|
+| `burma_road_complete` | `war-casualties` | Objective 3 completion card and selected Road of Valour photograph (#791). The owner approved the photograph (#1226) and the card's text as written on 21 October 2026 ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636)); it is `sensitivity-reviewed`. |
 | `altalena` | security, war-casualties | Jews killed by Jews: 16 Irgun and 3 IDF dead (in the YAML comment, not the card) |
 | `ten_days` | security, war-casualties | Lydda and Ramle are shown as a military operation only (Lydda airport, the Jerusalem road); leaving out the population's flight and expulsion is an editorial choice the notes flag for explicit approval |
 | `operation_yoav` | security, war-casualties | the Hebron-hills decision; military text only |
