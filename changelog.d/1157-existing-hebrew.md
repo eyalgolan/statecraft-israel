@@ -1,1 +1,0 @@
-- The Timeline shows existing Hebrew event titles and chosen/recorded answer text in the Hebrew UI, with localized office-holder names, independent English fallbacks and untranslated variant titles preserved (refs #955, #1157; existing human-review flags remain unchanged).
