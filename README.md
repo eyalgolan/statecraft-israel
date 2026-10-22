@@ -35,12 +35,12 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 - appoint and replace real ministers such as David Ben-Gurion, Eliezer Kaplan and Moshe Sharett, inside a real coalition;
 - divide a tiny budget between the ministries, from defence to immigrant absorption;
 - house the immigrants in twelve cities, put them to work and train recruits and halutzim, with most orders paid for in Attention;
-- manage security on a five-level escalation ladder, from routine threats to full war;
+- move the brigades and order them to attack, fortify or hold, while events move the country along a five-level escalation ladder, from routine threats to full war;
 - face real decisions at their real dates, such as the First Truce, the Altalena affair and the Bernadotte assassination, and see why each outcome happened in the "Why?" panel.
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and moving units are in; the attacks you order and settlement control are not playable yet, and the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, but choosing what happens to it is not playable yet, so a capture counts as Raid and withdraw at the end of the game. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
 
 ## What it looks like today
 
@@ -69,21 +69,23 @@ It is an early, honest prototype.
 - The start screen.
 - English and Hebrew, with a language switch in Settings. The Hebrew event cards wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
-- The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, and the Arab forces move and attack on their own.
+- The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.
-- Pioneers who build yishuvim, training camps and fields, and drain the Hula swamp.
+- Pioneers who build yishuvim, training camps, fields, roads and railways, and drain the Hula swamp.
 - The Cabinet with appointments.
 - The Budget screen.
-- The Defence screen with the escalation ladder and reserve call-up.
+- The Defence screen, which shows the escalation ladder and the reserve call-up as the events set them.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
 - The "Why?" panel, a turn report after End turn, a short How to play screen and a six-step first-turn guide.
+- A Timeline screen that sets your course beside the historical record.
+- An end screen with the outcome, the score and the date you met each objective beside the historical date.
 - Share: a screenshot of your game for X, Facebook, Instagram, WhatsApp, Telegram or LinkedIn.
 - Autosave and load.
 - The browser (WebGL) build.
 
 **What is missing:**
 - The art in the concept image above. Settlements and trees are still placeholder art.
-- Most of the [GDD](docs/GDD.md): the attacks you order, settlement control, the war objective and the end screen.
+- Most of the [GDD](docs/GDD.md): choosing what happens to a captured town, and the war objective.
 - Diplomacy.
 - Anything after 1951.
 
@@ -115,9 +117,9 @@ flowchart LR
 | 2 | Monthly turns for the real game, and the five resources | In progress: all but the top bar for the five resources | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | Every city, with housing, jobs and immigrant absorption | Done: 8 of 8 PRs merged | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | Pioneers, building sites, roads and railways | In progress: 6 of 8 PRs merged | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | Military units, movement and combat | In progress: 7 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 2 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
-| 7 | Ministers, events and the full 44-turn game | In progress: 4 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
+| 5 | Military units, movement and combat | In progress: 8 of 18 PRs merged | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | Settlement control, under [docs/CONTENT_POLICY.md](docs/CONTENT_POLICY.md) | In progress: 5 of 12 PRs merged | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 7 | Ministers, events and the full 44-turn game | In progress: 5 of 13 PRs merged | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### Other tracks
 
