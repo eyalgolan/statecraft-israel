@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Statecraft.Sim;
 using UnityEngine;
 
 namespace Statecraft.Game.Map.Routes
@@ -68,20 +69,40 @@ namespace Statecraft.Game.Map.Routes
 
         /// <summary>Shows the route groups whose window covers <paramref name="date"/> and hides the rest (the game calls it
         /// on every state change; cheap: a few SetActive calls), and remembers the date on the map, so a rebuild of the map
-        /// (MapScene.Build) draws the routes as at the game's date at once. A map without routes is left alone.</summary>
-        public static void ShowAt(MapScene map, DateTime date)
+        /// (MapScene.Build) draws the routes as at the game's date at once. A map without routes is left alone.
+        /// In the GDD loop (<paramref name="built"/> given: route id to each segment built, <see cref="BuiltSegments"/>), a
+        /// route a corridor follows is drawn by its built segments instead, whatever the date (spec §2.6, "Routes"; #792):
+        /// its dated ribbon is hidden and each built segment's own ribbon shown. Every other route keeps its dates.</summary>
+        public static void ShowAt(MapScene map, DateTime date, IReadOnlyDictionary<string, IReadOnlyList<bool>>? built = null)
         {
             if (map == null) return;
             map.RouteDate = date;                   // a later rebuild of this map starts at the game's date (re-review nit 2)
+            map.RouteSegmentsBuilt = built;         // and with the corridors as built
             if (map.Terrain == null) return;
             var service = map.Terrain.transform.Find($"{RootName}/{ServiceTrain.Name}");
             if (service != null) service.GetComponent<ServiceTrain>().ShowAt(date);   // from the service date on (issue #668)
             var vehicles = map.Terrain.transform.Find($"{RootName}/{RoadVehicles.Name}");
-            if (vehicles != null) vehicles.GetComponent<RoadVehicles>().ShowAt(date);
+            if (vehicles != null) vehicles.GetComponent<RoadVehicles>().ShowAt(date, built);
             var ribbons = map.Terrain.transform.Find($"{RootName}/{RibbonsName}");
             if (ribbons == null) return;
             foreach (var g in ribbons.GetComponentsInChildren<RouteGroup>(true)) g.gameObject.SetActive(g.Window.Covers(date));
+            ShowSegments(ribbons, built);
         }
+
+        /// <summary>Outside the GDD loop (<paramref name="built"/> null), each corridor route's dated ribbon and none of its
+        /// segments; in it, only the built segments.</summary>
+        static void ShowSegments(Transform ribbons, IReadOnlyDictionary<string, IReadOnlyList<bool>>? built)
+        {
+            foreach (var s in ribbons.GetComponentsInChildren<RouteSegment>(true))
+                s.gameObject.SetActive(built == null ? s.Index < 0
+                    : s.Index >= 0 && built.TryGetValue(s.Route, out var b) && s.Index < b.Count && b[s.Index]);
+        }
+
+        /// <summary>For <see cref="ShowAt"/> in the GDD loop: each corridor's route (corridors.yaml route) and, per segment,
+        /// whether the sim has built it (State.Corridors, R-COR-002). The sim decides what is built; this only reads it.</summary>
+        public static Dictionary<string, IReadOnlyList<bool>> BuiltSegments(Content content, GameState state) =>
+            content.Corridors.ToDictionary(d => d.Route, d => (IReadOnlyList<bool>)Enumerable.Range(0, d.Segments.Count)
+                .Select(i => state.Corridors.TryGetValue(d.Id, out var w) && i < w.Segments.Count && w.Segments[i]?.BuiltOn != null).ToArray());
 
         /// <summary>Clearance (m) beyond a ribbon's drawn half-width that kit buildings and trees keep from it, so a lot's or
         /// crown's edge never touches the soft edge of the road or the ballast.</summary>
@@ -149,8 +170,63 @@ namespace Statecraft.Game.Map.Routes
 
         /// <summary>A plan's ribbon, derived from the terrain (what the bake stores). A change to it or to what it calls
         /// (World, Geometry and their helpers) needs a re-bake and a bump of RouteRibbonFile.Version (see Plan).</summary>
-        public static RibbonGeometry Derive(RibbonPlan plan, GeoFrame frame, TerrainData data, Vector3 origin) =>
-            Geometry(plan.Routes.Select(r => (r.Id, Drawn(frame, r), WidthOf(r.Kind))), data, origin, plan.RailGrade);
+        public static RibbonGeometry Derive(RibbonPlan plan, GeoFrame frame, TerrainData data, Vector3 origin)
+        {
+            var g = Geometry(plan.Routes.Select(r => (r.Id, Drawn(frame, r), WidthOf(r.Kind))), data, origin, plan.RailGrade);
+            for (int k = 0; k < plan.Routes.Count; k++)
+                if (plan.Routes[k].SegmentEnds is { } ends)
+                {
+                    var s = g.Routes[k];
+                    var at = ends.ConvertAll(p => { var v = frame.ToWorld(p[0], p[1], 0); return new Vector2(v.x, v.z); });
+                    g.Routes[k] = new RouteSpan(s.Id, s.FirstVertex, s.VertexCount, s.FirstIndex, s.IndexCount,
+                        SegmentStarts(Drawn(frame, plan.Routes[k]), at, s.FirstIndex, s.IndexCount));
+                }
+            return g;
+        }
+
+        /// <summary>The route index's segment cuts (RouteSpan.Segments, #792) for a ribbon drawn along <paramref name="line"/>
+        /// (Geometry's cross-sections, <see cref="Resample"/>), starting at index <paramref name="firstIndex"/>: the first
+        /// segment starts at the ribbon's start and the last ends at its end, so the segments tile the route; between, each
+        /// segment ends at the cross-section nearest the point of the line nearest its end waypoint (<paramref name="ends"/>,
+        /// the route's first waypoint and each segment's end, world x, z), searched from the cut before it on, as
+        /// tools/corridor_hexes.py splits the hexes.</summary>
+        public static int[] SegmentStarts(List<Vector2> line, List<Vector2> ends, int firstIndex, int indexCount)
+        {
+            var cuts = new int[ends.Count];
+            cuts[0] = firstIndex; cuts[ends.Count - 1] = firstIndex + indexCount;
+            if (line.Count < 2) { for (int i = 1; i < ends.Count - 1; i++) cuts[i] = firstIndex; return cuts; }
+            var (_, along) = Resample(line, StepM);
+            const int perSection = (Across - 1) * 6;   // Geometry's triangles between two cross-sections
+            float at = Project(line, ends[0], 0f);
+            int section = 0;
+            for (int i = 1; i < ends.Count - 1; i++)
+            {
+                at = Project(line, ends[i], at);
+                int best = section;
+                for (int k = section; k < along.Count; k++)
+                    if (Mathf.Abs(along[k] - at) < Mathf.Abs(along[best] - at)) best = k;
+                section = best;
+                cuts[i] = firstIndex + section * perSection;
+            }
+            return cuts;
+        }
+
+        /// <summary>The distance along <paramref name="line"/> of its point nearest <paramref name="p"/>, among the points at
+        /// or past <paramref name="start"/>, so a route that passes near one waypoint twice is cut in order.</summary>
+        static float Project(List<Vector2> line, Vector2 p, float start)
+        {
+            float best = start, bestD = float.PositiveInfinity, s = 0f;
+            for (int i = 1; i < line.Count; i++)
+            {
+                var a = line[i - 1]; var d = line[i] - a; float len = d.magnitude;
+                if (len == 0f) continue;
+                float t = Mathf.Clamp01(Vector2.Dot(p - a, d) / (len * len)), here = s + t * len;
+                float dist = (a + d * t - p).magnitude;
+                if (here >= start && dist < bestD) { best = here; bestD = dist; }
+                s += len;
+            }
+            return best;
+        }
 
         /// <summary>Builds the routes under <paramref name="terrain"/> (so a map rebuild destroys them): one group per display
         /// window (its rail and road ribbons), shown as at <paramref name="date"/>, and, when <paramref name="train"/> is not
@@ -182,7 +258,7 @@ namespace Statecraft.Game.Map.Routes
             // One group per display window, in the order the windows open (deterministic names and draw order).
             var plans = Plan(routes);
             var geometry = Geometries(plans, frame, data, origin, baked);
-            GameObject? holder = null;
+            GameObject? holder = null, corridors = null;
             for (int i = 0; i < plans.Count; i++)
             {
                 var plan = plans[i];
@@ -202,7 +278,32 @@ namespace Statecraft.Game.Map.Routes
                 r.sharedMaterial = plan.RailGrade ? rail : road;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = true;
+                // A route a corridor follows (#792; each is alone in its ribbon, tools/tests/test_route_ribbon_bake.py): its
+                // dated ribbon is marked, and each segment gets a ribbon of its own, outside the dated groups, which the GDD
+                // loop shows once the segment is built (ShowAt).
+                for (int k = 0; k < plan.Routes.Count; k++)
+                {
+                    var span = geometry[i].Routes[k];
+                    if (span.Segments.Length < 2) continue;
+                    go.AddComponent<RouteSegment>().Route = span.Id;
+                    if (corridors == null) { corridors = new GameObject("Corridors"); corridors.transform.SetParent(ribbons.transform, false); }
+                    for (int s = 0; s + 1 < span.Segments.Length; s++)
+                    {
+                        var part = assets.Own(geometry[i].SegmentMesh(k, s, $"{plan.MeshName} {span.Id} {s + 1}"));
+                        part.UploadMeshData(true);
+                        var seg = new GameObject($"{span.Id} {s + 1}");
+                        seg.transform.SetParent(corridors.transform, false);
+                        seg.AddComponent<MeshFilter>().sharedMesh = part;
+                        var sr = seg.AddComponent<MeshRenderer>();
+                        sr.sharedMaterial = r.sharedMaterial;
+                        sr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        sr.receiveShadows = true;
+                        var mark = seg.AddComponent<RouteSegment>();
+                        mark.Route = span.Id; mark.Index = s;
+                    }
+                }
             }
+            ShowSegments(ribbons.transform, map != null ? map.RouteSegmentsBuilt : null);
             assets.OnTeardown(VisualToggles.Register(RoutesToggle, on => { if (ribbons != null) ribbons.SetActive(on); }));
 
             if (map != null) RoadVehicles.Create(root.transform, map, routes, date);

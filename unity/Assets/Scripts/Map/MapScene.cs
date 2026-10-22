@@ -54,6 +54,9 @@ namespace Statecraft.Game.Map
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
+        /// <summary>In the GDD loop, which segments of each corridor route are built (RouteLayer.ShowAt, #792), so a rebuild
+        /// draws them as the game left them; null outside the GDD loop (the routes then show by date).</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<bool>> RouteSegmentsBuilt { get; set; }
         /// <summary>Who held which hex on a date (content/map/control_hexes_1948_49.yaml with the map editor's control
         /// overrides), as Build read it, or null without the file: GameRoot draws the borders from it, and the road vehicles
         /// (issue #725) stand only on ground Israel held. Display only.</summary>

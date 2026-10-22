@@ -36,7 +36,8 @@ namespace Statecraft.Game.UI
             // In Hebrew each prose text shows its Hebrew counterpart where the row has one, else its English (#558).
             string Local(string english, string? he) => hebrew && !string.IsNullOrEmpty(he) ? he! : english;
             // In Hebrew a formed or since date that is a plain day or month ("24 May 1948", "March 1948") names its month
-            // through the date strings, as the event cards' dates do (#1292); a date in prose ("late 1947") keeps its English.
+            // through the date strings, as the event cards' dates do (#1292); a date in prose ("late 1947") shows its
+            // formed_he or since_he where the row has one, else its English.
             string When(string english)
             {
                 if (!hebrew) return english;
@@ -56,9 +57,9 @@ namespace Statecraft.Game.UI
             if (sourced)
             {
                 var place = Local(a.Place, a.PlaceHe);
-                lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, When(a.Since!)));
+                lines.Add(string.IsNullOrWhiteSpace(a.Since) ? text.Format("unit.position_plain", place) : text.Format("unit.position", place, Local(When(a.Since!), a.SinceHe)));
             }
-            if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", When(u.Formed!)));
+            if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", Local(When(u.Formed!), u.FormedHe)));
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
             lines.Add(Local(u.Sector, u.SectorHe));

@@ -116,7 +116,7 @@ public class ServiceTrainTests
     static string Rebody(string tsv)
     {
         var lines = tsv.TrimEnd('\n').Split('\n').ToList();
-        var rows = lines.Where(l => l.StartsWith("route\t") || l.StartsWith("service\t")).ToList();
+        var rows = lines.Where(l => l.StartsWith("route\t") || l.StartsWith("segments\t") || l.StartsWith("service\t")).ToList();   // #792: the segments rows too
         lines[lines.Count - 1] = $"meta\tbody_check\t{RoutePaths.BodyCheck(rows)}";
         return string.Join("\n", lines) + "\n";
     }

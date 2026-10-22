@@ -16,6 +16,8 @@ with a warning, when either does not match. Rows, tab-separated:
   meta   routes      <number of route rows>
   route  id kind status from to length_km on_symbol max_gap_m point_count points
   ...
+  segments route_id points            (one per route a corridor of corridors.yaml follows, GDD Phase 4, #792)
+  ...
   service  route_id from start end    (one per route with a `service` in routes_1948.yaml, issue #668)
   ...
   meta   body_check  <signed int32>   (the last row)
@@ -24,8 +26,13 @@ A service row is a railway's train service: the date regular service resumed (`f
 "lon lat" (start, end), read from routes_1948.yaml (the sourced, hand-written file the map never reads), so the train's
 date and stretch come from the content. A service changes neither route_paths_1948.yaml nor the ribbon bake.
 
+A segments row is where a corridor's segments meet on its route (content/corridors.yaml): the route's first waypoint, then
+the waypoint each segment ends at (`to`), as "lon lat" pairs joined by ';', read from routes_1948.yaml. The ribbon bake
+cuts the route's ribbon there, so in the GDD loop the map draws only the built segments (RouteLayer, #792). A change to
+these rows changes the ribbon bake: re-bake it (docs/routes.md).
+
 `to` is empty when the route has no end; `points` is "lon lat" pairs joined by ';', each number as Python's shortest
-round-trip form of the YAML's value. `body_check` is FNV-1a over the UTF-8 bytes of every route and service row, each with its
+round-trip form of the YAML's value. `body_check` is FNV-1a over the UTF-8 bytes of every route, segments and service row, each with its
 '\n', in order. The reader requires it as the last row and recomputes it, so a file cut anywhere (even inside a
 number, review of #547) or edited by hand is refused; the counts give the clearer message for a lost row or point. Lines starting with '#' are comments. No field may hold a tab or a line break.
 
@@ -44,9 +51,10 @@ import review_record  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "content" / "map" / "route_paths_1948.yaml"
-ROUTES = ROOT / "content" / "map" / "routes_1948.yaml"   # the services (issue #668)
+ROUTES = ROOT / "content" / "map" / "routes_1948.yaml"   # the services (issue #668) and the waypoints (#792)
+CORRIDORS = ROOT / "content" / "corridors.yaml"   # where each corridor's segments end (#792)
 RUNTIME = ROOT / "content" / "map" / "route_paths_1948.tsv"
-VERSION = 3   # RoutePaths.RuntimeVersion (2: the body_check row, review of #547; 3: the service rows, #668)
+VERSION = 4   # RoutePaths.RuntimeVersion (2: the body_check row, review of #547; 3: the service rows, #668; 4: segments, #792)
 COLUMNS = ["route", "id", "kind", "status", "from", "to", "length_km", "on_symbol", "max_gap_m", "point_count", "points"]
 
 
@@ -88,9 +96,9 @@ def running_span(service: dict) -> tuple[dict, dict] | None:
     return service["stretches"][first]["start"], service["stretches"][last]["end"]
 
 
-def bake(data: bytes, routes: bytes) -> str:
-    """The runtime file for the YAML file's bytes and routes_1948.yaml's (the services): deterministic, so a fresh bake
-    equals the committed file."""
+def bake(data: bytes, routes: bytes, corridors: bytes) -> str:
+    """The runtime file for the YAML file's bytes, routes_1948.yaml's (the services, the waypoints) and corridors.yaml's
+    (the segments): deterministic, so a fresh bake equals the committed file."""
     doc = yaml12.load(data.decode("utf-8"))
     sourced = yaml12.load(routes.decode("utf-8"))["routes"]
     out = [
@@ -110,6 +118,17 @@ def bake(data: bytes, routes: bytes) -> str:
                _number(r["on_symbol"], where), _number(r["max_gap_m"], where), str(len(r["points"]))]
         rows.append("\t".join(_field(v, where) for v in row) + "\t" + points)
     traced = {r["id"] for r in doc["routes"]}
+    by_id = {r["id"]: r for r in sourced}
+    for c in yaml12.load(corridors.decode("utf-8"))["corridors"]:
+        where = f"corridor '{c.get('id')}'"
+        if c["route"] not in traced or c["route"] not in by_id:
+            raise ValueError(f"{CORRIDORS.name}: {where}: route {c['route']!r} is not in {SOURCE.name} and {ROUTES.name}")
+        via = {w["name"]: w for w in by_id[c["route"]]["via"]}
+        ends = [by_id[c["route"]]["via"][0]["name"]] + [s["to"] for s in c["segments"]]
+        if any(e not in via for e in ends):
+            raise ValueError(f"{CORRIDORS.name}: {where}: a segment ends at a name that is not a waypoint of {c['route']}")
+        points = ";".join(f"{_number(via[e]['lon'], where)} {_number(via[e]['lat'], where)}" for e in ends)
+        rows.append("\t".join(_field(v, where) for v in ["segments", c["route"]]) + "\t" + points)
     for r in sourced:
         s = r.get("service")
         if s is None:
@@ -131,7 +150,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true", help="fail when the committed runtime file is stale")
     args = ap.parse_args()
-    fresh = bake(SOURCE.read_bytes(), ROUTES.read_bytes())
+    fresh = bake(SOURCE.read_bytes(), ROUTES.read_bytes(), CORRIDORS.read_bytes())
     if args.check:
         current = RUNTIME.read_text(encoding="utf-8") if RUNTIME.exists() else ""
         if current != fresh:

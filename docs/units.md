@@ -398,15 +398,18 @@ checks every anchor and logs each spot and its distance.
 - The card gives the name, the number and the service, where the unit stands (with "since" only from a sourced start),
   its formation and first commander where sourced, and the sector in the source's words.
 - In the Hebrew UI the place, the first commander and the sector each show their optional Hebrew counterpart in
-  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, each with its
+  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, and for a date in
+  prose `since_he` on an anchor and `formed_he` on the row (#1292; a plain day or month names its month through the
+  date strings instead), each with its
   `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
-  (#564). A field without one shows its English, independently of the other two; the English card never changes.
+  (#564). A field without one shows its English, independently of the others; the English card never changes.
   `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
   blank key, sources or a review flag without the text, and text without Hebrew letters; an unknown key such as
-  `formed_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
-  never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
-  person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
-  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
+  `number_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
+  never clear `wikipedia_only` (#902). The shipped rows carry them since #1292 (all `agent-checked`, each name's source its he.wiki article), except
+  the Iraqi force's sector, whose "Ma'ad" has no Hebrew spelling found. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
+  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `AProseDateShowsItsHebrewInTheHebrewCard`,
+  `BadHebrewProseNamesTheProblem`), on test-only fixtures.
 - It also gives the national values the token reflects on Israel's cards (legacy loop: "Reserve call-up 80% · security level
   5 of 5"; in the GDD loop only the squadron's card has one, "Security level 5 of 5", see above) and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.

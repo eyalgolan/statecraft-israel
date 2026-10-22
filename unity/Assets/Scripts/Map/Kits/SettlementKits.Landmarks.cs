@@ -16,6 +16,7 @@ namespace Statecraft.Game.Map.Kits
             float R = FootprintRadiusM(s, ground.HexSizeM);
             var heart = DryNear(centre, ground, R * 0.3f, ref rnd);
             if (NegevOutpost(s)) return NegevOutpostKit(s, heart, ground, km, lots);   // a Negev lookout's yard (#32)
+            if (MilitaryCamp(s)) return MilitaryCampKit(s, heart, ground, km, lots);   // a built camp's yard (#792)
             switch (s.Id)
             {
                 case "jaffa": return Jaffa(s, heart, ground, km, lots, ref rnd);

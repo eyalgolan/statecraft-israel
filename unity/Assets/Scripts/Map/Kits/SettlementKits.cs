@@ -221,8 +221,9 @@ namespace Statecraft.Game.Map.Kits
                 }
                 var km = townMeshes[s.Id];
                 // A Negev lookout's buildings stand in its walled yard, a landmark (SettlementKits.Outpost.cs, #32): no houses round it.
+                // Nor round a camp's barracks (SettlementKits.Camp.cs, #792).
                 System.Func<int>? scatter = null, palms = null;
-                int n = landmarks[s.Id] + (NegevOutpost(s) ? 0
+                int n = landmarks[s.Id] + (NegevOutpost(s) || MilitaryCamp(s) ? 0
                     : PlaceHouses(s, centres[s.Id], ground, km, lots, ref rnd, merged, out scatter, out palms));   // towns round 2: plot lattices
                 gameTowns.Add((s, km, n, scatter, palms));
             }
