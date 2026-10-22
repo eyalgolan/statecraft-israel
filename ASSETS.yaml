@@ -656,6 +656,37 @@ rules:
     adapted: "graded and cropped"
     commons: "Public domain; PD-USGov, NARA-cooperation"
     note: "Event israel_bonds. Original 3000x2393, SHA-1 990a79527ad34e1296129d1956bad1e602127db8 (https://upload.wikimedia.org/wikipedia/commons/5/53/Photograph_of_President_Truman_in_the_Oval_Office%2C_evidently_receiving_a_Menorah_as_a_gift_from_the_Prime_Minister_of..._-_NARA_-_200318.jpg); made by tools/event_images.py (crop [0.5, 0.58, 1.0]). US federal work (Abbie Rowe, National Park Service photographer at the White House), public domain in the US. Licence verified 2026-10-11 via the Commons API (licence review), with the owner's sign-off 2026-10-11 (in session, via controller). Re-cropped 2026-10-13 to the centred card's 16:9 media header (at most 960x540) from the same original, the same crop centre and width; only the crop changed, the credit and licence are as before."
+  # --- Opening cutscene photographs (#530, slice A): AI-drafted candidates, owner-verify until a person checks them ---
+  # The panel texts, sources and alt texts: unity/Assets/UI/Opening/opening.yaml. Licence and artist read from each
+  # Commons file page via the Commons API on 2026-10-19 by Claude; no person has checked them and the owner's sensitivity
+  # review is still to come, so each row is owner-verify (the release gate refuses it).
+  - glob: "unity/Assets/UI/Opening/opening_europe.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Cyprus_(997008136325305171).jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed; Meitar Collection (review needed)"
+    note: "Opening cutscene panel europe (#530), a draft candidate. Original 936x649, SHA-1 1e7a4adec5a2b2213adff7d36eea158b1b2eb79c (https://upload.wikimedia.org/wikipedia/commons/d/da/Cyprus_%28997008136325305171%29.jpg); made with tools/event_images.py grade() and encode() (crop [0.505, 0.56, 0.98]). Commons VRTS permission ticket 2021092910005788. SENSITIVE: waits for the owner's sensitivity review and a person's check of the licence and the NLI record (opening.yaml)."
+  - glob: "unity/Assets/UI/Opening/opening_arab_countries.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Ben_Gurion_International_Airport_(997008136550505171).jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
+    note: "Opening cutscene panel arab_countries (#530), a draft candidate. Original 1914x1346, SHA-1 15d3f27e3e1fe214cb470dffa84fdf0bbec1aae4 (https://upload.wikimedia.org/wikipedia/commons/6/60/Ben_Gurion_International_Airport_%28997008136550505171%29.jpg); made with tools/event_images.py grade() and encode() (crop [0.495, 0.58, 0.99]). Commons VRTS permission ticket 2021092910005788. SENSITIVE: waits for the owner's sensitivity review and a person's check of the licence and the NLI record (opening.yaml)."
+  - glob: "unity/Assets/UI/Opening/opening_yemen.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Aden_(997008136749905171).jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / Israel State Archives · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line2, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
+    note: "Opening cutscene panel yemen (#530), a draft candidate. Original 1305x1281, SHA-1 661307d44f6144e97b1925a366053a636f52afff (https://upload.wikimedia.org/wikipedia/commons/c/cc/Aden_%28997008136749905171%29.jpg); made with tools/event_images.py grade() and encode() (crop [0.47, 0.6, 0.94]). Commons VRTS permission ticket 2021092910005788. SENSITIVE: waits for the owner's sensitivity review and a person's check of the licence and the NLI record (opening.yaml)."
   - glob: "unity/Assets/Art/Collection/*"
     licence: CC0-1.0
     ai_generated: true

@@ -123,12 +123,15 @@ namespace Statecraft.HexTiles
         bool PlaceByWidthExact(string model, Vector3 at, float yawDeg, float widthM, StandIn standIn, Color? tint, float maxSlopeDeg) =>
             Place(model, at, yawDeg, new Vector3(widthM, widthM, widthM), Fit.Width, standIn, tint, widthM, maxSlopeDeg);
 
-        /// <summary>A model sized by its height, <paramref name="heightM"/> (figures, trees); its footprint for the inside
-        /// test is taken as <paramref name="footprintShare"/> of the height.</summary>
+        /// <summary>A model sized by its height, <paramref name="heightM"/> (figures, trees); its checked footprint is
+        /// <paramref name="footprintShare"/> of the height, enlarged to contain the stand-in when the model is missing.</summary>
         public bool PlaceByHeight(string model, Vector3 at, float yawDeg, float heightM, StandIn standIn, Color? tint = null, float footprintShare = 0.5f, float maxSlopeDeg = 35f)
         {
             heightM *= HexScale.PieceScale;
-            return Place(model, at, yawDeg, new Vector3(heightM, heightM, heightM), Fit.Height, standIn, tint, heightM * footprintShare, maxSlopeDeg);
+            float footprintM = heightM * footprintShare;
+            if (HexModels.Prefab(HexModels.Resolve(model, at)) == null)
+                footprintM = Mathf.Max(footprintM, heightM * HexModels.StandInFootprint(standIn));
+            return Place(model, at, yawDeg, new Vector3(heightM, heightM, heightM), Fit.Height, standIn, tint, footprintM, maxSlopeDeg);
         }
 
         /// <summary>A flat piece (a field, a road, a plaza) of width x depth, its top a few metres above the highest ground.</summary>

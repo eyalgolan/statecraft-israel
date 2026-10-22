@@ -239,6 +239,12 @@ report.intro: "What changed in the top bar, and the main causes:"
 report.line: "{0}: {1}"
 report.all: "See all in Why?"
 report.close: "Close"
+# The enemy's orders this turn (#1293): one line per order the enemy AI gave (R-ENEMY-001), {0} the unit's name.
+report.enemy: "What the Arab forces did"
+report.enemy_move: "{0} moved to a new position"
+report.enemy_attack: "{0} launched an attack on one of your units"
+report.enemy_fortify: "{0} fortified its position"
+report.unit: "Force {0}"
 # The end screen (#812; D-H4): the sim's end report (EndReport.For, #810), formatted only. {0} the card's title, {1} the
 # player's date, {2} the historical date; the population's {1} is the date of its CBS anchor and {2} the anchor's count.
 end.title: "The game has ended"

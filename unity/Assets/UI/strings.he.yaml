@@ -261,6 +261,14 @@ report.intro: "מה השתנה בסרגל העליון, ומה הסיבות הע
 report.line: "{0}: שינוי של {1}"
 report.all: "הכול במסך למה?"
 report.close: "סגירה"
+# The enemy's orders this turn (#1293), {0} the unit's name: agent-drafted Hebrew, not yet read by a native speaker. The
+# verbs are masculine, as every Arab force's name_he is (חיל, הלגיון, הצבא, צבא) and so is report.unit's כוח. For the
+# native reviewer (#564).
+report.enemy: "מה עשו הכוחות הערביים"
+report.enemy_move: "{0} עבר לעמדה חדשה"
+report.enemy_attack: "{0} פתח בהתקפה על אחת היחידות שלכם"
+report.enemy_fortify: "{0} התבצר בעמדתו"
+report.unit: "כוח {0}"
 # The end screen (#812; D-H4): the sim's end report, formatted only. For the native reviewer (#564).
 end.title: "המשחק הסתיים"
 end.outcome.mvp_ended: "המשחק הגיע לתורו האחרון."
