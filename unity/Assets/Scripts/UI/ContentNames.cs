@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -18,6 +19,11 @@ namespace Statecraft.Game.UI
         public static string Of(UiText text, Legislature l) => Pick(text, l.Body, l.BodyHe);
         /// <summary>A city project kind's name: its draft name_he, pending a native speaker's review (#564, #1122).</summary>
         public static string Of(UiText text, ProjectKind k) => Pick(text, k.Name, k.NameHe);
+        /// <summary>A settlement's name (map/settlements_1948.yaml): its name_he from <paramref name="namesHe"/>, by id (the
+        /// map's parse, as the info panel gets it; null: none), and the sim's English name (PlayerText.Settlement) where it
+        /// has none.</summary>
+        public static string Settlement(UiText text, Content c, string id, IReadOnlyDictionary<string, string>? namesHe) =>
+            Pick(text, PlayerText.Settlement(c, id), namesHe != null && namesHe.TryGetValue(id, out var he) && !string.IsNullOrWhiteSpace(he) ? he : "");
 
         /// <summary>The office's title for <paramref name="holder"/> (null: the office itself, masculine): a woman is given
         /// the row's feminine title_he_f, which every office with a Hebrew title has (owner on #861: "Move to content"), so

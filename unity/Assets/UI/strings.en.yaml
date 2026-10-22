@@ -163,6 +163,33 @@ event.objective_late_one: "Completed 1 month later than in history."
 event.alt_origin: "Alternative course. It follows the government's decision: {0} ({1}). In the record: {2}."
 event.alt_origin_no_record: "Alternative course. It follows the government's decision: {0} ({1})."
 event.rejoin: "Returns to the recorded course."
+# The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter). SENSITIVE: the owner reviews every line here, in
+# both languages, before any shareable build (plan 2026-10-15-gdd-phase-6.md, PR 10's gate). Q-UI-1 (b) (owner, 18 October
+# 2026, #783): the GDD's words for the options, with a one-line plain description under each; the descriptions state the
+# rules in docs/gdd/settlement-control.md and hold no number. Q-UI-2 (a): the preview is the sim's resource and parameter
+# changes only (SettlementControl.CaptureOptions), each a top-bar caption or capture.caption.* with its change.
+# {0} the place's name.
+capture.intro: "Israeli units hold {0}, and no enemy unit is there. Choose what happens next. Your choice takes effect at End turn; until you choose, the units stay."
+capture.option.raid: "Raid and withdraw"
+capture.option.occupy: "Occupy"
+capture.option.deport: "Deport"
+capture.about.raid: "The units leave at once, and the place is under enemy control again. Its residents are unchanged."
+capture.about.occupy: "One unit stays and holds the place for a set number of turns, at a Money cost each turn. Its residents are not affected."
+capture.about.deport: "The residents are expelled and become refugees outside your control. Social cohesion and International support fall, and International support keeps falling for the rest of the game."
+# The heading over the changes, one per line in the turn report's form (report.line: the caption, then the change as the
+# top bar would show it), or the line when nothing changes.
+capture.changes: "Changes at once:"
+capture.changes_none: "Changes at once: none"
+capture.caption.attention: "Attention"
+capture.caption.food: "Food"
+capture.caption.arms: "Arms"
+capture.caption.score: "Score"
+capture.delta_attention: "{0:+0.0;-0.0}"
+capture.delta_count: "{0:+#,##0;-#,##0}"
+# No option the sim offers can be chosen this turn (a Raid with no free hex to withdraw to, R-CTRL-010): the capture waits.
+capture.none: "None of the choices can be made this turn. The units stay, and the decision waits."
+# The hidden dialog's button. {0} the place's name.
+capture.reopen: "Decision waiting: {0}"
 start.listen: "Play the recording"
 start.stop: "Stop the recording"
 start.loading: "Loading the recording…"

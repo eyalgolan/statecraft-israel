@@ -213,7 +213,30 @@
                 <ui:Button name="event-illustration" class="event-illustration" />
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
+            <!-- The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter): in the decision card's place and style,
+                 shown while no decision card is open. The place's name, its target row's operation, and the options the sim
+                 offers (SettlementControl.CaptureOptions), in the sim's order, each with its plain description and the sim's
+                 preview of what it changes at once. No picture, no sound, no video. The text and the options scroll together
+                 on a short window; Hide stays in view. Focus order: the card, the options, Hide. -->
+            <ui:VisualElement name="capture-card" class="panel event-card capture-card">
+                <ui:Label name="capture-title" class="title event-title" />
+                <ui:Label name="capture-operation" class="muted event-office capture-operation" />
+                <ui:VisualElement class="gold-rule" />
+                <ui:ScrollView name="capture-scroll" class="event-scroll capture-scroll">
+                    <ui:Label name="capture-intro" class="event-text" />
+                    <ui:Label name="capture-none" class="event-delegate capture-none" />
+                    <ui:VisualElement name="capture-options" />
+                </ui:ScrollView>
+                <ui:VisualElement name="capture-foot" class="event-foot">
+                    <ui:Label name="capture-count" class="muted event-count" />
+                    <ui:Button name="capture-hide" class="event-hide" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
             <ui:Button name="event-reopen" class="event-reopen" />
+            <!-- The hidden capture dialog's button, in Decision waiting's place: it shows only while no decision card is open or
+                 waiting, so the two never show together. -->
+            <ui:Button name="capture-reopen" class="event-reopen" />
         </ui:VisualElement>
         <!-- The Cabinet as promo/final/04 (CabinetPresenter): a wide screen; the Prime Minister's card and the appointment
              list at the side; the legislature's seats (Hemicycle) with its legend above a grid of person cards. -->

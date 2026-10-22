@@ -270,13 +270,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    waiting" button at the layer's top right (EventCardPresenter), which takes no more room than itself. */
 .event-layer { position: absolute; left: 16px; right: 16px; top: 112px; bottom: 16px; justify-content: center; align-items: center; }
 .event-scrim { display: none; position: absolute; left: 56px; right: -16px; top: 0; bottom: -16px; background-color: rgba(5, 9, 18, 0.55); }
-.event-open .event-scrim { display: flex; }
+.event-open .event-scrim, .capture-open .event-scrim { display: flex; }
 /* The backdrop reaches up to the bar's bottom at every tier: a full-width band from the bar to the layer's top (42 px under the
    70 px one-row bar, where the date plate hangs; 16 px under the taller tiers' bars), then the layer's own part right of
    the left column, and the column's strip (event-gutter) beside and below its discs. No strip of map stays live under a
    card, and the hanging plate is dimmed evenly (review of #624). */
 .event-scrim-top { display: none; position: absolute; left: -16px; right: -16px; top: -42px; height: 42px; background-color: rgba(5, 9, 18, 0.55); }
-.event-open .event-scrim-top { display: flex; }
+.event-open .event-scrim-top, .capture-open .event-scrim-top { display: flex; }
 .hud-narrow .event-scrim-top, .hud-two-row .event-scrim-top, .hud-three-row .event-scrim-top { top: -16px; height: 16px; }
 .event-reopen {
     display: none; position: absolute; right: 0; top: 0; margin: 0; padding: 6px 18px; font-size: 20px; -unity-text-align: middle-center;
@@ -343,7 +343,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .event-office { white-space: normal; -unity-text-align: middle-center; font-size: 18px; }
 /* Options wrap inside the card (playtest 2, P2-2). No sign beside the text: a chevron read as "expand", but the press
    chooses (#1105); the gold rim and the hover and focus fills (Button:hover, :focus) mark it as a button. */
-#event-options Button { white-space: normal; -unity-text-align: middle-left; }
+#event-options Button, #capture-options Button { white-space: normal; -unity-text-align: middle-left; }
 .event-option { min-height: 42px; padding: 5px 12px; margin: 3px 0; border-color: rgba(196, 160, 92, 0.6); }
 .event-title { -unity-text-align: middle-center; margin-bottom: 4px; white-space: normal; font-size: 28px; }   /* centred, as before, in the card */
 .event-text { white-space: normal; margin-bottom: 8px; }
@@ -358,6 +358,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .lang-he .event-rejoin { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
+/* The capture dialog (CaptureDialogPresenter): under each option its plain description, then the sim's preview of what
+   it changes at once, in the muted ink; neither takes a Tab stop. */
+.capture-about { white-space: normal; margin: 0 4px 2px 4px; }
+.capture-preview { white-space: normal; margin: 0 4px 8px 4px; }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. It starts
    right of the left icon lane (84 px, as the toast; #1236: Star, Report and Share sit at the lane's foot) and keeps its right
@@ -937,7 +941,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    stays where it is: the minimap column, the info panel, the toast and the screens' position. Each text's paragraph
    direction is set in code from its own words (UiDirection), because dates, money and names are still English (#55). */
 .lang-he { -unity-text-align: upper-right; }
-.lang-he .button, .lang-he Button, .lang-he #event-options Button { -unity-text-align: middle-right; }
+.lang-he .button, .lang-he Button, .lang-he #event-options Button, .lang-he #capture-options Button { -unity-text-align: middle-right; }
 /* The buttons and cards whose text is centred stay centred (the rule above is the more specific one). */
 .lang-he .nav-button, .lang-he .seat { -unity-text-align: upper-center; }
 .lang-he .event-reopen, .lang-he .event-hide, .lang-he .event-illustration, .lang-he .start-button, .lang-he .start-listen, .lang-he .start-report { -unity-text-align: middle-center; }

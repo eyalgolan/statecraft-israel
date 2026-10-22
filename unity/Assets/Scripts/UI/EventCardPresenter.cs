@@ -203,7 +203,17 @@ namespace Statecraft.Game.UI
         /// under the start screen, is collapsed or is hidden in a capture run (GameAudio's cue, #39).</summary>
         public event System.Action<string>? Opened;
 
+        /// <summary>Raised at the end of every render, whatever it showed: the capture dialog (CaptureDialogPresenter) waits
+        /// while this card is open, and follows it when it is hidden, answered or opened again.</summary>
+        public event System.Action? Rendered;
+
         public void Render()
+        {
+            try { RenderCard(); }
+            finally { Rendered?.Invoke(); }
+        }
+
+        void RenderCard()
         {
             var c = bridge.Content; var s = bridge.State;
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();

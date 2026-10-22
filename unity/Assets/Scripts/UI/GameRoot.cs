@@ -56,6 +56,9 @@ namespace Statecraft.Game.UI
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
+        CaptureDialogPresenter? capture;
+        /// <summary>Tests: the capture dialog of the last Begin.</summary>
+        internal CaptureDialogPresenter? Capture => capture;
         /// <summary>Tests: the settlement name pills of the last Begin.</summary>
         internal MapLabelsPresenter? Labels => labels;
         string? hoveredCity;   // the city HoverCity lit (#1063)
@@ -284,6 +287,10 @@ namespace Statecraft.Game.UI
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
             nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape();
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
+            // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
+            // places' Hebrew names from the same parse.
+            capture = Own(new CaptureDialogPresenter(root, bridge, text, card,
+                map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe)));
             // The 1948 sub-districts, outlined on the map, and each front's 1949 armistice line from its agreement's date
             // where the line exists (display only: the sim never reads them; docs/visual-v1.md, owner rulings 2026-10-11).
             // Since the owner's rulings of 2026-10-14 the areas are coloured by side (control_hexes_1948_49.yaml), from 15 May 1948
@@ -728,9 +735,10 @@ namespace Statecraft.Game.UI
             // Game request (StartScreenPresenter.Escape; idempotent too).
             // With no screen to close, Escape skips the first-turn guide (FirstTurnGuidePresenter.Escape).
             // With nothing else to close, Escape on the open decision card is Hide (EventCardPresenter.Escape; the card itself
-            // takes the Cancel event when it has the focus).
+            // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
+            // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null) card?.Escape(); }
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).

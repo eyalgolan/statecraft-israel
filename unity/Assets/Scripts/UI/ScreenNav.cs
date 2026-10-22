@@ -30,7 +30,8 @@ namespace Statecraft.Game.UI
         /// open screen covers the decision layer (it sits where the card does), and in the two-row HUD also the minimap
         /// column and the info panel; a wide screen covers the info panel; the open decision card's backdrop
         /// (EventCardPresenter.OpenClass, with no start screen or screen over it: ModalClass, set here) covers the minimap
-        /// column and the info panel; an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
+        /// column and the info panel, and so does the open capture dialog's (CaptureDialogPresenter.OpenClass, in the same
+        /// layer); an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
         /// column, the info panel and the decision layer. The turn report (TurnReportPresenter.OpenClass, #1037) covers them
         /// too, and is itself enabled only while it shows and no start screen or outcome clip covers it; when it comes out it
         /// takes the focus (OnUncovered on its element). Called wherever one of those classes changes (StartScreenPresenter,
@@ -45,7 +46,7 @@ namespace Statecraft.Game.UI
             bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
             bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
             bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
-            bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
+            bool modal = (r.ClassListContains(EventCardPresenter.OpenClass) || r.ClassListContains(CaptureDialogPresenter.OpenClass)) && !start && !screen && !outcome;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
             r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
@@ -81,6 +82,12 @@ namespace Statecraft.Game.UI
         /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen, a
         /// screen or an outcome clip (DisableCovered enables it again); null stops it.</summary>
         public static void OnUncovered(VisualElement layer, System.Action? action) => layer.userData = action;
+
+        /// <summary>A second listener on the decision layer, beside the one <see cref="OnUncovered"/> set (the capture dialog
+        /// shares the event card's layer): added after it, and taken away again with <see cref="NotOnUncovered"/>.</summary>
+        public static void AlsoOnUncovered(VisualElement layer, System.Action action) => layer.userData = (layer.userData as System.Action) + action;
+
+        public static void NotOnUncovered(VisualElement layer, System.Action action) => layer.userData = (layer.userData as System.Action) - action;
 
         /// <summary>Asks to be told, synchronously, whenever <paramref name="screen"/> is opened (a presenter that skips
         /// rendering while its screen is hidden catches up then).</summary>

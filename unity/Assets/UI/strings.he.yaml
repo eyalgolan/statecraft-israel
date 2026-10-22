@@ -174,6 +174,27 @@ event.objective_late_one: "הושלם באיחור של חודש אחד לעומ
 event.alt_origin: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1}). בהיסטוריה: {2}."
 event.alt_origin_no_record: "מסלול חלופי. הוא נובע מהחלטת הממשלה: {0} ({1})."
 event.rejoin: "חוזר למסלול ההיסטורי."
+# The capture dialog (GDD Phase 6 PR 10, #802). SENSITIVE: the owner reviews every line before any shareable build.
+# Agent-drafted, for the native reviewer (#564). Q-UI-1 (b): direct Hebrew equivalents of the GDD's words, which are the
+# owner's to choose ("כיבוש" is the literal Occupy; "החזקה" is the alternative put to the owner). Gender-neutral phrasing
+# ("יש לבחור", "שליטתך").
+capture.intro: "כוחות ישראליים מחזיקים ב־{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
+capture.option.raid: "פשיטה ונסיגה"
+capture.option.occupy: "כיבוש"
+capture.option.deport: "גירוש"
+capture.about.raid: "הכוחות יוצאים מיד, והמקום חוזר לשליטת האויב. מצב התושבים לא משתנה."
+capture.about.occupy: "יחידה אחת נשארת ומחזיקה במקום מספר קבוע של תורות, בעלות כספית בכל תור. התושבים לא מושפעים."
+capture.about.deport: "התושבים מגורשים והופכים לפליטים מחוץ לשליטתך. הלכידות החברתית והתמיכה הבינלאומית יורדות, והתמיכה הבינלאומית ממשיכה לרדת עד סוף המשחק."
+capture.changes: "שינויים מיידיים:"
+capture.changes_none: "שינויים מיידיים: אין"
+capture.caption.attention: "תשומת לב"
+capture.caption.food: "מזון"
+capture.caption.arms: "נשק"
+capture.caption.score: "ניקוד"
+capture.delta_attention: "{0:+0.0;-0.0}"
+capture.delta_count: "{0:+#,##0;-#,##0}"
+capture.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. הכוחות נשארים במקום, וההחלטה ממתינה."
+capture.reopen: "החלטה ממתינה: {0}"
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
 start.loading: "טוען את ההקלטה…"
