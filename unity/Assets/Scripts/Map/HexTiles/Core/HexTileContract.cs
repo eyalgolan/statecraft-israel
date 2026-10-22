@@ -15,6 +15,11 @@ namespace Statecraft.HexTiles
     public sealed class HexPrototypeAttribute : Attribute
     {
         public string Id { get; }
+        /// <summary>What the tile is, for the Hex Painter's palette: one of <see cref="HexPrototypes.Kinds"/>.</summary>
+        public string Kind { get; set; } = "";
+        /// <summary>The landscape it is drawn for (north, centre, south), or "" for anywhere. A regional variant is one file
+        /// named by its region; the recipes in tools/hex_tiles/regions.yaml pick between the variants per hex.</summary>
+        public string Region { get; set; } = "";
         public HexPrototypeAttribute(string id) => Id = id;
     }
 
@@ -68,6 +73,14 @@ namespace Statecraft.HexTiles
             .Select(t => (t, attr: (HexPrototypeAttribute?)Attribute.GetCustomAttribute(t, typeof(HexPrototypeAttribute))))
             .Where(p => p.attr != null)
             .ToDictionary(p => p.attr!.Id, p => p.t!, StringComparer.Ordinal);
+
+        /// <summary>The palette groups, in the order the painter shows them; a prototype without a Kind is "other".</summary>
+        public static readonly string[] Kinds = { "city", "town", "village", "farm", "forest", "nature", "other" };
+        /// <summary>The regions a variant may name, north to south.</summary>
+        public static readonly string[] Regions = { "north", "centre", "south" };
+
+        public static HexPrototypeAttribute Info(string id) =>
+            (HexPrototypeAttribute)Attribute.GetCustomAttribute(All[id], typeof(HexPrototypeAttribute))!;
 
         public static IHexPrototype Create(string id) =>
             All.TryGetValue(id, out var t) ? (IHexPrototype)Activator.CreateInstance(t)! : throw new KeyNotFoundException($"no hex prototype '{id}' (known: {string.Join(", ", All.Keys)})");

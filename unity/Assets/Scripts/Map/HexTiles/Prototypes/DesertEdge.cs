@@ -16,7 +16,7 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// Triangle budget by arithmetic (caps below, with measured per-model counts): 6 acacias x ~1,160 = 6,960. 9 rocks x
     /// ~700 = 6,300. 9 tent boxes x under 50 = under 450. Total under 13,800 of 25,000.</summary>
-    [HexPrototype("desert_edge")]
+    [HexPrototype("desert_edge", Kind = "nature")]
     public sealed class DesertEdge : IHexPrototype
     {
         public string Title => "Desert edge: wadi, acacias, Bedouin tents (1948)";
