@@ -77,12 +77,13 @@ public class HudTests
 
     /// <summary>T71: the top bar's Treasury is the net position, cash minus debt (HudModel.From; M3 plan: "with deficits
     /// borrowed, cash alone is always 0"). The sim keeps cash at 0 or above (R-MONEY-003), so a negative reading is debt,
-    /// not a negative Treasury: after four monthly turns with no orders, 0 cash and the debt read as minus the debt.</summary>
+    /// not a negative Treasury: after five monthly turns with no orders, 0 cash and the debt read as minus the debt (four
+    /// before the GDD loop sent the reserves home with the first truce's rung, R-WAR-002, #750).</summary>
     [Test]
     public void TheTreasuryShowsCashMinusDebtSoBorrowingReadsNegative()
     {
         var bridge = NewBridge();
-        for (var i = 0; i < 4; i++) bridge.EndTurn();
+        for (var i = 0; i < 5; i++) bridge.EndTurn();
         Assert.AreEqual(0.0, bridge.State.Treasury);   // R-MONEY-003: cash stops at 0
         Assert.Greater(bridge.State.Debt, 0.0);
         var m = HudModel.From(bridge, Text);
@@ -99,7 +100,7 @@ public class HudTests
     {
         var text = hebrew ? He : Text;
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
-        for (var i = 0; i < 4; i++) bridge.EndTurn();
+        for (var i = 0; i < 5; i++) bridge.EndTurn();
         Assert.Greater(bridge.State.Debt, 0.0, "precondition: something is borrowed");
         using var ui = new UiTestKit();
         new HudPresenter(ui.Root, bridge, text);

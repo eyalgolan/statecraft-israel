@@ -16,7 +16,8 @@ public class WhyScreenTests
     public void EveryCauseOfTheLastTurnIsListedUnderItsSystem()
     {
         using var ui = new UiTestKit();
-        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        // The legacy loop: the call-up order is refused in the GDD loop (R-WAR-002, #750), and this test reads its cause.
+        var bridge = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), Text);
         new WhyPresenter(ui.Root, bridge, Text);
         Assert.AreEqual("Nothing has happened yet: end the turn to see its causes.", ui.Q<Label>("why-empty").text);
         bridge.Queue(new SetMobilization(1.0));

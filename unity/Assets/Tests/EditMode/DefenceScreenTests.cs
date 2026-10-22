@@ -179,7 +179,7 @@ public class DefenceScreenTests
     [Test]
     public void CallUpCanBeRaisedButNotPast100Percent()
     {
-        var (ui, bridge, defence) = Open();
+        var (ui, bridge, defence) = OpenLegacy();
         using (ui)
         {
             for (int i = 0; i < 6; i++) ui.Press("mob-up");
@@ -193,7 +193,7 @@ public class DefenceScreenTests
     [Test]
     public void TheCeasefireClockCountsDownEachTurn()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             bridge.EndTurn();   // a monthly turn counts 4 weeks (SecuritySystem.Weeks) since the GDD cutover
@@ -205,7 +205,7 @@ public class DefenceScreenTests
     [Test]
     public void AQueuedDropFromFullWarSaysTheClockStops()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
@@ -219,7 +219,7 @@ public class DefenceScreenTests
     [Test]
     public void AQueuedRaiseToFullWarShowsTheClockItWillStart()
     {
-        var (ui, bridge, _) = Open();
+        var (ui, bridge, _) = OpenLegacy();
         using (ui)
         {
             ui.Press("de-escalate");
