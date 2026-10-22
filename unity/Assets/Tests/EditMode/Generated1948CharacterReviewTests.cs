@@ -32,7 +32,7 @@ public class Generated1948CharacterReviewTests
             Assert.AreEqual(scene, review.ReviewCamera.gameObject.scene);
             StringAssert.Contains("No historical positions", review.Notice);
             CollectionAssert.AreEqual(Expected, review.Characters.Select(c => c.Id));
-            CollectionAssert.AreEqual(new[] { false, true, true, true, false, false, false }, review.Characters.Select(c => c.Campaign));
+            CollectionAssert.AreEqual(new[] { false, true, false, true, false, false, false }, review.Characters.Select(c => c.Campaign));
             foreach (var entry in review.Characters)
             {
                 Assert.IsNotNull(entry.Model, entry.Id);

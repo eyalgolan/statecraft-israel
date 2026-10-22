@@ -9,21 +9,21 @@ rules:
   - glob: "unity/Assets/Art/Collection/figure-syrian-infantry-1948-v1/*"
     licence: CC0-1.0
     ai_generated: true
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Egyptian, Syrian, ALA and Iraqi infantry; exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Syrian, ALA and Iraqi infantry; Egyptian art is recorded separately under Generated1948Review. exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
     status: verified
     artist: "Tal Heuberger"
     note: "New generated assets only; does not change the licences or provenance of existing figures. Art variations are proposals and do not establish historical uniform colours."
   - glob: "unity/Assets/Art/Collection/figure-ala-infantry-1948-v1/*"
     licence: CC0-1.0
     ai_generated: true
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Egyptian, Syrian, ALA and Iraqi infantry; exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Syrian, ALA and Iraqi infantry; Egyptian art is recorded separately under Generated1948Review. exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
     status: verified
     artist: "Tal Heuberger"
     note: "New generated assets only; does not change the licences or provenance of existing figures. Art variations are proposals and do not establish historical uniform colours."
   - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/*"
     licence: CC0-1.0
     ai_generated: true
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Egyptian, Syrian, ALA and Iraqi infantry; exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
+    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 by Tal Heuberger. New Syrian, ALA and Iraqi infantry; Egyptian art is recorded separately under Generated1948Review. exact stable model IDs and source/output hashes are recorded in each provenance.json. Rigging uses actual provider skin weights; existing C09 idle and walk clips are locally retargeted in Blender 5.2.2. Near geometry is preserved; separately reviewed far derivatives follow the collection 1500-triangle maximum, with 512px colour maps. Original source files and 4K maps remain outside git."
     status: verified
     artist: "Tal Heuberger"
     note: "New generated assets only; does not change the licences or provenance of existing figures. Art variations are proposals and do not establish historical uniform colours."
@@ -57,13 +57,13 @@ rules:
     note: "Character review scene only; creates no historical deployment, combat assignment or replacement of existing figures. AI-only output, CC0/no rights claimed under D1 and the existing paid Tripo output-rights convention."
   - glob: "docs/images/generated-1948-character-*.jpg"
     licence: CC-BY-SA-4.0
-    ai_generated: false
+    ai_generated: true
     source: "Actual Unity 6000.3.25f1 character renders, 22 October 2026. Generated1948Characters supplies actual Animator idle/walk and static far asset-review sheets. Generated1948CharacterReviewEvidence.ProofGround supplies the saved playable review-scene proof, with original lighting and scale-correct floor contact; its diagnostic record is docs/generated-1948-character-grounding.json. Images are labeled as isolated review evidence, not campaign/player/WebGL captures. Original AI-model provenance is recorded in the character rows."
     status: verified
     note: "Character art-review evidence copied unchanged from the combined integration. Existing asset licences remain unchanged."
   - glob: "docs/images/generated-1948-ala*-comparison.jpg"
     licence: CC-BY-SA-4.0
-    ai_generated: false
+    ai_generated: true
     source: "Actual Unity 6000.3.25f1 game-map renders, 22 October 2026. Same 15 May 1948 state, seed 1948, PC quality and 1920x1080 camera poses before/after the ALA figure mapping; both frames resized equally to 960x540. Camera/state record: docs/generated-1948-character-evidence.json. No player or WebGL claim."
     status: verified
     note: "CC BY-SA 4.0 follows existing map-render treatment because the map shows derived map bakes. Original asset licences remain unchanged."

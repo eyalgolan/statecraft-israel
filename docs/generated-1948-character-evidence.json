@@ -139,5 +139,7 @@
     "netanya:B28WaterTower=1",
     "tiberias:B17CourtyardHouse=51"
   ],
-  "scope": "Unchanged ALA before/after evidence from the combined integration. This category branch adds a playable character-review scene; that scene needs its own validation and captures."
+  "scope": "Unchanged ALA before/after evidence from the combined integration. This category branch adds a playable character-review scene; that scene needs its own validation and captures.",
+  "superseded": true,
+  "current_mapping": "Original C09 restored to ALA; replacement screenshots retained as superseded experiment only."
 }

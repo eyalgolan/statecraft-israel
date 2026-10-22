@@ -18,8 +18,28 @@ public class Generated1948CharacterTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
 
+    [Test]
+    public void OriginalC09RemainsOnExistingAlaCampaignTokens()
+    {
+        Assert.AreEqual(UnitFigures.Irregular, UnitFigures.SideFigure("ala"),
+            "new candidate art must not remove the original C09 campaign role");
+        var rows = Units;
+        Assert.IsFalse(rows.Any(r => r.Side == "local_arab_forces"),
+            "a mapping to an undeployed side cannot preserve C09's campaign use");
+        UnitAnchor Unmoved(UnitEntry row, UnitAnchor start, int q, int r) => start;
+        var tokens = UnitRoster.FromState(rows, C,
+            Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical),
+            id => id == UnitFigures.Irregular, Unmoved);
+        var ala = tokens.Single(t => t.Unit.Id == "arab_liberation_army");
+        Assert.AreEqual(UnitFigures.Irregular, ala.ArtType);
+        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3),
+            Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(ala.Unit, i, null)));
+        Assert.IsFalse(UnitFigures.BySide.Values.Contains(UnitFigures.AlaInfantry),
+            "the new ALA candidate remains in the explicit review scene");
+    }
+
     [TestCase("syria", "syrian_army", "syrian_army", "figure-syrian-infantry-1948-v1")]
-    [TestCase("ala", "arab_liberation_army", "arab_liberation_army", "figure-ala-infantry-1948-v1")]
+    [TestCase("ala", "arab_liberation_army", "arab_liberation_army", "figure-c09-irregular-v2")]
     [TestCase("iraq", "iraqi_expeditionary_force", "iraqi_army", "figure-iraqi-infantry-1948-v1")]
     public void AnExistingFormationWaitsForItsOwnFigure(string side, string rowId, string type, string model)
     {
@@ -45,11 +65,11 @@ public class Generated1948CharacterTests
     }
 
     [Test]
-    public void LegionAndLocalIrregularKeepTheirIdentitiesWithoutCreatingDeployments()
+    public void LegionAndAlaKeepTheirOriginalFiguresWithoutCreatingDeployments()
     {
         Assert.AreEqual("figure-c08-arab-legion-v2", UnitFigures.SideFigure("jordan"));
-        Assert.AreEqual("figure-c09-irregular-v2", UnitFigures.SideFigure("local_arab_forces"));
-        Assert.AreEqual("figure-ala-infantry-1948-v1", UnitFigures.SideFigure("ala"));
+        Assert.IsNull(UnitFigures.SideFigure("local_arab_forces"), "no undeployed alias masks loss of the original campaign role");
+        Assert.AreEqual("figure-c09-irregular-v2", UnitFigures.SideFigure("ala"));
         Assert.IsNull(UnitFigures.SideFigure("lebanon"), "the Lebanese candidate is review-only");
         var rows = Units;
         Assert.IsFalse(rows.Any(r => r.Side == "local_arab_forces"), "art does not author a local-force deployment");

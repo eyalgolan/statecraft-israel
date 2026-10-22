@@ -18,7 +18,7 @@ using UnityEngine.TestTools;
 
 /// <summary>Issue #665: the 1948 Collection (Tal Heuberger, #507) on the army tokens, streamed after the first frame. Every one of
 /// the original unit models retains its identity (owner, 17 October 2026, #663: every model is used): the Israeli figures,
-/// the Arab Legion and the local irregular, and the 65 mm gun and the jeep where a source puts them. New Syrian, ALA and
+/// the Arab Legion and C09 on the ALA, and the 65 mm gun and the jeep where a source puts them. New Syrian and
 /// Iraqi figures join their existing formations; the Egyptian figure awaits an approved map representation. Until a model
 /// arrives, and when its bundle is missing or damaged, an Israeli token keeps its code-built figures (fail open); an Arab
 /// force's token is not drawn at all (#740: no IDF figures, no placeholder).</summary>
@@ -30,13 +30,12 @@ public class UnitFiguresTests
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 
-    /// <summary>The models on the existing war roster, including each force's own generated infantry. C09 is kept for local
-    /// irregulars, which have no deployment row; importing art does not invent one.</summary>
+    /// <summary>The models on the existing war roster. C09 retains its baseline ALA role; the new ALA candidate remains review-only.</summary>
     static readonly string[] WarModels =
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
-        "figure-syrian-infantry-1948-v1", "figure-ala-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-soldier-1948-v1",
     };
@@ -147,7 +146,7 @@ public class UnitFiguresTests
         var helmeted = new UnitEntry { Id = "negev", Side = UnitData.Israel, Headgear = new List<string> { UnitData.WoolCap, UnitData.SteelHelmet, UnitData.SteelHelmet } };
         Assert.AreEqual(UnitFigures.YoungRecruit, UnitFigures.FigureFor(helmeted, 2, UnitData.SteelHelmet), "a source's steel helmet is never swapped for his cap");
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
-        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.AlaInfantry, 3), Trio("arab_liberation_army"));
+        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3), Trio("arab_liberation_army"));
         Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
@@ -396,10 +395,10 @@ public class UnitFiguresTests
             var units = Units;
             var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
             layer.Show(C, StateAt(May20, 0.8));
-            CollectionAssert.IsSubsetOf(new[] { UnitFigures.ArabLegion, UnitFigures.AlaInfantry,
+            CollectionAssert.IsSubsetOf(new[] { UnitFigures.ArabLegion, UnitFigures.Irregular,
                 UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry }, asked.Keys, "each deployed force's figure is asked for");
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force before its figure arrives");
-            asked[UnitFigures.AlaInfantry](null);   // the ALA's figure never comes
+            asked[UnitFigures.Irregular](null);   // the ALA's figure never comes
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "a figure that never comes draws nothing");
             asked[UnitFigures.ArabLegion](Prefab(UnitFigures.ArabLegion));
             var legion = layer.Tokens.Where(t => t.Token.Unit.Side != UnitData.Israel).ToList();

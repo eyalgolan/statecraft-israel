@@ -66,14 +66,14 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, ALA and
-        /// Iraqi identities; C08 stays with Jordan and C09 with local irregulars. A mapping supplies art only: no local-force
+        /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens. The new ALA candidate is review-only: no local-force
         /// row is authored here. Egypt awaits an approved representation of its simultaneous bases, and Lebanon's hidden
         /// row remains off the map (<see cref="UnitRoster.OnMap"/>).
         /// Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["jordan"] = ArabLegion, ["local_arab_forces"] = Irregular,
-            ["syria"] = SyrianInfantry, ["ala"] = AlaInfantry, ["iraq"] = IraqiInfantry,
+            ["jordan"] = ArabLegion, ["ala"] = Irregular,
+            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry,
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"

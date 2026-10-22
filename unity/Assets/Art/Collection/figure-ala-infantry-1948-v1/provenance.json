@@ -7,7 +7,7 @@
   "source_sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20",
   "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
   "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
-  "runtime_placement": "existing faction formation",
+  "runtime_placement": "character review scene only; original C09 retains the existing ALA campaign mapping",
   "files": {
     "figure-ala-infantry-1948-v1-near.fbx": "6d7083847b9f300da118393d5cc7e3fbd6fee9fff298a5542a78883fb1d045c2",
     "figure-ala-infantry-1948-v1-walk.fbx": "7cea04dcaa6857bf02c8c60a97150c4c505eadaa56ee9eb29cd822116cd887e3",

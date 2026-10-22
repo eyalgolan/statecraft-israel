@@ -7,14 +7,14 @@ This character-only change is independent of the vehicle and environment asset b
 | Character | Placement |
 | --- | --- |
 | Syrian infantry | Existing Syrian formation only |
-| ALA infantry | Existing Arab Liberation Army formation only |
+| ALA infantry | Character-review stage; original C09 retains campaign ALA role |
 | Iraqi infantry | Existing Iraqi formation only |
 | Egyptian infantry | Character-review stage; campaign representation pending |
 | Lebanese regular | Character-review stage; existing Lebanese row has no anchors |
 | Bedouin civilian | Character-review stage; no combat assignment |
 | Local irregular recreation | Character-review stage; original local figure retained |
 
-The original Arab Legion remains C08. Original C09 stays available for local forces; art creates no deployment row. The ALA has its own generated figure. Existing Israeli figures and vehicle identities are unchanged. This slice does not edit CivilianPeople, the original C04/C06 materials or any historical anchor data. The new Bedouin civilian remains review-only, so it adds no campaign civilian spawn. Collection runtime counts are 58 models, 24 People and 24 Animated.
+The original Arab Legion remains C08. Original C09 retains its existing ALA campaign mapping. The new ALA candidate is review-only; art creates no deployment row. Existing Israeli figures and vehicle identities are unchanged. This slice does not edit CivilianPeople, the original C04/C06 materials or any historical anchor data. The new Bedouin civilian remains review-only, so it adds no campaign civilian spawn. Collection runtime counts are 58 models, 24 People and 24 Animated.
 
 Egypt's existing simulation force has an authoritative hex, but presentation also uses the historical anchor row. Its Isdud forward and Majdal rear bases intentionally overlap from 11 June to 8 July 1948 (the existing sourced `content/map/units_1948.yaml` row, owner ruling #860). `UnitRoster.OnMap` also governs the legacy chronological roster and `UnitPlacer`; activating a side mapping would violate their existing one-token-per-row invariant. This change preserves the data and invariant and uses the explicitly authorized character-review scene. It does not select a base, invent a deployment or remove the simulation force.
 
@@ -30,7 +30,7 @@ The stage shows all seven characters. Select a character or return to all seven,
 
 ## Evidence and validation
 
-The unchanged earlier character sheets are isolated actual Unity asset renders, labeled **not gameplay**: [idle/walk](images/generated-1948-character-idle-walk-review.jpg), [far review](images/generated-1948-character-far-review.jpg). Matched ALA map frames: [close](images/generated-1948-ala20-comparison.jpg), [context](images/generated-1948-ala60-comparison.jpg), with [camera/state record](generated-1948-character-evidence.json).
+The unchanged earlier character sheets are isolated actual Unity asset renders, labeled **not gameplay**: [idle/walk](images/generated-1948-character-idle-walk-review.jpg), [far review](images/generated-1948-character-far-review.jpg). Superseded ALA replacement experiment (not the current mapping): [close](images/generated-1948-ala20-comparison.jpg), [context](images/generated-1948-ala60-comparison.jpg), with [camera/state record](generated-1948-character-evidence.json). C09 is now restored, so these comparisons do not represent the final campaign change.
 
 The prior combined integration passed 165 targeted EditMode tests, including 14 actual Animator/rig tests across seven characters. Those results predate this separate branch's new review scene; they do not claim that its scene test or playback has passed. The character-only branch passed 174 selected EditMode tests with no failures or skips, including the new scene and all 14 rig tests. The strengthened final scene test passed again after stage-only grounding was corrected for non-unit renderer scale. It checks all seven rigs after idle/walk against the real floor surface and independently computed renderer world bounds. An earlier bake-only assertion shared the original wrong scale assumption; it is not used as final floor-contact evidence. A one-pose no-shadow/zero-bias probe ruled out lighting as the main cause. [Final actual scene proof](images/generated-1948-character-review-scene-proof.jpg) and [scale/bounds record](generated-1948-character-grounding.json) show the planted boot meeting the floor; the other boot is raised in the walk pose. Original lights, global render settings, rig assets and campaign code were unchanged by this fix. The earlier64 development frames are not claimed as final contact evidence.
 
@@ -40,3 +40,9 @@ The collection-bundle build failed on unchanged base and the combined branch wit
 ## Current independent checks
 
 The .NET simulation check passed 2,423 tests with 0 warnings, 0 failures and 0 skips (parent-run shared unchanged sim/content). Full tools passed 1,500 tests, 5 skips and 2 subtests in 219.41 seconds; two native-GDAL modules, `test_dem_to_heightmap.py` and `test_precip_clip.py`, were excluded because GDAL is unavailable in this environment. This branch's slim-converter and policy test run passed 328 tests; repository policy also passed over the staged character-only files. The compile-only check uses the pinned Unity references and passed with 0 warnings and 0 errors. No successful player/WebGL build is claimed.
+
+## Draft review follow-up
+
+C09 campaign regression was reproduced with a failing test, then restored to the existing ALA formation. The final affected Unity run passed135 tests with zero C# warnings/errors. The new ALA rig stays available on the review stage and remains catalogued; it does not replace C09. Original C09 files and import metadata are byte-identical to the branch base.
+
+The license grant and derivative-import policy for these new models remain unresolved against draft #1177 and #1273. No license or import settings were changed in this follow-up. [Audit](generated-1948-review-audit.json) records exact provenance checks, current compression/LOD settings and the decision boundary. GitHub CI runs for all three category PRs are awaiting maintainer approval and have started no jobs; this is not a failing-test result.

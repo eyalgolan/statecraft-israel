@@ -1,0 +1,1 @@
+- Add Syrian and Iraqi infantry to existing formations and a playable seven-character review scene; preserve C09 on ALA campaign tokens and retain all original deployment data.
