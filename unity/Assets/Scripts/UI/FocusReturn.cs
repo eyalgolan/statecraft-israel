@@ -20,9 +20,21 @@ namespace Statecraft.Game.UI
 
         /// <summary>Whether an element can actually take the keyboard focus now: a control that is disabled or not drawn
         /// cannot, and asking it to leaves the focus nowhere. Public so the one rule has one home: ScreenNav asks it
-        /// which control to hand an opened screen (#41).</summary>
-        public static bool CanTakeFocus(VisualElement? e) =>
-            e?.panel != null && e.focusable && e.enabledInHierarchy && e.resolvedStyle.display != DisplayStyle.None;
+        /// which control to hand an opened screen (#41).
+        ///
+        /// "Not drawn" has to mean every ancestor up to the panel, not the element alone (#41, found reviewing #1489).
+        /// `display: none` on a parent takes its children out of the layout, but each child keeps its own
+        /// `resolvedStyle.display`, so a button inside a closed screen still reads `Flex` and used to pass this test.
+        /// `Focus()` then did nothing and the focus was left nowhere, which is the one thing this predicate exists to
+        /// rule out. A closed screen is the plain case: `screen-budget` is `none` while its `screen-close-budget` is
+        /// `Flex` and enabled.</summary>
+        public static bool CanTakeFocus(VisualElement? e)
+        {
+            if (e?.panel == null || !e.focusable || !e.enabledInHierarchy) return false;
+            for (var v = e; v != null; v = v.parent)
+                if (v.resolvedStyle.display == DisplayStyle.None) return false;
+            return true;
+        }
 
         /// <summary>Focuses <paramref name="target"/>; failing that the first control that can take the focus in each of
         /// <paramref name="scopes"/> in turn; and last of all <paramref name="last"/> (accessibility audit, #41, the

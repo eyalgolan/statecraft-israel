@@ -321,3 +321,79 @@ An AI agent opened the sources, compared the fields and passages, and drafted th
 check the evidence before relying on it for content. No human source check, historian review, legal decision,
 native-speaker review or sensitivity sign-off is claimed. Research publication does not authorize the paused
 implementation or change a release gate.
+
+## Supplementary reading of C16 and C17
+
+Status: research only, **23 October 2026**; AI agent checks, not human verification or approval.
+This supplementary reading updates only C16 and C17. The earlier scope statement, coverage table and source
+counts above describe the earlier pass; their original wording and the older secondary attributions are retained.
+No other conflict or baseline source is checked again by this addition. Refs #145, not completion of #145.
+
+### C16 — Finance, October 1983
+
+**[V]** Eight targeted term records and six identity records were read [W1, W3]. The register ends Aridor's
+Finance row 22838 on **15 October 1983**, records Shamir in Finance in row 22839 from **15 to 18 October**,
+and starts Cohen-Orgad on **18 October**, in row 4307 followed by row 22827 [W1]. Those two Cohen-Orgad rows
+meet on 13 August 1984 across the Knesset-number boundary within government 20; that division is not treated
+as another ministerial handover.
+
+The official transcription headed **18 October 1983**, sitting 235, records Shamir's announcement proposing
+Cohen-Orgad as Finance Minister, approval by **60 votes to 48**, and Cohen-Orgad's declaration of allegiance
+[W2, W4, W5]. The approval line reads “הודעת ראש הממשלה על מינוי שר אוצר אושרה.” [W5].
+
+These are a separately read proceeding and administrative term fields. Shamir's interim responsibility remains
+register-only in this reading: the assignment instrument, Aridor's resignation letter and its legal-effect time
+were not opened. The baseline's competing 15 October successor attribution remains **[C; baseline source not
+rechecked]**. No explanation for that difference, precise legal instant or D14 game boundary is supplied.
+
+### C17 — Religious Affairs, 1984 and 1986
+
+**[V]** The register ends Peres's Religious Affairs row 4321 and Burg's without-portfolio row 22883 on
+**24 December 1984**, and starts Burg's Religious Affairs row 4230 that day [W1, W3]. In the transcription
+headed **24 December 1984**, sitting 35, Peres reports the cabinet's **23 December** decision to allocate
+Religious Affairs to Burg. He says his own holding of that portfolio would cease with Burg's entry into it.
+The transcription records approval of the government announcement on the appointments by a majority against
+a minority; it prints no numeric tally for that approval [W2, W4, W6]. Cabinet decision and parliamentary
+approval remain distinct dates, not interchangeable term boundaries.
+
+**[V]** The register ends Burg's Religious Affairs row 4230 and starts Hammer's row 22921 on
+**7 October 1986** [W1]. The transcription headed that day, sitting 244, records Peres reporting the cabinet's
+**6 October** decision to add Hammer as Religious Affairs Minister. It records approval by a majority against
+a minority and includes Hammer's declaration of allegiance [W2, W4, W7]. Its approval statement is
+“הכנסת אישרה את הודעת הממשלה.” [W7]. The declaration passage includes a correction; converted paragraph
+positions are not used to infer its procedural sequence.
+
+The original cabinet minutes, Burg's resignation letter and an independent legal-effect time remain **[GAP]**.
+A member's mention of a newspaper report is not treated as the original resignation instrument or converted
+into an independently established date. The baseline's 23 December 1984 and 5 October 1986 alternatives remain
+**[C; baseline sources not rechecked]**. No cause for those differences or ministry-mapping decision is supplied.
+
+### Supplemental coverage
+
+| Original item | New targeted reading | Remaining work |
+|---|---|---|
+| C16 | Register sequence and 18 October 1983 appointment approval read [V] | Interim assignment and resignation instruments unread; older secondary date unexplained. |
+| C17 | Register boundaries, cabinet decisions as reported and the 24 December 1984 / 7 October 1986 parliamentary approvals read [V] | Original cabinet and resignation instruments, independent legal-effect times and older secondary alternatives unresolved. |
+
+### Supplemental sources actually read
+
+All entries: `checked: 2026-10-23`, AI agent reading only, human verification pending. W1–W4 are official
+Knesset administrative data. W5–W7 are official Word transcriptions, not facsimiles independently inspected here.
+Only the named fields and passages were read; these are not whole-sitting historical reviews.
+
+| Key | Source and exact locator | Scope and limit |
+|---|---|---|
+| W1 | [Knesset targeted office terms](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?%24filter=PersonToPositionID+eq+22838+or+PersonToPositionID+eq+22839+or+PersonToPositionID+eq+4307+or+PersonToPositionID+eq+22827+or+PersonToPositionID+eq+4321+or+PersonToPositionID+eq+4230+or+PersonToPositionID+eq+22921+or+PersonToPositionID+eq+22883&%24select=PersonToPositionID%2CPersonID%2CPositionID%2CKnessetNum%2CGovernmentNum%2CGovMinistryID%2CGovMinistryName%2CDutyDesc%2CStartDate%2CFinishDate%2CLastUpdatedDate&%24top=20) | Eight rows: 4230, 4307, 4321, 22827, 22838, 22839, 22883 and 22921; all returned fields read, no next link. Administrative boundaries, not legal instants. |
+| W2 | [Knesset targeted sitting metadata](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PlenumSession?%24filter=%28StartDate+ge+datetime%271983-10-17T00%3A00%3A00%27+and+StartDate+lt+datetime%271983-10-20T00%3A00%3A00%27%29+or+%28StartDate+ge+datetime%271984-12-23T00%3A00%3A00%27+and+StartDate+lt+datetime%271984-12-26T00%3A00%3A00%27%29+or+%28StartDate+ge+datetime%271986-10-06T00%3A00%3A00%27+and+StartDate+lt+datetime%271986-10-09T00%3A00%3A00%27%29&%24top=20) | Six records read; the three used are sessions 482642 (18 October 1983), 436758 (24 December 1984) and 436870 (7 October 1986). Session times do not timestamp individual votes; the 24 December FinishDate is null. |
+| W3 | [Knesset six identity records](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person?%24filter=PersonID+eq+2168+or+PersonID+eq+2652+or+PersonID+eq+2399+or+PersonID+eq+456+or+PersonID+eq+2187+or+PersonID+eq+2300&%24select=PersonID%2CFirstName%2CLastName&%24top=10) | All six names and IDs read: 2168, 2652, 2399, 456, 2187 and 2300. Identity only, no biography or living-status inference. |
+| W4 | [Knesset documents linked to those sittings](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_DocumentPlenumSession?%24filter=PlenumSessionID+eq+482642+or+PlenumSessionID+eq+436758+or+PlenumSessionID+eq+436870&%24top=20) | Nine DOC/PDF/TIF links read; the three DOC files below were opened. No PDF/TIF facsimile was opened. |
+| W5 | [18 October 1983 official transcription](https://fs.knesset.gov.il//10/Plenum/10_ptm_236530.DOC) | Document 236530: dated header, appointment announcement, approval (60–48) and declaration. Preserved converted text LF42–61, 1977–1985, 2029–2038; no exact vote/declaration time. |
+| W6 | [24 December 1984 official transcription](https://fs.knesset.gov.il//11/Plenum/11_ptm_236181.DOC) | Document 236181: dated header, Peres announcement and approval of the government announcement. Converted text LF63–66, 99–123, 2326–2335; majority/minority, no numeric tally. |
+| W7 | [7 October 1986 official transcription](https://fs.knesset.gov.il//11/Plenum/11_ptm_236229.DOC) | Document 236229: dated header, cabinet decision reported by Peres, approval and declaration. Converted text LF108–111, 3539–3545, 4686–4694, 4750–4777; no resignation instrument or legal-effect time. |
+
+The three Word files were obtained by ordinary public GETs and identified as OLE DOC by their bytes.
+Converted text is not in continuous procedural order. LF locators count newline characters only, from 1;
+formfeeds are not counted as additional lines. No rendered page or scanned facsimile was inspected, and no
+procedural order or precise time is inferred from converted paragraph placement. Originals, converted text
+and access receipts are retained privately. This addition changes no content or signed field and supplies no
+human fact-check, legal decision, native-language review, sensitivity approval or authorization of implementation.
