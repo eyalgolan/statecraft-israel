@@ -1,10 +1,11 @@
 # Settlement-control states on the map (#803). Plan
 
-> **For the implementer:** plan only. The owner approves this plan and answers the two OWNER QUESTIONS before any code.
+> **For the implementer:** the owner answered both questions on 24 October 2026 ("Owner decisions" below). Start after
+> Civ movement U1 merges (see "Overlap with work in flight").
 > Red-first tests, one focused Unity PR. No new sim rule, no annex state until #799 defines it.
 
-**Status (24 October 2026):** proposed. Read against `origin/main` at `ef62e9f1c` (#1517 merged: a move that ends on a
-target captures it at once; the answer still runs at End turn). No open or merged PR implements #803.
+**Status (24 October 2026):** decided; implementation waits for Civ movement U1. Read against `origin/main` at
+`ef62e9f1c` (#1517 merged: a move that ends on a target captures it at once; the answer still runs at End turn). No open or merged PR implements #803.
 
 **Design record:** [docs/GDD.md](../../GDD.md) "After capturing an enemy city or village";
 [docs/gdd/settlement-control.md](../../gdd/settlement-control.md) lines 29 and 32; the Phase 6 plan's PR 11
@@ -35,7 +36,7 @@ No record means the place is as it started. The six targets (jaffa, acre, nazare
 `content/map/settlements_1948.yaml`, so each has its own name pill in `MapLabelsPresenter`'s game settlements
 (`slot-<id>`, `label-<id>`). Lod and Ramla share hex (-3,21).
 
-## Settled by this plan, not owner questions
+## Settled by this plan
 
 The owner can overrule any of these in review.
 
@@ -52,29 +53,15 @@ The owner can overrule any of these in review.
   on main today with only a comment asking for review. Heads-up: from the merge, a shareable build is refused until the
   owner has reviewed those lines and #803's in both languages.
 
-## OWNER QUESTIONS
+## Owner decisions
 
-Code does not start until the owner answers both. Record the answers on #803.
+**Then decided (owner, 24 Oct 2026, "1521: 1. a 2.a"; [#803](https://github.com/eyalgolan/statecraft-israel/issues/803#issuecomment-6374861047)):**
 
-### OWNER QUESTION 1: How should a town's state look on the map?
-
-Your ruling: a marker for each state, with the town's name kept.
-
-- **(a) A short word tag under the name (Recommended).** For example "Occupied" or "Depopulated", in one quiet colour for
-  every state, so it reads without colour and does not look like a reward or an alarm.
-- **(b) A small symbol at the end of the name**, a different one per state, with the words only in the side panel. More
-  compact, but the player has to learn four symbols.
-- **(c) Recolour the name's border** per state. Compact, but easy to confuse with the existing hover and size badges.
-
-Recommendation: (a). It is the plainest reading of "a marker per state, with the name kept", and works the same in Hebrew.
-
-### OWNER QUESTION 2: Where does an occupation show how many turns are left?
-
-- **(a) Only in the side panel when the town is selected (Recommended).** The map tag just says "Occupied"; the panel
-  says "Nazareth: occupied, 4 turns left".
-- **(b) On the map tag too** ("Occupied, 4 turns left"). Quicker to scan, but the tag changes width every turn.
-
-Recommendation: (a). It keeps the map readable and the number is one click away.
+- **Question 1 (a), the map look:** a short word tag under the town's name, such as "Occupied" or "Depopulated", in one
+  quiet colour for every state, so it reads without colour and does not look like a reward or an alarm. The name stays.
+  Not (b) a symbol per state, not (c) a recoloured border.
+- **Question 2 (a), the turns left:** an occupation's turns left show only in the side panel when the town is selected
+  ("Nazareth: occupied, 4 turns left"). The map tag just says "Occupied" and never carries a number.
 
 ## Overlap with work in flight
 
@@ -113,7 +100,7 @@ Recommendation: (a). It keeps the map readable and the number is one click away.
 | `unity/Assets/Scripts/UI/GameRoot.cs` | Initial call and a named `bridge.Changed` handler, undone in `Shutdown` |
 | `unity/Assets/Scripts/UI/InfoPanelPresenter.cs` | One state line per settlement on the selected hex (`RenderLines`) |
 | `unity/Assets/Scripts/UI/HudModel.cs`, `MeterTip.cs` | The lasting count line on International Support |
-| `unity/Assets/UI/Statecraft.uss` | The badge style OWNER QUESTION 1 picks |
+| `unity/Assets/UI/Statecraft.uss` | One quiet tag style under the name, the same colour for every state |
 | `unity/Assets/UI/strings.en.yaml`, `strings.he.yaml` | The new keys |
 | `unity/Assets/UI/settlement-control-strings-review.yaml` (new) | R-GATE-002's reviewed snapshot, `status: pending` |
 | `unity/Assets/Scripts/UI/UiPaths.cs` | The manifest's path |
@@ -173,7 +160,7 @@ info.control.depopulated: "{0}: residents displaced, place depopulated"
 hud.standing_displaced_places: "Places depopulated by Deport: {0}"
 ```
 
-  Under OWNER QUESTION 2 (b) the occupied map tag takes `{0}` turns too.
+  The `map.control.*` words take no placeholder: the turns left are in the panel line only (Question 2 (a)).
 - [ ] Red tests in the new `SettlementControlViewTests` (with an `En` helper as `CaptureDialogTests` has):
 
 ```csharp
@@ -204,11 +191,12 @@ public void TheOccupiedPanelLineCarriesTheTurnsLeft()
 }
 ```
 
-- [ ] A parity test: every new key is in both files with the same placeholders, and each Hebrew value has Hebrew letters.
+- [ ] A parity test: every new key is in both files with the same placeholders, each Hebrew value has Hebrew letters, and
+  no `map.control.*` value has a placeholder in either language.
 
 ## Task 3: Map badges that keep the name
 
-- [ ] Interface: `public const string ControlBadgeClass = "map-label-control", ControlClassPrefix = "map-label-control-";`
+- [ ] Interface: `public const string ControlBadgeClass = "map-label-control";` (one class: no per-state style)
   and `public void SetSettlementControl(IReadOnlyDictionary<string, SettlementControl> control)`.
 - [ ] Red test in `MapLabelTests` with the file's `HdPanel` harness (a bare `UiTestKit` root has no `map-labels`
   element), disposed as the file's other tests do:
@@ -223,6 +211,7 @@ public IEnumerator EachStateHasOneBadgeAndTheNameStays()
     {
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         var names = labels.Labels.ToDictionary(x => x.name, x => x.text);
+        var badges = new List<Label>();
         labels.SetSettlementControl(new Dictionary<string, SettlementControl>
         {
             ["acre"] = new SettlementControl("israel", SettlementControl.AwaitingChoice),
@@ -237,8 +226,9 @@ public IEnumerator EachStateHasOneBadgeAndTheNameStays()
             Assert.AreEqual(names["label-" + id], slot.Q<Label>("label-" + id).text, id + ": the name is kept");
             var badge = slot.Q<Label>(className: MapLabelsPresenter.ControlBadgeClass);
             Assert.AreEqual(text["map.control." + key], badge.text, id);
-            Assert.IsTrue(badge.ClassListContains(MapLabelsPresenter.ControlClassPrefix + key), id);
+            badges.Add(badge);
         }
+        Assert.AreEqual(1, badges.Select(x => x.resolvedStyle.color).Distinct().Count(), "one quiet colour for every state");
         var jaffa = labels.Slots.Single(x => x.name == "slot-jaffa").Q<Label>(className: MapLabelsPresenter.ControlBadgeClass);
         Assert.AreEqual(DisplayStyle.None, jaffa.style.display.value, "no record, no badge");
     }
@@ -249,10 +239,12 @@ public IEnumerator EachStateHasOneBadgeAndTheNameStays()
 - [ ] `ClearingARecordHidesItsBadgeAndKeepsTheSameNameLabel`: hold the name `Label`, set one record, then an empty map;
   the same object remains and the badge is hidden.
 - [ ] Layout test at 1920x1080, 1280x720 and 390x844, English and Hebrew: each visible badge stays inside its slot's bounds
-  and the window, and does not overlap another visible name (Lod and Ramla included).
+  and the window, sits under its own name (its top at or below the name's bottom), and does not overlap another visible
+  name (Lod and Ramla included).
 - [ ] Implement one hidden badge per game settlement at construction (not for map locations, built sites or the 1948
-  localities), as a sibling of the name like the tier badge, hidden with `style.display = DisplayStyle.None`.
-  `SetSettlementControl` swaps text and class, toggles display and sets `geometryDirty` only when something changed; it never calls `container.Clear` or rebuilds a name.
+  localities), as a sibling of the name in its slot, placed under the name, hidden with `style.display = DisplayStyle.None`.
+  One USS rule styles every state alike. `SetSettlementControl` swaps text, toggles display and sets `geometryDirty` only
+  when something changed; it never calls `container.Clear` or rebuilds a name.
 
 ## Task 4: The panel names each place's state
 
@@ -314,7 +306,7 @@ Deport turn and one turn later. 1920x1080 for comparison, 390x844 for layout. La
 ## Done when
 
 - The four states on main each have one marker that keeps the name, and a per-place panel line.
-- The turns left show where OWNER QUESTION 2 says.
+- The turns left show only in the panel line; the map tag never carries a number.
 - The International Support tooltip always shows the places count while it is above 0.
 - R-GATE-002 refuses a pending, missing or changed string in a shareable build, for the capture dialog's lines and #803's.
 - The owner has reviewed the exact English and Hebrew lines that ship; a native reviewer has approved the Hebrew.
