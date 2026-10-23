@@ -18,10 +18,11 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   Round-trip decimal formatting is only a display concern: .NET and Unity Mono can spell the same carry bits
   differently. The Phase 7 minister carry correction re-pins hash1950, hash1952 and mvp-end for this representation
   only; stored values, gameplay and completion dates are unchanged.
-- **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
-  positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
-  list has six targets (#793), and only `mvp-occupy-cost` captures a place (Nazareth): player units may enter the five
-  enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
+- **Settlement control:** the player capture check runs after the route step and each order, then again in resolver
+  step 3 after enemy combat. Each check visits targets in ordinal id order and reads only unit positions, with no RNG
+  draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder`, `NoRngDraw` and `TheInstantCheckDrawsNothing`).
+  The shipped list has six targets (#793), and only `mvp-occupy-cost` captures a place (Nazareth): player units may
+  enter the five enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
   Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa is not enemy-held at the start. The smoke-orders
   move skips the lit hexes of enemy-held places on purpose (`GoldenRun.SmokeMove`), so it stays a plain move.
 - **Answering a capture (Raid and withdraw):** the units on the place leave in ascending id, each to the first free hex in

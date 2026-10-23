@@ -150,7 +150,11 @@ public class OccupyTests
         Assert.Empty(result.State.Settlements);
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
         Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));
-        Assert.Equal(Step(c, Without(s), new Move(1, 2, 0)).State.Describe(), result.State.Describe());
+        // Spec4.4 now captures a unit already on the target before orders. A never-captured twin must start outside.
+        var twin = Without(s);
+        Assert.Null(Movement.Move(c, twin, 1, 2, 0, new Dictionary<int, int>(), new List<Cause>()));
+        Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
+        Assert.Equal(Step(c, twin).State.Describe(), result.State.Describe());
     }
 
     // R-CTRL-013: a halutz left on the hex holds nothing (#796), so the occupation still ends.
