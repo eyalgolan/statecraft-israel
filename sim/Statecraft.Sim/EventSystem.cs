@@ -149,8 +149,6 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
-            // R-COMBAT-009: accepting a truce ends the player's standing attacks (owner ruling 2, 22 Oct 2026, #750).
-            if (Combat.PlayerTruces.Any(t => t.Event == eventId && t.Option == o.Id)) Combat.EndAttacksForTruce(s, why);
             // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
             if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
         }
