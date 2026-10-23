@@ -14,7 +14,7 @@ The evidence must distinguish monthly changes, twelve-month changes and changes 
 | Inflation series / D11 | [A] CBS monthly data; BoI annual and annual-average comparisons, S1–S4 | Owner chooses the measure and its eventual use |
 | Bank crisis, 1983 | [A] Contemporary BoI account, S5; explicitly retrospective study, S6 | Original bank-share arrangement and inquiry records not read |
 | Stabilization, 1985 | [A] BoI's contemporary prices chapter, S3 | Cabinet decision and full fiscal implementation records not read |
-| US aid | [A] Dated request and signing statement, S9–S10 | Annual 1977–1993 commitments/payments and exact enacted supplemental allocation not established here |
+| US aid | [A] Dated request and signing statement, S9–S10 | Enacted 1985 ESF amount documented in S16; annual 1977–1993 commitments/payments remain incomplete |
 | Loan guarantees | [A] Official codified authority and GAO summary, S11–S12 | Actual issues and deductions under the 1992 program not established |
 | Defence share of GDP | [A, R] CBS 1579, Table 4: both GDP columns for 1977–1993, S14 | Compare revision vintages and choose any later gameplay measure separately |
 | Sheqel dates | [A] BoI currency history and dated appendix, S7–S8 | No display-date decision is made |
@@ -92,7 +92,18 @@ of the API metadata. No values are altered here, no API defect is diagnosed, and
 
 ## 5. US financing: distinguish authority from payments
 
-[A] The White House public-papers entry for **15 May 1985** records a presidential request for $1.5 billion for Israel in FY1985 and $1.2 billion in FY1986, linked to economic reforms (S9, dated entry). These are requested appropriations, not verified disbursements. The signing statement published **16 August 1985** says H.R. 2577 appropriated funds for Israel, Egypt and Jordan; its editorial note dates approval to **15 August** and identifies Public Law 99-88 (S10). That statement does not give Israel's amount. The exact enacted supplemental allocation and payment timetable remain [GAP] here; do not convert the May request into a claim of payment on either August date.
+[A] The White House public-papers entry for **15 May 1985** records a presidential request for $1.5 billion for Israel in FY1985 and $1.2 billion in FY1986, linked to economic reforms (S9, dated entry). These are requested appropriations, not verified disbursements. The signing statement published **16 August 1985** says H.R. 2577 appropriated funds for Israel, Egypt and Jordan; its editorial note dates approval to **15 August** and identifies Public Law 99-88 (S10). That statement does not give Israel's amount. The enacted ESF amount is documented below in S16; actual payment dates and other accounts remain [GAP]. Neither the request nor the statutory allocation establishes a payment on either August date.
+
+**Enacted 1985 ESF allocation [A].** Public Law 99-88, dated **15 August 1985**, appropriates an additional
+**$2,258,000,000** for the Economic Support Fund. Its continuation specifies **$1,500,000,000 for Israel**
+and provides for the Israel and Egypt funds as cash grant transfers. The paragraph states availability for
+obligation until **30 September 1986** (99 Stat. 323–324; S16). This supplies the enacted ESF amount
+alongside the earlier presidential request, rather than inferring it from that request.
+
+This is not evidence of a disbursement's date or amount, a military-financing allocation or an annual
+all-aid total. The Jordan-specific timing limits on the same page are not assigned to Israel. Other law
+pages, cross-referenced laws, later amendments and payment records were not reviewed here. The full
+1977–1993 aid schedule remains [GAP]; no historical game text or calibration is supplied.
 
 [A] In the official **2023 codification**, 22 USC §2186(a)–(b) authorizes loan guarantees for immigrant absorption beginning **1 October 1992**, with up to **$10 billion** principal overall and up to **$2 billion** in FY1993, followed by annual authorizations for FY1994–1997. Subsections (c)–(f) contain geographical/use conditions, reductions, fees and suspension provisions (S11). The source note attributes the section to Public Law 102-391 §601, **6 October 1992**. These are statutory ceilings and conditions, not evidence that $10 billion was handed over in cash or all guarantees were issued. The later codification is identified explicitly; the original 1992 statutory pages were not obtained.
 
@@ -153,3 +164,4 @@ All checked **2026-10-23 by an AI agent only**. PDF page locators distinguish pr
 - **S13 — US GAO**, [NSIAD-92-119, official report PDF](https://www.gao.gov/assets/nsiad-92-119.pdf), Appendix I, printed pp. 12–14 (PDF pp. 14–16), authorization and financing passages. Extracted PDF text read from the archived web-reader response; no full local PDF or verified page image. Checked **2026-10-23 by an AI agent**. The original statutes cited by GAO were not read.
 - **S14 — Central Bureau of Statistics**, [Publication 1579, Defence Expenditure in Israel 1950–2012](https://www.cbs.gov.il/he/publications/doclib/2014/1579_defence_2012/pdf/e_print.pdf), October 2014. Table 4, printed p. 28 (PDF p. 30), both GDP columns and footnote 3 read as a rendered image; definitions pp. 13–15 and methods p. 17 read as text, with pp. 15 and 17 also rendered. These are retrospective current-price national-account estimates; the source is not a ledger of budget payments. Checked **2026-10-23 by an AI agent only**.
 - **S15 — Central Bureau of Statistics**, [Table 3.5, Consumer Price Index by different bases since September 1951](https://www.cbs.gov.il/he/publications/doclib/2008/price08a/a3_5_h.pdf), prepared for the expanded Price Statistics Monthly Bulletin 8/2008. Page 1 header, December 1984/January 1985 rows, scale bands and footnotes 1–3 read as a rendered image. Official retrospective table, not the original 1985 release. Checked **2026-10-23 by an AI agent only**.
+- **S16 — US Government Publishing Office / Statutes at Large**, [Public Law 99-88, Supplemental Appropriations Act, 1985](https://www.govinfo.gov/content/pkg/STATUTE-99/pdf/STATUTE-99-Pg293.pdf), **15 August 1985**, H.R. 2577. Law header and enacting clause at 99 Stat. 293 (PDF p. 1); Economic Support Fund paragraph at 99 Stat. 323–324 (PDF pp. 31–32). These three pages were opened and read as rendered images. The remaining 83 pages and cross-referenced laws were not reviewed. Checked **2026-10-23 by an AI agent only**. An OCR search snippet omitted three zeroes in the Israel amount; the scanned paragraph, not that snippet, supports the amount recorded here.
