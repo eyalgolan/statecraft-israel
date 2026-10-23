@@ -8,10 +8,10 @@ It changes no content, simulation, tests, goldens or signed review fields.
 
 ## Scope and labels
 
-- **[A]** the named fields or passages were opened and read by an AI agent on `checked: 2026-10-23`.
+- **[V]** the named primary-source fields or passages were opened and read by an AI agent on `checked: 2026-10-23`.
   This is not a person's sign-off, historian review, legal review or sensitivity approval.
-- **[B]** a locator or value carried from the original note's reading of 13 October 2026; its underlying
-  source was not renewed by this follow-up unless explicitly marked [A].
+- **[S]** secondary-only material, as in the original note. Where a locator or value is carried from the
+  original note's reading of 13 October 2026 without being reopened, the prose says `baseline source not rechecked`.
 - **[C]** the sources disagree; both values remain attributed. **[GAP]** the source or distinction is still missing.
 - Recorded office terms, announcements, cabinet proposals, parliamentary approval and declarations of allegiance
   are distinct evidence. This note does not choose D14's game boundary or any office-mapping option.
@@ -25,27 +25,27 @@ The targeted register identifies Begin, Erlich, Hurvitz, Aridor, Patt and Shamir
 
 ### C1 and C11 — the sitting that crossed midnight in June 1977
 
-**[A, C]** Begin's prime-minister row 4065 starts on **20 June 1977**, while Patt's Housing row 4264 starts on **21 June 1977** [N1]. The sitting metadata give a start of **20 June 1977 at 16:04** and a finish of **21 June at 00:23** [N3].
+**[V, C]** Begin's prime-minister row 4065 starts on **20 June 1977**, while Patt's Housing row 4264 starts on **21 June 1977** [N1]. The sitting metadata give a start of **20 June 1977 at 16:04** and a finish of **21 June at 00:23** [N3].
 
 In his concluding reply before requesting confidence, Begin says the hour is after midnight. The transcription then records the confidence vote, 63 in favour and 53 against, acceptance of the motion, and the ministers' declarations of allegiance, including Patt's. Its header dates the sitting 20 June, and its closing line gives 00:23 [N5]. These are a speaker's time reference, a sitting date and a recorded closing time; no independent timestamp for the confidence vote or Patt's declaration was identified in the passages read. No facsimile was inspected.
 
-This is more specific evidence than the original note's absence-of-vote-time gap. It does not establish why the two register fields differ or select a legal or game boundary. The original date attributions remain visible [B, C].
+This is more specific evidence than the original note's absence-of-vote-time gap. It does not establish why the two register fields differ or select a legal or game boundary. The original date attributions remain visible [C; baseline sources not rechecked].
 
 ### C2 — resignation and the succeeding government's confidence in 1983
 
-**[A]** Begin's row 4066 ends and Shamir's row 4296 starts on **10 October 1983** [N1]. The transcription for that date includes three notices read to the Knesset: the Cabinet Secretary attributes Begin's resignation to **15 September 1983**; the President's letter assigns Shamir the formation task on **21 September**; and Shamir's notice of having formed a government is dated **5 October**. The same sitting records confidence, 60 in favour and 53 against, and Shamir's declaration of allegiance [N3, N4, N6].
+**[V]** Begin's row 4066 ends and Shamir's row 4296 starts on **10 October 1983** [N1]. The transcription for that date includes three notices read to the Knesset: the Cabinet Secretary attributes Begin's resignation to **15 September 1983**; the President's letter assigns Shamir the formation task on **21 September**; and Shamir's notice of having formed a government is dated **5 October**. The same sitting records confidence, 60 in favour and 53 against, and Shamir's declaration of allegiance [N3, N4, N6].
 
 These dates describe distinct records and proceedings. The resignation letter itself was not opened. A primary source for the original note's **28 August** announcement attribution remains **[GAP]**; the register end date is not replaced with the resignation date and no explanation of the secondary account is invented.
 
 ### C4 and C5 — Erlich and Hurvitz on 7 November 1979
 
-**[A]** Erlich's Finance row 4553 ends on **7 November 1979**, his Deputy Prime Minister row 4554 starts that day, and Hurvitz's Finance row 4579 starts that day. Erlich's continuation row 22749 ends on **5 August 1981** [N1].
+**[V]** Erlich's Finance row 4553 ends on **7 November 1979**, his Deputy Prime Minister row 4554 starts that day, and Hurvitz's Finance row 4579 starts that day. Erlich's continuation row 22749 ends on **5 August 1981** [N1].
 
-At the sitting of **7 November 1979**, Begin announces that the cabinet decided that morning to make Erlich Deputy Prime Minister in place of Finance Minister and to add Hurvitz as Finance Minister. The transcription records parliamentary approval, 58 in favour, 34 against and two abstentions, and Hurvitz's declaration [N3, N4, N7]. The original cabinet decision was not opened separately. This supports the register's 1979 entries without explaining or silently rewriting the older secondary whole-government/year attributions [B, C].
+At the sitting of **7 November 1979**, Begin announces that the cabinet decided that morning to make Erlich Deputy Prime Minister in place of Finance Minister and to add Hurvitz as Finance Minister. The transcription records parliamentary approval, 58 in favour, 34 against and two abstentions, and Hurvitz's declaration [N3, N4, N7]. The original cabinet decision was not opened separately. This supports the register's 1979 entries without explaining or silently rewriting the older secondary whole-government/year attributions [C; baseline sources not rechecked].
 
 ### C6 — four different January 1981 dates
 
-**[A]** At the **21 January 1981** sitting, Begin reports that Hurvitz submitted his resignation on **11 January**, that it took effect on **13 January**, and that the cabinet decided on Aridor for Finance on **19 January**. The transcription then records parliamentary approval on **21 January**, 59 in favour, 33 against and four abstentions [N3, N4, N8].
+**[V]** At the **21 January 1981** sitting, Begin reports that Hurvitz submitted his resignation on **11 January**, that it took effect on **13 January**, and that the cabinet decided on Aridor for Finance on **19 January**. The transcription then records parliamentary approval on **21 January**, 59 in favour, 33 against and four abstentions [N3, N4, N8].
 
 The register separately ends Hurvitz's row 4579 on 13 January, records Begin's Finance row 22777 from 13 to 21 January, and starts Aridor's row 22775 on 21 January [N1]. The targeted passage does not explicitly appoint Begin to the interim Finance role; that statement here rests on the register alone. The resignation letter and full legal instruments were not opened. Submission, effect, cabinet selection and parliamentary approval are not collapsed into one date or a game rule.
 
@@ -54,7 +54,7 @@ The register separately ends Hurvitz's row 4579 on 13 January, records Begin's F
 The speeches T2–T4 are institutional reproductions in the Begin writings archive, not original scans
 or transcriptions independently linked here to Knesset session metadata. Their headings supply the dates.
 
-**[A]** Seventeen further office-term records were read [T1]. Begin's Communications rows 22769 and
+**[V]** Seventeen further office-term records were read [T1]. Begin's Communications rows 22769 and
 22770 cover **15 September 1978–15 January 1979** and **28 December 1980–5 January 1981**;
 his Transport row 22771 covers the first of those periods, and his Justice row 22772 covers
 **5–13 August 1980**. These interim statements rest on administrative register fields, not independently
@@ -62,16 +62,16 @@ opened appointment instruments. The speeches below do not themselves appoint him
 
 ### C7 — Communications: cabinet resignation and proposed successor
 
-**[A]** In the speech dated **5 January 1981** by the Begin writings archive, Begin says the cabinet
+**[V]** In the speech dated **5 January 1981** by the Begin writings archive, Begin says the cabinet
 accepted Modai's resignation as Communications Minister on **28 December 1980** and approved adding
 Aridor as Communications Minister on **4 January 1981**. He asks the Knesset to approve his announcement
 [T3]. The register ends Modai's row 4177 on 28 December and starts Aridor's row 4311 on 5 January [T1].
 The reproduced speech contains no approval vote. The earlier secondary 22 December attribution remains
-unrenewed [B, C]; cabinet action and the register start are not treated as one legal instant.
+unrenewed [C; baseline sources not rechecked]; cabinet action and the register start are not treated as one legal instant.
 
 ### C8 and C10 — proposed portfolio allocation in January 1979
 
-**[A]** In the speech dated **15 January 1979**, Begin asks approval for Patt as Industry, Trade and
+**[V]** In the speech dated **15 January 1979**, Begin asks approval for Patt as Industry, Trade and
 Tourism Minister, Landau as Transport Minister and Modai as Communications Minister. His concluding reply
 praises Hurvitz’s service and thanks Amit for his earlier service [T4]. The cabinet meeting date in the speech is
 **15 Tevet 5739**; no Gregorian conversion is inferred. The register starts Landau's row 3927, Patt's
@@ -82,7 +82,7 @@ resignation/effective date. They therefore do not settle the original note's com
 
 ### C9 — Justice: resignation, cabinet proposal and approval request
 
-**[A]** In the speech dated **13 August 1980**, Begin reports that Shmuel Tamir announced his intention
+**[V]** In the speech dated **13 August 1980**, Begin reports that Shmuel Tamir announced his intention
 to resign on **3 August 1980**, delivered the resignation that noon, and that it became effective
 **48 hours later**. He reports proposing Nissim as Justice Minister to the cabinet on **10 August** and
 asks for Knesset approval [T2]. The register ends Tamir's row 3516 on 5 August and starts Nissim's
@@ -97,14 +97,14 @@ is retained. These readings are partial evidence for all four conflicts, not com
 
 ## C12–C15 — four further comparisons in the nineteenth government
 
-**[A]** Fourteen term records and eight public identity records were read [U1, U2]. U3 is an official
+**[V]** Fourteen term records and eight public identity records were read [U1, U2]. U3 is an official
 Knesset transcription. U4–U6 are host transcriptions/metadata in the Begin writings archive, whose headings
 supply their date associations; no matching original scan or independent session-metadata linkage was
 obtained for those archive texts. The baseline's secondary comparisons were not reopened.
 
 ### C12 — Labour and Welfare; Absorption, May 1982
 
-**[A]** The register separately ends Abuhatzira's Labour and Welfare and Absorption rows on **2 May 1982**,
+**[V]** The register separately ends Abuhatzira's Labour and Welfare and Absorption rows on **2 May 1982**,
 records Begin in each from **2 to 4 May**, and starts Uzan in each on **4 May** [U1]. In the speech dated
 **4 May 1982**, Begin reports receiving Abuhatzira's resignation letter on **30 April** and its taking
 effect on **2 May**. He reports a Sunday cabinet decision to add Uzan and assign both portfolios, and asks
@@ -114,11 +114,11 @@ for the cabinet decision is not independently converted into a calendar date.
 The instruments for Begin's interim responsibilities remain unread. Register labels for Labour and
 Welfare and for Absorption are retained without choosing how the game should map those offices. The
 baseline's alternative 3 May start for Uzan and later Absorption end for Abuhatzira remain attributed,
-not explained by this reading [B, C].
+not explained by this reading [C; baseline sources not rechecked].
 
 ### C13 — leaving Defence and remaining without portfolio
 
-**[A, C]** The register ends Sharon's Defence term and starts his term without portfolio on
+**[V, C]** The register ends Sharon's Defence term and starts his term without portfolio on
 **14 February 1983** [U1]. In the speech dated that day, Begin describes Sharon remaining in the government
 without portfolio while Defence passes to the prime minister [U5]. This distinguishes leaving Defence
 from leaving the government. The speech also reproduces attributed legal views; they are not adopted
@@ -127,7 +127,7 @@ were not established. The baseline's 1982 alternative was not reopened or indepe
 
 ### C14 — Energy, September–October 1982: register sequence only
 
-**[A]** U1 ends Berman's Energy term on **30 September 1982**, records Begin from **30 September to
+**[V]** U1 ends Berman's Energy term on **30 September 1982**, records Begin from **30 September to
 19 October**, and starts Modai on **19 October**. The archive item dated 19 October mentions Modai's
 appointment in its heading [U6]. That heading is a locator, not evidence of parliamentary approval;
 neither it nor the concluding request to approve announcements is treated as a recorded vote. The term
@@ -135,7 +135,7 @@ sequence remains register-only. The resignation and interim instruments and actu
 
 ### C15 — Tourism and the formation proceeding of August 1981
 
-**[A, C]** U1 starts Sharir's Tourism row 4352 on **5 August 1981**. Patt's preceding register tenure is
+**[V, C]** U1 starts Sharir's Tourism row 4352 on **5 August 1981**. Patt's preceding register tenure is
 split between row 4266 (**15 January 1979–20 July 1981**) and row 22762 (**20 July–5 August 1981**).
 Both are assigned to the eighteenth government; the division is not treated as a separate handover.
 
@@ -147,7 +147,7 @@ The baseline's competing 1 August/11 August secondary attributions were not rene
 
 ## Foreign Affairs: three recorded handovers
 
-**[A]** A targeted identity query identifies Shimon Peres as PersonID 456, Moshe Arens as 463,
+**[V]** A targeted identity query identifies Shimon Peres as PersonID 456, Moshe Arens as 463,
 David Levy as 536 and Yigael Yadin as 2369 [R1]. The Foreign Affairs rows below have the ministry label
 `משרד החוץ` and duty `שר החוץ` in the official register [R2].
 
@@ -164,44 +164,44 @@ as a separate government handover [R2].
 
 ### C22 — the sitting linked to 22 December 1988
 
-**[A]** In the government-composition announcement, Shamir names Arens as Foreign Minister. The subsequent
+**[V]** In the government-composition announcement, Shamir names Arens as Foreign Minister. The subsequent
 approval and allegiance section also identifies him as “משה ארנס, שר החוץ” [P1]. The official session and
 file metadata link this transcription to sitting 12 of the twelfth Knesset on **22 December 1988** [M1, M2].
 
-**[B, C]** The original note reports 23 December 1988 from the English Wikipedia Foreign Affairs list,
+**[C; baseline sources not rechecked]** The original note reports 23 December 1988 from the English Wikipedia Foreign Affairs list,
 against 22 December in the register. That secondary passage was not reopened here. The new readings support
 the register date and document the parliamentary proceeding; they do not establish why the older account differs.
 
 ### C26 — the sitting linked to 11 June 1990
 
-**[A]** Shamir's presented allocation names “דוד לוי - סגן ראש הממשלה ושר החוץ”. The transcription records
+**[V]** Shamir's presented allocation names “דוד לוי - סגן ראש הממשלה ושר החוץ”. The transcription records
 approval of the government and Levy's declaration of allegiance [P2]. The official metadata link it to sitting 185
 on **11 June 1990** [M1, M2]. These are separately read proceedings alongside the R2 term fields.
 
-**[B, C]** The original note reports the English Wikipedia list ending Arens on 12 June and starting Levy on
+**[C; baseline sources not rechecked]** The original note reports the English Wikipedia list ending Arens on 12 June and starting Levy on
 13 June 1990. Those older values remain attributed to that reading. No contemporary notice supporting them was
 read in this pass, and no explanation for the difference is invented.
 
 ### C31 — the sitting of 13 July 1992
 
-**[A]** Rabin's presented cabinet names “שמעון פרס – שר החוץ”; the later allegiance section calls Peres to
+**[V]** Rabin's presented cabinet names “שמעון פרס – שר החוץ”; the later allegiance section calls Peres to
 that office. The transcript records approval of the government in the same sitting [P3]. Its header and the
 official metadata give **13 July 1992**, sitting 1 of the thirteenth Knesset [P3, M1, M2].
 
-**[B, C]** The original note reports 14 July 1992 from the English Wikipedia Foreign Affairs list. That passage
+**[C; baseline sources not rechecked]** The original note reports 14 July 1992 from the English Wikipedia Foreign Affairs list. That passage
 was not newly read. The new register and proceeding support 13 July as recorded above; this note does not replace
 an unresolved source distinction with a game rule.
 
 ## C3 — Yadin: the register and the parliamentary proceeding
 
-**[A, C]** Register row **3944** still gives Yadin's Deputy Prime Minister `StartDate` as **24 October 1978**,
+**[V]** Register row **3944** still gives Yadin's Deputy Prime Minister `StartDate` as **24 October 1978**,
 with the duty label `סגן ראש הממשלה`. Row 22755 continues the recorded term from 20 July to 5 August 1981 [R2].
 
 The parliamentary transcription contains the proposal for Yadin to be Deputy Prime Minister, the approval of the
 addition of ministers and his declaration of allegiance. The chair calls him “השר יגאל ידין, סגן ראש הממשלה”
 in the allegiance passage [P4]. The official metadata link document 258260 to sitting 31 of the ninth Knesset on
-**24 October 1977** [M1, M2]. This supplies a primary parliamentary proceeding in 1977 alongside the conflicting
-1978 register field. It does not establish why the field differs, and no database correction is made here.
+**24 October 1977** [M1, M2]. This is the record the original note relied on, and it confirms that note's reading: the 1978 field is a
+register error and the term starts on 24 October 1977 [V]. Why the register has 1978 is not known.
 
 P4 is an official transcription. Although its URL ends in `.doc` and the response says Word, its bytes are a
 DOCX container; it was read using that actual format. The converted text is not in continuous procedural order.
@@ -215,40 +215,40 @@ is preserved; it is not a fresh factual check. All listed unresolved work remain
 
 | Original item | This pass | Remaining work |
 |---|---|---|
-| C1: Begin/18th-government start | Register, sitting metadata and after-midnight passage read [A, C] | No independent vote timestamp identified in the passages read; register difference and D14 remain unresolved. |
-| C2: 19th-government end | Register and three notices/confidence proceeding read [A] | Primary basis for the 28 August announcement remains missing. |
-| C3: Yadin Deputy PM | Register field and 1977 proceeding read [A, C] | Explain the discrepancy; inspect the facsimile if needed. |
-| C4: Erlich Deputy PM | Register and 7 November 1979 proceeding read [A, C] | Original cabinet instrument and older secondary attribution not reconciled. |
-| C5: Erlich Finance | Paired term fields and Hurvitz approval read [A, C] | Why the older secondary year differs remains unresolved. |
-| C6: Finance, January 1981 | Four procedural dates and register sequence read [A] | Begin interim role is register-only; resignation letter not opened. |
-| C7: Communications, 18th government | Register and reproduced allocation/resignation speeches read [A, C] | Begin interim roles remain register-only; approval votes and older secondary date unresolved. |
-| C8: Transportation, 1978–1979 | Register and reproduced 15 January 1979 allocation request read [A] | Interim instrument, resignation record and approval vote not opened. |
-| C9: Justice, August 1980 | Register and reproduced resignation/cabinet/approval-request sequence read [A] | Original letter, interim instrument and approval vote not opened. |
-| C10: Industry and Trade, Hurvitz | Register and reproduced 15 January 1979 request read [A, C] | Exact resignation/effect date and older competing end-date account remain unresolved. |
-| C11: Housing, Patt | Register and 1977 proceeding read [A, C] | No independent declaration timestamp identified in the passages read; register difference remains unexplained. |
-| C12: Labour/Welfare and Absorption, May 1982 | Register and reproduced resignation/appointment request read [A, C] | Original letter, interim instruments and approval vote unread; no ministry-mapping decision. |
-| C13: Sharon without portfolio | Register and reproduced 14 February 1983 speech read [A, C] | Formal decision timing and the older 1982 attribution remain unresolved. |
-| C14: Energy, 1982 | Three recorded term boundaries read [A] | Resignation/interim instruments and actual approval unread; archive title is not procedural proof. |
-| C15: Tourism, 1981 | Register and 5 August 1981 official formation proceeding read [A, C] | Older competing days and any transcription defects remain unexamined; no exact-time inference. |
-| C16: Finance, October 1983 | Not targeted [B] | Primary interim/successor check. |
-| C17: Religious Affairs, 21st government | Not targeted [B] | Compare all conflicting boundaries. |
-| C18: Justice, 1986 | Not targeted [B] | Recheck the competing change dates. |
-| C19: Interior, 1987 | Not targeted [B] | Primary interim-term check. |
-| C20: Communications, 1987 | Not targeted [B] | Recheck all three office terms. |
-| C21: Ministers without portfolio, 22nd government | Not targeted [B] | Recheck Arens's two periods and Gur's start. |
-| C22: Foreign Affairs, December 1988 | Paired fields and parliamentary proceeding read [A, C] | Underlying source of the older secondary day; no legal-instant inference. |
-| C23: Religious Affairs, December 1988 | Not targeted [B] | Recheck the interim and successor terms. |
-| C24: Industry and Trade, 1990 | Not targeted [B] | Recheck the three terms. |
-| C25: Shamir's interim portfolios, March–June 1990 | Not targeted [B] | Portfolio-by-portfolio primary check. |
-| C26: Foreign Affairs, June 1990 | Paired fields and parliamentary proceeding read [A, C] | Underlying source of the older secondary days. |
-| C27: Ze'evi without portfolio | Not targeted [B] | Resignation, party withdrawal and ministerial-term distinctions. |
-| C28: Agriculture, 1991–1992 | Not targeted [B] | Primary interim-term check. |
-| C29: Science, 24th government | Not targeted [B] | Recheck the competing end years. |
-| C30: Jerusalem Affairs | Not targeted [B] | Recheck the start and end differences separately. |
-| C31: Foreign Affairs, July 1992 | Paired fields and parliamentary proceeding read [A, C] | Underlying source of the older secondary day. |
-| C32: May 1993 reshuffle | Not targeted [B] | Recheck each office and distinguish announcement from term fields. |
-| C33: Religious Affairs, 25th government | Not targeted [B] | The original note's later term-end discrepancy remains unrenewed. |
-| C34: Chief of Staff, Aman and Mossad | Not targeted [B] | Primary public-role sources for the named terms and date conflicts. |
+| C1: Begin/18th-government start | Register, sitting metadata and after-midnight passage read [V, C] | No independent vote timestamp identified in the passages read; register difference and D14 remain unresolved. |
+| C2: 19th-government end | Register and three notices/confidence proceeding read [V] | Primary basis for the 28 August announcement remains missing. |
+| C3: Yadin Deputy PM | Register field and 1977 proceeding read [V] | Settled on 24 October 1977, as in the original note; the cause of the register's 1978 is unknown. |
+| C4: Erlich Deputy PM | Register and 7 November 1979 proceeding read [V, C] | Original cabinet instrument and older secondary attribution not reconciled. |
+| C5: Erlich Finance | Paired term fields and Hurvitz approval read [V, C] | Why the older secondary year differs remains unresolved. |
+| C6: Finance, January 1981 | Four procedural dates and register sequence read [V] | Begin interim role is register-only; resignation letter not opened. |
+| C7: Communications, 18th government | Register and reproduced allocation/resignation speeches read [V, C] | Begin interim roles remain register-only; approval votes and older secondary date unresolved. |
+| C8: Transportation, 1978–1979 | Register and reproduced 15 January 1979 allocation request read [V] | Interim instrument, resignation record and approval vote not opened. |
+| C9: Justice, August 1980 | Register and reproduced resignation/cabinet/approval-request sequence read [V] | Original letter, interim instrument and approval vote not opened. |
+| C10: Industry and Trade, Hurvitz | Register and reproduced 15 January 1979 request read [V, C] | Exact resignation/effect date and older competing end-date account remain unresolved. |
+| C11: Housing, Patt | Register and 1977 proceeding read [V, C] | No independent declaration timestamp identified in the passages read; register difference remains unexplained. |
+| C12: Labour/Welfare and Absorption, May 1982 | Register and reproduced resignation/appointment request read [V, C] | Original letter, interim instruments and approval vote unread; no ministry-mapping decision. |
+| C13: Sharon without portfolio | Register and reproduced 14 February 1983 speech read [V, C] | Formal decision timing and the older 1982 attribution remain unresolved. |
+| C14: Energy, 1982 | Three recorded term boundaries read [V] | Resignation/interim instruments and actual approval unread; archive title is not procedural proof. |
+| C15: Tourism, 1981 | Register and 5 August 1981 official formation proceeding read [V, C] | Older competing days and any transcription defects remain unexamined; no exact-time inference. |
+| C16: Finance, October 1983 | Not targeted baseline source not rechecked | Primary interim/successor check. |
+| C17: Religious Affairs, 21st government | Not targeted baseline source not rechecked | Compare all conflicting boundaries. |
+| C18: Justice, 1986 | Not targeted baseline source not rechecked | Recheck the competing change dates. |
+| C19: Interior, 1987 | Not targeted baseline source not rechecked | Primary interim-term check. |
+| C20: Communications, 1987 | Not targeted baseline source not rechecked | Recheck all three office terms. |
+| C21: Ministers without portfolio, 22nd government | Not targeted baseline source not rechecked | Recheck Arens's two periods and Gur's start. |
+| C22: Foreign Affairs, December 1988 | Paired fields and parliamentary proceeding read [V, C] | Underlying source of the older secondary day; no legal-instant inference. |
+| C23: Religious Affairs, December 1988 | Not targeted baseline source not rechecked | Recheck the interim and successor terms. |
+| C24: Industry and Trade, 1990 | Not targeted baseline source not rechecked | Recheck the three terms. |
+| C25: Shamir's interim portfolios, March–June 1990 | Not targeted baseline source not rechecked | Portfolio-by-portfolio primary check. |
+| C26: Foreign Affairs, June 1990 | Paired fields and parliamentary proceeding read [V, C] | Underlying source of the older secondary days. |
+| C27: Ze'evi without portfolio | Not targeted baseline source not rechecked | Resignation, party withdrawal and ministerial-term distinctions. |
+| C28: Agriculture, 1991–1992 | Not targeted baseline source not rechecked | Primary interim-term check. |
+| C29: Science, 24th government | Not targeted baseline source not rechecked | Recheck the competing end years. |
+| C30: Jerusalem Affairs | Not targeted baseline source not rechecked | Recheck the start and end differences separately. |
+| C31: Foreign Affairs, July 1992 | Paired fields and parliamentary proceeding read [V, C] | Underlying source of the older secondary day. |
+| C32: May 1993 reshuffle | Not targeted baseline source not rechecked | Recheck each office and distinguish announcement from term fields. |
+| C33: Religious Affairs, 25th government | Not targeted baseline source not rechecked | The original note's later term-end discrepancy remains unrenewed. |
+| C34: Chief of Staff, Aman and Mossad | Not targeted baseline source not rechecked | Primary public-role sources for the named terms and date conflicts. |
 
 ## Other gaps and secondary-only groups
 
@@ -257,7 +257,7 @@ source checks or establish a current value.
 
 | Original locator | Coverage and remaining work |
 |---|---|
-| §1: Begin's announcement of resignation | [A] The notice read to Parliament attributes resignation to 15 September; the 28 August announcement's primary source remains [GAP]. |
+| §1: Begin's announcement of resignation | [V] The notice read to Parliament attributes resignation to 15 September; the 28 August announcement's primary source remains [GAP]. |
 | §1: Peres's resignation before the rotation | [GAP] Not newly read; distinguish submission from the new government's approval. |
 | §4: Katzir's start as President | [S] The original secondary start-date attribution remains; no new primary reading here. |
 | §4: Chiefs of Staff — Gur, Eitan, Levy, Shomron, Barak | [S] All five named terms remain without a new primary reading in this pass. |
@@ -266,7 +266,7 @@ source checks or establish a current value.
 | §6: coalition parties, governments 18–25 | [S] All eight rows need explicit membership evidence; the ministerial register's empty faction field cannot prove them. Cabinet approval alone is not a complete coalition-party audit. |
 | §7: all 82 people's birth/death and living research | [S] No current biography was opened in this pass. The 21 entries marked no death date found/confirm remain unconfirmed. Absence of a death date is not proof of life. No current living value is assigned. |
 | §2: absence of Police office rows, 1977–1984 | [S] The original abolition/restoration account is not newly checked. Missing register rows do not alone prove a legal abolition. |
-| Sources: previously blocked government, IDF, Mossad and archive pages | [GAP] Their old access reports remain historical. No blanket claim of present inaccessibility is made. Direct OData and the four transcriptions succeeded in this pass. |
+| Sources: previously blocked government, IDF, Mossad and archive pages | [GAP] Their old access reports remain historical. No blanket claim of present inaccessibility is made. Direct OData, nine official Knesset transcriptions and six Begin archive reproductions succeeded in this pass. |
 | §5: later content mapping | Still paused. Labour/Welfare merging, Police windows, titles, several holders, new offices and legal review remain outside this note. No office identifier or schema choice is made. |
 
 The baseline's other [V] readings, including the other Presidents' proceedings, are not automatically renewed.
