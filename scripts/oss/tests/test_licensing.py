@@ -1,6 +1,9 @@
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "tools"))
+import yaml12  # noqa: E402  (tools/yaml12.py: YAML 1.2, no 1.1 coercions)
 
 
 # sha256 of the official plain text, https://polyformproject.org/licenses/noncommercial/1.0.0.txt (fetched 22 Oct 2026;
@@ -33,7 +36,8 @@ def test_earlier_mit_licence_is_kept():
 def test_licence_texts_are_the_real_ones():
     for name, marker in (("CC-BY-4.0", "Attribution 4.0 International"),
                          ("CC-BY-SA-4.0", "Attribution-ShareAlike 4.0 International"),
-                         ("CC0-1.0", "CC0 1.0 Universal")):
+                         ("CC0-1.0", "CC0 1.0 Universal"),
+                         ("CC-BY-NC-ND-4.0", "Attribution-NonCommercial-NoDerivatives 4.0 International")):
         assert marker in (ROOT / f"LICENSES/{name}.txt").read_text(encoding="utf-8"), name
     yaml_dot_net = (ROOT / "LICENSES/YamlDotNet-MIT.txt").read_text(encoding="utf-8")
     assert "Antoine Aubry" in yaml_dot_net and "Permission is hereby granted" in yaml_dot_net
@@ -89,3 +93,29 @@ def test_every_repo_path_licensing_names_exists():
         if not ok:
             missing.append(token)
     assert missing == [], f"LICENSING.md names paths that are not in the repository: {missing}"
+
+
+def test_all_of_tal_heubergers_models_are_cc_by_nc_nd_from_20_october_2026():
+    """Owner ruling, 20 October 2026: all of Tal Heuberger's models, the 73 released as CC0 included, are distributed
+    under CC BY-NC-ND 4.0 from that date. CC0 cannot be withdrawn, so LICENSING.md and NOTICE say that copies obtained
+    before that date keep CC0."""
+    rows = [r for r in yaml12.load_path(ROOT / "ASSETS.yaml")["rules"]
+            if r.get("artist") == "Tal Heuberger"]
+    globs = {r["glob"] for r in rows}
+    assert len(rows) == 12  # the 23 single-building models (one row) and the 50 in The 1948 Collection (eleven rows)
+    assert {"unity/Assets/Art/Settlements/Prototype/Models/b*", "unity/Assets/Art/Collection/*"} <= globs
+    assert [r["glob"] for r in rows if r["licence"] != "CC-BY-NC-ND-4.0"] == []
+    assert all("CC0 1.0 until 2026-10-20" in r["note"] for r in rows)
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    tal = [l for l in text.splitlines() if l.startswith("|") and "Tal Heuberger" in l]
+    assert len(tal) == 1, "one LICENSING.md row covers all of Tal Heuberger's models"
+    row = tal[0]
+    for path in ("`unity/Assets/Art/Settlements/Prototype/Models/`", "`unity/Assets/Art/Collection/`"):
+        assert path in row
+    assert "[CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt)" in row and 'credit "Tal Heuberger"' in row
+    assert "before 20 October 2026" in row and "keeps them under CC0 1.0" in row
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    credit = next(p for p in notice.split("\n\n") if "Tal Heuberger" in p)
+    assert "CC BY-NC-ND 4.0" in credit and "https://creativecommons.org/licenses/by-nc-nd/4.0/" in credit
+    assert "copies obtained before then keep CC0 1.0" in credit
+    assert "Tal Heuberger, CC0" not in notice

@@ -11,7 +11,9 @@ See LICENSING.md for the path-by-path map.
 This product includes or is derived from the following third-party material. Per-file records: ASSETS.yaml,
 ASSETS.portraits.yaml, THIRD-PARTY-NOTICES.md.
 
-The 1948 Collection: 3D models by Tal Heuberger, CC0 1.0.
+The 1948 Collection and the single-building models: 3D models by Tal Heuberger, CC BY-NC-ND 4.0
+(https://creativecommons.org/licenses/by-nc-nd/4.0/) from 20 October 2026. They were marked CC0 1.0 before that date,
+and copies obtained before then keep CC0 1.0 (LICENSING.md).
 
 Terrain (Copernicus DEM licence, modified data):
 produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018
