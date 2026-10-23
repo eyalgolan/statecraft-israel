@@ -18,6 +18,7 @@ public class MovementTests
     /// <summary>A soldier, an Egyptian unit (an enemy side) and the fixture's halutz types.</summary>
     const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+        + "  - { id: gun, kind: unit, side: israel, class: infantry, movement_points: 2 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
 
     /// <summary>A 6 x 3 board of coastal plain, q 0 to 5 and r 0 to 2, with <paramref name="biomes"/> replacing hexes (a
@@ -75,6 +76,42 @@ public class MovementTests
         var c = Load(Board((3, 1, biome)));
         var s = With(c, Soldier(1, 2, 1));
         Assert.Equal(cost, Movement.Reachable(c, s, 1)[(3, 1)]);
+    }
+
+    // R-MOVE-001 (owner, 23 October 2026, OQ-3: "No, strict like Civ VI": a unit needs the full cost of the next hex, "with
+    // full points it can always move one hex"): a unit that has not moved may enter one neighbour whatever it costs, and
+    // that spends all its points.
+    [Fact]
+    public void WithFullPointsAUnitCanAlwaysMoveOneHex()
+    {
+        var c = Load(Board((3, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"));
+        Assert.Equal(2, Movement.Reachable(c, s, 1)[(3, 1)]);   // all of its two points
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1), new Move(1, 4, 1) });
+        Assert.Equal((3, 1), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Equal("That hex is out of reach this turn", now.Rejected.Single().Reason);   // no points left
+    }
+
+    // R-MOVE-001: only with full points: after a move the strict rule holds.
+    [Fact]
+    public void AfterAMoveTheNextHexNeedsItsFullCost()
+    {
+        var c = Load(Board((4, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"));
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1) });
+        Assert.False(Movement.Reachable(c, now.State, 1, now.Spent).ContainsKey((4, 1)));
+        Assert.Equal("That hex is out of reach this turn", Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1), new Move(1, 4, 1) }).Rejected.Single().Reason);
+    }
+
+    // R-MOVE-001: the exception reaches one hex only, never a hex beyond it, and never gives a type with no movement points
+    // (a halutz) a move.
+    [Fact]
+    public void TheExceptionIsOneHexOnly()
+    {
+        var c = Load(Board((3, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"), new Unit(2, "halutz", 1, 2));
+        Assert.False(Movement.Reachable(c, s, 1).ContainsKey((4, 1)));
+        Assert.Empty(Movement.Reachable(c, s, 2));
     }
 
     // R-MOVE-001: the real game's numbers, design values this PR proposes (Q-MOVE-1): one cost per land biome of hexes.json,
@@ -253,6 +290,78 @@ public class MovementTests
         Assert.Equal((3, 1), (r.State.Units[1].Q, r.State.Units[1].R));
         Assert.Contains(r.Why, x => x.System == "map" && x.Message == "Unit 1 moved to hex 2,1 for 2 movement points");
         Assert.Empty(Step(c, r.State, new Move(1, 5, 1)).Rejected);
+    }
+
+    // R-MOVE-002: Reachable with the turn's spent points searches with the points left (R-MOVE-001); without them, with all.
+    [Fact]
+    public void ReachableUsesOnlyTheMovementPointsLeftAfterAFirstMove()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 1, spent, new List<Cause>()));
+
+        Assert.True(Movement.Reachable(c, s, 1).ContainsKey((5, 1)));   // three points from the unit's new hex
+        var left = Movement.Reachable(c, s, 1, spent);
+        Assert.True(left.ContainsKey((3, 1)));
+        Assert.False(left.ContainsKey((4, 1)));                         // two points, but only one remains
+        Assert.True(left.Count < Movement.Reachable(c, s, 1).Count);
+    }
+
+    // R-MOVE-002: Path with the turn's spent points finds only paths the points left can pay for.
+    [Fact]
+    public void PathUsesOnlyTheMovementPointsLeftAfterAFirstMove()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 1, spent, new List<Cause>()));
+
+        Assert.Equal(new[] { (3, 1), (4, 1) }, Movement.Path(c, s, 1, 4, 1));
+        Assert.Empty(Movement.Path(c, s, 1, 4, 1, spent));
+        Assert.Equal(new[] { (3, 1) }, Movement.Path(c, s, 1, 3, 1, spent));
+    }
+
+    // Spec 2026-10-23 section 3: the preview runs the same orders as Step's RunOrders and stops before the resolver.
+    [Fact]
+    public void PreviewRunsTheSameMoveOrdersWithoutResolvingTheTurn()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        Command[] commands = { new Move(1, 2, 1), new Move(1, 3, 1), new Move(1, 5, 1) };
+
+        var preview = Simulation.Preview(c, s, commands);
+        var expected = s.Clone();
+        var spent = new Dictionary<int, int>();
+        var why = new List<Cause>();
+        Assert.Null(Movement.Move(c, expected, 1, 2, 1, spent, why));
+        Assert.Null(Movement.Move(c, expected, 1, 3, 1, spent, why));
+        Assert.Equal("That hex is out of reach this turn", Movement.Move(c, expected, 1, 5, 1, spent, why));
+
+        Assert.Equal(expected.Hash(), preview.State.Hash());
+        Assert.Equal(3, preview.Spent[1]);
+        // Step continues through TurnResolver and the rest of the turn, so its full hash is not comparable. This fixture
+        // has no enemy units, and resolution does not move the player's unit: its final position remains comparable.
+        var stepped = Step(c, s, commands);
+        Assert.Equal((stepped.State.Units[1].Q, stepped.State.Units[1].R),
+                     (preview.State.Units[1].Q, preview.State.Units[1].R));
+    }
+
+    // Spec 2026-10-23 section 3: the preview works on a clone; the turn's start state and its RNG are untouched.
+    [Fact]
+    public void PreviewLeavesTheInputStateAndItsRngUnchanged()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        s.CoalitionStability = 0.4;   // below the automatic-pass threshold, so the policy vote consumes a draw
+        var beforeHash = s.Hash();
+        var beforeRng = s.RngState;
+
+        var preview = Simulation.Preview(c, s, new Command[] { new SetPolicy("rationing", 0.5), new Move(1, 1, 1) });
+
+        Assert.Equal(beforeHash, s.Hash());
+        Assert.Equal(beforeRng, s.RngState);
+        Assert.NotEqual(beforeRng, preview.State.RngState);   // the vote consumed only the clone's draw
     }
 
     // R-MOVE-006, Q-HOLD-1 ("lost on move"): a move that goes through clears fortify, set or given this turn, and the hex it

@@ -244,7 +244,7 @@ public class HudTests
         new HudPresenter(ui.Root, bridge, text);
         new ToastPresenter(ui.Root, bridge, text);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("toast").style.display.value);
-        bridge.Queue(new SetPolicy(C.Policies[0].Id, 2));     // a known policy at an impossible level: the sim refuses it
+        bridge.Queue(new SetPolicy(C.At(bridge.State.Date).Policies[0].Id, 2));     // a policy in force now at an impossible level: the sim refuses it
         ui.Press("end-turn");
         Assert.AreEqual("Not done: Policy level must be between 0 and 1", ui.Q<Label>("toast").text);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("toast").style.display.value);

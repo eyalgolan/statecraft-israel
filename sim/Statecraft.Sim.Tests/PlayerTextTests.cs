@@ -147,7 +147,10 @@ public class PlayerTextTests
             foreach (var o in e.Options)
             {
                 var g = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
-                g.Date = e.From; g.PendingEvents.Clear(); g.PendingEvents.Add(e.Id);
+                var start = g.Date;
+                g.Date = e.From;
+                ContentWindows.Update(c, g, start);
+                g.PendingEvents.Clear(); g.PendingEvents.Add(e.Id);
                 var r = Simulation.Step(c, g, new Command[] { new ChooseEventOption(e.Id, o.Id) });
                 Assert.Empty(r.Rejected);
                 causes.AddRange(r.Why);

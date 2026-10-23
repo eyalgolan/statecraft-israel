@@ -26,8 +26,8 @@
 #                Thirteen villages have no Hebrew label or article (#558). Eight have a name_he from a he.wiki page
 #                (2026-10-21, #1219 item 3). Three more have one from the sources the owner allowed on 2026-10-21
 #                (#1219): Salihiya and Karatiya from moreshet-map.org.il battle pages, Zuq et Tahtani from an Israel
-#                Antiquities Authority final report (2026-10-22). Ni'ilya and Ghazawiya keep the English: their only
-#                Hebrew forms so far are Zochrot's, which the ruling does not allow.
+#                Antiquities Authority final report, and the last two - Ni'ilya (נעיליא) and Ghazawiya (אל-גזאוויה) -
+#                from the he.wiki subdistrict lists (2026-10-22). All thirteen villages now carry a sourced name_he.
 #                name_he_review: agent-checked on the rows with a sourced name_he: an AI agent checked the name against its sources and no
 #                person has read it yet (owner, 2026-10-15); a native speaker reviews it (#564) and removes the flag.
 #   reviewed_by/on  a person's sign-off beside status (a place or a camp row), their GitHub handle and the day, both or
@@ -4836,6 +4836,12 @@ places:
   name: Ni'ilya
   name_basis: vs1945
   name_ar: نعليا
+  name_he: נעיליא
+  name_he_review: agent-checked
+  # he.wiki subdistrict list entry
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נפת_עזה_(המנדט)
+    checked: '2026-10-22'
   lon: 34.5717
   lat: 31.6461
   kind: arab_village
@@ -6558,6 +6564,12 @@ places:
   name: Ghazawiya
   name_basis: vs1945
   name_ar: الغزاوية، بيسان
+  name_he: אל-גזאוויה
+  name_he_review: agent-checked
+  # he.wiki subdistrict list entry
+  name_he_sources:
+  - url: https://he.wikipedia.org/wiki/נפת_ביסאן
+    checked: '2026-10-22'
   lon: 35.5415
   lat: 32.5021
   kind: arab_village
