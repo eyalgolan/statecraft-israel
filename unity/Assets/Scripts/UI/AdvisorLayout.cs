@@ -38,7 +38,7 @@ namespace Statecraft.Game.UI
         /// <paramref name="avoid"/> (Show me's target, spec 7.3); never taller than the slot.</summary>
         public static Rect Place(Rect slot, float height, Rect? avoid)
         {
-            float h = Mathf.Min(height, slot.height);
+            float h = Mathf.Max(0f, Mathf.Min(height, slot.height));
             var top = new Rect(slot.xMin, slot.yMin, slot.width, h);
             if (!(avoid is Rect a) || !top.Overlaps(a)) return top;
             var foot = new Rect(slot.xMin, slot.yMax - h, slot.width, h);

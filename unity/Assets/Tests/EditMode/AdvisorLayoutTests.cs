@@ -51,4 +51,20 @@ public class AdvisorLayoutTests
         Assert.AreEqual(Rect.MinMaxRect(1504, 166, 1904, 366), AdvisorLayout.Place(slot, 200, R(1600, 600, 100, 40)), "a target below it: stays");
         Assert.AreEqual(Rect.MinMaxRect(1504, 166, 1904, 672), AdvisorLayout.Place(slot, 900, null), "never taller than its slot (the text scrolls)");
     }
+
+    [Test]
+    public void ADegenerateSlotGivesAnEmptyPopupInsideIt()
+    {
+        var slot = Rect.MinMaxRect(1504, 300, 1904, 200);   // a short window: the foot sits above the top, so the height is negative
+        var placed = AdvisorLayout.Place(slot, 200, null);
+        Assert.AreEqual(0f, placed.height);
+        Assert.AreEqual(slot.yMin, placed.yMin);
+    }
+
+    [Test]
+    public void WhenTopAndFootBothMeetTheTargetThePopupStaysAtTheTop()
+    {
+        var slot = Rect.MinMaxRect(1504, 166, 1904, 372);
+        Assert.AreEqual(Rect.MinMaxRect(1504, 166, 1904, 366), AdvisorLayout.Place(slot, 200, R(1600, 200, 100, 150)));
+    }
 }
