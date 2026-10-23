@@ -308,7 +308,9 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 **Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
 (`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner
 records the sign-off by moving each feature's `status` to `sensitivity-reviewed` (after `fact-checked`). The 1948
-sub-districts (D-B) are reviewed with them.
+sub-districts (D-B) are reviewed with them. On 23 October 2026 the owner signed off 11 of the 16 features (#196, #1444;
+the owner's review also stands as their fact check); `egypt_adl_gaza`, `egypt_mv1950_demarcation`, `egypt_mv1950_zone_lines`,
+`jordan_adl_a_latrun` and `syria_adl` were flagged and stay `draft`.
 
 | Line or zone | Front, from | What to review |
 |---|---|---|

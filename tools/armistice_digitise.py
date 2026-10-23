@@ -49,6 +49,12 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "map" / "armistice_lines_1949.geojson"
 SUBDISTRICTS = ROOT / "content" / "map" / "subdistricts_1948.geojson"
 CHECKED = "2026-10-11"
+# The owner's sign-off (CONTENT_POLICY 2.7, in the owner's own commit): the 11 features the owner approved on 2026-10-23 (#196), the
+# owner's review standing as their fact check too (owner ruling, PR #1444: "My review counts"). The 5 flagged stay draft.
+SIGNED_OFF = {"status": "sensitivity-reviewed", "reviewed_by": "eyalgolan", "reviewed_on": "2026-10-23"}
+SIGNED_OFF_IDS = ("egypt_el_auja_dmz", "lebanon_adl", "jordan_adl_bc_south", "jordan_adl_d_arava",
+                  "jordan_adl_iraqi_a_triangle", "jordan_adl_iraqi_b_wadi_ara", "jordan_adl_iraqi_c_east",
+                  "jordan_adl_iraqi_c_south", "syria_dmz_central", "syria_dmz_north", "syria_dmz_south")
 PG_PIPELINE = ("+proj=pipeline +step +inv +proj=cass +lat_0=31.7340969444444 +lon_0=35.2120805555556 +x_0=170251.555 "
                "+y_0=126867.909 +a=6378300.789 +b=6356566.435 +step +inv +proj=longlat +a=6378300.789 +b=6356566.435 "
                "+step +proj=push +v_3 +step +proj=cart +a=6378300.789 +b=6356566.435 +step +proj=helmert +x=-275.7224 "
@@ -833,6 +839,8 @@ def feature(fid, front, kind, name, geom_km, accuracy, method, sources, extra=No
              "document": doc, "shown_from": date, "accuracy": accuracy, "method": method,
              "sources": [s["url"] for s in sources], "checked": CHECKED, "status": "draft"}
     props.update(extra or {})
+    if fid in SIGNED_OFF_IDS:
+        props.update(SIGNED_OFF)
     return {"type": "Feature", "properties": props, "geometry": mapping(g)}
 
 
@@ -1090,9 +1098,10 @@ def build(syria_pdf: Path, syria_tif: Path, gaza: Path, mv1: Path, mv2: Path, jo
                         "where the international border is. the line is clear on the map you drew on'; "
                         "'jordan_adl_a_latrun | FLAG | check this again, the bottom part doesnt look right'; 'syria_adl | "
                         "FLAG | this is not where the international border is. the line is clear on the map you drew on'. "
-                        "Every feature's status stays draft: the order is fact-checked, then sensitivity-reviewed "
-                        "(docs/m3-release.md), and no feature is fact-checked yet; an approved feature moves to "
-                        "sensitivity-reviewed once it is."),
+                        "Owner ruling (2026-10-23, PR #1444): the owner's review also stands as the fact check of the 11 "
+                        "approved features, so each is sensitivity-reviewed, signed reviewed_by eyalgolan, reviewed_on "
+                        "2026-10-23, in the owner's own commit; the 5 flagged stay draft, and so does this file's status until "
+                        "every feature is reviewed."),
         "diagnostics": {"syria": {"dmz_total_km2": total, "line_to_zone_edge_median_m": diag["line_to_zone_edge_median_m"], "dmz_areas_km2": diag["dmz_areas_km2"], "dropped_hatch_km2": dropped,
                                   "colour_registration": diag["fits"],
                                   "grid_georeference_1bit": {k: {"rms_m": [round(x, 1) for x in f["rms_m"]], "obs": f["obs"]} for k, f in tif_fits.items()}},

@@ -13,6 +13,7 @@ import yaml12
 import armistice_bake as ab
 import armistice_digitise as ad
 import borders_bake as bb
+import review_record
 
 ROOT = Path(__file__).resolve().parents[2]
 MAP = ROOT / "content" / "map"
@@ -136,15 +137,23 @@ def test_the_1950_modus_vivendi_is_its_own_dated_feature():
     assert FEATS["egypt_adl_gaza"]["properties"]["shown_from"] == "1949-02-24"
 
 
-def test_each_feature_is_dated_sourced_and_draft():
+def test_each_feature_is_dated_sourced_and_signed_off_or_draft():
+    """The owner signed off the 11 approved features (2026-10-23, the owner's review also the fact check, PR #1444); the 5
+    flagged stay draft."""
     assert {"lebanon_adl", "syria_adl", "syria_dmz_north", "syria_dmz_central", "syria_dmz_south",
             "egypt_adl_gaza", "egypt_el_auja_dmz", "egypt_mv1950_demarcation"} <= set(FEATS)
+    assert len(ad.SIGNED_OFF_IDS) == 11 and set(ad.SIGNED_OFF_IDS) <= set(FEATS)
     for fid, f in FEATS.items():
         p = f["properties"]
         assert p["shown_from"] >= p["signed"], fid
         if "mv1950" not in fid:
             assert p["signed"] == DATES[p["front"]], fid
-        assert p["status"] == "draft" and p["checked"] == ad.CHECKED, fid
+        if fid in ad.SIGNED_OFF_IDS:
+            assert p["status"] == "sensitivity-reviewed" and review_record.signed(p), fid
+            assert (p["reviewed_by"], p["reviewed_on"]) == ("eyalgolan", "2026-10-23"), fid
+        else:
+            assert p["status"] == "draft" and "reviewed_by" not in p and "reviewed_on" not in p, fid
+        assert p["checked"] == ad.CHECKED, fid
         assert p["sources"] and all(s.startswith("https://") for s in p["sources"]), fid
         assert p["accuracy"] and p["method"] and p["agreement"] and p["document"], fid
         assert p["kind"] == ("zone" if f["geometry"]["type"] in ("Polygon", "MultiPolygon") else "line"), fid
