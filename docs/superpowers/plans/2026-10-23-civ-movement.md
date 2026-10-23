@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- No code before the owner approves the spec. The owner's answers of 23 October 2026 are built in: OQ-1 "One unit per attack, Civ" (Tasks 5, 11), OQ-2 "Instant" capture (Tasks 8a, 12a, after #1324 and #1327 merge), OQ-3 "No, strict like Civ VI" with the full-points exception (Tasks 2a, 7), old saves "Refuse with a clear message" (Task 6). OQ-A (a force-end key) is open: the plan builds none.
+- The owner approved the spec and this plan on 23 October 2026: "Approve, start building" (recorded on #1402). The owner's answers of 23 October 2026 are built in: OQ-1 "One unit per attack, Civ" (Tasks 5, 11), OQ-2 "Instant" capture (Tasks 8a, 12a, after #1324 and #1327 merge), OQ-3 "No, strict like Civ VI" with the full-points exception (Tasks 2a, 7), old saves "Refuse with a clear message" (Task 6). OQ-A "No force": the plan builds no force-end key (Task 13a). The capture answer: "Yes, answer at End turn": `ResolveCapture` stays deferred (Task 8a).
 - Unchanged and not to be touched: Q-MOVE-1 to Q-MOVE-5 (terrain costs, points, stacking, no zone of control, no transport), D-A6's resolver order, R-ENEMY-001 to R-ENEMY-006, `Movement.Toward` (the enemy's march), `Movement.Closed` (#1324 and #1327 edit it).
 - Instant orders: `Move`, and `UnitOrder` with `attack`, `go_to`, `fortify` or `hold`. Send home and every other order, `ResolveCapture` included, stay deferred (spec 3.2). `Simulation.IsInstant` is the only definition.
 - End turn's batch order: route step, committed orders in click order, deferred orders in queue order (spec 3.3).
@@ -40,7 +40,7 @@ Estimates are for one focused agent lane including the gates; Unity slices inclu
 
 | Slice | Tasks | Needs | Drafted by | Estimate | Main risk |
 |---|---|---|---|---|---|
-| S1 sim: preview, points left, needs-orders, the full-points hex | 1, 2, 2a | the owner's spec approval | Codex (cx135's draft on `codex/civ-move-reach-spent` starts Task 1) | 0.5 day | `RunOrders` refactor touching `Step`: guarded by the unchanged goldens |
+| S1 sim: preview, points left, needs-orders, the full-points hex | 1, 2, 2a | none (the owner approved the spec, 23 October 2026) | Codex (cx135's draft on `codex/civ-move-reach-spent` starts Task 1) | 0.5 day | `RunOrders` refactor touching `Step`: guarded by the unchanged goldens |
 | S2 sim: session and save | 3, 4 | S1 | Codex | 0.5 day | save format: old-save round trips in `SaveGameTests` |
 | S5a sim: Why lines carry units: the mechanism and the move, order, send-home and enemy-truce lines | 4a | S2 | Codex (cx137's sweep lists every site) | 0.5 day | constructor overloads on `Cause`: compile-only risk |
 | S5b sim: the combat lines | 4b | S5a | Codex | 0.5 day | `Combat.Take` keeps snapshots: engagement order must not change |
@@ -56,7 +56,7 @@ Estimates are for one focused agent lane including the gates; Unity slices inclu
 | U4a Unity: End turn waits; Skip | 13a | U1 | Claude lane | 0.5 day | the smoke runs: both must keep their hashes |
 | U4b Unity: the cycle and the camera | 13b | U4a | Claude lane | 0.5 day | camera focus helper shared with the guide (#1394) |
 | U4c Unity: dimmed tokens and the phone layout | 13c | U4a | Claude lane | 0.5 day | material property blocks on badge renderers |
-| D docs: the GDD amendments | 14 | the owner's approval of spec 9.3 | Claude lane | 1 hour | approval scope only |
+| D docs: the GDD amendments | 14 | none (the owner approved spec 9.3, 23 October 2026) | Claude lane | 1 hour | approval scope only |
 
 Codex workers cannot run Unity; a Claude lane reviews, runs the gates and lands every Codex draft. Each slice is one PR. Before each: `git fetch`, and check it is not already done on origin/main.
 
@@ -1957,7 +1957,7 @@ The engagement's values are, in order: the attackers' names, the defenders' name
         // EndTurn and Replace: skipped.Clear();
 ```
 
-`HudPresenter`: the button's text is `hud.end_turn_needs_orders` while `bridge.NeedsOrders.Count > 0`; the press calls `selectUnit(bridge.NeedsOrders[0])` then, and `bridge.EndTurn()` otherwise. There is no force path (OQ-A). The card's `info-skip` button ("Skip this turn") calls `bridge.Skip(id)`. `Smoke` and `SmokeOrders`: before pressing End turn, `foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);` through the card is the player's path, so press `end-turn` (which selects the unit and opens its card) then `info-skip`, repeated while `bridge.NeedsOrders.Count > 0` (guard 200); log the same lines as before. Strings per spec 8.2.
+`HudPresenter`: the button's text is `hud.end_turn_needs_orders` while `bridge.NeedsOrders.Count > 0`; the press calls `selectUnit(bridge.NeedsOrders[0])` then, and `bridge.EndTurn()` otherwise. There is no force path (OQ-A, owner: "No force"). The card's `info-skip` button ("Skip this turn") calls `bridge.Skip(id)`. `Smoke` and `SmokeOrders`: before pressing End turn, `foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);` through the card is the player's path, so press `end-turn` (which selects the unit and opens its card) then `info-skip`, repeated while `bridge.NeedsOrders.Count > 0` (guard 200); log the same lines as before. Strings per spec 8.2.
 
 - [ ] **Step 4: Full EditMode on the merged tree, 0 NEW.** WebGL: `golden&smoke=5` prints `SMOKE OK 5 turns 1948-10-15 bc2ab42b...` unchanged and `smoke-orders` prints `SMOKE ORDERS OK 1948-06-15 9f224bd4...` unchanged (Skip changes nothing in the sim; if either moves, stop). Screenshots EN and HE: the blocked button and the Skip button.
 
@@ -2054,7 +2054,7 @@ In `UiLayoutTests`, `TheBlockedEndTurnLabelFitsAtPhoneWidth`: with the layout se
 
 - [ ] **Step 2: Run; expect failures. Step 3: Implement** `Dim`: for each token under the tokens root, set a `MaterialPropertyBlock` with `_BaseColor = DimColor` on its `Badge` renderers when its row is listed, else `SetPropertyBlock(null)`; GameRoot calls it after `unitLayer.Show` with the rows of the player's units whose `Movement.PointsLeft` is 0. Shorten the label only if the layout test fails, with the copy reviewed again under `WRITING_UI.md`. **Step 4:** full EditMode, 0 NEW; screenshots EN and HE of a dimmed token and the blocked button at 390 px. **Step 5:** commit and open the U4c PR.
 
-### Task 14: The GDD amendments (D; after the owner approves spec 9.3)
+### Task 14: The GDD amendments (D; the owner approved spec 9.3 on 23 October 2026)
 
 **Files:**
 - Modify: `docs/GDD.md:38`, `:42`, `:76`; `docs/gdd/military-combat.md:13`, `:15`, `:17`, `:18`; `docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md:251`

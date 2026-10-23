@@ -1,6 +1,6 @@
 # Civ-style movement: design spec
 
-**Status:** DRAFT for the owner's approval. No code until the owner approves this spec (tracking issue #1398). Revision 2 (23 October 2026) folds in the owner's answers to the four open questions (recorded on #1402 and #1398, section 10) and an independent review of revision 1 (Codex cx142; each finding and its outcome in section 12).
+**Status:** APPROVED by the owner on 23 October 2026: "Approve, start building", for revision 2 (head `9a52b015`) including the GDD edits of section 9.3 (recorded on #1402; tracking issue #1398). Every owner question is decided (section 10). Revision 2 (23 October 2026) folds in the owner's answers to the four open questions (recorded on #1402 and #1398, section 10) and an independent review of revision 1 (Codex cx142; each finding and its outcome in section 12).
 **Date:** 23 October 2026. **Base:** origin/main `de78253e` (#1394 merged). Every file:line below was read on that commit.
 **Plan:** [docs/superpowers/plans/2026-10-23-civ-movement.md](../plans/2026-10-23-civ-movement.md).
 
@@ -33,6 +33,8 @@ The owner then answered this spec's four questions (23 October 2026, recorded on
 | OQ-2, captures | "Instant". A town is captured the moment a unit takes it, not after End turn (against this spec's first recommendation) |
 | OQ-3, last hex | "No, strict like Civ VI": a unit needs the full cost of the next hex (with full points it can always move one hex) |
 | Old saves | "Refuse with a clear message (spec)": a schema 2 save that contains a player attack is refused as made under older rules |
+
+And on revision 2 (23 October 2026, recorded on #1402, verbatim): OQ-A, forcing End turn: "No force"; the answer to a capture: "Yes, answer at End turn"; the spec and plan with the GDD edits of 9.3: "Approve, start building".
 
 ## 2. What Civ does, and what we already have
 
@@ -158,7 +160,7 @@ Today a capture is recorded at End turn, in resolver step 3 (R-CTRL-004, `mvp.md
 
 **A unit that leaves.** The record stays. A captured place no Israeli unit holds goes back to the enemy only as today: when enemy military units alone are on it, in step 3 (#796). A player who captures and walks away still has the decision to make.
 
-**The answer.** The capture dialog opens at once, since it reads the shown state. The answer (`ResolveCapture`: Raid, Occupy or Deport) stays a deferred order, as today: it takes effect at End turn and can be changed until then (section 3.2). The owner ruled the capture instant, not the answer, and Deport cannot be undone. An unanswered capture waits, its units staying (R-CTRL-008); at the game's end it still counts as Raid (`EndPending`, R-CTRL-008, #797).
+**The answer.** The capture dialog opens at once, since it reads the shown state. The answer (`ResolveCapture`: Raid, Occupy or Deport) stays a deferred order, as today: it takes effect at End turn and can be changed until then (section 3.2). The owner ruled the capture instant and then the answer's timing: "Yes, answer at End turn" (23 October 2026); Deport cannot be undone. An unanswered capture waits, its units staying (R-CTRL-008); at the game's end it still counts as Raid (`EndPending`, R-CTRL-008, #797).
 
 **Enemy captures.** Unchanged: they are not built (R-CTRL-006 is still the plan's), and the "under enemy control again" branch stays in step 3, after the enemy's phase.
 
@@ -229,7 +231,7 @@ Halutzim never need orders: they cannot move (R-MOVE-001). Enemy units never do.
 
 - While any unit needs orders, the End turn button reads "A unit needs orders" (Civ VI's wording). Pressing it selects the next such unit after the one selected (ascending id, wrapping), centres the camera on it and opens its card with Move ready, using the camera centring #1394 added for the guide (`GameRoot.cs:480-492`).
 - After an order that finishes a unit for the turn (Skip, Fortify, Hold, Send home, an attack, or a move that spends all its points), the next unit that needs orders is selected the same way (Civ's automatic cycling). A move that leaves points does not move the camera.
-- **No force.** While a unit needs orders, End turn only selects the next one; the way on is to give it an order or skip it. A force-end shortcut is not added: no primary source shows Civ VI has one (section 2.1), and the ruling is "Block". It is owner question OQ-A.
+- **No force.** While a unit needs orders, End turn only selects the next one; the way on is to give it an order or skip it. A force-end shortcut is not added: no primary source shows Civ VI has one (section 2.1), and the ruling is "Block". The owner ruled OQ-A: "No force" (23 October 2026).
 - Spacebar is not taken for Skip, as third-party key lists say Civ VI does: in our keyboard map Enter and Space press the focused button (`docs/superpowers/plans/2026-10-14-a11y-keyboard-map.md:27`). Skip is a button on the unit card.
 
 ## 8. Decision 6: the UI
@@ -314,7 +316,7 @@ Each slice proves this by running the golden tests unchanged. If one moves, it i
 - **R-CTRL-004**: rewritten (4.4): the capture check runs after the route step and after each order, and still in step 3; a move ending on the hex captures, passing through does not; `Since` is the turn's end. **R-CTRL-007**: unchanged (the answer stays deferred). **R-UNIT-005**: a unit's front is that of the enemy it attacked this turn or borders (4.6).
 - Unchanged: R-MOVE-003 to R-MOVE-007, R-ORDER-002 and R-ORDER-003, R-COMBAT-003, -005, -006, -008, R-ENEMY-001 to R-ENEMY-006, R-CTRL-005, R-CTRL-008 to R-CTRL-010 and #1324/#1327's R-CTRL-011 onwards (the timers keep `Since` on the turn's end), and Send home's timing (it still "acts at once" when its order runs at End turn, `mvp.md:163`).
 
-### 9.3 GDD text to amend (proposed; needs the owner's explicit approval)
+### 9.3 GDD text to amend (approved by the owner, 23 October 2026: "Approve, start building"; applied in plan Task 14)
 
 - `docs/GDD.md:38`: "2. Move units, issue orders, start city projects and choose ministers." Add: "Moves and attacks happen at once; the other orders take effect at End turn."
 - `docs/GDD.md:42`: "The order of resolution and the number of actions per turn are open." Stale since D-A6; replace with a pointer to D-A6 and R-TURN-004.
@@ -334,14 +336,12 @@ Each slice proves this by running the golden tests unchanged. If one moves, it i
 | OQ-2 | Captures at End turn or at once? | "Instant" | 4.4 |
 | OQ-3 | Enter one more hex with any points left (Civ V)? | "No, strict like Civ VI": a unit needs the full cost of the next hex (with full points it can always move one hex) | 5, 6.2 |
 | Old saves | | "Refuse with a clear message (spec)" | 3.4 |
-| GDD | Approve the GDD edits of 9.3 | pending, with the spec's approval | 9.3 |
+| OQ-A | While units need orders, may the player force End turn (a key such as Shift+Enter)? | "No force" | 7.3 |
+| Capture answer | Is the Raid / Occupy / Deport answer chosen and applied at End turn? | "Yes, answer at End turn" | 4.4 |
+| GDD | Approve the GDD edits of 9.3 | "Approve, start building" | 9.3 |
+| Approval | Approve this revised spec (revision 2) and the plan | "Approve, start building" | Status |
 
-**Open, for the owner only:**
-
-| # | Question | Options | Recommendation |
-|---|---|---|---|
-| OQ-A | While units need orders, may the player force End turn (a key such as Shift+Enter)? A Civ VI player reports one, but no primary source confirms Civ VI has it (2.1) | (a) no force: give each unit an order or skip it (the spec as written); (b) a force key | (a), the literal "Block like Civ" |
-| Approval | Approve this revised spec and the GDD edits of 9.3 | | |
+No question is open.
 
 ## 11. Conflicts and sequencing
 
@@ -383,7 +383,7 @@ Slice order (details, estimates and risks in the plan): S1 (preview, points left
 | # | Finding | Outcome |
 |---|---|---|
 | 1 | The go-to's stop next to an enemy contradicts Q-MOVE-4 (no zone of control) | Accepted. `mvp.md:195` says passing next to an enemy has no effect; the stop would keep a go-to from ever passing one. Removed (6.3) |
-| 2 | Shift+Enter makes End turn non-blocking without a ruling | Accepted. No Firaxis or 2K source confirms Civ VI has it (2.1). Removed; OQ-A |
+| 2 | Shift+Enter makes End turn non-blocking without a ruling | Accepted. No Firaxis or 2K source confirms Civ VI has it (2.1). Removed; OQ-A, owner: "No force" |
 | 3 | Refusing every schema 2 save with an attack is avoidable | Not changed: the owner ruled "Refuse with a clear message (spec)" (3.4) |
 | 4 | Without standing attacks, Send home's front changes (ranged artillery) | Accepted. Confirmed at `Demobilization.cs:27-42` and `Combat.cs:42-47`. The turn keeps each unit's attacked hex for the front (4.6), with a regression test |
 | 5 | "No undo" widened beyond moves and attacks | Accepted in part. Send home and capture answers stay deferred and changeable. Fortify and hold are instant but replaceable, as in Civ, because deferring them would put them after the turn's moves (3.2) |
