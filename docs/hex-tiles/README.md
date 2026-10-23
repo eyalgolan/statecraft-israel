@@ -535,7 +535,8 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 - **What they are.** 20 AI-made props by Tal Heuberger (Higgsfield: a concept image, then Tripo H3.1 image to 3D),
   committed under `Assets/Art/HexTiles/Props/<tile>_<name>/` with their prefabs at
   `Assets/Art/HexTiles/<tile>/<name>.prefab`. The tiles' own `tiles:<tile>/<name>` ids find them. Their `ASSETS.yaml`
-  row is `owner-verify` until the CC BY-NC-ND 4.0 licence joins the allow-list (#1177).
+  row records CC BY-NC-ND 4.0 (#1177) and stays `owner-verify` until the owner settles the AI tools' terms listed in
+  its note.
 - **How they load.** They are in no Resources folder, so the default download does not carry them (owner, 23 October
   2026: "Own streamed bundle"). A player build puts them in one bundle of their own, `StreamingAssets/hex-props`
   (`HexProps`, built by `HexPropsBundle`). The Collection's loader (`CollectionStream`) streams it after the first frame,
