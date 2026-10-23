@@ -790,8 +790,7 @@ namespace Statecraft.Game.UI
             labels.Hover(hover);
             HoverCity(hover);
             if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
-            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse)
-                map.ShowRoute(Array.Empty<(int q, int r, int turn)>());
+            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }

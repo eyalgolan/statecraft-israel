@@ -304,6 +304,14 @@ namespace Statecraft.Game.UI
                 .Select(h => (h.Q, h.R, h.Turn)).ToList();
         }
 
+        /// <summary>Clears a hovered route (the mouse left the map): once, and so that the same hex shows it again later.</summary>
+        public void HideRoute()
+        {
+            if (shownRoute == null) return;
+            shownRoute = null;
+            showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
+        }
+
         /// <summary>Shows the route to the hovered unlit hex while Move is picking; otherwise clears it.</summary>
         public void ShowRouteTo(int q, int r)
         {

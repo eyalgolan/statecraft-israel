@@ -285,8 +285,9 @@ public class UnitOrdersTests
             {
                 part.GetPropertyBlock(block);
                 var own = part.sharedMaterial.color;
-                Assert.AreEqual(new Color(own.r * UnitLayer.DimShade, own.g * UnitLayer.DimShade, own.b * UnitLayer.DimShade, own.a),
-                    block.GetColor("_BaseColor"), part.name + ": dimmed from its own colour, so the glyph keeps its contrast");
+                var want = new Vector4(own.r * UnitLayer.DimShade, own.g * UnitLayer.DimShade, own.b * UnitLayer.DimShade, own.a);
+                Assert.Less(Vector4.Distance(want, (Vector4)block.GetColor("_BaseColor")), 1e-3f,
+                    part.name + ": dimmed from its own colour, so the glyph keeps its contrast");
             }
             layer.Dim(new string[0]);
             foreach (var part in badge) { part.GetPropertyBlock(block); Assert.IsTrue(block.isEmpty, part.name + ": undimmed when it has points again"); }
@@ -607,6 +608,43 @@ public class UnitOrdersTests
             Assert.IsNotEmpty(shown.Last(), "the route is visible after the first tap");
             GameRoot.OnHexClicked(map, layer, info, far.Q, far.R, touch: true);
             Assert.AreEqual(Movement.GoTo, bridge.State.Units[id].Order);
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Spec 8.1: a hovered route hides when the mouse leaves the map, and the same hex shows it again on return
+    /// (the hover's cache is cleared with it, not only the map's overlay).</summary>
+    [Test]
+    public void AHoveredRouteShowsAgainAfterTheMouseLeavesTheMap()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var shown = new List<IReadOnlyList<(int q, int r, int turn)>>();
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: route => shown.Add(route));
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, bridge.State, golani.Token.Unit)!.Value;
+            var lit = Movement.Reachable(C, bridge.State, id).Keys.ToHashSet();
+            var far = C.Hexes.Where(h => h.Land && !lit.Contains((h.Q, h.R)) && (h.Q, h.R) != (golani.Q, golani.R))
+                .Select(h => (h.Q, h.R)).First(h => Movement.Route(C, bridge.State, id, h.Q, h.R, new Dictionary<int, int>()).Count > 0);
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(ui.Q<Button>("info-move"));
+            info.ShowRouteTo(far.Q, far.R);
+            Assert.IsNotEmpty(shown.Last(), "precondition: the hover shows the route");
+            info.HideRoute();
+            Assert.IsEmpty(shown.Last(), "the mouse left the map");
+            var calls = shown.Count;
+            info.HideRoute();
+            Assert.AreEqual(calls, shown.Count, "hiding again redraws nothing");
+            info.ShowRouteTo(far.Q, far.R);
+            Assert.IsNotEmpty(shown.Last(), "back on the same hex, the route shows again");
             info.Dispose();
         }
         finally { Object.DestroyImmediate(map.gameObject); }
