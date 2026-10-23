@@ -54,6 +54,7 @@ namespace Statecraft.Sim
             var end = c.End;
             var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { end }).Min();
             var next = SimTime.AdvanceTo(s.Date, len, boundary);
+            if (c.IsGdd) SettlementControl.Stamp(s, next);   // R-CTRL-004: dates for captures made during the orders
             var adjusted = next != SimTime.Advance(s.Date, len);
             var days = (next - s.Date).Days;
             var yf = adjusted ? days / 365.0 : SimTime.YearFraction(len);
@@ -123,6 +124,7 @@ namespace Statecraft.Sim
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
+            if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
             foreach (var cmd in commands)
             {
@@ -135,6 +137,7 @@ namespace Statecraft.Sim
                 var before = s.Attention;
                 var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
                 if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
+                if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
         }
 

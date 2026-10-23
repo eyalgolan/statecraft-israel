@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -17,32 +16,44 @@ namespace Statecraft.Sim
         /// <summary>The <see cref="State"/> of an occupied place whose timer has ended: it awaits EndOccupation (Phase 6 PR 7).</summary>
         public const string AwaitingEnd = "awaiting_end";
 
-        /// <summary>Resolver step 3 (R-CTRL-004, R-CTRL-005), after combat, in ordinal settlement id. A curated target that
-        /// starts under enemy control (on mvp.enemy_held_localities, owner, 21 October 2026, #796) is captured when the
-        /// player's military units are on its hex and no enemy military unit is (Q-CAP-1 (a); Q-CAP-3 (a): only enemy military
-        /// units are combatants; #796: a halutz holds nothing): its record names the player, awaits the player's choice and
-        /// starts on <paramref name="next"/>, the turn's end. A captured target still awaiting the choice that only enemy
-        /// military units are on is under enemy control again, and its record goes (#796). A target that is not enemy-held
-        /// at the start (Jaffa, #793) is never captured. Capture writes the settlement state only: no resident field, unit,
-        /// resource, score or objective (R-CTRL-005). It draws nothing from the RNG.</summary>
-        public static void Capture(Content c, GameState s, DateTime next, List<Cause> why)
+        /// <summary>R-CTRL-004: the player's capture check, after the route step and each order, and in resolver step3.
+        /// Only curated enemy-held targets held by Israeli military units alone gain a record. Passing through a hex
+        /// captures nothing. The preview has no capture date; Step stamps the turn's end before the resolver.</summary>
+        internal static void CaptureHeld(Content c, GameState s, List<Cause> why)
         {
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
-                var holder = Holder(s, t.Q, t.R);
-                var record = s.Settlements.TryGetValue(t.Id, out var held) ? held : null;
-                var name = c.SettlementNames[t.Id];
-                if (holder == Movement.PlayerSide && record == null)
-                {
-                    s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, next);
-                    why.Add(new Cause("map", t.Id, 0, $"{name} is captured: Israeli units hold it and no enemy unit is there. It awaits a decision"));
-                }
-                else if (holder == Enemy && record?.State == AwaitingChoice)   // PR 5's outcomes decide what a later state returns to
-                {
-                    s.Settlements.Remove(t.Id);
-                    why.Add(new Cause("map", t.Id, 0, $"{name} is under enemy control again: enemy units hold it and no Israeli unit is there"));
-                }
+                if (Holder(s, t.Q, t.R) != Movement.PlayerSide || s.Settlements.ContainsKey(t.Id)) continue;
+                s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice);
+                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. It awaits a decision"));
+            }
+        }
+
+        /// <summary>R-CTRL-004: a new capture keeps the turn's end date even when its same-turn answer changed its state.
+        /// Deport keeps that date in its ownerless record (#1327); every other field is preserved.</summary>
+        internal static void Stamp(GameState s, DateTime next)
+        {
+            foreach (var id in s.Settlements.Where(x => x.Value.Since == default
+                && (x.Value.Owner == Movement.PlayerSide || x.Value.Depopulated)).Select(x => x.Key).ToList())
+            {
+                var x = s.Settlements[id];
+                s.Settlements[id] = new SettlementControl(x.Owner, x.State, next, x.Depopulated, x.Combatants, x.Buildings, x.Turns);
+            }
+        }
+
+        /// <summary>Resolver step3, after enemy combat: perform any remaining player capture, stamp its date, then return
+        /// an awaiting-choice target held by enemy military units alone to enemy control. No resident field or RNG changes.</summary>
+        public static void Capture(Content c, GameState s, DateTime next, List<Cause> why)
+        {
+            CaptureHeld(c, s, why);
+            Stamp(s, next);
+            var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
+            foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
+            {
+                if (Holder(s, t.Q, t.R) != Enemy || !s.Settlements.TryGetValue(t.Id, out var record) || record.State != AwaitingChoice) continue;
+                s.Settlements.Remove(t.Id);
+                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"));
             }
         }
 
@@ -106,10 +117,10 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            var moved = new List<Unit>();
+            var moved = new List<(Unit From, Unit To)>();
             if (MoveOut(c, s, t, name, atTheEnd, moved) is string no) return no;
             s.Settlements.Remove(id);
-            Withdrew(name, moved, why);
+            Withdrew(id, name, moved, why);
             why.Add(new Cause("map", id, 0, moved.Count > 0
                 ? $"{name}: Israeli units withdrew and it is under enemy control again. Its residents are unchanged"
                 : $"{name} is under enemy control again. Its residents are unchanged"));
@@ -119,31 +130,31 @@ namespace Statecraft.Sim
         /// <summary>R-CTRL-010's move: the units leave <paramref name="t"/>'s hex as <see cref="Withdraw"/> says, into
         /// <paramref name="moved"/>. Raid and Deport share it (R-CTRL-018). The reason, with every unit back where it was, when
         /// one has nowhere to go, unless <paramref name="atTheEnd"/>.</summary>
-        static string? MoveOut(Content c, GameState s, SettlementTarget t, string name, bool atTheEnd, List<Unit> moved)
+        static string? MoveOut(Content c, GameState s, SettlementTarget t, string name, bool atTheEnd, List<(Unit From, Unit To)> moved)
         {
-            var from = new List<Unit>();
             foreach (var u in s.Units.Values.Where(u => u.Q == t.Q && u.R == t.R && !IsEnemy(u)).ToList())   // ascending id
             {
                 var to = Movement.Neighbours.Select(d => ((int Q, int R)?)(t.Q + d.Q, t.R + d.R)).FirstOrDefault(h => Free(c, s, u, h!.Value.Q, h.Value.R));
                 if (to == null && atTheEnd) continue;
                 if (to == null)
                 {
-                    foreach (var x in from) s.Units[x.Id] = x;   // back as it was
+                    foreach (var x in moved) s.Units[x.From.Id] = x.From;   // back as it was
                     moved.Clear();
-                    return $"Unit {u.Id} has no free hex next to {name} to withdraw to";
+                    return $"A unit has no free hex next to {name} to withdraw to";
                 }
                 var w = new Unit(u.Id, u.Type, to.Value.Q, to.Value.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
                 s.Units[u.Id] = w;
-                from.Add(u);
-                moved.Add(w);
+                moved.Add((u, w));
             }
             return null;
         }
 
-        static void Withdrew(string name, List<Unit> moved, List<Cause> why)
+        static void Withdrew(string id, string name, List<(Unit From, Unit To)> moved, List<Cause> why)
         {
-            foreach (var w in moved)
-                why.Add(new Cause("map", w.Id.ToString(CultureInfo.InvariantCulture), 0, FormattableString.Invariant($"Unit {w.Id} withdrew from {name} to hex {w.Q},{w.R}")));
+            foreach (var (from, to) in moved)
+                why.Add(UnitLines.Line(WhyKeys.Withdrew,
+                    FormattableString.Invariant($"Unit {from.Id} withdrew from {name} to hex {to.Q},{to.R}"),
+                    new[] { from }, id, FormattableString.Invariant($"{to.Q},{to.R}")));
         }
 
         /// <summary>R-CTRL-018 to R-CTRL-021, Deport (impact plan section 4.1; Q-DEP-1 (a) to Q-DEP-5 (c), Q-DEP-7 (c)). The
@@ -156,11 +167,11 @@ namespace Statecraft.Sim
         {
             var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
             var name = c.SettlementNames[id];
-            var moved = new List<Unit>();
+            var moved = new List<(Unit From, Unit To)>();
             if (MoveOut(c, s, t, name, false, moved) is string no) return no;
             s.Settlements[id] = new SettlementControl(since: s.Settlements[id].Since, depopulated: true);
             s.DisplacedByPlayer++;
-            Withdrew(name, moved, why);
+            Withdrew(id, name, moved, why);
             why.Add(new Cause("map", id, 0, $"{name}: Deport. Its residents are displaced and the place is depopulated"));
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires both costs in the GDD loop
             foreach (var (indicator, cost) in new[] { ("morale", r.DeportCohesionCost!.Value), (SupportIndicator, r.DeportSupportCost!.Value) })
