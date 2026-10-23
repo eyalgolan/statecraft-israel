@@ -66,6 +66,13 @@ def test_rule_missing_a_key_is_a_bad_rule_not_a_crash(make_repo, capsys):
     assert "bad-rule missing glob" in capsys.readouterr().out
 
 
+def test_cc_by_nc_nd_4_0_is_an_allowed_licence(make_repo, capsys):
+    rules = RULES.replace("licence: CC-BY-4.0", "licence: CC-BY-NC-ND-4.0")
+    root = make_repo({"ASSETS.yaml": rules, "img/a.png": b"\x89PNG"})
+    assert run(root) == 0
+    assert run(root, "--release") == 0
+
+
 def test_unknown_licence_and_bad_status(make_repo, capsys):
     bad = RULES.replace("licence: CC-BY-4.0", "licence: WTFPL").replace("status: verified\n  - glob: \"future",
                                                                       "status: maybe\n  - glob: \"future")
