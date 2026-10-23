@@ -16,7 +16,7 @@ The evidence must distinguish monthly changes, twelve-month changes and changes 
 | Stabilization, 1985 | [A] BoI's contemporary prices chapter, S3 | Cabinet decision and full fiscal implementation records not read |
 | US aid | [A] Dated request and signing statement, S9–S10 | Annual 1977–1993 commitments/payments and exact enacted supplemental allocation not established here |
 | Loan guarantees | [A] Official codified authority and GAO summary, S11–S12 | Actual issues and deductions under the 1992 program not established |
-| Defence share of GDP | [GAP] The opened historical table uses GNP, S4 | Find the appropriate GDP series and its coverage; do not relabel GNP |
+| Defence share of GDP | [A, R] CBS 1579, Table 4: both GDP columns for 1977–1993, S14 | Compare revision vintages and choose any later gameplay measure separately |
 | Sheqel dates | [A] BoI currency history and dated appendix, S7–S8 | No display-date decision is made |
 | 1957–1977 / 1977 price-base bridge | [GAP] | Source and agree the two bases and linkage with #24/#116; no numerical bridge is supplied |
 
@@ -85,13 +85,39 @@ The following cells reproduce S1's `percent` field, in percent. Selected month-t
 
 [A] GAO's report of **12 February 1992**, Appendix I, printed pp. 12–14 (S13), attributes authorization of the earlier **$400 million housing-loan-guaranty program** to **25 May 1990**. It records authorization to release the guarantee on **20 February 1991**, AID's release in **March 1991**, completion of financing with underwriters on **28 March 1991**, and transfer of loan proceeds to Israel's Ministry of Finance on **9 April 1991**. This is the auditor's account, not an independently inspected bank-transfer record. The guarantee ceiling is neither a $400 million US cash grant nor proof of the exact net proceeds. These milestones do not establish an annual aid series or issues under the later 1992 program.
 
-## 6. Outstanding evidence and coordination
+## 6. Defence consumption and GDP
 
-- **Defence/GDP [GAP].** S4 Table A11c, PDF p. 26, is explicitly in percent of **GNP**, with domestic defence and direct-import entries separate. It does not meet the requested GDP series. Establish denominator, net/gross treatment, direct imports, advances, price basis and revision vintage before comparing years or using a number.
+[A, R] CBS Publication 1579, *Defence Expenditure in Israel 1950–2012* (October 2014), Table 4, printed p. 28 (PDF p. 30), reports the following percentages at current prices. Both columns are retained; neither is selected for gameplay. Footnote 3 assigns 1950–1994 to SNA 1968. This is a later official statistical publication, not a budget record (S14).
+
+| Year | General government defence consumption / GDP | Domestic defence consumption / GDP |
+|---|---:|---:|
+| 1977 | 21.0% | 13.1% |
+| 1978 | 22.7% | 12.5% |
+| 1979 | 18.7% | 13.0% |
+| 1980 | 21.6% | 13.3% |
+| 1981 | 23.1% | 13.5% |
+| 1982 | 19.7% | 13.9% |
+| 1983 | 16.9% | 13.0% |
+| 1984 | 19.4% | 13.0% |
+| 1985 | 19.0% | 11.4% |
+| 1986 | 14.2% | 10.2% |
+| 1987 | 17.1% | 10.2% |
+| 1988 | 14.5% | 9.9% |
+| 1989 | 12.3% | 10.0% |
+| 1990 | 12.6% | 9.7% |
+| 1991 | 12.0% | 8.8% |
+| 1992 | 10.7% | 8.5% |
+| 1993 | 10.9% | 7.5% |
+
+Domestic consumption excludes defence imports (p. 13); it is not the broader total defence-cost measure discussed separately (pp. 9, 15). Imports are recorded using equipment supply and certain payments, differing from budget payment-flow accounting (p. 17). Do not relabel either column as GNP, gross military budget or total economic cost; do not splice it to the earlier GNP table.
+
+## 7. Outstanding evidence and coordination
+
+- **Defence-series comparability [GAP].** S14 supplies GDP ratios with two defined consumption measures. S4 Table A11c remains a separate **GNP** table; the measures are not spliced. Newer revision vintages, original budget ledgers and any eventual gameplay choice remain unexamined. No calibration is supplied.
 - **Price-base bridge [GAP].** This note supplies no 1957–1977-to-1977 factor. A chosen month/year, basket and consistent level/chaining source are needed; a change of currency denomination alone is insufficient. #24 and #116 have separate contributor claims. [PR #1387](https://github.com/eyalgolan/statecraft-israel/pull/1387) is coordination context for #116, not a primary source read or adopted by this note.
-- **Coverage [GAP].** CPI outside 1979–1985, a full US aid schedule for 1977–1993, actual guarantee issues/deductions, defence/GDP, original crisis records and the price-base bridge remain open. D11 is still an owner decision. Research is partial; no claim that #148 is complete or that this note has been reviewed by a human.
+- **Coverage [GAP].** CPI outside 1979–1985, a full US aid schedule for 1977–1993, actual guarantee issues/deductions, defence-series comparability and gameplay selection, original crisis records and the price-base bridge remain open. D11 is still an owner decision. Research is partial; no claim that #148 is complete or that this note has been reviewed by a human.
 
-## 7. Sources opened and read
+## 8. Sources opened and read
 
 All checked **2026-10-23 by an AI agent only**. PDF page locators distinguish printed pages where available. Raw responses and selected rendered pages are retained privately for review; third-party PDFs are not added to the repository.
 
@@ -108,3 +134,4 @@ All checked **2026-10-23 by an AI agent only**. PDF page locators distinguish pr
 - **S11 — US Government Publishing Office**, [22 USC §2186, 2023 edition](https://www.govinfo.gov/content/pkg/USCODE-2023-title22/html/USCODE-2023-title22-chap32.htm), subsections (a)–(f) and source note after (m). Official later codification; original statutory text/vintage comparison remains open. Two attempted 1994 section URLs redirected to GovInfo's error page despite HTTP 200 and were not used as evidence.
 - **S12 — US GAO**, [Israel: U.S. Loan Guaranties for Immigrant Absorption, NSIAD-92-119](https://www.gao.gov/products/nsiad-92-119), report metadata, highlights and recommendation-status table. Web-rendered text was opened and read; a separate direct GET returned 403. The full 44-page report was not read; S13 covers only the newly read Appendix I passages.
 - **S13 — US GAO**, [NSIAD-92-119, official report PDF](https://www.gao.gov/assets/nsiad-92-119.pdf), Appendix I, printed pp. 12–14 (PDF pp. 14–16), authorization and financing passages. Extracted PDF text read from the archived web-reader response; no full local PDF or verified page image. Checked **2026-10-23 by an AI agent**. The original statutes cited by GAO were not read.
+- **S14 — Central Bureau of Statistics**, [Publication 1579, Defence Expenditure in Israel 1950–2012](https://www.cbs.gov.il/he/publications/doclib/2014/1579_defence_2012/pdf/e_print.pdf), October 2014. Table 4, printed p. 28 (PDF p. 30), both GDP columns and footnote 3 read as a rendered image; definitions pp. 13–15 and methods p. 17 read as text, with pp. 15 and 17 also rendered. These are retrospective current-price national-account estimates; the source is not a ledger of budget payments. Checked **2026-10-23 by an AI agent only**.
