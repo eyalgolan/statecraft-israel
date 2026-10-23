@@ -236,10 +236,11 @@ public class UnitsFromStateTests
     public void StartingUnitsAreUnchangedWhenARaisedUnitIsDrawn()
     {
         var s = NewGame();
+        var units = Units;   // one parse: a token's row is compared by reference
         var moved = new Moved();
-        var before = UnitRoster.FromState(Units, C, s, _ => true, moved.At);
+        var before = UnitRoster.FromState(units, C, s, _ => true, moved.At);
         var raised = Raise(s);
-        var after = UnitRoster.FromState(Units, C, s, _ => true, moved.At);
+        var after = UnitRoster.FromState(units, C, s, _ => true, moved.At);
         CollectionAssert.AreEqual(before, after.Where(t => t.SimId != raised.Id).ToList());
         Assert.AreEqual(before.Count + 1, after.Count);
     }
