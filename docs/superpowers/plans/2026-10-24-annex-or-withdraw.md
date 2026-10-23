@@ -1,8 +1,8 @@
 # Annex or withdraw after an occupation (#799). Plan
 
-> **For the implementer:** the owner approved this plan and answered its three questions on 24 October 2026. Tasks 0 to
-> 4, 6 and 7 can start now. Task 5 (Deport of a fled town) waits for OWNER QUESTION 4. Red-first tests. No puppet regime
-> anywhere.
+> **For the implementer:** the owner approved this plan and answered all four of its questions on 24 October 2026. Every
+> task can start now. Task 5 (Deport of a fled town) is its own small PR after the Task 0 to 4 PR. Red-first tests. No
+> puppet regime anywhere.
 
 **Status (24 October 2026):** approved. Read against `origin/main` at `ef62e9f1c` (#1517, the Civ movement capture at the
 click, merged 23 October 2026). No open or merged PR implements #799; #1324 (Occupy) says `EndOccupation` is not in it.
@@ -26,6 +26,7 @@ annex" and "X is unset"; Task 0 brings it up to date), [docs/gdd/settlement-cont
 | Q-OCC-3 | X = 6 monthly turns (R-CTRL-012) | [#1324](https://github.com/eyalgolan/statecraft-israel/pull/1324#issuecomment-6338594839) |
 | Q-REF-1 (a) | The reference player and `HistoricalAI` always Raid, so they never reach the end of an occupation | [#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6249822320) |
 | This plan's OQ 1 to 3 | See "The owner's answers" below | [#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6374876433) |
+| This plan's OQ 4 | "Hide it, button explains (Recommended)": see OWNER QUESTION 4 below | [#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6375591758) |
 
 The 23 October rulings on #1510 to #1513 (replacements, qualified civilians, terrain, ministers) say nothing about
 occupation or annexation. #1511's "qualified civilians count as ordinary civilians" does not define annexed residents.
@@ -100,7 +101,7 @@ The options were (a) yes, for good (Recommended), (b) only while a unit stays, (
 upkeep stops and no unit has to stay. Enemy units treat the town like any Israeli town (today they cannot enter one;
 enemy captures of Israeli towns are #1305's work).
 
-## OWNER QUESTION 4 (open): Deport of a town whose residents fled when it was captured
+## OWNER QUESTION 4: Deport of a town whose residents fled when it was captured
 
 Under OWNER QUESTION 2 (b), the residents of Lydda, Ramle or Beersheba are recorded as fled the moment the player captures
 the town. Deport (R-CTRL-018) displaces "every resident the state holds" and charges Social cohesion, International
@@ -116,9 +117,13 @@ Deport button do?
 
 Recommendation: (a). It matches the record (no one is left to deport), keeps the dialog's fixed order and its "every option
 says why it is refused" pattern (R-CTRL-008), and cannot make Deport cheaper or better than Raid, so `DeportNeverDominates`
-(R-CTRL-022) is untouched. Until the owner answers, Task 5 is blocked. Nothing a player can reach depends on it meanwhile:
-Deport is off in the real content (`mvp.deport_in_play`), and Phase 6 PR 10, which turns it on, must not land before
-Task 5.
+(R-CTRL-022) is untouched. Deport is off in the real content (`mvp.deport_in_play`), and Phase 6 PR 10, which turns it
+on, must not land before Task 5.
+
+**Then decided (owner, 24 Oct 2026, in the coordinator session, "Hide it, button explains (Recommended)";
+[#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6375591758)):** option (a). For a town whose residents fled at capture, Deport is
+not available: the dialog keeps Raid, Occupy and Deport in the fixed order, and the Deport button is refused with its
+plain reason. Raid and Occupy work as for any town. Task 5 is unblocked.
 
 ## Settled by this plan, not owner questions
 
@@ -217,12 +222,12 @@ These follow from a ruling or an existing precedent. The owner can overrule any 
 | 2 | Residents flee at capture (OWNER QUESTION 2 (b)) | now |
 | 3 | `EndOccupation`, its options and every touch-point | now |
 | 4 | Withdraw and annex | now; the stayed annexation's real numbers come from Task 1 |
-| 5 | Deport of a fled town | **BLOCKED on OWNER QUESTION 4** |
+| 5 | Deport of a fled town | now, as its own PR after the Task 0 to 4 PR (OWNER QUESTION 4 answered: (a)) |
 | 6 | One real-content scenario, rules text, changelog | now |
 | 7 | Review and gates | with the PR |
 
 Tasks 0 to 4 and 6 to 7 are one PR. It can be written and reviewed now, and it merges once the owner has approved the
-Acre and Nazareth counts (Task 1). Task 5 is its own small PR after OWNER QUESTION 4.
+Acre and Nazareth counts (Task 1). Task 5 is its own small PR after that one.
 
 ### Task 0: Record the answers (docs only)
 
@@ -230,11 +235,11 @@ Acre and Nazareth counts (Task 1). Task 5 is its own small PR after OWNER QUESTI
 `docs/gdd/settlement-control.md` (lines 12, 19 to 22 and the R-CTRL references), `docs/superpowers/plans/2026-10-15-gdd-phase-6.md`
 (PR 7: drop `Puppet` and R-CTRL-015 "the puppet regime"), `docs/oss/DECISIONS.md`.
 
-- [ ] Copy the three answers, with the #799 link, as "Then decided (owner, 24 Oct 2026, in the coordinator session, ...)"
+- [ ] Copy the four answers, with their #799 links, as "Then decided (owner, 24 Oct 2026, in the coordinator session, ...)"
   lines, as this plan does. The GDD says: no puppet regime in the MVP; X is six monthly turns; annex or withdraw; residents
   of a fled town are recorded as fled at capture; an emptied town adds land only; a stayed town adds one city by the
   starting-city rule; an annexed town stays Israeli for good with no upkeep. `settlement-control.md` line 12 ("only whether
-  a place is inhabited") becomes inhabited, fled or depopulated. OWNER QUESTION 4 is listed as open.
+  a place is inhabited") becomes inhabited, fled or depopulated. OWNER QUESTION 4's answer (a) is recorded too.
 - [ ] `uv run scripts/oss/gdd_lint.py`, `uv run scripts/oss/rule_ids.py`, `uv run scripts/oss/check_repo.py`.
 
 ### Task 1: The resident outcome in each target row
@@ -553,19 +558,18 @@ public void AnnexingAStayedPlaceAddsExactlyOneCity()
   `DeportNeverDominatesTests`, `CaptureTests`, `MovementTests`, then the suite. `CalibrationTests` stays bit-for-bit (the
   reference player always Raids, and no golden captures a fled town).
 
-### Task 5: Deport of a fled town (BLOCKED on OWNER QUESTION 4)
+### Task 5: Deport of a fled town (OWNER QUESTION 4 (a))
 
-Do not start until the owner answers OWNER QUESTION 4. Its own PR, after the Task 0 to 4 PR.
+Its own PR, after the Task 0 to 4 PR. The owner chose (a) on 24 October 2026: "Hide it, button explains (Recommended)".
 
-**Files (under the recommended (a)):** `SettlementControl.cs` (`Resolve`'s Deport branch), `DeportTests.cs`,
+**Files:** `SettlementControl.cs` (`Resolve`'s Deport branch), `DeportTests.cs`,
 `docs/rules/mvp.md` (R-CTRL-018, R-CTRL-020), `docs/gdd/settlement-control.md`, the capture dialog's refusal display only
 if it does not already show the sim's refusal text.
 
-- [ ] Under (a): `Resolve(..., Deport)` on a `Fled` record is refused with "Its residents fled when it was captured, so
+- [ ] `Resolve(..., Deport)` on a `Fled` record is refused with "Its residents fled when it was captured, so
   there is no one to deport" (wording to the owner's sensitivity packet), the state unchanged, so `CaptureOptions` shows
   the reason on the Deport button. Red test in `DeportTests` with `LoadFled` and Deport in play: the option is listed third
   with that refusal, and resolving it changes nothing. `DeportNeverDominatesTests` stays on stayed rows.
-- [ ] Under (b) or (c): rewrite this task to the owner's words before any code.
 
 ### Task 6: One real-content scenario, rules text, changelog
 
@@ -593,11 +597,11 @@ if it does not already show the sim's refusal text.
 
 ## Done when
 
-- The owner's answers are in `docs/GDD.md` and #799, and OWNER QUESTION 4 is answered or listed as open.
+- The owner's four answers are in `docs/GDD.md` and #799.
 - Each target row has a sourced fled or stayed outcome, reviewed by the owner, and Acre and Nazareth have approved counts.
 - A fled town is recorded as fled at capture, keeps the record after it returns to enemy control, and can be captured
   again; a stayed town is captured as today.
 - `EndOccupation` has every touch-point; Withdraw is the Raid withdrawal; a fled annexation changes only the record; a
   stayed annexation adds exactly the approved city; a depopulated place is never annexed.
 - R-CTRL-014 to R-CTRL-017 and the amended rules have citing tests; `scripts/check.sh` and the full EditMode run pass.
-- Task 5 lands after OWNER QUESTION 4, before Deport is turned on.
+- Task 5 lands after the Task 0 to 4 PR, before Deport is turned on.
