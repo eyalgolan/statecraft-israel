@@ -26,7 +26,12 @@ These rules protect the game and the people in it. They are not a viewpoint:
    simulation enforces that (`Statecraft.Cli --release-gate`, the `-shareable` build flag and
    `tools/package_release.py` all refuse otherwise). Historian review is planned for M4 and is not yet a gate.
 2. **No invented quotes.** No words are attributed to a real person unless they are sourced verbatim. Event text
-   describes; it does not put speech in anyone's mouth.
+   describes; it does not put speech in anyone's mouth. The one exception is the advisors (David Ben-Gurion, Golda
+   Meyerson (later Meir) and Moshe Dayan), by owner ruling, 23 October 2026: "Labelled game dialogue". Their lines are
+   original game dialogue in the persona, shown in the advisor panel under the label "Advisor" and never styled as
+   quotes; they explain the game and its state, and say nothing on a contested issue beyond neutral game facts. A real
+   quote appears only from the verified list in `docs/superpowers/specs/2026-10-23-advisors-design.md` (section 3.3),
+   styled as a quote with its source. The owner reviews every advisor line before it ships.
 3. **Choices never reward atrocities.** Options tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot grant
    treasury or score rewards for the atrocity side of a choice, and they need a recorded sensitivity review. Automated
    tests enforce this (`dotnet test`).
@@ -97,5 +102,12 @@ Facts are open to correction. The framing (section 1) is not.
   `unity/Assets/UI/EventImages/event-images.yaml` and `ASSETS.yaml` (see `docs/event-images.md`).
 
   AI-generated likenesses of real people appear only in concept art (`promo/final/04`, `08`), are recorded as
-  AI-generated in the asset provenance records, and are never presented as photographs or used in the game.
+  AI-generated in the asset provenance records, and are never presented as photographs or used in the game. The
+  advisors are the one exception, by owner ruling, 23 October 2026: "you can sythesize their voices", and, for their
+  videos, "The real figures talking". A synthetic voice or moving likeness of Ben-Gurion, Meyerson or Dayan is made
+  only after written consent from their estates (the Ben-Gurion Heritage Institute, Golda Meir's family, Moshe Dayan's
+  heirs), which the provider's terms also require; the owner sends every request. Until then their videos show the
+  archival portrait, narrated by a fictional, named aide in a designed voice that is no one's likeness. Every such
+  output is recorded in `ASSETS.yaml` as AI-generated (`docs/superpowers/specs/2026-10-23-advisors-design.md`,
+  sections 11 to 13).
 - Hate speech, slurs or dehumanising language about any group, in content, code comments, issues or commits.
