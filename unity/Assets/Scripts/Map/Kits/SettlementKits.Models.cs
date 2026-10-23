@@ -182,17 +182,6 @@ namespace Statecraft.Game.Map.Kits
             if (top - bottom > PlinthRiseM * m) km.Plinths.Box(p.x, p.y, yaw, mi.W, mi.D, bottom, top, 0f, TerraceStone, TerraceStone, Facade.Plain, m, roofed: true);
         }
 
-        /// <summary>One tent on an existing camp plot. Its model keeps that plot's symbolic footprint; it does not add
-        /// camps, consume a random value or change their sourced distribution.</summary>
-        static void AddTentModel(string id, TownModel model, Vector2 p, float yaw, float w, float d, float h, float ground)
-        {
-            if (models == null) throw new System.InvalidOperationException("a tent model was placed outside a model collection");
-            var fit = Fit(id, model, p, yaw, w, d, h, ground, false, false, ModelScale);
-            float contain = Mathf.Min(1f, w / fit.W, d / fit.D);
-            if (contain < 1f) fit = Fit(id, model, p, yaw, w * contain, d * contain, h, ground, false, false, ModelScale);
-            models.Add(fit);
-        }
-
         /// <summary>A town plot's models by its style and its place (issue #659's table).</summary>
         static TownModel[] ModelsFor(Style st, string id, Spec b)
         {
@@ -202,10 +191,10 @@ namespace Statecraft.Game.Map.Kits
                 case Style.Kibbutz: return TownModels.ForKibbutz(b.part);
                 case Style.TelAviv: return TownModels.TelAviv;
                 case Style.WhiteBlock: return id == "haifa" ? TownModels.Haifa : TownModels.WhiteCity;
-                case Style.TownBlock: return id == "netanya" ? TownModels.Netanya : TownModels.TownBlockBase;
+                case Style.TownBlock: return TownModels.Netanya;
                 case Style.StoneBlock: return TownModels.Jerusalem;
                 case Style.OldHouse: return TownModels.ForArchetype(Archetype.OldTown, s);
-                case Style.Village: return TownModels.ForArchetype(Archetype.ArabTown, s);
+                case Style.Village: return TownModels.Stone;
                 case Style.Templer: return TownModels.Templer;
                 default: return TownModels.Houses(s);
             }

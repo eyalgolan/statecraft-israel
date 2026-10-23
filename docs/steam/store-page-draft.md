@@ -50,7 +50,7 @@ released.
 
 > **You are the prime minister of Israel on 15 May 1948.**
 >
-> Statecraft: Israel is a free, open-source, turn-based strategy game about governing the new state in its first years,
+> Statecraft: Israel is a free, turn-based strategy game about governing the new state in its first years,
 > from 15 May 1948 to 15 January 1952: the 1948 war, the austerity period and the mass immigration of those years.
 > There is never enough money, arms or food for everything, and each choice is paid for somewhere else.
 >
@@ -133,13 +133,15 @@ until #55; and the report recommends listing Hebrew on Steam as "Game Support On
 October 2026 to match section 2 (free and open source, the colours by side, the boats, the platforms, the launch dates,
 the Burma Road); the added sentences need the same native-speaker review. Updated again on 21 October 2026 with the
 same facts as section 2 (the end date, the sides from the first turn, the starting forces, the sound effects, the
-platform); the changed lines are listed for the native read in #564.
+platform); the changed lines are listed for the native read in #564. Updated on 22 October 2026 (#1371): the
+game is no longer called open source ("חינמי ובקוד פתוח" became "וחינמי", and "שנבנה בקוד פתוח" became "שנבנה
+בפומבי", as "built in the open" in section 2); agent-checked, for the native read in #564.
 
 <div dir="rtl">
 
 > **אתם ראש הממשלה ב־15 במאי 1948.**
 >
-> <span dir="ltr">Statecraft: Israel</span> הוא משחק אסטרטגיה מבוסס־תורות, חינמי ובקוד פתוח, על ניהול המדינה בשנותיה
+> <span dir="ltr">Statecraft: Israel</span> הוא משחק אסטרטגיה מבוסס־תורות וחינמי, על ניהול המדינה בשנותיה
 > הראשונות, מ־15 במאי 1948 ועד 15 בינואר 1952: מלחמת השחרור, תקופת הצנע והעלייה ההמונית של אותן שנים. אין מספיק כסף, נשק ומזון לכל מה שצריך, ועל כל החלטה משלמים במקום
 > אחר.
 >
@@ -183,7 +185,7 @@ platform); the changed lines are listed for the native read in #564.
 >
 > **מה עוד אין**
 >
-> זה אב־טיפוס מוקדם שנבנה בקוד פתוח. היישובים והעצים במפה הם עדיין אמנות זמנית. אין דיפלומטיה, אין מוזיקה ואין דבר
+> זה אב־טיפוס מוקדם שנבנה בפומבי. היישובים והעצים במפה הם עדיין אמנות זמנית. אין דיפלומטיה, אין מוזיקה ואין דבר
 > אחרי ינואר 1952. הצלילים במשחק הם שלושה אפקטים קצרים שנוצרו בבינה מלאכותית (כרטיס שנפתח, פקודה שנדחתה, תור
 > שהסתיים) וההקלטה הארכיונית מ־1948 של דוד בן־גוריון קורא את ההכרזה, במסך הפתיחה (ארכיון המדינה), והיא מושמעת רק
 > כשלוחצים על הכפתור שלה.

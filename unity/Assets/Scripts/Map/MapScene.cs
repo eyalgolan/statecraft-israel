@@ -221,7 +221,6 @@ namespace Statecraft.Game.Map
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
         /// <summary>Sets the town models (issue #659): the editor bake saves them in the scene; tests set a broken list.</summary>
         public void ConfigureTownModels(Kits.TownModelSet set) => townModels = set;
-        public Kits.TownModelSet TownModelAssets => townModels;
 
         /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
         /// (SettlementKits.FootprintRadiusM) of the game settlements and, with the kits, of the 1948 localities, so the units

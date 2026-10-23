@@ -38,6 +38,9 @@ jobs:
       - name: Install
         working-directory: site
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test
+        working-directory: site
+        run: node --test tests/*.test.mjs
       - name: Build and check
         working-directory: site
         env:

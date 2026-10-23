@@ -30,7 +30,7 @@ namespace Statecraft.Sim
     /// <summary>
     /// A save is seed + command log + content hash + schema version (spec section 3); loading replays it. Text format,
     /// one item per line:
-    ///   statecraft-save 2          schema version (a schema 1 save has no ruleset line and is legacy)
+    ///   statecraft-save 3          schema version (a schema 1 save has no ruleset line and is legacy)
     ///   content &lt;hex&gt;             Content.Hash of the content it was played with
     ///   seed &lt;ulong&gt;  /  mode Historical
     ///   ruleset legacy|gdd-0.1     the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001),
@@ -41,12 +41,13 @@ namespace Statecraft.Sim
     ///                              train CITY TRACK N | untrain COHORT | pioneer UNIT ACTION SITE | stop UNIT |
     ///                              project KIND CITY Q R | unproject PROJECT | arms N |
     ///                              capture SETTLEMENT OUTCOME
+    ///   open                       starts the turn in progress's committed command list; it comes after every turn
     ///   end &lt;hex&gt;                 GameState.Hash() after the last turn (checks the replay)
     /// Doubles are IEEE bit patterns in hex, so replays are exact; strings are percent-escaped (Uri.EscapeDataString).
     /// </summary>
     public sealed class SaveGame
     {
-        public const int SchemaVersion = 2;
+        public const int SchemaVersion = 3;
         /// <summary>The ruleset of the legacy loop (Content.Ruleset).</summary>
         public const string LegacyRuleset = "legacy";
         /// <summary>The ruleset of the GDD v0.1 loop (eras.yaml systems.loop: gdd).</summary>
@@ -58,7 +59,10 @@ namespace Statecraft.Sim
         /// <summary>Each turn as its canonical command lines. The save keeps text, not the caller's objects, so nothing
         /// outside can change a recorded turn; <see cref="Turns"/> parses fresh copies on demand.</summary>
         readonly List<List<string>> turns = new List<List<string>>();
+        readonly List<string> open = new List<string>();
 
+        /// <summary>The schema version parsed from this save; a new save uses <see cref="SchemaVersion"/>.</summary>
+        public int Version { get; private set; }
         public string ContentHash { get; }
         public ulong Seed { get; }
         public Mode Mode { get; }
@@ -67,6 +71,8 @@ namespace Statecraft.Sim
         /// <summary>The recorded turns as new command objects each time it is read (changing them changes nothing in the save).</summary>
         public IReadOnlyList<IReadOnlyList<Command>> Turns =>
             turns.Select(t => (IReadOnlyList<Command>)t.Select(l => ParseCommand(0, l)).ToList().AsReadOnly()).ToList().AsReadOnly();
+        /// <summary>The open turn's committed orders as new command objects each time it is read (R-SAVE-003).</summary>
+        public IReadOnlyList<Command> Open => open.Select(l => ParseCommand(0, l)).ToList().AsReadOnly();
         /// <summary>GameState.Hash() after the last recorded turn (the new game's hash before any turn).</summary>
         public string FinalHash { get; private set; }
 
@@ -74,7 +80,7 @@ namespace Statecraft.Sim
         {
             ContentHash = contentHash ?? throw new ArgumentNullException(nameof(contentHash));
             if (ruleset != LegacyRuleset && ruleset != GddRuleset) throw new ArgumentException($"unknown ruleset '{ruleset}'", nameof(ruleset));
-            Seed = seed; Mode = mode; Ruleset = ruleset;
+            Version = SchemaVersion; Seed = seed; Mode = mode; Ruleset = ruleset;
             FinalHash = initialHash ?? throw new ArgumentNullException(nameof(initialHash));
         }
 
@@ -86,6 +92,16 @@ namespace Statecraft.Sim
             // A recorded turn is immutable: the caller keeps its own objects (an AllocateBudget's dictionary is theirs to reuse).
             turns.Add(commands.Select(Format).ToList());
             FinalHash = after.Hash();
+            open.Clear();
+        }
+
+        /// <summary>Replaces the turn in progress with canonical copies of its committed orders (R-SAVE-003).</summary>
+        internal void SetOpen(IReadOnlyList<Command> commands)
+        {
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            var lines = commands.Select(Format).ToList();
+            open.Clear();
+            open.AddRange(lines);
         }
 
         public string Write()
@@ -100,6 +116,11 @@ namespace Statecraft.Sim
             {
                 sb.Append("turn\n");
                 foreach (var line in t) sb.Append(line).Append('\n');
+            }
+            if (open.Count > 0)
+            {
+                sb.Append("open\n");
+                foreach (var line in open) sb.Append(line).Append('\n');
             }
             sb.Append("end ").Append(FinalHash).Append('\n');
             return sb.ToString();
@@ -175,12 +196,27 @@ namespace Statecraft.Sim
             var end = Head(n - 1, "end", 2)[1];
             if (!IsHash(end)) throw new SaveException(n, "bad end hash");
             var save = new SaveGame(content, seed, mode, ruleset, end);
+            save.Version = version;
             List<string>? current = null;
+            bool sawOpen = false;
             for (int i = first; i < n - 1; i++)
             {
-                if (lines[i] == "turn") { current = new List<string>(); save.turns.Add(current); continue; }
+                if (version >= 3 && lines[i] == "open")
+                {
+                    if (sawOpen) throw new SaveException(i + 1, "'open' must come last, once");
+                    sawOpen = true; current = save.open; continue;
+                }
+                if (lines[i] == "turn")
+                {
+                    if (sawOpen) throw new SaveException(i + 1, "'open' must come last, once");
+                    current = new List<string>(); save.turns.Add(current); continue;
+                }
                 if (current == null) throw new SaveException(i + 1, "command before the first 'turn'");
-                current.Add(Format(ParseCommand(i + 1, lines[i])));   // canonical form, validated now
+                var cmd = ParseCommand(i + 1, lines[i]);
+                // The open turn holds committed orders only (R-TURN-004); a waiting order there means the save was edited.
+                if (ReferenceEquals(current, save.open) && !Simulation.IsInstant(cmd))
+                    throw new SaveException(i + 1, "only a move or a unit order other than Send home can be in the open turn");
+                current.Add(Format(cmd));   // canonical form, validated now
             }
             return save;
         }

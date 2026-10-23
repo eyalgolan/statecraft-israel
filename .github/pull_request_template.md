@@ -30,4 +30,4 @@
 - [ ] If `unity/` changed: Unity edit-mode tests ran locally, and their result is pasted above (CI does not run them).
 - [ ] Nothing in the diff contains a credential, a Unity Cloud id or personal data.
 - [ ] AI-assisted parts are disclosed under "AI assistance", and I can defend every line (`CONTRIBUTING.md`).
-- [ ] I contribute this under the repository's licences for the paths it changes (`LICENSING.md`).
+- [ ] I contribute this under the terms in `CONTRIBUTING.md` ("Licence of your contribution"): code under MIT to the maintainer, Eyal Golan, and under PolyForm Noncommercial 1.0.0 to everyone else; every other path under its licence in `LICENSING.md`.

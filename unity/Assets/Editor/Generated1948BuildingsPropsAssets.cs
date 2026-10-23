@@ -1,60 +1,59 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Review;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Category-only preparation. Existing baked town meshes and GUIDs are retained.</summary>
+    /// <summary>Editor review preparation only. Never updates a player catalog, bundle or baked LOD asset.</summary>
     public static class Generated1948BuildingsPropsAssets
     {
+        public static readonly string[] Ids = {
+            "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
+            "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house",
+            "generated-1948-05-plastered-courtyard-house-original", "generated-1948-06-bedouin-b-enclosed-striped-tent",
+            "generated-1948-08-khaki-canvas-tent", "generated-1948-09-stone-village-well",
+            "generated-1948-10-low-sandbag-position", "generated-1948-11-supply-crate-stack", "generated-1948-12-low-stone-wall-module"
+        };
+
         [MenuItem("Statecraft/Generated 1948/Prepare buildings and props")]
         public static void Prepare()
         {
-            string path = TownModels.SetPath;
-            string before = File.ReadAllText(path);
-            var oldMeshes = Regex.Matches(before, @"(?ms)^--- !u!43 &[^\n]+\n.*?(?=^--- |\z)")
-                .Cast<Match>().Select(m => m.Value).ToArray();
-            TownModelAssets.AppendMissing();
-            string after = File.ReadAllText(path);
-            // Saving a Mesh can round-trip compressed normal-range floats. Keep every pre-existing serialized
-            // mesh block byte-for-byte, including those floats; only the new groups and catalog refs may be added.
-            var originals = oldMeshes.ToDictionary(m => Regex.Match(m, @"^--- !u!43 &([^\n]+)").Groups[1].Value);
-            after = Regex.Replace(after, @"(?ms)^--- !u!43 &([^\n]+)\n.*?(?=^--- |\z)",
-                m => originals.TryGetValue(m.Groups[1].Value, out var original) ? original : m.Value);
-            File.WriteAllText(path, after);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-            foreach (string mesh in oldMeshes)
-                if (!File.ReadAllText(path).Contains(mesh)) throw new InvalidOperationException("An existing baked town mesh changed; stop and review the asset diff.");
-            if (!EditorBuildSettings.scenes.Any(s => s.path == Generated1948BuildingsPropsReview.ScenePath && s.enabled))
-                throw new InvalidOperationException("The playable buildings/props scene must be enabled in build settings.");
-
+            if (EditorBuildSettings.scenes.Any(s => s.path.EndsWith("GeneratedBuildingsPropsReview.unity", StringComparison.Ordinal)))
+                throw new InvalidOperationException("Editor review must never be build-listed.");
             var scene = EditorSceneManager.OpenScene(Generated1948BuildingsPropsReview.ScenePath, OpenSceneMode.Additive);
             var review = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Generated1948BuildingsPropsReview>()).Single();
             var serialized = new SerializedObject(review);
-            string[] ids = { "generated-1948-01-textured-hip-roof-repair-v2", "generated-1948-02-netanya-two-storey-balcony-house", "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house", "generated-1948-05-textured-courtyard-roof-repair-v2", "generated-1948-06-bedouin-b-enclosed-striped-tent", "generated-1948-08-khaki-canvas-tent", "generated-1948-09-stone-village-well", "generated-1948-10-low-sandbag-position", "generated-1948-11-supply-crate-stack", "generated-1948-12-low-stone-wall-module" };
-            string[] names = { "Repaired tiled-roof house", "Netanya balcony house", "Netanya porch house", "Tiberias stone house", "Repaired courtyard house", "Bedouin enclosed tent", "Khaki canvas tent", "Stone well", "Low sandbag position", "Supply crates", "Low stone wall" };
+            string[] names = { "Original tiled house (roof gaps)", "Netanya balcony house", "Original porch house (rear opening)",
+                "Tiberias stone house", "Original courtyard house (roof gaps)", "Bedouin enclosed tent", "Khaki canvas tent",
+                "Stone well", "Low sandbag position", "Supply crates", "Low stone wall" };
             var prefabs = serialized.FindProperty("prefabs"); var materials = serialized.FindProperty("materials"); var labels = serialized.FindProperty("labels");
-            prefabs.arraySize = materials.arraySize = labels.arraySize = ids.Length;
-            for (int i = 0; i < ids.Length; i++)
+            prefabs.arraySize = materials.arraySize = labels.arraySize = Ids.Length;
+            for (int i = 0; i < Ids.Length; i++)
             {
-                string stem = "Assets/Art/Generated1948Review/" + ids[i] + "/" + ids[i];
-                var source = AssetDatabase.LoadAssetAtPath<GameObject>(stem + "-near.fbx");
+                string stem = Generated1948BuildingsPropsReview.AssetFolder + "/" + Ids[i] + "/" + Ids[i];
+                var source = AssetDatabase.LoadAssetAtPath<GameObject>(stem + ".fbx");
                 var material = AssetDatabase.LoadAssetAtPath<Material>(stem + ".mat");
-                if (source == null || material == null) throw new InvalidOperationException("Missing review asset " + ids[i]);
-                prefabs.GetArrayElementAtIndex(i).objectReferenceValue = source;
+                var importer = AssetImporter.GetAtPath(stem + ".fbx") as ModelImporter;
+                if (source == null || material == null || importer == null) throw new InvalidOperationException("Missing original review asset " + Ids[i]);
+                if (importer.meshCompression != ModelImporterMeshCompression.Off || importer.animationCompression != ModelImporterAnimationCompression.Off || !importer.importAnimation)
+                    throw new InvalidOperationException("Lossless mesh/animation import required: " + Ids[i]);
+                var texture = material.mainTexture;
+                var ti = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture)) as TextureImporter;
+                if (texture == null || ti == null || ti.crunchedCompression || ti.textureCompression != TextureImporterCompression.Uncompressed || ti.maxTextureSize < 4096)
+                    throw new InvalidOperationException("Exact original full-size colour map required: " + Ids[i]);
+                var go = UnityEngine.Object.Instantiate(source);
+                foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;
+                var prefab = PrefabUtility.SaveAsPrefabAsset(go, stem + ".prefab"); UnityEngine.Object.DestroyImmediate(go);
+                prefabs.GetArrayElementAtIndex(i).objectReferenceValue = prefab;
                 materials.GetArrayElementAtIndex(i).objectReferenceValue = material;
                 labels.GetArrayElementAtIndex(i).stringValue = names[i];
             }
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); EditorSceneManager.CloseScene(scene, true);
-            UnityEngine.Debug.Log("Buildings/props prepared: existing " + oldMeshes.Length + " baked mesh blocks retained unchanged.");
+            Debug.Log("BUILDINGS ORIGINALS:11 editor-only assets prepared; no campaign catalog or LOD write.");
         }
 
         [MenuItem("Statecraft/Generated 1948/Play buildings and props review")]

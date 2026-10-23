@@ -2,19 +2,34 @@ using System;
 using System.Linq;
 using Statecraft.Sim;
 
-/// <summary>The Yishuv windows in the real content (#80): a fresh Founding start holds exactly the records it held before.</summary>
+/// <summary>The Yishuv windows in the real content (#80).</summary>
 public class YishuvWindowsTests
 {
     static readonly Content C = ContentLoader.Load(RealContentTests.ContentRoot());
 
     [Fact]
-    public void AFreshFoundingStartHoldsTheSameRecordsAsBeforeTheWindows()
+    public void AFreshFoundingStartHoldsOnlyTheRecordsActiveThen()
     {
         var s = Simulation.NewGame(C, 1, Mode.Historical);
         Assert.Equal(new[] { "food_supply", "housing", "intl_standing", "morale", "security" }, s.Indicators.Keys.OrderBy(k => k, StringComparer.Ordinal));
-        Assert.Equal(new[] { "border_settlement", "housing_construction", "maabarot", "rationing" }, s.Policies.Keys.OrderBy(k => k, StringComparer.Ordinal));
-        Assert.Equal(new[] { "border_villages_secure", "building_houses", "food_lifts_cohesion", "homes_lift_morale", "rationing_feeds", "rationing_grates", "safety_lifts_morale", "work_lifts_cohesion" },
+        Assert.Equal(new[] { "border_settlement", "housing_construction", "maabarot" }, s.Policies.Keys.OrderBy(k => k, StringComparer.Ordinal));
+        Assert.Equal(new[] { "border_villages_secure", "building_houses", "food_lifts_cohesion", "homes_lift_morale", "safety_lifts_morale", "work_lifts_cohesion" },
             s.EffectContributions.Keys.OrderBy(k => k, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void RationingAndItsEffectsBeginWithTheRationingOffice()
+    {
+        var from = new DateTime(1949, 3, 10);
+        var before = C.At(from.AddDays(-1));
+        Assert.DoesNotContain(before.Policies, p => p.Id == "rationing");
+        Assert.DoesNotContain(before.Effects, e => e.Id == "rationing_feeds");
+        Assert.DoesNotContain(before.Effects, e => e.Id == "rationing_grates");
+
+        var on = C.At(from);
+        Assert.Contains(on.Policies, p => p.Id == "rationing");
+        Assert.Contains(on.Effects, e => e.Id == "rationing_feeds");
+        Assert.Contains(on.Effects, e => e.Id == "rationing_grates");
     }
 
     [Fact]

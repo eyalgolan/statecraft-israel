@@ -125,10 +125,13 @@ namespace Statecraft.Sim
         }
 
         /// <summary>"+5 units" for a change to a whole-unit national stock (the Food and Arms pools; R-EFX-001).</summary>
-        public static string UnitsChange(double change)
+        public static string UnitsChange(double change) => UnitsChangeNumber(change) + " units";
+
+        /// <summary>The same signed, rounded whole-stock number without an English noun, for localized UI templates.</summary>
+        public static string UnitsChangeNumber(double change)
         {
             var r = Math.Round(Finite(change, nameof(change)), 0, MidpointRounding.AwayFromZero);
-            return Signed(r, "", Fixed(Math.Abs(r), 0) + " units", signed: true);
+            return Signed(r, "", Fixed(Math.Abs(r), 0), signed: true);
         }
 
         /// <summary>"Morale +4.1%" or "Treasury IL -2.0m": the name and the change, in the target's unit.</summary>

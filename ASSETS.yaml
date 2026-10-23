@@ -37,85 +37,168 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: verified
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used. Decision D-D decided (owner, 2026-10-14, docs/oss/DECISIONS.md): approved for free, non-commercial distribution and CC0 marking; before any paid release the owner confirms commercial rights for the plan used or replaces the image."
-  # Generated buildings and props: focused category admission.
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-01-textured-hip-roof-repair-v2/*"
-    licence: CC0-1.0
+  # Generated buildings and props: original source review only (PR1379).
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Owner Tripo-generated source, 22 October 2026; separately named local closed-roof derivative. measurement-provenance.json and QA-VERIFICATION.json record geometry, atlas, unit and hash verification. Original source preserved in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only visual sample under D1; owner cleared after actual elevated Unity review for the existing architectural role. No archival reconstruction claim or historical deployment. See docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-05-textured-courtyard-roof-repair-v2/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Owner Tripo-generated source, 22 October 2026; separately named local closed-roof derivative. measurement-provenance.json and QA-VERIFICATION.json record geometry, atlas, unit and hash verification. Original source preserved in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only visual sample under D1; owner cleared after actual elevated Unity review for the existing architectural role. No archival reconstruction claim or historical deployment. See docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-04-dark-basalt-house/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-06-bedouin-b-enclosed-striped-tent/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-08-khaki-canvas-tent/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-09-stone-village-well/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-10-low-sandbag-position/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-11-supply-crate-stack/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-12-low-stone-wall-module/*"
-    licence: CC0-1.0
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Canonical project derivative copied from the reviewed combined asset branch; per-model provenance.json records source image/GLB and runtime FBX/512px colour hashes. Original source and 4K master remain in local staging."
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "AI-only output under D1; no existing asset licence changes. Visual variation, not an archival reconstruction. Role mapping and playable-review scope are documented in docs/generated-buildings-props.md."
-  # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-06-bedouin-b-enclosed-striped-tent/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    status: verified
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-*/*.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Eleven byte-identical provider-original GLBs retained as editor-only source records; per-model provenance.json records source hashes. No geometry or texture modification."
+    status: verified
+    note: "Original source archive only; does not cover adjacent prefabs, materials, metadata or code. Known roof/rear defects01/03/05 retained; all campaign activation held for streaming and art/sensitivity sign-off. Older licences unchanged."
   - glob: "unity/Assets/Art/Settlements/Prototype/Models/b*"
     licence: CC0-1.0
     ai_generated: true
@@ -260,7 +343,7 @@ rules:
     licence: CC-BY-SA-4.0
     source: "tools/borders_digitise.py from the Survey of Palestine map 'Administrative Divisions' (1:750,000, 1946, overprinted May 1947; two Commons scans, SHA-256 in the file) per the 1947 Schedule (Palestine Gazette No. 1552); coast from the Copernicus DEM (NOTICE); the hex layer by tools/borders_bake.py; content/ is CC BY-SA 4.0. subdistrict_hexes_1948.tsv is the YAML's baked runtime form (tools/regions_bake.py, issue #321), with the same rows and no new facts"
     status: verified
-    note: "Decision D-B (owner-delegated, 2026-10-11): allowed; facts redrawn, no image copied. Government of Palestine works of 1945-47, public domain in Israel and the UK since 1997; the file holds facts (where legally defined lines run) redrawn by our own method, which a possible US copyright in the map's drawing does not reach (Feist). Hebrew and Arabic names from Wikipedia, noted per row."
+    note: "Decision D-B (owner-delegated, 2026-10-11): allowed; facts redrawn, no image copied. Government of Palestine works of 1945-47, public domain in Israel and the UK since 1997; the file holds facts (where legally defined lines run) redrawn by our own method, which a possible US copyright in the map's drawing does not reach (Feist). Hebrew names from the Palestine Gazette's 1945 Hebrew schedule (owner ruling, 2026-10-23, #196), Arabic names from Wikipedia, noted per row."
   - glob: "content/map/armistice*"
     licence: CC-BY-SA-4.0
     source: "tools/armistice_digitise.py from the 1949 General Armistice Agreements (UNTS vol. 42) and their annexed maps: Syria, Annex I's MR points and the annexed 1:50,000 map (S/1353/Rev.1: the UN ODS colour scan and the UNISPAL 1-bit scan, SHA-256 in the tool); Lebanon, Art. V.1's international boundary as the Mandate frontier of content/map/subdistricts_1948.geojson; Egypt, Art. VI.1 and VIII.2 with the Survey of Palestine 1:100,000 sheet 9 'Gaza' (Commons, NLI copy) for the Wadi Hasi mouth, Deir Suneid and the highway; the 1950 modus vivendi line from S/1471's signed map (UNISPAL; sheet 2 from the UN Treaty Collection); Jordan from the low-resolution UNISPAL copy of the signed map 1 (source_quality low_res_scan), georeferenced on town coordinates from Wikidata (CC0) and Wikipedia; IBS 46 (1965) a named cross-check only; coast from the Copernicus DEM (NOTICE); the hex layer by tools/armistice_bake.py; content/ is CC BY-SA 4.0. armistice_hexes_1949.tsv is the YAML's baked runtime form (tools/regions_bake.py, issue #321), with the same rows and no new facts"

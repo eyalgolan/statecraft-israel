@@ -1,20 +1,20 @@
+#if UNITY_EDITOR
 #nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Statecraft.Game.Review
 {
-    /// <summary>A playable, opt-in art display on the real map and camera. Samples have no sim state or deployment.</summary>
+    /// <summary>An Editor-only Play Mode art display on the real map and camera. Samples have no sim state or deployment.</summary>
     public sealed class Generated1948BuildingsPropsReview : MonoBehaviour
     {
         public const string Flag = "buildingpropsreview", SceneName = "GeneratedBuildingsPropsReview";
-        public const string ScenePath = "Assets/GeneratedBuildingsPropsReview.unity";
+        public const string AssetFolder = "Assets/Editor/Generated1948Review";
+        public const string ScenePath = AssetFolder + "/GeneratedBuildingsPropsReview.unity";
         public const float Spacing = 1000f, DisplayWidth = 600f;
         [SerializeField] GameObject[] prefabs = Array.Empty<GameObject>();
         [SerializeField] Material[] materials = Array.Empty<Material>();
@@ -27,18 +27,6 @@ namespace Statecraft.Game.Review
         public IReadOnlyList<string> Labels => labels;
         public IReadOnlyList<Material> Materials => materials;
         public int PlacedCount { get; private set; }
-
-        public static bool Requested(string? url, string[] args, bool webgl) =>
-            webgl ? UrlFlags.Has(url, Flag) : args.Contains("-" + Flag);
-        public static bool Requested() => Requested(Application.absoluteURL, Environment.GetCommandLineArgs(),
-            Application.platform == RuntimePlatform.WebGLPlayer);
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void LoadRequestedScene()
-        {
-            if (Requested() && !SceneManager.GetSceneByName(SceneName).isLoaded)
-                SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Additive);
-        }
 
         IEnumerator Start()
         {
@@ -139,3 +127,5 @@ namespace Statecraft.Game.Review
         }
     }
 }
+
+#endif

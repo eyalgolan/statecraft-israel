@@ -28,9 +28,9 @@ namespace Statecraft.Game.EditorTools
             set.mid = new Mesh[n]; set.far = new Mesh[n]; set.farthest = new Mesh[n];
             for (int i = 0; i < n; i++)
             {
-                string id = TownModels.Ids[i];
-                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(TownModels.ModelPath(id))) if (o is Mesh m) set.meshes[i] = m;
-                set.materials[i] = AssetDatabase.LoadAssetAtPath<Material>(TownModels.MaterialPath(id));
+                string id = TownModels.Ids[i], dir = $"{TownModels.Folder}/{id}";
+                foreach (var o in AssetDatabase.LoadAllAssetsAtPath($"{dir}/{id}.fbx")) if (o is Mesh m) set.meshes[i] = m;
+                set.materials[i] = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat");
                 var levels = Object.Instantiate(set.meshes[i]);
                 MeshLodUtility.GenerateMeshLods(levels, -1);
                 var full = set.meshes[i].bounds;
@@ -51,34 +51,6 @@ namespace Statecraft.Game.EditorTools
             so.FindProperty("townModels").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.SaveScene(scene);
-        }
-
-        /// <summary>Append only new catalog entries. Existing meshes, materials and baked sub-assets are retained;
-        /// this does not call Create or rebuild any original model.</summary>
-        public static void AppendMissing()
-        {
-            var set = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
-            if (set == null) throw new System.InvalidOperationException("The existing town model set is required.");
-            int first = set.meshes.Length, n = TownModels.Ids.Length;
-            if (first > n) throw new System.InvalidOperationException("The catalog cannot remove existing model slots.");
-            if (first == n) { set.Validate(); return; }
-            System.Array.Resize(ref set.meshes, n); System.Array.Resize(ref set.materials, n);
-            System.Array.Resize(ref set.mid, n); System.Array.Resize(ref set.far, n); System.Array.Resize(ref set.farthest, n);
-            for (int i = first; i < n; i++)
-            {
-                string id = TownModels.Ids[i];
-                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(TownModels.ModelPath(id))) if (o is Mesh mesh) set.meshes[i] = mesh;
-                set.materials[i] = AssetDatabase.LoadAssetAtPath<Material>(TownModels.MaterialPath(id));
-                if (set.meshes[i] == null || set.materials[i] == null) throw new System.InvalidOperationException(id + " has no imported mesh/material");
-                var levels = Object.Instantiate(set.meshes[i]);
-                MeshLodUtility.GenerateMeshLods(levels, -1);
-                var full = set.meshes[i].bounds;
-                set.mid[i] = Bake(levels, Nearest(levels, TownModelSet.MidTriangles, full), id + "_mid", set, full.min.z);
-                set.far[i] = Bake(levels, Nearest(levels, TownModelSet.FarTriangles, full), id + "_far", set, full.min.z);
-                set.farthest[i] = Bake(levels, Nearest(levels, 0, full), id + "_farthest", set, full.min.z);
-                Object.DestroyImmediate(levels);
-            }
-            set.Validate(); EditorUtility.SetDirty(set); AssetDatabase.SaveAssets();
         }
 
         /// <summary>The generated level whose triangle count is nearest <paramref name="triangles"/> (level 1 or deeper; 0

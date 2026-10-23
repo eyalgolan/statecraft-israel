@@ -45,7 +45,7 @@ namespace Statecraft.Sim
                 return new StepResult(s, why, rejected);
             }
 
-            RunOrders(c, s, commands, why, rejected);
+            RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why, rejected);
             EventSystem.Delegate(c, s, why);
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
@@ -91,16 +91,39 @@ namespace Statecraft.Sim
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
             CommandText.Validate(commands);
             var s = state.Clone();
-            if (s.GameOver == null) RunOrders(c, s, commands, new List<Cause>(), new List<Rejection>());
+            if (s.GameOver == null) RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), new List<Cause>(), new List<Rejection>());
             return EventSystem.DelegatedTo(c, s, c.Events.First(e => e.Id == eventId));
         }
 
-        /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
-        /// rejected with its reason. Step and DelegatedTo share it, so the dry run sees what End Turn will.</summary>
-        static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, List<Cause> why, List<Rejection> rejected)
+        /// <summary>The state after <paramref name="commands"/> run as End turn would run them first (spec 2026-10-23 section 3;
+        /// RunOrders, shared with Step), on a clone. Never mutates <paramref name="state"/>.</summary>
+        public static PreviewResult Preview(Content c, GameState state, IReadOnlyList<Command> commands)
         {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            CommandText.Validate(commands);
+            var s = state.Clone();
+            var why = new List<Cause>(); var rejected = new List<Rejection>(); var spent = new Dictionary<int, int>();
+            var attacked = new Dictionary<int, (int Q, int R)>();
+            if (s.GameOver != null)
+                foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {PlayerText.GameOver(s.GameOver)}"));
+            else RunOrders(c, s, commands, spent, attacked, why, rejected);
+            return new PreviewResult(s, spent, attacked, why, rejected);
+        }
+
+        /// <summary>A move, a go-to, an attack, fortify or hold takes effect at once; Send home and every other order waits
+        /// for End turn (spec 2026-10-23 section 3.2).</summary>
+        public static bool IsInstant(Command cmd) => cmd is Move || (cmd is UnitOrder o && o.Order != Demobilization.SendHome);
+
+        /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
+        /// rejected with its reason. Step, DelegatedTo and Preview share it, so every dry run sees what End Turn will.</summary>
+        static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
+                              Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
+        {
+            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
-            var spent = new Dictionary<int, int>();   // movement points each unit has used this turn (R-MOVE-001)
             foreach (var cmd in commands)
             {
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
@@ -110,7 +133,7 @@ namespace Statecraft.Sim
                 // before charging, so the state and the Attention are unchanged.
                 if (c.IsGdd && (cmd is SetMobilization || cmd is SecurityOrder)) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
                 var before = s.Attention;
-                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, why);
+                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
                 if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
             }
         }
@@ -118,7 +141,8 @@ namespace Statecraft.Sim
         /// <summary>Returns null when the command was carried out (a lost vote counts: it consumes the RNG draw and is
         /// reported as a politics cause), or the reason it failed validation. A command that fails validation leaves
         /// the state as it found it (attention is refunded by the caller).</summary>
-        static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent, List<Cause> why)
+        static string? Execute(Content c, GameState s, Command cmd, Dictionary<int, int> spent,
+                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
         {
             switch (cmd)
             {
@@ -178,10 +202,11 @@ namespace Statecraft.Sim
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
-                    if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
+                    if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
+                    if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
                     if (o.Q != null || o.R != null) return "That order names no hex";
                     return o.Order == Demobilization.SendHome
-                        ? Demobilization.Give(c, s, o.Unit, why)
+                        ? Demobilization.Give(c, s, o.Unit, attacked, why)
                         : Orders.Give(c, s, o.Unit, o.Order, why);
                 case StartProject p:
                     return Projects.StartCity(c, s, p.ProjectKind, p.City, p.Q, p.R, why);

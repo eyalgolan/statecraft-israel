@@ -30,7 +30,7 @@ public class Generated1948BuildingsPropsEvidenceTests
         }
         Assert.IsNotNull(review); Assert.AreEqual(11, review!.PlacedCount);
         var camera = Camera.main; var rig = camera.GetComponent<CameraRig>();
-        string dir = Path.Combine(Paths.RepoRoot, "captures", "buildings-props-playmode"); Directory.CreateDirectory(dir);
+        string dir = Path.Combine(Paths.RepoRoot, "captures", "buildings-props-originals-review-v2"); Directory.CreateDirectory(dir);
         int oldQuality = QualitySettings.GetQualityLevel();
         try
         {
@@ -44,45 +44,13 @@ public class Generated1948BuildingsPropsEvidenceTests
                 rig.LookAt = bounds.center; rig.Distance = CameraController.MinDistance; rig.Yaw = 0f; rig.Apply();
                 yield return null;
                 string file = sample.name.ToLowerInvariant().Replace(' ', '-'); Capture(camera, Path.Combine(dir, file + ".png"));
-                if (sample.name.StartsWith("Repaired"))
+                if (sample.name.Contains("roof gaps") || sample.name.Contains("rear opening"))
                 {
                     rig.Yaw = 180f; rig.Apply(); yield return null; Capture(camera, Path.Combine(dir, file + "-rear.png"));
                 }
             }
-            // Matched campaign evidence: restore only the pre-branch house pools in memory, rebuild the same map,
-            // then restore the approved pools. No source asset or simulation state is changed by this comparison.
-            var map = Object.FindFirstObjectByType<MapScene>();
-            var layer = map.GetComponentInChildren<TownModelLayer>();
-            var courtyard = layer.Instances().First(i => i.model == TownModel.CourtyardRepair2026).m.GetColumn(3);
-            var anchors = new[] {
-                map.Frame.ToWorld(map.Settlements.Single(s => s.Id == "netanya").Lon, map.Settlements.Single(s => s.Id == "netanya").Lat, 0),
-                map.Frame.ToWorld(map.Settlements.Single(s => s.Id == "tiberias").Lon, map.Settlements.Single(s => s.Id == "tiberias").Lat, 0),
-                new Vector3(courtyard.x, courtyard.y, courtyard.z) };
-            string[] towns = { "netanya", "tiberias", "courtyard-plot" };
-            var pools = new[] { TownModels.Netanya, TownModels.Tiberias, TownModels.ArabCourtyard };
-            var originals = pools.Select(pool => pool.ToArray()).ToArray();
-            try
-            {
-                for (int i = 0; i < pools.Length; i++) for (int j = 0; j < pools[i].Length; j++)
-                    pools[i][j] = i == 0 ? TownModel.B13aTwoStorey : TownModel.B17CourtyardHouse;
-                map.Build();
-                for (int i = 0; i < anchors.Length; i++)
-                {
-                    rig.LookAt = anchors[i]; rig.LookAt.y = map.Terrain.SampleHeight(anchors[i]) + map.Terrain.transform.position.y;
-                    rig.Distance = CameraController.MinDistance; rig.Yaw = 0; rig.Apply(); yield return null;
-                    Capture(camera, Path.Combine(dir, towns[i] + "-before.png"));
-                }
-            }
-            finally { for (int i = 0; i < pools.Length; i++) System.Array.Copy(originals[i], pools[i], pools[i].Length); }
-            map.Build();
-            for (int i = 0; i < anchors.Length; i++)
-            {
-                rig.LookAt = anchors[i]; rig.LookAt.y = map.Terrain.SampleHeight(anchors[i]) + map.Terrain.transform.position.y;
-                rig.Distance = CameraController.MinDistance; rig.Yaw = 0; rig.Apply(); yield return null;
-                Capture(camera, Path.Combine(dir, towns[i] + "-after.png"));
-            }
-            File.WriteAllText(Path.Combine(dir, "README.txt"), "Actual Unity Editor Play Mode, runtime Start placement, real MapScene CameraRig at its fixed elevated pitch. PC quality,3840x2160. Camera.Render captures exclude screen-space GUI labels/HUD. Matched campaign pairs temporarily restore only original B13/B17 pool contents in memory and rebuild identical map inputs, then restore approved pools; same camera/quality. Not a native player or new historical deployment.\n");
-            Debug.Log("BUILDINGS/PROPS PLAY MODE EVIDENCE: all11 + focused roof views -> " + dir);
+            File.WriteAllText(Path.Combine(dir, "README.txt"), "Actual Unity Editor Play Mode, runtime Start placement, real MapScene CameraRig at its fixed elevated pitch. PC quality,3840x2160. Camera.Render captures exclude screen-space GUI labels/HUD. Editor-only original-source inspection; no campaign variation is activated. Known source roof/rear defects are intentionally retained. Not a native player or new historical deployment.\n");
+            Debug.Log("BUILDINGS/PROPS EDITOR ORIGINALS EVIDENCE: all11 + known defect views -> " + dir);
         }
         finally { QualitySettings.SetQualityLevel(oldQuality, true); }
         yield return new ExitPlayMode();

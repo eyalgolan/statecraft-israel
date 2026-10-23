@@ -1429,11 +1429,8 @@ namespace Statecraft.Game.Map.Kits
                         // Goat-hair cloth, a warm dark brown rather than black: at the overview a black row read as a scratch.
                         // Low side walls under a peaked roof, so it reads as a tent rather than a shed.
                         var cloth = Jitter(C(0.33f, 0.27f, 0.21f), ref rnd, 0.08f);
-                        var tentStart = km.CutStart();
                         km.Box(p.x, p.y, tyaw, tw, td, bottom, top, 1.1f * m, Jitter(C(0.42f, 0.35f, 0.27f), ref rnd, 0.06f), cloth, Facade.Plain, m, roofed: true);
                         km.Gable(p.x, p.y, tyaw, tw, td, top + 1.1f * m, 1.4f * m, cloth, cloth);
-                        km.CutEnd(tentStart);
-                        AddTentModel("camp:" + area.Subdistrict, TownModel.BedouinTent2026, p, tyaw, tw, td, 2.5f * m, top);
                         pitched++;
                     }
                     if (pitched == 0) continue;

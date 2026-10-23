@@ -1,44 +1,35 @@
-# Generated buildings and props integration
+# Generated buildings and props: original-source editor review
 
-This branch is independent of the vehicle and character branches. It contains five house variations (including two separately named local roof repairs), two tents and four props, with original asset GUIDs preserved. The scoped [admission receipt](generated-buildings-props-admission.json) records source/runtime hashes copied from combined checkpoint `623ca73c`. Original provider GLBs, 4K maps and earlier files remain in local staging. No simulation/content rules or historical deployments change.
+**Not finished game assets. All eleven models are editor-only, and all new campaign activation is held.** Provider originals01 and05 have known roof gaps, and03 has a broad rear opening. Restoring original deliveries intentionally removes the previous local roof caps/rear panel. Those adaptations remain preserved separately in offline staging; they are not relabeled as originals or included in this source-original revision. Tal can request separately identified adapted delivery, but neither version has Eyal's final art/sensitivity sign-off here.
 
-| Asset | Placement |
-|---|---|
-| 01 tiled-roof repair, 02 Netanya balcony and 03 porch houses | Existing Netanya house pool, alongside the original B13 house |
-| 04 lighter stone house | Existing Tiberias pool, alongside the original B17 courtyard house |
-| 05 courtyard roof repair | Existing generic Arab-town / Village-style house plots, alongside B17; unrelated OldHouse and StoneBlock roles stay unchanged |
-| 06 enclosed Bedouin tent | Existing sourced encampment tent plots only; never ordinary Arab-town houses |
-| 08 khaki canvas tent | Existing non-white ridge-tent plots in player-built transit camps; white/bell tents and military barracks remain |
-| 09 well, 10 sandbags, 11 crate stack, 12 wall | Playable review display only: no suitable exact runtime detail role is currently defined |
+The [admission receipt](generated-buildings-props-admission.json) identifies every source by hash. Each directory under `unity/Assets/Editor/Generated1948Review/` contains the byte-identical provider GLB, exact embedded4096×4096 colour-map bytes, a local FBX compatibility export, material/prefab and provenance. The FBX is not a provider-original export. Conversion preserves triangle positions/connectivity and UVs within documented float serialization tolerance; its stored corner normals exactly match the Blender-imported source values. Blender's reimport quantization is recorded separately, rather than claimed to be exporter loss. No geometry centering, decimation, roof repair, atlas or texture resize/recompression is performed. The GLB remains the exact source of record.
 
-The Village style follows ForArchetype so Tiberias actually reaches its own house pool. Shared TownBlock plots outside Netanya retain original B13 only, preventing Netanya variations from leaking into another town. Jerusalem's existing Village-style plots can use the generic courtyard variation; its other architectural roles retain their original pools. Tent selection adds no random draws and changes no camp locations, counts, census or far kit geometry. Missing model data retains the original kit rendering. Imported bounds are Blender mesh-space x=width,y=depth,z=height; the runtime fit rotates z into Unity y. Tent models retain their existing camp plot footprints; house fitting keeps the existing model world scale.
+| Number | Original triangles | Current readiness |
+|---|---:|---|
+|01 tiled house|5021|Known original roof defects; prior repair excluded|
+|02 balcony house|4798|Full-source editor review captured; activation/sign-off held|
+|03 porch house|4929|Known original rear opening; prior plaster panel excluded|
+|04 lighter stone house|5624|Full-source editor review captured; activation/sign-off held|
+|05 courtyard house|5466|Known original roof defects; prior repair excluded|
+|06 enclosed Bedouin tent|3184|Full-source editor review captured; activation/sign-off held|
+|08 khaki canvas tent|3988|Full-source editor review captured; activation/sign-off held|
+|09 well|3992|Editor-only; no sourced map role|
+|10 sandbags|4074|Editor-only; no sourced map role|
+|11 crates|2126|Editor-only; no sourced map role|
+|12 wall|2146|Editor-only; no sourced map role|
 
-## Playable review
+Mesh and animation import compression are Off. Every source clip is kept; all eleven provider GLBs contain zero clips and zero skins. Texture import is uncompressed, Crunch is off for every platform, and max size is4096, matching the source. There are no `-near`/`-far` files or new generated LODs. Existing main catalog entries, placements and54 baked mesh sub-assets are unchanged.
 
-Launch the normal game with `-buildingpropsreview` or WebGL `?buildingpropsreview`. The additive `Assets/GeneratedBuildingsPropsReview.unity` scene waits for the actual MapScene and CameraRig, then places and names every scoped asset on a clearly labeled display surface. Camera controls remain the normal game controls. Display sizes are art-review choices, not historical scale. Ordinary MapScene does not load the review scene or place the review-only props.
+## Loading and placement dependency
 
-In the Editor, Statecraft → Generated1948 → Play buildings and props review opens Map plus the additive scene and enters Play mode. This is a playable route, not the older editor-only asset render.
+Eyal's [23 October rulings](https://github.com/eyalgolan/statecraft-israel/pull/1379#issuecomment-6358297184) require own streamed bundles after the first frame, or the houses may use #1273's town-building streaming once it lands. Current main07995723 has no compatible town-stream interface. This branch does not build that system: it removes its new campaign/catalog references, leaves existing towns/camps unchanged and records only [prepared mappings](generated-buildings-props-mapping.json) outside runtime code. Nothing new enters Resources, the1948 Collection or the initial player art dependency graph. No WebGL download measurement is claimed.
 
-## Preparation and validation
+The intended mappings remain Netanya houses, Tiberias stone house, generic Village/ArabTown courtyard variation, existing Bedouin tent plots and existing non-white transit-camp ridge tents. They are inactive. Future activation still needs before/after screenshots at matching state/camera for each affected role, including Jerusalem, an Arab village and both camp types, and Eyal's art/sensitivity sign-off. Tal's earlier asset/repair approval is not presented as Eyal's approval. The four props remain editor review art until a sourced role exists.
 
-Run `Statecraft.Game.EditorTools.Generated1948BuildingsPropsAssets.Prepare` only in the coordinated Unity window. It calls append-only TownModelAssets.AppendMissing, retains existing catalog indices and baked mesh objects, and checks every existing serialized mesh block remains unchanged. Do not call the full TownModelAssets.Create for this branch. The two tent and two repaired-roof entries append their own LOD groups. All 54 original sub-assets from main remain byte-identical; no original LOD is regenerated. Unity can round-trip compressed normal floats during SaveAssets, so preparation restores the exact existing serialized mesh blocks before reimporting and verifies them.
+## Editor review and validation
 
-Regression coverage checks requested-town house mapping, no tent leakage into town-house pools, actual encampment models, identical transit-camp census/far geometry, explicit review flags and the scene's full scoped asset roster/material references. Unity import and actual Play Mode elevated front/rear views passed for both repairs. The first scoped EditMode run passed25/25; after role activation,24/26 passed with two stale allowlists, then the focused allowlist rerun exposed the shared TownBlock leak described above. Exact-current mapping tests and captures validate that correction. Final result counts and logs are recorded in the [category QA receipt](generated-buildings-props-qa.json). No native-player or WebGL result is claimed.
+The review scene lives under `Assets/Editor/Generated1948Review/`, is absent from build settings and has no runtime loader. Its component is guarded by `UNITY_EDITOR`. Use **Statecraft → Generated1948 → Prepare buildings and props**, then **Play buildings and props review**. Preparation validates lossless imports and sets up only editor prefabs/scene references. It never appends a catalog entry, writes TownModels.asset or generates LODs.
 
-House 03 retains the documented local rear-plaster backing caveat. Houses 01 and 05 remain separately named local roof derivatives with their original exports untouched. Unit/hash, culled-roof and actual elevated Unity checks passed before the owner-approved pool activation. Their added geometry is not claimed to be an authentic reconstruction. House01 has5,055triangles (original5,021+34); house05 has5,494 (original5,466+28), each with512px colour maps. Their measured roof surfaces are closed; the courtyard notch and porch openings remain intentional. No vehicle, character, whole-town concept or rejected model is included. No LFS or existing licence policy changes are made.
+The [QA receipt](generated-buildings-props-qa.json) records current offline verification and remaining gates. Old repaired/slim captures and test results are superseded for this restored-original revision. Current original-source Unity validation passed6/6 tests with no compiler warnings/errors: actual import/settings, source hashes/triangle counts, player dependency isolation, layout and Editor Play Mode captures. Local evidence is in `captures/buildings-props-originals-review-v2/`, including `all11-overview.png`, `original-source-defect-contact.jpg` and `original-source-overview.jpg`. Visual inspection confirms the known01 roof defects and03 rear opening;05 visibly lacks its roof deck. These source views do not clear those assets. Offline policy/integrity checks passed329 tests, and the merged-tree sim passed2493 tests. No player/WebGL result or final art approval is claimed.
 
-## Visual evidence
-
-Actual Unity Editor Play Mode at PC quality produced the all11 display, elevated roof front/rear crops and matched campaign pairs using the real MapScene CameraRig. Captures exclude screen-space GUI/HUD; the live scene shows names through OnGUI. This is not a native-player/WebGL or historical-site screenshot.
-
-All review JPEGs remain local and ignored under `captures/buildings-props-playmode/reviewer-jpegs/`:
-
-- `generated-1948-buildings-props-overview.jpg`
-- `generated-1948-buildings-props-roofs.jpg`
-- `generated-1948-buildings-props-netanya-before.jpg` and `generated-1948-buildings-props-netanya-after.jpg`
-- `generated-1948-buildings-props-tiberias-before.jpg` and `generated-1948-buildings-props-tiberias-after.jpg`
-- `generated-1948-buildings-props-courtyard-plot-before.jpg` and `generated-1948-buildings-props-courtyard-plot-after.jpg`
-
-Normal GitHub attachments remain pending: the browser extension lacked file-URL access and the upload was blocked before execution. These screenshots are not committed or uploaded by an alternate route. Raw3840×2160 PNGs remain in the parent capture folder; nothing was discarded.
-
-Matched campaign pairs use the same map inputs, camera and quality. The before frame temporarily restores only original B13/B17 pool contents in memory, rebuilds the map, and restores the approved pools before the after frame. No source asset or simulation state is written by that comparison.
+New model/map licensing is CC BY-NC-ND4.0, credited to **Tal Heuberger**, under the precise new row in [LICENSING.md](../LICENSING.md). Older asset licences are unchanged. This records the requested file licence; it does not tick the contributor-consent checkbox.

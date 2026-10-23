@@ -1,61 +1,73 @@
+#nullable enable
+using System;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using NUnit.Framework;
+using Statecraft.Game;
+using Statecraft.Game.Map.Kits;
+using Statecraft.Game.Review;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>Generated candidates are reviewed outside Resources and the shipped collection until their placement is verified.</summary>
 public class Generated1948AssetTests
 {
-    const string Folder = "Assets/Art/Generated1948Review";
-    static readonly string[] Ids = {
-        "generated-1948-02-netanya-two-storey-balcony-house", "generated-1948-03-netanya-flat-roof-porch-house",
-        "generated-1948-04-dark-basalt-house", "generated-1948-06-bedouin-b-enclosed-striped-tent",
-        "generated-1948-08-khaki-canvas-tent", "generated-1948-09-stone-village-well",
-        "generated-1948-10-low-sandbag-position", "generated-1948-11-supply-crate-stack",
-        "generated-1948-12-low-stone-wall-module"
-    };
-
-    [Test]
-    public void NewHouseVariantsStayInTheirRequestedTownsAndKeepTheOriginals()
+    [Serializable] sealed class Receipt
     {
-        var netanya = new Statecraft.Game.Map.Settlement { Id = "netanya", Type = "town" };
-        var tiberias = new Statecraft.Game.Map.Settlement { Id = "tiberias", Type = "town" };
-        var safed = new Statecraft.Game.Map.Settlement { Id = "safed", Type = "town" };
-        string[] Houses(Statecraft.Game.Map.Settlement s) => Statecraft.Game.Map.Kits.TownModels.ForArchetype(
-            Statecraft.Game.Map.Kits.SettlementKits.ArchetypeOf(s), s).Select(m => Statecraft.Game.Map.Kits.TownModels.Ids[(int)m]).ToArray();
-        CollectionAssert.Contains(Houses(netanya), Ids[0]);
-        CollectionAssert.Contains(Houses(netanya), Ids[1]);
-        CollectionAssert.Contains(Houses(netanya), "b13a-netanya-two-storey-v2");
-        CollectionAssert.Contains(Houses(netanya), "generated-1948-01-textured-hip-roof-repair-v2");
-        var arab = Statecraft.Game.Map.Kits.TownModels.ForArchetype(Statecraft.Game.Map.Kits.Archetype.ArabTown, safed);
-        CollectionAssert.Contains(arab, Statecraft.Game.Map.Kits.TownModel.CourtyardRepair2026);
-        CollectionAssert.Contains(arab, Statecraft.Game.Map.Kits.TownModel.B17CourtyardHouse);
-        CollectionAssert.Contains(Houses(tiberias), Ids[2]);
-        CollectionAssert.Contains(Houses(tiberias), "b17-stone-courtyard-house-v2");
-        CollectionAssert.AreEquivalent(new[] { "b17-stone-courtyard-house-v2", "generated-1948-05-textured-courtyard-roof-repair-v2" }, Houses(safed));
+        public string id = "", source_glb_sha256 = "", embedded_image_sha256 = "";
+        public int number = 0, source_triangles = 0;
+        public int[] embedded_dimensions = Array.Empty<int>();
+        public string[] source_clips = Array.Empty<string>();
+    }
+    static string Hash(string path)
+    {
+        using var sha = SHA256.Create();
+        return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-", "").ToLowerInvariant();
+    }
+    static string Disk(string path) => Path.Combine(Paths.RepoRoot, "unity", path);
+
+    [Test] public void OriginalDeliveriesAndExactMapsMatchReceiptsWithLosslessImport()
+    {
+        var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder })
+            .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal)).ToArray();
+        Assert.AreEqual(11, files.Length);
+        foreach (string fbx in files)
+        {
+            string dir = Path.GetDirectoryName(fbx)!;
+            var receipt = JsonUtility.FromJson<Receipt>(File.ReadAllText(Disk(dir + "/provenance.json")));
+            Assert.AreEqual(receipt.source_glb_sha256, Hash(Disk(dir + "/" + receipt.id + ".glb")), receipt.id);
+            Assert.IsFalse(fbx.Contains("-near") || fbx.Contains("-far"), fbx);
+            var importer = (ModelImporter)AssetImporter.GetAtPath(fbx);
+            Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression, fbx);
+            Assert.AreEqual(ModelImporterAnimationCompression.Off, importer.animationCompression, fbx);
+            Assert.IsTrue(importer.importAnimation, "all source clips remain enabled");
+            Assert.AreEqual(receipt.source_clips.Length, importer.defaultClipAnimations.Length, fbx);
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
+            var meshes = source.GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
+            Assert.AreEqual(receipt.source_triangles, meshes.Sum(m => (long)m.GetIndexCount(0) / 3), fbx);
+            Assert.IsTrue(meshes.All(m => m.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord0)));
+            Assert.IsEmpty(source.GetComponentsInChildren<LODGroup>(true));
+            var material = AssetDatabase.LoadAssetAtPath<Material>(dir + "/" + receipt.id + ".mat");
+            Assert.AreEqual(0f, material.GetFloat("_Metallic"), 1e-6f, receipt.id);
+            Assert.AreEqual(.1f, material.GetFloat("_Smoothness"), 1e-6f, receipt.id);
+            var texture = material.mainTexture; Assert.IsNotNull(texture, receipt.id);
+            string image = AssetDatabase.GetAssetPath(texture);
+            Assert.AreEqual(receipt.embedded_image_sha256, Hash(Disk(image)), receipt.id);
+            Assert.AreEqual(receipt.embedded_dimensions[0], texture.width, receipt.id);
+            Assert.AreEqual(receipt.embedded_dimensions[1], texture.height, receipt.id);
+            var ti = (TextureImporter)AssetImporter.GetAtPath(image);
+            Assert.IsFalse(ti.crunchedCompression, image);
+            Assert.AreEqual(TextureImporterCompression.Uncompressed, ti.textureCompression, image);
+            Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + receipt.id + ".prefab"));
+        }
     }
 
-    [Test]
-    public void StaticCandidatesHaveCompleteIndependentPrefabsWithUvAndExternalColourMaps()
+    [Test] public void CampaignActivationWaitsForStreamingAndAddsNoBootAssetReference()
     {
-        foreach (var id in Ids)
-        {
-            var dir = Folder + "/" + id;
-            var go = AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + id + ".prefab");
-            Assert.IsNotNull(go, id);
-            var filters = go.GetComponentsInChildren<MeshFilter>(true);
-            Assert.AreEqual(1, filters.Length, id);
-            var mesh = filters.Single().sharedMesh;
-            Assert.Greater(mesh.vertexCount, 0, id);
-            Assert.IsTrue(mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord0), id + " UV");
-            Assert.Greater(mesh.GetIndexCount(0), 0, id);
-            Assert.IsEmpty(go.GetComponentsInChildren<SkinnedMeshRenderer>(true), id + " is static, not a rigged character");
-            var mat = go.GetComponentsInChildren<MeshRenderer>(true).Single().sharedMaterial;
-            Assert.IsNotNull(mat, id);
-            Assert.IsNotNull(mat.mainTexture, id + " colour map");
-            StringAssert.StartsWith(dir, AssetDatabase.GetAssetPath(mat.mainTexture), id);
-            Assert.LessOrEqual(mat.mainTexture.width, 512, id);
-            Assert.IsFalse(Statecraft.Game.Map.Collection.CollectionCatalog.Ids.Contains(id), id + " has no invented placement");
-        }
+        Assert.IsFalse(TownModels.Ids.Any(id => id.StartsWith("generated-1948-", StringComparison.Ordinal)));
+        Assert.IsFalse(File.ReadAllText(Disk(TownModels.SetPath)).Contains("generated-1948-"));
+        Assert.IsFalse(AssetDatabase.GetDependencies("Assets/Map.unity", true)
+            .Any(p => p.StartsWith(Generated1948BuildingsPropsReview.AssetFolder, StringComparison.Ordinal)));
     }
 }

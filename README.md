@@ -9,7 +9,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 [![Play on itch.io](https://img.shields.io/badge/play-itch.io-FA5C5C.svg?logo=itchdotio&logoColor=white)](https://eyalgolan.itch.io/statecraft-israel)
 [![Latest release, pre-releases included](https://img.shields.io/github/v/release/eyalgolan/statecraft-israel?include_prereleases&sort=semver)](https://github.com/eyalgolan/statecraft-israel/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/eyalgolan/statecraft-israel/ci.yml?branch=main&label=CI)](https://github.com/eyalgolan/statecraft-israel/actions/workflows/ci.yml)
-[![Code license: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
+[![Code license: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/code-PolyForm%20Noncommercial-blue.svg)](LICENSE)
 [![Assets license: CC BY 4.0 / content CC BY-SA 4.0](https://img.shields.io/badge/assets-CC%20BY%20%2F%20BY--SA%204.0-lightgrey.svg)](LICENSING.md)
 [![Unity 6000.3.25f1](https://img.shields.io/badge/Unity-6000.3.25f1-black.svg)](unity/ProjectSettings/ProjectVersion.txt)
 ![Status: playable 1948–1951 prototype](https://img.shields.io/badge/status-playable%201948%E2%80%931951-orange.svg)
@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 **A turn-based grand-strategy game about governing Israel. You are the prime minister on 15 May 1948. The ministers are the real ones, the map is real, and every historical fact comes with a source.**
 
 > [!NOTE]
-> This is an independent open-source project. The game is free and non-commercial. It is not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted. The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, every fact cites a source, and no quotes are invented. See [Historical content](#history-sources-and-accuracy).
+> This is an independent project, and its code is free to read and change for non-commercial use. The game is free and non-commercial. It is not affiliated with or endorsed by Firaxis, 2K, the State of Israel or any person depicted. The game deals with war, terror and the Holocaust as historical events. Its framing is Israeli, every fact cites a source, and no quotes are invented. See [Historical content](#history-sources-and-accuracy).
 
 ##### [Report a bug](https://github.com/eyalgolan/statecraft-israel/issues/new?template=bug_report.yml) | [Report a historical error](https://github.com/eyalgolan/statecraft-israel/issues/new?template=historical_accuracy.yml) | [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions) | [Roadmap](#roadmap) | [Changelog](CHANGELOG.md)
 
@@ -130,7 +130,7 @@ flowchart LR
 
 ## Play
 
-Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.2.0](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.0), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.2.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.1), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.
@@ -188,7 +188,7 @@ Nothing is generated live while you play.
 
 ## License
 
-- **Code:** [MIT](LICENSE).
+- **Code:** [PolyForm Noncommercial 1.0.0](LICENSE): free for any noncommercial use; commercial use needs written permission (ask in an issue). Code released up to and including v0.2.1 stays [MIT](LICENSES/MIT.txt).
 - **Original art, docs and data:** [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 - **Game content text** (`content/`, which paraphrases its sources, many from Wikipedia): [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt).
 - **AI-generated images:** marked [CC0](LICENSES/CC0-1.0.txt), with no rights claimed.
