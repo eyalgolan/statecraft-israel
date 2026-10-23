@@ -8,7 +8,8 @@ allows this note; it does not reopen implementation. No `content/`, simulation, 
 
 ## Reading this note
 
-- **[A]** an AI agent opened and read the named source on `checked: 2026-10-23`. This is not a person's sign-off.
+- **[V]** read on a primary source named here (source key given). **[S]** single secondary source, not confirmed in a primary source.
+- Every reading in this follow-up was made by an AI agent on `checked: 2026-10-23`; a person's check is pending.
 - **[C]** conflicting values remain, each attributed to its source.
 - **[GAP]** the required source or distinction has not been established. A search result, inaccessible page or
   unexamined citation does not close a gap.
@@ -22,7 +23,7 @@ completed implementation of #146 or permission to turn an unresolved value into 
 
 ## Election totals: an additional official source for C1
 
-**[A, C]** The Central Bureau of Statistics' table 27.2, published **29 August 2023**, gives **2,236,293**
+**[V, C]** The Central Bureau of Statistics' table 27.2, published **29 August 2023**, gives **2,236,293**
 eligible voters for the **17 May 1977** election. Its source line attributes the data to the Central Elections
 Committee [E1]. This is an official retrospective statistical publication, not the original results notice.
 
@@ -30,18 +31,19 @@ The original note's CEC Basic Facts value, **2,236,478**, remains recorded as a 
 source has not yet been rechecked here, and the CBS table does not explain that discrepancy. The new reading
 supports 2,236,293 without establishing how the conflicting figure arose.
 
-The same CBS page prints **79.8%** turnout for **23 July 1984**, whereas the original note records **78.8%**.
-This additional discrepancy remains **[C]**; neither value is silently corrected or substituted. E1 does not
+The same CBS page prints **79.8%** turnout for **23 July 1984**, but its own totals give 2,091,402 /
+2,654,613 = **78.78%** (computed here), which rounds to the original note's **78.8%**. The printed
+79.8% is inconsistent with E1's own columns; 78.8% stands. E1 does not
 provide per-list results or votes for lists that won no seats.
 
 ### C2 and C5 — two archived official results tables
 
-**[A]** The archived Knesset table for the **1 November 1988** election gives the Progressive List for Peace
+**[V]** The archived Knesset table for the **1 November 1988** election gives the Progressive List for Peace
 **33,695 votes, 1.5% and one seat** [E2]. This rechecks the official one-seat figure. The original note's
 attribution of two seats to a Wikipedia passage is retained as an older reported conflict; that passage was
 not newly read here.
 
-**[A, C]** The archived table for the **23 July 1984** election uses the list labels
+**[V, C]** The archived table for the **23 July 1984** election uses the list labels
 **Morasha-Po'aeli Agudat Yisrael** and **Tehiya-Tsomet**, with **33,287 votes/two seats** and
 **83,037 votes/five seats**, respectively [E3]. These are the official retrospective table's English labels.
 They do not establish the legal ballot names in the original election notice or when a faction adopted a longer
@@ -53,7 +55,7 @@ in two bounded attempts.
 
 ### C5 — Telem's split and the later Ometz name
 
-**[A]** The current Knesset faction records distinguish the following [K1]:
+**[V]** The current Knesset faction records distinguish the following [K1]:
 
 | Record | Name as returned by the Knesset | Recorded dates |
 |---|---|---|
@@ -68,7 +70,7 @@ a party-founding date from a faction's first day. The original note's secondary 
 
 ### A checked example of member records versus faction records
 
-**[A]** The member-term records show Moshe Dayan's Telem term ending and Yigal Hurvitz's Telem term beginning
+**[V]** The member-term records show Moshe Dayan's Telem term ending and Yigal Hurvitz's Telem term beginning
 on **16 October 1981**, both under FactionID 469. On **6 June 1983**, Hurvitz's record changes from 469 to 1022,
 while Mordechai Ben-Porat's changes from 469 to 1023 [K2, K3]. The October records share the same faction ID;
 the June records change faction IDs. The five records alone do not document the formal replacement procedure
@@ -78,7 +80,7 @@ no independent inference about announcements or the precise time of legal effect
 
 ### The original secondary-only 13 May 1980 move
 
-**[A]** A targeted identity query identifies David Golomb as PersonID 2244 and Meir Amit as 2527 [K9].
+**[V]** A targeted identity query identifies David Golomb as PersonID 2244 and Meir Amit as 2527 [K9].
 For both, the Knesset member-term records end faction 413, the Movement for Change and Initiative, on
 **13 May 1980**, and begin faction 431, the Alignment, on the same day [K10]. Golomb's relevant rows are
 27136–27137; Amit's are 27232–27233. This provides a primary register check for the date previously marked
@@ -89,7 +91,7 @@ dating an announcement, parliamentary vote or legal decision.
 
 These contemporary reports supply milestones outside the parliamentary register, with the limits stated below.
 They are primary evidence of what was reported at the time, not party registration certificates.
-All rows are **[A]**; an exact founding day remains **[GAP]** where the source does not give one.
+The press milestones are **[S]**, the K1 faction dates **[V]**; an exact founding day remains **[GAP]** where the source does not give one.
 
 | Party | Additional evidence read | What remains unproved |
 |---|---|---|
@@ -101,11 +103,11 @@ All rows are **[A]**; an exact founding day remains **[GAP]** where the source d
 
 ## API access and session coverage
 
-**[A]** A direct request to the service root lists `KNS_KnessetDates` but no `KNS_Knesset`; a direct request to
+**[V]** A direct request to the service root lists `KNS_KnessetDates` but no `KNS_Knesset`; a direct request to
 `KNS_Knesset?$top=1` returned HTTP 404 with an unknown-segment message [K4]. This confirms the missing entity
 on the route checked, rather than treating it as a usable source.
 
-**[A]** A fully returned query for `KnessetNum ge 9 and KnessetNum le 10` produced **16 session-period rows**
+**[V]** A fully returned query for `KnessetNum ge 9 and KnessetNum le 10` produced **16 session-period rows**
 and no next-page link [K5]. For Knesset 9 it includes both ID 51, a one-day row on **13 June 1977**, and ID 136,
 from **13 June to 3 August 1977**, as well as later periods. ID 31 for Knesset 10 starts **20 July 1981**.
 The original note's description of only a single one-day row for Knesset 9 is therefore **not the result of
@@ -119,7 +121,7 @@ restriction page. These are route-specific observations, not evidence that all K
 
 ### C3 — resignation notice, term fields and the older withdrawal date
 
-**[A, C]** Section ב of sitting 374, indexed by the Knesset as **21 January 1992**, records Roni Milo's
+**[V, C]** Section ב of sitting 374, indexed by the Knesset as **21 January 1992**, records Roni Milo's
 government notice that Rehavam Ze'evi and Yuval Ne'eman resigned on **19 January 1992** [J4, K8].
 Separately, the administrative ministerial records have `FinishDate` **21 January 1992** for Ze'evi's
 minister-without-portfolio row and Ne'eman's two ministerial rows in government 24 [K6, K7].
@@ -132,7 +134,7 @@ J4 was read as the official DOC transcription; its scanned counterpart was not o
 
 ### C4 — the committee decision concerning Kach
 
-**[A, C]** The English translation of Election Appeal 1/88 on Cardozo's Versa site has a readable PDF.
+**[S, C]** The English translation of Election Appeal 1/88 on Cardozo's Versa site has a readable PDF.
 Its paragraph 1, printed page 2, dates the Central Elections Committee's determination and the chairman's notice
 to **5 October 1988** [J1]. The corresponding HTML passage was garbled in the original note; the PDF removes
 that reading obstacle.
@@ -143,22 +145,22 @@ this note does not establish why they differ. J1 is an English translation of a 
 judgment or the committee's own decision. Those originals remain **[GAP]**. This finding supplies a readable
 judicial account; it does not constitute a sensitivity review or authorize a game event.
 
-### The 1984 dissolution law and the 22 March photograph
+### The 1984 dissolution law and the 22 March preliminary vote
 
-**[A]** The Knesset's copy of the Dissolution of the Tenth Knesset Law gives **23 July 1984** as the election day
+**[V]** The Knesset's copy of the Dissolution of the Tenth Knesset Law gives **23 July 1984** as the election day
 in section 2. Section 3 makes the law effective on adoption. Its adoption footnote says **4 April 1984**;
 the publication footer is *Sefer HaHukim* 1116, **12 April 1984**, printed page 132 [J2].
 
-**[A]** The official transcript linked to sitting 301, indexed as **22 March 1984**, records a **61–58** vote
+**[V]** The official transcript linked to sitting 301, indexed as **22 March 1984**, records a **61–58** vote
 to send dissolution proposal שפ״ד for preliminary committee consideration and preparation for its first
 reading [J5, K8]. That is the stage recorded for this proposal, separate from final adoption on 4 April.
 The DOC's date header has a transcription error; the day-to-document link comes from the official session
 and document metadata. The facsimile was not opened, so a scan check remains **[GAP]**. Adoption, publication
-and the photograph's date must not be substituted for one another.
+and the preliminary vote's date must not be substituted for one another.
 
 ### The 1988 election day and the regular-term question
 
-**[A]** Section 1(1) of the Twelfth Knesset Elections (Temporary Provisions) Law identifies
+**[V]** Section 1(1) of the Twelfth Knesset Elections (Temporary Provisions) Law identifies
 **1 November 1988** as election day while amending the electoral-register provisions for that election.
 Its adoption footnote and publication footer both give **27 July 1988**, *Sefer HaHukim* 1260,
 printed page 181 [J3].
