@@ -255,6 +255,78 @@ public class MovementTests
         Assert.Empty(Step(c, r.State, new Move(1, 5, 1)).Rejected);
     }
 
+    // R-MOVE-002: Reachable with the turn's spent points searches with the points left (R-MOVE-001); without them, with all.
+    [Fact]
+    public void ReachableUsesOnlyTheMovementPointsLeftAfterAFirstMove()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 1, spent, new List<Cause>()));
+
+        Assert.True(Movement.Reachable(c, s, 1).ContainsKey((5, 1)));   // three points from the unit's new hex
+        var left = Movement.Reachable(c, s, 1, spent);
+        Assert.True(left.ContainsKey((3, 1)));
+        Assert.False(left.ContainsKey((4, 1)));                         // two points, but only one remains
+        Assert.True(left.Count < Movement.Reachable(c, s, 1).Count);
+    }
+
+    // R-MOVE-002: Path with the turn's spent points finds only paths the points left can pay for.
+    [Fact]
+    public void PathUsesOnlyTheMovementPointsLeftAfterAFirstMove()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        var spent = new Dictionary<int, int>();
+        Assert.Null(Movement.Move(c, s, 1, 2, 1, spent, new List<Cause>()));
+
+        Assert.Equal(new[] { (3, 1), (4, 1) }, Movement.Path(c, s, 1, 4, 1));
+        Assert.Empty(Movement.Path(c, s, 1, 4, 1, spent));
+        Assert.Equal(new[] { (3, 1) }, Movement.Path(c, s, 1, 3, 1, spent));
+    }
+
+    // Spec 2026-10-23 section 3: the preview runs the same orders as Step's RunOrders and stops before the resolver.
+    [Fact]
+    public void PreviewRunsTheSameMoveOrdersWithoutResolvingTheTurn()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        Command[] commands = { new Move(1, 2, 1), new Move(1, 3, 1), new Move(1, 5, 1) };
+
+        var preview = Simulation.Preview(c, s, commands);
+        var expected = s.Clone();
+        var spent = new Dictionary<int, int>();
+        var why = new List<Cause>();
+        Assert.Null(Movement.Move(c, expected, 1, 2, 1, spent, why));
+        Assert.Null(Movement.Move(c, expected, 1, 3, 1, spent, why));
+        Assert.Equal("That hex is out of reach this turn", Movement.Move(c, expected, 1, 5, 1, spent, why));
+
+        Assert.Equal(expected.Hash(), preview.State.Hash());
+        Assert.Equal(3, preview.Spent[1]);
+        // Step continues through TurnResolver and the rest of the turn, so its full hash is not comparable. This fixture
+        // has no enemy units, and resolution does not move the player's unit: its final position remains comparable.
+        var stepped = Step(c, s, commands);
+        Assert.Equal((stepped.State.Units[1].Q, stepped.State.Units[1].R),
+                     (preview.State.Units[1].Q, preview.State.Units[1].R));
+    }
+
+    // Spec 2026-10-23 section 3: the preview works on a clone; the turn's start state and its RNG are untouched.
+    [Fact]
+    public void PreviewLeavesTheInputStateAndItsRngUnchanged()
+    {
+        var c = Plain();
+        var s = With(c, Soldier(1, 0, 1));
+        s.CoalitionStability = 0.4;   // below the automatic-pass threshold, so the policy vote consumes a draw
+        var beforeHash = s.Hash();
+        var beforeRng = s.RngState;
+
+        var preview = Simulation.Preview(c, s, new Command[] { new SetPolicy("rationing", 0.5), new Move(1, 1, 1) });
+
+        Assert.Equal(beforeHash, s.Hash());
+        Assert.Equal(beforeRng, s.RngState);
+        Assert.NotEqual(beforeRng, preview.State.RngState);   // the vote consumed only the clone's draw
+    }
+
     // R-MOVE-006, Q-HOLD-1 ("lost on move"): a move that goes through clears fortify, set or given this turn, and the hex it
     // names, even when the unit comes back to that hex in the same turn; hold moves with the unit; a refused move changes
     // nothing. The order values are the standing orders' (Phase 5 PR 7, #746), written here as records.

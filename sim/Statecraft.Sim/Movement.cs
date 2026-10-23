@@ -16,22 +16,30 @@ namespace Statecraft.Sim
         /// is the player's.</summary>
         public const string PlayerSide = "israel";
 
+        static readonly IReadOnlyDictionary<int, int> NothingSpent = new Dictionary<int, int>();
+
         /// <summary>The six axial directions in tools/hexgrid.py's NEIGHBOURS order, the fixed order of hexes.json's layout
         /// (R-MOVE-002).</summary>
         internal static readonly (int Q, int R)[] Neighbours = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != PlayerSide;
 
-        static int Points(Content c, Unit u) => c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.MovementPoints ?? 0;
+        internal static int Points(Content c, Unit u) => c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.MovementPoints ?? 0;
 
         /// <summary>The hexes unit <paramref name="unitId"/> can move to this turn, each with its path's cost, in (q, r) order:
         /// what Move accepts on a turn the unit has not moved yet (R-MOVE-001 to R-MOVE-005). Empty for an unknown unit, an
         /// enemy unit or one that cannot move.</summary>
-        public static IReadOnlyDictionary<(int Q, int R), int> Reachable(Content c, GameState s, int unitId)
+        public static IReadOnlyDictionary<(int Q, int R), int> Reachable(Content c, GameState s, int unitId) =>
+            Reachable(c, s, unitId, NothingSpent);
+
+        /// <summary>The hexes unit <paramref name="unitId"/> can move to with the points left after <paramref name="spent"/>,
+        /// each with its path's cost, in (q, r) order. Empty for an unknown unit, an enemy unit or one that cannot move.</summary>
+        public static IReadOnlyDictionary<(int Q, int R), int> Reachable(Content c, GameState s, int unitId, IReadOnlyDictionary<int, int> spent)
         {
             var result = new SortedDictionary<(int Q, int R), int>();
             if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u)) return result;
-            var (dist, _) = Search(c, s, u, Points(c, u));
+            spent.TryGetValue(unitId, out var used);
+            var (dist, _) = Search(c, s, u, Points(c, u) - used);
             foreach (var kv in dist)
                 if (kv.Key != (u.Q, u.R) && Full(c, s, u, kv.Key.Q, kv.Key.R) == null) result[kv.Key] = kv.Value;
             return result;
@@ -39,16 +47,38 @@ namespace Statecraft.Sim
 
         /// <summary>The hexes the unit's cheapest path to (<paramref name="q"/>, <paramref name="r"/>) enters, in order, within
         /// this turn's movement points (R-MOVE-002); empty when the hex is out of reach.</summary>
-        public static IReadOnlyList<(int Q, int R)> Path(Content c, GameState s, int unitId, int q, int r)
+        public static IReadOnlyList<(int Q, int R)> Path(Content c, GameState s, int unitId, int q, int r) =>
+            Path(c, s, unitId, q, r, NothingSpent);
+
+        /// <summary>The hexes the unit's cheapest path to (<paramref name="q"/>, <paramref name="r"/>) enters, in order, within
+        /// the points left after <paramref name="spent"/>; empty when the hex is out of reach.</summary>
+        public static IReadOnlyList<(int Q, int R)> Path(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent)
         {
-            if (!Reachable(c, s, unitId).ContainsKey((q, r))) return Array.Empty<(int, int)>();
+            if (!Reachable(c, s, unitId, spent).ContainsKey((q, r))) return Array.Empty<(int, int)>();
             var u = s.Units[unitId];
-            var (_, prev) = Search(c, s, u, Points(c, u));
+            spent.TryGetValue(unitId, out var used);
+            var (_, prev) = Search(c, s, u, Points(c, u) - used);
             var path = new List<(int Q, int R)>();
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) path.Add(h);
             path.Reverse();
             return path;
         }
+
+        /// <summary>R-MOVE-001: the movement points unit <paramref name="unitId"/> has left this turn; 0 for an unknown unit.</summary>
+        public static int PointsLeft(Content c, GameState s, int unitId, IReadOnlyDictionary<int, int> spent)
+        {
+            if (!s.Units.TryGetValue(unitId, out var u)) return 0;
+            spent.TryGetValue(unitId, out var used);
+            return Math.Max(0, Points(c, u) - used);
+        }
+
+        /// <summary>R-MOVE-010: the player's military units, in ascending id, that have movement points, have neither moved nor
+        /// attacked this turn (nothing in <paramref name="spent"/>) and have no order (fortify, fortifying, hold and go-to are
+        /// orders). End turn waits for them (spec 2026-10-23 section 7); Skip is the UI's and not in the sim.</summary>
+        public static IReadOnlyList<int> NeedsOrders(Content c, GameState s, IReadOnlyDictionary<int, int> spent) =>
+            s.Units.Values.Where(u => u.Side == PlayerSide && Points(c, u) > 0 && u.Order == ""
+                    && !(spent.TryGetValue(u.Id, out var used) && used > 0))
+                .Select(u => u.Id).ToList();
 
         /// <summary>R-MOVE-006: moves the unit, spending the path's cost from what <paramref name="spent"/> says it has used this
         /// turn (R-MOVE-001). Refused, state untouched, for an unknown or enemy unit, one that cannot move or is already there,

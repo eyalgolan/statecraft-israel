@@ -174,6 +174,18 @@ namespace Statecraft.Sim
         public StepResult(GameState state, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected) { State = state; Why = why; Rejected = rejected; }
     }
 
+    /// <summary>The state after the turn's committed orders (spec 2026-10-23 section 3), before End turn: what
+    /// the screen shows, the movement points each unit has spent, the turn's Why lines so far and the refused orders.</summary>
+    public sealed class PreviewResult
+    {
+        public GameState State { get; }
+        public IReadOnlyDictionary<int, int> Spent { get; }
+        public IReadOnlyList<Cause> Why { get; }
+        public IReadOnlyList<Rejection> Rejected { get; }
+        public PreviewResult(GameState state, IReadOnlyDictionary<int, int> spent, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected)
+        { State = state; Spent = spent; Why = why; Rejected = rejected; }
+    }
+
     /// <summary>Checks that every text an order carries can be saved: a null id or a lone surrogate would make the save
     /// unwritable or lossy, so Step refuses the whole batch before anything happens (a programmer error, like a null Command).</summary>
     static class CommandText
