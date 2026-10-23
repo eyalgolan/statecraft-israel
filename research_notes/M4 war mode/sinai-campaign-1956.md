@@ -64,7 +64,7 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 | Battalion 890 (para) | Lt-Col Rafael Eitan | Mitla drop. [V] MOD for Bn 890 and Eitan |
 | 9th Infantry Brigade | Col Abraham Yoffe | Ras al-Naqb, then Sharm el-Sheikh |
 | 4th Infantry Brigade | Col Josef Harpaz | Qusayma, then Abu Ageila |
-| 7th Armoured Brigade | not named in the text read; Maj Izhak Ben-Ari led a probe, Col Avraham Adan led the al-Dayyiqa force | Umm Katef, Abu Ageila, Ruafa |
+| 7th Armoured Brigade | not named in the text read; a major led a probe, Col Avraham Adan led the al-Dayyiqa force | Umm Katef, Abu Ageila, Ruafa |
 | 10th Infantry Brigade (mostly reservists) | Col Shmuel Golinda, replaced by Col Israel Tal | Umm Katef assaults |
 | 37th Armoured Brigade | not named | Umm Katef, Khan Yunis |
 | 1st Infantry Brigade | Col Binyamin Gibli | Rafah |
