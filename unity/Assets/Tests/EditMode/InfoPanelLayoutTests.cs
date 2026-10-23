@@ -292,14 +292,14 @@ public class InfoPanelLayoutTests
     }
 
     /// <summary>The empty hint stays inside the window and clear of the minimap in both languages: one line on desktop,
-    /// at most two on the phone tier, with no terrain sign, fact rows or spare panel height.</summary>
+    /// at most two on the two-row and phone tiers, with no terrain sign, fact rows or spare panel height.</summary>
     [UnityTest]
     public IEnumerator TheEmptyInfoPanelHintFitsBothLanguages()
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         foreach (var hebrew in new[] { false, true })
-            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (960, 1080), (390, 844) })
                 yield return Rendered(w, h, g, (root, info) => { }, root =>
                 {
                     var at = $"{(hebrew ? "he" : "en")} {w}x{h}";
@@ -310,7 +310,7 @@ public class InfoPanelLayoutTests
                     Assert.IsTrue(Inside(hint.worldBound, panel.worldBound), $"{at}: the hint fits the panel");
                     Assert.IsTrue(Inside(panel.worldBound, root.worldBound), $"{at}: the hint panel fits the window");
                     Assert.IsFalse(panel.worldBound.Overlaps(root.Q("minimap").worldBound), $"{at}: the hint stays clear of the minimap");
-                    var lines = root.Q("root").ClassListContains("hud-three-row") ? 2 : 1;
+                    var lines = root.Q("root").ClassListContains("hud-two-row") ? 2 : 1;
                     var natural = hint.MeasureTextSize(hint.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
                     Assert.LessOrEqual(hint.contentRect.height, natural.y * lines + 1f, $"{at}: the hint uses at most {lines} lines");
                     Assert.AreEqual(DisplayStyle.None, root.Q("info-thumb").resolvedStyle.display, $"{at}: no terrain sign");
