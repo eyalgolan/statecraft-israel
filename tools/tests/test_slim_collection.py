@@ -15,7 +15,7 @@ IMPORT_TESTS = REPO / "unity/Assets/Tests/EditMode/CollectionImportTests.cs"
 # These characters have their own generated sources and rigging/export pipeline, not #507/#336 FBX inputs.
 GENERATED_PEOPLE = [
     "figure-syrian-infantry-1948-v1",
-    "figure-ala-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+    "figure-iraqi-infantry-1948-v1",
 ]
 
 

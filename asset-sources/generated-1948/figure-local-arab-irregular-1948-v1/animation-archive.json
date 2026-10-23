@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-local-arab-irregular-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "36efdacee0783959ce6592240b41c9db36f1e9ffc543d006ab98f79f97905b6f",
+  "uncompressed_bytes": 52741733,
+  "compressed_sha256": "48e311b1c46c45560d25271b6552331d0210d61b15232c47ad48dee8add2ab76",
+  "compressed_bytes": 4295409,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

@@ -46,5 +46,16 @@
   ],
   "preparation": "Unchanged base in separate detached checkout; standard tools/build_sim_for_unity.py with .NET10.0.401 before test. No generated feature assets, package edits or toolchain upgrades.",
   "scope_conclusion": "The asset branch did not introduce this reproduced failure. Exact vendor/toolchain or local-installation cause remains unestablished.",
-  "fix_status": "No speculative safety-define workaround, package patch, upgrade or blanket bypass applied."
+  "fix_status": "No speculative safety-define workaround, package patch, upgrade or blanket bypass applied.",
+  "current_full_source_recheck": {
+    "upstream_checked": "07995723",
+    "test": "CollectionImportTests.BuildBundlesWritesTheChecksBesideTheShippedBundles",
+    "result": "Failed with the same NativeList.cs850/864 CS7036",
+    "focused_suite": {
+      "passed": 55,
+      "failed": 1
+    },
+    "package_manifest_and_lock_match_current_upstream": true,
+    "scope": "The historical identical-input comparison above belongs to its named baseline/feature commits. Current CollectionImport has focused full-quality import changes; no package or vendor change. People byte measurement remains blocked; 6309797 is maintainer-reported main, not a new local measurement."
+  }
 }

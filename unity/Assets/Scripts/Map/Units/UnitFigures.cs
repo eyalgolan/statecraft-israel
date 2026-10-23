@@ -29,9 +29,10 @@ namespace Statecraft.Game.Map.Units
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
             PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
-            SyrianInfantry = "figure-syrian-infantry-1948-v1",
-            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1",
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2";
+
+        public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
+            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1";
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -69,7 +70,8 @@ namespace Statecraft.Game.Map.Units
         /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens. The new ALA candidate is review-only: no local-force
         /// row is authored here. Egypt awaits an approved representation of its simultaneous bases, and Lebanon's hidden
         /// row remains off the map (<see cref="UnitRoster.OnMap"/>).
-        /// Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).</summary>
+        /// Tal Heuberger's 1948 Collection figures count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3);
+        /// the Syrian and Iraqi figures of 22 October await sign-off (#756).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
@@ -233,7 +235,7 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
-            if (CollectionCatalog.Animated.Contains(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own

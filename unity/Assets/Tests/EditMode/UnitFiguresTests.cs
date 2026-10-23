@@ -81,14 +81,21 @@ public class UnitFiguresTests
     {
         var model = piece.Find(UnitFigures.ModelName);
         Bounds? box = null;
-        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
+        void Add(Bounds b, Transform at)
         {
-            var b = f.sharedMesh.bounds; var m = piece.worldToLocalMatrix * f.transform.localToWorldMatrix;
+            var m = piece.worldToLocalMatrix * at.localToWorldMatrix;
             for (int c = 0; c < 8; c++)
             {
                 var p = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
                 if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
             }
+        }
+        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) Add(f.sharedMesh.bounds, f.transform);
+        foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            var baked = new Mesh();
+            try { skin.BakeMesh(baked); Add(baked.bounds, skin.transform); }
+            finally { UnityEngine.Object.DestroyImmediate(baked); }
         }
         return box!.Value;
     }
@@ -175,8 +182,17 @@ public class UnitFiguresTests
             var go = (GameObject)PrefabUtility.InstantiatePrefab(Prefab(id));
             try
             {
+                var animator = go.GetComponentInChildren<Animator>();
+                if (animator != null) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Rebind(); animator.Update(0f); }
                 var rs = go.GetComponentsInChildren<Renderer>();
                 var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+                if (CollectionCatalog.IsFullQualityGeneratedInfantry(id))
+                {
+                    var skin = go.GetComponentInChildren<SkinnedMeshRenderer>(); var baked = new Mesh();
+                    try { skin.BakeMesh(baked); var vertices = baked.vertices.Select(skin.transform.TransformPoint).ToArray();
+                        b = new Bounds(vertices[0], Vector3.zero); foreach (var v in vertices) b.Encapsulate(v); }
+                    finally { UnityEngine.Object.DestroyImmediate(baked); }
+                }
                 Debug.Log($"UNITS figures {id}: {b.size.x:0.000} x {b.size.z:0.000}, {b.size.y:0.000} tall");
                 Assert.Less(Mathf.Max(b.size.x, b.size.z), 0.55f * b.size.y, $"{id}: arms down, not a T-pose (wider than half his height)");
             }

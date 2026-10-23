@@ -24,13 +24,13 @@ namespace Statecraft.Game.EditorTools
 
         public static void Run()
         {
-            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
+            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
             {
                 ImportModel(Model(id, CollectionDetail.Far), animated: false);
                 ImportModel(Model(id, CollectionDetail.Near), animated: CollectionCatalog.Animated.Contains(id));
                 ImportColourMap($"{Dir(id)}/{id}_basecolor.jpg");
             }
-            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
+            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
             {
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat")
                     ?? throw new InvalidOperationException($"{id}: no material");
@@ -39,8 +39,9 @@ namespace Statecraft.Game.EditorTools
                 MakePrefab(id, CollectionDetail.Near, mat, CollectionCatalog.Animated.Contains(id) ? IdleController(id) : null);
             }
             AssetDatabase.SaveAssets();
+            Generated1948Characters.ImportRuntime();
             MakeBuildingPrefabs();
-            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings)} collection models");
+            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings && !CollectionCatalog.IsFullQualityGeneratedInfantry(id))} collection models");
         }
 
         /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own

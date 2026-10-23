@@ -16,20 +16,21 @@ public class Generated1948RigTests
         "figure-iraqi-infantry-1948-v1", "figure-lebanese-regular-1948-v1", "figure-bedouin-civilian-1948-v1",
         "figure-local-arab-irregular-1948-v1"
     };
-    static string Dir(string id) => "Assets/Art/" + (Array.IndexOf(Ids, id) > 0 && Array.IndexOf(Ids, id) < 4 ? "Collection/" : "Generated1948Review/") + id;
-    static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath($"{Dir(id)}/{id}-{level}.fbx")
-        .OfType<AnimationClip>().Single(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal));
+    static string Dir(string id) => (Array.IndexOf(Ids, id) == 1 || Array.IndexOf(Ids, id) == 3
+        ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
+    static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath($"{Dir(id)}/{id}.fbx")
+        .OfType<AnimationClip>().Single(c => c.name == (level == "walk" ? "walk" : "idle"));
 
     [TestCaseSource(nameof(Ids))]
-    public void DeliveredRigHasValidAvatarWeightsIdleAndStaticFar(string id)
+    public void DeliveredRigHasValidAvatarWeightsAndBothUnreducedClips(string id)
     {
-        string source = $"{Dir(id)}/{id}-near.fbx";
+        string source = $"{Dir(id)}/{id}.fbx";
         var imp = AssetImporter.GetAtPath(source) as ModelImporter;
         Assert.IsNotNull(imp, source);
         Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType);
         Assert.AreEqual(ModelImporterAvatarSetup.CreateFromThisModel, imp.avatarSetup);
         Assert.IsTrue(imp.importAnimation);
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}-near.prefab");
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}.prefab");
         Assert.IsNotNull(prefab, id);
         var animator = prefab.GetComponentInChildren<Animator>(true);
         Assert.IsNotNull(animator);
@@ -58,19 +59,17 @@ public class Generated1948RigTests
         Assert.AreEqual("idle", idle.name);
         Assert.IsTrue(idle.isLooping);
         Assert.AreSame(idle, animator.runtimeAnimatorController.animationClips.Single());
-        var far = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}-far.prefab");
-        Assert.IsNotNull(far);
-        Assert.IsEmpty(far.GetComponentsInChildren<Animator>(true));
-        Assert.IsEmpty(far.GetComponentsInChildren<SkinnedMeshRenderer>(true));
-        var farMeshes = far.GetComponentsInChildren<MeshFilter>(true);
-        Assert.IsNotEmpty(farMeshes);
-        Assert.LessOrEqual(farMeshes.Sum(f => (long)f.sharedMesh.GetIndexCount(0) / 3), 1500);
+        Assert.AreEqual(ModelImporterMeshCompression.Off, imp.meshCompression);
+        Assert.AreEqual(ModelImporterAnimationCompression.Off, imp.animationCompression);
+        CollectionAssert.AreEquivalent(new[] { "idle", "walk" }, imp.clipAnimations.Select(c => c.name));
+        Assert.IsFalse(System.IO.Directory.GetFiles(Dir(id), "*-far.fbx").Any());
+
     }
 
     [TestCaseSource(nameof(Ids))]
     public void ActualAnimatorIdleAndWalkDeformFiniteVerticesWithoutExplodingFeetOrHeadcloth(string id)
     {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}-near.prefab");
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}.prefab");
         Assert.IsNotNull(prefab, id);
         var go = Object.Instantiate(prefab);
         try

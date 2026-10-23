@@ -1,145 +1,61 @@
 {
-  "kind": "Actual Unity game-map renders; editor, no HUD; not a WebGL/player capture",
-  "state": "1948-05-15",
-  "contentHash": "5a890d25446e7dbe04bb464500d3e719579c5c5bd56882d69191cbc405e391b7",
-  "seed": "1948",
-  "utc": "2026-10-22T19:46:04.9305940Z",
-  "width": 1920,
-  "height": 1080,
-  "baseline": "Original C09 ALA mapping; original Legion unchanged",
-  "overrides": "In-memory catalog entries only; restored in finally; no assets or scenes saved",
+  "kind": "Matched actual Unity Editor map renders; no HUD; not a player/WebGL or GDD campaign run",
+  "fixture": "Existing dated legacy roster, no new anchors or simulated state changes",
+  "date": "1948-06-20",
+  "seed": 1948,
+  "rung": 5,
+  "mobilization": 0.8,
+  "camera": {
+    "distance_m": 24000,
+    "pitch_degrees": 50,
+    "yaw_degrees": 0,
+    "fov_degrees": 35,
+    "aspect": "16:9",
+    "top_inset": 0
+  },
+  "before": "Main baseline: own side model not arrived, no Arab placeholder/token",
+  "after": "Full original-source side figure dressed on its existing sourced anchor; all other state/camera/lighting unchanged",
   "frames": [
     {
-      "file": "ala20-after.png",
-      "label": "ALA: current own-side infantry versus previous C09",
-      "version": "after",
-      "quality": "PC",
-      "town": "",
-      "changedModel": "figure-ala-infantry-1948-v1",
-      "lookAt": {
-        "x": 125573.8828125,
-        "y": 3957.62939453125,
-        "z": 408723.125
-      },
-      "cameraPosition": {
-        "x": 123341.5078125,
-        "y": 19278.517578125,
-        "z": 396062.6875
-      },
-      "cameraEuler": {
-        "x": 50.0,
-        "y": 9.999999046325684,
-        "z": 0.0
-      },
-      "distanceM": 20000.0,
-      "fov": 35.0,
-      "pitch": 50.0,
-      "yaw": 10.0,
-      "submittedTownInstances": 1208,
-      "submittedTownTriangles": 230728
-    },
-    {
-      "file": "ala60-after.png",
-      "label": "ALA at gameplay zoom",
-      "version": "after",
-      "quality": "PC",
-      "town": "",
-      "changedModel": "figure-ala-infantry-1948-v1",
-      "lookAt": {
-        "x": 125573.8828125,
-        "y": 3957.62939453125,
-        "z": 408723.125
-      },
-      "cameraPosition": {
-        "x": 118876.75,
-        "y": 49920.296875,
-        "z": 370741.78125
-      },
-      "cameraEuler": {
-        "x": 50.0,
-        "y": 9.999999046325684,
-        "z": 0.0
-      },
-      "distanceM": 60000.0,
-      "fov": 35.0,
-      "pitch": 50.0,
-      "yaw": 10.0,
-      "submittedTownInstances": 0,
-      "submittedTownTriangles": 0
-    },
-    {
-      "file": "ala20-before.png",
-      "label": "ALA: current own-side infantry versus previous C09",
+      "file": "syria-before.jpg",
+      "side": "syria",
       "version": "before",
-      "quality": "PC",
-      "town": "",
-      "changedModel": "figure-ala-infantry-1948-v1",
-      "lookAt": {
-        "x": 125573.8828125,
-        "y": 3957.62939453125,
-        "z": 408723.125
-      },
-      "cameraPosition": {
-        "x": 123341.5078125,
-        "y": 19278.517578125,
-        "z": 396062.6875
-      },
-      "cameraEuler": {
-        "x": 50.0,
-        "y": 9.999999046325684,
-        "z": 0.0
-      },
-      "distanceM": 20000.0,
-      "fov": 35.0,
-      "pitch": 50.0,
-      "yaw": 10.0,
-      "submittedTownInstances": 1208,
-      "submittedTownTriangles": 230728
+      "width": 1920,
+      "height": 1080,
+      "sha256": "81df410a2365071c6be1244c1e134a392f07bb435cad1e8b58650fb12b301246"
     },
     {
-      "file": "ala60-before.png",
-      "label": "ALA at gameplay zoom",
+      "file": "syria-after.jpg",
+      "side": "syria",
+      "version": "after",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "ebd9d3bea4e01d8e985062b9afb38128ad0250d196ad4047e892e7c68524a7d9"
+    },
+    {
+      "file": "iraq-before.jpg",
+      "side": "iraq",
       "version": "before",
-      "quality": "PC",
-      "town": "",
-      "changedModel": "figure-ala-infantry-1948-v1",
-      "lookAt": {
-        "x": 125573.8828125,
-        "y": 3957.62939453125,
-        "z": 408723.125
-      },
-      "cameraPosition": {
-        "x": 118876.75,
-        "y": 49920.296875,
-        "z": 370741.78125
-      },
-      "cameraEuler": {
-        "x": 50.0,
-        "y": 9.999999046325684,
-        "z": 0.0
-      },
-      "distanceM": 60000.0,
-      "fov": 35.0,
-      "pitch": 50.0,
-      "yaw": 10.0,
-      "submittedTownInstances": 0,
-      "submittedTownTriangles": 0
+      "width": 1920,
+      "height": 1080,
+      "sha256": "8c48515a6e467b2e952e47a8bdc6b241307586fc9127811673ae7d3f63a250a4"
+    },
+    {
+      "file": "iraq-after.jpg",
+      "side": "iraq",
+      "version": "after",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "059370ff8cad1bc6d7090692034fba2d9a1235da78ea195bfb6861ccc54aafe7"
     }
   ],
-  "afterModels": [
-    "netanya:B13aTwoStorey=10",
-    "netanya:B28WaterTower=1",
-    "netanya:NetanyaBalcony2026=11",
-    "netanya:NetanyaPorch2026=3",
-    "tiberias:B17CourtyardHouse=24",
-    "tiberias:TiberiasStone2026=27"
-  ],
-  "beforeModels": [
-    "netanya:B13aTwoStorey=27",
-    "netanya:B28WaterTower=1",
-    "tiberias:B17CourtyardHouse=51"
-  ],
-  "scope": "Unchanged ALA before/after evidence from the combined integration. This category branch adds a playable character-review scene; that scene needs its own validation and captures.",
-  "superseded": true,
-  "current_mapping": "Original C09 restored to ALA; replacement screenshots retained as superseded experiment only."
+  "C09": "Unchanged original ALA mapping; old ALA replacement captures superseded",
+  "render_record": "Unity editor renders, real map and dated legacy roster fixture (20 June 1948, rung 5, mobilization 0.8).\nBefore delays only that new side's model arrival: main draws no token until its own model exists. Same camera/state/lighting for each pair.\nNo UI or location text in captures. Not a WebGL/player or GDD campaign run; no simulated state or placements modified.\nsyria: row=syrian_army; lookAt=(134233.80, 1792.59, 393723.20); distance=24000; pitch=50; fov=35\niraq: row=iraqi_expeditionary_force; lookAt=(108253.20, 1727.47, 333723.50); distance=24000; pitch=50; fov=35",
+  "source_quality": "Original full meshes/maps, same full prefab at both zoom levels; no decimated copy",
+  "bundle_measurement": {
+    "main_baseline_bytes_reported_by_maintainer": 6309797,
+    "current_measured_bytes": null,
+    "status": "blocked",
+    "reason": "Unity Collections NativeList.cs850/864 CS7036 missing safety parameter. Same failure reproduced on baseline4d92aff9. No package changes in this category branch."
+  }
 }

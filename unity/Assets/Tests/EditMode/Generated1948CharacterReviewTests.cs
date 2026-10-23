@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 public class Generated1948CharacterReviewTests
 {
-    const string ScenePath = "Assets/Generated1948CharacterReview.unity";
+    const string ScenePath = "Assets/Editor/Generated1948CharacterReview.unity";
     static readonly string[] Expected = {
         "figure-egyptian-infantry-1948-v1", "figure-syrian-infantry-1948-v1", "figure-ala-infantry-1948-v1",
         "figure-iraqi-infantry-1948-v1", "figure-lebanese-regular-1948-v1", "figure-bedouin-civilian-1948-v1",
@@ -37,9 +37,9 @@ public class Generated1948CharacterReviewTests
             {
                 Assert.IsNotNull(entry.Model, entry.Id);
                 Assert.IsNotNull(entry.Material, entry.Id);
-                StringAssert.EndsWith(entry.Id + "-near.fbx", AssetDatabase.GetAssetPath(entry.Model));
-                StringAssert.EndsWith(entry.Id + "-near.fbx", AssetDatabase.GetAssetPath(entry.Idle));
-                StringAssert.EndsWith(entry.Id + "-walk.fbx", AssetDatabase.GetAssetPath(entry.Walk));
+                StringAssert.EndsWith(entry.Id + ".fbx", AssetDatabase.GetAssetPath(entry.Model));
+                StringAssert.EndsWith(entry.Id + ".fbx", AssetDatabase.GetAssetPath(entry.Idle));
+                StringAssert.EndsWith(entry.Id + ".fbx", AssetDatabase.GetAssetPath(entry.Walk));
                 Assert.AreEqual("idle", entry.Idle.name);
                 Assert.AreEqual("walk", entry.Walk.name);
                 Assert.IsNotNull(entry.Model.GetComponentInChildren<SkinnedMeshRenderer>(true));

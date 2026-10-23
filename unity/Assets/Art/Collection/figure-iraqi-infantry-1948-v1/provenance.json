@@ -5,24 +5,28 @@
   "rig_preset": "Unity Humanoid Compatible (67 bones)",
   "rig_credits": 20,
   "source_sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8",
-  "local_processing": "Blender 5.2.2 rest-relative retarget of existing C09 idle/walk; original near connectivity and skin retained; separate reviewed <=1500 triangle far derivative; 512px base colour; units normalized in FBX metadata.",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
   "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
-  "runtime_placement": "existing faction formation",
+  "runtime_placement": "existing faction formation, art/sensitivity sign-off pending #756",
   "files": {
-    "figure-iraqi-infantry-1948-v1-near.fbx": "39156b10041b0a3695730befcf450da3ff281e5bf7f1e899eb591c8377e507f8",
-    "figure-iraqi-infantry-1948-v1-walk.fbx": "4793c5325cea861c71b316ad8f7bbe5825b5caff38bf60ed5d119ac46fbfdda5",
-    "figure-iraqi-infantry-1948-v1-far.fbx": "3abe789c990536e4f615db995e6abc3bd991783467dee2c3ad95604dc98427bd",
-    "figure-iraqi-infantry-1948-v1_basecolor.jpg": "67426b3e76f132a27da76b9cac2e94058a2d7a71e600f35c34d90c44ce47fc32"
+    "figure-iraqi-infantry-1948-v1.fbx": "078442d96388388059a490f8a708e0600f18673859bfc8c1dbddaabb00877b90",
+    "figure-iraqi-infantry-1948-v1_basecolor.jpg": "cb3a62455a0764e66aac0c7fa14117ae69797239ff2577dae1bca6ee2fe4a1a1"
   },
   "provider_model_id": "14f2a010-b22a-43a5-9029-0385dd7cec2d",
   "provider_rig_job_id": "not separately exposed by provider UI",
   "source_triangles": 7569,
   "bones": 67,
-  "source_animation_actions": [
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
     "idle",
     "walk"
   ],
-  "runtime_controller_actions": [
-    "idle"
-  ]
+  "source_archive": "asset-sources/generated-1948/figure-iraqi-infantry-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-iraqi-infantry-1948-v1/validation.json"
 }

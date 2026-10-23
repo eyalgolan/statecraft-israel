@@ -25,105 +25,97 @@ namespace Statecraft.Game.EditorTools
         {
             int index = Array.IndexOf(Ids, id);
             if (index < 0) throw new ArgumentException("Character is outside the explicit import scope", nameof(id));
-            return "Assets/Art/" + (index > 0 && index < 4 ? "Collection/" : "Generated1948Review/") + id;
+            return (index == 1 || index == 3 ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
         }
-        static string Model(string id, string level) => $"{Dir(id)}/{id}-{level}.fbx";
+        static string Model(string id, string level) => $"{Dir(id)}/{id}.fbx";
         static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath(Model(id, level))
-            .OfType<AnimationClip>().Single(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal));
+            .OfType<AnimationClip>().Single(c => c.name == (level == "walk" ? "walk" : "idle"));
 
         [MenuItem("Statecraft/Generated 1948/Import seven characters")]
         public static void Run()
         {
             AssetDatabase.Refresh();
-            // Fail before creating prefabs if any delivery is incomplete.
-            foreach (string id in Ids)
-            {
-                foreach (string level in new[] { "near", "far", "walk" })
-                    if (!File.Exists(Model(id, level))) throw new FileNotFoundException("Incomplete character delivery", Model(id, level));
-                if (!File.Exists($"{Dir(id)}/{id}_basecolor.jpg")) throw new FileNotFoundException("Missing character colour map", id);
-            }
-            foreach (string id in Ids)
-            {
-                ImportModel(Model(id, "near"), "idle");
-                ImportModel(Model(id, "far"), null);
-                ImportModel(Model(id, "walk"), "walk");
-                ImportTexture($"{Dir(id)}/{id}_basecolor.jpg");
-                var mat = Material(id);
-                var controller = Controller(id);
-                MakePrefab(id, "near", mat, controller);
-                MakePrefab(id, "far", mat, null);
-            }
+            foreach (string id in Ids) Import(id);
+            RebindReview();
             AssetDatabase.SaveAssets();
-            Debug.Log("Generated1948Characters: seven explicit candidates imported. Walk remains a separate review clip; no movement behaviour added.");
         }
-
-        static void ImportModel(string path, string clipName)
+        public static void ImportRuntime()
         {
+            foreach (string id in Ids.Where(Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry)) Import(id);
+        }
+        static void Import(string id)
+        {
+            string path = Model(id, "original");
+            if (!File.Exists(path)) throw new FileNotFoundException("Missing full-quality compatibility export", path);
             var imp = AssetImporter.GetAtPath(path) as ModelImporter ?? throw new FileNotFoundException("No model importer", path);
             imp.globalScale = 1f;
             imp.useFileScale = true;
-            imp.meshCompression = ModelImporterMeshCompression.Medium;
+            imp.meshCompression = ModelImporterMeshCompression.Off;
             imp.isReadable = false;
-            imp.optimizeMeshPolygons = true;
-            imp.optimizeMeshVertices = true;
-            imp.importBlendShapes = false;
+            imp.optimizeMeshPolygons = false;
+            imp.optimizeMeshVertices = false;
+            imp.importBlendShapes = true;
             imp.importVisibility = false;
             imp.importCameras = false;
             imp.importLights = false;
             imp.addCollider = false;
             imp.generateSecondaryUV = false;
             imp.importNormals = ModelImporterNormals.Import;
-            imp.importTangents = ModelImporterTangents.None;
+            imp.importTangents = ModelImporterTangents.Import;
             imp.materialImportMode = ModelImporterMaterialImportMode.None;
-            if (clipName != null)
-            {
-                imp.animationType = ModelImporterAnimationType.Generic;
-                imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                imp.optimizeGameObjects = true;
-                imp.importAnimation = true;
-                imp.resampleCurves = true;
-                imp.animationCompression = ModelImporterAnimationCompression.Optimal;
-                // Refresh takes after enabling animation if a prior review import disabled it.
-                imp.SaveAndReimport();
-                var takes = imp.defaultClipAnimations;
-                if (takes.Length != 1) throw new InvalidOperationException(path + ": expected one " + clipName + " take, got " + takes.Length);
-                var clip = takes[0];
-                clip.name = clipName;
-                clip.loopTime = true;
-                imp.clipAnimations = new[] { clip };
-            }
-            else
-            {
-                imp.animationType = ModelImporterAnimationType.None;
-                imp.importAnimation = false;
-                imp.clipAnimations = Array.Empty<ModelImporterClipAnimation>();
-            }
+            imp.animationType = ModelImporterAnimationType.Generic;
+            imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            imp.optimizeGameObjects = false;
+            imp.importAnimation = true;
+            imp.resampleCurves = false;
+            imp.animationCompression = ModelImporterAnimationCompression.Off;
+            imp.clipAnimations = Array.Empty<ModelImporterClipAnimation>();
             imp.SaveAndReimport();
+            var takes = imp.defaultClipAnimations;
+            foreach (var clip in takes)
+            {
+                if (clip.name.EndsWith("|idle", StringComparison.Ordinal)) clip.name = "idle";
+                if (clip.name.EndsWith("|walk", StringComparison.Ordinal)) clip.name = "walk";
+                clip.loopTime = clip.name == "idle" || clip.name == "walk";
+            }
+            if (!takes.Any(c => c.name == "idle") || !takes.Any(c => c.name == "walk"))
+                throw new InvalidOperationException(path + ": local idle/walk takes missing; no source clips may be discarded");
+            imp.clipAnimations = takes;
+            imp.SaveAndReimport();
+            ImportTexture($"{Dir(id)}/{id}_basecolor.jpg");
+            MakePrefab(id, "original", Material(id), Controller(id));
         }
-
         static void ImportTexture(string path)
         {
-            var imp = AssetImporter.GetAtPath(path) as TextureImporter ?? throw new FileNotFoundException("No colour map importer", path);
+            var imp = AssetImporter.GetAtPath(path) as TextureImporter ?? throw new FileNotFoundException("Missing original map", path);
             imp.textureType = TextureImporterType.Default;
             imp.sRGBTexture = true;
             imp.mipmapEnabled = true;
             imp.isReadable = false;
-            imp.maxTextureSize = 512;
-            imp.textureCompression = TextureImporterCompression.Compressed;
-            imp.crunchedCompression = true;
-            imp.compressionQuality = 50;
-            foreach (string target in new[] { "Standalone", "WebGL" })
-            {
-                var settings = imp.GetPlatformTextureSettings(target);
-                settings.overridden = true;
-                settings.maxTextureSize = 512;
-                settings.format = TextureImporterFormat.Automatic;
-                settings.textureCompression = TextureImporterCompression.Compressed;
-                settings.crunchedCompression = true;
-                settings.compressionQuality = 50;
-                imp.SetPlatformTextureSettings(settings);
-            }
+            imp.maxTextureSize = 4096;
+            imp.textureCompression = TextureImporterCompression.Uncompressed;
+            imp.crunchedCompression = false;
+            foreach (string target in new[] { "Standalone", "WebGL" }) imp.ClearPlatformTextureSettings(target);
             imp.SaveAndReimport();
+        }
+        static void RebindReview()
+        {
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                var scene = EditorSceneManager.OpenScene(Generated1948CharacterReviewMenu.ScenePath);
+                var review = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Statecraft.Game.Review.Generated1948CharacterReview>()).Single();
+                foreach (var entry in review.Characters)
+                {
+                    entry.Model = AssetDatabase.LoadAssetAtPath<GameObject>(Model(entry.Id, "original"));
+                    entry.Material = Material(entry.Id);
+                    entry.Idle = Clip(entry.Id, "near");
+                    entry.Walk = Clip(entry.Id, "walk");
+                }
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+            finally { if (previous.Any(s => s.isLoaded) && previous.Any(s => s.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous); }
         }
 
         static Material Material(string id)
@@ -148,7 +140,7 @@ namespace Statecraft.Game.EditorTools
 
         static AnimatorController Controller(string id)
         {
-            string path = $"{Dir(id)}/{id}-near.controller";
+            string path = $"{Dir(id)}/{id}.controller";
             var clip = Clip(id, "near");
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (controller == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
@@ -177,10 +169,13 @@ namespace Statecraft.Game.EditorTools
                         throw new InvalidOperationException(id + ": no valid Generic Avatar");
                     animator.runtimeAnimatorController = controller;
                     animator.applyRootMotion = false;
+                    animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    animator.Rebind();
+                    animator.Update(0f);
                     animator.cullingMode = AnimatorCullingMode.CullCompletely;
                 }
                 else if (animator != null) Object.DestroyImmediate(animator);
-                PrefabUtility.SaveAsPrefabAsset(go, $"{Dir(id)}/{id}-{level}.prefab");
+                PrefabUtility.SaveAsPrefabAsset(go, $"{Dir(id)}/{id}.prefab");
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -213,6 +208,81 @@ namespace Statecraft.Game.EditorTools
             return bounds;
         }
 
+        /// <summary>Matched editor renders of the real legacy roster/map using the game's camera. No simulation changes.</summary>
+        public static void CaptureCampaign()
+        {
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            string output = Path.GetFullPath("../captures/generated-1948-characters/matched-campaign");
+            Directory.CreateDirectory(output);
+            var pending = new List<(string id, Action<GameObject> done)>();
+            Statecraft.Game.Map.Units.UnitFigures.Forget();
+            Statecraft.Game.Map.Units.UnitFigures.Source = (id, detail, done) => pending.Add((id, done));
+            try
+            {
+                EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+                var map = new GameObject("MapScene").AddComponent<Statecraft.Game.Map.MapScene>();
+                UnityEngine.Material Load(string name) => AssetDatabase.LoadAssetAtPath<UnityEngine.Material>($"Assets/Materials/{name}.mat");
+                map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+                Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+                    File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+                map.Build();
+                var events = Directory.GetFiles(Path.Combine(Statecraft.Game.Paths.Content, "events"), "*.yaml")
+                    .Select(f => "events/" + Path.GetFileName(f)).ToList();
+                var content = Statecraft.Sim.ContentLoader.Load(rel => {
+                    string path = Path.Combine(Statecraft.Game.Paths.Content, rel);
+                    if (!File.Exists(path)) return null;
+                    string text = File.ReadAllText(path);
+                    return rel == "eras.yaml" ? text.Replace("    systems: { loop: gdd }\n", "") : text;
+                }, events);
+                var state = Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical).Clone();
+                state.Date = new DateTime(1948, 6, 20); state.Rung = 5; state.Mobilization = 0.8;
+                var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, map.UnitEntries, content.Hexes, true);
+                layer.Show(content, state);
+                foreach (var request in pending.ToArray().Where(r => !Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry(r.id)))
+                    request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(request.id,
+                        Statecraft.Game.Map.Collection.CollectionDetail.Far)));
+                var camera = Object.FindFirstObjectByType<Statecraft.Game.Map.CameraRig>().GetComponent<Camera>();
+                var rig = camera.GetComponent<Statecraft.Game.Map.CameraRig>();
+                camera.aspect = 16f / 9f;
+                var records = new List<string>();
+                foreach (string side in new[] { "syria", "iraq" })
+                {
+                    var row = map.UnitEntries.First(u => u.Side == side && u.Anchors.Count > 0);
+                    var spot = layer.Spots.First(p => row.Anchors.Contains(p.Key) && state.Date >= Statecraft.Game.Map.Units.UnitData.Day(p.Key.From) && state.Date < Statecraft.Game.Map.Units.UnitData.Day(p.Key.To)).Value;
+                    rig.LookAt = Statecraft.Game.Map.Units.UnitShowcase.Ground(map, new Vector3((float)spot.X, 0, (float)spot.Z));
+                    rig.Distance = 24000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply(); layer.FaceCamera(camera);
+                    string before = Path.Combine(output, side + "-before.jpg");
+                    RenderMap(camera, before);
+                    string id = Statecraft.Game.Map.Units.UnitFigures.SideFigure(side);
+                    foreach (var request in pending.ToArray().Where(r => r.id == id))
+                        request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id,
+                            Statecraft.Game.Map.Collection.CollectionDetail.Far)));
+                    foreach (var animator in layer.GetComponentsInChildren<Animator>(true)) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Update(0f); }
+                    layer.FaceCamera(camera);
+                    RenderMap(camera, Path.Combine(output, side + "-after.jpg"));
+                    records.Add($"{side}: row={row.Id}; lookAt={rig.LookAt}; distance={rig.Distance}; pitch={Statecraft.Game.Map.CameraRig.Pitch}; fov={camera.fieldOfView}");
+                }
+                File.WriteAllText(Path.Combine(output, "README.txt"), "Unity editor renders, real map and dated legacy roster fixture (20 June 1948, rung 5, mobilization 0.8).\n" +
+                    "Before delays only that new side's model arrival: main draws no token until its own model exists. Same camera/state/lighting for each pair.\n" +
+                    "No UI or location text in captures. Not a WebGL/player or GDD campaign run; no simulated state or placements modified.\n" + string.Join("\n", records));
+            }
+            finally
+            {
+                Statecraft.Game.Map.Units.UnitFigures.Source = null;
+                Statecraft.Game.Map.Units.UnitFigures.Forget();
+                if (previous.Any(s => s.isLoaded) && previous.Any(s => s.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous);
+            }
+        }
+        static void RenderMap(Camera camera, string path)
+        {
+            var old = camera.targetTexture; var active = RenderTexture.active;
+            var target = new RenderTexture(1920, 1080, 24); target.Create();
+            var image = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+            try { camera.targetTexture = target; camera.Render(); RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); image.Apply(); File.WriteAllBytes(path, image.EncodeToJPG(92)); }
+            finally { camera.targetTexture = old; RenderTexture.active = active; target.Release(); Object.DestroyImmediate(target); Object.DestroyImmediate(image); }
+        }
+
         [MenuItem("Statecraft/Generated 1948/Capture character asset previews")]
         public static void Capture()
         {
@@ -242,7 +312,7 @@ namespace Statecraft.Game.EditorTools
                 {
                     foreach (string level in new[] { "near", "far" })
                     {
-                        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}-{level}.prefab")
+                        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{Dir(id)}/{id}.prefab")
                             ?? throw new InvalidOperationException("Import characters before capture: " + id);
                         var go = Object.Instantiate(prefab);
                         SceneManager.MoveGameObjectToScene(go, scene);

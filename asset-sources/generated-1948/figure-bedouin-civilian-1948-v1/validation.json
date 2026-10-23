@@ -1,0 +1,232 @@
+{
+  "number": "22",
+  "id": "figure-bedouin-civilian-1948-v1",
+  "kind": "Full-source GLB-to-FBX compatibility export; FBX was not delivered by provider",
+  "licence": "CC-BY-NC-ND-4.0, owner-adopted; no licence change or new grant",
+  "blender": "5.2.2 LTS",
+  "source": {
+    "number": "22",
+    "id": "figure-bedouin-civilian-1948-v1",
+    "glb_bytes": 5392004,
+    "glb_sha256": "941d0f7e435b238ee8098abc4be665dec62e34a9b4cd3d824c5fb45385f01c88",
+    "source_animation_count": 0,
+    "source_vertices": 8395,
+    "source_triangles": 7306,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 4888497,
+        "sha256": "03652a0eb90e4ca4253cf47959c5234d716abafb621f5ce4edd0322c1de98548",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "figure-bedouin-civilian-1948-v1-retargeted.blend",
+    "blend_bytes": 18137740,
+    "blend_sha256": "23a50c5fb2056afa8d49538000d927ef7bbec63bf4c8fa7e3b74bb547874e03d",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  "source_animation_count": 0,
+  "local_target_clip_count": 2,
+  "unrelated_donor_actions_excluded": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "original_source_and_blend_unchanged": true,
+  "provider_glb_archive_byte_identical": true,
+  "embedded_jpeg_extracted_byte_identical": true,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "no_geometry_reduction": true,
+  "source_vertices": 8395,
+  "fbx_reimport_vertices": 8395,
+  "triangles": 7306,
+  "bones": 67,
+  "bone_names_and_hierarchy_exact": true,
+  "source_blend_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 1.5497207641601562e-06,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 5.066394805908203e-07
+  },
+  "fbx_roundtrip_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 1.5497207641601562e-06,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 9.760260581970215e-07
+  },
+  "rest_world_bounds_metres": [
+    [
+      -0.3830566108226776,
+      -1.422870496980977e-07,
+      -0.14477521181106567
+    ],
+    [
+      0.3830565810203552,
+      0.9995114207267761,
+      0.14477573335170746
+    ]
+  ],
+  "weights_sum_range": [
+    0.9999999068677425,
+    1.0000000521540642
+  ],
+  "max_influences": 4,
+  "animations": {
+    "idle": {
+      "fbx_reimport_action_name": "figure-bedouin-civilian-1948-v1-rig|figure-bedouin-civilian-1948-v1-rig|idle",
+      "source_frame_range": [
+        1.0,
+        423.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        423.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 423,
+      "half_frame_sample_count": 422,
+      "skin_operator_integer_frame_max_abs": 2.86102294921875e-05,
+      "skin_operator_half_frame_max_abs": 0.002640131860971451,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        423
+      ],
+      "total_keys": 287217,
+      "strict_continuous_curve_identity": false
+    },
+    "walk": {
+      "fbx_reimport_action_name": "figure-bedouin-civilian-1948-v1-rig|figure-bedouin-civilian-1948-v1-rig|walk",
+      "source_frame_range": [
+        1.0,
+        57.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        57.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 57,
+      "half_frame_sample_count": 56,
+      "skin_operator_integer_frame_max_abs": 2.1412968635559082e-05,
+      "skin_operator_half_frame_max_abs": 0.03559336066246033,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        57
+      ],
+      "total_keys": 38703,
+      "strict_continuous_curve_identity": false
+    }
+  },
+  "animation_note": "Every existing target action retained, sampled every frame with simplify0. Integer-frame transforms validated numerically; continuous quaternion/Bezier-to-Euler FBX curve identity is not claimed. Exact target F-curve data is separately preserved in local-actions.json; original blend remains unchanged.",
+  "fbx_unit_scale_factors": [
+    100.0
+  ],
+  "all_fbx_local_scales_identity": true,
+  "fbx_animation_stacks": [
+    "figure-bedouin-civilian-1948-v1-rig|idle\u0000\u0001AnimStack",
+    "figure-bedouin-civilian-1948-v1-rig|walk\u0000\u0001AnimStack"
+  ],
+  "texture_references": [
+    {
+      "field": "FileName",
+      "value": "__________________________________________________________________________________________________________________________________________________________________________________________________/figure-bedouin-civilian-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-bedouin-civilian-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "Filename",
+      "value": "__________________________________________________________________________________________________________________________________________________________________________________________________/figure-bedouin-civilian-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-bedouin-civilian-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-bedouin-civilian-1948-v1-rig|idle.tak"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-bedouin-civilian-1948-v1-rig|walk.tak"
+    }
+  ],
+  "author_path_string_runs_neutralized": 4,
+  "export_options": {
+    "use_selection": true,
+    "object_types": [
+      "ARMATURE",
+      "MESH"
+    ],
+    "global_scale": 1.0,
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "use_space_transform": true,
+    "bake_space_transform": false,
+    "use_mesh_modifiers": false,
+    "mesh_smooth_type": "OFF",
+    "use_tspace": false,
+    "use_custom_props": false,
+    "add_leaf_bones": false,
+    "use_armature_deform_only": false,
+    "path_mode": "STRIP",
+    "embed_textures": false,
+    "bake_anim": true,
+    "bake_anim_use_all_bones": true,
+    "bake_anim_use_all_actions": true,
+    "bake_anim_use_nla_strips": false,
+    "bake_anim_step": 1.0,
+    "bake_anim_simplify_factor": 0.0,
+    "bake_anim_force_startend_keying": true
+  },
+  "files": {
+    "figure-bedouin-civilian-1948-v1-provider-original.glb": {
+      "bytes": 5392004,
+      "sha256": "941d0f7e435b238ee8098abc4be665dec62e34a9b4cd3d824c5fb45385f01c88"
+    },
+    "figure-bedouin-civilian-1948-v1_basecolor.jpg": {
+      "bytes": 4888497,
+      "sha256": "03652a0eb90e4ca4253cf47959c5234d716abafb621f5ce4edd0322c1de98548"
+    },
+    "figure-bedouin-civilian-1948-v1.fbx": {
+      "bytes": 3354204,
+      "sha256": "27c3781eae0f9f1a18ed87eec8b03cde2187cbbe5310e2d3a5e85186181981d4"
+    },
+    "figure-bedouin-civilian-1948-v1-local-actions.json": {
+      "bytes": 52735576,
+      "sha256": "4b231b3266e1fb984b1574cf5c630c01e98473cb1344efb71372cbcc08c614a6"
+    }
+  }
+}

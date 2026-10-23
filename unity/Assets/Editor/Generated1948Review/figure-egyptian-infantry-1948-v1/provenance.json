@@ -1,0 +1,32 @@
+{
+  "asset": "figure-egyptian-infantry-1948-v1",
+  "source_number": 17,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "7470a17c90b62af78ad225aaa2073c05686748f39819d46089d57ac831b66ab5",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "files": {
+    "figure-egyptian-infantry-1948-v1.fbx": "d84cef4b4e8c21ebfa57aa78788c89f160d295b948e7775653db7f0570df586e",
+    "figure-egyptian-infantry-1948-v1_basecolor.jpg": "94d2e98fbccad98a7fee34fa4aefe3abfcc8a6f2f68dfb5dbd53fabc153e7b60"
+  },
+  "provider_model_id": "446ca561-c4e6-4d07-93b6-0c29baf69672",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7282,
+  "bones": 65,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-egyptian-infantry-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-egyptian-infantry-1948-v1/validation.json"
+}
