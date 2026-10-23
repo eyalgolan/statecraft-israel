@@ -38,8 +38,10 @@ namespace Statecraft.Sim
         {
             var result = new SortedDictionary<(int Q, int R), int>();
             if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u)) return result;
+            var points = Points(c, u);
+            if (points == 0) return result;
             spent.TryGetValue(unitId, out var used);
-            var (dist, _) = Search(c, s, u, Points(c, u) - used);
+            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0);
             foreach (var kv in dist)
                 if (kv.Key != (u.Q, u.R) && Full(c, s, u, kv.Key.Q, kv.Key.R) == null) result[kv.Key] = kv.Value;
             return result;
@@ -57,7 +59,7 @@ namespace Statecraft.Sim
             if (!Reachable(c, s, unitId, spent).ContainsKey((q, r))) return Array.Empty<(int, int)>();
             var u = s.Units[unitId];
             spent.TryGetValue(unitId, out var used);
-            var (_, prev) = Search(c, s, u, Points(c, u) - used);
+            var (_, prev) = Search(c, s, u, Points(c, u) - used, fresh: used == 0);
             var path = new List<(int Q, int R)>();
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) path.Add(h);
             path.Reverse();
@@ -97,7 +99,7 @@ namespace Statecraft.Sim
             if (Closed(c, s, enemy).Contains((q, r))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Full(c, s, u, q, r) is string full) return full;
             spent.TryGetValue(unitId, out var used);
-            var (dist, _) = Search(c, s, u, points - used);
+            var (dist, _) = Search(c, s, u, points - used, fresh: used == 0);
             if (!dist.TryGetValue((q, r), out var cost)) return "That hex is out of reach this turn";
             // Moving clears fortify at once (Q-HOLD-1, "lost on move"; the standing orders' "fortify", or "fortifying" the turn it
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
@@ -175,8 +177,10 @@ namespace Statecraft.Sim
         /// never an enemy unit's hex or a closed enemy-held locality's (<see cref="Closed"/>); passing next to either costs nothing extra (no zone of
         /// control, Q-MOVE-4). Hexes leave the frontier in (cost, q, r) order and neighbours are tried in the fixed
         /// <see cref="Neighbours"/> order, so a hex reached at the same cost twice keeps the first, and the path is the same
-        /// every run. Stacking limits only where a move ends, so it is not checked here.</summary>
-        static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(Content c, GameState s, Unit u, int budget)
+        /// every run. With <paramref name="fresh"/>, one neighbouring hex whose cost exceeds the budget costs the whole budget
+        /// (R-MOVE-001, OQ-3). Stacking limits only where a move ends, so it is not checked here.</summary>
+        static (Dictionary<(int Q, int R), int> Dist, Dictionary<(int Q, int R), (int Q, int R)> Prev) Search(
+            Content c, GameState s, Unit u, int budget, bool fresh = false)
         {
             var costs = c.RulesAt(s.Date).Mvp!.MoveCost;   // the loader requires a cost for every land biome in the GDD loop
             var blocked = Closed(c, s, IsEnemy(u));
@@ -197,6 +201,7 @@ namespace Statecraft.Sim
                     foreach (var (hexes, kindCost) in built)
                         if (kindCost < step && hexes.Contains((q, r)) && hexes.Contains(next)) step = kindCost;
                     var total = cost + step;
+                    if (fresh && cost == 0 && total > budget) total = budget;   // R-MOVE-001: with full points a unit can always move one hex (OQ-3)
                     if (total > budget || (dist.TryGetValue(next, out var known) && known <= total)) continue;
                     if (dist.ContainsKey(next)) frontier.Remove((known, next.Item1, next.Item2));
                     dist[next] = total;

@@ -18,6 +18,7 @@ public class MovementTests
     /// <summary>A soldier, an Egyptian unit (an enemy side) and the fixture's halutz types.</summary>
     const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+        + "  - { id: gun, kind: unit, side: israel, class: infantry, movement_points: 2 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n";
 
     /// <summary>A 6 x 3 board of coastal plain, q 0 to 5 and r 0 to 2, with <paramref name="biomes"/> replacing hexes (a
@@ -75,6 +76,42 @@ public class MovementTests
         var c = Load(Board((3, 1, biome)));
         var s = With(c, Soldier(1, 2, 1));
         Assert.Equal(cost, Movement.Reachable(c, s, 1)[(3, 1)]);
+    }
+
+    // R-MOVE-001 (owner, 23 October 2026, OQ-3: "No, strict like Civ VI": a unit needs the full cost of the next hex, "with
+    // full points it can always move one hex"): a unit that has not moved may enter one neighbour whatever it costs, and
+    // that spends all its points.
+    [Fact]
+    public void WithFullPointsAUnitCanAlwaysMoveOneHex()
+    {
+        var c = Load(Board((3, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"));
+        Assert.Equal(2, Movement.Reachable(c, s, 1)[(3, 1)]);   // all of its two points
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1), new Move(1, 4, 1) });
+        Assert.Equal((3, 1), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Equal("That hex is out of reach this turn", now.Rejected.Single().Reason);   // no points left
+    }
+
+    // R-MOVE-001: only with full points: after a move the strict rule holds.
+    [Fact]
+    public void AfterAMoveTheNextHexNeedsItsFullCost()
+    {
+        var c = Load(Board((4, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"));
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1) });
+        Assert.False(Movement.Reachable(c, now.State, 1, now.Spent).ContainsKey((4, 1)));
+        Assert.Equal("That hex is out of reach this turn", Simulation.Preview(c, s, new Command[] { new Move(1, 3, 1), new Move(1, 4, 1) }).Rejected.Single().Reason);
+    }
+
+    // R-MOVE-001: the exception reaches one hex only, never a hex beyond it, and never gives a type with no movement points
+    // (a halutz) a move.
+    [Fact]
+    public void TheExceptionIsOneHexOnly()
+    {
+        var c = Load(Board((3, 1, "desert")));
+        var s = With(c, new Unit(1, "gun", 2, 1, side: "israel"), new Unit(2, "halutz", 1, 2));
+        Assert.False(Movement.Reachable(c, s, 1).ContainsKey((4, 1)));
+        Assert.Empty(Movement.Reachable(c, s, 2));
     }
 
     // R-MOVE-001: the real game's numbers, design values this PR proposes (Q-MOVE-1): one cost per land biome of hexes.json,
