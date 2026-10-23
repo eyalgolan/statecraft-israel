@@ -79,7 +79,8 @@ namespace Statecraft.Sim
                 var u = s.Units[id];
                 if (!Player(u) || u.Order != Attack) continue;
                 s.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
-                why.Add(new Cause("map", id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {id}'s attack on hex {u.OrderTarget} ends: a truce is on"));
+                why.Add(UnitLines.Line(WhyKeys.AttackEndedTruce,
+                    $"Unit {id}'s attack on hex {u.OrderTarget} ends: a truce is on", new[] { u }, u.OrderTarget));
             }
         }
 

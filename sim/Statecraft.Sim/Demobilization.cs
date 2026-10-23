@@ -71,7 +71,9 @@ namespace Statecraft.Sim
             s.Cities[city] = x.WithCounts(x.Civilians + u.Strength, x.Employed, x.Refugees);
             var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), u.Strength, FormattableString.Invariant(
-                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now")));
+                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
+                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
+                args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
             return null;
         }
 
