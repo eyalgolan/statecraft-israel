@@ -379,6 +379,80 @@ public class FirstTurnGuideTests
         Assert.IsNull(info.Selected, "and no hex");
     }
 
+    /// <summary>Issue #1392: the move step brings UnitToShow's hex into the map view, clear of the info panel and the guide's
+    /// card, with at least one of Movement.Reachable's lit destinations visible too. The real scene, camera projection and HUD
+    /// layout are used at the guide's supported desktop, itch embed and phone sizes, in both UI directions.</summary>
+    [UnityTest]
+    public IEnumerator TheMoveStepShowsTheUnitAndAReachableHexOnTheMap()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (390, 844) })
+            {
+                // The scene first: opening it in Single mode destroys textures made before it.
+                var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+                var rt = new RenderTexture(w, h, 0);
+                var camRt = new RenderTexture(w, h, 24);
+                var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+                ps.targetTexture = rt;
+                var camera = Camera.main;
+                try
+                {
+                    game.Language = hebrew ? UiLanguage.Hebrew : UiLanguage.English;
+                    Object.FindFirstObjectByType<UIDocument>().panelSettings = ps;
+                    camera.targetTexture = camRt;
+                    game.Begin(Inputs, 0, startScreen: true);
+                    UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+                    var guide = game.Guide!; var bridge = game.Bridge!; var units = game.Units!;
+                    var map = Object.FindFirstObjectByType<MapScene>();
+                    var move = Array.IndexOf(FirstTurnGuidePresenter.Steps, "move");
+                    for (int step = 0; step < move; step++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
+                    Assert.AreEqual(move, guide.Step, "precondition: the guide is on its move step");
+                    for (int frame = 0; frame < 5; frame++) yield return null;
+
+                    var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token.Unit));
+                    Assert.IsNotNull(id, "precondition: a drawn unit can move");
+                    var token = units.Tokens.Single(t => t.Token.Unit.Id == id);
+                    var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token.Unit);
+                    Assert.IsNotNull(simUnit, "precondition: the guide's token has a sim unit");
+                    var reachable = Movement.Reachable(bridge.Content, bridge.State, simUnit!.Value).Keys.ToList();
+                    Assert.IsNotEmpty(reachable, "precondition: the guide's unit has a destination");
+                    UiTestKit.Press(Ui.Q<Button>("info-move"));
+                    Assert.IsTrue(map.Terrain.transform.Find(MapScene.ReachableName)?.GetComponent<MeshRenderer>().enabled == true,
+                        "precondition: Move lit the reachable hexes");
+
+                    var root = Ui;
+                    var info = root.Q("info-panel").worldBound;
+                    var card = root.Q("guide-panel").worldBound;   // the guide's own card is opaque too
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    (bool visible, bool clear, Vector3 viewport, Vector2 panel) Project(int q, int r)
+                    {
+                        var hex = bridge.Content.HexAt(q, r)!;
+                        var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                        ground.y = map.Terrain.SampleHeight(ground) + map.Terrain.transform.position.y;
+                        var viewport = camera.WorldToViewportPoint(ground);
+                        var panel = MapLabelsPresenter.ToPanel(viewport, camera.rect, root.panel.visualTree.layout.size, Vector2.zero);
+                        return (viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f,
+                            !info.Contains(panel) && !card.Contains(panel), viewport, panel);
+                    }
+
+                    var unit = Project(token.Q, token.R);
+                    if (!unit.visible) problems.Add($"{at}: unit ({token.Q},{token.R}) is outside the viewport at {unit.viewport}");
+                    else if (!unit.clear) problems.Add($"{at}: unit ({token.Q},{token.R}) at {unit.panel} is under the info panel {info} or the guide {card}");
+                    if (!reachable.Select(p => (at: p, projection: Project(p.Q, p.R))).Any(p => p.projection.visible && p.projection.clear))
+                        problems.Add($"{at}: no reachable hex is visible and clear of the info panel and the guide");
+                }
+                finally
+                {
+                    camera.targetTexture = null;
+                    Object.FindFirstObjectByType<UIDocument>().panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel);
+                    Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); camRt.Release(); Object.DestroyImmediate(camRt);
+                    EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                }
+            }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     // --- Each step with what it explains (owner's report on v0.1.4) ---------------------------------------------------
 
     /// <summary>The first card's first option, pressed as a click would.</summary>

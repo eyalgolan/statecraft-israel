@@ -37,6 +37,10 @@ namespace Statecraft.Game.UI
         public static readonly string[] Steps = { "attention", "city", "training", "move", "event", "objectives" };
         /// <summary>The event card's step (the card shows on it and is hidden on the others).</summary>
         public const int EventStep = 4;
+        /// <summary>The camera's farthest distance on the move step, which centres it on <see cref="UnitToShow"/>'s hex (GameRoot;
+        /// a nearer camera stays as near). At the start's 90 km, the view's fit to the map's edge (CameraController.Settle) left
+        /// a unit near the edge, the Negev Brigade at Nir Am, under the info panel (#1392).</summary>
+        public const float MoveStepDistanceM = 40000f;
         /// <summary>The ring's gap round its target, in panel px. Under Attention (step 1) End Turn's border is kept clear of
         /// it by Statecraft.uss (.guide-open #attention), not by this gap: the two sit 3 px apart in the bar.</summary>
         const float RingGap = 4f;
