@@ -16,7 +16,7 @@ namespace Statecraft.Sim
         /// <summary>The <see cref="State"/> of an occupied place whose timer has ended: it awaits EndOccupation (Phase 6 PR 7).</summary>
         public const string AwaitingEnd = "awaiting_end";
 
-        /// <summary>R-CTRL-004: the player's capture check, after the route step and each order, and in resolver step3.
+        /// <summary>R-CTRL-004: the player's capture check, after the route step and each order, and in resolver step 3.
         /// Only curated enemy-held targets held by Israeli military units alone gain a record. Passing through a hex
         /// captures nothing. The preview has no capture date; Step stamps the turn's end before the resolver.</summary>
         internal static void CaptureHeld(Content c, GameState s, List<Cause> why)
@@ -42,7 +42,7 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>Resolver step3, after enemy combat: perform any remaining player capture, stamp its date, then return
+        /// <summary>Resolver step 3, after enemy combat: perform any remaining player capture, stamp its date, then return
         /// an awaiting-choice target held by enemy military units alone to enemy control. No resident field or RNG changes.</summary>
         public static void Capture(Content c, GameState s, DateTime next, List<Cause> why)
         {

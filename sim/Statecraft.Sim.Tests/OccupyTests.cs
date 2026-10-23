@@ -150,7 +150,7 @@ public class OccupyTests
         Assert.Empty(result.State.Settlements);
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
         Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));
-        // Spec4.4 now captures a unit already on the target before orders. A never-captured twin must start outside.
+        // Spec 4.4 now captures a unit already on the target before orders. A never-captured twin must start outside.
         var twin = Without(s);
         Assert.Null(Movement.Move(c, twin, 1, 2, 0, new Dictionary<int, int>(), new List<Cause>()));
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));

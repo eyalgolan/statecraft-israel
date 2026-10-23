@@ -243,6 +243,7 @@ public class CaptureTests
         Assert.False(Reaches("gaza"));
         Assert.True(Reaches("acre"));
     }
+
     // R-CTRL-004 (owner, 23 October 2026, OQ-2: "Instant"): a move that ends on an enemy-held target with no enemy unit
     // there captures it at once, before End turn; End turn stamps the turn's end as Since, as step 3 does.
     [Fact]
@@ -297,7 +298,7 @@ public class CaptureTests
         Assert.False(ended.State.Settlements.ContainsKey("town_a"));
     }
 
-    // R-CTRL-004: the automatic route stop is checked before any order (spec4.4/6.3).
+    // R-CTRL-004: the automatic route stop is checked before any order (spec 4.4, 6.3).
     [Fact]
     public void ARouteStopCapturesBeforeAnyPlayerOrder()
     {
@@ -322,5 +323,4 @@ public class CaptureTests
         Assert.Empty(ended.Rejected);
         Assert.Equal(ended.State.Date, ended.State.Settlements["town_a"].Since);
     }
-
 }
