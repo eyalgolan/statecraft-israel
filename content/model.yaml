@@ -9,11 +9,10 @@ indicators:
   - { id: security, base: 0.30, name: Security }
   - { id: intl_standing, base: 0.50, name: International support }
 # Windows (issue #80, Yishuv design 5.1 and 5.5; the dates are game design, not historical facts): the policies, effects and
-# actors that only make sense in a state begin on 15 May 1948, the Founding start, so a Founding start holds the same
-# records as before. `rationing` and `rationing_feeds` stay windowless because their office, rationing_minister, only
-# exists from 10 March 1949 and the loader needs an office to cover its policy's whole window.
+# actors that only make sense in a state begin on 15 May 1948, the Founding start. The rationing policy and its effects
+# follow the rationing office's window from 10 March 1949 (owner ruling 22 October 2026, #80).
 policies:
-  - { id: rationing, default: 0.0, office: rationing_minister, name: Rationing }
+  - { id: rationing, from: 1949-03-10, default: 0.0, office: rationing_minister, name: Rationing }
   - { id: housing_construction, from: 1948-05-15, default: 0.3, office: labour_minister, name: Housing construction }
   - { id: border_settlement, from: 1948-05-15, default: 0.2, office: agriculture_minister, name: Border settlement }
   # 1 = transit camps (ma'abarot) where residents earn their own living replace the free-board immigrant camps.
@@ -21,8 +20,8 @@ policies:
   # Minister, who decided it with the Jewish Agency (and the Ministry of Immigration ends on 1951-10-08).
   - { id: maabarot, from: 1948-05-15, default: 0.0, office: prime_minister, name: Transit camps (ma'abarot) }
 effects:
-  - { id: rationing_feeds, source: rationing, target: food_supply, k: 0.40, inertia: 2, office: rationing_minister, name: Rations share out food }
-  - { id: rationing_grates, from: 1948-05-15, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on cohesion }
+  - { id: rationing_feeds, from: 1949-03-10, source: rationing, target: food_supply, k: 0.40, inertia: 2, office: rationing_minister, name: Rations share out food }
+  - { id: rationing_grates, from: 1949-03-10, source: rationing, target: morale, k: -0.15, inertia: 1, name: Rationing wears on cohesion }
   - { id: building_houses, from: 1948-05-15, source: housing_construction, target: housing, k: 0.35, inertia: 4, office: labour_minister, name: New housing }
   - { id: homes_lift_morale, source: housing, target: morale, k: 0.15, inertia: 2, name: Homes lift cohesion }
   - { id: border_villages_secure, from: 1948-05-15, source: border_settlement, target: security, k: 0.30, inertia: 4, office: agriculture_minister, name: Border villages }

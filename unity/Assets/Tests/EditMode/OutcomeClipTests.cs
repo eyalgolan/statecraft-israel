@@ -75,7 +75,9 @@ public class OutcomeClipTests
             Root = doc.rootVisualElement;
             Root.Q("root").RemoveFromClassList("loading");
             var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+            var start = g.State.Date;
             g.State.Date = c.Events.First(e => e.Id == events[0]).From;
+            ContentWindows.Update(c, g.State, start);     // as a turn does when the date moves (#80)
             g.State.PendingEvents.Clear(); g.State.PendingEvents.AddRange(events);
             Bridge = new SimBridge(g, t, step);
             owned.Add(new HudPresenter(Root, Bridge, t));
