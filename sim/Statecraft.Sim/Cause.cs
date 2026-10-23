@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Statecraft.Sim
 {
     /// <summary>One line of the "Why did this happen?" report.</summary>
@@ -7,8 +10,19 @@ namespace Statecraft.Sim
         public string Target { get; }
         public double Delta { get; }
         public string Message { get; }
-        public Cause(string system, string target, double delta, string message)
-        { System = system; Target = target; Delta = delta; Message = PlayerText.Capitalised(message); }   // sentence case (playtest 2, P2-6)
+        /// <summary>What the enemy did, when this cause records it (R-ENEMY-001): Movement.Kind or Orders.Fortify for the order
+        /// the enemy AI gave unit Target, or Combat.Attack for an engagement its units led on hex Target (#1297); else empty.
+        /// The turn report words it in the player's language (#1293), as Message is English only. A move or fortify the unit
+        /// already has is kept with no cause (R-ENEMY-003), so it is named only on the turn it is given; an attack is named on
+        /// every turn it engages, as a standing one still does.</summary>
+        public string EnemyOrder { get; }
+        /// <summary>With EnemyOrder Combat.Attack: the enemy units that attacked in the engagement, in id order; else empty.</summary>
+        public IReadOnlyList<int> EnemyAttackers { get; }
+        public Cause(string system, string target, double delta, string message, string enemyOrder = "", IReadOnlyList<int>? enemyAttackers = null)
+        {
+            System = system; Target = target; Delta = delta; Message = PlayerText.Capitalised(message);   // sentence case (playtest 2, P2-6)
+            EnemyOrder = enemyOrder; EnemyAttackers = enemyAttackers ?? Array.Empty<int>();
+        }
         public override string ToString() => $"[{System}] {Message}";
     }
 }

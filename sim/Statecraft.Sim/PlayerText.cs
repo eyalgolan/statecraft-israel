@@ -21,8 +21,10 @@ namespace Statecraft.Sim
             GameOverCodes.EraEnded => "The chapter has ended",
             GameOverCodes.MvpEnded => "The game has reached its last turn",
             GameOverCodes.CoalitionCollapse => "The coalition collapsed",
-            // Interim: the plan's short option (a) wording. The defeat texts are the owner's pick (Q-DEF-4, #784, open).
+            // The short factual line per cause (Q-DEF-4 (b), owner, 18 Oct 2026, #784). The sourced history note
+            // beside each cause goes on the end screen with #812.
             GameOverCodes.DefeatEconomy => "Money and Food ran out",
+            GameOverCodes.DefeatWar => "The enemy holds a city",
             _ => throw Unknown("game over reason", code),
         };
 
@@ -68,16 +70,17 @@ namespace Statecraft.Sim
 
         static string Fixed(double abs, int decimals) => abs.ToString(decimals == 0 ? "0" : "0.0", CultureInfo.InvariantCulture);
 
-        /// <summary>The one sign style: the sign goes before the currency or number, and a value that rounds to zero prints
-        /// unsigned. <paramref name="signed"/> adds "+" to positive values (changes).</summary>
+        /// <summary>The one sign style: the sign goes after the currency prefix, next to the number ("IL -3.0m";
+        /// player feedback, 19 October 2026, #1107), and a value that rounds to zero prints unsigned.
+        /// <paramref name="signed"/> adds "+" to positive values (changes).</summary>
         static string Signed(double rounded, string prefix, string body, bool signed) =>
-            rounded == 0 ? prefix + body : (rounded < 0 ? "-" : signed ? "+" : "") + prefix + body;
+            rounded == 0 ? prefix + body : prefix + (rounded < 0 ? "-" : signed ? "+" : "") + body;
 
-        /// <summary>An amount in millions with its currency: "IL 18.6m", "-IL 3.0m", "$41.5m"; zero is "IL 0.0m".</summary>
+        /// <summary>An amount in millions with its currency: "IL 18.6m", "IL -3.0m", "$41.5m"; zero is "IL 0.0m".</summary>
         public static string Money(Content c, string id, double millions)
         {
             var (sign, prefix, amount) = MoneyParts(c, id, millions);
-            return sign + prefix + amount + "m";
+            return prefix + sign + amount + "m";
         }
 
         /// <summary>The parts Money is built from, rounded as it rounds: the sign ("-", or "" for a value that rounds to zero
@@ -88,7 +91,7 @@ namespace Statecraft.Sim
             return (r < 0 ? "-" : "", Account(c, id).Prefix, Fixed(Math.Abs(r), 1));
         }
 
-        /// <summary>A change in millions with its currency, sign first: "+IL 1.2m", "-$0.4m"; zero is "IL 0.0m".</summary>
+        /// <summary>A change in millions with its currency, sign next to the number: "IL +1.2m", "$-0.4m"; zero is "IL 0.0m".</summary>
         public static string MoneyChange(Content c, string id, double millions)
         {
             var r = Math.Round(Finite(millions, nameof(millions)), 1, MidpointRounding.AwayFromZero);
@@ -122,13 +125,16 @@ namespace Statecraft.Sim
         }
 
         /// <summary>"+5 units" for a change to a whole-unit national stock (the Food and Arms pools; R-EFX-001).</summary>
-        public static string UnitsChange(double change)
+        public static string UnitsChange(double change) => UnitsChangeNumber(change) + " units";
+
+        /// <summary>The same signed, rounded whole-stock number without an English noun, for localized UI templates.</summary>
+        public static string UnitsChangeNumber(double change)
         {
             var r = Math.Round(Finite(change, nameof(change)), 0, MidpointRounding.AwayFromZero);
-            return Signed(r, "", Fixed(Math.Abs(r), 0) + " units", signed: true);
+            return Signed(r, "", Fixed(Math.Abs(r), 0), signed: true);
         }
 
-        /// <summary>"Morale +4.1%" or "Treasury -IL 2.0m": the name and the change, in the target's unit.</summary>
+        /// <summary>"Morale +4.1%" or "Treasury IL -2.0m": the name and the change, in the target's unit.</summary>
         public static string Change(Content c, string id, double change) =>
             (id == Pools.FoodTarget ? "Food" : id == Pools.ArmsTarget ? "Arms" : Target(c, id)) + " "
             + (id == Pools.FoodTarget || id == Pools.ArmsTarget ? UnitsChange(change) : IsMoney(c, id) ? MoneyChange(c, id, change) : PercentChange(change));

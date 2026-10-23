@@ -17,7 +17,9 @@
             <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-timeline" text="Timeline" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="hourglass" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-how-to-play" text="How to play" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="book" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-objectives" text="Objectives" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="flag" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-settings" text="Settings" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="gear" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
         <ui:VisualElement name="top-bar" class="panel top-bar">
@@ -147,13 +149,30 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
+                    <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
+                    <ui:Button name="info-move" />
+                    <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
+                    <ui:Button name="info-fortify" />
+                    <ui:Button name="info-hold" />
+                    <!-- Attack (#754): shown only when the sim's Combat.Check takes some hex; the pick shows each hex's odds. -->
+                    <ui:Button name="info-attack" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
+                <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
+                <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
                  second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
             <ui:VisualElement name="info-gdd" class="info-gdd" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
+        </ui:VisualElement>
+        <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
+             the bottom left (the info panel starts right of the lane). Icon-only as the side menu: each one's name is its text,
+             drawn clear, and its tooltip (HoverTip). After the info panel in the tree, so Tab reaches them after its actions. -->
+        <ui:VisualElement name="community-column" class="community-column" picking-mode="Ignore">
+            <ui:Button name="hud-star" text="Star on GitHub" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="star" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-report" text="Report a bug or idea" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="speech" class="nav-disc" /></ui:Button>
+            <ui:Button name="hud-share" text="Share" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="share" class="nav-disc" /></ui:Button>
         </ui:VisualElement>
         <!-- The decision layer under the top bar (decision cards, 2026-10-13): while an event is open a dim backdrop blocks the
              map and the panels under it, and the card sits in the middle, up to 1040 px wide, with a 16:9 media header (the
@@ -180,7 +199,9 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
+                <!-- event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card;
+                     inside the scroll, so on a short window it scrolls with the text and never pushes the options away. -->
+                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-alt-banner" class="muted event-alt-banner" /><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
                 <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
                 <ui:Label name="event-delegate" class="event-delegate" />
                 <ui:VisualElement name="event-options" />
@@ -195,7 +216,29 @@
                 <ui:Button name="event-illustration" class="event-illustration" />
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
+            <!-- The capture dialog (GDD Phase 6 PR 10, #802; CaptureDialogPresenter): in the decision card's place and style,
+                 shown while no decision card is open. The place's name and the options the sim offers
+                 (SettlementControl.CaptureOptions), in the sim's order, each with its plain description and the sim's preview
+                 of what it changes at once. No picture, no sound, no video. The text and the options scroll together
+                 on a short window; Hide stays in view. Focus order: the card, the options, Hide. -->
+            <ui:VisualElement name="capture-card" class="panel event-card capture-card">
+                <ui:Label name="capture-title" class="title event-title" />
+                <ui:VisualElement class="gold-rule" />
+                <ui:ScrollView name="capture-scroll" class="event-scroll capture-scroll">
+                    <ui:Label name="capture-intro" class="event-text" />
+                    <ui:Label name="capture-none" class="event-delegate capture-none" />
+                    <ui:VisualElement name="capture-options" />
+                </ui:ScrollView>
+                <ui:VisualElement name="capture-foot" class="event-foot">
+                    <ui:Label name="capture-count" class="muted event-count" />
+                    <ui:Button name="capture-hide" class="event-hide" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
             <ui:Button name="event-reopen" class="event-reopen" />
+            <!-- The hidden capture dialog's button, in Decision waiting's place: it shows only while no decision card is open or
+                 waiting, so the two never show together. -->
+            <ui:Button name="capture-reopen" class="event-reopen" />
         </ui:VisualElement>
         <!-- The Cabinet as promo/final/04 (CabinetPresenter): a wide screen; the Prime Minister's card and the appointment
              list at the side; the legislature's seats (Hemicycle) with its legend above a grid of person cards. -->
@@ -308,6 +351,12 @@
             <ui:ScrollView name="why-rows" class="grow" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
+        <ui:VisualElement name="screen-timeline" class="panel screen screen-wide">
+            <ui:VisualElement class="screen-header"><ui:Label name="timeline-screen-title" class="title" /></ui:VisualElement>
+            <ui:VisualElement class="timeline-columns timeline-headings"><ui:Label name="timeline-yours-heading" /><ui:Label name="timeline-record-heading" /></ui:VisualElement>
+            <ui:ScrollView name="timeline-list" class="grow" />
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
         <!-- A short guide to the existing loop (#1041). It is a normal side-menu screen, so ScreenNav owns opening and closing. -->
         <ui:VisualElement name="screen-how-to-play" class="panel screen">
             <ui:VisualElement class="screen-header"><ui:Label name="how-to-play-title" text="How to play" class="title" /></ui:VisualElement>
@@ -321,6 +370,14 @@
                 <ui:Label name="how-to-play-end-turn" class="how-to-play-line" />
                 <ui:Label name="how-to-play-why" class="how-to-play-line" />
             </ui:ScrollView>
+            <!-- Opens the first-turn guide again (#42, FirstTurnGuidePresenter), which closes this screen. -->
+            <ui:Button name="how-to-play-guide" class="how-to-play-guide" />
+            <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
+        <!-- The objectives (#1189, ObjectivesPresenter): one row per objective, its status and both dates, no score. -->
+        <ui:VisualElement name="screen-objectives" class="panel screen">
+            <ui:VisualElement class="screen-header"><ui:Label name="objectives-title" text="Objectives" class="title" /></ui:VisualElement>
+            <ui:ScrollView name="objectives-rows" class="grow objectives-rows" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
         <!-- Settings (#40, SettingsPresenter): the player's presentation options, kept per browser (SettingsStore), never in
@@ -340,6 +397,15 @@
                     <ui:Button name="settings-quality-low" text="Low" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- Sound effects (#39, GameAudio): three volume steps, the one that is set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-sound-label" text="Sound effects" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-sound-off" text="Off" class="settings-switch" />
+                    <ui:Button name="settings-sound-low" text="Low" class="settings-switch" />
+                    <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-language-label" text="Language" class="settings-name" />
@@ -348,8 +414,45 @@
                     <ui:Button name="settings-language-he" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Label name="settings-language-note" text="Event cards are English only for now." class="settings-note muted" />
+            <!-- UI scale (SettingsPresenter.UiScales): three buttons, the one that is set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-uiscale-label" text="UI scale" class="settings-name" />
+                <ui:VisualElement class="row settings-choices">
+                    <ui:Button name="settings-uiscale-100" text="100%" class="settings-switch" />
+                    <ui:Button name="settings-uiscale-125" text="125%" class="settings-switch" />
+                    <ui:Button name="settings-uiscale-150" text="150%" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <!-- Community (#1168): "Star on GitHub" opens the repository in a new tab (ExternalLink); "Report a bug or idea"
+                 opens the report panel (#1169, FeedbackPresenter); "Share" opens the share panel with a picture of the game
+                 (#1170, SharePresenter). -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-community-label" text="Community" class="settings-name" />
+                <ui:VisualElement class="row settings-choices settings-community-choices">
+                    <ui:Button name="settings-star" text="Star on GitHub" class="settings-switch" />
+                    <ui:Button name="settings-report" text="Report a bug or idea" class="settings-switch" />
+                    <ui:Button name="settings-share" text="Share" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
+        </ui:VisualElement>
+        <!-- The first-turn guide (#42, FirstTurnGuidePresenter): a gold ring round the step's part of the HUD and a short panel
+             in the other half of the window. It takes no pointer outside the panel, so the HUD stays usable under it. Over the
+             screens and the decision layer, under the turn report, the outcome clips and the start screen. -->
+        <ui:VisualElement name="first-turn-guide" class="guide-layer" picking-mode="Ignore">
+            <ui:VisualElement name="guide-ring" class="guide-ring" picking-mode="Ignore" />
+            <ui:VisualElement name="guide-dock" class="guide-dock" picking-mode="Ignore">
+                <ui:VisualElement name="guide-panel" class="panel guide-panel">
+                    <ui:Label name="guide-count" class="muted guide-count" />
+                    <ui:Label name="guide-title" class="title guide-title" />
+                    <ui:Label name="guide-text" class="guide-text" />
+                    <ui:VisualElement class="row guide-actions">
+                        <ui:Button name="guide-skip" />
+                        <ui:Button name="guide-next" class="guide-next" />
+                    </ui:VisualElement>
+                    <Statecraft.Game.UI.UiFrame filigree="true" />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
         <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.
              A backdrop over the HUD (ScreenNav.DisableCovered disables what it covers), under the outcome clips' layer. -->
@@ -358,8 +461,22 @@
                 <ui:VisualElement class="screen-header"><ui:Label name="turn-report-title" class="title" /><ui:Label name="turn-report-intro" class="muted" /></ui:VisualElement>
                 <ui:ScrollView name="turn-report-rows" class="turn-report-rows" />
                 <ui:VisualElement class="row turn-report-actions">
+                    <ui:Button name="turn-report-share" text="Share" />
                     <ui:Button name="turn-report-all" />
                     <ui:Button name="turn-report-close" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- The end screen (#812, EndScreenPresenter): the sim's end report once the game is over. Over the turn report the
+             last turn brings, under the outcome clips' layer; the same backdrop and panel as the report. -->
+        <ui:VisualElement name="end-screen" class="turn-report">
+            <ui:VisualElement name="end-screen-panel" class="panel turn-report-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="end-screen-title" class="title" /></ui:VisualElement>
+                <ui:ScrollView name="end-screen-rows" class="turn-report-rows" />
+                <ui:VisualElement class="row turn-report-actions">
+                    <ui:Button name="end-screen-new-game" />
+                    <ui:Button name="end-screen-close" />
                 </ui:VisualElement>
                 <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
@@ -403,6 +520,14 @@
                     <ui:VisualElement name="start-actions" class="start-actions">
                         <ui:Button name="start-continue" text="Continue" class="start-button" />
                         <ui:Button name="start-new-game" text="New game" class="start-button" />
+                        <!-- Community (#1168): "Star on GitHub", New game's size beside it, opens the repository in a new tab
+                             (ExternalLink); its star and GitHub mark are painted in by StartScreenPresenter. -->
+                        <ui:Button name="start-star" text="Star on GitHub" class="start-button start-star" />
+                    </ui:VisualElement>
+                    <!-- "Report a bug or idea" (#1169, FeedbackPresenter): a quiet button under the actions that opens the
+                         report panel. -->
+                    <ui:VisualElement name="start-community" class="start-community">
+                        <ui:Button name="start-report" text="Report a bug or idea" class="start-report" />
                     </ui:VisualElement>
                     <ui:VisualElement name="start-caption" class="start-caption" picking-mode="Ignore">
                         <ui:Label name="start-caption-he" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he start-caption-he" language-direction="RTL" picking-mode="Ignore" />
@@ -410,6 +535,48 @@
                     </ui:VisualElement>
                     <Statecraft.Game.UI.UiFrame />
                 </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- "Report a bug or idea" (#1169, FeedbackPresenter): over everything, the start screen too, with what each GitHub
+             form opens with under its button; the game sends nothing itself. Before the toast, which stays readable. -->
+        <ui:VisualElement name="feedback-layer" class="feedback-layer">
+            <ui:VisualElement name="feedback-panel" class="panel feedback-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="feedback-title" text="Report a bug or idea" class="title" /><ui:Label name="feedback-intro" text="The form opens with these lines filled in. Nothing is sent until you submit it on GitHub." class="muted feedback-intro" /></ui:VisualElement>
+                <ui:Button name="feedback-bug" text="Report a bug" class="feedback-choice" />
+                <ui:Label name="feedback-bug-preview" class="muted feedback-preview" />
+                <ui:Button name="feedback-feature" text="Suggest a feature" class="feedback-choice" />
+                <ui:Label name="feedback-feature-preview" class="muted feedback-preview" />
+                <ui:Button name="feedback-itch" text="No GitHub account? Comment on itch" class="feedback-choice" />
+                <ui:VisualElement class="row feedback-actions"><ui:Button name="feedback-close" text="Close" /></ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- "Share" (#1170, SharePresenter): over everything, the turn report too, after the frame was captured without it.
+             A preview of that picture, the Share/Download button, then Copy (#1238), which puts the picture, or the post
+             text, on the clipboard, with a line under it that says which. Then the site buttons in the owner's order (#1237);
+             the notes show once the picture downloaded, where the browser cannot share it itself. Before the toast. -->
+        <ui:VisualElement name="share-layer" class="share-layer">
+            <ui:VisualElement name="share-panel" class="panel share-panel">
+                <ui:VisualElement class="screen-header"><ui:Label name="share-title" text="Share a picture of the game" class="title" /></ui:VisualElement>
+                <ui:VisualElement name="share-preview" class="share-preview" />
+                <ui:Label name="share-post" class="share-post" />
+                <ui:Button name="share-go" class="share-go" />
+                <ui:Button name="share-copy" class="share-go" />
+                <ui:Label name="share-copied" class="muted share-copied" />
+                <ui:VisualElement class="row share-sites">
+                    <ui:Button name="share-x" />
+                    <ui:Button name="share-facebook" />
+                    <ui:Button name="share-instagram" />
+                    <ui:Button name="share-whatsapp" />
+                    <ui:Button name="share-telegram" />
+                    <ui:Button name="share-linkedin" />
+                </ui:VisualElement>
+                <ui:Label name="share-instagram-note" class="muted share-instagram-note" />
+                <ui:VisualElement name="share-fallback" class="share-fallback">
+                    <ui:Label name="share-attach" text="These sites can't take a picture through a link: attach the downloaded picture to your post." class="muted share-attach" />
+                </ui:VisualElement>
+                <ui:VisualElement class="row share-actions"><ui:Button name="share-close" text="Close" /></ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:Label name="toast" class="panel toast" />

@@ -2,6 +2,12 @@
 id: israel_bonds
 title: Israel Bonds
 text: 'The Knesset authorised a bond issue in February; it launches on 10 May. {finance_minister} proposes selling State of Israel bonds to Jews abroad, alongside the United Jewish Appeal donations.'
+# For the native reviewer (#564): הכנסת and מלווה העצמאות follow the official Knesset record of the State of Israel
+# Bonds (Independence Loan) Law (https://fs.knesset.gov.il/1/Plenum/1_ptm_250158.pdf); he.wiki "הבונדס" names the
+# 1951 issue מלווה העצמאות and the bonds איגרות חוב של מדינת ישראל (https://he.wikipedia.org/wiki/הבונדס).
+title_he: מלווה העצמאות
+text_he: 'הכנסת אישרה בפברואר הנפקת איגרות חוב; היא תושק ב־10 במאי. הצעת {finance_minister} היא למכור איגרות חוב של מדינת ישראל ליהודים בחו״ל, לצד התרומות למגבית היהודית המאוחדת.'
+text_he_review: agent-checked
 anchor: hard
 office: finance_minister
 # Knesset authorisation February 1951 (second and third readings on 27 February, Knesset minutes; published 8 March, the
@@ -20,6 +26,7 @@ to: 1951-05-11
 options:
   - id: launch
     text: Launch the bond issue in the United States
+    text_he: להשיק את הנפקת איגרות החוב בארצות הברית
     historical: true
     recommended: true
     effects:
@@ -27,6 +34,8 @@ options:
       - { target: intl_standing, delta: 0.02 }
   - id: donations_only
     text: Rely on donations and loans
+    text_he: להסתמך על תרומות והלוואות
+    alternative: { basis: design }
     effects:
       - { target: fx_reserves, delta: 10 }
 sources:

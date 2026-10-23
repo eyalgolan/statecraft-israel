@@ -11,8 +11,9 @@ namespace Statecraft.Game.Map
     /// <summary>GDD Phase 1 PR 8 (#381): the designated sites the player builds on (sites.yaml, State.Sites).
     /// <list type="bullet">
     /// <item>A built site is drawn as a rural kit on its hex (SettlementKits, as a kibbutz: the one archetype a new yishuv has
-    /// in Phase 1), named <see cref="Prefix"/> + its id. With the map's "kits" toggle off, it is the kibbutz marker box, as the
-    /// settlements are (KitLayer).</item>
+    /// in Phase 1), or a built camp as a camp kit (SettlementKits.Camp.cs, #792; <see cref="KitOf"/>), named
+    /// <see cref="Prefix"/> + its id. With the map's "kits" toggle off, it is the kibbutz marker box, as the settlements are
+    /// (KitLayer).</item>
     /// <item>A site being built is a scaffold marker: an open frame of raw timber on its hex, named Prefix + id +
     /// <see cref="ScaffoldSuffix"/>.</item>
     /// <item>An available site, with no record, draws nothing.</item>
@@ -36,6 +37,9 @@ namespace Statecraft.Game.Map
         /// <summary>The built sites as places (Prefix + id, the site's name, a kibbutz on its hex), for their name pills
         /// (MapLabelsPresenter.SetSites).</summary>
         public IReadOnlyList<Settlement> Places => places;
+        readonly List<SettlementKits.Placed> placed = new List<SettlementKits.Placed>();
+        /// <summary>What the built sites' kits placed (SettlementKits.Placed, by site place id), as Render drew them (tests).</summary>
+        internal IReadOnlyList<SettlementKits.Placed> Placed => placed;
 
         List<SiteWork>? lastSites; Content? lastContent; MapScene? lastMap; bool kitsShown;
 
@@ -57,11 +61,11 @@ namespace Statecraft.Game.Map
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); if (own != null) Destroy(own); }
                 else { DestroyImmediate(old); if (own != null) DestroyImmediate(own); }
             }
-            columns.Clear(); places.Clear();
+            columns.Clear(); places.Clear(); placed.Clear();
             var list = sites.ToList();
             lastSites = list; lastContent = content; lastMap = map; kitsShown = map.KitsShown;
             var block = new MaterialPropertyBlock();
-            var built = new List<Settlement>();
+            var built = new List<Settlement>(); var kitPlaces = new List<Settlement>();
             foreach (var w in list)
             {
                 var site = content.Sites.FirstOrDefault(x => x.Id == w.Site);
@@ -71,9 +75,10 @@ namespace Statecraft.Game.Map
                 at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
                 if (w.BuiltOn == null) { Scaffold(Prefix + w.Site + ScaffoldSuffix, at, cube, map, block); continue; }
                 built.Add(new Settlement { Id = Prefix + w.Site, Name = site.Name, NameHe = site.NameHe, Type = "kibbutz", Lon = hex.Lon, Lat = hex.Lat });
+                kitPlaces.Add(KitOf(site, built[built.Count - 1]));
             }
             places.AddRange(built);
-            var drawn = kitsShown && built.Count > 0 ? Kits(built, map) : new HashSet<string>();
+            var drawn = kitsShown && built.Count > 0 ? Kits(kitPlaces, map) : new HashSet<string>();
             foreach (var s in built.Where(s => !drawn.Contains(s.Id)))
             {
                 // No kit (toggle off, or no free ground): the kibbutz marker box, as SettlementPlacer draws the settlements.
@@ -86,10 +91,16 @@ namespace Statecraft.Game.Map
             }
         }
 
+        /// <summary>What a built site's kit is built from: a camp site's place as a camp (SettlementKits.CampType, its barracks
+        /// yard), any other built site's place as it is, a kibbutz (the rural kit). Its pill and its box stay the kibbutz's.</summary>
+        internal static Settlement KitOf(Site site, Settlement place) => !site.Kinds.Contains(SettlementKits.CampType) ? place
+            : new Settlement { Id = place.Id, Name = place.Name, NameHe = place.NameHe, Type = SettlementKits.CampType, Lon = place.Lon, Lat = place.Lat };
+
         /// <summary>Draws the built sites as kits (one object each, Kit.mat), keeps their columns, and returns the ids drawn.</summary>
         HashSet<string> Kits(List<Settlement> built, MapScene map)
         {
-            var kits = SettlementKits.Build(built, PlacementLayer.CampGround(map), out _, columns);
+            var kits = SettlementKits.Build(built, PlacementLayer.CampGround(map), out _, out var census, columns);
+            placed.AddRange(census);
             var drawn = new HashSet<string>();
             foreach (var (s, mesh, _) in kits)
             {

@@ -54,6 +54,9 @@ namespace Statecraft.Game.Map
         /// <summary>The game date the routes were last shown at (RouteLayer.ShowAt), so a rebuild draws them as at that date;
         /// null before the game has set one (the routes then show as at the game's start).</summary>
         public DateTime? RouteDate { get; set; }
+        /// <summary>In the GDD loop, which segments of each corridor route are built (RouteLayer.ShowAt, #792), so a rebuild
+        /// draws them as the game left them; null outside the GDD loop (the routes then show by date).</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<bool>> RouteSegmentsBuilt { get; set; }
         /// <summary>Who held which hex on a date (content/map/control_hexes_1948_49.yaml with the map editor's control
         /// overrides), as Build read it, or null without the file: GameRoot draws the borders from it, and the road vehicles
         /// (issue #725) stand only on ground Israel held. Display only.</summary>
@@ -149,6 +152,65 @@ namespace Statecraft.Game.Map
             mr.enabled = true;
         }
 
+        /// <summary>The hexes a unit's Move can go to, outlined while the player picks one (#754): a child of the terrain.</summary>
+        public const string ReachableName = "ReachableHexes";
+        /// <summary>The reachable hexes' band, half the selection's, so the lit hexes read as choices and not as the selection.</summary>
+        public const float ReachableWidth = SelectionWidth / 2;
+
+        /// <summary>Outlines every hex in <paramref name="hexes"/> (Movement.Reachable's, from InfoPanelPresenter) with a thin
+        /// band in one mesh, drawn and draped as <see cref="Select"/>'s outline and with its material; nothing to light (none,
+        /// or only hexes off the map) hides it. Display only: which hexes are lit is the sim's answer, never computed here.
+        /// A unit has at most 5 movement points (unit_types.yaml), so the mesh stays far under 16-bit indices.</summary>
+        public void ShowReachable(IEnumerable<(int q, int r)> hexes)
+        {
+            if (Terrain == null || Hexes == null) return;
+            var found = Terrain.transform.Find(ReachableName);
+            var go = found != null ? found.gameObject : null;
+            if (go == null)
+            {
+                go = new GameObject(ReachableName);
+                go.transform.SetParent(Terrain.transform, false);
+                var mesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = ReachableName });
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = selectionMaterial;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var byHex = new Dictionary<(int, int), HexJson>();
+            foreach (var h in Hexes.hexes) byHex[(h.q, h.r)] = h;
+            float size = Hexes.hex_size_km * 1000f;
+            int n = MapBuilder.RingVertices;
+            var verts = new List<Vector3>(); var tris = new List<int>();
+            var ring = new List<Vector3>(2 * n); var middle = new List<Vector3>(n);
+            foreach (var at in hexes)
+            {
+                if (!byHex.TryGetValue(at, out var hex)) continue;
+                var c = Frame.ToWorld(hex.lon, hex.lat, 0);
+                var centre = new Vector2(c.x, c.z);
+                ring.Clear(); middle.Clear();
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size, SelectionClearanceM, ring);
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - ReachableWidth), SelectionClearanceM, ring);
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - ReachableWidth / 2), SelectionClearanceM, middle);
+                int b0 = verts.Count;
+                for (int j = 0; j < n; j++)   // each index at the highest of its three rings, as Select's band
+                {
+                    float y = Mathf.Max(ring[j].y, Mathf.Max(ring[n + j].y, middle[j].y));
+                    ring[j] = new Vector3(ring[j].x, y, ring[j].z); ring[n + j] = new Vector3(ring[n + j].x, y, ring[n + j].z);
+                }
+                verts.AddRange(ring);
+                for (int j = 0; j < n; j++)
+                {
+                    int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
+                    tris.AddRange(new[] { a, ai, b, b, ai, bi });   // the shader draws both faces (Cull Off)
+                }
+            }
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear();
+            m.SetVertices(verts); m.SetTriangles(tris, 0);
+            m.RecalculateBounds();
+            go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+        }
+
         public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)
         {
             terrainMaterial = terrain; markerMaterial = marker; selectionMaterial = selection;
@@ -171,9 +233,13 @@ namespace Statecraft.Game.Map
         /// keeps every kit (review of #559).</summary>
         public bool? ShowcaseClearing { get; set; }
 
-        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors), every route whatever its date, so the units keep
-        /// their figures off them. Empty before Build.</summary>
+        /// <summary>The railways' and roads' corridors (RouteLayer.Corridors) of every route drawn while a unit token stands
+        /// (RouteLayer.UnitRoutes, #786), so the units keep their figures off them. Empty before Build.</summary>
         public IReadOnlyList<(List<Vector2> line, float halfWidth)> RouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
+
+        /// <summary>The corridors the kits keep off: those of the routes drawn at the game's start (RouteLayer.KitRoutes, #786).
+        /// Empty before Build.</summary>
+        public IReadOnlyList<(List<Vector2> line, float halfWidth)> KitRouteCorridors { get; private set; } = new List<(List<Vector2>, float)>();
 
         /// <summary>The units of content/map/units_1948.yaml as the last Build read them (empty before a build, or when the
         /// file is missing or malformed). Read only: the units layer draws from this same list (UnitEntriesFor).</summary>
@@ -363,7 +429,8 @@ namespace Statecraft.Game.Map
             // From the baked runtime form when it matches the YAML (issue #321: boot time), else from the YAML with a warning.
             var routes = Routes.RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
             DiagLog.BootPhase("route paths read");   // issue #321: the splits of the units' phase
-            RouteCorridors = Routes.RouteLayer.Corridors(Frame, routes);
+            // Only the routes drawn at the start keep the kits off (#786); the units keep off those drawn while they stand.
+            KitRouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.KitRoutes(routes));
             DiagLog.BootPhase("route corridors");
             // The game settlements' and the 1948 localities' discs, as the kits will claim them (review I5: a token placed "off
             // the towns" keeps off the villages too). The camps are placed after the units and keep off them instead.
@@ -374,6 +441,9 @@ namespace Statecraft.Game.Map
             var unitData = Units.UnitData.ReadOrNone(inputs.UnitsYaml, Debug.LogWarning);
             UnitEntries = unitData; unitsYamlRead = inputs.UnitsYaml ?? "";
             DiagLog.BootPhase("unit data read");
+            // The end of the last token's window (anchors always have one): a route opened later takes no token's spot (#786).
+            var unitsUntil = unitData.SelectMany(u => u.Anchors).Select(a => Units.UnitData.Day(a.To)).DefaultIfEmpty(DateTime.MaxValue).Max();
+            RouteCorridors = Routes.RouteLayer.Corridors(Frame, Routes.RouteLayer.UnitRoutes(routes, unitsUntil));
             var unitHexes = Hexes.hexes.Select(h => new Statecraft.Sim.MapHex { Q = h.q, R = h.r, Lon = h.lon, Lat = h.lat, ElevM = h.elev_m, Land = h.land, Biome = h.biome }).ToList();
             UnitHexes = unitHexes;
             var unitGround = new Units.UnitGround(SettlementFootprints, RouteCorridors, unitHexes,
@@ -421,7 +491,7 @@ namespace Statecraft.Game.Map
                 var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
                     townModels != null ? townModels : null,   // a missing asset reference is Unity's fake null: pass a real null
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
-                    RouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
+                    KitRouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
                     unitRings);
                 kits.transform.SetParent(transform, true);
                 kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);

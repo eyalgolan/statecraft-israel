@@ -55,6 +55,10 @@ month) is skipped alone, with a warning.
   symbol: the red main road, or the black railway (thick, with white dashes). A thin dark line costs 4 for a railway
   (curves drawn thinner, as in the Sorek canyon). Any other pixel costs 40.
 - The 1,050 mm narrow-gauge Jezreel Valley line is drawn thin, so it traces as a `track`.
+- A route with `trace: straight` is not traced: its line is its waypoints joined by straight lines. Only the 1950 Tel
+  Aviv–Netanya road uses it: the 1946 map does not show it and no source read gives its line, so the owner decided it is
+  drawn as straight draft lines between the five places the sources name (18 October 2026, #786). Its `on_symbol` is 0,
+  and the tracer's quality checks skip it.
 - A waypoint first snaps to its symbol within 1.5 km. A waypoint off the line (a town circle, its name, a modern
   town's point such as Ashkelon's for al-Majdal) is reached by an out-and-back spur, which the tool cuts.
 - The chain is smoothed over 15 pixels, resampled every 40 m, smoothed again and simplified at 35 m.
@@ -105,6 +109,8 @@ is inside it (review C1):
 | road | Tel Aviv–Haifa | 1937 | The Hadera–Haifa section's date (OpenHistoricalMap), to-verify. |
 | road | Haifa–Acre–Ras an-Naqura | 1933 | OpenHistoricalMap way dates. |
 | track | Burma Road | 1948-06-14 | Completed on 14 June 1948. The first jeep attempt failed on the night of 30–31 May; a second got through on 31 May – 1 June. Drawn along the 1946 tracks (to-verify). It is hidden at the 15 May start. |
+| rail | Petah Tikva–Tel Aviv North rail link | 1949-09-20 | The 1949 Yarkon link (#786): new track from the Petah Tikva branch to a new Tel Aviv North station, which with the Tulkarm bypass carried the Haifa–Tel Aviv service from 20 September 1949. Drawn along the 1946 tracks (to-verify); the bypass is not drawn, no source gives its line. A GDD Phase 4 corridor (`content/corridors.yaml`). |
+| road | Tel Aviv–Netanya road | 1950-07-28 | Opened on 28 July 1950 (*The Jerusalem Post*, 30 July 1950), from the northern end of the Yarkon bridge by Herzliya, Rishpon and Wadi Falik to Netanya; an 8 km stretch at Wadi Falik was still unfinished. A Phase 4 corridor (#786). Straight draft lines between those five places (`trace: straight`, owner, 18 October 2026, #786), not the built line (to-verify). |
 
 **Left out, on purpose.**
 - The Afula–Nablus–Tulkarm branch: its service ended in 1932 and 1938 (Palestine Railways article). Freight on the
@@ -297,7 +303,11 @@ the YAML (about 125 ms at `--cpu 4`), as the localities do since #291.
 - The YAML still ships. When the runtime file is missing, of another version, made from another YAML, cut short (even
   inside a number) or edited by hand, the map reads the YAML with a warning (`...; reading the YAML`): the same routes,
   only slower.
-- Rerun `uv run tools/route_paths_bake.py` after `tools/routes_1948.py` rewrites the YAML. `test_route_paths_bake.py`
+- A `segments` row per route a corridor follows (`content/corridors.yaml`, #792): the route's first waypoint, then the
+  waypoint each segment ends at, from `routes_1948.yaml` (the map never reads that file). The ribbon bake cuts the
+  route there (Route index, below). Inside `body_check`.
+- Rerun `uv run tools/route_paths_bake.py` after `tools/routes_1948.py` rewrites the YAML, and after a change to a
+  corridor's segments or waypoints (then re-bake the ribbons too). `test_route_paths_bake.py`
   fails a stale file and pins a fingerprint of the C# readers; Unity's `RoutePathsRuntimeTests` compares every route
   and point with the YAML's.
 
@@ -311,14 +321,30 @@ does (#320, docs/visual-v1.md).
 - When any of them differs from what the map loaded, the bake is refused with a warning (`ROUTES ...: deriving the route
   ribbons at load`) and the ribbons are derived as before: the same meshes, only slower.
 - **Route index** (for the GDD Phase 4 corridors, #384). Each mesh lists its routes, each with its first vertex, vertex
-  count, first index and index count (`RouteSpan`), so a later change can show one route by its construction state.
-  Nothing reads it yet; the vertex layout is unchanged.
+  count, first index and index count (`RouteSpan`). Since version 4 (#792), a route a corridor follows also lists where
+  each of its segments starts in the index range, and the range's end (`RouteSpan.Segments`): the first segment starts
+  at the ribbon's start and the last ends at its end, and between them the cut is the cross-section nearest the point of
+  the line nearest the segment's end waypoint (the runtime file's `segments` row), searched in order along the line as
+  `tools/corridor_hexes.py` splits the hexes. The vertex layout is unchanged. The bake's header does not hash the segment ends: CI
+  without Unity checks only their count and alignment, and a moved waypoint or segment end is caught by
+  `RouteTests.TheBakedRibbonsMatchTheRoutes` (a fresh derivation, byte for byte). A map that reads the YAML (no or a
+  stale runtime file, with its warning) has no segment ends, so it derives the ribbons uncut and the corridors draw by
+  date.
+- **Corridors in the GDD loop** (spec §2.6, "Routes"; #792). `RouteLayer.Build` gives each segment of a corridor's route
+  a ribbon of its own (`Corridors/<route> <n>`, outside the dated groups), and marks the route's dated ribbon
+  (`RouteSegment`). In the GDD loop `GameRoot` passes `RouteLayer.BuiltSegments` (the sim's `State.Corridors`) to
+  `ShowAt`: the dated ribbon is hidden and only the built segments are drawn, at any date. Outside the GDD loop the
+  segments are hidden and the route keeps its dates. Every other route keeps its dates in both. Each corridor's route is
+  alone in its mesh (`test_route_ribbon_bake.py` checks it), so hiding its dated ribbon hides no other route. Segments
+  being built are not drawn yet (Q-UI-1's dashed outline is a later slice of #792). Tests:
+  `RouteLayerCorridorTests.OnlyBuiltSegmentsDraw`, `TheLegacyLoopDrawsByDate`.
 - **Re-bake** whenever the heightmap, `heightmap.json`, the route file, a constant in the header or the ribbon rule
   (`RouteLayer.Geometry`; bump `RouteRibbonFile.Version` with it) changes:
   `Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod
   Statecraft.Game.EditorTools.RouteRibbonBake.Bake`, under `tools/machine_lock.py` as any Unity run.
 - **Checks.** `tools/tests/test_route_ribbon_bake.py` (CI, no Unity) fails on a stale header, reading the constants from
-  the C# source, and checks the route index. `RouteTests.TheBakedRibbonsMatchTheRoutes` compares the bake with a fresh
+  the C# source, and checks the route index, its segment cuts and that they are the corridors' segments.
+  `RouteTests.TheBakedRibbonsMatchTheRoutes` compares the bake with a fresh
   derivation byte for byte, and with the map's own terrain vertex for vertex; `AStaleRibbonBakeIsDerivedAtLoad` checks
   the fallback. A change to `RouteLayer.Geometry` without a version bump is caught only by the Unity test.
 - **Boot** (`tools/headed.py boot --runs 3 --cpu 4`, phase `routes built`, three rounds interleaved with main `bc67247`
@@ -327,13 +353,18 @@ does (#320, docs/visual-v1.md).
   same few tens of milliseconds both ways from run to run.
 
 **Kits keep off the routes** (settlement kits and trees, #179).
-- `MapScene` reads the routes before building the kits, and hands `KitLayer.Build` every route's corridor
-  (`RouteLayer.Corridors`): half the drawn width plus `CorridorMarginM` (100 m; 40 m for roads, `RoadCorridorMarginM`).
+- `MapScene` reads the routes before building the kits, and hands `KitLayer.Build` the corridor of every route drawn at
+  the game's start (`RouteLayer.KitRoutes`, `RouteLayer.Corridors`; `MapScene.KitRouteCorridors`, which the kit tests mirror): half the drawn width plus `CorridorMarginM` (100 m;
+  40 m for roads, `RoadCorridorMarginM`).
 - `KitGround.OnRoute` (a 2 km segment grid) keeps building lots, landmarks and tree crowns out of these corridors.
   B9 still keeps trees out of building lots.
-- Every route gets its corridor, whatever its date: the kits are built once, not per date, so the Burma Road's corridor
-  stays clear from the start.
-- `RouteTests.NoKitBuildingOrTreeStandsOnARoute` checks every lot and tree against every segment by brute force.
+- Only the routes drawn on 15 May 1948 get a kit corridor (owner, 18 October 2026, #786: the kit floors are kept, not
+  lowered). The kits are built once, not per date, so a later route (the Burma Road, the 1949 rail link, the 1950 Tel
+  Aviv–Netanya road) clears no town's houses or trees from the start, and draws over them when it appears. The units
+  keep off every route drawn while a token stands (`RouteLayer.UnitRoutes`, `MapScene.RouteCorridors`): the Burma Road
+  still, the 1949 rail link and the 1950 road not, as they open after the last token leaves the map.
+- `RouteTests.NoKitBuildingOrTreeStandsOnARoute` checks every lot and tree against every segment of those routes by
+  brute force, and logs what the later routes draw over.
 
 ## Measurements
 

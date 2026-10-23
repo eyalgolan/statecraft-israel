@@ -126,11 +126,13 @@ namespace Statecraft.Sim
 
         /// <summary>R-HOUSE-003 (Q-HOUSE-5): the people who take the city's housing: its civilians, craftsmen, recruits and groups
         /// in training (a halutz group too, until it becomes a movable unit and leaves). Refugees wait for housing and are not
-        /// in it. Summed as integers, so the order of the training groups cannot change it.</summary>
+        /// in it. Israeli formations retain their home city's housing after graduation, including when they move or become
+        /// veterans. Summed as integers, so the order of the training groups and formations cannot change it.</summary>
         public static int Housed(GameState s, City x)
         {
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
+            foreach (var u in s.Units.Values) if (u.Side == "israel" && u.HomeCity == x.Id) n += u.Strength;
             return n;
         }
 

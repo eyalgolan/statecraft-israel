@@ -9,9 +9,9 @@ name: Site
 on:
   push:
     branches: [main]
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
+    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "unity/ProjectSettings/ProjectSettings.asset", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
   pull_request:
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
+    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "unity/ProjectSettings/ProjectSettings.asset", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
   workflow_dispatch:
 
 permissions:
@@ -38,6 +38,9 @@ jobs:
       - name: Install
         working-directory: site
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test
+        working-directory: site
+        run: node --test tests/*.test.mjs
       - name: Build and check
         working-directory: site
         env:

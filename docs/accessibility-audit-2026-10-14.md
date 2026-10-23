@@ -345,6 +345,44 @@ Escape closes the open screen; on the open card it is Hide; on the start screen 
   screen is set in a Hebrew face at 15:1; bars and seat colours meet 3:1 (`PromoScreensTests.BarsAndPartyColoursMeetThreeToOne`).
 - Every change in the top bar carries its sign in the text, not only its colour.
 
+## The keyboard-only turn, 22 October 2026
+
+The done-when's turn, played again on main `5d5bee4d` after B1a (#890), B1b (#1134) and the city panel (#381, #1122,
+#1124): unit orders are left out until #754 closes (owner, 22 October 2026).
+
+- **How tested:** `KeyboardTurnTests` (EditMode) on Map.unity at 1280x720, a new GDD game with no start screen. Keys are
+  sent as the UI Toolkit events the Input System's UI provider makes of them (Tab and Shift+Tab: `NavigationMoveEvent`;
+  Enter: `KeyDownEvent` then `NavigationSubmitEvent`; Escape: `NavigationCancelEvent`), as `MapFocusTests` does. No
+  pointer event is sent after the game starts.
+- **The turn:** Tab once from the card to its first option, Enter (focus to End Turn). Tab to Budget, Enter, about 16 Tabs
+  to the screen's first control (the screens come after the HUD in the order), Tab to a line's +, Enter (focus stays,
+  H2), Tab to Submit, Enter. Tab to Cabinet, Enter, Tab to a minister's seat, Enter, Tab once to the first candidate,
+  Enter. Escape (focus to the Cabinet button, M1). Tab to the map stop, pan to Tel Aviv, Enter (the city panel shows),
+  Tab to Train halutzim, Enter. Tab to End Turn, Enter: the turn ends and the turn report takes the focus; Enter on its
+  Close hands it to the next card, or to End Turn when none opens.
+- **Attention:** the opening turn has 4 Attention; answering the card and Train halutzim cost 2 each, a budget and an
+  appointment 4 each, so the five steps take more than one turn's Attention. That is the game's rule, not the keyboard's:
+  the test raises the Attention to check the path. With 4, the budget and the appointment are refused with the toast
+  ("Not enough attention (need 4.0, have 2.0)"), as for a mouse player.
+
+What failed, and what changed:
+
+| | Finding | Fix |
+|---|---|---|
+| K1 | Tab after the Cabinet's last card (and after the last candidate) lands on the list's own scroll bar. `FocusScroll` then called `ScrollView.ScrollTo` on it, which throws for anything outside the list's content: an error on every such Tab. | `FocusScroll` leaves an element outside the view's content alone (the scroll bar is always in sight). |
+| K2 | Enter on a city panel button (Train, Assign, Build) rebuilt the panel and took the focus with it; the next Tab started again at Cabinet, as H2 did on the Budget. | `InfoPanelPresenter` gives the focus to the rebuilt button of the same name after a keyboard press; a mouse press still leaves none (PointerBlur's rule). |
+
+Still open, not blocking the turn:
+
+- The Cabinet's two scroll bars are each one extra Tab stop.
+- A city panel button that is gone or disabled after the press (Assign's - at 0) still drops the focus.
+- From a screen's button it takes about 16 Tabs to reach the screen's first control.
+
+Pinned in EditMode: the card's order (the card, each option, Hide, the side menu, New Game, End Turn, Star, Report,
+Share, the card again; Shift+Tab the reverse), End Turn's (the map stop, the minimap's three buttons, Star, Report,
+Share, the side menu, New Game, End Turn; Shift+Tab to New Game) and where the focus goes after End Turn
+(`KeyboardTurnTests`). No UI string was added, so nothing goes to #564.
+
 ## Screenshots
 
 In `.superpowers/a11y-2026-10-14/` (1568x752 unless noted), with the driver and the contrast, colour-vision and

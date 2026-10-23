@@ -2,6 +2,11 @@
 id: latrun_proposal
 title: Latrun
 text: '{prime_minister} proposes to the cabinet that the IDF break the truce to attack and take Latrun. Most ministers, among them {finance_minister}, {justice_minister} and {immigration_minister}, oppose it.'
+# For the native reviewer (#564): לטרון and צה״ל follow he.wiki "קרבות לטרון"
+# (https://he.wikipedia.org/wiki/קרבות_לטרון).
+title_he: לטרון
+text_he: 'הצעת {prime_minister} לממשלה היא שצה״ל יפר את ההפוגה כדי לתקוף ולכבוש את לטרון. רוב השרים, ובהם {finance_minister}, {justice_minister} ו־{immigration_minister}, מתנגדים.'
+text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister
@@ -19,14 +24,24 @@ requires: [{ event: second_truce, option: comply }]
 options:
   - id: accept_vote
     text: Accept the cabinet's vote and keep the truce
+    text_he: לקבל את החלטת הממשלה ולקיים את ההפוגה
     historical: true
     recommended: true
     effects:
       - { target: intl_standing, delta: 0.01 }
   - id: press_offensive
-    # Effects are game assumptions; the morale cost stands in for the ministers who voted against (the sim has no direct
+    # Effects are game assumptions; the morale cost stands in for the ministers who oppose it (the sim has no direct
     # lever on coalition stability from events).
-    text: Press the attack on Latrun despite the vote
+    text: Attack Latrun before the cabinet votes
+    text_he: לתקוף את לטרון לפני הצבעת הממשלה
+    # Who proposed it: research_notes/Alternate timelines/roads-checked.md (checked by the owner, 19 October 2026).
+    alternative:
+      basis: debated
+      by: the Prime Minister and Minister of Defence, in the cabinet
+      # Option reworded to the record (an attack before the cabinet votes) and kept `debated`: owner ruling of 18 October 2026 (#949).
+      date: 1948-09-26
+      sources:
+        - { url: "https://bengurionarchive.bgu.ac.il/en/node/6251", checked: 2026-10-17 }
     set_rung: 5
     effects:
       - { target: security, delta: 0.025 }

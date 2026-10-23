@@ -384,7 +384,8 @@ def test_every_unity_build_runs_under_the_shared_lock_and_waits_for_unity(repo, 
     for c in builds:
         lock = c.index("--")
         head = c[:lock]
-        assert head[:2] == ["uv", "run"] and head[2].endswith("tools/machine_lock.py")
+        # The command holds a native path (backslashes on Windows); compare it in POSIX form.
+        assert head[:2] == ["uv", "run"] and Path(head[2]).as_posix().endswith("tools/machine_lock.py")
         assert "--shared" in head and "--wait-unity" in head
         assert c[lock + 1] == str(editor), "Unity is the locked command itself"
         assert "-nographics" not in c, "never -nographics for the editor"
@@ -425,7 +426,7 @@ def test_settings_churn_is_dropped_after_each_build(repo, editor, monkeypatch, t
 def test_the_sim_dlls_are_built_before_unity(repo, editor, monkeypatch, tmp_path):
     fake = Fake()
     run_main(["--platform", "mac", "--out", str(tmp_path / "out")], repo, editor, fake, monkeypatch)
-    sim = next(i for i, c in enumerate(fake.calls) if c[-1].endswith("tools/build_sim_for_unity.py"))
+    sim = next(i for i, c in enumerate(fake.calls) if Path(c[-1]).as_posix().endswith("tools/build_sim_for_unity.py"))
     assert sim < next(i for i, c in enumerate(fake.calls) if "-executeMethod" in c)
 
 
@@ -526,9 +527,9 @@ def test_the_golden_runs_on_the_mac_player_headless_under_the_lock(repo, editor,
     assert len(goldens) == 1, "only the macOS player can run on the Mac"
     c = goldens[0]
     head = c[:c.index("--")]
-    assert head[2].endswith("tools/machine_lock.py") and "--shared" in head
+    assert Path(head[2]).as_posix().endswith("tools/machine_lock.py") and "--shared" in head
     player = c[c.index("--") + 1]
-    assert player.endswith("Statecraft.app/Contents/MacOS/Statecraft Israel")
+    assert Path(player).as_posix().endswith("Statecraft.app/Contents/MacOS/Statecraft Israel")
     assert {"-batchmode", "-nographics", "-golden"} <= set(c), "a player may run -nographics (docs/determinism.md)"
     assert Path(c[c.index("-logFile") + 1]).is_absolute()
 
@@ -713,19 +714,21 @@ def test_every_archive_carries_the_notices_and_matches_its_file_list(repo, edito
         names = archive_files(out / a["archive"]["name"])
         for notice in NOTICES:
             assert notice in names, (a["platform"], notice)
-            assert (zip_text(out / a["archive"]["name"], notice)) == (repo / FONT_SOURCES.get(notice, notice)).read_text()
+            # The file's exact bytes: read_text() would turn the \r\n that a Windows write gives into \n.
+            source = repo / FONT_SOURCES.get(notice, notice)
+            assert zip_bytes(out / a["archive"]["name"], notice) == source.read_bytes()
         listed = sorted(l.split("  ", 1)[1].split(" -> ")[0] for l in (out / a["file_list"]).read_text().splitlines())
         assert listed == names, f"{a['platform']}: the file list is exactly the archive"
 
 
-def zip_text(path, name):
+def zip_bytes(path, name):
     import tarfile
     import zipfile
     if path.name.endswith(".tar.gz"):
         with tarfile.open(path) as t:
-            return t.extractfile(name).read().decode()
+            return t.extractfile(name).read()
     with zipfile.ZipFile(path) as z:
-        return z.read(name).decode()
+        return z.read(name)
 
 
 def test_the_mac_zip_keeps_the_app_whole_with_the_notices_beside_it_and_no_appledouble(repo, editor, monkeypatch, tmp_path):

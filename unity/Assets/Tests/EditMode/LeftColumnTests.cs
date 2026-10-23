@@ -33,7 +33,8 @@ public class LeftColumnTests
     {
         ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "ledger"),
         ("nav-defence", "hud.nav.defence", "helmet"), ("nav-why", "hud.nav.why", "question"),
-        ("nav-how-to-play", "hud.nav.how_to_play", "book"),
+        ("nav-timeline", "nav.timeline", "hourglass"),
+        ("nav-how-to-play", "hud.nav.how_to_play", "book"), ("nav-objectives", "hud.nav.objectives", "flag"),
         ("nav-settings", "hud.nav.settings", "gear"),
     };
 
@@ -255,7 +256,7 @@ public class LeftColumnTests
                 var order = root.Query<VisualElement>().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0 && e is Button).ToList()
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
                 // Under the open card the minimap column is out of reach (the backdrop covers it); the column and the bar are not.
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-settings", "new-game", "end-turn" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" },
                     order, $"{at}: the Tab order under the open card");
                 var r = root.Q("root");
                 Assert.IsTrue(r.ClassListContains(EventCardPresenter.ModalClass), at + ": precondition: the card is open");
@@ -307,6 +308,58 @@ public class LeftColumnTests
                     if (nav.Current != "budget") problems.Add($"{at}: Budget in the column opens the Budget screen (was {nav.Current ?? "none"})");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#1323 (owner, v0.2.0): a screen closed with its X by the mouse hands no focus on (PointerBlur's rule), so its
+    /// button in the column shows neither its tip nor the focus fill. Closed from the keyboard (Escape, even after a mouse
+    /// press on the X; Enter on the X) the focus goes back to that button and its tip shows, and Tab moves the tip on.</summary>
+    [UnityTest]
+    public IEnumerator ClosingAScreenWithTheMouseShowsNoTipAndTheKeyboardKeepsIt()
+    {
+        var problems = new List<string>();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        yield return Rendered(1280, 720, false, g, (root, nav) =>
+        {
+            var tip = root.Q<Label>(HoverTip.TipName);
+            var focus = root.panel.focusController;
+            // HoverTip shows the tip inline (display: flex) and hides it inline; with no inline value the stylesheet hides it
+            bool Shown() => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
+            bool TipFor(VisualElement b) => Shown() && tip.text == b.tooltip;
+            Assert.IsFalse(root.Q("root").ClassListContains(EventCardPresenter.ModalClass), "precondition: the decision card is hidden (open, it takes the focus when a screen closes)");
+            foreach (var s in ScreenNav.Screens)
+            {
+                var button = root.Q<Button>("nav-" + s); var x = root.Q<Button>("screen-close-" + s);
+                nav.Open(s);
+                PressWithPointer(x);
+                if (nav.Current != null) problems.Add($"{s}: the X pressed with the mouse closes the screen");
+                if (focus.focusedElement == button) problems.Add($"{s}: the X pressed with the mouse puts the focus on {button.name}");
+                if (Shown()) problems.Add($"{s}: the X pressed with the mouse shows the tip '{tip.text}'");
+
+                nav.Open(s); x.Focus();
+                using (var e = NavigationCancelEvent.GetPooled()) { e.target = x; x.SendEvent(e); }
+                if (nav.Current != null || focus.focusedElement != button || !TipFor(button)) problems.Add($"{s}: Escape after a mouse press gives {button.name} the focus and its tip");
+
+                nav.Open(s); x.Focus(); UiTestKit.Press(x);
+                if (nav.Current != null || focus.focusedElement != button || !TipFor(button)) problems.Add($"{s}: Enter on the X gives {button.name} the focus and its tip");
+
+                using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = button; button.SendEvent(e); }
+                var next = focus.focusedElement as VisualElement;
+                if (next == null || next == button || !TipFor(next)) problems.Add($"{s}: Tab from {button.name} moves the tip to the next button (focus on {next?.name ?? "nothing"}, tip '{tip.text}')");
+            }
+        }, act: (root, nav) => UiTestKit.Press(root.Q<Button>("event-hide")));   // turn 0's card (One Army) put behind "Decision waiting", as the owner had it
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>A mouse press as the player makes it (StartScreenTests' helper): pointer down, which also gives the button the
+    /// focus, then the button's Clickable fires `clicked` on pointer up. UiTestKit.Press is the keyboard's Submit instead.</summary>
+    static void PressWithPointer(Button b)
+    {
+        b.Focus();
+        using (var down = PointerDownEvent.GetPooled()) { down.target = b; b.SendEvent(down); }
+        using var click = ClickEvent.GetPooled();
+        click.target = b;
+        typeof(Clickable).GetMethod("Invoke", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+            null, new[] { typeof(EventBase) }, null)!.Invoke(b.clickable, new object[] { click });
     }
 
     /// <summary>#1109: the Cabinet disc wears a small gold badge, and its tip says why, while the sim has a vacant seat the

@@ -68,10 +68,18 @@ namespace Statecraft.Sim
         public static int TurnsToBuild(Content c, GameState s, int unit, Site site, int left, double carry)
         {
             if (site == null) throw new ArgumentNullException(nameof(site));
+            return TurnsToBuild(c, s, unit, SystemOf(site), left, carry);
+        }
+
+        /// <summary><see cref="TurnsToBuild(Content, GameState, int, Site, int, double)"/> for work scaled by
+        /// <paramref name="system"/>'s minister multiplier: a site's (SystemOf), or a corridor segment's
+        /// (Corridors.TurnsToBuild, #792).</summary>
+        public static int TurnsToBuild(Content c, GameState s, int unit, string system, int left, double carry)
+        {
             if (left < 1) throw new ArgumentOutOfRangeException(nameof(left));
             if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry));
             var r = c.RulesAt(s.Date).Mvp!;
-            var m = EffectsSystem.GddSystemMultiplier(c, s, r, SystemOf(site));
+            var m = EffectsSystem.GddSystemMultiplier(c, s, r, system);
             if (!(m > 0) || double.IsInfinity(m)) throw new InvalidOperationException("Site progress multiplier must be finite and positive");
             var u = s.Units[unit];
             for (int turns = 1; ; turns = checked(turns + 1))
@@ -83,13 +91,34 @@ namespace Statecraft.Sim
                 if (u.Type == "halutz")
                 {
                     var service = u.Service + 1;
-                    u = new Unit(u.Id, service >= r.VeteranHalutzService!.Value ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget);
+                    u = new Unit(u.Id, service >= r.VeteranHalutzService!.Value ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
                 }
             }
         }
 
-        /// <summary>Whether a site being built names <paramref name="unit"/>: the unit has a project (D-D6).</summary>
-        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit);
+        /// <summary><see cref="TurnsToBuild"/> for a city project (#1150): the turns, this one included, in which a project of
+        /// <paramref name="kind"/> completes its remaining whole turns and fractional carry at the kind's current minister
+        /// multiplier, as <see cref="AdvanceCity"/> counts them. Reads the current date's rules and changes no state. A new
+        /// order passes the kind's turns and zero carry.</summary>
+        public static int CityTurnsToBuild(Content c, GameState s, string kind, int left, double carry)
+        {
+            if (left < 1) throw new ArgumentOutOfRangeException(nameof(left));
+            if (!(carry >= 0 && carry < 1)) throw new ArgumentOutOfRangeException(nameof(carry));
+            var r = c.RulesAt(s.Date).Mvp!;
+            var m = EffectsSystem.GddSystemMultiplier(c, s, r, SystemOfKind(kind));
+            if (!(m > 0) || double.IsInfinity(m)) throw new InvalidOperationException("City project progress multiplier must be finite and positive");
+            for (int turns = 1; ; turns = checked(turns + 1))
+            {
+                carry += m;
+                if (carry >= left) return turns;
+                var whole = (int)Math.Floor(carry);
+                left -= whole; carry -= whole;
+            }
+        }
+
+        /// <summary>Whether a site or a corridor segment being built names <paramref name="unit"/>: the unit has a project
+        /// (D-D6).</summary>
+        public static bool IsBusy(GameState s, int unit) => s.Sites.Values.Any(w => w.BuiltOn == null && w.Unit == unit) || Corridors.WorkOf(s, unit) != null;
 
         /// <summary>R-SITE-001: an idle halutz unit starts <paramref name="action"/> (build_yishuv) at a yishuv site that has no
         /// record. The Treasury pays build_yishuv_cost now and borrows what it lacks; the site gets build_yishuv_turns to go; the unit
@@ -106,6 +135,10 @@ namespace Statecraft.Sim
             if (!IsPioneer(u.Type)) return "Only halutzim do pioneer work";
             var busy = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (busy != null) return $"That group of halutzim is already building {PlayerText.Site(c, busy.Site)}";
+            if (Corridors.WorkOf(s, unit) is var (cw, ci))
+                return $"That group of halutzim is already building {Corridors.SegmentName(c.Corridors.First(x => x.Id == cw.Id), ci)}";
+            // Phase 4 PR 2 (#786): build_road and build_rail take a corridor segment, "corridor:N" (R-COR-001).
+            if (Corridors.IsAction(action)) return Corridors.Start(c, s, unit, action, site, why);
             if (action != BuildYishuv && action != BuildCamp && action != PlowFields && action != DrySwamp) return "There is no such pioneer work";
             var place = c.Sites.FirstOrDefault(x => x.Id == site);
             if (place == null) return "There is no such site";
@@ -121,17 +154,31 @@ namespace Statecraft.Sim
                 return $"{place.Name} can be plowed once {first.Name} is {(first.Kinds.Contains(SwampKind) ? "drained" : "built")}";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             // Owner decision "Allow borrowing" (2026-10-15, #378 question 13): a short Treasury borrows, as map actions do.
-            var cost = camp ? r.BuildCampCost!.Value : plow ? r.PlowFieldsCost!.Value : drain ? r.DrySwampCost!.Value : r.BuildYishuvCost;   // the loader requires them in the GDD loop
+            var (cost, turns) = Terms(r, action);
             EconomySystem.PayOrBorrow(c, s, cost, camp ? "to build a training camp" : plow ? "to plow fields" : drain ? "to drain a swamp" : "to build a yishuv", why);
             // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
             // build_yishuv_turns 6 an order on turn T is built at the end of T+5
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
-            s.Sites[site] = new SiteWork(site, unit, camp ? r.BuildCampTurns!.Value : plow ? r.PlowFieldsTurns : drain ? r.DrySwampTurns!.Value : r.BuildYishuvTurns, null);
+            s.Sites[site] = new SiteWork(site, unit, turns, null);
             why.Add(plow || drain
                 ? new Cause("map", site, 1, $"{place.Name}: a group of halutzim began {(plow ? "plowing" : "draining the swamp")}, cost {PlayerText.Money(c, "treasury", cost)}")
                 : new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building {(camp ? "a training camp" : "a yishuv")}, cost {PlayerText.Money(c, "treasury", cost)}"));
             return null;
         }
+
+        /// <summary>What pioneer <paramref name="action"/> costs the Treasury and how many turns of progress it takes, under
+        /// rules <paramref name="r"/>: what <see cref="Start"/> charges and gives the site, and what the info panel shows (#1124).
+        /// The loader requires every value in the GDD loop.</summary>
+        public static (double Cost, int Turns) Terms(MvpRules r, string action) => action switch
+        {
+            BuildCamp => (r.BuildCampCost!.Value, r.BuildCampTurns!.Value),
+            PlowFields => (r.PlowFieldsCost!.Value, r.PlowFieldsTurns),
+            DrySwamp => (r.DrySwampCost!.Value, r.DrySwampTurns!.Value),
+            // A corridor segment's kind (R-COR-001, R-COR-002): what Corridors.Start charges and Corridors.Advance takes (#792).
+            Corridors.BuildRoad => (r.RoadSegmentCost, r.RoadSegmentTurns),
+            Corridors.BuildRail => (r.RailSegmentCost, r.RailSegmentTurns),
+            _ => (r.BuildYishuvCost, r.BuildYishuvTurns),
+        };
 
         /// <summary>Whether a training camp may be built at <paramref name="site"/>: its kinds include military_camp or hakhshara
         /// (R-CAMP-001). Built, its city gains those facilities (Training.HasFacility).</summary>
@@ -151,7 +198,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.ContainsKey(unit)) return "There is no such unit";
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
-            if (work == null) return "That group of halutzim is not building anything";
+            if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
             s.Sites.Remove(work.Site);
             why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned"));
             return null;
@@ -187,9 +234,10 @@ namespace Statecraft.Sim
                 if (u.Type != "halutz") continue;
                 var service = u.Service + 1;
                 var promoted = service >= r.VeteranHalutzService!.Value;
-                s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget);
+                s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
                 if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers"));
             }
+            Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
         }
 
         /// <summary>The city project at hex (q, r), being built or built, or null (Q-PROJ-2: one project or placement a hex).</summary>
@@ -199,34 +247,63 @@ namespace Statecraft.Sim
         /// (q, r) now, else the reason. Refused for an unknown kind or city; a kind whose resource the city lacks (R-PROJ-005); a
         /// transit camp without the ma'abarot policy (Q-HOUSE-3, D-D3: the policy carries its sourced date); a hex that is not
         /// land, is further than map_action_max_distance from the city's settlement hex, or holds a placement or another city
-        /// project (Q-PROJ-2); and once map_actions_per_turn map actions and city projects together were started this turn
+        /// project (Q-PROJ-2); and once map_actions_per_turn city projects were started this turn
         /// (Q-PROJ-4). A short Treasury is not a reason: it borrows (Q-MONEY-3). The reference player asks this before it orders.</summary>
-        public static string? CheckCity(Content c, GameState s, string kind, string city, int q, int r)
+        public static string? CheckCity(Content c, GameState s, string kind, string city, int q, int r) => CheckCityReason(c, s, kind, city, q, r)?.Text;
+
+        /// <summary><see cref="CheckCity"/>'s one validator (#1122, owner ruling 2): null when the project may be started, else a
+        /// stable kind and invariant values for a UI to word in its language (the map actions' pattern), plus the English text.
+        /// The kinds, in check order: unknown_kind, unknown_city, locked (kind), maabarot_policy, no_resource (city, resource, kind), not_land,
+        /// too_far (distance, city), occupied (the placement's action), occupied_project (the project's kind), turn_cap (cap).</summary>
+        public static MapActionReason? CheckCityReason(Content c, GameState s, string kind, string city, int q, int r)
         {
             var k = c.ProjectKinds.FirstOrDefault(x => x.Id == kind);
-            if (k == null) return "There is no such city project";
-            if (!s.Cities.ContainsKey(city)) return "There is no such city";
+            if (k == null) return new MapActionReason("unknown_kind", "There is no such city project");
+            if (!s.Cities.ContainsKey(city)) return new MapActionReason("unknown_city", "There is no such city");
+            if (k.Locked && !s.UnlockedProjects.Contains(kind))   // R-EFX-008
+                return new MapActionReason("locked", $"{PlayerText.Capitalised(k.Name)} is not available yet", kind);
             if (kind == MapActions.TransitCamp && !(s.Policies.TryGetValue(MapActions.MaabarotPolicy, out var m) && m >= 0.5))
-                return "Transit camps need the ma'abarot policy";
+                return new MapActionReason("maabarot_policy", "Transit camps need the ma'abarot policy");
             // R-PROJ-005. A city founded in play is not in cities.yaml, so it has no resources.
             if (!string.IsNullOrEmpty(k.Requires) && c.Cities.FirstOrDefault(x => x.Id == city)?.Resources.Any(x => x.Id == k.Requires) != true)
-                return $"{PlayerText.Settlement(c, city)} has no {k.Requires} for {k.Name}";
+                return new MapActionReason("no_resource", $"{PlayerText.Settlement(c, city)} has no {k.Requires} for {k.Name}", city, k.Requires, kind);
             var hex = c.HexAt(q, r);
-            if (hex == null || !hex.Land) return "This hex is not land";
+            if (hex == null || !hex.Land) return new MapActionReason("not_land", "This hex is not land");
             var rules = c.RulesAt(s.Date);   // the era the turn starts in
-            var home = c.SettlementHexes.First(h => h.Id == city);   // every city has one (ValidateGdd)
             var max = rules.MapActionMaxDistance;
             var name = PlayerText.Settlement(c, city);
-            if (MapActions.Distance(q, r, home.Q, home.R) > max)
-                return FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from {name}");
-            if (MapActions.At(s, q, r) is Placement placed) return $"This hex already has {PlayerText.MapAction(c, placed.Action)}";
-            if (CityProjectAt(s, q, r) is CityProject other) return $"This hex already has {c.ProjectKinds.First(x => x.Id == other.Kind).Name}";
+            if (!InReach(c, s, city, q, r))
+                return new MapActionReason("too_far", FormattableString.Invariant($"This hex is more than {max} {(max == 1 ? "hex" : "hexes")} from {name}"),
+                    max.ToString(System.Globalization.CultureInfo.InvariantCulture), city);
+            if (MapActions.At(s, q, r) is Placement placed)
+                return new MapActionReason("occupied", $"This hex already has {PlayerText.MapAction(c, placed.Action)}", placed.Action);
+            if (CityProjectAt(s, q, r) is CityProject other)
+                return new MapActionReason("occupied_project", $"This hex already has {c.ProjectKinds.First(x => x.Id == other.Kind).Name}", other.Kind);
             // Last, as for map actions, so a player over the cap still sees the specific reason an order is illegal. The count
             // is the map actions' own (one national limit, Q-PROJ-4).
             if ((s.MapActionsTurnDate == s.Date ? s.MapActionsThisTurn : 0) >= rules.MapActionsPerTurn)
-                return FormattableString.Invariant($"No more than {rules.MapActionsPerTurn} map actions and city projects in one turn");
+                return new MapActionReason("turn_cap", FormattableString.Invariant($"No more than {rules.MapActionsPerTurn} city projects in one turn"),
+                    rules.MapActionsPerTurn.ToString(System.Globalization.CultureInfo.InvariantCulture));
             return null;
         }
+
+        /// <summary>Whether hex (q, r) is within map_action_max_distance of <paramref name="city"/>'s settlement hex (Q-PROJ-2): the
+        /// one range check, of <see cref="CheckCityReason"/> and <see cref="CitiesFor"/>.</summary>
+        static bool InReach(Content c, GameState s, string city, int q, int r) =>
+            Distance(c, city, q, r) <= c.RulesAt(s.Date).MapActionMaxDistance;   // the era the turn starts in
+
+        static int Distance(Content c, string city, int q, int r)
+        {
+            var home = c.SettlementHexes.First(h => h.Id == city);   // every city has one (ValidateGdd)
+            return MapActions.Distance(q, r, home.Q, home.R);
+        }
+
+        /// <summary>The cities that may own a city project on hex (q, r) (#1122, owner ruling 1): those whose settlement hex is in
+        /// reach (<see cref="InReach"/>), nearest first, then in ordinal id order. Being listed promises no kind: each still goes
+        /// through <see cref="CheckCityReason"/>.</summary>
+        public static IReadOnlyList<string> CitiesFor(Content c, GameState s, int q, int r) =>
+            s.Cities.Keys.Where(id => InReach(c, s, id, q, r))
+                .OrderBy(id => Distance(c, id, q, r)).ThenBy(id => id, StringComparer.Ordinal).ToList();
 
         /// <summary>R-PROJ-001: starts city project <paramref name="kind"/> for <paramref name="city"/> on hex (q, r), or returns
         /// the reason (<see cref="CheckCity"/>; state untouched). The Treasury pays the kind's cost now and borrows what it lacks

@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = ["numpy==2.5.3", "scipy==1.17.1", "pillow==12.3.0", "shapely==2.2.0", "pyproj==3.8.0",
-#                 "scikit-image==0.26.0", "pypdf==5.4.0"]
+#                 "scikit-image==0.26.0", "pypdf==6.21.1"]
 # ///
 """Digitises who held which areas of Mandatory Palestine in 1948-49, by date, as true polygons, into
 content/map/control_1948_49.geojson (status draft; owner-verify). Owner rulings of 2026-10-14: the map colours areas by
@@ -420,10 +420,8 @@ FACT_SOURCES = [ISA_MAP, RES181, S1025, CIA_MAP]
 
 def load_scan(pdf: Path) -> np.ndarray:
     from PIL import Image
-    from pypdf import PdfReader
     ad.check(pdf, ISA_MAP)
-    page = PdfReader(pdf).pages[1]
-    img = max(page.images, key=lambda im: im.image.size[0] * im.image.size[1]).image.convert("RGB")
+    img = ad.pdf_page_image(pdf, 1).convert("RGB")
     a = np.asarray(img).astype(np.int16)
     if a.shape[:2] != (4078, 2368):
         raise SystemExit(f"{pdf}: the map image is {a.shape[1]} x {a.shape[0]} px, expected 2368 x 4078")
@@ -557,10 +555,8 @@ def trace_all(a: np.ndarray, log) -> dict:
 
 def load_cia(pdf: Path) -> np.ndarray:
     """The 18 May 1948 map (page 2) as an ink mask (True: dark)."""
-    from pypdf import PdfReader
     ad.check(pdf, CIA_MAP)
-    page = PdfReader(pdf).pages[1]
-    img = max(page.images, key=lambda im: im.image.size[0] * im.image.size[1]).image.convert("L")
+    img = ad.pdf_page_image(pdf, 1).convert("L")
     a = np.asarray(img) < 128
     if a.shape != (2108, 1594):
         raise SystemExit(f"{pdf}: the map image is {a.shape[1]} x {a.shape[0]} px, expected 1594 x 2108")

@@ -1,6 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -20,6 +23,12 @@ namespace Statecraft.Game.UI
         /// <summary>On the "root" element while the report shows.</summary>
         public const string OpenClass = "turn-report-open";
         public const string ElementName = "turn-report";
+        /// <summary>The id of the row after the meters' that lists the enemy's orders this turn (#1293).</summary>
+        public const string EnemyRow = "enemy";
+
+        /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
+        /// them); without a row a unit is named by its id (report.unit).</summary>
+        public IReadOnlyList<UnitEntry>? Units { get; set; }
 
         readonly VisualElement hudRoot, report; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;
         readonly ScreenNav nav; readonly Button close, all;
@@ -83,8 +92,9 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
-        /// the bar's order (the meters have different units, so no order by size is given without a rule).</summary>
-        public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text)
+        /// the bar's order (the meters have different units, so no order by size is given without a rule); then, under
+        /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
+        public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null)
         {
             var m = HudModel.From(bridge, text); var lines = new List<Line>();
             foreach (var id in HudModel.MeterIds)
@@ -94,13 +104,37 @@ namespace Statecraft.Game.UI
                 if (meter.Delta.Length == 0) continue;
                 lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id)));
             }
+            var enemy = EnemyOrders(bridge, text, units);
+            if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
             return lines;
+        }
+
+        /// <summary>#1293: every order the enemy AI gave in the last turn, and every attack its units made, a standing one too
+        /// (#1297), as the sim names it on its cause (Cause.EnemyOrder, R-ENEMY-001), in the sim's order, in the player's
+        /// language: Message is English only. The unit is named by its row
+        /// (unit i of a new game is StartingForces[i], R-UNIT-006), in Hebrew by its name_he where it has one.</summary>
+        static IReadOnlyList<string> EnemyOrders(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units)
+        {
+            var turn = bridge.Session.Last;
+            if (turn == null) return Array.Empty<string>();
+            var forces = bridge.Content.StartingForces; bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
+            string Name(int id)
+            {
+                var row = id < forces.Count ? units?.FirstOrDefault(u => u.Id == forces[id].Row) : null;
+                if (row == null) return text.Format("report.unit", id);
+                return hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name;
+            }
+            // An engagement (#1297) names its enemy attackers, one line each, and gives no line if it names none: its Target is
+            // a hex, not a unit. An order names its unit, Target.
+            return turn.Why.Where(w => w.EnemyOrder != "")
+                .SelectMany(w => (w.EnemyOrder == Combat.Attack ? w.EnemyAttackers : new[] { int.Parse(w.Target, CultureInfo.InvariantCulture) })
+                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(id)))).ToList();
         }
 
         void Show()
         {
             rows.Clear();
-            foreach (var line in Lines(bridge, text))
+            foreach (var line in Lines(bridge, text, Units))
             {
                 var row = new VisualElement { name = "turn-report-" + line.Meter };
                 row.AddToClassList("turn-report-row");

@@ -646,6 +646,7 @@ Each is a question with its options and what each costs. Recommended defaults ar
 
 **O1. Which platforms at the first public release?**
 - **Decided (owner, 2026-10-14), with O7:** "ok lets do it - windows, mac and linux". Windows, macOS and Linux, built on the Mac (O7).
+- **Then decided (owner ruling, 20 Oct 2026 (#814)):** the MVP release is web only; the desktop players move after the MVP (#905), and the macOS IL2CPP parity check is dropped for the MVP.
 - (a) Windows only. Cost: no Apple account; the Mac audience waits.
 - (b) Windows and macOS. Cost: the Apple Developer Program (99 USD a year) and notarization work; required for Mac on Steam.
 - (c) Also native Linux. Cost: another build and test target; Deck already runs Windows builds through Proton.
@@ -653,6 +654,7 @@ Each is a question with its options and what each costs. Recommended defaults ar
 
 **O2. Free or paid on Steam?**
 - **Decided (owner, 2026-10-14):** "free". (a).
+- **Then decided (owner, 22 Oct 2026 ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744))):** "there is not going to be a paid release, everything is going to stay free and expanded over time." Option (b) no longer applies.
 - (a) Free. Cost: the 100 USD Steam Direct fee is never recouped; D-D's paid-release condition does not apply; the
   question of the #465 recording's commercial terms is softer but not gone.
 - (b) Paid. Cost: pricing work; D-D needs commercial rights or a new painting; the #465 recording's terms ("except

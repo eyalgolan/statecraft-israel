@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Game.Map.Kits;
+using Statecraft.Game.Map.Collection;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -92,8 +93,8 @@ namespace Statecraft.HexTiles
         /// own decimations and show the ground through clothes, boots and faces, 2.7-6.5% of view rays; the Collection's
         /// are whole, HexUnitTests' report). The soldiers take the rigged near prefab (about 7,200 triangles, idle clip);
         /// the Tel Aviv townspeople the static far one (about 1,350, so the tile keeps its budget), but c01, whose far mesh
-        /// is holed (1.8%), the near one. A player keeps the proto prefab, then the stand-in: the Collection streams from
-        /// AssetBundles there, not Resources.</summary>
+        /// is holed (1.8%), the near one. A player asks the same public Collection stream through HexCollectionFigures;
+        /// the proto prefab or stand-in stays visible until it arrives.</summary>
         public static readonly (string id, string figure, string level)[] FigureAliases =
         {
             ("proto:figure-palmach-scout-c12f-1948-v2", "figure-c12f-palmach-scout-v2", "near"),
@@ -117,6 +118,15 @@ namespace Statecraft.HexTiles
 
         static readonly Dictionary<string, (string figure, string level)> figureOf =
             FigureAliases.ToDictionary(a => a.id, a => (a.figure, a.level), StringComparer.Ordinal);
+
+        internal static bool CollectionAlias(string id, out string figure, out CollectionDetail detail)
+        {
+            if (figureOf.TryGetValue(id, out var alias))
+            {
+                figure = alias.figure; detail = alias.level == "far" ? CollectionDetail.Far : CollectionDetail.Near; return true;
+            }
+            figure = ""; detail = CollectionDetail.Far; return false;
+        }
 
         /// <summary>The Collection prefab a figure id draws in the editor (AssetDatabase), or null: in a player, without
         /// the Collection folder, or switched off.</summary>
@@ -263,13 +273,12 @@ namespace Statecraft.HexTiles
             return b;
         }
 
-        /// <summary>A renderer's world bounds. In the editor a skinned renderer without exposed bones (the Collection's near
+        /// <summary>A renderer's world bounds. A skinned renderer without exposed bones (the Collection's near
         /// figures: their rig hides its transforms) reports nearly empty bounds until it has drawn, which scaled a squad to
         /// hundreds of kilometres: measure its baked vertices instead (BakeMesh already applies the scale, so only the
         /// renderer's position and rotation place them).</summary>
         static Bounds RendererBounds(Renderer r)
         {
-#if UNITY_EDITOR
             if (r is SkinnedMeshRenderer s && s.sharedMesh != null && s.bones.Length == 0)
             {
                 var baked = new Mesh();
@@ -287,7 +296,6 @@ namespace Statecraft.HexTiles
                 }
                 finally { Object.DestroyImmediate(baked); }
             }
-#endif
             return r.bounds;
         }
 
@@ -322,6 +330,24 @@ namespace Statecraft.HexTiles
                 StandIn.Figure => new[] { (Resources.GetBuiltinResource<Mesh>("Capsule.fbx"), "hull", Matrix4x4.Translate(new Vector3(0f, 0.5f, 0f)) * Matrix4x4.Scale(new Vector3(0.3f, 0.5f, 0.3f))) },
                 _ => From(HexStandIns.Shape.Field, Vector3.one),
             };
+        }
+
+        /// <summary>The centred square enclosing the stand-in's parts in its unit frame, before placement scale/yaw.</summary>
+        internal static float StandInFootprint(StandIn kind)
+        {
+            float width = 0f;
+            foreach (var part in StandInParts(kind))
+            {
+                var b = part.mesh.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    var corner = b.center + Vector3.Scale(b.extents,
+                        new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+                    var p = part.local.MultiplyPoint3x4(corner);
+                    width = Mathf.Max(width, 2f * Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.z)));
+                }
+            }
+            return width;
         }
 
         public static int StandInTriangles(StandIn kind) => StandInParts(kind).Sum(p => IndexTriangles(p.mesh));

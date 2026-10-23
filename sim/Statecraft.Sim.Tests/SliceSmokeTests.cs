@@ -37,8 +37,8 @@ public class SliceSmokeTests
     static List<Command> Historical(Content c, GameState s, int turn) => GoldenRun.Orders(c, s).ToList();
 
     /// <summary>A player who uses every UI order: the event card's first options, then (in turn) an appointment, a
-    /// budget change, a call-up change, a map build and a security-level change, each only when the sim's own check
-    /// says it is legal now.</summary>
+    /// budget change and a map build, each only when the sim's own check says it is legal now. The call-up change and
+    /// the security-level change left with the retired controls (R-WAR-002, #750).</summary>
     static List<Command> Player(Content c, GameState s, int turn)
     {
         var cmds = FirstOption(c, s, turn);
@@ -56,19 +56,12 @@ public class SliceSmokeTests
             if (s.Budget[from] >= 0.05)
                 cmds.Add(new AllocateBudget(new Dictionary<string, double>(s.Budget) { [from] = s.Budget[from] - 0.05, [to] = s.Budget[to] + 0.05 }));
         }
-        if (turn % 10 == 3) cmds.Add(new SetMobilization(Math.Min(1, Math.Round(s.Mobilization + 0.1, 2))));
-        if (turn % 10 == 8) cmds.Add(new SetMobilization(SecuritySystem.MinMobilization(c, s.Date, s.Rung)));
         if (turn % 2 == 0)
             foreach (var action in new[] { MapActions.TransitCamp, MapActions.Housing })
             {
                 var hex = c.Hexes.FirstOrDefault(h => MapActions.Check(c, s, action, h.Q, h.R) == null);
                 if (hex != null) { cmds.Add(new MapAction(action, hex.Q, hex.R)); break; }
             }
-        if (turn % 15 == 7 || turn % 15 == 8)   // DefencePresenter: one level up, then back down the next turn
-        {
-            var delta = SecuritySystem.ClampRung(s.Rung + (turn % 15 == 7 ? 1 : -1)) - s.Rung;
-            if (delta != 0) cmds.Add(new SecurityOrder(delta));
-        }
         return cmds;
     }
 
@@ -237,6 +230,26 @@ public class SliceSmokeTests
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }
 
+    /// <summary>The smoke-orders golden (GDD Phase 5 PR 15, #754): one turn whose only order is one Move, the one the WebGL
+    /// ?smoke-orders run gives through the unit card's buttons (GameRoot.SmokeOrders); events go to their ministers.</summary>
+    [Fact]
+    public void TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden()
+    {
+        var start = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var move = GoldenRun.SmokeMove(Real, start);
+        var reach = Movement.Reachable(Real, start, move.Unit).Keys;
+        var places = Movement.NoEntry(Real, start);
+        Assert.Contains(reach.First(), places);   // the first lit hex, Nazareth, is a place (#1304) ...
+        Assert.Equal(reach.First(h => !places.Contains(h)), (move.Q, move.R));   // ... so the move skips it
+        var end = GoldenRun.PlaySmokeOrders(Real);
+        var expected = GoldenManifest.Expected("smoke-orders");   // read before an update rewrites the manifest
+        if (GoldenManifest.UpdateRequested) GoldenManifest.Update("smoke-orders", end.Hash());
+        Assert.Equal((move.Q, move.R), (end.Units[move.Unit].Q, end.Units[move.Unit].R));   // the order took effect
+        Assert.Empty(end.Settlements);   // a plain move: no golden captures a place (docs/determinism.md)
+        Assert.NotEqual(Simulation.Step(Real, start, new List<Command>()).State.Hash(), end.Hash());   // and shows in the hash
+        Assert.Equal(expected, end.Hash());
+    }
+
     [Fact]
     public void TheHistoricalRunPlaysTheWholeSliceCleanlyAndEndsOnTheGolden()
     {
@@ -254,9 +267,14 @@ public class SliceSmokeTests
         var clock = Stopwatch.StartNew();
         var run = Play(Real, Player, reload: true, PlayerTextTests.LeakGuard(Real));
         AssertClean("player", run, Play(Real, Player, reload: false, guard: null));
-        // Attention runs out some turns: the UI refuses those extra orders at queue time, which is not a sim refusal.
-        Assert.True(run.Orders > run.Turns, $"{run.Orders} orders in {run.Turns} turns");
-        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget", "set_mobilization", "map_action", "security_order" };
+        // Attention runs out some turns: the UI refuses those extra orders at queue time, which is not a sim refusal. This
+        // checked "more orders than turns" until the call-up and security orders left the GDD loop (R-WAR-002, #750); it now
+        // asserts the queue refusals themselves.
+        Assert.True(run.QueueRefusals.Count > 0, $"{run.Orders} orders in {run.Turns} turns and none refused by the queue");
+        // No map_action: the GDD loop refuses it (R-PROJ-004) and the info panel offers no legacy Build button there.
+        // R-WAR-002 (#750): the GDD loop refuses set_mobilization and security_order and the Defence screen hides them there,
+        // so the reference player never queues them.
+        var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget" };
         Assert.Empty(uiKinds.Except(run.Carried));                     // every order a UI screen can queue was carried out
         Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
     }

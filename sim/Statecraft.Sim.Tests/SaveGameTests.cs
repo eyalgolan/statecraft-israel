@@ -27,9 +27,9 @@ public class SaveGameTests
             new Command[] { new AllocateBudget(new Dictionary<string, double> { ["finance_minister"] = 0.75, ["defense_minister"] = 0.25 }) },
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
-            new Command[] { new AssignWorkers("town_a", "job", 1) },   // a GDD order: the legacy fixture refuses it
+            new Command[] { new AssignWorkers("town_a", "job", 1), new UnitOrder(1, "hold") },   // GDD orders: the legacy fixture refuses them
             new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1) },   // GDD orders too
-            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2) },
+            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3), new ResolveCapture("town_a", "raid") },
             new Command[] { new SecurityOrder(1) }, new Command[0],
         };
         foreach (var o in orders) g.Step(o);
@@ -415,14 +415,18 @@ public class SaveGameTests
         var real = RealContentTests.ContentRoot();
         Assert.True(File.Exists(Path.Combine(real, "map", "settlement_population_1945.yaml")));
         var copy = Path.Combine(Path.GetTempPath(), "statecraft-nopop-" + Guid.NewGuid().ToString("N"));
-        foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+        try
         {
-            var rel = Path.GetRelativePath(real, f);
-            if (rel.Replace('\\', '/') == "map/settlement_population_1945.yaml") continue;
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
-            File.Copy(f, Path.Combine(copy, rel));
+            foreach (var f in Directory.GetFiles(real, "*", SearchOption.AllDirectories))
+            {
+                var rel = Path.GetRelativePath(real, f);
+                if (rel.Replace('\\', '/') == "map/settlement_population_1945.yaml") continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(copy, rel))!);
+                File.Copy(f, Path.Combine(copy, rel));
+            }
+            Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
         }
-        Assert.Equal(ContentLoader.Load(real).Hash, ContentLoader.Load(copy).Hash);
+        finally { if (Directory.Exists(copy)) Directory.Delete(copy, true); }
     }
 
     /// <summary>content/map/localities_1948.yaml (the 1948 localities and Bedouin camp areas the map's kits and labels draw)

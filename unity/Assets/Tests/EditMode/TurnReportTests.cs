@@ -1,9 +1,11 @@
 #nullable enable
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -60,7 +62,8 @@ public class TurnReportTests
         var changed = HudModel.MeterIds.Where(id => m.For(id).Delta.Length > 0).ToArray();
         Assert.GreaterOrEqual(changed.Length, 3, "the opening turn moves at least three numbers in the bar");
         var rows = k.Ui.Q<ScrollView>("turn-report-rows").Children().ToList();
-        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id), rows.Select(r => r.name), "every changed number, in the bar's order, and no other");
+        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id).Append("turn-report-" + TurnReportPresenter.EnemyRow), rows.Select(r => r.name),
+            "every changed number, in the bar's order, and no other; then the enemy's orders (#1293)");
         var messages = new HashSet<string>(turn.Why.Select(w => w.Message));
         foreach (var id in changed)
         {
@@ -81,6 +84,71 @@ public class TurnReportTests
         StringAssert.EndsWith("(Border villages)", security[1]);
         StringAssert.StartsWith("Money ", k.Ui.Q<Label>("turn-report-causes-treasury").text, "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
+    }
+
+    /// <summary>#1293: the opening turn's enemy orders (R-ENEMY-001): the four scripted forces march (R-ENEMY-002) and the
+    /// others fortify (R-ENEMY-003). After the bar's numbers the report lists each order, in the sim's order, its unit named
+    /// by its units_1948.yaml row, in the player's language.</summary>
+    [Test]
+    public void TheEnemysOrdersAreReportedInBothLanguages()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            k.Report.Units = rows;
+            var turn = k.Bridge.EndTurn();
+            var orders = turn.Why.Where(w => w.EnemyOrder != "").ToList();
+            CollectionAssert.IsSupersetOf(orders.Select(w => w.EnemyOrder), new[] { Movement.Kind, Orders.Fortify }, "the opening turn has enemy moves and fortifies");
+            var expected = orders.Select(w =>
+            {
+                var row = rows.First(u => u.Id == C.StartingForces[int.Parse(w.Target, System.Globalization.CultureInfo.InvariantCulture)].Row);
+                return text.Format("report.enemy_" + w.EnemyOrder, hebrew ? row.NameHe : row.Name);
+            }).ToList();
+            Assert.AreEqual(text["report.enemy"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.EnemyRow).text);
+            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            CollectionAssert.AreEqual(expected, lines);
+            CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
+        }
+    }
+
+    /// <summary>#1297: a standing enemy attack (R-ENEMY-003) is reported on every turn it engages, not only on the turn it is
+    /// ordered. The opening turn is set up as a later one: the Arab Liberation Army already attacks Golani's hex, which it keeps
+    /// (no order is given this turn) and which engages in step 2 (R-COMBAT-002).</summary>
+    [Test]
+    public void AStandingEnemyAttackIsReportedOnATurnItIsNotOrdered()
+    {
+        var rows = UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
+        int golani = C.StartingForces.ToList().FindIndex(f => f.Row == "golani"), ala = C.StartingForces.ToList().FindIndex(f => f.Row == "arab_liberation_army");
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var k = new Kit(text);
+            k.Report.Units = rows;
+            var s = k.Bridge.Session.State; var g = s.Units[golani]; var a = s.Units[ala];
+            s.Units[golani] = new Unit(g.Id, g.Type, a.Q, a.R - 1, g.Service, g.Side, 1);   // next to the ALA, weak enough to attack
+            s.Units[ala] = new Unit(a.Id, a.Type, a.Q, a.R, a.Service, a.Side, a.Strength, Combat.Attack, $"{a.Q},{a.R - 1}");
+            var turn = k.Bridge.EndTurn();
+            Assert.IsFalse(turn.Why.Any(w => w.Message.StartsWith($"Unit {ala} will attack")), "the attack stands: no order this turn");
+            Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith($"The attack on hex {a.Q},{a.R - 1}")), "and it engages");
+            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            CollectionAssert.Contains(lines, hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units");
+        }
+    }
+
+    /// <summary>#1297 review: an attack cause's Target is a hex ("q,r"), not a unit, so one that names no attackers gives no
+    /// line rather than a parse that throws. Combat fills the attackers for every enemy engagement today, so the turn is
+    /// replaced with one such cause through Session.Last's private setter.</summary>
+    [Test]
+    public void AnAttackThatNamesNoAttackersGivesNoLine()
+    {
+        using var k = new Kit(En);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+            new StepResult(last.State, new[] { new Cause("map", "3,0", 0, "The attack on hex 3,0", Combat.Attack) }, last.Rejected));
+        Assert.IsFalse(TurnReportPresenter.Lines(k.Bridge, En).Any(l => l.Meter == TurnReportPresenter.EnemyRow));
     }
 
     [Test]

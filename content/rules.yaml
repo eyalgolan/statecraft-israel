@@ -17,9 +17,12 @@ attention_cost:
   cancel_training: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A6)
   pioneer_work: 0                        # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   stop_work: 0                           # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
+  unit_order: 0                          # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; R-ORDER-001, #746)
   start_project: 1                       # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: the map action's cost)
   cancel_project: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-C5, Q-PROJ-5: cancel_training's cost)
+  move: 0                                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
+  resolve_capture: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; Q-TECH-3: one key, so Raid, Occupy and Deport cost the same; proposed on #797)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
 # turns from 15 May 1948 end on the 15th of each month.
 turn_lengths: [month, month, month, month, month]
@@ -46,14 +49,15 @@ mvp:
   # factor, EffectsSystem.Multiplier) scales each GDD system. Q-MIN-1's mapping, "each with its office's sourced remit
   # in a comment": the Ministry of Labour ran housing and public construction; the Ministry of Agriculture, the fields
   # and the new settlements; the Ministry of Immigration, the immigrants' housing (the offices and their terms are the
-  # sourced rows of offices.yaml; the remits are as the decision names them). Corridors (Transportation) and military
-  # training (Defense) join the map when their integrations land (#870, #742).
+  # sourced rows of offices.yaml; the remits are as the decision names them). Transportation scales corridor work
+  # (Q-MIN-1); military training (Defense) joins the map with #742.
   minister_systems:
     housing_construction: labour_minister
     industry_construction: labour_minister
     field_work: agriculture_minister
     yishuv_work: agriculture_minister
     absorption: immigration_minister
+    corridors: transportation_minister
   # The day the cities start taking arrivals (R-CITY-003; Q-ARRV-3, owner, 15 October 2026, #375): the census day of their
   # start values, 8 November 1948 (CBS Statistical Abstract of Israel No. 14, Table 11, pp. 30-31). The census already
   # counts the people who arrived from 15 May, so the cities take none before it; the national head count takes them all.
@@ -76,6 +80,12 @@ mvp:
   dry_swamp_turns: 12                    # DESIGN VALUE: owner-set balance, not a historical figure (D-D6, Q-SWAMP-1: turns draining the Hula takes)
   dry_swamp_cost: 4                      # DESIGN VALUE: owner-set balance, not a historical figure (D-D6, Q-SWAMP-1: IL millions, paid at the start)
   field_food_per_turn: 1                 # DESIGN VALUE: owner-set balance, not a historical figure (D-D10, Q-FIELD-3: Food units a plowed field adds each turn)
+  # Q-COR-6 (agents propose design values, owner, 15 October 2026, #375; taken with the plan on 17 October 2026, #782): a
+  # road segment as the Mefalsim build, a rail segment twice its Money at the same pace. Not historical figures.
+  road_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a road segment takes)
+  road_segment_cost: 2                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
+  rail_segment_turns: 6                  # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: turns a rail segment takes)
+  rail_segment_cost: 4                   # DESIGN VALUE: owner-set balance, not a historical figure (D-D7, Q-COR-6: IL millions, paid at the start)
   objective_points: 100                  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6: points per objective)
   objective_bonus_per_month: 5           # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: points per month early)
   objective_bonus_cap: 60                # DESIGN VALUE: owner-set balance, not a historical figure (D-B2: the most bonus points)
@@ -95,6 +105,13 @@ mvp:
   arms_start: 12                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: Arms on 15 May 1948)
   arms_price: 1                          # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, #781: IL millions per Arms)
   arms_per_recruit_group: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-UNIT-3: Arms per recruit group trained)
+  # Agent-proposed values accepted by the owner on 19 October 2026 (Q-GEN-1, Q-UNIT-2, Q-UNIT-3):
+  # https://github.com/eyalgolan/statecraft-israel/pull/1130#issuecomment-6269103829
+  # Upkeep is per formation, not strength:
+  # IL 0.05m is one tenth of a single group's IL 0.5m training cost per turn. Six service turns match the veteran pioneer
+  # threshold as an accepted initial design value; neither number asserts a historical cost or period.
+  military_upkeep_per_turn: 0.05         # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-UNIT-3: IL millions per formation per turn)
+  veteran_soldier_service: 6             # DESIGN VALUE: owner-set balance, not a historical figure (D-D9, Q-UNIT-2: service turns, excluding training)
   # The veteran pioneer (R-VET-001, R-VET-002; D-D9). Agent-proposed design values the owner took on 17 October 2026 (#782:
   # "take all of the plan's recommendations"; Phase 4 plan Q-VET-1, Q-VET-2). Service is build_yishuv_turns, so one
   # completed yishuv makes a veteran pioneer.
@@ -113,12 +130,95 @@ mvp:
   # is a historical figure; the Phase 7 balance pass (PR 12) sets the final ceiling.
   defeat_turns: 3                        # DESIGN VALUE: owner-set balance, not a historical figure (D-B5, Q-DEF-2: turn ends in a row with Money and Food exhausted)
   debt_ceiling: 250                      # DESIGN VALUE: owner-set balance, not a historical figure (D-B5, Q-DEF-1: IL millions of debt at which Money is exhausted)
+  # Standing orders (R-ORDER-002, R-ORDER-003; Q-HOLD-1 "(a) 1 turn, free, lost on move" and Q-HOLD-2 "(a) Own hex, no
+  # interception", owner, 15 October 2026, #375). A unit's defence in percent of its strength. Proposed in Phase 5 PR 7
+  # (#746): fortify 125 was decided by the owner on 19 October 2026 (PR #1071, https://github.com/eyalgolan/statecraft-israel/pull/1071#issuecomment-6259021297); hold stays at 100
+  # (it adds nothing, it keeps the position). Not play-tested (combat is PR 8); the balance pass (#813) may tune both.
+  fortify_defence_percent: 125           # DESIGN VALUE: owner-set balance, not a historical figure (D-G4, Q-HOLD-1: a fortified unit's defence, percent; owner-decided 19 Oct 2026, #1071)
+  hold_defence_percent: 100              # DESIGN VALUE: owner-set balance, not a historical figure (D-G4, Q-HOLD-2: a holding unit's defence, percent)
   # Delegation and loyalty (R-EVT-003; #107, owner, 18 October 2026: "Yes: minister loyalty changes a delegated event's
   # outcome, with labelled values in the PR"). A minister below the floor still picks as competence says, but carries the
   # decision out half-heartedly: only the share of each numeric effect lands. The floor is 5 because people.yaml rates
   # the deputies 5 as a neutral rating, so neutral is not disloyal. Agent-proposed; the owner may override them.
   delegation_loyalty_floor: 5            # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, #107: loyalty below which a delegated decision is half-done)
   disloyal_effect_share: 0.5             # DESIGN VALUE: owner-set balance, not a historical figure (D-H1, #107: share of each numeric effect a disloyal minister delivers)
+  # Movement (R-MOVE-001, R-MOVE-003; Q-MOVE-1, Q-MOVE-3, owner, 15 October 2026, #375: "Take all recommendations").
+  # The numbers below were proposed in PR #1073 (#744) and accepted by the owner as design values on 19 October 2026:
+  # https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259021508
+  # The smallest integer spread that separates the plain from the hills from the mountains; lake and sea have no cost,
+  # so they are impassable. Three units of a side per hex: a brigade of battalion-size formations.
+  move_cost:
+    coastal_plain: 1                     # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+    valley: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+    lowland: 1                           # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+    hills: 2                             # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+    desert: 2                            # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+    mountains: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-1: movement points to enter the hex)
+  stack_limit: 3                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-3: units of one side a hex holds)
+  # Roads and rail (R-MOVE-007; Q-MOVE-2, owner, 15 October 2026, #375: option (a), only the corridors Phase 4 builds).
+  # Proposed in Phase 5 PR 6 (#745) under "Agents propose design values"; the owner may override them. 1 is the lowest
+  # whole cost, so a built segment halves a hills step and thirds a mountain one, but on the coastal plain, valley and
+  # lowland (already 1) it saves nothing. Not historical figures.
+  road_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built road segment)
+  rail_move_cost: 1                      # DESIGN VALUE: owner-set balance, not a historical figure (D-G2, Q-MOVE-2: movement points for a step along a built rail segment)
+  # R-MOVE-005 (Q-CIV-1, owner, 15 October 2026: "No entry until Phase 6"): the settlements no player unit may enter or
+  # cross. DRAFT, UNCHECKED: the owner accepted this list as a draft on 19 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1073#issuecomment-6259083180).
+  # No person has yet checked each place's control on 15 May 1948; research task #1096 will check it. Do not treat it as history.
+  enemy_held_localities: [acre, nazareth, lod, ramla, gaza, beersheba]
+  # Combat (R-COMBAT-001 to R-COMBAT-006; Q-COMBAT-1 to Q-COMBAT-4, owner, 15 October 2026, #375: "Take all
+  # recommendations"). PROPOSED in Phase 5 PR 8 (#747) and accepted by the owner as design values on 20 October 2026
+  # (all six defaults, asked at
+  # https://github.com/eyalgolan/statecraft-israel/issues/747#issuecomment-6297295556, ruling at
+  # https://github.com/eyalgolan/statecraft-israel/issues/747#issuecomment-6299184133). They stay labelled design values
+  # for the balance pass (#813). None is a historical figure. Each engagement draws once from the RNG: a face 1 to 6, the six
+  # entries of its row. A row applies from its min_ratio_percent (the attackers' summed strength over the defenders'
+  # strength after fortify and terrain, in percent) up to the next row's: below 1:2, 1:2, 1:1, 2:1 and 3:1 and up.
+  # Losses are population units; defender_retreats 1 sends the defenders that are left one hex back.
+  arms_per_attack: 1                     # DESIGN VALUE: owner-set balance, not a historical figure (D-G6, Q-COMBAT-4: Arms each Israeli unit spends on an attack)
+  combat_terrain_percent:
+    coastal_plain: 100                   # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+    valley: 100                          # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+    lowland: 100                         # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+    hills: 125                           # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+    desert: 100                          # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+    mountains: 150                       # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-2: a defender's strength on this biome, percent)
+  combat_table:
+    - min_ratio_percent: 0               # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-1: the attack : defence ratio the row starts at, percent)
+      attacker_loss: [2, 2, 1, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
+      defender_loss: [0, 0, 0, 0, 0, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
+      defender_retreats: [0, 0, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+    - min_ratio_percent: 50              # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-1: the attack : defence ratio the row starts at, percent)
+      attacker_loss: [2, 1, 1, 1, 1, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
+      defender_loss: [0, 0, 0, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
+      defender_retreats: [0, 0, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+    - min_ratio_percent: 100             # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-1: the attack : defence ratio the row starts at, percent)
+      attacker_loss: [1, 1, 1, 1, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
+      defender_loss: [0, 0, 1, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
+      defender_retreats: [0, 0, 0, 0, 0, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+    - min_ratio_percent: 200             # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-1: the attack : defence ratio the row starts at, percent)
+      attacker_loss: [1, 1, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
+      defender_loss: [0, 1, 1, 1, 1, 2]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
+      defender_retreats: [0, 0, 0, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+    - min_ratio_percent: 300             # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-1: the attack : defence ratio the row starts at, percent)
+      attacker_loss: [1, 0, 0, 0, 0, 0]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the attackers lose, per face)
+      defender_loss: [1, 1, 1, 2, 2, 2]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: population units the defenders lose, per face)
+      defender_retreats: [0, 1, 1, 1, 1, 1]  # DESIGN VALUE: owner-set balance, not a historical figure (D-G3, Q-COMBAT-3: 1 where the defenders retreat, per face)
+  # The enemy's simple goals (R-ENEMY-003; Q-ENEMY-2, owner, 15 October 2026, #375: "Take all recommendations"). PROPOSED in
+  # Phase 5 PR 10 (#749) under "Agents propose design values"; the owner may override it. An enemy unit off its script
+  # attacks an adjacent player unit when the attack preview's ratio reaches this, else it holds its hex fortified. 200 is
+  # the 2:1 row of combat_table, the first where the defenders can be made to retreat. Not a historical figure.
+  enemy_attack_ratio_percent: 200        # DESIGN VALUE: owner-set balance, not a historical figure (D-G7, Q-ENEMY-2: the least attack : defence ratio an enemy unit attacks at, percent)
+  # Prisoners (R-POW-002, R-POW-004, R-POW-005; Q-POW-2, Q-POW-4, Q-POW-5, owner, 15 October 2026, #375). The amounts are
+  # agent defaults posted on #751 (https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6318787961)
+  # and accepted by the owner as design values (owner, 21 October 2026, #751:
+  # https://github.com/eyalgolan/statecraft-israel/issues/751#issuecomment-6321366548); none is a historical figure. A prisoner
+  # unit eats the ration any population unit eats (one Food is one unit's food for a month, R-FOOD-001). A return scores a
+  # tenth of an objective (D-B6) per unit. The player's soldiers held cost one month of income_per_job_per_year (0.06 /
+  # 12) a unit, in Money, so Q-CIV-3 keeps the Food shortfall as its one cohesion exemption.
+  food_per_prisoner_unit: 1              # DESIGN VALUE: owner-set balance, not a historical figure (D-C2, Q-POW-5: Food a population unit of prisoners eats a turn)
+  prisoner_shortfall_cohesion: 0.01      # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-POW-5: Social cohesion lost per unit of the prisoners' Food not given)
+  points_per_prisoner_unit_returned: 10  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6, Q-POW-2: points per population unit of prisoners returned)
+  held_soldier_cost_per_turn: 0.005      # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-POW-4: IL millions a turn per population unit of our soldiers held)
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

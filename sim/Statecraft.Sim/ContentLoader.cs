@@ -51,6 +51,7 @@ namespace Statecraft.Sim
         sealed class UnitTypesFile { public List<UnitType> Types { get; set; } = new List<UnitType>(); }
         sealed class SitesFile { public List<Site> Sites { get; set; } = new List<Site>(); }
         sealed class ProjectsFile { public List<ProjectKind> Projects { get; set; } = new List<ProjectKind>(); }
+        sealed class CorridorsFile { public List<CorridorDef> Corridors { get; set; } = new List<CorridorDef>(); }
         sealed class ObjectivesFile { public List<Objective> Objectives { get; set; } = new List<Objective>(); }
 
         public const string HexesFile = "map/hexes.json";
@@ -334,6 +335,7 @@ namespace Statecraft.Sim
             // Event files (content/events/*.yaml), one GameEvent each. Keys, for content authors:
             //   id, title, text            text may name office holders only through {office_id} placeholders, which
             //                              must have a holder on every day of the window
+            //   title_he, text_he, text_he_review   the Hebrew title and text (#1064); with them every option has a text_he
             //   anchor: hard | soft        hard needs a historical option; in Historical mode it resolves to it
             //   tags: [...]                holocaust, terror, massacre, war-casualties, displacement are sensitive (no gain)
             //   office                     the minister the event is delegated to
@@ -344,12 +346,15 @@ namespace Statecraft.Sim
             //                              its historical one (R-ALT-001, R-ALT-002); the ids must exist, an event cannot
             //                              require itself and requirements cannot form a cycle (EventRules)
             //   options: [{ id, text, historical, recommended, effects: [{ target, delta }], set_rung, set_policy,
-            //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }] }]
+            //              grant_units: [{ type, n, at }], city_effects: [{ city, field, delta }],
+            //              unlock_projects: [<projects.yaml id of a locked kind>] }]
             //   sources: [{ url, checked }], status
             //   objective                  the objective (objectives.yaml) whose completion card this is: it fires only once
             //                              that objective is recorded, and has exactly one option
             //   site                       a swamp site (sites.yaml) whose works the event is about: in the GDD loop it
             //                              fires only while that site is being worked; the legacy loop ignores it
+            //   prisoners                  a front (Prisoners.Fronts) whose prisoners the card returns: it fires only while
+            //                              that front holds some either way, and has exactly one option (R-POW-004)
             foreach (var rel in eventFiles.OrderBy(p => p, StringComparer.Ordinal))
             {
                 var e = Read<GameEvent>(readFile, rel);
@@ -358,8 +363,8 @@ namespace Statecraft.Sim
             }
             // Objectives (GDD v0.1, Phase 1 PR 6). Read in both loops, since their cards are events every loop loads; a content
             // set without objectives has no file.
-            c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives
-                .OrderBy(o => o.Id, StringComparer.Ordinal).ToList() ?? new List<Objective>();
+            // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
+            c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
             Validate(c, settlementIds);
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
@@ -370,7 +375,10 @@ namespace Statecraft.Sim
                 c.UnitTypes = Read<UnitTypesFile>(readFile, "unit_types.yaml").Types;
                 c.Sites = Read<SitesFile>(readFile, "sites.yaml").Sites;   // sourced facts (Phase 1 PR 5)
                 c.ProjectKinds = Read<ProjectsFile>(readFile, "projects.yaml").Projects;   // design values (Phase 3 PR 4)
+                c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 ValidateGdd(c, settlementIds);
+                // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
+                c.StartingForces = StartingForces.Read(readFile, c);
             }
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
@@ -717,6 +725,9 @@ namespace Statecraft.Sim
                 // The player can order a woman into any office, so a Hebrew title without its feminine form would show her the
                 // masculine one (owner on #861, 17 October 2026).
                 if (o.TitleHe != "" && o.TitleHeF == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_f", $"required: office {o.Id} has a title_he, so it needs its feminine title_he_f beside it");
+                if ((o.TitleHeFrom.HasValue || o.TitleHeUntil.HasValue) && o.TitleHe == "") throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he", "required: title_he_from/title_he_until bound a title_he");
+                if (o.TitleHeFrom.HasValue && o.TitleHeUntil.HasValue && o.TitleHeUntil.Value <= o.TitleHeFrom.Value)
+                    throw new ContentException("offices.yaml", $"offices[{o.Id}].title_he_until", FormattableString.Invariant($"must be after title_he_from ({o.TitleHeFrom:yyyy-MM-dd})"));
             }
             foreach (var p in c.Parties) HebrewName("parties.yaml", $"parties[{p.Id}]", "name_he", p.NameHe, p.NameHeSources, p.NameHeReview, p.NameHeReviewGiven);
             foreach (var l in c.Legislatures) HebrewName("legislatures.yaml", $"legislatures[{l.Id}]", "body_he", l.BodyHe, l.BodyHeSources, l.BodyHeReview, l.BodyHeReviewGiven);
@@ -1077,6 +1088,7 @@ namespace Statecraft.Sim
             {
                 var at = $"types[{x.Id}]";
                 if (x.Kind != "population" && x.Kind != "unit") throw new ContentException(uf, at + ".kind", "must be population or unit");
+                if (x.Id == "recruit" && x.Side != "israel") throw new ContentException(uf, at + ".side", "a recruit must be an Israeli military unit (R-UNIT-003)");
                 // R-UNIT-001: a type with a side or a class is military, and needs both; the sides are units_1948.yaml's.
                 if (x.Side != "" || x.Class != "")
                 {
@@ -1086,11 +1098,30 @@ namespace Statecraft.Sim
                     if (!Sides.Contains(x.Side)) throw new ContentException(uf, at + ".side", $"unknown side '{x.Side}' ({string.Join(", ", Sides)})");
                     if (!Classes.Contains(x.Class)) throw new ContentException(uf, at + ".class", $"unknown class '{x.Class}' (infantry, artillery or armour)");
                 }
+                // R-MOVE-001 (Q-MOVE-1): a military type has its movement points; a population count is not on the map.
+                if (x.Kind == "population" && x.MovementPoints != 0) throw new ContentException(uf, at + ".movement_points", "only a unit moves");
+                if (x.Side != "" && x.MovementPoints < 1) throw new ContentException(uf, at + ".movement_points", "required for a military type, at least 1");
+                if (x.MovementPoints < 0) throw new ContentException(uf, at + ".movement_points", "must be >= 0");
+                // R-COMBAT-007, R-COMBAT-008 (Q-ARTY-1, Q-ARTY-2): only a military type fights, so only it has a combat
+                // factor; range and Arms per firing are artillery's support role and are read for nothing else.
+                if (x.CombatPercent != null && x.Side == "") throw new ContentException(uf, at + ".combat_percent", "only a military type has a combat factor");
+                if (x.CombatPercent < 1) throw new ContentException(uf, at + ".combat_percent", "must be at least 1");
+                if (x.Class == Combat.ArtilleryClass)
+                {
+                    if (!(x.Range >= 1)) throw new ContentException(uf, at + ".range", "required for an artillery type, at least 1");
+                    if (!(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
+                }
+                else
+                {
+                    if (x.Range != null) throw new ContentException(uf, at + ".range", "only an artillery type has a range");
+                    if (x.ArmsPerFire != null) throw new ContentException(uf, at + ".arms_per_fire", "only an artillery type fires");
+                }
                 if (x.Facility == "")
                 {
                     // Training (R-TRAIN-001) needs a place to train; values without one would be read by nothing.
                     if (x.TrainingTurns != 0) throw new ContentException(uf, at + ".training_turns", "only a type with a facility trains");
                     if (x.TrainingCost != 0) throw new ContentException(uf, at + ".training_cost", "only a type with a facility trains");
+                    if (x.TrainingArms != null) throw new ContentException(uf, at + ".training_arms", "only a type with a facility trains");
                     continue;
                 }
                 if (!TrainingFacilities.Contains(x.Facility)) throw new ContentException(uf, at + ".facility", $"unknown facility '{x.Facility}' (military_camp, hakhshara or industry)");
@@ -1101,9 +1132,19 @@ namespace Statecraft.Sim
                 // Q-CRAFT-1 (owner, 15 October 2026): a craftsman trains in a city with a completed industry project.
                 if (x.Id == Training.Craftsman && x.Facility != Training.Industry)
                     throw new ContentException(uf, at + ".facility", "a craftsman trains at industry (Q-CRAFT-1)");
+                // R-UNIT-008 (Q-ARTY-3): a trained military type pays Arms a group; the recruit's is rules.yaml's
+                // arms_per_recruit_group (R-ARMS-003), so a second value on it would be read by nothing.
+                if (x.Side != "" && x.Id != "recruit")
+                {
+                    if (!(x.TrainingArms >= 1)) throw new ContentException(uf, at + ".training_arms", "required for a trained military type, at least 1");
+                }
+                else if (x.TrainingArms != null) throw new ContentException(uf, at + ".training_arms", "only a trained military type other than the recruit takes its own Arms");
                 if (x.TrainingTurns < 1) throw new ContentException(uf, at + ".training_turns", "must be >= 1");
                 if (!(x.TrainingCost >= 0 && IsFinite(x.TrainingCost))) throw new ContentException(uf, at + ".training_cost", "must be a finite number >= 0");
             }
+            // R-UNIT-004: promotion must not create a unit whose military type is missing or belongs to another side.
+            if (c.UnitTypes.Any(t => t.Id == "recruit") && !c.UnitTypes.Any(t => t.Id == "veteran_soldier" && t.Kind == "unit" && t.Side == "israel" && t.Class == "infantry"))
+                throw new ContentException(uf, "types[veteran_soldier]", "required as an Israeli infantry unit for recruit promotion");
             // R-CITY-003: the arrivals are spread over the cities, so there must be one to take them.
             if (c.Cities.Count == 0) throw new ContentException(cf, "cities", "the GDD loop needs at least one city to take the arrivals");
             foreach (var (file, r) in new[] { ("rules.yaml", c.Rules) }.Concat(c.EraRules.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => ("rules/" + kv.Key + ".yaml", kv.Value))))
@@ -1150,6 +1191,10 @@ namespace Statecraft.Sim
                 if (!(m.DrySwampCost >= 0 && IsFinite(m.DrySwampCost.Value))) throw new ContentException(file, "mvp.dry_swamp_cost", "must be a finite number >= 0");
                 if (m.FieldFoodPerTurn == null) throw new ContentException(file, "mvp.field_food_per_turn", "required when eras.yaml systems.loop is gdd");
                 if (m.FieldFoodPerTurn < 0) throw new ContentException(file, "mvp.field_food_per_turn", "must be >= 0");
+                if (m.RoadSegmentTurns < 1) throw new ContentException(file, "mvp.road_segment_turns", "must be >= 1");
+                if (!(m.RoadSegmentCost >= 0 && IsFinite(m.RoadSegmentCost))) throw new ContentException(file, "mvp.road_segment_cost", "must be a finite number >= 0");
+                if (m.RailSegmentTurns < 1) throw new ContentException(file, "mvp.rail_segment_turns", "must be >= 1");
+                if (!(m.RailSegmentCost >= 0 && IsFinite(m.RailSegmentCost))) throw new ContentException(file, "mvp.rail_segment_cost", "must be a finite number >= 0");
                 // R-FOOD-001 to R-FOOD-003: required, so a missing key is never read as 0 (a stock term of 0, or no stock).
                 if (m.KFood == null) throw new ContentException(file, "mvp.k_food", "required when eras.yaml systems.loop is gdd");
                 if (!(m.KFood >= 0 && m.KFood <= 1)) throw new ContentException(file, "mvp.k_food", "must be between 0 and 1");
@@ -1162,6 +1207,11 @@ namespace Statecraft.Sim
                 if (!(m.ArmsPrice >= 0 && IsFinite(m.ArmsPrice.Value))) throw new ContentException(file, "mvp.arms_price", "must be a finite number >= 0");
                 if (m.ArmsPerRecruitGroup == null) throw new ContentException(file, "mvp.arms_per_recruit_group", "required when eras.yaml systems.loop is gdd");
                 if (m.ArmsPerRecruitGroup < 0) throw new ContentException(file, "mvp.arms_per_recruit_group", "must be >= 0");
+                // R-UNIT-010, R-UNIT-004: omitted values must not silently make upkeep free or promotion immediate.
+                if (m.MilitaryUpkeepPerTurn == null) throw new ContentException(file, "mvp.military_upkeep_per_turn", "required when eras.yaml systems.loop is gdd");
+                if (!(m.MilitaryUpkeepPerTurn >= 0 && IsFinite(m.MilitaryUpkeepPerTurn.Value))) throw new ContentException(file, "mvp.military_upkeep_per_turn", "must be a finite number >= 0");
+                if (m.VeteranSoldierService == null) throw new ContentException(file, "mvp.veteran_soldier_service", "required when eras.yaml systems.loop is gdd");
+                if (m.VeteranSoldierService < 1) throw new ContentException(file, "mvp.veteran_soldier_service", "must be >= 1");
                 // R-VET-001, R-VET-002: required, so a missing key is not read as 0 (a veteran after no work, or one that builds nothing).
                 foreach (var (key, v) in new[] { ("veteran_halutz_service", m.VeteranHalutzService), ("veteran_progress", m.VeteranProgress) })
                 {
@@ -1178,15 +1228,77 @@ namespace Statecraft.Sim
                 if (m.DefeatTurns < 1) throw new ContentException(file, "mvp.defeat_turns", "must be >= 1");
                 if (m.DebtCeiling == null) throw new ContentException(file, "mvp.debt_ceiling", "required when eras.yaml systems.loop is gdd");
                 if (!(m.DebtCeiling >= 0 && IsFinite(m.DebtCeiling.Value))) throw new ContentException(file, "mvp.debt_ceiling", "must be a finite number >= 0");
+                // R-ORDER-002, R-ORDER-003 (#746): required, so a missing key is never read as 0 (a unit with no defence).
+                if (m.FortifyDefencePercent == null) throw new ContentException(file, "mvp.fortify_defence_percent", "required when eras.yaml systems.loop is gdd");
+                if (m.FortifyDefencePercent < 1) throw new ContentException(file, "mvp.fortify_defence_percent", "must be >= 1");
+                if (m.HoldDefencePercent == null) throw new ContentException(file, "mvp.hold_defence_percent", "required when eras.yaml systems.loop is gdd");
+                if (m.HoldDefencePercent < 1) throw new ContentException(file, "mvp.hold_defence_percent", "must be >= 1");
                 // R-EVT-003 (#107): required, so a missing key is never read as 0 (no floor, or a disloyal minister who does nothing).
                 if (m.DelegationLoyaltyFloor == null) throw new ContentException(file, "mvp.delegation_loyalty_floor", "required when eras.yaml systems.loop is gdd");
                 if (m.DelegationLoyaltyFloor < 0 || m.DelegationLoyaltyFloor > 10) throw new ContentException(file, "mvp.delegation_loyalty_floor", "must be 0-10");
                 if (m.DisloyalEffectShare == null) throw new ContentException(file, "mvp.disloyal_effect_share", "required when eras.yaml systems.loop is gdd");
                 Unit(file, "mvp.disloyal_effect_share", m.DisloyalEffectShare.Value);
+                // R-MOVE-001 (Q-MOVE-1): a cost for every land biome of the map, so no hex is read as free, and none for a water
+                // biome, so lake and sea stay impassable.
+                foreach (var b in c.Hexes.Where(h => h.Land).Select(h => h.Biome).Distinct().OrderBy(b => b, StringComparer.Ordinal))
+                    if (!m.MoveCost.ContainsKey(b)) throw new ContentException(file, "mvp.move_cost", $"no cost for land biome '{b}' ({HexesFile})");
+                foreach (var kv in m.MoveCost)
+                {
+                    if (c.Hexes.Any(h => !h.Land && h.Biome == kv.Key)) throw new ContentException(file, "mvp.move_cost." + kv.Key, $"is water in {HexesFile}: lake and sea are impassable");
+                    if (kv.Value < 1) throw new ContentException(file, "mvp.move_cost." + kv.Key, "must be >= 1");
+                }
+                // R-MOVE-003 (Q-MOVE-3): required, so a missing key is never read as no room at all.
+                if (m.StackLimit == null) throw new ContentException(file, "mvp.stack_limit", "required when eras.yaml systems.loop is gdd");
+                if (m.StackLimit < 1) throw new ContentException(file, "mvp.stack_limit", "must be >= 1");
+                // R-COMBAT-002 to R-COMBAT-004 (Q-COMBAT-1 to Q-COMBAT-4): required, so a missing key is never read as a free
+                // attack, a defender with no strength or an engagement with no outcome.
+                if (m.ArmsPerAttack == null) throw new ContentException(file, "mvp.arms_per_attack", "required when eras.yaml systems.loop is gdd");
+                if (m.ArmsPerAttack < 0) throw new ContentException(file, "mvp.arms_per_attack", "must be >= 0");
+                foreach (var b in c.Hexes.Where(h => h.Land).Select(h => h.Biome).Distinct().OrderBy(b => b, StringComparer.Ordinal))
+                    if (!m.CombatTerrainPercent.ContainsKey(b)) throw new ContentException(file, "mvp.combat_terrain_percent", $"no percent for land biome '{b}' ({HexesFile})");
+                foreach (var kv in m.CombatTerrainPercent)
+                    if (kv.Value < 1) throw new ContentException(file, "mvp.combat_terrain_percent." + kv.Key, "must be >= 1");
+                if (m.CombatTable.Count == 0) throw new ContentException(file, "mvp.combat_table", "required when eras.yaml systems.loop is gdd");
+                var faces = m.CombatTable[0].AttackerLoss.Count;
+                for (int i = 0; i < m.CombatTable.Count; i++)
+                {
+                    var row = m.CombatTable[i];
+                    var at = FormattableString.Invariant($"mvp.combat_table[{i}]");
+                    if (i == 0 ? row.MinRatioPercent != 0 : row.MinRatioPercent <= m.CombatTable[i - 1].MinRatioPercent)
+                        throw new ContentException(file, at + ".min_ratio_percent", i == 0 ? "the first row must start at 0" : "must be above the row before");
+                    if (faces < 1 || row.AttackerLoss.Count != faces || row.DefenderLoss.Count != faces || row.DefenderRetreats.Count != faces)
+                        throw new ContentException(file, at, "attacker_loss, defender_loss and defender_retreats need one entry per face, the same number in every row");
+                    if (row.AttackerLoss.Concat(row.DefenderLoss).Any(x => x < 0)) throw new ContentException(file, at, "a loss must be >= 0");
+                    if (row.DefenderRetreats.Any(x => x != 0 && x != 1)) throw new ContentException(file, at + ".defender_retreats", "must be 0 or 1");
+                }
+                // R-ENEMY-003 (Q-ENEMY-2): required, so a missing key is never read as an enemy that attacks at any odds.
+                if (m.EnemyAttackRatioPercent == null) throw new ContentException(file, "mvp.enemy_attack_ratio_percent", "required when eras.yaml systems.loop is gdd");
+                if (m.EnemyAttackRatioPercent < 1) throw new ContentException(file, "mvp.enemy_attack_ratio_percent", "must be >= 1");
+                // R-MOVE-007 (Q-MOVE-2): required, so a missing key is never read as a free step along a corridor.
+                foreach (var (key, v) in new[] { ("road_move_cost", m.RoadMoveCost), ("rail_move_cost", m.RailMoveCost) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (v < 1) throw new ContentException(file, "mvp." + key, "must be >= 1");
+                }
+                // R-MOVE-005 (Q-CIV-1)
+                foreach (var id in m.EnemyHeldLocalities)
+                    if (c.SettlementHexes.All(h => h.Id != id)) throw new ContentException(file, "mvp.enemy_held_localities", $"unknown settlement '{id}' ({SettlementHexesFileName})");
                 if (c.Indicators.All(i => i.Id != Pools.FoodIndicator))
                     throw new ContentException(file, "mvp.k_food", "the Food stock feeds the food_supply indicator, which model.yaml must define");
                 // One game has one last day (R-LOOP-004): an era cannot move it.
                 if (m.End != c.Rules.Mvp!.End) throw new ContentException(file, "mvp.end", "must be the same in every era (the game has one end)");
+                // R-POW-002, R-POW-004, R-POW-005 (Q-POW-2, Q-POW-4, Q-POW-5): required, so a missing key is never read as
+                // prisoners who eat nothing, a shortfall that costs nothing or a return that scores nothing.
+                foreach (var (key, v) in new[] { ("food_per_prisoner_unit", m.FoodPerPrisonerUnit), ("points_per_prisoner_unit_returned", m.PointsPerPrisonerUnitReturned) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (v < 0) throw new ContentException(file, "mvp." + key, "must be >= 0");
+                }
+                foreach (var (key, v) in new[] { ("prisoner_shortfall_cohesion", m.PrisonerShortfallCohesion), ("held_soldier_cost_per_turn", m.HeldSoldierCostPerTurn) })
+                {
+                    if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
+                    if (!(v >= 0 && IsFinite(v.Value))) throw new ContentException(file, "mvp." + key, "must be a finite number >= 0");
+                }
                 // R-OBJ-002. Required, so a missing key is not read as 0. Zero is allowed (a balance choice); a negative value
                 // would take points away for finishing.
                 foreach (var (key, v) in new[] { ("objective_points", m.ObjectivePoints), ("objective_bonus_per_month", m.ObjectiveBonusPerMonth), ("objective_bonus_cap", m.ObjectiveBonusCap) })
@@ -1210,9 +1322,23 @@ namespace Statecraft.Sim
             if (c.Rules.Mvp!.End is DateTime end && (end <= c.Rules.Start || end >= c.Eras[c.Eras.Count - 1].To))
                 throw new ContentException("rules.yaml", "mvp.end", FormattableString.Invariant($"must be after start ({c.Rules.Start:yyyy-MM-dd}) and before the last era's end ({c.Eras[c.Eras.Count - 1].To:yyyy-MM-dd})"));
             ValidateSites(c);
-            ValidateObjectiveSites(c);
+            ValidateObjectiveConditions(c);
             ValidateEventSites(c);
+            ValidateEventPrisoners(c);
             ValidateProjects(c);
+            ValidateCorridors(c);
+        }
+
+        /// <summary>An exchange card (R-POW-004): a known front, and one option, which Delegate resolves without a draw.</summary>
+        static void ValidateEventPrisoners(Content c)
+        {
+            foreach (var e in c.Events.Where(e => e.Prisoners != ""))
+            {
+                if (!Prisoners.Fronts.Contains(e.Prisoners))
+                    throw new ContentException(e.File, $"events[{e.Id}].prisoners", $"unknown front '{e.Prisoners}' (one of {string.Join(", ", Prisoners.Fronts)})");
+                if (e.Options.Count != 1)
+                    throw new ContentException(e.File, $"events[{e.Id}].options", "an exchange card has exactly one option");
+            }
         }
 
         /// <summary>An event's site (R-SWAMP-002): a designated swamp site, whose works the event is about. Only the GDD loop
@@ -1244,21 +1370,91 @@ namespace Statecraft.Sim
                 if (x.Capacity < 0) throw new ContentException(pf, at + ".capacity", "must not be negative");
                 if (x.JobSlots < 0) throw new ContentException(pf, at + ".job_slots", "must not be negative");
                 if (!(x.Condition >= -1 && x.Condition <= 1)) throw new ContentException(pf, at + ".condition", "must be a number from -1 to 1");
+                // #1122 (owner ruling 3): a draft Hebrew name is marked pending a native speaker's review (#564).
+                if (x.NameHeReviewGiven && x.NameHeReview != HebrewReview.AgentChecked)
+                    throw new ContentException(pf, at + ".name_he_review", $"must be {HebrewReview.AgentChecked} (pending a native speaker's review, #564), or left out once a person has reviewed the name");
+                if (x.NameHeReviewGiven && string.IsNullOrWhiteSpace(x.NameHe)) throw new ContentException(pf, at + ".name_he", "required: name_he_review is set but the name is empty");
                 // R-PROJ-005: a kind whose resource no city has could never be built.
                 if (!string.IsNullOrEmpty(x.Requires) && !c.Cities.Any(k => k.Resources.Any(r => r.Id == x.Requires)))
                     throw new ContentException(pf, at + ".requires", $"no city in cities.yaml has the resource '{x.Requires}'");
             }
         }
 
-        /// <summary>An objective's site (R-OBJ-001): a designated site of kind yishuv, whose sourced founding date is the
-        /// objective's reference date, so the card and the site cannot disagree. Only the GDD loop reads sites.yaml, so only
-        /// it can check this; EventRules checks the rest of objectives.yaml in both loops.</summary>
-        static void ValidateObjectiveSites(Content c)
+        /// <summary>The corridors (corridors.yaml, Phase 4 PR 2): a known kind, names, a route id, and segments whose hexes are
+        /// land hexes of the map, each one step from the last, the first of a segment one step from (or on) the last of the one
+        /// before (Review focus 2: no corridor with a gap). That the route exists in map/routes_1948.yaml and the hexes are its
+        /// traced line's is checked by tools/tests/test_corridor_hexes.py: the sim does not read the map-only route files.</summary>
+        static void ValidateCorridors(Content c)
+        {
+            const string cf = "corridors.yaml";
+            Unique(cf, "corridors", c.Corridors.Select(x => x.Id));
+            foreach (var x in c.Corridors)
+            {
+                var at = $"corridors[{x.Id}]";
+                if (x.Kind != Corridors.Road && x.Kind != Corridors.Rail) throw new ContentException(cf, at + ".kind", $"unknown kind '{x.Kind}' (road, rail)");
+                Named(cf, at + ".name", x.Name);
+                Named(cf, at + ".name_he", x.NameHe);
+                if (string.IsNullOrWhiteSpace(x.Route)) throw new ContentException(cf, at + ".route", "required: the map route the corridor follows");
+                if (x.Segments.Count == 0) throw new ContentException(cf, at + ".segments", "needs at least one segment");
+                List<int>? prev = null;
+                for (int i = 0; i < x.Segments.Count; i++)
+                {
+                    var sat = FormattableString.Invariant($"{at}.segments[{i + 1}].hexes");
+                    var hexes = x.Segments[i].Hexes;
+                    if (hexes.Count == 0) throw new ContentException(cf, sat, "needs at least one hex");
+                    foreach (var h in hexes)
+                    {
+                        if (h == null || h.Count != 2) throw new ContentException(cf, sat, "must be [q, r] pairs");
+                        var hex = c.HexAt(h[0], h[1]);
+                        if (hex == null || !hex.Land)
+                            throw new ContentException(cf, sat, FormattableString.Invariant($"hex q={h[0]} r={h[1]} is not a land hex in {HexesFile}"));
+                        if (prev != null && MapActions.Distance(prev[0], prev[1], h[0], h[1]) > 1)
+                            throw new ContentException(cf, sat, FormattableString.Invariant($"hex q={h[0]} r={h[1]} is not next to q={prev[0]} r={prev[1]}"));
+                        prev = h;
+                    }
+                }
+                if (x.Sources.Count == 0) throw new ContentException(cf, at + ".sources", "required: a corridor is a historical fact");
+                for (int i = 0; i < x.Sources.Count; i++)
+                    if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
+                        throw new ContentException(cf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
+                Status(cf, at + ".status", x.Status);
+            }
+        }
+
+        /// <summary>An objective's GDD condition: a standalone site objective keeps the site's founding date (R-OBJ-001),
+        /// while an infrastructure part names an existing corridor or one or more buildable yishuv sites (R-OBJ-005).
+        /// EventRules checks the loop-independent shape and sources.</summary>
+        static void ValidateObjectiveConditions(Content c)
         {
             foreach (var o in c.Objectives)
             {
                 var at = $"objectives[{o.Id}]";
+                if (o.PartOf != "" && (o.ReferenceDate < c.Rules.Start || o.ReferenceDate >= c.End))
+                    throw new ContentException(ObjectivesFileName, at + ".reference_date",
+                        FormattableString.Invariant($"must be inside the MVP ({c.Rules.Start:yyyy-MM-dd} to {c.End:yyyy-MM-dd})"));
                 if (o.CompletesWhen!.Absorbed != null) continue;   // R-OBJ-004 has no site; the GDD loop always has cities
+                if (o.CompletesWhen.CorridorComplete != "")
+                {
+                    var corridor = o.CompletesWhen.CorridorComplete;
+                    if (c.Corridors.All(x => x.Id != corridor))
+                        throw new ContentException(ObjectivesFileName, at + ".completes_when.corridor_complete", $"unknown corridor '{corridor}' (corridors.yaml)");
+                    continue;
+                }
+                if (o.CompletesWhen.SitesBuilt.Count > 0)
+                {
+                    var ids = new HashSet<string>(StringComparer.Ordinal);
+                    for (int i = 0; i < o.CompletesWhen.SitesBuilt.Count; i++)
+                    {
+                        var siteId = o.CompletesWhen.SitesBuilt[i];
+                        var field = FormattableString.Invariant($"{at}.completes_when.sites_built[{i}]");
+                        if (!ids.Add(siteId)) throw new ContentException(ObjectivesFileName, field, $"duplicate site '{siteId}'");
+                        var listed = c.Sites.FirstOrDefault(x => x.Id == siteId)
+                            ?? throw new ContentException(ObjectivesFileName, field, $"unknown site '{siteId}' (sites.yaml)");
+                        if (!listed.Kinds.Contains(Projects.YishuvKind))
+                            throw new ContentException(ObjectivesFileName, field, $"site '{siteId}' cannot be built as a yishuv");
+                    }
+                    continue;
+                }
                 var id = o.CompletesWhen.SiteBuilt;   // EventRules requires one kind
                 var site = c.Sites.FirstOrDefault(x => x.Id == id)
                     ?? throw new ContentException(ObjectivesFileName, at + ".completes_when.site_built", $"unknown site '{id}' (sites.yaml)");
@@ -1433,8 +1629,9 @@ namespace Statecraft.Sim
             }
         }
 
-        /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex, with a
-        /// sourced operation and a review status.</summary>
+        /// <summary>R-CTRL-001 (Q-TGT-1 (a)): every target is an arab_town row of settlements_1948.yaml on a land hex that is
+        /// its own hex in settlement_hexes.yaml (capture reads the target's hex, movement the settlement's), with a sourced
+        /// operation and a review status.</summary>
         static void ValidateSettlementTargets(Content c, IEnumerable<string> arabTownIds)
         {
             Unique(SettlementTargetsFileName, "targets", c.SettlementTargets.Select(x => x.Id));
@@ -1447,6 +1644,8 @@ namespace Statecraft.Sim
                 var hex = c.HexAt(x.Q, x.R);
                 if (hex == null || !hex.Land)
                     throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not a land hex in {HexesFile}"));
+                if (c.SettlementHexes.Any(h => h.Id == x.Id && (h.Q != x.Q || h.R != x.R)))
+                    throw new ContentException(SettlementTargetsFileName, at + ".q", FormattableString.Invariant($"hex q={x.Q} r={x.R} is not {x.Id}'s hex in {SettlementHexesFileName}"));
                 if (string.IsNullOrWhiteSpace(x.Operation)) throw new ContentException(SettlementTargetsFileName, at + ".operation", "required");
                 if (x.Sources.Count == 0) throw new ContentException(SettlementTargetsFileName, at + ".sources", "needs at least one source");
                 for (int i = 0; i < x.Sources.Count; i++)

@@ -180,13 +180,13 @@ public class KitTests
         return doc;
     }
 
-    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits.</summary>
+    /// <summary>The railways' and roads' corridors as MapScene hands them to the kits: the routes drawn at the start (#786).</summary>
     static IReadOnlyList<(List<Vector2> line, float halfWidth)> Corridors(MapScene map)
     {
         var inputs = Statecraft.Game.Boot.GameInputs.MapFromDisk(Statecraft.Game.Paths.Content, Statecraft.Game.Paths.StreamingMap);
         var b = HeightmapLoader.Load(Statecraft.Game.Paths.StreamingMap).meta;
         var routes = Statecraft.Game.Map.Routes.RoutePaths.ReadOrNone(inputs.RoutesYaml, (b.lon0, b.lon1, b.lat0, b.lat1), _ => { });
-        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, routes);
+        return Statecraft.Game.Map.Routes.RouteLayer.Corridors(map.Frame, Statecraft.Game.Map.Routes.RouteLayer.KitRoutes(routes));
     }
 
     /// <summary>Owner rulings 2026-10-11 and 2026-10-12: the 271 places of 1,000+ people beside the 25 game settlements, as Arab village and
@@ -540,7 +540,9 @@ public class KitTests
         Assert.AreEqual("Sha'ab", tsv.Places.Single(p => p.Settlement.Id == "shaab").Today, "owner rule: Sha'ab is a living local council");
         Assert.IsTrue(tsv.Places.Single(p => p.Settlement.Id == "nesher").Mixed);
         Assert.AreEqual("ביסאן", tsv.Places.Single(p => p.Settlement.Id == "beit_shean").NameHe, "#558: the 1948 form, as the English shows it");
-        Assert.IsNull(tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#558: no sourced Hebrew name, so none");
+        Assert.AreEqual("נענה", tsv.Places.Single(p => p.Settlement.Id == "naana").NameHe, "#1219: the he.wiki-sourced name");
+        Assert.AreEqual("סאלחיה", tsv.Places.Single(p => p.Settlement.Id == "al_salihiyya").NameHe, "#1313: the sourced name");
+        Assert.AreEqual("אל-גזאוויה", tsv.Places.Single(p => p.Settlement.Id == "al_ghazzawiyya").NameHe, "#1344: the he.wiki-sourced name");
     }
 
     /// <summary>A malformed runtime row is an error naming the file and the line.</summary>
@@ -550,7 +552,9 @@ public class KitTests
         var b = (34.2, 35.9, 29.45, 33.35);
         var reserved = new[] { "tel_aviv" };
         const string ok = "place\ta\tA\t\t\t\t35.0\t32.0\tvillage\tmosque\t0\t1200\tdraft\t2026-10-11\t3";
-        Assert.AreEqual(1, Localities.ParseRuntime("# header\n" + ok + "\n", b, reserved, "loc.tsv").Places.Count);
+        var okPlaces = Localities.ParseRuntime("# header\n" + ok + "\n", b, reserved, "loc.tsv").Places;
+        Assert.AreEqual(1, okPlaces.Count);
+        Assert.IsNull(okPlaces[0].NameHe, "an empty name_he column reads as none (#558; no real row is empty since #1344)");
         void Bad(string tsv, string expect)
         {
             var ex = Assert.Throws<System.IO.InvalidDataException>(() => Localities.ParseRuntime(tsv, b, reserved, "loc.tsv"));

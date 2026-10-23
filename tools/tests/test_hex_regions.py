@@ -44,6 +44,26 @@ def test_the_whole_country_is_deterministic(country):
     assert json.dumps(again) == json.dumps(country)
 
 
+def test_default_country_balances_villages_and_regional_landscape(country):
+    hexes = {(h["q"], h["r"]): h for h in country["hexes"]}
+    assert sum(h["prototype"] == "arab_village" for h in hexes.values()) == 61
+    assert sum(bool(h["note"]) for h in hexes.values()) == 90
+    variants = {h["prototype"] for h in hexes.values() if re.fullmatch(
+        r"(wheat_fields|citrus_orchard|olive_terraces|mixed_farm|forest)_(north|centre|south)_[ab]", h["prototype"])}
+    assert len(variants) == 16
+    # At 2,000, hills and the Carmel ridge return while these village hexes remain.
+    assert hexes[(11, 5)]["prototype"] == "upper_galilee_hills"
+    assert hexes[(4, 11)]["prototype"] == "carmel_ridge"
+    assert hexes[(9, 7)]["prototype"] == hexes[(4, 10)]["prototype"] == "arab_village"
+    core = {s["id"] for s in mb.settlements(str(ROOT / "content/map/settlements_1948.yaml"))}
+    assert core <= {h["note"] for h in hexes.values()}
+
+
+def test_published_country_matches_its_region_recipes(country):
+    published = json.loads((ROOT / "unity/Assets/Resources/HexTiles/Boards/israel.json").read_text())
+    assert published == country
+
+
 def test_every_region_dresses_some_land(country):
     regions = [r["id"] for r in mb.Recipes.load(str(REGIONS)).regions]
     used = {h["region"] for h in country["hexes"] if h["terrain"] != "water"}
@@ -79,11 +99,45 @@ def test_the_recipes_name_only_known_prototypes_grounds_and_shapes():
     assert {u["unit"] for u in recipes.defaults["units"]} <= known_units()
 
 
-def test_environment_is_only_the_ring_and_carries_no_tiles(country):
+def test_environment_carries_no_tiles(country):
     env = [h for h in country["hexes"] if h["env"]]
     assert env, "an --env-ring board has environment hexes"
     assert all(h["prototype"] == "" and h["unit"] == "" and h["terrain"] != "mountain" for h in env)
-    assert sum(not h["env"] for h in country["hexes"]) > 5 * len(env)
+    assert sum(not h["env"] for h in country["hexes"]) > 4 * len(env)
+
+
+def test_the_play_area_is_the_mandate_clipped_to_land(country):
+    """defaults.clip mandate: every playing land hex is inside a Mandate sub-district; the land outside is a one-hex
+    environment fringe round it, and the rest of the game map (Lebanon, the Golan, Transjordan, Sinai) is dropped."""
+    inside = mb.mandate_hexes()
+    land = [h for h in country["hexes"] if h["terrain"] != "water"]
+    play = {(h["q"], h["r"]) for h in land if not h["env"]}
+    assert play and play <= inside
+    outside = [(h["q"], h["r"]) for h in land if (h["q"], h["r"]) not in inside]
+    assert outside, "the fringe keeps some outside land as landscape"
+    assert all(any(mb.hex_distance(k, i) <= 1 for i in inside) for k in outside)
+    assert all(h["env"] for h in land if (h["q"], h["r"]) not in inside)
+    # Every Mandate land hex the game map has is on the board: none of it is lost to the clip.
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    mandate_land = {(h["q"], h["r"]) for h in hexes if h["land"] and (h["q"], h["r"]) in inside}
+    assert mandate_land <= {(h["q"], h["r"]) for h in land}
+    # Water stays only next to playing land.
+    for h in country["hexes"]:
+        if h["terrain"] == "water":
+            assert any(mb.hex_distance((h["q"], h["r"]), k) <= 1 for k in play), h
+
+
+def test_clip_none_keeps_the_whole_game_map():
+    whole, _ = mb.build_board(mb.parse(COUNTRY + ["--clip", "none"]))
+    clipped, _ = mb.build_board(mb.parse(COUNTRY))
+    assert len(whole["hexes"]) > len(clipped["hexes"])
+    assert {(h["q"], h["r"]) for h in clipped["hexes"]} <= {(h["q"], h["r"]) for h in whole["hexes"]}
+
+
+def test_a_rule_can_set_the_presentation_terrain():
+    rules = [{"biome": "lowland", "prototype": "hula_swamp", "set_terrain": "flat"}, {"prototype": "b"}]
+    assert mb.apply_rule(rules, 0, 0, biome="lowland", terrain="hills") == ("hula_swamp", None, "flat")
+    assert mb.apply_rule(rules, 0, 0, biome="hills", terrain="hills") == ("b", None, None)
 
 
 def test_settlements_take_their_tier_and_type_tiles(country):
@@ -91,8 +145,19 @@ def test_settlements_take_their_tier_and_type_tiles(country):
     assert by_note["tel_aviv"] == "tel_aviv_city"
     assert by_note["jerusalem"] == "jerusalem_old_city"
     assert by_note["jaffa"] == "jaffa_old_city"
-    assert by_note["haifa"] == "tel_aviv_city_mixed"   # a city-tier Jewish or mixed city (1945: 138,300)
+    assert by_note["haifa"] == "haifa_port"   # its own tile, by id, ahead of the city-tier rule
+    assert "kiryat_ata" not in by_note   # below the default locality cutoff
+    # A lower-threshold board still uses Haifa's bay tile for this locality.
+    rules = mb.Recipes.load(str(REGIONS)).defaults["settlements"]
+    assert mb.apply_rule(rules, 0, 0, id="kiryat_ata")[0] == "haifa_bay"
     assert by_note["rosh_pinna"] == "moshava_village"
+    assert by_note["lod"] == "lydda_town" and by_note["ramla"] == "ramla_town"
+    # A kibbutz takes its region's kibbutz: Galilee green in the north, a Negev outpost in the south.
+    regions = {h["note"]: h["region"] for h in country["hexes"] if h["note"]}
+    for note, proto in by_note.items():
+        if proto in ("kibbutz_galilee", "kibbutz_negev"):
+            assert regions[note] in (("hula", "upper_galilee", "lower_galilee", "jezreel", "jordan_valley") if proto == "kibbutz_galilee" else ("negev", "negev_loess")), note
+    assert "maabara_camp" not in by_note.values()   # the camps date from 1950: a painter tile, not on the 1948 board
     # One place per hex: no hex note repeats.
     notes = [h["note"] for h in country["hexes"] if h["note"]]
     assert len(notes) == len(set(notes))
@@ -140,14 +205,14 @@ def test_overrides_are_applied_last_and_survive_regeneration(tmp_path, capsys):
         "ground": [edit(*ta, "plains")],
         "unit": [edit(*sq, "")],
         "facing": [edit(*sq, "0")],
-        "region": [edit(ring["q"], ring["r"], "north")],
+        "region": [edit(ring["q"], ring["r"], "upper_galilee")],
     }))
     mb.main(COUNTRY + ["--out", str(out)])
     assert "(999,999)" in capsys.readouterr().out
     after = {(h["q"], h["r"]): h for h in json.loads(out.read_text())["hexes"]}
     assert (after[ta]["prototype"], after[ta]["ground"]) == ("kibbutz", "plains")
     assert (after[sq]["unit"], after[sq]["facing"]) == ("", 0.0)
-    assert after[(ring["q"], ring["r"])]["region"] == "north"
+    assert after[(ring["q"], ring["r"])]["region"] == "upper_galilee"
     # Only the edited fields move.
     assert after[ta]["terrain"] == tel_aviv["terrain"] and after[sq]["prototype"] == squad["prototype"]
     edited = {ta, sq, (ring["q"], ring["r"])}
@@ -168,7 +233,7 @@ def test_boards_follow_the_map_editors_terrain_and_location_moves(tmp_path):
     tel_aviv = next(k for k, h in hexes.items() if h["note"] == "tel_aviv")
     # A flat central-hills hex with no settlement, made desert by the map editor; Rosh Pinna moved to a free land hex.
     flat = next(k for k, h in hexes.items() if h["region"] == "central_hills" and h["terrain"] == "flat" and not h["note"] and not h["env"])
-    free = next(k for k, h in hexes.items() if h["region"] == "north" and h["terrain"] != "water" and not h["note"] and not h["env"])
+    free = next(k for k, h in hexes.items() if h["region"] == "upper_galilee" and h["terrain"] != "water" and not h["note"] and not h["env"])
     ov = tmp_path / "overrides.yaml"
     ov.write_text(f"terrain:\n- hex: {{q: {flat[0]}, r: {flat[1]}}}\n  value: desert\n"
                   f"control: []\nlocations:\n- id: rosh_pinna\n  hex: {{q: {free[0]}, r: {free[1]}}}\n")
@@ -182,6 +247,46 @@ def test_boards_follow_the_map_editors_terrain_and_location_moves(tmp_path):
 def test_the_repos_map_overrides_file_reads():
     terrain, locations = mb.map_overrides()
     assert isinstance(terrain, dict) and isinstance(locations, dict)
+
+
+def test_a_settlement_moved_into_the_crop_is_kept(tmp_path):
+    base, _ = mb.build_board(mb.parse([]))
+    assert all(h["note"] != "rosh_pinna" for h in base["hexes"])
+    target = next(h for h in base["hexes"] if h["terrain"] != "water" and not h["note"] and not h["env"])
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: rosh_pinna\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, _ = mb.build_board(mb.parse(["--map-overrides", str(ov)]))
+    after = {(h["q"], h["r"]): h for h in moved["hexes"]}
+    assert after[(target["q"], target["r"])]["note"] == "rosh_pinna"
+    tel_aviv = next(h for h in base["hexes"] if h["note"] == "tel_aviv")
+    assert after[(tel_aviv["q"], tel_aviv["r"])]["note"] == "tel_aviv"
+
+
+def test_a_settlement_moved_out_of_the_crop_is_omitted(tmp_path):
+    base, _ = mb.build_board(mb.parse([]))
+    assert any(h["note"] == "tel_aviv" for h in base["hexes"])
+    inside = {(h["q"], h["r"]) for h in base["hexes"]}
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    target = next(h for h in hexes if h["land"] and (h["q"], h["r"]) not in inside)
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: tel_aviv\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, _ = mb.build_board(mb.parse(["--map-overrides", str(ov)]))
+    assert all(h["note"] != "tel_aviv" for h in moved["hexes"])
+
+
+def test_a_settlement_moved_out_of_an_empty_crop_is_omitted(tmp_path):
+    args = ["--lat", "0", "1", "--lon", "0", "1"]
+    base, _ = mb.build_board(mb.parse(args))
+    assert base["hexes"] == []
+    hexes = json.loads((ROOT / "content/map/hexes.json").read_text())["hexes"]
+    target = next(h for h in hexes if h["land"])
+    ov = tmp_path / "overrides.yaml"
+    ov.write_text(f"terrain: []\ncontrol: []\nlocations:\n- id: rosh_pinna\n"
+                  f"  hex: {{q: {target['q']}, r: {target['r']}}}\n")
+    moved, owner = mb.build_board(mb.parse(args + ["--map-overrides", str(ov)]))
+    assert moved["hexes"] == [] and owner == {}
 
 
 def test_the_built_in_mode_writes_no_regions(tmp_path):

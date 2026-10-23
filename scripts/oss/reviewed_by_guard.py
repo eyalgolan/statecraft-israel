@@ -62,7 +62,8 @@ class GuardError(Exception):
 
 
 def _git(args: list[str], cwd: Path) -> str:
-    return subprocess.run(["git", *CONFIG, *args], cwd=cwd, check=True, capture_output=True, text=True).stdout
+    return subprocess.run(["git", *CONFIG, *args], cwd=cwd, check=True, capture_output=True, text=True,
+                          encoding="utf-8").stdout
 
 
 def _resolve(repo: Path, ref: str) -> str:

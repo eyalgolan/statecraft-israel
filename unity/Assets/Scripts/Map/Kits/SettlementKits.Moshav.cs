@@ -35,8 +35,13 @@ namespace Statecraft.Game.Map.Kits
             float yaw = RingYaw(p - heart);
             var (bottom, top) = GroundSpan(p, yaw, w, d, ground, m);
             var wall = C(0.91f, 0.86f, 0.75f); var roof = C(0.70f, 0.30f, 0.20f);
+            // Issue #659 (owner, 18 Oct 2026: "Use b09a and b07"): up close the hall is Tal Heuberger's b09a communal
+            // building, its gable included; far off, the kit's.
+            AddModel(owner, TownModel.B09aCommunal, p, yaw, w, d, h + d * 0.42f, bottom, top, km, m, exactHeight: false, flip: false);
+            var cut = km.CutStart();
             km.Box(p.x, p.y, yaw, w, d, bottom, top, h, wall, roof, Facade.Village, m, roofed: true);
             km.Gable(p.x, p.y, yaw, w, d, top + h, d * 0.42f, roof, wall);
+            km.CutEnd(cut);
             Record(owner, "public_building", p, yaw, w, d, h, wall);
             return 1;
         }

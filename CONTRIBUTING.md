@@ -15,13 +15,22 @@ If you're unsure where to start, open an issue first and describe what you want 
 
 ## Licence of your contribution
 
-There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed under this repository's licences, as GitHub's Terms of Service (section D.6) also say:
+There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed as follows:
 
-- code under [MIT](LICENSE);
+- **code:** to the project maintainer, Eyal Golan, under [MIT](LICENSES/MIT.txt), which lets him give permission for commercial use; everyone else gets it with the rest of the code, under [PolyForm Noncommercial 1.0.0](LICENSE);
 - `content/` under [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt);
 - other original material under [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 
+For `content/` and the other original material this is "inbound = outbound", as GitHub's Terms of Service (section D.6) also say. For code it is not: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0 (the owner's decision of 22 October 2026). This wording is the owner's choice, not legal advice, and it should be checked by a lawyer.
+
 [LICENSING.md](LICENSING.md) lists which licence covers each path. Only contribute work you have the right to license this way. If you add a third-party file, include its source and licence. Material from the Unity Asset Store is never accepted.
+
+**The licence line in the pull request.** The template's last box, "I contribute this under the terms in `CONTRIBUTING.md`", is asked of everyone; please tick it.
+
+- **Docs only:** the maintainer may merge without the tick, relying on GitHub's Terms of Service, section D.6 ("inbound = outbound"). That means every changed path is in `docs/` (except `docs/sources/`), `research_notes/`, `reports/`, `changelog.d/` or a root `*.md` file other than `LICENSING.md` and `THIRD-PARTY-NOTICES.md`, or is one of the UI text and layout files of the CC BY 4.0 row: `unity/Assets/UI/*.uxml`, `*.uss` and `strings.en.yaml`. No image, audio, video, 3D model, font, PDF or other binary file anywhere.
+- **Everything else needs the tick, code included:** code comes in under MIT to the maintainer, which is not the licence it goes out under, so GitHub's terms do not cover it. That means `sim/`, `tools/`, `scripts/`, `.github/`, `.gitignore`, `promo/*.py` and every `unity/Assets/` file of the code row (scripts, tests, scenes, prefabs, `.meta` files, `strings.he.yaml`, `WebGLTemplates/` and the rest), as well as `content/`, `ASSETS.yaml`, the licence and notice files, art, audio, video, models, fonts, materials, shaders, `.asset` files, `unity/Assets/Settings/`, `unity/Assets/StreamingAssets/`, `unity/Assets/UI/Fonts/`, `unity/Assets/UI/Portraits/`, Shader Graphs, `site/`, `spikes/`, `unity/Packages/`, `unity/ProjectSettings/` and any other path. A pull request that mixes the two needs it too.
+
+These are the owner's decisions of 22 October 2026 (D2 in [docs/oss/DECISIONS.md](docs/oss/DECISIONS.md)).
 
 ## Setup
 
@@ -46,7 +55,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
      `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -projectPath unity -buildTarget OSXUniversal -runTests -testPlatform EditMode -testResults "$PWD/unity-editmode.xml" -logFile unity-tests.log`. There must be 0 `warning CS` in the log.
 4. **Text the player sees** has no internal ids, gives dates as "15 May 1948", and shows money as "IL 1.2m" or "$1.2m". The tests enforce this.
 5. **Keep the pull request focused:** one change per PR, and no unrelated refactors.
-6. **Changelog.** If you change `sim/`, `content/` or `unity/` (tests excepted), add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md). CI's `Changelog` job checks it; the maintainer can add the `no-changelog` label to a change no player would notice.
+6. **Changelog.** If you change `sim/`, `content/` or `unity/` (tests excepted), add a new file `changelog.d/<branch-or-issue>.md` with your entry as a bullet ([changelog.d/README.md](changelog.d/README.md)); fragments never conflict with other pull requests. A line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) still works. CI's `Changelog` job checks it; the maintainer can add the `no-changelog` label to a change no player would notice.
 7. **Rule IDs.** A rule that has an ID (`R-ECON-014`, defined in `docs/rules/`, see [docs/rules/README.md](docs/rules/README.md)) is cited by that ID in the test that checks it (`// R-ECON-014`), in YAML comments that depend on it, and in the PR body ("implements R-ECON-014"). `uv run scripts/oss/rule_ids.py` fails on a rule with no citing test and on a citation of an ID that does not exist.
 8. **Provenance.** Every new image, video, font, audio, 3D-model or map-data file gets a row in [ASSETS.yaml](ASSETS.yaml) with its source, licence and status. CI's `Repo policy` job fails on a file with no row.
 9. **Roadmap status.** If your PR finishes a Phase 1 PR or a whole phase of [#374](https://github.com/eyalgolan/statecraft-israel/issues/374), update the Roadmap table in [README.md](README.md#roadmap) and the same table in [README.he.md](README.he.md), and tick the item in #374 if you can (otherwise ask the maintainer in the PR). The Phase 1 count must match in both files; `test_readme.py` checks it.
@@ -86,6 +95,7 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 
 - Base your branch on `main`. History on `main` is protected, so no force-pushes.
 - In the description, say what changed and why. Paste the test commands you ran and their output; a description of the output doesn't count.
+- **Visual changes:** matched before/after screenshots are required in the PR description for any change a player can see (models, the map, characters, the UI or the website). Keep the game state, camera and zoom the same; match resolution and lighting when relevant. Label the changed area and show important visual side effects. For changes with no visible effect, explain why screenshots are not applicable, and add a short video when motion helps review. Prefer GitHub PR attachments that reviewers can open over private Library links or committing review-only captures to the repository.
 - The maintainer reviews every PR (`.github/CODEOWNERS`). Once the maintainer approves your latest commit and every check on it has passed, `.github/workflows/merge-approved.yml` squash-merges it within about ten minutes. A new push needs a new approval.
 
 ## What CI runs

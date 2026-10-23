@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Objective 3's Burma Road-part card (R-OBJ-003, R-OBJ-005; G1, Q-CARD-1). The opening also commemorated people killed
+# in the convoys, so the card and its photograph are sensitive. The owner approved the photograph (#1226) and the card's
+# text as written on 21 October 2026 (#791: https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636).
+id: burma_road_complete
+title: The Road of Valour opens
+text: 'The Road of Valour opened on 7 December 1948 as the permanent road that replaced the Burma Road track to Jerusalem. Its opening ceremony also commemorated those killed in the convoys.'
+anchor: soft
+objective: burma_road
+from: 1948-05-15
+to: 1957-01-01
+options:
+  - id: continue
+    text: Continue
+    historical: true
+tags: [war-casualties]
+sources:
+  - { url: "https://www.nli.org.il/he/newspapers/hayomjlm/1948/12/08/01/article/2", checked: 2026-10-14 }
+  - { url: "https://www.nli.org.il/he/newspapers/haretz/1948/12/08/01/article/18", checked: 2026-10-14 }
+  - { url: "https://www.nli.org.il/he/newspapers/mar/1948/12/07/01/article/10", checked: 2026-10-14 }
+status: sensitivity-reviewed

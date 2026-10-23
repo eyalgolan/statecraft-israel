@@ -59,4 +59,19 @@ public class SiteLabelTests
         labels.SetSites(System.Array.Empty<(Settlement, Bounds[]?)>());
         Assert.IsNull(ui.Root.Q<VisualElement>("slot-" + site.Id), "no pill once the site is not built");
     }
+
+    /// <summary>Issue #1219 item 1: in the Hebrew UI a built site's pill reads the row's name_he, in English its name.</summary>
+    [Test]
+    public void ABuiltSitesPillReadsItsHebrewNameInHebrewAndItsNameInEnglish()
+    {
+        var site = Mefalsim();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(site.NameHe), "the site has a Hebrew name");
+        foreach (var hebrew in new[] { false, true })
+        {
+            using var ui = new UiTestKit();
+            using var labels = new MapLabelsPresenter(ui.Root, map, cam, hebrew: hebrew);
+            labels.SetSites(new[] { (site, (Bounds[]?)null) });
+            Assert.AreEqual(hebrew ? site.NameHe : site.Name, labels.SiteLabels.Single().text, hebrew ? "he" : "en");
+        }
+    }
 }

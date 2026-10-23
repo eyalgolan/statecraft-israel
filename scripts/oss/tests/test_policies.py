@@ -123,6 +123,19 @@ def test_pr_template_has_evidence_and_no_cla_item():
     assert "CLA" not in text and "contributors/" not in text
 
 
+def test_contribution_terms_match_the_code_licence():
+    """Owner, 22 Oct 2026: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0, so
+    the licence-line waiver covers docs only. The template line still starts "I contribute" (the merge tooling looks
+    for "[x] I contribute")."""
+    c = read("CONTRIBUTING.md")
+    for s in ("under [MIT](LICENSES/MIT.txt)", "[PolyForm Noncommercial 1.0.0](LICENSE)", "should be checked by a lawyer",
+              "**Docs only:**", "**Everything else needs the tick, code included:**"):
+        assert s in c, s
+    assert "**Code or docs only:**" not in c
+    line = next(l for l in read(".github/pull_request_template.md").splitlines() if "MIT" in l)
+    assert line.startswith("- [ ] I contribute this under the terms in `CONTRIBUTING.md`") and "PolyForm Noncommercial 1.0.0" in line
+
+
 def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
     # Issue #264: the checklist pointed at a disclosure "above" that nothing asked for.
     text = read(".github/pull_request_template.md")

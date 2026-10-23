@@ -12,6 +12,43 @@ import pytest
 
 import web_check as wc
 
+# A client connects to the address serve() bound (127.0.0.1), not "localhost": Windows resolves localhost to ::1 first,
+# where nothing listens, and with no timeout the connect waits with no end. The timeout bounds every request.
+TIMEOUT = 10
+
+
+def base_url(server) -> str:
+    host, port = server.server_address[:2]
+    return f"http://{host}:{port}"
+
+
+@pytest.mark.parametrize("error", [BrokenPipeError, ConnectionResetError])
+def test_server_client_disconnects_do_not_print_a_false_failure(error, capsys):
+    server = wc.Server(("127.0.0.1", 0), wc.Handler)
+    try:
+        try:
+            raise error("browser closed an outstanding response")
+        except error:
+            server.handle_error(None, server.server_address)
+    finally:
+        server.server_close()
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize("error", [ValueError, OSError])
+def test_server_unexpected_request_errors_are_still_reported(error, capsys):
+    server = wc.Server(("127.0.0.1", 0), wc.Handler)
+    try:
+        try:
+            raise error("unexpected request failure")
+        except error:
+            server.handle_error(None, server.server_address)
+    finally:
+        server.server_close()
+    report = capsys.readouterr().err
+    assert "Traceback" in report
+    assert f"{error.__name__}: unexpected request failure" in report
+
 
 def test_console_lines_are_read_from_their_first_line():
     one = '[1010/025003.375619:INFO:CONSOLE:2] "GOLDEN OK 1950 abc", source: http://localhost:1/index.html (2)'
@@ -28,12 +65,12 @@ def test_precompressed_files_get_content_encoding_and_wasm_its_type(tmp_path):
     (tmp_path / "index.html").write_text("<html></html>")
     server = wc.serve(tmp_path)
     try:
-        base = f"http://localhost:{server.server_address[1]}"
-        r = urllib.request.urlopen(base + "/Build/game.wasm.br")
+        base = base_url(server)
+        r = urllib.request.urlopen(base + "/Build/game.wasm.br", timeout=TIMEOUT)
         assert (r.headers["Content-Encoding"], r.headers["Content-Type"]) == ("br", "application/wasm")
         r = urllib.request.Request(base + "/Build/game.data.gz", headers={"Accept-Encoding": "identity"})
-        assert urllib.request.urlopen(r).headers["Content-Encoding"] == "gzip"
-        assert urllib.request.urlopen(base + "/index.html").headers["Content-Encoding"] is None
+        assert urllib.request.urlopen(r, timeout=TIMEOUT).headers["Content-Encoding"] == "gzip"
+        assert urllib.request.urlopen(base + "/index.html", timeout=TIMEOUT).headers["Content-Encoding"] is None
     finally:
         server.shutdown()
         server.server_close()
@@ -107,10 +144,12 @@ def test_compressed_scripts_and_data_keep_their_types_and_traversal_is_404(tmp_p
     (tmp_path / "secret.txt").write_text("secret")
     server = wc.serve(tmp_path / "site")
     try:
-        base = f"http://localhost:{server.server_address[1]}"
-        assert urllib.request.urlopen(base + "/a.framework.js.gz").headers["Content-Type"] == "application/javascript"
-        assert urllib.request.urlopen(base + "/a.data.br").headers["Content-Type"] == "application/octet-stream"
-        conn = http.client.HTTPConnection("localhost", server.server_address[1])
+        base = base_url(server)
+        js = urllib.request.urlopen(base + "/a.framework.js.gz", timeout=TIMEOUT)
+        assert js.headers["Content-Type"] == "application/javascript"
+        data = urllib.request.urlopen(base + "/a.data.br", timeout=TIMEOUT)
+        assert data.headers["Content-Type"] == "application/octet-stream"
+        conn = http.client.HTTPConnection(*server.server_address[:2], timeout=TIMEOUT)
         for path in ("/../secret.txt", "/%2e%2e/secret.txt"):
             conn.request("GET", path)
             r = conn.getresponse(); r.read()
@@ -183,62 +222,126 @@ def test_find_chrome_without_chrome_path_picks_the_newest_revision(tmp_path, mon
     assert wc.find_chrome() == found[1]
 
 
+# A start buttons line as StartScreenPresenter logs it under ?navlog (a save: Continue shows), and the CSS pixels each
+# centre maps to in the 1920x1080 viewport.
+LAID_OUT = ("NAV f=88 t=9625 start buttons start-continue=0.3750,0.9278 start-new-game=0.4479,0.9278 "
+            "start-star=0.5521,0.9278 start-listen=0.4229,0.8704")
+AT = {"start-continue": (720, 1002), "start-new-game": (860, 1002), "start-star": (1060, 1002), "start-listen": (812, 940)}
+
+
+def _buttons(text=LAID_OUT, wait=0.0):
+    buttons = wc.StartButtons((1920, 1080), wait=wait, sleep=lambda s: None)
+    buttons.feed(text)
+    return buttons
+
+
+def test_start_buttons_maps_the_logged_centres_onto_the_viewport():
+    buttons = _buttons()
+    assert {name: buttons.point(name) for name in AT} == AT
+    phone = wc.StartButtons((390, 844))
+    phone.feed("NAV f=1 t=2 start buttons start-new-game=0.5,0.75")
+    assert phone.point("start-new-game") == (195, 633)
+
+
+def test_start_buttons_keeps_only_the_latest_layout_and_forgets_it_on_clear():
+    buttons = _buttons()
+    buttons.feed("NAV f=90 t=9700 start buttons start-new-game=0.5000,0.9000")    # the row moved: Continue is gone
+    assert buttons.point("start-new-game") == (960, 972)
+    buttons.feed("console: start buttons start-new-game=0.1,0.1")                  # not a NAV line: ignored
+    buttons.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
+    assert buttons.point("start-new-game") == (960, 972)
+    with pytest.raises(ValueError, match="START SCREEN FAIL no centre for start-continue .*logged: start-new-game"):
+        buttons.point("start-continue")
+    buttons.clear()
+    with pytest.raises(ValueError, match="no start buttons line; the page needs [?]navlog"):
+        buttons.point("start-new-game")
+
+
+def test_start_buttons_waits_for_a_line_the_reader_thread_brings():
+    t = [0.0]
+    buttons = wc.StartButtons((1920, 1080), wait=10, clock=lambda: t[0])
+
+    def sleep(seconds):
+        t[0] += seconds
+        if t[0] >= 3:
+            buttons.feed(LAID_OUT)
+    buttons.sleep = sleep
+    assert buttons.point("start-new-game") == AT["start-new-game"] and 3 <= t[0] < 3.2
+
+
+def test_start_buttons_fails_a_centre_outside_the_window():
+    with pytest.raises(ValueError, match="start-star is outside the window"):
+        _buttons("NAV f=1 t=2 start buttons start-star=1.0200,0.9000").point("start-star")
+
+
+def test_page_query_adds_navlog_only_to_the_start_screen_runs():
+    assert wc.page_query(_args("--startscreen", "new")) == "navlog"
+    assert wc.page_query(_args("--startscreen", "new", "--query", "lang=he")) == "lang=he&navlog"
+    assert wc.page_query(_args("--persistence")) == "navlog"
+    assert wc.page_query(_args("--startscreen", "recording", "--query", "navlog&lang=he")) == "navlog&lang=he"
+    assert wc.page_query(_args("--query", "golden")) == "golden"
+
+
+def _committed_turn(check, generation, date, turn, digest):
+    receipt = f"{generation} {date} turn {turn} hash {digest}"
+    check.feed("AUTOSAVE PENDING " + receipt)
+    check.feed(f"TURN {turn} {date} hash {digest}")
+    check.feed("AUTOSAVE OK " + receipt)
+
+
 def test_persistence_check_reloads_after_a_settled_and_an_immediate_autosave(capsys):
     actions, sleeps = [], []
-    check = wc.PersistenceCheck(actions.append, sleeps.append)
+    check = wc.PersistenceCheck(actions.append, _buttons(), sleeps.append)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa00")
-    check.feed("TURN 1 1948-06-01 turn 1 hash one")       # unrelated malformed diagnostic is ignored
-    check.feed("TURN 1 1948-06-01 hash aaa1")
+    check.feed("TURN 1 1948-06-01 turn 1 hash one")       # malformed diagnostic is ignored
+    _committed_turn(check, 1, "1948-06-01", 1, "aaa1")
+    assert check.buttons.centres == {}, "a reload forgets the old page's layout"
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-01 turn 1 hash aaa1")
-    check.feed("TURN 2 1948-07-01 hash aaa2")
+    _committed_turn(check, 1, "1948-07-01", 2, "aaa2")    # a reload resets the page's counter
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-07-01 turn 2 hash aaa2")
-    new_game, cont, end_turn = (f"click:{x},{y}" for x, y in (wc.NEW_GAME, wc.CONTINUE, wc.END_TURN))
+    new_game, cont, end_turn = _clicks(AT["start-new-game"], AT["start-continue"], wc.END_TURN)
     assert actions == [new_game, end_turn, "reload", cont, end_turn, "reload"]
-    assert sleeps == [3, 2, 2, 3, 2]     # no wait between the second TURN and its reload
+    assert sleeps == [3, 2, 3, 2]     # UI layout only; neither commit uses a settling delay
     assert check.done
     assert "settled reload OK" in capsys.readouterr().out
 
 
-def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_saved_turn():
-    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
-    for text in ("GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-01 hash bb",
-                 "GAME OK 1948-06-01 turn 1 hash bb", "TURN 2 1948-07-01 hash cc"):
-        check.feed(text)
-    try:
-        check.feed("GAME OK 1948-06-01 turn 1 hash bb")
-    except ValueError as e:
-        assert "PERSISTENCE FAIL immediate reload" in str(e) and "file a follow-up" in str(e)
-    else:
-        raise AssertionError("a lost immediate autosave must fail")
-
-
 def _played_to_the_settled_reload(check):
-    for text in ("GAME OK 1948-05-15 turn 0 hash aa", "TURN 1 1948-06-15 hash bb"):
-        check.feed(text)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    _committed_turn(check, 1, "1948-06-15", 1, "bb")
+
+
+def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_saved_turn():
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    _committed_turn(check, 1, "1948-07-15", 2, "cc")
+    with pytest.raises(ValueError, match="PERSISTENCE FAIL immediate reload"):
+        check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
 
 def test_persistence_check_fails_when_the_settled_reload_did_not_load_the_saved_turn():
-    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
     _played_to_the_settled_reload(check)
     with pytest.raises(ValueError, match="PERSISTENCE FAIL settled reload got 1948-05-15 turn 0"):
-        check.feed("GAME OK 1948-05-15 turn 0 hash aa")      # the reload came up with no save: a fresh game
-    assert not check.done
+        check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
 
 def test_persistence_check_fails_when_continue_started_a_new_game():
-    """A click that misses Continue and starts a new game must not pass: the turn after Continue is the reloaded
-    game's next turn (2), not a new game's turn 1."""
-    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
     _played_to_the_settled_reload(check)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-15 turn 1 hash bb")
-    with pytest.raises(ValueError, match="PERSISTENCE FAIL End turn after Continue: turn 1 .*expected turn 2"):
-        check.feed("TURN 1 1948-06-15 hash cc")
-    assert not check.done
+    with pytest.raises(ValueError, match="expected turn 2"):
+        check.feed("TURN 1 1948-06-15 hash bb")
 
 
 def test_persistence_check_fails_when_the_first_boot_is_not_a_fresh_game():
-    check = wc.PersistenceCheck(lambda action: None, lambda seconds: None)
-    with pytest.raises(ValueError, match="PERSISTENCE FAIL first boot"):
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    with pytest.raises(ValueError, match="expected turn 0"):
         check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
 
@@ -258,32 +361,41 @@ def _clicks(*points):
 
 def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(capsys):
     actions = []
-    check = wc.StartScreenCheck(actions.append, recording=False, hebrew=False, settle=lambda s: None)
+    check = wc.StartScreenCheck(actions.append, recording=False, hebrew=False, buttons=_buttons(), settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
-    assert actions == _clicks(wc.NEW_GAME, wc.END_TURN)
+    assert actions == _clicks(AT["start-new-game"], wc.END_TURN)
     assert not check.done
     check.feed("TURN 1 1948-06-15 hash bb")
     assert check.done
-    assert "START SCREEN OK New game reached the map: TURN 1" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "click start-new-game at (860, 1002)" in out and "START SCREEN OK New game reached the map: TURN 1" in out
+
+
+def test_start_screen_check_fails_at_once_when_the_game_never_says_where_new_game_is():
+    check = wc.StartScreenCheck(lambda a: None, False, False, buttons=_buttons(""), settle=lambda s: None)
+    with pytest.raises(ValueError, match="START SCREEN FAIL no centre for start-new-game"):
+        check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
 
 def test_start_screen_check_plays_the_recording_first_and_waits_for_it_hebrew_layout():
     actions = []
-    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=True, settle=lambda s: None)
+    buttons = _buttons()
+    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=True, buttons=buttons, settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
-    assert actions == _clicks(wc.PLAY_RECORDING_HE)
+    assert actions == _clicks(AT["start-listen"])
     check.feed("TURN 1 1948-06-15 hash bb")            # no New game before the recording plays
-    assert actions == _clicks(wc.PLAY_RECORDING_HE) and not check.done
+    assert actions == _clicks(AT["start-listen"]) and not check.done
+    buttons.feed("NAV f=300 t=19000 start buttons start-new-game=0.5521,0.8000")   # the caption moved the row up
     check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
-    assert actions == _clicks(wc.PLAY_RECORDING_HE, wc.NEW_GAME, wc.END_TURN_HE)
+    assert actions == _clicks(AT["start-listen"], (1060, 864), wc.END_TURN_HE)
     check.feed("TURN 1 1948-06-15 hash bb")
     assert check.done
 
 
 def test_start_screen_check_fails_on_a_saved_game_or_a_wrong_turn():
     with pytest.raises(ValueError, match="START SCREEN FAIL the first boot is turn 3"):
-        wc.StartScreenCheck(lambda a: None, False, False, lambda s: None).feed("GAME OK 1948-08-15 turn 3 hash aa")
-    check = wc.StartScreenCheck(lambda a: None, False, False, lambda s: None)
+        wc.StartScreenCheck(lambda a: None, False, False, _buttons(), lambda s: None).feed("GAME OK 1948-08-15 turn 3 hash aa")
+    check = wc.StartScreenCheck(lambda a: None, False, False, _buttons(), lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     with pytest.raises(ValueError, match="START SCREEN FAIL End turn after New game logged turn 2"):
         check.feed("TURN 2 1948-07-15 hash cc")
@@ -298,10 +410,10 @@ def test_query_value():
 
 def test_start_screen_check_english_recording_uses_the_english_layout():
     actions = []
-    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=False, settle=lambda s: None)
+    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=False, buttons=_buttons(), settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
-    assert actions == _clicks(wc.PLAY_RECORDING, wc.NEW_GAME, wc.END_TURN)
+    assert actions == _clicks(AT["start-listen"], AT["start-new-game"], wc.END_TURN)
 
 
 def _args(*argv):
@@ -309,7 +421,7 @@ def _args(*argv):
 
 
 def _plan(*argv):
-    driver, fail, plan = wc.run_plan(_args(*argv), lambda action: None)
+    driver, fail, plan = wc.run_plan(_args(*argv), lambda action: None, _buttons())
     if driver is not None:
         driver.settle = lambda seconds: None
     return driver, fail, plan
@@ -333,8 +445,7 @@ def test_a_start_screen_run_fails_on_boot_fail_exceptions_and_the_recording_what
 def test_the_start_screen_run_takes_the_hebrew_layout_from_the_query():
     he, _, _ = _plan("--startscreen", "recording", "--query", "lang=he&smoke=0")
     en, _, _ = _plan("--startscreen", "recording")
-    assert (he.play, he.end_turn) == (wc.PLAY_RECORDING_HE, wc.END_TURN_HE)
-    assert (en.play, en.end_turn) == (wc.PLAY_RECORDING, wc.END_TURN)
+    assert (he.end_turn, en.end_turn) == (wc.END_TURN_HE, wc.END_TURN)
 
 
 def test_persistence_and_start_screen_are_separate_runs():
@@ -397,3 +508,81 @@ def test_mobile_only_flips_the_emulation_flag():
     assert wc.viewport_override(1920, 1080, 1.0)["mobile"] is False          # the desktop default (review ruling 1)
     phone = wc.viewport_override(390, 844, 3.0, True)
     assert phone == {"width": 390, "height": 844, "deviceScaleFactor": 3.0, "mobile": True}
+
+
+def test_persistence_check_does_not_reload_turn_two_before_its_commit_ack():
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    check.feed("AUTOSAVE OK 1 1948-06-15 turn 1 hash bb")
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    assert actions.count("reload") == 1
+    check.feed("AUTOSAVE PENDING 2 1948-07-15 turn 2 hash cc")
+    check.feed("TURN 2 1948-07-15 hash cc")
+    assert actions.count("reload") == 1, "TURN is not an IndexedDB commit acknowledgement"
+    check.feed("AUTOSAVE OK 2 1948-07-15 turn 2 hash cc")
+    assert actions.count("reload") == 2
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-07-15 turn 2 hash cc")
+    assert check.done
+
+
+@pytest.mark.parametrize("ack", [
+    "AUTOSAVE OK 1 1948-07-15 turn 2 hash cc",  # old generation, identical state
+    "AUTOSAVE OK 2 1948-07-15 turn 2 hash dd",  # wrong hash
+    "AUTOSAVE OK 2 1948-06-15 turn 1 hash bb",  # old turn/date
+])
+def test_a_stale_or_mismatched_save_ack_cannot_authorize_reload(ack):
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    _played_to_the_settled_reload(check)
+    check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
+    check.feed("GAME OK 1948-06-15 turn 1 hash bb")
+    check.feed("AUTOSAVE PENDING 2 1948-07-15 turn 2 hash cc")
+    check.feed("TURN 2 1948-07-15 hash cc")
+    check.feed(ack)
+    assert actions.count("reload") == 1
+    assert not check.done
+    check.feed("AUTOSAVE OK 2 1948-07-15 turn 2 hash cc")
+    assert actions.count("reload") == 2
+
+
+def test_a_commit_timeout_fails_even_without_any_further_console_line():
+    clock = [0.0]
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    clock[0] = 5
+    with pytest.raises(ValueError, match="no matching IndexedDB commit within 5s"):
+        _ = check.done
+
+
+def test_an_indexeddb_failure_fails_the_driver_loudly():
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    with pytest.raises(ValueError, match="IndexedDB autosave failed"):
+        check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
+
+
+def test_commit_ack_before_turn_diagnostic_is_not_lost():
+    actions = []
+    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
+    check.feed("AUTOSAVE OK 1 1948-06-15 turn 1 hash bb")
+    assert "reload" not in actions
+    check.feed("TURN 1 1948-06-15 hash bb")
+    assert actions.count("reload") == 1
+
+
+def test_commit_timeout_is_polled_while_an_unrelated_expectation_is_still_missing():
+    clock = [0.0]
+    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    check.feed("TURN 1 1948-06-15 hash bb")
+    with pytest.raises(ValueError, match="no matching IndexedDB commit within 5s"):
+        wc.watch(queue.Queue(), lambda: None, lambda: None, ["UNRELATED"], re.compile("BOOT FAIL"), 20,
+                 now=lambda: clock[0], sleep=lambda seconds: clock.__setitem__(0, clock[0] + 1),
+                 complete=lambda: check.done)

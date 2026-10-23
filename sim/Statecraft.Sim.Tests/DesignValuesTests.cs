@@ -15,7 +15,7 @@ public class DesignValuesTests
 
     /// <summary>Every design value: file, then the path of its key (a list item by its id). Adding one here and in content is
     /// a balance change for the owner to set or accept in review.</summary>
-    public static readonly (string File, string Key)[] Listed =
+    public static readonly (string File, string Key)[] Listed = new (string File, string Key)[]
     {
         ("rules.yaml", "attention_cost.assign_workers"),
         ("rules.yaml", "attention_cost.train"),
@@ -42,6 +42,10 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.dry_swamp_turns"),
         ("rules.yaml", "mvp.dry_swamp_cost"),
         ("rules.yaml", "mvp.field_food_per_turn"),
+        ("rules.yaml", "mvp.road_segment_turns"),
+        ("rules.yaml", "mvp.road_segment_cost"),
+        ("rules.yaml", "mvp.rail_segment_turns"),
+        ("rules.yaml", "mvp.rail_segment_cost"),
         ("rules.yaml", "mvp.objective_points"),
         ("rules.yaml", "mvp.objective_bonus_per_month"),
         ("rules.yaml", "mvp.objective_bonus_cap"),
@@ -49,12 +53,18 @@ public class DesignValuesTests
         ("rules.yaml", "mvp.cover_months"),
         ("rules.yaml", "mvp.veteran_halutz_service"),
         ("rules.yaml", "mvp.veteran_progress"),
+        ("rules.yaml", "mvp.military_upkeep_per_turn"),
+        ("rules.yaml", "mvp.veteran_soldier_service"),
         ("rules.yaml", "mvp.housing_start_condition"),
         ("rules.yaml", "mvp.overflow_condition_loss"),
         ("rules.yaml", "mvp.defeat_turns"),
         ("rules.yaml", "mvp.debt_ceiling"),
+        ("rules.yaml", "mvp.fortify_defence_percent"),   // R-ORDER-002, #746 (Q-HOLD-1)
+        ("rules.yaml", "mvp.hold_defence_percent"),      // R-ORDER-003, #746 (Q-HOLD-2)
+        ("rules.yaml", "attention_cost.unit_order"),     // R-ORDER-001, #746 (D-A6)
         ("rules.yaml", "mvp.delegation_loyalty_floor"),   // R-EVT-003, #107
         ("rules.yaml", "mvp.disloyal_effect_share"),
+        ("rules.yaml", "mvp.enemy_attack_ratio_percent"),   // R-ENEMY-003, #749 (Q-ENEMY-2)
         // Q-START-1 (owner, 15 October 2026, #375): no city has a sourced housing stock or job count, so every city's
         // housing is its start people and its job slots its start employed; seven towns with no CBS working share take
         // the national one. The census people and the five CBS shares are sourced, not design values (R-CITY-006).
@@ -122,12 +132,76 @@ public class DesignValuesTests
         ("projects.yaml", "projects[industry].capacity"),
         ("projects.yaml", "projects[industry].condition"),
         ("projects.yaml", "projects[industry].job_slots"),
+        ("projects.yaml", "projects[winery].cost"),
+        ("projects.yaml", "projects[winery].turns"),
+        ("projects.yaml", "projects[winery].capacity"),
+        ("projects.yaml", "projects[winery].condition"),
+        ("projects.yaml", "projects[winery].job_slots"),
+        // Movement (Phase 5 PR 5, #744; Q-MOVE-1, Q-MOVE-3): agent-proposed under "Take all recommendations" (#375).
+        ("rules.yaml", "attention_cost.move"),
+        ("rules.yaml", "mvp.move_cost.coastal_plain"),
+        ("rules.yaml", "mvp.move_cost.valley"),
+        ("rules.yaml", "mvp.move_cost.lowland"),
+        ("rules.yaml", "mvp.move_cost.hills"),
+        ("rules.yaml", "mvp.move_cost.desert"),
+        ("rules.yaml", "mvp.move_cost.mountains"),
+        ("rules.yaml", "mvp.stack_limit"),
+        // Combat (Phase 5 PR 8, #747; Q-COMBAT-1 to Q-COMBAT-4): agent-proposed, accepted by the owner as design values on 20 October 2026 (#747, https://github.com/eyalgolan/statecraft-israel/issues/747#issuecomment-6299184133). The table's cells are
+        // listed by CombatTableCells below.
+        ("rules.yaml", "mvp.arms_per_attack"),
+        ("rules.yaml", "mvp.combat_terrain_percent.coastal_plain"),
+        ("rules.yaml", "mvp.combat_terrain_percent.valley"),
+        ("rules.yaml", "mvp.combat_terrain_percent.lowland"),
+        ("rules.yaml", "mvp.combat_terrain_percent.hills"),
+        ("rules.yaml", "mvp.combat_terrain_percent.desert"),
+        ("rules.yaml", "mvp.combat_terrain_percent.mountains"),
+        ("rules.yaml", "mvp.road_move_cost"),   // R-MOVE-007, #745 (Q-MOVE-2): agent-proposed
+        ("rules.yaml", "mvp.rail_move_cost"),
+        ("unit_types.yaml", "types[recruit].movement_points"),
+        ("unit_types.yaml", "types[veteran_soldier].movement_points"),
+        ("unit_types.yaml", "types[artillery].movement_points"),
+        ("unit_types.yaml", "types[armoured_car].movement_points"),
+        // Artillery's combat role and the armoured car (Phase 5 PR 9, #748; Q-ARTY-1, Q-ARTY-2): owner, 21 October 2026.
+        ("unit_types.yaml", "types[artillery].range"),
+        ("unit_types.yaml", "types[artillery].arms_per_fire"),
+        ("unit_types.yaml", "types[artillery].combat_percent"),
+        ("unit_types.yaml", "types[armoured_car].combat_percent"),
+        // How either is acquired (part 2, R-UNIT-008; Q-ARTY-3): proposed on #748, 22 October 2026, for the owner to set or accept.
+        ("unit_types.yaml", "types[artillery].training_turns"),
+        ("unit_types.yaml", "types[artillery].training_cost"),
+        ("unit_types.yaml", "types[artillery].training_arms"),
+        ("unit_types.yaml", "types[armoured_car].training_turns"),
+        ("unit_types.yaml", "types[armoured_car].training_cost"),
+        ("unit_types.yaml", "types[armoured_car].training_arms"),
+        ("unit_types.yaml", "types[egyptian_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[arab_legion].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[syrian_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[iraqi_army].movement_points"),   // #743, owner, 20 October 2026
+        ("unit_types.yaml", "types[arab_liberation_army].movement_points"),   // #743, owner, 20 October 2026
         // The national Arms pool (Phase 2 PR 3b; #781, owner 18 October 2026: "Approve as drafted").
         ("rules.yaml", "attention_cost.buy_arms"),
+        ("rules.yaml", "attention_cost.resolve_capture"),   // #797 (Q-TECH-3): proposed, for owner override
         ("rules.yaml", "mvp.arms_start"),
         ("rules.yaml", "mvp.arms_price"),
         ("rules.yaml", "mvp.arms_per_recruit_group"),
-    };
+        // Prisoners (Phase 5 PR 12, #751; Q-POW-2, Q-POW-4, Q-POW-5): agent defaults, accepted by the owner as design values (owner, 21 October 2026, #751).
+        ("rules.yaml", "mvp.food_per_prisoner_unit"),
+        ("rules.yaml", "mvp.prisoner_shortfall_cohesion"),
+        ("rules.yaml", "mvp.points_per_prisoner_unit_returned"),
+        ("rules.yaml", "mvp.held_soldier_cost_per_turn"),
+    }.Concat(CombatTableCells()).ToArray();
+
+    /// <summary>rules.yaml mvp.combat_table, every cell: its five rows (below 1:2, 1:2, 1:1, 2:1, 3:1) with their start ratio
+    /// and, for each of the draw's six faces, the two losses and the retreat (R-COMBAT-002, R-COMBAT-003; #747).</summary>
+    static IEnumerable<(string File, string Key)> CombatTableCells()
+    {
+        for (int row = 0; row < 5; row++)
+        {
+            yield return ("rules.yaml", $"mvp.combat_table[{row}].min_ratio_percent");
+            foreach (var list in new[] { "attacker_loss", "defender_loss", "defender_retreats" })
+                for (int face = 0; face < 6; face++) yield return ("rules.yaml", $"mvp.combat_table[{row}].{list}[{face}]");
+        }
+    }
 
 
     /// <summary>Every number in the GDD files and blocks, as (file, key path, the line it is on). Scope: all of cities.yaml,
@@ -213,14 +287,18 @@ public class DesignValuesTests
         Assert.Equal((0.5, 1.0, 0.5), (c.Rules.AttentionCost["assign_workers"], c.Rules.AttentionCost["train"], c.Rules.AttentionCost["cancel_training"]));
         Assert.Equal((0.0, 0.0), (c.Rules.AttentionCost["pioneer_work"], c.Rules.AttentionCost["stop_work"]));   // D-A6: unit orders are free
         Assert.Equal((6, 2.0), (m.BuildYishuvTurns, m.BuildYishuvCost));
+        Assert.Equal((6, 2.0, 6, 4.0), (m.RoadSegmentTurns, m.RoadSegmentCost, m.RailSegmentTurns, m.RailSegmentCost));   // Q-COR-6
         Assert.Equal((100, 5, 60), (m.ObjectivePoints, m.ObjectiveBonusPerMonth, m.ObjectiveBonusCap));   // D-B6, D-B2
         Assert.Equal((0.35, 0.15), (m.HousingStartCondition, m.OverflowConditionLoss));   // Q-START-3, Q-HOUSE-1 (D-D1)
         Assert.Equal((5, 0.5), (m.DelegationLoyaltyFloor, m.DisloyalEffectShare));   // R-EVT-003, #107 (D-H1)
         Assert.Equal((12, 1.0, 1, 1.0), (m.ArmsStart, m.ArmsPrice, m.ArmsPerRecruitGroup, c.Rules.AttentionCost["buy_arms"]));   // #781 (D-G6)
+        Assert.Equal((0.05, 6), (m.MilitaryUpkeepPerTurn, m.VeteranSoldierService)); // Q-GEN-1: owner-accepted initial design values (19 October 2026), not history.
+        Assert.Equal((1, 5, 6), (m.ArmsPerAttack, m.CombatTable.Count, m.CombatTable[0].AttackerLoss.Count));   // #747 (D-G6, D-G3), accepted by the owner 20 Oct 2026
+        Assert.Equal((1, 0.01, 10, 0.005), (m.FoodPerPrisonerUnit, m.PrisonerShortfallCohesion, m.PointsPerPrisonerUnitReturned, m.HeldSoldierCostPerTurn));   // #751 (Q-POW-2, Q-POW-4, Q-POW-5), accepted by the owner (owner, 21 October 2026, #751)
         Assert.Equal(12, c.Cities.Count);
         foreach (var x in c.Cities)   // the listed housing and job values are the ones Cities.Init starts from
             Assert.Equal(((int)x.Housing!.Value, (int)x.Jobs!.Value), (x.HousingCapacity, x.JobSlots));
-        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5), ("craftsman", 3, 0.5) },   // the craftsman: Q-CRAFT-3
+        Assert.Equal(new[] { ("recruit", 3, 0.5), ("halutz", 4, 0.5), ("craftsman", 3, 0.5), ("artillery", 3, 1.0), ("armoured_car", 3, 1.0) },   // the craftsman: Q-CRAFT-3; the guns and the car: Q-ARTY-3 (#748)
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.TrainingTurns, t.TrainingCost)));
     }
 

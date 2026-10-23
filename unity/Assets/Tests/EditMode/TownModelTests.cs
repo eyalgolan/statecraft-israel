@@ -35,7 +35,7 @@ public class TownModelTests
     static SettlementKits.Result Build(MapScene map, out List<SettlementKits.Placed> placed)
     {
         var g = new KitGround(map.Terrain, map.Frame, map.Hexes, map.ElevMinM);
-        foreach (var c in map.RouteCorridors) g.AddCorridor(c.line, c.halfWidth);
+        foreach (var c in map.KitRouteCorridors) g.AddCorridor(c.line, c.halfWidth);   // as the map builds its kits (#786)
         foreach (var c in map.UnitClearings) g.AddCorridor(new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius);
         var built = SettlementKits.Build(map.Settlements, map.Localities.Select(p => p.Settlement).ToList(), new List<Localities.Area>(), g, out placed);
         foreach (var k in built.Towns) UnityEngine.Object.DestroyImmediate(k.mesh);
@@ -58,7 +58,7 @@ public class TownModelTests
         switch (s.Type)
         {
             case "kibbutz": return new HashSet<M> { M.B07DiningHall, M.B09aCommunal, M.B24Barn, M.B28WaterTower };   // #820: sheds are barns
-            case "moshav": return new HashSet<M>(moshava);
+            case "moshav": return new HashSet<M>(moshava) { M.B09aCommunal };   // #659: Nahalal's public building
             case "town" when s.Id != "tiberias" && s.Id != "safed":
                 var h = new HashSet<M>(moshava) { M.B13aTwoStorey };
                 if (TownModels.WineMoshava(s.Id)) h.Add(M.B23Winery);
@@ -80,8 +80,6 @@ public class TownModelTests
             var used = built.Models.Where(m => m.Id == s.Id).Select(m => m.Model).ToList();
             TestContext.WriteLine($"{s.Id} ({s.Type}): {used.Count} models: " +
                 string.Join(", ", used.GroupBy(x => x).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}")));
-            // A Negev lookout's yard (#825) has no model that fits a 1943 walled outpost: it keeps its kit up close.
-            if (outposts.Contains(s.Id)) { if (used.Count > 0) bad.Add(s.Id + ": a lookout with models"); continue; }
             if (used.Count == 0) bad.Add(s.Id + " has no models");
             var wrong = used.Where(u => !Allowed(s).Contains(u)).Distinct().ToList();
             if (wrong.Count > 0) bad.Add($"{s.Id} ({s.Type}) uses {string.Join(", ", wrong)}");
@@ -89,7 +87,8 @@ public class TownModelTests
             var halls = placed.Where(p => p.Id == s.Id && p.Kind == "dining_hall").ToList();
             var b07 = built.Models.Where(m => m.Id == s.Id && m.Model == M.B07DiningHall).ToList();
             if (b07.Count != halls.Count) bad.Add($"{s.Id}: {b07.Count} b07 models for {halls.Count} dining halls");
-            else if (halls.Count == 1 && (b07[0].C - halls[0].C).magnitude > 1f) bad.Add($"{s.Id}: the b07 model is not on the dining hall");
+            // A lookout's hall stands in its yard's shrunk close copy, not on the kit's plot (RevivimAndNahalalDrawB09aAndB07UpClose).
+            else if (halls.Count == 1 && !outposts.Contains(s.Id) && (b07[0].C - halls[0].C).magnitude > 1f) bad.Add($"{s.Id}: the b07 model is not on the dining hall");
             if (TownModels.WineMoshava(s.Id) && used.Count(u => u == M.B23Winery) != 1) bad.Add(s.Id + ": not one winery");
         }
         // The cities' own models are there (not only a fallback).
@@ -118,17 +117,17 @@ public class TownModelTests
 
     /// <summary>Every building the census records (and every water tower and port warehouse) is built of models on its plot:
     /// at the world scale (SettlementKits.ModelScale) a kit plot holds a grid of them (a water tower, a warehouse, a dining
-    /// hall and a place's one-off building one), each turned with the plot and inside its footprint; no other model is
+    /// hall and a place's one-off building one), each turned with the plot (up to SettlementKits.MaxTurnDeg off it, #1032) and inside its footprint; no other model is
     /// placed.</summary>
     [Test]
     public void EveryPlacedBuildingIsOneModelOnItsPlot()
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        var outposts = Outposts(placed);   // a Negev lookout keeps its kit up close (#825)
+        var outposts = Outposts(placed);   // a lookout's models stand in its yard copy, not on kit plots (RevivimAndNahalalDrawB09aAndB07UpClose)
         var towns = map.Settlements.Select(s => s.Id).Where(id => !outposts.Contains(id)).ToHashSet();
         var want = placed.Where(p => towns.Contains(p.Id)
-            && (p.Kind == "building" || p.Kind == "water_tower" || p.Kind == "warehouse" || p.Kind == "dining_hall")).ToList();
+            && (p.Kind == "building" || p.Kind == "water_tower" || p.Kind == "warehouse" || p.Kind == "dining_hall" || p.Kind == "public_building")).ToList();
         Assert.IsTrue(want.Any(p => p.Kind == "dining_hall"), "the kibbutzim's dining halls are in the census (#820)");
         var got = built.Models.Where(m => towns.Contains(m.Id)).ToList();
         TestContext.WriteLine($"{want.Count} town buildings in the census, {got.Count} town models, {built.Models.Count} models with the localities");
@@ -144,7 +143,7 @@ public class TownModelTests
             float a = p.Yaw * Mathf.Deg2Rad, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
             foreach (var mi in at)
             {
-                if (Mathf.Abs(mi.Yaw - p.Yaw) > 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: turned off its plot");
+                if (Mathf.Abs(Mathf.DeltaAngle(mi.Yaw, p.Yaw)) > SettlementKits.MaxTurnDeg + 0.01f) bad.Add($"{p.Id} {p.Kind} at {p.C}: turned off its plot");   // #1032: up to MaxTurnDeg
                 corners.Clear(); mi.Corners(corners);
                 foreach (var c in corners)
                 {
@@ -162,10 +161,10 @@ public class TownModelTests
     /// <summary>Owner ruling, 18 October 2026: "Whole model far, buildings near". Every town
     /// with a whole-town model (TownLandmarks.ModelFor: the cities, the six moshavot, every kibbutz, the moshav and every
     /// Arab town) is built of the single building models up close: every house, hall, water tower and warehouse its kit
-    /// places is a model on its plot. What keeps the kit up close is a landmark no model fits (the list below), Nahalal's
-    /// public building (#851: no model of a moshav's school or offices) and Revivim's walled lookout (#825: no model of a
-    /// 1943 walled outpost); those two are the gaps the PR lists. A new kind of building in these towns fails here until it
-    /// is given a model or named as a gap.</summary>
+    /// places is a model on its plot. What keeps the kit up close is a landmark no model fits (the list below). Nahalal's
+    /// public building is a b09a and Revivim's walled lookout, whose buildings stand in its yard's close copy rather than on
+    /// their kit plots, has its own test (the owner, 18 October 2026: "Use b09a and b07"). A new kind of building in these
+    /// towns fails here until it is given a model or named as a landmark.</summary>
     [Test]
     public void EveryTownWithAWholeTownModelIsTheBuildingModelsUpClose()
     {
@@ -176,14 +175,14 @@ public class TownModelTests
         var ids = mapped.Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
         Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
-        var modelled = new HashSet<string> { "building", "dining_hall", "water_tower", "warehouse" };
+        var modelled = new HashSet<string> { "building", "dining_hall", "water_tower", "warehouse", "public_building" };
         var landmarks = new HashSet<string>
         {
             "al_aqsa", "breakwater", "church", "citadel", "clock_tower", "dome_of_the_rock", "gate", "german_colony", "haram",
             "lighthouse", "mosque", "palm", "port", "village_mosque", "walls", "white_tower",
         };
         var outposts = Outposts(placed);
-        CollectionAssert.AreEqual(new[] { "revivim" }, outposts.Where(ids.Contains).ToArray(), "the one walled lookout (a listed gap)");
+        CollectionAssert.AreEqual(new[] { "revivim" }, outposts.Where(ids.Contains).ToArray(), "the one walled lookout (RevivimAndNahalalDrawB09aAndB07UpClose)");
         var at = built.Models.ToLookup(m => (m.Id, Mathf.RoundToInt(m.Plot.x), Mathf.RoundToInt(m.Plot.y)));
         var bad = new List<string>();
         int houses = 0;
@@ -195,11 +194,41 @@ public class TownModelTests
                 houses++;
                 if (!at[(p.Id, Mathf.RoundToInt(p.C.x), Mathf.RoundToInt(p.C.y))].Any()) bad.Add($"{p.Id}: a {p.Kind} at {p.C} with no model");
             }
-            else if (!landmarks.Contains(p.Kind) && !(p.Id == "nahalal" && p.Kind == "public_building")) bad.Add($"{p.Id}: {p.Kind} keeps the kit up close");
+            else if (!landmarks.Contains(p.Kind)) bad.Add($"{p.Id}: {p.Kind} keeps the kit up close");
         }
         TestContext.WriteLine($"{houses} buildings in those towns, all models: {bad.Count == 0}");
         Assert.Greater(houses, 100);
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} kit buildings left up close");
+    }
+
+    /// <summary>Issue #659, the owner on 18 October 2026: "Use b09a and b07" at Revivim and Nahalal, the two places whose
+    /// kit buildings had no fitting model. Up close Nahalal's public building is one b09a communal building on its plot, and
+    /// the kit's hall no longer draws there. Revivim's walled lookout keeps its wall and tower (no model of either), and its
+    /// four buildings are models: the dining hall a b07 and the other three b09a, each inside the yard's close copy, so they
+    /// stand within its wall at the models' scale.</summary>
+    [Test]
+    public void RevivimAndNahalalDrawB09aAndB07UpClose()
+    {
+        var map = OpenMap();
+        var built = Build(map, out var placed);
+        var hall = placed.Single(p => p.Id == "nahalal" && p.Kind == "public_building");
+        var onHall = built.Models.Where(m => m.Id == "nahalal" && (m.Plot - hall.C).magnitude < 1f).Select(m => m.Model).ToArray();
+        CollectionAssert.AreEqual(new[] { M.B09aCommunal }, onHall, "Nahalal's public building up close");
+        Assert.IsFalse(built.CloseLandmarks.Any(l => l.Id == "nahalal" && l.Kind == "public_building"), "Nahalal's kit hall still draws up close");
+        var revivim = built.Models.Where(m => m.Id == "revivim").ToList();
+        TestContext.WriteLine($"revivim: {string.Join(", ", revivim.Select(m => $"{m.Model} at {m.C}"))}");
+        Assert.AreEqual(1, revivim.Count(m => m.Model == M.B07DiningHall), "Revivim's dining hall is a b07");
+        Assert.AreEqual(3, revivim.Count(m => m.Model == M.B09aCommunal), "Revivim's other three buildings are b09a");
+        Assert.AreEqual(4, revivim.Count, "Revivim's four buildings, no other model");
+        var yard = built.CloseLandmarks.Single(l => l.Id == "revivim" && l.Kind == "outpost_yard");
+        var corners = new List<Vector3>();
+        foreach (var mi in revivim)
+        {
+            corners.Clear(); mi.Corners(corners);
+            foreach (var c in corners)
+                Assert.IsTrue(Mathf.Abs(c.x - yard.C.x) <= 0.5f * yard.W + 1f && Mathf.Abs(c.z - yard.C.y) <= 0.5f * yard.D + 1f,
+                    $"Revivim's {mi.Model} at {mi.C} stands outside the yard's close copy ({yard.C}, {yard.W:0} x {yard.D:0} m)");
+        }
     }
 
     /// <summary>A model stands on its plot at the world scale (SettlementKits.ModelScale, the owner on v0.1.1: the buildings

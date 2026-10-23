@@ -105,6 +105,7 @@ from: 1948-05-15
 options:
   - id: first
     text: The first way
+    alternative: { basis: design }
     recommended: true
     effects:
       - target: fx_reserves

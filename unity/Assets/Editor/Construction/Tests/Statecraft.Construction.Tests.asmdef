@@ -1,0 +1,8 @@
+{
+  "name": "Statecraft.Construction.Tests",
+  "references": ["Statecraft.Construction.Editor", "Statecraft.Game", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

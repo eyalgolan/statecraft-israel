@@ -288,7 +288,8 @@ def notice_sources() -> dict[str, Path]:
 
 
 def missing_sources() -> list[str]:
-    return [str(src.relative_to(REPO)) for src in notice_sources().values() if not src.is_file()]
+    # Repository paths as the notice list and the docs name them ("LICENSES/CC-BY-4.0.txt"), on every OS.
+    return [src.relative_to(REPO).as_posix() for src in notice_sources().values() if not src.is_file()]
 
 
 def add_notices(folder: Path) -> None:
