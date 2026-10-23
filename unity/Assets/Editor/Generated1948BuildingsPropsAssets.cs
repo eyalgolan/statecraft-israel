@@ -53,7 +53,7 @@ namespace Statecraft.Game.EditorTools
             }
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); EditorSceneManager.CloseScene(scene, true);
-            Debug.Log("BUILDINGS ORIGINALS:11 editor-only assets prepared; no campaign catalog or LOD write.");
+            Debug.Log("BUILDINGS ORIGINALS: 11 editor-only assets prepared; no campaign catalog or LOD write.");
         }
 
         [MenuItem("Statecraft/Generated 1948/Play buildings and props review")]

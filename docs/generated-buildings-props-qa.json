@@ -1,5 +1,5 @@
 {
-  "revision": "PR1379 original-source correction v2",
+  "revision": "PR #1379 original-source correction v3 (external source archive)",
   "source_count": 11,
   "byte_identical_original_glbs": true,
   "byte_identical_embedded_colour_maps": true,
@@ -8,8 +8,8 @@
     4096
   ],
   "mesh_import_compression": "Off",
-  "animation_import_compression": "Off;all source clips kept (0 for all11 static sources)",
-  "texture_import": "Uncompressed,no Crunch,max4096",
+  "animation_import_compression": "Off; all source clips kept (0 for all 11 static sources)",
+  "texture_import": "Uncompressed, no Crunch, max 4096",
   "new_generated_lods": 0,
   "campaign_activation": "held for streaming dependency and art/sensitivity sign-off",
   "known_defective_originals": [
@@ -34,8 +34,8 @@
     "captures": "captures/buildings-props-originals-review-v2/",
     "scope": "Actual Editor import, source integrity/settings, dependency graph, layout and Editor Play Mode renders; no native-player/WebGL result"
   },
-  "first_download": "No new art is referenced from player scenes/catalogs/Resources; all new art is under Editor. No WebGL size result claimed.",
-  "merge_main": "0799572389124905dd6c4dda0b338474205b6ec6 merged with no commit; root owns review/commit",
+  "first_download": "No new art is referenced from player scenes/catalogs/Resources; review art is under Editor and original GLBs are outside Unity. No WebGL size result claimed.",
+  "merge_main": "Current reviewed main: 703d87cf. Earlier Unity and sim results below record the tested revision; no Unity rerun for the archive-only package correction.",
   "offline_tests": {
     "policy": 323,
     "source_integrity_boot_import": 6,
@@ -47,8 +47,15 @@
     "failed": 0
   },
   "standalone_compile": {
-    "runtime_and_editmode": "0warnings,0errors",
-    "editor_helpers": "0warnings,0errors"
+    "runtime_and_editmode": "0 warnings, 0 errors",
+    "editor_helpers": "0 warnings, 0 errors"
   },
-  "visual_inspection": "Original01 roof defects and03 rear opening remain;05 visibly lacks the roof deck. These are known-defective source reviews, not finished or approved game assets."
+  "visual_inspection": "Original 01 roof defects and 03 rear opening remain; 05 visibly lacks the roof deck. These are known-defective source reviews, not finished or approved game assets.",
+  "source_archive": "asset-sources/generated-1948/<id>/<id>.glb; outside Unity import tree",
+  "archive_package_verification": {
+    "original_glb_hashes_verified": 11,
+    "fbx_and_map_files_byte_identical_to_prior_commit": 22,
+    "affected_tests_passed": 34,
+    "unity_rerun": false
+  }
 }

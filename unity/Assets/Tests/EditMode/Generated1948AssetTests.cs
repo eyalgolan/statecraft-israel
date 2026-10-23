@@ -14,7 +14,7 @@ public class Generated1948AssetTests
 {
     [Serializable] sealed class Receipt
     {
-        public string id = "", source_glb_sha256 = "", embedded_image_sha256 = "";
+        public string id = "", source_glb_sha256 = "", source_archive_path = "", embedded_image_sha256 = "";
         public int number = 0, source_triangles = 0;
         public int[] embedded_dimensions = Array.Empty<int>();
         public string[] source_clips = Array.Empty<string>();
@@ -35,7 +35,7 @@ public class Generated1948AssetTests
         {
             string dir = Path.GetDirectoryName(fbx)!;
             var receipt = JsonUtility.FromJson<Receipt>(File.ReadAllText(Disk(dir + "/provenance.json")));
-            Assert.AreEqual(receipt.source_glb_sha256, Hash(Disk(dir + "/" + receipt.id + ".glb")), receipt.id);
+            Assert.AreEqual(receipt.source_glb_sha256, Hash(Path.Combine(Paths.RepoRoot, receipt.source_archive_path)), receipt.id);
             Assert.IsFalse(fbx.Contains("-near") || fbx.Contains("-far"), fbx);
             var importer = (ModelImporter)AssetImporter.GetAtPath(fbx);
             Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression, fbx);

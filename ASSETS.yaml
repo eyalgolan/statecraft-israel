@@ -42,163 +42,163 @@ rules:
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-06-bedouin-b-enclosed-striped-tent/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-10-low-sandbag-position/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-11-supply-crate-stack/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-12-low-stone-wall-module/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Provider-original GLB and exact embedded4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source01/05roof gaps and03rear opening remain known defects. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-*/*.glb"
+    note: "Original-source editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. Tal's prior local roof/rear adaptations remain separate offline and are excluded. Source 01/05 roof gaps and 03 rear opening remain known defects. No rights change to older assets."
+  - glob: "asset-sources/generated-1948/generated-1948-*/*.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tal Heuberger, Tripo Studio generated source,22 October2026. Eleven byte-identical provider-original GLBs retained as editor-only source records; per-model provenance.json records source hashes. No geometry or texture modification."
+    source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Eleven byte-identical provider-original GLBs retained as editor-only source records; per-model provenance.json records source hashes. No geometry or texture modification."
     status: verified
-    note: "Original source archive only; does not cover adjacent prefabs, materials, metadata or code. Known roof/rear defects01/03/05 retained; all campaign activation held for streaming and art/sensitivity sign-off. Older licences unchanged."
+    note: "Original source archive only; does not cover adjacent prefabs, materials, metadata or code. Known roof/rear defects 01/03/05 retained; all campaign activation held for streaming and art/sensitivity sign-off. Older licences unchanged."
   - glob: "unity/Assets/Art/Settlements/Prototype/Models/b*"
     licence: CC0-1.0
     ai_generated: true

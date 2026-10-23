@@ -39,7 +39,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original.glb"
   },
   {
     "number": 2,
@@ -81,7 +82,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-02-netanya-two-storey-balcony-house/generated-1948-02-netanya-two-storey-balcony-house.glb"
   },
   {
     "number": 3,
@@ -123,7 +125,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house.glb"
   },
   {
     "number": 4,
@@ -165,7 +168,9 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house.glb",
+    "appearance_note": "Lighter basalt colour variant; stable dark-basalt asset ID retained for reference continuity."
   },
   {
     "number": 5,
@@ -207,7 +212,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-05-plastered-courtyard-house-original/generated-1948-05-plastered-courtyard-house-original.glb"
   },
   {
     "number": 6,
@@ -249,7 +255,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-06-bedouin-b-enclosed-striped-tent/generated-1948-06-bedouin-b-enclosed-striped-tent.glb"
   },
   {
     "number": 8,
@@ -291,7 +298,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-08-khaki-canvas-tent/generated-1948-08-khaki-canvas-tent.glb"
   },
   {
     "number": 9,
@@ -333,7 +341,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-09-stone-village-well/generated-1948-09-stone-village-well.glb"
   },
   {
     "number": 10,
@@ -375,7 +384,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-10-low-sandbag-position/generated-1948-10-low-sandbag-position.glb"
   },
   {
     "number": 11,
@@ -417,7 +427,8 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-11-supply-crate-stack/generated-1948-11-supply-crate-stack.glb"
   },
   {
     "number": 12,
@@ -459,6 +470,7 @@
       ],
       "double_sided": true
     },
-    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true"
+    "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+    "source_archive_path": "asset-sources/generated-1948/generated-1948-12-low-stone-wall-module/generated-1948-12-low-stone-wall-module.glb"
   }
 ]
