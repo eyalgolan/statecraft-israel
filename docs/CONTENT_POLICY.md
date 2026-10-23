@@ -104,10 +104,13 @@ Facts are open to correction. The framing (section 1) is not.
   AI-generated likenesses of real people appear only in concept art (`promo/final/04`, `08`), are recorded as
   AI-generated in the asset provenance records, and are never presented as photographs or used in the game. The
   advisors are the one exception, by owner ruling, 23 October 2026: "you can sythesize their voices", and, for their
-  videos, "The real figures talking". A synthetic voice or moving likeness of Ben-Gurion, Meyerson or Dayan is made
-  only after written consent from their estates (the Ben-Gurion Heritage Institute, Golda Meir's family, Moshe Dayan's
-  heirs), which the provider's terms also require; the owner sends every request. Until then their videos show the
-  archival portrait, narrated by a fictional, named aide in a designed voice that is no one's likeness. Every such
-  output is recorded in `ASSETS.yaml` as AI-generated (`docs/superpowers/specs/2026-10-23-advisors-design.md`,
-  sections 11 to 13).
+  videos, "The real figures talking", then "Leader's face, labelled", and on the same day: "Amend the policy". So a
+  stylized, non-photoreal talking portrayal of Ben-Gurion, Meyerson or Dayan may appear in game dialogue. It is made
+  locally from public-domain or CC-licensed archival photographs and is never presented as real footage. It never uses
+  or imitates their real voices: the voice is a fictional, named aide's designed voice that is no one's likeness. It is
+  always labelled "Stylized portrayal. Fictional dialogue and voice." No third-party service that requires consent for
+  identifiable people is used on their faces. A photoreal likeness or a voice clone of any of them is still made only
+  after written consent from their estates (the Ben-Gurion Heritage Institute, Golda Meir's family, Moshe Dayan's
+  heirs), which the provider's terms also require; the owner sends every request. Every such output is recorded
+  in `ASSETS.yaml` as AI-generated (`docs/superpowers/specs/2026-10-23-advisors-design.md`, sections 11 to 13).
 - Hate speech, slurs or dehumanising language about any group, in content, code comments, issues or commits.
