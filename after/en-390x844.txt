@@ -1,0 +1,12 @@
+window=390x844
+lang=en
+root_classes=root hud-narrow hud-two-row hud-three-row
+card_collapsed=True
+info_classes=panel info-panel info-empty
+info=(x:16.25, y:1381.26, width:522.04, height:89.38)
+info_text=Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map
+label_shown=True
+label=(x:298.60, y:1247.20, width:473.29, height:65.00)
+label_text=Held by Israel: blue · Held by Arab forces: orange-red · Contested or no-man's land: grey, dashed
+Front lines of 9 July 1948, adjusted (Israel State Archives; CIA map of 18 May 1948)
+overlap=False

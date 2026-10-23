@@ -1,0 +1,12 @@
+window=390x844
+lang=he
+root_classes=root lang-he hud-narrow hud-two-row hud-three-row
+card_collapsed=True
+info_classes=panel info-panel info-empty
+info=(x:16.25, y:1383.29, width:522.04, height:87.34)
+info_text=יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה
+label_shown=True
+label=(x:314.85, y:1224.86, width:457.04, height:87.34)
+label_text=בשליטת ישראל: כחול · בשליטת כוחות ערביים: כתום-אדום · שטח שבמחלוקת או שטח הפקר: אפור, מקווקו
+קווי החזית של 9 ביולי 1948, מותאמים (ארכיון המדינה; מפת ה-CIA מ-18 במאי 1948)
+overlap=False
