@@ -28,6 +28,11 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   the fixed neighbour order, and the captures still waiting at the game's end resolve in ordinal id order, with no RNG
   draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). No golden captures a place, so none answers one.
 
+## Combat draws
+
+A player engagement draws `Combat.DrawsPerEngagement` (1) when its order runs in `RunOrders`, after the route step and any
+earlier committed order, before every waiting order. The enemy's engagements draw in resolver step 2, in ascending attacker id.
+
 ## Golden playthroughs
 
 `Statecraft.Sim.GoldenRun.Play(content, until)` starts `Simulation.NewGame(content, GoldenRun.Seed, Mode.Historical)`

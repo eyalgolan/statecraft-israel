@@ -31,7 +31,7 @@ Sub-district boundaries (content/map/subdistricts_1948.geojson): digitised from 
 "Administrative Divisions" (1946, overprinted May 1947) and the Administrative Divisions (Amendment) Proclamation, 1947
 (Palestine Gazette No. 1552), Government of Palestine works (public domain in Israel and the UK; facts only are used: decision D-B in
 docs/oss/DECISIONS.md; see the file's licence note); scans from
-the National Library of Israel via Wikimedia Commons. Hebrew and Arabic names from Wikipedia (CC BY-SA 4.0).
+the National Library of Israel via Wikimedia Commons. Hebrew names from the Palestine Gazette's Hebrew edition (the 1945 schedule); Arabic names from Wikipedia (CC BY-SA 4.0).
 
 Railways and roads of 1948 (content/map/route*_1948.yaml): traced on the Survey of Palestine 1:250,000 map of 1946
 (public domain in Israel and the UK; facts only are used, as for decision D-B in docs/oss/DECISIONS.md), using the scans

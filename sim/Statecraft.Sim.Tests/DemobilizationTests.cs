@@ -173,9 +173,10 @@ public class DemobilizationTests
         var c = Load();
         var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2, order: Combat.Attack, orderTarget: "1,0"),
             new Unit(2, "enemy", 1, 0, side: "egypt", strength: 3));
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1));
+        var attacked = new Dictionary<int, (int Q, int R)> { [1] = (1, 0) };
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
         s.ChosenOptions["armistice_jordan"] = "sign";   // would open the order if the target did not count
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1));
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
     }
 
     // R-UNIT-005: the front is the nearest enemy unit's, ties by the lowest unit id; an attack order's target counts.
@@ -191,7 +192,8 @@ public class DemobilizationTests
         s.ChosenOptions["armistice_syria"] = "sign";
         Assert.Null(Demobilization.Check(c, s, 1));
 
-        var attacking = State(c, Soldier(1, 3, 0, Combat.Attack, "2,0"), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, attacking, 1));
+        var attacking = State(c, Soldier(1, 3, 0), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, attacking, 1,
+            new Dictionary<int, (int Q, int R)> { [1] = (2, 0) }));
     }
 }

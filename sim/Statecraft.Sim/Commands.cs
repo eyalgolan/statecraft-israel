@@ -180,10 +180,12 @@ namespace Statecraft.Sim
     {
         public GameState State { get; }
         public IReadOnlyDictionary<int, int> Spent { get; }
+        public IReadOnlyDictionary<int, (int Q, int R)> Attacked { get; }
         public IReadOnlyList<Cause> Why { get; }
         public IReadOnlyList<Rejection> Rejected { get; }
-        public PreviewResult(GameState state, IReadOnlyDictionary<int, int> spent, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected)
-        { State = state; Spent = spent; Why = why; Rejected = rejected; }
+        public PreviewResult(GameState state, IReadOnlyDictionary<int, int> spent, IReadOnlyDictionary<int, (int Q, int R)> attacked,
+                             IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected)
+        { State = state; Spent = spent; Attacked = attacked; Why = why; Rejected = rejected; }
     }
 
     /// <summary>Checks that every text an order carries can be saved: a null id or a lone surrogate would make the save

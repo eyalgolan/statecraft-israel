@@ -79,6 +79,42 @@ public class GameSessionTurnTests
         Assert.Equal(SaveException.OlderRules, e.Code);
     }
 
+    // R-SAVE-003: reloading keeps an attack's result; the same draw comes out.
+    [Fact]
+    public void AReloadKeepsAnAttacksResult()
+    {
+        var session = Fresh();
+        var (unit, q, r) = FirstAttack(session);
+        Assert.Null(session.Commit(new UnitOrder(unit, Combat.Attack, q, r)));
+        var loaded = GameSession.Load(C, session.Save.Write(), out _);
+        Assert.Equal(session.Now.State.Hash(), loaded.Now.State.Hash());
+    }
+
+    // R-TURN-004: a vote queued after an attack runs after it, so it cannot change the attack's draw.
+    [Fact]
+    public void AVoteQueuedAfterAnAttackDoesNotChangeIt()
+    {
+        var a = Fresh(); var b = Fresh();
+        var (unit, q, r) = FirstAttack(a);
+        a.Commit(new UnitOrder(unit, Combat.Attack, q, r)); b.Commit(new UnitOrder(unit, Combat.Attack, q, r));
+        var policy = C.At(a.State.Date).Policies.First().Id;
+        var withVote = a.EndTurn(new Command[] { new SetPolicy(policy, 0.5) });
+        var without = b.EndTurn(new Command[0]);
+        Assert.Equal(without.Why.First(w => w.Message.StartsWith("The attack on hex")).Message,
+                     withVote.Why.First(w => w.Message.StartsWith("The attack on hex")).Message);
+    }
+
+    /// <summary>The first (unit, hex) of the player's that Combat.Check takes on the session's shown state. At the start Golani
+    /// (unit 0, 10,9) is next to the Syrian unit on 10,10 (docs/determinism.md, #1240's row), so one exists.</summary>
+    static (int, int, int) FirstAttack(GameSession s)
+    {
+        var st = s.Now.State;
+        foreach (var u in st.Units.Values.Where(x => x.Side == Movement.PlayerSide))
+            foreach (var e in st.Units.Values.Where(x => x.Side != "" && x.Side != Movement.PlayerSide))
+                if (Combat.Check(C, st, u.Id, e.Q, e.R, spent: s.Now.Spent) == null) return (u.Id, e.Q, e.R);
+        throw new InvalidOperationException("precondition: no attack is possible at the start");
+    }
+
     // R-SAVE-004: a schema 2 GDD save that does not replay to its saved hash gets the clear older-rules message; a schema 3
     // one that does not is still damaged (no code).
     [Fact]

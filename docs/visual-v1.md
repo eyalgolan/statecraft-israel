@@ -1066,10 +1066,10 @@ WebGL frame profile can no longer draw it), and `?borderproof` / `-borderproof` 
 the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (Palestine Gazette No. 1552, Supplement No. 2,
 30 Jan 1947, pp. 125-133, in force 1 Jan 1947) revoked and replaced the whole Schedule, so it alone defines them; the 1942
 (No. 1163) and 1945 (No. 1415) changes are superseded (cited, not read). No later amendment was found (two web searches,
-2026-10-11); **the check stays open**: the Palestine Gazette's 1947 and 1948 indexes, or "Laws of Palestine 1947"
-(subsidiary legislation) at the National Library of Israel, would close it.
+2026-10-11; then the Gazette's 1947 and 1948 indexes, read 2026-10-16: `research_notes/Map borders/subdistrict-names-and-amendments-1947-48.md` section 3);
+**the check is closed** (owner ruling, 2026-10-23, #196), and the note's section 3.3 gaps are recorded in the file.
 - *True lines:* `content/map/subdistricts_1948.geojson` (status `sensitivity-reviewed`, checked 2026-10-11; names as in
-  the Gazette, Hebrew and Arabic from Wikipedia, the source noted per row), written by `tools/borders_digitise.py` from the Survey of Palestine map
+  the Gazette, Hebrew from the Gazette's 1945 Hebrew schedule (owner ruling, 2026-10-23, #196), Arabic from Wikipedia, the source noted per row), written by `tools/borders_digitise.py` from the Survey of Palestine map
   "Administrative Divisions" (1:750,000, drawn April 1946, red boundary overprint May 1947; map 6 of the "Maps of
   Palestine" prepared for UNSCOP, June 1947), two Commons scans of different prints (National Library of Israel), SHA-256
   checked. Method: the graticule (35-36 E x 30-33 N) georeferences each scan (affine, rms 5-6 px, about 0.2 km); the red
@@ -1112,7 +1112,8 @@ the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (P
   Lisan) stay as built; the Mandate frontier outline stays; Samaria District in Arabic stays "لواء السامرة" (no official
   Arabic Mandate text reachable online; "لواء نابلس" is the common usage; unverified, noted in the file); the Hebrew and
   Arabic names from Wikipedia are accepted for now; the sensitivity review is done (`sensitivity-reviewed`), while the
-  1947-48 amendment check stays open.
+  1947-48 amendment check stays open. Owner rulings, 2026-10-23 (#196): the Hebrew names follow the Gazette's 1945 Hebrew
+  schedule headings, and the amendment check is closed (the research note above, sections 2 and 3).
 - *1949 armistice lines (armistice-lines, #196):* `content/map/armistice_lines_1949.geojson` (true lines, draft) and
   `armistice_hexes_1949.yaml` (snapped), from the agreements and their annexed maps
   (`research_notes/Map borders/armistice-lines-1949.md`, "Built"): Syria (line and three-part DMZ), Lebanon (the

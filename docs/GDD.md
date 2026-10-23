@@ -35,11 +35,11 @@ The central decision is where people should contribute next. A civilian can take
 
 Proposed turn structure:
 1. Review resources and city needs.
-2. Move units, issue orders, start city projects and choose ministers.
+2. Move units, issue orders, start city projects and choose ministers. Moves and attacks happen at once; the other orders take effect at End turn (owner, 23 October 2026, #1402 and #1398: "Instant, like Civ", "No undo, like Civ" and "Approve, start building").
 3. Select event outcomes.
 4. Resolve production, consumption, training, construction and combat.
 
-The order of resolution and the number of actions per turn are open.
+Unit orders are free under D-A6, and their order of resolution follows R-TURN-004 (owner, 23 October 2026, #1402 and #1398: "Approve, start building").
 
 ### Minister selection TBD
 
@@ -73,7 +73,7 @@ The player can choose ministers. TBD: minister roles, available candidates, appo
 
 ### Movement and civilian actions
 
-The player can move units. Movement allowance, terrain costs, road and rail effects, stacking, transport and access to enemy territory are open.
+The player can move a unit at once or set a go-to route whose next step runs at End turn. Units have an integer movement allowance and pay integer biome costs; built road and rail corridors may lower those costs. Lakes and the sea are impassable, stacking is limited, there is no zone of control, and there is no transport or embarkation. A unit with its full allowance may always enter one neighbouring land hex, whatever its cost; after spending points, it needs the full cost of the next hex. End turn waits until every military unit with movement points has moved, attacked, holds an order or is skipped for the turn (`Q-MOVE-1` to `Q-MOVE-5`; owner, 23 October 2026, #1402 and #1398: "Now" for go-to, "No, strict like Civ VI", "Block like Civ" and "Approve, start building").
 
 A civilian can be employed in an available city employment slot. A civilian can train in a military camp and become a recruit, or train in a Hakhshara (הכשרה) and become a Halutz. The source of a Hakhshara and whether the player builds one are open.
 
