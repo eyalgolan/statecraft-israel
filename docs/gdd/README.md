@@ -2,8 +2,8 @@
 
 The [GDD](../GDD.md) is the design of record. Map-production priorities and historical location records are in the
 separate [Locations specification](../locations.md); the authoring workflow is in [Map editor](map-editor.md).
-The terrain/tile/hex-type catalogue remains **TBD in the GDD**, while the approved biome-based movement framework
-is retained in [Military and combat](military-combat.md).
+The terrain/tile/hex-type catalogue is frozen at the eight biomes for the MVP (owner, 23 October 2026, #1512), and the
+approved biome-based movement framework is retained in [Military and combat](military-combat.md).
 
 For map work, read the location roster together with [Cities and absorption](cities.md), [Build yishuv](build-yishuv.md)
 and [Corridors](corridors.md). [Settlement control](settlement-control.md) defines which places may become control targets;
