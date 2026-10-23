@@ -12,7 +12,7 @@ These are candidate labels. Paint, markings and exact subtype are unverified; th
 
 ## Original files and provenance
 
-The two original delivered ZIPs are preserved byte-for-byte in [assets-source/generated-1948/vehicles](../assets-source/generated-1948/vehicles/). They contain the original textured GLBs with embedded colour maps; they contain **no provider FBX**. [sources.json](../assets-source/generated-1948/vehicles/sources.json) records archive/member hashes, provider model IDs, geometry counts and round-trip checks. Per-model provenance beside each editor asset records the same identity. Original archives and backup commit `623ca73c` are preserved.
+The two original delivered ZIPs are preserved byte-for-byte in [asset-sources/generated-1948/vehicles](../asset-sources/generated-1948/vehicles/). They contain the original textured GLBs with embedded colour maps; they contain **no provider FBX**. [sources.json](../asset-sources/generated-1948/vehicles/sources.json) records archive/member hashes, provider model IDs, geometry counts and round-trip checks. Per-model provenance beside each editor asset records the same identity. Original archives and backup commit `623ca73c` are preserved.
 
 Unity has no glTF importer installed in this project. The `*-compatibility.fbx` files are explicitly documented, full-geometry GLB→FBX compatibility conversions, not renamed originals. The export does not decimate, weld, alter the pivot or rewrite mesh/UV data; its reimport checks triangle connectivity and vertex/UV error below 1e-6. There are no original clips to discard. The 4096px JPEG bytes are extracted from the original GLB buffer without resizing or re-encoding.
 

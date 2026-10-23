@@ -17,7 +17,7 @@ import zipfile
 
 IDS = {13: "generated-1948-13-egyptian-spitfire", 14: "generated-1948-14-syrian-renault-r35", 16: "generated-1948-16-egyptian-dakota-c47"}
 ART = Path("unity/Assets/Editor/Generated1948VehicleReview")
-SOURCES = Path("assets-source/generated-1948/vehicles")
+SOURCES = Path("asset-sources/generated-1948/vehicles")
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
 

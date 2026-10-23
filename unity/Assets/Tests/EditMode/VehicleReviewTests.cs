@@ -50,7 +50,7 @@ public class VehicleReviewTests
     [Test]
     public void DeliveredSourceArchivesStayOutsideUnityWithVerifiedHashes()
     {
-        string root = System.IO.Path.Combine(Paths.RepoRoot, "assets-source/generated-1948/vehicles");
+        string root = System.IO.Path.Combine(Paths.RepoRoot, "asset-sources/generated-1948/vehicles");
         var manifest = JsonUtility.FromJson<ArchiveManifest>(System.IO.File.ReadAllText(System.IO.Path.Combine(root, "sources.json")));
         Assert.AreEqual(3, manifest.items.Length); Assert.AreEqual(2, manifest.items.Select(i => i.archive).Distinct().Count());
         foreach (var item in manifest.items)
