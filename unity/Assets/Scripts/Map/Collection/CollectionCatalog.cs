@@ -23,8 +23,9 @@ namespace Statecraft.Game.Map.Collection
     /// waits for a sourced location (owner: wait), and #507's first Jerusalem, kept in the repository unused on the map
     /// (owner, 21 October 2026, #708).
     /// The original fifty #507/#336 models are slimmed by tools/slim_collection.py; the two new infantry retain full
-    /// source geometry, original-size maps and both local clips. All runtime models live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
-    /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
+    /// source geometry, original-size maps and both local clips. All runtime models live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. The original fifty each ship as two
+    /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near; the two new infantry each ship one, &lt;id&gt;.prefab,
+    /// in their category's AssetBundle, which the game streams after the first frame
     /// (<see cref="CollectionStream"/>), so the first download does not grow. A category is one bundle, so a placement
     /// downloads only its own kind. The buildings of #659 can join as one more bundle by adding a row here.</summary>
     public static class CollectionCatalog
