@@ -16,6 +16,8 @@ R-TURN-002: An event that asks for a decision opens its window on the 15th on or
 
 R-TURN-003: In the historical run, no more than 6 months pass from one card to the next (or from the last card to the game's end), and no more than 2 when the country is at full war (security level 5) on any turn of the stretch (owner, 15 October 2026, Q-CUT-8: "6 months, 2 in wartime"; the M3 gap ruling restated in months).
 
+R-TURN-004: A move (`Move`) and a unit order (`UnitOrder`) other than Send home take effect at once and are final (the owner, 23 October 2026: "No undo, like Civ"): each is committed to the turn in progress, in the order given, and the game shows the state after them (`Simulation.Preview`). Every other order waits for End turn, may be changed or withdrawn until then, and costs and runs as before. End turn runs the route step (R-MOVE-009), then the committed orders in the order given, then the waiting orders in the order queued, as one batch (`Simulation.Step`), so a waiting order never changes the result of a committed one (spec 2026-10-23 section 3).
+
 ## The loop switch
 
 R-LOOP-001: `systems.loop` in eras.yaml is `legacy` (the default) or `gdd`, and every era has the same value. Its ruleset id, which a save records, is `legacy` or `gdd-0.1`.
@@ -53,6 +55,10 @@ R-CTRL-010: Raid and withdraw (Q-RAID-1 (a), owner, 18 October 2026, #783 batch 
 R-SAVE-001: A save names the ruleset it was played under (`ruleset legacy` or `ruleset gdd-0.1`, save schema 2). A game refuses a save made under another ruleset. A schema 1 save has no ruleset line and is legacy, so the GDD game refuses it as made under earlier rules. The refusal carries a code (`older_rules`) the UI translates, and the sim's reason does not itself ask for a new game: the player reads that once (N4).
 
 R-SAVE-002: A save that names a ruleset this build does not know, or a newer save schema, was made by a newer version of the game and is refused with the code `newer_version` (N2).
+
+R-SAVE-003: Save schema 3 adds the open turn: after the last `turn`, a line `open` and the turn in progress's committed orders (R-TURN-004), one a line (a waiting order there is refused: the save was edited); the `end` hash is still the state's after the last finished turn. Loading replays the turns, then commits the open orders again; one refused on the same content means the save is damaged (`SaveException`), and on other content the rest are dropped with the `replay_differs` warning. A schema 2 save has no open turn and loads as before (but see R-SAVE-004).
+
+R-SAVE-004: A schema 2 save of the GDD game with a player attack (`order <unit> attack <q> <r>`) is refused with the code `older_rules` (R-SAVE-001): its attacks were standing orders, so it would replay differently (the owner, 23 October 2026: "Refuse with a clear message"). So is a schema 2 GDD save whose replay under the current rules does not end on its saved hash (instant capture, the full-points step). Other schema 2 saves load.
 
 ## Cities
 
