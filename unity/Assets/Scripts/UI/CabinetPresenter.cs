@@ -46,6 +46,7 @@ namespace Statecraft.Game.UI
             screen = root.Q<VisualElement>("screen-cabinet"); this.bridge = bridge; this.text = text; this.portraits = portraits;
             pmCard = screen.Q<Button>("seat-" + PrimeMinister);
             list = screen.Q<ScrollView>("cabinet-seats"); candidates = screen.Q<ScrollView>("cabinet-candidates");
+            FocusScroll.BarsAreNotTabStops(list, candidates);   // #41: each bar was an extra Tab stop after the last row
             pmOffices = screen.Q<VisualElement>("cabinet-pm-offices"); chips = screen.Q<VisualElement>("cabinet-parties");
             hemicycle = screen.Q<Hemicycle>("cabinet-hemicycle");
             hemicycle.Mirrored = text["ui.lang"] == UiLanguage.Hebrew;   // the coalition from the right in a right-to-left UI

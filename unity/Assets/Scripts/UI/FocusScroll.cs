@@ -86,5 +86,27 @@ namespace Statecraft.Game.UI
         }
 
         static bool LaidOut(Rect r) => !float.IsNaN(r.width) && !float.IsNaN(r.height) && r.width > 0f && r.height > 0f;
+
+        /// <summary>Takes a scroll view's own scroll bars out of the Tab order (accessibility audit, #41, the keyboard-only
+        /// turn's "Still open" list). A scroll bar is always in sight and the list it belongs to is reached by Tabbing
+        /// through its rows, so a stop on the bar only adds a press between the last row and the next control. Dragging it
+        /// with the pointer and the mouse wheel are untouched: this changes focusability, not behaviour. Call it after the
+        /// view exists; UI Toolkit rebuilds the bars' children with the view, so the sliders are set as well as the
+        /// scrollers.</summary>
+        public static void BarsAreNotTabStops(params ScrollView?[] views)
+        {
+            foreach (var view in views)
+            {
+                if (view == null) continue;
+                foreach (var scroller in new[] { view.verticalScroller, view.horizontalScroller })
+                {
+                    if (scroller == null) continue;
+                    scroller.focusable = false;
+                    if (scroller.slider != null) scroller.slider.focusable = false;
+                    if (scroller.lowButton != null) scroller.lowButton.focusable = false;
+                    if (scroller.highButton != null) scroller.highButton.focusable = false;
+                }
+            }
+        }
     }
 }

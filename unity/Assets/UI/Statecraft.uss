@@ -404,10 +404,13 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }
 .info-empty .gold-rule, .info-empty #info-subtitle, .info-empty .reason { display: none; }
 .info-empty #info-title { font-size: 20px; }
+/* On the two-row bar the window is too narrow for the one-line chip beside the right column: it ran under the border
+   layer's label (.map-layer, the column's left 250 px). The chip ends 12 px left of the column (16 px + 480 px) and wraps. */
+.hud-two-row .info-panel.info-empty { right: 508px; }
+.hud-two-row .info-empty #info-title { white-space: normal; }
 /* On a phone upright the hint chip keeps the window's width from the left edge (two lines, InfoPanelLayoutTests), so it sits
    over Star, Report and Share (#1236): the window's 16 px, three 60 px discs with their 12 px margins, and a 12 px gap. */
 .hud-three-row .info-panel.info-empty { left: 16px; bottom: 244px; right: 254px; }
-.hud-three-row .info-empty #info-title { white-space: normal; }
 /* The hex's facts as the promo's icon rows: a gold sign, then the line, which wraps inside the panel (#397). A unit's card
    reuses the lines without the signs (they name a hex's facts, not a unit's). */
 .info-row { flex-direction: row; align-items: flex-start; margin-bottom: 3px; }

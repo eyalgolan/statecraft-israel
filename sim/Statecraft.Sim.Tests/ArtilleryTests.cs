@@ -4,8 +4,8 @@ using System.Linq;
 using Statecraft.Sim;
 
 /// <summary>Artillery's combat role and the armoured car (GDD Phase 5 PR 9, part 1; #748). Q-ARTY-1 and Q-ARTY-2 are the
-/// plan's recommendations, taken by the owner on 15 October 2026 ("Take all recommendations", #375): artillery adds its
-/// strength to an attack on a hex within its range, never attacks alone or holds ground, and spends Arms when it fires; the
+/// plan's recommendations, updated by OQ-1 on 23 October 2026: player artillery attacks alone at once from range, never
+/// holds ground, and spends Arms when it fires; enemy artillery still supports another attacker in resolver step 2. The
 /// armoured car has its own combat factor and no other special rule. The fixture's numbers are fixture values: a gun with
 /// range 2, 3 Arms a firing and a factor of 200, a car with a factor of 150, and CombatTests' table (below 2:1 both sides
 /// lose 1, from 2:1 the defenders lose 1 and retreat), so a test does not depend on the draw.</summary>
@@ -44,35 +44,46 @@ public class ArtilleryTests
         Assert.Equal("That hex is not next to the unit", Assert.Single(Step(c, s, new UnitOrder(3, Combat.Attack, 2, 0)).Rejected).Reason);
     }
 
-    // R-COMBAT-007: artillery never attacks alone. With no other unit of its side attacking the hex, it holds its fire: no
-    // draw, no Arms, no loss, a line, and the order stands for a later turn.
+    // R-COMBAT-007 (owner, 23 October 2026, OQ-1: "One unit per attack, Civ"): artillery attacks alone from range, at once,
+    // pays its arms_per_fire and loses nothing.
     [Fact]
-    public void ArtilleryAloneHoldsItsFire()
+    public void ArtilleryAloneFiresAtOnceAndLosesNothing()
     {
         var c = Load();
         var s = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Enemy(2, 2, 0, 3));
-        var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0));
-        Assert.Empty(r.Rejected);
-        Assert.Equal(3, r.State.Units[2].Strength);
-        Assert.Equal(s.Arms, r.State.Arms);
-        Assert.Equal(Step(c, s).State.RngState, r.State.RngState);
-        Assert.Equal((Combat.Attack, "2,0"), (r.State.Units[1].Order, r.State.Units[1].OrderTarget));
-        Assert.Contains(r.Why, w => w.Message == "Unit 1 holds its fire: no attack on hex 2,0 to support");
+        var arms = s.Arms;
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
+        Assert.Empty(now.Rejected);
+        Assert.Contains(now.Why, w => w.Key == WhyKeys.Engagement);
+        Assert.Equal(arms - 3, now.State.Arms);
+        Assert.Equal(2, now.State.Units[1].Strength);
+        Assert.Equal((2, 0), now.Attacked[1]);
     }
 
-    // R-COMBAT-007: in support, the guns add their strength times their factor and pay their own Arms. 1 + 2 x 200% = 5
-    // against 2 is 250 percent, the 2:1 row; the soldier alone would be at 50.
+    // R-UNIT-005 (spec 4.6): a gun's front is that of the enemy it attacked this turn, two hexes away, though it borders none.
     [Fact]
-    public void ArtilleryAddsItsStrengthTimesItsFactorToAnAttack()
+    public void AGunsFrontIsTheEnemyItAttackedThisTurn()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Enemy(2, 2, 0, 9));
+        s.ChosenOptions["armistice_syria"] = "sign";
+        Assert.Null(Demobilization.Check(c, s, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, now.State, 1, now.Attacked));
+        Assert.Equal("The armistice with Egypt is not signed",
+            Simulation.Step(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0), new UnitOrder(1, Demobilization.SendHome) }).Rejected.Single().Reason);
+    }
+
+    // R-COMBAT-007, OQ-1: the preview and engagement count the selected player unit alone, not another standing attacker.
+    [Fact]
+    public void APlayersAttackDoesNotAddAStandingGun()
     {
         var c = Load();
         var s = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Of("soldier", 3, 3, 0, 1), Enemy(2, 2, 0, 2));
-        Assert.Equal(250, Combat.Preview(c, s, 3, 2, 0)!.Value.RatioPercent);
+        Assert.Equal(50, Combat.Preview(c, s, 3, 2, 0)!.Value.RatioPercent);
         var r = Step(c, s, new UnitOrder(3, Combat.Attack, 2, 0));
         Assert.Empty(r.Rejected);
-        Assert.Equal(1, r.State.Units[2].Strength);   // the 2:1 row: the defenders lose 1 and retreat, the attackers nothing
-        Assert.NotEqual((2, 0), (r.State.Units[2].Q, r.State.Units[2].R));
-        Assert.Equal(s.Arms - 2 - 3, r.State.Arms);   // the soldier's attack and the guns' firing
+        Assert.Equal(s.Arms - 2, r.State.Arms);
     }
 
     // R-COMBAT-007: the guns fire from behind the line, so the attackers' losses fall on the other attackers only. 1 + 2 x
@@ -88,33 +99,6 @@ public class ArtilleryTests
         Assert.False(r.State.Units.ContainsKey(3));   // the soldier took the loss and was destroyed
         Assert.Equal(2, r.State.Units[2].Strength);
         Assert.Contains(r.Why, w => w.Message.StartsWith("The attack on hex 2,0 (units 1, 3 against unit 2,", StringComparison.Ordinal));   // id order, though the guns join last
-    }
-
-    // R-COMBAT-007: the guns pay after the other attackers; a stock that cannot pay for the firing calls it off, and the
-    // attack goes ahead without them. At the order, the firing counts the attacks already ordered.
-    [Fact]
-    public void ArtilleryTheStockCannotPayForIsCalledOff()
-    {
-        var c = Load();
-        var s = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Attacking(Of("soldier", 3, 3, 0, 1), 2, 0), Enemy(2, 2, 0, 2));
-        s.Arms = 4;   // the soldier's 2, then 2 left for the guns' 3
-        var r = Step(c, s);
-        Assert.Contains(r.Why, w => w.Message == "Unit 1's attack on hex 2,0 is called off: it needs 3 Arms and the stock has 2");
-        Assert.Equal("", r.State.Units[1].Order);
-        Assert.Equal(2, r.State.Arms);
-        Assert.False(r.State.Units.ContainsKey(3));   // 1 against 2, the first row: both sides lose 1
-        Assert.Equal(1, r.State.Units[2].Strength);
-
-        var t = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Attacking(Of("soldier", 3, 3, 0, 1), 2, 0), Enemy(2, 2, 0, 2));
-        t.Arms = 4;
-        Assert.Equal("An attack needs 3 Arms and the stock has 4, of which 2 go to attacks already ordered",
-            Assert.Single(Step(c, t, new UnitOrder(1, Combat.Attack, 2, 0)).Rejected).Reason);
-
-        // The other way round: a gun already ordered counts at its own 3 Arms, not at one attack's 2.
-        var g = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Of("soldier", 3, 3, 0, 1), Enemy(2, 2, 0, 2));
-        g.Arms = 4;
-        Assert.Equal("An attack needs 2 Arms and the stock has 4, of which 3 go to attacks already ordered",
-            Assert.Single(Step(c, g, new UnitOrder(3, Combat.Attack, 2, 0)).Rejected).Reason);
     }
 
     // R-COMBAT-007: artillery never holds ground. The hold order is refused with a reason; fortify is not.

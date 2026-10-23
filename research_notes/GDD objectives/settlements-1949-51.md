@@ -113,7 +113,7 @@ are land.
 | 5 | HaSolelim / הסוללים | Kibbutz | 21 Jul 1949 **[S]**; July **[V]** | Lower Galilee | 32.75067, 35.23758 | (7, 9) hills | Pass | Yes / No / No | Saffuriya 3.9 km |
 | 6 | Meron / מירון | Moshav | 22 May 1949 **[S]**; 1949 **[V]** | Upper Galilee | 32.98738, 35.43982 | (11, 5) mountains | Pass | Yes / No / No | Next to Lebanon line; Meron village (sources); hex shared with Sasa |
 | 7 | Kiryat Shmona / קריית שמונה | Transit camp, then town | 18 Jul 1949 first families; 26 Dec 1949 camp; CBS 1950 **[C]** | Hula valley | 33.21316, 35.57461 | (14, 2) hills | Pass | Yes / No / No | On Lebanon line hex; al-Khalisa 0.7 km |
-| 8 | Megiddo / מגידו | Kibbutz | 1 or 2 Feb 1949 **[C]** | Jezreel valley | 32.58041, 35.17968 | (5, 11) coastal plain | Pass | Yes / No / No | Next to Jordan lines; Lajjun 600 m (sources) |
+| 8 | Megiddo / מגידו | Kibbutz | 2 Feb 1949 (kibbutz's own text; its Hebrew date reads as 1 Feb, our reading) vs 1 Feb (Gvati list) **[C]** | Jezreel valley | 32.58041, 35.17968 | (5, 11) coastal plain | Pass | Yes / No / No | Next to Jordan lines; Lajjun 600 m (sources) |
 | 9 | Rehov / רחוב | Moshav | 13 Sep 1951 **[V]** | Beit She'an valley | 32.45080, 35.48915 | (8, 13) valley | Pass | Yes / Yes / No | Next to Jordan line; Faruna (source) |
 | 10 | Ma'agan Michael / מעגן מיכאל | Kibbutz | 25 Aug 1949 **[V]** | Carmel coast | 32.55597, 34.91571 | (2, 12) coastal plain | Pass | Yes / Yes / See note | Area depopulated except one tribe (en Wikipedia); hex shared with Or Akiva |
 | 11 | HaBonim / הבונים | Cooperative moshav | 18 Jul 1949 **[S]** | Carmel coast | 32.63663, 34.93271 | (3, 10) coastal plain | Pass | Yes / No / No | Kafr Lam (sources) |
@@ -263,10 +263,46 @@ sources read, not a gazetteer check.
 
 ### 8. Megiddo (מגידו), kibbutz
 
-- **Founded: [C, one day].** Gvati: 1.2.49, HaKibbutz HaArtzi. Hebrew Wikipedia: "on 2 February 1949 kibbutz Megiddo
-  was founded", citing an Al HaMishmar item dated 2 February 1949 (not read). English Wikipedia: 2 February 1949. The
-  kibbutz archive's "historical background" page gives 2 February 1949, but its text is the Hebrew Wikipedia article
-  word for word, so it is not independent. CBS: 1949.
+- **Founded: [C, one day; the kibbutz's own quoted line may be internally inconsistent, on our reading].** Tags below are [S] unless stated;
+  "agent read 2026-10-23; a person's check pending" applies to every page added here that was opened.
+  - Gvati: 1.2.49, HaKibbutz HaArtzi (the appendix list, as the note already cites it); his prose, on the
+    benyehuda.org page above, says four kibbutzim "went onto the land in Shvat 5709 (February 1949)" and names
+    Megiddo first but gives no day. [S]
+  - The kibbutz's own pages. (a) An excerpt of its founding scroll, shown on the settlement list at ofra.org.il
+    (page "אודות קיבוץ מגידו"): "היום, יום ב' בשבט תש"ט (02.02.1949), שנה ראשונה למדינת ישראל, עלינו כאן חברי הקיבוץ
+    'השומר הצעיר' על שם יוסף קפלן ואנו מניחים יסוד לישוב חדש במולדת" ("Today, 'yom bet' of Shvat 5709 (02.02.1949),
+    the first year of the State of Israel, we members of the kibbutz 'HaShomer HaTza'ir' named after Yosef Kaplan
+    came up here and lay the foundation of a new settlement in the homeland"), marked "(from the founding scroll)".
+    The scroll itself was not seen, only this quotation on a third-party list. [S]
+    (b) Two member memorial pages on megiddo.co.il (objDoc OID 889907 and OID 889911)
+    carry the line "2.2.1949 יום העלייה על הקרקע" (2.2.1949, the day of going onto the land); the first page's life story
+    says he "עלה ב-2 בפברואר 1949 עם קבוצת המייסדים על הקרקע במגידו", the second's "בשניים בפברואר 1949 עלה עם חברי
+    הגרעין להקים את מגידו". These were written decades later; they show what the kibbutz records, not an event
+    report. [S]
+  - **Our reading of the scroll's Hebrew date.** The quotation has no day-of-month number: "יום ב' בשבט" can
+    mean "the 2nd of Shvat" or "Monday in Shvat". We read it as the 2nd of Shvat, which is our interpretation. On
+    that reading it falls on Tuesday 1 February 1949, while Wednesday 2 February 1949 is 3 Shvat (our reading,
+    `convertdate`; 1 Shvat 5709 = Monday 31 January 1949); the Hebrew day would then agree with Gvati's 1.2.49 and
+    not with the Gregorian date in the same line. Read as "Monday", it matches neither 1 nor 2 February (Mondays
+    in Shvat 5709 are 31 January and 7 February). The reading is ours and does not show which date is right. [C]
+  - Hebrew Wikipedia (oldid 43556011): "on 2 February 1949 kibbutz Megiddo was founded". The reference attached to
+    that sentence is not a newspaper but a note on a 1951 survey map (NLI, Eran Laor map collection). The Al HaMishmar
+    item of 2 February 1949, p. 15, is cited elsewhere in the article, after a sentence about the group's members
+    coming from Mishmar HaEmek, under the headline "קיבוץ השוה"צ ע"ש יוסף קפלן עלה על הקרקע בעמק המערבי" ("the
+    Hashomer Hatzair kibbutz named after Yosef Kaplan went onto the land in the western valley"). So the article's
+    own citation gives us the headline only, in a paper dated 2 February; what day the headline's event fell on is
+    not stated in it. The
+    article's sentence that in "February 1949" they went onto the land opposite the mouth of Nahal Iron is cited
+    to Al HaMishmar of 4 May 1949, p. 44 (not read by us). Wikipedia is a citation here, not a source we read
+    through. [S]
+  - English Wikipedia (oldid 1374533944): 2 February 1949. CBS: 1949. The kibbutz archive's "historical background"
+    page repeats the Hebrew Wikipedia text, so it is not independent.
+  - **[GAP]** The Al HaMishmar item of 2 February 1949 (and 4 May 1949) was not opened: nli.org.il returns a
+    Cloudflare "Checking your browser" page (HTTP 403) to curl, and the Jpress address returns 403. A JTA archive
+    search for Megiddo in February 1949 found nothing. So no contemporary record has been read, and the one-day gap
+    stays open: the sources that say 2.2 are the kibbutz's later text (the scroll excerpt, the member memorial
+    pages written long after) or Wikipedia, and on our reading the scroll excerpt's Hebrew date points to
+    1 February.
 - **Founders. [V]** A Hashomer Hatzair group named after Yosef Kaplan, Holocaust survivors from Poland and Hungary:
   both Wikipedias, the archive page.
 - **Location and hex.** CBS 32.58041, 35.17968 (Hebrew Wikipedia 37 m). Hex (5, 11), coastal plain. Nahalal's hex is
@@ -279,6 +315,11 @@ sources read, not a gazetteer check.
 - **Sources.** Gvati and CBS; https://he.wikipedia.org/w/index.php?oldid=43556011 ;
   https://en.wikipedia.org/w/index.php?oldid=1374533944 ;
   https://archive.megiddo.co.il/archiyon_http/ViewPage.asp?pagesCatID=28306&siteName=megido . All checked 2026-10-14.
+  Added 2026-10-23 (agent read; a person's check pending):
+  https://www.ofra.org.il/adminML/ajaxXML/getXMLGlobalSetelmentsList.asp (the founding-scroll excerpt, in the
+  "אודות קיבוץ מגידו" entry); https://www.megiddo.co.il/objDoc.asp?PID=877627&OID=889907&DivID=1 and
+  https://www.megiddo.co.il/objDoc.asp?DivID=1&OID=889911&PID=877627 ; Gvati as above
+  (https://benyehuda.org/read/14684).
 
 ### 9. Rehov (רחוב), moshav
 
