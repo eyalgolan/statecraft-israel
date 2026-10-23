@@ -16,7 +16,7 @@ It changes no content, simulation, tests, goldens or signed review fields.
 - Recorded office terms, announcements, cabinet proposals, parliamentary approval and declarations of allegiance
   are distinct evidence. This note does not choose D14's game boundary or any office-mapping option.
 
-This note examines the original note's §3 items **C1, C2, C3, C4, C5, C6, C11, C22, C26 and C31**. The coverage tables retain the other
+This note examines the original note's §3 items **C1–C11, C22, C26 and C31**. The coverage tables retain the other
 conflicts and secondary-only groups. They are not claims that those rows were checked again or completed.
 
 ## Earlier governments and Finance: six further comparisons
@@ -48,6 +48,52 @@ At the sitting of **7 November 1979**, Begin announces that the cabinet decided 
 **[A]** At the **21 January 1981** sitting, Begin reports that Hurvitz submitted his resignation on **11 January**, that it took effect on **13 January**, and that the cabinet decided on Aridor for Finance on **19 January**. The transcription then records parliamentary approval on **21 January**, 59 in favour, 33 against and four abstentions [N3, N4, N8].
 
 The register separately ends Hurvitz's row 4579 on 13 January, records Begin's Finance row 22777 from 13 to 21 January, and starts Aridor's row 22775 on 21 January [N1]. The targeted passage does not explicitly appoint Begin to the interim Finance role; that statement here rests on the register alone. The resignation letter and full legal instruments were not opened. Submission, effect, cabinet selection and parliamentary approval are not collapsed into one date or a game rule.
+
+## C7–C10 — further register readings and reproduced speeches
+
+The speeches T2–T4 are institutional reproductions in the Begin writings archive, not original scans
+or transcriptions independently linked here to Knesset session metadata. Their headings supply the dates.
+
+**[A]** Seventeen further office-term records were read [T1]. Begin's Communications rows 22769 and
+22770 cover **15 September 1978–15 January 1979** and **28 December 1980–5 January 1981**;
+his Transport row 22771 covers the first of those periods, and his Justice row 22772 covers
+**5–13 August 1980**. These interim statements rest on administrative register fields, not independently
+opened appointment instruments. The speeches below do not themselves appoint him to those interim roles.
+
+### C7 — Communications: cabinet resignation and proposed successor
+
+**[A]** In the speech dated **5 January 1981** by the Begin writings archive, Begin says the cabinet
+accepted Modai's resignation as Communications Minister on **28 December 1980** and approved adding
+Aridor as Communications Minister on **4 January 1981**. He asks the Knesset to approve his announcement
+[T3]. The register ends Modai's row 4177 on 28 December and starts Aridor's row 4311 on 5 January [T1].
+The reproduced speech contains no approval vote. The earlier secondary 22 December attribution remains
+unrenewed [B, C]; cabinet action and the register start are not treated as one legal instant.
+
+### C8 and C10 — proposed portfolio allocation in January 1979
+
+**[A]** In the speech dated **15 January 1979**, Begin asks approval for Patt as Industry, Trade and
+Tourism Minister, Landau as Transport Minister and Modai as Communications Minister. His concluding reply
+praises Hurvitz’s service and thanks Amit for his earlier service [T4]. The cabinet meeting date in the speech is
+**15 Tevet 5739**; no Gregorian conversion is inferred. The register starts Landau's row 3927, Patt's
+row 4268 and Modai's row 4177 on 15 January 1979, when Hurvitz's row 4228 ends [T1].
+
+The opened excerpts do not include the approval vote, Amit's resignation instrument or Hurvitz's exact
+resignation/effective date. They therefore do not settle the original note's competing end-date accounts.
+
+### C9 — Justice: resignation, cabinet proposal and approval request
+
+**[A]** In the speech dated **13 August 1980**, Begin reports that Shmuel Tamir announced his intention
+to resign on **3 August 1980**, delivered the resignation that noon, and that it became effective
+**48 hours later**. He reports proposing Nissim as Justice Minister to the cabinet on **10 August** and
+asks for Knesset approval [T2]. The register ends Tamir's row 3516 on 5 August and starts Nissim's
+row 22773 on 13 August [T1]. The read passage does not include the approval vote or an original
+resignation letter. No precise legal-effect hour is inferred.
+
+**Source limits.** T2–T4 are institutional reproductions of parliamentary speeches in the Begin writings
+archive. The archive's headings supply their dates, sitting numbers and volumes; no matching official
+Knesset session metadata or facsimile was obtained for these three texts. The T2 host abstract calls
+Tamir “Moshe”, while the title and speech body identify Shmuel; the body is used here and the discrepancy
+is retained. These readings are partial evidence for all four conflicts, not completed reconciliations or D14.
 
 ## Foreign Affairs: three recorded handovers
 
@@ -125,10 +171,10 @@ is preserved; it is not a fresh factual check. All listed unresolved work remain
 | C4: Erlich Deputy PM | Register and 7 November 1979 proceeding read [A, C] | Original cabinet instrument and older secondary attribution not reconciled. |
 | C5: Erlich Finance | Paired term fields and Hurvitz approval read [A, C] | Why the older secondary year differs remains unresolved. |
 | C6: Finance, January 1981 | Four procedural dates and register sequence read [A] | Begin interim role is register-only; resignation letter not opened. |
-| C7: Communications, 18th government | Not targeted [B] | Recheck each interim and successor term. |
-| C8: Transportation, 1978–1979 | Not targeted [B] | Primary interim-term check. |
-| C9: Justice, August 1980 | Not targeted [B] | Primary interim-term check. |
-| C10: Industry and Trade, Hurvitz | Not targeted [B] | Recheck the conflicting end dates. |
+| C7: Communications, 18th government | Register and reproduced allocation/resignation speeches read [A, C] | Begin interim roles remain register-only; approval votes and older secondary date unresolved. |
+| C8: Transportation, 1978–1979 | Register and reproduced 15 January 1979 allocation request read [A] | Interim instrument, resignation record and approval vote not opened. |
+| C9: Justice, August 1980 | Register and reproduced resignation/cabinet/approval-request sequence read [A] | Original letter, interim instrument and approval vote not opened. |
+| C10: Industry and Trade, Hurvitz | Register and reproduced 15 January 1979 request read [A, C] | Exact resignation/effect date and older competing end-date account remain unresolved. |
 | C11: Housing, Patt | Register and 1977 proceeding read [A, C] | No independent declaration timestamp identified in the passages read; register difference remains unexplained. |
 | C12: Labour/Welfare and Absorption, May 1982 | Not targeted [B] | Recheck each term; no ministry-mapping decision. |
 | C13: Sharon without portfolio | Not targeted [B] | Recheck the competing start years. |
@@ -200,9 +246,16 @@ whole-sitting historical review or precise vote-time check is claimed.
 | N6 | Knesset [10 October 1983 transcription](https://fs.knesset.gov.il/10/Plenum/10_ptm_236470.DOC) | Document 236470: three notices as read, confidence and Shamir declaration; original resignation/formation letters not separately opened. |
 | N7 | Knesset [7 November 1979 transcription](https://fs.knesset.gov.il/9/Plenum/9_ptm_258322.doc) | Document 258322: announcement, approval and Hurvitz declaration; cabinet decision itself not opened. |
 | N8 | Knesset [21 January 1981 transcription](https://fs.knesset.gov.il/9/Plenum/9_ptm_258064.doc) | Document 258064: resignation dates, cabinet choice and parliamentary approval; Begin interim role not explicitly stated in the targeted passage. |
+| T1 | Knesset [seventeen further office-term records](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?%24filter=PersonToPositionID+eq+4177+or+PersonToPositionID+eq+22770+or+PersonToPositionID+eq+4311+or+PersonToPositionID+eq+22748+or+PersonToPositionID+eq+4148+or+PersonToPositionID+eq+22769+or+PersonToPositionID+eq+22778+or+PersonToPositionID+eq+22771+or+PersonToPositionID+eq+3927+or+PersonToPositionID+eq+22759+or+PersonToPositionID+eq+3516+or+PersonToPositionID+eq+22772+or+PersonToPositionID+eq+22773+or+PersonToPositionID+eq+22774+or+PersonToPositionID+eq+4228+or+PersonToPositionID+eq+4268+or+PersonToPositionID+eq+22763&%24select=PersonToPositionID%2CPersonID%2CPositionID%2CKnessetNum%2CGovernmentNum%2CGovMinistryID%2CGovMinistryName%2CDutyDesc%2CStartDate%2CFinishDate%2CLastUpdatedDate&%24top=25) | All selected fields and all 17 rows read; no next link. Administrative records, not appointment instruments. |
+| T2 | Begin writings archive, [13 August 1980 Justice speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%A9%D7%9C%D7%95%D7%A9-%D7%9E%D7%90%D7%95%D7%AA-%D7%95%D7%A9%D7%99%D7%A9%D7%99%D7%9D-%D7%95%D7%90%D7%A8%D7%91%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1/) | Institutional reproduction of a parliamentary speech. Sitting 364, volume 89; heading and opening resignation/appointment paragraphs read. Approval vote not read; host abstract typo is not used. |
+| T3 | Begin writings archive, [5 January 1981 Communications speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%90%D7%A8%D7%91%D7%A2-%D7%9E%D7%90%D7%95%D7%AA-%D7%95%D7%A9%D7%9C%D7%95%D7%A9-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%AA%D7%A9%D7%99%D7%A2/) | Institutional reproduction of a parliamentary speech. Sitting 403, volume 90; heading and full short announcement read. No approval vote included. |
+| T4 | Begin writings archive, [15 January 1979 portfolio-allocation speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%9E%D7%90%D7%94-%D7%95%D7%A9%D7%91%D7%A2%D7%99%D7%9D-%D7%95%D7%AA%D7%A9%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%AA%D7%A9%D7%99%D7%A2/) | Institutional reproduction of a parliamentary speech. Sitting 179, volume 84; heading, allocation request and relevant concluding reply read. No approval vote or scanned original. |
 
-Some web-reader requests failed, but ordinary public GETs opened the sources listed above. A failed route was not
-used as evidence of the historical claim. Downloaded originals, converted text and access receipts are retained
+A new session-metadata query returned HTTP 473/access denied and was not retried. The separate, publicly
+accessible Begin archive texts are not presented as the unavailable Knesset metadata or original scans.
+
+Some earlier Knesset sources were opened by ordinary public GETs; T2–T4 were read through the web reader.
+A failed route was not used as evidence of a historical claim. Downloaded originals, converted text and access receipts are retained
 privately; no raw document or third-party binary is added to the repository.
 
 ## AI assistance and remaining review
