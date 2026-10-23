@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e16529f7b4684507af10a6d560d1a628, type: 3}
+  m_Name: Models
+  m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.VehicleReview.VehicleReviewCatalog
+  entries:
+  - id: generated-1948-13-egyptian-spitfire
+    label: Egyptian Spitfire candidate
+    model: {fileID: 7353393818029377039, guid: ec1969383e45c4068b3115ee5e55ea91, type: 3}
+    longSideM: 4704
+  - id: generated-1948-14-syrian-renault-r35
+    label: Syrian Renault R35 candidate
+    model: {fileID: 3683171245577937883, guid: e627f00beadb84d4b83b7dacb023943a, type: 3}
+    longSideM: 1744.3999
+  - id: generated-1948-16-egyptian-dakota-c47
+    label: Egyptian Dakota C-47 candidate
+    model: {fileID: 826348103006816945, guid: 56b89b2613d174f55a9bb4b35c72982b, type: 3}
+    longSideM: 4704

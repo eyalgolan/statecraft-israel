@@ -43,7 +43,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 </div>
 
 > [!NOTE]
-> <div dir="rtl">Statecraft: Israel הוא פרויקט קוד פתוח עצמאי. המשחק חינמי ולא מסחרי. אין לפרויקט קשר ל־Firaxis, ל־2K, למדינת ישראל או לאדם כלשהו המופיע בו, והם אינם תומכים בו. המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים. המסגור שלו ישראלי, לכל עובדה יש מקור, ואף ציטוט אינו בדוי. לפרטים: <a href="docs/CONTENT_POLICY.md">מדיניות התוכן ההיסטורי</a>.</div>
+> <div dir="rtl">Statecraft: Israel הוא פרויקט עצמאי, ואת הקוד שלו אפשר לקרוא ולשנות בחינם לשימוש לא מסחרי. המשחק חינמי ולא מסחרי. אין לפרויקט קשר ל־Firaxis, ל־2K, למדינת ישראל או לאדם כלשהו המופיע בו, והם אינם תומכים בו. המשחק עוסק במלחמה, בטרור ובשואה כאירועים היסטוריים. המסגור שלו ישראלי, לכל עובדה יש מקור, ואף ציטוט אינו בדוי. לפרטים: <a href="docs/CONTENT_POLICY.md">מדיניות התוכן ההיסטורי</a>.</div>
 
 <div dir="rtl">
 
@@ -57,7 +57,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 ## מה המצב היום?
 
-***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.2.0](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.0), גרסת טרום־הפצה); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
+***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.2.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.1), גרסת טרום־הפצה); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
 
 מסמך התכנון המחייב הוא עכשיו [<span dir="ltr">docs/GDD.md</span>](docs/GDD.md) (גרסה 0.2, 17 באוקטובר 2026, באנגלית): תורות של חודש, שבהם בונים ומגינים על ישראל בשנים 1948 עד 1951 בעזרת יחידות, ערים ובנייה, ובוחרים שרים. המשחק שאפשר לשחק היום הוא המשחק שמתואר למעלה. התורות החודשיים, תשומת הלב, הערים, האימון, הבנייה בידי החלוצים והפקודות ליחידות, כולל התקפה, כבר בפנים. השליטה ביישובים נכנסה רק בחלקה: היחידות שלכם יכולות לכבוש עיר יעד, אבל הבחירה מה יקרה בה אחר כך עוד לא ניתנת למשחק, ולכן בסוף המשחק כיבוש נחשב לפשיטה ונסיגה (Raid and withdraw). [תוכנית הבנייה](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) מכניסה את השאר בשלבים.
 
@@ -147,7 +147,7 @@ flowchart RL
 
 ## רישיון
 
-קוד: MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
+קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
 
 על בעיות אבטחה מדווחים באופן פרטי, ראו [<span dir="ltr">SECURITY.md</span>](SECURITY.md). קוד ההתנהגות: [<span dir="ltr">CODE_OF_CONDUCT.md</span>](CODE_OF_CONDUCT.md).
 

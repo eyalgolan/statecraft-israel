@@ -6,9 +6,8 @@ using System.Linq;
 namespace Statecraft.Sim
 {
     /// <summary>Combat in the GDD v0.1 loop (Phase 5 PR 8; docs/rules/mvp.md R-COMBAT-001 to R-COMBAT-006). A unit given
-    /// UnitOrder(unit, attack, q, r) attacks the adjacent hex (q, r) in resolver step 2 of every turn until its hex holds no
-    /// enemy unit next to it (spec 2026-10-12 section 2.3: a standing order). Units of one side attacking one hex are one
-    /// engagement, their strengths summed (Q-COMBAT-2); it draws once from the RNG and reads rules.yaml mvp.combat_table
+    /// UnitOrder(unit, attack, q, r) makes a player's unit attack the hex at once; enemy attacks remain standing orders
+    /// resolved in step 2. Each player attack is one engagement with that unit alone; it draws once and reads rules.yaml mvp.combat_table
     /// (Q-COMBAT-1). Combat changes the units and the Arms only (R-COMBAT-005): no resident, city, locality or score is ever
     /// a target or an outcome (Q-CIV-2, impact plan section 4.3).</summary>
     public static class Combat
@@ -70,30 +69,18 @@ namespace Statecraft.Sim
         internal static bool TruceInForce(GameState s) =>
             PlayerTruces.Any(t => s.Date < t.Until && s.ChosenOptions.TryGetValue(t.Event, out var o) && o == t.Option);
 
-        /// <summary>R-COMBAT-009: accepting a truce ends and clears every standing attack of the player's, with a
-        /// line, the same as the enemy side's (owner ruling 2, 22 October 2026, #750; R-ENEMY-006).</summary>
-        internal static void EndAttacksForTruce(GameState s, List<Cause> why)
-        {
-            foreach (var id in s.Units.Keys.ToList())
-            {
-                var u = s.Units[id];
-                if (!Player(u) || u.Order != Attack) continue;
-                s.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
-                why.Add(new Cause("map", id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {id}'s attack on hex {u.OrderTarget} ends: a truce is on"));
-            }
-        }
-
         /// <summary>The enemy military units on (q, r), seen from <paramref name="attacker"/>'s team, in id order.</summary>
         static List<Unit> Defenders(GameState s, Unit attacker, int q, int r) =>
             s.Units.Values.Where(x => x.Q == q && x.R == r && Military(x) && Player(x) != Player(attacker)).ToList();
 
-        /// <summary>R-COMBAT-001's refusals: null when <see cref="Give"/> takes the attack on (q, r), else the reason shown to
-        /// the player. Changes nothing: the unit card asks it for each enemy hex before it offers that hex (#754). Refused for
-        /// an unknown unit, a halutz, an enemy unit, no hex, the attack it already has, a hex not next to it (artillery: beyond
-        /// its range) or with no enemy unit, a truce the player accepted (R-COMBAT-009), or fewer Arms than one attack takes
-        /// on top of the player's other attacks already ordered (Q-COMBAT-4). With <paramref name="enemy"/> the enemy AI orders its own unit through the same checks, the
-        /// sides swapped, and pays no Arms (R-ENEMY-001; Q-ENEMY-4).</summary>
-        public static string? Check(Content c, GameState s, int unitId, int? q, int? r, bool enemy = false)
+        /// <summary>R-COMBAT-001's refusals: null when the player may strike (q, r), else the reason shown to the player.
+        /// Changes nothing: the unit card asks it for each enemy hex before it offers that hex (#754). Refused for an unknown
+        /// unit, a halutz, an enemy unit, no hex, a hex not next to it (artillery: beyond its range), a hex with no enemy unit,
+        /// a truce the player accepted (R-COMBAT-009), no movement points left or fewer Arms than the attack takes. With
+        /// <paramref name="enemy"/> the enemy AI orders its own unit through the same checks, the sides swapped, with its
+        /// existing-order check and no Arms cost (R-ENEMY-001; Q-ENEMY-4).</summary>
+        public static string? Check(Content c, GameState s, int unitId, int? q, int? r, bool enemy = false,
+                                    IReadOnlyDictionary<int, int>? spent = null)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (!Military(u)) return "Only a military unit takes that order";
@@ -101,48 +88,61 @@ namespace Statecraft.Sim
             if (q == null || r == null) return "An attack names a hex";
             if (!enemy && TruceInForce(s)) return "A truce is in force";   // R-COMBAT-009
             var target = Hex(q.Value, r.Value);
-            if (u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
+            if (enemy && u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
             if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? "That hex is beyond the unit's range" : "That hex is not next to the unit";
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
+            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
+                return "That unit has no movement points left this turn";
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            // Arms are paid at resolution, so the stock must also cover the player's other standing attacks, this turn's
-            // included; the unit's own attack, which this order replaces, is not counted.
-            var committed = s.Units.Values.Where(x => x.Id != unitId && x.Order == Attack && Military(x) && Player(x)).Sum(x => Need(c, mvp, x));
-            return !enemy && s.Arms < need + committed ? Short(need, s.Arms, committed) : null;
+            return !enemy && s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
         }
 
-        /// <summary>R-COMBAT-001: gives the player's military unit a standing attack on the adjacent hex (q, r), replacing its
-        /// order (a fortify is lost). Refused, state untouched, with <see cref="Check"/>'s reason. It costs no Attention (D-A6)
-        /// and resolves in this turn's step 2. With <paramref name="enemy"/>, the enemy AI's own unit (see Check).</summary>
-        internal static string? Give(Content c, GameState s, int unitId, int? q, int? r, List<Cause> why, bool enemy = false)
+        /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing
+        /// its order. Refused, state untouched, with <see cref="Check"/>'s reason. The player's attacks are fought at once by
+        /// <see cref="Strike"/> and never stand.</summary>
+        internal static string? Give(Content c, GameState s, int unitId, int? q, int? r, List<Cause> why, bool enemy)
         {
             var refused = Check(c, s, unitId, q, r, enemy);
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
             s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity);
-            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, $"Unit {unitId} will attack hex {target}"));
+            why.Add(UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target));
             return null;
         }
 
-        static string Short(int need, int have, int committed) => committed == 0
-            ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {have}")
-            : FormattableString.Invariant($"An attack needs {need} Arms and the stock has {have}, of which {committed} go to attacks already ordered");
+        /// <summary>R-COMBAT-001 (owner, 23 October 2026, "Instant, like Civ"): the player's unit attacks (q, r) at once:
+        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004), loses its
+        /// order and the rest of its movement points, and fights one engagement alone (OQ-1), drawing once.</summary>
+        internal static string? Strike(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent,
+                                       Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
+        {
+            var refused = Check(c, s, unitId, q, r, spent: spent);
+            if (refused != null) return refused;
+            var mvp = c.RulesAt(s.Date).Mvp!;
+            var u = s.Units[unitId];
+            s.Arms -= Need(c, mvp, u);
+            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            s.Units[unitId] = attacker;
+            if (u.Order == Orders.Fortify)
+                why.Add(UnitLines.Line(WhyKeys.FortifyLost,
+                    $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
+            spent[unitId] = Movement.Points(c, attacker);
+            attacked[unitId] = (q!.Value, r!.Value);
+            Engage(c, s, mvp, new List<Unit> { attacker }, Defenders(s, attacker, q.Value, r.Value), q.Value, r.Value, why);
+            return null;
+        }
 
-        /// <summary>The attack preview (spec section 2.6; Q-UI-1): the ratio, in percent and rounded down, of unit
-        /// <paramref name="unitId"/>'s strength plus that of the units of its team already ordered to attack (q, r) from next to
-        /// it (artillery: from within its range), each at its combat factor, against the enemy units there after fortify and
-        /// terrain, and the combat_table row it falls in. Null when (q, r) is out of the unit's reach or holds no enemy unit, or
-        /// the unit is unknown or no military unit. A gun previewed with no other attacker still gets a ratio, though step 2
-        /// would have it hold its fire (R-COMBAT-007); the unit card shows it with <see cref="Outcomes"/> (#754).</summary>
+        /// <summary>The player attack preview (spec section 4.1; Q-UI-1): the ratio, in percent and rounded down, of unit
+        /// <paramref name="unitId"/>'s strength alone, at its combat factor, against the enemy units there after fortify and
+        /// terrain, and the combat_table row it falls in. Null when (q, r) is out of reach, holds no enemy unit, or the unit is
+        /// unknown or not military. The unit card shows it with <see cref="Outcomes"/> (#754).</summary>
         public static (int RatioPercent, int Row)? Preview(Content c, GameState s, int unitId, int q, int r)
         {
             if (!s.Units.TryGetValue(unitId, out var u) || !Military(u) || !InReach(c, u, q, r)) return null;
             var defenders = Defenders(s, u, q, r);
             if (defenders.Count == 0) return null;
-            var target = Hex(q, r);
-            var attackers = s.Units.Values.Where(x => x.Id == unitId
-                || (x.Order == Attack && x.OrderTarget == target && Military(x) && Player(x) == Player(u) && InReach(c, x, q, r))).ToList();
+            var attackers = new List<Unit> { u };
             var mvp = c.RulesAt(s.Date).Mvp!;
             var ratio = Ratio(c, mvp, attackers, defenders, q, r);
             return (ratio, Row(mvp, ratio));
@@ -187,11 +187,10 @@ namespace Statecraft.Sim
             return row;
         }
 
-        /// <summary>Resolver step 2 (R-COMBAT-002 to R-COMBAT-006): in ascending attacker id, each unit with an attack order not
+        /// <summary>Resolver step 2 (R-COMBAT-002 to R-COMBAT-006): enemy units keep standing attacks. In ascending attacker id, each unit with an attack order not
         /// yet in an engagement this turn leads one, with every unit of its team attacking the same hex. A unit no longer next
-        /// to its hex (artillery: within its range), or whose hex holds no enemy unit, ends its attack; a player's unit pays
-        /// its Arms when it joins, and one the stock cannot pay for has its attack called off (Q-COMBAT-4). Enemy units pay
-        /// nothing (Q-ENEMY-4: no supply). Artillery joins after the other attackers and only beside one of them: alone it
+        /// to its hex (artillery: within its range), or whose hex holds no enemy unit, ends its attack. Enemy units pay
+        /// nothing (Q-ENEMY-4: no supply). Enemy artillery joins after the other attackers and only beside one of them: alone it
         /// holds its fire, pays nothing and keeps its order (R-COMBAT-007). An engagement with an attacker left draws once.
         /// Afterwards every attack whose hex is now empty ends.</summary>
         public static void Resolve(Content c, GameState s, List<Cause> why)
@@ -210,21 +209,17 @@ namespace Statecraft.Sim
                 foreach (var x in group)
                 {
                     done.Add(x.Id);
-                    if (defenders.Count == 0 || !InReach(c, x, q, r)) { End(s, x, $"Unit {x.Id}'s attack on hex {x.OrderTarget} ends: no enemy unit is there", why); continue; }
-                    if (Guns(c, x) && attackers.Count == 0)
+                    if (defenders.Count == 0 || !InReach(c, x, q, r))
                     {
-                        why.Add(new Cause("map", x.Id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {x.Id} holds its fire: no attack on hex {x.OrderTarget} to support"));
+                        End(s, x, WhyKeys.AttackEnded,
+                            $"Unit {x.Id}'s attack on hex {x.OrderTarget} ends: no enemy unit is there", why, x.OrderTarget);
                         continue;
                     }
-                    if (Player(x))
+                    if (Guns(c, x) && attackers.Count == 0)
                     {
-                        var need = Need(c, mvp, x);
-                        if (s.Arms < need)
-                        {
-                            End(s, x, $"Unit {x.Id}'s attack on hex {x.OrderTarget} is called off: it needs {need.ToString(CultureInfo.InvariantCulture)} Arms and the stock has {s.Arms.ToString(CultureInfo.InvariantCulture)}", why);
-                            continue;
-                        }
-                        s.Arms -= need;
+                        why.Add(UnitLines.Line(WhyKeys.HoldsFire,
+                            $"Unit {x.Id} holds its fire: no attack on hex {x.OrderTarget} to support", new[] { x }, x.OrderTarget));
+                        continue;
                     }
                     attackers.Add(x);
                 }
@@ -235,7 +230,8 @@ namespace Statecraft.Sim
                 {
                     var (q, r) = Target(u);
                     if (Defenders(s, u, q, r).Count == 0 || !InReach(c, u, q, r))
-                        End(s, u, $"Unit {u.Id}'s attack on hex {u.OrderTarget} ends: no enemy unit is there", why);
+                        End(s, u, WhyKeys.AttackEnded,
+                            $"Unit {u.Id}'s attack on hex {u.OrderTarget} ends: no enemy unit is there", why, u.OrderTarget);
                 }
         }
 
@@ -245,10 +241,10 @@ namespace Statecraft.Sim
             return (int.Parse(parts[0], CultureInfo.InvariantCulture), int.Parse(parts[1], CultureInfo.InvariantCulture));
         }
 
-        static void End(GameState s, Unit u, string line, List<Cause> why)
+        static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
             s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
-            why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0, line));
+            why.Add(UnitLines.Line(key, line, new[] { u }, args));
         }
 
         /// <summary>R-COMBAT-002, R-COMBAT-003, R-COMBAT-006: one engagement. The face is the one draw; its row's losses fall on
@@ -264,16 +260,21 @@ namespace Statecraft.Sim
             s.RngState = rng.State;
             var target = Hex(q, r);
             var ppu = mvp.PeoplePerUnit;
-            var removed = new List<int>();
+            var removed = new List<Unit>();
             // R-COMBAT-007: the guns fire from behind the line, so the attackers' losses fall on the others only.
             var attackersLost = Take(s, attackers.Where(x => !Guns(c, x)).Select(x => x.Id).ToList(), row.AttackerLoss[face], removed);
             var defendersLost = Take(s, defenders.Select(x => x.Id).ToList(), row.DefenderLoss[face], removed);
+            var named = attackers.OrderBy(x => x.Id).Concat(defenders.OrderBy(x => x.Id)).Select(x => new UnitRef(x)).ToList();
             why.Add(new Cause("map", target, 0, FormattableString.Invariant(
                 $"The attack on hex {target} ({Ids(attackers)} against {Ids(defenders)}, strength ratio {ratio}%): the attackers lost {attackersLost * ppu:N0} people and the defenders lost {defendersLost * ppu:N0} people"),
                 // #1297: the turn report names an enemy attack on every turn it engages, a standing one too (R-ENEMY-003)
-                Player(attackers[0]) ? "" : Attack, Player(attackers[0]) ? null : attackers.Select(x => x.Id).OrderBy(x => x).ToList()));
-            foreach (var id in removed)
-                why.Add(new Cause("map", id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {id} was destroyed"));
+                enemyOrder: Player(attackers[0]) ? "" : Attack,
+                enemyAttackers: Player(attackers[0]) ? null : attackers.Select(x => x.Id).OrderBy(x => x).ToList(),
+                key: WhyKeys.Engagement, units: named, args: new[] { target, ratio.ToString(CultureInfo.InvariantCulture),
+                    (attackersLost * ppu).ToString(CultureInfo.InvariantCulture), (defendersLost * ppu).ToString(CultureInfo.InvariantCulture),
+                    attackers.Count.ToString(CultureInfo.InvariantCulture) }));
+            foreach (var u in removed)
+                why.Add(UnitLines.Line(WhyKeys.Destroyed, $"Unit {u.Id} was destroyed", new[] { u }));
             if (row.DefenderRetreats[face] != 1) return;
             foreach (var d in defenders)
             {
@@ -281,7 +282,8 @@ namespace Statecraft.Sim
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
                     s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
-                    why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {u.Id} retreated to hex {Hex(to.Item1, to.Item2)}"));
+                    var hex = Hex(to.Item1, to.Item2);
+                    why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
                 else
                 {
@@ -290,8 +292,9 @@ namespace Statecraft.Sim
                     // player's soldiers (R-POW-005).
                     s.Units.Remove(u.Id);
                     var held = Prisoners.Take(s, u, attackers.OrderBy(x => x.Id).First());
-                    why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0,
-                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}")));
+                    why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
+                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
+                        new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));
                 }
             }
         }
@@ -302,7 +305,7 @@ namespace Statecraft.Sim
         /// <summary>Takes up to <paramref name="loss"/> population units from <paramref name="ids"/>, one at a time from the
         /// strongest unit left (a tie on the lower id; the list is in id order), removing each that reaches 0 (its id is never
         /// reused: NextId is not touched) and adding it to <paramref name="removed"/>. Returns the units taken.</summary>
-        static int Take(GameState s, List<int> ids, int loss, List<int> removed)
+        static int Take(GameState s, List<int> ids, int loss, List<Unit> removed)
         {
             int taken = 0;
             for (; taken < loss; taken++)
@@ -311,7 +314,7 @@ namespace Statecraft.Sim
                 foreach (var id in ids)
                     if (s.Units.TryGetValue(id, out var x) && (top == null || x.Strength > top.Strength)) top = x;
                 if (top == null) break;
-                if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top.Id); }
+                if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top); }
                 else s.Units[top.Id] = new Unit(top.Id, top.Type, top.Q, top.R, top.Service, top.Side, top.Strength - 1, top.Order, top.OrderTarget, top.HomeCity);
             }
             return taken;

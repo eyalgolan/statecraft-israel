@@ -1,17 +1,20 @@
+#if UNITY_EDITOR
 #nullable enable
 using UnityEngine;
+using UnityEditor;
 
 namespace Statecraft.Game.VehicleReview
 {
-    /// <summary>The dedicated, playable review scene uses the same runtime environment as the opt-in player mode.</summary>
+    /// <summary>Editor-only Play Mode entry; no runtime bootstrap or player-build dependency.</summary>
     public sealed class VehicleReviewScene : MonoBehaviour
     {
         public VehicleReviewStage Open()
         {
-            var catalog = Resources.Load<VehicleReviewCatalog>(VehicleReviewCatalog.Resource);
+            var catalog = AssetDatabase.LoadAssetAtPath<VehicleReviewCatalog>(VehicleReviewCatalog.Path);
             if (catalog == null) throw new System.InvalidOperationException("Run VehicleReviewAssets.Import to create the review catalog.");
             return VehicleReviewStage.Create(catalog);
         }
         void Start() => Open();
     }
 }
+#endif

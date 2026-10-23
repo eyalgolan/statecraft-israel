@@ -6,9 +6,9 @@ namespace Statecraft.Sim.Reference
 {
     /// <summary>Test policy for the GDD goldens (D-A7): a stated simple policy, not game AI and not historical. It sends
     /// HistoricalAI's orders (so it answers every capture with Raid and never Deport, Q-REF-1 (a), R-CTRL-009) and no AssignWorkers (R-CITY-009's default fills the jobs, and an order would turn it off), then
-    /// has each of Israel's units with no attack, in id order, attack the first neighbouring hex (in the fixed order) whose
+    /// has each of Israel's units, in id order, attack the first neighbouring hex (in the fixed order) whose
     /// enemy units it meets at <see cref="AttackRatioPercent"/> percent or better by the combat preview, while the Arms last
-    /// for every standing attack and the new one (R-COMBAT-001, R-COMBAT-004), then,
+    /// for every attack it orders this turn (R-COMBAT-001, R-COMBAT-004), then,
     /// when no city project is being built, starts a housing project in the city with the most overflow that has a hex for it, then sends each idle halutz
     /// unit to the first available yishuv site (then to the first ready field, then to the first available camp site, then to the lowest free segment of the lowest-id corridor), then,
     /// when there is no halutz and none in training, trains one halutz group in
@@ -46,8 +46,8 @@ namespace Statecraft.Sim.Reference
             if (!c.IsGdd) return;
             var cost = AttentionSystem.Cost(c, s, Orders.Kind);
             var per = c.RulesAt(s.Date).Mvp!.ArmsPerAttack!.Value;
-            var attacking = s.Units.Values.Count(u => u.Side == Movement.PlayerSide && u.Order == Combat.Attack);
-            foreach (var u in s.Units.Values.Where(u => u.Side == Movement.PlayerSide && u.Order != Combat.Attack))
+            var attacking = 0;
+            foreach (var u in s.Units.Values.Where(u => u.Side == Movement.PlayerSide))
             {
                 if (cost > left + 1e-9 || s.Arms < per * (attacking + 1)) return;
                 foreach (var (dq, dr) in Movement.Neighbours)

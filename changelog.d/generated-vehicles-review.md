@@ -1,1 +1,1 @@
-- Add a playable, explicitly non-historical vehicle-review scene for the new Egyptian Spitfire, Syrian R35 and Egyptian Dakota candidates, with game camera controls, grounded pivots and independent near/far meshes. Normal scenario deployments and existing vehicle art stay unchanged.
+- Preserve the three generated vehicle candidates as original-source, losslessly imported editor-only review art; remove reduced LODs and all player/Resources review hooks. Record Tal Heuberger’s CC BY-NC-ND 4.0 credit for these new models and their colour maps.

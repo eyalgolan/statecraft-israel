@@ -46,7 +46,7 @@ public class CitiesContentTests
         Assert.True(c.Rules.AttentionCost.ContainsKey("assign_workers"));
         Assert.Equal(new[] { "tel_aviv" }, c.Cities.Where(x => x.Facilities.Count > 0).Select(x => x.Id));
         Assert.Equal(new[] { "military_camp", "hakhshara" }, c.Cities.Single(x => x.Id == "tel_aviv").Facilities);   // D-D5: one of each at the start
-        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara"), ("craftsman", "industry") },
+        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara"), ("craftsman", "industry"), ("artillery", "military_camp"), ("armoured_car", "military_camp") },   // R-UNIT-008: the guns and the car (Q-ARTY-3)
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.Facility)));
         Assert.True(c.Rules.AttentionCost.ContainsKey("train") && c.Rules.AttentionCost.ContainsKey("cancel_training"));
     }

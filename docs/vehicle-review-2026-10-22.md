@@ -1,47 +1,44 @@
-# Generated vehicle review — 22 October 2026
+# Generated vehicle review — original sources
 
-Three owner-generated candidates are placed in a playable, explicitly **non-historical** review environment:
+Refs #756. PR #1378 keeps three candidates as **editor-only review art** until a sourced gameplay placement and art/sensitivity sign-off exist. This follows the [23 October owner rulings](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6358296929) and [original review](https://github.com/eyalgolan/statecraft-israel/pull/1378#issuecomment-6357803018).
 
-| Candidate label | Asset ID |
-| --- | --- |
-| Egyptian Spitfire | `generated-1948-13-egyptian-spitfire` |
-| Syrian Renault R35 | `generated-1948-14-syrian-renault-r35` |
-| Egyptian Dakota C47 | `generated-1948-16-egyptian-dakota-c47` |
+| Candidate | Original GLB triangles | Original colour map | Original animation clips |
+| --- | --- | --- | --- |
+| Egyptian Spitfire (13) | 7,177 | 4096×4096 | 0 |
+| Syrian Renault R35 (14) | 6,329 | 4096×4096 | 0 |
+| Egyptian Dakota C-47 (16) | 6,854 | 4096×4096 | 0 |
 
-These are candidate labels. Their markings and exact subtype details still require art/content review; the models' `provenance.json` files retain those caveats, provider model IDs and source hashes. Only the three new asset directories were copied from combined backup `623ca73c`. M22 and the refused Emir are excluded.
+These are candidate labels. Paint, markings and exact subtype are unverified; the review environment asserts no geographic location, date, formation or historical deployment. Current [unit data](../content/map/units_1948.yaml), [UnitData](../unity/Assets/Scripts/Map/Units/UnitData.cs) and [SeaAirCollection](../unity/Assets/Scripts/Map/Collection/SeaAirCollection.cs) supply no supported deployment for them. Existing Israeli aircraft, C54, armor and scenario rows are unchanged.
 
-## Why a neutral review environment
+## Original files and provenance
 
-The current [unit data](../content/map/units_1948.yaml) provides Egyptian and Syrian **army** rows but no Egyptian air-service/base row or sourced R35 equipment entry. [UnitData](../unity/Assets/Scripts/Map/Units/UnitData.cs) supplies the existing Israeli aircraft types; [SeaAirCollection](../unity/Assets/Scripts/Map/Collection/SeaAirCollection.cs) places the existing C54 in its separate sourced context. None supplies an appropriate deployment for these three candidates.
+The two original delivered ZIPs are preserved byte-for-byte in [assets-source/generated-1948/vehicles](../assets-source/generated-1948/vehicles/). They contain the original textured GLBs with embedded colour maps; they contain **no provider FBX**. [sources.json](../assets-source/generated-1948/vehicles/sources.json) records archive/member hashes, provider model IDs, geometry counts and round-trip checks. Per-model provenance beside each editor asset records the same identity. Original archives and backup commit `623ca73c` are preserved.
 
-The review plane therefore has no geographic coordinates, date, formation, faction control, combat behavior or simulation state. It is not an Egyptian airfield or a Syrian tank deployment. Existing Israeli aircraft, C54, armor and scenario data are untouched. A historical placement later needs a sourced date/location/formation and any required owner design decision.
+Unity has no glTF importer installed in this project. The `*-compatibility.fbx` files are explicitly documented, full-geometry GLB→FBX compatibility conversions, not renamed originals. The export does not decimate, weld, alter the pivot or rewrite mesh/UV data; its reimport checks triangle connectivity and vertex/UV error below 1e-6. There are no original clips to discard. The 4096px JPEG bytes are extracted from the original GLB buffer without resizing or re-encoding.
 
-## Open and use
+[VehicleReviewSources.py](../unity/Assets/Editor/VehicleReviewSources.py) reproduces and verifies the preparation locally, without a service or paid job:
 
-Open `unity/Assets/VehicleReview.unity` and press Play. Existing game builds also enter the same runtime environment with the exact desktop flag `-vehicle-review` or Web query `?vehicle-review`. A normal launch does not activate the review environment.
+```sh
+Blender --background --factory-startup --python unity/Assets/Editor/VehicleReviewSources.py -- --repo REPO --batch ORIGINAL_BATCH
+python3 unity/Assets/Editor/VehicleReviewSources.py --verify --repo .
+```
 
-- `0`: overview; `1`–`3`: focus a candidate.
-- Wheel: zoom; `Q`/`E`: orbit; right-drag or camera keys: pan.
-- In the flagged normal game launch, `Esc` restores the ordinary scene and starts its normal boot.
+## Lossless editor import
 
-The permanent notice says **Vehicle review · Non-historical display** and states that no historical deployment is represented. Labels identify candidates, not military deployments. Aircraft use the existing aircraft-token presentation envelope; the tank uses the existing vehicle-token envelope. These are review sizes, not assertions of the candidates' relative physical dimensions. Each LOD is centered and grounded independently while preserving the source prefab's axis rotation. The camera uses `CameraRig` (35° FOV, 50° pitch), `CameraController`, map lighting/grade and the existing 40/45 km near/far switch.
+`Statecraft.Game.EditorTools.VehicleReviewAssets.Import` imports only these three candidates into `Assets/Editor/Generated1948VehicleReview/`. Mesh and animation compression are Off; animation import keeps all source clips; texture import is uncompressed with Crunch disabled and a cap at least the 4096px source dimensions. Platform compression/size overrides are cleared. There are no near/far variants, decimated meshes, LODs or zoom-dependent model swaps.
 
-## Import and evidence
+Models and colour maps are under **CC BY-NC-ND 4.0, credit Tal Heuberger**, as authorized for these new candidates on 23 October 2026. [ASSETS.yaml](../ASSETS.yaml) retains `ai_generated: true`; [LICENSING.md](../LICENSING.md) adds only the new vehicle model/map paths. Existing model licences and contribution terms are unchanged.
 
-The scoped `Statecraft.Game.EditorTools.VehicleReviewAssets.Import` method imports these three directories, creates their own simplified far meshes/prefabs, writes `Assets/Resources/VehicleReview/Models.asset`, and saves only the new `Assets/VehicleReview.unity` scene. It never rebuilds existing town LODs or overwrites old art. Far meshes must be below 4,500 triangles, lighter than their source, and preserve dimensions within the importer's tolerance.
+## Review and player exclusion
 
-`Statecraft.Game.EditorTools.VehicleReviewEvidence.Capture -captureDir <path>` opens the playable review scene and renders its runtime environment at matched overview, strategic and focused poses. Before frames show the same labelled slots empty; after frames show the candidate placements. Captures include world labels. `evidence.json` records camera/visibility settings. These are **Unity editor renders of the dedicated runtime review scene**, not historical gameplay-map or player/WebGL screenshots.
+Open `unity/Assets/Editor/Generated1948VehicleReview/VehicleReview.unity` and press Play. Keys `0` and `1`–`3` show the overview or focus a candidate; the existing game camera supports wheel zoom, Q/E orbit and right-drag pan. The permanent notice identifies a non-historical display. Camera, lighting, token presentation envelopes and runtime-only centering/grounding serve visual review; they do not assert physical relative sizes or modify original source pivots.
 
-## Payload and validation
+All review types are compiled only under `UNITY_EDITOR`. The catalog, scene, prefabs, compatibility models and textures are under `Editor/`; original archives are outside Unity. There is no Resources catalog, player bootstrap, query/desktop review flag, native capture/quit hook, player build helper, build-listed review scene or asset-bundle label. Tests check the enabled player-scene and Resources dependency closures and all named bundles for vehicle references. Source/archive bytes describe repository storage, not player download size; a fresh player build has not been measured for this revision.
 
-The Resources catalog directly references both prefab levels and their textures. Its assets are **included in player build payload even when review mode is not requested**; opt-in activation does not avoid those build bytes. Before far-LOD generation, the three copied asset directories contain 421,340, 382,016 and 387,652 bytes respectively (1,191,008 bytes total, including metadata/provenance). After import, independent far-LOD generation and trailing-whitespace normalization of the new Unity text files, the directories contain 612,251, 587,382 and 572,400 bytes (1,772,033 total); the Resources catalog is 1,324 bytes before its metadata. These are repository artifact bytes, not compressed build/download bytes. Compressed player download size and frame cost require a build/profile; neither is inferred from repository size.
+Future gameplay placement depends on sourced deployment data, art/sensitivity sign-off and **an own streamed bundle loaded after the first frame, outside the 1948 Collection**. This PR does not implement that future loading system or invent a placement.
 
-`VehicleReviewTests` checks explicit activation, isolation from scenario catalogs, all three placements, pivot/ground contact, actual near/far reduction, texture dimensions, game-camera projection, label viewport fit/model separation and lighting/camera cleanup. Scoped Unity import passed with zero C# warnings. All nine `VehicleReviewTests` passed with zero failures and zero C# warnings. The label regression first failed on overlap, then passed after short world labels and mesh-height clearance replaced the oversized labels; full candidate names remain in the on-screen review legend. Near/far triangle counts are 7,177/4,437 for the Spitfire, 6,329/4,332 for the R35, and 6,854/4,315 for the Dakota. No paid jobs or new concepts are part of this integration.
+## Evidence
 
-For actual player screenshots, `VehicleReviewEvidence.BuildNativeReview` builds only the dedicated review scene into ignored `unity/Builds/VehicleReview/StatecraftVehicleReview.app`. Launch its executable with `-vehicle-proof <absolute-output-dir> -screen-width 3840 -screen-height 2160 -screen-fullscreen 0`. It captures the running player screen, including its non-historical notice, at the same five before/after poses, writes `player-evidence.json` with the actual screen dimensions and camera values, and exits. The proof path reuses the existing `VisualShots` settling interval and end-of-frame capture approach. No scene list or player settings are saved by the build helper.
+Offline original-archive/colour-map verification and compatibility geometry/UV round trips pass for all three. Nine focused Unity tests cover provenance, lossless import, editor exclusion, full-geometry placement at both camera distances, labels and cleanup. Current-revision Unity import passed with zero C# warnings/errors; all nine focused tests passed, and the explicit actual Editor Play Mode capture passed 1/1. All five refreshed pairs were visually inspected and their recorded camera/state/quality fields match; earlier reduced-model screenshots are superseded. The current-upstream simulation suite passed 2,493 tests with zero warnings/errors; policy tests passed 323, and repository policy passed over 3,213 tracked files. No current player-build or compressed-download-size success is claimed.
 
-If the native player build is blocked, the explicit `VehicleReviewPlayModeEvidenceTests.CaptureRunningReviewScene` test enters actual Editor Play Mode through the saved review scene, waits for `VehicleReviewScene.Start` to place all three models, and captures ten matched 4K scene-camera frames into `captures/vehicle-review-playmode`. Its provenance labels them **actual Editor Play Mode scene-camera renders, with world labels and without the screen-space HUD**. They must not be called native-player screenshots. Package/compiler validation is never bypassed to obtain a build.
-
-The one bounded native-player attempt stopped at `Error building Player: Currently selected scripting backend (IL2CPP) is not installed.` No backend change, package patch or validation bypass was attempted. The native-player screenshot route therefore remains unverified on this machine; Editor Play Mode evidence must keep its own provenance label.
-
-The final explicit Play Mode capture test passed 1/1 with zero C# warnings and produced all ten corrected-label frames. The five pairs have identical recorded camera/quality fields at 40 km overview, 60 km strategic view and 12 km individual inspections, all 3840×2160, PC tier and 35° FOV. Visual inspection confirmed clear, grounded models with readable labels that do not cover them. The wrapper also printed five `Invalid ILPostProcessor configuration: Configuration not initialized` diagnostics after its passing test verdict; no player success or clean player-build log is inferred. Separately, the simulation suite passed 2,423 tests with zero warnings/errors, repository policy tests passed 320, and the repository/rule-ID checks passed.
+The explicit `VehicleReviewPlayModeEvidenceTests.CaptureRunningReviewScene` route enters the saved editor-only scene in actual Editor Play Mode. It produces five matched 3840×2160 before/after pairs at 40/60 km overview and 12 km inspections. Before frames show empty neutral slots; after frames show the candidates, at identical camera/state/quality. They are scene-camera renders with world labels and without the screen-space HUD, not native-player or historical-map screenshots.

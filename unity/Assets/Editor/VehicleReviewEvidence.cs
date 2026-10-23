@@ -7,7 +7,6 @@ using Statecraft.Game.Map;
 using Statecraft.Game.VehicleReview;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -39,7 +38,7 @@ namespace Statecraft.Game.EditorTools
             string output = at >= 0 && at + 1 < args.Length ? Path.GetFullPath(args[at + 1])
                 : Path.Combine(Paths.RepoRoot, "captures", "vehicle-review");
             Directory.CreateDirectory(output);
-            EditorSceneManager.OpenScene("Assets/VehicleReview.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(VehicleReviewCatalog.ScenePath, OpenSceneMode.Single);
             var entry = Object.FindFirstObjectByType<VehicleReviewScene>() ?? throw new InvalidOperationException("The playable review scene entry is missing.");
             var stage = entry.Open(); var report = new Report();
             int previous = QualitySettings.GetQualityLevel(); int pc = Array.IndexOf(QualitySettings.names, "PC");
@@ -50,7 +49,7 @@ namespace Statecraft.Game.EditorTools
                 for (int shot = -2; shot < 3; shot++)
                 {
                     string name;
-                    if (shot < 0) { stage.Overview(); if (shot == -1) stage.Rig.Distance = 60000f; stage.Rig.Apply(); name = shot == -2 ? "overview40" : "strategic60"; }
+                    if (shot < 0) { stage.Overview(); if (shot == -1) stage.Rig.Distance = 60000f; stage.Rig.Apply(); name = shot == -2 ? "overview40" : "overview60"; }
                     else { stage.Focus(shot); name = VehicleReviewCatalog.Ids[shot]; }
                     foreach (bool visible in new[] { false, true })
                     {
@@ -61,7 +60,7 @@ namespace Statecraft.Game.EditorTools
                         report.frames.Add(new Frame { file = file, label = visible ? "Three review candidates placed" : "Same review slots before placement",
                             lookAt = stage.Rig.LookAt, cameraPosition = stage.Camera.transform.position, cameraEuler = stage.Camera.transform.eulerAngles,
                             fov = stage.Camera.fieldOfView, distance = stage.Rig.Distance, modelsVisible = visible,
-                            activeModels = stage.Placed.Where(p => p.Near.activeSelf || p.Far.activeSelf).Select(p => p.Id + (p.Near.activeSelf ? ":near" : ":far")).ToArray() });
+                            activeModels = stage.Placed.Where(p => p.Model.activeSelf).Select(p => p.Id).ToArray() });
                     }
                 }
                 File.WriteAllText(Path.Combine(output, "evidence.json"), JsonUtility.ToJson(report, true) + "\n");
@@ -69,16 +68,6 @@ namespace Statecraft.Game.EditorTools
             }
             finally { Object.DestroyImmediate(stage.gameObject); MapShaderGlobals.PinWaterTime(null); QualitySettings.SetQualityLevel(previous, true); }
         }
-        public static void BuildNativeReview()
-        {
-            var args = Environment.GetCommandLineArgs(); int at = Array.IndexOf(args, "-out");
-            string output = at >= 0 && at + 1 < args.Length ? args[at + 1] : "Builds/VehicleReview/StatecraftVehicleReview.app";
-            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { "Assets/VehicleReview.unity" },
-                locationPathName = output, target = BuildTarget.StandaloneOSX, options = BuildOptions.Development });
-            if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Native vehicle-review build failed: " + report.summary.result);
-            Debug.Log("VEHICLE REVIEW BUILD: " + report.summary.totalSize + " bytes -> " + output);
-        }
-
         static void Save(Camera camera, string file)
         {
             var old = camera.targetTexture; var active = RenderTexture.active;

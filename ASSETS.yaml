@@ -116,27 +116,34 @@ rules:
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
   # --- Generated vehicle review candidates (22 October 2026) ---
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-13-egyptian-spitfire/*"
-    licence: CC0-1.0
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-14-syrian-renault-r35/*"
-    licence: CC0-1.0
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
-  - glob: "unity/Assets/Art/Generated1948Review/generated-1948-16-egyptian-dakota-c47/*"
-    licence: CC0-1.0
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*"
+    licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio Smart Mesh P2.0, paid plan, generated 22 October 2026 from the owner's generated concept. Per-model provenance.json records stable provider model IDs and source/output hashes. Static near geometry and UVs retained; 512px colour derivative. A separate Unity-generated far mesh serves the explicitly non-historical vehicle-review scene. Original 4K masters remain outside git."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
-    note: "AI-only output under the existing D1 paid-Tripo CC0/no-rights-claimed convention, preserved from combined backup 623ca73c. Candidate labels and markings do not establish a sourced deployment or archival reconstruction. This row covers only this new vehicle; existing Israeli aircraft, transport and armor are unchanged."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "assets-source/generated-1948/vehicles/*.zip"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Original statecraft-vehicles-aircraft-01.zip and -02.zip delivered 22 October 2026. Exact archive bytes retained; they contain the original textured GLBs and embedded 4096px colour maps for candidates 13, 14 and 16. Member and archive hashes are recorded and checked in sources.json and VehicleReviewSources.py."
+    status: verified
+    note: "Credit Tal Heuberger; owner-authorized CC BY-NC-ND 4.0 for these three new vehicles only. Source archives are outside Unity and have no player-build reference."
   # --- Fonts ---
   - glob: "unity/Assets/UI/Fonts/EBGaramond-*.ttf"
     licence: OFL-1.1
@@ -203,7 +210,7 @@ rules:
     licence: CC-BY-SA-4.0
     source: "tools/borders_digitise.py from the Survey of Palestine map 'Administrative Divisions' (1:750,000, 1946, overprinted May 1947; two Commons scans, SHA-256 in the file) per the 1947 Schedule (Palestine Gazette No. 1552); coast from the Copernicus DEM (NOTICE); the hex layer by tools/borders_bake.py; content/ is CC BY-SA 4.0. subdistrict_hexes_1948.tsv is the YAML's baked runtime form (tools/regions_bake.py, issue #321), with the same rows and no new facts"
     status: verified
-    note: "Decision D-B (owner-delegated, 2026-10-11): allowed; facts redrawn, no image copied. Government of Palestine works of 1945-47, public domain in Israel and the UK since 1997; the file holds facts (where legally defined lines run) redrawn by our own method, which a possible US copyright in the map's drawing does not reach (Feist). Hebrew and Arabic names from Wikipedia, noted per row."
+    note: "Decision D-B (owner-delegated, 2026-10-11): allowed; facts redrawn, no image copied. Government of Palestine works of 1945-47, public domain in Israel and the UK since 1997; the file holds facts (where legally defined lines run) redrawn by our own method, which a possible US copyright in the map's drawing does not reach (Feist). Hebrew names from the Palestine Gazette's 1945 Hebrew schedule (owner ruling, 2026-10-23, #196), Arabic names from Wikipedia, noted per row."
   - glob: "content/map/armistice*"
     licence: CC-BY-SA-4.0
     source: "tools/armistice_digitise.py from the 1949 General Armistice Agreements (UNTS vol. 42) and their annexed maps: Syria, Annex I's MR points and the annexed 1:50,000 map (S/1353/Rev.1: the UN ODS colour scan and the UNISPAL 1-bit scan, SHA-256 in the tool); Lebanon, Art. V.1's international boundary as the Mandate frontier of content/map/subdistricts_1948.geojson; Egypt, Art. VI.1 and VIII.2 with the Survey of Palestine 1:100,000 sheet 9 'Gaza' (Commons, NLI copy) for the Wadi Hasi mouth, Deir Suneid and the highway; the 1950 modus vivendi line from S/1471's signed map (UNISPAL; sheet 2 from the UN Treaty Collection); Jordan from the low-resolution UNISPAL copy of the signed map 1 (source_quality low_res_scan), georeferenced on town coordinates from Wikidata (CC0) and Wikipedia; IBS 46 (1965) a named cross-check only; coast from the Copernicus DEM (NOTICE); the hex layer by tools/armistice_bake.py; content/ is CC BY-SA 4.0. armistice_hexes_1949.tsv is the YAML's baked runtime form (tools/regions_bake.py, issue #321), with the same rows and no new facts"

@@ -32,7 +32,7 @@ public class VehicleReviewPlayModeEvidenceTests
     [UnityTest, Explicit("Produces actual Play Mode visual evidence; run this method explicitly after scoped import")]
     public IEnumerator CaptureRunningReviewScene()
     {
-        EditorSceneManager.OpenScene("Assets/VehicleReview.unity", OpenSceneMode.Single);
+        EditorSceneManager.OpenScene(VehicleReviewCatalog.ScenePath, OpenSceneMode.Single);
         yield return new EnterPlayMode();
         VehicleReviewStage? stage = null;
         for (int i = 0; i < 60 && stage == null; i++) { yield return null; stage = Object.FindFirstObjectByType<VehicleReviewStage>(); }
@@ -48,7 +48,7 @@ public class VehicleReviewPlayModeEvidenceTests
             for (int shot = -2; shot < stage.Placed.Count; shot++)
             {
                 string name;
-                if (shot < 0) { stage.Overview(); if (shot == -1) stage.Rig.Distance = 60000f; stage.Rig.Apply(); name = shot == -2 ? "overview40" : "strategic60"; }
+                if (shot < 0) { stage.Overview(); if (shot == -1) stage.Rig.Distance = 60000f; stage.Rig.Apply(); name = shot == -2 ? "overview40" : "overview60"; }
                 else { stage.Focus(shot); name = stage.Placed[shot].Id; }
                 foreach (bool visible in new[] { false, true })
                 {

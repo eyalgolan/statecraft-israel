@@ -68,6 +68,32 @@ public class DemobilizationTests
         Assert.Equal("The armistice with Egypt is not signed", Assert.Single(again.Rejected).Reason);
     }
 
+    // R-UNIT-005: the order is the only way home (owner, 22 October 2026, #1309). After the front's armistice is
+    // signed, a turn with no Send home order sends nothing: the unit and the city counts (civilians, employed,
+    // refugees and housing) are exactly those of the same turn before the signature - no automatic demobilisation.
+    [Fact]
+    public void NothingGoesHomeWithoutTheOrder()
+    {
+        var c = Load(TwoCities);
+        GameState Fresh() => State(c, Soldier(1, 3, 0, homeCity: "town_a"), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
+        var unsigned = Step(c, Fresh());
+        var signed = Fresh();
+        signed.ChosenOptions["armistice_egypt"] = "sign";
+        var after = Step(c, signed);
+        Assert.DoesNotContain(after.Why, w => w.Message.Contains("sent home"));
+        Assert.Equal(unsigned.State.Units.Count, after.State.Units.Count);
+        Assert.Equal((unsigned.State.Units[1].Strength, unsigned.State.Units[1].Q, unsigned.State.Units[1].R),
+            (after.State.Units[1].Strength, after.State.Units[1].Q, after.State.Units[1].R));
+        foreach (var id in after.State.Cities.Keys)
+        {
+            Assert.Equal(unsigned.State.Cities[id].Civilians, after.State.Cities[id].Civilians);
+            Assert.Equal(unsigned.State.Cities[id].Employed, after.State.Cities[id].Employed);
+            Assert.Equal(unsigned.State.Cities[id].Refugees, after.State.Cities[id].Refugees);
+            // housing too (#1309's "done when"): the unit's home town_a keeps its share while no order runs
+            Assert.Equal(Cities.Housed(unsigned.State, unsigned.State.Cities[id]), Cities.Housed(after.State, after.State.Cities[id]));
+        }
+    }
+
     // R-UNIT-005: the standing refusals are the orders' own (R-ORDER-001's wording).
     [Theory]
     [InlineData(9, "There is no such unit")]
@@ -147,9 +173,10 @@ public class DemobilizationTests
         var c = Load();
         var s = State(c, new Unit(1, "gun", 3, 0, side: "israel", strength: 2, order: Combat.Attack, orderTarget: "1,0"),
             new Unit(2, "enemy", 1, 0, side: "egypt", strength: 3));
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1));
+        var attacked = new Dictionary<int, (int Q, int R)> { [1] = (1, 0) };
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
         s.ChosenOptions["armistice_jordan"] = "sign";   // would open the order if the target did not count
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1));
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, s, 1, attacked));
     }
 
     // R-UNIT-005: the front is the nearest enemy unit's, ties by the lowest unit id; an attack order's target counts.
@@ -165,7 +192,8 @@ public class DemobilizationTests
         s.ChosenOptions["armistice_syria"] = "sign";
         Assert.Null(Demobilization.Check(c, s, 1));
 
-        var attacking = State(c, Soldier(1, 3, 0, Combat.Attack, "2,0"), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
-        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, attacking, 1));
+        var attacking = State(c, Soldier(1, 3, 0), new Unit(2, "enemy", 2, 0, side: "egypt", strength: 3));
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, attacking, 1,
+            new Dictionary<int, (int Q, int R)> { [1] = (2, 0) }));
     }
 }

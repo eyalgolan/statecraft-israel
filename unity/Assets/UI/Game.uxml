@@ -156,6 +156,8 @@
                     <ui:Button name="info-hold" />
                     <!-- Attack (#754): shown only when the sim's Combat.Check takes some hex; the pick shows each hex's odds. -->
                     <ui:Button name="info-attack" />
+                    <!-- Send home (#1309): shown only when the sim's Demobilization.Check takes the unit. -->
+                    <ui:Button name="info-send-home" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
                 <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->

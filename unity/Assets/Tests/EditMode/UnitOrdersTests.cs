@@ -236,6 +236,47 @@ public class UnitOrdersTests
         info.Dispose();
     }
 
+    /// <summary>R-UNIT-005 (#1309): Send home is absent until the shown Israeli unit's own front has signed its armistice,
+    /// then carries the localized label, queues the sim's UnitOrder through the same bridge as the standing orders and shows
+    /// its queued line under the card's lines.</summary>
+    [Test]
+    public void SendHomeAppearsAfterTheFrontsArmisticeAndQueuesTheSimsOrder()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (t, label) in new[] { (Text, "Send home"), (he, "שליחה הביתה") })
+        {
+            using var ui = new UiTestKit();
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var bridge = new SimBridge(g, t);
+            var tokens = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a);
+            var token = tokens.Single(x => x.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var u = g.State.Units[id];
+            var next = new[] { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) }.Select(d => (q: u.Q + d.Item1, r: u.R + d.Item2))
+                .First(h => C.HexAt(h.q, h.r)?.Land == true && !g.State.Units.Values.Any(x => (x.Q, x.R) == h));
+            var egypt = g.State.Units.Values.First(x => x.Side == "egypt");
+            g.State.Units[egypt.Id] = new Unit(egypt.Id, egypt.Type, next.q, next.r, egypt.Service, egypt.Side, egypt.Strength,
+                egypt.Order, egypt.OrderTarget, egypt.HomeCity);
+            PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+            var info = new InfoPanelPresenter(ui.Root, bridge, t, new Dictionary<string, string>(), selectedUnit: () => selected);
+            var button = ui.Q<Button>("info-send-home");
+            Assert.AreEqual("The armistice with Egypt is not signed", Demobilization.Check(C, g.State, id), "precondition");
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.None, button.style.display.value, "hidden before the relevant armistice");
+
+            g.State.ChosenOptions["armistice_egypt"] = "sign";
+            Assert.IsNull(Demobilization.Check(C, g.State, id), "precondition: the relevant armistice opens the order");
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.Flex, button.style.display.value, "shown after the relevant armistice");
+            Assert.AreEqual(label, button.text);
+            UiTestKit.Press(button);
+            var queued = bridge.Queued.OfType<UnitOrder>().Single();
+            Assert.AreEqual((id, Demobilization.SendHome, (int?)null, (int?)null), (queued.Unit, queued.Order, queued.Q, queued.R));
+            StringAssert.Contains(t["unit.send_home_queued"], ui.Q<Label>("info-settlements").text, "the card says the order waits for End turn");
+            info.Dispose();
+        }
+    }
+
     /// <summary>Gives the state the Arms for an attack and, when Golani has no enemy in reach (the sim's Combat.Check takes no
     /// hex), puts the first enemy sim unit on the first free land hex next to it; returns Golani's sim id.</summary>
     internal static int EnemyInGolanisReach(GameState s)

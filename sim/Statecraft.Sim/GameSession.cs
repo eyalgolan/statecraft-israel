@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Statecraft.Sim
 {
@@ -18,8 +19,17 @@ namespace Statecraft.Sim
         /// the save.</summary>
         public StepResult? BeforeLast { get; private set; }
         public SaveGame Save { get; }
+        readonly List<Command> committed = new List<Command>();
+        /// <summary>R-TURN-004: the turn's committed orders, in the order given: final, shown at once, run first at End turn.</summary>
+        public IReadOnlyList<Command> Committed => committed;
+        /// <summary>The state the screen shows: the turn's start after its committed orders (Simulation.Preview).</summary>
+        public PreviewResult Now { get; private set; }
 
-        GameSession(Content c, GameState s, SaveGame save) { Content = c; State = s; Save = save; }
+        GameSession(Content c, GameState s, SaveGame save)
+        {
+            Content = c; State = s; Save = save;
+            Now = Simulation.Preview(c, s, Array.Empty<Command>());
+        }
 
         public static GameSession New(Content c, ulong seed, Mode mode)
         {
@@ -28,13 +38,39 @@ namespace Statecraft.Sim
             return new GameSession(c, s, new SaveGame(c.Hash, seed, mode, c.Ruleset, s.Hash()));
         }
 
-        /// <summary>Runs one turn and records it in the save.</summary>
+        /// <summary>R-TURN-004: commits a move or a unit order. Null when taken (it is shown at once and saved in the open
+        /// turn, R-SAVE-003), else the sim's reason, with nothing changed. A deferred order is a programmer error.</summary>
+        public string? Commit(Command cmd)
+        {
+            if (cmd == null) throw new ArgumentNullException(nameof(cmd));
+            if (!Simulation.IsInstant(cmd)) throw new ArgumentException($"'{cmd.Kind}' waits for End turn; only a move or a unit order other than Send home is committed.", nameof(cmd));
+            var next = Simulation.Preview(Content, State, committed.Concat(new[] { cmd }).ToList());
+            var refused = next.Rejected.FirstOrDefault(r => ReferenceEquals(r.Command, cmd));
+            if (refused != null) return refused.Reason;
+            committed.Add(cmd);
+            Now = next;
+            Save.SetOpen(committed);
+            return null;
+        }
+
+        /// <summary>Ends the turn: the committed orders, then <paramref name="deferred"/>, as one batch (R-TURN-004).</summary>
+        public StepResult EndTurn(IReadOnlyList<Command> deferred)
+        {
+            if (deferred == null) throw new ArgumentNullException(nameof(deferred));
+            var batch = committed.Concat(deferred).ToList();
+            var r = Simulation.Step(Content, State, batch);
+            Save.Record(batch, r.State);
+            Previous = State; State = r.State; BeforeLast = Last; Last = r;
+            committed.Clear();
+            Now = Simulation.Preview(Content, State, committed);
+            return r;
+        }
+
+        /// <summary>Runs one turn with these commands and records it (no orders may be committed).</summary>
         public StepResult Step(IReadOnlyList<Command> commands)
         {
-            var r = Simulation.Step(Content, State, commands);
-            Save.Record(commands, r.State);
-            Previous = State; State = r.State; BeforeLast = Last; Last = r;
-            return r;
+            if (committed.Count > 0) throw new InvalidOperationException("Orders are committed this turn: end it with EndTurn.");
+            return EndTurn(commands);
         }
 
         /// <summary>Load warning: the save was made with other content, so the replayed game may differ (spec section 7).</summary>
@@ -57,6 +93,10 @@ namespace Statecraft.Sim
                 throw saved.Ruleset == SaveGame.LegacyRuleset
                     ? new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules)
                     : new SaveException(0, "This save was made with a newer version of the game's rules.", SaveException.NewerVersion);
+            // R-SAVE-004: schema 2 stored player attacks as standing orders, which the current rules no longer replay alike.
+            if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset
+                && saved.Turns.Any(t => t.Any(x => x is UnitOrder o && o.Order == Combat.Attack)))
+                throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
             var list = new List<string>();
             bool sameContent = saved.ContentHash == c.Hash;
             if (!sameContent) list.Add(ContentChanged);
@@ -67,8 +107,18 @@ namespace Statecraft.Sim
             catch (Exception e) { throw new SaveException(FormattableString.Invariant($"turn {turnNo + 1}: {e.Message}"), e); }
             if (session.State.Hash() != saved.FinalHash)
             {
+                if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset)
+                    throw new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
                 if (sameContent) throw new SaveException(0, "The replay does not match the saved game: the save is damaged or was edited, or the game has a bug.");
                 list.Add(ReplayDiffers);
+            }
+            foreach (var cmd in saved.Open)
+            {
+                var reason = session.Commit(cmd);
+                if (reason == null) continue;
+                if (sameContent) throw new SaveException(0, $"The open turn's order '{cmd.Kind}' was refused: {reason}");
+                if (!list.Contains(ReplayDiffers)) list.Add(ReplayDiffers);
+                break;
             }
             warnings = list;
             return session;

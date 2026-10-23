@@ -1,16 +1,11 @@
+#if UNITY_EDITOR
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Statecraft.Game.Boot;
 using Statecraft.Game.Map;
-using Statecraft.Game.Map.Kits;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
-using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 namespace Statecraft.Game.VehicleReview
@@ -19,12 +14,11 @@ namespace Statecraft.Game.VehicleReview
     public sealed class VehicleReviewStage : MonoBehaviour
     {
         public const string ReviewNotice = "Vehicle review · Non-historical display. No historical deployment is represented.";
-        public const string Flag = "vehicle-review";
         public const float OverviewM = 40000f;
         public sealed class PlacedVehicle
         {
             public string Id = "", Label = "";
-            public GameObject Near = null!, Far = null!;
+            public GameObject Model = null!;
             public Vector3 At;
             public float LongSideM;
         }
@@ -34,32 +28,6 @@ namespace Statecraft.Game.VehicleReview
         public Camera Camera { get; private set; } = null!;
         public CameraRig Rig { get; private set; } = null!;
         readonly List<TextMesh> labels = new List<TextMesh>();
-        Action? restoreScene;
-        bool? wasClose;
-
-        public static bool Requested(string? url, string[] args, bool webgl) =>
-            webgl ? UrlFlags.Has(url, Flag) : Array.IndexOf(args, "-" + Flag) >= 0;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void OpenRequested()
-        {
-            if (!Requested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer)) return;
-            var catalog = Resources.Load<VehicleReviewCatalog>(VehicleReviewCatalog.Resource);
-            if (catalog == null) { Debug.LogError("Vehicle review models are missing; the normal game continues."); return; }
-            catalog.Validate();
-            var originals = SceneManager.GetActiveScene().GetRootGameObjects().Where(g => g.activeSelf).ToArray();
-            foreach (var original in originals) original.SetActive(false);
-            try
-            {
-                var stage = Create(catalog);
-                stage.restoreScene = () => { foreach (var original in originals) if (original != null) original.SetActive(true); };
-            }
-            catch
-            {
-                foreach (var original in originals) if (original != null) original.SetActive(true);
-                throw;
-            }
-        }
 
         public static VehicleReviewStage Create(VehicleReviewCatalog catalog)
         {
@@ -89,10 +57,9 @@ namespace Statecraft.Game.VehicleReview
                 {
                     var entry = catalog.entries[i]; var at = positions[i];
                     Box(root.transform, "Review slot " + (i + 1), at + new Vector3(0, -10, 0), new Vector3(entry.longSideM * 1.3f, 20f, entry.longSideM * 1.3f), pad);
-                    var near = Fit(entry.near, root.transform, at, entry.longSideM, entry.id + " near");
-                    var far = Fit(entry.far, root.transform, at, entry.longSideM, entry.id + " far");
-                    stage.PlacedModels.Add(new PlacedVehicle { Id = entry.id, Label = entry.label, Near = near, Far = far, At = at, LongSideM = entry.longSideM });
-                    var box = BoundsOf(near);
+                    var model = Fit(entry.model, root.transform, at, entry.longSideM, entry.id);
+                    stage.PlacedModels.Add(new PlacedVehicle { Id = entry.id, Label = entry.label, Model = model, At = at, LongSideM = entry.longSideM });
+                    var box = BoundsOf(model);
                     stage.Label(shortLabels[i], new Vector3(at.x, 150f, box.max.z + box.size.y * 1.3f + 700f), 40f);
                 }
                 stage.Label("Vehicle review · Non-historical display", new Vector3(0, 0, 8500), 80f);
@@ -150,14 +117,13 @@ namespace Statecraft.Game.VehicleReview
         public void Overview() { Rig.LookAt = new Vector3(0, 800f, 2500f); Rig.Distance = OverviewM; Rig.Yaw = 0f; Rig.TopInset = 0f; Rig.Apply(); }
         public void Focus(int index)
         {
-            var p = PlacedModels[index]; Rig.LookAt = p.At + Vector3.up * (BoundsOf(p.Near).size.y * .5f);
+            var p = PlacedModels[index]; Rig.LookAt = p.At + Vector3.up * (BoundsOf(p.Model).size.y * .5f);
             Rig.Distance = 12000f; Rig.Yaw = 10f; Rig.TopInset = 0f; Rig.Apply();
         }
         public void Choose(Camera camera)
         {
             if (camera != Camera) return;
-            bool close = TownModelLayer.CloseAt(Rig.Distance, wasClose); wasClose = close;
-            foreach (var p in PlacedModels) { p.Near.SetActive(ModelsVisible && close); p.Far.SetActive(ModelsVisible && !close); }
+            foreach (var p in PlacedModels) p.Model.SetActive(ModelsVisible);
             foreach (var label in labels) if (label != null) label.transform.rotation = camera.transform.rotation;
         }
         void Render(ScriptableRenderContext _, Camera camera) => Choose(camera);
@@ -172,54 +138,9 @@ namespace Statecraft.Game.VehicleReview
             if (keys.digit3Key.wasPressedThisFrame) Focus(2);
             if (keys.escapeKey.wasPressedThisFrame) Close();
         }
-        void Start()
-        {
-            var args = Environment.GetCommandLineArgs(); int at = Array.IndexOf(args, "-vehicle-proof");
-            if (at >= 0 && at + 1 < args.Length && Application.platform != RuntimePlatform.WebGLPlayer)
-                StartCoroutine(NativeProof(Path.GetFullPath(args[at + 1])));
-        }
-
-        [Serializable] sealed class PlayerEvidence
-        {
-            public string provenance = "Actual native review-player screen captures, including on-screen non-historical notice";
-            public List<PlayerFrame> frames = new List<PlayerFrame>();
-        }
-        [Serializable] sealed class PlayerFrame
-        {
-            public string file = ""; public int width, height; public bool modelsVisible;
-            public float distance, fov; public Vector3 lookAt, cameraPosition, cameraEuler;
-        }
-        IEnumerator NativeProof(string output)
-        {
-            Directory.CreateDirectory(output); var report = new PlayerEvidence();
-            for (int shot = -2; shot < PlacedModels.Count; shot++)
-            {
-                string name;
-                if (shot < 0) { Overview(); if (shot == -1) Rig.Distance = 60000f; Rig.Apply(); name = shot == -2 ? "overview40" : "strategic60"; }
-                else { Focus(shot); name = PlacedModels[shot].Id; }
-                foreach (bool visible in new[] { false, true })
-                {
-                    ModelsVisible = visible;
-                    for (int settle = 0; settle < VisualShots.SettleFrames; settle++) yield return null;
-                    yield return new WaitForEndOfFrame();
-                    var image = ScreenCapture.CaptureScreenshotAsTexture();
-                    string file = name + (visible ? "-after.png" : "-before.png");
-                    try { File.WriteAllBytes(Path.Combine(output, file), image.EncodeToPNG()); }
-                    finally { Destroy(image); }
-                    report.frames.Add(new PlayerFrame { file = file, width = Screen.width, height = Screen.height, modelsVisible = visible,
-                        distance = Rig.Distance, fov = Camera.fieldOfView, lookAt = Rig.LookAt, cameraPosition = Camera.transform.position, cameraEuler = Camera.transform.eulerAngles });
-                }
-            }
-            File.WriteAllText(Path.Combine(output, "player-evidence.json"), JsonUtility.ToJson(report, true) + "\n");
-            Debug.Log("VEHICLE REVIEW PLAYER PROOF: " + report.frames.Count + " frames -> " + output);
-            Application.Quit(0);
-        }
-
         public void Close()
         {
-            var restore = restoreScene; restoreScene = null;
-            // Disable this camera action map before the original camera re-enables its own shared actions.
-            gameObject.SetActive(false); restore?.Invoke(); Delete(gameObject);
+            gameObject.SetActive(false); Delete(gameObject);
         }
 
         void OnGUI()
@@ -229,7 +150,7 @@ namespace Statecraft.Game.VehicleReview
                 "\n1 Egyptian Spitfire candidate · 2 Syrian Renault R35 candidate · 3 Egyptian Dakota C-47 candidate" +
                 "\n0 Show all · 1–3 Inspect a model · Wheel Zoom · Q/E Rotate · Right-drag Pan · Esc Close review", style);
         }
-        void OnDestroy() { restoreScene?.Invoke(); restoreScene = null; }
         static void Delete(Object obj) { if (Application.isPlaying) Destroy(obj); else DestroyImmediate(obj); }
     }
 }
+#endif
