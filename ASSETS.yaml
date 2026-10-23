@@ -116,21 +116,42 @@ rules:
     ai_generated: true
     note: "The contributor reports the drawing was AI-assisted (PR #169); flagged for the AI-content disclosure by controller ruling."
   # --- Generated vehicle review candidates (22 October 2026) ---
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*"
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*"
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-13-egyptian-spitfire/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*"
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    status: verified
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    status: verified
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in assets-source/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    status: verified
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
