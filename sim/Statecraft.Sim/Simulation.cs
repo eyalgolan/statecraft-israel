@@ -121,6 +121,7 @@ namespace Statecraft.Sim
         static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
                               List<Cause> why, List<Rejection> rejected)
         {
+            if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
             foreach (var cmd in commands)
             {
@@ -199,6 +200,7 @@ namespace Statecraft.Sim
                 case StopWork w:
                     return Projects.Stop(c, s, w.Unit, why);
                 case UnitOrder o:
+                    if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
                     if (o.Order == Combat.Attack) return Combat.Give(c, s, o.Unit, o.Q, o.R, why);
                     if (o.Q != null || o.R != null) return "That order names no hex";
                     return o.Order == Demobilization.SendHome

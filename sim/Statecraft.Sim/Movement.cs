@@ -12,6 +12,9 @@ namespace Statecraft.Sim
     {
         public const string Kind = "move";
 
+        /// <summary>The go-to order (R-MOVE-008): <see cref="Unit.Order"/> while a unit is on its way, with the hex "q,r".</summary>
+        public const string GoTo = "go_to";
+
         /// <summary>The player's side (units_1948.yaml's id). A unit of any other side is the enemy's; a halutz has no side and
         /// is the player's.</summary>
         public const string PlayerSide = "israel";
@@ -64,6 +67,105 @@ namespace Statecraft.Sim
             for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) path.Add(h);
             path.Reverse();
             return path;
+        }
+
+        /// <summary>R-MOVE-002, R-MOVE-008: the cheapest path to (q, r) with no points limit, each hex with the turn it is
+        /// reached on (turn 1 spends the points left after <paramref name="spent"/>, later turns all of them; a step that costs
+        /// more than the full points takes a whole turn, R-MOVE-001). Empty for an unknown or enemy unit, one that cannot
+        /// move, its own hex, or a hex no path reaches.</summary>
+        public static IReadOnlyList<(int Q, int R, int Turn)> Route(Content c, GameState s, int unitId, int q, int r, IReadOnlyDictionary<int, int> spent)
+        {
+            var result = new List<(int Q, int R, int Turn)>();
+            if (!s.Units.TryGetValue(unitId, out var u) || IsEnemy(u) || (u.Q, u.R) == (q, r)) return result;
+            var full = Points(c, u);
+            if (full == 0) return result;
+            var (dist, prev) = Search(c, s, u, int.MaxValue);
+            if (!dist.ContainsKey((q, r))) return result;
+            var hexes = new List<(int Q, int R)>();
+            for (var h = (q, r); h != (u.Q, u.R); h = prev[h]) hexes.Add(h);
+            hexes.Reverse();
+            spent.TryGetValue(unitId, out var used);
+            int left = full - used, turn = 1, before = 0;
+            foreach (var h in hexes)
+            {
+                var step = dist[h] - before; before = dist[h];
+                if (step > left && !(left == full && step > full)) { turn++; left = full; }
+                left = step > left ? 0 : left - step;
+                result.Add((h.Q, h.R, turn));
+            }
+            return result;
+        }
+
+        static string HexText(int q, int r) => string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r);
+
+        static (int Q, int R) Target(Unit u)
+        {
+            var parts = u.OrderTarget.Split(',');
+            return (int.Parse(parts[0], CultureInfo.InvariantCulture), int.Parse(parts[1], CultureInfo.InvariantCulture));
+        }
+
+        static void Stop(GameState s, Unit u, string key, string line, string hex, List<Cause> why)
+        {
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            why.Add(UnitLines.Line(key, line, new[] { u }, hex));
+        }
+
+        /// <summary>R-MOVE-008: gives the player's unit the go-to order and moves it at once as far as its points left reach.
+        /// Refused, the state untouched, for no hex, an unknown or enemy unit, one that cannot move or is there, water or off
+        /// the board, an enemy unit's hex, a closed locality (R-MOVE-005) or a hex no route reaches.</summary>
+        internal static string? GiveGoTo(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent, List<Cause> why)
+        {
+            if (q == null || r == null) return "A route names a hex";
+            if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
+            if (IsEnemy(u)) return "That unit is not yours";
+            if (Points(c, u) == 0) return "That unit cannot move";
+            if (u.Q == q && u.R == r) return "That unit is already there";
+            if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
+            if (s.Units.Values.Any(x => x.Q == q && x.R == r && IsEnemy(x))) return "An enemy unit holds that hex";
+            if (Closed(c, s, false).Contains((q.Value, r.Value))) return "Units may not enter an enemy-held locality before its capture is possible";
+            if (Route(c, s, unitId, q.Value, r.Value, spent).Count == 0) return "No route reaches that hex";
+            var target = HexText(q.Value, r.Value);
+            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity);
+            s.Units[unitId] = given;
+            why.Add(UnitLines.Line(WhyKeys.OnItsWay, $"Unit {unitId} is on its way to hex {target}", new[] { given }, target));
+            if (u.Order == "fortify")
+                why.Add(UnitLines.Line(WhyKeys.FortifyLost, $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
+            Advance(c, s, given, q.Value, r.Value, spent, why);
+            return null;
+        }
+
+        /// <summary>R-MOVE-009, the route step: at the start of the player's turn, in ascending id, each unit with a go-to moves
+        /// on (<see cref="Advance"/>). An enemy unit next to it does not stop it (Q-MOVE-4: no zone of control).</summary>
+        internal static void ContinueRoutes(Content c, GameState s, Dictionary<int, int> spent, List<Cause> why)
+        {
+            foreach (var id in s.Units.Keys.OrderBy(x => x).ToList())
+            {
+                if (!s.Units.TryGetValue(id, out var u) || u.Order != GoTo) continue;
+                var (q, r) = Target(u);
+                Advance(c, s, u, q, r, spent, why);
+            }
+        }
+
+        /// <summary>R-MOVE-008, R-MOVE-009: moves the unit along a fresh route to (q, r) as far as this turn's points reach,
+        /// stopping short of a full hex; stops it (order cleared) when no route reaches the hex or the hex is full on arrival,
+        /// and clears the order on arrival. With no hex of this turn free, it waits, keeping the order.</summary>
+        static void Advance(Content c, GameState s, Unit u, int q, int r, Dictionary<int, int> spent, List<Cause> why)
+        {
+            var route = Route(c, s, u.Id, q, r, spent);
+            if (route.Count == 0) { Stop(s, u, WhyKeys.StoppedNoRoute, $"Unit {u.Id} stopped: no route reaches hex {HexText(q, r)}", HexText(q, r), why); return; }
+            var today = route.TakeWhile(h => h.Turn == 1).ToList();
+            for (int i = today.Count - 1; i >= 0; i--)
+            {
+                var h = today[i];
+                if (Full(c, s, u, h.Q, h.R) != null)
+                {
+                    if ((h.Q, h.R) == (q, r)) { Stop(s, u, WhyKeys.StoppedFull, $"Unit {u.Id} stopped: hex {HexText(q, r)} is full", HexText(q, r), why); return; }
+                    continue;
+                }
+                if (Move(c, s, u.Id, h.Q, h.R, spent, why) is string refused) { Stop(s, u, WhyKeys.StoppedNoRoute, $"Unit {u.Id} stopped: {refused}", HexText(q, r), why); return; }
+                if ((h.Q, h.R) == (q, r)) Stop(s, s.Units[u.Id], WhyKeys.Arrived, $"Unit {u.Id} arrived at hex {HexText(q, r)}", HexText(q, r), why);
+                return;
+            }
         }
 
         /// <summary>R-MOVE-001: the movement points unit <paramref name="unitId"/> has left this turn; 0 for an unknown unit.</summary>
