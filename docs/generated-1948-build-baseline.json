@@ -57,5 +57,18 @@
     },
     "package_manifest_and_lock_match_current_upstream": true,
     "scope": "The historical identical-input comparison above belongs to its named baseline/feature commits. Current CollectionImport has focused full-quality import changes; no package or vendor change. People byte measurement remains blocked; 6309797 is maintainer-reported main, not a new local measurement."
+  },
+  "post_1448_recheck": {
+    "main_merge": "703d87cf467d73ffd04dc1e3e68fbc5bba7c5b12",
+    "upstream_pr_head": "6df7451664a2efedefc559fc81c997b4d1a70bc9",
+    "clean_normal_merge": true,
+    "unity_tests": "Generated1948CharacterTests;UnitFiguresTests;UnitsFromStateTests",
+    "passed": 48,
+    "failed": 0,
+    "compile_warnings": 0,
+    "compile_errors": 0,
+    "C09_ALA_preserved": true,
+    "Syrian_and_Iraqi_mappings_preserved": true,
+    "bundle_rebuild": "Not repeated; same unchanged package failure remains pending."
   }
 }

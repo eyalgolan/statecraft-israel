@@ -29,3 +29,5 @@ Current matched Unity Editor map comparisons (20 June 1948, same sourced roster,
 These use the dated legacy roster as a rendering fixture, not a WebGL/player or GDD campaign run. The older isolated idle/walk/far review sheets are historical reduced-candidate diagnostics, not current source-quality evidence. The original ALA comparison experiments were removed from the current review because C09 is preserved.
 
 Current focused Unity result: 55 passed, one bundle-build failure with the baseline Collections CS7036 error. People bytes remain unmeasured; 6,309,797 bytes is the maintainer-reported main baseline. The new full-quality figures use the existing streamed People bundle after the first frame; no replacement streaming system or first-download binary growth measurement is claimed.
+
+Upstream #1448 is preserved by a clean normal merge of main `703d87cf`. Post-merge character/mapping/raised-unit checks: 48 passed, zero failed; standalone Unity assembly compile: zero warnings/errors. The original C09 ALA role and the Syrian/Iraqi mappings remain intact.
