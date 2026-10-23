@@ -1,0 +1,13 @@
+date=1950-03-01
+hex=-10,27
+fixture=shipped-UI-only; no map camera
+lang=en
+resolution=1920x1080
+region_bounds=(x:237.00, y:554.00, width:288.00, height:478.00)
+region_content=(x:1.00, y:4.00, width:285.00, height:470.00)
+region_measure=(285.00, 470.00)
+layer=Mandate sub-districts, 1947 · 1949 armistice lines: Egypt (and the 1950 modus vivendi), Lebanon, Jordan (low accuracy), Syria
+region=Gaza Sub-District, Gaza District (Mandate sub-districts, 1947)
+On the Armistice Demarcation Line (Egypt-Israel) of 1949, Gaza-Rafah area: Wadi Hasi to Gaza · Egypt-Israel General Armistice Agreement, 24 February 1949
+On the Demarcation line as drawn on the signed 1950 modus vivendi map (Gaza-Rafah area) · Modus vivendi to the Egypt-Israel General Armistice Agreement, 22 February 1950
+On the Zone A and zone C lines of the 1950 modus vivendi (Gaza-Rafah area) · Modus vivendi to the Egypt-Israel General Armistice Agreement, 22 February 1950

@@ -1,0 +1,10 @@
+date=1949-03-01
+hex=-16,36
+fixture=shipped-UI-only; no map camera
+lang=he
+resolution=1920x1080
+region_bounds=(x:99.00, y:920.00, width:282.00, height:112.00)
+region_content=(x:1.00, y:4.00, width:279.00, height:104.00)
+region_measure=(279.00, 104.00)
+layer=נפות המנדט, 1947 · קווי שביתת הנשק, 1949: מצרים
+region=השטח המפורז באל-עוג'ה (מצרים-ישראל) · הסכם מצרים-ישראל על שביתת נשק כללית, ⁧24 בפברואר 1949⁩

@@ -1,0 +1,10 @@
+date=1948-05-15
+hex=-16,36
+fixture=shipped-UI-only; no map camera
+lang=en
+resolution=1920x1080
+region_bounds=(x:237.00, y:945.00, width:282.00, height:87.00)
+region_content=(x:1.00, y:4.00, width:279.00, height:79.00)
+region_measure=(279.00, 79.00)
+layer=Mandate sub-districts, 1947
+region=Beersheba Sub-District, Gaza District (Mandate sub-districts, 1947)

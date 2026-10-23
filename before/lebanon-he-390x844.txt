@@ -1,0 +1,11 @@
+date=1949-08-01
+hex=8,4
+fixture=shipped-UI-only; no map camera
+lang=he
+resolution=390x844
+region_bounds=(x:99.53, y:1450.33, width:280.32, height:215.31)
+region_content=(x:0.00, y:4.06, width:278.28, height:207.19)
+region_measure=(278.28, 207.19)
+layer=Mandate sub-districts, 1947 · 1949 armistice lines: Egypt, Lebanon, ‎Jordan‎ (דיוק נמוך), Syria
+region=‎Acre Sub-District‎, ‎Galilee District‎ (נפות המנדט, 1947)
+עובר כאן: ‎Armistice Demarcation Line (Lebanon-Israel): the international boundary‎ · ‎Lebanon-Israel General Armistice Agreement‎, ⁧23 במרץ 1949⁩

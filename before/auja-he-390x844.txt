@@ -1,0 +1,10 @@
+date=1949-03-01
+hex=-16,36
+fixture=shipped-UI-only; no map camera
+lang=he
+resolution=390x844
+region_bounds=(x:99.53, y:1553.92, width:280.32, height:111.72)
+region_content=(x:0.00, y:4.06, width:278.28, height:103.59)
+region_measure=(278.28, 103.59)
+layer=Mandate sub-districts, 1947 · 1949 armistice lines: Egypt
+region=El Auja Demilitarized Zone (Egypt-Israel) · Egypt-Israel General Armistice Agreement, ⁧24 בפברואר 1949⁩
