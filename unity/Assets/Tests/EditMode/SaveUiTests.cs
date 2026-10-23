@@ -57,6 +57,44 @@ public class SaveUiTests
         Assert.AreEqual(2, resumed.State.Turn);
     }
 
+    /// <summary>Spec 3.4 (No undo across a reload): the autosave is written after every committed order, with the open
+    /// turn in click order, and reloading it shows the same state.</summary>
+    [Test]
+    public void AutosaveWritesEveryCommittedOrder()
+    {
+        var store = TempStore();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        using (GameStart.Autosave(bridge, store, Text))
+        {
+            var move = GoldenRun.SmokeMove(C, bridge.State);
+            Assert.IsNull(bridge.Queue(move));
+            var first = store.ReadAutosave()!;
+            StringAssert.Contains($"\nopen\nmove {move.Unit} {move.Q} {move.R}\n", first);
+            var loaded = GameSession.Load(C, first, out var warnings);
+            Assert.IsEmpty(warnings);
+            Assert.AreEqual(bridge.State.Hash(), loaded.Now.State.Hash());
+            Assert.IsNull(bridge.Queue(new UnitOrder(move.Unit, Orders.Hold)));
+            var again = GameSession.Load(C, store.ReadAutosave()!, out _);
+            CollectionAssert.AreEqual(new[] { "move", "unit_order" }, again.Committed.Select(x => x.Kind).ToArray());
+            Assert.AreEqual(bridge.State.Hash(), again.Now.State.Hash());
+        }
+    }
+
+    /// <summary>Spec 3.4: an attack's result survives a reload of the autosave, unchanged (no re-roll).</summary>
+    [Test]
+    public void AutosaveKeepsAnAttacksResult()
+    {
+        var store = TempStore();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        using (GameStart.Autosave(bridge, store, Text))
+        {
+            var syrian = bridge.State.Units.Values.First(u => u.Side == "syria" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
+            Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
+            var loaded = GameSession.Load(C, store.ReadAutosave()!, out _);
+            Assert.AreEqual(bridge.State.Hash(), loaded.Now.State.Hash());
+        }
+    }
+
     [Test]
     public void AutosaveReceiptsKeepTheirGenerationAndSavedState()
     {
@@ -485,6 +523,7 @@ public class SaveUiTests
         var hud = new HudPresenter(ui.Root, bridge, Text);
         var toast = new ToastPresenter(ui.Root, bridge, Text);
         new NewGamePresenter(ui.Root, bridge, store, toast, Text, () => 4UL);
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         ui.Press("end-turn");
         Assert.AreEqual("Turn 1", ui.Q<Label>("turn").text);
         ui.Press("new-game"); ui.Press("new-game");

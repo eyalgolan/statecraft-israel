@@ -15,7 +15,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>Starts the game once GameBoot has loaded the inputs and built the map (GameBoot.Ready): continues the
     /// autosave or starts a new game (GameStart.Begin, with its notes in the toast), creates every screen, autosaves each
-    /// turn, and wires the camera and the map pointer to the game panel (UiPointer.IsOverUi), map clicks to the info panel,
+    /// committed order and turn, and wires the camera and the map pointer to the game panel (UiPointer.IsOverUi), map clicks to the info panel,
     /// the minimap to the camera, and State.Placements with the built city projects to the placement layer. Disabling it disposes all of that.
     /// With "smoke" in the page URL (WebGL, e.g. ?smoke=5) or -smoke N (desktop) it starts a fresh game with the golden
     /// seed (the player's autosave is neither read nor written), plays N turns through the UI's own buttons and logs
@@ -244,7 +244,7 @@ namespace Statecraft.Game.UI
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
-            Own(new HudPresenter(root, bridge, text));
+            Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
@@ -277,7 +277,7 @@ namespace Statecraft.Game.UI
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
             Own(new BudgetPresenter(root, bridge, text));
-            Own(new WhyPresenter(root, bridge, text));
+            var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
             Own(new ObjectivesPresenter(root, bridge, text));
@@ -330,6 +330,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens wired");   // issue #321: the splits of the units layer
             // The map's own parse of the unit file when it read this text (issue #321: it was parsed twice at boot).
             var unitData = map.UnitEntriesFor(inputs.Map.UnitsYaml, Debug.LogWarning);
+            why.Units = unitData;
             report.Units = unitData;   // the turn report names the enemy's units by these rows (#1293)
             DiagLog.BootPhase("units layer data read");
             var unitLayer = units = Statecraft.Game.Map.Units.UnitLayer.Create(map,
@@ -341,7 +342,14 @@ namespace Statecraft.Game.UI
             if (Statecraft.Game.Map.Units.UnitLayer.HiddenInCaptures(Application.absoluteURL, Environment.GetCommandLineArgs(),
                     Application.platform == RuntimePlatform.WebGLPlayer))
                 VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, false);
-            Action showUnits = () => unitLayer.Show(bridge.Content, bridge.State);
+            Action showUnits = () =>
+            {
+                unitLayer.Show(bridge.Content, bridge.State);
+                unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
+                    .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
+                        && Movement.PointsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)
+                    .Select(t => t.Token.Unit.Id).ToList());
+            };
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
@@ -355,7 +363,9 @@ namespace Statecraft.Game.UI
                 townNamesHe: townNamesHe,
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
-                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault()));
+                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute));
+            toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -382,7 +392,8 @@ namespace Statecraft.Game.UI
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
             pointer.IsOverUi = overUi;
-            Action<int, int> onHex = (q, r) => OnHexClicked(map, unitLayer, info, q, r);
+            Action<int, int> onHex = (q, r) => OnHexClicked(map, unitLayer, info, q, r,
+                UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
             pointer.HexClicked += onHex;
             // #1063: a click on a city's name pill is a click on the city's hex (its settlement hex, where the city panel opens).
             Func<Vector2, (int q, int r)?> pillHex = p =>
@@ -480,16 +491,8 @@ namespace Statecraft.Game.UI
             Action showUnit = () =>
             {
                 if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
-                unitLayer.Select(id);
-                if (unitLayer.Selected != null)
-                {
-                    map.ClearSelection(); info.ShowUnit();
-                    var token = unitLayer.Tokens.First(t => t.Token.Unit.Id == id);
-                    var hex = bridge.Content.HexAt(token.Q, token.R)!;
-                    camRig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                    camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
-                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
-                }
+                camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
+                FocusUnit(id);
             };
             // When it closes, the guide puts back the selection it found (a hex, a unit, or none), unless the player has
             // picked something else meanwhile (the HUD stays usable under it).
@@ -567,9 +570,9 @@ namespace Statecraft.Game.UI
 
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
-        /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a click on a lit hex queues
-        /// the order and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
-        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r)
+        /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a target click gives the
+        /// order and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
+        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
         {
             if (info.Covered)
             {
@@ -578,11 +581,44 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
-            if (info.PickTarget(q, r)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
+            if (info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             var id = units.UnitToSelectAt(q, r);
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+        }
+
+        /// <summary>Selects a drawn unit row, opens its card and centres the camera on its current hex.</summary>
+        internal void FocusUnit(string rowId)
+        {
+            if (units == null || Bridge == null || info == null || rig == null) return;
+            units.Select(rowId);
+            if (units.Selected == null) return;
+            map.ClearSelection(); info.ShowUnit();
+            var token = units.Tokens.First(t => t.Token.Unit.Id == rowId);
+            var hex = Bridge.Content.HexAt(token.Q, token.R);
+            if (hex == null) return;
+            rig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+            cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+        }
+
+        void SelectUnit(int simId)
+        {
+            if (units == null || Bridge == null) return;
+            var row = units.Tokens.FirstOrDefault(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token) == simId).Token?.Unit.Id;
+            if (row != null) FocusUnit(row);
+        }
+
+        void FocusNextUnit()
+        {
+            if (Bridge == null || units == null || Bridge.NeedsOrders.Count == 0) return;
+            int? current = units.Selected is string row
+                ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
+                : null;
+            var next = current is int id
+                ? Bridge.NeedsOrders.Where(n => n > id).Select(n => (int?)n).FirstOrDefault() ?? Bridge.NeedsOrders[0]
+                : Bridge.NeedsOrders[0];
+            SelectUnit(next);
         }
 
         /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click): the city under a
@@ -753,6 +789,9 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
+            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse)
+                map.ShowRoute(Array.Empty<(int q, int r, int turn)>());
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }
@@ -805,6 +844,13 @@ namespace Statecraft.Game.UI
                     yield return null;
                 }
                 var turn = bridge.State.Turn;
+                for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
+                {
+                    if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
+                    if (!Press(root.Q<Button>("end-turn"), log)) yield break;
+                    if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                    yield return null;
+                }
                 int refused = 0;
                 Action<IReadOnlyList<Rejection>> count = r => refused = r.Count;
                 bridge.TurnEnded += count;
@@ -823,7 +869,7 @@ namespace Statecraft.Game.UI
                 var s = bridge.State;
                 log(FormattableString.Invariant($"SMOKE turn {s.Turn} {s.Date:yyyy-MM-dd} refused {refused}"));
             }
-            log(FormattableString.Invariant($"SMOKE OK {turns} turns {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
+            log(FormattableString.Invariant($"SMOKE OK {turns} turns {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
         /// <summary>The smoke-orders golden (#754, docs/determinism.md): turn 1 with one unit order given as a player gives it.
@@ -852,10 +898,17 @@ namespace Statecraft.Game.UI
             if (units.Selected != t.Token.Unit.Id) { log(FormattableString.Invariant($"SMOKE FAIL the click on {t.Q},{t.R} did not select unit {move.Unit}")); yield break; }
             if (!Press(root.Q<Button>("info-move"), log)) yield break;
             clickHex(move.Q, move.R);
-            if (!bridge.Queued.OfType<Move>().Any(m => m.Unit == move.Unit && m.Q == move.Q && m.R == move.R))
-            { log(FormattableString.Invariant($"SMOKE FAIL the click on {move.Q},{move.R} queued no Move for unit {move.Unit}")); yield break; }
+            if (!bridge.Session.Committed.OfType<Move>().Any(m => m.Unit == move.Unit && m.Q == move.Q && m.R == move.R))
+            { log(FormattableString.Invariant($"SMOKE FAIL the click on {move.Q},{move.R} committed no Move for unit {move.Unit}")); yield break; }
             yield return null;
             var turn = bridge.State.Turn;
+            for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
+            {
+                if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
+                if (!Press(root.Q<Button>("end-turn"), log)) yield break;
+                if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                yield return null;
+            }
             if (!Press(root.Q<Button>("end-turn"), log)) yield break;
             if (bridge.State.Turn != turn + 1) { log(FormattableString.Invariant($"SMOKE FAIL End Turn did not end turn {turn}")); yield break; }
             if (hud.ClassListContains(TurnReportPresenter.OpenClass))
@@ -863,7 +916,7 @@ namespace Statecraft.Game.UI
                 if (!Press(root.Q<Button>("turn-report-close"), log)) yield break;
                 if (hud.ClassListContains(TurnReportPresenter.OpenClass)) { log(FormattableString.Invariant($"SMOKE FAIL the turn report after turn {turn} did not close")); yield break; }
             }
-            log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
+            log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
         static bool Press(Button? b, Action<string> log)

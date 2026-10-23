@@ -244,6 +244,10 @@ public class TurnReportTests
     public void TheSmokeRunClosesTheReportEachTurn()
     {
         using var k = new Kit(En);
+        // This report-only fixture has no map/card. Supply its unit skips at each turn start.
+        void SkipUnits() { foreach (var id in k.Bridge.NeedsOrders.ToList()) k.Bridge.Skip(id); }
+        SkipUnits();
+        k.Bridge.TurnEnded += _ => SkipUnits();
         var log = new List<string>();
         var run = GameRoot.Smoke(k.Ui.Root, k.Bridge, k.Card, 3, log.Add);
         while (run.MoveNext()) { }

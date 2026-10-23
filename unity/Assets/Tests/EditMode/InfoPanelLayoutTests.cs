@@ -82,7 +82,9 @@ public class InfoPanelLayoutTests
         if (natural.x <= box.width + 1f) return true;
         if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return false;
         var wrapped = l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
-        return wrapped.y <= box.height + 1f;
+        // Text and layout round to raster pixels: at fractional panel scale one pixel can exceed one logical px.
+        var pixel = l.panel == null ? 1f : 1f / l.panel.scaledPixelsPerPoint;
+        return wrapped.y <= box.height + pixel + 0.01f;
     }
 
     static bool Inside(Rect inner, Rect outer) =>

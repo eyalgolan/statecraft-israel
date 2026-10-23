@@ -1,5 +1,7 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
+using Statecraft.Game.Map.Units;
 using Statecraft.Sim;
 using UnityEngine.UIElements;
 
@@ -11,6 +13,19 @@ namespace Statecraft.Game.UI
     {
         public static readonly string[] Order = { "era", "events", "politics", "cabinet", "security", "economy", "population", "city", "map", "policy", "effects", "situations" };
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text;
+        IReadOnlyList<UnitEntry> units = new List<UnitEntry>();
+        public IReadOnlyList<UnitEntry> Units
+        {
+            get => units;
+            set { units = value ?? new List<UnitEntry>(); shown = null; Render(); }
+        }
+        IReadOnlyDictionary<string, string>? townNamesHe;
+        /// <summary>Each settlement's Hebrew name, by id (the map's parse), for a raised unit's home city in Hebrew.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe
+        {
+            get => townNamesHe;
+            set { townNamesHe = value; shown = null; Render(); }
+        }
 
         public WhyPresenter(VisualElement root, SimBridge bridge, UiText text)
         {
@@ -52,7 +67,7 @@ namespace Statecraft.Game.UI
                 rows.Add(header);
                 foreach (var w in lines)
                 {
-                    var line = new Label(w.Message) { name = "why-" + i++ };
+                    var line = new Label(UnitNames.Line(w, bridge.Content, units, text, townNamesHe)) { name = "why-" + i++ };
                     line.AddToClassList("why-line");
                     rows.Add(line);
                 }

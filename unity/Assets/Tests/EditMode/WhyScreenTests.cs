@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -10,6 +13,7 @@ using UnityEngine.UIElements;
 public class WhyScreenTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
+    static List<UnitEntry> Rows => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     [Test]
@@ -36,9 +40,9 @@ public class WhyScreenTests
     {
         using var ui = new UiTestKit();
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
-        new WhyPresenter(ui.Root, bridge, Text);
+        new WhyPresenter(ui.Root, bridge, Text) { Units = Rows };
         var r = bridge.EndTurn();
-        var expected = WhyPresenter.Order.SelectMany(sys => r.Why.Where(w => w.System == sys).Select(w => w.Message)).ToList();
+        var expected = WhyPresenter.Order.SelectMany(sys => r.Why.Where(w => w.System == sys).Select(w => UnitNames.Line(w, C, Rows, Text))).ToList();
         var shown = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-line").ToList().Select(l => l.text).ToList();
         Assert.AreEqual(expected, shown);
     }
