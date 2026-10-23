@@ -45,7 +45,7 @@ namespace Statecraft.Sim
                 return new StepResult(s, why, rejected);
             }
 
-            RunOrders(c, s, commands, why, rejected);
+            RunOrders(c, s, commands, new Dictionary<int, int>(), why, rejected);
             EventSystem.Delegate(c, s, why);
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
@@ -91,16 +91,37 @@ namespace Statecraft.Sim
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
             CommandText.Validate(commands);
             var s = state.Clone();
-            if (s.GameOver == null) RunOrders(c, s, commands, new List<Cause>(), new List<Rejection>());
+            if (s.GameOver == null) RunOrders(c, s, commands, new Dictionary<int, int>(), new List<Cause>(), new List<Rejection>());
             return EventSystem.DelegatedTo(c, s, c.Events.First(e => e.Id == eventId));
         }
 
+        /// <summary>The state after <paramref name="commands"/> run as End turn would run them first (spec 2026-10-23 section 3;
+        /// RunOrders, shared with Step), on a clone. Never mutates <paramref name="state"/>.</summary>
+        public static PreviewResult Preview(Content c, GameState state, IReadOnlyList<Command> commands)
+        {
+            if (c == null) throw new ArgumentNullException(nameof(c));
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (commands == null) throw new ArgumentNullException(nameof(commands));
+            if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            CommandText.Validate(commands);
+            var s = state.Clone();
+            var why = new List<Cause>(); var rejected = new List<Rejection>(); var spent = new Dictionary<int, int>();
+            if (s.GameOver != null)
+                foreach (var cmd in commands) rejected.Add(new Rejection(cmd, $"The game is over: {PlayerText.GameOver(s.GameOver)}"));
+            else RunOrders(c, s, commands, spent, why, rejected);
+            return new PreviewResult(s, spent, why, rejected);
+        }
+
+        /// <summary>A move, a go-to, an attack, fortify or hold takes effect at once; Send home and every other order waits
+        /// for End turn (spec 2026-10-23 section 3.2).</summary>
+        public static bool IsInstant(Command cmd) => cmd is Move || (cmd is UnitOrder o && o.Order != Demobilization.SendHome);
+
         /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
-        /// rejected with its reason. Step and DelegatedTo share it, so the dry run sees what End Turn will.</summary>
-        static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, List<Cause> why, List<Rejection> rejected)
+        /// rejected with its reason. Step, DelegatedTo and Preview share it, so every dry run sees what End Turn will.</summary>
+        static void RunOrders(Content c, GameState s, IReadOnlyList<Command> commands, Dictionary<int, int> spent,
+                              List<Cause> why, List<Rejection> rejected)
         {
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
-            var spent = new Dictionary<int, int>();   // movement points each unit has used this turn (R-MOVE-001)
             foreach (var cmd in commands)
             {
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
