@@ -1077,7 +1077,22 @@ def build(syria_pdf: Path, syria_tif: Path, gaza: Path, mv1: Path, mv2: Path, jo
                              "line leaves out Jerusalem. Until they do, the Mandate sub-district layer stays as the base under them "
                              "(tools/borders_bake.py), each front's end recorded per front."},
         "naming": "The agreements' own terms ('Armistice Demarcation Line', 'Demilitarized Zone'); owner review.",
-        "sensitivity": "Every feature awaits the owner's sensitivity review (docs/m3-release.md); status stays draft until fact-checked.",
+        "sensitivity": ("The owner's sensitivity review (eyalgolan, 2026-10-23, issue #196 question 1): on the "
+                        "coordinator's review page of origin/main de78253e4c, decisions given in chat. Approved, "
+                        "verbatim: 'egypt_el_auja_dmz | APPROVE'; 'lebanon_adl | APPROVE'; 'jordan_adl_bc_south | "
+                        "APPROVE'; 'jordan_adl_d_arava | APPROVE'; 'jordan_adl_iraqi_a_triangle | APPROVE'; "
+                        "'jordan_adl_iraqi_b_wadi_ara | APPROVE'; 'jordan_adl_iraqi_c_east | APPROVE'; "
+                        "'jordan_adl_iraqi_c_south | APPROVE'; 'syria_dmz_central | APPROVE'; 'syria_dmz_north | "
+                        "APPROVE'; 'syria_dmz_south | APPROVE'. Flagged, verbatim, to be checked and reviewed again: "
+                        "'egypt_adl_gaza | FLAG | this is not where the international border is. the line is clear on the "
+                        "map you drew on'; 'egypt_mv1950_demarcation | FLAG | this is not where the international border "
+                        "is. the line is clear on the map you drew on'; 'egypt_mv1950_zone_lines | FLAG | this is not "
+                        "where the international border is. the line is clear on the map you drew on'; "
+                        "'jordan_adl_a_latrun | FLAG | check this again, the bottom part doesnt look right'; 'syria_adl | "
+                        "FLAG | this is not where the international border is. the line is clear on the map you drew on'. "
+                        "Every feature's status stays draft: the order is fact-checked, then sensitivity-reviewed "
+                        "(docs/m3-release.md), and no feature is fact-checked yet; an approved feature moves to "
+                        "sensitivity-reviewed once it is."),
         "diagnostics": {"syria": {"dmz_total_km2": total, "line_to_zone_edge_median_m": diag["line_to_zone_edge_median_m"], "dmz_areas_km2": diag["dmz_areas_km2"], "dropped_hatch_km2": dropped,
                                   "colour_registration": diag["fits"],
                                   "grid_georeference_1bit": {k: {"rms_m": [round(x, 1) for x in f["rms_m"]], "obs": f["obs"]} for k, f in tif_fits.items()}},
