@@ -410,10 +410,10 @@ public class FirstTurnGuideTests
                     Assert.AreEqual(move, guide.Step, "precondition: the guide is on its move step");
                     for (int frame = 0; frame < 5; frame++) yield return null;
 
-                    var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token.Unit));
+                    var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token));
                     Assert.IsNotNull(id, "precondition: a drawn unit can move");
                     var token = units.Tokens.Single(t => t.Token.Unit.Id == id);
-                    var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token.Unit);
+                    var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token);
                     Assert.IsNotNull(simUnit, "precondition: the guide's token has a sim unit");
                     var reachable = Movement.Reachable(bridge.Content, bridge.State, simUnit!.Value).Keys.ToList();
                     Assert.IsNotEmpty(reachable, "precondition: the guide's unit has a destination");
