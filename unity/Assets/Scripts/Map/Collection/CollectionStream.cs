@@ -19,9 +19,30 @@ namespace Statecraft.Game.Map.Collection
     /// from the source or from a caller's callback is caught for that request alone: it logs one warning (once per bundle,
     /// prefab or id) and the stream goes on serving every later request.
     /// The player reads the bundles from StreamingAssets/<see cref="CollectionCatalog.StreamingFolder"/> (every Build.*
-    /// player build, Web, Mac, Linux and Windows, puts them there); the editor reads the prefabs from the AssetDatabase, so map work needs no bundle build.</summary>
+    /// player build, Web, Mac, Linux and Windows, puts them there); the editor reads the prefabs from the AssetDatabase, so map work needs no bundle build.
+    /// The same loader serves any other set of streamed bundles through its own <see cref="Catalog"/> (the hex tiles' props,
+    /// HexProps; owner, 23 October 2026: "Own streamed bundle"), each with its own folder, checks file and shared stream.</summary>
     public sealed class CollectionStream
     {
+        /// <summary>What a stream serves: its bundles' folder in StreamingAssets, the checks file beside them (written by the
+        /// bundle build, <see cref="CollectionCatalog.ChecksFile"/>'s format), and each model id's bundle and prefab path.</summary>
+        public sealed class Catalog
+        {
+            public readonly string Name, StreamingFolder, ChecksFile;
+            public readonly Func<string, string?> BundleOf;
+            public readonly Func<string, CollectionDetail, string> PrefabPath;
+
+            public Catalog(string name, string streamingFolder, string checksFile, Func<string, string?> bundleOf,
+                Func<string, CollectionDetail, string> prefabPath)
+            {
+                Name = name; StreamingFolder = streamingFolder; ChecksFile = checksFile; BundleOf = bundleOf; PrefabPath = prefabPath;
+            }
+        }
+
+        /// <summary>The 1948 Collection (<see cref="CollectionCatalog"/>), the stream's default.</summary>
+        public static readonly Catalog Collection = new Catalog("The 1948 Collection", CollectionCatalog.StreamingFolder,
+            CollectionCatalog.ChecksFile, CollectionCatalog.BundleOf, CollectionCatalog.PrefabPath);
+
         /// <summary>Where the models come from: bundles in a build, the AssetDatabase in the editor, a fake in tests.</summary>
         public interface ISource
         {
@@ -34,6 +55,7 @@ namespace Statecraft.Game.Map.Collection
         enum State { Closed, Open, Failed }
 
         readonly ISource source;
+        readonly Catalog catalog;
         readonly Dictionary<string, State> bundles = new Dictionary<string, State>(StringComparer.Ordinal);
         readonly Dictionary<string, GameObject?> loaded = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> warnedIds = new HashSet<string>(StringComparer.Ordinal);
@@ -41,41 +63,47 @@ namespace Statecraft.Game.Map.Collection
         readonly Queue<(string Id, CollectionDetail Detail, Action<GameObject?> Done)> pending =
             new Queue<(string, CollectionDetail, Action<GameObject?>)>();
 
-        public CollectionStream(ISource source) { this.source = source; }
+        public CollectionStream(ISource source, Catalog? catalog = null) { this.source = source; this.catalog = catalog ?? Collection; }
 
-        /// <summary>The game's stream, made on the first request with the source for this player (or the editor).</summary>
-        static CollectionStream? shared;
-        static CollectionStreamHost? host;
+        /// <summary>The game's streams, one per catalog, each made on its first request with the source for this player (or
+        /// the editor), and each run by its own host.</summary>
+        static readonly Dictionary<Catalog, CollectionStream> shared = new Dictionary<Catalog, CollectionStream>();
+        static readonly Dictionary<Catalog, CollectionStreamHost> hosts = new Dictionary<Catalog, CollectionStreamHost>();
 
         /// <summary>Asks for model <paramref name="id"/> at <paramref name="detail"/>; <paramref name="done"/> runs on a later
         /// frame with the prefab, or with null when the model cannot be had (fail open).</summary>
-        public static void Request(string id, CollectionDetail detail, Action<GameObject?> done)
+        public static void Request(string id, CollectionDetail detail, Action<GameObject?> done) => Request(Collection, id, detail, done);
+
+        /// <summary><see cref="Request(string, CollectionDetail, Action{GameObject})"/> from <paramref name="catalog"/>'s
+        /// stream; nothing of it is fetched until something asks.</summary>
+        public static void Request(Catalog catalog, string id, CollectionDetail detail, Action<GameObject?> done)
         {
-            shared ??= new CollectionStream(DefaultSource());
-            if (shared.Enqueue(id, detail, done) && host == null)
+            if (!shared.TryGetValue(catalog, out var stream)) shared[catalog] = stream = new CollectionStream(DefaultSource(catalog), catalog);
+            if (stream.Enqueue(id, detail, done) && (!hosts.TryGetValue(catalog, out var host) || host == null))
             {
-                var go = new GameObject("CollectionStream") { hideFlags = HideFlags.HideAndDontSave };
+                var go = new GameObject(catalog == Collection ? "CollectionStream" : "CollectionStream " + catalog.StreamingFolder)
+                    { hideFlags = HideFlags.HideAndDontSave };
                 if (Application.isPlaying) UnityEngine.Object.DontDestroyOnLoad(go);
-                host = go.AddComponent<CollectionStreamHost>();
-                host.StartCoroutine(host.Run(shared));
+                hosts[catalog] = host = go.AddComponent<CollectionStreamHost>();
+                host.StartCoroutine(host.Run(stream));
             }
         }
 
-        static ISource DefaultSource()
+        static ISource DefaultSource(Catalog catalog)
         {
 #if UNITY_EDITOR
             return new EditorSource();
 #else
-            return new BundleSource(Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder));
+            return new BundleSource(Path.Combine(Application.streamingAssetsPath, catalog.StreamingFolder), catalog.ChecksFile);
 #endif
         }
 
         /// <summary>Queues a request; false (and <paramref name="done"/> already called with null) for an unknown id.</summary>
         public bool Enqueue(string id, CollectionDetail detail, Action<GameObject?> done)
         {
-            if (CollectionCatalog.BundleOf(id) == null)
+            if (catalog.BundleOf(id) == null)
             {
-                if (warnedIds.Add(id)) Debug.LogWarning($"Collection: no model '{id}' in The 1948 Collection; nothing is drawn for it.");
+                if (warnedIds.Add(id)) Debug.LogWarning($"Collection: no model '{id}' in {catalog.Name}; nothing is drawn for it.");
                 done(null);
                 return false;
             }
@@ -93,7 +121,7 @@ namespace Statecraft.Game.Map.Collection
                 while (pending.Count > 0)
                 {
                     var (id, detail, done) = pending.Dequeue();
-                    var bundle = CollectionCatalog.BundleOf(id)!;
+                    var bundle = catalog.BundleOf(id)!;
                     if (!bundles.TryGetValue(bundle, out var state))
                     {
                         string? error = null;
@@ -104,7 +132,7 @@ namespace Statecraft.Game.Map.Collection
                             Debug.LogWarning($"Collection: bundle {bundle} did not load ({error}); its models stay off the map.");
                     }
                     if (state != State.Open) { Answer(id, done, null); continue; }
-                    var path = CollectionCatalog.PrefabPath(id, detail);
+                    var path = catalog.PrefabPath(id, detail);
                     if (!loaded.TryGetValue(path, out var prefab))
                     {
                         string? error = null;
@@ -160,19 +188,19 @@ namespace Statecraft.Game.Map.Collection
         static IEnumerator Done() { yield break; }
 
         /// <summary>Reads the bundles from a folder: by URL on WebGL (StreamingAssets is served beside the page; StreamingFetch
-        /// retries a dropped connection, a 429 or a 5xx, #1054), from disk elsewhere. Each bundle must match its line of
-        /// <see cref="CollectionCatalog.ChecksFile"/>, written by the bundle build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
+        /// retries a dropped connection, a 429 or a 5xx, #1054), from disk elsewhere. Each bundle must match its line of the
+        /// checks file (<see cref="CollectionCatalog.ChecksFile"/> unless the catalog names another), written by the bundle build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
         /// AssetBundle by its header (<see cref="CheckHeader"/>) or one whose size or SHA-256 differs from the build fails at
         /// once without asking Unity to open it, so it logs this class's one warning and not Unity's own errors too.</summary>
         public sealed class BundleSource : ISource
         {
-            readonly string folder;
+            readonly string folder, checksFile;
             readonly Dictionary<string, AssetBundle> open = new Dictionary<string, AssetBundle>(StringComparer.Ordinal);
             Dictionary<string, CollectionCatalog.BundleCheck>? checks;
             string? checksError;
             bool checksRead;
 
-            public BundleSource(string folder) { this.folder = folder; }
+            public BundleSource(string folder, string checksFile = CollectionCatalog.ChecksFile) { this.folder = folder; this.checksFile = checksFile; }
 
             public IEnumerator Open(string bundle, Action<string?> done)
             {
@@ -219,7 +247,7 @@ namespace Statecraft.Game.Map.Collection
                 done(null);
             }
 
-            /// <summary>Reads <see cref="CollectionCatalog.ChecksFile"/> once (by URL or from disk, like the bundles).</summary>
+            /// <summary>Reads the checks file once (by URL or from disk, like the bundles).</summary>
             IEnumerator ReadChecks()
             {
                 if (checksRead) yield break;
@@ -227,10 +255,10 @@ namespace Statecraft.Game.Map.Collection
                 string? text = null;
                 if (folder.Contains("://"))
                 {
-                    var download = StreamingFetch.Get(folder + "/" + CollectionCatalog.ChecksFile);
+                    var download = StreamingFetch.Get(folder + "/" + checksFile);
                     string? failed = null;
-                    yield return Await(StreamingFetch.Done(download, CollectionCatalog.ChecksFile, StreamingFetch.StallSeconds), e => failed = e);
-                    if (failed != null) checksError = $"no {CollectionCatalog.ChecksFile} ({failed})";
+                    yield return Await(StreamingFetch.Done(download, checksFile, StreamingFetch.StallSeconds), e => failed = e);
+                    if (failed != null) checksError = $"no {checksFile} ({failed})";
                     else
                     {
                         try { text = download.Request.downloadHandler.text; }
@@ -239,12 +267,12 @@ namespace Statecraft.Game.Map.Collection
                 }
                 else
                 {
-                    var file = Path.Combine(folder, CollectionCatalog.ChecksFile);
+                    var file = Path.Combine(folder, checksFile);
                     if (File.Exists(file)) text = File.ReadAllText(file);
                     else checksError = "no file " + file;
                 }
                 if (text != null && (checks = CollectionCatalog.ParseChecks(text)) == null)
-                    checksError = $"a damaged {CollectionCatalog.ChecksFile}";
+                    checksError = $"a damaged {checksFile}";
             }
 
             /// <summary>Waits a frame at a time for a StreamingFetch download (with its retries) to end; a final failure
@@ -260,8 +288,8 @@ namespace Statecraft.Game.Map.Collection
             /// <summary>The bundle's line of the checks file, or null and why not.</summary>
             (CollectionCatalog.BundleCheck? Check, string Why) Lookup(string bundle)
             {
-                if (checks == null) return (null, checksError ?? "no " + CollectionCatalog.ChecksFile);
-                return checks.TryGetValue(bundle, out var c) ? (c, "") : (null, $"not in {CollectionCatalog.ChecksFile}");
+                if (checks == null) return (null, checksError ?? "no " + checksFile);
+                return checks.TryGetValue(bundle, out var c) ? (c, "") : (null, $"not in {checksFile}");
             }
 
             public IEnumerator Load(string bundle, string path, Action<GameObject?> done)

@@ -182,7 +182,10 @@ namespace Statecraft.Game.EditorTools
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built
         /// <paramref name="bundles"/> there: each one's Unity CRC, size and SHA-256. Throws when Unity has no CRC for one.</summary>
-        public static void WriteChecks(string folder, string[] bundles)
+        public static void WriteChecks(string folder, string[] bundles) => WriteChecksFile(folder, bundles, CollectionCatalog.ChecksFile);
+
+        /// <summary><see cref="WriteChecks(string, string[])"/> into the checks file named <paramref name="checksFile"/>.</summary>
+        static void WriteChecksFile(string folder, string[] bundles, string checksFile)
         {
             var lines = bundles.OrderBy(b => b, StringComparer.Ordinal).Select(b =>
             {
@@ -192,21 +195,26 @@ namespace Statecraft.Game.EditorTools
                 var check = new CollectionCatalog.BundleCheck(crc, new FileInfo(path).Length, CollectionCatalog.Sha256(path));
                 return $"{b} {check}";
             });
-            File.WriteAllText(Path.Combine(folder, CollectionCatalog.ChecksFile), string.Join("\n", lines) + "\n");
+            File.WriteAllText(Path.Combine(folder, checksFile), string.Join("\n", lines) + "\n");
         }
 
         /// <summary>Builds the bundles for <paramref name="target"/> and copies them into StreamingAssets/collection (git-ignored,
         /// like content/), so the player build carries them as plain files beside it. Returns the manifest path for
         /// BuildPlayerOptions.assetBundleManifestPath (which keeps the classes only the bundles use from being stripped).
         /// Throws when the build fails: a player build without its bundles would boot without the models.</summary>
-        public static string BuildBundles(BuildTarget target)
+        public static string BuildBundles(BuildTarget target) =>
+            BuildStreamed(target, BundleCache(target), Builds(), CollectionCatalog.StreamingFolder, CollectionCatalog.ChecksFile);
+
+        /// <summary><see cref="BuildBundles"/> for any set of streamed bundles (CollectionStream.Catalog): builds
+        /// <paramref name="builds"/> into <paramref name="cache"/> and copies them, with their checks file, into
+        /// StreamingAssets/<paramref name="streamingFolder"/>. Returns the manifest path.</summary>
+        public static string BuildStreamed(BuildTarget target, string cache, AssetBundleBuild[] builds, string streamingFolder, string checksFile)
         {
-            var cache = BundleCache(target);
             Directory.CreateDirectory(cache);
-            var manifest = BuildPipeline.BuildAssetBundles(cache, Builds(),
+            var manifest = BuildPipeline.BuildAssetBundles(cache, builds,
                 BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode, target);
-            if (manifest == null) throw new InvalidOperationException("CollectionImport: the bundle build failed");
-            var dest = Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder);
+            if (manifest == null) throw new InvalidOperationException("CollectionImport: the bundle build failed for " + streamingFolder);
+            var dest = Path.Combine(Application.streamingAssetsPath, streamingFolder);
             if (Directory.Exists(dest)) Directory.Delete(dest, true);
             Directory.CreateDirectory(dest);
             long bytes = 0;
@@ -220,8 +228,8 @@ namespace Statecraft.Game.EditorTools
             // Unity reads a bundle's CRC from its .manifest, which stays in the cache (the player ships the bundles only), so
             // the checks are written there, over the same bytes, and copied beside the shipped bundles (found by #668: from
             // #680 every player build failed with "no CRC for the bundle").
-            WriteChecks(cache, manifest.GetAllAssetBundles());
-            File.Copy(Path.Combine(cache, CollectionCatalog.ChecksFile), Path.Combine(dest, CollectionCatalog.ChecksFile));
+            WriteChecksFile(cache, manifest.GetAllAssetBundles(), checksFile);
+            File.Copy(Path.Combine(cache, checksFile), Path.Combine(dest, checksFile));
             Debug.Log($"BUNDLES {target}: {manifest.GetAllAssetBundles().Length} bundles, {bytes} bytes -> {dest}");
             return Path.Combine(cache, Path.GetFileName(cache) + ".manifest");
         }

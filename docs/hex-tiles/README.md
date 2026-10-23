@@ -532,19 +532,25 @@ Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectP
 
 ## Props: the Higgsfield set
 
-- **What they are.** 20 AI-made props (Higgsfield: a concept image, then Tripo H3.1 image to 3D), committed under
-  `Assets/Art/HexTiles/Props/<tile>_<name>/` with their prefabs at `Assets/Resources/HexTiles/<tile>/<name>.prefab`, so
-  the tiles' own `tiles:<tile>/<name>` ids find them. Their `ASSETS.yaml` row is `owner-verify`: the release gate blocks
-  them until the owner rules on their rights.
+- **What they are.** 20 AI-made props by Tal Heuberger (Higgsfield: a concept image, then Tripo H3.1 image to 3D),
+  committed under `Assets/Art/HexTiles/Props/<tile>_<name>/` with their prefabs at
+  `Assets/Art/HexTiles/<tile>/<name>.prefab`. The tiles' own `tiles:<tile>/<name>` ids find them. Their `ASSETS.yaml`
+  row is `owner-verify` until the CC BY-NC-ND 4.0 licence joins the allow-list (#1177).
+- **How they load.** They are in no Resources folder, so the default download does not carry them (owner, 23 October
+  2026: "Own streamed bundle"). A player build puts them in one bundle of their own, `StreamingAssets/hex-props`
+  (`HexProps`, built by `HexPropsBundle`). The Collection's loader (`CollectionStream`) streams it after the first frame,
+  and only when a `?hex-tiles` board asks for a prop. Until a prop arrives, its tile draws the stand-in. The editor, the
+  painter and the captures load the prefabs straight from the project. A new committed prop goes in `HexProps.Ids` and
+  in `HexPropsTests`, which pin the bundle's contents.
 - **Where they draw.**
   - They fill the stand-ins of `arab_village` (minaret, prickly pear), `jaffa_old_city` (clock tower, sea minaret,
     belfry), `coastal_dunes` (scrub), `desert_edge` (tent) and `judean_highlands` (garrigue).
   - The rest go to three tiles: `railway_halt` (station, packing house, crates, well, eucalyptus), `caesarea_ruins`
     (arcades, boulders, landing stage) and `village_mill` (mill, threshing floor, terrace wall, sycamore fig).
 - **Importing more.** List each prop in a manifest, one row per prop: the model folder (OBJ plus `albedo.jpg`), its
-  Resources path and an optional `twosided`. Then run:
+  path (`HexTiles/<tile>/<name>`) and an optional `twosided`. Then run:
   ```bash
-  Unity ... -executeMethod HexSandboxImport.RunHiggsfield -manifest <tsv> -modelsRoot Assets/Art/HexTiles/Props -prefabsRoot Assets/Resources
+  Unity ... -executeMethod HexSandboxImport.RunHiggsfield -manifest <tsv> -modelsRoot Assets/Art/HexTiles/Props -prefabsRoot Assets/Art
   ```
   Without the two roots it writes into the git-ignored prototype folder.
 - **Weld before you decimate.** A Tripo GLB is split along every UV seam. Decimating it as it comes tears gaps, and the

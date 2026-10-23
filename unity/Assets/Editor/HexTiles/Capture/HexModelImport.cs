@@ -104,7 +104,8 @@ public static class HexSandboxImport
     /// holds it, so a tile's tiles:&lt;tile&gt;/&lt;name&gt; id fills its stand-in with no source edit. The folders come from
     /// asset-staging/higgsfield-local/&lt;date&gt;/export.py. -executeMethod HexSandboxImport.RunHiggsfield -manifest &lt;path&gt;
     /// [-modelsRoot &lt;Assets path&gt;] [-prefabsRoot &lt;Assets path of a Resources folder&gt;]: by default both go into the
-    /// git-ignored prototype folder; committed props use Assets/Art/HexTiles/Props and Assets/Resources.</summary>
+    /// git-ignored prototype folder; committed props use Assets/Art/HexTiles/Props and Assets/Art (outside Resources: they
+    /// stream from their own bundle, HexProps, and join HexProps.Ids).</summary>
     public static void RunHiggsfield()
     {
         try

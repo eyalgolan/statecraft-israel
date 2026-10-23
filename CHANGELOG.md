@@ -169,12 +169,6 @@ checks this (see `CONTRIBUTING.md`).
     the grazing flock's sheep and donkey do too. Our decimated copies showed the ground through clothes, fleece and faces.
   - **Board capture:** the whole-board shot no longer cuts off the board's south edge.
   (docs/hex-tiles/README.md; refs #18)
-- Props for the opt-in hex-tile map, still presentation only and off by default: 20 AI-made 3D props (Higgsfield,
-  Tripo H3.1; ASSETS.yaml, owner-verify) fill the stand-ins of the Arab village (minaret, prickly pear), Jaffa (clock
-  tower, sea minaret, belfry), the coastal dunes (scrub), the desert edge (Bedouin tent) and the Judean highlands
-  (garrigue), and three new tiles use the rest: a railway halt with a packing house, coastal ruins with a landing
-  stage, and a village mill with threshing floors and terraces. `HexSandboxImport.RunHiggsfield` imports a manifest of
-  such props (refs #18).
 - Opt-in hex player: stream existing Collection figure aliases after the first frame, replace loading stand-ins without rebuilding terrain, and cancel refreshes on board teardown.
 - Draft sources for the opening cutscene (GDD Phase 7 PR 10): one paragraph per origin (Europe, the Arab countries,
   Yemen) and a closing line, the CBS Publication 1365 Table 5 arrivals, and three Meitar CC BY 4.0 photographs, in
