@@ -126,11 +126,12 @@ rules:
     status: verified
     note: "Animation payloads of the seven new character candidates only. No older C09 animation source grant changes. JSON provenance, validation and archive receipts retain their existing path licences."
   - glob: "docs/images/generated-1948-character-*.jpg"
-    licence: CC-BY-SA-4.0
+    licence: CC-BY-NC-ND-4.0
+    artist: "Tal Heuberger"
     ai_generated: true
     source: "Actual Unity 6000.3.25f1 renders. The 22 October isolated asset/grounding sheets show the earlier reduced candidates and are historical diagnostics, not approval evidence for the full-source imports. The 23 October Syria/Iraq comparison sheets use the full-source figures on the real map and the dated legacy roster, 20 June 1948, same camera/state/lighting before/after; original 1920x1080 frames scaled equally to 960x540. Metadata: docs/generated-1948-character-evidence.json. No player/WebGL/GDD-campaign claim."
     status: verified
-    note: "Historical isolated diagnostics are distinguished from current matched map comparisons. Map-render CC BY-SA treatment follows the derived map bakes; original model grants are unchanged."
+    note: "Historical isolated diagnostics are distinguished from current matched map comparisons."
   # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
   - glob: "promo/final/0[1-8]-*.png"
     licence: CC0-1.0
