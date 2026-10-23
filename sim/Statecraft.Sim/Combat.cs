@@ -122,7 +122,7 @@ namespace Statecraft.Sim
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
             s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity);
-            why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, $"Unit {unitId} will attack hex {target}"));
+            why.Add(UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target));
             return null;
         }
 
@@ -211,10 +211,16 @@ namespace Statecraft.Sim
                 foreach (var x in group)
                 {
                     done.Add(x.Id);
-                    if (defenders.Count == 0 || !InReach(c, x, q, r)) { End(s, x, $"Unit {x.Id}'s attack on hex {x.OrderTarget} ends: no enemy unit is there", why); continue; }
+                    if (defenders.Count == 0 || !InReach(c, x, q, r))
+                    {
+                        End(s, x, WhyKeys.AttackEnded,
+                            $"Unit {x.Id}'s attack on hex {x.OrderTarget} ends: no enemy unit is there", why, x.OrderTarget);
+                        continue;
+                    }
                     if (Guns(c, x) && attackers.Count == 0)
                     {
-                        why.Add(new Cause("map", x.Id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {x.Id} holds its fire: no attack on hex {x.OrderTarget} to support"));
+                        why.Add(UnitLines.Line(WhyKeys.HoldsFire,
+                            $"Unit {x.Id} holds its fire: no attack on hex {x.OrderTarget} to support", new[] { x }, x.OrderTarget));
                         continue;
                     }
                     if (Player(x))
@@ -222,7 +228,9 @@ namespace Statecraft.Sim
                         var need = Need(c, mvp, x);
                         if (s.Arms < need)
                         {
-                            End(s, x, $"Unit {x.Id}'s attack on hex {x.OrderTarget} is called off: it needs {need.ToString(CultureInfo.InvariantCulture)} Arms and the stock has {s.Arms.ToString(CultureInfo.InvariantCulture)}", why);
+                            End(s, x, WhyKeys.AttackCalledOff,
+                                $"Unit {x.Id}'s attack on hex {x.OrderTarget} is called off: it needs {need.ToString(CultureInfo.InvariantCulture)} Arms and the stock has {s.Arms.ToString(CultureInfo.InvariantCulture)}",
+                                why, x.OrderTarget, need.ToString(CultureInfo.InvariantCulture), s.Arms.ToString(CultureInfo.InvariantCulture));
                             continue;
                         }
                         s.Arms -= need;
@@ -236,7 +244,8 @@ namespace Statecraft.Sim
                 {
                     var (q, r) = Target(u);
                     if (Defenders(s, u, q, r).Count == 0 || !InReach(c, u, q, r))
-                        End(s, u, $"Unit {u.Id}'s attack on hex {u.OrderTarget} ends: no enemy unit is there", why);
+                        End(s, u, WhyKeys.AttackEnded,
+                            $"Unit {u.Id}'s attack on hex {u.OrderTarget} ends: no enemy unit is there", why, u.OrderTarget);
                 }
         }
 
@@ -246,10 +255,10 @@ namespace Statecraft.Sim
             return (int.Parse(parts[0], CultureInfo.InvariantCulture), int.Parse(parts[1], CultureInfo.InvariantCulture));
         }
 
-        static void End(GameState s, Unit u, string line, List<Cause> why)
+        static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
             s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
-            why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0, line));
+            why.Add(UnitLines.Line(key, line, new[] { u }, args));
         }
 
         /// <summary>R-COMBAT-002, R-COMBAT-003, R-COMBAT-006: one engagement. The face is the one draw; its row's losses fall on
@@ -265,16 +274,21 @@ namespace Statecraft.Sim
             s.RngState = rng.State;
             var target = Hex(q, r);
             var ppu = mvp.PeoplePerUnit;
-            var removed = new List<int>();
+            var removed = new List<Unit>();
             // R-COMBAT-007: the guns fire from behind the line, so the attackers' losses fall on the others only.
             var attackersLost = Take(s, attackers.Where(x => !Guns(c, x)).Select(x => x.Id).ToList(), row.AttackerLoss[face], removed);
             var defendersLost = Take(s, defenders.Select(x => x.Id).ToList(), row.DefenderLoss[face], removed);
+            var named = attackers.OrderBy(x => x.Id).Concat(defenders.OrderBy(x => x.Id)).Select(x => new UnitRef(x)).ToList();
             why.Add(new Cause("map", target, 0, FormattableString.Invariant(
                 $"The attack on hex {target} ({Ids(attackers)} against {Ids(defenders)}, strength ratio {ratio}%): the attackers lost {attackersLost * ppu:N0} people and the defenders lost {defendersLost * ppu:N0} people"),
                 // #1297: the turn report names an enemy attack on every turn it engages, a standing one too (R-ENEMY-003)
-                Player(attackers[0]) ? "" : Attack, Player(attackers[0]) ? null : attackers.Select(x => x.Id).OrderBy(x => x).ToList()));
-            foreach (var id in removed)
-                why.Add(new Cause("map", id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {id} was destroyed"));
+                enemyOrder: Player(attackers[0]) ? "" : Attack,
+                enemyAttackers: Player(attackers[0]) ? null : attackers.Select(x => x.Id).OrderBy(x => x).ToList(),
+                key: WhyKeys.Engagement, units: named, args: new[] { target, ratio.ToString(CultureInfo.InvariantCulture),
+                    (attackersLost * ppu).ToString(CultureInfo.InvariantCulture), (defendersLost * ppu).ToString(CultureInfo.InvariantCulture),
+                    attackers.Count.ToString(CultureInfo.InvariantCulture) }));
+            foreach (var u in removed)
+                why.Add(UnitLines.Line(WhyKeys.Destroyed, $"Unit {u.Id} was destroyed", new[] { u }));
             if (row.DefenderRetreats[face] != 1) return;
             foreach (var d in defenders)
             {
@@ -282,7 +296,8 @@ namespace Statecraft.Sim
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
                     s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
-                    why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0, $"Unit {u.Id} retreated to hex {Hex(to.Item1, to.Item2)}"));
+                    var hex = Hex(to.Item1, to.Item2);
+                    why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
                 else
                 {
@@ -291,8 +306,9 @@ namespace Statecraft.Sim
                     // player's soldiers (R-POW-005).
                     s.Units.Remove(u.Id);
                     var held = Prisoners.Take(s, u, attackers.OrderBy(x => x.Id).First());
-                    why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0,
-                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}")));
+                    why.Add(UnitLines.Line(u.Side == Movement.PlayerSide ? WhyKeys.SurrenderedHeld : WhyKeys.SurrenderedPrisoners,   // Prisoners.Take's two cases
+                        FormattableString.Invariant($"Unit {u.Id} surrendered with {u.Strength * ppu:N0} people: it had no hex to retreat to. {held}"),
+                        new[] { u }, (u.Strength * ppu).ToString(CultureInfo.InvariantCulture)));
                 }
             }
         }
@@ -303,7 +319,7 @@ namespace Statecraft.Sim
         /// <summary>Takes up to <paramref name="loss"/> population units from <paramref name="ids"/>, one at a time from the
         /// strongest unit left (a tie on the lower id; the list is in id order), removing each that reaches 0 (its id is never
         /// reused: NextId is not touched) and adding it to <paramref name="removed"/>. Returns the units taken.</summary>
-        static int Take(GameState s, List<int> ids, int loss, List<int> removed)
+        static int Take(GameState s, List<int> ids, int loss, List<Unit> removed)
         {
             int taken = 0;
             for (; taken < loss; taken++)
@@ -312,7 +328,7 @@ namespace Statecraft.Sim
                 foreach (var id in ids)
                     if (s.Units.TryGetValue(id, out var x) && (top == null || x.Strength > top.Strength)) top = x;
                 if (top == null) break;
-                if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top.Id); }
+                if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top); }
                 else s.Units[top.Id] = new Unit(top.Id, top.Type, top.Q, top.R, top.Service, top.Side, top.Strength - 1, top.Order, top.OrderTarget, top.HomeCity);
             }
             return taken;

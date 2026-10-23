@@ -106,4 +106,99 @@ public class UnitLinesTests
 
     [Fact]
     public void EveryKeyIsListedOnce() => Assert.Equal(WhyKeys.All.Distinct().Count(), WhyKeys.All.Count);
+
+    // Task 4b: the combat lines, on CombatTests' fixture (below 2:1 both sides lose 1; from 2:1 the defenders lose 1 and
+    // retreat, whatever the draw).
+    static Content Fixture6x3() => TurnPreviewTests.Plain();
+    static Unit Ours(int id, int q, int r, int strength) => new Unit(id, "soldier", q, r, side: "israel", strength: strength, homeCity: "town_a");
+    static Unit Theirs(int id, int q, int r, int strength, int tq, int tr) =>
+        new Unit(id, "enemy", q, r, side: "egypt", strength: strength, order: Combat.Attack, orderTarget: $"{tq},{tr}");
+
+    // The engagement names the attackers, then the defenders, and the count of attackers; a destroyed unit keeps its identity.
+    [Fact]
+    public void TheEngagementAndADestroyedUnitNameTheirUnits()
+    {
+        var c = Fixture6x3();
+        var s = CombatTests.With(c, Ours(1, 2, 1, 1), Theirs(2, 3, 1, 9, 2, 1));
+        var why = new List<Cause>();
+        Combat.Resolve(c, s, why);
+        var fight = why.Single(w => w.Key == WhyKeys.Engagement);
+        Assert.Equal(new[] { 2, 1 }, fight.Units.Select(u => u.Id));
+        Assert.Equal(("2,1", "1"), (fight.Args[0], fight.Args[4]));
+        Assert.False(s.Units.ContainsKey(1));
+        var gone = why.Single(w => w.Key == WhyKeys.Destroyed).Units.Single();
+        Assert.Equal((1, "soldier", "town_a"), (gone.Id, gone.Type, gone.HomeCity));
+    }
+
+    [Fact]
+    public void ARetreatNamesTheUnit()
+    {
+        var c = Fixture6x3();
+        var s = CombatTests.With(c, Ours(1, 2, 1, 3), Theirs(2, 3, 1, 9, 2, 1));
+        var why = new List<Cause>();
+        Combat.Resolve(c, s, why);
+        Assert.Equal(1, why.Single(w => w.Key == WhyKeys.Retreated).Units.Single().Id);
+    }
+
+    // 0,0's land neighbours on the 6 x 3 board are 1,0 and 0,1: with enemy units on both, the defender has nowhere to go.
+    [Fact]
+    public void ASurrenderNamesTheUnit()
+    {
+        var c = Fixture6x3();
+        var s = CombatTests.With(c, Ours(1, 0, 0, 3), Theirs(2, 1, 0, 9, 0, 0), new Unit(3, "enemy", 0, 1, side: "egypt", strength: 1));
+        var why = new List<Cause>();
+        Combat.Resolve(c, s, why);
+        var line = why.Single(w => w.Key == WhyKeys.SurrenderedHeld);   // the player's soldiers, held by the enemy (Prisoners.cs:40)
+        Assert.Equal((1, "town_a"), (line.Units.Single().Id, line.Units.Single().HomeCity));
+    }
+
+    // An enemy unit that surrenders to the player's attack becomes prisoners: the other key.
+    [Fact]
+    public void AnEnemySurrenderIsPrisoners()
+    {
+        var c = Fixture6x3();
+        var mine = new Unit(2, "soldier", 1, 0, side: "israel", strength: 9, order: Combat.Attack, orderTarget: "0,0");
+        var s = CombatTests.With(c, new Unit(1, "enemy", 0, 0, side: "egypt", strength: 3), mine, Ours(3, 0, 1, 1));
+        var why = new List<Cause>();
+        Combat.Resolve(c, s, why);
+        Assert.Equal(1, why.Single(w => w.Key == WhyKeys.SurrenderedPrisoners).Units.Single().Id);
+    }
+
+    // The attack order, an attack that ends with no enemy there, guns holding fire and an attack called off for Arms name
+    // their unit and the hex (the called-off line also the need and the stock).
+    [Fact]
+    public void TheAttackOrderLinesNameTheirUnit()
+    {
+        var c = ContentLoader.Load(Fixture.Write(Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Fixture.GddUnitTypes
+                + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
+                + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 3 }\n"
+                + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n",
+            ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        })));
+        var s = CombatTests.With(c, Ours(1, 3, 0, 5), new Unit(9, "enemy", 2, 0, side: "egypt", strength: 3));
+        var given = new List<Cause>();
+        Assert.Null(Combat.Give(c, s, 1, 2, 0, given));
+        var ordered = given.Single(w => w.Key == WhyKeys.AttackOrdered);
+        Assert.Equal((1, "town_a", "2,0"), (ordered.Units.Single().Id, ordered.Units.Single().HomeCity, ordered.Args[0]));
+        s.Units.Remove(9);
+        var ended = new List<Cause>();
+        Combat.Resolve(c, s, ended);
+        Assert.Equal((1, "2,0"), (ended.Single(w => w.Key == WhyKeys.AttackEnded).Units.Single().Id, ended.Single(w => w.Key == WhyKeys.AttackEnded).Args[0]));
+
+        var gun = new Unit(5, "gun", 4, 0, side: "israel", strength: 2, order: Combat.Attack, orderTarget: "2,0", homeCity: "town_a");
+        var quiet = CombatTests.With(c, gun, new Unit(9, "enemy", 2, 0, side: "egypt", strength: 3));
+        var held = new List<Cause>();
+        Combat.Resolve(c, quiet, held);
+        Assert.Equal((5, "2,0"), (held.Single(w => w.Key == WhyKeys.HoldsFire).Units.Single().Id, held.Single(w => w.Key == WhyKeys.HoldsFire).Args[0]));
+
+        var poor = CombatTests.With(c, gun, new Unit(8, "soldier", 3, 0, side: "israel", strength: 2, order: Combat.Attack, orderTarget: "2,0"),
+                                    new Unit(9, "enemy", 2, 0, side: "egypt", strength: 3));
+        poor.Arms = 2;
+        var off = new List<Cause>();
+        Combat.Resolve(c, poor, off);
+        var line = off.Single(w => w.Key == WhyKeys.AttackCalledOff && w.Units[0].Id == 5);
+        Assert.Equal(new[] { "2,0", "3", "0" }, line.Args);
+    }
 }
