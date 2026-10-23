@@ -10,7 +10,7 @@ The evidence must distinguish monthly changes, twelve-month changes and changes 
 
 | Owner's anchor | Coverage here | Remaining work |
 |---|---|---|
-| Monthly CPI, 1979–1985 | [A] All 84 months, source S1; catalogue S2 | Resolve the index-level discontinuity described below before using levels across the boundary |
+| Monthly CPI, 1979–1985 | [A] All 84 months, source S1; catalogue S2 | Published 1985 scale link now documented in S15; resolve API metadata and verify any later cross-base use |
 | Inflation series / D11 | [A] CBS monthly data; BoI annual and annual-average comparisons, S1–S4 | Owner chooses the measure and its eventual use |
 | Bank crisis, 1983 | [A] Contemporary BoI account, S5; explicitly retrospective study, S6 | Original bank-share arrangement and inquiry records not read |
 | Stabilization, 1985 | [A] BoI's contemporary prices chapter, S3 | Cabinet decision and full fiscal implementation records not read |
@@ -36,7 +36,24 @@ The following cells reproduce S1's `percent` field, in percent. Selected month-t
 | 1984 | 14.9 | 12.0 | 10.7 | 20.6 | 14.3 | 13.4 | 12.4 | 16.5 | 21.4 | 24.3 | 19.5 | 3.7 |
 | 1985 | 5.3 | 13.5 | 12.1 | 19.4 | 6.8 | 14.9 | 27.5 | 3.9 | 3.0 | 4.7 | 0.5 | 1.3 |
 
-**Index-level warning [GAP].** In this response, December 1984 has `currBase.value: 10754.8`, and January 1985 has `113.2`, while both carry `baseDesc: Average 1980`; `prevBase` is null. A direct ratio of those levels would contradict the reported January change. This is an observed response inconsistency, not a diagnosed cause or a currency-conversion instruction. Do not silently multiply, splice or recompute the series from these levels. CBS chaining documentation/coefficient data or an independent official level table must settle it first. S1's monthly percentages are transcribed without such repair.
+**Index-level warning.** In S1, December 1984 has `currBase.value: 10754.8`, and January 1985 has
+`113.2`, while both carry `baseDesc: Average 1980`; `prevBase` is null. A direct ratio of those levels
+would contradict the reported January change. S1's monthly percentages above are transcribed without repair.
+
+### The 1985 index scale: an explicit published link
+
+[A, R] CBS Table 3.5, prepared for the expanded Price Statistics Monthly Bulletin 8/2008, shows
+December 1984 as **10,754.8** and January 1985 as **113.2**. Its scale band specifies a **100-fold scale
+reduction** from January 1985; footnote (2) explicitly instructs multiplying the **1985** indices by
+**100** to link them to earlier years (S15, p. 1). This is a published instruction, not a factor calculated
+from the two monthly values or a currency-conversion rule. It is limited to the stated 1985 comparison;
+footnote (3) gives separate linking instructions for 1986 onward.
+
+This accounts for the scale boundary in the published level table. The API's unchanged `Average 1980`
+label remains unexplained **[GAP]**. A separate two-month retrieval with `coef=true` returns coefficient
+arrays but does not include the factor 100 in those arrays (S2); it does not establish the cause or meaning
+of the API metadata. No values are altered here, no API defect is diagnosed, and neither D11 nor the
+1957–1977 price-base bridge is selected.
 
 ### Two annual measures, not interchangeable values
 
@@ -49,7 +66,7 @@ The following cells reproduce S1's `percent` field, in percent. Selected month-t
 
 [A] S4's Table A7 is explicitly headed “average annual rate of change”; S3's Table III-1 rounds the period increases for 1982–1985 to 132%, 191%, 445% and 185%. Thus 373.8% and 444.9% for 1984 need not be rival estimates of the same statistic. Likewise 304.6% and 185.2% for 1985 describe different comparisons. The original IMF series underlying the era plan's comparison was **not** opened here; this note does not attribute these BoI values to IMF or establish IMF/CBS vintage equivalence.
 
-**Proposal for D11, not a decision:** use CBS general CPI 120010 monthly percentage changes as the research anchor for the 1979–1985 path, with December/December checks clearly labelled. It preserves the within-year break that an annual average hides and comes directly from the national statistical publisher. Costs: this is a current historical-data retrieval, not a frozen contemporary release; the level discontinuity remains unresolved; rounded monthly percentages do not establish exact index levels; and the remaining years still need collection. Annual averages remain useful for annual comparisons, but should not be substituted for monthly changes. Any later chaining, turn mapping or calibration needs separate owner-approved work.
+**Proposal for D11, not a decision:** use CBS general CPI 120010 monthly percentage changes as the research anchor for the 1979–1985 path, with December/December checks clearly labelled. It preserves the within-year break that an annual average hides and comes directly from the national statistical publisher. Costs: this is a current historical-data retrieval, not a frozen contemporary release; the published scale link does not explain the API metadata; rounded monthly percentages do not establish exact index levels; and the remaining years still need collection. Annual averages remain useful for annual comparisons, but should not be substituted for monthly changes. Any later chaining, turn mapping or calibration needs separate owner-approved work.
 
 ## 3. Bank crisis and stabilization
 
@@ -122,7 +139,7 @@ Domestic consumption excludes defence imports (p. 13); it is not the broader tot
 All checked **2026-10-23 by an AI agent only**. PDF page locators distinguish printed pages where available. Raw responses and selected rendered pages are retained privately for review; third-party PDFs are not added to the repository.
 
 - **S1 — CBS data API**, [general CPI 120010, January 1979–December 1985](https://api.cbs.gov.il/index/data/price?id=120010&format=json&download=false&startPeriod=01-1979&endPeriod=12-1985&lang=en). Read all 84 records and paging. Field names and the anomalous levels above refer to this exact response.
-- **S2 — CBS catalogue and API documentation**, [subject 37](https://api.cbs.gov.il/index/catalog/subject?id=37&format=json&download=false&lang=en), record 120010; [API Indices](https://www.cbs.gov.il/en/cbsNewBrand/Pages/Api-Indices.aspx), data retrieval parameters `id`, `startPeriod`, `endPeriod`, `coef`. The documentation does not resolve the observed historical-level discontinuity.
+- **S2 — CBS catalogue and API documentation**, [subject 37](https://api.cbs.gov.il/index/catalog/subject?id=37&format=json&download=false&lang=en), record 120010; [API Indices](https://www.cbs.gov.il/en/cbsNewBrand/Pages/Api-Indices.aspx), data retrieval parameters `id`, `startPeriod`, `endPeriod`, `coef`. A separate [December 1984–January 1985 retrieval with `coef=true`](https://api.cbs.gov.il/index/data/price?id=120010&format=json&download=false&startPeriod=12-1984&endPeriod=01-1985&coef=true&lang=en) was also read, including both monthly records, coefficient arrays and paging. The documentation and returned arrays do not explain the unchanged `Average 1980` label or supply the 1985 factor 100 shown explicitly in S15.
 - **S3 — Bank of Israel, Annual Report 1985**, [Chapter III, Prices](https://www.boi.org.il/media/zi1injbo/pe_3.pdf), printed pp. 36–38, Table III-1 p. 37 (PDF pp. 1–3). Pages 36–37 also read as rendered images; p. 38 read as extracted text.
 - **S4 — Bank of Israel, Annual Report 1995**, [Appendix tables](https://www.boi.org.il/media/bymmrj4d/nispe.pdf), Table A6 p. 236 and Table A7 p. 237 (PDF pp. 16–17), read as rendered images; Table A11c (PDF p. 26), heading and defence/import rows read in extracted text. A6 and A7 differ slightly for some other historical totals, so the comparison above uses A7 consistently rather than merging vintages/definitions.
 - **S5 — Bank of Israel, Annual Report 1983**, [Chapter III, Prices](https://www.boi.org.il/media/5w2cx22q/pe_3.pdf), printed p. 38 (PDF p. 6), also read as a rendered image.
@@ -135,3 +152,4 @@ All checked **2026-10-23 by an AI agent only**. PDF page locators distinguish pr
 - **S12 — US GAO**, [Israel: U.S. Loan Guaranties for Immigrant Absorption, NSIAD-92-119](https://www.gao.gov/products/nsiad-92-119), report metadata, highlights and recommendation-status table. Web-rendered text was opened and read; a separate direct GET returned 403. The full 44-page report was not read; S13 covers only the newly read Appendix I passages.
 - **S13 — US GAO**, [NSIAD-92-119, official report PDF](https://www.gao.gov/assets/nsiad-92-119.pdf), Appendix I, printed pp. 12–14 (PDF pp. 14–16), authorization and financing passages. Extracted PDF text read from the archived web-reader response; no full local PDF or verified page image. Checked **2026-10-23 by an AI agent**. The original statutes cited by GAO were not read.
 - **S14 — Central Bureau of Statistics**, [Publication 1579, Defence Expenditure in Israel 1950–2012](https://www.cbs.gov.il/he/publications/doclib/2014/1579_defence_2012/pdf/e_print.pdf), October 2014. Table 4, printed p. 28 (PDF p. 30), both GDP columns and footnote 3 read as a rendered image; definitions pp. 13–15 and methods p. 17 read as text, with pp. 15 and 17 also rendered. These are retrospective current-price national-account estimates; the source is not a ledger of budget payments. Checked **2026-10-23 by an AI agent only**.
+- **S15 — Central Bureau of Statistics**, [Table 3.5, Consumer Price Index by different bases since September 1951](https://www.cbs.gov.il/he/publications/doclib/2008/price08a/a3_5_h.pdf), prepared for the expanded Price Statistics Monthly Bulletin 8/2008. Page 1 header, December 1984/January 1985 rows, scale bands and footnotes 1–3 read as a rendered image. Official retrospective table, not the original 1985 release. Checked **2026-10-23 by an AI agent only**.
