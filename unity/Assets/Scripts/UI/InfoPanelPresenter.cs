@@ -180,7 +180,7 @@ namespace Statecraft.Game.UI
         (int unit, IReadOnlyDictionary<(int Q, int R), int> hexes)? MoveTargets()
         {
             var unit = unitMode ? selectedUnit() : null;
-            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token.Unit) is int id)) return null;
+            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token) is int id)) return null;
             var reach = Movement.Reachable(bridge.Content, bridge.State, id);
             return reach.Count == 0 ? null : (id, reach);
         }
@@ -241,7 +241,7 @@ namespace Statecraft.Game.UI
         int? OrderUnit()
         {
             var unit = unitMode ? selectedUnit() : null;
-            return unit == null || bridge.State.GameOver != null ? null : UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token.Unit);
+            return unit == null || bridge.State.GameOver != null ? null : UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token);
         }
 
         /// <summary>Fortify, Hold or Send home's button: queues the sim's order for the shown unit (one per unit: another
@@ -398,7 +398,7 @@ namespace Statecraft.Game.UI
             defenceButton.style.display = unit != null ? DisplayStyle.Flex : DisplayStyle.None;
             // A pick read on another turn or session, or for a unit no longer shown, is over: its hexes are not the sim's now.
             if (pick is { } open
-                && (open.session != bridge.Session || open.turn != s.Turn || unit == null || UnitCard.SimUnit(c, s, unit.Value.Token.Unit) != open.unit))
+                && (open.session != bridge.Session || open.turn != s.Turn || unit == null || UnitCard.SimUnit(c, s, unit.Value.Token) != open.unit))
                 EndPick();
             var moves = MoveTargets();
             moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
@@ -424,7 +424,7 @@ namespace Statecraft.Game.UI
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
-                var card = UnitCard.For(unit.Value, s, text, c.IsGdd);
+                var card = UnitCard.For(unit.Value, s, text, c.IsGdd, c, townNamesHe);
                 panel.EnableInClassList("info-empty", false);
                 // The orders' state under the card's lines: the pick asks for a hex (an attack's with each lit hex's odds, Q-UI-1);
                 // a queued Move, Fortify, Hold, Attack or Send home waits for End turn (an attack's with its hex's odds).

@@ -44,7 +44,7 @@ public class FirstTurnGuideTests
             () => { if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is (int q, int r)) info.Show(q, r); }, closeScreens,
             showUnit: () =>
             {
-                if (!(FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, tokens.Select(t => t.Unit)) is string id)) return;
+                if (!(FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, tokens) is string id)) return;
                 shown = new PlacedToken(tokens.First(t => t.Unit.Id == id), new AnchorSpot(0, 0, 0, 0, false));
                 info.ShowUnit();
             });
@@ -368,7 +368,7 @@ public class FirstTurnGuideTests
         var move = Array.IndexOf(FirstTurnGuidePresenter.Steps, "move");
         for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
         Assert.AreEqual(move, guide.Step);
-        var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token.Unit));
+        var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token));
         Assert.IsNotNull(id, "precondition: a drawn unit can move");
         Assert.AreEqual(id, units.Selected, "the guide's unit, with its ring");
         Assert.IsTrue(info.ShowsUnit, "its card in the info panel");
@@ -410,10 +410,10 @@ public class FirstTurnGuideTests
                     Assert.AreEqual(move, guide.Step, "precondition: the guide is on its move step");
                     for (int frame = 0; frame < 5; frame++) yield return null;
 
-                    var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token.Unit));
+                    var id = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token));
                     Assert.IsNotNull(id, "precondition: a drawn unit can move");
                     var token = units.Tokens.Single(t => t.Token.Unit.Id == id);
-                    var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token.Unit);
+                    var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token);
                     Assert.IsNotNull(simUnit, "precondition: the guide's token has a sim unit");
                     var reachable = Movement.Reachable(bridge.Content, bridge.State, simUnit!.Value).Keys.ToList();
                     Assert.IsNotEmpty(reachable, "precondition: the guide's unit has a destination");
