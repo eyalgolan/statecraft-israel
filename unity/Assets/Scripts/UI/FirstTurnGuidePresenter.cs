@@ -381,6 +381,10 @@ namespace Statecraft.Game.UI
         public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitEntry> units) =>
             units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Id;
 
+        /// <summary>The drawn-token form used by the game. A raised token carries its sim id even without a starting row.</summary>
+        public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitToken> units) =>
+            units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Unit.Id;
+
         public void Dispose()
         {
             if (disposed) return;

@@ -29,7 +29,13 @@ namespace Statecraft.Game.UI
             return null;
         }
 
-        public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false)
+        /// <summary>The sim unit a drawn token represents. GDD tokens carry the id directly, including units raised after
+        /// the starting forces; row lookup remains the fallback for callers that construct an older token by hand.</summary>
+        public static int? SimUnit(Content c, GameState s, UnitToken token) =>
+            token.SimId is int id ? s.Units.ContainsKey(id) ? id : (int?)null : SimUnit(c, s, token.Unit);
+
+        public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false, Content? content = null,
+            IReadOnlyDictionary<string, string>? settlementNamesHe = null)
         {
             var t = placed.Token; var u = t.Unit; var a = t.Anchor;
             bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
@@ -47,6 +53,23 @@ namespace Statecraft.Game.UI
                     ? text.Format("date.month_year", text["date.month_" + m.Month], m.Year) : english;
             }
             var lines = new List<string>();
+            string? raisedType = t.Raised && t.StateUnit != null ? t.StateUnit.Type switch
+            {
+                "recruit" => text["city.track_recruit"],
+                StartingForces.IsraeliBrigadeType => text["unit.type.veteran_soldier"],
+                "artillery" => text["city.track_artillery"],
+                "armoured_car" => text["city.track_armoured_car"],
+                _ => null,
+            } : null;
+            string home = t.StateUnit != null && t.StateUnit.HomeCity != "" && content != null
+                && content.SettlementNames.TryGetValue(t.StateUnit.HomeCity, out var city) ? city : "";
+            if (hebrew && t.StateUnit != null && settlementNamesHe != null
+                && settlementNamesHe.TryGetValue(t.StateUnit.HomeCity, out var cityHe) && !string.IsNullOrWhiteSpace(cityHe)) home = cityHe;
+            if (raisedType != null && t.StateUnit != null)
+            {
+                lines.Add(text.Format("unit.strength", t.StateUnit.Strength));
+                if (home != "") lines.Add(text.Format("unit.home_city", home));
+            }
             if (u.Service == UnitData.Air)
             {
                 var aircraft = text[t.ArtType == UnitShowcase.SpitfireType ? "unit.aircraft.spitfire" : "unit.aircraft.s199"];
@@ -62,7 +85,7 @@ namespace Statecraft.Game.UI
             if (!string.IsNullOrEmpty(u.Formed)) lines.Add(text.Format("unit.formed", Local(When(u.Formed!), u.FormedHe)));
             // The English decides whether the line exists: a Hebrew commander never adds one (owner, #558).
             if (!string.IsNullOrEmpty(u.FirstCommander)) lines.Add(text.Format("unit.commander", Local(u.FirstCommander!, u.FirstCommanderHe)));
-            lines.Add(Local(u.Sector, u.SectorHe));
+            if (!t.Raised) lines.Add(Local(u.Sector, u.SectorHe));   // a raised unit has no sourced sector
             // Israel's call-up and security level set only Israel's tokens; an Arab force's token reflects neither (#665).
             var national = u.Side != UnitData.Israel ? ""
                 : !gddLoop ? text.Format("unit.national", PlayerText.Percent(state.Mobilization), state.Rung)
@@ -70,12 +93,14 @@ namespace Statecraft.Game.UI
             var hosts = u.AllSources().Select(s => new Uri(s.Url).Host).Distinct(StringComparer.Ordinal).OrderBy(h => h, StringComparer.Ordinal);
             return new UnitCard
             {
-                Title = text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrEmpty(u.NameHe) ? u.NameHe : u.Name,
-                Subtitle = text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service]),
+                // A raised unit has no name or number: its type is the title, the service the subtitle (#1396).
+                Title = raisedType ?? (hebrew && !string.IsNullOrEmpty(u.NameHe) ? u.NameHe : u.Name),
+                Subtitle = raisedType == null ? text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service])
+                    : text["unit.service." + u.Service],
                 Body = string.Join("\n", lines),
-                Footer = (national == "" ? "" : national + "\n")
+                Footer = t.Raised ? "" : (national == "" ? "" : national + "\n")
                     + text.Format("unit.sources", string.Join(", ", hosts)),
-                Note = (sourced ? UnitData.IsWikipediaOnly(a.Sources) : UnitData.IsWikipediaOnly(u)) ? text["unit.draft_wikipedia"] : text["unit.draft"],
+                Note = t.Raised ? "" : (sourced ? UnitData.IsWikipediaOnly(a.Sources) : UnitData.IsWikipediaOnly(u)) ? text["unit.draft_wikipedia"] : text["unit.draft"],
             };
         }
     }

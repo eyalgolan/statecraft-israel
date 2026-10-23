@@ -11,6 +11,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 /// <summary>GDD Phase 5 PR 14 (#753; impact plan §2.6): in the GDD loop the map's army tokens come from the sim's units
 /// (GameState.Units), one per unit on its sim hex, and a token's figures follow Q-UI-3, not the call-up. The squadron and
@@ -20,6 +21,7 @@ public class UnitsFromStateTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static GameState NewGame() => Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
+    static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     /// <summary>A moved unit's anchor as the layer makes it: the hex's centre, made once per row and hex.</summary>
     sealed class Moved
@@ -154,20 +156,92 @@ public class UnitsFromStateTests
         Assert.AreEqual(UnitData.IsWikipediaOnly(t.Unit) ? text["unit.draft_wikipedia"] : text["unit.draft"], card.Note);
     }
 
-    /// <summary>A unit raised in play takes the next id, at or above <c>StartingForces.Count</c>, so it has no row and no art
-    /// yet: it draws no token (UnitRoster.FromState's id check).</summary>
-    [Test]
-    public void AUnitRaisedInPlayDrawsNoToken()
+    static Unit Raise(GameState s, string type = "recruit", int strength = 2)
+    {
+        var like = s.Units.Values.First(x => x.Side == UnitData.Israel);
+        var to = FreeNeighbour(s, like.Q, like.R);
+        var unit = new Unit(s.NextId++, type, to.q, to.r, side: UnitData.Israel, strength: strength, homeCity: "tel_aviv");
+        s.Units.Add(unit.Id, unit);
+        return unit;
+    }
+
+    /// <summary>#1396: each military type raised after the starting forces gets an army token on its sim hex. Its reusable
+    /// type default supplies the existing figures and vehicle, and Q-UI-3 supplies the figure count from strength.</summary>
+    [TestCase("recruit", 1, 1, null)]
+    [TestCase("veteran_soldier", 4, 3, null)]
+    [TestCase("artillery", 2, 2, UnitFigures.Napoleonchik)]
+    [TestCase("armoured_car", 4, 3, UnitFigures.SandwichArmouredCar)]
+    public void ARaisedUnitDrawsItsTypeAndStrengthOnItsHex(string type, int strength, int figures, string vehicle)
     {
         var s = NewGame();
-        var units = Units;
-        var before = Army(UnitRoster.FromState(units, C, s, _ => true, new Moved().At));
-        Assert.IsNotEmpty(before);
-        var like = s.Units.Values.First(x => x.Side == "israel");
-        var to = FreeNeighbour(s, like.Q, like.R);
-        Assert.GreaterOrEqual(s.NextId, C.StartingForces.Count, "ids below the count are the starting forces");
-        s.Units.Add(s.NextId, new Unit(s.NextId, like.Type, to.q, to.r, side: like.Side, strength: like.Strength)); s.NextId++;
-        CollectionAssert.AreEqual(before, Army(UnitRoster.FromState(units, C, s, _ => true, new Moved().At)), "the raised unit draws nothing");
+        var raised = Raise(s, type, strength);
+        var tokens = UnitRoster.FromState(Units, C, s, _ => true, new Moved().At);
+        var token = tokens.Single(t => t.SimId == raised.Id);
+        Assert.AreEqual(UnitData.Army, token.Unit.Service);
+        Assert.AreEqual(figures, token.Figures, "Q-UI-3 against the reused four-strength Israeli army default");
+        Assert.AreEqual(figures, token.Headgear.Count, "one existing figure per strength band");
+        if (vehicle == null) CollectionAssert.IsEmpty(token.Vehicles); else CollectionAssert.Contains(token.Vehicles, vehicle);
+        var hexes = MapBuilder.LoadHexes(Path.Combine(Paths.Content, "map", "hexes.json"));
+        Assert.AreEqual((raised.Q, raised.R), HexPicker.FromLonLat(token.Anchor.Lon, token.Anchor.Lat, hexes.bounds, hexes.hex_size_km));
+    }
+
+    /// <summary>#1396: the raised token has its own stable map id, so the same UnitLayer path as a starting unit selects it.</summary>
+    [Test]
+    public void ARaisedUnitCanBeSelected()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var map = new GameObject("MapScene").AddComponent<MapScene>();
+        try
+        {
+            map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+            Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+                File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+            map.Build();
+            var s = NewGame();
+            var raised = Raise(s);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            Assert.IsTrue(layer.Show(C, s));
+            var token = layer.Tokens.Single(t => t.Token.SimId == raised.Id);
+            Assert.AreEqual(token.Token.Unit.Id, layer.UnitToSelectAt(token.Q, token.R));
+            layer.Select(token.Token.Unit.Id);
+            Assert.AreEqual(token.Token.Unit.Id, layer.Selected);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>#1396: a raised formation's card names its type, strength and home city, and routes Move to its real sim id.</summary>
+    [Test]
+    public void ARaisedUnitShowsItsCardAndMove()
+    {
+        using var ui = new UiTestKit();
+        var game = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var raised = Raise(game.State);
+        var bridge = new SimBridge(game, Text);
+        var token = UnitRoster.FromState(Units, C, game.State, _ => true, new Moved().At).Single(t => t.SimId == raised.Id);
+        Assert.IsNotEmpty(Movement.Reachable(C, game.State, raised.Id), "precondition: the raised recruits can move");
+        PlacedToken? selected = new PlacedToken(token, new AnchorSpot(raised.Q, raised.R, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, C.SettlementNames, selectedUnit: () => selected);
+        info.ShowUnit();
+        Assert.AreEqual(Text["city.track_recruit"], ui.Q<Label>("info-title").text);
+        Assert.AreEqual(Text["unit.service.army"], ui.Q<Label>("info-subtitle").text);
+        Assert.AreEqual(Text.Format("unit.strength", raised.Strength) + "\n" + Text.Format("unit.home_city", C.SettlementNames[raised.HomeCity]),
+            ui.Q<Label>("info-settlements").text, "strength and home city, and no empty sector line");
+        Assert.AreEqual(DisplayStyle.Flex, ui.Q<Button>("info-move").style.display.value);
+        Assert.AreEqual(Text["unit.order.move"], ui.Q<Button>("info-move").text);
+        info.Dispose();
+    }
+
+    /// <summary>#1396 is additive: giving a raised unit a default token does not change any starting unit's row, art or anchor.</summary>
+    [Test]
+    public void StartingUnitsAreUnchangedWhenARaisedUnitIsDrawn()
+    {
+        var s = NewGame();
+        var moved = new Moved();
+        var before = UnitRoster.FromState(Units, C, s, _ => true, moved.At);
+        var raised = Raise(s);
+        var after = UnitRoster.FromState(Units, C, s, _ => true, moved.At);
+        CollectionAssert.AreEqual(before, after.Where(t => t.SimId != raised.Id).ToList());
+        Assert.AreEqual(before.Count + 1, after.Count);
     }
 
     /// <summary>Review point 3 on #1205: in the GDD loop the call-up no longer sets the figures, so the card's footer does not
