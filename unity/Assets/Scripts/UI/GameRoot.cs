@@ -470,7 +470,7 @@ namespace Statecraft.Game.UI
             // It shows by itself only where the start screen does (never in the automated runs, nor under ?firstcard, which
             // times the first card) and a settings file remembers that it has; How to play opens it again anywhere. Steps 2
             // and 3 show its city as a click there would, without selecting a unit on the city's hex; step 4 shows a unit
-            // that can move, its ring and its card, as a click on it would (OnHexClicked).
+            // that can move, its ring and its card, as a click on it would (OnHexClicked), and centres the camera on its hex.
             Action showCity = () =>
             {
                 if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
@@ -480,7 +480,15 @@ namespace Statecraft.Game.UI
             {
                 if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token.Unit)) is not string id) return;
                 unitLayer.Select(id);
-                if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
+                if (unitLayer.Selected != null)
+                {
+                    map.ClearSelection(); info.ShowUnit();
+                    var token = unitLayer.Tokens.First(t => t.Token.Unit.Id == id);
+                    var hex = bridge.Content.HexAt(token.Q, token.R)!;
+                    camRig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                    camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
+                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                }
             };
             // When it closes, the guide puts back the selection it found (a hex, a unit, or none), unless the player has
             // picked something else meanwhile (the HUD stays usable under it).
