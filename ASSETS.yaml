@@ -104,13 +104,27 @@ rules:
     source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
     status: verified
     note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
-  - glob: "asset-sources/generated-1948/figure-*/*"
+  - glob: "asset-sources/generated-1948/figure-*/original.glb"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Byte-identical provider rigged GLBs and exact embedded JPEG payloads, generated 22 October 2026; source IDs and SHA-256 recorded alongside Unity imports. Archives are outside Assets and cannot enter the player build."
     status: verified
     note: "Attribution Tal Heuberger. Provider originals contain no animation clips; local compatibility exports and retargeted actions are separately documented."
+  - glob: "asset-sources/generated-1948/figure-*/original_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Byte-identical provider rigged GLBs and exact embedded JPEG payloads, generated 22 October 2026; source IDs and SHA-256 recorded alongside Unity imports. Archives are outside Assets and cannot enter the player build."
+    status: verified
+    note: "Attribution Tal Heuberger. Provider originals contain no animation clips; local compatibility exports and retargeted actions are separately documented."
+  - glob: "asset-sources/generated-1948/figure-*/*-local-actions.json.gz"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Existing local idle/walk retarget curve data, archived as byte-verified gzip with exact keys, handles and interpolation. Not provider animation files: provider rigged GLBs have zero clips. Per-model validation and archive receipts record source and decompressed hashes."
+    status: verified
+    note: "Animation payloads of the seven new character candidates only. No older C09 animation source grant changes. JSON provenance, validation and archive receipts retain their existing path licences."
   - glob: "docs/images/generated-1948-character-*.jpg"
     licence: CC-BY-SA-4.0
     ai_generated: true
