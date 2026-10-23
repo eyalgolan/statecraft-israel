@@ -7,4 +7,4 @@ region_bounds=(x:99.00, y:972.00, width:282.00, height:60.00)
 region_content=(x:1.00, y:4.00, width:279.00, height:52.00)
 region_measure=(279.00, 52.00)
 layer=נפות המנדט, 1947
-region=נפת באר שבע, מחוז עזה (נפות המנדט, 1947)
+region=נפת באר־שבע, מחוז עזה (נפות המנדט, 1947)
