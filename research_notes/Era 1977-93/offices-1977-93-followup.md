@@ -16,7 +16,7 @@ It changes no content, simulation, tests, goldens or signed review fields.
 - Recorded office terms, announcements, cabinet proposals, parliamentary approval and declarations of allegiance
   are distinct evidence. This note does not choose D14's game boundary or any office-mapping option.
 
-This note examines the original note's §3 items **C1–C11, C22, C26 and C31**. The coverage tables retain the other
+This note examines the original note's §3 items **C1–C15, C22, C26 and C31**. The coverage tables retain the other
 conflicts and secondary-only groups. They are not claims that those rows were checked again or completed.
 
 ## Earlier governments and Finance: six further comparisons
@@ -94,6 +94,56 @@ archive. The archive's headings supply their dates, sitting numbers and volumes;
 Knesset session metadata or facsimile was obtained for these three texts. The T2 host abstract calls
 Tamir “Moshe”, while the title and speech body identify Shmuel; the body is used here and the discrepancy
 is retained. These readings are partial evidence for all four conflicts, not completed reconciliations or D14.
+
+## C12–C15 — four further comparisons in the nineteenth government
+
+**[A]** Fourteen term records and eight public identity records were read [U1, U2]. U3 is an official
+Knesset transcription. U4–U6 are host transcriptions/metadata in the Begin writings archive, whose headings
+supply their date associations; no matching original scan or independent session-metadata linkage was
+obtained for those archive texts. The baseline's secondary comparisons were not reopened.
+
+### C12 — Labour and Welfare; Absorption, May 1982
+
+**[A]** The register separately ends Abuhatzira's Labour and Welfare and Absorption rows on **2 May 1982**,
+records Begin in each from **2 to 4 May**, and starts Uzan in each on **4 May** [U1]. In the speech dated
+**4 May 1982**, Begin reports receiving Abuhatzira's resignation letter on **30 April** and its taking
+effect on **2 May**. He reports a Sunday cabinet decision to add Uzan and assign both portfolios, and asks
+for Knesset approval [U4]. The original letter and the approval vote were not opened. The Sunday reference
+for the cabinet decision is not independently converted into a calendar date.
+
+The instruments for Begin's interim responsibilities remain unread. Register labels for Labour and
+Welfare and for Absorption are retained without choosing how the game should map those offices. The
+baseline's alternative 3 May start for Uzan and later Absorption end for Abuhatzira remain attributed,
+not explained by this reading [B, C].
+
+### C13 — leaving Defence and remaining without portfolio
+
+**[A, C]** The register ends Sharon's Defence term and starts his term without portfolio on
+**14 February 1983** [U1]. In the speech dated that day, Begin describes Sharon remaining in the government
+without portfolio while Defence passes to the prime minister [U5]. This distinguishes leaving Defence
+from leaving the government. The speech also reproduces attributed legal views; they are not adopted
+as this note's legal conclusions. A formal cabinet minute, decision time and independent legal effect
+were not established. The baseline's 1982 alternative was not reopened or independently explained.
+
+### C14 — Energy, September–October 1982: register sequence only
+
+**[A]** U1 ends Berman's Energy term on **30 September 1982**, records Begin from **30 September to
+19 October**, and starts Modai on **19 October**. The archive item dated 19 October mentions Modai's
+appointment in its heading [U6]. That heading is a locator, not evidence of parliamentary approval;
+neither it nor the concluding request to approve announcements is treated as a recorded vote. The term
+sequence remains register-only. The resignation and interim instruments and actual approval remain unread.
+
+### C15 — Tourism and the formation proceeding of August 1981
+
+**[A, C]** U1 starts Sharir's Tourism row 4352 on **5 August 1981**. Patt's preceding register tenure is
+split between row 4266 (**15 January 1979–20 July 1981**) and row 22762 (**20 July–5 August 1981**).
+Both are assigned to the eighteenth government; the division is not treated as a separate handover.
+
+The official transcription headed **5 August 1981** names Sharir as Tourism Minister, records confidence
+in the new government by **61 votes to 58**, and includes his ministerial declaration and the minister
+roster [U3]. Its converted text is not in continuous procedural order. No event sequence is inferred from
+paragraph position, no independent declaration time is supplied and no original facsimile was viewed.
+The baseline's competing 1 August/11 August secondary attributions were not renewed or reconciled.
 
 ## Foreign Affairs: three recorded handovers
 
@@ -176,10 +226,10 @@ is preserved; it is not a fresh factual check. All listed unresolved work remain
 | C9: Justice, August 1980 | Register and reproduced resignation/cabinet/approval-request sequence read [A] | Original letter, interim instrument and approval vote not opened. |
 | C10: Industry and Trade, Hurvitz | Register and reproduced 15 January 1979 request read [A, C] | Exact resignation/effect date and older competing end-date account remain unresolved. |
 | C11: Housing, Patt | Register and 1977 proceeding read [A, C] | No independent declaration timestamp identified in the passages read; register difference remains unexplained. |
-| C12: Labour/Welfare and Absorption, May 1982 | Not targeted [B] | Recheck each term; no ministry-mapping decision. |
-| C13: Sharon without portfolio | Not targeted [B] | Recheck the competing start years. |
-| C14: Energy, 1982 | Not targeted [B] | Primary interim-term check. |
-| C15: Tourism, 1981 | Not targeted [B] | Recheck appointment and overlapping secondary dates. |
+| C12: Labour/Welfare and Absorption, May 1982 | Register and reproduced resignation/appointment request read [A, C] | Original letter, interim instruments and approval vote unread; no ministry-mapping decision. |
+| C13: Sharon without portfolio | Register and reproduced 14 February 1983 speech read [A, C] | Formal decision timing and the older 1982 attribution remain unresolved. |
+| C14: Energy, 1982 | Three recorded term boundaries read [A] | Resignation/interim instruments and actual approval unread; archive title is not procedural proof. |
+| C15: Tourism, 1981 | Register and 5 August 1981 official formation proceeding read [A, C] | Older competing days and any transcription defects remain unexamined; no exact-time inference. |
 | C16: Finance, October 1983 | Not targeted [B] | Primary interim/successor check. |
 | C17: Religious Affairs, 21st government | Not targeted [B] | Compare all conflicting boundaries. |
 | C18: Justice, 1986 | Not targeted [B] | Recheck the competing change dates. |
@@ -250,11 +300,18 @@ whole-sitting historical review or precise vote-time check is claimed.
 | T2 | Begin writings archive, [13 August 1980 Justice speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%A9%D7%9C%D7%95%D7%A9-%D7%9E%D7%90%D7%95%D7%AA-%D7%95%D7%A9%D7%99%D7%A9%D7%99%D7%9D-%D7%95%D7%90%D7%A8%D7%91%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1/) | Institutional reproduction of a parliamentary speech. Sitting 364, volume 89; heading and opening resignation/appointment paragraphs read. Approval vote not read; host abstract typo is not used. |
 | T3 | Begin writings archive, [5 January 1981 Communications speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%90%D7%A8%D7%91%D7%A2-%D7%9E%D7%90%D7%95%D7%AA-%D7%95%D7%A9%D7%9C%D7%95%D7%A9-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%AA%D7%A9%D7%99%D7%A2/) | Institutional reproduction of a parliamentary speech. Sitting 403, volume 90; heading and full short announcement read. No approval vote included. |
 | T4 | Begin writings archive, [15 January 1979 portfolio-allocation speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%9E%D7%90%D7%94-%D7%95%D7%A9%D7%91%D7%A2%D7%99%D7%9D-%D7%95%D7%AA%D7%A9%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%AA%D7%A9%D7%99%D7%A2/) | Institutional reproduction of a parliamentary speech. Sitting 179, volume 84; heading, allocation request and relevant concluding reply read. No approval vote or scanned original. |
+| U1 | Knesset, [fourteen further term records](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?%24filter=PersonToPositionID+eq+4355+or+PersonToPositionID+eq+22821+or+PersonToPositionID+eq+21263+or+PersonToPositionID+eq+4354+or+PersonToPositionID+eq+22819+or+PersonToPositionID+eq+21264+or+PersonToPositionID+eq+4255+or+PersonToPositionID+eq+4256+or+PersonToPositionID+eq+4128+or+PersonToPositionID+eq+22820+or+PersonToPositionID+eq+4174+or+PersonToPositionID+eq+4352+or+PersonToPositionID+eq+4266+or+PersonToPositionID+eq+22762&%24select=PersonToPositionID%2CPersonID%2CPositionID%2CKnessetNum%2CGovernmentNum%2CGovMinistryID%2CGovMinistryName%2CDutyDesc%2CStartDate%2CFinishDate%2CLastUpdatedDate&%24top=20) | All 14 rows and selected fields; no next link. Administrative endpoints, not legal approval. |
+| U2 | Knesset, [eight public identity records](https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_Person?%24filter=PersonID+eq+2119+or+PersonID+eq+2129+or+PersonID+eq+2179+or+PersonID+eq+2222+or+PersonID+eq+2451+or+PersonID+eq+482+or+PersonID+eq+2560+or+PersonID+eq+2667&%24select=PersonID%2CFirstName%2CLastName&%24top=10) | All eight names read; no next link. No biography or living-status inference. |
+| U3 | Knesset, [5 August 1981 official transcription](https://fs.knesset.gov.il/10/Plenum/10_ptm_236508.DOC) | Document 236508: header, portfolio list, confidence result, Sharir declaration and minister roster. Converted DOC text; procedural order is discontinuous; no facsimile viewed. |
+| U4 | Begin writings archive, [4 May 1982 speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%A9%D7%9E%D7%95%D7%A0%D7%99%D7%9D-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%A2%D7%A9%D7%99%D7%A8%D7%99%D7%AA-%D7%99%D7%95%D7%9D-%D7%A9%D7%9C/) | Host reproduction: heading/date and final resignation/appointment paragraphs, including the 30 April receipt reported in the speech. Original letter and approval vote not opened. |
+| U5 | Begin writings archive, [14 February 1983 speech](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%9E%D7%90%D7%94-%D7%A9%D7%91%D7%A2%D7%99%D7%9D-%D7%95%D7%90%D7%A8%D7%91%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%A2/) | Host reproduction: heading/date and retention-without-portfolio passages. Formal legal instruments and attributed legal opinions not independently verified. |
+| U6 | Begin writings archive, [19 October 1982 archive item](https://db.begincenter.org.il/article/%D7%94%D7%99%D7%A9%D7%99%D7%91%D7%94-%D7%94%D7%9E%D7%90%D7%94-%D7%A2%D7%A9%D7%A8%D7%99%D7%9D-%D7%95%D7%90%D7%A8%D7%91%D7%A2-%D7%A9%D7%9C-%D7%94%D7%9B%D7%A0%D7%A1%D7%AA-%D7%94%D7%A2/) | Heading/date and targeted speech inspection. Appointment heading is a locator only; no approval result or interim instrument established. |
 
-A new session-metadata query returned HTTP 473/access denied and was not retried. The separate, publicly
+An earlier session-metadata query returned HTTP 473/access denied and was not retried. The separate, publicly
 accessible Begin archive texts are not presented as the unavailable Knesset metadata or original scans.
 
 Some earlier Knesset sources were opened by ordinary public GETs; T2–T4 were read through the web reader.
+U1–U6 were obtained by ordinary public GETs; U4–U6 were read as the host archive’s parsed text.
 A failed route was not used as evidence of a historical claim. Downloaded originals, converted text and access receipts are retained
 privately; no raw document or third-party binary is added to the repository.
 
