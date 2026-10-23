@@ -47,7 +47,8 @@ CONFLICT_MARKER = re.compile(r"^(<{7}|\|{7}|>{7}) ")
 MAX_FILE_BYTES = 10 * 1024 * 1024
 
 REQUIRED_FILES: tuple[str, ...] = (
-    "LICENSE", "LICENSES/MIT.txt", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
+    "LICENSE", "LICENSES/MIT.txt", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-NC-ND-4.0.txt",
+    "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt",
     "LICENSES/YamlDotNet-MIT.txt", "LICENSING.md", "NOTICE", "THIRD-PARTY-NOTICES.md", "ASSETS.yaml",
     "README.md", "README.he.md", "BUILDING.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md",
     "TRADEMARK.md", "CHANGELOG.md", "docs/CONTENT_POLICY.md",
@@ -69,7 +70,7 @@ PROVENANCE_GLOBS: tuple[str, ...] = ("content/map/*", "unity/Assets/StreamingAss
 # "Israel State Archives terms of use": the archive's own licence for its catalogue items (Ben-Gurion's 1948 recording,
 # unity/Assets/StreamingAssets/audio/; ASSETS.yaml records the terms and their open questions; the row stays owner-verify).
 # Owner, 20 Oct 2026: written ElevenLabs permission to publish the three #1112 audio files in this repo.
-ALLOWED_LICENCES = frozenset({"MIT", "CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "OFL-1.1", "Public-Domain",
+ALLOWED_LICENCES = frozenset({"MIT", "CC-BY-4.0", "CC-BY-NC-ND-4.0", "CC-BY-SA-4.0", "CC0-1.0", "OFL-1.1", "Public-Domain",
                               "Copernicus-DEM", "IMS-data.gov.il", "Unity-Companion-License",
                               "Israel State Archives terms of use", "LicenseRef-ElevenLabs-Owner-Permission", "unknown"})
 STATUSES = frozenset({"verified", "owner-verify"})

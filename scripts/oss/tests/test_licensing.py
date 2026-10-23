@@ -6,6 +6,9 @@ ROOT = Path(__file__).resolve().parents[3]
 # sha256 of the official plain text, https://polyformproject.org/licenses/noncommercial/1.0.0.txt (fetched 22 Oct 2026;
 # word for word the same as PolyForm-Noncommercial-1.0.0.md in polyformproject/polyform-licenses at 9c032bcb).
 POLYFORM_NC_SHA256 = "ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064c94cc8"
+# sha256 of the official plain text, https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.txt (fetched
+# 23 Oct 2026).
+CC_BY_NC_ND_4_0_SHA256 = "38762e3777f4ec00a6f769062a7c3f704fb78ce08303ecff88558da4c49cf9ea"
 REQUIRED_NOTICE = "Required Notice: Copyright (c) 2026 Eyal Golan (https://github.com/eyalgolan/statecraft-israel)"
 
 
@@ -32,9 +35,12 @@ def test_earlier_mit_licence_is_kept():
 
 def test_licence_texts_are_the_real_ones():
     for name, marker in (("CC-BY-4.0", "Attribution 4.0 International"),
+                         ("CC-BY-NC-ND-4.0", "Attribution-NonCommercial-NoDerivatives 4.0 International"),
                          ("CC-BY-SA-4.0", "Attribution-ShareAlike 4.0 International"),
                          ("CC0-1.0", "CC0 1.0 Universal")):
         assert marker in (ROOT / f"LICENSES/{name}.txt").read_text(encoding="utf-8"), name
+    import hashlib
+    assert hashlib.sha256((ROOT / "LICENSES/CC-BY-NC-ND-4.0.txt").read_bytes()).hexdigest() == CC_BY_NC_ND_4_0_SHA256
     yaml_dot_net = (ROOT / "LICENSES/YamlDotNet-MIT.txt").read_text(encoding="utf-8")
     assert "Antoine Aubry" in yaml_dot_net and "Permission is hereby granted" in yaml_dot_net
 
