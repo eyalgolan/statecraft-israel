@@ -1043,6 +1043,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-narrating .advisor-media-label { display: flex; }   /* a voice-only line: portrait and caption stay, the disclosure under it */
 .advisor-watching .advisor-portrait { display: none; }
 .advisor-media-label { white-space: normal; font-size: 15px; flex-shrink: 0; }
+/* While a clip plays in the popup, the live caption and the buttons keep their full size; the credit's scroll view takes
+   what is left (the v0.3.0 release check: Dayan's seven-line credit cut the caption to one line). */
+.advisor-media-credits { display: none; flex-shrink: 1; min-height: 0; }
+.advisor-watching .advisor-media-credits, .advisor-narrating .advisor-media-credits { display: flex; }
+.advisor-watching .advisor-body, .advisor-actions, .advisor-count { flex-shrink: 0; }
 .advisor-overlay { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.72); padding: 16px; }
 .advisor-overlay-open .advisor-overlay { display: flex; }
 .advisor-overlay-open .advisor-layer { display: none; }
