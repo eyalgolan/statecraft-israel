@@ -459,16 +459,20 @@
             <ui:VisualElement name="advisor-ring" class="advisor-ring" picking-mode="Ignore" />
             <ui:VisualElement name="advisor-popup" class="panel advisor-popup">
                 <ui:VisualElement class="row advisor-head">
-                    <ui:VisualElement name="advisor-portrait" class="advisor-portrait" />
+                    <ui:VisualElement name="advisor-portrait" class="advisor-portrait"><ui:Button name="advisor-watch" class="advisor-watch" /></ui:VisualElement>
                     <ui:VisualElement class="advisor-names">
                         <ui:Label name="advisor-name" class="title advisor-name" />
                         <ui:Label name="advisor-role" class="muted advisor-role" />
                     </ui:VisualElement>
                     <ui:Button name="advisor-close" class="advisor-close" />
                 </ui:VisualElement>
+                <ui:VisualElement name="advisor-media" class="advisor-media" />
                 <ui:ScrollView name="advisor-body" class="advisor-body">
                     <ui:Label name="advisor-text" class="advisor-text" />
                 </ui:ScrollView>
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). -->
+                <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
+                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />
                     <ui:Button name="advisor-more" />
@@ -515,6 +519,19 @@
                 <ui:VisualElement name="outcome-media" class="outcome-media" picking-mode="Ignore"><ui:Label name="outcome-label" class="outcome-label" picking-mode="Ignore" /></ui:VisualElement>
                 <ui:Label name="outcome-caption" class="title outcome-caption" picking-mode="Ignore" />
                 <ui:Label name="outcome-hint" class="muted outcome-hint" picking-mode="Ignore" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- User-started advisor media, after outcome clips; the start screen/feedback still cover it. -->
+        <ui:VisualElement name="advisor-overlay" class="advisor-overlay">
+            <ui:VisualElement name="advisor-overlay-frame" class="panel advisor-overlay-frame">
+                <ui:Button name="advisor-overlay-close" class="advisor-close" />
+                <ui:VisualElement name="advisor-overlay-media" class="advisor-overlay-media" />
+                <ui:ScrollView class="advisor-overlay-words">
+                    <ui:Label name="advisor-overlay-caption" class="advisor-text" />
+                    <ui:Label name="advisor-overlay-label" class="muted advisor-media-label" />
+                    <ui:Label name="advisor-overlay-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
         </ui:VisualElement>

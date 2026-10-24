@@ -44,7 +44,7 @@ namespace Statecraft.Game.UI
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
-            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
+            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass) || r.ClassListContains(AdvisorPresenter.OverlayOpenClass);   // an End Turn outcome clip covers all but itself
             bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
             bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
             bool modal = (r.ClassListContains(EventCardPresenter.OpenClass) || r.ClassListContains(CaptureDialogPresenter.OpenClass)) && !start && !screen && !outcome;

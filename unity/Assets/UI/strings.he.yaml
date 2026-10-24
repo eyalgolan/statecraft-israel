@@ -125,10 +125,11 @@ feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק �
 # Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
 # it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
 # on #1182 (20 Oct 2026). share.post no longer says "בקוד פתוח" (open source) since the code licence changed (#1371,
-# 22 Oct 2026): agent-checked, for the native reviewer (#564).
+# 22 Oct 2026): agent-checked, for the native reviewer (#564). share.post's second link, "קוד המקור" (the source code,
+# the GitHub repository; owner, 24 Oct 2026): agent-checked, for the native reviewer (#564).
 share.open: "שיתוף"
 share.title: "שיתוף תמונה מהמשחק"
-share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי. {0}, תור {1}. לשחק: {2}"
+share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי. {0}, תור {1}. לשחק: {2} · קוד המקור: {3}"
 share.native: "שיתוף"
 share.download: "הורדת התמונה"
 share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
@@ -680,3 +681,18 @@ advisor.opening.objectives.text: "היעדים מגדירים את מטרות ה
 advisor.next: "הבא"
 advisor.done: "סיום"
 advisor.step: "שלב {0} מתוך {1}"
+
+# Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
+advisor.watch: "צפייה"
+# The media row's disclosure (OQ-16). Hebrew draft for the native reviewer (#564).
+advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאלוג בדיוני."
+
+# S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
+# Hebrew cues remain agent drafts and require the parent opening row’s native approval.
+advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
+advisor.opening.attention.cue.1: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
+advisor.opening.city.cue.1: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
+advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
+advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
+advisor.opening.objectives.cue.1: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
