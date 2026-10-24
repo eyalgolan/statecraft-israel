@@ -39,6 +39,16 @@ public class SettlementControlViewTests
     }
 
     [Test]
+    public void OneTurnLeftReadsRightInBothLanguages()
+    {
+        var last = new SettlementControl("israel", SettlementControl.Occupied, turns: 1);
+        Assert.AreEqual("Lydda: occupied, turns left: 1", SettlementControlView.PanelText(En, "Lydda", last), "count-neutral: no \"1 turns\"");
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        StringAssert.EndsWith("תורות שנותרו: " + UiText.LeftToRightMark + "1" + UiText.LeftToRightMark,
+            SettlementControlView.PanelText(he, "לוד", last), "count-neutral label form, the number after the colon");
+    }
+
+    [Test]
     public void NewSettlementControlStringsHaveEnglishHebrewParity()
     {
         var en = En;
