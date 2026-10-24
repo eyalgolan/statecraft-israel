@@ -68,12 +68,24 @@ public class AdvisorLevelSettingTests
                     for (int i = 0; i < 30 && !(root.Q("screen-settings").layout.width > 0); i++) yield return null;
                     for (int i = 0; i < 3; i++) yield return null;
                     var screen = root.Q("screen-settings").worldBound;
-                    foreach (var level in AdvisorSettings.Levels)
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    var placed = new List<(string name, Rect b)>();
+                    // Each choice, and the screen's last control (the row must not push it out), inside the screen on both axes.
+                    foreach (var name in new[] { "settings-advisors-new", "settings-advisors-experienced", "settings-advisors-warnings", "settings-advisors-off", "settings-share" })
                     {
-                        var b = root.Q("settings-advisors-" + level).worldBound;
-                        if (!(b.width > 0) || b.xMin < screen.xMin - 0.5f || b.xMax > screen.xMax + 0.5f)
-                            problems.Add($"{(hebrew ? "he" : "en")} {w}x{h}: {level} {b} leaves the screen {screen}");
+                        var b = root.Q(name).worldBound;
+                        if (!(b.width > 0) || b.xMin < screen.xMin - 0.5f || b.xMax > screen.xMax + 0.5f || b.yMin < screen.yMin - 0.5f || b.yMax > screen.yMax + 0.5f)
+                            problems.Add($"{at}: {name} {b} leaves the screen {screen}");
+                        if (name.StartsWith("settings-advisors-", StringComparison.Ordinal)) placed.Add((name, b));
                     }
+                    // Wrapped, the choices never overlap.
+                    for (int i = 0; i < placed.Count; i++)
+                        for (int j = i + 1; j < placed.Count; j++)
+                        {
+                            var x = placed[i].b; var y = placed[j].b;
+                            if (x.xMin < y.xMax - 0.5f && y.xMin < x.xMax - 0.5f && x.yMin < y.yMax - 0.5f && y.yMin < x.yMax - 0.5f)
+                                problems.Add($"{at}: {placed[i].name} {x} overlaps {placed[j].name} {y}");
+                        }
                 }
                 finally
                 {
