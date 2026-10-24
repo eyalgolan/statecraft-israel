@@ -540,6 +540,13 @@ city.groups: "{0} groups"
 city.turns_one: "1 turn"
 city.turns: "{0} turns"
 city.cancel_ordered: "Cancel ordered"
+# Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, no Money, no training; {0}: the qualified groups kept.
+city.return_craftsmen: "Return craftsmen to civilian life: 1 group"
+city.reassign_craftsmen: "Reassign craftsmen: 1 of {0}"
+city.reassign_halutz: "Reassign halutzim: 1 of {0}"
+city.reassign_veteran_halutz: "Reassign veteran pioneers: 1 of {0}"
+# A pioneer group's Return (R-QUAL-003); {0}: its name, site.group.
+pioneer.return: "Return {0} to civilian life"
 # City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
 # turns from content), the order, and a project under way or finished. Refusals the map actions share use their
 # info.map_action_reason.* strings; these are the city projects' own.
