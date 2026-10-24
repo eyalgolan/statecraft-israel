@@ -1,20 +1,117 @@
 #nullable enable
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.UI;
 using Statecraft.Sim;
 
 /// <summary>Final review I4: a shareable build (Build.Web -shareable) is refused while any sensitive event lacks the owner's
 /// sensitivity review, and the refusal names each one.</summary>
 public class BuildGateTests
 {
+    static Type SettlementReview => Type.GetType("Statecraft.Game.EditorTools.SettlementControlStringReview, Assembly-CSharp-Editor")!;
+    static object ParseSettlementReview(string yaml, string file) =>
+        SettlementReview.GetMethod("Parse", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { yaml, file })!;
+    static string? SettlementReviewRefusal(object? review, UiText en, UiText he) =>
+        (string?)SettlementReview.GetMethod("Refusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new[] { review, en, he });
+
+    internal static string? ReviewedSettlementControlStrings()
+    {
+        var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
+        SettlementReview.GetProperty("Status")!.SetValue(review, ReleaseGate.ReviewedStatus);
+        var en = UiText.Parse(File.ReadAllText(UiPaths.Strings), "strings.en.yaml");
+        var he = UiText.Parse(File.ReadAllText(UiPaths.StringsHebrew), "strings.he.yaml");
+        return SettlementReviewRefusal(review, en, he);
+    }
+
     static string? Refusal(Content c)
     {
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor");
         Assert.IsNotNull(t, "Build exists");
-        return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object?[] { c, null, false, null, null });   // event content only
+        return (string?)t!.GetMethod("ShareableRefusal", BindingFlags.Public | BindingFlags.Static)!.Invoke(null,
+            new object?[] { c, null, false, null, null, ReviewedSettlementControlStrings() });   // event content only
+    }
+
+    [Test]
+    public void AShareableBuildWaitsForTheSettlementControlStringsReview() // R-GATE-002
+    {
+        var en = UiText.Parse("map.control.depopulated: Depopulated\n", "strings.en.yaml");
+        var he = UiText.Parse("map.control.depopulated: מרוקן מתושביו\n", "strings.he.yaml");
+        var review = ParseSettlementReview(
+            "status: pending\nstrings:\n  - { key: map.control.depopulated, en: Depopulated, he: מרוקן מתושביו }\n", "fixture");
+        StringAssert.Contains("sensitivity review", SettlementReviewRefusal(review, en, he));
+        SettlementReview.GetProperty("Status")!.SetValue(review, ReleaseGate.ReviewedStatus);
+        Assert.IsNull(SettlementReviewRefusal(review, en, he));
+        var changed = UiText.Parse("map.control.depopulated: Empty\n", "strings.en.yaml");
+        StringAssert.Contains("map.control.depopulated", SettlementReviewRefusal(review, changed, he));
+    }
+
+    [Test]
+    public void SettlementControlStringsReviewFailsClosed() // R-GATE-002
+    {
+        var en = UiText.Parse("a: English\nb: Other\n", "strings.en.yaml");
+        var he = UiText.Parse("a: עברית\nb: אחר\n", "strings.he.yaml");
+        Assert.That(SettlementReviewRefusal(null, en, he), Does.Contain("missing or unreadable"));
+
+        var empty = ParseSettlementReview("status: sensitivity-reviewed\nstrings: []\n", "fixture");
+        Assert.That(SettlementReviewRefusal(empty, en, he), Does.Contain("no strings"));
+        var repeated = ParseSettlementReview(
+            "status: sensitivity-reviewed\nstrings:\n  - { key: a, en: English, he: עברית }\n  - { key: a, en: English, he: עברית }\n", "fixture");
+        Assert.That(SettlementReviewRefusal(repeated, en, he), Does.Contain("repeated key 'a'"));
+        var emptyKey = ParseSettlementReview("status: sensitivity-reviewed\nstrings:\n  - { key: '', en: English, he: עברית }\n", "fixture");
+        Assert.That(SettlementReviewRefusal(emptyKey, en, he), Does.Contain("empty key"));
+        var unknown = ParseSettlementReview(
+            "status: fact-checked\nstrings:\n  - { key: a, en: English, he: עברית }\n", "fixture");
+        Assert.That(SettlementReviewRefusal(unknown, en, he), Does.Contain("unknown status"));
+        var missing = ParseSettlementReview(
+            "status: sensitivity-reviewed\nstrings:\n  - { key: missing, en: English, he: עברית }\n", "fixture");
+        Assert.That(SettlementReviewRefusal(missing, en, he), Does.Contain("missing"));
+        var missingHebrew = ParseSettlementReview(
+            "status: sensitivity-reviewed\nstrings:\n  - { key: a, en: English, he: עברית }\n", "fixture");
+        Assert.That(SettlementReviewRefusal(missingHebrew, en, UiText.Parse("b: אחר\n", "strings.he.yaml")),
+            Does.Contain("strings.he.yaml"));
+        var unreadable = Assert.Throws<TargetInvocationException>(() => ParseSettlementReview("not: [readable", "fixture"));
+        Assert.IsInstanceOf<InvalidOperationException>(unreadable!.InnerException);
+    }
+
+    [Test]
+    public void TheSettlementControlStringsRefusalJoinsTheShareableGateOnly() // R-GATE-002
+    {
+        var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
+        var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
+        var args = new object?[] { new[] { "Unity", "-shareable" }, ReviewedContent(), null, false, null, null, "fixture string refusal" };
+        StringAssert.Contains("fixture string refusal", (string?)gate.Invoke(null, args));
+        args[0] = new[] { "Unity" };
+        Assert.IsNull(gate.Invoke(null, args), "a dev build remains ungated");
+    }
+
+    [Test]
+    public void TheShippedReviewManifestCoversTheWholeSettlementControlSurface() // R-GATE-002
+    {
+        var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
+        Assert.AreEqual("pending", SettlementReview.GetProperty("Status")!.GetValue(review), "an AI-assisted draft is never reviewed");
+        var rows = ((System.Collections.IEnumerable)SettlementReview.GetProperty("Strings")!.GetValue(review)!).Cast<object>();
+        var rowType = SettlementReview.GetNestedType("Row")!;
+        var keys = rows.Select(x => (string)rowType.GetProperty("Key")!.GetValue(x)!).ToArray();
+        CollectionAssert.AreEqual(new[]
+        {
+            "capture.intro", "capture.option.raid", "capture.option.occupy", "capture.option.deport",
+            "capture.about.raid", "capture.about.occupy", "capture.about.deport", "capture.changes",
+            "capture.changes_none", "capture.caption.attention", "capture.caption.food", "capture.caption.arms",
+            "capture.caption.score", "capture.delta_attention", "capture.delta_count", "capture.none", "capture.reopen",
+            "map.control.awaiting_choice", "map.control.occupied", "map.control.awaiting_end", "map.control.depopulated",
+            "info.control.awaiting_choice", "info.control.occupied", "info.control.awaiting_end", "info.control.depopulated",
+            "hud.standing_displaced_places",
+        }, keys);
+        // A settlement-control key added to either strings file later (U6's dialog, #799's annex words) must join the manifest.
+        foreach (var file in new[] { UiPaths.Strings, UiPaths.StringsHebrew })
+            foreach (var key in new YamlDotNet.Serialization.Deserializer().Deserialize<System.Collections.Generic.Dictionary<string, string>>(File.ReadAllText(file)).Keys)
+                if (key.StartsWith("capture.", StringComparison.Ordinal) || key.StartsWith("map.control.", StringComparison.Ordinal)
+                    || key.StartsWith("info.control.", StringComparison.Ordinal) || key == "hud.standing_displaced_places")
+                    CollectionAssert.Contains(keys, key, file + ": " + key + " is a settlement-control string, so R-GATE-002's manifest lists it");
     }
 
     /// <summary>The real content with its starting forces' rows fact-checked (R-UNIT-006, Q-START-3) and its settlement
@@ -75,11 +172,11 @@ public class BuildGateTests
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         var c = Checked();
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null }), "a dev build is not gated");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null, ReviewedSettlementControlStrings() }), "a dev build is not gated");
         Assert.AreEqual(ReleaseGate.ReviewedStatus, c.Events.Single(e => e.Id == "burma_road_complete").Status, "the owner's review of 21 Oct 2026 (#791)");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null, ReviewedSettlementControlStrings() }));
         foreach (var e in c.Events) if (e.Id == "reparations_claim") e.Status = "fact-checked";
-        StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null }));
+        StringAssert.Contains("reparations_claim", (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null, ReviewedSettlementControlStrings() }));
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
         foreach (var method in new[] { "public static void Web()", "public static void Mac()", "static void StandaloneMono(" })
         {
@@ -150,20 +247,20 @@ public class BuildGateTests
         try
         {
             CollectionAssert.IsEmpty(photos.SensitiveUnreviewed(), "every shipped sensitive photograph is reviewed (burma_road_complete: owner, 21 Oct 2026)");
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null }), "the shipped catalog and mapping may be shared");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, true, Mapping, null, ReviewedSettlementControlStrings() }), "the shipped catalog and mapping may be shared");
             Unreview(photos);
             CollectionAssert.AreEqual(SensitivePhotos, photos.SensitiveUnreviewed(), "exactly the owner's list");
-            var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null });
+            var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null, ReviewedSettlementControlStrings() });
             Assert.IsNotNull(refusal, "unreviewed sensitive photographs block a shareable build");
             foreach (var id in SensitivePhotos) StringAssert.Contains(id, refusal);
             StringAssert.Contains("event photographs", refusal);
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Web" }, c, photos, false, null, null }),
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Web" }, c, photos, false, null, null, ReviewedSettlementControlStrings() }),
                 "a dev build still carries them (the owner reviews them in one)");
             for (int i = 0; i < photos.entries.Count; i++)                       // as the owner's sign-off would
             {
                 var e = photos.entries[i]; e.sensitivityReviewed = e.sensitive; photos.entries[i] = e;
             }
-            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null }), "all reviewed: the build may be shared");
+            Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, photos, false, null, null, ReviewedSettlementControlStrings() }), "all reviewed: the build may be shared");
         }
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }
@@ -172,10 +269,13 @@ public class BuildGateTests
     public void TheShareableBuildChecksTheShippedCatalog()
     {
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
-        var body = source.Substring(source.IndexOf("static bool RefuseUnlessShareable()", StringComparison.Ordinal), 900);
+        var start = source.IndexOf("static bool RefuseUnlessShareable()", StringComparison.Ordinal);
+        var body = source.Substring(start, source.IndexOf("\n        }\n", start, StringComparison.Ordinal) - start);   // the whole method
         StringAssert.Contains("EventImageImport.CatalogPath", body, "the gate loads the catalog the build ships");
         StringAssert.Contains("File.Exists(EventImageImport.CatalogPath)", body, "a catalog that fails to load is not 'nothing to review'");
         StringAssert.Contains("EventImageMapping.Path", body, "the gate cross-checks the mapping");
+        StringAssert.Contains("SettlementControlStringReview.Refusal(", body, "R-GATE-002: the gate checks the settlement-control strings");
+        StringAssert.Contains("UiPaths.SettlementControlStringsReview", body, "R-GATE-002: from the shipped manifest");
     }
 
     static MethodInfo Gate => Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
@@ -189,11 +289,11 @@ public class BuildGateTests
     public void TheGateFailsClosedWhenTheCatalogDoesNotLoad()
     {
         var c = ReviewedContent();
-        var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, null, null });
+        var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, null, null, ReviewedSettlementControlStrings() });
         Assert.IsNotNull(refusal, "an existing catalog that did not load is a refusal");
         StringAssert.Contains("did not load", refusal);
-        Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, null, false, null, null }), "no catalog file and no mapping: no photographs ship");
-        var fromMapping = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, UnreviewedMapping, null });
+        Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, null, false, null, null, ReviewedSettlementControlStrings() }), "no catalog file and no mapping: no photographs ship");
+        var fromMapping = (string?)Gate.Invoke(null, new object?[] { Shareable, c, null, true, UnreviewedMapping, null, ReviewedSettlementControlStrings() });
         foreach (var id in SensitivePhotos) StringAssert.Contains(id, fromMapping, "the mapping's own sensitive rows refuse");
     }
 
@@ -206,20 +306,20 @@ public class BuildGateTests
         var photos = ShippedPhotos();
         try
         {
-            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "the shipped catalog matches the mapping, all reviewed");
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null, ReviewedSettlementControlStrings() }), "the shipped catalog matches the mapping, all reviewed");
             Unreview(photos);
             for (int i = 0; i < photos.entries.Count; i++)                       // a hand edit, not the owner's sign-off
             {
                 var e = photos.entries[i]; e.sensitivityReviewed = e.sensitive; photos.entries[i] = e;
             }
-            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, null, null }), "the catalog alone would pass");
-            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, UnreviewedMapping, null });
+            Assert.IsNull(Gate.Invoke(null, new object?[] { Shareable, c, photos, true, null, null, ReviewedSettlementControlStrings() }), "the catalog alone would pass");
+            var refusal = (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, UnreviewedMapping, null, ReviewedSettlementControlStrings() });
             Assert.IsNotNull(refusal, "the mapping still says unreviewed");
             StringAssert.Contains("does not match", refusal);
             foreach (var id in SensitivePhotos) StringAssert.Contains(id, refusal);
             var j = photos.entries.FindIndex(e => e.eventId == "maabarot_policy");
             var m = photos.entries[j]; m.credit = "someone else"; photos.entries[j] = m;
-            StringAssert.Contains("maabarot_policy", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null }), "a changed credit");
+            StringAssert.Contains("maabarot_policy", (string?)Gate.Invoke(null, new object?[] { Shareable, c, photos, true, Mapping, null, ReviewedSettlementControlStrings() }), "a changed credit");
         }
         finally { UnityEngine.Object.DestroyImmediate(photos); }
     }

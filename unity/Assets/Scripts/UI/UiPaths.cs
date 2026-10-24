@@ -12,6 +12,8 @@ namespace Statecraft.Game.UI
         public const string Strings = Folder + "/strings.en.yaml";
         /// <summary>The Hebrew strings, loaded when Hebrew is asked for (UiLanguage; #193).</summary>
         public const string StringsHebrew = Folder + "/strings.he.yaml";
+        /// <summary>The owner-reviewed English and Hebrew snapshot for settlement-control strings (R-GATE-002).</summary>
+        public const string SettlementControlStringsReview = Folder + "/settlement-control-strings-review.yaml";
         public const string FontRegular = Folder + "/Fonts/EBGaramond-Regular.ttf";
         public const string FontSemiBold = Folder + "/Fonts/EBGaramond-SemiBold.ttf";
         /// <summary>The Hebrew face (EB Garamond has no Hebrew; #193): Frank Ruhl Libre, OFL.</summary>

@@ -204,15 +204,15 @@ public class EventVideoTests
         CollectionAssert.IsEmpty(EventVideoMapping.SensitiveUnreviewed(Rows));
         // Isolate the clip gate from the other content gates (the starting forces' rows); never change the shipped content or shared C.
         StringAssert.DoesNotContain("illustration clips", (string?)gate.Invoke(null,
-            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, Rows }) ?? "");
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, Rows, BuildGateTests.ReviewedSettlementControlStrings() }) ?? "");
         var reviewedContent = BuildGateTests.Checked();
         foreach (var e in reviewedContent.Events)
             if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
-        Assert.IsNull(gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, Rows }), "reviewed: the clips may ship");
+        Assert.IsNull(gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, Rows, BuildGateTests.ReviewedSettlementControlStrings() }), "reviewed: the clips may ship");
         var unreviewed = Rows.Select(x => { x.SensitivityReviewed = false; return x; }).ToList();
-        var refusal = (string?)gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, unreviewed });
+        var refusal = (string?)gate.Invoke(null, new object?[] { shareable, reviewedContent, null, false, null, unreviewed, BuildGateTests.ReviewedSettlementControlStrings() });
         StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity" }, reviewedContent, null, false, null, unreviewed }), "a dev build is not gated");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity" }, reviewedContent, null, false, null, unreviewed, BuildGateTests.ReviewedSettlementControlStrings() }), "a dev build is not gated");
         CollectionAssert.AreEqual(new[] { "altalena", "operation_horev", "operation_yoav", "ten_days" }, EventVideoMapping.SensitiveUnreviewed(unreviewed));
     }
 }
