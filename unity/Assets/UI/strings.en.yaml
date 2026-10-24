@@ -639,13 +639,14 @@ settings.advisors.experienced: "Experienced"
 settings.advisors.warnings: "Warnings only"
 settings.advisors.off: "Off"
 
-# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564).
+# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564). "three": rules.yaml defeat_turns (R-END-002, a
+# design value); "ceiling": debt_ceiling (R-END-001). Change these lines if either rule changes.
 advisor.ben_gurion.city_at_risk.text: "The enemy is likely to attack one of our cities this turn. If an enemy unit holds any of our cities at the end of a turn, the war is lost."
-advisor.ben_gurion.exhausted.text: "Money and Food have both run out. If they stay exhausted for a few turns in a row, the economy collapses and the game is lost."
-advisor.meyerson.debt_ceiling.text: "Our debt is close to the ceiling. At the ceiling, Money counts as exhausted, and if Food runs out as well the economy starts to break."
+advisor.ben_gurion.exhausted.text: "Money and Food are both exhausted: our debt is at or above the ceiling and the Food stock is empty. If three turns in a row end like this, the game is lost."
+advisor.meyerson.debt_ceiling.text: "Our debt is close to the ceiling. At or above it, Money counts as exhausted; if the Food stock is also empty at the end of three turns in a row, the game is lost."
 advisor.meyerson.food_short.text: "This turn the country needed more Food than it had. A Food shortage also lowers Social cohesion."
 advisor.ben_gurion.defeat_war.text: "An enemy unit held one of our cities at the end of the turn, and that ends the game."
-advisor.ben_gurion.defeat_economy.text: "Money and Food stayed exhausted for too many turns in a row, and that ends the game."
+advisor.ben_gurion.defeat_economy.text: "Three turns in a row ended with our debt at or above the ceiling and the Food stock empty, and that ends the game."
 end.outcome.defeat_war: "The enemy holds a city."
 
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
