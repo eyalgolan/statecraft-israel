@@ -642,7 +642,8 @@ event.effect.housing_capacity: "קיבולת דיור"
 event.effect.job_slots: "מקומות עבודה"
 event.effect.condition: "מצב הדיור"
 
-# Agent-drafted, NOT approved: he_review pending in advisor-messages.yaml (spec OQ-4). For the native reviewer (#564).
+# The opening chain (#1484). Agent-drafted; approved by the owner, a native speaker, in chat on 24 October 2026 (about
+# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4).
 advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
