@@ -163,11 +163,24 @@ public class AdvisorMediaTests
         rig.Advisor.Media = new AdvisorMedia(Text, pic, null, Immediate, output);
         rig.Advisor.ForceInline = false;
         rig.Advisor.NewGame();
+        rig.Ui.Press("nav-budget");                                       // a screen under the overlay
+        Assert.AreEqual("budget", rig.Nav.Current, "precondition");
+        var close = rig.Ui.Q<Button>("advisor-overlay-close");
+
         rig.Advisor.Watch(Row, "advisor.x");
         Assert.IsTrue(rig.HudRoot.ClassListContains("advisor-overlay-open"));
-        Assert.IsTrue(rig.Advisor.CloseOverlay());
-        Assert.IsTrue(pic.Stopped && output.Stopped);
+        rig.Ui.Press("advisor-overlay-close");
+        Assert.IsTrue(pic.Stopped && output.Stopped, "the X stops picture and narration");
         Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        Assert.AreEqual("budget", rig.Nav.Current, "the X closes only the overlay");
+
+        pic.Stopped = output.Stopped = false;
+        rig.Advisor.Watch(Row, "advisor.x");
+        Assert.IsTrue(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = close; close.SendEvent(esc); }
+        Assert.IsTrue(pic.Stopped && output.Stopped, "Escape stops picture and narration");
+        Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        Assert.AreEqual("budget", rig.Nav.Current, "Escape closes only the overlay, not the screen under it");
         Assert.IsFalse(rig.Advisor.CloseOverlay(), "nothing to close");
     }
     [Test]
