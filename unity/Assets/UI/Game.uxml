@@ -474,6 +474,7 @@
              upright phone, placed in code (AdvisorLayout). Not modal: the layer takes no pointer outside the popup. It
              hides under every modal layer (ScreenNav.DisableCovered calls the presenter). -->
         <ui:VisualElement name="advisor-layer" class="advisor-layer" picking-mode="Ignore">
+            <ui:VisualElement name="advisor-ring" class="advisor-ring" picking-mode="Ignore" />
             <ui:VisualElement name="advisor-popup" class="panel advisor-popup">
                 <ui:VisualElement class="row advisor-head">
                     <ui:VisualElement name="advisor-portrait" class="advisor-portrait" />

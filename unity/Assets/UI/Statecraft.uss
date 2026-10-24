@@ -1037,3 +1037,14 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .timeline-diverged { border-left-width: 3px; padding-left: 8px; }
 .lang-he .timeline-diverged { border-left-width: 0; border-right-width: 3px; padding-left: 4px; padding-right: 8px; }
 #timeline-difference, #timeline-rejoined { color: var(--gold-light); }
+
+/* Show me's gold ring (spec 7.3), round the named part of the HUD; the guide's ring, moved. The layer shows for the ring
+   alone too (the encyclopedia's Show me), with the popup hidden. */
+.advisor-ring { display: none; position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+.advisor-ring-open .advisor-layer, .advisor-ring-open .advisor-ring { display: flex; }
+.advisor-popup { display: none; }
+.advisor-open .advisor-popup { display: flex; }
+/* Under Attention's ring, End Turn's border is kept clear of it (the guide's rule, FirstTurnGuideTests): 5 px in the
+   one-row bar, 8 in the narrow one. */
+.advisor-ring-open #attention { margin-bottom: 5px; }
+.advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }

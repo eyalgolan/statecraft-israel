@@ -40,7 +40,7 @@ namespace Statecraft.Game.UI
         /// <summary>The camera's farthest distance on the move step, which centres it on <see cref="UnitToShow"/>'s hex (GameRoot;
         /// a nearer camera stays as near). At the start's 90 km, the view's fit to the map's edge (CameraController.Settle) left
         /// a unit near the edge, the Negev Brigade at Nir Am, under the info panel (#1392).</summary>
-        public const float MoveStepDistanceM = 40000f;
+        public const float MoveStepDistanceM = AdvisorTargets.MoveStepDistanceM;
         /// <summary>The ring's gap round its target, in panel px. Under Attention (step 1) End Turn's border is kept clear of
         /// it by Statecraft.uss (.guide-open #attention), not by this gap: the two sit 3 px apart in the bar.</summary>
         const float RingGap = 4f;
@@ -359,35 +359,21 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Shown on the panel: laid out with a size, and neither it nor any parent hidden.</summary>
-        static bool Shown(VisualElement e)
-        {
-            if (e.panel == null || !(e.worldBound.width > 0 && e.worldBound.height > 0)) return false;
-            for (var v = e; v != null; v = v.parent)
-                if (v.resolvedStyle.display == DisplayStyle.None || v.resolvedStyle.visibility == Visibility.Hidden) return false;
-            return true;
-        }
+        static bool Shown(VisualElement e) => AdvisorTargets.Shown(e);
 
         /// <summary>The city the guide shows in the info panel: the first city (cities.yaml order) with a training facility at
         /// the start (Training.HasFacility, the sim's helper), else the first city; its settlement hex, or null with none.</summary>
-        public static (int q, int r)? CityHex(Content c, GameState s)
-        {
-            var cities = c.Cities.Where(x => s.Cities.ContainsKey(x.Id)).ToList();
-            var city = cities.FirstOrDefault(x => c.UnitTypes.Any(t => t.Facility != "" && Training.HasFacility(c, s, x.Id, t.Facility)))
-                ?? cities.FirstOrDefault();
-            if (city == null) return null;
-            foreach (var h in c.SettlementHexes) if (h.Id == city.Id) return (h.Q, h.R);
-            return null;
-        }
+        public static (int q, int r)? CityHex(Content c, GameState s) => AdvisorTargets.CityHex(c, s);
 
         /// <summary>The unit the guide shows on its move step: the first of <paramref name="units"/> (the drawn tokens' rows, in
         /// units.yaml order) whose sim unit has a hex in Movement.Reachable now, so its card shows Move
         /// (InfoPanelPresenter.MoveTargets' rule); its id, or null with none (the legacy loop, or no unit able to move).</summary>
         public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitEntry> units) =>
-            units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Id;
+            AdvisorTargets.UnitToShow(c, s, units);
 
         /// <summary>The drawn-token form used by the game. A raised token carries its sim id even without a starting row.</summary>
         public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitToken> units) =>
-            units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Unit.Id;
+            AdvisorTargets.UnitToShow(c, s, units);
 
         public void Dispose()
         {

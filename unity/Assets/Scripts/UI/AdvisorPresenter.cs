@@ -14,6 +14,9 @@ namespace Statecraft.Game.UI
         public EventCardPresenter? Card;
         /// <summary>Opens a side screen by ScreenNav's name (an action's open_screen).</summary>
         public Action<string>? OpenScreen;
+        public Action? ShowCity, ShowUnit;
+        public Func<Action>? KeepSelection;
+        public Func<Rect?>? MapTarget;
     }
 
     /// <summary>The advisors' popup (spec 4.2, 7.1): one message at a time, in the right column's free upper part or a sheet
@@ -30,6 +33,12 @@ namespace Statecraft.Game.UI
         public const float NamePx = 24f, RolePx = 15f, TextPx = 22f, ButtonPx = 19f, CountPx = 15f;
         /// <summary>The fade out (Statecraft.uss .advisor-popup.window-closing), in ms.</summary>
         public const long HideMs = 150;
+        public const string RingClass = "advisor-ring-open";
+        public const long RingOnlyMs = 4000;
+        readonly VisualElement ring;
+        string? target;
+        Action? putBack;
+        IVisualElementScheduledItem? ringOnly;
 
         readonly VisualElement hudRoot, layer, popup, portrait;
         readonly Label name, role, words, count;
@@ -55,6 +64,7 @@ namespace Statecraft.Game.UI
             hudRoot = root.Q("root") ?? root;
             layer = root.Q<VisualElement>(LayerName);
             popup = layer.Q<VisualElement>("advisor-popup");
+            ring = layer.Q("advisor-ring");
             portrait = popup.Q<VisualElement>("advisor-portrait");
             name = popup.Q<Label>("advisor-name"); role = popup.Q<Label>("advisor-role");
             words = popup.Q<Label>("advisor-text"); count = popup.Q<Label>("advisor-count");
@@ -128,7 +138,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             var m = session.Queue.Head(Turn, hebrew);
-            if (m == null) { Shown = null; Hide(); return; }
+            if (m == null) { Shown = null; ClearTarget(); Hide(); return; }
             Fill(m);
             Show();
         }
@@ -170,13 +180,13 @@ namespace Statecraft.Game.UI
             hudRoot.AddToClassList(OpenClass);
             follow.Resume();
             layer.UnregisterCallback(onLaidOut);
-            if (Place(null) == null) layer.RegisterCallback(onLaidOut);
+            if (Place(TargetRect()) == null) layer.RegisterCallback(onLaidOut);
         }
 
         /// <summary>Once, on the layer's first layout after Show: places the popup, which makes it visible.</summary>
         void PlaceWhenLaidOut(GeometryChangedEvent e)
         {
-            if (Place(null) != null) layer.UnregisterCallback(onLaidOut);
+            if (Place(TargetRect()) != null) layer.UnregisterCallback(onLaidOut);
         }
 
         void EndOpening(GeometryChangedEvent e)
@@ -189,6 +199,7 @@ namespace Statecraft.Game.UI
         {
             if (hidden) return;
             hidden = true;
+            ring.style.display = DisplayStyle.None;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
             var focused = layer.focusController?.focusedElement as VisualElement;
@@ -219,11 +230,58 @@ namespace Statecraft.Game.UI
             Render();
         }
 
+        /// <summary>Draws the ring round <paramref name="name"/>'s elements, showing its unit or city first as a click would
+        /// (the selection it finds is put back by ClearTarget). Never carries out the advised action (spec 7.3).</summary>
+        public void ShowTarget(string name)
+        {
+            if (disposed) return;
+            ClearTarget();
+            target = name;
+            if (AdvisorTargets.ShowsCity(name) || AdvisorTargets.ShowsUnit(name))
+            {
+                putBack = hooks.KeepSelection?.Invoke();
+                (AdvisorTargets.ShowsUnit(name) ? hooks.ShowUnit : hooks.ShowCity)?.Invoke();
+            }
+            hudRoot.AddToClassList(RingClass);
+            follow.Resume();
+            if (Shown == null) ringOnly = ring.schedule.Execute(ClearTarget).StartingIn(RingOnlyMs);   // the encyclopedia's ring fades by itself
+            Place();
+        }
+
+        public void ClearTarget()
+        {
+            ringOnly?.Pause(); ringOnly = null;
+            target = null;
+            hudRoot.RemoveFromClassList(RingClass);
+            if (!hudRoot.ClassListContains(OpenClass)) follow.Pause();
+            var back = putBack; putBack = null;
+            back?.Invoke();
+        }
+
+        Rect? TargetRect()
+        {
+            if (target == null) return null;
+            var world = AdvisorTargets.Area(AdvisorTargets.Find(hudRoot, target, hooks.Card));
+            Rect? local = world is Rect a ? Local(a) : (Rect?)null;
+            ring.style.display = local == null || Covered(hudRoot) ? DisplayStyle.None : StyleKeyword.Null;
+            if (local is Rect area)
+            {
+                var tl = Vector2.Max(area.min - new Vector2(4, 4), Vector2.zero);
+                var br = Vector2.Min(area.max + new Vector2(4, 4), layer.layout.size);
+                ring.style.left = tl.x; ring.style.top = tl.y; ring.style.width = br.x - tl.x; ring.style.height = br.y - tl.y;
+            }
+            // The ring stays on the named HUD control; the popup also keeps clear of its selected map hex (spec7.3).
+            if ((AdvisorTargets.ShowsUnit(target) || AdvisorTargets.ShowsCity(target)) && hooks.MapTarget?.Invoke() is Rect map)
+                return map;
+            return local;
+        }
+
         void ShowMe()
         {
             if (Shown == null) return;
             foreach (var a in Shown.Actions)
-                if (a.OpenScreen != "") hooks.OpenScreen?.Invoke(a.OpenScreen);
+                if (a.ShowMe != "") ShowTarget(a.ShowMe);
+                else if (a.OpenScreen != "") hooks.OpenScreen?.Invoke(a.OpenScreen);
                 else if (a.OpenCard && hooks.Card?.Shown != null) hooks.Card.Reopen();
         }
 
@@ -231,6 +289,7 @@ namespace Statecraft.Game.UI
         public void GotIt()
         {
             if (Shown == null) return;
+            ClearTarget();
             session.Queue.Done(Shown, Turn, bridge.State.Date);
             Shown = null;
             Render();
@@ -240,6 +299,7 @@ namespace Statecraft.Game.UI
         public void NotNow()
         {
             if (Shown == null || Shown.Teaching || Shown.Critical) return;
+            ClearTarget();
             session.Queue.PutOff(Shown, Turn, bridge.State.Date);
             Shown = null;
             Render();
@@ -271,7 +331,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>In its slot, at the top (Task 8 passes Show me's target to keep it off), with the text floor applied.</summary>
-        internal void Place() => Place(null);
+        internal void Place() => Place(TargetRect());
 
         /// <summary>Places the popup and returns where (in the layer's space), or null when it is not shown or not laid out.</summary>
         internal Rect? Place(Rect? avoid)
@@ -313,6 +373,7 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             if (disposed) return;
+            ClearTarget();
             disposed = true;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
