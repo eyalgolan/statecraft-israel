@@ -689,7 +689,8 @@ settings.advisors.experienced: "מנוסים"
 settings.advisors.warnings: "אזהרות בלבד"
 settings.advisors.off: "כבוי"
 
-# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564).
+# S4 Task16 warnings (spec6). Approved by the owner, a native speaker (24 October 2026; advisor-messages.yaml records the
+# rulings); any change needs a new approval.
 advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
 advisor.meyerson.exhausted.text: "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.text: "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."

@@ -648,7 +648,7 @@ settings.advisors.experienced: "Experienced"
 settings.advisors.warnings: "Warnings only"
 settings.advisors.off: "Off"
 
-# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564). "three": rules.yaml defeat_turns (R-END-002, a
+# S4 Task16 warnings (spec6). Their Hebrew is approved by the owner (24 October 2026); see advisor-messages.yaml. "three": rules.yaml defeat_turns (R-END-002, a
 # design value). Change that line if the rule changes. The clip lines (city_at_risk, exhausted, debt_ceiling, defeat_war,
 # arms_out) are the recorded words, word for word (advisor-messages.yaml); change them only with a new recording.
 advisor.dayan.city_at_risk.text: "An enemy attack is aimed at one of the country's cities. Review its defenders and the combat preview before the enemy phase resolves."

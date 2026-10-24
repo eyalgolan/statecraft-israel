@@ -204,7 +204,7 @@ namespace Statecraft.Game.UI
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
             if (!CanPay(c))
             {
-                RefusedForAttention?.Invoke();
+                Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
                 return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
             }
             var old = QueuedLike(c);
