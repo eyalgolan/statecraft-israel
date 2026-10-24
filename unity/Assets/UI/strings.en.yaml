@@ -613,3 +613,17 @@ event.effect.veteran_halutz: "Veteran Halutzim"
 event.effect.housing_capacity: "housing capacity"
 event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
+
+# The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
+# quote. Each step carries the first-turn guide's facts (#42), without balance values. The owner reviews every line.
+advisor.opening.greeting.text: "Everything needs doing at once. My colleagues and I will show you the essentials, one at a time."
+advisor.opening.attention.text: "Most orders cost Attention, shown here. It refills at the start of each turn, and Attention left unspent does not carry over."
+advisor.opening.city.text: "This is one of our cities. Its housing and jobs decide how people live. The + and − buttons set how many people work; the order takes effect when the turn ends."
+advisor.opening.training.text: "Civilians without work train here: as recruits at a military camp, or as halutzim, pioneers who build settlements, at a Hakhshara. Each button shows the cost and the training time."
+advisor.opening.move.text: "Select one of your units, press Move, and choose a lit hex. The unit moves when you end the turn."
+advisor.opening.event.text: "A decision is waiting. Answering costs Attention, and the choice takes effect when the turn ends. A card left unanswered goes to the responsible minister."
+advisor.opening.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
+advisor.next: "Next"
+advisor.done: "Done"
+# {0} the step, {1} the steps in the chain now.
+advisor.step: "Step {0} of {1}"

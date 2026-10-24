@@ -45,7 +45,8 @@ namespace Statecraft.Game.UI
         readonly Button showMe, more, notNow, gotIt, close;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose;
+        readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly (VisualElement element, float px)[] floored;
@@ -60,6 +61,7 @@ namespace Statecraft.Game.UI
         {
             this.bridge = bridge; this.text = text; this.session = session; this.portraits = portraits;
             this.hooks = hooks ?? new AdvisorHooks();
+            chain = OrderedChain(session.Catalog);
             hebrew = text["ui.lang"] == UiLanguage.Hebrew;
             hudRoot = root.Q("root") ?? root;
             layer = root.Q<VisualElement>(LayerName);
@@ -74,7 +76,8 @@ namespace Statecraft.Game.UI
             gotIt.text = text["advisor.got_it"]; close.text = text["advisor.close"];
             floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
-            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onGotIt; notNow.clicked += onNotNow;
+            onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
+            showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
@@ -83,6 +86,12 @@ namespace Statecraft.Game.UI
             follow = layer.schedule.Execute(Place).Every(100);
             follow.Pause();
             hudRoot.RemoveFromClassList(OpenClass);
+            if (session.Chain.Step >= 0)
+            {
+                if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
+                    this.hooks.Card.Collapse(takeFocus: false);
+                RenderChain();
+            }
         }
 
         /// <summary>A modal layer is open (spec 4.2): the start screen, the open decision card, the capture dialog, the turn
@@ -109,7 +118,15 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             session.Queue.Reset(); session.Fired.Clear(); session.FiredTurn = Turn;
             Shown = null; covered = null;
+            session.Chain.Step = -1;
+            ClearTarget();
             Notice(AdvisorSignals.NewGame);
+            if (session.AutoShow && session.Settings.HasFile && session.Settings.Level == "new" && !session.Settings.OpeningSeen
+                && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
+            {
+                session.Settings.MarkOpeningSeen();
+                OpenChain();
+            }
         }
 
         /// <summary>An event signal fired (spec 5): it holds for this turn.</summary>
@@ -136,9 +153,11 @@ namespace Statecraft.Game.UI
         void Render()
         {
             if (disposed) return;
+            if (session.Chain.Step >= 0) { RenderChain(); return; }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             var m = session.Queue.Head(Turn, hebrew);
             if (m == null) { Shown = null; ClearTarget(); Hide(); return; }
+            if (Shown?.Id != m.Id) ClearTarget();
             Fill(m);
             Show();
         }
@@ -146,6 +165,7 @@ namespace Statecraft.Game.UI
         void Fill(AdvisorCatalog.Message m)
         {
             Shown = m;
+            gotIt.text = text["advisor.got_it"];
             name.text = text[m.Advisor == "meyerson" && !session.Introduced(m.Advisor) ? "advisor.meyerson.name_first" : "advisor." + m.Advisor + ".name"];
             role.text = text["advisor." + m.Advisor + ".role"];
             words.text = text["advisor." + m.Id + ".text"];
@@ -219,6 +239,7 @@ namespace Statecraft.Game.UI
         void CoverChanged()
         {
             if (disposed) return;
+            if (session.Chain.Step >= 0) { RenderChain(); return; }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
             {
@@ -276,6 +297,103 @@ namespace Statecraft.Game.UI
             return local;
         }
 
+        public const int EventStep = 5;
+        public IReadOnlyList<AdvisorCatalog.Message> Chain => chain;
+        public bool InChain => session.Chain.Step >= 0 && IsOpen;
+        public int ChainStep => InChain ? session.Chain.Step : -1;
+        public static IReadOnlyList<string> ChainIds(AdvisorCatalog catalog) => OrderedChain(catalog).Select(m => m.Id).ToList();
+
+        static List<AdvisorCatalog.Message> OrderedChain(AdvisorCatalog catalog)
+        {
+            var steps = catalog.Messages.Where(m => m.Signal == AdvisorSignals.Opening).ToList();
+            var line = new List<AdvisorCatalog.Message>();
+            var next = steps.FirstOrDefault(m => m.Requires.Count == 0);
+            while (next != null && !line.Contains(next))
+            {
+                line.Add(next);
+                next = steps.FirstOrDefault(m => m.Requires.Contains(line[line.Count - 1].Id));
+            }
+            return line;
+        }
+
+        bool InTour(AdvisorCatalog.Message message) => message.ApprovedIn(hebrew) && AdvisorSignals.When(Context(), message.When);
+        int NextChainStep(int after)
+        {
+            for (int i = after + 1; i < chain.Count; i++) if (InTour(chain[i])) return i;
+            return -1;
+        }
+
+        /// <summary>Manual reopen starts at the greeting; the opening card and selection are restored on close.</summary>
+        public void OpenChain()
+        {
+            if (disposed) return;
+            var first = NextChainStep(-1);
+            if (first < 0) return;                         // no unreviewed Hebrew, even when explicitly asked
+            if (session.Chain.Step < 0)
+            {
+                session.Chain.CardWasOpen = hooks.Card?.Shown != null && !hooks.Card.Collapsed;
+                session.Chain.CardEvent = hooks.Card?.Shown?.Id;
+                session.Chain.OpenTurn = Turn;
+            }
+            session.Chain.EventShown = false;
+            session.Chain.Step = first;
+            if (hooks.Card?.Shown != null && !hooks.Card.Collapsed) hooks.Card.Collapse(takeFocus: false);
+            ShowStep(first);
+        }
+
+        public void NextStep()
+        {
+            int step = session.Chain.Step;
+            if (disposed || step < 0 || step >= chain.Count || !chain[step].ApprovedIn(hebrew)) return;
+            session.Queue.Done(chain[step], Turn, bridge.State.Date);
+            int next = NextChainStep(step);
+            if (next < 0) CloseChain(); else ShowStep(next);
+        }
+
+        public void CloseChain() => CloseChain(restoreCard: true);
+        void CloseChain(bool restoreCard)
+        {
+            if (session.Chain.Step < 0) return;
+            session.Chain.Step = -1;
+            Shown = null; covered = null;
+            ClearTarget();
+            Hide();
+            if (restoreCard && hooks.Card?.Shown != null)
+            {
+                if (session.Chain.CardWasOpen && hooks.Card.Collapsed) hooks.Card.Reopen();
+                else if (!session.Chain.CardWasOpen && !hooks.Card.Collapsed) hooks.Card.Collapse(takeFocus: false);
+            }
+            Render();
+        }
+
+        void ShowStep(int step)
+        {
+            session.Chain.Step = step;
+            if (!chain[step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
+            if (Covered(hudRoot)) { Hide(); return; }
+            ClearTarget();
+            if (step == EventStep) session.Chain.EventShown = true;
+            Fill(chain[step]);
+            bool Counted(int i) => chain[i].ApprovedIn(hebrew) && (i == EventStep ? session.Chain.EventShown || InTour(chain[i]) : InTour(chain[i]));
+            int number = Enumerable.Range(0, step + 1).Count(Counted), total = Enumerable.Range(0, chain.Count).Count(Counted);
+            count.text = text.Format("advisor.step", number, total);
+            gotIt.text = text[NextChainStep(step) < 0 ? "advisor.done" : "advisor.next"];
+            Display(notNow, false);
+            Display(showMe, chain[step].Actions.Any(a => a.OpenCard));
+            foreach (var action in chain[step].Actions) if (action.ShowMe != "") ShowTarget(action.ShowMe);
+            Show();
+        }
+
+        void RenderChain()
+        {
+            if (session.Chain.Step < 0) return;
+            if (Turn != session.Chain.OpenTurn) { CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent); return; }
+            if (!chain[session.Chain.Step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
+            if (Covered(hudRoot)) { Hide(); return; }
+            if (session.Chain.Step == EventStep && hooks.Card?.Shown == null) NextStep();
+            else ShowStep(session.Chain.Step);
+        }
+
         void ShowMe()
         {
             if (Shown == null) return;
@@ -288,6 +406,7 @@ namespace Statecraft.Game.UI
         /// <summary>Got it, the X, or Escape from inside: seen, and the next message (if any) shows.</summary>
         public void GotIt()
         {
+            if (session.Chain.Step >= 0) { NextStep(); return; }
             if (Shown == null) return;
             ClearTarget();
             session.Queue.Done(Shown, Turn, bridge.State.Date);
@@ -310,7 +429,7 @@ namespace Statecraft.Game.UI
         {
             var focused = layer.focusController?.focusedElement as VisualElement;
             if (!IsOpen || focused == null || !popup.Contains(focused)) return false;
-            GotIt();
+            if (session.Chain.Step >= 0) CloseChain(); else GotIt();
             return true;
         }
 
@@ -373,13 +492,14 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             if (disposed) return;
+            if (session.Chain.Step >= 0) putBack = null;  // a rebuilt UI takes its own selection hook
             ClearTarget();
             disposed = true;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
-            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onGotIt; notNow.clicked -= onNotNow;
+            showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;
             hudRoot.RemoveFromClassList(OpenClass);
         }
     }

@@ -17,6 +17,15 @@ namespace Statecraft.Game.UI
             Catalog = catalog; Settings = settings; AutoShow = autoShow; Queue = new AdvisorQueue(catalog, settings);
         }
 
+        /// <summary>The opening chain survives a presenter/language rebuild, not a load or a new game (spec9.2).</summary>
+        public sealed class ChainState
+        {
+            public int Step = -1, OpenTurn;
+            public bool CardWasOpen, EventShown;
+            public string? CardEvent;
+        }
+        public ChainState Chain { get; } = new ChainState();
+
         public bool AutoShow { get; }
         public AdvisorCatalog Catalog { get; }
         public AdvisorSettings Settings { get; }
