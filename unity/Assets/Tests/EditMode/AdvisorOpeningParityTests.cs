@@ -557,7 +557,7 @@ public class AdvisorOpeningParityTests
         card.Collapse(); Assert.AreEqual(5, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); AnswerTheCard();
         Assert.AreEqual("degania_defence", card.Shown?.Id, "One Army answered, the turn's second card opens (R-EVT-006)");
-        Assert.IsTrue(advisor.InChain); Assert.AreEqual(5, advisor.ChainStep, "and the event step stays, explaining it");
+        Assert.IsFalse(advisor.IsOpen, "the advisor steps aside while the second card is open, its event step kept");
         AnswerTheCard();
         Assert.IsNull(card.Shown, "the opening turn's two cards answered"); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
         Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
