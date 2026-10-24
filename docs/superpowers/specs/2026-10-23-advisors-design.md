@@ -13,8 +13,12 @@ Nothing is built until this PR is merged, every slice below is its own PR, and n
 - **24 October 2026, the media route** (sections 11 and 12, for the owner's approval): real archival photographs,
   faithfully colorized, animated with ElevenLabs Kling 3.0 Pro and lip-synced with Sync 3 to voices made as close to the
   real people as possible (Fish Audio), English first, with a live disclosure label, a credit per clip and a review of
-  every clip. Where the older text below (sections 2, 3.1, 13, 17) still describes aide narration or estate consent first,
-  sections 11 and 12 and the open questions OQ-13 to OQ-17 govern.
+  every clip. Where the older text below (section 2) still describes aide narration or estate consent first, sections 11
+  and 12 govern.
+- **24 October 2026, the owner's answers to OQ-13 to OQ-17** (section 11.3): the estate-consent rule and the rest of the
+  advisor exception are amended to this route (`docs/CONTENT_POLICY.md` and D-ADV, in this PR); the Golda photograph
+  stays, with a tighter crop; the label is "AI animation and voice. Fictional dialogue.", shown small; the fictional
+  aides are retired.
 - The advisor is a popup on the side, as in Civ (section 7.1): the upper part of the right column, above the minimap,
   400 px wide; a sheet under the top bar on an upright phone; the same place in Hebrew with its inside mirrored. It
   hides under the modal layers (section 4.2) and steals no focus (section 16).
@@ -22,8 +26,8 @@ Nothing is built until this PR is merged, every slice below is its own PR, and n
   (section 12). The picture is a silent clip on the existing player; captions are live text; the narration is a
   separate audio file. The first three sample clips and their settings are recorded in section 12.1.
 - The video sources are the three photographs the owner chose (section 11.1).
-- The narrators are fictional aides; their voices are saved and 43 Hebrew lines are rendered (section 13.1). Their
-  names are not approved yet (section 18).
+- The fictional aides who were to narrate are retired (24 October 2026, section 11.3); their saved voices and the 43
+  Hebrew lines rendered with them are not used (section 13.1).
 - Private people are named by role (section 2). The game never charges money and never has ads (section 2).
 - The opening chain's event step is restated: the advisor speaks before the card opens and steps aside when "Show me"
   opens it (section 9.3).
@@ -66,7 +70,7 @@ talk only after written consent from their estates (the Ben-Gurion Heritage Inst
 Dayan's heirs). Until then each video is a **photo video**: the archival photograph with one slow move, narrated by a
 **fictional aide** for each advisor, in a voice made with ElevenLabs Voice Design (a designed voice, not a clone; no real
 name in the prompt), in English and Hebrew (section 13). The aides are fictional and never imitate anyone.
-(Superseded on 24 October 2026 by the owner's media rulings, section 11.2; the estate-consent question is open,
+(Superseded on 24 October 2026 by the owner's media rulings, section 11.2, and the amended estate-consent rule,
 section 11.3.)
 
 Already decided, and kept as they are:
@@ -78,8 +82,8 @@ Already decided, and kept as they are:
   (`docs/oss/DECISIONS.md:32`), and there is no paid release (`:50`).
 - **In-game AI narration** (15 October 2026, #639, recorded in
   `.github/skills/statecraft-video-script/references/06-ai-voice-music-and-disclosure.md:28`): allowed in its own voice,
-  never as a real person, disclosed, with an `ASSETS.yaml` row. The aide narration follows it as it stands. Only slice S7
-  (real-figure video, after consent) needs that file's rules 1 and 9 (`:16`, `:24`) amended; S7 does it.
+  never as a real person, disclosed, with an `ASSETS.yaml` row. The real-figure clips (S6b) need that file's rules 1
+  and 9 (`:16`, `:24`) amended for the three advisors; the first clip PR does it (the plan's Task 26).
 - **ElevenLabs output in the game** is recorded in `ASSETS.yaml` as AI-generated (the 18 October ruling on #39,
   `docs/oss/DECISIONS.md:82`).
 
@@ -103,16 +107,8 @@ them). Calling all three "Advisor" is a game role, and nothing in the UI claims 
 it, in Hebrew "גולדה מאירסון (לימים מאיר)". `content/people.yaml:585` keeps "Golda Meir" for the cabinet; the advisor's
 display name lives in the advisor data file, not in `people.yaml`.
 
-**The narrators.** Each advisor's videos are narrated by a fictional aide from their office, never by the advisor:
-
-| Office | Draft name (not approved, section 18) | Voice direction |
-|---|---|---|
-| Prime Minister's office | Ephraim Armon / אפרים ארמון | Male, 48-58; measured low baritone; formal, calm, exact, without grandeur |
-| Labour ministry | Rivka Armon / רבקה ארמון | Female, 38-48; grounded mezzo-alto; practical, patient, unsentimental |
-| Army staff | Gideon Talmi / גדעון תלמי | Male, 32-42; compact mid-low baritone; brisk, disciplined, without bravado |
-
-The English and Hebrew Voice Design prompts for an aide describe one fictional voice in two languages. "Mid-century
-broadcast clarity" in them describes diction and recording style only, never a person to imitate.
+**The voice.** In a clip the advisor speaks, in a synthetic voice made as close to theirs as possible (section 11.2).
+The fictional aides of the first version, who were to narrate, are retired (owner, 24 October 2026, section 11.3).
 
 ### 3.2 What they may say
 
@@ -127,8 +123,7 @@ broadcast clarity" in them describes diction and recording style only, never a p
 - **Real quotes only from the verified list** (section 3.3), each shown as a quote with its source line under it, and only
   where the list says it may be used.
 - **No made-up history.** A line may name a date, place or number only when the game's content already sources it.
-- **A narrated clip names its narrator** as a fictional aide, for example "Narrator: <name>, a fictional office aide";
-  until the names are approved, by office only.
+- **A clip carries its disclosure**, "AI animation and voice. Fictional dialogue." (section 12).
 - **Plain English** by `docs/WRITING_UI.md`, and Hebrew by `docs/WRITING_UI_HE.md` (section 14). A popup line is one or
   two sentences, about 35 words at most; the encyclopedia page may be longer.
 - **The owner reviews every advisor line** before it ships (section 17).
@@ -393,10 +388,10 @@ Immigration and the national meters get pages too.
 
 **Amended 24 October 2026.** The owner chose how the clips are made: real archival photographs, faithfully colorized,
 made to talk with voices as close to the real people as possible (section 11.2). This replaces the photo videos narrated
-by fictional aides (this spec's first version) and the stylized local routes tried on 23 October. The rulings do not by
-themselves amend `docs/CONTENT_POLICY.md:104-115` or D-ADV (`docs/oss/DECISIONS.md:70`), which still require written
-estate consent for a photoreal likeness or a voice clone; that is open (section 11.3, OQ-13 to OQ-16). Clips may be
-made and reviewed now; none ships in the game until those questions are answered.
+by fictional aides (this spec's first version) and the stylized local routes tried on 23 October. On 24 October the
+owner amended the estate-consent rule and the rest of the advisor exception to this route, and this PR amends
+`docs/CONTENT_POLICY.md:104-118` and D-ADV (`docs/oss/DECISIONS.md:70`) to match (section 11.3). Each clip still ships
+only after the owner's review of that clip (section 11.5).
 
 ### 11.1 Photographs
 
@@ -426,8 +421,11 @@ October. Checked on Commons on 24 October 2026:
   https://commons.wikimedia.org/wiki/File:Golda_Meir_with_children_of_Kibbutz_Shfayim.jpg. National Photo Collection
   `D703-086`, Théodore Brauner, Government Press Office, `PD-Israel` (the same URAA note). The archive's caption: "After
   the opening of the Tel Aviv Nathania highway, Mrs. Golda Meir poses for a picture with the children of Kibbutz
-  Shefaim". It shows identifiable private people, children in 1950, and is an event photograph as much as a portrait
-  (OQ-15).
+  Shefaim". It shows identifiable private people, children in 1950, and is an event photograph as much as a portrait.
+  The owner kept it under the advisors' narrow exception (section 11.3): "you can ship as is but it doesnt look good at
+  the moment - i think the fact that there are too many people is making elevenlabs do a bad job", then "Tighter crop,
+  same photo" and "B: medium" (24 Oct 2026). So the Golda clips start from the box (850,160,2150,891) of the colorized
+  master (1300 x 731 px, 16:9, no upscaling), and the bystanders left in it are never animated or altered.
 - **Moshe Dayan** in uniform, 9 December 1953, 1297 x 1314 px:
   https://commons.wikimedia.org/wiki/File:Moshe_Dayan_(997008136641805171).jpg. NLI `997008136641805171`, Benno
   Rothenberg, CC BY 4.0. Credit, in full: "Benno Rothenberg / Meitar Collection / National Library of Israel / The
@@ -443,7 +441,8 @@ its date, and nothing implies it was taken in the period. Every photograph used 
 colour and set the tone, but it changes nothing the photograph shows: the face, hair, body, clothing, uniform, insignia,
 Dayan's eye patch, the pose, the people around and the objects. A colorization that restyles any of them is rejected,
 as the first Golda colorization was (it changed her hair). Ribbon and insignia colours that the photograph cannot show are
-a guess and are recorded as one. Whether AI colorization of these portraits is allowed at all is open (OQ-15).
+a guess and are recorded as one. Faithful colorization is allowed for these three photographs and is recorded in the
+credit ("Amend to my route", section 11.3).
 
 ### 11.2 The route (slice S6b)
 
@@ -470,7 +469,7 @@ So:
 - **Their words** stay labelled game dialogue (section 3.2): the voice speaks the owner-approved advisor line word for
   word, never a quote and never a line the person said.
 - **English first.** Hebrew clips come later, each after a native reviewer approves its Hebrew (OQ-4).
-- **The fictional aides** (section 3.1) no longer narrate the clips; whether they are retired is open (OQ-17).
+- **The fictional aides** (section 3.1) are retired (section 11.3).
 - **Terms.** Before the first clip ships, the Fish Audio and Dreamina terms that apply to a real person's voice and
   likeness are read and recorded, as section 13.2 does for ElevenLabs. D-D (`docs/oss/DECISIONS.md:25`) covers only the
   start-screen painting.
@@ -490,18 +489,27 @@ The approved Ben-Gurion test approves the recipe, not any later file (section 11
    first Golda take animated the crowd and added a child; a second take was ordered.)
 5. Export the picture as a silent clip (section 12.1) and the voice as the PCM WAV the lip-sync used.
 
-### 11.3 Estate consent and the content policy (open)
+### 11.3 Estate consent and the content policy (decided 24 October 2026)
 
-The policy and D-ADV, as merged on 23 October, allow only "a stylized, non-photoreal talking portrayal", "made locally",
-that "never uses or imitates their real voices", labelled "Stylized portrayal. Fictional dialogue and voice.", with "No
-third-party service that requires consent for identifiable people ... used on their faces", and "A photoreal likeness or
-a voice clone of any of them is still made only after written consent from their estates"
-(`docs/CONTENT_POLICY.md:108-114`). The chosen route is a photoreal likeness with cloned voices made with third-party
-services, so it conflicts with each of those clauses. The owner's acceptance of ElevenLabs' and the archive's terms is
-recorded above; whether it replaces the estate-consent rule is the owner's to say (OQ-13). This PR does not rewrite the
-policy. Once the owner answers, the policy, D-ADV and section 13 are amended in one PR, quoting the answer. This reading
-is factual, not legal advice. **The coordinator drafts any consent letters and the owner sends them; no outreach happens
-without the owner.**
+The policy and D-ADV, as merged on 23 October, allowed only a stylized, non-photoreal portrayal, made locally, with a
+fictional aide's voice, labelled "Stylized portrayal. Fictional dialogue and voice.", and a photoreal likeness or a
+voice clone only after written consent from the estates. The chosen route is a photoreal likeness with cloned voices
+made with third-party services, so the owner was asked OQ-13 to OQ-17. The owner's answers, 24 October 2026, in the
+coordinator session, verbatim:
+
+| # | Question | Owner's answer | What it means |
+|---|---|---|---|
+| OQ-13 | Estate consent: do the estates' letters go out first, or is the rule amended? | "Amend the rule" | Real public figures from archival photographs may be animated and voiced without written estate letters, labelled as AI. No letters are sent |
+| OQ-14 | Amend the rest of the advisor exception to the chosen route? | "Amend to my route" | A narrow exception for the three advisors only: real archival photographs (faithful colorization recorded in the credit), AI animation, close-to-real cloned voices, labelled, each clip reviewed |
+| OQ-15 | The Golda photograph of 24 July 1950 (GPO, `PD-Israel`, children of Kibbutz Shefayim) | "you can ship as is but it doesnt look good at the moment - i think the fact that there are too many people is making elevenlabs do a bad job", then "Tighter crop, same photo" and "B: medium" | The photograph stays under the narrow exception, cropped to box (850,160,2150,891) of the colorized master; no alteration or animation of bystanders is intended (section 11.1) |
+| OQ-16 | The disclosure's wording | Option 2, "AI animation and voice. Fictional dialogue.", and "make sure tha label is small" | That exact text, shown small: caption size, not a banner, at the text floor (section 12) |
+| OQ-17 | Retire the fictional aides? | Answered in substance by D-ADV's "The real figures talking" | The aides are retired, and OQ-1 and OQ-2 (their names) are closed; their lines are removed from this spec |
+
+The same day the owner also ruled that lines without a clip show the advisor's photograph: "the rest of the advisor
+screen would use their photos for now until we have more tolens" (#1547; sections 2, 12).
+
+`docs/CONTENT_POLICY.md:104-118` and D-ADV (`docs/oss/DECISIONS.md:70`) are amended in this PR, quoting the answers.
+This reading is factual, not legal advice.
 
 ### 11.4 Credits, licences and records, per clip
 
@@ -539,9 +547,11 @@ review. Approving one language approves no other.
 - **Captions are live text**, never burned into the clip: timed cue strings per language (`advisor.<id>.cue.<n>` with a
   start time), the same words as the voice, under the text floor and direction rules, and in Counsel's history. A
   version with burned captions may be made for sharing outside the game; it is not the game's file.
-- **The disclosure is live text** too, under the picture inline and in the overlay, for the whole clip, separate from the
-  caption and the credit: "synthetic voice, fictional dialogue" until the owner approves its wording (OQ-16). Its key is
-  the media row's `label`.
+- **The disclosure is live text** too, for the whole clip, separate from the caption and the credit: "AI animation and
+  voice. Fictional dialogue." (owner, 24 Oct 2026, section 11.3). It is small: one muted line at caption size, not a
+  banner, at the bar's small text size (`HudPresenter.SmallTextPx`, 15 panel px, `HudPresenter.cs:83`) raised to the 12
+  screen px floor by `HudPresenter.SmallTextSize` (`:87`). It sits under the live caption: under the picture in the
+  popup, and under the picture's caption in the overlay; never over the picture. Its key is the media row's `label`.
 - **The picture is a silent clip** on the existing player. `CardVideo` is silent by design: "A silent clip player ... No
   audio is output" (`CardVideo.cs:9-15`), `audioOutputMode = VideoAudioOutputMode.None` (`:102`), into one 960x540
   RenderTexture (`:18`, `:90-109`); the encoder passes `-an` (`tools/encode_event_videos.py:42-45`) and its check rejects
@@ -586,16 +596,15 @@ shipped: Ben-Gurion's `opening.greeting` (approved, "looks good"), Dayan's `open
 ### 13.1 What the rulings change, and what exists
 
 The owner's "you can sythesize their voices" lifts the rule that a synthetic voice never speaks as a real person, for
-these three advisors. The design still waits for estate consent before any synthetic voice speaks as them (section
-11.3), for the reasons in 13.2. Until then the aides' designed voices are used, which the 15 October rule already allows.
-On 23 and 24 October the owner asked for voices as close to the real people as possible and accepted ElevenLabs' and the
-Israel State Archives' terms (section 11.2); whether that replaces the estate-consent wait is open (OQ-13).
+these three advisors. On 23 and 24 October the owner asked for voices as close to the real people as possible and
+accepted ElevenLabs' and the Israel State Archives' terms (section 11.2), and on 24 October amended the estate-consent
+rule: "Amend the rule" (section 11.3).
 
 Done on 23 October 2026 (outside the repository, nothing shipped): the aide voices were designed with ElevenLabs Voice
 Design (`eleven_ttv_v3`) from prompts that name no real person and ask to resemble no one; after the owner's "Yes,
 both", five were saved as private voices (the Prime Minister's office aide for both languages, and an English and a
 Hebrew voice for each of the other two), and 43 Hebrew advisor lines were rendered with `eleven_v3`. Those Hebrew lines
-are drafts marked for native review; none ships before that review and the owner's review of the line.
+are not used: the aides are retired (section 11.3).
 
 ### 13.2 ElevenLabs' terms (read 23 October 2026, both pages "Last updated: 09 October 2026")
 
@@ -611,14 +620,15 @@ are drafts marked for native review; none ships before that review and the owner
   for at least five years.
 
 So a voice or image of Ben-Gurion, Meyerson or Dayan made with ElevenLabs needs the authorisation that only their estates
-can give. This is why S7 waits for consent. This reading is factual, not legal advice. The game being free forever and
+can give. The owner read this and amended the estate-consent rule on 24 October (section 11.3). This reading is
+factual, not legal advice. The game being free forever and
 without ads does not remove any consent, licence or credit duty.
 
 ### 13.3 The account and the records
 
 - The owner's paid ElevenLabs plan, no Beta features. ElevenLabs' documentation calls Voice Design experimental; if the
   product marks the workflow Beta, production stops for the owner's decision.
-- The aide voices stay private and are never shared to the Voice Library.
+- The voices stay private and are never shared to the Voice Library.
 - Every output gets an `ASSETS.yaml` row: AI-generated, the tool, the voice id, the model, the date, the exact script, and
   the file's sha256, as the video-script rules ask (`06-ai-voice-music-and-disclosure.md:19`).
 - `docs/ai-disclosure.md`, the README's AI section and the Steam draft change in the same PR as the first voiced video
@@ -629,11 +639,11 @@ without ads does not remove any consent, licence or credit duty.
 - Every advisor string and caption cue has an English and a Hebrew key; the existing parity tests (`HebrewUiTests.cs`)
   cover them.
 - **The player is addressed gender-neutrally** in Hebrew, by HE-03 (`docs/WRITING_UI_HE.md:73-76`): no masculine-only
-  singular, no slash forms; plural address or "יש ל..." forms. The advisors and aides speak in their own grammatical
-  gender (Meyerson and the Labour aide in the feminine), which is the speaker's, not the player's.
+  singular, no slash forms; plural address or "יש ל..." forms. The advisors speak in their own grammatical gender
+  (Meyerson in the feminine), which is the speaker's, not the player's.
 - Hebrew lines are agent-drafted and go to the native reviewer before they ship, as the rest of the UI.
 - Names: "דוד בן-גוריון", "גולדה מאירסון (לימים מאיר)", "משה דיין"; the people rows (`content/people.yaml:30`, `:586`,
-  `:1120`) hold the first and third. The aides' Hebrew names ship only once approved (section 18).
+  `:1120`) hold the first and third.
 - The popup stays on the right in Hebrew; its header, buttons and text direction mirror inside it (section 7.1).
 
 ## 15. Persistence
@@ -687,17 +697,15 @@ goes to the owner for content review before it ships.**
 | S3 | The encyclopedia, replacing How to play (section 10) | S1 |
 | S4 | Ongoing warnings and advice (section 5), the help-level setting (section 6) | S1; the budget signal waits for #1352 |
 | S5 | The Counsel screen and history, disagreement (sections 7.4, 8) | S4 |
-| S6 | The media player (the plan's S6a), then the English real-figure clips (S6b; sections 11, 12): the silent clips, the separate voice, the live captions and disclosure, the inline player and the overlay, the per-clip credits, the Dayan portrait (section 11.1) | S3; for S6b, OQ-13 to OQ-16, the CRF, and the Hebrew review before any Hebrew clip (section 18) |
-| S7 | No separate slice: the real-figure clips are S6b, and their consent and policy gate is OQ-13 (section 11.3) | - |
+| S6 | The media player (the plan's S6a), then the English real-figure clips (S6b; sections 11, 12): the silent clips, the separate voice, the live captions and disclosure, the inline player and the overlay, the per-clip credits, the Dayan portrait (section 11.1) | S3; for S6b, the policy as amended on 24 October (section 11.3), the owner's review of each clip, the CRF, and the Hebrew review before any Hebrew clip (section 18) |
+| S7 | No separate slice: the real-figure clips are S6b, under the policy as amended on 24 October (section 11.3) | - |
 
 ## 18. Open questions for the owner
 
 | # | Question | Default until answered |
 |---|---|---|
-| OQ-1 | The aides' names. The three draft names (section 3.1) are not approved, and two of them share the surname Armon. Approve them, or choose others? | The narrator is named by office only ("a fictional aide, Prime Minister's office"); no name ships |
-| OQ-2 | If the Labour aide needs another surname, approve **Rivka Tavor / רבקה תבור**? Checked on 23 October 2026: exact-phrase searches on English Wikipedia ("Rivka Tavor", "Rivka Tabor") and Hebrew Wikipedia ("רבקה תבור") found no result, and the repository has no match. A general web search and the National Library's catalogue were not checked, so this lowers the risk of a clash and does not rule it out. Tavor is also Mount Tabor and the name of the Israeli army's rifle | As OQ-1 |
 | OQ-3 | Which quality for the clips: CRF 28 (the existing pinned profile; 367 to 849 KB per clip) or CRF 20 (keeps the film grain; 1.08 to 2.83 MB)? Both play the same way (section 12.1) | CRF 28 |
-| OQ-4 | Who reviews the Hebrew (the 43 rendered narration lines, the captions and the popup text) as a native speaker, and is that review done before S2 or only before S6? | No Hebrew advisor line or narration ships before a native reviewer approves it |
+| OQ-4 | Who reviews the Hebrew (the narration, the captions and the popup text) as a native speaker, and is that review done before S2 or only before S6? | No Hebrew advisor line or narration ships before a native reviewer approves it |
 | OQ-5 | D-P accepted six named Government Press Office portraits for the free release. Does it also cover the new 1951 Ben-Gurion photograph you chose (possible URAA-restored US copyright)? | Used under D-P, with the risk note in its asset row |
 | OQ-6 | The popup's still portraits (section 11.1) are the first version's. Should they switch to crops of the three video photographs, so the still matches the clip? | Keep the first version's stills |
 | OQ-7 | Dayan's 1948-49 posts (battalion commander, commander in Jerusalem, Aluf in October 1949) are not yet in `content/people.yaml`. They matter only if a line names them | No line names them |
@@ -706,11 +714,8 @@ goes to the owner for content review before it ships.**
 | OQ-10 | The end screen has no player text for `defeat_war` (`strings.en.yaml:279-280` has `mvp_ended` and `defeat_economy`; the sim's English is "The enemy holds a city", `PlayerText.cs:27`). Ben-Gurion's defeat message needs it | S4 adds `end.outcome.defeat_war` in both languages |
 | OQ-11 | Add Civ VII's folded tab: a 56 px portrait at the right edge under the bar, with a count, for messages waiting or put off with `Not now`? | No tab; the queue and Counsel keep the messages. If approved, it comes in S5 |
 | OQ-12 | Which key, free of the existing bindings, moves the focus into an open popup? | No new key; Tab and the popup's openers reach it |
-| OQ-13 | `CONTENT_POLICY.md:112-114` and D-ADV still require written estate consent before a photoreal likeness or a voice clone of the three, and the chosen route is both (section 11.3). Do your acceptances of ElevenLabs' terms ("do it", "Yes, accept it for me") and of the archive's clause ("Proceed, I accept it (Recommended)") replace that rule, so the policy and D-ADV are amended to drop it, or do the estates' letters go out first? | Clips are made and reviewed; none ships in the game, and no policy line changes, until you answer |
-| OQ-14 | The rest of the advisor exception (`CONTENT_POLICY.md:108-111`) allows only a stylized, non-photoreal portrayal, made locally, with a fictional aide's voice that never imitates theirs, and no third-party service that needs consent for identifiable people used on their faces. Amend those clauses to the chosen route (real photographs, ElevenLabs, Dreamina, Fish Audio, voices close to the real people)? | As OQ-13 |
-| OQ-15 | The Golda photograph (24 July 1950) is a Government Press Office photograph tagged only `PD-Israel` and shows identifiable private people, children of Kibbutz Shefayim in 1950. The policy refuses GPO and PD-Israel-only *event* photographs and AI colourising of them (`CONTENT_POLICY.md:85-97`), D-P names six accepted GPO portraits, and principle 5 keeps living people out (`:39-41`). Is it used as a portrait under D-P, with the children left unaltered and unanimated, and is faithful AI colorization allowed for all three video photographs? | The children are never animated or changed; no Golda clip ships until you answer |
-| OQ-16 | The disclosure under every clip: "synthetic voice, fictional dialogue" (the policy's current label is "Stylized portrayal. Fictional dialogue and voice.")? | "synthetic voice, fictional dialogue" in drafts; nothing ships before OQ-13 |
-| OQ-17 | The fictional aides no longer narrate the clips. Retire them (and with them OQ-1 and OQ-2, and the 43 rendered aide Hebrew lines)? | No aide voice or name ships |
+
+OQ-1, OQ-2 and OQ-13 to OQ-17 were answered on 24 October 2026 (section 11.3).
 
 ## 19. Policy edits in this PR
 
@@ -719,6 +724,8 @@ goes to the owner for content review before it ships.**
 - `docs/CONTENT_POLICY.md` the AI-likeness lines (`:99-100`): the advisors' synthetic voices ("you can sythesize their
   voices") and the real-figure videos only after the estates' written consent; the aide voices are not likenesses.
 - `docs/oss/DECISIONS.md`: a D-ADV line recording the rulings.
+- 24 October 2026 (#1530): the advisor exception in `docs/CONTENT_POLICY.md` (`:104-118`) and D-ADV amended to the
+  owner's answers to OQ-13 to OQ-17 (section 11.3).
 
 ## 20. Risks
 
@@ -734,8 +741,7 @@ goes to the owner for content review before it ships.**
 | Narration and picture drift, or keep playing under a layer | The audio's position drives the cues; any press or covering layer stops both |
 | WebGL video sound does not work | Not needed: a silent clip and a separate audio file on the path the start screen already uses |
 | A photograph's licence or date is misstated | The exact source, date, credit and risk note per photograph; later photographs dated; no upscaling |
-| A fictional aide's name matches a real person | Names screened before approval; by office only until then (OQ-1, OQ-2) |
-| A synthetic voice of a real figure without the right consent | No real-figure clip ships before the owner answers OQ-13 and the policy agrees (11.3, 13.2) |
+| A synthetic voice of a real figure without the right consent | The owner amended the consent rule (11.3); every clip is labelled and the owner reviews each one before it ships (11.5) |
 | A clip that misrepresents the photograph or the person | Real photographs only, faithful colorization, and the owner reviews every final file (11.1, 11.5) |
 | Video growing the download or boot time | Never autoplays, lazy, StreamingAssets, never at boot; the load-time gate |
 | Hebrew addressing the player in one gender, or mirrored photographs | HE-03 and the native reviewer; only the popup's inside mirrors |
