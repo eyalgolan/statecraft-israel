@@ -146,7 +146,7 @@ public class AdvisorOpeningTests
         using var rig = new Rig(En, Store()); rig.Advisor.OpenChain();
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) rig.Advisor.NextStep();
         Assert.IsTrue(rig.Card.Collapsed); Assert.AreEqual(5, rig.Advisor.ChainStep);
-        Assert.AreEqual("event-reopen", AdvisorTargets.Find(rig.Ui.Root.Q("root"), AdvisorTargets.DecisionWaiting, rig.Card).Single().name, "(1) the ring's target");
+        Assert.AreEqual(AdvisorTargets.DecisionWaiting, rig.Advisor.Shown!.Actions.First(a => a.ShowMe != "").ShowMe, "(1) the ring's target: Decision waiting");
         Assert.IsTrue(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass), "(1) the ring shows");
         rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed); Assert.IsFalse(rig.Advisor.IsOpen);
         rig.Card.Collapse(); Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual(5, rig.Advisor.ChainStep);

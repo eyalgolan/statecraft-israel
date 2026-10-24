@@ -519,8 +519,8 @@ public class AdvisorOpeningParityTests
     /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
     /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
     /// advisor goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
-    [Test]
-    public void AnsweringTheCardOnItsStepGoesOnToTheNext()
+    [UnityTest]
+    public IEnumerator AnsweringTheCardOnItsStepGoesOnToTheNext()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
@@ -533,6 +533,7 @@ public class AdvisorOpeningParityTests
         Assert.IsNull(card.Shown); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
         Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
         Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
+        for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
         Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
     }
 
