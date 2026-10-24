@@ -26,6 +26,10 @@ public class CollectionImportTests
     static string ColourMap(string id) => $"{Dir(id)}/{id}_basecolor.jpg";
     static IEnumerable<string> Ids => CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings);
     static bool Animated(string id) => CollectionCatalog.Animated.Contains(id);
+    static readonly string[] GeneratedInfantry =
+    {
+        "figure-syrian-infantry-1948-v1", "figure-iraqi-infantry-1948-v1",
+    };
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
@@ -61,13 +65,14 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void TheCatalogHasThe31ModelsNineTownsAndFiveSpecialBuildingsInFiveBundles()
+    public void TheCatalogKeepsTheOriginalModelsAndAddsThreeInfantryInFiveBundles()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(55, ids.Count);
+        Assert.AreEqual(57, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12 and #336's 9), vehicles, animals, towns (#507's 9 and #336's Jerusalem variant), special buildings");
-        Assert.AreEqual(21, CollectionCatalog.Animated.Count);
+        CollectionAssert.AreEqual(new[] { 23, 13, 6, 10, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12, #336's 9 and two generated infantry), vehicles, animals, towns, special buildings");
+        Assert.AreEqual(23, CollectionCatalog.Animated.Count);
+        CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids.Skip(21));
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -136,7 +141,7 @@ public class CollectionImportTests
             "figure-pioneer-farmer-v1-tpose",
         };
         var people = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids;
-        CollectionAssert.AreEqual(nine, people.Skip(12).ToArray());
+        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray(), "the original people retain their order before the new infantry");
         CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
         foreach (var id in nine)
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
@@ -149,9 +154,9 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void TheFolderHoldsExactlyTheShippedFilesOfThe31Models()
+    public void TheFolderHoldsExactlyTheRuntimeModelFilesAndDeclaredGeneratedReviewFiles()
     {
-        var expected = Ids.SelectMany(id =>
+        var expected = Ids.SelectMany<string, string>(id =>
         {
             var files = new List<string>
             {
@@ -159,6 +164,9 @@ public class CollectionImportTests
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
             if (Animated(id)) files.Add($"{Dir(id)}/{id}-near.controller");
+            if (GeneratedInfantry.Contains(id))
+                return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id),
+                    $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/{id}.controller", $"{Dir(id)}/provenance.json" };
             return files;
         }).OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)
@@ -215,7 +223,7 @@ public class CollectionImportTests
     [Test]
     public void EveryFarModelIsOneStaticMeshOfAtMost1500TrianglesOr4500ForAVehicleOrATown()
     {
-        foreach (var id in Ids)
+        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
             AssertStatic(Model(id, "far"), CollectionCatalog.BundleOf(id) == CollectionCatalog.Towns ? FarTrianglesTown
                 : CollectionCatalog.BundleOf(id) == CollectionCatalog.Vehicles ? FarTrianglesVehicle : FarTriangles);
     }
@@ -223,7 +231,7 @@ public class CollectionImportTests
     [Test]
     public void EveryNearModelIsAtMost8000TrianglesAndOnlyTheAnimatedOnesKeepARigAndTheirIdleClip()
     {
-        foreach (var id in Ids)
+        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
             var path = Model(id, "near");
             if (!Animated(id)) { AssertStatic(path, NearTriangles); continue; }
@@ -256,7 +264,7 @@ public class CollectionImportTests
     [Test]
     public void EveryColourMapIsCrunchedMipmappedAndAtMost512OnEveryTarget()
     {
-        foreach (var id in Ids)
+        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
             var path = ColourMap(id);
             var imp = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -284,7 +292,7 @@ public class CollectionImportTests
     [Test]
     public void EveryPrefabDrawsItsOwnInstancedMaterialAndOnlyTheAnimatedNearOnesPlayTheIdleClip()
     {
-        foreach (var id in Ids)
+        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
             var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat");
             Assert.IsNotNull(mat, id);

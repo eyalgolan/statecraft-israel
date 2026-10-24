@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-iraqi-infantry-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "1780a1a35923074505cb4dd430104716fb73b0a3b41900fccf21d41030049c70",
+  "uncompressed_bytes": 52793729,
+  "compressed_sha256": "b54e5aec6fe194849f8e076cc3a9442c35b9b2dffe3b0d0e36679eace537c252",
+  "compressed_bytes": 4304927,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

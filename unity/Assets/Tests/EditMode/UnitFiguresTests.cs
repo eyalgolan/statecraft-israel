@@ -17,8 +17,9 @@ using UnityEngine;
 using UnityEngine.TestTools;
 
 /// <summary>Issue #665: the 1948 Collection (Tal Heuberger, #507) on the army tokens, streamed after the first frame. Every one of
-/// the nine unit models is placed (owner, 17 October 2026, #663: every model is used): the five Israeli figures, the Arab
-/// Legion and the irregular on their forces' tokens, and the 65 mm gun and the jeep where a source puts them. Until a model
+/// the original unit models retains its identity (owner, 17 October 2026, #663: every model is used): the Israeli figures,
+/// the Arab Legion and C09 on the ALA, and the 65 mm gun and the jeep where a source puts them. New Syrian and
+/// Iraqi figures join their existing formations; the Egyptian figure awaits an approved map representation. Until a model
 /// arrives, and when its bundle is missing or damaged, an Israeli token keeps its code-built figures (fail open); an Arab
 /// force's token is not drawn at all (#740: no IDF figures, no placeholder).</summary>
 public class UnitFiguresTests
@@ -29,12 +30,12 @@ public class UnitFiguresTests
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 
-    /// <summary>The nine unit models of #665, and #336's 1948 soldier (#708; owner, 21 October 2026: "a third figure on some
-    /// brigade unit tokens, next to C06 and C07").</summary>
-    static readonly string[] Nine =
+    /// <summary>The models on the existing war roster. C09 retains its baseline ALA role; the new ALA candidate remains review-only.</summary>
+    static readonly string[] WarModels =
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
-        "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2", "figure-c09-irregular-v2",
+        "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
+        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-soldier-1948-v1",
     };
@@ -80,14 +81,21 @@ public class UnitFiguresTests
     {
         var model = piece.Find(UnitFigures.ModelName);
         Bounds? box = null;
-        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
+        void Add(Bounds b, Transform at)
         {
-            var b = f.sharedMesh.bounds; var m = piece.worldToLocalMatrix * f.transform.localToWorldMatrix;
+            var m = piece.worldToLocalMatrix * at.localToWorldMatrix;
             for (int c = 0; c < 8; c++)
             {
                 var p = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
                 if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
             }
+        }
+        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) Add(f.sharedMesh.bounds, f.transform);
+        foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            var baked = new Mesh();
+            try { skin.BakeMesh(baked); Add(baked.bounds, skin.transform); }
+            finally { UnityEngine.Object.DestroyImmediate(baked); }
         }
         return box!.Value;
     }
@@ -105,18 +113,18 @@ public class UnitFiguresTests
     }
 
     /// <summary>The owner: "make sure we are using all of [his] models" (#663). Over every day of the war, with every model
-    /// arrived and the full call-up, the tokens draw exactly the nine, each in the Collection's streamed bundles with its far
+    /// arrived and the full call-up, the tokens draw exactly their mapped models, each in the Collection's streamed bundles with its far
     /// prefab on main.</summary>
     [Test]
-    public void EveryOneOfTheNineModelsStandsOnATokenSomeDayOfTheWar()
+    public void EveryMappedWarModelStandsOnATokenSomeDayOfTheWar()
     {
         var units = Units;
         var used = new HashSet<string>();
         for (var d = C.Rules.Start; d < LastArmistice; d = d.AddDays(1))
             foreach (var t in UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => true).Where(t => t.Unit.Service == UnitData.Army))
                 foreach (var id in ModelsOf(t)) { Assert.IsNotNull(id, $"{d:yyyy-MM-dd} {t}: every figure has a model"); used.Add(id); }
-        CollectionAssert.AreEquivalent(Nine, used);
-        foreach (var id in Nine)
+        CollectionAssert.AreEquivalent(WarModels, used);
+        foreach (var id in WarModels)
         {
             Assert.IsNotNull(CollectionCatalog.BundleOf(id), $"{id}: streamed");
             Assert.IsNotNull(Prefab(id), $"{id}: its far prefab is on main");
@@ -146,8 +154,7 @@ public class UnitFiguresTests
         Assert.AreEqual(UnitFigures.YoungRecruit, UnitFigures.FigureFor(helmeted, 2, UnitData.SteelHelmet), "a source's steel helmet is never swapped for his cap");
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3), Trio("arab_liberation_army"));
-        foreach (var side in UnitData.Sides.Where(s => s != UnitData.Israel && s != "jordan" && s != "ala"))
-            Assert.IsNull(UnitFigures.SideFigure(side), $"{side}: no figure, so its rows stay data only");
+        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 6, 1)), "the Burma Road jeeps");
@@ -170,13 +177,22 @@ public class UnitFiguresTests
     [Test]
     public void EveryFigureOnATokenStandsWithItsArmsDown()
     {
-        foreach (var id in Nine.Where(i => i.StartsWith("figure-c")))
+        foreach (var id in WarModels.Where(i => i != UnitFigures.Soldier1948 && !i.StartsWith("figure-vehicle-", StringComparison.Ordinal)))
         {
             var go = (GameObject)PrefabUtility.InstantiatePrefab(Prefab(id));
             try
             {
+                var animator = go.GetComponentInChildren<Animator>();
+                if (animator != null) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Rebind(); animator.Update(0f); }
                 var rs = go.GetComponentsInChildren<Renderer>();
                 var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+                if (CollectionCatalog.IsFullQualityGeneratedInfantry(id))
+                {
+                    var skin = go.GetComponentInChildren<SkinnedMeshRenderer>(); var baked = new Mesh();
+                    try { skin.BakeMesh(baked); var vertices = baked.vertices.Select(skin.transform.TransformPoint).ToArray();
+                        b = new Bounds(vertices[0], Vector3.zero); foreach (var v in vertices) b.Encapsulate(v); }
+                    finally { UnityEngine.Object.DestroyImmediate(baked); }
+                }
                 Debug.Log($"UNITS figures {id}: {b.size.x:0.000} x {b.size.z:0.000}, {b.size.y:0.000} tall");
                 Assert.Less(Mathf.Max(b.size.x, b.size.z), 0.55f * b.size.y, $"{id}: arms down, not a T-pose (wider than half his height)");
             }
@@ -204,7 +220,7 @@ public class UnitFiguresTests
             CollectionAssert.AreEquivalent(new[] { "carmeli", "givati", "harel", "harel", "yiftach", "negev", "negev" }, vehicles.Select(v => v.parent.name),
                 "the guns of the 11 July distribution and the Harel and Negev jeeps");
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the strategic-zoom mesh");
-            CollectionAssert.AreEquivalent(Nine, asked.Select(a => a.id), "each model once: the eight on the tokens, and the two forces' figures asked for ahead");
+            CollectionAssert.AreEquivalent(WarModels, asked.Select(a => a.id), "each token model once, including the forces' own figures prefetched ahead");
             Assert.IsTrue(figures.All(f => !UnitFigures.Dressed(f) && f.GetComponent<MeshRenderer>().enabled), "the code-built figures until the models arrive");
             Assert.IsTrue(vehicles.All(v => v.childCount == 0 && v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn before it arrives");
             var before = figures.ToDictionary(f => f, f => (f.position, f.rotation));
@@ -381,7 +397,7 @@ public class UnitFiguresTests
         detail.Choose(default, camera);
     }
 
-    /// <summary>The Arab Legion and the Arab Liberation Army are drawn only once their own figure has arrived, three of it on
+    /// <summary>The Arab forces are drawn only once their own figure has arrived, three of it on
     /// a base under the neutral pennant, never an IDF figure, and on ground no Israeli force held on the window's first day
     /// (#226, ruling 9). A figure that never comes (null: a missing or damaged bundle) draws nothing, and warns nothing more.</summary>
     [Test]
@@ -395,7 +411,8 @@ public class UnitFiguresTests
             var units = Units;
             var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
             layer.Show(C, StateAt(May20, 0.8));
-            Assert.IsTrue(asked.ContainsKey(UnitFigures.ArabLegion) && asked.ContainsKey(UnitFigures.Irregular), "the two forces' figures are asked for");
+            CollectionAssert.IsSubsetOf(new[] { UnitFigures.ArabLegion, UnitFigures.Irregular,
+                UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry }, asked.Keys, "each deployed force's figure is asked for");
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force before its figure arrives");
             asked[UnitFigures.Irregular](null);   // the ALA's figure never comes
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "a figure that never comes draws nothing");

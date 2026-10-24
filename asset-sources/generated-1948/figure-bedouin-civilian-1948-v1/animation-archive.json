@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-bedouin-civilian-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "4b231b3266e1fb984b1574cf5c630c01e98473cb1344efb71372cbcc08c614a6",
+  "uncompressed_bytes": 52735576,
+  "compressed_sha256": "5333aaa6b252c2edc187f24d8e0f3f28be1229364db8e8c6f0f22a666c371126",
+  "compressed_bytes": 4297481,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

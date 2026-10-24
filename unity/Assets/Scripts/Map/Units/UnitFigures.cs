@@ -32,6 +32,9 @@ namespace Statecraft.Game.Map.Units
             Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
 
+        public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
+            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1";
+
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
         /// Mk II steel helmet the young recruit (C06), the Palmach's knitted stocking cap the veteran fighter (C07).</summary>
@@ -64,13 +67,16 @@ namespace Statecraft.Game.Map.Units
             [Soldier1948] = UnitData.WoolCap,
         };
 
-        /// <summary>An Arab force's figures, by its side: the Arab Legion (C08) for Transjordan's army, the irregular (C09) for
-        /// the Arab Liberation Army, "an irregular army" of volunteers (https://en.wikipedia.org/wiki/Arab_Liberation_Army,
-        /// checked 2026-10-18). Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
-        /// No other side has a figure, so its rows stay off the map (<see cref="UnitRoster.OnMap"/>).</summary>
+        /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, ALA and
+        /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens. The new ALA candidate is review-only: no local-force
+        /// row is authored here. Egypt awaits an approved representation of its simultaneous bases, and Lebanon's hidden
+        /// row remains off the map (<see cref="UnitRoster.OnMap"/>).
+        /// Tal Heuberger's 1948 Collection figures count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3);
+        /// the Syrian and Iraqi figures of 22 October await sign-off (#756).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
+            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry,
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
@@ -230,7 +236,7 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
-            if (CollectionCatalog.Animated.Contains(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own

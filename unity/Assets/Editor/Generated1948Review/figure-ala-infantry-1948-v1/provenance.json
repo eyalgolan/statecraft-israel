@@ -1,0 +1,32 @@
+{
+  "asset": "figure-ala-infantry-1948-v1",
+  "source_number": 19,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "files": {
+    "figure-ala-infantry-1948-v1.fbx": "0bba6578823eb3b22eacc7b4d542120750b62d189a4cd87a8c7afd61353b0b71",
+    "figure-ala-infantry-1948-v1_basecolor.jpg": "6e30145f5479c83e46684de51785ae1ec100508c787b520a60822d7c65fd1f72"
+  },
+  "provider_model_id": "5745fb8a-0d14-4488-a06e-59e7bfaacf78",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7480,
+  "bones": 65,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-ala-infantry-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-ala-infantry-1948-v1/validation.json"
+}

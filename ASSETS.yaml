@@ -6,6 +6,132 @@
 # Globs use fnmatch: '*' also matches '/'. Portrait rows live in ASSETS.portraits.yaml (scripts/oss/commons_licences.py).
 # ai_generated: true marks AI output (the future Steam/itch.io disclosure is generated from it).
 rules:
+  - glob: "unity/Assets/Art/Collection/figure-syrian-infantry-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-syrian-infantry-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-ala-infantry-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-ala-infantry-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Art/Collection/figure-iraqi-infantry-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    artist: "Tal Heuberger"
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-egyptian-infantry-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-egyptian-infantry-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-lebanese-regular-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-lebanese-regular-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-bedouin-civilian-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-bedouin-civilian-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-local-arab-irregular-1948-v1/*.fbx"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "unity/Assets/Editor/Generated1948Review/figure-local-arab-irregular-1948-v1/*_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Tripo Studio Smart Mesh P2.0, generated 22 October 2026 by Tal Heuberger. Exact provider GLB and embedded 4096px JPEG are retained byte-identical in asset-sources/generated-1948/<id>/. Unity FBX is a documented full-geometry compatibility export, not a provider FBX. Source rigged GLBs contain zero animation clips; both existing locally retargeted idle/walk actions are exported at every frame with no simplification. No decimated copy, texture resize, Crunch or Unity mesh/animation compression. Per-character provenance records source and export hashes."
+    status: verified
+    note: "New models by Tal Heuberger under CC BY-NC-ND 4.0, per the adopted 23 October brief; attribution Tal Heuberger. Existing asset grants are unchanged. Five review-only characters are editor-only; Syria and Iraq retain existing formation mappings pending art/sensitivity sign-off. No archival uniform-colour claim."
+  - glob: "asset-sources/generated-1948/figure-*/original.glb"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Byte-identical provider rigged GLBs and exact embedded JPEG payloads, generated 22 October 2026; source IDs and SHA-256 recorded alongside Unity imports. Archives are outside Assets and cannot enter the player build."
+    status: verified
+    note: "Attribution Tal Heuberger. Provider originals contain no animation clips; local compatibility exports and retargeted actions are separately documented."
+  - glob: "asset-sources/generated-1948/figure-*/original_basecolor.jpg"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Byte-identical provider rigged GLBs and exact embedded JPEG payloads, generated 22 October 2026; source IDs and SHA-256 recorded alongside Unity imports. Archives are outside Assets and cannot enter the player build."
+    status: verified
+    note: "Attribution Tal Heuberger. Provider originals contain no animation clips; local compatibility exports and retargeted actions are separately documented."
+  - glob: "asset-sources/generated-1948/figure-*/*-local-actions.json.gz"
+    licence: CC-BY-NC-ND-4.0
+    ai_generated: true
+    artist: "Tal Heuberger"
+    source: "Existing local idle/walk retarget curve data, archived as byte-verified gzip with exact keys, handles and interpolation. Not provider animation files: provider rigged GLBs have zero clips. Per-model validation and archive receipts record source and decompressed hashes."
+    status: verified
+    note: "Animation payloads of the seven new character candidates only. No older C09 animation source grant changes. JSON provenance, validation and archive receipts retain their existing path licences."
+  - glob: "docs/images/generated-1948-character-*.jpg"
+    licence: CC-BY-NC-ND-4.0
+    artist: "Tal Heuberger"
+    ai_generated: true
+    source: "Actual Unity 6000.3.25f1 renders. The 22 October isolated asset/grounding sheets show the earlier reduced candidates and are historical diagnostics, not approval evidence for the full-source imports. The 23 October Syria/Iraq comparison sheets use the full-source figures on the real map and the dated legacy roster, 20 June 1948, same camera/state/lighting before/after; original 1920x1080 frames scaled equally to 960x540. Metadata: docs/generated-1948-character-evidence.json. No player/WebGL/GDD-campaign claim."
+    status: verified
+    note: "Historical isolated diagnostics are distinguished from current matched map comparisons."
   # --- AI-generated concept art: CC0 / no rights claimed (LICENSING.md); published 2026-10-10 before D5 was checked ---
   - glob: "promo/final/0[1-8]-*.png"
     licence: CC0-1.0
@@ -696,7 +822,7 @@ rules:
     source: "Tripo Studio (tripo3d.ai), paid Max plan, made 10-13 October 2026 from concept images generated in the same studio, by Tal Heuberger (PR #507 at 3ef0a7a5a36887aee7a24fd11ddf722507695f3c): the 31 non-building models of The 1948 Collection (12 people, 9 road and rail vehicles, 4 ships and aircraft, 6 animals), and its nine whole-town models (issue #663: tel-aviv-white-city-v1, jerusalem-stone-city-v1, haifa-port-city-v1, moshava-town-v1, nahalal-moshav-v1, kibbutz-compound-v2, stone-village-v1, maabara-camp-v1, shikun-housing-v1; byte-identical to the same files in #336). Slimmed for the repository by tools/slim_collection.py (Blender 5.2.2, issue #664): a far mesh of at most 1,500 triangles (4,500 for vehicles, ships, aircraft and whole towns) and a near mesh of at most 8,000 per model, the near mesh keeping its rig and only the idle clip on the 13 models that have one, every other clip dropped (C05, which has no idle clip, has both static meshes posed at the first frame of his walk instead of his T-pose rest, issue #665); colour maps 1024 px resized to 512 px. The masters, #507's full-detail FBX files and the per-model records (prompts, task ids, credits) are kept outside the repository."
     status: verified
     artist: "Tal Heuberger"
-    note: "Issue #664 (umbrella #663). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issues #659 and #663): 'they are ok to use'. The whole-town models: owner ruling 2026-10-17 on #663, 'The nine whole-town models ship (this reverses the 15 Oct 'layout references only' ruling)'; their author offered them under CC0 in #507 itself (its ASSETS.yaml rule for Settlements/Prototype/Models/*). Owner ruling 2026-10-15 on repository size: plain git, slimmed first, no masters and no Git LFS. The prefabs, controllers and materials beside the models are under the code row of LICENSING.md."
+    note: "Issue #664 (umbrella #663). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issues #659 and #663): 'they are ok to use'. The whole-town models: owner ruling 2026-10-17 on #663, 'The nine whole-town models ship (this reverses the 15 Oct 'layout references only' ruling)'; their author offered them under CC0 in #507 itself (its ASSETS.yaml rule for Settlements/Prototype/Models/*). Owner ruling 2026-10-15 on repository size: plain git, slimmed first, no masters and no Git LFS. The prefabs, controllers and materials beside the models are under the code row of LICENSING.md. Except figure-syrian-infantry-1948-v1/ and figure-iraqi-infantry-1948-v1/, whose models and colour maps are CC BY-NC-ND 4.0 under their own rows above."
   - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/*"
     licence: CC0-1.0
     ai_generated: true

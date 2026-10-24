@@ -1,0 +1,32 @@
+{
+  "asset": "figure-local-arab-irregular-1948-v1",
+  "source_number": 24,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "9cc53176b1c00a41ea7d9afc7712aa3aecc0de11247a1abe1f7bdab1e9a387d7",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "files": {
+    "figure-local-arab-irregular-1948-v1.fbx": "148b8907b3bb685ec20cab148eb7ec337df7940081092e868becd46d69769fa8",
+    "figure-local-arab-irregular-1948-v1_basecolor.jpg": "98312219d48113d69303e7f37112736ca277114da4dfb2f957e2b98835bb2841"
+  },
+  "provider_model_id": "df89407e-1955-4eb9-b0e2-5b40f4fee9cd",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7508,
+  "bones": 67,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-local-arab-irregular-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-local-arab-irregular-1948-v1/validation.json"
+}

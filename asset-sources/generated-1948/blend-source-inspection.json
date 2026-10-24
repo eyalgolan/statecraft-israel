@@ -1,0 +1,1262 @@
+[
+  {
+    "number": "17",
+    "rig": "Mixamo_17",
+    "mesh": "character-17",
+    "vertices": 8984,
+    "triangles": 7282,
+    "bones": 65,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBMixamo_17"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBMixamo_17"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "18",
+    "rig": "Mixamo_18",
+    "mesh": "character-18",
+    "vertices": 8701,
+    "triangles": 7616,
+    "bones": 65,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBMixamo_18"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBMixamo_18"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "19",
+    "rig": "Rig_19",
+    "mesh": "character-19",
+    "vertices": 9239,
+    "triangles": 7480,
+    "bones": 65,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBRig_19"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBRig_19"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "20",
+    "rig": "Rig_20",
+    "mesh": "character-20",
+    "vertices": 4859,
+    "triangles": 7569,
+    "bones": 67,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBRig_20"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBRig_20"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "21",
+    "rig": "Rig_21",
+    "mesh": "character-21",
+    "vertices": 4825,
+    "triangles": 6948,
+    "bones": 67,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBRig_21"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBRig_21"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "22",
+    "rig": "Rig_22",
+    "mesh": "figure-bedouin-civilian-1948-v1",
+    "vertices": 8395,
+    "triangles": 7306,
+    "bones": 67,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBRig_22"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBRig_22"
+        ]
+      }
+    ]
+  },
+  {
+    "number": "24",
+    "rig": "Rig_24",
+    "mesh": "figure-local-arab-irregular-1948-v1",
+    "vertices": 4997,
+    "triangles": 7508,
+    "bones": 67,
+    "mesh_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_world_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ],
+    "fps": 24,
+    "unit_scale": 1.0,
+    "actions": [
+      {
+        "name": "Armature|Armature|box_01",
+        "range": [
+          1.0,
+          54.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_02",
+        "range": [
+          1.0,
+          204.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|defeat_03",
+        "range": [
+          1.0,
+          134.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|fire",
+        "range": [
+          1.0,
+          37.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|hit_to_body_01",
+        "range": [
+          1.0,
+          32.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|run",
+        "range": [
+          1.0,
+          31.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|shoot",
+        "range": [
+          1.0,
+          218.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "Armature|Armature|walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBSlot"
+        ]
+      },
+      {
+        "name": "idle",
+        "range": [
+          1.0,
+          423.0
+        ],
+        "slots": [
+          "OBRig_24"
+        ]
+      },
+      {
+        "name": "walk",
+        "range": [
+          1.0,
+          57.0
+        ],
+        "slots": [
+          "OBRig_24"
+        ]
+      }
+    ]
+  }
+]

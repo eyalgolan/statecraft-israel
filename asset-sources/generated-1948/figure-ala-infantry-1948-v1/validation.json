@@ -1,0 +1,232 @@
+{
+  "number": "19",
+  "id": "figure-ala-infantry-1948-v1",
+  "kind": "Full-source GLB-to-FBX compatibility export; FBX was not delivered by provider",
+  "licence": "CC-BY-NC-ND-4.0, owner-adopted; no licence change or new grant",
+  "blender": "5.2.2 LTS",
+  "source": {
+    "number": "19",
+    "id": "figure-ala-infantry-1948-v1",
+    "glb_bytes": 5845852,
+    "glb_sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20",
+    "source_animation_count": 0,
+    "source_vertices": 9239,
+    "source_triangles": 7480,
+    "source_bones": 65,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 5297419,
+        "sha256": "6e30145f5479c83e46684de51785ae1ec100508c787b520a60822d7c65fd1f72",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-19-retargeted.blend",
+    "blend_bytes": 18518446,
+    "blend_sha256": "60dbf43e221d816171de567fe07c64ae3701ee6f09628832e17fc91fe56d1226",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  "source_animation_count": 0,
+  "local_target_clip_count": 2,
+  "unrelated_donor_actions_excluded": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "original_source_and_blend_unchanged": true,
+  "provider_glb_archive_byte_identical": true,
+  "embedded_jpeg_extracted_byte_identical": true,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "no_geometry_reduction": true,
+  "source_vertices": 9239,
+  "fbx_reimport_vertices": 9239,
+  "triangles": 7480,
+  "bones": 65,
+  "bone_names_and_hierarchy_exact": true,
+  "source_blend_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 1.7959416709345533e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 4.172325134277344e-07
+  },
+  "fbx_roundtrip_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 2.384185791015625e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 4.76837158203125e-07
+  },
+  "rest_world_bounds_metres": [
+    [
+      -0.3811037242412567,
+      -5.244567660156463e-07,
+      -0.14575199782848358
+    ],
+    [
+      0.38110339641571045,
+      0.999511182308197,
+      0.1457519680261612
+    ]
+  ],
+  "weights_sum_range": [
+    0.9999999031424522,
+    1.0000000521540642
+  ],
+  "max_influences": 4,
+  "animations": {
+    "idle": {
+      "fbx_reimport_action_name": "figure-ala-infantry-1948-v1-rig|figure-ala-infantry-1948-v1-rig|idle",
+      "source_frame_range": [
+        1.0,
+        423.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        423.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 423,
+      "half_frame_sample_count": 422,
+      "skin_operator_integer_frame_max_abs": 2.594292163848877e-05,
+      "skin_operator_half_frame_max_abs": 0.002619270235300064,
+      "reimport_fcurve_count": 659,
+      "keys_per_curve_unique_counts": [
+        423
+      ],
+      "total_keys": 278757,
+      "strict_continuous_curve_identity": false
+    },
+    "walk": {
+      "fbx_reimport_action_name": "figure-ala-infantry-1948-v1-rig|figure-ala-infantry-1948-v1-rig|walk",
+      "source_frame_range": [
+        1.0,
+        57.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        57.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 57,
+      "half_frame_sample_count": 56,
+      "skin_operator_integer_frame_max_abs": 1.1283904314041138e-05,
+      "skin_operator_half_frame_max_abs": 0.035618364810943604,
+      "reimport_fcurve_count": 659,
+      "keys_per_curve_unique_counts": [
+        57
+      ],
+      "total_keys": 37563,
+      "strict_continuous_curve_identity": false
+    }
+  },
+  "animation_note": "Every existing target action retained, sampled every frame with simplify0. Integer-frame transforms validated numerically; continuous quaternion/Bezier-to-Euler FBX curve identity is not claimed. Exact target F-curve data is separately preserved in local-actions.json; original blend remains unchanged.",
+  "fbx_unit_scale_factors": [
+    100.0
+  ],
+  "all_fbx_local_scales_identity": true,
+  "fbx_animation_stacks": [
+    "figure-ala-infantry-1948-v1-rig|idle\u0000\u0001AnimStack",
+    "figure-ala-infantry-1948-v1-rig|walk\u0000\u0001AnimStack"
+  ],
+  "texture_references": [
+    {
+      "field": "FileName",
+      "value": "______________________________________________________________________________________________________________________________________________________________________________________________/figure-ala-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-ala-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "Filename",
+      "value": "______________________________________________________________________________________________________________________________________________________________________________________________/figure-ala-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-ala-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-ala-infantry-1948-v1-rig|idle.tak"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-ala-infantry-1948-v1-rig|walk.tak"
+    }
+  ],
+  "author_path_string_runs_neutralized": 4,
+  "export_options": {
+    "use_selection": true,
+    "object_types": [
+      "ARMATURE",
+      "MESH"
+    ],
+    "global_scale": 1.0,
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "use_space_transform": true,
+    "bake_space_transform": false,
+    "use_mesh_modifiers": false,
+    "mesh_smooth_type": "OFF",
+    "use_tspace": false,
+    "use_custom_props": false,
+    "add_leaf_bones": false,
+    "use_armature_deform_only": false,
+    "path_mode": "STRIP",
+    "embed_textures": false,
+    "bake_anim": true,
+    "bake_anim_use_all_bones": true,
+    "bake_anim_use_all_actions": true,
+    "bake_anim_use_nla_strips": false,
+    "bake_anim_step": 1.0,
+    "bake_anim_simplify_factor": 0.0,
+    "bake_anim_force_startend_keying": true
+  },
+  "files": {
+    "figure-ala-infantry-1948-v1-provider-original.glb": {
+      "bytes": 5845852,
+      "sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20"
+    },
+    "figure-ala-infantry-1948-v1_basecolor.jpg": {
+      "bytes": 5297419,
+      "sha256": "6e30145f5479c83e46684de51785ae1ec100508c787b520a60822d7c65fd1f72"
+    },
+    "figure-ala-infantry-1948-v1.fbx": {
+      "bytes": 3297964,
+      "sha256": "0bba6578823eb3b22eacc7b4d542120750b62d189a4cd87a8c7afd61353b0b71"
+    },
+    "figure-ala-infantry-1948-v1-local-actions.json": {
+      "bytes": 51962945,
+      "sha256": "82f07be1fbe1969106666a93bb1063bdb145051f5a121bc426de96dd52140d34"
+    }
+  }
+}
