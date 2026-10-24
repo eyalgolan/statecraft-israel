@@ -129,11 +129,16 @@ namespace Statecraft.Game.UI
         /// <summary>Statecraft.uss .hud-three-row .top-bar height.</summary>
         const float ThreeRowBarPx = 440f;
 
-        public HudPresenter(VisualElement root, SimBridge bridge, UiText text)
+        public HudPresenter(VisualElement root, SimBridge bridge, UiText text, System.Action<int>? selectUnit = null)
         {
             this.root = root; this.bridge = bridge; this.text = text;
             endTurn = root.Q<Button>("end-turn");
-            onEndTurn = () => bridge.EndTurn();
+            onEndTurn = () =>
+            {
+                var needs = bridge.NeedsOrders;
+                if (needs.Count > 0) selectUnit?.Invoke(needs[0]);
+                else bridge.EndTurn();
+            };
             endTurn.clicked += onEndTurn;
             endTurn.generateVisualContent += PaintHourglass;
             bar = root.Q<VisualElement>("top-bar");
@@ -271,7 +276,7 @@ namespace Statecraft.Game.UI
         /// size), and the turn box widened in step. The one-row and icon tiers read the bar's width less this.</summary>
         float FloorGrowth()
         {
-            float growth = TurnBoxPx * (smallTextSize / SmallTextPx - 1f) + (RaisedPlateWidth() - PlateWidthPx);
+            float growth = TurnBoxWidth - TurnBoxPx + (RaisedPlateWidth() - PlateWidthPx);
             foreach (var l in smallText)
             {
                 if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
@@ -284,6 +289,9 @@ namespace Statecraft.Game.UI
         }
         // Statecraft.uss .turn-box width, .meter .meter-name max-width (170 on the three-row bar, where the tier is fixed), .date-box width.
         const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
+        // The button keeps its stylesheet font; only the attention line grows with the text floor.
+        float TurnBoxWidth => UnityEngine.Mathf.Max(bridge.NeedsOrders.Count > 0 ? 230f : TurnBoxPx,
+            TurnBoxPx * smallTextSize / SmallTextPx);
         /// <summary>The widest date line's width per px of font size, with a little to spare: the Hebrew 31 October 1956 is
         /// about 7.8 times its size (196 px at 25 px), the English "30 September 1956" 7.2 (TopBarScoreLayoutTests.WorstDate).</summary>
         const float DateLinePerPx = 8f;
@@ -331,7 +339,7 @@ namespace Statecraft.Game.UI
                 dateRow.style.flexDirection = raised ? new StyleEnum<FlexDirection>(FlexDirection.Column) : new StyleEnum<FlexDirection>(StyleKeyword.Null);
                 if (dateRow.parent != null) PadPlate(dateRow.parent, raised);
             }
-            var box = TurnBoxPx * smallTextSize / SmallTextPx;
+            var box = TurnBoxWidth;
             turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
             turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
         }
@@ -481,6 +489,8 @@ namespace Statecraft.Game.UI
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
+            endTurn.text = text[bridge.NeedsOrders.Count > 0 ? "hud.end_turn_needs_orders" : "hud.end_turn"];
+            turnBox.EnableInClassList("needs-orders", bridge.NeedsOrders.Count > 0);
             // #1109: a vacant seat the player can fill lights the Cabinet disc's badge, and its tip says why.
             var cabinet = root.Q<Button>("nav-cabinet"); bool vacant = bridge.Vacancies.Count > 0;
             cabinet.EnableInClassList(ActionClass, vacant);

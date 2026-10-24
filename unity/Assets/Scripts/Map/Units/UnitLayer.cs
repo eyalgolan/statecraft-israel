@@ -20,6 +20,9 @@ namespace Statecraft.Game.Map.Units
     public sealed class UnitLayer : MonoBehaviour
     {
         public const string RootName = "Units", ToggleName = "units";
+        /// <summary>A player unit with no movement points left this turn has its badge drawn at this share of its colours
+        /// (plate and glyph alike, so the glyph keeps its contrast on the plate).</summary>
+        public const float DimShade = 0.5f;
         /// <summary>A parked aircraft's centre of gravity above the ground, in real metres (on its undercarriage).</summary>
         public const float ParkedHeightM = 1.4f;
         public const float ParkedHeadingDegrees = 200f;
@@ -260,6 +263,27 @@ namespace Statecraft.Game.Map.Units
             Rebuild();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             return true;
+        }
+
+        /// <summary>Dims the listed unit rows' badges for this turn (each badge renderer at <see cref="DimShade"/> of its
+        /// material's colour); every other badge has no property override.</summary>
+        public void Dim(IReadOnlyCollection<string> rowIds)
+        {
+            var dim = new HashSet<string>(rowIds ?? Array.Empty<string>());
+            var block = new MaterialPropertyBlock();
+            for (int i = 0; i < tokensRoot.childCount; i++)
+            {
+                var token = tokensRoot.GetChild(i);
+                var badge = token.Find("Badge");
+                if (badge == null) continue;
+                foreach (var renderer in badge.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!dim.Contains(token.name)) { renderer.SetPropertyBlock(null); continue; }
+                    var c = renderer.sharedMaterial.color;
+                    block.SetColor("_BaseColor", new Color(c.r * DimShade, c.g * DimShade, c.b * DimShade, c.a));
+                    renderer.SetPropertyBlock(block);
+                }
+            }
         }
 
         /// <summary>The anchor of <paramref name="row"/>'s unit on sim hex (<paramref name="q"/>, <paramref name="r"/>) after a

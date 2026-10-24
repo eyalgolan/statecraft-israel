@@ -380,21 +380,19 @@ public class GameSceneTests
             var pointer = Object.FindFirstObjectByType<MapPointer>();
             var camera = cam.GetComponent<CameraController>();
 
+            // The card's buttons keep their clicks while the pick is open, wherever the lit hexes are.
+            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
+            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
+            Assert.IsTrue(pointer.IsOverUi!(ScreenFor(move.worldBound.center)), "the Move button keeps its click during the pick");
+
             Assert.IsFalse(pointer.IsOverUi!(probe), "a lit hex seen through the card takes the click");
             Assert.IsTrue(camera.IsOverUi!(probe), "the card still holds the drag and the wheel");
             Assert.IsTrue(pointer.HandleClick(probe), "the click picks the lit hex");
-            var queued = bridge.Queued.OfType<Move>().Single();
-            Assert.AreEqual((id, lit.Item1, lit.Item2), (queued.Unit, queued.Q, queued.R), "the click queued the Move to the lit hex");
+            Assert.AreEqual(lit, (bridge.State.Units[id].Q, bridge.State.Units[id].R), "the click moved Golani to the lit hex at once (#1398)");
             Assert.IsTrue(root.Info.ShowsUnit, "Golani's card stays");
+            // A move with points left opens the pick again (#1398): end it, and the card blocks the map again.
+            if (ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"])) UiTestKit.Press(move);
             Assert.IsTrue(pointer.IsOverUi!(probe), "with no pick open the card blocks the map again");
-
-            // The card's buttons keep their clicks while a pick is open, wherever the lit hexes are.
-            UiTestKit.Press(move);
-            for (int i = 0; i < 3; i++) yield return null;
-            var b = move.worldBound;
-            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
-            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
-            Assert.IsTrue(pointer.IsOverUi!(ScreenFor(b.center)), "the Move button keeps its click during the pick");
         }
         finally
         {
@@ -769,6 +767,8 @@ public class GameSceneTests
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
         var turn = g.State.Turn;
         var log = new List<string>();
+        // This event-only fixture has no map or unit-card presenter; its units have already been skipped.
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         var run = GameRoot.Smoke(ui.Root, bridge, card, 1, log.Add);
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 1 turns", log[log.Count - 1], string.Join("\n", log));
@@ -794,6 +794,8 @@ public class GameSceneTests
         using var hud = new HudPresenter(ui.Root, bridge, text);
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
         var log = new List<string>();
+        // This event-only fixture has no map or unit-card presenter; its units have already been skipped.
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         var run = GameRoot.Smoke(ui.Root, bridge, card, 1, log.Add);
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 1 turns 1948-08-15", log[log.Count - 1], string.Join("\n", log));

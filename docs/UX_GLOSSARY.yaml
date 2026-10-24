@@ -208,6 +208,32 @@ concepts:
     reasons:
     - The current rules set all five turn lengths to month.
   decision_owner: Eyal
+- id: movement-points
+  status: decision-needed
+  category: game-system
+  definition: The number of points a military unit can spend entering hexes during one turn.
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: movement points
+    avoid: []
+    in_use:
+    - form: 'Movement points: {0} of {1}'
+      where: strings.en.yaml unit.points
+  he:
+    preferred: נקודות תנועה
+    avoid: []
+    in_use:
+    - form: 'נקודות תנועה: {0} מתוך {1}'
+      where: strings.he.yaml unit.points
+  recommendation:
+    en: Use movement points in the card and rules.
+    he: The candidate נקודות תנועה needs a native review.
+    reasons:
+    - The term is new on screen with Civ-style movement.
+  decision_owner: Eyal and the native reviewer
 - id: end-turn
   status: preferred
   category: game-system
