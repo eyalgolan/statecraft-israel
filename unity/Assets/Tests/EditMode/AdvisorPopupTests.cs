@@ -191,6 +191,60 @@ public class AdvisorPopupTests
         Assert.IsTrue(rig.Session.Settings.Seen("t.teach"), "Escape is the X");
     }
 
+    /// <summary>Spec 16: one Escape with the focus in the popup closes the popup only, as in the report panel (#1169).
+    /// ScreenNav's Cancel asks it first (TakesEscape, as GameRoot wires it), and GameRoot's Escape poll asks it before it
+    /// closes the screen, also in the frame its Cancel already closed it. (Time.frameCount does not move in an edit-mode
+    /// test, so after this the popup keeps saying "used this frame".)</summary>
+    [Test]
+    public void OneEscapeInThePopupLeavesTheScreenUnderItOpen()
+    {
+        using var rig = new Rig();
+        rig.Nav.TakesEscape = rig.Advisor.Escape;
+        rig.Advisor.NewGame();
+        rig.Nav.Open("budget");                                          // what Show me opens: the one-row HUD keeps it beside
+        Assert.IsTrue(rig.Advisor.IsOpen, "precondition: a side screen does not cover it on the one-row HUD");
+        var gotIt = rig.Ui.Q<Button>("advisor-got-it");
+        gotIt.Focus();
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = gotIt; gotIt.SendEvent(esc); }
+        Assert.IsFalse(rig.Advisor.IsOpen, "Esc closes the popup");
+        Assert.AreEqual("budget", rig.Nav.Current, "and only the popup");
+        Assert.IsTrue(rig.Advisor.Escape(), "closed this frame: the poll's Escape is used, so it leaves the screen open");
+        Assert.AreEqual("budget", rig.Nav.Current);
+    }
+
+    /// <summary>One Escape dismisses one message: when Got it brings the next message up at once (the focus still on Got
+    /// it), the poll's Escape in the same frame does not dismiss that one too.</summary>
+    [Test]
+    public void OneEscapeDismissesOnlyOneMessage()
+    {
+        using var rig = new Rig();
+        rig.Nav.TakesEscape = rig.Advisor.Escape;
+        rig.Advisor.NewGame();
+        rig.Ui.Press("advisor-got-it");
+        rig.EndTurn();
+        Assert.AreEqual("t.crit", rig.Advisor.Shown!.Id, "precondition: critical first, the warning behind it");
+        var gotIt = rig.Ui.Q<Button>("advisor-got-it");
+        gotIt.Focus();
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = gotIt; gotIt.SendEvent(esc); }
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id, "Cancel dismissed the critical one; the warning is up");
+        Assert.IsTrue(rig.Advisor.Escape(), "the poll in the same frame: the key is used");
+        Assert.IsTrue(rig.Advisor.IsOpen, "and the warning stays up");
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id);
+        Assert.IsFalse(rig.Session.Settings.Seen("t.warn"), "unread, so not seen");
+    }
+
+    /// <summary>OQ-4: in Hebrew a message shows only once its Hebrew is approved.</summary>
+    [TestCase("pending", false)]
+    [TestCase("approved", true)]
+    public void InHebrewOnlyAnApprovedMessageShows(string review, bool shows)
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text +
+            "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\n", "strings.he.yaml");
+        using var rig = new Rig(catalog: Fixture.Replace("level: new,", $"level: new, he_review: {review},"), text: he);
+        rig.Advisor.NewGame();
+        Assert.AreEqual(shows, rig.Advisor.IsOpen, "he_review: " + review);
+    }
+
     [Test]
     public void NeverShowsByItselfWithoutASettingsFile()
     {

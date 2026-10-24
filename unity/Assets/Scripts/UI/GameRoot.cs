@@ -292,8 +292,11 @@ namespace Statecraft.Game.UI
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             if (keep == null || AdvisorSession == null)
-                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
-                    autoShow: showsStart && !FirstCardCheckRequested() && SettingsFile() != null);
+            {
+                bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
+                // Final S1 store isolation; initialize once before Settings uses the advisor level.
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
+            }
             Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
@@ -819,7 +822,8 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
+            // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).

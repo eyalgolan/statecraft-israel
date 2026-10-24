@@ -78,8 +78,12 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly (VisualElement element, float px)[] floored;
         readonly IVisualElementScheduledItem follow;
+        /// <summary>The latest hide's fade end, paused by a Show or Dispose so an earlier one never acts.</summary>
+        IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
+        int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
         AdvisorCatalog.Message? covered;
 
@@ -251,6 +255,7 @@ namespace Statecraft.Game.UI
         void Show()
         {
             hidden = false;
+            fading?.Pause();
             popup.RemoveFromClassList(ScreenNav.ClosingClass);
             if (!hudRoot.ClassListContains(OpenClass))
             {
@@ -293,7 +298,8 @@ namespace Statecraft.Game.UI
             if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
             popup.AddToClassList(ScreenNav.ClosingClass);
-            popup.schedule.Execute(() =>
+            fading?.Pause();
+            fading = popup.schedule.Execute(() =>
             {
                 if (!hidden) return;                                    // shown again meanwhile
                 popup.RemoveFromClassList(ScreenNav.ClosingClass);
@@ -478,9 +484,9 @@ namespace Statecraft.Game.UI
         /// <summary>Got it, the X, or Escape from inside: seen, and the next message (if any) shows.</summary>
         public void GotIt()
         {
+            if (Shown == null || !IsOpen) return;                       // final S1: no action during fade
             StopWatching();
             if (session.Chain.Step >= 0) { NextStep(); return; }
-            if (Shown == null) return;
             ClearTarget();
             session.Queue.Done(Shown, Turn, bridge.State.Date);
             Shown = null;
@@ -490,8 +496,8 @@ namespace Statecraft.Game.UI
         /// <summary>Not now: off to the next turn and into Counsel's history (spec 7.1). Not for teaching or critical messages.</summary>
         public void NotNow()
         {
+            if (Shown == null || !IsOpen || Shown.Teaching || Shown.Critical) return;
             StopWatching();
-            if (Shown == null || Shown.Teaching || Shown.Critical) return;
             ClearTarget();
             session.Queue.PutOff(Shown, Turn, bridge.State.Date);
             Shown = null;
@@ -590,11 +596,15 @@ namespace Statecraft.Game.UI
             StopWatching(); return true;
         }
 
-        /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did.</summary>
+        /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did, and
+        /// also in the frame ScreenNav's Cancel already closed it, so GameRoot's poll does not close the screen under it too.
+        /// That frame check comes first: Got it can bring the next message up at once, and one Escape dismisses one message.</summary>
         public bool Escape()
         {
+            if (escapedAt == Time.frameCount) return true;
             var focused = layer.focusController?.focusedElement as VisualElement;
             if (!IsOpen || focused == null || !popup.Contains(focused)) return false;
+            escapedAt = Time.frameCount;
             if (session.Chain.Step >= 0) CloseChain(); else GotIt();
             return true;
         }
@@ -667,6 +677,7 @@ namespace Statecraft.Game.UI
             hudRoot.UnregisterCallback(onMediaPointer, TrickleDown.TrickleDown); hudRoot.UnregisterCallback(onMediaSubmit, TrickleDown.TrickleDown);
             overlay.UnregisterCallback(onMediaCancel);
             follow.Pause();
+            fading?.Pause();
             layer.UnregisterCallback(onLaidOut);
             bridge.RefusedForAttention -= onAttention;
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;

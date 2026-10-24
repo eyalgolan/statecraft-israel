@@ -165,8 +165,10 @@ def check_assets(root: Path, files: list[str], release: bool) -> list[Finding]:
             found.append(Finding("assets", r["_file"], 0, f"unknown-licence {r['licence']}"))
         if r["status"] not in P.STATUSES:
             found.append(Finding("assets", r["_file"], 0, f"bad-status {r['status']}"))
-        elif release and (r["status"] == "owner-verify" or r["licence"] == "unknown"):
+        elif release and r["status"] == "owner-verify":
             found.append(Finding("assets", r["_file"], 0, f"owner-verify {r['glob']}"))
+        elif release and r["licence"] == "unknown":
+            found.append(Finding("assets", r["_file"], 0, f"licence-unknown {r['glob']}"))
         if not r.get("allow_empty") and not any(fnmatch.fnmatch(f, r["glob"]) for f in files):
             found.append(Finding("assets", r["_file"], 0, f"stale-rule {r['glob']}"))
     binary = git_binary_files(root)
