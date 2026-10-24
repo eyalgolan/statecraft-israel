@@ -69,6 +69,8 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
     its first fields. A generic settlement, not a reconstruction of Mefalsim.
   - iraqi_exodus / airlift: A07, families arriving by air at Lydda. The alt text names no ethnicity.
   - austerity_1949 / impose: A09, the raw shot of a queue with ration books (not the trailer's composite with a card).
+  - absorb_immigrants / continue: K04b (the demo 3 v8 take), a child on a man's shoulders at a ship's rail, seen from
+    behind, pointing at a harbour town. A generic harbour, not a reconstruction of Haifa.
 - **More clips (#1102, owner ruling of 20 October 2026):** the owner watched the five shots A27, A05, TILE1, A07 and A09
   and approved them ("looks good", https://github.com/eyalgolan/statecraft-israel/issues/1102#issuecomment-6300646067)
   for exactly seven uses: the four outcome clips above and three card loops, `altalena` (A27), `operation_horev` (A05,
@@ -76,6 +78,17 @@ event has an outcome clip, plays that clip once, in the middle of the screen, be
   windows are the encoder's steadiest 3.5 s (A27 frames 12-95, TILE1 37-120, A07 34-117, A09 10-93). The other cards and
   historical outcomes have no shot that fits; the reason for each is in
   https://github.com/eyalgolan/statecraft-israel/issues/1102#issuecomment-6300539663.
+- **absorb_immigrants (owner ruling of 24 October 2026, given in chat after the demo-clip sheet):** "Add v8, 6 s".
+  K04b, the 6 s demo 3 v8 take (Veo 3.1 Fast, 17 October), is the card's loop (the whole shot) and its `continue` outcome
+  (frames 11-94, the encoder's steadiest 3.5 s). It shows the same arrival as the `law_of_return` loop (K04a), the
+  moment before the card's photograph of immigrants coming down a gangway.
+- **Not added: A02 on `burma_road_complete` (24 October 2026).** The owner's ruling was "Add, check headlights first":
+  the shot's trucks drive with their headlights on at dusk, so it could go in only with a period source for lit
+  convoys, or as a window with no lights showing. No source was found for lights on the Burma Road track; the sources
+  found say the convoys and porters moved at night to stay hidden from the Arab Legion at Latrun, and Collins and
+  Lapierre's *O Jerusalem!* (1972) describes the jeep runs coming up under "a total blackout" and the porters going
+  "without any light". The lead trucks' headlights show in every frame of A02, so no window fits, and the card keeps
+  its photograph only.
 - **Dropped in review (2026-10-14):** first_truce / accept (A02, the Burma Road convoy of June 1948, a poor picture for
   a truce whose terms bar bringing in men and materiel) and law_of_return / enact (K04b, not in the plan's list and with
   no recorded ruling). A replacement needs the owner's word before anything new is generated.

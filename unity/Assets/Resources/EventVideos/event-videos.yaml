@@ -18,11 +18,15 @@
 # (TILE1, a generic Negev settlement, not Mefalsim), the iraqi_exodus airlift outcome (A07) and the austerity_1949 impose
 # outcome (A09). The three sensitive ones (both altalena rows, the operation_horev loop) are sensitivity_reviewed: true on
 # that ruling.
+# Owner rulings of 2026-10-24, given in chat after the demo-clip sheet: absorb_immigrants "Add v8, 6 s" (K04b, the demo 3 v8
+# take t1, as the card loop and the continue outcome, frames 11-94). burma_road_complete "Add, check headlights first": A02
+# was not added, because its trucks show headlights in every frame and no source was found for lit convoys on the Burma
+# Road track (docs/event-videos.md).
 # Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
 # Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
 # tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, no burned-in caption (owner ruling
 # 2026-10-14 above; ai_generated: true stays on every row).
-checked: 2026-10-20
+checked: 2026-10-24
 clips:
   - event: latrun_proposal
     file: latrun_proposal.mp4
@@ -178,6 +182,17 @@ clips:
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
+  - event: absorb_immigrants
+    file: absorb_immigrants.mp4
+    shot: K04b
+    source: promo/demo3/clips-v8/K04b-t1.mp4
+    source_sha256: 029968d2f57d61643ef3bcd10cfbb928a4648a0a95bbc88cb6e43767316da16a
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-17
+    alt: "Illustration: immigrants at a ship's rail seen from behind, a child on a man's shoulders pointing at a harbour town on the hills."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
 # Outcome clips (decision videos, phase 3; docs/event-videos.md): played at End Turn, once, when the player queued the
 # event's historical option (historical: true in content) and the turn applied it. 3.5 s, silent, skippable (a click,
 # Esc, Enter or Space; Esc skips them all), captioned as the order ("Your order: ..."), never for a counterfactual option,
@@ -285,6 +300,20 @@ outcomes:
     start_frame: 10
     frames: 84
     alt: "Illustration: a queue with ration books outside a grocer's in a seaside town."
+    ai_generated: true
+    sensitive: false
+    sensitivity_reviewed: false
+  - event: absorb_immigrants
+    option: continue
+    file: absorb_immigrants-outcome.mp4
+    shot: K04b
+    source: promo/demo3/clips-v8/K04b-t1.mp4
+    source_sha256: 029968d2f57d61643ef3bcd10cfbb928a4648a0a95bbc88cb6e43767316da16a
+    generator: "Veo 3.1 Fast (ElevenLabs)"
+    generated: 2026-10-17
+    start_frame: 11
+    frames: 84
+    alt: "Illustration: a child on a man's shoulders at a ship's rail, seen from behind, pointing at a harbour town on the hills."
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
