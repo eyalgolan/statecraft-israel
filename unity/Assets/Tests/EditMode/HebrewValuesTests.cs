@@ -342,6 +342,61 @@ public class HebrewValuesTests
         Assert.IsTrue(dateMarked, "marked, \"15 May 1948\" is drawn as one run, as it is on its own");
     }
 
+    /// <summary>#1414: RLI/PDI are formatting controls, not visible glyphs. In a Hebrew-only line their insertion
+    /// must leave both the raster and measured advance unchanged; the visible-letter control checks the pixel oracle.</summary>
+    [UnityTest]
+    public IEnumerator TheHebrewFaceDrawsNothingForTheIsolateMarks()
+    {
+        var font = AssetDatabase.LoadAssetAtPath<Font>(UiPaths.FontHebrew);
+        Assert.IsNotNull(font, "the shipped Hebrew font must load; a fallback cannot validate the isolate marks");
+        using var r = new Rendered(
+            "אב",
+            "\u2067אב\u2069",
+            "ערך עברי",
+            "ערך \u2067עברי\u2069",
+            "אXב");
+        yield return r.Draw();
+        Assert.AreEqual("Advanced", r.Labels[0].resolvedStyle.unityTextGenerator.ToString());
+        Assert.AreSame(font, r.Labels[0].resolvedStyle.unityFontDefinition.fontAsset != null
+            ? r.Labels[0].resolvedStyle.unityFontDefinition.fontAsset.sourceFontFile : r.Labels[0].resolvedStyle.unityFontDefinition.font);
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[0].languageDirection);
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[1].languageDirection);
+        Assert.Greater(MaxDiff(r.Row(0), r.Row(4)), 0.2f, "control: a visible extra letter must change the pixels");
+        foreach (var (plain, isolated) in new[] { (0, 1), (2, 3) })
+        {
+            Assert.Less(MaxDiff(r.Row(plain), r.Row(isolated)), 0.02f,
+                "RLI/PDI draw no glyph or box and do not shift the surrounding Hebrew ink");
+            var a = r.Labels[plain]; var b = r.Labels[isolated];
+            Vector2 wa = a.MeasureTextSize(a.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+            Vector2 wb = b.MeasureTextSize(b.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+            Assert.AreEqual(wa.x, wb.x, 0.01f, "RLI/PDI have no advance");
+        }
+    }
+
+    /// <summary>#1414: like RegionText, an English name/agreement is followed by an isolated Hebrew date. Its day,
+    /// month and year must draw together in the same order as the standalone RTL date, not a deliberately reversed date.</summary>
+    [UnityTest]
+    public IEnumerator AnIsolatedHebrewDateStaysOneRunAfterEnglishRegionNames()
+    {
+        const string date = "24 בפברואר 1949";
+        var font = AssetDatabase.LoadAssetAtPath<Font>(UiPaths.FontHebrew);
+        Assert.IsNotNull(font, "the shipped Hebrew font must load; a fallback cannot validate the isolate marks");
+        using var r = new Rendered(
+            En.Format("info.armistice_zone", "Auja", "Egypt-Israel General Armistice Agreement", "\u2067" + date + "\u2069"),
+            date,
+            "1949 בפברואר 24");
+        yield return r.Draw();
+        Assert.AreEqual("Advanced", r.Labels[0].resolvedStyle.unityTextGenerator.ToString());
+        Assert.AreSame(font, r.Labels[0].resolvedStyle.unityFontDefinition.fontAsset != null
+            ? r.Labels[0].resolvedStyle.unityFontDefinition.fontAsset.sourceFontFile : r.Labels[0].resolvedStyle.unityFontDefinition.font);
+        Assert.AreEqual(LanguageDirection.LTR, r.Labels[0].languageDirection, "the surrounding region-shaped line is English");
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[1].languageDirection, "the standalone control is a Hebrew date");
+        Assert.AreEqual(3, Words(r.Row(1)).Count, "the date has a day, month and year");
+        Assert.IsFalse(Found(r.Row(2), r.Row(1)), "control: the same date words in the wrong order must not match");
+        Assert.IsTrue(Found(r.Row(0), r.Row(1)),
+            $"the isolated date stays one run: standalone {Show(Words(r.Row(1)))}, region line {Show(Words(r.Row(0)))}");
+    }
+
     /// <summary>The lines the game shows (#543's "done when"; sign style from #1107): Hebrew budget.money with negative
     /// foreign currency draws "$-4.2m" as one left-to-right run - the dollar leads, the minus sits next to the number -
     /// and Hebrew why.turn draws "15 May 1948" as one run.</summary>
