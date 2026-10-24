@@ -117,18 +117,17 @@ namespace Statecraft.Game.UI
         {
             var turn = bridge.Session.Last;
             if (turn == null) return Array.Empty<string>();
-            var forces = bridge.Content.StartingForces; bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
-            string Name(int id)
+            string Name(Cause cause, int id)
             {
-                var row = id < forces.Count ? units?.FirstOrDefault(u => u.Id == forces[id].Row) : null;
-                if (row == null) return text.Format("report.unit", id);
-                return hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name;
+                var snapshot = cause.Units.FirstOrDefault(u => u.Id == id);
+                if (snapshot != null) return UnitNames.Of(snapshot, bridge.Content, units ?? Array.Empty<UnitEntry>(), text);
+                return text.Format("report.unit", id);
             }
             // An engagement (#1297) names its enemy attackers, one line each, and gives no line if it names none: its Target is
             // a hex, not a unit. An order names its unit, Target.
             return turn.Why.Where(w => w.EnemyOrder != "")
                 .SelectMany(w => (w.EnemyOrder == Combat.Attack ? w.EnemyAttackers : new[] { int.Parse(w.Target, CultureInfo.InvariantCulture) })
-                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(id)))).ToList();
+                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(w, id)))).ToList();
         }
 
         void Show()

@@ -18,7 +18,7 @@ using UnityEngine.UIElements;
 /// sim's Move through SimBridge, and a click anywhere else ends the pick and selects as before. Slice 2, Fortify and Hold:
 /// each shows only where the sim's Orders.Check takes it, else the sim's reason, and a press queues the sim's UnitOrder.
 /// Slice 3, Attack: shown only where the sim's Combat.Check takes some hex; pressing it lights those hexes with
-/// Combat.Preview's strength ratio and Combat.Outcomes' bands for each (Q-UI-1), and a click on one queues the attack.</summary>
+/// Combat.Preview's strength ratio and Combat.Outcomes' bands for each (Q-UI-1), and a click on one commits the attack.</summary>
 public class UnitOrdersTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -84,11 +84,11 @@ public class UnitOrdersTests
         info.Dispose();
     }
 
-    /// <summary>Move lights exactly Movement.Reachable's hexes. A click on one queues Move(unit, q, r) through SimBridge and
-    /// keeps the card, which says the move waits for End turn; a click on an unlit hex queues nothing and shows that hex;
+    /// <summary>Move lights exactly Movement.Reachable's hexes. A click on one commits Move(unit, q, r) through SimBridge and
+    /// keeps the card; a click on an unreachable water hex commits nothing and shows that hex;
     /// a second press of Move ends the pick. Each end of the pick clears the overlay.</summary>
     [Test]
-    public void AClickOnALitHexQueuesTheMoveAndAnyOtherClickEndsThePick()
+    public void AClickOnALitHexCommitsTheMoveAndAnUnreachableClickEndsThePick()
     {
         var map = BuildMap();
         using var ui = new UiTestKit();
@@ -115,51 +115,65 @@ public class UnitOrdersTests
             UiTestKit.Press(move);   // a second press ends the pick
             Assert.IsEmpty(lit.Last());
             Assert.IsFalse(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
-            // An unlit hex: nothing queued, the pick ends and the click selects as before (the hex, as the unit is not on it).
-            var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
-            Assert.IsFalse(reach.Contains((tlv.Q, tlv.R)), "precondition: Tel Aviv is out of Golani's reach");
+            // Task12/spec8.1:248: unlit land with a route now gives go-to (tested below); water ends the pick.
+            var water = C.Hexes.First(h => !h.Land);
+            Assert.IsFalse(reach.Contains((water.Q, water.R)), "precondition: water has no move or go-to route");
             UiTestKit.Press(move);
-            GameRoot.OnHexClicked(map, layer, info, tlv.Q, tlv.R);
+            GameRoot.OnHexClicked(map, layer, info, water.Q, water.R);
             Assert.IsEmpty(lit.Last());
             Assert.IsEmpty(bridge.Queued);
+            Assert.IsEmpty(bridge.Session.Committed);
             Assert.IsFalse(info.ShowsUnit);
-            Assert.AreEqual((tlv.Q, tlv.R), info.Selected);
-            // A lit hex: the sim's Move is queued, the unit stays selected and its card says the move waits for End turn.
+            Assert.AreEqual((water.Q, water.R), info.Selected);
+            // A lit hex: the sim's Move is committed, the unit stays selected and the card has no queued-move line.
             GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
             UiTestKit.Press(move);
             var (q, r) = reach.Last();
             map.Select(q, r);   // MapPointer outlines the hex before it raises HexClicked
             GameRoot.OnHexClicked(map, layer, info, q, r);
-            var queued = bridge.Queued.OfType<Move>().Single();
-            Assert.AreEqual((id, q, r), (queued.Unit, queued.Q, queued.R));
-            Assert.IsEmpty(lit.Last());
+            var committed = bridge.Session.Committed.OfType<Move>().Single();
+            Assert.AreEqual((id, q, r), (committed.Unit, committed.Q, committed.R));
+            CollectionAssert.AreEquivalent(Movement.Reachable(C, bridge.State, id, bridge.Spent).Keys.Select(h => (h.Q, h.R)).ToList(), lit.Last(), "movement reopens only the remaining reach");
             Assert.AreEqual("golani", layer.Selected);
             Assert.IsTrue(info.ShowsUnit);
             Assert.IsFalse(map.Terrain.transform.Find(MapScene.SelectionName).GetComponent<MeshRenderer>().enabled, "one highlight: the ring");
-            Assert.IsTrue(ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_queued"]), ui.Q<Label>("info-settlements").text);
-            // A refused order (here the game ends while the pick is open): nothing more is queued and the pick line goes.
-            bridge.Withdraw(queued);
-            UiTestKit.Press(move);
-            bridge.State.GameOver = GameOverCodes.MvpEnded;
-            GameRoot.OnHexClicked(map, layer, info, q, r);
-            Assert.IsEmpty(bridge.Queued, "the bridge refuses an order once the game is over");
-            Assert.IsEmpty(lit.Last());
-            Assert.IsFalse(ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"]), ui.Q<Label>("info-settlements").text);
-            bridge.State.GameOver = null;
-            // A turn ends the pick (its hexes were the last turn's), as does another selection.
-            UiTestKit.Press(move);
-            Assert.IsNotEmpty(lit.Last());
-            bridge.EndTurn();
-            Assert.IsEmpty(lit.Last(), "End turn ends the pick");
-            Assert.IsFalse(ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"]));
-            Assert.IsTrue(info.ShowsUnit && Shown(move), "precondition: Golani's card still offers Move on the next turn");
-            UiTestKit.Press(move);
-            Assert.IsNotEmpty(lit.Last());
+            Assert.IsFalse(ui.Q<Label>("info-settlements").text.Contains("Move ordered"), ui.Q<Label>("info-settlements").text);
+            // Another selection ends any pick reopened by movement points left.
             info.Clear();
             Assert.IsEmpty(lit.Last(), "another selection ends the pick");
             info.Dispose();
         }
         finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>R-MOVE-001 on screen: a click on a lit hex moves the unit at once, the Move pick opens again on what the
+    /// points left reach, and the card shows the points.</summary>
+    [Test]
+    public void TheLitReachShrinksAfterAMove()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+        layer.Show(bridge.Content, bridge.State);
+        var lit = new List<IReadOnlyCollection<(int q, int r)>>();
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+            selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+            showReachable: hexes => lit.Add(hexes.ToList()));
+        var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, bridge.State, golani.Token.Unit)!.Value;
+        var cheap = Movement.Reachable(C, bridge.State, id).Where(kv => kv.Value == 1).Select(kv => kv.Key).ToList();
+        Assert.IsNotEmpty(cheap, "precondition: Golani has a one-point step");
+        GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+        UiTestKit.Press(ui.Q<Button>("info-move"));
+        var before = lit.Last().Count;
+        GameRoot.OnHexClicked(map, layer, info, cheap[0].Q, cheap[0].R);
+        Assert.AreEqual((cheap[0].Q, cheap[0].R), (bridge.State.Units[id].Q, bridge.State.Units[id].R), "the unit moved at once");
+        CollectionAssert.AreEquivalent(Movement.Reachable(C, bridge.State, id, bridge.Spent).Keys.Select(h => (h.Q, h.R)).ToList(), lit.Last());
+        Assert.Less(lit.Last().Count, before);
+        var full = C.UnitTypes.Single(t => t.Id == bridge.State.Units[id].Type).MovementPoints;
+        StringAssert.Contains(Text.Format("unit.points", full - 1, full), ui.Q<Label>("info-settlements").text);
+        info.Dispose();
     }
 
     /// <summary>Slice 2 (#754): for every unit with a sim unit, Israel's and the enemy's, the card shows Fortify and Hold each
@@ -223,17 +237,62 @@ public class UnitOrdersTests
         string Lines() => ui.Q<Label>("info-settlements").text;
         Assert.IsFalse(Lines().Contains(Text["unit.fortify_queued"]) || Lines().Contains(Text["unit.hold_queued"]), Lines());
         UiTestKit.Press(ui.Q<Button>("info-fortify"));
-        var queued = bridge.Queued.OfType<UnitOrder>().Single();
+        var queued = bridge.Session.Committed.OfType<UnitOrder>().Last();
         Assert.AreEqual((id, Orders.Fortify, (int?)null, (int?)null), (queued.Unit, queued.Order, queued.Q, queued.R));
         StringAssert.Contains(Text["unit.fortify_queued"], Lines());
         UiTestKit.Press(ui.Q<Button>("info-hold"));
-        queued = bridge.Queued.OfType<UnitOrder>().Single();
+        queued = bridge.Session.Committed.OfType<UnitOrder>().Last();
         Assert.AreEqual((id, Orders.Hold), (queued.Unit, queued.Order));
         StringAssert.Contains(Text["unit.hold_queued"], Lines());
         Assert.IsFalse(Lines().Contains(Text["unit.fortify_queued"]), Lines());
-        Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim takes the order the card queued");
+        Assert.IsEmpty(bridge.Queued, "standing orders commit immediately");
+        Assert.AreEqual(2, bridge.Session.Committed.Count, "both clicks remain in the committed history");
+        Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim replays the committed orders once");
         Assert.AreEqual(Orders.Hold, bridge.State.Units[id].Order);
         info.Dispose();
+    }
+
+    /// <summary>Spec 7.3: an order that finishes the unit for the turn asks for the next unit.</summary>
+    [Test]
+    public void AFinishingOrderAsksForTheNextUnit()
+    {
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var tokens = UnitRoster.FromState(Units, C, bridge.State, _ => true, (row, a, q, r) => a);
+        PlacedToken? shown = new PlacedToken(tokens.Single(t => t.Unit.Id == "golani"), new AnchorSpot(0, 0, 0, 0, false));
+        var asked = 0;
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown, unitDone: () => asked++);
+        info.ShowUnit();
+        UiTestKit.Press(ui.Q<Button>("info-fortify"));
+        Assert.AreEqual(1, asked);
+        info.Dispose();
+    }
+
+    [Test]
+    public void ATokenWithNoPointsLeftIsDimmed()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            layer.Show(bridge.Content, bridge.State);
+            layer.Dim(new[] { "golani" });
+            var block = new MaterialPropertyBlock();
+            var badge = layer.transform.Find("Tokens/golani/Badge").GetComponentsInChildren<Renderer>();
+            Assert.Greater(badge.Length, 1, "precondition: the badge has a plate and a glyph");
+            foreach (var part in badge)
+            {
+                part.GetPropertyBlock(block);
+                var own = part.sharedMaterial.color;
+                var want = new Vector4(own.r * UnitLayer.DimShade, own.g * UnitLayer.DimShade, own.b * UnitLayer.DimShade, own.a);
+                Assert.Less(Vector4.Distance(want, (Vector4)block.GetColor("_BaseColor")), 1e-3f,
+                    part.name + ": dimmed from its own colour, so the glyph keeps its contrast");
+            }
+            layer.Dim(new string[0]);
+            foreach (var part in badge) { part.GetPropertyBlock(block); Assert.IsTrue(block.isEmpty, part.name + ": undimmed when it has points again"); }
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
     }
 
     /// <summary>R-UNIT-005 (#1309): Send home is absent until the shown Israeli unit's own front has signed its armistice,
@@ -394,11 +453,10 @@ public class UnitOrdersTests
     }
 
     /// <summary>Attack lights exactly the hexes Combat.Check takes, and the card gives each its units' names with
-    /// Combat.Preview's strength ratio and Combat.Outcomes' bands for its row (Q-UI-1). A click on an unlit hex queues
-    /// nothing; a click on a lit one queues UnitOrder(unit, attack, q, r) through SimBridge and the card says the attack
-    /// waits for End turn, with that hex's odds; the sim takes the queued attack at End turn.</summary>
+    /// Combat.Preview's strength ratio and Combat.Outcomes' bands for its row (Q-UI-1). A click on an unlit hex commits
+    /// nothing; a click on a lit one commits UnitOrder(unit, attack, q, r) through SimBridge and fights it at once.</summary>
     [Test]
-    public void AttackShowsEachTargetsOddsAndAClickOnOneQueuesTheAttack()
+    public void AttackShowsEachTargetsOddsAndAClickOnOneCommitsTheAttack()
     {
         var map = BuildMap();
         using var ui = new UiTestKit();
@@ -433,28 +491,58 @@ public class UnitOrdersTests
             StringAssert.Contains(Text["unit.attack_pick"], Lines());
             foreach (var (q, r) in targets) StringAssert.Contains(Odds(q, r), Lines());
             StringAssert.Contains("strength ratio", Lines());
-            // An unlit hex: nothing queued, the pick ends.
+            // An unlit hex: nothing committed, the pick ends.
             var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
             Assert.IsFalse(targets.Contains((tlv.Q, tlv.R)), "precondition");
             GameRoot.OnHexClicked(map, layer, info, tlv.Q, tlv.R);
             Assert.IsEmpty(lit.Last());
             Assert.IsEmpty(bridge.Queued);
-            // A lit hex: the sim's attack is queued and the card keeps the unit, with the order's line and its odds.
+            Assert.IsEmpty(bridge.Session.Committed);
+            // A lit hex: the sim's attack is committed and fought at once.
             GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
             UiTestKit.Press(attack);
             var at = targets[0];
             GameRoot.OnHexClicked(map, layer, info, at.q, at.r);
-            var queued = bridge.Queued.OfType<UnitOrder>().Single();
-            Assert.AreEqual((id, Combat.Attack, (int?)at.q, (int?)at.r), (queued.Unit, queued.Order, queued.Q, queued.R));
+            var committed = bridge.Session.Committed.OfType<UnitOrder>().Single();
+            Assert.AreEqual((id, Combat.Attack, (int?)at.q, (int?)at.r), (committed.Unit, committed.Order, committed.Q, committed.R));
+            Assert.IsEmpty(bridge.Queued);
             Assert.IsEmpty(lit.Last());
-            Assert.IsTrue(info.ShowsUnit);
             Assert.IsFalse(Lines().Contains(Text["unit.attack_pick"]), Lines());
-            StringAssert.Contains(Text["unit.attack_queued"], Lines());
-            StringAssert.Contains(Odds(at.q, at.r), Lines());
-            Assert.IsEmpty(bridge.EndTurn().Rejected, "the sim takes the attack the card queued");
+            Assert.IsEmpty(bridge.EndTurn().Rejected, "End turn keeps the committed attack result");
             info.Dispose();
         }
         finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>R-COMBAT-001 on screen: the attack is fought at the click; the toast names the units, and the card shows
+    /// the unit spent, or no unit if its own attack destroyed it (Review Focus 4). The seed fixes the draw, so one branch runs.</summary>
+    [Test]
+    public void AnAttackShowsItsResultAtOnce()
+    {
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        var tokens = UnitRoster.FromState(Units, C, bridge.State, _ => true, (row, a, q, r) => a);
+        var golani = tokens.Single(t => t.Unit.Id == "golani");
+        PlacedToken? shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
+        using var toast = new ToastPresenter(ui.Root, bridge, Text) { Units = Units };
+        var syrian = bridge.State.Units.Values.First(u => u.Side == "syria" && MapActions.Distance(u.Q, u.R, bridge.State.Units[0].Q, bridge.State.Units[0].R) == 1);
+        var arms = bridge.State.Arms;
+        Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
+        Assert.AreEqual(arms - 1, bridge.State.Arms, "paid at once (arms_per_attack 1)");
+        var line = ui.Q<Label>("toast").text;
+        StringAssert.StartsWith("The attack on hex", line);
+        StringAssert.DoesNotContain("unit 0", line);
+        StringAssert.Contains(golani.Unit.Name, line);
+        info.ShowUnit();
+        if (bridge.State.Units.ContainsKey(0))
+        {
+            var full = C.UnitTypes.Single(t => t.Id == bridge.State.Units[0].Type).MovementPoints;
+            StringAssert.Contains(Text.Format("unit.points", 0, full), ui.Q<Label>("info-settlements").text);
+        }
+        else
+            Assert.IsFalse(info.ShowsUnit, "a unit its own attack destroyed has no card");
+        info.Dispose();
     }
 
     /// <summary>The overlay draws one band per hex given (two rings of MapBuilder.RingVertices each) and hides when given
@@ -479,6 +567,151 @@ public class UnitOrdersTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>Spec 8.1: every route hex has one band, and the last hex of each turn carries that turn's number.</summary>
+    [Test]
+    public void TheRouteOverlayShowsTurnNumbers()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            using var labels = new MapLabelsPresenter(ui.Root, map, Camera.main);
+            var hexes = C.Hexes.Where(h => h.Land).Take(3).ToList();
+            var route = new[] { (hexes[0].Q, hexes[0].R, 1), (hexes[1].Q, hexes[1].R, 1), (hexes[2].Q, hexes[2].R, 2) };
+            map.ShowRoute(route);
+            labels.Refresh();
+            var go = map.Terrain.transform.Find(MapScene.RouteName);
+            Assert.IsTrue(go.GetComponent<MeshRenderer>().enabled);
+            Assert.AreEqual(3 * 2 * MapBuilder.RingVertices, go.GetComponent<MeshFilter>().sharedMesh.vertexCount);
+            CollectionAssert.AreEqual(new[] { "1", "2" }, ui.Root.Query<Label>(className: MapLabelsPresenter.RouteTurnClass).ToList().Select(x => x.text).ToList());
+            map.ShowRoute(System.Array.Empty<(int, int, int)>());
+            labels.Refresh();
+            Assert.IsFalse(go.GetComponent<MeshRenderer>().enabled);
+            Assert.IsEmpty(ui.Root.Query<Label>(className: MapLabelsPresenter.RouteTurnClass).ToList());
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>R-MOVE-008 on screen: in Move's pick, a click on an unlit hex a route reaches gives the go-to, and the card
+    /// says how many turns remain after this one.</summary>
+    [Test]
+    public void AClickBeyondTheLitHexesGivesAGoTo()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: map.ShowRoute);
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, bridge.State, golani.Token.Unit)!.Value;
+            var lit = Movement.Reachable(C, bridge.State, id).Keys.ToHashSet();
+            var none = new Dictionary<int, int>();
+            var far = C.Hexes.Where(h => h.Land && !lit.Contains((h.Q, h.R)) && (h.Q, h.R) != (golani.Q, golani.R))
+                .Select(h => (h.Q, h.R)).First(h => Movement.Route(C, bridge.State, id, h.Q, h.R, none).LastOrDefault().Turn == 2);
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(ui.Q<Button>("info-move"));
+            GameRoot.OnHexClicked(map, layer, info, far.Q, far.R);
+            Assert.AreEqual((Movement.GoTo, $"{far.Q},{far.R}"), (bridge.State.Units[id].Order, bridge.State.Units[id].OrderTarget));
+            StringAssert.Contains(Text.Format("unit.go_to_given", 1), ui.Q<Label>("info-settlements").text);
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Spec 8.1: on touch, the first tap on an unlit reachable route previews it and the second gives the go-to.</summary>
+    [Test]
+    public void AGoToNeedsASecondTapOnTouch()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var shown = new List<IReadOnlyList<(int q, int r, int turn)>>();
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: route => shown.Add(route));
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, bridge.State, golani.Token.Unit)!.Value;
+            var lit = Movement.Reachable(C, bridge.State, id).Keys.ToHashSet();
+            var far = C.Hexes.Where(h => h.Land && !lit.Contains((h.Q, h.R)) && (h.Q, h.R) != (golani.Q, golani.R))
+                .Select(h => (h.Q, h.R)).First(h => Movement.Route(C, bridge.State, id, h.Q, h.R, new Dictionary<int, int>()).Count > 0);
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(ui.Q<Button>("info-move"));
+            GameRoot.OnHexClicked(map, layer, info, far.Q, far.R, touch: true);
+            Assert.IsEmpty(bridge.Session.Committed, "the first tap only previews");
+            Assert.IsNotEmpty(shown.Last(), "the route is visible after the first tap");
+            GameRoot.OnHexClicked(map, layer, info, far.Q, far.R, touch: true);
+            Assert.AreEqual(Movement.GoTo, bridge.State.Units[id].Order);
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Spec 8.1: a hovered route hides when the mouse leaves the map, and the same hex shows it again on return
+    /// (the hover's cache is cleared with it, not only the map's overlay).</summary>
+    [Test]
+    public void AHoveredRouteShowsAgainAfterTheMouseLeavesTheMap()
+    {
+        var map = BuildMap();
+        using var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(bridge.Content, bridge.State);
+            var shown = new List<IReadOnlyList<(int q, int r, int turn)>>();
+            var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
+                selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
+                showReachable: map.ShowReachable, showRoute: route => shown.Add(route));
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, bridge.State, golani.Token.Unit)!.Value;
+            var lit = Movement.Reachable(C, bridge.State, id).Keys.ToHashSet();
+            var far = C.Hexes.Where(h => h.Land && !lit.Contains((h.Q, h.R)) && (h.Q, h.R) != (golani.Q, golani.R))
+                .Select(h => (h.Q, h.R)).First(h => Movement.Route(C, bridge.State, id, h.Q, h.R, new Dictionary<int, int>()).Count > 0);
+            GameRoot.OnHexClicked(map, layer, info, golani.Q, golani.R);
+            UiTestKit.Press(ui.Q<Button>("info-move"));
+            info.ShowRouteTo(far.Q, far.R);
+            Assert.IsNotEmpty(shown.Last(), "precondition: the hover shows the route");
+            info.HideRoute();
+            Assert.IsEmpty(shown.Last(), "the mouse left the map");
+            var calls = shown.Count;
+            info.HideRoute();
+            Assert.AreEqual(calls, shown.Count, "hiding again redraws nothing");
+            info.ShowRouteTo(far.Q, far.R);
+            Assert.IsNotEmpty(shown.Last(), "back on the same hex, the route shows again");
+            info.Dispose();
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>R-MOVE-009 on screen: a go-to that arrives at the next turn's start says so in the toast, by the unit's name.</summary>
+    [Test]
+    public void ARouteThatArrivesSaysSo()
+    {
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        using var toast = new ToastPresenter(ui.Root, bridge, Text) { Units = Units };
+        var none = new Dictionary<int, int>();
+        var lit = Movement.Reachable(C, bridge.State, 0).Keys.ToHashSet();
+        var far = C.Hexes.Where(h => h.Land && !lit.Contains((h.Q, h.R)))
+            .Select(h => (h.Q, h.R)).First(h => Movement.Route(C, bridge.State, 0, h.Q, h.R, none).LastOrDefault().Turn == 2);
+        Assert.IsNull(bridge.Queue(new UnitOrder(0, Movement.GoTo, far.Q, far.R)));
+        bridge.EndTurn();
+        Assert.IsEmpty(bridge.Session.Committed, "route work happens before this turn has a player order");
+        Assert.AreEqual(bridge.Session.Now.State.Hash(), bridge.State.Hash(), "spec6.3/8.1: the map shows the route-start preview");
+        Assert.AreEqual((far.Q, far.R), (bridge.State.Units[0].Q, bridge.State.Units[0].R));
+        var golaniName = Units.Single(u => u.Id == C.StartingForces[0].Row).Name;
+        StringAssert.Contains(golaniName, ui.Q<Label>("toast").text);
+    }
+
     /// <summary>The smoke-orders golden (slice 4): GameRoot.SmokeOrders hides turn 1's event card, gives GoldenRun.SmokeMove
     /// through the unit card (a click on the unit, Move, a click on the lit hex), ends the turn with End Turn, and ends on the state the sim's
     /// PlaySmokeOrders pins in the golden manifest.</summary>
@@ -491,7 +724,8 @@ public class UnitOrdersTests
         {
             var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
             using var toast = new ToastPresenter(ui.Root, bridge, Text);
-            using var hud = new HudPresenter(ui.Root, bridge, Text);   // wires End Turn
+            System.Action<int>? select = null;
+            using var hud = new HudPresenter(ui.Root, bridge, Text, id => select?.Invoke(id));   // wires End Turn and the unit cycle
             using var card = new EventCardPresenter(ui.Root, bridge, Text, null);
             Assert.IsTrue(ui.Root.Q("root").ClassListContains(EventCardPresenter.OpenClass), "precondition: turn 1's card is open, as in the player");
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
@@ -499,6 +733,11 @@ public class UnitOrdersTests
             using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
                 selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null,
                 showReachable: map.ShowReachable);
+            select = id =>
+            {
+                var row = layer.Tokens.Single(p => UnitCard.SimUnit(C, bridge.State, p.Token.Unit) == id).Token.Unit.Id;
+                layer.Select(row); info.ShowUnit();
+            };
             var log = new List<string>();
             var run = GameRoot.SmokeOrders(ui.Root, bridge, layer, (q, r) => GameRoot.OnHexClicked(map, layer, info, q, r), log.Add);
             while (run.MoveNext()) { }
@@ -520,11 +759,17 @@ public class UnitOrdersTests
         try
         {
             var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
-            using var hud = new HudPresenter(ui.Root, bridge, Text);
+            System.Action<int>? select = null;
+            using var hud = new HudPresenter(ui.Root, bridge, Text, id => select?.Invoke(id));
             var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
             layer.Show(bridge.Content, bridge.State);
             using var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(),
                 selectedUnit: () => layer.Selected is string sel ? layer.Tokens.First(p => p.Token.Unit.Id == sel) : (PlacedToken?)null);
+            select = id =>
+            {
+                var row = layer.Tokens.Single(p => UnitCard.SimUnit(C, bridge.State, p.Token.Unit) == id).Token.Unit.Id;
+                layer.Select(row); info.ShowUnit();
+            };
             int clicks = 0, turn = bridge.State.Turn;
             var log = new List<string>();
             var run = GameRoot.SmokeOrders(ui.Root, bridge, layer, (q, r) => { if (clicks++ == 0) GameRoot.OnHexClicked(map, layer, info, q, r); }, log.Add);

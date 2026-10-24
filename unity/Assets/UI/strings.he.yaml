@@ -42,6 +42,8 @@ hud.nav.objectives: "יעדים"
 hud.nav.settings: "הגדרות"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
+# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+hud.end_turn_needs_orders: "יחידה ממתינה להוראות"
 budget.title: "תקציב"
 budget.reset: "איפוס"
 budget.submit: "הגשת התקציב"
@@ -57,7 +59,8 @@ how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ו
 how_to_play.training: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
 how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור."
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
-how_to_play.end_turn: "סיום התור מבצע את ההוראות שלכם ומעביר לחודש הבא. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
+# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: הזיזו אותה, בצרו אותה, החזיקו בה או דלגו עליה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
 how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
@@ -77,10 +80,10 @@ guide.city.title: "דיור ומשרות בעיר"
 guide.city.text: "בחרו עיר כדי לראות את הדיור והמשרות בה. הכפתורים + ו־− קובעים כמה אנשים עובדים, ובהם בעלי מלאכה. ההוראה מתבצעת בסיום התור."
 guide.training.title: "אימון והכשרה"
 guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא עבודה כמגויסים. בהכשרה (מחנה הכשרה לחלוצים) אפשר להכשיר אותם כחלוצים שבונים יישובים. הכפתורים מציגים עלות ומשך הכשרה."
-# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's, unit.move_pick's
-# and unit.move_queued's terms. For the native reviewer (#564).
+# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's and unit.move_pick's
+# terms. For the native reviewer (#564).
 guide.move.title: "תנועת יחידה"
-guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על תנועה ובחרו משושה מואר. היחידה תנוע בסיום התור."
+guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על \"תנועה\" ובחרו משושה מואר. היחידה זזה מיד, והאזור המואר מצטמצם לנקודות התנועה שנותרו לה."
 guide.event.title: "כרטיס אירוע"
 guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
 guide.objectives.title: "יעדים"
@@ -240,6 +243,8 @@ start.recording_failed: "לא ניתן היה להשמיע את ההקלטה."
 outcome.order: "הפקודה שלך: {0}"
 outcome.skip: "לחיצה, Enter או רווח לדילוג · Esc מדלג על הכול"
 order.game_over: "המשחק הסתיים"
+# Hebrew draft for #1398; native review pending (#564).
+order.going_home: "היחידה חוזרת הביתה בסיום התור"
 order.no_attention: "אין מספיק תשומת לב (נדרש {0:0.0}, יש {1:0.0})"
 order.unknown: "לא ניתן לזהות {0}"
 # The kind of thing a refused order names in order.unknown (SimBridge.Validate; #595), one key per kind. order.unknown puts
@@ -321,6 +326,27 @@ why.effects: "השפעות מתמשכות"
 why.situations: "מצבים"
 why.other: "אחר"
 why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
+# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564).
+why.line.unit_moved: "{0} נעה למשושה {1} תמורת {2} נקודות תנועה"
+why.line.fortify_lost: "{0} עזבה את משושה {1} ואינה מבוצרת עוד"
+why.line.fortifying: "{0} מתבצרת במשושה {1}; היא תהיה מבוצרת מסוף התור"
+why.line.holds: "{0} מחזיקה במשושה {1}"
+why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: שביתת נשק בתוקף"
+why.line.attack_ordered: "{0} תתקוף את משושה {1}"
+why.line.attack_ended: "ההתקפה של {0} על משושה {1} מסתיימת: אין שם יחידת אויב"
+why.line.holds_fire: "{0} אינה יורה: אין התקפה על משושה {1} לתמוך בה"
+why.line.attack_called_off: "ההתקפה של {0} על משושה {1} מבוטלת: נדרשים {2} כלי נשק ובמלאי יש {3}"
+why.line.engagement: "ההתקפה על משושה {2} ({0} נגד {1}, יחס כוחות {3}%): התוקפים איבדו {4:N0} איש והמגינים איבדו {5:N0} איש"
+why.line.destroyed: "{0} הושמדה"
+why.line.retreated: "{0} נסוגה למשושה {1}"
+why.line.surrendered_prisoners: "{0} נכנעה עם {1:N0} איש: לא היה לה משושה לסגת אליו. הם מוחזקים כשבויים"
+why.line.surrendered_held: "{0} נכנעה עם {1:N0} איש: לא היה לה משושה לסגת אליו. הם מוחזקים בידי האויב"
+why.line.sent_home: "{0} נשלחת הביתה: {1:N0} אנשיה הם כעת אזרחים ב־{2}"
+why.line.withdrew: "{0} נסוגה מ־{1} למשושה {2}"
+why.line.on_its_way: "{0} בדרך למשושה {1}"
+why.line.stopped_no_route: "{0} נעצרה: אין מסלול שמגיע למשושה {1}"
+why.line.stopped_full: "{0} נעצרה: משושה {1} מלא"
+why.line.arrived: "{0} הגיעה למשושה {1}"
 # The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
@@ -515,19 +541,25 @@ unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
+# Hebrew draft for a raised unit's type and home city (#1399); native review pending (#564).
+unit.raised_name: "{0}, {1}"
 # The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "תנועה"
-# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
-unit.move_pick: "בחרו משושה מואר שאליו היחידה תנוע"
-# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
-unit.move_queued: "ניתנה פקודת תנועה: היחידה תנוע בסיום התור"
+# Hebrew route draft for #1398; native review pending (#564).
+unit.move_pick: "בחרו משושה מואר כדי לנוע אליו עכשיו, או משושה אחר כדי לשלוח אליו את היחידה במשך כמה תורות"
+# Hebrew draft for #1398; native review pending (#564).
+unit.points: "נקודות תנועה: {0} מתוך {1}"
+# Hebrew route draft for #1398; native review pending (#564).
+unit.go_to_given: "בדרך למשושה שנבחר. תורות עד ההגעה: {0}"
 # Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
 unit.order.fortify: "ביצור"
 unit.order.hold: "החזקה"
+# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+unit.order.skip: "דילוג על התור"
 # Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
 unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
-# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
-unit.hold_queued: "ניתנה פקודת החזקה: היחידה תחזיק במשושה שלה בסיום התור"
+# Hebrew draft for #1398; native review pending (#564).
+unit.hold_queued: "מחזיקה במשושה שלה"
 # Attack (#754): the name is Q-UI-2's, approved by the owner (#375).
 unit.order.attack: "התקפה"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
@@ -540,7 +572,6 @@ unit.attack_band: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מ�
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
 unit.attack_band_retreat: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מאבדים {3:N0} ונסוגים"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
-unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף בסיום התור"
 # The unit card's Send home order and its queued line (R-UNIT-005, #1309), in unit.order.*'s and unit.*_queued's form.
 # Hebrew drafts: agent-checked; native review pending (#564).
 unit.order.send_home: "שליחה הביתה"

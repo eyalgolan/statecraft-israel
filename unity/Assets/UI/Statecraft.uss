@@ -199,6 +199,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the window's foot (padding, so its backdrop still reaches it, DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier). */
 .hud-three-row .event-layer { justify-content: flex-start; padding-left: 72px; padding-bottom: 88px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
+.turn-box.needs-orders { width: 230px; min-width: 230px; }   /* the blocked End turn label and its hourglass, EN and HE */
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 20px;
@@ -842,6 +843,16 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     margin: 0;
     -unity-text-align: middle-center;
     white-space: nowrap;
+}
+/* The last hex of each turn in a multi-turn go-to: a compact number centred on the route, not a settlement name. */
+.map-route-turn {
+    width: 26px;
+    height: 26px;
+    translate: -50% -50%;
+    padding: 0;
+    border-radius: 13px;
+    font-size: 17px;
+    background-color: rgba(14, 22, 38, 0.92);
 }
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }

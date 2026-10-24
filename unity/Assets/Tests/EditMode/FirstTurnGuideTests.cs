@@ -290,6 +290,7 @@ public class FirstTurnGuideTests
         game.Guide.Open();
         for (int i = 0; i < step; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
         var turn = game.Bridge!.State.Turn;
+        foreach (var id in game.Bridge.NeedsOrders.ToList()) game.Bridge.Skip(id);
         UiTestKit.Press(Ui.Q<Button>("end-turn"));
         Assert.AreEqual(turn + 1, game.Bridge.State.Turn, "precondition: End turn ran the turn");
         Assert.IsFalse(game.Guide.IsOpen, "the guide closes when the turn advances");
@@ -451,6 +452,60 @@ public class FirstTurnGuideTests
                 }
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Spec 7.3: End turn, while a unit needs orders, selects it and centres the camera on its hex.</summary>
+    [UnityTest]
+    public IEnumerator EndTurnFocusesTheNextUnitThatNeedsOrders()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        yield return null;
+        var bridge = game.Bridge!; var units = game.Units!;
+        // At the guide framing, the map bounds permit the selected hex to be centred exactly.
+        Object.FindFirstObjectByType<CameraRig>().Distance = FirstTurnGuidePresenter.MoveStepDistanceM;
+        var next = bridge.NeedsOrders[0];
+        UiTestKit.Press(Ui.Q<Button>("end-turn"));
+        yield return null;
+        var token = units.Tokens.Single(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token.Unit) == next);
+        Assert.AreEqual(token.Token.Unit.Id, units.Selected);
+        var hex = bridge.Content.HexAt(token.Q, token.R)!;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var rig = Object.FindFirstObjectByType<CameraRig>();
+        Assert.Less(Vector3.Distance(map.Frame.ToWorld(hex.Lon, hex.Lat, 0), rig.LookAt), 1f);
+    }
+
+    /// <summary>Spec 7.3: repeated blocked End turn presses move past the selected needing unit and wrap.</summary>
+    [UnityTest]
+    public IEnumerator BlockedEndTurnCyclesPastTheSelectionAndWraps()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("guide-skip"));
+        yield return null;
+        var bridge = game.Bridge!; var units = game.Units!;
+        var needs = bridge.NeedsOrders.ToList();
+        Assert.Greater(needs.Count, 1, "precondition: several units need orders");
+        var turn = bridge.TurnStart.Turn;
+        int? SelectedId() => units.Selected is string row
+            ? units.Tokens.Where(t => t.Token.Unit.Id == row)
+                .Select(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token.Unit)).FirstOrDefault()
+            : null;
+        // Begin from the first needing unit, then prove advance and a complete wrap without issuing an order.
+        UiTestKit.Press(Ui.Q<Button>("end-turn"));
+        yield return null;
+        Assert.AreEqual(needs[0], SelectedId());
+        for (var step = 1; step <= needs.Count; step++)
+        {
+            UiTestKit.Press(Ui.Q<Button>("end-turn"));
+            yield return null;
+            Assert.AreEqual(needs[step % needs.Count], SelectedId(),
+                "blocked End turn advances beyond the selected unit and wraps");
+        }
+        Assert.AreEqual(turn, bridge.TurnStart.Turn, "cycling never ends the turn");
     }
 
     // --- Each step with what it explains (owner's report on v0.1.4) ---------------------------------------------------

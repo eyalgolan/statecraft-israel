@@ -1,4 +1,5 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -33,6 +34,59 @@ public class SimBridgeGddTests
     }
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static SimBridge Bridge(Content c) => new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text);
+
+    /// <summary>R-TURN-004: a Move given through the bridge shows at once (State), and End turn keeps it.</summary>
+    [Test]
+    public void AMoveShowsAtOnce()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var move = GoldenRun.SmokeMove(Slice, bridge.State);
+        var start = (bridge.State.Units[move.Unit].Q, bridge.State.Units[move.Unit].R);
+        IReadOnlyList<Cause>? lines = null; bridge.Committed += w => lines = w;
+        Assert.IsNull(bridge.Queue(move));
+        Assert.AreEqual((move.Q, move.R), (bridge.State.Units[move.Unit].Q, bridge.State.Units[move.Unit].R));
+        Assert.AreEqual(start, (bridge.TurnStart.Units[move.Unit].Q, bridge.TurnStart.Units[move.Unit].R));
+        Assert.IsEmpty(bridge.Queued, "a committed order is not queued");
+        Assert.IsTrue(lines!.Any(w => w.Key == WhyKeys.UnitMoved));
+        bridge.EndTurn();
+        Assert.AreEqual(GoldenRun.PlaySmokeOrders(Slice).Hash(), bridge.TurnStart.Hash());
+    }
+
+    /// <summary>No undo: a committed move is not withdrawn; a second move for the same unit is kept beside it.</summary>
+    [Test]
+    public void ACommittedMoveCannotBeWithdrawn()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var move = GoldenRun.SmokeMove(Slice, bridge.State);
+        bridge.Queue(move);
+        bridge.Withdraw(move);
+        Assert.AreEqual(1, bridge.Session.Committed.Count);
+    }
+
+    /// <summary>Spec 3.2: Send home stays deferred, and a unit with it queued takes no more moves or orders.</summary>
+    [Test]
+    public void AUnitWithSendHomeQueuedTakesNoMoreOrders()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var move = GoldenRun.SmokeMove(Slice, bridge.State);
+        Assert.IsNull(bridge.Queue(new UnitOrder(move.Unit, Demobilization.SendHome)));
+        Assert.AreEqual(1, bridge.Queued.Count, "deferred, as today");
+        Assert.AreEqual(Text["order.going_home"], bridge.Queue(move));
+        Assert.IsEmpty(bridge.Session.Committed);
+    }
+
+    [Test]
+    public void SkippedUnitsAndUnitsGoingHomeDoNotNeedOrders()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var first = bridge.NeedsOrders[0]; var second = bridge.NeedsOrders[1];
+        bridge.Skip(first);
+        bridge.Queue(new UnitOrder(second, Demobilization.SendHome));
+        CollectionAssert.DoesNotContain(bridge.NeedsOrders.ToList(), first);
+        CollectionAssert.DoesNotContain(bridge.NeedsOrders.ToList(), second);
+        bridge.EndTurn();
+        Assert.IsFalse(bridge.IsSkipped(first), "a skip ends with the turn");
+    }
 
     /// <summary>A slice bridge after one turn that opened a halutz cohort, and that cohort's id.</summary>
     static (SimBridge bridge, int cohort) WithACohort()

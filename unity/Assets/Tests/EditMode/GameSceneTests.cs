@@ -684,6 +684,8 @@ public class GameSceneTests
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
         var turn = g.State.Turn;
         var log = new List<string>();
+        // This event-only fixture has no map or unit-card presenter; its units have already been skipped.
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         var run = GameRoot.Smoke(ui.Root, bridge, card, 1, log.Add);
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 1 turns", log[log.Count - 1], string.Join("\n", log));
@@ -709,6 +711,8 @@ public class GameSceneTests
         using var hud = new HudPresenter(ui.Root, bridge, text);
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
         var log = new List<string>();
+        // This event-only fixture has no map or unit-card presenter; its units have already been skipped.
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         var run = GameRoot.Smoke(ui.Root, bridge, card, 1, log.Add);
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 1 turns 1948-08-15", log[log.Count - 1], string.Join("\n", log));
