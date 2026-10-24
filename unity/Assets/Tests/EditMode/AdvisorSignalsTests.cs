@@ -1,11 +1,19 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Boot;
+using Statecraft.Game.Map;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
 /// <summary>Spec 5 and 6: each signal on built states, and the critical warnings at every help level.</summary>
 public class AdvisorSignalsTests
@@ -15,6 +23,95 @@ public class AdvisorSignalsTests
     static SimBridge Bridge() => new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
     static bool Holds(SimBridge b, string signal) => AdvisorSignals.States[signal](new AdvisorContext(b, null));
     static double Ceiling(SimBridge b) => C.RulesAt(b.State.Date).Mvp!.DebtCeiling!.Value;
+
+    readonly List<string> temp = new List<string>();
+    string TempDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-signals-" + Guid.NewGuid().ToString("N"));
+        temp.Add(dir);
+        return dir;
+    }
+
+    [TearDown]
+    public void Clean()
+    {
+        if (temp.Count == 0) return;
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);   // after the scene test
+        foreach (var d in temp) { try { if (Directory.Exists(d)) Directory.Delete(d, true); } catch (Exception) { } }
+        temp.Clear();
+    }
+
+    /// <summary>The ids the queue would show now, in order, taking each as Got it would (the popup itself untouched).</summary>
+    static List<string> Waiting(AdvisorSession session, SimBridge bridge)
+    {
+        var ids = new List<string>();
+        while (session.Queue.Head(bridge.State.Turn, hebrew: false) is AdvisorCatalog.Message m) { ids.Add(m.Id); session.Queue.Done(m, bridge.State.Turn, bridge.State.Date); }
+        return ids;
+    }
+
+    /// <summary>Review (must-fix 2): a game loaded with Continue already at the debt ceiling has its critical warning as the
+    /// start screen closes, not only after the next change.</summary>
+    [Test]
+    public void AContinuedGameHearsItsWarningsAtOnce()
+    {
+        var store = new SaveStore(TempDir());
+        var played = new SimBridge(GameSession.New(C, 9, Mode.Historical), En);
+        played.EndTurn();
+        store.WriteAutosave(played.Session.Save.Write());
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var inputs = GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
+        Object.FindFirstObjectByType<MapScene>().Build(inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = store; game.Settings = new SettingsStore(TempDir()); game.Language = UiLanguage.English;
+        game.Begin(inputs, 0, startScreen: true);
+        var bridge = game.Bridge!;
+        bridge.State.Debt = Ceiling(bridge);                             // as a save at the ceiling would load
+        UiTestKit.Press(Object.FindFirstObjectByType<UIDocument>().rootVisualElement.Q<Button>("start-continue"));
+        CollectionAssert.Contains(Waiting(game.AdvisorSession!, bridge), "meyerson.debt_ceiling");
+    }
+
+    /// <summary>Review (must-fix 3): Submit takes the unsubmitted-budget warning back, shown or waiting, as GameRoot wires the
+    /// Budget screen to the advisor.</summary>
+    [Test]
+    public void SubmittingTheBudgetTakesItsWarningBack()
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
+        using var budget = new BudgetPresenter(rig.Ui.Root, rig.Bridge, text);
+        budget.UnsubmittedChanged += rig.Advisor.BudgetUnsubmitted;
+        rig.Ui.Press("budget-education_minister-up");
+        Assert.AreEqual("meyerson.budget_unsubmitted", rig.Advisor.Shown?.Id, "an edit not submitted");
+        rig.Ui.Press("budget-submit");
+        Assert.AreNotEqual("meyerson.budget_unsubmitted", rig.Advisor.Shown?.Id, "submitted: no longer true");
+        CollectionAssert.DoesNotContain(Drain(rig), "meyerson.budget_unsubmitted", "nor waiting");
+    }
+
+    /// <summary>Review (should 4): a new help level applies to the popup at once, both ways.</summary>
+    [Test]
+    public void ANewHelpLevelAppliesAtOnce()
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
+        rig.Session.Settings.SetLevel("off");
+        rig.Advisor.Notice(AdvisorSignals.BudgetUnsubmitted);
+        Assert.IsNull(rig.Advisor.Shown, "Off: no warning");
+        rig.Session.Settings.SetLevel("warnings");
+        Assert.AreEqual("meyerson.budget_unsubmitted", rig.Advisor.Shown?.Id, "Warnings only: shown at once");
+        rig.Session.Settings.SetLevel("off");
+        Assert.IsNull(rig.Advisor.Shown, "Off again: gone at once");
+    }
+
+    /// <summary>The owner approved these Hebrew lines word for word (24 October 2026, "Hebrew approved"); a different text
+    /// needs a new approval, so it must also set he_review back to pending.</summary>
+    [TestCase("dayan.city_at_risk", "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע.")]
+    [TestCase("meyerson.exhausted", "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו.")]
+    [TestCase("meyerson.debt_ceiling", "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ.")]
+    public void AnApprovedHebrewLineIsTheTextTheOwnerRead(string id, string hebrew)
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        Assert.AreEqual(AdvisorCatalog.Approved, AdvisorCatalog.Parse(System.IO.File.ReadAllText(AdvisorCatalog.Path)).Find(id)!.HeReview);
+        Assert.AreEqual(hebrew, he["advisor." + id + ".text"]);
+    }
 
     [Test]
     public void TheEconomySignalsReadTheShownState()

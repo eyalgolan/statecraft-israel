@@ -150,6 +150,9 @@ namespace Statecraft.Game.UI
             }
         }
 
+        /// <summary>The Budget screen's unsubmitted state changed (BudgetPresenter.UnsubmittedChanged).</summary>
+        public void BudgetUnsubmitted(bool on) { if (on) Notice(AdvisorSignals.BudgetUnsubmitted); }
+
         /// <summary>An event signal fired (spec 5): it holds for this turn.</summary>
         public void Notice(string signal)
         {
