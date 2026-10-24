@@ -706,12 +706,27 @@ advisor.watch: "צפייה"
 # The media row's disclosure (OQ-16). Hebrew draft for the native reviewer (#564).
 advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאלוג בדיוני."
 
-# S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
+# Each advisor clip's photograph credit (spec 11.4; CONTENT_POLICY's advisor exception): the photograph, its date,
+# photographer or agency, collection and id, licence, and the changes. Shown small beside the disclosure.
+# Hebrew agent-drafted, for the native reviewer (#564).
+advisor.credit.ben_gurion: "צילום: דוד בן-גוריון, 16 באפריל 1951, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D683-095, נחלת הכלל (PD-Israel). נצבע, הוצב על רקע משרד שנוצר בבינה מלאכותית, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
+advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); האנשים סביבה הם התצלום הדומם."
+advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
+
+# Caption keys: same text as the C68 recorded opening lines. The five lines with an English clip (S6b, Task 26) are
+# cut at the clip's sentence and clause pauses; their start times are the media rows' cues.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.
-advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
-advisor.opening.attention.cue.1: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
-advisor.opening.city.cue.1: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
-advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים."
+advisor.opening.greeting.cue.2: "ההחלטות בידיכם,"
+advisor.opening.greeting.cue.3: "והיועצים יסבירו מה כל בחירה משנה."
+advisor.opening.attention.cue.1: "תשומת לב היא היכולת לקבל החלטות בחודש הזה."
+advisor.opening.attention.cue.2: "היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
+advisor.opening.city.cue.1: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים."
+advisor.opening.city.cue.2: "תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
+advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן."
+advisor.opening.training.cue.2: "הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח;"
+advisor.opening.training.cue.3: "אימון צבאי דורש גם נשק."
+advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה."
+advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
 advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.cue.1: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
