@@ -134,7 +134,7 @@ are land.
 | 26 | Nahal Oz / נחל עוז | Nahal outpost, then kibbutz | 15, 25 or 26 Jul 1951 **[C]**; 25 Jul: Gvati; scroll (our reading); Frankel's arrival (as of 2026-10-23) | Gaza border | 31.47277, 34.49746 | (-11, 28) coastal plain | Pass | Yes / No / Yes | Next to Gaza lines; next to Gaza's hex |
 | 27 | Sderot / שדרות | Transit camp, then town | April 1951 **[S]** | Western Negev | 31.52901, 34.59434 | (-9, 27) coastal plain | Pass | Yes / No / No | On Gaza line hex; Najd (source) |
 | 28 | Beit Guvrin / בית גוברין | Kibbutz | 23 May or 2 Jun 1949 **[C]**; 2 Jun has the kibbutz's own site | Lachish area | 31.61302, 34.89595 | (-5, 26) hills | Pass | Yes / No / No | On Jordan line hex; Bayt Jibrin 0.9 km |
-| 29 | Ahuzam / אחוזם | Moshav | 2 or 30 Oct 1950 **[C]** | Lachish area | 31.55340, 34.77020 | (-7, 26) coastal plain | Pass | Yes / No / See note | Abu Jabir (source); 'Iraq el Manshiya 5.8 km |
+| 29 | Ahuzam / אחוזם | Moshav | 2 or 30 Oct 1950 **[C]**; no day-level source found | Lachish area | 31.55340, 34.77020 | (-7, 26) coastal plain | Pass | Yes / No / See note | Abu Jabir (source); 'Iraq el Manshiya 5.8 km |
 | 30 | Yotvata / יטבתה | Nahal outpost, then kibbutz | 30 or 31 Oct 1951 **[C]**; Nahal association list adds 15 Oct 1951 (entry inconsistent: 14 Elul 5711 / 15 Oct 1951) | Arava | 29.89552, 35.05929 | (-16, 51) desert | Pass | Yes / No / Yes | On Jordan (Arava) line hex |
 
 "Crit. 4: Yes" means no source read places the settlement at or next to a depopulated locality and no
@@ -753,6 +753,33 @@ sources read, not a gazetteer check.
 
 - **Founded: [C].** Gvati: 2.10.50, HaOved HaZioni, region "Lachish". English Wikipedia: 30 October 1950. Hebrew
   Wikipedia and CBS: 1950.
+  Searched again 2026-10-23 (agent read; a person's check pending); the day is not settled:
+  - English Wikipedia (oldid 1375067074) gives "30 October 1950" in the infobox and in "Ahuzam was founded on 30
+    October 1950 by Jewish immigrants from Morocco, members of the Ma'agalim society". No reference is attached to the
+    date. The references on that paragraph are Vilnai's Ariel Encyclopedia, vol. 1, p. 101 (for the Hapoel HaMizrachi
+    link, not the date) and the Or movement page (for the present mixed religious and secular character). So the
+    30 October date traces to nothing it cites. [S]; no reference is attached to the date
+  - Hebrew Wikipedia (oldid 43968833): "המושב הוקם בשנת 1950 בשם "מעגלים" על ידי עולים ממרוקו כמושב של העובד
+    הציוני וחולקו בו כ-90 משקים" ("the moshav was founded in 1950 under the name Ma'agalim by immigrants from Morocco
+    as a moshav of HaOved HaZioni, and about 90 farm units were allotted"). Year only. The ref on "תחילת היישוב במעברה"
+    (the start in the ma'abara) is an NLI map note (a 1952 IDF survey sheet, Ruhama, marking "מעברה, צריפים" south
+    of the moshav's site); an oral-history story page (below) is attached to the name Abu Jabir. [S]
+  - Lachish Regional Council page (https://lachish.org.il/ , Ahuzam entry): "המושב אחוזם הוקם בשנת 1950 על ידי עולים
+    ממרוקו". Or movement entry (Wayback snapshot 2007-10-14 of the negev-net page): "שנת עלייה לקרקע - 1950 ... הוקם
+    ב-1950 בידי עולים ממרוקו ונקרא תחילה מעגלים". Center for Educational Technology library page (lib.cet.ac.il, item 23543): "הוקם
+    בשנת 1950 ושמו המקורי היה "מעגלים". המייסדים היו עולים ממרוקו" under a photo captioned "עולים ממרוקו מובאים ליישוב אחוזם שבחבל
+    לכיש, ספטמבר 1954" (translation: Moroccan immigrants brought to the settlement of Ahuzam in the Lachish region,
+    September 1954). Year only, in all three. [S]
+  - Oral history, "זיכרונות החיים במעברה מושב אחוזם" (Ravdori / HaKesher HaRav-Dori, 10 March 2020; Wayback
+    snapshot of the story page): the interviewee, who arrived in Israel in 1950, describes the ma'abara "אבו ג'יבר" near
+    the moshav, 36 Moroccan families, "בהיותו בן 5" (when he was 5), and it gives no founding day. A 2020 retelling by the interviewer, so not a dating source. [S]
+  - What each date might mark is not stated by any source read: nothing read says whether 2 October or 30 October 1950
+    is the ma'abara opening, the settlers' arrival, recognition or the renaming from Ma'agalim.
+  - Calendar, our reading (`convertdate`): 2 October 1950 was a Monday, 21 Tishrei 5711; 30 October 1950 was a Monday,
+    19 Heshvan 5711 (exactly four weeks apart). Neither fact favours a date.
+  - **[GAP]** No newspaper item, Jewish Agency, Hapoel HaMizrachi/HaOved HaZioni or Moshavim Movement record was
+    reached (nli.org.il / Jpress return 403). No source for English Wikipedia's 30 October was found, and Gvati's 2.10.50
+    is still unmatched by any second source.
 - **Founders. [V]** Immigrants from Morocco, first named "Ma'agalim" (both Wikipedias).
 - **Location and hex.** CBS 31.55340, 34.77020 (Hebrew Wikipedia 2 m). Hex (-7, 26), coastal plain.
 - **Suitability.** Criterion 1 met; 2 contested; 4: see the flag.
