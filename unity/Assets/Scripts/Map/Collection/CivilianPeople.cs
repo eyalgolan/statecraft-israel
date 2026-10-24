@@ -207,10 +207,11 @@ namespace Statecraft.Game.Map.Collection
             Inhabited(control, id) && !(VillagerUntil.TryGetValue(id, out var until) && date > until);
 
         /// <summary>Whether the sim has residents at place <paramref name="id"/>: inhabited unless its control record says
-        /// depopulated (SettlementControl.Depopulated; docs/gdd/settlement-control.md: residents are a state, inhabited by
-        /// default; a capture whose residents fled records them as gone). A place with no record is inhabited.</summary>
+        /// depopulated (SettlementControl.Depopulated, Deport) or fled (SettlementControl.Fled, a capture whose residents fled,
+        /// owned or not; OWNER QUESTION 2 (b) on #799; docs/gdd/settlement-control.md: residents are a state, inhabited by
+        /// default). A place with no record is inhabited.</summary>
         public static bool Inhabited(IReadOnlyDictionary<string, SettlementControl>? control, string id) =>
-            control == null || !control.TryGetValue(id, out var record) || !record.Depopulated;
+            control == null || !control.TryGetValue(id, out var record) || !(record.Depopulated || record.Fled);
 
         /// <summary>The anchors RuralLife's scenes of <paramref name="models"/> take: each model's first
         /// <see cref="RuralLife.MaxAnchorsPerModel"/> in its fixed hash order, each anchor once.</summary>

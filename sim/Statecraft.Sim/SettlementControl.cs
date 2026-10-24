@@ -24,9 +24,13 @@ namespace Statecraft.Sim
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
-                if (Holder(s, t.Q, t.R) != Movement.PlayerSide || s.Settlements.ContainsKey(t.Id)) continue;
-                s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice);
-                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. It awaits a decision"));
+                // An ownerless fled record (the place returned to enemy control) is no record here, so it can be taken again.
+                if (Holder(s, t.Q, t.R) != Movement.PlayerSide
+                    || (s.Settlements.TryGetValue(t.Id, out var old) && !(old.Owner == "" && old.Fled && !old.Depopulated))) continue;
+                var fled = t.Residents == ContentLoader.Fled;
+                s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, fled: fled);
+                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. "
+                    + (fled ? "Its residents fled. " : "") + "It awaits a decision"));
             }
         }
 
@@ -35,10 +39,10 @@ namespace Statecraft.Sim
         internal static void Stamp(GameState s, DateTime next)
         {
             foreach (var id in s.Settlements.Where(x => x.Value.Since == default
-                && (x.Value.Owner == Movement.PlayerSide || x.Value.Depopulated)).Select(x => x.Key).ToList())
+                && (x.Value.Owner == Movement.PlayerSide || x.Value.Depopulated || x.Value.Fled)).Select(x => x.Key).ToList())
             {
                 var x = s.Settlements[id];
-                s.Settlements[id] = new SettlementControl(x.Owner, x.State, next, x.Depopulated, x.Combatants, x.Buildings, x.Turns);
+                s.Settlements[id] = new SettlementControl(x.Owner, x.State, next, x.Depopulated, x.Combatants, x.Buildings, x.Turns, x.Fled);
             }
         }
 
@@ -52,8 +56,9 @@ namespace Statecraft.Sim
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
                 if (Holder(s, t.Q, t.R) != Enemy || !s.Settlements.TryGetValue(t.Id, out var record) || record.State != AwaitingChoice) continue;
-                s.Settlements.Remove(t.Id);
-                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"));
+                Release(s, t.Id);
+                why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"
+                    + (record.Fled ? ". " + FledLine : "")));
             }
         }
 
@@ -99,9 +104,81 @@ namespace Statecraft.Sim
             {
                 case Raid: return Withdraw(c, s, id, why, false);
                 case Occupy: return StartOccupation(c, s, id, why);
-                case Deport: return c.RulesAt(s.Date).Mvp!.DeportInPlay ? Depopulate(c, s, id, why) : "Deport is not built yet";
+                case Deport:
+                    if (!c.RulesAt(s.Date).Mvp!.DeportInPlay) return "Deport is not built yet";
+                    // R-CTRL-018, OWNER QUESTION 4 (a) on #799: a fled town has no one left to deport, so Deport stays listed
+                    // third but is refused with this reason, which the options helper shows on its button.
+                    return s.Settlements[id].Fled ? NoOneToDeport : Depopulate(c, s, id, why);
                 default: return "That outcome is not known";
             }
+        }
+
+        /// <summary>Deport's refusal for a fled town (OWNER QUESTION 4 (a) on #799; in the owner's sensitivity packet).</summary>
+        const string NoOneToDeport = "Its residents fled when it was captured, so there is no one to deport";
+
+        /// <summary>The kind of <see cref="EndOccupation"/>, with one attention_cost key (R-CTRL-014).</summary>
+        public const string EndKind = "end_occupation";
+        /// <summary>The outcomes of EndOccupation (R-CTRL-015; Q-PUP-1 (c): no puppet regime).</summary>
+        public const string Annex = "annex";
+        public const string WithdrawOutcome = "withdraw";
+        /// <summary>The <see cref="State"/> of an annexed place: Israeli for good, no timer, upkeep or garrison (R-CTRL-016).</summary>
+        public const string Annexed = "annexed";
+
+        /// <summary>R-CTRL-015: the end outcomes in their one fixed order, the ruling's words "annex or withdraw".</summary>
+        static readonly string[] EndOutcomes = { Annex, WithdrawOutcome };
+
+        /// <summary>R-CTRL-015: what the end of <paramref name="id"/>'s occupation offers, Annex then Withdraw, each with its
+        /// refusal or preview, as <see cref="CaptureOptions"/> does; empty when the place is not awaiting the end. Leaves
+        /// <paramref name="s"/> as it found it.</summary>
+        public static IReadOnlyList<CaptureOption> EndOptions(Content c, GameState s, string id)
+        {
+            if (NotEnding(s, id) != null) return Array.Empty<CaptureOption>();
+            var options = new List<CaptureOption>();
+            foreach (var outcome in EndOutcomes)
+            {
+                var after = s.Clone();
+                var refusal = AttentionSystem.TrySpend(c, after, EndKind) ?? End(c, after, id, outcome, new List<Cause>());
+                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(s, after) : null));
+            }
+            return options;
+        }
+
+        /// <summary>R-CTRL-014 to R-CTRL-017: carries out EndOccupation. Null when done, else the reason, with the state
+        /// unchanged: the place is not awaiting the end (a depopulated place never is, R-CTRL-017), the outcome is not known,
+        /// or no Israeli military unit is on the place, for either outcome. Withdraw is the Raid withdrawal (R-CTRL-010).</summary>
+        internal static string? End(Content c, GameState s, string id, string outcome, List<Cause> why)
+        {
+            if (NotEnding(s, id) is string no) return no;
+            switch (outcome)
+            {
+                case Annex: return AnnexPlace(c, s, id, why);
+                case WithdrawOutcome:
+                    // R-CTRL-014: withdrawing needs the unit that holds the place too, as annexing does.
+                    if (!Garrisoned(s, c.SettlementTargets.First(x => x.Id == id))) return $"Withdraw needs an Israeli military unit on {c.SettlementNames[id]}";
+                    return Withdraw(c, s, id, why, false);
+                default: return "That outcome is not known";
+            }
+        }
+
+        static string? NotEnding(GameState s, string id) =>
+            s.Settlements.TryGetValue(id, out var x) && x.State == AwaitingEnd ? null : "That place is not awaiting the end of its occupation";
+
+        /// <summary>R-CTRL-016 (Q-ANNEX-1; OWNER QUESTIONS 1 (a) and 3 (a) on #799): the record becomes owner=israel,
+        /// state=annexed, keeping its capture date and fled, with no timer. A fled place adds nothing else ("Territory only, no
+        /// gain"). A stayed place adds one city by the starting-city rule (<see cref="Cities.Annex"/>). Step 10 ignores an
+        /// annexed record, so its upkeep stops and no unit has to stay. Needs the garrison, as Occupy does (R-CTRL-011).</summary>
+        static string? AnnexPlace(Content c, GameState s, string id, List<Cause> why)
+        {
+            var t = c.SettlementTargets.First(x => x.Id == id);   // only a target gets a record (R-CTRL-004)
+            var name = c.SettlementNames[id];
+            if (!Garrisoned(s, t)) return $"Annex needs an Israeli military unit on {name}";
+            var x = s.Settlements[id];
+            if (!x.Fled && Cities.Annex(c, s, t) is string refused) return refused;
+            s.Settlements[id] = new SettlementControl(Movement.PlayerSide, Annexed, x.Since, x.Depopulated, x.Combatants, x.Buildings, 0, x.Fled);
+            why.Add(new Cause("map", id, 0, x.Fled
+                ? $"{name} is annexed. Its residents fled when it was captured, so no people, homes or jobs are added"
+                : $"{name} is annexed. Its residents join the population"));
+            return null;
         }
 
         static string? NotAwaiting(GameState s, string id) =>
@@ -110,8 +187,8 @@ namespace Statecraft.Sim
         /// <summary>R-CTRL-010, Raid and withdraw (Q-RAID-1 (a)): the player's units on the place's hex, soldiers and halutzim
         /// alike, leave in id order, each to the first neighbouring hex in the fixed <see cref="Movement.Neighbours"/> order
         /// that is land, holds no enemy unit, is no enemy-held locality (R-MOVE-005) and has room for it (R-MOVE-003). Leaving
-        /// costs no movement points (the default proposed on #797). The record goes, so the place is under enemy control again
-        /// at once, and its residents are unchanged. Refused, the state untouched, when a unit has nowhere to go, unless
+        /// costs no movement points (the default proposed on #797). The record goes (a fled one stays ownerless, <see cref="Release"/>),
+        /// so the place is under enemy control again at once, and its residents are unchanged (or fled at capture). Refused, the state untouched, when a unit has nowhere to go, unless
         /// <paramref name="atTheEnd"/>: then that unit stays, the others leave and the record still goes.</summary>
         static string? Withdraw(Content c, GameState s, string id, List<Cause> why, bool atTheEnd)
         {
@@ -119,12 +196,29 @@ namespace Statecraft.Sim
             var name = c.SettlementNames[id];
             var moved = new List<(Unit From, Unit To)>();
             if (MoveOut(c, s, t, name, atTheEnd, moved) is string no) return no;
-            s.Settlements.Remove(id);
+            var residents = Residents(s.Settlements[id]);
+            Release(s, id);
             Withdrew(id, name, moved, why);
             why.Add(new Cause("map", id, 0, moved.Count > 0
-                ? $"{name}: Israeli units withdrew and it is under enemy control again. Its residents are unchanged"
-                : $"{name} is under enemy control again. Its residents are unchanged"));
+                ? $"{name}: Israeli units withdrew and it is under enemy control again. {residents}"
+                : $"{name} is under enemy control again. {residents}"));
             return null;
+        }
+
+        /// <summary>The line about a fled place's residents after its capture (OWNER QUESTION 2 (b) on #799; in the owner's
+        /// sensitivity packet).</summary>
+        const string FledLine = "Its residents fled when it was captured";
+
+        /// <summary>What the player-facing lines say about the residents: unchanged for a stayed place, fled for a fled one.</summary>
+        static string Residents(SettlementControl x) => x.Fled ? FledLine : "Its residents are unchanged";
+
+        /// <summary>R-CTRL-004, R-CTRL-010 (OWNER QUESTION 2 (b) on #799): a place returns to enemy control. A fled record stays
+        /// as an ownerless record with its capture date, the flight remembered; any other record goes.</summary>
+        static void Release(GameState s, string id)
+        {
+            var x = s.Settlements[id];
+            if (x.Fled) s.Settlements[id] = new SettlementControl(since: x.Since, fled: true);
+            else s.Settlements.Remove(id);
         }
 
         /// <summary>R-CTRL-010's move: the units leave <paramref name="t"/>'s hex as <see cref="Withdraw"/> says, into
@@ -199,8 +293,8 @@ namespace Statecraft.Sim
             if (!Garrisoned(s, t)) return $"Occupy needs an Israeli military unit on {name}";
             var x = s.Settlements[id];
             var turns = c.RulesAt(s.Date).Mvp!.OccupationTurns!.Value;
-            s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns);
-            why.Add(new Cause("map", id, turns, FormattableString.Invariant($"{name} is occupied for {turns} turns: an Israeli unit stays there. Its residents are unchanged")));
+            s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns, x.Fled);
+            why.Add(new Cause("map", id, turns, FormattableString.Invariant($"{name} is occupied for {turns} turns: an Israeli unit stays there. ") + Residents(x)));
             return null;
         }
 
@@ -240,14 +334,14 @@ namespace Statecraft.Sim
                 var name = c.SettlementNames[id];
                 if (!Garrisoned(s, c.SettlementTargets.First(t => t.Id == id)))
                 {
-                    s.Settlements.Remove(id);
-                    why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. Its residents are unchanged"));
+                    Release(s, id);
+                    why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}"));
                     continue;
                 }
                 EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why);
                 if (x.State == AwaitingEnd) continue;
                 var left = x.Turns - 1;
-                s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left);
+                s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left, x.Fled);
                 why.Add(new Cause("map", id, left, left == 0
                     ? $"{name}: the occupation period has ended. It awaits a decision"
                     : FormattableString.Invariant($"{name}: {left} turns of occupation left")));

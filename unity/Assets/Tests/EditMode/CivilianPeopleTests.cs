@@ -316,6 +316,20 @@ public sealed class CivilianPeopleTests
             "nobody stands in for them");
     }
 
+    /// <summary>OWNER QUESTION 2 (b) on #799: a town whose residents fled at capture has no villager, whether the player
+    /// holds it or it is under enemy control again (the ownerless fled record); a stayed capture keeps him.</summary>
+    [Test]
+    public void AFledTownIsNotInhabited()
+    {
+        var d = new DateTime(1948, 7, 10);
+        IReadOnlyDictionary<string, SettlementControl> Record(SettlementControl x) =>
+            new Dictionary<string, SettlementControl>(StringComparer.Ordinal) { ["lod"] = x };
+        Assert.IsFalse(CivilianPeople.Inhabited(Record(new SettlementControl(since: d, fled: true)), "lod"), "ownerless fled record");
+        Assert.IsFalse(CivilianPeople.Inhabited(Record(new SettlementControl("israel", SettlementControl.AwaitingChoice, d, fled: true)), "lod"), "owned fled record");
+        Assert.IsTrue(CivilianPeople.Inhabited(Record(new SettlementControl("israel", SettlementControl.AwaitingChoice, d)), "lod"), "stayed capture");
+        Assert.IsFalse(CivilianPeople.VillagerAt(Record(new SettlementControl("israel", SettlementControl.Occupied, d, fled: true)), "lod", d), "before Lod's sourced date");
+    }
+
     /// <summary>The owner, 21 October 2026, on #708: "hide each town's villager after its sourced date", from the #793
     /// packet's sources only (CivilianPeople.VillagerUntil quotes each). Jaffa's source puts its surrender in May, in a section
     /// that ends on 14 May 1948, so he never stands there in the game; Lod's is the last day of Operation Dani's range in the

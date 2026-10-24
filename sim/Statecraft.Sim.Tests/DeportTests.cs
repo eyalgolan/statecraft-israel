@@ -13,13 +13,14 @@ using Statecraft.Sim;
 public class DeportTests
 {
     /// <summary>CaptureTests' fixture with Deport in play and International Support in the model (the fixture's model has
-    /// none; the real one has it, model.yaml). <paramref name="edit"/> changes the files further.</summary>
-    internal static Content Load(Action<Dictionary<string, string>>? edit = null) => CaptureTests.Load(files =>
+    /// none; the real one has it, model.yaml). <paramref name="edit"/> changes the files further; the rows in
+    /// <paramref name="fled"/> are written as <c>residents: fled</c> (CaptureTests.LoadFled).</summary>
+    internal static Content Load(Action<Dictionary<string, string>>? edit = null, string[]? fled = null) => CaptureTests.Load(files =>
     {
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities:", "deport_in_play: true\n  enemy_held_localities:");
         files["model.yaml"] = Fixture.Files["model.yaml"].Replace("indicators:\n", "indicators:\n  - id: intl_standing\n    base: 0.5\n    name: International support\n");
         edit?.Invoke(files);
-    }, CaptureTests.AllTargets);
+    }, fled ?? Array.Empty<string>(), CaptureTests.AllTargets);
 
     internal static Unit Soldier(int id, int q, int r) => CaptureTests.Soldier(id, q, r);
 
@@ -42,6 +43,29 @@ public class DeportTests
         var t = s.Clone();
         Assert.Null(SettlementControl.Resolve(c, t, id, outcome, new List<Cause>()));
         return t;
+    }
+
+    // R-CTRL-018, OWNER QUESTION 4 (a) on #799 ("Hide it, button explains"): for a town whose residents fled at capture,
+    // Deport stays listed third but is refused with its reason, and resolving it changes nothing. A soldier on its hex captures
+    // town_a at the turn's capture step, so the record's fled comes from the row, as in play.
+    [Fact]
+    public void DeportOfAFledTownIsRefusedWithItsReason()
+    {
+        var c = Load(fled: new[] { "town_a" });
+        var s = Step(c, CombatTests.With(c, Soldier(1, 1, 0))).State;
+        Assert.True(s.Settlements["town_a"].Fled);
+        var options = SettlementControl.CaptureOptions(c, s, "town_a");
+        Assert.Equal(new[] { SettlementControl.Raid, SettlementControl.Occupy, SettlementControl.Deport }, options.Select(x => x.Outcome).ToArray());
+        Assert.Equal("Its residents fled when it was captured, so there is no one to deport", options[2].Refusal);
+        Assert.Null(options[2].Preview);
+        var before = s.Describe();
+        var why = new List<Cause>();
+        Assert.Equal(options[2].Refusal, SettlementControl.Resolve(c, s, "town_a", SettlementControl.Deport, why));
+        Assert.Empty(why);
+        Assert.Equal(before, s.Describe());
+        var stepped = Step(c, s, Answer(SettlementControl.Deport));
+        Assert.Equal(options[2].Refusal, Assert.Single(stepped.Rejected).Reason);
+        Assert.Equal(0, stepped.State.DisplacedByPlayer);
     }
 
     // R-CTRL-018 (Q-DEP-5 (c)): Social cohesion and International Support fall at once by the labelled costs, the place is
@@ -184,6 +208,8 @@ public class DeportTests
             [typeof(Move)] = new Command[] { new Move(1, 1, 0), new Move(2, 1, 0) },
             [typeof(UnitOrder)] = new Command[] { new UnitOrder(1, Combat.Attack, 1, 0) },
             [typeof(ResolveCapture)] = new Command[] { Answer(SettlementControl.Raid), Answer(SettlementControl.Occupy), Answer(SettlementControl.Deport) },
+            // R-CTRL-017 (Q-ANNEX-2 (a)): a depopulated place is never annexed nor withdrawn from.
+            [typeof(EndOccupation)] = new Command[] { new EndOccupation("town_a", SettlementControl.Annex), new EndOccupation("town_a", SettlementControl.WithdrawOutcome) },
             // These name no place or hex: a city, a cohort, a unit's own work, a policy, a budget, an event, an office or a count.
             [typeof(SetPolicy)] = null, [typeof(AllocateBudget)] = null, [typeof(ChooseEventOption)] = null, [typeof(SetMobilization)] = null,
             [typeof(SecurityOrder)] = null, [typeof(Appoint)] = null, [typeof(AssignWorkers)] = null, [typeof(Train)] = null,

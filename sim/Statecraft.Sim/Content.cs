@@ -1188,8 +1188,24 @@ namespace Statecraft.Sim
         public int R { get; set; }
         public string Operation { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
+        /// <summary>The residents' outcome at capture, fled or stayed (Q-ANNEX-1, owner, 18 October 2026, #783; per place on
+        /// #793). Required; empty means the key was missing and is rejected by the loader.</summary>
+        public string Residents { get; set; } = "";
+        /// <summary>The sources for <see cref="Residents"/>, at least one (the per-place sourcing the ruling asks for).</summary>
+        [YamlMember(Alias = "residents_sources")] public List<Source> ResidentsSources { get; set; } = new List<Source>();
+        /// <summary>What joins the player's population when a stayed place is annexed (OWNER QUESTION 1 (a) on #799, the
+        /// starting-city rule); required for stayed, refused for fled.</summary>
+        public TargetAnnexation? Annexation { get; set; }
         /// <summary>Required on every row; empty means the key was missing and is rejected by the loader.</summary>
         public string Status { get; set; } = "";
+    }
+
+    /// <summary>A stayed target's annexation values (R-CTRL-016): the residents and their share in work, each a cities.yaml
+    /// value (R-CITY-006). Housing, jobs and condition follow the starting-city rule (Q-START-1), so they are not stored.</summary>
+    public sealed class TargetAnnexation
+    {
+        public CityValue? People { get; set; }
+        [YamlMember(Alias = "employed_share")] public CityValue? EmployedShare { get; set; }
     }
 
     public sealed class Content
