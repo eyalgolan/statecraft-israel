@@ -187,6 +187,14 @@ checks this (see `CONTRIBUTING.md`).
   because the focus stayed outside and Tab had to walk the rest of the HUD first. The focus goes to the screen's first
   control, leaving its close X one Shift+Tab back; a screen with nothing else that can take the focus takes its X. A
   screen opened with the mouse still moves no focus, and Escape and the X still hand the focus back to the rail button.
+- Moshe Dayan's advisor popup shows his portrait: a crop of Benno Rothenberg's photograph of 7 December 1948 (Meitar
+  Collection / National Library of Israel, CC BY 4.0). Before, the frame was empty in English and missing in Hebrew.
+- While an advisor clip plays in the popup, its caption shows in full and the Show me, Not now and Got it buttons keep
+  their size; the clip's credit scrolls in the room left under the AI disclosure. Before, Dayan's long credit cut each
+  caption to its first line and squeezed the buttons.
+- Hebrew: the plural of תור (a turn) is תורות, as the owner ruled ("plural of תור is תורות"), in the Defence screen's
+  turn lengths and in Ben-Gurion's economic-defeat warning, which now reads "שלוש תורות ברציפות". Before, they said
+  תורים (#1589).
 - On the two-row bar (a window narrower than about square, e.g. 960x1080) the "no hex chosen" hint wraps to two lines
   and ends left of the minimap column, so it no longer covers the border layer's label (refs #1227).
 
