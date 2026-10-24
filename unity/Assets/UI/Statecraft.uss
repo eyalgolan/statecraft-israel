@@ -1027,6 +1027,14 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-ring-open #attention { margin-bottom: 5px; }
 .advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }
 
+/* The help-level choices can wrap within narrow Settings screens (spec6). */
+.settings-advisors { flex-wrap: wrap; flex-shrink: 1; }
+
+/* Only spec3.3 verified quotes, separated from the advisor's game dialogue, with their source. */
+.advisor-quote { white-space: normal; font-size: 20px; -unity-font-style: italic; margin: 2px 12px 0 12px; border-left-width: 2px; border-color: var(--gold-dim); padding-left: 8px; }
+.lang-he .advisor-quote { border-left-width: 0; border-right-width: 2px; padding-left: 0; padding-right: 8px; }
+.advisor-quote-source { white-space: normal; font-size: 15px; margin: 2px 12px 6px 12px; }
+
 /* User-started advisor media: live caption replaces the prose; no shipped media row means no Watch badge. */
 .advisor-watch { display: none; position: absolute; bottom: 0; left: 0; right: 0; min-width: 0; font-size: 15px; padding: 1px 2px; }
 .advisor-media, .advisor-media-label { display: none; }

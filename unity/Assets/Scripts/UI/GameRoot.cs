@@ -280,15 +280,24 @@ namespace Statecraft.Game.UI
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
-            Own(new BudgetPresenter(root, bridge, text));
+            var budget = Own(new BudgetPresenter(root, bridge, text));
             Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
             Own(new ObjectivesPresenter(root, bridge, text));
+            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
+            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
+            // on the first new game: the start screen shows and a settings file remembers what was seen. Made before
+            // Settings, whose help-level row (spec 6) reads and sets the session's level.
+            if (keep == null || AdvisorSession == null)
+            {
+                bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
+            }
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio));
+            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -386,7 +395,13 @@ namespace Statecraft.Game.UI
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
             pointer.IsOverUi = overUi;
-            Action<int, int> onHex = (q, r) => OnHexClicked(map, unitLayer, info, q, r);
+            Action<int, int> onHex = (q, r) =>
+            {
+                OnHexClicked(map, unitLayer, info, q, r);
+                if (info.ShowsUnit) advisor?.Notice(AdvisorSignals.UnitShown);
+                else if (info.Selected is (int sq, int sr) && bridge.Content.SettlementHexes.Any(h => h.Q == sq && h.R == sr && bridge.State.Cities.ContainsKey(h.Id)))
+                    advisor?.Notice(AdvisorSignals.CityShown);
+            };
             pointer.HexClicked += onHex;
             // #1063: a click on a city's name pill is a click on the city's hex (its settlement hex, where the city panel opens).
             Func<Vector2, (int q, int r)?> pillHex = p =>
@@ -465,7 +480,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) { advisor?.NewGame(); }
+                    if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
                 }, recording, text));
                 start.Show();
             }
@@ -519,15 +534,7 @@ namespace Statecraft.Game.UI
                     else { map.ClearSelection(); nowInfo.Clear(); }
                 };
             };
-            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
-            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
-            // on the first new game: the start screen shows and a settings file remembers what was seen.
-            if (keep == null || AdvisorSession == null)
-            {
-                bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
-                // Final S1 store isolation; S2 supplies only the catalogue test seam.
-                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
-            }
+            // The advisors' popup, over the session made before Settings (above).
             advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
                 new AdvisorHooks
                 {
@@ -551,6 +558,7 @@ namespace Statecraft.Game.UI
                         return new Rect(at, Vector2.one);
                     },
                 }));
+            budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
             if (video != null)
                 advisor.Media = new AdvisorMedia(text, new ClipPicture(video), new StillPicture(), DeclarationRecording.WebFetch, new DeclarationRecording.SourceOutput());
             if (newGame != null) newGame.Started += advisor.NewGame;

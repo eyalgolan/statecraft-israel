@@ -105,6 +105,17 @@ namespace Statecraft.Game.UI
             history.Add(new Entry(m.Id, turn, date, Outcome.Missed));
         }
 
+        /// <summary>An event signal stopped being true this turn (the budget submitted): each message waiting on it, shown or not,
+        /// goes to the history as missed, not seen, so the signal can bring it back.</summary>
+        public void Withdraw(string signal, int turn, DateTime date)
+        {
+            foreach (var w in waiting.Where(w => w.M.Signal == signal).ToList())
+            {
+                waiting.Remove(w);
+                history.Add(new Entry(w.M.Id, turn, date, Outcome.Missed));
+            }
+        }
+
         void Take(AdvisorCatalog.Message m, int turn)
         {
             Caps(turn);

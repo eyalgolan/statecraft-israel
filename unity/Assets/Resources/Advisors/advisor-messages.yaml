@@ -22,4 +22,26 @@ messages:
   - { id: opening.event, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 1 }, actions: [{ show_me: decision_waiting }, { open_card: true }] }
   - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.event], actions: [{ show_me: nav_objectives }] }
 
+# Spec 6's critical warnings (shown at every help level, Off included) and the defeat lines. Their words and speakers are the
+# recorded clips' (owner, 24 October 2026: "Adopt clip words"; talking-v3/lines.csv): dayan.city_at_risk is
+# warning.city_under_attack, meyerson.exhausted warning.economic_defeat_countdown.fix1, meyerson.debt_ceiling
+# warning.debt_ceiling (so it waits for the ceiling itself, R-END-001: debt at or above it; owner, 24 October
+# 2026, asked about an earlier warning: "No, at the ceiling is fine"), dayan.defeat_war
+# warning.city_held_defeat and dayan.arms_out teach.arms, which fires when Arms are low (owner, 24 October 2026: "Fire
+# when low"; the threshold, AdvisorSignals.ArmsReserve, is an owner-set DESIGN VALUE: "Approve 3 / costliest action", same day).
+# The three critical warnings' Hebrew is approved by the owner, a native speaker (24 October 2026, asked what Hebrew players
+# should see while the critical warnings wait for review: "Hebrew approved"), as worded in the S4 review sheet; any change
+# to their Hebrew sets them back to pending. The other five rows' Hebrew is approved by the owner too (24 October 2026,
+# asked about the S4 warning and teaching lines: "approved"), defeat_economy with the sheet's grammar fix (תורים, not
+# תורות); any later change to their Hebrew sets them back to pending.
+  - { id: dayan.city_at_risk, advisor: dayan, signal: city_at_risk, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }] }
+  - { id: meyerson.exhausted, advisor: meyerson, signal: exhausted, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
+  - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 1 }, level: critical, he_review: approved, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }] }
+  - { id: meyerson.food_short, advisor: meyerson, signal: food_short, level: warnings, he_review: approved, priority: 2, repeat: every, cooldown_turns: 2 }
+  - { id: dayan.defeat_war, advisor: dayan, signal: defeat_war, level: warnings, he_review: approved }
+  - { id: ben_gurion.defeat_economy, advisor: ben_gurion, signal: defeat_economy, level: warnings, he_review: approved }
+# Tasks 18 and 20's two warnings that need no encyclopedia page; the teaching rows wait for S3 (#1519).
+  - { id: meyerson.budget_unsubmitted, advisor: meyerson, signal: budget_unsubmitted, level: warnings, he_review: approved, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
+  - { id: dayan.arms_out, advisor: dayan, signal: arms_low, level: warnings, he_review: approved, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }] }
+
 pages: []
