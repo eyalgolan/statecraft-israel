@@ -1,6 +1,8 @@
 """The 1949 armistice lines: the Palestine-grid conversion, the true lines (content/map/armistice_lines_1949.geojson,
 tools/armistice_digitise.py) and their hex-snapped display layer (content/map/armistice_hexes_1949.yaml,
 tools/armistice_bake.py), and the per-front ends they give the 1948 sub-district layer (tools/borders_bake.py)."""
+import copy
+from datetime import date
 import json
 import math
 import re
@@ -23,6 +25,92 @@ SUBD = yaml12.load((MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf
 HEXES = json.loads((MAP / "hexes.json").read_text())
 FEATS = {f["properties"]["id"]: f for f in SOURCE["features"]}
 DATES = {"egypt": "1949-02-24", "lebanon": "1949-03-23", "jordan": "1949-04-03", "syria": "1949-07-20"}
+
+
+@pytest.mark.parametrize("section", ["label", "front", "items"])
+def test_hebrew_display_fields_survive_the_armistice_bake(section):
+    """#1219: localized display fields follow the same source-to-player path as English."""
+    source = copy.deepcopy(SOURCE)
+    source["statecraft"]["label_he"] = "קווי שביתת הנשק, 1949"
+    front = source["statecraft"]["fronts"][0]
+    front.update(name_he="מצרים", agreement_he="הסכם מצרים-ישראל על שביתת נשק כללית")
+    items = {f["properties"]["id"]: f["properties"] for f in source["features"]}
+    zone = items["egypt_el_auja_dmz"]
+    zone.update(name_he="האזור המפורז בעוג'ה (מצרים-ישראל)", agreement_he=front["agreement_he"])
+    mv = items["egypt_mv1950_demarcation"]
+    mv.update(name_he="קו התיחום של הסדר 1950", agreement_he="הסדר 1950", label_note_he="הסדר 1950")
+    fresh = yaml12.load(ab.render(source, ab.bake(source, HEXES, ab.land_hexes())))
+    if section == "label":
+        assert fresh.get("label_he") == source["statecraft"]["label_he"]
+    elif section == "front":
+        assert fresh["fronts"][0].get("name_he") == front["name_he"]
+        assert fresh["fronts"][0].get("agreement_he") == front["agreement_he"]
+    else:
+        for row in fresh["zones"] + fresh["lines"]:
+            original = items[row["key"]]
+            for key in ("name", "agreement", "signed", "shown_from"):
+                assert row[key] == original[key], (row["key"], key)
+            for key in ("name_he", "agreement_he", "label_note_he"):
+                assert row.get(key, "") == original.get(key, ""), (row["key"], key)
+    assert fresh["zone_hexes"] == BAKED["zone_hexes"]
+    assert fresh["line_hexes"] == BAKED["line_hexes"]
+
+
+def test_authored_hebrew_names_are_complete_and_sourced():
+    names = json.loads((MAP / "region_names_he.json").read_text(encoding="utf-8"))
+    arm = names["armistice"]
+    assert set(arm["fronts"]) == set(DATES)
+    assert set(arm["features"]) == set(FEATS)
+    records = [names["subdistricts"]["metadata"], arm["metadata"], *arm["fronts"].values(), *arm["features"].values()]
+    for row in records:
+        fields = [k for k in row if k.endswith("_he")]
+        assert fields, row
+        assert set(row) <= {k + suffix for k in fields for suffix in ("", "_sources", "_review")}
+        for field in fields:
+            assert any("\u05d0" <= c <= "\u05ea" for c in row[field]), field
+            if field + "_review" in row:
+                assert row[field + "_review"] == "agent-checked"
+            assert row[field + "_sources"], field
+            for source in row[field + "_sources"]:
+                assert source["url"].startswith("https://")
+                assert date.fromisoformat(source["checked"])
+    # Editing the authored input without refreshing its generated GeoJSON must fail, including removed review flags.
+    pairs = [(names["subdistricts"]["metadata"], json.loads((MAP / "subdistricts_1948.geojson").read_text())["statecraft"]),
+             (arm["metadata"], SOURCE["statecraft"])]
+    pairs += [(arm["fronts"][f["key"]], f) for f in SOURCE["statecraft"]["fronts"]]
+    pairs += [(arm["features"][key], feature["properties"]) for key, feature in FEATS.items()]
+    for authored, generated in pairs:
+        assert {k: v for k, v in generated.items() if k.endswith("_he") or "_he_" in k} == authored
+
+
+@pytest.mark.parametrize("already_translated", [False, True])
+def test_regeneration_preserves_authored_hebrew_review_and_every_original_field(tmp_path, monkeypatch, already_translated):
+    names = json.loads((MAP / "region_names_he.json").read_text(encoding="utf-8"))
+    # A person's removal of the pending flag belongs to the authored input, never a generator default.
+    del names["armistice"]["features"]["egypt_el_auja_dmz"]["name_he_review"]
+    path = tmp_path / "names.json"
+    path.write_text(json.dumps(names, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(ad, "HEBREW_NAMES", path)
+    original = copy.deepcopy(SOURCE)
+    for row in [original["statecraft"], *original["statecraft"]["fronts"],
+                *(f["properties"] for f in original["features"])]:
+        for key in list(row):
+            if "_he" in key:
+                del row[key]
+    got = ad.with_hebrew_names(copy.deepcopy(SOURCE if already_translated else original))
+    auja = next(f["properties"] for f in got["features"] if f["properties"]["id"] == "egypt_el_auja_dmz")
+    assert auja["name_he"] and "name_he_review" not in auja
+    assert got["statecraft"]["label_he"] == names["armistice"]["metadata"]["label_he"]
+    for front in got["statecraft"]["fronts"]:
+        assert all(front[k] == v for k, v in names["armistice"]["fronts"][front["key"]].items())
+    for feature in got["features"]:
+        expected = names["armistice"]["features"][feature["properties"]["id"]]
+        assert all(feature["properties"][k] == v for k, v in expected.items())
+    for row in [got["statecraft"], *got["statecraft"]["fronts"], *(f["properties"] for f in got["features"])]:
+        for key in list(row):
+            if "_he" in key:
+                del row[key]
+    assert got == original
 
 
 def km(lon_a, lat_a, lon_b, lat_b) -> float:

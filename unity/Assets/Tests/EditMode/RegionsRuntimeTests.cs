@@ -38,18 +38,18 @@ public class RegionsRuntimeTests
 
     /// <summary>Everything a Subdistricts1948 holds that the map, the camps and the region layers read.</summary>
     static string Describe(Subdistricts1948 s) => string.Join("\n",
-        new[] { s.Title, s.Line, s.Label, D(s.ShownFrom), D(s.ShownUntil), s.Layer.Name }
+        new[] { s.Title, s.Line, s.Label, s.LabelHe, D(s.ShownFrom), D(s.ShownUntil), s.Layer.Name }
         .Concat(s.Fronts.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => f.Key + "=" + D(f.Value)))
-        .Concat(s.Regions.OrderBy(r => r.Id).Select(r => $"{r.Id}|{r.Key}|{r.Name}|{r.District}|{r.Style}|{s.Layer.StyleOf(r.Id)}"))
+        .Concat(s.Regions.OrderBy(r => r.Id).Select(r => $"{r.Id}|{r.Key}|{r.Name}|{r.District}|{r.NameHe}|{r.DistrictHe}|{r.Style}|{s.Layer.StyleOf(r.Id)}"))
         .Concat(s.Layer.Hexes.OrderBy(h => h.r).ThenBy(h => h.q).Select(h => $"{h.q},{h.r}:{s.Layer.RegionOf(h.q, h.r)}")));
 
     static string Describe(Armistice1949 a)
     {
         string Item(Armistice1949.Item i) =>
-            $"{i.Id}|{i.Key}|{i.Name}|{i.Front.Key}|{D(i.ShownFrom)}|{i.Style}|{i.Agreement}|{i.LabelNote}|{D(i.Signed)}|{i.LowAccuracy}";
+            $"{i.Id}|{i.Key}|{i.Name}|{i.Front.Key}|{D(i.ShownFrom)}|{i.Style}|{i.Agreement}|{i.LabelNote}|{D(i.Signed)}|{i.LowAccuracy}|{i.NameHe}|{i.AgreementHe}|{i.LabelNoteHe}";
         return string.Join("\n",
-            new[] { a.Title, a.Line, a.Label }
-            .Concat(a.Fronts.Select(f => $"{f.Key}|{f.Name}|{f.Agreement}|{f.Note}|{D(f.Signed)}|{D(f.ShownFrom)}|{f.LowAccuracy}"))
+            new[] { a.Title, a.Line, a.Label, a.LabelHe }
+            .Concat(a.Fronts.Select(f => $"{f.Key}|{f.Name}|{f.Agreement}|{f.Note}|{D(f.Signed)}|{D(f.ShownFrom)}|{f.LowAccuracy}|{f.NameHe}|{f.AgreementHe}"))
             .Concat(a.Zones.Select(Item)).Concat(a.Lines.Select(Item))
             .Concat(a.ZoneHexes.OrderBy(k => k.Key.r).ThenBy(k => k.Key.q).Select(k => $"z {k.Key.q},{k.Key.r}:{k.Value.Id}"))
             .Concat(a.LineHexes.OrderBy(k => k.Key.r).ThenBy(k => k.Key.q).Select(k => $"l {k.Key.q},{k.Key.r}:{string.Join(",", k.Value.Select(x => x.Id))}")));

@@ -45,14 +45,16 @@ namespace Statecraft.Game.Map
                 Id = r.Int("id", 0), Key = r.Str("key", "")!, Front = r.Str("front", "")!, Name = r.Str("name", "")!,
                 ShownFrom = r.Str("shown_from", absent.ShownFrom)!, Style = r.Str("style", absent.Style)!, Agreement = r.Str("agreement", absent.Agreement),
                 Signed = r.Str("signed", null), LabelNote = r.Str("label_note", "")!, LowAccuracy = r.Bool("low_accuracy", false),
+                NameHe = r.Str("name_he", "")!, AgreementHe = r.Str("agreement_he", "")!, LabelNoteHe = r.Str("label_note_he", "")!,
             };
             return new FileDoc
             {
-                Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!,
+                Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!, LabelHe = d.Str("label_he", "")!,
                 Fronts = d.Items("fronts", r => new FrontRow
                 {
                     Key = r.Str("key", "")!, Name = r.Str("name", "")!, Agreement = r.Str("agreement", "")!, Signed = r.Str("signed", "")!,
                     ShownFrom = r.Str("shown_from", null), LowAccuracy = r.Bool("low_accuracy", false), Note = r.Str("note", "")!,
+                    NameHe = r.Str("name_he", "")!, AgreementHe = r.Str("agreement_he", "")!,
                 }),
                 Zones = d.Items("zones", Item), Lines = d.Items("lines", Item), NoHex = d.List("no_hex"),
                 ZoneHexes = d.Ints("zone_hexes"), LineHexes = d.Ints("line_hexes"),
@@ -61,7 +63,7 @@ namespace Statecraft.Game.Map
 
         public sealed class Front
         {
-            public string Key = "", Name = "", Agreement = "", Note = ""; public DateTime Signed; public DateTime? ShownFrom;
+            public string Key = "", Name = "", Agreement = "", Note = "", NameHe = "", AgreementHe = ""; public DateTime Signed; public DateTime? ShownFrom;
             /// <summary>Traced from a low-resolution scan (Jordan, owner ruling 2026-10-11): said on the map label.</summary>
             public bool LowAccuracy;
             /// <summary>Whether the front's line is shown on <paramref name="date"/> (never, without line data).</summary>
@@ -74,10 +76,11 @@ namespace Statecraft.Game.Map
             /// <summary>The item's own agreement and date (the 1950 modus vivendi is not its front's 1949 agreement), a note
             /// for the map label ("" for none), and whether it is low-accuracy.</summary>
             public string Agreement = "", LabelNote = ""; public DateTime Signed; public bool LowAccuracy;
+            public string NameHe = "", AgreementHe = "", LabelNoteHe = "";
             public bool InForce(DateTime date) => date >= ShownFrom;
         }
 
-        public readonly string Title, Line, Label;
+        public readonly string Title, Line, Label, LabelHe;
         public readonly IReadOnlyList<Front> Fronts;
         public readonly IReadOnlyList<Item> Zones, Lines;
         readonly Dictionary<(int q, int r), Item> zoneAt;
@@ -86,10 +89,10 @@ namespace Statecraft.Game.Map
         internal IReadOnlyDictionary<(int q, int r), Item> ZoneHexes => zoneAt;
         internal IReadOnlyDictionary<(int q, int r), List<Item>> LineHexes => linesAt;
 
-        Armistice1949(string title, string line, string label, List<Front> fronts, List<Item> zones, List<Item> lines,
+        Armistice1949(string title, string line, string label, string labelHe, List<Front> fronts, List<Item> zones, List<Item> lines,
             Dictionary<(int q, int r), Item> zoneAt, Dictionary<(int q, int r), List<Item>> linesAt)
         {
-            Title = title; Line = line; Label = label; Fronts = fronts; Zones = zones; Lines = lines; this.zoneAt = zoneAt; this.linesAt = linesAt;
+            Title = title; Line = line; Label = label; LabelHe = labelHe; Fronts = fronts; Zones = zones; Lines = lines; this.zoneAt = zoneAt; this.linesAt = linesAt;
         }
 
         public Front? FrontOf(string key) => Fronts.FirstOrDefault(f => f.Key == key);
@@ -104,11 +107,12 @@ namespace Statecraft.Game.Map
         /// <summary>The hexes of a zone (for composing the drawn layer).</summary>
         public IEnumerable<(int q, int r)> HexesOf(Item zone) => zoneAt.Where(kv => kv.Value == zone).Select(kv => kv.Key);
 
-        sealed class FrontRow { public string Key { get; set; } = ""; public string Name { get; set; } = ""; public string Agreement { get; set; } = ""; public string Signed { get; set; } = ""; public string? ShownFrom { get; set; } public bool LowAccuracy { get; set; } public string Note { get; set; } = ""; }
-        sealed class ItemRow { public int Id { get; set; } public string Key { get; set; } = ""; public string Front { get; set; } = ""; public string Name { get; set; } = ""; public string ShownFrom { get; set; } = ""; public string Style { get; set; } = "secondary"; public string? Agreement { get; set; } public string? Signed { get; set; } public string LabelNote { get; set; } = ""; public bool LowAccuracy { get; set; } }
+        sealed class FrontRow { public string Key { get; set; } = ""; public string Name { get; set; } = ""; public string Agreement { get; set; } = ""; public string NameHe { get; set; } = ""; public string AgreementHe { get; set; } = ""; public string Signed { get; set; } = ""; public string? ShownFrom { get; set; } public bool LowAccuracy { get; set; } public string Note { get; set; } = ""; }
+        sealed class ItemRow { public int Id { get; set; } public string Key { get; set; } = ""; public string Front { get; set; } = ""; public string Name { get; set; } = ""; public string NameHe { get; set; } = ""; public string AgreementHe { get; set; } = ""; public string LabelNoteHe { get; set; } = ""; public string ShownFrom { get; set; } = ""; public string Style { get; set; } = "secondary"; public string? Agreement { get; set; } public string? Signed { get; set; } public string LabelNote { get; set; } = ""; public bool LowAccuracy { get; set; } }
         sealed class FileDoc
         {
             public string Layer { get; set; } = ""; public string Title { get; set; } = ""; public string Line { get; set; } = ""; public string Label { get; set; } = "";
+            public string LabelHe { get; set; } = "";
             public List<FrontRow> Fronts { get; set; } = new List<FrontRow>(); public List<ItemRow> Zones { get; set; } = new List<ItemRow>(); public List<ItemRow> Lines { get; set; } = new List<ItemRow>();
             public List<string> NoHex { get; set; } = new List<string>();
             public List<List<int>> ZoneHexes { get; set; } = new List<List<int>>(); public List<List<int>> LineHexes { get; set; } = new List<List<int>>();
@@ -140,7 +144,8 @@ namespace Statecraft.Game.Map
                 var from = Date(f.ShownFrom, $"front {f.Key} shown_from");
                 if (from == null && string.IsNullOrWhiteSpace(f.Note)) throw new InvalidDataException($"{FileName}: front {f.Key} has no line data and no note saying so");
                 if (from != null && from < signed) throw new InvalidDataException($"{FileName}: front {f.Key}: shown_from is before the agreement was signed");
-                fronts.Add(new Front { Key = f.Key, Name = f.Name, Agreement = f.Agreement, Signed = signed, ShownFrom = from, Note = f.Note, LowAccuracy = f.LowAccuracy });
+                fronts.Add(new Front { Key = f.Key, Name = f.Name, Agreement = f.Agreement, NameHe = f.NameHe ?? "", AgreementHe = f.AgreementHe ?? "",
+                    Signed = signed, ShownFrom = from, Note = f.Note, LowAccuracy = f.LowAccuracy });
             }
             List<Item> Items(List<ItemRow> rows, string kind)
             {
@@ -160,9 +165,13 @@ namespace Statecraft.Game.Map
                     };
                     var signed = Date(z.Signed, $"{kind} {z.Key} signed") ?? front.Signed;
                     if (from < signed) throw new InvalidDataException($"{FileName}: {kind} {z.Key}: shown_from is before its agreement was signed");
+                    var agreementHe = z.AgreementHe ?? "";
+                    if (string.IsNullOrWhiteSpace(agreementHe) && (string.IsNullOrWhiteSpace(z.Agreement) || z.Agreement == front.Agreement))
+                        agreementHe = front.AgreementHe;
                     items.Add(new Item { Id = z.Id, Key = z.Key, Name = z.Name, Front = front, ShownFrom = from, Style = style,
                         Agreement = string.IsNullOrWhiteSpace(z.Agreement) ? front.Agreement : z.Agreement!, Signed = signed,
-                        LabelNote = z.LabelNote, LowAccuracy = z.LowAccuracy || front.LowAccuracy });
+                        NameHe = z.NameHe ?? "", AgreementHe = agreementHe,
+                        LabelNoteHe = z.LabelNoteHe ?? "", LabelNote = z.LabelNote, LowAccuracy = z.LowAccuracy || front.LowAccuracy });
                 }
                 return items;
             }
@@ -184,7 +193,7 @@ namespace Statecraft.Game.Map
                 if (!linesAt.TryGetValue((h[0], h[1]), out var list)) linesAt[(h[0], h[1])] = list = new List<Item>();
                 if (!list.Contains(l)) list.Add(l);
             }
-            return new Armistice1949(doc.Title, doc.Line, doc.Label, fronts, zones, lines, zoneAt, linesAt);
+            return new Armistice1949(doc.Title, doc.Line, doc.Label, doc.LabelHe ?? "", fronts, zones, lines, zoneAt, linesAt);
         }
 
         static DateTime? Date(string? text, string key)

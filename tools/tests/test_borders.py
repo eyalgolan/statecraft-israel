@@ -1,5 +1,6 @@
 """The 1948 sub-districts: the true lines (content/map/subdistricts_1948.geojson, tools/borders_digitise.py) and their
 hex-snapped display layer (content/map/subdistrict_hexes_1948.yaml, tools/borders_bake.py)."""
+import copy
 import json
 import re
 from pathlib import Path
@@ -132,6 +133,32 @@ def test_committed_layer_is_up_to_date_and_deterministic():
     text = bb.build()
     assert (MAP / "subdistrict_hexes_1948.yaml").read_text(encoding="utf-8") == text, "rerun: uv run tools/borders_bake.py"
     assert bb.build() == text
+
+
+def test_hebrew_display_names_survive_the_full_bake():
+    """#1219: the existing sourced Hebrew names must reach the game's region file."""
+    fresh = yaml12.load(bb.build())
+    rows = {row["key"]: row for row in fresh["regions"]}
+    for feature in SOURCE["features"]:
+        source = feature["properties"]
+        row = rows[source["id"]]
+        for field in ("name", "district", "name_he", "district_he"):
+            assert row.get(field) == source[field], (source["id"], field)
+    assert fresh["hexes"] == BAKED["hexes"], "display names cannot change the region of any hex"
+
+
+@pytest.mark.parametrize("missing", ["name_he", "district_he"])
+def test_a_missing_optional_hebrew_name_keeps_the_english_source(missing):
+    source = copy.deepcopy(SOURCE)
+    first = source["features"][0]["properties"]
+    first.pop(missing)
+    # No hexes: exercise the actual bake/render path for names without resampling terrain.
+    regions, cells = bb.bake(source, {**HEXES, "hexes": []}, np.empty((0, 0)), {}, [])
+    row = yaml12.load(bb.render(source, regions, cells))["regions"][0]
+    assert row.get(missing) == "", "the reader can fall back to the unchanged English name"
+    assert row["name"] == first["name"] and row["district"] == first["district"]
+    other = "district_he" if missing == "name_he" else "name_he"
+    assert row.get(other) == first[other], "one missing translation cannot hide the other"
 
 
 def test_every_land_hex_and_only_land_has_a_region():

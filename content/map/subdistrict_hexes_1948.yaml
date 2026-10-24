@@ -6,6 +6,7 @@ layer: subdistricts_1948
 title: "Sub-districts of Mandatory Palestine in force on 15 May 1948 (true lines, not hex-snapped)"
 line: "The true lines are the Survey of Palestine map of the 1947 Administrative Divisions Schedule (content/map/subdistricts_1948.geojson, status sensitivity-reviewed); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line."
 label: "Mandate sub-districts, 1947"   # shown on screen while the layer is drawn (owner ruling 2026-10-11)
+label_he: "נפות המנדט, 1947"
 shown_from: 1948-05-15   # the game's start
 shown_until: null   # the last front's end, once the armistice lines enclose each side's area; null until then (the base under them)
 fronts:   # until: the date that front switches, its 1949 armistice features drawn over this layer from then (null: no line data)
@@ -14,23 +15,23 @@ fronts:   # until: the date that front switches, its 1949 armistice features dra
   - { key: jordan, until: 1949-04-03 }
   - { key: syria, until: 1949-07-20 }
 regions:
-  - { id: 1, key: acre, name: "Acre Sub-District", district: "Galilee District", style: primary }
-  - { id: 2, key: beisan, name: "Beisan Sub-District", district: "Galilee District", style: primary }
-  - { id: 3, key: nazareth, name: "Nazareth Sub-District", district: "Galilee District", style: primary }
-  - { id: 4, key: safad, name: "Safad Sub-District", district: "Galilee District", style: primary }
-  - { id: 5, key: tiberias, name: "Tiberias Sub-District", district: "Galilee District", style: primary }
-  - { id: 6, key: haifa, name: "Haifa Sub-District", district: "Haifa District", style: primary }
-  - { id: 7, key: jenin, name: "Jenin Sub-District", district: "Samaria District", style: primary }
-  - { id: 8, key: nablus, name: "Nablus Sub-District", district: "Samaria District", style: primary }
-  - { id: 9, key: tulkarm, name: "Tulkarm Sub-District", district: "Samaria District", style: primary }
-  - { id: 10, key: hebron, name: "Hebron Sub-District", district: "Jerusalem District", style: primary }
-  - { id: 11, key: jerusalem, name: "Jerusalem Sub-District", district: "Jerusalem District", style: primary }
-  - { id: 12, key: ramallah, name: "Ramallah Sub-District", district: "Jerusalem District", style: primary }
-  - { id: 13, key: jaffa, name: "Jaffa Sub-District", district: "Lydda District", style: primary }
-  - { id: 14, key: ramle, name: "Ramle Sub-District", district: "Lydda District", style: primary }
-  - { id: 15, key: gaza, name: "Gaza Sub-District", district: "Gaza District", style: primary }
-  - { id: 16, key: beersheba, name: "Beersheba Sub-District", district: "Gaza District", style: primary }
-  - { id: 17, key: outside, name: "Outside Mandatory Palestine", district: "", style: none }
+  - { id: 1, key: acre, name: "Acre Sub-District", district: "Galilee District", name_he: "נפת עכו", district_he: "מחוז הגליל", style: primary }
+  - { id: 2, key: beisan, name: "Beisan Sub-District", district: "Galilee District", name_he: "נפת בית־שאן", district_he: "מחוז הגליל", style: primary }
+  - { id: 3, key: nazareth, name: "Nazareth Sub-District", district: "Galilee District", name_he: "נפת נצרת", district_he: "מחוז הגליל", style: primary }
+  - { id: 4, key: safad, name: "Safad Sub-District", district: "Galilee District", name_he: "נפת צפת", district_he: "מחוז הגליל", style: primary }
+  - { id: 5, key: tiberias, name: "Tiberias Sub-District", district: "Galilee District", name_he: "נפת טבריה", district_he: "מחוז הגליל", style: primary }
+  - { id: 6, key: haifa, name: "Haifa Sub-District", district: "Haifa District", name_he: "נפת חיפה", district_he: "מחוז חיפה", style: primary }
+  - { id: 7, key: jenin, name: "Jenin Sub-District", district: "Samaria District", name_he: "נפת ג'נין", district_he: "מחוז שומרון", style: primary }
+  - { id: 8, key: nablus, name: "Nablus Sub-District", district: "Samaria District", name_he: "נפת שכם", district_he: "מחוז שומרון", style: primary }
+  - { id: 9, key: tulkarm, name: "Tulkarm Sub-District", district: "Samaria District", name_he: "נפת טול כרם", district_he: "מחוז שומרון", style: primary }
+  - { id: 10, key: hebron, name: "Hebron Sub-District", district: "Jerusalem District", name_he: "נפת חברון", district_he: "מחוז ירושלים", style: primary }
+  - { id: 11, key: jerusalem, name: "Jerusalem Sub-District", district: "Jerusalem District", name_he: "נפת ירושלים", district_he: "מחוז ירושלים", style: primary }
+  - { id: 12, key: ramallah, name: "Ramallah Sub-District", district: "Jerusalem District", name_he: "נפת ראם־אללה", district_he: "מחוז ירושלים", style: primary }
+  - { id: 13, key: jaffa, name: "Jaffa Sub-District", district: "Lydda District", name_he: "נפת יפו", district_he: "מחוז לוד", style: primary }
+  - { id: 14, key: ramle, name: "Ramle Sub-District", district: "Lydda District", name_he: "נפת רמלה", district_he: "מחוז לוד", style: primary }
+  - { id: 15, key: gaza, name: "Gaza Sub-District", district: "Gaza District", name_he: "נפת עזה", district_he: "מחוז עזה", style: primary }
+  - { id: 16, key: beersheba, name: "Beersheba Sub-District", district: "Gaza District", name_he: "נפת באר־שבע", district_he: "מחוז עזה", style: primary }
+  - { id: 17, key: outside, name: "Outside Mandatory Palestine", district: "", name_he: "", district_he: "", style: none }
 hexes:   # [q, r, region id], ordered by r then q
   - [12, 0, 17]
   - [13, 0, 17]

@@ -158,9 +158,93 @@ public class ArmisticeTests
 
     static UiText HeText => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
+    [TestCase(false, false, false)]
+    [TestCase(false, true, false)]
+    [TestCase(false, false, true)]
+    [TestCase(false, true, true)]
+    [TestCase(true, false, false)]
+    [TestCase(true, true, false)]
+    [TestCase(true, false, true)]
+    [TestCase(true, true, true)]
+    public void RegionDetailsChooseEachArmisticeHebrewFieldIndependently(bool line, bool hasName, bool hasAgreement)
+    {
+        const string name = "Zone or line", agreement = "This item's agreement";
+        var yaml = "layer: names\nlabel: L\n" + Fronts
+            + (line ? "lines:\n" : "zones:\n")
+            + "  - { id: 1, key: place, front: e, name: '" + name + "', agreement: \"" + agreement
+            + "\", shown_from: 1949-02-24"
+            + (hasName ? ", name_he: 'שם האזור או הקו'" : "")
+            + (hasAgreement ? ", agreement_he: 'שם ההסכם של הפריט'" : "")
+            + " }\n" + (line ? "line_hexes:\n" : "zone_hexes:\n") + "  - [0, 0, 1]\n";
+        var sub = Subdistricts1948.Parse("layer: x\nlabel: L\nshown_from: 1948-05-15\n"
+            + "regions:\n  - { id: 1, key: a, name: A, district: D, style: primary }\nhexes: []\n");
+        var regions = new MapRegions(sub, Armistice1949.Parse(yaml));
+        var key = line ? "info.armistice_line" : "info.armistice_zone";
+        Assert.AreEqual(Text.Format(key, name, agreement, MapRegions.DateText(Egypt)),
+            InfoPanelPresenter.RegionText(regions, Text, 0, 0, Egypt));
+        Assert.AreEqual(HeText.Format(key, hasName ? "שם האזור או הקו" : name,
+                hasAgreement ? "שם ההסכם של הפריט" : agreement, "\u206724 בפברואר 1949\u2069"),
+            InfoPanelPresenter.RegionText(regions, HeText, 0, 0, Egypt));
+        Assert.AreEqual("", InfoPanelPresenter.RegionText(regions, HeText, 0, 0, Egypt.AddDays(-1)), "not before activation");
+    }
+
+    [TestCase(null, null, "הסכם החזית")]
+    [TestCase("", "", "הסכם החזית")]
+    [TestCase("A", null, "הסכם החזית")]
+    [TestCase("Another agreement", null, "Another agreement")]
+    [TestCase("Another agreement", " ", "Another agreement")]
+    [TestCase("Another agreement", "הסכם הפריט", "הסכם הפריט")]
+    public void AnItemsDifferentAgreementNeverBorrowsTheFrontsHebrewTitle(string? english, string? hebrew, string expected)
+    {
+        var fronts = Fronts.Replace("note: ''", "note: '', agreement_he: 'הסכם החזית'");
+        var yaml = Head + fronts + "zones:\n  - { id: 1, key: later, front: e, name: Z, shown_from: 1950-02-22, signed: 1950-02-22"
+            + (english == null ? "" : ", agreement: '" + english + "'")
+            + (hebrew == null ? "" : ", agreement_he: '" + hebrew + "'")
+            + " }\nzone_hexes:\n  - [0, 0, 1]\n";
+        var sub = Subdistricts1948.Parse("layer: x\nlabel: L\nshown_from: 1948-05-15\n"
+            + "regions:\n  - { id: 1, key: a, name: A, district: D, style: primary }\nhexes: []\n");
+        var regions = new MapRegions(sub, Armistice1949.Parse(yaml));
+        var date = new DateTime(1950, 2, 22);
+        Assert.AreEqual(HeText.Format("info.armistice_zone", "Z", expected, "\u206722 בפברואר 1950\u2069"),
+            InfoPanelPresenter.RegionText(regions, HeText, 0, 0, date));
+        Assert.AreEqual("", InfoPanelPresenter.RegionText(regions, HeText, 0, 0, date.AddDays(-1)));
+    }
+
     static string LHe(MapRegions m, DateTime d)
     {
-        return m.Label(d, HeText.Format);
+        return m.Label(d, HeText.Format, true);
+    }
+
+    [Test]
+    public void TheShippedHebrewRegionTextNamesTheLayersFrontsAndEveryArmisticeItem()
+    {
+        var m = Regions();
+        Assert.AreEqual("נפות המנדט, 1947", LHe(m, Start));
+        var later = new DateTime(1950, 3, 1);
+        Assert.AreEqual("נפות המנדט, 1947 · קווי שביתת הנשק, 1949: מצרים (וגם מודוס ויוונדי מ־1950), לבנון, ירדן (דיוק נמוך), סוריה", LHe(m, later));
+        StringAssert.DoesNotContain("מודוס ויוונדי", LHe(m, new DateTime(1950, 2, 21)));
+        foreach (var item in m.Armistice!.Zones.Concat(m.Armistice.Lines))
+        {
+            Assert.IsTrue(UiDirection.RightToLeft(item.NameHe), item.Key);
+            Assert.IsTrue(UiDirection.RightToLeft(item.AgreementHe), item.Key);
+        }
+        foreach (var pair in m.Armistice.ZoneHexes)
+        {
+            var text = InfoPanelPresenter.RegionText(m, HeText, pair.Key.q, pair.Key.r, later);
+            StringAssert.Contains(pair.Value.NameHe, text);
+            StringAssert.Contains(pair.Value.AgreementHe, text);
+            StringAssert.DoesNotContain(pair.Value.Name, text);
+        }
+        foreach (var pair in m.Armistice.LineHexes)
+        {
+            var text = InfoPanelPresenter.RegionText(m, HeText, pair.Key.q, pair.Key.r, later);
+            foreach (var item in pair.Value)
+            {
+                StringAssert.Contains(item.NameHe, text);
+                StringAssert.Contains(item.AgreementHe, text);
+                StringAssert.DoesNotContain(item.Name, text);
+            }
+        }
     }
 
     /// <summary>The Hebrew map label (#596): a value with no Hebrew in it that a Hebrew pattern inserts (the 1950 note,
@@ -172,15 +256,22 @@ public class ArmisticeTests
         const string Lrm = "‎";
         var sub = Subdistricts1948.Parse(SubText.Replace("label: \"Mandate sub-districts, 1947\"", "label: \"נפות המנדט, 1947\""));
         var arm = ArmText.Replace("label: \"1949 armistice lines\"", "label: \"קווי שביתת הנשק, 1949\"");
-        // The fronts' names as they are today (English), inside the Hebrew line.
-        var m = new MapRegions(sub, Armistice1949.Parse(arm));
+        // Legacy input without translated fronts/notes keeps the English values and directional marks.
+        Armistice1949 Legacy(string yaml)
+        {
+            var parsed = Armistice1949.Parse(yaml);
+            foreach (var front in parsed.Fronts) front.NameHe = "";
+            foreach (var item in parsed.Zones.Concat(parsed.Lines)) item.LabelNoteHe = "";
+            return parsed;
+        }
+        var m = new MapRegions(sub, Legacy(arm));
         Assert.AreEqual("נפות המנדט, 1947", LHe(m, Start));
         var en = LHe(m, new DateTime(1950, 3, 1));
         Assert.AreEqual("נפות המנדט, 1947 · קווי שביתת הנשק, 1949: " + Lrm + "Egypt" + Lrm + " (וגם " + Lrm + "1950 modus vivendi" + Lrm + "), Lebanon, "
             + Lrm + "Jordan" + Lrm + " (דיוק נמוך), Syria", en);
         Assert.IsTrue(UiDirection.RightToLeft(en), en);
         // Hebrew names: a Hebrew value is left alone, the note is still marked.
-        var heNames = new MapRegions(sub, Armistice1949.Parse(arm.Replace("name: \"Egypt\"", "name: \"מצרים\"").Replace("name: \"Jordan\"", "name: \"ירדן\"")));
+        var heNames = new MapRegions(sub, Legacy(arm.Replace("name: \"Egypt\"", "name: \"מצרים\"").Replace("name: \"Jordan\"", "name: \"ירדן\"")));
         StringAssert.Contains(": מצרים (וגם " + Lrm + "1950 modus vivendi" + Lrm + "), Lebanon, ירדן (דיוק נמוך), Syria", LHe(heNames, new DateTime(1950, 3, 1)));
         // A front without line data: its name is marked in the Hebrew note that says so.
         var noJordan = new MapRegions(sub, Armistice1949.Parse(
@@ -200,25 +291,25 @@ public class ArmisticeTests
         var m = Regions(); var t = hebrew ? HeText : Text; var a = m.Armistice!;
         var auja = a.Zones.Single(z => z.Key == "egypt_el_auja_dmz");
         var (q, r) = a.HexesOf(auja).First();
-        StringAssert.Contains("Beersheba Sub-District", InfoPanelPresenter.RegionText(m, t, q, r, Start));
-        Assert.AreEqual(t.Format("info.armistice_zone", auja.Name, "Egypt-Israel General Armistice Agreement", hebrew ? "\u206724 בפברואר 1949\u2069" : "24 February 1949"),
+        StringAssert.Contains(hebrew ? "נפת באר־שבע" : "Beersheba Sub-District", InfoPanelPresenter.RegionText(m, t, q, r, Start));
+        Assert.AreEqual(t.Format("info.armistice_zone", hebrew ? auja.NameHe : auja.Name, hebrew ? auja.AgreementHe : auja.Agreement, hebrew ? "\u206724 בפברואר 1949\u2069" : "24 February 1949"),
             InfoPanelPresenter.RegionText(m, t, q, r, Egypt).Split('\n')[0]);
         var leb = a.Lines.Single(l => l.Key == "lebanon_adl");
         var lh = Enumerable.Range(-40, 120).SelectMany(qq => Enumerable.Range(-5, 120).Select(rr => (qq, rr))).First(h => a.LinesAt(h.qq, h.rr, Lebanon).Contains(leb));
-        StringAssert.DoesNotContain("Lebanon-Israel", InfoPanelPresenter.RegionText(m, t, lh.qq, lh.rr, Lebanon.AddDays(-1)));
-        StringAssert.Contains(t.Format("info.armistice_line", leb.Name, "Lebanon-Israel General Armistice Agreement", hebrew ? "\u206723 במרץ 1949\u2069" : "23 March 1949"),
+        StringAssert.DoesNotContain(hebrew ? leb.NameHe : leb.Name, InfoPanelPresenter.RegionText(m, t, lh.qq, lh.rr, Lebanon.AddDays(-1)));
+        StringAssert.Contains(t.Format("info.armistice_line", hebrew ? leb.NameHe : leb.Name, hebrew ? leb.AgreementHe : leb.Agreement, hebrew ? "\u206723 במרץ 1949\u2069" : "23 March 1949"),
             InfoPanelPresenter.RegionText(m, t, lh.qq, lh.rr, Lebanon));
         // the 1950 line names the modus vivendi and its date, not the 1949 agreement
         var mv = a.Lines.Single(l => l.Key == "egypt_mv1950_demarcation");
         var mh = Hexes().First(h => a.LinesAt(h.q, h.r, new DateTime(1950, 3, 1)).Contains(mv));
         var at1950 = InfoPanelPresenter.RegionText(m, t, mh.q, mh.r, new DateTime(1950, 3, 1));
-        StringAssert.Contains(t.Format("info.armistice_line", mv.Name, mv.Agreement, hebrew ? "\u206722 בפברואר 1950\u2069" : "22 February 1950"), at1950);
-        StringAssert.DoesNotContain(mv.Name, InfoPanelPresenter.RegionText(m, t, mh.q, mh.r, new DateTime(1950, 2, 21)));
+        StringAssert.Contains(t.Format("info.armistice_line", hebrew ? mv.NameHe : mv.Name, hebrew ? mv.AgreementHe : mv.Agreement, hebrew ? "\u206722 בפברואר 1950\u2069" : "22 February 1950"), at1950);
+        StringAssert.DoesNotContain(hebrew ? mv.NameHe : mv.Name, InfoPanelPresenter.RegionText(m, t, mh.q, mh.r, new DateTime(1950, 2, 21)));
         // Jordan lines say they are low-accuracy; line A in the triangle only from its stage date
         var tri = a.Lines.Single(l => l.Key == "jordan_adl_iraqi_a_triangle");
         var th = Hexes().First(h => a.LinesAt(h.q, h.r, new DateTime(1949, 6, 1)).Contains(tri));
-        StringAssert.DoesNotContain(tri.Name, InfoPanelPresenter.RegionText(m, t, th.q, th.r, new DateTime(1949, 5, 7)));
-        StringAssert.Contains(t.Format("info.armistice_line_low", tri.Name, tri.Agreement, hebrew ? "\u20673 באפריל 1949\u2069" : "3 April 1949"),
+        StringAssert.DoesNotContain(hebrew ? tri.NameHe : tri.Name, InfoPanelPresenter.RegionText(m, t, th.q, th.r, new DateTime(1949, 5, 7)));
+        StringAssert.Contains(t.Format("info.armistice_line_low", hebrew ? tri.NameHe : tri.Name, hebrew ? tri.AgreementHe : tri.Agreement, hebrew ? "\u20673 באפריל 1949\u2069" : "3 April 1949"),
             InfoPanelPresenter.RegionText(m, t, th.q, th.r, new DateTime(1949, 5, 8)));
     }
 
@@ -287,9 +378,9 @@ public class ArmisticeTests
     [UnityTest]
     public IEnumerator TheLongestMapLabelFitsBesideTheEventCard()
     {
-        var c = Inputs.Content; var t = Text;
-        var text = L(Regions(), new DateTime(1950, 3, 1));
-        StringAssert.Contains("Jordan (low accuracy)", text);
+        var c = Inputs.Content; var regions = Regions(); var date = new DateTime(1950, 3, 1);
+        StringAssert.Contains("Jordan (low accuracy)", L(regions, date));
+        foreach (var (t, text) in new[] { (Text, L(regions, date)), (HeText, LHe(regions, date)) })
         foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1531, 784), (1366, 657), (2560, 1080), (1920, 900), (1280, 1024),
                                        (960, 600), (1024, 768), (390, 844), (375, 667), (1600, 757),
                                        // the two-row bar's shapes (#380's re-tier gives a square window two rows; review B1 of #831)
@@ -303,9 +394,12 @@ public class ArmisticeTests
             doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
             go.SetActive(true);
             var root = doc.rootVisualElement;
+            (root.Q("root") ?? root).EnableInClassList(UiLanguage.HebrewClass, t["ui.lang"] == UiLanguage.Hebrew);
+            (root.Q("root") ?? root).RemoveFromClassList("loading");
             var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), t);
             var hud = new HudPresenter(root, bridge, t);
             var card = new EventCardPresenter(root, bridge, t, null, null);
+            var direction = new UiDirection(root, bridge);
             // The info panel as the game draws it before a hex is chosen: the hint chip (its presenter, not the bare UXML).
             var info = new InfoPanelPresenter(root, bridge, t, new System.Collections.Generic.Dictionary<string, string>());
             try
@@ -328,10 +422,13 @@ public class ArmisticeTests
                 Assert.IsFalse(lb.Overlaps(R("top-bar")), $"{w}x{h}: the top bar overlaps the label");
                 var size = label.MeasureTextSize(text, lb.width - label.resolvedStyle.paddingLeft - label.resolvedStyle.paddingRight,
                     VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
+                var contentSize = label.MeasureTextSize(text, label.contentRect.width,
+                    VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
+                TestContext.WriteLine($"REGION LABEL {t["ui.lang"]} {w}x{h}: bounds={lb}, layout={label.layout}, content={label.contentRect}, inferred={size}, actualContent={contentSize}, font={label.resolvedStyle.fontSize}, direction={label.languageDirection}");
                 Assert.LessOrEqual(size.y, lb.height + 1f, $"{w}x{h}: the label's text is cut off");
                 Assert.LessOrEqual(size.y, 4 * label.resolvedStyle.fontSize * 1.4f, $"{w}x{h}: the label takes more than four lines ({size.y} px)");
             }
-            finally { info.Dispose(); card.Dispose(); hud.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+            finally { info.Dispose(); direction.Dispose(); card.Dispose(); hud.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
         }
     }
 

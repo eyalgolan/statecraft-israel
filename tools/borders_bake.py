@@ -212,6 +212,7 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict, places: list)
     """(regions, {(q, r): region id}). Region ids: the sub-districts 1..n in file order, then 'outside'."""
     feats = source["features"]
     regions = [{"id": i, "key": f["properties"]["id"], "name": f["properties"]["name"], "district": f["properties"]["district"],
+                "name_he": f["properties"].get("name_he", ""), "district_he": f["properties"].get("district_he", ""),
                 "style": "primary"} for i, f in enumerate(feats, start=1)]
     outside_id = len(feats) + 1
     regions.append({"id": outside_id, "key": OUTSIDE, "name": "Outside Mandatory Palestine", "district": "", "style": "none"})
@@ -279,13 +280,16 @@ def render(source: dict, regions: list[dict], cells: dict, armistice: dict | Non
              f"title: {json.dumps(meta['title'])}\n",
              f"line: {json.dumps('The true lines are the Survey of Palestine map of the 1947 Administrative Divisions Schedule (content/map/subdistricts_1948.geojson, status ' + meta['status'] + '); shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line.')}\n",
              f"label: {json.dumps(LABEL)}   # shown on screen while the layer is drawn (owner ruling 2026-10-11)\n",
+             f"label_he: {json.dumps(meta.get('label_he', ''), ensure_ascii=False)}\n",
              f"shown_from: {SHOWN_FROM}   # the game's start\n",
              f"shown_until: {until or 'null'}   # the last front's end, once the armistice lines enclose each side's area; null until then (the base under them)\n",
              "fronts:   # until: the date that front switches, its 1949 armistice features drawn over this layer from then (null: no line data)\n"]
     lines += [f"  - {{ key: {k}, until: {d or 'null'} }}\n" for k, d in ends]
     lines += ["regions:\n"]
     for r in regions:
-        lines.append(f"  - {{ id: {r['id']}, key: {r['key']}, name: {json.dumps(r['name'])}, district: {json.dumps(r['district'])}, style: {r['style']} }}\n")
+        lines.append(f"  - {{ id: {r['id']}, key: {r['key']}, name: {json.dumps(r['name'])}, district: {json.dumps(r['district'])}, "
+                     f"name_he: {json.dumps(r.get('name_he', ''), ensure_ascii=False)}, "
+                     f"district_he: {json.dumps(r.get('district_he', ''), ensure_ascii=False)}, style: {r['style']} }}\n")
     lines.append("hexes:   # [q, r, region id], ordered by r then q\n")
     for (q, r), rid in sorted(cells.items(), key=lambda kv: (kv[0][1], kv[0][0])):
         lines.append(f"  - [{q}, {r}, {rid}]\n")

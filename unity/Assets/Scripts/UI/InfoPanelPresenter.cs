@@ -312,16 +312,18 @@ namespace Statecraft.Game.UI
                 return UiDirection.HasRightToLeft(value) ? "\u2067" + value + "\u2069" : value;
             }
             var parts = new List<string>();
+            bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
+            string Name(string english, string translated) => hebrew && !string.IsNullOrWhiteSpace(translated) ? translated : english;
             var zone = regions.ZoneAt(q, r, date);
             var control = ControlText(regions, text, q, r, date);
             // a demilitarized zone is named by its own line below; the control line would only repeat "Demilitarized zone"
             if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
-            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, DateText(zone.Signed)));
-            else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
+            if (zone != null) parts.Add(text.Format("info.armistice_zone", Name(zone.Name, zone.NameHe), Name(zone.Agreement, zone.AgreementHe), DateText(zone.Signed)));
+            else if (sub != null) parts.Add(text.Format("info.region", Name(sub.Name, sub.NameHe), Name(sub.District, sub.DistrictHe)));
             foreach (var l in regions.LinesAt(q, r, date))
-                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, DateText(l.Signed)));
+                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", Name(l.Name, l.NameHe), Name(l.Agreement, l.AgreementHe), DateText(l.Signed)));
             return string.Join("\n", parts);
         }
 

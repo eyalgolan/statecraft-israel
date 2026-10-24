@@ -73,7 +73,8 @@ def line_hexes(coords: list, grid: dict) -> list:
 
 def item(i: int, p: dict) -> dict:
     return {"id": i, "key": p["id"], "front": p["front"], "name": p["name"], "shown_from": p["shown_from"], "agreement": p["agreement"],
-            "signed": p["signed"], "label_note": p.get("label_note", ""), "low_accuracy": p.get("source_quality") == "low_res_scan"}
+            "signed": p["signed"], "label_note": p.get("label_note", ""), "low_accuracy": p.get("source_quality") == "low_res_scan",
+            "name_he": p.get("name_he", ""), "agreement_he": p.get("agreement_he", ""), "label_note_he": p.get("label_note_he", "")}
 
 
 def bake(source: dict, grid: dict, land: set) -> dict:
@@ -110,15 +111,18 @@ def render(source: dict, baked: dict) -> str:
 
     def extra(x: dict) -> str:
         return (f"agreement: {q(x['agreement'])}, signed: {x['signed']}, label_note: {q(x['label_note'])}, "
-                f"low_accuracy: {str(x['low_accuracy']).lower()}")
+                f"low_accuracy: {str(x['low_accuracy']).lower()}, name_he: {q(x['name_he'], ensure_ascii=False)}, "
+                f"agreement_he: {q(x['agreement_he'], ensure_ascii=False)}, label_note_he: {q(x['label_note_he'], ensure_ascii=False)}")
     out = [HEADER, "layer: armistice_1949\n", f"title: {q(meta['title'])}\n",
            f"line: {q('The true lines are content/map/armistice_lines_1949.geojson (status ' + meta['status'] + '): the agreements and their annexed maps; shown here to the nearest hex edge, up to half a hex (about 4 km) from the true line.')}\n",
            f"label: {q(LABEL)}   # added to the map label while any front's line is shown\n",
+           f"label_he: {q(meta.get('label_he', ''), ensure_ascii=False)}\n",
            "fronts:   # each agreement; shown_from null: no line data, the Mandate sub-district layer stays on that front\n"]
     for f in meta["fronts"]:
         note = f.get("gap", "")
         out.append(f"  - {{ key: {f['key']}, name: {q(FRONT_NAMES[f['key']])}, agreement: {q(f['agreement'])}, signed: {f['signed']}, "
-                   f"shown_from: {f['shown_from'] or 'null'}, low_accuracy: {str(f.get('source_quality') == 'low_res_scan').lower()}, note: {q(note)} }}\n")
+                   f"shown_from: {f['shown_from'] or 'null'}, low_accuracy: {str(f.get('source_quality') == 'low_res_scan').lower()}, note: {q(note)}, "
+                   f"name_he: {q(f.get('name_he', ''), ensure_ascii=False)}, agreement_he: {q(f.get('agreement_he', ''), ensure_ascii=False)} }}\n")
     out.append("zones:   # drawn over the sub-districts from shown_from (style secondary)\n")
     for z in baked["zones"]:
         out.append(f"  - {{ id: {z['id']}, key: {z['key']}, front: {z['front']}, name: {q(z['name'])}, shown_from: {z['shown_from']}, style: secondary, {extra(z)} }}\n")

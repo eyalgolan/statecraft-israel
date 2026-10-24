@@ -420,6 +420,9 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The border layer's label, beside the minimap's lower left: what the outlines are (MapRegions.Label). Out of the column's
    flex flow (absolute), so it takes no height from the event card at any HUD tier (armistice review I-4). */
 .map-layer { display: none; position: absolute; right: 230px; bottom: 0; max-width: 250px; padding: 5px 8px; font-size: 15px; white-space: normal; -unity-text-align: middle-center; color: var(--ink); background-color: rgba(9, 14, 26, 0.9); border-radius: 3px; }
+/* The advanced Hebrew text generator can shrink to a line's rounded width, then wrap it into an extra line without
+   growing the height. Keep the desktop label at its existing width cap; the phone's wider cap below still applies. */
+.lang-he .map-layer { min-width: 250px; }
 /* A phone upright (three-row bar): the info panel spans the bottom left, beside the minimap, but the column is tall, so the
    label goes back above the minimap, in the column's flow. */
 .hud-three-row .map-layer { position: relative; right: auto; bottom: auto; align-self: flex-end; max-width: 480px; margin-bottom: 6px; }

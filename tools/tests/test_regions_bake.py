@@ -30,7 +30,7 @@ REBAKE = "run uv run tools/regions_bake.py and commit the .tsv"
 
 # The fingerprint of the readers (code_fingerprint). Re-pin only after RegionsRuntimeTests passes in Unity, with
 # RegionsRuntime.Version and regions_bake.VERSION bumped together if the runtime layout changed.
-PINNED_CODE = "688bfe4efcf6459b5b5de21812c92c1b1e5a906204e0145ac531d55b5f3d35d2"
+PINNED_CODE = "88765f63ecb5c695371e9e44f5f1afe1933bf97fbe4e4cfe5f6402fff54df5d7"
 
 
 def member(text: str, signature: str) -> str:
@@ -117,7 +117,7 @@ def _rows(tsv: str):
 # does (0x0F then stays "0x0F", which Control1948 refuses on both paths; a datetime keeps its space).
 YAML_11_CASES = [
     ("subdistrict_hexes_1948", 'name: "Acre Sub-District"', "name: yes", "name=s:yes"),
-    ("subdistrict_hexes_1948", 'district: "Galilee District", style: primary }\n  - { id: 2', 'district: Off, style: primary }\n  - { id: 2', "district=s:Off"),
+    ("subdistrict_hexes_1948", 'district: "Galilee District"', 'district: Off', "district=s:Off"),
     ("subdistrict_hexes_1948", "key: acre,", "key: 1_0,", "key=s:1_0"),
     ("armistice_hexes_1949", "signed: 1949-03-23, shown_from: 1949-03-23", "signed: 1949-03-23 00:00:00, shown_from: 1949-03-23", "signed=s:1949-03-23 00:00:00"),
     ("control_hexes_1948_49", '  - [15, 1, "cIIIIIIIIIIIIIII"]', '  - [0x0F, 1, "cIIIIIIIIIIIIIII"]', "0x0F 1 cIIIIIIIIIIIIIII"),

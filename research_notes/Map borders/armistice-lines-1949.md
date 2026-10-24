@@ -45,6 +45,28 @@ Gaps and findings:
 - **Snapped at 5-km hexes**, the northern and southern Syrian DMZ parts contain no hex centre (listed as `no_hex`); they
   are in the true lines only. El Auja takes 5 hexes, the central Syrian part 1.
 
+## Hebrew display names (21 October 2026, #1219 item 4)
+
+`content/map/region_names_he.json` is the authored input for the two layer labels and the armistice fronts and features.
+The digitising tools copy its Hebrew fields and their source/review metadata to the GeoJSON; the bakes copy only the
+display text to the player's YAML and runtime files. Edit this input when reviewing a translation, then regenerate.
+A native speaker removes the relevant `*_he_review: agent-checked` flag there after reviewing it (#564); regeneration
+does not invent or restore a review flag. These are agent drafts, not a historical or sensitivity sign-off. The older
+sub-district/district names and their existing review record stay as they were.
+
+The four Hebrew agreement copies from the Knesset, mirrored by ECF, supply the agreement titles and contemporary place
+spellings. Each field cites its actual PDF and check date in the authored input. In particular, Egypt's article VI
+(PDF p. 4) gives **ודי חזי**, and article VIII (p. 7) gives **אל-עוג'ה**; Jordan's articles V–VI (pp. 3–4) give
+**חירבת דיר-ערב**, **זבובה**, **בקעה** and **כפר קאסם**. Their 1949 dates come from the documents, not ECF's catalogue
+date of 1970. Hebrew Wikipedia supplies the stated secondary name checks for Tel el Qadi, Dardara and the Syrian
+zones, and the Hebrew geographical name **מפרץ אילת** for the English Gulf of Aqaba. The English text is unchanged.
+
+The separate 1950 title/note is a Hebrew paraphrase of UN **S/1471**, read in ECF's three-page English scan: signed
+22 February 1950, transmitted 17 March. Articles I and V describe zones A, B, C and the signed map; article III keeps
+each party's position on the principal agreement. The Hebrew term **מודוס ויוונדי** is checked separately. These
+features keep their own agreement and date, rather than borrowing the 1949 front's Hebrew title. No traced line,
+activation date, gap, accuracy warning, original source or original review status changes with these display names.
+
 ## The documents
 
 All four agreements are registered in the **United Nations Treaty Series, vol. 42 (1949)**

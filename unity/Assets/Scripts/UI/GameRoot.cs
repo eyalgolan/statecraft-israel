@@ -322,7 +322,7 @@ namespace Statecraft.Game.UI
             {
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
-                    ?? regions.Label(bridge.State.Date, text.Format);
+                    ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.

@@ -463,6 +463,7 @@ def geojson(main: dict, geoms: dict, cross: dict | None) -> dict:
     }
     if cross:
         meta["cross_check"] = {"scan": cross["_scan"], "sha256": cross["_sha256"]}
+    meta.update(json.loads((ROOT / "content" / "map" / "region_names_he.json").read_text(encoding="utf-8"))["subdistricts"]["metadata"])
     return {"type": "FeatureCollection", "statecraft": meta, "features": feats}
 
 

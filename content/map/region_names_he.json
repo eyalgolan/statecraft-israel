@@ -1,0 +1,362 @@
+{
+  "subdistricts": {
+    "metadata": {
+      "label_he": "נפות המנדט, 1947",
+      "label_he_sources": [
+        {
+          "url": "https://he.wikipedia.org/wiki/מחוזות_המנדט_הבריטי",
+          "checked": "2026-10-21"
+        }
+      ],
+      "label_he_review": "agent-checked"
+    }
+  },
+  "armistice": {
+    "metadata": {
+      "label_he": "קווי שביתת הנשק, 1949",
+      "label_he_sources": [
+        {
+          "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+          "checked": "2026-10-21"
+        },
+        {
+          "url": "https://content.ecf.org.il/files/M00199_TheArmisticeAgreementBetweenLebanonandIsrael-HebrewText_0.pdf",
+          "checked": "2026-10-21"
+        },
+        {
+          "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+          "checked": "2026-10-21"
+        },
+        {
+          "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+          "checked": "2026-10-21"
+        }
+      ],
+      "label_he_review": "agent-checked"
+    },
+    "fronts": {
+      "egypt": {
+        "name_he": "מצרים",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "הסכם מצרים-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked"
+      },
+      "lebanon": {
+        "name_he": "לבנון",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00199_TheArmisticeAgreementBetweenLebanonandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "הסכם לבנון-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00199_TheArmisticeAgreementBetweenLebanonandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked"
+      },
+      "jordan": {
+        "name_he": "ירדן",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked"
+      },
+      "syria": {
+        "name_he": "סוריה",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "הסכם סוריה-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked"
+      }
+    },
+    "features": {
+      "lebanon_adl": {
+        "name_he": "קו שביתת הנשק (לבנון-ישראל): הגבול הבין-לאומי",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00199_TheArmisticeAgreementBetweenLebanonandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "syria_adl": {
+        "name_he": "קו שביתת הנשק (סוריה-ישראל)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "syria_dmz_north": {
+        "name_he": "האזור המפורז (סוריה-ישראל), החלק הצפוני: בניאס ותל אל-קאדי",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/תל_דן",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "syria_dmz_central": {
+        "name_he": "האזור המפורז (סוריה-ישראל), החלק המרכזי: דרדרה, הירדן ומשמר הירדן",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/דרדרה",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "syria_dmz_south": {
+        "name_he": "האזור המפורז (סוריה-ישראל), החלק הדרומי: עין-גב ואל-חמה",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00201_TheArmisticeAgreementBetweenSyriaandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "egypt_adl_gaza": {
+        "name_he": "קו שביתת הנשק (מצרים-ישראל) מ־1949, אזור עזה-רפיח: מוודי חזי עד עזה",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "egypt_el_auja_dmz": {
+        "name_he": "השטח המפורז באל-עוג'ה (מצרים-ישראל)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "egypt_mv1950_demarcation": {
+        "name_he": "קו התיחום במפת המודוס ויוונדי החתומה מ־1950 (אזור עזה-רפיח)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "מודוס ויוונדי להסכם מצרים-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked",
+        "label_note_he": "מודוס ויוונדי מ־1950",
+        "label_note_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "label_note_he_review": "agent-checked"
+      },
+      "egypt_mv1950_zone_lines": {
+        "name_he": "קווי אזורים A ו־C של המודוס ויוונדי מ־1950 (אזור עזה-רפיח)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked",
+        "agreement_he": "מודוס ויוונדי להסכם מצרים-ישראל על שביתת נשק כללית",
+        "agreement_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://content.ecf.org.il/files/M00193_TheArmisticeAgreementBetweenEgyptandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "agreement_he_review": "agent-checked",
+        "label_note_he": "מודוס ויוונדי מ־1950",
+        "label_note_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מודוס_ויוונדי",
+            "checked": "2026-10-21"
+          }
+        ],
+        "label_note_he_review": "agent-checked"
+      },
+      "jordan_adl_iraqi_c_east": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), קו A, מזבובה לנהר הירדן (סעיף 6.3(ג), עד 17 ביולי 1949)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_iraqi_b_wadi_ara": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), קו A, ואדי ערה, מזבובה לבקעה (סעיף 6.3(ב), עד 22 במאי 1949)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_iraqi_a_triangle": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), קו A, מבקעה לכפר קאסם (סעיף 6.3(א), עד 8 במאי 1949)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_iraqi_c_south": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), קו A, מכפר קאסם לחירבת דיר-ערב (סעיף 6.3(ג), עד 17 ביולי 1949)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_a_latrun": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), מחירבת דיר-ערב לירושלים (לטרון)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_bc_south": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), מירושלים לים המלח (קו B, חברון-ים המלח)",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      },
+      "jordan_adl_d_arava": {
+        "name_he": "קו שביתת הנשק (ירדן-ישראל), מים המלח למפרץ אילת",
+        "name_he_sources": [
+          {
+            "url": "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf",
+            "checked": "2026-10-21"
+          },
+          {
+            "url": "https://he.wikipedia.org/wiki/מפרץ_אילת",
+            "checked": "2026-10-21"
+          }
+        ],
+        "name_he_review": "agent-checked"
+      }
+    }
+  }
+}

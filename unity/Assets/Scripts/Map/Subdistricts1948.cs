@@ -42,24 +42,25 @@ namespace Statecraft.Game.Map
 
         static FileDoc FromRuntime(RegionsRuntime.Doc d) => new FileDoc
         {
-            Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!,
+            Layer = d.Str("layer", "")!, Title = d.Str("title", "")!, Line = d.Str("line", "")!, Label = d.Str("label", "")!, LabelHe = d.Str("label_he", "")!,
             ShownFrom = d.Str("shown_from", "")!, ShownUntil = d.Str("shown_until", null),
             Fronts = d.Items("fronts", r => new FrontRow { Key = r.Str("key", "")!, Until = r.Str("until", null) }),
             Regions = d.Items("regions", r => new FileRow
             {
-                Id = r.Int("id", 0), Key = r.Str("key", "")!, Name = r.Str("name", "")!, District = r.Str("district", "")!, Style = r.Str("style", "")!,
+                Id = r.Int("id", 0), Key = r.Str("key", "")!, Name = r.Str("name", "")!, District = r.Str("district", "")!,
+                NameHe = r.Str("name_he", "")!, DistrictHe = r.Str("district_he", "")!, Style = r.Str("style", "")!,
             }),
             Hexes = d.Ints("hexes"),
         };
 
         public sealed class Region
         {
-            public int Id; public string Key = "", Name = "", District = ""; public BorderStyle Style;
+            public int Id; public string Key = "", Name = "", District = "", NameHe = "", DistrictHe = ""; public BorderStyle Style;
         }
 
         public readonly RegionLayer Layer;
         /// <summary>What the map shows, and where the true line is (the file's "line").</summary>
-        public readonly string Title, Line, Label;
+        public readonly string Title, Line, Label, LabelHe;
         public readonly DateTime ShownFrom;
         /// <summary>The first date the layer is no longer shown (null: until replaced, no end set yet).</summary>
         public readonly DateTime? ShownUntil;
@@ -68,9 +69,9 @@ namespace Statecraft.Game.Map
         public readonly IReadOnlyDictionary<string, DateTime?> Fronts;
         readonly Dictionary<int, Region> regions;
 
-        Subdistricts1948(RegionLayer layer, string title, string line, string label, DateTime from, DateTime? until, Dictionary<int, Region> regions,
+        Subdistricts1948(RegionLayer layer, string title, string line, string label, string labelHe, DateTime from, DateTime? until, Dictionary<int, Region> regions,
             Dictionary<string, DateTime?> fronts)
-        { Layer = layer; Title = title; Line = line; Label = label; ShownFrom = from; ShownUntil = until; this.regions = regions; Fronts = fronts; }
+        { Layer = layer; Title = title; Line = line; Label = label; LabelHe = labelHe; ShownFrom = from; ShownUntil = until; this.regions = regions; Fronts = fronts; }
 
         /// <summary>Whether the front's armistice line has replaced this layer there by <paramref name="date"/>.</summary>
         public bool FrontReplaced(string front, DateTime date) => Fronts.TryGetValue(front, out var u) && u != null && date >= u.Value;
@@ -84,9 +85,9 @@ namespace Statecraft.Game.Map
         public Region? SubdistrictAt(int q, int r) =>
             regions.TryGetValue(Layer.RegionOf(q, r), out var x) && x.Style != BorderStyle.None ? x : null;
 
-        sealed class FileRow { public int Id { get; set; } public string Key { get; set; } = ""; public string Name { get; set; } = ""; public string District { get; set; } = ""; public string Style { get; set; } = ""; }
+        sealed class FileRow { public int Id { get; set; } public string Key { get; set; } = ""; public string Name { get; set; } = ""; public string District { get; set; } = ""; public string NameHe { get; set; } = ""; public string DistrictHe { get; set; } = ""; public string Style { get; set; } = ""; }
         sealed class FrontRow { public string Key { get; set; } = ""; public string? Until { get; set; } }
-        sealed class FileDoc { public string Layer { get; set; } = ""; public string Title { get; set; } = ""; public string Line { get; set; } = ""; public string Label { get; set; } = ""; public string ShownFrom { get; set; } = ""; public string? ShownUntil { get; set; } public List<FrontRow> Fronts { get; set; } = new List<FrontRow>(); public List<FileRow> Regions { get; set; } = new List<FileRow>(); public List<List<int>> Hexes { get; set; } = new List<List<int>>(); }
+        sealed class FileDoc { public string Layer { get; set; } = ""; public string Title { get; set; } = ""; public string Line { get; set; } = ""; public string Label { get; set; } = ""; public string LabelHe { get; set; } = ""; public string ShownFrom { get; set; } = ""; public string? ShownUntil { get; set; } public List<FrontRow> Fronts { get; set; } = new List<FrontRow>(); public List<FileRow> Regions { get; set; } = new List<FileRow>(); public List<List<int>> Hexes { get; set; } = new List<List<int>>(); }
 
         /// <summary>Parses the baked file. Every malformed input throws InvalidDataException naming the file and the entry.</summary>
         public static Subdistricts1948 Parse(string yaml)
@@ -126,7 +127,8 @@ namespace Statecraft.Game.Map
                 };
                 if (string.IsNullOrWhiteSpace(r.Key) || string.IsNullOrWhiteSpace(r.Name)) throw new InvalidDataException($"{FileName}: region {r.Id}: key and name are required");
                 if (regions.ContainsKey(r.Id)) throw new InvalidDataException($"{FileName}: region id {r.Id} twice");
-                regions[r.Id] = new Region { Id = r.Id, Key = r.Key, Name = r.Name, District = r.District, Style = style };
+                regions[r.Id] = new Region { Id = r.Id, Key = r.Key, Name = r.Name, District = r.District,
+                    NameHe = r.NameHe ?? "", DistrictHe = r.DistrictHe ?? "", Style = style };
                 styles[r.Id] = style;
             }
             var hexes = new Dictionary<(int q, int r), int>();
@@ -141,7 +143,7 @@ namespace Statecraft.Game.Map
             // The label goes in the game's UI (GameRoot, the "map-layer" label), not the 3D banner, which the tilt-shift blurs.
             try { layer = new RegionLayer(doc.Layer, hexes, styles); }
             catch (ArgumentException e) { throw new InvalidDataException($"{FileName}: {e.Message}", e); }
-            return new Subdistricts1948(layer, doc.Title, doc.Line, doc.Label, from, until, regions, fronts);
+            return new Subdistricts1948(layer, doc.Title, doc.Line, doc.Label, doc.LabelHe ?? "", from, until, regions, fronts);
         }
 
         static DateTime? Date(string? text, string key)

@@ -25,6 +25,28 @@ public class SubdistrictTests
     static GameInputs Inputs => inputs ??= GameInputs.FromDisk(Paths.Content, Paths.StreamingMap);
     static string FileText => File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName));
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    [TestCase(true, true)]
+    public void RegionDetailsUseEachHebrewNameIndependentlyAndKeepEnglish(bool hasName, bool hasDistrict)
+    {
+        const string name = "Acre Sub-District", district = "Galilee District";
+        var yaml = "layer: names\nlabel: L\nshown_from: 1948-05-15\nregions:\n"
+            + "  - { id: 1, key: acre, name: '" + name + "', district: '" + district + "', style: primary"
+            + (hasName ? ", name_he: 'נפת עכו'" : "")
+            + (hasDistrict ? ", district_he: 'מחוז הגליל'" : "")
+            + " }\nhexes:\n  - [0, 0, 1]\n";
+        var regions = new MapRegions(Subdistricts1948.Parse(yaml), null);
+        var date = new DateTime(1948, 5, 15);
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        Assert.AreEqual(Text.Format("info.region", name, district), InfoPanelPresenter.RegionText(regions, Text, 0, 0, date));
+        Assert.AreEqual(he.Format("info.region", hasName ? "נפת עכו" : name, hasDistrict ? "מחוז הגליל" : district),
+            InfoPanelPresenter.RegionText(regions, he, 0, 0, date));
+        Assert.AreEqual("", InfoPanelPresenter.RegionText(regions, he, 1, 0, date), "an unknown hex has no region");
+    }
+
     string saveDir = "";
 
     [SetUp] public void TempSaves() => saveDir = Path.Combine(Path.GetTempPath(), "statecraft-subd-" + Guid.NewGuid().ToString("N"));

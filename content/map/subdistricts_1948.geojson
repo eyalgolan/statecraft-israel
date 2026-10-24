@@ -398,7 +398,15 @@
   "cross_check": {
    "scan": "Eran Laor Cartographic Collection copy, National Library of Israel (FL147392105, published 1947-06 per Commons); Commons tags {{PD-UKGov}}{{PD-IsraelGov}}",
    "sha256": "84f2bdac9d39cfc39063d04f2a7e440d2a4786f548ce539837cc919202912792"
-  }
+  },
+  "label_he": "נפות המנדט, 1947",
+  "label_he_sources": [
+   {
+    "url": "https://he.wikipedia.org/wiki/מחוזות_המנדט_הבריטי",
+    "checked": "2026-10-21"
+   }
+  ],
+  "label_he_review": "agent-checked"
  },
  "features":[
 {"type":"Feature",

@@ -139,19 +139,22 @@ namespace Statecraft.Game.Map
         /// label, {1} armistice label, {2} front names); map.layer_front_no_data ({0} a front's name, appended for each front
         /// without data); map.layer_front_low ({0} a low-accuracy front's name: Jordan, from a low-resolution scan);
         /// map.layer_front_note ({0} a front's name and {1} the notes of its items shown: the 1950 modus vivendi).</summary>
-        public string Label(DateTime date, Func<string, object[], string> format)
+        public string Label(DateTime date, Func<string, object[], string> format, bool hebrew = false)
         {
+            string Pick(string english, string translated) => hebrew && !string.IsNullOrWhiteSpace(translated) ? translated : english;
             var (on, none) = FrontsOn(date);
-            if (on.Count == 0 || Armistice == null) return Subdistricts.Label;
+            var subdistrictLabel = Pick(Subdistricts.Label, Subdistricts.LabelHe);
+            if (on.Count == 0 || Armistice == null) return subdistrictLabel;
             string Name(Armistice1949.Front f)
             {
-                var n = f.LowAccuracy ? format("map.layer_front_low", new object[] { f.Name }) : f.Name;
+                var name = Pick(f.Name, f.NameHe);
+                var n = f.LowAccuracy ? format("map.layer_front_low", new object[] { name }) : name;
                 var notes = Armistice.Zones.Concat(Armistice.Lines).Where(x => x.Front == f && InForce(x, date) && x.LabelNote != "")
-                    .Select(x => x.LabelNote).Distinct().ToList();
+                    .Select(x => Pick(x.LabelNote, x.LabelNoteHe)).Distinct().ToList();
                 return notes.Count == 0 ? n : format("map.layer_front_note", new object[] { n, string.Join(", ", notes) });
             }
-            var text = format("map.layer_with_armistice", new object[] { Subdistricts.Label, Armistice.Label, string.Join(", ", on.Select(Name)) });
-            foreach (var f in none) text += format("map.layer_front_no_data", new object[] { f.Name });
+            var text = format("map.layer_with_armistice", new object[] { subdistrictLabel, Pick(Armistice.Label, Armistice.LabelHe), string.Join(", ", on.Select(Name)) });
+            foreach (var f in none) text += format("map.layer_front_no_data", new object[] { Pick(f.Name, f.NameHe) });
             return text;
         }
 

@@ -48,6 +48,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "map" / "armistice_lines_1949.geojson"
 SUBDISTRICTS = ROOT / "content" / "map" / "subdistricts_1948.geojson"
+HEBREW_NAMES = ROOT / "content" / "map" / "region_names_he.json"
 CHECKED = "2026-10-11"
 # The owner's sign-off (CONTENT_POLICY 2.7, in the owner's own commit): the 11 features the owner approved on 2026-10-23 (#196), the
 # owner's review standing as their fact check too (owner ruling, PR #1444: "My review counts"). The 5 flagged stay draft.
@@ -1109,7 +1110,24 @@ def build(syria_pdf: Path, syria_tif: Path, gaza: Path, mv1: Path, mv2: Path, jo
                                   "highway_on_red_road": eg["fit"]["highway_on_red_road"], "highway_km": eg["highway_km"],
                                   "wadi_hasi_mouth_mr": [round(v, 2) for v in eg["mouth"]], "deir_suneid_mr": [round(v, 2) for v in eg["deir_suneid"]]}},
     }
-    return {"type": "FeatureCollection", "statecraft": meta, "features": feats}
+    return with_hebrew_names({"type": "FeatureCollection", "statecraft": meta, "features": feats})
+
+
+def with_hebrew_names(collection: dict) -> dict:
+    """Authored display names and their review flags; never change traced geometry or agreement dates."""
+    names = json.loads(HEBREW_NAMES.read_text(encoding="utf-8"))["armistice"]
+    def replace(target: dict, authored: dict) -> None:
+        # A names-only refresh of an existing file must also copy the absence of a person's removed review flag.
+        for key in list(target):
+            if key.endswith("_he") or "_he_" in key:
+                del target[key]
+        target.update(authored)
+    replace(collection["statecraft"], names["metadata"])
+    for front in collection["statecraft"]["fronts"]:
+        replace(front, names["fronts"][front["key"]])
+    for feature in collection["features"]:
+        replace(feature["properties"], names["features"][feature["properties"]["id"]])
+    return collection
 
 
 def main() -> None:
