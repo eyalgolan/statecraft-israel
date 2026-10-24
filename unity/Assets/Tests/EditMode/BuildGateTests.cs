@@ -269,10 +269,13 @@ public class BuildGateTests
     public void TheShareableBuildChecksTheShippedCatalog()
     {
         var source = System.IO.File.ReadAllText("Assets/Editor/Build.cs");
-        var body = source.Substring(source.IndexOf("static bool RefuseUnlessShareable()", StringComparison.Ordinal), 900);
+        var start = source.IndexOf("static bool RefuseUnlessShareable()", StringComparison.Ordinal);
+        var body = source.Substring(start, source.IndexOf("\n        }\n", start, StringComparison.Ordinal) - start);   // the whole method
         StringAssert.Contains("EventImageImport.CatalogPath", body, "the gate loads the catalog the build ships");
         StringAssert.Contains("File.Exists(EventImageImport.CatalogPath)", body, "a catalog that fails to load is not 'nothing to review'");
         StringAssert.Contains("EventImageMapping.Path", body, "the gate cross-checks the mapping");
+        StringAssert.Contains("SettlementControlStringReview.Refusal(", body, "R-GATE-002: the gate checks the settlement-control strings");
+        StringAssert.Contains("UiPaths.SettlementControlStringsReview", body, "R-GATE-002: from the shipped manifest");
     }
 
     static MethodInfo Gate => Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
