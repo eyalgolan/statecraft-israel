@@ -24,7 +24,9 @@ public class AdvisorMediaTests
         public void Load(string url, VisualElement target, Action<string> failed) { Loads++; }
         public void Start() { Started = true; Stopped = false; }
         public void Stop() => Stopped = true;
-        public void Seek(double t) { Seeks.Add(t); Time = t; }
+        /// <summary>False: as a browser whose host serves no byte ranges, every seek puts the clip back at its start.</summary>
+        public bool Seekable = true;
+        public void Seek(double t) { Seeks.Add(t); Time = Seekable ? t : 0; }
     }
 
     sealed class FakeOutput : DeclarationRecording.IOutput
@@ -81,6 +83,36 @@ public class AdvisorMediaTests
         CollectionAssert.AreEqual(new[] { 3.0 }, pic.Seeks);
         output.Position = 3.5f; pic.Time = 3.45; media.Tick();
         Assert.AreEqual(1, pic.Seeks.Count, "within 0.1 s: left alone");
+    }
+
+    /// <summary>The v0.3.0 release check: a host without byte ranges cannot seek, so each seek put the clip back at 0 and the
+    /// next tick seeked again, holding the picture on its first frame while the narration ran. One seek that does not take
+    /// ends the correction for that clip, and the picture plays on.</summary>
+    [Test]
+    public void ASeekThatDoesNotTakeIsNotRepeated()
+    {
+        var (media, pic, output, _) = Make();
+        pic.Seekable = false; pic.Ready = true; media.Tick();
+        output.Position = 0.3f; media.Tick();                                   // started late: 0.3 s behind
+        Assert.AreEqual(1, pic.Seeks.Count, "the first drift is corrected");
+        for (int i = 0; i < 100; i++)
+        {
+            output.Position += AdvisorMedia.TickMs / 1000f; pic.Time += AdvisorMedia.TickMs / 1000.0;
+            media.Tick();
+        }
+        Assert.AreEqual(1, pic.Seeks.Count, "a seek that came back at the start is not repeated every tick");
+        Assert.Greater(pic.Time, 4.9, "the picture advances");
+    }
+
+    [Test]
+    public void ASeekThatTakesLeavesTheCorrectionOn()
+    {
+        var (media, pic, output, _) = Make();
+        pic.Ready = true; media.Tick();
+        output.Position = 1.0f; pic.Time = 0.5; media.Tick();
+        output.Position = 1.05f; pic.Time = 1.05; media.Tick();
+        output.Position = 3.0f; pic.Time = 2.5; media.Tick();
+        CollectionAssert.AreEqual(new[] { 1.0, 3.0 }, pic.Seeks);
     }
 
     [Test]
