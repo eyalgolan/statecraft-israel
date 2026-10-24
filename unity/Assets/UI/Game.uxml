@@ -422,6 +422,16 @@
                     <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- How much the advisors say (spec 6, AdvisorSettings): four levels, the one set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-advisors-label" text="Advisors" class="settings-name" />
+                <ui:VisualElement class="row settings-choices settings-advisors">
+                    <ui:Button name="settings-advisors-new" class="settings-switch" />
+                    <ui:Button name="settings-advisors-experienced" class="settings-switch" />
+                    <ui:Button name="settings-advisors-warnings" class="settings-switch" />
+                    <ui:Button name="settings-advisors-off" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-language-label" text="Language" class="settings-name" />

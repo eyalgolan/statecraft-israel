@@ -1048,3 +1048,6 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    one-row bar, 8 in the narrow one. */
 .advisor-ring-open #attention { margin-bottom: 5px; }
 .advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }
+
+/* The help-level choices can wrap within narrow Settings screens (spec6). */
+.settings-advisors { flex-wrap: wrap; flex-shrink: 1; }

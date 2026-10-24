@@ -673,3 +673,10 @@ advisor.opening.objectives.text: "במסך היעדים מופיעים יעדי 
 advisor.next: "הבא"
 advisor.done: "סיום"
 advisor.step: "שלב {0} מתוך {1}"
+
+# Advisor help levels (spec6). Hebrew is an agent draft for the native reviewer (#564).
+settings.advisors: "יועצים"
+settings.advisors.new: "חדשים במשחקי אסטרטגיה"
+settings.advisors.experienced: "מנוסים"
+settings.advisors.warnings: "אזהרות בלבד"
+settings.advisors.off: "כבוי"

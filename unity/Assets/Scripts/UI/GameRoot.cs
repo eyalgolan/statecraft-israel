@@ -291,7 +291,10 @@ namespace Statecraft.Game.UI
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio));
+            if (keep == null || AdvisorSession == null)
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
+                    autoShow: showsStart && !FirstCardCheckRequested() && SettingsFile() != null);
+            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -528,9 +531,6 @@ namespace Statecraft.Game.UI
             // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
             // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
             // where the guide does: the start screen shows and a settings file remembers what was seen.
-            if (keep == null || AdvisorSession == null)
-                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
-                    autoShow: showsStart && !FirstCardCheckRequested() && SettingsFile() != null);
             advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
                 new AdvisorHooks
                 {

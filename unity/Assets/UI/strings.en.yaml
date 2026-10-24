@@ -627,3 +627,10 @@ advisor.next: "Next"
 advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
 advisor.step: "Step {0} of {1}"
+
+# Advisor help levels (spec6). Hebrew is an agent draft for the native reviewer (#564).
+settings.advisors: "Advisors"
+settings.advisors.new: "New to strategy games"
+settings.advisors.experienced: "Experienced"
+settings.advisors.warnings: "Warnings only"
+settings.advisors.off: "Off"
