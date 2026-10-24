@@ -70,6 +70,10 @@ namespace Statecraft.Game.UI
         FirstTurnGuidePresenter? guide;
         /// <summary>Tests: the first-turn guide of the last Begin.</summary>
         internal FirstTurnGuidePresenter? Guide => guide;
+        AdvisorPresenter? advisor;
+        /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
+        internal AdvisorPresenter? Advisor => advisor;
+        internal AdvisorSession? AdvisorSession { get; private set; }
         FeedbackPresenter? feedback;
         SharePresenter? share;
         InfoPanelPresenter? info;
@@ -296,7 +300,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape();
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.Escape() == true;
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -464,7 +468,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) firstTurn?.NewGame();
+                    if (!shown && start?.Resumed == false) { firstTurn?.NewGame(); advisor?.NewGame(); }
                 }, recording, text));
                 start.Show();
             }
@@ -512,6 +516,15 @@ namespace Statecraft.Game.UI
             guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
                 card, showCity, () => nav?.Close(), bridge, keepSelection, showUnit));
             if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
+            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
+            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
+            // where the guide does: the start screen shows and a settings file remembers what was seen.
+            if (keep == null || AdvisorSession == null)
+                AdvisorSession = new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
+                    autoShow: showsStart && !FirstCardCheckRequested() && SettingsFile() != null);
+            advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
+                new AdvisorHooks { Card = card, OpenScreen = s => nav?.Open(s) }));
+            if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             DiagLog.BootPhase("screens ready");
@@ -624,7 +637,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
