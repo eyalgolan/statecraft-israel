@@ -133,3 +133,50 @@ def test_documented_isolated_command_starts():
     import sys
     r = subprocess.run([sys.executable, "-I", str(Path(ei.__file__)), "--help"], capture_output=True, text=True, cwd="/")
     assert r.returncode == 0 and "--originals" in r.stdout, r.stderr[-400:]
+
+
+@pytest.mark.parametrize('include_known, unknown', [
+    (False, ('unknown-media-one',)),
+    (False, ('unknown-media-one', 'unknown-media-two')),
+    (True, ('unknown-media-one', 'unknown-media-two')),
+], ids=['one-unknown', 'two-unknowns', 'known-and-two-unknowns'])
+def test_unknown_only_values_refuse_before_sources_or_outputs(tmp_path, capsys, monkeypatch, as_isolated,
+                                                            include_known, unknown):
+    rows = ei.load_rows()[:2]
+    known = rows[1]['event']
+    monkeypatch.setattr(ei, 'load_rows', lambda mapping=ei.MAPPING: rows)
+    touched = []
+    monkeypatch.setattr(Path, 'is_file', lambda p: touched.append(('is_file', p)) or False)
+    monkeypatch.setattr(Path, 'read_bytes', lambda p: touched.append(('read_bytes', p)) or b'')
+    monkeypatch.setattr(Path, 'write_bytes', lambda p, data: touched.append(('write_bytes', p)) or len(data))
+    monkeypatch.setattr(Path, 'mkdir', lambda p, *a, **k: touched.append(('mkdir', p)))
+    originals, out = tmp_path / 'missing-originals', tmp_path / 'missing-out'
+    args = ['--originals', str(originals), '--out', str(out)]
+    for value in ([known] if include_known else []) + list(unknown):
+        args += ['--only', value]
+    assert ei.main(args) != 0
+    captured = capsys.readouterr()
+    message = captured.out + captured.err
+    assert '--only' in message and all(value in message for value in unknown)
+    assert known not in message
+    assert touched == [], 'invalid selection must not inspect sources or create/write outputs'
+    assert not originals.exists() and not out.exists()
+
+
+@pytest.mark.parametrize('selection', [(), (1,), (1, 1), (1, 0)],
+                         ids=['all', 'single', 'repeated-same', 'repeated-different'])
+def test_valid_only_keeps_the_first_selected_source_check(tmp_path, capsys, monkeypatch, as_isolated, selection):
+    rows = ei.load_rows()[:2]
+    monkeypatch.setattr(ei, 'load_rows', lambda mapping=ei.MAPPING: rows)
+    looked_at = []
+    monkeypatch.setattr(Path, 'is_file', lambda p: looked_at.append(p) or False)
+    originals, out = tmp_path / 'originals', tmp_path / 'out'
+    args = ['--originals', str(originals), '--out', str(out)]
+    for index in selection:
+        args += ['--only', rows[index]['event']]
+    first = rows[min(selection) if selection else 0]
+    expected = originals / (first['event'] + '.jpg')
+    assert ei.main(args) == 1
+    assert capsys.readouterr().out == f'MISSING {expected}\n'
+    assert looked_at == [expected]
+    assert not out.exists()

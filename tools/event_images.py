@@ -114,7 +114,11 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     if not isolated():
         print("run with python -I: the originals are untrusted downloads (see the module docstring)"); return 2
-    rows = [r for r in load_rows() if not a.only or r["event"] in a.only]
+    rows = load_rows()
+    unknown = sorted(set(a.only) - {r["event"] for r in rows})
+    if unknown:
+        print(f"UNKNOWN --only: {', '.join(unknown)}"); return 2
+    rows = [r for r in rows if not a.only or r["event"] in a.only]
     for r in rows:   # check every download before reading or writing anything, so a bad row writes nothing
         src = a.originals / f"{r['event']}.jpg"
         if not src.is_file():

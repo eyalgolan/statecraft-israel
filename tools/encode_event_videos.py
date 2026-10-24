@@ -138,9 +138,13 @@ def main(argv: list[str] | None = None) -> int:
     if a.steadiest:
         start, numbers = steadiest(a.steadiest, decimate=a.decimate)
         print(json.dumps({"start_frame": start, "start_s": round(start / FPS, 3), "frames": int(round(3.5 * FPS)), **numbers})); return 0
+    rows = load_rows()
+    unknown = sorted(set(a.only) - {Path(r["file"]).stem for r in rows})
+    if unknown:
+        print(f"UNKNOWN --only: {', '.join(unknown)}"); return 2
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         print("ffmpeg and ffprobe are needed"); return 2
-    rows = [r for r in load_rows() if not a.only or Path(r["file"]).stem in a.only]
+    rows = [r for r in rows if not a.only or Path(r["file"]).stem in a.only]
     for r in rows:   # check every source before writing anything
         src = a.root / r["source"]
         if not src.is_file():

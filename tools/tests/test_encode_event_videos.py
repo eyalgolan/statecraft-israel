@@ -201,3 +201,65 @@ def test_the_temporary_copy_is_hashed_again_before_it_is_encoded(tmp_path, capsy
     assert ev.main(["--root", str(tmp_path), "--out", str(tmp_path / "out")]) == 1
     assert "SHA-256 MISMATCH" in capsys.readouterr().out
     assert not any((tmp_path / "out").iterdir())
+
+
+@pytest.mark.parametrize('include_known, unknown', [
+    (False, ('unknown-media-one',)),
+    (False, ('unknown-media-one', 'unknown-media-two')),
+    (True, ('unknown-media-one', 'unknown-media-two')),
+], ids=['one-unknown', 'two-unknowns', 'known-and-two-unknowns'])
+def test_unknown_only_values_refuse_before_sources_or_outputs(tmp_path, capsys, monkeypatch,
+                                                            include_known, unknown):
+    rows = ev.load_rows()[:2]
+    known = Path(rows[1]['file']).stem
+    monkeypatch.setattr(ev, 'load_rows', lambda mapping=ev.MAPPING: rows)
+    monkeypatch.setattr(ev.shutil, 'which', lambda name: '/unused/' + name)
+    touched = []
+    monkeypatch.setattr(Path, 'is_file', lambda p: touched.append(('is_file', p)) or False)
+    monkeypatch.setattr(Path, 'read_bytes', lambda p: touched.append(('read_bytes', p)) or b'')
+    monkeypatch.setattr(Path, 'write_bytes', lambda p, data: touched.append(('write_bytes', p)) or len(data))
+    monkeypatch.setattr(Path, 'mkdir', lambda p, *a, **k: touched.append(('mkdir', p)))
+    root, out = tmp_path / 'missing-promo', tmp_path / 'missing-out'
+    args = ['--root', str(root), '--out', str(out)]
+    for value in ([known] if include_known else []) + list(unknown):
+        args += ['--only', value]
+    assert ev.main(args) != 0
+    captured = capsys.readouterr()
+    message = captured.out + captured.err
+    assert '--only' in message and all(value in message for value in unknown)
+    assert known not in message
+    assert touched == [], 'invalid selection must not inspect sources or create/write outputs'
+    assert not root.exists() and not out.exists()
+
+
+@pytest.mark.parametrize('selection', [(), (1,), (1, 1), (1, 0)],
+                         ids=['all', 'single', 'repeated-same', 'repeated-different'])
+def test_valid_only_keeps_the_first_selected_source_check(tmp_path, capsys, monkeypatch, selection):
+    rows = ev.load_rows()[:2]
+    monkeypatch.setattr(ev, 'load_rows', lambda mapping=ev.MAPPING: rows)
+    monkeypatch.setattr(ev.shutil, 'which', lambda name: '/unused/' + name)
+    looked_at = []
+    monkeypatch.setattr(Path, 'is_file', lambda p: looked_at.append(p) or False)
+    root, out = tmp_path / 'promo-root', tmp_path / 'out'
+    args = ['--root', str(root), '--out', str(out)]
+    for index in selection:
+        args += ['--only', Path(rows[index]['file']).stem]
+    expected = root / rows[min(selection) if selection else 0]['source']
+    assert ev.main(args) == 1
+    assert capsys.readouterr().out == f'MISSING {expected}\n'
+    assert looked_at == [expected]
+    assert not out.exists()
+
+
+def test_steadiest_mode_keeps_its_independent_path(tmp_path, capsys, monkeypatch):
+    import json
+    seen = []
+    def window(path, decimate=False):
+        seen.append((path, decimate))
+        return 7, {'score': 1.0}
+    monkeypatch.setattr(ev, 'steadiest', window)
+    monkeypatch.setattr(ev, 'load_rows', lambda *a, **k: pytest.fail('steadiest must not load the mapping'))
+    source = tmp_path / 'shot.mp4'
+    assert ev.main(['--steadiest', str(source), '--decimate', '--only', 'unknown-media-one']) == 0
+    assert seen == [(source, True)]
+    assert json.loads(capsys.readouterr().out)['start_frame'] == 7
