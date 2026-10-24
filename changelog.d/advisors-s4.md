@@ -1,2 +1,2 @@
 ### Added
-- Advisor help levels in Settings, and warnings for a city at risk, exhausted Money and Food, debt near its ceiling, a Food shortage, an unsubmitted budget and an empty Arms stock. Critical warnings show at every help level; Hebrew advice awaits native review. The end screen names a war loss (Refs #1484).
+- Advisor help levels in Settings, applied at once, and advisor warnings: a city under attack, Money and Food exhausted together, debt at its ceiling, a Food shortage, a budget left unsubmitted and low Arms. Critical warnings show at every help level and, approved by the owner, in Hebrew; other Hebrew advice awaits native review. A loaded game hears the warnings that already hold. The end screen names a war loss (Refs #1484).
