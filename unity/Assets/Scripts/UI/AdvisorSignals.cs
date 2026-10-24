@@ -31,9 +31,9 @@ namespace Statecraft.Game.UI
             ["situation_active"] = ctx => ctx.State.ActiveSituations.Count > 0,
             ["standing_order"] = ctx => ctx.State.Units.Values.Any(u => u.Side == Movement.PlayerSide && u.Order != ""),
             ["combat_seen"] = ctx => ctx.Bridge.Session.Last?.Why.Any(w => w.Key == WhyKeys.Engagement) == true,
-            // Owner, 24 October 2026: "Fire when low". DESIGN VALUE, for the owner's OK: low is fewer Arms than one attack by
-            // each of our military units in reach of an enemy unit (ArmsForOneRound); an empty stock is always low.
-            ["arms_low"] = ctx => ctx.Content.IsGdd && (ctx.State.Arms == 0 || ctx.State.Arms < ArmsForOneRound(ctx)),
+            // Owner, 24 October 2026: "Fire when low". DESIGN VALUE, for the owner's OK: low is at or below the costliest single
+            // Arms action (ArmsReserve), so an empty stock is low too.
+            ["arms_low"] = ctx => ctx.Content.IsGdd && ctx.State.Arms <= ArmsReserve(ctx),
             ["capture_waiting"] = ctx => ctx.State.Settlements.Values.Any(x => x.State == SettlementControl.AwaitingChoice),
             ["enemy_moved"] = ctx => ctx.Bridge.Session.Last?.Why.Any(w => w.EnemyOrder != "") == true,
             ["objective_done"] = ctx => ctx.State.Objectives.Count > 0,
@@ -48,25 +48,18 @@ namespace Statecraft.Game.UI
         };
         public static IEnumerable<string> Names => Events.Concat(States.Keys);
 
-        /// <summary>The Arms one attack by each of our military units now in reach of an enemy military unit would spend, read
-        /// from the shown state: R-COMBAT-004's mvp.arms_per_attack, or for artillery its type's arms_per_fire within its
-        /// range (R-COMBAT-007), as Combat.Need and Combat.InReach count them. Presentation only; the sim is not asked.</summary>
-        public static int ArmsForOneRound(AdvisorContext ctx)
+        /// <summary>The Arms the costliest single Arms action takes under the rules in force: a recruit group
+        /// (mvp.arms_per_recruit_group, R-ARMS-003), an attack (mvp.arms_per_attack, R-COMBAT-004), or one of our unit types'
+        /// training_arms (R-UNIT-008) or arms_per_fire (R-COMBAT-007). At or below it, one such action may be all the stock
+        /// pays for. There is no Arms upkeep or refill (R-ARMS-001, R-ARMS-002), so a per-turn burn rate would not be stable.
+        /// Presentation only; the sim is not asked.</summary>
+        public static int ArmsReserve(AdvisorContext ctx)
         {
             var mvp = ctx.Content.RulesAt(ctx.State.Date).Mvp;
-            if (mvp?.ArmsPerAttack is not int perAttack) return 0;
-            var enemies = ctx.State.Units.Values.Where(u => u.Side != "" && u.Side != Movement.PlayerSide).ToList();
-            int need = 0;
-            foreach (var u in ctx.State.Units.Values)
-            {
-                if (u.Side != Movement.PlayerSide) continue;
-                var type = ctx.Content.UnitTypes.FirstOrDefault(t => t.Id == u.Type);
-                bool guns = type?.Class == Combat.ArtilleryClass;
-                int reach = guns ? type!.Range ?? 0 : 1;
-                if (enemies.Any(e => MapActions.Distance(u.Q, u.R, e.Q, e.R) is int d && d >= 1 && d <= reach))
-                    need += guns ? type!.ArmsPerFire ?? 0 : perAttack;
-            }
-            return need;
+            int reserve = Math.Max(mvp?.ArmsPerRecruitGroup ?? 0, mvp?.ArmsPerAttack ?? 0);
+            foreach (var t in ctx.Content.UnitTypes)
+                if (t.Side == Movement.PlayerSide) reserve = Math.Max(reserve, Math.Max(t.TrainingArms ?? 0, t.ArmsPerFire ?? 0));
+            return reserve;
         }
 
         /// <summary>Whether a message's `when` holds: each named measure against its bound (spec 4.1).</summary>

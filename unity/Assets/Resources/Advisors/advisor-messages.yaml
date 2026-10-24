@@ -28,7 +28,7 @@ messages:
 # warning.debt_ceiling (so it waits for the ceiling itself, R-END-001: debt at or above it; owner, 24 October
 # 2026, asked about an earlier warning: "No, at the ceiling is fine"), dayan.defeat_war
 # warning.city_held_defeat and dayan.arms_out teach.arms, which fires when Arms are low (owner, 24 October 2026: "Fire
-# when low"; the threshold, AdvisorSignals.ArmsForOneRound, is a DESIGN VALUE for the owner's OK).
+# when low"; the threshold, AdvisorSignals.ArmsReserve, is a DESIGN VALUE for the owner's OK).
 # The three critical warnings' Hebrew is approved by the owner, a native speaker (24 October 2026, asked what Hebrew players
 # should see while the critical warnings wait for review: "Hebrew approved"), as worded in the S4 review sheet; any change
 # to their Hebrew sets them back to pending. The other rows wait for a native reviewer (#564).
