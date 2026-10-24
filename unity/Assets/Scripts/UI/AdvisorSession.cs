@@ -32,6 +32,8 @@ namespace Statecraft.Game.UI
         public AdvisorQueue Queue { get; }
         /// <summary>The event signals fired on <see cref="FiredTurn"/>; they hold for that turn only.</summary>
         public HashSet<string> Fired { get; } = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>Failed media files stay hidden through language rebuilds in this session; never saved.</summary>
+        public HashSet<string> MediaFailed { get; } = new HashSet<string>(StringComparer.Ordinal);
         public int FiredTurn { get; set; } = -1;
         /// <summary>Whether Meyerson has been named in full once this profile (her first appearance, spec 3.1), by her seen marks.</summary>
         public bool Introduced(string advisor) =>

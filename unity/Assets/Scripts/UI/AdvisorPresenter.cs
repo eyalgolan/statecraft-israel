@@ -36,6 +36,29 @@ namespace Statecraft.Game.UI
         public const long HideMs = 150;
         public const string RingClass = "advisor-ring-open";
         public const long RingOnlyMs = 4000;
+        public const string WatchingClass = "advisor-watching", OverlayOpenClass = "advisor-overlay-open";
+        AdvisorMedia? media;
+        public AdvisorMedia? Media
+        {
+            get => media;
+            set { if (ReferenceEquals(media, value)) return; StopWatching(); media?.Dispose(); media = value; UpdateWatch(); }
+        }
+        internal bool? ForceInline { get; set; }
+        readonly VisualElement mediaPicture, overlay, overlayPicture;
+        readonly Label mediaLabel, mediaCredit, overlayCaption, overlayLabel, overlayCredit;
+        readonly Button watch, overlayClose;
+        readonly Action onWatch, onOverlayClose;
+        readonly EventCallback<GeometryChangedEvent> onMediaGeometry;
+        string watchScreens = "";
+        VisualElement? mediaOpener;
+        bool watchStoppedOnPress;
+        int overlayClosedAt = -1;
+        internal bool OverlayClosedThisFrame => overlayClosedAt == Time.frameCount;
+        readonly List<(VisualElement element, bool enabled)> overlayCoveredScreens = new List<(VisualElement, bool)>();
+        readonly EventCallback<PointerDownEvent> onMediaPointer;
+        readonly EventCallback<NavigationSubmitEvent> onMediaSubmit;
+        readonly EventCallback<NavigationCancelEvent> onMediaCancel;
+
         readonly VisualElement ring;
         string? target;
         Action? putBack;
@@ -71,6 +94,22 @@ namespace Statecraft.Game.UI
             layer = root.Q<VisualElement>(LayerName);
             popup = layer.Q<VisualElement>("advisor-popup");
             ring = layer.Q("advisor-ring");
+            mediaPicture = popup.Q("advisor-media"); mediaLabel = popup.Q<Label>("advisor-media-label"); mediaCredit = popup.Q<Label>("advisor-media-credit");
+            overlay = hudRoot.Q("advisor-overlay"); overlayPicture = overlay.Q("advisor-overlay-media");
+            overlayCaption = overlay.Q<Label>("advisor-overlay-caption"); overlayLabel = overlay.Q<Label>("advisor-overlay-label"); overlayCredit = overlay.Q<Label>("advisor-overlay-credit");
+            watch = popup.Q<Button>("advisor-watch"); overlayClose = overlay.Q<Button>("advisor-overlay-close");
+            watch.text = text["advisor.watch"]; overlayClose.text = text["advisor.close"];
+            onWatch = () => { if (watchStoppedOnPress) { watchStoppedOnPress = false; return; } if (Media?.Playing == true) StopWatching(); else if (Shown?.Media is AdvisorCatalog.Media row) Watch(row, "advisor." + Shown.Id); };
+            onOverlayClose = () => CloseOverlay();
+            watch.clicked += onWatch; overlayClose.clicked += onOverlayClose;
+            onMediaPointer = e => StopBeforeButton(e); onMediaSubmit = e => StopBeforeButton(e);
+            onMediaCancel = e => { if (CloseOverlay()) e.StopPropagation(); };
+            hudRoot.RegisterCallback(onMediaPointer, TrickleDown.TrickleDown); hudRoot.RegisterCallback(onMediaSubmit, TrickleDown.TrickleDown);
+            overlay.RegisterCallback(onMediaCancel);
+
+            onMediaGeometry = _ => SizeMedia();
+            hudRoot.RegisterCallback(onMediaGeometry); mediaPicture.RegisterCallback(onMediaGeometry); overlayPicture.RegisterCallback(onMediaGeometry);
+
             portrait = popup.Q<VisualElement>("advisor-portrait");
             name = popup.Q<Label>("advisor-name"); role = popup.Q<Label>("advisor-role");
             words = popup.Q<Label>("advisor-text"); count = popup.Q<Label>("advisor-count");
@@ -79,7 +118,7 @@ namespace Statecraft.Game.UI
             notNow = popup.Q<Button>("advisor-not-now"); gotIt = popup.Q<Button>("advisor-got-it"); close = popup.Q<Button>("advisor-close");
             showMe.text = text["advisor.show_me"]; more.text = text["advisor.more"]; notNow.text = text["advisor.not_now"];
             gotIt.text = text["advisor.got_it"]; close.text = text["advisor.close"];
-            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx), (quote, 20f), (quoteSource, 15f) };
+            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx), (quote, 20f), (quoteSource, 15f), (mediaLabel, 15f), (mediaCredit, 15f), (overlayCaption, TextPx), (overlayLabel, 15f), (overlayCredit, 15f), (watch, 15f), (overlayClose, ButtonPx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
             reopen = root.Q<Button>("how-to-play-guide");
@@ -177,11 +216,13 @@ namespace Statecraft.Game.UI
 
         void Fill(AdvisorCatalog.Message m)
         {
+            if (Shown?.Id != m.Id) StopWatching();
             Shown = m;
             gotIt.text = text["advisor.got_it"];
             name.text = text[m.Advisor == "meyerson" && !session.Introduced(m.Advisor) ? "advisor.meyerson.name_first" : "advisor." + m.Advisor + ".name"];
             role.text = text["advisor." + m.Advisor + ".role"];
-            words.text = text["advisor." + m.Id + ".text"];
+            if (!popup.ClassListContains(WatchingClass)) words.text = text["advisor." + m.Id + ".text"];
+            UpdateWatch();
             var quoteKey = "advisor.quote." + m.Quote;
             bool verifiedQuote = AdvisorQuotes.Ids.Contains(m.Quote) && text.Has(quoteKey + ".text") && text.Has(quoteKey + ".source");
             quote.text = verifiedQuote ? text[quoteKey + ".text"] : "";
@@ -236,6 +277,7 @@ namespace Statecraft.Game.UI
 
         void Hide()
         {
+            StopWatching();
             if (hidden) return;
             hidden = true;
             ring.style.display = DisplayStyle.None;
@@ -258,6 +300,8 @@ namespace Statecraft.Game.UI
         void CoverChanged()
         {
             if (disposed) return;
+            if (Media?.Playing == true && (HardMediaCover() || CurrentScreens() != watchScreens)) StopWatching();
+            if (hudRoot.ClassListContains(OverlayOpenClass)) return;
             if (session.Chain.Step >= 0) { RenderChain(); return; }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
@@ -417,6 +461,7 @@ namespace Statecraft.Game.UI
 
         void ShowMe()
         {
+            StopWatching();
             if (Shown == null) return;
             foreach (var a in Shown.Actions)
                 if (a.ShowMe != "") ShowTarget(a.ShowMe);
@@ -427,6 +472,7 @@ namespace Statecraft.Game.UI
         /// <summary>Got it, the X, or Escape from inside: seen, and the next message (if any) shows.</summary>
         public void GotIt()
         {
+            StopWatching();
             if (session.Chain.Step >= 0) { NextStep(); return; }
             if (Shown == null) return;
             ClearTarget();
@@ -438,11 +484,101 @@ namespace Statecraft.Game.UI
         /// <summary>Not now: off to the next turn and into Counsel's history (spec 7.1). Not for teaching or critical messages.</summary>
         public void NotNow()
         {
+            StopWatching();
             if (Shown == null || Shown.Teaching || Shown.Critical) return;
             ClearTarget();
             session.Queue.PutOff(Shown, Turn, bridge.State.Date);
             Shown = null;
             Render();
+        }
+
+        bool HardMediaCover() => hudRoot.ClassListContains(StartScreenPresenter.OpenClass) || hudRoot.ClassListContains(EventCardPresenter.OpenClass)
+            || hudRoot.ClassListContains(CaptureDialogPresenter.OpenClass) || hudRoot.ClassListContains(TurnReportPresenter.OpenClass)
+            || hudRoot.ClassListContains(OutcomePresenter.OpenClass) || hudRoot.ClassListContains(EndScreenPresenter.OpenClass)
+            || hudRoot.ClassListContains(FeedbackPresenter.OpenClass) || hudRoot.ClassListContains(SharePresenter.OpenClass);
+
+        void StopBeforeButton(EventBase e)
+        {
+            var element = e.target as VisualElement;
+            var button = element as Button ?? element?.GetFirstAncestorOfType<Button>();
+            if (button == null) return;
+            if (button == watch) watchStoppedOnPress = Media?.Playing == true;
+            if (Media?.Playing == true) StopWatching(); // before another window snapshots the covered UI states
+        }
+
+        string CurrentScreens() => string.Join("|", ScreenNav.Screens.Where(n => hudRoot.Q("screen-" + n) is VisualElement screen && ScreenNav.IsOpen(screen)));
+
+        bool Watchable(AdvisorCatalog.Media? row) => Media != null && row != null && !session.MediaFailed.Contains(row.Picture)
+            && row.Narration.ContainsKey(hebrew ? "he" : "en");
+        void UpdateWatch()
+        {
+            bool canWatch = Watchable(Shown?.Media) && Shown!.ApprovedIn(hebrew);
+            Display(watch, canWatch); popup.EnableInClassList("advisor-has-media", canWatch);
+        }
+
+        internal void Watch(AdvisorCatalog.Media row, string keyStem) => PlayMedia(row, keyStem, overlayOnly: false);
+        /// <summary>For the encyclopedia and Counsel adapters once their owners land; their source row must be approved.</summary>
+        internal void WatchOverlay(AdvisorCatalog.Media row, string keyStem) => PlayMedia(row, keyStem, overlayOnly: true);
+
+        void PlayMedia(AdvisorCatalog.Media row, string keyStem, bool overlayOnly)
+        {
+            if (disposed || !Watchable(row) || HardMediaCover()) return;
+            StopWatching(); watchScreens = CurrentScreens(); mediaOpener = hudRoot.focusController?.focusedElement as VisualElement;
+            bool inline = !overlayOnly && (ForceInline ?? AdvisorMedia.Inline(AdvisorLayout.Tier(hudRoot), Slot().height));
+            var picture = inline ? mediaPicture : overlayPicture;
+            var caption = inline ? words : overlayCaption;
+            var label = inline ? mediaLabel : overlayLabel;
+            var credit = inline ? mediaCredit : overlayCredit;
+            label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
+            popup.EnableInClassList(WatchingClass, inline);
+            hudRoot.EnableInClassList(OverlayOpenClass, !inline);
+            if (!inline)
+            {
+                foreach (var name in ScreenNav.Screens)
+                    if (hudRoot.Q("screen-" + name) is VisualElement screen) { overlayCoveredScreens.Add((screen, screen.enabledSelf)); screen.SetEnabled(false); }
+                ScreenNav.DisableCovered(hudRoot); FocusReturn.To(overlayClose);
+            }
+            SizeMedia(); ApplyTextFloor();
+            Media!.Play(row, keyStem, hebrew, picture, caption, StopWatching, _ =>
+            {
+                session.MediaFailed.Add(row.Picture); StopWatching(); UpdateWatch();
+            });
+        }
+
+        void SizeMedia()
+        {
+            void Fit(VisualElement e, float ceiling)
+            {
+                float width = e.layout.width;
+                float height = Mathf.Min(width / EventCardPresenter.MediaAspect, ceiling);
+                if (width > 0 && Mathf.Abs(e.layout.height - height) > 0.5f) e.style.height = height;
+            }
+            Fit(mediaPicture, float.MaxValue);
+            float availableHeight = Mathf.Max(0, hudRoot.layout.height - 220);
+            overlay.Q("advisor-overlay-frame").style.width = Mathf.Min(1000, Mathf.Max(0, hudRoot.layout.width - 32), availableHeight * EventCardPresenter.MediaAspect + 40);
+            Fit(overlayPicture, float.MaxValue);
+        }
+
+        void StopWatching()
+        {
+            bool overlayWasOpen = hudRoot.ClassListContains(OverlayOpenClass);
+            Media?.Stop(); popup.RemoveFromClassList(WatchingClass); hudRoot.RemoveFromClassList(OverlayOpenClass);
+            if (Shown != null) words.text = text["advisor." + Shown.Id + ".text"];
+            if (overlayWasOpen)
+            {
+                overlayClosedAt = Time.frameCount;
+                foreach (var (element, enabled) in overlayCoveredScreens) element.SetEnabled(enabled);
+                overlayCoveredScreens.Clear();
+                ScreenNav.DisableCovered(hudRoot);
+                if (!disposed) FocusReturn.To(mediaOpener ?? gotIt);
+                mediaOpener = null;
+            }
+        }
+
+        public bool CloseOverlay()
+        {
+            if (!hudRoot.ClassListContains(OverlayOpenClass)) return false;
+            StopWatching(); return true;
         }
 
         /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did.</summary>
@@ -516,6 +652,11 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0) putBack = null;  // a rebuilt UI takes its own selection hook
             ClearTarget();
             disposed = true;
+            StopWatching(); Media?.Dispose();
+            watch.clicked -= onWatch; overlayClose.clicked -= onOverlayClose;
+            hudRoot.UnregisterCallback(onMediaGeometry); mediaPicture.UnregisterCallback(onMediaGeometry); overlayPicture.UnregisterCallback(onMediaGeometry);
+            hudRoot.UnregisterCallback(onMediaPointer, TrickleDown.TrickleDown); hudRoot.UnregisterCallback(onMediaSubmit, TrickleDown.TrickleDown);
+            overlay.UnregisterCallback(onMediaCancel);
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
             bridge.RefusedForAttention -= onAttention;

@@ -651,3 +651,16 @@ end.outcome.defeat_war: "The enemy holds a city."
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
 advisor.quote.q1.text: "“THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;”"
 advisor.quote.q1.source: "Declaration of the Establishment of the State of Israel, 14 May 1948"
+
+# Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
+advisor.watch: "Watch"
+
+# S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
+# Hebrew cues remain agent drafts and require the parent opening row’s native approval.
+advisor.opening.greeting.cue.1: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
+advisor.opening.attention.cue.1: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
+advisor.opening.city.cue.1: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
+advisor.opening.training.cue.1: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
+advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
+advisor.opening.event.cue.1: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
+advisor.opening.objectives.cue.1: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
