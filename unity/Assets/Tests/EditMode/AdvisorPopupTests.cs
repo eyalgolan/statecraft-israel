@@ -82,7 +82,7 @@ public class AdvisorPopupTests
         Assert.IsTrue(Displayed(rig.Ui.Q<Button>("advisor-show-me")), "it has an action");
         Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-not-now")), "teaching: Tell me more, not Not now");
         Assert.IsFalse(Displayed(rig.Ui.Q<Button>("advisor-more")), "no page to open yet (S3)");
-        Assert.IsFalse(rig.HudRoot.ClassListContains(AdvisorPresenter.CriticalClass));
+        Assert.IsFalse(rig.Ui.Q<VisualElement>("advisor-popup").ClassListContains(AdvisorPresenter.CriticalClass));
     }
 
     [Test]

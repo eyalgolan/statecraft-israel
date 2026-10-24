@@ -39,6 +39,7 @@ namespace Statecraft.Game.UI
         readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly (VisualElement element, float px)[] floored;
+        readonly IVisualElementScheduledItem follow;
         float flooredFor;
         bool disposed, hidden = true;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
@@ -66,6 +67,10 @@ namespace Statecraft.Game.UI
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
+            // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
+            // it while it shows, as the guide's ring does.
+            follow = layer.schedule.Execute(Place).Every(100);
+            follow.Pause();
             hudRoot.RemoveFromClassList(OpenClass);
         }
 
@@ -156,6 +161,7 @@ namespace Statecraft.Game.UI
                 popup.RegisterCallback<GeometryChangedEvent>(EndOpening);
             }
             hudRoot.AddToClassList(OpenClass);
+            follow.Resume();
             Place();
         }
 
@@ -169,6 +175,7 @@ namespace Statecraft.Game.UI
         {
             if (hidden) return;
             hidden = true;
+            follow.Pause();
             var focused = layer.focusController?.focusedElement as VisualElement;
             if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
@@ -232,13 +239,66 @@ namespace Statecraft.Game.UI
             return true;
         }
 
-        /// <summary>Puts the popup in its slot (AdvisorLayout) and applies the text floor. Task 6 fills it in.</summary>
-        internal void Place() { }
+        /// <summary>The slot in the layer's space (AdvisorLayout.Slot from the HUD as it is laid out now).</summary>
+        internal Rect Slot()
+        {
+            Rect L(string n) => Local(hudRoot.Q(n)!.worldBound);
+            Rect? Visible(string n) { var e = hudRoot.Q(n); return e != null && e.resolvedStyle.display == DisplayStyle.Flex && e.worldBound.width > 0 ? Local(e.worldBound) : (Rect?)null; }
+            var window = new Rect(Vector2.zero, layer.layout.size);
+            return AdvisorLayout.Slot(AdvisorLayout.Tier(hudRoot), window, L("right-column"), L("left-column"), L("minimap"),
+                Visible("event-reopen"), Visible("toast"), Visible("info-panel"), Visible("map-layer"));
+        }
+
+        Rect Local(Rect world)
+        {
+            var min = layer.WorldToLocal(world.min); var max = layer.WorldToLocal(world.max);
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        }
+
+        /// <summary>In its slot, at the top (Task 8 passes Show me's target to keep it off), with the text floor applied.</summary>
+        internal void Place() => Place(null);
+
+        /// <summary>Places the popup and returns where (in the layer's space), or null when it is not shown or not laid out.</summary>
+        internal Rect? Place(Rect? avoid)
+        {
+            if (!hudRoot.ClassListContains(OpenClass) || layer.panel == null || !(layer.layout.width > 0)) return null;
+            ApplyTextFloor();
+            var slot = OnPixels(Slot());
+            var at = AdvisorLayout.Place(slot, popup.resolvedStyle.height > 0 ? popup.resolvedStyle.height : slot.height, avoid);
+            popup.style.left = at.xMin; popup.style.top = at.yMin;
+            popup.style.width = at.width; popup.style.maxHeight = slot.height;
+            return at;
+        }
+
+        /// <summary>The slot shrunk to whole screen pixels: the layout rounds each edge to the nearest one, which on a small
+        /// window (2.5 panel px a pixel at 844 x 390) would push the popup's edges past the slot's.</summary>
+        Rect OnPixels(Rect r)
+        {
+            float s = layer.panel.scaledPixelsPerPoint;
+            if (!(s > 0f)) return r;
+            var o = layer.worldBound.position;
+            float In(float v, float origin) => Mathf.Ceil((v + origin) * s - 0.01f) / s - origin;
+            float Out(float v, float origin) => Mathf.Floor((v + origin) * s + 0.01f) / s - origin;
+            return Rect.MinMaxRect(In(r.xMin, o.x), In(r.yMin, o.y), Out(r.xMax, o.x), Out(r.yMax, o.y));
+        }
+
+        void ApplyTextFloor()
+        {
+            var scale = HudPresenter.ScreenPxPerPanelPx(layer.panel);
+            if (scale == flooredFor) return;
+            flooredFor = scale;
+            foreach (var (element, px) in floored)
+            {
+                var size = HudPresenter.FlooredTextSize(px, scale);
+                element.style.fontSize = size > px ? new StyleLength(size) : new StyleLength(StyleKeyword.Null);
+            }
+        }
 
         public void Dispose()
         {
             if (disposed) return;
             disposed = true;
+            follow.Pause();
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
             showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onGotIt; notNow.clicked -= onNotNow;
