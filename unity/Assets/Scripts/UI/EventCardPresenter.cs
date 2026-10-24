@@ -167,7 +167,7 @@ namespace Statecraft.Game.UI
         public void Collapse() => Collapse(takeFocus: true);
 
         /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
-        /// first-turn guide hides the card while its own panel has the focus, FirstTurnGuidePresenter).</summary>
+        /// advisor opening chain hides the card while its popup has the focus).</summary>
         public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
@@ -505,7 +505,7 @@ namespace Statecraft.Game.UI
         {
             // The bridge raises Refused (the toast shows it) or Changed (the toast clears and Render shows the next event,
             // which takes the focus). Answered from the keyboard with no event left, the focus goes to End Turn (#41 M1),
-            // unless a control outside the card took it meanwhile (the first-turn guide's Next, as it moves on, #1323).
+            // unless a control outside the card took it meanwhile (the opening chain's Next, as it moves on, #1323).
             bridge.Queue(new ChooseEventOption(e.Id, o.Id));
             var focused = hudRoot.focusController?.focusedElement as VisualElement;
             bool kept = focused != null && focused.panel != null && !layer.Contains(focused);

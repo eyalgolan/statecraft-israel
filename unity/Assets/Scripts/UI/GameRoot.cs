@@ -67,10 +67,9 @@ namespace Statecraft.Game.UI
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
-        FirstTurnGuidePresenter? guide;
-        /// <summary>Tests: the first-turn guide of the last Begin.</summary>
-        internal FirstTurnGuidePresenter? Guide => guide;
         AdvisorPresenter? advisor;
+        /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
+        internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
         /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
         internal AdvisorPresenter? Advisor => advisor;
         internal AdvisorSession? AdvisorSession { get; private set; }
@@ -301,7 +300,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.Escape() == true;
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true;
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -457,9 +456,6 @@ namespace Statecraft.Game.UI
             drawn = null; drawnSites = null;
             RenderPlacementsIfChanged();
             SyncMinimap();
-            // The first-turn guide (#42) opens when the start screen closes on a new game (not on Continue). It is made after
-            // the screen, so Shutdown disposes it first and the screen's closing then opens nothing.
-            FirstTurnGuidePresenter? firstTurn = null;
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
             if (showsStart)                                                // newGame is made above whenever smoke == 0
@@ -469,7 +465,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) { firstTurn?.NewGame(); advisor?.NewGame(); }
+                    if (!shown && start?.Resumed == false) { advisor?.NewGame(); }
                 }, recording, text));
                 start.Show();
             }
@@ -479,12 +475,18 @@ namespace Statecraft.Game.UI
             // that can move, its ring and its card, as a click on it would (OnHexClicked), and centres the camera on its hex.
             Action showCity = () =>
             {
-                if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
+                if (AdvisorTargets.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
                 unitLayer.Select(null); map.Select(q, r); info.Show(q, r);
+                var cityHex = bridge.Content.HexAt(q, r);
+                if (cityHex != null)
+                {
+                    camRig.LookAt = map.Frame.ToWorld(cityHex.Lon, cityHex.Lat, 0);
+                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                }
             };
             Action showUnit = () =>
             {
-                if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
+                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
                 unitLayer.Select(id);
                 if (unitLayer.Selected != null)
                 {
@@ -492,42 +494,65 @@ namespace Statecraft.Game.UI
                     var token = unitLayer.Tokens.First(t => t.Token.Unit.Id == id);
                     var hex = bridge.Content.HexAt(token.Q, token.R)!;
                     camRig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                    camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
+                    camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
                     cameraController.Settle(); SyncMinimap(); labels?.Refresh();
                 }
             };
-            // When it closes, the guide puts back the selection it found (a hex, a unit, or none), unless the player has
+            // When it closes, the advisor puts back the selection it found (a hex, a unit, or none), unless the player has
             // picked something else meanwhile (the HUD stays usable under it).
             Func<Action> keepSelection = () =>
             {
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
-                var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State);
-                var guideUnit = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
+                var shownUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                // It reads the UI of the Begin it runs in, so after a language switch rebuilt the UI it still puts back what
+                // the advisor found before (AdvisorSession.ChainState.PutBack).
                 return () =>
                 {
-                    // Under a screen, or the player picked another than the guide's city or unit: kept.
-                    if (info.Covered || (info.ShowsUnit ? unitLayer.Selected != guideUnit : info.Selected != city)) return;
-                    unitLayer.Select(unit);
-                    if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
-                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
-                    else { map.ClearSelection(); info.Clear(); }
+                    if (this.info is not { } nowInfo || this.units is not { } nowUnits) return;
+                    // Under a screen, or the player picked another than the advisor's city or unit: kept.
+                    if (nowInfo.Covered || (nowInfo.ShowsUnit ? nowUnits.Selected != shownUnit : nowInfo.Selected != city)) return;
+                    nowUnits.Select(unit);
+                    if (nowUnits.Selected != null) { map.ClearSelection(); nowInfo.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); nowInfo.Show(q, r); }
+                    else { map.ClearSelection(); nowInfo.Clear(); }
                 };
             };
-            guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
-                card, showCity, () => nav?.Close(), bridge, keepSelection, showUnit));
-            if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
             // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
             // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
-            // where the guide does: the start screen shows and a settings file remembers what was seen.
+            // on the first new game: the start screen shows and a settings file remembers what was seen.
             if (keep == null || AdvisorSession == null)
             {
                 bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
-                // As the guide's: no settings file for an automated run, which then never reads or writes the player's.
-                AdvisorSession = new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
+                // Final S1 store isolation; S2 supplies only the catalogue test seam.
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
             }
             advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
-                new AdvisorHooks { Card = card, OpenScreen = s => nav?.Open(s) }));
+                new AdvisorHooks
+                {
+                    Card = card, OpenScreen = s => nav?.Open(s), CloseScreens = () => nav?.Close(), ShowCity = showCity, ShowUnit = showUnit, KeepSelection = keepSelection,
+                    MapTarget = () =>
+                    {
+                        (int q, int r)? selected = info.Selected;
+                        if (info.ShowsUnit)
+                        {
+                            var token = unitLayer.Tokens.FirstOrDefault(t => t.Token.Unit.Id == unitLayer.Selected);
+                            selected = token.Token != null ? (token.Q, token.R) : ((int, int)?)null;
+                        }
+                        if (selected is not (int q, int r) || root.panel == null || bridge.Content.HexAt(q, r) is not { } hex) return null;
+                        var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                        ground.y = map.Terrain.SampleHeight(ground) + map.Terrain.transform.position.y;
+                        var camera = Camera.main;
+                        if (camera == null) return null;
+                        var viewport = camera.WorldToViewportPoint(ground);
+                        if (viewport.z <= 0) return null;
+                        var at = MapLabelsPresenter.ToPanel(viewport, camera.rect, root.panel.visualTree.layout.size, Vector2.zero);
+                        return new Rect(at, Vector2.one);
+                    },
+                }));
+            if (video != null)
+                advisor.Media = new AdvisorMedia(text, new ClipPicture(video), new StillPicture(), DeclarationRecording.WebFetch, new DeclarationRecording.SourceOutput());
             if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
@@ -637,11 +662,14 @@ namespace Statecraft.Game.UI
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
             // then render and load the photo catalog for a game that is going away (#592; since the GDD cutover a new game's
             // card waits under the screen, so New Game's Begin would load it).
+            // The advisors before the card: a card going away is a layer closing, which must not make a popup that is itself
+            // going away draw its step again and show its city or unit on a camera being destroyed.
+            if (advisor != null) { owned.Remove(advisor); advisor.Dispose(); }
             if (card != null) { owned.Remove(card); card.Dispose(); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -779,13 +807,13 @@ namespace Statecraft.Game.UI
             // Escape closes the open screen even when no element has the keyboard focus (ScreenNav also takes the UI
             // Cancel event from a focused element; closing twice is harmless). On the start screen it withdraws an open New
             // Game request (StartScreenPresenter.Escape; idempotent too).
-            // With no screen to close, Escape skips the first-turn guide (FirstTurnGuidePresenter.Escape).
+            // The advisor handles Escape only while focus is inside its popup.
             // With nothing else to close, Escape on the open decision card is Hide (EventCardPresenter.Escape; the card itself
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
             // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).

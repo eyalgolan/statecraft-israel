@@ -71,28 +71,8 @@ how_to_play.why: "After a turn, open Why? to see each change and its cause."
 objectives.title: "Objectives"
 objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
-# How to play's button that opens the first-turn guide again (#42).
-how_to_play.guide: "Show the first-turn guide"
-# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): six steps, each pointing at its part of the HUD
-# (FirstTurnGuidePresenter). Like the How to play lines, they describe the sim without balance values. {0} the step, {1} the
-# number of steps.
-guide.step: "Step {0} of {1}"
-guide.next: "Next"
-guide.done: "Done"
-guide.skip: "Skip the guide"
-guide.attention.title: "Attention"
-guide.attention.text: "Most orders cost Attention. This shows how much you have left this turn. It refills at the start of each turn, and Attention you leave unspent does not carry over."
-guide.city.title: "A city's housing and jobs"
-guide.city.text: "Select a city to see its housing and jobs. The + and − buttons set how many people, including craftsmen, work. The order takes effect when you end the turn."
-guide.training.title: "Training"
-guide.training.text: "At a military camp, train civilians without work as recruits. At a Hakhshara (pioneer training camp), train them as halutzim (pioneers who build settlements). Buttons show cost and training time."
-# The move step (#1141, owner, 21 October 2026): the unit card's Move button (unit.order.move, unit.move_pick).
-guide.move.title: "Moving a unit"
-guide.move.text: "Select one of your units, press Move, and choose a lit hex. The unit moves when you end the turn."
-guide.event.title: "An event card"
-guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
-guide.objectives.title: "Objectives"
-guide.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
+# How to play's button that opens the advisor opening chain again (#1484).
+how_to_play.guide: "Show the opening advice again"
 # The advisors (spec 3.1 and 7.1; AdvisorPresenter). Their names as the popup shows them: Golda Meyerson's first appearance
 # in a profile adds "(later Meir)" (owner, 23 October 2026). "Advisor" is a game role, not an office they held.
 advisor.ben_gurion.name: "David Ben-Gurion"
@@ -140,7 +120,7 @@ feedback.itch: "No GitHub account? Comment on itch"
 # in-game date ({0}), the turn ({1}) and the itch URL ({2}).
 share.open: "Share"
 share.title: "Share a picture of the game"
-share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. {0}, turn {1}. Play: {2}"
+share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. {0}, turn {1}. Play: {2} · Code: {3}"
 share.native: "Share"
 share.download: "Download the picture"
 share.attach: "These sites can't take a picture through a link: attach the downloaded picture to your post."
@@ -644,3 +624,34 @@ event.effect.veteran_halutz: "Veteran Halutzim"
 event.effect.housing_capacity: "housing capacity"
 event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
+
+# The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
+# quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the
+# copy-fix wording ("next month", "when the month ends") the owner approved in chat on 24 October 2026, 04:14 UTC:
+# "Approve all 8".
+advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
+advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
+advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
+advisor.opening.training.text: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
+advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
+advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
+advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
+advisor.next: "Next"
+advisor.done: "Done"
+# {0} the step, {1} the steps in the chain now.
+advisor.step: "Step {0} of {1}"
+
+# Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
+advisor.watch: "Watch"
+# The media row's disclosure (owner, 24 Oct 2026, OQ-16 option 2; spec 11.3, 12): exactly this text, shown small.
+advisor.media_label: "AI animation and voice. Fictional dialogue."
+
+# S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
+# Hebrew cues remain agent drafts and require the parent opening row’s native approval.
+advisor.opening.greeting.cue.1: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
+advisor.opening.attention.cue.1: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
+advisor.opening.city.cue.1: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
+advisor.opening.training.cue.1: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
+advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
+advisor.opening.event.cue.1: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
+advisor.opening.objectives.cue.1: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."

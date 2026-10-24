@@ -86,7 +86,7 @@ namespace Statecraft.Game.UI
         /// screen: the stylesheet's SmallTextPx, or the whole px that keeps it at TextFloorPx on screen if that is larger.</summary>
         public static float SmallTextSize(float screenPxPerPanelPx) => FlooredTextSize(SmallTextPx, screenPxPerPanelPx);
 
-        /// <summary>The same rule for any text (the first-turn guide's too): its stylesheet size <paramref name="stylesheetPx"/>,
+        /// <summary>The same rule for any text (the advisors' popup's too): its stylesheet size <paramref name="stylesheetPx"/>,
         /// or the whole px that keeps it at TextFloorPx on screen if that is larger.</summary>
         public static float FlooredTextSize(float stylesheetPx, float screenPxPerPanelPx) =>
             screenPxPerPanelPx > 0f ? UnityEngine.Mathf.Max(stylesheetPx, UnityEngine.Mathf.Ceil(TextFloorPx / screenPxPerPanelPx - 0.01f)) : stylesheetPx;
