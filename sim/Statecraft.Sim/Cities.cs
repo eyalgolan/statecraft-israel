@@ -14,9 +14,10 @@ namespace Statecraft.Sim
         /// civilians and craftsmen (a craftsman fills an ordinary job slot, R-CRAFT-002). R-CITY-009's default fills to it.</summary>
         public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians + city.Craftsmen);
 
-        /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train orders in
-        /// <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one of
-        /// them accepted, whatever order they run in. Other orders do not count.</summary>
+        /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train, Reinforce and Reassign
+        /// orders in <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one
+        /// of them accepted, whatever order they run in. Every queued reassignment counts in full, craftsmen too (#1548): if the
+        /// job order runs first, the civilians a reassignment needs are already in work.</summary>
         public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
@@ -30,6 +31,21 @@ namespace Statecraft.Sim
         /// <summary>R-CITY-007: people in units to the nearest unit, a half rounding up. Decimal, so it is exact on every runtime.</summary>
         public static int NearestUnit(decimal people, int peoplePerUnit) =>
             (int)Math.Round(people / peoplePerUnit, MidpointRounding.AwayFromZero);
+
+        /// <summary>R-CTRL-016 (OWNER QUESTION 1 (a) on #799, the starting-city rule): a stayed target joins the player's
+        /// population as one new city: its approved people in units (R-CITY-007), homes equal to them, jobs equal to the
+        /// employed (people times employed_share to the nearest unit), the usual start condition, and no refugees, recruits or
+        /// craftsmen. Null when added, else the reason with the state unchanged (the id is already a city).</summary>
+        internal static string? Annex(Content c, GameState s, SettlementTarget t)
+        {
+            if (s.Cities.ContainsKey(t.Id)) return $"{c.SettlementNames[t.Id]} is already a city";
+            var r = c.RulesAt(s.Date).Mvp!;
+            var people = t.Annexation!.People!.Value;   // the loader requires both values on a stayed row
+            var units = StartUnits(people, r.PeoplePerUnit);
+            var employed = NearestUnit(people * t.Annexation.EmployedShare!.Value, r.PeoplePerUnit);
+            s.Cities[t.Id] = new City(t.Id, units, employed, units, employed, 0, 0, r.HousingStartCondition!.Value);
+            return null;
+        }
 
         /// <summary>Fills the state's cities from cities.yaml, with no refugees yet and the start housing condition (R-HOUSE-001). Does nothing in the legacy loop.</summary>
         public static void Init(Content c, GameState s)
