@@ -25,7 +25,7 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 35 ordinary events
+    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 36 ordinary events
     /// except the four conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
@@ -39,7 +39,7 @@ public class EventRetimingTests
         // remain unfinished (R-OBJ-005), so neither of their completion cards is expected.
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
         Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(35, record.Count);
+        Assert.Equal(36, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -49,6 +49,7 @@ public class EventRetimingTests
     // R-TURN-002
     [Theory]
     [InlineData("idf_founding", "1948-05-15")]                     // edit 1: the game's first day (was 15 June)
+    [InlineData("degania_defence", "1948-05-15")]                 // #1565: the decision of 19 May, so the window opens at the game's start (R-TURN-002)
     [InlineData("first_truce", "1948-06-15")]                      // late by design, +5 days (owner, Q-CUT-3)
     [InlineData("altalena", "1948-06-15")]                         // edit 2 (owner, Q-CUT-7; was 15 July)
     [InlineData("ten_days", "1948-07-15")]                         // rewritten in PR 1a (#577)

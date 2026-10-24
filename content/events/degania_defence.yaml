@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+id: degania_defence
+title: The Defence of Degania
+text: 'On 18 May the Syrian army takes Samakh (Tzemah), at the south end of the Sea of Galilee, and the road north runs through Degania. The next evening a delegation from the Deganias asks {prime_minister} in Tel Aviv for reinforcements, but there are none to spare. {prime_minister} and the General Staff argue over where the Yishuv''s only battery of old 65 millimetre mountain guns should go: Jerusalem, or the Jordan Valley. {defense_minister} must decide where the guns go.'
+# For the native reviewer (#564): צמח and the battle's framing follow he.wiki "הטנק בדגניה"
+# (https://he.wikipedia.org/wiki/הטנק_בדגניה). עמק הירדן and תותחי שדה 65 מ"מ follow he.wiki "קרב עמק הירדן"
+# (https://he.wikipedia.org/wiki/קרב_עמק_הירדן): "הסכים בן-גוריון להעביר ארבעה תותחי שדה 65 מ"מ (נפוליאונצ'יקים)
+# לעמק הירדן". Neither page uses בקעת הירדן or תותחי הרים (review on #1568).
+title_he: ההגנה על דגניה
+text_he: 'ב-18 במאי הצבא הסורי כובש את צמח, בקצה הדרומי של הכנרת, והדרך צפונה עוברת בדגניה. למחרת בערב משלחת מהדגניות פונה אל {prime_minister} בתל אביב ומבקשת תגבורות, אבל אין כוחות פנויים. {prime_minister} והמטה הכללי נחלקים לאן לשלוח את סוללת תותחי השדה הישנים של היישוב, בקליבר 65 מ"מ: לירושלים או לעמק הירדן. על {defense_minister} להכריע לאן ילכו התותחים.'
+text_he_review: agent-checked
+anchor: hard
+tags: [security, war-casualties]
+office: defense_minister
+# R-TURN-002: the decision is 19 May 1948 and the battle 20 May, so the window opens on the 15th on or before them,
+# 15 May 1948, the game's start (#1565), and the card reaches the player on the first turn (EventRetimingTests).
+# `to` is exclusive: the day after the Syrian withdrawal.
+from: 1948-05-15
+to: 1948-05-21
+options:
+  - id: jordan_valley
+    text: Send the guns to the Jordan Valley
+    text_he: לשלוח את התותחים לעמק הירדן
+    historical: true
+    recommended: true
+    effects:
+      # The recorded choice of 19 May: the guns reached the front at midday on 20 May, were placed on the
+      # Poria-Alumot ridge and opened fire at 13:20, the first Israeli artillery of the war; the Syrians withdrew
+      # (en.wiki; JVL credits the barrages with surprise and confusion). security is not a NoGainTarget (R-EFX-005),
+      # and moving the guns is shown as no grant or unlock, per the issue. +0.015 is altalena's scale.
+      # Owner-set design value, 24 October 2026 (the review on #1568, after GDD.md's balance rule kept it unset
+      # until then): keep +0.015.
+      - { target: security, delta: 0.015 }
+  - id: jerusalem
+    text: Send the guns to Jerusalem
+    text_he: לשלוח את התותחים לירושלים
+    # The Prime Minister wanted the guns for Jerusalem; the General Staff's head of operations pressed for the
+    # Kinarot valley, and the Prime Minister agreed (en.wiki, citing Morris, 1948, p. 254).
+    alternative:
+      basis: debated
+      by: the Prime Minister
+      date: 1948-05-19
+      sources:
+        - { url: "https://en.wikipedia.org/wiki/Battles_of_the_Kinarot_Valley", checked: 2026-10-24 }
+    effects:
+      # The defenders stopped the tanks at the fence with what they had, before the guns fired (JVL), so the road
+      # not taken is not punished: 0 by design, no balance claim made.
+      - { target: security, delta: 0 }
+sources:
+  # en.wiki, secondary: Samakh (Tzemah) falls to the Syrian 1st Brigade on 18 May; the delegation from the Deganias
+  # in Tel Aviv on the evening of 19 May and the refusal of reinforcements (Lorch, p. 174); the dispute over the
+  # Yishuv's only battery of pre-World War I 65 mm mountain guns, which went to the valley (Morris, 1948, p. 254);
+  # the attack of 20 May; the guns firing at 13:20 (Teveth, p. 142); after some 40 rounds the Syrians retreat,
+  # withdrawing to Tel al-Qasr. The books it cites are the record.
+  - { url: "https://en.wikipedia.org/wiki/Battles_of_the_Kinarot_Valley", checked: 2026-10-24 }
+  # JVL, credited to the IDF: the dawn attack on Degania A and Degania B on 20 May, about 70 defenders at Degania A,
+  # an R35 that broke through the fence and was stopped (it stands there today), new field guns arriving during the
+  # fight and causing surprise and confusion, and the Syrian withdrawal.
+  - { url: "https://www.jewishvirtuallibrary.org/the-battle-for-degania-may-1948", checked: 2026-10-24 }
+# [C] unresolved: four guns or two at Degania. Ben-Gurion's diary of 21 May, en.wiki and he.wiki say four; his note
+# of 19 May says two; Ben-Tzur leaves it open (research_notes/gdd-phase-7-sourcing.md, section 4a). The card states
+# no number. No casualty figures: the checked sources give none that the card needs (the issue's rule).
+status: fact-checked

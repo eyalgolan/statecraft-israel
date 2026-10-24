@@ -1,7 +1,7 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 27 of the 35 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 28 of the 36 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
@@ -88,9 +88,10 @@ cover this. The decision layer under the top bar bounds the card's height.
 
 ## Owner steps
 
-- **Sensitivity review.** Seven pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
-  `operation_hiram`, `operation_horev`, `bernadotte_assassination` and `burma_road_complete`. The sign-offs below cover
-  the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791).
+- **Sensitivity review.** Eight pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
+  `operation_hiram`, `operation_horev`, `bernadotte_assassination`, `burma_road_complete` and `degania_defence`. The
+  sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791);
+  `degania_defence` (#1565) awaits the owner's sign-off.
   - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads
