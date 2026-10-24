@@ -718,8 +718,8 @@ advisor.credit.ben_gurion: "צילום: דוד בן-גוריון, 16 באפרי�
 advisor.credit.meyerson: "צילום: גולדה מאירסון (לימים מאיר) עם ילדי קיבוץ שפיים, 24 ביולי 1950, תאודור בראונר, לשכת העיתונות הממשלתית, אוסף התצלומים הלאומי D703-086, נחלת הכלל (PD-Israel). נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3); הבינה המלאכותית מניעה גם את האנשים סביבה ואת הדגל."
 advisor.credit.dayan: "צילום: משה דיין, 9 בדצמבר 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). הוחזר לכיוונו הנכון, נצבע ב-Dreamina, נחתך, והונפש וסונכרן לקול בבינה מלאכותית (Kling 3.0 Pro, Sync 3)."
 
-# Caption keys: same text as the C68 recorded opening lines. The five lines with an English clip (S6b, Task 26) are
-# cut at the clip's sentence and clause pauses; their start times are the media rows' cues.
+# Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
+# the clip's sentence and clause pauses; their start times are the media rows' cues.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.
 advisor.opening.greeting.cue.1: "למדינה צרכים דחופים ואמצעים מוגבלים."
 advisor.opening.greeting.cue.2: "ההחלטות בידיכם,"
@@ -733,6 +733,18 @@ advisor.opening.training.cue.2: "הכשרת חלוצים ובעלי מלאכה �
 advisor.opening.training.cue.3: "אימון צבאי דורש גם נשק."
 advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה."
 advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
-advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
+advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה."
+advisor.opening.event.cue.2: "כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.cue.1: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 
+# The S4 warning and teaching lines with an English clip: each text cut at its sentence end, as above.
+advisor.dayan.city_at_risk.cue.1: "התקפת אויב מכוונת לאחת מערי המדינה."
+advisor.dayan.city_at_risk.cue.2: "בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
+advisor.meyerson.exhausted.cue.1: "הכסף והמזון אזלו יחד."
+advisor.meyerson.exhausted.cue.2: "החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
+advisor.meyerson.debt_ceiling.cue.1: "החוב הגיע לתקרה."
+advisor.meyerson.debt_ceiling.cue.2: "אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
+advisor.dayan.defeat_war.cue.1: "יחידה צבאית של האויב מחזיקה באחת מערי המדינה בסוף התור."
+advisor.dayan.defeat_war.cue.2: "המערכה הסתיימה בתבוסה."
+advisor.dayan.arms_out.cue.1: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות."
+advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."

@@ -679,8 +679,8 @@ advisor.credit.ben_gurion: "Photograph: David Ben-Gurion, 16 April 1951, Israeli
 advisor.credit.meyerson: "Photograph: Golda Meyerson (later Meir) with the children of Kibbutz Shefayim, 24 July 1950, Théodore Brauner, Government Press Office, National Photo Collection D703-086, public domain (PD-Israel). Colorized with Dreamina, cropped, then animated and lip-synced with AI (Kling 3.0 Pro, Sync 3); the AI also moves the people around her and the flag."
 advisor.credit.dayan: "Photograph: Moshe Dayan, 9 December 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Flipped to its true orientation, colorized with Dreamina, cropped, then animated and lip-synced with AI (Kling 3.0 Pro, Sync 3)."
 
-# Caption keys: same text as the C68 recorded opening lines. The five lines with an English clip (S6b, Task 26) are
-# cut at the clip's sentence and clause pauses; their start times are the media rows' cues.
+# Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
+# the clip's sentence and clause pauses; their start times are the media rows' cues.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.
 advisor.opening.greeting.cue.1: "The country has urgent needs and limited means."
 advisor.opening.greeting.cue.2: "The decisions are theirs,"
@@ -694,6 +694,18 @@ advisor.opening.training.cue.2: "Halutz and craftsman training supports developm
 advisor.opening.training.cue.3: "military training also requires Arms."
 advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of each hex."
 advisor.opening.move.cue.2: "A farther destination creates a route that continues on later turns."
-advisor.opening.event.cue.1: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
+advisor.opening.event.cue.1: "An event card presents a decision and shows its effects."
+advisor.opening.event.cue.2: "A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.cue.1: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
 
+# The S4 warning and teaching lines with an English clip: each text cut at its sentence end, as above.
+advisor.dayan.city_at_risk.cue.1: "An enemy attack is aimed at one of the country's cities."
+advisor.dayan.city_at_risk.cue.2: "Review its defenders and the combat preview before the enemy phase resolves."
+advisor.meyerson.exhausted.cue.1: "Money and Food are exhausted together."
+advisor.meyerson.exhausted.cue.2: "Restore either one before the defeat counter reaches its limit."
+advisor.meyerson.debt_ceiling.cue.1: "Debt has reached the ceiling."
+advisor.meyerson.debt_ceiling.cue.2: "If Food is also empty at turn end, the defeat counter begins or continues."
+advisor.dayan.defeat_war.cue.1: "An enemy military unit holds one of the country's cities at turn end."
+advisor.dayan.defeat_war.cue.2: "The campaign has ended in defeat."
+advisor.dayan.arms_out.cue.1: "Arms equip military training and are spent in attacks."
+advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs short keeps those choices available."
