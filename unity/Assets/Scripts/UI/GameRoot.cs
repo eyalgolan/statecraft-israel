@@ -613,6 +613,9 @@ namespace Statecraft.Game.UI
         void FocusNextUnit()
         {
             if (Bridge == null || units == null || Bridge.NeedsOrders.Count == 0) return;
+            // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
+            // could take no order: the card waits behind "Decision waiting", as its Hide button does.
+            card?.Collapse(takeFocus: false);
             int? current = units.Selected is string row
                 ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
                 : null;
