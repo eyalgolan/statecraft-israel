@@ -12,7 +12,7 @@ namespace Statecraft.Game.UI
     public sealed class AdvisorSettings
     {
         public const string LevelKey = "advisor_level", SeenKey = "advisor_seen", OpeningKey = "advisor_opening";
-        /// <summary>The first-turn guide's line (spec 9.3: honoured, so a player who saw the guide gets no chain by itself).</summary>
+        /// <summary>The legacy first-turn guide's saved line (spec 9.3: honoured, so a player who saw the guide gets no chain by itself).</summary>
         public const string GuideSeenKey = "first_turn_guide";
         /// <summary>Spec 6, from the chattiest; a message shows when its level's index (AdvisorCatalog.Levels) is at least this one's.</summary>
         public static readonly string[] Levels = { "new", "experienced", "warnings", "off" };

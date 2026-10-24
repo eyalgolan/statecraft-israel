@@ -126,7 +126,7 @@ namespace Statecraft.Game.UI
         public static Known Shipped() => new Known
         {
             Signals = AdvisorSignals.Names.ToList(), Conditions = AdvisorSignals.Measures.Keys.ToList(),
-            Screens = ScreenNav.Screens,
+            Screens = ScreenNav.Screens, Targets = AdvisorTargets.Names,
         };
 
         /// <summary>Every problem, one line each (spec 4.1).</summary>
