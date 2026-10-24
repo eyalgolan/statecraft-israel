@@ -1,0 +1,15 @@
+things:
+  - id: line
+    name: 'Line "A"'
+    name_he: 'קו "א" \ ב'
+  - id: year
+    name: 1948
+    name_he: שנה
+  - id: hebrew_only
+    name_he: רק בעברית
+regions:
+  north:
+    label: North
+    label_he: צפון
+  south:
+    label: South

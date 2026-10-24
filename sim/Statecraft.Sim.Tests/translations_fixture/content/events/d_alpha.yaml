@@ -1,0 +1,12 @@
+id: alpha
+title: Alpha
+text: First on the day.
+title_he: אלפא
+text_he: 'ראשון ביום: \ ולא שני.'
+text_he_review: agent-checked
+from: 1948-06-01
+options:
+  - id: continue
+    text: Continue
+    text_he: להמשיך
+status: draft

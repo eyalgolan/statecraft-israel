@@ -1,0 +1,10 @@
+units:
+  - id: golani
+    name: Golani Brigade
+    name_he: חטיבת גולני
+    sector: The Galilee
+    sector_he: הגליל
+    anchors:
+      - place: Yavne'el
+        place_he: יבנאל
+      - place: Tiberias

@@ -1,0 +1,10 @@
+people:
+  - id: ben_gurion
+    name: David Ben-Gurion
+    name_he: דוד בן-גוריון
+    name_he_review: agent-checked
+    title_he_form: masculine
+    biography_sources:
+      name_he: [{ url: "https://example.org/bg", checked: 2026-10-24 }]
+  - id: sharett
+    name: Moshe Sharett

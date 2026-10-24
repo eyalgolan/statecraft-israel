@@ -1,0 +1,8 @@
+id: quiet
+title: Quiet
+text: Nothing happens.
+from: 1948-05-15
+options:
+  - id: continue
+    text: Continue
+status: draft

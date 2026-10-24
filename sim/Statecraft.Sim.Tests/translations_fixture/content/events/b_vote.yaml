@@ -1,0 +1,15 @@
+id: vote
+title: The vote
+text: '{prime_minister} asks the cabinet to vote.'
+title_he: ההצבעה
+text_he: '{prime_minister} מבקש מהממשלה להצביע על "התוכנית".'
+text_he_review: agent-checked
+from: 1948-06-01
+options:
+  - id: yes_vote
+    text: Vote
+    text_he: להצביע
+  - id: wait
+    text: Wait
+    text_he: 'לחכות לצה"ל'
+status: draft

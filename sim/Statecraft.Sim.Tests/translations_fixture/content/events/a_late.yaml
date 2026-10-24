@@ -1,0 +1,11 @@
+id: late
+title: Late
+text: Later.
+title_he: מאוחר
+text_he: מאוחר יותר.
+from: 1948-07-01
+options:
+  - id: continue
+    text: Continue
+    text_he: להמשיך
+status: draft

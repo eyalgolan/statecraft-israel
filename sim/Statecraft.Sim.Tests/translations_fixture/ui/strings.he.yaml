@@ -1,0 +1,5 @@
+# The Hebrew strings, out of order on purpose.
+b.two: "שתיים"
+z.only: "רק בעברית"
+a.one: "אחת {0}"
+a.sep: " · "
