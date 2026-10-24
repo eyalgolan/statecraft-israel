@@ -56,6 +56,17 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   outside every checkout (`docs/RELEASING.md`, step 5, "Desktop builds"). A release must be `main` at its tag; `--dev` builds
   anywhere under a `-dev.<commit>` name. It never commits, pushes or uploads.
 - `preview_map.py` renders the geography check image `tools/.cache/map-preview.png`.
+- `translate.py [--port 8765] [--no-open]` serves a local page (http://127.0.0.1:8765) for writing translations into
+  any language: every user-facing string (the events, `unity/Assets/UI/strings.en.yaml` and every content field with a
+  Hebrew form, such as `name_he`, `title_he_f` or `sector_he`) with a source language you pick on the left (English,
+  Hebrew or any other started language) and the translation on the right. Hebrew is written where the game reads it:
+  the events' `title_he` / `text_he` / options' `text_he` (#1064) and `strings.he.yaml` (#12), only the changed lines;
+  Hebrew content names keep their sources and are edited by hand. Any other language goes to
+  `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet. Every language keeps the Hebrew
+  rules (all or none per event, placeholders as in the English, one line, no direction marks; `agent-checked` until a
+  native speaker has read it, #564), and nothing is written while any edited string is refused. It never commits or
+  touches `status` / `reviewed_by`; a saved Hebrew edit is a `content/` or `unity/` change, so it needs a changelog
+  fragment.
 - `terrain_bake.py` writes `unity/Assets/Textures/Map/terrain_bake.png` (AO, curvature, sky-view), `ao.png` (the AO
   alone, imported uncompressed) and `coast.png`
   (exact signed Euclidean distance to the shoreline; lakes under 1 km2 count as land; on the dune coasts its land side is
