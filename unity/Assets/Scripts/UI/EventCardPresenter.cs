@@ -167,7 +167,7 @@ namespace Statecraft.Game.UI
         public void Collapse() => Collapse(takeFocus: true);
 
         /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
-        /// first-turn guide hides the card while its own panel has the focus, FirstTurnGuidePresenter).</summary>
+        /// advisor opening chain hides the card while its popup has the focus).</summary>
         public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
