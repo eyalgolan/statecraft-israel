@@ -29,6 +29,7 @@ Before writing or editing content, review:
 
 ## Content-writing rules
 
+- New player-facing strings follow the [glossary](docs/UX_GLOSSARY.md), [UI microcopy guide](docs/WRITING_UI.md) and [Hebrew guide](docs/WRITING_UI_HE.md), binding from 22 October 2026 ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)). Existing strings change one focused PR at a time; preserve pending native review.
 - Use office placeholders like `{prime_minister}` rather than hard-coded names in dynamic event text.
 - Keep wording concrete and credible. Prefer clear historical description over melodrama.
 - Show dates as `15 May 1948` style, not shorthand or invented formatting.

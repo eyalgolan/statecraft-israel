@@ -1,6 +1,6 @@
-# UI microcopy guide for Statecraft: Israel (draft v0.5)
+# UI microcopy guide for Statecraft: Israel (v0.5)
 
-Status: DRAFT for discussion. Not approved by the maintainer or by a native Hebrew reviewer.
+Status: Binding for new player-facing strings from 22 October 2026 ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)). Existing strings change one focused PR at a time. Hebrew recommendations still need native review; proposed wording retains its recorded review status.
 Date: 17 October 2026. Evidence: upstream/main 46abd99c, 271 keys in each language. This revision reconciles the cited examples and decisions with that snapshot. It is not a full review of every added string. Score, minimap tooltips, icon-only navigation and the new city, training and pioneer strings remain outside the detailed copy review.
 
 Revision 19 October 2026: targeted corrections against upstream/main 9e571342 address the #970 review. The original 46abd99c snapshot and counts are historical evidence; this revision does not claim a full audit of all newer strings.

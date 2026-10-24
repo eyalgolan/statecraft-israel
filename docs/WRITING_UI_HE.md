@@ -1,6 +1,6 @@
-# Hebrew localisation guide for Statecraft: Israel (draft v0.5)
+# Hebrew localisation guide for Statecraft: Israel (v0.5)
 
-Status: DRAFT for discussion. Not approved by the maintainer. **New Hebrew recommendations need native review. Existing maintainer decisions, including gershayim in #630, remain adopted unless explicitly overruled.** Hebrew in this draft has been reviewed by a non-native reader and not finalised.
+Status: Binding for new player-facing strings from 22 October 2026 ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)). Existing strings change one focused PR at a time. **New Hebrew recommendations need native review. Existing maintainer decisions, including gershayim in #630, remain adopted unless explicitly overruled.** Hebrew in this draft has been reviewed by a non-native reader and not finalised.
 Date: 17 October 2026. Evidence: upstream/main 46abd99c, 271 keys in each language. Cited strings were reconciled with the snapshot; new city, training, pioneer and other added strings have not received a full native-language review.
 
 Publication update, 18 October 2026: the examples below were audited at 46abd99c. Since that snapshot, #928 adopted a verb-free info.built date label after native review, and #930 recorded native reads of government, legislature and office names. Those accepted changes stand; the guide does not reopen their approval. This draft is based on db4350f8 and is not a full review of subsequent Hebrew changes.

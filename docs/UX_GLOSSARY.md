@@ -1,6 +1,6 @@
-# Glossary (draft v0.5)
+# Glossary (v0.5)
 
-Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
+Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. Binding for new player-facing strings from 22 October 2026 ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)). Existing strings change one focused PR at a time. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
 
 Entries: 6 contested, 7 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (49 concepts, 6 conventions).
 

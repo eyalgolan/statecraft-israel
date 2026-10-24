@@ -29,5 +29,6 @@
 - [ ] If this finishes a Phase 1 PR or a phase of #374, the Roadmap table is updated in `README.md` and `README.he.md` (`CONTRIBUTING.md`, rule 9).
 - [ ] If `unity/` changed: Unity edit-mode tests ran locally, and their result is pasted above (CI does not run them).
 - [ ] Nothing in the diff contains a credential, a Unity Cloud id or personal data.
+- [ ] New UI strings follow the glossary (`docs/UX_GLOSSARY.md`) and the UI guides (`docs/WRITING_UI.md`, `docs/WRITING_UI_HE.md`) ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)); existing strings change one focused PR at a time.
 - [ ] AI-assisted parts are disclosed under "AI assistance", and I can defend every line (`CONTRIBUTING.md`).
 - [ ] I contribute this under the terms in `CONTRIBUTING.md` ("Licence of your contribution"): code under MIT to the maintainer, Eyal Golan, and under PolyForm Noncommercial 1.0.0 to everyone else; every other path under its licence in `LICENSING.md`.
