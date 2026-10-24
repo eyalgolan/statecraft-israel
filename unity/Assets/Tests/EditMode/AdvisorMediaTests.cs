@@ -454,4 +454,80 @@ public class AdvisorMediaTests
             wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
         }
     }
+
+    /// <summary>The v0.3.0 release check (24 October 2026, dayan.arms_out): with a clip playing in the popup, the picture and
+    /// Dayan's seven-line credit squeezed the live caption to its first line and cramped the buttons. At every window and UI
+    /// scale where a shipped clip plays in the popup, each of its captions shows all its lines inside the popup, the
+    /// disclosure still shows, and the buttons keep the size they had before Watch.</summary>
+    [UnityTest]
+    public System.Collections.IEnumerator EveryClipsCaptionShowsWholeAndTheButtonsKeepTheirSize()
+    {
+        var clips = AdvisorCatalog.Load().Messages.Where(m => !string.IsNullOrEmpty(m.Media?.Picture)).ToList();
+        Assert.That(clips.Select(m => m.Id), Does.Contain("dayan.arms_out"), "precondition: the clip the release check caught");
+        (int w, int h)[] windows = { (1920, 1080), (1280, 720), (1366, 768), (1024, 768), (960, 1080), (390, 844), (844, 390) };
+        var problems = new List<string>(); int inlineChecks = 0;
+        foreach (var scale in new[] { 1f, 1.25f, 1.5f })
+            foreach (var (w, h) in windows)
+            {
+                string at = $"{w}x{h} at {scale * 100:0}%";
+                var rt = new RenderTexture(w, h, 0);
+                var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+                panel.targetTexture = rt;
+                // SettingsPresenter.ApplyScale's rule: a UI scale divides the reference resolution.
+                panel.referenceResolution = new Vector2Int(Mathf.RoundToInt(panel.referenceResolution.x / scale), Mathf.RoundToInt(panel.referenceResolution.y / scale));
+                var go = new GameObject("AdvisorClipCaption"); go.SetActive(false);
+                var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
+                doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+                var root = doc.rootVisualElement; root.Q("root").RemoveFromClassList("loading");
+                var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), Text);
+                var hud = new HudPresenter(root, bridge, Text); var nav = new ScreenNav(root);
+                var card = new EventCardPresenter(root, bridge, Text, null); card.Collapse(takeFocus: false);
+                var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
+                var advisor = new AdvisorPresenter(root, bridge, Text, session, hooks: new AdvisorHooks { Card = card });
+                var output = new FakeOutput();
+                advisor.Media = new AdvisorMedia(Text, new FakePicture { Ready = true }, new FakePicture { Ready = true }, Immediate, output);
+                try
+                {
+                    advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
+                    var popup = root.Q("advisor-popup");
+                    var buttons = root.Query<Button>().Where(b => b.parent.ClassListContains("advisor-actions") && AdvisorTargets.Shown(b)).ToList();
+                    var before = buttons.Select(b => b.worldBound.size).ToList();
+                    foreach (var m in clips)
+                        for (int cue = 0; cue < m.Media!.Cues["en"].Count; cue++)
+                        {
+                            advisor.Watch(m.Media, "advisor." + m.Id); advisor.Media.Tick();
+                            output.Position = (float)m.Media.Cues["en"][cue] + 0.01f; advisor.Media.Tick();
+                            for (int i = 0; i < 4; i++) yield return null;
+                            if (!popup.ClassListContains(AdvisorPresenter.WatchingClass)) continue;   // the overlay's own layout
+                            inlineChecks++;
+                            string what = $"{at} {m.Id} cue {cue + 1}";
+                            var caption = root.Q<Label>("advisor-text");
+                            Assert.AreEqual(Text[$"advisor.{m.Id}.cue.{cue + 1}"], caption.text, what + ": precondition");
+                            var shown = root.Q<ScrollView>("advisor-body").contentViewport.worldBound;
+                            if (!Inside(caption.worldBound, shown) || !Inside(caption.worldBound, popup.worldBound))
+                                problems.Add($"{what}: the caption {caption.worldBound} is cut to {shown}");
+                            if (!AdvisorTargets.Shown(root.Q("advisor-media-label")) || !Inside(root.Q("advisor-media-label").worldBound, popup.worldBound))
+                                problems.Add($"{what}: the disclosure does not show");
+                            var credit = root.Q<Label>("advisor-media-credit");
+                            if (m.Media.Credit != "" && !(root.Q("advisor-media-credits").worldBound.height >= credit.resolvedStyle.fontSize))
+                                problems.Add($"{what}: no line of the credit shows ({root.Q("advisor-media-credits").worldBound})");
+                            for (int b = 0; b < buttons.Count; b++)
+                                if (buttons[b].worldBound.width < before[b].x - 0.5f || buttons[b].worldBound.height < before[b].y - 0.5f
+                                    || !Inside(buttons[b].worldBound, popup.worldBound))
+                                    problems.Add($"{what}: {buttons[b].name} is {buttons[b].worldBound.size}, was {before[b]}");
+                        }
+                }
+                finally
+                {
+                    advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
+                    UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
+                    rt.Release(); UnityEngine.Object.DestroyImmediate(rt);
+                }
+            }
+        Assert.Greater(inlineChecks, 0, "no window played a clip in the popup");
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static bool Inside(Rect inner, Rect outer) =>
+        inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
 }

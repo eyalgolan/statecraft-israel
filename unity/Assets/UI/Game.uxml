@@ -482,9 +482,12 @@
                     <ui:Label name="advisor-quote" class="advisor-quote" />
                     <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
                 </ui:ScrollView>
-                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). -->
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). The credit
+                     scrolls in the room the caption and the buttons leave (Dayan's runs to seven lines). -->
                 <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
-                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                <ui:ScrollView name="advisor-media-credits" class="advisor-media-credits">
+                    <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />
                     <ui:Button name="advisor-more" />
