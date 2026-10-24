@@ -9,7 +9,8 @@
 A source is any mapping with `url` and `checked` anywhere in content/**/*.yaml, or a url in a plain `sources` list next
 to a `checked` date. A YAML alias counts once. One line per source, oldest check first:
 age in days, checked date, file, url. `--older-than N` keeps only sources checked more than N days ago. A non-https url
-is marked `http`; a source with no valid check date is marked `NO-DATE`. A report, not a gate: always exits 0. Reads only."""
+is marked `http`; a source with no valid check date is marked `NO-DATE`. A report, not a gate: exits 0 for an existing
+content/ directory, even when empty. A root without content/ is a usage error: prints to stderr and exits 2. Reads only."""
 import argparse
 import sys
 from datetime import date
@@ -78,6 +79,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--older-than", type=int, metavar="DAYS")
     p.add_argument("--today", type=date.fromisoformat, default=date.today())
     a = p.parse_args(argv)
+    content = a.root / "content"
+    if not content.is_dir():
+        print(f"source_report: error: content directory not found: {content}", file=sys.stderr)
+        return 2
     rows = collect(a.root, a.today)
     if a.older_than is not None:
         rows = [r for r in rows if r["age"] is None or r["age"] > a.older_than]

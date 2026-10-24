@@ -3,6 +3,8 @@ import importlib.util
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[3]
 SPEC = importlib.util.spec_from_file_location('source_report', ROOT / 'scripts/source_report.py')
 m = importlib.util.module_from_spec(SPEC)
@@ -52,3 +54,25 @@ def test_alias_counts_once_and_plain_url_lists_are_read(tmp_path):
     rows = m.collect(tmp_path, TODAY)
     assert sorted((r['url'], r['age']) for r in rows) == [('https://l.example/1', 2), ('https://l.example/2', 2),
                                                           ('https://p.example', 12)]
+
+
+@pytest.mark.parametrize('root_exists', [True, False], ids=['empty-root', 'nonexistent-root'])
+def test_missing_content_is_a_usage_error(tmp_path, capsys, root_exists):
+    root = tmp_path if root_exists else tmp_path / 'missing-root'
+    assert m.main(['--root', str(root), '--today', '2026-10-23']) != 0
+    captured = capsys.readouterr()
+    assert str(root / 'content') in captured.err
+    assert 'error' in captured.err.lower()
+    assert captured.out == ''
+    assert root.exists() == root_exists
+    assert not (root / 'content').exists()
+
+
+def test_existing_empty_content_is_an_empty_report(tmp_path, capsys):
+    content = tmp_path / 'content'
+    content.mkdir()
+    assert m.main(['--root', str(tmp_path), '--today', '2026-10-23']) == 0
+    captured = capsys.readouterr()
+    assert captured.out == '0 sources\n'
+    assert captured.err == ''
+    assert content.is_dir() and list(content.iterdir()) == []
