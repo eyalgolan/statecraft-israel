@@ -10,7 +10,9 @@ using Object = UnityEngine.Object;
 namespace Statecraft.HexTiles
 {
     /// <summary>Model ids and what they draw. An id is a Resources path, with prefixes for the existing local libraries:
-    ///   "tiles:&lt;path&gt;"   Resources/HexTiles/&lt;path&gt; (a contributor's own models, one folder per prototype)
+    ///   "tiles:&lt;path&gt;"   Resources/HexTiles/&lt;path&gt; (a contributor's own models, one folder per prototype); the
+    ///                     streamed props (HexProps) are outside Resources: the editor loads them from the AssetDatabase,
+    ///                     and a player streams them (HexCollectionFigures)
     ///   "sandbox:&lt;name&gt;" Resources/HexSandbox/&lt;name&gt; (EZ-Tree trees, Poly Haven rocks, decimated Tripo building kit)
     ///   "proto:&lt;name&gt;"   Resources/SettlementPrototypes/&lt;name&gt; (Tripo heroes, figures, animals, vehicles)
     ///   "town:&lt;folder&gt;[@mid]" a shipped b*-v2 building (TownModels.Ids; TownModelSet's full mesh, or its baked mid
@@ -139,6 +141,15 @@ namespace Statecraft.HexTiles
             return null;
         }
 
+        /// <summary>A streamed prop's prefab (HexProps) in the editor (AssetDatabase), or null: in a player, which streams it.</summary>
+        static GameObject? StreamedProp(string id)
+        {
+#if UNITY_EDITOR
+            if (HexProps.Has(id)) return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(HexProps.PrefabPath(id));
+#endif
+            return null;
+        }
+
         /// <summary>A Collection figure's prefab path at a level ("near" or "far").</summary>
         public static string FigurePath(string figure, string level) => $"{CollectionFolder}/{figure}/{figure}-{level}.prefab";
 
@@ -165,7 +176,7 @@ namespace Statecraft.HexTiles
             bool town = id.StartsWith(TownPrefix, StringComparison.Ordinal), alias = townOf.ContainsKey(id);
             var made = town || alias ? Town(town ? id : townOf[id]) : null;
             if (made != null) return prefabs[id] = made;
-            var figure = CollectionFigure(id);
+            var figure = CollectionFigure(id) ?? StreamedProp(id);
             if (figure != null) return prefabs[id] = figure;
             var prefab = town ? null : Resources.Load<GameObject>(PathOf(id));
             // Without the set (a player before the map scene has loaded it), not remembered, so the set is looked for again.

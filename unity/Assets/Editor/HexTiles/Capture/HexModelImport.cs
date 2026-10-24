@@ -99,10 +99,44 @@ public static class HexSandboxImport
         }
     }
 
-    static void Import(string src, string model, string species, Color tint)
+    /// <summary>Higgsfield props (pending rights, local only): imports just the rows of a manifest, each
+    /// "&lt;model folder&gt;\t&lt;Resources path&gt;[\ttwosided]" (for example "hf_minaret\tHexTiles/arab_village/minaret"), from the folder that
+    /// holds it, so a tile's tiles:&lt;tile&gt;/&lt;name&gt; id fills its stand-in with no source edit. The folders come from
+    /// asset-staging/higgsfield-local/&lt;date&gt;/export.py. -executeMethod HexSandboxImport.RunHiggsfield -manifest &lt;path&gt;
+    /// [-modelsRoot &lt;Assets path&gt;] [-prefabsRoot &lt;Assets path of a Resources folder&gt;]: by default both go into the
+    /// git-ignored prototype folder; committed props use Assets/Art/HexTiles/Props and Assets/Art (outside Resources: they
+    /// stream from their own bundle, HexProps, and join HexProps.Ids).</summary>
+    public static void RunHiggsfield()
+    {
+        try
+        {
+            var args = Environment.GetCommandLineArgs();
+            int i = Array.IndexOf(args, "-manifest");
+            if (i < 0 || i + 1 >= args.Length) throw new ArgumentException("-manifest <path> is required");
+            var manifest = Path.GetFullPath(args[i + 1]);
+            string Opt(string name, string fallback) { int k = Array.IndexOf(args, name); return k >= 0 && k + 1 < args.Length ? args[k + 1] : fallback; }
+            string modelsRoot = Opt("-modelsRoot", Root), prefabsRoot = Opt("-prefabsRoot", Path.GetDirectoryName(Prefabs)!);
+            foreach (var line in File.ReadAllLines(manifest))
+            {
+                var cols = line.Split('\t');
+                if (cols.Length < 2 || line.StartsWith("#", StringComparison.Ordinal)) continue;
+                Import(Path.Combine(Path.GetDirectoryName(manifest)!, cols[0]), cols[0], Path.GetFileName(cols[1]), Color.white,
+                    $"{prefabsRoot}/{cols[1]}.prefab", cols.Length > 2 && cols[2] == "twosided", modelsRoot);
+            }
+            AssetDatabase.SaveAssets();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("HEX HIGGSFIELD IMPORT FAILED " + e);
+            if (Application.isBatchMode) EditorApplication.Exit(1);
+            else throw;
+        }
+    }
+
+    static void Import(string src, string model, string species, Color tint, string? prefabPath = null, bool twoSided = false, string modelsRoot = Root)
     {
         if (!File.Exists(Path.Combine(src, model + ".obj"))) throw new FileNotFoundException($"no {model}.obj in {src}");
-        var dir = $"{Root}/{model}";
+        var dir = $"{modelsRoot}/{model}";
         Directory.CreateDirectory(Path.Combine(Paths.RepoRoot, "unity", dir));
         foreach (var f in Directory.GetFiles(src)) File.Copy(f, Path.Combine(Paths.RepoRoot, "unity", dir, Path.GetFileName(f)), true);
         AssetDatabase.Refresh();
@@ -139,11 +173,11 @@ public static class HexSandboxImport
             // Made once per model: Mat replaces the asset at its path, which would orphan a renderer already using it.
             var bark = tree ? Mat("bark", Tex("bark.jpg", max: 512), Color.white) : null;
             var leaves = tree ? Mat("leaves", Tex("leaves.png", alpha: true, max: 512), tint, clip: true) : null;
-            var rock = tree ? null : Mat("rock", Tex("albedo.jpg", max: species.StartsWith("hq_", StringComparison.Ordinal) ? 2048 : 1024), Color.white, File.Exists(Path.Combine(src, "normal.jpg")) ? Tex("normal.jpg", normal: true) : null);
+            var rock = tree ? null : Mat("rock", Tex("albedo.jpg", max: species.StartsWith("hq_", StringComparison.Ordinal) || prefabPath != null ? 2048 : 1024), Color.white, File.Exists(Path.Combine(src, "normal.jpg")) ? Tex("normal.jpg", normal: true) : null);
             foreach (var r in go.GetComponentsInChildren<MeshRenderer>())
             {
                 var mesh = r.GetComponent<MeshFilter>().sharedMesh; tris += mesh.triangles.Length / 3;
-                r.shadowCastingMode = tree || (species.StartsWith("kit_", StringComparison.Ordinal) || species.StartsWith("hq_", StringComparison.Ordinal)) ? ShadowCastingMode.On : ShadowCastingMode.Off;
+                r.shadowCastingMode = tree || prefabPath != null || (species.StartsWith("kit_", StringComparison.Ordinal) || species.StartsWith("hq_", StringComparison.Ordinal)) ? ShadowCastingMode.On : ShadowCastingMode.Off;
                 if (tree)
                 {
                     // gen.mjs writes "bark" then "leaves"; Unity names submesh materials after the OBJ's usemtl.
@@ -153,10 +187,13 @@ public static class HexSandboxImport
                 }
                 else
                 {
+                    // Generated vegetation (open, single-layer pads and leaves) draws both sides, or the back faces leave holes.
+                    if (twoSided) rock!.SetFloat("_Cull", (float)CullMode.Off);
                     r.sharedMaterials = Enumerable.Repeat(rock!, r.sharedMaterials.Length).ToArray();
                 }
             }
-            var prefab = $"{Prefabs}/{species}.prefab";
+            var prefab = prefabPath ?? $"{Prefabs}/{species}.prefab";
+            Directory.CreateDirectory(Path.Combine(Paths.RepoRoot, "unity", Path.GetDirectoryName(prefab)!));
             PrefabUtility.SaveAsPrefabAsset(go, prefab);
             Debug.Log($"HEX SANDBOX MODEL {species} <- {model} tris={tris} tree={tree}");
         }

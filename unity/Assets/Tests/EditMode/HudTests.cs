@@ -699,6 +699,7 @@ public class HudTests
         ("CameraController.cs", "PixelsPerNotch = 100f", "wheel pixels in one mouse notch, to scale the browser's wheel events (input, not a displayed number)"),
         ("WildlifeLayer.cs", "MinimumCliffElevationM = 100f", "a real elevation in metres an ibex hex must reach (placement, not a displayed number)"),
         ("SettingsPresenter.cs", "Level(int percent) => percent / 100.0", "the UI scale's stored percents (#40) to the level PlayerText.Percent formats (1.25 for 125%); it never formats text itself"),
+        ("VillageMill.cs", "vy + 100f", "a bearing in degrees round the hex tile, where the village mill's well stands (placement, not a displayed number)"),
     };
 
     [Test]

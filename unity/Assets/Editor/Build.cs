@@ -13,7 +13,7 @@ namespace Statecraft.Game.EditorTools
 {
     /// <summary>Headless player builds. Map.unity is the boot scene; ContentSync copies content/ into StreamingAssets
     /// first (IPreprocessBuildWithReport), and CollectionImport.BuildBundles puts The 1948 Collection's streamed bundles in
-    /// StreamingAssets/collection. Exits non-zero on failure.
+    /// StreamingAssets/collection (and HexPropsBundle the hex tiles' props in StreamingAssets/hex-props). Exits non-zero on failure.
     ///   Web: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web
     ///        [-compression disabled|gzip|brotli] [-decompressionFallback] [-out Builds/Web-disabled] [-textureSubtarget dxt|etc2|astc]
     ///        (-decompressionFallback: Unity's Decompression Fallback, for hosts that cannot set response headers,
@@ -251,6 +251,9 @@ namespace Statecraft.Game.EditorTools
             // The 1948 Collection's streamed bundles (issue #664) go in StreamingAssets/collection first; their manifest keeps
             // the classes only they use (Animator, SkinnedMeshRenderer) in the player.
             var bundles = CollectionImport.BuildBundles(target);
+            // The hex tiles' props stream from their own bundle in StreamingAssets/hex-props (owner, 23 October 2026), asked
+            // for only by a ?hex-tiles board; their classes (MeshFilter, MeshRenderer) are the player's own already.
+            HexPropsBundle.BuildBundles(target);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { ProjectSetup.BootScene }, locationPathName = location, target = target, options = BuildOptions.None,

@@ -432,8 +432,7 @@ namespace Statecraft.HexTiles
             foreach (var p in placements)
             {
                 var id = HexModels.Resolve(p.Model, p.Position);
-                if (prefabOf == null && HexCollectionFigures.Available && p.StandIn != StandIn.Flat
-                    && HexModels.CollectionAlias(id, out _, out _)) { streamed.Add(p); continue; }
+                if (prefabOf == null && p.StandIn != StandIn.Flat && HexCollectionFigures.Streams(id)) { streamed.Add(p); continue; }
                 var prefab = p.StandIn == StandIn.Flat ? null : (prefabOf ?? HexModels.Prefab)(id);
                 if (prefab != null && HexModels.Skinned(prefab))
                 {
