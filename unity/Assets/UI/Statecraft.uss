@@ -1049,3 +1049,24 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
    one-row bar, 8 in the narrow one. */
 .advisor-ring-open #attention { margin-bottom: 5px; }
 .advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }
+
+/* User-started advisor media: live caption replaces the prose; no shipped media row means no Watch badge. */
+.advisor-watch { display: none; position: absolute; bottom: 0; left: 0; right: 0; min-width: 0; font-size: 15px; padding: 1px 2px; }
+.advisor-media, .advisor-media-label { display: none; }
+.advisor-media { width: 100%; height: 205px; flex-shrink: 0; background-size: contain; background-color: var(--navy-deep); }
+.advisor-watching .advisor-media, .advisor-watching .advisor-media-label { display: flex; }
+.advisor-narrating .advisor-media-label { display: flex; }   /* a voice-only line: portrait and caption stay, the disclosure under it */
+.advisor-watching .advisor-portrait { display: none; }
+.advisor-media-label { white-space: normal; font-size: 15px; flex-shrink: 0; }
+.advisor-overlay { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.72); padding: 16px; }
+.advisor-overlay-open .advisor-overlay { display: flex; }
+.advisor-overlay-open .advisor-layer { display: none; }
+.advisor-overlay-frame { width: 1000px; max-width: 100%; max-height: 100%; padding: 16px 20px; }
+.advisor-overlay-media { width: 100%; height: 540px; flex-shrink: 0; background-size: contain; background-color: var(--navy-deep); }
+.advisor-overlay .advisor-media-label { display: flex; }
+.advisor-overlay-words { flex-shrink: 1; min-height: 0; }
+
+.advisor-watching .advisor-head { position: absolute; right: 8px; top: 8px; margin: 0; }
+.advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
+
+.advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }
