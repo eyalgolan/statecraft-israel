@@ -682,7 +682,7 @@ advisor.next: "הבא"
 advisor.done: "סיום"
 advisor.step: "שלב {0} מתוך {1}"
 
-# Advisor help levels (spec6). Hebrew is an agent draft for the native reviewer (#564).
+# Advisor help levels (spec6). English and Hebrew approved by the owner, 24 October 2026 ("approved both").
 settings.advisors: "יועצים"
 settings.advisors.new: "חדשים במשחקי אסטרטגיה"
 settings.advisors.experienced: "מנוסים"
@@ -690,7 +690,7 @@ settings.advisors.warnings: "אזהרות בלבד"
 settings.advisors.off: "כבוי"
 
 # S4 Task16 warnings (spec6). Approved by the owner, a native speaker (24 October 2026; advisor-messages.yaml records the
-# rulings); any change needs a new approval.
+# rulings); any change needs a new approval. end.outcome.defeat_war is approved too (24 October 2026, "approved both").
 advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
 advisor.meyerson.exhausted.text: "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.text: "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
@@ -701,7 +701,8 @@ end.outcome.defeat_war: "האויב מחזיק בעיר."
 advisor.meyerson.budget_unsubmitted.text: "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב."
 advisor.dayan.arms_out.text: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
 
-# Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
+# Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
+# 24 October 2026 ("approved both").
 advisor.quote.q1.text: "«מדינת ישראל תהא פתוחה לעליה יהודית ולקיבוץ גלויות;»"
 advisor.quote.q1.source: "ההכרזה על הקמת מדינת ישראל, 14 במאי 1948"
 

@@ -641,7 +641,7 @@ advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
 advisor.step: "Step {0} of {1}"
 
-# Advisor help levels (spec6). Hebrew is an agent draft for the native reviewer (#564).
+# Advisor help levels (spec6). English and Hebrew approved by the owner, 24 October 2026 ("approved both").
 settings.advisors: "Advisors"
 settings.advisors.new: "New to strategy games"
 settings.advisors.experienced: "Experienced"
@@ -650,7 +650,9 @@ settings.advisors.off: "Off"
 
 # S4 Task16 warnings (spec6). Their Hebrew is approved by the owner (24 October 2026); see advisor-messages.yaml. "three": rules.yaml defeat_turns (R-END-002, a
 # design value). Change that line if the rule changes. The clip lines (city_at_risk, exhausted, debt_ceiling, defeat_war,
-# arms_out) are the recorded words, word for word (advisor-messages.yaml); change them only with a new recording.
+# arms_out) are the recorded words, word for word (advisor-messages.yaml); change them only with a new recording. The other
+# three (food_short, defeat_economy, budget_unsubmitted) and end.outcome.defeat_war are approved by the owner, 24 October
+# 2026 ("approved both").
 advisor.dayan.city_at_risk.text: "An enemy attack is aimed at one of the country's cities. Review its defenders and the combat preview before the enemy phase resolves."
 advisor.meyerson.exhausted.text: "Money and Food are exhausted together. Restore either one before the defeat counter reaches its limit."
 advisor.meyerson.debt_ceiling.text: "Debt has reached the ceiling. If Food is also empty at turn end, the defeat counter begins or continues."
@@ -661,7 +663,8 @@ end.outcome.defeat_war: "The enemy holds a city."
 advisor.meyerson.budget_unsubmitted.text: "The budget has changes that are not submitted. They will not apply when the turn ends until you submit the budget."
 advisor.dayan.arms_out.text: "Arms equip military training and are spent in attacks. Buying Arms with Money before the stock runs short keeps those choices available."
 
-# Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
+# Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
+# 24 October 2026 ("approved both").
 advisor.quote.q1.text: "“THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;”"
 advisor.quote.q1.source: "Declaration of the Establishment of the State of Israel, 14 May 1948"
 
