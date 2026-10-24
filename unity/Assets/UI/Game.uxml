@@ -422,6 +422,16 @@
                     <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- How much the advisors say (spec 6, AdvisorSettings): four levels, the one set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-advisors-label" text="Advisors" class="settings-name" />
+                <ui:VisualElement class="row settings-choices settings-advisors">
+                    <ui:Button name="settings-advisors-new" class="settings-switch" />
+                    <ui:Button name="settings-advisors-experienced" class="settings-switch" />
+                    <ui:Button name="settings-advisors-warnings" class="settings-switch" />
+                    <ui:Button name="settings-advisors-off" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-language-label" text="Language" class="settings-name" />
@@ -469,10 +479,15 @@
                 <ui:VisualElement name="advisor-media" class="advisor-media" />
                 <ui:ScrollView name="advisor-body" class="advisor-body">
                     <ui:Label name="advisor-text" class="advisor-text" />
+                    <ui:Label name="advisor-quote" class="advisor-quote" />
+                    <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
                 </ui:ScrollView>
-                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). -->
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). The credit
+                     scrolls in the room the caption and the buttons leave (Dayan's runs to seven lines). -->
                 <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
-                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                <ui:ScrollView name="advisor-media-credits" class="advisor-media-credits">
+                    <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />
                     <ui:Button name="advisor-more" />

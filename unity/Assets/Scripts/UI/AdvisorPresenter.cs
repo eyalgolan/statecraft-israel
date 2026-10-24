@@ -29,9 +29,9 @@ namespace Statecraft.Game.UI
     {
         public const string OpenClass = "advisor-open", LayerName = "advisor-layer", CriticalClass = "advisor-critical",
             NoPortraitClass = "advisor-no-portrait";
-        /// <summary>Statecraft.uss sizes (.advisor-name, .advisor-role, .advisor-text, Button, .advisor-count), in panel px,
+        /// <summary>Statecraft.uss sizes (.advisor-name, .advisor-role, .advisor-text, Button, .advisor-count, .advisor-quote, .advisor-quote-source), in panel px,
         /// raised where they would be under the text floor on screen (HudPresenter.FlooredTextSize).</summary>
-        public const float NamePx = 24f, RolePx = 15f, TextPx = 22f, ButtonPx = 19f, CountPx = 15f;
+        public const float NamePx = 24f, RolePx = 15f, TextPx = 22f, ButtonPx = 19f, CountPx = 15f, QuotePx = 20f, QuoteSourcePx = 15f;
         /// <summary>The fade out (Statecraft.uss .advisor-popup.window-closing), in ms.</summary>
         public const long HideMs = 150;
         public const string RingClass = "advisor-ring-open";
@@ -69,14 +69,14 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? ringOnly;
 
         readonly VisualElement hudRoot, layer, popup, portrait;
-        readonly Label name, role, words, count;
+        readonly Label name, role, words, count, quote, quoteSource;
         readonly Button showMe, more, notNow, gotIt, close;
         readonly Button? reopen;
         readonly Action onReopen;
         GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel;
         readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
@@ -127,11 +127,12 @@ namespace Statecraft.Game.UI
             portrait = popup.Q<VisualElement>("advisor-portrait");
             name = popup.Q<Label>("advisor-name"); role = popup.Q<Label>("advisor-role");
             words = popup.Q<Label>("advisor-text"); count = popup.Q<Label>("advisor-count");
+            quote = popup.Q<Label>("advisor-quote"); quoteSource = popup.Q<Label>("advisor-quote-source");
             showMe = popup.Q<Button>("advisor-show-me"); more = popup.Q<Button>("advisor-more");
             notNow = popup.Q<Button>("advisor-not-now"); gotIt = popup.Q<Button>("advisor-got-it"); close = popup.Q<Button>("advisor-close");
             showMe.text = text["advisor.show_me"]; more.text = text["advisor.more"]; notNow.text = text["advisor.not_now"];
             gotIt.text = text["advisor.got_it"]; close.text = text["advisor.close"];
-            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (mediaLabel, 15f), (mediaCredit, 15f), (overlayCaption, TextPx), (overlayLabel, 15f), (overlayCredit, 15f), (watch, 15f), (overlayClose, ButtonPx) };
+            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (mediaLabel, 15f), (mediaCredit, 15f), (overlayCaption, TextPx), (overlayLabel, 15f), (overlayCredit, 15f), (watch, 15f), (overlayClose, ButtonPx), (quote, QuotePx), (quoteSource, QuoteSourcePx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
             reopen = root.Q<Button>("how-to-play-guide");
@@ -142,8 +143,11 @@ namespace Statecraft.Game.UI
                 Display(reopen, chain.Any(m => m.ApprovedIn(hebrew)));  // no button that opens nothing (pending Hebrew)
             }
             showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
+            onAttention = () => Notice(AdvisorSignals.AttentionRefused);
+            bridge.RefusedForAttention += onAttention;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
+            onLevel = Evaluate; session.Settings.LevelChanged += onLevel;   // a new help level applies at once (spec 6)
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
             // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
             // it while it shows, as its ring does.
@@ -197,6 +201,22 @@ namespace Statecraft.Game.UI
             }
         }
 
+        /// <summary>A loaded game (Continue closed the start screen): the warnings that already hold are offered at once, not
+        /// only after the next change.</summary>
+        public void Resume() => Evaluate();
+
+        /// <summary>The Budget screen's unsubmitted state changed (BudgetPresenter.UnsubmittedChanged): an edit not submitted
+        /// fires budget_unsubmitted; Submit takes it back.</summary>
+        public void BudgetUnsubmitted(bool on)
+        {
+            if (on) { Notice(AdvisorSignals.BudgetUnsubmitted); return; }
+            if (disposed) return;
+            session.Fired.Remove(AdvisorSignals.BudgetUnsubmitted);
+            session.Queue.Withdraw(AdvisorSignals.BudgetUnsubmitted, Turn, bridge.State.Date);
+            if (covered?.Signal == AdvisorSignals.BudgetUnsubmitted) covered = null;
+            Render();
+        }
+
         /// <summary>An event signal fired (spec 5): it holds for this turn.</summary>
         public void Notice(string signal)
         {
@@ -238,6 +258,11 @@ namespace Statecraft.Game.UI
             name.text = text[m.Advisor == "meyerson" && !session.Introduced(m.Advisor) ? "advisor.meyerson.name_first" : "advisor." + m.Advisor + ".name"];
             role.text = text["advisor." + m.Advisor + ".role"];
             if (!Captioning) words.text = text["advisor." + m.Id + ".text"];
+            var quoteKey = "advisor.quote." + m.Quote;
+            bool verifiedQuote = AdvisorQuotes.Ids.Contains(m.Quote) && text.Has(quoteKey + ".text") && text.Has(quoteKey + ".source");
+            quote.text = verifiedQuote ? text[quoteKey + ".text"] : "";
+            quoteSource.text = verifiedQuote ? text[quoteKey + ".source"] : "";
+            Display(quote, verifiedQuote); Display(quoteSource, verifiedQuote);
             UpdateWatch();
             var picture = portraits?.Get(session.Catalog.AdvisorOf(m.Advisor).Person);
             popup.EnableInClassList(NoPortraitClass, picture == null);
@@ -569,6 +594,8 @@ namespace Statecraft.Game.UI
             var label = inline ? mediaLabel : overlayLabel;
             var credit = inline ? mediaCredit : overlayCredit;
             label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
+            // Each clip's credit starts at its first line, wherever the last one was scrolled to.
+            if (credit.GetFirstAncestorOfType<ScrollView>() is ScrollView credits) credits.scrollOffset = Vector2.zero;
             popup.EnableInClassList(WatchingClass, inline && hasPicture);
             popup.EnableInClassList(NarratingClass, !hasPicture);
             if (inline && hasPicture) mediaHead.BringToFront();
@@ -708,7 +735,9 @@ namespace Statecraft.Game.UI
             follow.Pause();
             fading?.Pause();
             layer.UnregisterCallback(onLaidOut);
+            bridge.RefusedForAttention -= onAttention;
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
+            session.Settings.LevelChanged -= onLevel;
             if (layer.userData == (object)onCover) layer.userData = null;
             if (reopen != null) reopen.clicked -= onReopen;
             showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;

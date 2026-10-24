@@ -13,6 +13,9 @@ namespace Statecraft.Game.UI
     public sealed class BudgetPresenter : IDisposable
     {
         public const double Step = 0.05;
+        /// <summary>The unsubmitted badge changed, after its UI state was updated.</summary>
+        public event Action<bool>? UnsubmittedChanged;
+        bool lastUnsubmitted;
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text;
         readonly Button reset, submit;
         /// <summary>The side menu's Budget disc, whose badge (#1109) this screen lights: only it knows the draft.</summary>
@@ -167,6 +170,11 @@ namespace Statecraft.Game.UI
             bool unsubmitted = bridge.BudgetUnsubmitted(draft);
             nav.EnableInClassList(HudPresenter.ActionClass, unsubmitted);
             nav.tooltip = unsubmitted ? text["hud.nav.budget_unsubmitted"] : nav.text;
+            if (unsubmitted != lastUnsubmitted)
+            {
+                lastUnsubmitted = unsubmitted;
+                UnsubmittedChanged?.Invoke(unsubmitted);
+            }
         }
     }
 }

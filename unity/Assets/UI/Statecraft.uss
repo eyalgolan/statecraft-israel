@@ -1027,6 +1027,14 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-ring-open #attention { margin-bottom: 5px; }
 .advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }
 
+/* The help-level choices can wrap within narrow Settings screens (spec6). */
+.settings-advisors { flex-wrap: wrap; flex-shrink: 1; }
+
+/* Only spec3.3 verified quotes, separated from the advisor's game dialogue, with their source. */
+.advisor-quote { white-space: normal; font-size: 20px; -unity-font-style: italic; margin: 2px 12px 0 12px; border-left-width: 2px; border-color: var(--gold-dim); padding-left: 8px; }
+.lang-he .advisor-quote { border-left-width: 0; border-right-width: 2px; padding-left: 0; padding-right: 8px; }
+.advisor-quote-source { white-space: normal; font-size: 15px; margin: 2px 12px 6px 12px; }
+
 /* User-started advisor media: live caption replaces the prose; no shipped media row means no Watch badge. */
 .advisor-watch { display: none; position: absolute; bottom: 0; left: 0; right: 0; min-width: 0; font-size: 15px; padding: 1px 2px; }
 .advisor-media, .advisor-media-label { display: none; }
@@ -1035,6 +1043,11 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-narrating .advisor-media-label { display: flex; }   /* a voice-only line: portrait and caption stay, the disclosure under it */
 .advisor-watching .advisor-portrait { display: none; }
 .advisor-media-label { white-space: normal; font-size: 15px; flex-shrink: 0; }
+/* While a clip plays in the popup, the live caption and the buttons keep their full size; the credit's scroll view takes
+   what is left (the v0.3.0 release check: Dayan's seven-line credit cut the caption to one line). */
+.advisor-media-credits { display: none; flex-shrink: 1; min-height: 0; }
+.advisor-watching .advisor-media-credits, .advisor-narrating .advisor-media-credits { display: flex; }
+.advisor-watching .advisor-body, .advisor-actions, .advisor-count { flex-shrink: 0; }
 .advisor-overlay { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.72); padding: 16px; }
 .advisor-overlay-open .advisor-overlay { display: flex; }
 .advisor-overlay-open .advisor-layer { display: none; }
