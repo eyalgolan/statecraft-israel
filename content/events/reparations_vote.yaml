@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+id: reparations_vote
+title: Talks with Germany
+text: '{prime_minister} asks the Knesset to let the government negotiate directly with West Germany over reparations for the Holocaust, on Israel''s claim of 1.5 billion dollars. Herut, the General Zionists and Mapam oppose any dealings with Bonn, and Herut asks for a referendum first. The debate opens on 7 January 1952.'
+anchor: hard
+tags: [holocaust]
+office: prime_minister
+# The Knesset debated the government's announcement on reparations in sittings 38 to 40, 7 to 9 January 1952 (the
+# protocols of sittings 38 and 39, Sharett Archive, below). In sitting 38 the Prime Minister gave the claim of the note of
+# 12 March 1951, 1.5 billion dollars as the minimum for absorbing about half a million survivors; Rimalt (General
+# Zionists) asked that the item be taken off the agenda, Hazan (Mapam) said his party would vote against, and Begin
+# (Herut) said there would be no negotiations and asked that the question be put to the people first. On 9 January the
+# Knesset voted 61 to 50, with five abstaining and four absent (JTA; the Hebrew Wikipedia count is six abstaining and
+# three absent, and the record of sitting 40 is not yet opened), to empower the Foreign Affairs Committee "to take
+# adequate steps according to the circumstances"; an opposition motion rejecting any negotiations was defeated, and
+# the Foreign Minister opposed a referendum (JTA). On 7 January opponents rallied outside the Knesset, stones were
+# thrown into the chamber (the Speaker, in sitting 38) and the police used hoses and tear gas (en.wiki). The text names
+# the parties, not their leaders, and leaves the riot to the turn it happens in. Research note:
+# research_notes/M4 content 1952-56/reparations-vote-1952.md.
+# The window opens on 15 December 1951, the monthly turn date before the vote, so the card reaches the player on the
+# turn before the decision (R-TURN-002); it closes the day after the vote.
+from: 1951-12-15
+to: 1952-01-10
+options:
+  - id: negotiate
+    text: Ask the Knesset to authorise direct talks with Germany
+    historical: true
+    recommended: true
+    effects:
+      # A design value, awaiting the owner (#1564): the country divided and the riot of 7 January. Small, like the
+      # reparations claim's IL 1 million; not a historical figure and not a moral judgement of either answer.
+      - { target: morale, delta: -0.02 }
+  - id: reject
+    text: Rule out any negotiation with Germany
+    alternative:
+      basis: debated
+      by: the opposition in the Knesset (Herut, the General Zionists and Mapam)
+      date: 1952-01-07
+      sources:
+        - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+        - { url: "https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany", checked: 2026-10-24 }
+    effects:
+      # A design value, awaiting the owner (#1564): the German funds a refusal forgoes, as reparations_claim's refuse
+      # option costs Foreign currency (#938, $4 million). Not a historical figure and not a moral judgement.
+      - { target: fx_reserves, delta: -4 }
+  - id: referendum
+    text: Put the question to the people in a referendum first
+    alternative:
+      basis: debated
+      by: Herut in the Knesset
+      date: 1952-01-07
+      sources:
+        - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+        - { url: "https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany", checked: 2026-10-24 }
+    effects:
+      # A design value, awaiting the owner (#1564): the cost of a national vote and the months of delay. Not a
+      # historical figure; no referendum was held.
+      - { target: treasury, delta: -1 }
+sources:
+  # Knesset, sitting 38, 7 January 1952, as printed in Polmos HaShilumim (Sharett Archive): the Prime Minister's
+  # statement (the notes of 6 January and 12 March 1951, the claim of 1.5 billion dollars), the opposition's speeches
+  # (Rimalt, Hazan, Begin, including the call for a referendum) and the Speaker's statement that stones were thrown
+  # into the chamber.
+  - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+  # Knesset, sitting 39, 8 January 1952 (same volume): the debate continued.
+  - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2213", checked: 2026-10-24 }
+  # JTA, 10 January 1952: the vote of 9 January (61 for, 50 against, five abstaining, four absent), the resolution's
+  # wording, the defeated opposition motion, the Foreign Minister against a referendum, and the rioting on Monday.
+  - { url: "https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany", checked: 2026-10-24 }
+  # en.wiki: the debate of 7 January 1952, the rally of 15,000, stones at the windows, hoses and tear gas, the 61-50
+  # vote. Secondary, beside
+  # the two above.
+  - { url: "https://en.wikipedia.org/wiki/Reparations_Agreement_between_Israel_and_the_Federal_Republic_of_Germany", checked: 2026-10-24 }
+status: fact-checked

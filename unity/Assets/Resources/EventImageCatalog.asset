@@ -227,6 +227,14 @@ MonoBehaviour:
       and cropped"
     sensitive: 1
     sensitivityReviewed: 1
+  - eventId: reparations_vote
+    image: {fileID: 2800000, guid: 06570f8e84c1493491e3a51b3fdf7c33, type: 3}
+    alt: Police set up barbed-wire barriers before a planned demonstration near the Knesset against the reparations talks, Jerusalem, January 1952.
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel /
+      The Pritzker Family National Photography Collection · CC BY 4.0 · graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 0
   - eventId: second_truce
     image: {fileID: 2800000, guid: eeb2c6a1420f649d6b259c164df97e0a, type: 3}
     alt: Count Folke Bernadotte, the UN mediator, interviewed by a radio reporter

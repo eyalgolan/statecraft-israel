@@ -62,8 +62,8 @@ final `GameState.Hash()` is pinned:
 | Run | Ends | Hash |
 |---|---|---|
 | to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `f3ec68b734a3beb24df9a873e0400f0253aed48f3cde2ea12415f1890dcaa5b0` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `6dfd23376a448641e29516518b8751e4ae7d3df564d3d9d5019ae7be942058c6` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `6dfd23376a448641e29516518b8751e4ae7d3df564d3d9d5019ae7be942058c6` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -432,3 +432,6 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
 | #798: the `mvp-occupy-cost` golden (the plan's PR 6 scenario; owner, 23 Oct 2026, now that a capture is reachable in play, #1304) | scenario-mvp-occupy-cost | `a767bb66` | new: Golani's unit moves to Nazareth on 15 May 1948, the scenario answers the capture with Occupy on 15 June, and the run ends on 15 December 1948 with Nazareth awaiting `EndOccupation` (`since=1948-06-15`). No existing golden moves |
 | #799: the `mvp-annex-nazareth` golden (the plan's Task 6, #1520) | scenario-mvp-annex-nazareth | `d37e6db4` | new: `mvp-occupy-cost`'s two steps, then `end_occupation nazareth annex` on 15 December 1948, run to 15 January 1949. Nazareth ends `owner=israel,state=annexed,since=1948-06-15` and is a city of 17 units, 7 employed (16,994 people, the census-day count the owner approved on #799, times the national share 0.439), housing 17. It pins the approved count. The fled field and EndOccupation move no existing golden: `mvp-occupy-cost` captures Nazareth (stayed) and keeps `a767bb66` |
+| #1564: the `reparations_vote` card, the Knesset vote on talks with West Germany (fires 15 December 1951) | hash1952 | `6dfd2337` | the new hard card fires on turn 43 of the historical run, the reference player answers it historically (`negotiate`, morale -0.02), and the run's state and fired events change (was `6b374f69`) |
+| #1564: as above | mvp-end | `6dfd2337` | same run as hash1952 (was `6b374f69`) |
+| #1564: as above | scenario-mvp-defeat | `85c86120` | the scenario's run reaches December 1951, so the card fires in it too and, left unanswered, resolves to `negotiate` (morale -0.02; was `584a828a`) |

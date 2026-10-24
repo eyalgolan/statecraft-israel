@@ -384,3 +384,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "The objective card absorb_immigrants (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). NLI title 'עולים מטרנסילבניה רומניה מגיעים באוניה לנמל חיפה' (immigrants from Transylvania, Romania, arrive by ship at Haifa port), description 'עולים חדשים יורדים מכבש הספינה' (new immigrants come down the ship's gangway), taken 25 June 1951; NLI archive ARC. 4* 2068 / 6027. A generic arrival, not the card's own date (the card is December 1949). Unnamed adults on the gangway and men in uniform caps at its foot; no child, nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-21. Owner sign-off, 21 October 2026 (coordinator session): approved for the objective 2 card (#1268). Not a sensitive picture, so sensitivity_reviewed stays false (docs/event-images.md: only the sensitive pictures need that flag)."
+  - event: reparations_vote
+    file: reparations_vote.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Jerusalem_(997008136934105171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/d/d1/Jerusalem_%28997008136934105171.jpg"
+    sha1: d2bab6a04eee727ab63becc62f14d3922e77f0fe
+    original_size: [1914, 1314]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "Police set up barbed-wire barriers before a planned demonstration near the Knesset against the reparations talks, Jerusalem, January 1952."
+    crop: [0.5, 0.55, 1.0]
+    sensitive: true
+    sensitivity_reviewed: false
+    note: "The reparations vote card (#1564). NLI title 'המשטרה מניחה מחסומים ומתארגנת לקראת הפגנה מתוכננת ליד משכן הכנסת בעקבות הסכמי השילומים עם גרמניה' (the police set up barriers and organise before a planned demonstration near the Knesset over the reparations agreements with Germany), dated January 1952 (the day is not given, so the alt text gives the month); NLI archive ARC. 4* 2068 / 7264. Police in helmets and greatcoats at a coil of barbed wire across a street, with a crowd behind; no one is hurt, and no face dominates. Chosen from the Rothenberg series 997008136933705171 to 997008136934705171 by Jeremy Hoover on 24 October 2026. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-24; VRTS ticket 2021092910005788. Sensitive: the card is tagged holocaust and the photograph shows a violent day, so the owner signs it off."

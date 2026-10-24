@@ -775,4 +775,12 @@ rules:
     credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
     note: "Owner-selected Road of Valour opening frame (#791). Owner sign-off, 21 October 2026 (coordinator session): the photograph from #1226 is approved, sensitivity review included. Original 1370x924, SHA-1 55b3ea19042035fbd45812ffc6576029b3d171dc; VRTS ticket 2021092910005788. Commons credit/licence and downloaded original verified 21 October 2026. Made by tools/event_images.py, centred crop [0.5, 0.5, 1.0]."
+  - glob: "unity/Assets/UI/EventImages/reparations_vote.jpg"
+    licence: CC-BY-4.0
+    source: "https://commons.wikimedia.org/wiki/File:Jerusalem_(997008136934105171.jpg"
+    status: owner-verify
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    adapted: "graded and cropped"
+    note: "Police barriers before the demonstration near the Knesset over the reparations talks, January 1952 (#1564). Original 1914x1314, SHA-1 d2bab6a04eee727ab63becc62f14d3922e77f0fe; VRTS ticket 2021092910005788. Commons credit/licence read through the API and the downloaded original's SHA-1 checked on 24 October 2026. Made by tools/event_images.py, crop [0.5, 0.55, 1.0]. Sensitive: awaits the owner's sign-off."
 removed: []

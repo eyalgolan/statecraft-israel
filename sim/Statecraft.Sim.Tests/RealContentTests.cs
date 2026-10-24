@@ -49,13 +49,13 @@ public class RealContentTests
         }
     }
 
-    /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
+    /// <summary>R-ALT-004 on the real content: every one of the 32 alternatives carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.Equal(30, alternatives.Count);
+        Assert.Equal(32, alternatives.Count);
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
@@ -175,10 +175,14 @@ public class RealContentTests
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
         Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
-        Assert.Empty(ReleaseGate.SensitiveUnreviewed(C));
+        // reparations_vote (#1564) is submitted fact-checked and waits for the owner's sensitivity review; the maintainer
+        // sets sensitivity-reviewed and empties this list.
+        var awaitingSensitivityReview = new[] { "reparations_vote" };
+        Assert.Equal(awaitingSensitivityReview, ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
             Assert.Equal(objectiveDrafts.Contains(e.Id) ? "draft"
+                : awaitingSensitivityReview.Contains(e.Id) ? "fact-checked"
                 : ReleaseGate.SensitiveEvents(C).Contains(e.Id) ? ReleaseGate.ReviewedStatus : "fact-checked", e.Status);
             Assert.NotEmpty(e.Sources);
         }
