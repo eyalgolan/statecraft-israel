@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.Boot;
@@ -12,6 +13,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
@@ -247,6 +249,66 @@ public class AdvisorSignalsTests
         Assert.AreEqual(1, raised);
         Assert.IsNotNull(b.Queue(new SetPolicy("no_such_policy", 1)), "a refusal for another reason");
         Assert.AreEqual(1, raised, "raises nothing");
+    }
+
+    /// <summary>Review (pre-#1602, must-fix 1): the advisor's hook never changes how an order is refused. A throwing
+    /// RefusedForAttention subscriber is logged, and the order still gets its ordinary refusal, Refused included.</summary>
+    [Test]
+    public void AThrowingAttentionSubscriberLeavesTheRefusalAlone()
+    {
+        var b = Bridge();
+        var ev = C.Events.First(e => e.Id == b.State.PendingEvents[0]);
+        var order = new ChooseEventOption(ev.Id, ev.Options[0].Id);
+        Assume.That(b.Price(order), Is.GreaterThan(0), "the opening card's answer costs Attention");
+        b.State.Attention = 0;
+        string? refused = null; b.Refused += r => refused = r;
+        b.RefusedForAttention += () => throw new InvalidOperationException("advisor hook failed");
+        LogAssert.Expect(LogType.Exception, new Regex("advisor hook failed"));
+        var why = b.Queue(order);
+        Assert.IsNotNull(why, "still refused");
+        Assert.AreEqual(why, refused, "and Refused still raised");
+        Assert.IsEmpty(b.Queued, "nothing queued");
+    }
+
+    /// <summary>Review (pre-#1602, should 2): the city warning is critical, shown at Off, in English and approved Hebrew.</summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ACityAtRiskIsWarnedAtOff(bool hebrew)
+    {
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml")
+                          : UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
+        rig.Session.Settings.SetLevel("off");
+        var b = rig.Bridge;
+        var city = C.SettlementHexes.First(h => b.State.Cities.ContainsKey(h.Id));
+        int id = b.State.Units.Keys.Max() + 1;
+        b.State.Units[id] = new Unit(id, "egyptian_army", city.Q, city.R, side: "egypt", strength: 10);
+        rig.Advisor.Notice(AdvisorSignals.TurnEnded);
+        CollectionAssert.Contains(Drain(rig), "dayan.city_at_risk");
+    }
+
+    /// <summary>Review (pre-#1602, should 3), end to end on the shipped row: the owner's "Approve 3 / costliest action" means 4
+    /// Arms say nothing and 3 Arms bring Dayan's warning, at Warnings only and not at Off.</summary>
+    [Test]
+    public void DayanWarnsAtThreeArmsAtWarningsOnly()
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
+        using (var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text))
+        {
+            rig.Session.Settings.SetLevel("warnings");
+            rig.Bridge.State.Arms = 4;
+            rig.Advisor.Notice(AdvisorSignals.TurnEnded);
+            CollectionAssert.DoesNotContain(Drain(rig), "dayan.arms_out", "4 Arms");
+        }
+        using (var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text))
+        {
+            rig.Session.Settings.SetLevel("off");
+            rig.Bridge.State.Arms = 3;
+            rig.Advisor.Notice(AdvisorSignals.TurnEnded);
+            CollectionAssert.DoesNotContain(Drain(rig), "dayan.arms_out", "3 Arms at Off");
+            rig.Session.Settings.SetLevel("warnings");
+            CollectionAssert.Contains(Drain(rig), "dayan.arms_out", "3 Arms at Warnings only");
+        }
     }
 
     [Test]
