@@ -130,7 +130,59 @@ namespace Statecraft.Game.UI
                 Button(row, $"city-cohort-{k.Id}-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
                     () => bridge.Queue(new CancelTraining(k.Id))).SetEnabled(!cancelled);
             }
+
+            // Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, like Train, shown only where the city has
+            // the people. The sim keeps the qualification and rules on each order; a button is off only where it would refuse it
+            // (more than the craftsmen or qualified groups, or than the civilians without work, Training.Idle, with this
+            // turn's orders counted by Training.Available).
+            if (city.Craftsmen > 0)
+            {
+                var back = (bridge.QueuedLike(new ReturnCraftsmen(id, 1)) as ReturnCraftsmen)?.Count ?? 0;
+                var row = Row(host, "city-return-craftsmen-row");
+                Button(row, "city-return-craftsmen", text["city.return_craftsmen"], () => bridge.Queue(new ReturnCraftsmen(id, back + 1))).SetEnabled(back < city.Craftsmen);
+                if (back > 0) Line(row, "city-return-craftsmen-ordered", text.Format("city.train_ordered", back));
+            }
+            // Training.Available already takes this turn's Train, Reinforce, Assign and Reassign orders off the idle civilians.
+            var idleLeft = Training.Available(s, id, bridge.Queued);
+            var q = city.Qualified;
+            // A queued Train or Reinforce that leaves fewer civilians than the city has qualified costs it qualifications first
+            // (R-QUAL-006, craftsmen first) and runs before the reassignment, so only what survives it can be reassigned.
+            // Training.Ordered now includes the reassignments themselves, which leave the civilians where they are, so only Train and Reinforce count here.
+            var trained = bridge.Queued.OfType<Train>().Where(x => x.City == id).Sum(x => x.Count) + bridge.Queued.OfType<Reinforce>().Where(x => x.City == id).Sum(x => x.Count);
+            var kept = q.Lose(Math.Max(0, q.Total - (city.Civilians - trained)));
+            foreach (var (role, have, left) in new[] { ("craftsmen", q.Craftsmen, kept.Craftsmen), ("halutz", q.Halutzim.Count, kept.Halutzim.Count), (Projects.VeteranType, q.Veterans, kept.Veterans) })
+            {
+                if (have == 0) continue;
+                Command Order(int n) => role == "craftsmen" ? new ReassignCraftsmen(id, n) : (Command)new ReassignPioneers(id, role, n);
+                var again = bridge.QueuedLike(Order(1));
+                var ordered = again is ReassignCraftsmen rc ? rc.Count : again is ReassignPioneers rp ? rp.Count : 0;
+                var row = Row(host, $"city-reassign-{role}-row");
+                Button(row, "city-reassign-" + role, text.Format("city.reassign_" + role, have), () => bridge.Queue(Order(ordered + 1)))
+                    .SetEnabled(ordered < left && idleLeft >= 1);
+                if (ordered > 0) Line(row, $"city-reassign-{role}-ordered", text.Format("city.train_ordered", ordered));
+            }
+            var hex = c.SettlementHexes.First(h => h.Id == id);   // every settlement has one
+            foreach (var u in s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && u.Q == hex.Q && u.R == hex.R))
+                PioneerReturn(host, bridge, text, u.Id);
         }
+
+        /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
+        /// Qualification.CheckReturn takes the group (not one at work). Pioneer groups have no map token and so no unit card:
+        /// this sits beside the places that list them. Once ordered the button reads "Ordered" and is off.</summary>
+        static void PioneerReturn(VisualElement host, SimBridge bridge, UiText text, int unit)
+        {
+            if (Qualification.CheckReturn(bridge.State, unit) != null) return;
+            var ordered = ReturnQueued(bridge, unit);
+            // A queued Build or Stop for the group is another key (unit:N), so the queue would not replace it: the sim would refuse one of them.
+            var working = bridge.Queued.Any(x => (x is PioneerWork w && w.Unit == unit) || (x is StopWork sw && sw.Unit == unit));
+            Button(host, $"pioneer-return-{unit}", ordered ? text["site.ordered"] : text.Format("pioneer.return", Group(text, bridge.State, unit)),
+                () => bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder))).SetEnabled(!ordered && !working);
+        }
+
+        /// <summary>A Return is queued for the group. It runs before Build at End turn, so the unit has left by then and the sim
+        /// refuses the Build ("no such unit"): the Build buttons are off once it is.</summary>
+        static bool ReturnQueued(SimBridge bridge, int unit) =>
+            bridge.QueuedLike(new UnitOrder(unit, Qualification.ReturnOrder)) is UnitOrder o && o.Order == Qualification.ReturnOrder;
 
         static void Workers(SimBridge bridge, string city, int current, int count)
         {
@@ -178,7 +230,8 @@ namespace Statecraft.Game.UI
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
+                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken && !ReturnQueued(bridge, u.Id));
+                    PioneerReturn(host, bridge, text, u.Id);
                 }
             }
             else if (work.BuiltOn == null)
@@ -217,7 +270,8 @@ namespace Statecraft.Game.UI
                     Button(host, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
+                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken && !ReturnQueued(bridge, u.Id));
+                    PioneerReturn(host, bridge, text, u.Id);
                 }
             }
             else if (work.BuiltOn == null)
