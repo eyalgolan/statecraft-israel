@@ -243,7 +243,7 @@ public class AdvisorMediaTests
     [UnityTest]
     public System.Collections.IEnumerator InlineKeepsItsXAndAPhoneStopsItBeforeUsingTheOverlay()
     {
-        var wide = new RenderTexture(1280, 720, 0); var phone = new RenderTexture(390, 844, 0);
+        var wide = new RenderTexture(1280, 720, 0);
         var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); panel.targetTexture = wide;
         var go = new GameObject("AdvisorMediaGeometry"); go.SetActive(false);
         var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
@@ -262,7 +262,9 @@ public class AdvisorMediaTests
             advisor.ForceInline = true; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
             for (int i = 0; i < 4; i++) yield return null;
             Assert.IsTrue(AdvisorTargets.Shown(root.Q("advisor-close")), "inline keeps X usable");
-            advisor.ForceInline = null; panel.targetTexture = phone;
+            // A runtime targetTexture swap does not resize an EditMode panel (it stayed 1920x1080 panel px for 30 frames), so the
+            // HUD root takes an upright phone's size in panel px (390x844 at the 1280x720 panel's 1.5 panel px per pixel).
+            advisor.ForceInline = null; hudRoot.style.width = 585; hudRoot.style.height = 1266;
             for (int i = 0; i < 6; i++) yield return null;
             Assert.IsTrue(hudRoot.ClassListContains(HudPresenter.ThreeRowClass));
             Assert.IsFalse(advisor.Media.Playing, "inline stops when the new tier has no room; no automatic replay");
@@ -276,7 +278,7 @@ public class AdvisorMediaTests
         {
             advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
             UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
-            wide.Release(); phone.Release(); UnityEngine.Object.DestroyImmediate(wide); UnityEngine.Object.DestroyImmediate(phone);
+            wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
         }
     }
 
