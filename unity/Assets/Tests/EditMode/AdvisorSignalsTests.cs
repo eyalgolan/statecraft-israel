@@ -69,6 +69,24 @@ public class AdvisorSignalsTests
         CollectionAssert.Contains(Drain(rig), "meyerson.food_short", "Warnings only");
     }
 
+    /// <summary>The owner approved the critical warnings' Hebrew (24 October 2026, "Hebrew approved"): a Hebrew player sees
+    /// them at Off, and nothing still pending (food_short at Warnings only) shows in Hebrew.</summary>
+    [Test]
+    public void TheCriticalWarningsShowInHebrew()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text);
+        using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: he);
+        rig.Session.Settings.SetLevel("off");
+        rig.Bridge.State.ExhaustedTurns = 1; rig.Bridge.State.Debt = Ceiling(rig.Bridge); rig.Bridge.State.FoodUnmet = 3;
+        rig.Advisor.Notice(AdvisorSignals.TurnEnded);
+        CollectionAssert.IsSubsetOf(new[] { "meyerson.exhausted", "meyerson.debt_ceiling" }, Drain(rig));
+        rig.Session.Settings.SetLevel("warnings");
+        rig.Advisor.Notice(AdvisorSignals.TurnEnded);
+        CollectionAssert.DoesNotContain(Drain(rig), "meyerson.food_short", "pending Hebrew");
+        foreach (var id in new[] { "dayan.city_at_risk", "meyerson.exhausted", "meyerson.debt_ceiling" })
+            Assert.IsTrue(rig.Session.Catalog.Find(id)!.ApprovedIn(hebrew: true), id);
+    }
+
     /// <summary>Task 18: an unsubmitted budget change (BudgetPresenter.UnsubmittedChanged, wired by GameRoot) is a warning.</summary>
     [Test]
     public void AnUnsubmittedBudgetIsAWarning()

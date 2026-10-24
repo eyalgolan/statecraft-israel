@@ -26,9 +26,12 @@ messages:
 # warning.city_under_attack, meyerson.exhausted warning.economic_defeat_countdown.fix1, meyerson.debt_ceiling
 # warning.debt_ceiling (so it waits for the ceiling itself, R-END-001: debt at or above it), dayan.defeat_war
 # warning.city_held_defeat and dayan.arms_out teach.arms.
-  - { id: dayan.city_at_risk, advisor: dayan, signal: city_at_risk, level: critical, he_review: pending, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }] }
-  - { id: meyerson.exhausted, advisor: meyerson, signal: exhausted, level: critical, he_review: pending, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
-  - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 1 }, level: critical, he_review: pending, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }] }
+# The three critical warnings' Hebrew is approved by the owner, a native speaker (24 October 2026, asked what Hebrew players
+# should see while the critical warnings wait for review: "Hebrew approved"), as worded in the S4 review sheet; any change
+# to their Hebrew sets them back to pending. The other rows wait for a native reviewer (#564).
+  - { id: dayan.city_at_risk, advisor: dayan, signal: city_at_risk, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }] }
+  - { id: meyerson.exhausted, advisor: meyerson, signal: exhausted, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
+  - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 1 }, level: critical, he_review: approved, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }] }
   - { id: meyerson.food_short, advisor: meyerson, signal: food_short, level: warnings, he_review: pending, priority: 2, repeat: every, cooldown_turns: 2 }
   - { id: dayan.defeat_war, advisor: dayan, signal: defeat_war, level: warnings, he_review: pending }
   - { id: ben_gurion.defeat_economy, advisor: ben_gurion, signal: defeat_economy, level: warnings, he_review: pending }
