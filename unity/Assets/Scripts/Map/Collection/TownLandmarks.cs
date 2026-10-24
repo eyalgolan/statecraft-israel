@@ -329,8 +329,11 @@ namespace Statecraft.Game.Map.Collection
             date = at;
             if (next.SequenceEqual(wants)) return;
             wants = next;
+            OriginalModelRequests.WhenVisible(this, () =>
+            {
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
+            });
             dirty = true;
             Rebuild();
         }

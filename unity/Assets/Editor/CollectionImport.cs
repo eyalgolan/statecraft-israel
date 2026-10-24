@@ -9,38 +9,37 @@ using UnityEngine;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>The 1948 Collection's import (issue #664): sets the import settings of the 31 slimmed models in
-    /// <see cref="CollectionCatalog.Folder"/> (written by tools/slim_collection.py from Tal Heuberger's #507 files), makes each model's
-    /// &lt;id&gt;-far and &lt;id&gt;-near prefabs (and the near idle controller where there is one), and builds the streamed
-    /// AssetBundles for a player build. CollectionImportTests pins what Run leaves behind. Idempotent.
+    /// <summary>Imports Tal Heuberger's 73 unmodified original models (#1273; docs/original-models.json pins the files) without
+    /// mesh or animation compression, keyframe reduction, Crunch, texture downscaling or generated LODs, keeping every source
+    /// take. Makes one prefab per model and one integrity-checked streaming bundle per model. OriginalModelsStreamingTests
+    /// pins the import settings. Idempotent.
     /// Run headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.Run</summary>
     public static class CollectionImport
     {
-        public const int MaxTextureSize = 512;
+        public const int MaxTextureSize = 8192;
 
         static string Dir(string id) => $"{CollectionCatalog.Folder}/{id}";
-        public static string Model(string id, CollectionDetail d) => $"{Dir(id)}/{id}-{(d == CollectionDetail.Far ? "far" : "near")}.fbx";
+        public static string Model(string id, CollectionDetail d) => $"{Dir(id)}/{id}.fbx";
         public static string Controller(string id) => $"{Dir(id)}/{id}-near.controller";
 
         public static void Run()
         {
-            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
+            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id)))
             {
                 ImportModel(Model(id, CollectionDetail.Far), animated: false);
                 ImportModel(Model(id, CollectionDetail.Near), animated: CollectionCatalog.Animated.Contains(id));
                 ImportColourMap($"{Dir(id)}/{id}_basecolor.jpg");
             }
-            foreach (var id in CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings))
+            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id)))
             {
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat")
                     ?? throw new InvalidOperationException($"{id}: no material");
                 if (!mat.enableInstancing) { mat.enableInstancing = true; EditorUtility.SetDirty(mat); }
-                MakePrefab(id, CollectionDetail.Far, mat, null);
-                MakePrefab(id, CollectionDetail.Near, mat, CollectionCatalog.Animated.Contains(id) ? IdleController(id) : null);
+                MakePrefab(id, CollectionDetail.Near, mat, (CollectionCatalog.Animated.Contains(id) || OriginalModelPose.Required(id)) ? IdleController(id) : null);
             }
             AssetDatabase.SaveAssets();
             MakeBuildingPrefabs();
-            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings)} collection models");
+            Debug.Log($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id))} collection models");
         }
 
         /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own
@@ -48,22 +47,26 @@ namespace Statecraft.Game.EditorTools
         /// settings are #675's and are left as they are.</summary>
         public static void MakeBuildingPrefabs()
         {
-            foreach (var id in CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Buildings).Ids)
+            foreach (var id in CollectionCatalog.Ids.Where(CollectionCatalog.IsBuilding))
             {
                 string dir = $"{CollectionCatalog.BuildingsFolder}/{id}";
+                ImportModel($"{dir}/{id}.fbx", animated: false);
+                ImportColourMap($"{dir}/{id}_basecolor.jpg");
                 var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{id}.fbx") ?? throw new InvalidOperationException($"{id}: no model");
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat") ?? throw new InvalidOperationException($"{id}: no material");
+                mat.enableInstancing = true; EditorUtility.SetDirty(mat);
                 var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
                 try
                 {
                     foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                         r.sharedMaterials = Enumerable.Repeat(mat, Math.Max(1, r.sharedMaterials.Length)).ToArray();
+                    go.AddComponent<OriginalModelDistance>();
                     PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
                 }
                 finally { UnityEngine.Object.DestroyImmediate(go); }
             }
             AssetDatabase.SaveAssets();
-            Debug.Log("CollectionImport: the five special-building prefabs (#707)");
+            Debug.Log("CollectionImport: 23 original building prefabs");
         }
 
         static void ImportModel(string path, bool animated)
@@ -71,11 +74,11 @@ namespace Statecraft.Game.EditorTools
             var imp = AssetImporter.GetAtPath(path) as ModelImporter ?? throw new FileNotFoundException("no model", path);
             imp.globalScale = 1f;
             imp.useFileScale = true;
-            imp.meshCompression = ModelImporterMeshCompression.Medium;
+            imp.meshCompression = ModelImporterMeshCompression.Off;
             imp.isReadable = false;
-            imp.optimizeMeshPolygons = true;
-            imp.optimizeMeshVertices = true;
-            imp.importBlendShapes = false;
+            imp.optimizeMeshPolygons = false;
+            imp.optimizeMeshVertices = false;
+            imp.importBlendShapes = true;
             imp.importVisibility = false;
             imp.importCameras = false;
             imp.importLights = false;
@@ -84,27 +87,17 @@ namespace Statecraft.Game.EditorTools
             imp.importNormals = ModelImporterNormals.Import;
             imp.importTangents = ModelImporterTangents.None;   // no normal map
             imp.materialImportMode = ModelImporterMaterialImportMode.None;   // the prefab draws with the .mat beside it
-            if (animated)
-            {
-                imp.animationType = ModelImporterAnimationType.Generic;
-                imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-                imp.optimizeGameObjects = true;
-                imp.importAnimation = true;
-                imp.resampleCurves = true;
-                imp.animationCompression = ModelImporterAnimationCompression.Optimal;
-                var takes = imp.defaultClipAnimations;
-                if (takes.Length != 1) throw new InvalidOperationException($"{path}: {takes.Length} takes, expected the idle clip only");
-                var clip = takes[0];
-                clip.name = "idle";
-                clip.loopTime = true;
-                imp.clipAnimations = new[] { clip };
-            }
-            else
-            {
-                imp.animationType = ModelImporterAnimationType.None;
-                imp.importAnimation = false;
-                imp.clipAnimations = Array.Empty<ModelImporterClipAnimation>();
-            }
+            // Lossless (#1273): every source take, no resampling, no keyframe reduction, no generated LODs.
+            imp.animationType = ModelImporterAnimationType.Generic;
+            imp.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            imp.optimizeGameObjects = false;
+            imp.importAnimation = true;
+            imp.resampleCurves = false;
+            imp.animationCompression = ModelImporterAnimationCompression.Off;
+            imp.clipAnimations = imp.defaultClipAnimations;
+            var serialized = new SerializedObject(imp);
+            var lods = serialized.FindProperty("m_GenerateMeshLods") ?? serialized.FindProperty("generateMeshLods");
+            if (lods != null) { lods.boolValue = false; serialized.ApplyModifiedPropertiesWithoutUndo(); }
             imp.SaveAndReimport();
         }
 
@@ -117,7 +110,7 @@ namespace Statecraft.Game.EditorTools
             imp.isReadable = false;
             imp.maxTextureSize = MaxTextureSize;
             imp.textureCompression = TextureImporterCompression.Compressed;
-            imp.crunchedCompression = true;
+            imp.crunchedCompression = false;
             imp.compressionQuality = 50;
             foreach (var target in new[] { "Standalone", "WebGL" })
             {
@@ -126,18 +119,18 @@ namespace Statecraft.Game.EditorTools
                 s.maxTextureSize = MaxTextureSize;
                 s.format = TextureImporterFormat.Automatic;
                 s.textureCompression = TextureImporterCompression.Compressed;
-                s.crunchedCompression = true;
+                s.crunchedCompression = false;
                 s.compressionQuality = 50;
                 imp.SetPlatformTextureSettings(s);
             }
             imp.SaveAndReimport();
         }
 
-        /// <summary>The near model's one-state controller playing its idle clip (made once, then kept, so its GUID holds).</summary>
+        /// <summary>The original model's one-state controller using its idle clip (C05 uses his walk) (made once, then kept, so its GUID holds).</summary>
         static AnimatorController IdleController(string id)
         {
             var clip = AssetDatabase.LoadAllAssetsAtPath(Model(id, CollectionDetail.Near)).OfType<AnimationClip>()
-                .Single(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal));
+                .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).OrderBy(c => c.name.IndexOf(id == "figure-c05-pioneer-veteran-v2" ? "walk" : "idle", StringComparison.OrdinalIgnoreCase) < 0 ? 1 : 0).ThenBy(c => c.name, StringComparer.Ordinal).First();
             var path = Controller(id);
             var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (ctrl == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
@@ -164,6 +157,8 @@ namespace Statecraft.Game.EditorTools
                     animator.cullingMode = AnimatorCullingMode.CullCompletely;
                 }
                 else if (animator != null) UnityEngine.Object.DestroyImmediate(animator);
+                go.AddComponent<OriginalModelDistance>();
+                if (OriginalModelPose.Required(id)) go.AddComponent<OriginalModelPose>();
                 PrefabUtility.SaveAsPrefabAsset(go, CollectionCatalog.PrefabPath(id, detail));
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
@@ -177,7 +172,7 @@ namespace Statecraft.Game.EditorTools
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
-            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct().ToArray(),
+            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id, CollectionDetail.Near) }).Distinct().ToArray(),
         }).ToArray();
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built

@@ -1,0 +1,156 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &4269401681043855648
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8947828357738811474, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071067
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7642849408271383736, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -7511008662851502641, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -4780611624704838178, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -4672032705310100479, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -4424773215464230335, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -3894362368614004842, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -3779869083779447267, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -2647410690336345078, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -2645064853855488993, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -1888371344555811700, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -1400376146623313959, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: -1030049382021718998, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 811610461774373820, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 919132149155446097, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: m_Name
+      value: vehicle-steam-locomotive-1948-v2-stream
+      objectReference: {fileID: 0}
+    - target: {fileID: 4855663609590687253, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 6399670020648426636, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 7194928800915695689, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 7650049667216733250, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    - target: {fileID: 8449996119470504636, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e83d432a0ba3340c5b3ce2b15b6e1714, type: 2}
+    m_RemovedComponents:
+    - {fileID: 5866666021909216657, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 849572043717571384}
+  m_SourcePrefab: {fileID: 100100000, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+--- !u!1 &4034838120156243057 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7087b967f12584fe99a88e6efefd9db1, type: 3}
+  m_PrefabInstance: {fileID: 4269401681043855648}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &849572043717571384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4034838120156243057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77a9d0471f794527b4c41799be6b978, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.Map.Collection.OriginalModelDistance

@@ -314,7 +314,7 @@ namespace Statecraft.Game.Map.Collection
         {
             if (next.SequenceEqual(wanted)) return;
             wanted = next;
-            Ask(CollectionDetail.Far);
+            OriginalModelRequests.WhenVisible(this, () => Ask(CollectionDetail.Far));
             Rebuild();
         }
 

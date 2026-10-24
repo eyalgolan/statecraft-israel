@@ -14,7 +14,7 @@ namespace Statecraft.HexTiles
         internal static Action<string, CollectionDetail, Action<GameObject?>>? Source;
         static Action<string, CollectionDetail, Action<GameObject?>>? Requester =>
             Source ?? (Application.isPlaying ? CollectionStream.Request : (Action<string, CollectionDetail, Action<GameObject?>>?)null);
-        internal static bool Available => HexModels.DrawCollectionFigures && Requester != null;
+        internal static bool Available => (HexModels.DrawCollectionFigures || HexModels.DrawTownModels) && Requester != null;
 
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> answered = new HashSet<string>(StringComparer.Ordinal);

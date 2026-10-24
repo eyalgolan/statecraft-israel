@@ -5,24 +5,12 @@ using System.Linq;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Which model to draw: the strategic zoom's static mesh (at most 1,500 triangles; 4,500 for a vehicle, ship
-    /// or aircraft) or the close zoom's (at most 8,000; skinned and playing its idle clip on the models that have one).</summary>
+    /// <summary>Requested placement detail; both requests resolve to the same full original prefab. No far mesh is generated.</summary>
     public enum CollectionDetail { Far, Near }
 
-    /// <summary>The 31 non-building models of The 1948 Collection, made by Tal Heuberger with Tripo Studio and
-    /// offered in #507 (issue #664; the owner ruled them OK to use, 15 October 2026), and #507's nine whole-town models (issue
-    /// #663; owner, 17 October 2026: "The nine whole-town models ship"), standing on their towns far off (<see cref="TownLandmarks"/>);
-    /// and ten models offered only in #336, by Tal Heuberger: eight figures (issue #708; owner, 18 October 2026: "the 8 figures
-    /// in #708 can be merged without his license line"), the pioneer farmer and a second Jerusalem town (issue #886; owner,
-    /// 19 October 2026: "Yes, both"), placed by CivilianPeople, UnitFigures (the soldier) and TownLandmarks (the second
-    /// Jerusalem, the city's only far-zoom model) (#708). Every model is placed but two, each by an owner ruling: b21, which
-    /// waits for a sourced location (owner: wait), and #507's first Jerusalem, kept in the repository unused on the map
-    /// (owner, 21 October 2026, #708).
-    /// They are slimmed by
-    /// tools/slim_collection.py and live in <see cref="Folder"/>/&lt;id&gt;/, outside every Resources folder. Each ships as two
-    /// prefabs, &lt;id&gt;-far and &lt;id&gt;-near, in its category's AssetBundle, which the game streams after the first frame
-    /// (<see cref="CollectionStream"/>), so the first download does not grow. A category is one bundle, so a placement
-    /// downloads only its own kind. The buildings of #659 can join as one more bundle by adding a row here.</summary>
+    /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
+    /// Each has one CRC/SHA-checked bundle and one full-quality prefab outside Resources. Map requests wait
+    /// for a drawable view; the shared loader waits until the first game frame has rendered (#1273).</summary>
     public static class CollectionCatalog
     {
         public const string Folder = "Assets/Art/Collection";
@@ -72,7 +60,7 @@ namespace Statecraft.Game.Map.Collection
             Towns = "collection-towns", Buildings = "collection-special-buildings";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
-        public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles = new (string, string[])[]
+        public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
             (People, new[]
             {
@@ -127,7 +115,12 @@ namespace Statecraft.Game.Map.Collection
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
         };
 
-        public static IEnumerable<string> Ids => Bundles.SelectMany(b => b.Ids);
+        // Category membership is for placement/import paths only; every original has its own bundle.
+        public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
+        public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles =
+            Ids.Select(id => ("collection-" + id, new[] { id })).ToArray();
+        public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
+            || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
 
         /// <summary>The bundle that carries <paramref name="id"/>, or null for an id the collection does not have.</summary>
         public static string? BundleOf(string id)
@@ -143,8 +136,8 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
-            BundleOf(id) == Buildings
+            IsBuilding(id)
                 ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"
-                : $"{Folder}/{id}/{id}-{(detail == CollectionDetail.Far ? "far" : "near")}.prefab";
+                : $"{Folder}/{id}/{id}-stream.prefab";
     }
 }

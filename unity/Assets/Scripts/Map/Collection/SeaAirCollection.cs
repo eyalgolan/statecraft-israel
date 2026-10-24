@@ -168,8 +168,11 @@ namespace Statecraft.Game.Map.Collection
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
             if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
             wants = next; placements = placed; taken = others;
+            OriginalModelRequests.WhenVisible(this, () =>
+            {
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
+            });
             Rebuild();
         }
 

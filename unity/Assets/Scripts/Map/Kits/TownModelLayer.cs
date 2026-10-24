@@ -41,6 +41,7 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The towns whose kit buildings never draw (<see cref="Suppress"/>), by settlement id.</summary>
         readonly HashSet<string> suppressed = new HashSet<string>(System.StringComparer.Ordinal);
         TownModelSet? set;
+        bool streaming, requested;
         public bool Draw { get; set; } = true;
         /// <summary>Whether the layer has a complete model list (else the towns keep their kits at every zoom).</summary>
         public bool HasModels => set != null;
@@ -59,7 +60,8 @@ namespace Statecraft.Game.Map.Kits
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps)
         {
             string? why = models == null ? "the map scene has no model list" : models.Missing();
-            if (why != null) Debug.LogError($"town models: {why}; the towns keep their kits at every zoom (issue #659)");
+            streaming = models == null && Application.isPlaying;
+            if (why != null && !streaming) Debug.LogError($"town models: {why}; the towns keep their kits at every zoom (issue #659)");
             set = why == null ? models : null;
             this.swaps.Clear(); this.swaps.AddRange(swaps);
             closeFor.Clear();
@@ -105,7 +107,7 @@ namespace Statecraft.Game.Map.Kits
         {
             suppressed.Clear();
             suppressed.UnionWith(ids);
-            Show(set != null && LastClose);
+            // The next camera decides: do not hide fallback buildings while its original is still loading.
         }
 
         /// <summary>Whether town <paramref name="id"/>'s kit buildings never draw (a test aid).</summary>
@@ -151,40 +153,72 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>Kit buildings (false) or close meshes (true) for the camera about to render; a suppressed town's close mesh
         /// at either.</summary>
-        void Show(bool close)
+        void Show(bool close, bool originals = false)
         {
             foreach (var (kit, closeR) in swaps)
             {
-                bool c = close || (kit != null && suppressed.Contains(kit.name));
+                bool c = close || (originals && kit != null && suppressed.Contains(kit.name));
                 if (kit != null) kit.forceRenderingOff = c;
                 if (closeR != null) closeR.forceRenderingOff = !c;
             }
         }
+
+        void RequestModels()
+        {
+            requested = true;
+            var next = ScriptableObject.CreateInstance<TownModelSet>();
+            int n = TownModels.Ids.Length, remaining = n;
+            next.meshes = new Mesh[n]; next.materials = new Material[n];
+            next.mid = new Mesh[n]; next.far = new Mesh[n]; next.farthest = new Mesh[n];
+            for (int i = 0; i < n; i++)
+            {
+                int at = i;
+                Collection.CollectionStream.Request(TownModels.Ids[i], Collection.CollectionDetail.Near, prefab =>
+                {
+                    if (this == null) return;
+                    var mesh = prefab == null ? null : prefab.GetComponentInChildren<MeshFilter>(true);
+                    var renderer = prefab == null ? null : prefab.GetComponentInChildren<MeshRenderer>(true);
+                    if (mesh != null && renderer != null)
+                    {
+                        next.meshes[at] = next.mid[at] = next.far[at] = next.farthest[at] = mesh.sharedMesh;
+                        next.materials[at] = renderer.sharedMaterial;
+                    }
+                    // Swap only once all 18 are valid. A failed or partial stream keeps every kit intact.
+                    if (--remaining == 0)
+                    {
+                        if (next.Missing() == null) set = next;
+                        else { Debug.LogWarning("Town originals incomplete; keeping code-built kits."); Destroy(next); }
+                    }
+                });
+            }
+        }
+        void OnDestroy() { if (streaming && set != null) Destroy(set); }
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Submit;
         void OnDisable() { RenderPipelineManager.beginCameraRendering -= Submit; Show(false); }
 
         void Submit(ScriptableRenderContext context, Camera cam)
         {
-            if (set == null || cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
             int id = cam.GetInstanceID();
             bool close = CloseAt(ViewDistance(cam), closeFor.TryGetValue(id, out bool was) ? was : (bool?)null);
             closeFor[id] = close;
-            Show(close);
+            if (close && streaming && !requested) RequestModels();
+            close &= set != null;
+            bool originals = Collection.OriginalModelDistance.Visible(cam);
+            Show(close, originals);
             LastClose = close;
             int drawn = 0, draws = 0; long tris = 0;
             if (close && Draw)
             {
                 var planes = GeometryUtility.CalculateFrustumPlanes(cam);
-                var eye = cam.transform.position;
                 foreach (var t in tiles)
                 {
                     // The shadow pass sees casters outside the view too: cull on a widened box (as the trees).
                     var wide = t.bounds; wide.Expand(new Vector3(3000f, 0f, 3000f));
                     if (!GeometryUtility.TestPlanesAABB(planes, wide)) continue;
-                    int level = LodFor(t.size, Mathf.Sqrt(t.bounds.SqrDistance(eye)), cam.fieldOfView, cam.pixelHeight, TownModelSet.Levels + 1);
-                    var mesh = set.Mesh(t.model, level);
-                    var rp = new RenderParams(set.Material(t.model))
+                    var mesh = set!.Mesh(t.model); // always the original mesh, no baked LOD
+                    var rp = new RenderParams(set!.Material(t.model))
                     {
                         worldBounds = t.bounds, camera = cam, shadowCastingMode = ShadowCastingMode.On, receiveShadows = true,
                         layer = gameObject.layer,

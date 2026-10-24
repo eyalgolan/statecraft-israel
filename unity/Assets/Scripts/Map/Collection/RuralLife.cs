@@ -201,6 +201,8 @@ namespace Statecraft.Game.Map.Collection
         {
             if (next.SequenceEqual(wants) && nextOthers.SequenceEqual(others)) return;
             wants = next; others = nextOthers;
+            OriginalModelRequests.WhenVisible(this, () =>
+            {
             foreach (var model in wants.Select(w => w.Model).Distinct())
                 foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
                     if (asked.Add((model, detail)))
@@ -208,6 +210,7 @@ namespace Statecraft.Game.Map.Collection
                         var m = model; var d = detail;
                         Request(m, d, prefab => OnModel(m, d, prefab));
                     }
+            });
             Rebuild();
         }
 

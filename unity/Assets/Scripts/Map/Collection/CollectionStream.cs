@@ -44,6 +44,11 @@ namespace Statecraft.Game.Map.Collection
         public CollectionStream(ISource source) { this.source = source; }
 
         /// <summary>The game's stream, made on the first request with the source for this player (or the editor).</summary>
+        static int readyFrame = -1;
+        public static void GameReady() { if (readyFrame < 0) readyFrame = Time.frameCount; }
+        public static bool MayFetch(int frame, int ready) => ready >= 0 && frame > ready + 2;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetFrame() { readyFrame = -1; shared = null; host = null; }
         static CollectionStream? shared;
         static CollectionStreamHost? host;
 
@@ -88,6 +93,7 @@ namespace Statecraft.Game.Map.Collection
         public IEnumerator Run()
         {
             yield return null;   // after the frame that made the first request
+            while (Application.isPlaying && !MayFetch(Time.frameCount, readyFrame)) yield return null;
             while (true)
             {
                 while (pending.Count > 0)

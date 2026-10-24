@@ -1,0 +1,3176 @@
+[
+  {
+    "model": "b01-white-city-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2.fbx",
+    "sourceBytes": 269084,
+    "sourceSHA256": "292955c009ec6af3f5a5d89b26523c9d37be7feb91da484c2b03597d6c9eee56",
+    "spikeSHA256": "97358d8114dd0864a940b15b970ef52eb0fb3647f304779e1e7dbd06a58fc09a",
+    "blankedStringSpans": [
+      {
+        "offset": 263105,
+        "length": 173
+      },
+      {
+        "offset": 263704,
+        "length": 173
+      },
+      {
+        "offset": 264303,
+        "length": 211
+      },
+      {
+        "offset": 264976,
+        "length": 210
+      },
+      {
+        "offset": 265562,
+        "length": 173
+      },
+      {
+        "offset": 265801,
+        "length": 173
+      },
+      {
+        "offset": 266221,
+        "length": 173
+      },
+      {
+        "offset": 266460,
+        "length": 173
+      },
+      {
+        "offset": 266880,
+        "length": 211
+      },
+      {
+        "offset": 267157,
+        "length": 211
+      },
+      {
+        "offset": 267653,
+        "length": 210
+      },
+      {
+        "offset": 267929,
+        "length": 210
+      }
+    ]
+  },
+  {
+    "model": "b01-white-city-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b01-white-city-v2/b01-white-city-v2_basecolor.jpg",
+    "sourceBytes": 415921,
+    "sourceSHA256": "05c3847969936255e903361df85627b9d136dbbdabb052d9450453e2112df37d",
+    "spikeSHA256": "05c3847969936255e903361df85627b9d136dbbdabb052d9450453e2112df37d",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b02a-tel-aviv-corner-block-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2.fbx",
+    "sourceBytes": 231916,
+    "sourceSHA256": "e42d1a0a0a285b1685e14975575a07fa1bb0ecc905afdc5fe8b0ffaf3eced5b3",
+    "spikeSHA256": "d7ea68f3167c99bee77f246116b5c11f64c15fb20d5807af497ccef8bc2dd57d",
+    "blankedStringSpans": [
+      {
+        "offset": 225794,
+        "length": 185
+      },
+      {
+        "offset": 226405,
+        "length": 185
+      },
+      {
+        "offset": 227016,
+        "length": 223
+      },
+      {
+        "offset": 227701,
+        "length": 222
+      },
+      {
+        "offset": 228299,
+        "length": 185
+      },
+      {
+        "offset": 228550,
+        "length": 185
+      },
+      {
+        "offset": 228982,
+        "length": 185
+      },
+      {
+        "offset": 229233,
+        "length": 185
+      },
+      {
+        "offset": 229665,
+        "length": 223
+      },
+      {
+        "offset": 229954,
+        "length": 223
+      },
+      {
+        "offset": 230462,
+        "length": 222
+      },
+      {
+        "offset": 230750,
+        "length": 222
+      }
+    ]
+  },
+  {
+    "model": "b02a-tel-aviv-corner-block-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b02a-tel-aviv-corner-block-v2/b02a-tel-aviv-corner-block-v2_basecolor.jpg",
+    "sourceBytes": 435425,
+    "sourceSHA256": "142cdaa69584d105bcfe94a33c9dd48088f6d635328a95cebc9096784f6407e1",
+    "spikeSHA256": "142cdaa69584d105bcfe94a33c9dd48088f6d635328a95cebc9096784f6407e1",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b02b-tel-aviv-narrow-block-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2.fbx",
+    "sourceBytes": 225212,
+    "sourceSHA256": "107bb0617189b7343acab01162c936e1a7e3226a8406fd498864cca42b0f6760",
+    "spikeSHA256": "3b3c66bb62d97d678099cdbf94d10b21f65a6e01c97f038882f3b83ea76cdb7c",
+    "blankedStringSpans": [
+      {
+        "offset": 219096,
+        "length": 185
+      },
+      {
+        "offset": 219707,
+        "length": 185
+      },
+      {
+        "offset": 220318,
+        "length": 223
+      },
+      {
+        "offset": 221003,
+        "length": 222
+      },
+      {
+        "offset": 221601,
+        "length": 185
+      },
+      {
+        "offset": 221852,
+        "length": 185
+      },
+      {
+        "offset": 222284,
+        "length": 185
+      },
+      {
+        "offset": 222535,
+        "length": 185
+      },
+      {
+        "offset": 222967,
+        "length": 223
+      },
+      {
+        "offset": 223256,
+        "length": 223
+      },
+      {
+        "offset": 223764,
+        "length": 222
+      },
+      {
+        "offset": 224052,
+        "length": 222
+      }
+    ]
+  },
+  {
+    "model": "b02b-tel-aviv-narrow-block-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b02b-tel-aviv-narrow-block-v2/b02b-tel-aviv-narrow-block-v2_basecolor.jpg",
+    "sourceBytes": 430512,
+    "sourceSHA256": "cd317ce8c560fff93827fe69613424d908e0e184fbc58ac03b0aed3d06410289",
+    "spikeSHA256": "cd317ce8c560fff93827fe69613424d908e0e184fbc58ac03b0aed3d06410289",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b03a-jerusalem-arches-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03a-jerusalem-arches-v2/b03a-jerusalem-arches-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03a-jerusalem-arches-v2/b03a-jerusalem-arches-v2.fbx",
+    "sourceBytes": 253804,
+    "sourceSHA256": "c42f5fde45386335dc11126ff56cce8f5e6ee17ec3ca4a1486c9f114c9ba7453",
+    "spikeSHA256": "e0a4740e5661995aa493c24d315a150feba88c6c3e4065466f05df512f17c331",
+    "blankedStringSpans": [
+      {
+        "offset": 247742,
+        "length": 180
+      },
+      {
+        "offset": 248348,
+        "length": 180
+      },
+      {
+        "offset": 248954,
+        "length": 218
+      },
+      {
+        "offset": 249634,
+        "length": 217
+      },
+      {
+        "offset": 250227,
+        "length": 180
+      },
+      {
+        "offset": 250473,
+        "length": 180
+      },
+      {
+        "offset": 250900,
+        "length": 180
+      },
+      {
+        "offset": 251146,
+        "length": 180
+      },
+      {
+        "offset": 251573,
+        "length": 218
+      },
+      {
+        "offset": 251857,
+        "length": 218
+      },
+      {
+        "offset": 252360,
+        "length": 217
+      },
+      {
+        "offset": 252643,
+        "length": 217
+      }
+    ]
+  },
+  {
+    "model": "b03a-jerusalem-arches-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03a-jerusalem-arches-v2/b03a-jerusalem-arches-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03a-jerusalem-arches-v2/b03a-jerusalem-arches-v2_basecolor.jpg",
+    "sourceBytes": 541042,
+    "sourceSHA256": "8caae59af00f981062de9321e3cb90fd116f7a807af7cd5261d30c649ed7a970",
+    "spikeSHA256": "8caae59af00f981062de9321e3cb90fd116f7a807af7cd5261d30c649ed7a970",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b03b-jerusalem-external-stair-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2.fbx",
+    "sourceBytes": 249148,
+    "sourceSHA256": "7f438238cd91a6e29cfd7fbafd739683d1deaf4bdbf01b7ea609e5b908d67065",
+    "spikeSHA256": "8983220ccbfc3525e333fb1c7c0866fee00351ed78fee3e52e8c7830a9cdc776",
+    "blankedStringSpans": [
+      {
+        "offset": 242998,
+        "length": 188
+      },
+      {
+        "offset": 243612,
+        "length": 188
+      },
+      {
+        "offset": 244226,
+        "length": 226
+      },
+      {
+        "offset": 244914,
+        "length": 225
+      },
+      {
+        "offset": 245515,
+        "length": 188
+      },
+      {
+        "offset": 245769,
+        "length": 188
+      },
+      {
+        "offset": 246204,
+        "length": 188
+      },
+      {
+        "offset": 246458,
+        "length": 188
+      },
+      {
+        "offset": 246893,
+        "length": 226
+      },
+      {
+        "offset": 247185,
+        "length": 226
+      },
+      {
+        "offset": 247696,
+        "length": 225
+      },
+      {
+        "offset": 247987,
+        "length": 225
+      }
+    ]
+  },
+  {
+    "model": "b03b-jerusalem-external-stair-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03b-jerusalem-external-stair-v2/b03b-jerusalem-external-stair-v2_basecolor.jpg",
+    "sourceBytes": 539873,
+    "sourceSHA256": "51d1a1273f3f9f75d6e363be9c9e3729d9d29e8aa0ad4ac0339f1b07dee1be28",
+    "spikeSHA256": "51d1a1273f3f9f75d6e363be9c9e3729d9d29e8aa0ad4ac0339f1b07dee1be28",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b03c-jerusalem-plain-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2.fbx",
+    "sourceBytes": 243980,
+    "sourceSHA256": "67dcf3e0ae4004d649477a259bb869d66eaaa921af702458f4a208aca47337d1",
+    "spikeSHA256": "351312ed6fef2474ad0c34784352912349dbc73e61b19617459f7d63a5a1be6b",
+    "blankedStringSpans": [
+      {
+        "offset": 237934,
+        "length": 179
+      },
+      {
+        "offset": 238539,
+        "length": 179
+      },
+      {
+        "offset": 239144,
+        "length": 217
+      },
+      {
+        "offset": 239823,
+        "length": 216
+      },
+      {
+        "offset": 240415,
+        "length": 179
+      },
+      {
+        "offset": 240660,
+        "length": 179
+      },
+      {
+        "offset": 241086,
+        "length": 179
+      },
+      {
+        "offset": 241331,
+        "length": 179
+      },
+      {
+        "offset": 241757,
+        "length": 217
+      },
+      {
+        "offset": 242040,
+        "length": 217
+      },
+      {
+        "offset": 242542,
+        "length": 216
+      },
+      {
+        "offset": 242824,
+        "length": 216
+      }
+    ]
+  },
+  {
+    "model": "b03c-jerusalem-plain-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b03c-jerusalem-plain-v2/b03c-jerusalem-plain-v2_basecolor.jpg",
+    "sourceBytes": 499908,
+    "sourceSHA256": "d8ffabf10c002e11194cd9d4bbc65d540b69e5dc079e1ca84484210e27227d2e",
+    "spikeSHA256": "d8ffabf10c002e11194cd9d4bbc65d540b69e5dc079e1ca84484210e27227d2e",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b04a-haifa-stone-balconies-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2.fbx",
+    "sourceBytes": 244220,
+    "sourceSHA256": "c012cdfeaba4bc47134974c0c3752cbf05ac5f9613a31589af370e2bae9db3e6",
+    "spikeSHA256": "9eeb44fa69f860a92d45c2ac964fe8168d95e662a3e8a3fe3a58a644993bb067",
+    "blankedStringSpans": [
+      {
+        "offset": 238107,
+        "length": 185
+      },
+      {
+        "offset": 238718,
+        "length": 185
+      },
+      {
+        "offset": 239329,
+        "length": 223
+      },
+      {
+        "offset": 240014,
+        "length": 222
+      },
+      {
+        "offset": 240612,
+        "length": 185
+      },
+      {
+        "offset": 240863,
+        "length": 185
+      },
+      {
+        "offset": 241295,
+        "length": 185
+      },
+      {
+        "offset": 241546,
+        "length": 185
+      },
+      {
+        "offset": 241978,
+        "length": 223
+      },
+      {
+        "offset": 242267,
+        "length": 223
+      },
+      {
+        "offset": 242775,
+        "length": 222
+      },
+      {
+        "offset": 243063,
+        "length": 222
+      }
+    ]
+  },
+  {
+    "model": "b04a-haifa-stone-balconies-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b04a-haifa-stone-balconies-v2/b04a-haifa-stone-balconies-v2_basecolor.jpg",
+    "sourceBytes": 524026,
+    "sourceSHA256": "c737e7b3d01c866a0ab29179ff94da0ba3351b35532bce0b9c723ff8a8a76674",
+    "spikeSHA256": "c737e7b3d01c866a0ab29179ff94da0ba3351b35532bce0b9c723ff8a8a76674",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b04b-haifa-loading-doors-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2.fbx",
+    "sourceBytes": 226412,
+    "sourceSHA256": "fc2bfa5c260613ff898737720fb51a2d047e70292a119ff3b4245382c2ef81da",
+    "spikeSHA256": "fc365084332aac6a10559bd7221f06ea120083a3430c8cf18648fd8280711a98",
+    "blankedStringSpans": [
+      {
+        "offset": 220311,
+        "length": 183
+      },
+      {
+        "offset": 220920,
+        "length": 183
+      },
+      {
+        "offset": 221529,
+        "length": 221
+      },
+      {
+        "offset": 222212,
+        "length": 220
+      },
+      {
+        "offset": 222808,
+        "length": 183
+      },
+      {
+        "offset": 223057,
+        "length": 183
+      },
+      {
+        "offset": 223487,
+        "length": 183
+      },
+      {
+        "offset": 223736,
+        "length": 183
+      },
+      {
+        "offset": 224166,
+        "length": 221
+      },
+      {
+        "offset": 224453,
+        "length": 221
+      },
+      {
+        "offset": 224959,
+        "length": 220
+      },
+      {
+        "offset": 225245,
+        "length": 220
+      }
+    ]
+  },
+  {
+    "model": "b04b-haifa-loading-doors-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b04b-haifa-loading-doors-v2/b04b-haifa-loading-doors-v2_basecolor.jpg",
+    "sourceBytes": 475281,
+    "sourceSHA256": "1f1a59748b67e0dfa5c22959cf70f5b73f9d4ad9bd4c5b2ddd5360c1644bcd83",
+    "spikeSHA256": "1f1a59748b67e0dfa5c22959cf70f5b73f9d4ad9bd4c5b2ddd5360c1644bcd83",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b05a-moshava-house-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2.fbx",
+    "sourceBytes": 275084,
+    "sourceSHA256": "6d60d17608034186866ac08ebd85dfe3269b4528c0d4edf6f689fe4b2d47b571",
+    "spikeSHA256": "28a24c80217d65f9547eeb2e9bc4d2d82f05372edc2e115b18adbc37f2834344",
+    "blankedStringSpans": [
+      {
+        "offset": 269058,
+        "length": 177
+      },
+      {
+        "offset": 269661,
+        "length": 177
+      },
+      {
+        "offset": 270264,
+        "length": 215
+      },
+      {
+        "offset": 270941,
+        "length": 214
+      },
+      {
+        "offset": 271531,
+        "length": 177
+      },
+      {
+        "offset": 271774,
+        "length": 177
+      },
+      {
+        "offset": 272198,
+        "length": 177
+      },
+      {
+        "offset": 272441,
+        "length": 177
+      },
+      {
+        "offset": 272865,
+        "length": 215
+      },
+      {
+        "offset": 273146,
+        "length": 215
+      },
+      {
+        "offset": 273646,
+        "length": 214
+      },
+      {
+        "offset": 273926,
+        "length": 214
+      }
+    ]
+  },
+  {
+    "model": "b05a-moshava-house-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b05a-moshava-house-v2/b05a-moshava-house-v2_basecolor.jpg",
+    "sourceBytes": 536151,
+    "sourceSHA256": "f2de87f4e5c8cec1642c4e7cedcffbc6b2bd5d64f12989ff690e8cf4e812977d",
+    "spikeSHA256": "f2de87f4e5c8cec1642c4e7cedcffbc6b2bd5d64f12989ff690e8cf4e812977d",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b07-kibbutz-dining-hall-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b07-kibbutz-dining-hall-v2/b07-kibbutz-dining-hall-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b07-kibbutz-dining-hall-v2/b07-kibbutz-dining-hall-v2.fbx",
+    "sourceBytes": 272124,
+    "sourceSHA256": "36574144dee9368df856851b6fb451006cea99c5e0dbd5150621f333bb00e6cd",
+    "spikeSHA256": "a5059f85eef0a4c1d9196bc57d7885c2468be302715a42630d178fd6feb83f71",
+    "blankedStringSpans": [
+      {
+        "offset": 266047,
+        "length": 182
+      },
+      {
+        "offset": 266655,
+        "length": 182
+      },
+      {
+        "offset": 267263,
+        "length": 220
+      },
+      {
+        "offset": 267945,
+        "length": 219
+      },
+      {
+        "offset": 268540,
+        "length": 182
+      },
+      {
+        "offset": 268788,
+        "length": 182
+      },
+      {
+        "offset": 269217,
+        "length": 182
+      },
+      {
+        "offset": 269465,
+        "length": 182
+      },
+      {
+        "offset": 269894,
+        "length": 220
+      },
+      {
+        "offset": 270180,
+        "length": 220
+      },
+      {
+        "offset": 270685,
+        "length": 219
+      },
+      {
+        "offset": 270970,
+        "length": 219
+      }
+    ]
+  },
+  {
+    "model": "b07-kibbutz-dining-hall-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b07-kibbutz-dining-hall-v2/b07-kibbutz-dining-hall-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b07-kibbutz-dining-hall-v2/b07-kibbutz-dining-hall-v2_basecolor.jpg",
+    "sourceBytes": 505122,
+    "sourceSHA256": "e99a9cacde711dd5c76a4f427a4c375339fbbc21a60816b8a7f21dec9f6d5e9e",
+    "spikeSHA256": "e99a9cacde711dd5c76a4f427a4c375339fbbc21a60816b8a7f21dec9f6d5e9e",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b09a-kibbutz-communal-building-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b09a-kibbutz-communal-building-v2/b09a-kibbutz-communal-building-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b09a-kibbutz-communal-building-v2/b09a-kibbutz-communal-building-v2.fbx",
+    "sourceBytes": 137484,
+    "sourceSHA256": "0ec1207fa010ff8651c327110b67cee8118f1b2e3a0015e7812b3020550b64fb",
+    "spikeSHA256": "b5195ab6f0511cf267824770a041d8ce789b21d85431e9c020ea2ea28a60c131",
+    "blankedStringSpans": [
+      {
+        "offset": 131316,
+        "length": 189
+      },
+      {
+        "offset": 131931,
+        "length": 189
+      },
+      {
+        "offset": 132546,
+        "length": 227
+      },
+      {
+        "offset": 133235,
+        "length": 226
+      },
+      {
+        "offset": 133837,
+        "length": 189
+      },
+      {
+        "offset": 134092,
+        "length": 189
+      },
+      {
+        "offset": 134528,
+        "length": 189
+      },
+      {
+        "offset": 134783,
+        "length": 189
+      },
+      {
+        "offset": 135219,
+        "length": 227
+      },
+      {
+        "offset": 135512,
+        "length": 227
+      },
+      {
+        "offset": 136024,
+        "length": 226
+      },
+      {
+        "offset": 136316,
+        "length": 226
+      }
+    ]
+  },
+  {
+    "model": "b09a-kibbutz-communal-building-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b09a-kibbutz-communal-building-v2/b09a-kibbutz-communal-building-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b09a-kibbutz-communal-building-v2/b09a-kibbutz-communal-building-v2_basecolor.jpg",
+    "sourceBytes": 353791,
+    "sourceSHA256": "00af5bfc3a976bc1106c0d1dcc638a9a9069065a59c7257fa23d6cabaffe639e",
+    "spikeSHA256": "00af5bfc3a976bc1106c0d1dcc638a9a9069065a59c7257fa23d6cabaffe639e",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b11-shikun-housing-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b11-shikun-housing-v2/b11-shikun-housing-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b11-shikun-housing-v2/b11-shikun-housing-v2.fbx",
+    "sourceBytes": 364492,
+    "sourceSHA256": "2a09974319f261b991cd66418db1451e0d300c8f0eab49d192669bc6e8e33db2",
+    "spikeSHA256": "29c176f3a66417643f1d1c65c5b52e7ff46f3b99758978a675fe9398d84b7218",
+    "blankedStringSpans": [
+      {
+        "offset": 358470,
+        "length": 177
+      },
+      {
+        "offset": 359073,
+        "length": 177
+      },
+      {
+        "offset": 359676,
+        "length": 215
+      },
+      {
+        "offset": 360353,
+        "length": 214
+      },
+      {
+        "offset": 360943,
+        "length": 177
+      },
+      {
+        "offset": 361186,
+        "length": 177
+      },
+      {
+        "offset": 361610,
+        "length": 177
+      },
+      {
+        "offset": 361853,
+        "length": 177
+      },
+      {
+        "offset": 362277,
+        "length": 215
+      },
+      {
+        "offset": 362558,
+        "length": 215
+      },
+      {
+        "offset": 363058,
+        "length": 214
+      },
+      {
+        "offset": 363338,
+        "length": 214
+      }
+    ]
+  },
+  {
+    "model": "b11-shikun-housing-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b11-shikun-housing-v2/b11-shikun-housing-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b11-shikun-housing-v2/b11-shikun-housing-v2_basecolor.jpg",
+    "sourceBytes": 539140,
+    "sourceSHA256": "580e06279cef9d7793caf4c1b46c5e17ef34f9c5b1fe18c28305169101acc781",
+    "spikeSHA256": "580e06279cef9d7793caf4c1b46c5e17ef34f9c5b1fe18c28305169101acc781",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b12-tegart-fort-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b12-tegart-fort-v2/b12-tegart-fort-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b12-tegart-fort-v2/b12-tegart-fort-v2.fbx",
+    "sourceBytes": 346460,
+    "sourceSHA256": "5198d67d69fbd6f12f28b2711a36bdb9f5a2d883397b68fce01639fbac078938",
+    "spikeSHA256": "7d9c5d0dee0cf8155a7c89b1f683c1ba1e6705df4de771db72227060165b0bca",
+    "blankedStringSpans": [
+      {
+        "offset": 340481,
+        "length": 174
+      },
+      {
+        "offset": 341081,
+        "length": 174
+      },
+      {
+        "offset": 341681,
+        "length": 212
+      },
+      {
+        "offset": 342355,
+        "length": 211
+      },
+      {
+        "offset": 342942,
+        "length": 174
+      },
+      {
+        "offset": 343182,
+        "length": 174
+      },
+      {
+        "offset": 343603,
+        "length": 174
+      },
+      {
+        "offset": 343843,
+        "length": 174
+      },
+      {
+        "offset": 344264,
+        "length": 212
+      },
+      {
+        "offset": 344542,
+        "length": 212
+      },
+      {
+        "offset": 345039,
+        "length": 211
+      },
+      {
+        "offset": 345316,
+        "length": 211
+      }
+    ]
+  },
+  {
+    "model": "b12-tegart-fort-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b12-tegart-fort-v2/b12-tegart-fort-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b12-tegart-fort-v2/b12-tegart-fort-v2_basecolor.jpg",
+    "sourceBytes": 483074,
+    "sourceSHA256": "622e4ce17db2645bd14d49d0124c2679ed30269cde7552b6ba98e34b06e6f2fe",
+    "spikeSHA256": "622e4ce17db2645bd14d49d0124c2679ed30269cde7552b6ba98e34b06e6f2fe",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b13a-netanya-two-storey-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2.fbx",
+    "sourceBytes": 257596,
+    "sourceSHA256": "9ebd31bd15cf058e9778f850540f52a98e7ab00daabe786da8e9a805ec9cbe17",
+    "spikeSHA256": "d608b1803bb6f6661ea6ae918e0ac5ecbd9b4fb4b2221eec349fabef2a8f6cbe",
+    "blankedStringSpans": [
+      {
+        "offset": 251519,
+        "length": 182
+      },
+      {
+        "offset": 252127,
+        "length": 182
+      },
+      {
+        "offset": 252735,
+        "length": 220
+      },
+      {
+        "offset": 253417,
+        "length": 219
+      },
+      {
+        "offset": 254012,
+        "length": 182
+      },
+      {
+        "offset": 254260,
+        "length": 182
+      },
+      {
+        "offset": 254689,
+        "length": 182
+      },
+      {
+        "offset": 254937,
+        "length": 182
+      },
+      {
+        "offset": 255366,
+        "length": 220
+      },
+      {
+        "offset": 255652,
+        "length": 220
+      },
+      {
+        "offset": 256157,
+        "length": 219
+      },
+      {
+        "offset": 256442,
+        "length": 219
+      }
+    ]
+  },
+  {
+    "model": "b13a-netanya-two-storey-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b13a-netanya-two-storey-v2/b13a-netanya-two-storey-v2_basecolor.jpg",
+    "sourceBytes": 502949,
+    "sourceSHA256": "f2ae4805076411c8231a8a4bd949a5801e78481185ed996e981bc07530849408",
+    "spikeSHA256": "f2ae4805076411c8231a8a4bd949a5801e78481185ed996e981bc07530849408",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b16-farmhouse-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b16-farmhouse-v2/b16-farmhouse-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b16-farmhouse-v2/b16-farmhouse-v2.fbx",
+    "sourceBytes": 264028,
+    "sourceSHA256": "b9fed6791d9296c968215222bbd803c87e429e553f65ec65e9980100d51bc26f",
+    "spikeSHA256": "affbe86406e17f541d5648da56747a76932d7dfee7a3c663a9d3555cbec9f2ef",
+    "blankedStringSpans": [
+      {
+        "offset": 258066,
+        "length": 172
+      },
+      {
+        "offset": 258664,
+        "length": 172
+      },
+      {
+        "offset": 259262,
+        "length": 210
+      },
+      {
+        "offset": 259934,
+        "length": 209
+      },
+      {
+        "offset": 260519,
+        "length": 172
+      },
+      {
+        "offset": 260757,
+        "length": 172
+      },
+      {
+        "offset": 261176,
+        "length": 172
+      },
+      {
+        "offset": 261414,
+        "length": 172
+      },
+      {
+        "offset": 261833,
+        "length": 210
+      },
+      {
+        "offset": 262109,
+        "length": 210
+      },
+      {
+        "offset": 262604,
+        "length": 209
+      },
+      {
+        "offset": 262879,
+        "length": 209
+      }
+    ]
+  },
+  {
+    "model": "b16-farmhouse-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b16-farmhouse-v2/b16-farmhouse-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b16-farmhouse-v2/b16-farmhouse-v2_basecolor.jpg",
+    "sourceBytes": 424881,
+    "sourceSHA256": "45757aae05d662304126a1651f5e5a5cea01968d519d8cd8533d4328069fe4e7",
+    "spikeSHA256": "45757aae05d662304126a1651f5e5a5cea01968d519d8cd8533d4328069fe4e7",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b17-stone-courtyard-house-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2.fbx",
+    "sourceBytes": 270796,
+    "sourceSHA256": "a8ba3a13e4a3f91dfb80fe9f110126f47bc61f1e099ce319c469eae5b23aacee",
+    "spikeSHA256": "01978a1f4051d1032c6c95ee30f790ea63dc966dcb14c9b204f4f34c355580bf",
+    "blankedStringSpans": [
+      {
+        "offset": 264684,
+        "length": 184
+      },
+      {
+        "offset": 265294,
+        "length": 184
+      },
+      {
+        "offset": 265904,
+        "length": 222
+      },
+      {
+        "offset": 266588,
+        "length": 221
+      },
+      {
+        "offset": 267185,
+        "length": 184
+      },
+      {
+        "offset": 267435,
+        "length": 184
+      },
+      {
+        "offset": 267866,
+        "length": 184
+      },
+      {
+        "offset": 268116,
+        "length": 184
+      },
+      {
+        "offset": 268547,
+        "length": 222
+      },
+      {
+        "offset": 268835,
+        "length": 222
+      },
+      {
+        "offset": 269342,
+        "length": 221
+      },
+      {
+        "offset": 269629,
+        "length": 221
+      }
+    ]
+  },
+  {
+    "model": "b17-stone-courtyard-house-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b17-stone-courtyard-house-v2/b17-stone-courtyard-house-v2_basecolor.jpg",
+    "sourceBytes": 579886,
+    "sourceSHA256": "e713e427ebd794d7f0a6a5a3abae2ec0f9bab7a4f5df3405bc4a7619224787ac",
+    "spikeSHA256": "e713e427ebd794d7f0a6a5a3abae2ec0f9bab7a4f5df3405bc4a7619224787ac",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b18-military-barracks-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b18-military-barracks-v2/b18-military-barracks-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b18-military-barracks-v2/b18-military-barracks-v2.fbx",
+    "sourceBytes": 250668,
+    "sourceSHA256": "e2da9b559f86bb95f62c2fd2e7e5e366cb2ba9b7f92ab90db66af25f9bf4208a",
+    "spikeSHA256": "f2ad471f3764b77f16d4fc31632dfad3c4204ff170fec31f039329f109797c8d",
+    "blankedStringSpans": [
+      {
+        "offset": 244610,
+        "length": 180
+      },
+      {
+        "offset": 245216,
+        "length": 180
+      },
+      {
+        "offset": 245822,
+        "length": 218
+      },
+      {
+        "offset": 246502,
+        "length": 217
+      },
+      {
+        "offset": 247095,
+        "length": 180
+      },
+      {
+        "offset": 247341,
+        "length": 180
+      },
+      {
+        "offset": 247768,
+        "length": 180
+      },
+      {
+        "offset": 248014,
+        "length": 180
+      },
+      {
+        "offset": 248441,
+        "length": 218
+      },
+      {
+        "offset": 248725,
+        "length": 218
+      },
+      {
+        "offset": 249228,
+        "length": 217
+      },
+      {
+        "offset": 249511,
+        "length": 217
+      }
+    ]
+  },
+  {
+    "model": "b18-military-barracks-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b18-military-barracks-v2/b18-military-barracks-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b18-military-barracks-v2/b18-military-barracks-v2_basecolor.jpg",
+    "sourceBytes": 482831,
+    "sourceSHA256": "c0cc4f4c1ee74697d7aef0ecc2a22b41552f4cdc60de6a94f4399b1df25a5d19",
+    "spikeSHA256": "c0cc4f4c1ee74697d7aef0ecc2a22b41552f4cdc60de6a94f4399b1df25a5d19",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b21-artisan-workshop-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b21-artisan-workshop-v2/b21-artisan-workshop-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b21-artisan-workshop-v2/b21-artisan-workshop-v2.fbx",
+    "sourceBytes": 272492,
+    "sourceSHA256": "6dea38c46fd01dd8479e889bc6c63fe2928c63d21ba0e1f8a4d574dedee1299c",
+    "spikeSHA256": "6d362e6a9a3a72b172a60d1ed43f54bde4fa323c01d8de3a11910c2ac4327643",
+    "blankedStringSpans": [
+      {
+        "offset": 266448,
+        "length": 179
+      },
+      {
+        "offset": 267053,
+        "length": 179
+      },
+      {
+        "offset": 267658,
+        "length": 217
+      },
+      {
+        "offset": 268337,
+        "length": 216
+      },
+      {
+        "offset": 268929,
+        "length": 179
+      },
+      {
+        "offset": 269174,
+        "length": 179
+      },
+      {
+        "offset": 269600,
+        "length": 179
+      },
+      {
+        "offset": 269845,
+        "length": 179
+      },
+      {
+        "offset": 270271,
+        "length": 217
+      },
+      {
+        "offset": 270554,
+        "length": 217
+      },
+      {
+        "offset": 271056,
+        "length": 216
+      },
+      {
+        "offset": 271338,
+        "length": 216
+      }
+    ]
+  },
+  {
+    "model": "b21-artisan-workshop-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b21-artisan-workshop-v2/b21-artisan-workshop-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b21-artisan-workshop-v2/b21-artisan-workshop-v2_basecolor.jpg",
+    "sourceBytes": 433421,
+    "sourceSHA256": "e193eae625cf7bc1d713c5f781546d5e4d6b940636622de6777d9ffb15a7cad0",
+    "spikeSHA256": "e193eae625cf7bc1d713c5f781546d5e4d6b940636622de6777d9ffb15a7cad0",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b22-industrial-factory-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b22-industrial-factory-v2/b22-industrial-factory-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b22-industrial-factory-v2/b22-industrial-factory-v2.fbx",
+    "sourceBytes": 356892,
+    "sourceSHA256": "f028b1210d8e132e3b1808c2c3516d46c9d71ebceeef5192ff2735d2af3df024",
+    "spikeSHA256": "74cf1cf85d730f1795c3e68a7139c19bd73a7089c58ba8570d9d513d7c22183e",
+    "blankedStringSpans": [
+      {
+        "offset": 350816,
+        "length": 181
+      },
+      {
+        "offset": 351423,
+        "length": 181
+      },
+      {
+        "offset": 352030,
+        "length": 219
+      },
+      {
+        "offset": 352711,
+        "length": 218
+      },
+      {
+        "offset": 353305,
+        "length": 181
+      },
+      {
+        "offset": 353552,
+        "length": 181
+      },
+      {
+        "offset": 353980,
+        "length": 181
+      },
+      {
+        "offset": 354227,
+        "length": 181
+      },
+      {
+        "offset": 354655,
+        "length": 219
+      },
+      {
+        "offset": 354940,
+        "length": 219
+      },
+      {
+        "offset": 355444,
+        "length": 218
+      },
+      {
+        "offset": 355728,
+        "length": 218
+      }
+    ]
+  },
+  {
+    "model": "b22-industrial-factory-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b22-industrial-factory-v2/b22-industrial-factory-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b22-industrial-factory-v2/b22-industrial-factory-v2_basecolor.jpg",
+    "sourceBytes": 515122,
+    "sourceSHA256": "5d3cb70a84fe16b4a56625881c102749ec51c6cee2759f33d2497abd8a989833",
+    "spikeSHA256": "5d3cb70a84fe16b4a56625881c102749ec51c6cee2759f33d2497abd8a989833",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b23-winery-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b23-winery-v2/b23-winery-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b23-winery-v2/b23-winery-v2.fbx",
+    "sourceBytes": 313372,
+    "sourceSHA256": "50aaa0061a50aae3ccb47feb8285c24df4182e63a39780d8ee1725750c8de1fb",
+    "spikeSHA256": "0b3c6271921d8fb21b6625da69824a514df78168e21cb68f59a581fe07e50e10",
+    "blankedStringSpans": [
+      {
+        "offset": 307442,
+        "length": 169
+      },
+      {
+        "offset": 308037,
+        "length": 169
+      },
+      {
+        "offset": 308632,
+        "length": 207
+      },
+      {
+        "offset": 309301,
+        "length": 206
+      },
+      {
+        "offset": 309883,
+        "length": 169
+      },
+      {
+        "offset": 310118,
+        "length": 169
+      },
+      {
+        "offset": 310534,
+        "length": 169
+      },
+      {
+        "offset": 310769,
+        "length": 169
+      },
+      {
+        "offset": 311185,
+        "length": 207
+      },
+      {
+        "offset": 311458,
+        "length": 207
+      },
+      {
+        "offset": 311950,
+        "length": 206
+      },
+      {
+        "offset": 312222,
+        "length": 206
+      }
+    ]
+  },
+  {
+    "model": "b23-winery-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b23-winery-v2/b23-winery-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b23-winery-v2/b23-winery-v2_basecolor.jpg",
+    "sourceBytes": 534100,
+    "sourceSHA256": "420abd9d8e1fe5dbd606dce676d2187259d79578e9981b604fb7d2ff7140a103",
+    "spikeSHA256": "420abd9d8e1fe5dbd606dce676d2187259d79578e9981b604fb7d2ff7140a103",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b24-agricultural-barn-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2.fbx",
+    "sourceBytes": 289420,
+    "sourceSHA256": "7f1869909e962827319c11b99a432ad2b8f92e247c040dc9f23d15c36a4c1ee9",
+    "spikeSHA256": "e7724f14452d1630cc50a55fc6fb9536ee43a10c9ca3e71b76e6bea2b4a1a64b",
+    "blankedStringSpans": [
+      {
+        "offset": 283358,
+        "length": 180
+      },
+      {
+        "offset": 283964,
+        "length": 180
+      },
+      {
+        "offset": 284570,
+        "length": 218
+      },
+      {
+        "offset": 285250,
+        "length": 217
+      },
+      {
+        "offset": 285843,
+        "length": 180
+      },
+      {
+        "offset": 286089,
+        "length": 180
+      },
+      {
+        "offset": 286516,
+        "length": 180
+      },
+      {
+        "offset": 286762,
+        "length": 180
+      },
+      {
+        "offset": 287189,
+        "length": 218
+      },
+      {
+        "offset": 287473,
+        "length": 218
+      },
+      {
+        "offset": 287976,
+        "length": 217
+      },
+      {
+        "offset": 288259,
+        "length": 217
+      }
+    ]
+  },
+  {
+    "model": "b24-agricultural-barn-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b24-agricultural-barn-v2/b24-agricultural-barn-v2_basecolor.jpg",
+    "sourceBytes": 486506,
+    "sourceSHA256": "1e623cc8aecaf0a5c095f23665c3db31f889e4b1759ae90eeb90460b5e65994f",
+    "spikeSHA256": "1e623cc8aecaf0a5c095f23665c3db31f889e4b1759ae90eeb90460b5e65994f",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b28-water-tower-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2.fbx",
+    "sourceBytes": 235852,
+    "sourceSHA256": "47b3667a9ea35435f18246d463de87b9c9a212717f726751fa49e2872c030519",
+    "spikeSHA256": "d858dfc502a37ab848f57ca989b44c4310d4c5f0d35da60925e958187e90b706",
+    "blankedStringSpans": [
+      {
+        "offset": 229870,
+        "length": 174
+      },
+      {
+        "offset": 230470,
+        "length": 174
+      },
+      {
+        "offset": 231070,
+        "length": 212
+      },
+      {
+        "offset": 231744,
+        "length": 211
+      },
+      {
+        "offset": 232331,
+        "length": 174
+      },
+      {
+        "offset": 232571,
+        "length": 174
+      },
+      {
+        "offset": 232992,
+        "length": 174
+      },
+      {
+        "offset": 233232,
+        "length": 174
+      },
+      {
+        "offset": 233653,
+        "length": 212
+      },
+      {
+        "offset": 233931,
+        "length": 212
+      },
+      {
+        "offset": 234428,
+        "length": 211
+      },
+      {
+        "offset": 234705,
+        "length": 211
+      }
+    ]
+  },
+  {
+    "model": "b28-water-tower-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b28-water-tower-v2/b28-water-tower-v2_basecolor.jpg",
+    "sourceBytes": 522911,
+    "sourceSHA256": "1bbeeda19ba2cd78e16ff5a4bc186f5d59416328354ca93e7bb42d1c41979940",
+    "spikeSHA256": "1bbeeda19ba2cd78e16ff5a4bc186f5d59416328354ca93e7bb42d1c41979940",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "b32-port-cargo-shed-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2.fbx",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2.fbx",
+    "sourceBytes": 268636,
+    "sourceSHA256": "6d558dc47a399cd59599d3d7fd61006912074156af2cb60b2027e257283dae2f",
+    "spikeSHA256": "83d5af0caf45f01fe58dfb2a6a90d12adff3b09cb76ac30f89bdd9daa0f05fe9",
+    "blankedStringSpans": [
+      {
+        "offset": 262595,
+        "length": 178
+      },
+      {
+        "offset": 263199,
+        "length": 178
+      },
+      {
+        "offset": 263803,
+        "length": 216
+      },
+      {
+        "offset": 264481,
+        "length": 215
+      },
+      {
+        "offset": 265072,
+        "length": 178
+      },
+      {
+        "offset": 265316,
+        "length": 178
+      },
+      {
+        "offset": 265741,
+        "length": 178
+      },
+      {
+        "offset": 265985,
+        "length": 178
+      },
+      {
+        "offset": 266410,
+        "length": 216
+      },
+      {
+        "offset": 266692,
+        "length": 216
+      },
+      {
+        "offset": 267193,
+        "length": 215
+      },
+      {
+        "offset": 267474,
+        "length": 215
+      }
+    ]
+  },
+  {
+    "model": "b32-port-cargo-shed-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Settlements/Prototype/Models/b32-port-cargo-shed-v2/b32-port-cargo-shed-v2_basecolor.jpg",
+    "sourceBytes": 526917,
+    "sourceSHA256": "d05a1ae8b745eadc7204de77c5abd780a8cbc4b8451b8197dd7b5f75bde1ecb9",
+    "spikeSHA256": "d05a1ae8b745eadc7204de77c5abd780a8cbc4b8451b8197dd7b5f75bde1ecb9",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c01-arriving-man-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c01-arriving-man-v2/figure-c01-arriving-man-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c01-arriving-man-v2/figure-c01-arriving-man-v2.fbx",
+    "sourceBytes": 8215948,
+    "sourceSHA256": "872bc9eb3daf358ff47ded61128cac69819f2d56f454fcba4e0a5ad2ca049010",
+    "spikeSHA256": "46cbe30f1359cdf1c5d55c1853c408e4e146e5482119b4a9654498a0867ae996",
+    "blankedStringSpans": [
+      {
+        "offset": 1671629,
+        "length": 153
+      },
+      {
+        "offset": 1672269,
+        "length": 153
+      },
+      {
+        "offset": 1672819,
+        "length": 153
+      },
+      {
+        "offset": 1673038,
+        "length": 153
+      },
+      {
+        "offset": 1673440,
+        "length": 153
+      },
+      {
+        "offset": 1673659,
+        "length": 153
+      }
+    ]
+  },
+  {
+    "model": "figure-c01-arriving-man-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c01-arriving-man-v2/figure-c01-arriving-man-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c01-arriving-man-v2/figure-c01-arriving-man-v2_basecolor.jpg",
+    "sourceBytes": 489964,
+    "sourceSHA256": "a6e086719902786bee55aecdfa1eb1d5bc769bf461a9cb85c54b4762f8820647",
+    "spikeSHA256": "a6e086719902786bee55aecdfa1eb1d5bc769bf461a9cb85c54b4762f8820647",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c02-townsman-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c02-townsman-v2/figure-c02-townsman-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c02-townsman-v2/figure-c02-townsman-v2.fbx",
+    "sourceBytes": 8322588,
+    "sourceSHA256": "bee6ddff9ac651099da4fe43a3ad7f5db4ff3eef4933818fa471642c7d7d6f68",
+    "spikeSHA256": "43f6cbd9790d313de0b1649dae9f8930a1c41133d532ee7d00dc1e8738c03cfa",
+    "blankedStringSpans": [
+      {
+        "offset": 1785531,
+        "length": 149
+      },
+      {
+        "offset": 1786167,
+        "length": 149
+      },
+      {
+        "offset": 1786713,
+        "length": 149
+      },
+      {
+        "offset": 1786928,
+        "length": 149
+      },
+      {
+        "offset": 1787326,
+        "length": 149
+      },
+      {
+        "offset": 1787541,
+        "length": 149
+      }
+    ]
+  },
+  {
+    "model": "figure-c02-townsman-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c02-townsman-v2/figure-c02-townsman-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c02-townsman-v2/figure-c02-townsman-v2_basecolor.jpg",
+    "sourceBytes": 491474,
+    "sourceSHA256": "1371dbd8e54a5f727ee953c03258a8140ca1db7975a27ce75295fc037980b833",
+    "spikeSHA256": "1371dbd8e54a5f727ee953c03258a8140ca1db7975a27ce75295fc037980b833",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c03-smith-carpenter-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c03-smith-carpenter-v2/figure-c03-smith-carpenter-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c03-smith-carpenter-v2/figure-c03-smith-carpenter-v2.fbx",
+    "sourceBytes": 8341276,
+    "sourceSHA256": "98b551568b19be1b033e37548cf7cd19c982d952bef6c36fa3b212d66b2984f9",
+    "spikeSHA256": "65c0136b94fc18628a4be377503099c3d5a8ffcceae11c727713736a2164884e",
+    "blankedStringSpans": [
+      {
+        "offset": 1808856,
+        "length": 156
+      },
+      {
+        "offset": 1809499,
+        "length": 156
+      },
+      {
+        "offset": 1810052,
+        "length": 156
+      },
+      {
+        "offset": 1810274,
+        "length": 156
+      },
+      {
+        "offset": 1810679,
+        "length": 156
+      },
+      {
+        "offset": 1810901,
+        "length": 156
+      }
+    ]
+  },
+  {
+    "model": "figure-c03-smith-carpenter-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c03-smith-carpenter-v2/figure-c03-smith-carpenter-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c03-smith-carpenter-v2/figure-c03-smith-carpenter-v2_basecolor.jpg",
+    "sourceBytes": 477917,
+    "sourceSHA256": "e7ca47f2f335d9632f68c6984d8d5ce4a8049c4d20408b6aa83bdaa325de27da",
+    "spikeSHA256": "e7ca47f2f335d9632f68c6984d8d5ce4a8049c4d20408b6aa83bdaa325de27da",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c04-sabra-pioneer-v3",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c04-sabra-pioneer-v3/figure-c04-sabra-pioneer-v3.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/figure-c04-sabra-pioneer-v3.fbx",
+    "sourceBytes": 8357372,
+    "sourceSHA256": "28d3951d29c4f399a8c6cc6119a656f87684bf5c277b161f537c09ed33618ef3",
+    "spikeSHA256": "fac87ad243af9133317b4c181c8ab644324ecfe54f5ff1f0bfc984e0af697cc0",
+    "blankedStringSpans": [
+      {
+        "offset": 1815137,
+        "length": 154
+      },
+      {
+        "offset": 1815778,
+        "length": 154
+      },
+      {
+        "offset": 1816329,
+        "length": 154
+      },
+      {
+        "offset": 1816549,
+        "length": 154
+      },
+      {
+        "offset": 1816952,
+        "length": 154
+      },
+      {
+        "offset": 1817172,
+        "length": 154
+      }
+    ]
+  },
+  {
+    "model": "figure-c04-sabra-pioneer-v3",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c04-sabra-pioneer-v3/figure-c04-sabra-pioneer-v3_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c04-sabra-pioneer-v3/figure-c04-sabra-pioneer-v3_basecolor.jpg",
+    "sourceBytes": 452923,
+    "sourceSHA256": "811e6c47c6ab7b6eef3b94fb77d869d718f0179497f726d17735c2f803451221",
+    "spikeSHA256": "811e6c47c6ab7b6eef3b94fb77d869d718f0179497f726d17735c2f803451221",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c05-pioneer-veteran-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c05-pioneer-veteran-v2/figure-c05-pioneer-veteran-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c05-pioneer-veteran-v2/figure-c05-pioneer-veteran-v2.fbx",
+    "sourceBytes": 2896876,
+    "sourceSHA256": "9b1fc41250f5fff72d48369d1b58ee1a906b8ca901647315ae29e7a5053373f6",
+    "spikeSHA256": "bff6fcd427b1e0b57460f84fdc762128491a9710c97fcf591ca0d545ff162a6a",
+    "blankedStringSpans": [
+      {
+        "offset": 1768703,
+        "length": 156
+      },
+      {
+        "offset": 1769346,
+        "length": 156
+      },
+      {
+        "offset": 1769899,
+        "length": 156
+      },
+      {
+        "offset": 1770121,
+        "length": 156
+      },
+      {
+        "offset": 1770526,
+        "length": 156
+      },
+      {
+        "offset": 1770748,
+        "length": 156
+      }
+    ]
+  },
+  {
+    "model": "figure-c05-pioneer-veteran-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c05-pioneer-veteran-v2/figure-c05-pioneer-veteran-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c05-pioneer-veteran-v2/figure-c05-pioneer-veteran-v2_basecolor.jpg",
+    "sourceBytes": 447026,
+    "sourceSHA256": "61787a312ba5b37c9aad6dafbbc10b48e68fadf4d8d1b5a573e87629f3738cdb",
+    "spikeSHA256": "61787a312ba5b37c9aad6dafbbc10b48e68fadf4d8d1b5a573e87629f3738cdb",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c06-young-recruit-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2.fbx",
+    "sourceBytes": 10081900,
+    "sourceSHA256": "df4e01173ab1de3ff0d45ed54b638592262ff39a5a000e752272e1723efbdcba",
+    "spikeSHA256": "369d5c0924a9e0ce808f958972351ba441e6a889254c9a39a89f97ca16f84819",
+    "blankedStringSpans": [
+      {
+        "offset": 1763903,
+        "length": 154
+      },
+      {
+        "offset": 1764544,
+        "length": 154
+      },
+      {
+        "offset": 1765095,
+        "length": 154
+      },
+      {
+        "offset": 1765315,
+        "length": 154
+      },
+      {
+        "offset": 1765718,
+        "length": 154
+      },
+      {
+        "offset": 1765938,
+        "length": 154
+      }
+    ]
+  },
+  {
+    "model": "figure-c06-young-recruit-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2_basecolor.jpg",
+    "sourceBytes": 426868,
+    "sourceSHA256": "a0456c8aed822f459d2f9c7624072460abdef9f0ba71f7ce9c5e3f34434b5af1",
+    "spikeSHA256": "a0456c8aed822f459d2f9c7624072460abdef9f0ba71f7ce9c5e3f34434b5af1",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c07-veteran-fighter-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2.fbx",
+    "sourceBytes": 10147852,
+    "sourceSHA256": "3c5c72c7300dffd903ee81169d3aa0e128975fb0c58cc857be7b037b84be5deb",
+    "spikeSHA256": "7f839d2d37c6eff68e5dc3cb4f19f3bcb50a780ae9b31f90edda3e6f461b5ec3",
+    "blankedStringSpans": [
+      {
+        "offset": 1839249,
+        "length": 156
+      },
+      {
+        "offset": 1839892,
+        "length": 156
+      },
+      {
+        "offset": 1840445,
+        "length": 156
+      },
+      {
+        "offset": 1840667,
+        "length": 156
+      },
+      {
+        "offset": 1841072,
+        "length": 156
+      },
+      {
+        "offset": 1841294,
+        "length": 156
+      }
+    ]
+  },
+  {
+    "model": "figure-c07-veteran-fighter-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c07-veteran-fighter-v2/figure-c07-veteran-fighter-v2_basecolor.jpg",
+    "sourceBytes": 533749,
+    "sourceSHA256": "41b38f3a57cfe5acfefc90271dcbb440da43bdf2df4944859bf7a3c85d7a0e57",
+    "spikeSHA256": "41b38f3a57cfe5acfefc90271dcbb440da43bdf2df4944859bf7a3c85d7a0e57",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c08-arab-legion-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c08-arab-legion-v2/figure-c08-arab-legion-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c08-arab-legion-v2/figure-c08-arab-legion-v2.fbx",
+    "sourceBytes": 10109388,
+    "sourceSHA256": "6e990d4170b9357e62eea6b8c4983e3302f26cd0997fa1349da3d7c9e641efd3",
+    "spikeSHA256": "818677faa0a16867e1be5171259d75afc87111791e9faf4c818f1bdbb948f8a2",
+    "blankedStringSpans": [
+      {
+        "offset": 1799543,
+        "length": 152
+      },
+      {
+        "offset": 1800182,
+        "length": 152
+      },
+      {
+        "offset": 1800731,
+        "length": 152
+      },
+      {
+        "offset": 1800949,
+        "length": 152
+      },
+      {
+        "offset": 1801350,
+        "length": 152
+      },
+      {
+        "offset": 1801568,
+        "length": 152
+      }
+    ]
+  },
+  {
+    "model": "figure-c08-arab-legion-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c08-arab-legion-v2/figure-c08-arab-legion-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c08-arab-legion-v2/figure-c08-arab-legion-v2_basecolor.jpg",
+    "sourceBytes": 507039,
+    "sourceSHA256": "4590751938614f986494a28fcef60fddcebec855eb58aa8124bc28604df43010",
+    "spikeSHA256": "4590751938614f986494a28fcef60fddcebec855eb58aa8124bc28604df43010",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c09-irregular-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2.fbx",
+    "sourceBytes": 9995388,
+    "sourceSHA256": "e4d77d95e6b17b6329a222c52aeeca6135c57a732d07094423b471dceb0ac2ba",
+    "spikeSHA256": "27ca0298a9d11f58d8956731b1063c212e9e091503257b10bb1291e0bdd6dc2d",
+    "blankedStringSpans": [
+      {
+        "offset": 1686273,
+        "length": 150
+      },
+      {
+        "offset": 1686910,
+        "length": 150
+      },
+      {
+        "offset": 1687457,
+        "length": 150
+      },
+      {
+        "offset": 1687673,
+        "length": 150
+      },
+      {
+        "offset": 1688072,
+        "length": 150
+      },
+      {
+        "offset": 1688288,
+        "length": 150
+      }
+    ]
+  },
+  {
+    "model": "figure-c09-irregular-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c09-irregular-v2/figure-c09-irregular-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c09-irregular-v2/figure-c09-irregular-v2_basecolor.jpg",
+    "sourceBytes": 564328,
+    "sourceSHA256": "14a718ead468d82926f36a9a7c8b3a4f4492c92eb8d992040150513edcba7c85",
+    "spikeSHA256": "14a718ead468d82926f36a9a7c8b3a4f4492c92eb8d992040150513edcba7c85",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c10-woman-blue-dress-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c10-woman-blue-dress-v2/figure-c10-woman-blue-dress-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c10-woman-blue-dress-v2/figure-c10-woman-blue-dress-v2.fbx",
+    "sourceBytes": 8207004,
+    "sourceSHA256": "5c1fd31637769e1d12e8b7b3e43a46279fb26b7ffc27308c2950f1f63efe2eb6",
+    "spikeSHA256": "420c2973260532c12f6cdba192486c320c9479f4414044b2408101940a8e4d5a",
+    "blankedStringSpans": [
+      {
+        "offset": 1663501,
+        "length": 157
+      },
+      {
+        "offset": 1664145,
+        "length": 157
+      },
+      {
+        "offset": 1664699,
+        "length": 157
+      },
+      {
+        "offset": 1664922,
+        "length": 157
+      },
+      {
+        "offset": 1665328,
+        "length": 157
+      },
+      {
+        "offset": 1665551,
+        "length": 157
+      }
+    ]
+  },
+  {
+    "model": "figure-c10-woman-blue-dress-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c10-woman-blue-dress-v2/figure-c10-woman-blue-dress-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c10-woman-blue-dress-v2/figure-c10-woman-blue-dress-v2_basecolor.jpg",
+    "sourceBytes": 470326,
+    "sourceSHA256": "a56f55023adaa63c9198d8e12412a50c8824cdffae522f22feb15982896428fd",
+    "spikeSHA256": "a56f55023adaa63c9198d8e12412a50c8824cdffae522f22feb15982896428fd",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c12f-palmach-scout-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c12f-palmach-scout-v2/figure-c12f-palmach-scout-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c12f-palmach-scout-v2/figure-c12f-palmach-scout-v2.fbx",
+    "sourceBytes": 10206956,
+    "sourceSHA256": "3bdfba7bcdf4b908c027abc316c6b988485a31e8be06395e7b1d867fd6505cd6",
+    "spikeSHA256": "ac09bb1d8135f0aaa88256b3b9ec50a10692ac89ffaaecdefa53f8ba29086840",
+    "blankedStringSpans": [
+      {
+        "offset": 1894243,
+        "length": 155
+      },
+      {
+        "offset": 1894885,
+        "length": 155
+      },
+      {
+        "offset": 1895437,
+        "length": 155
+      },
+      {
+        "offset": 1895658,
+        "length": 155
+      },
+      {
+        "offset": 1896062,
+        "length": 155
+      },
+      {
+        "offset": 1896283,
+        "length": 155
+      }
+    ]
+  },
+  {
+    "model": "figure-c12f-palmach-scout-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c12f-palmach-scout-v2/figure-c12f-palmach-scout-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c12f-palmach-scout-v2/figure-c12f-palmach-scout-v2_basecolor.jpg",
+    "sourceBytes": 451912,
+    "sourceSHA256": "83b57060a4f0c2a352ec6bd1c771265b7fb1bc01db0264640ff5a82f60d22ed5",
+    "spikeSHA256": "83b57060a4f0c2a352ec6bd1c771265b7fb1bc01db0264640ff5a82f60d22ed5",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-c13-nurse-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c13-nurse-v2/figure-c13-nurse-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-c13-nurse-v2/figure-c13-nurse-v2.fbx",
+    "sourceBytes": 8285820,
+    "sourceSHA256": "c8ddbc87ef2c51185de4371a6ebb55a7c71372946547c34aadd53d9ef2092641",
+    "spikeSHA256": "20a5851a612ce67901c298a658bace574415fc89e309527f5a0b59e8a9406a87",
+    "blankedStringSpans": [
+      {
+        "offset": 1739418,
+        "length": 146
+      },
+      {
+        "offset": 1740051,
+        "length": 146
+      },
+      {
+        "offset": 1740594,
+        "length": 146
+      },
+      {
+        "offset": 1740806,
+        "length": 146
+      },
+      {
+        "offset": 1741201,
+        "length": 146
+      },
+      {
+        "offset": 1741413,
+        "length": 146
+      }
+    ]
+  },
+  {
+    "model": "figure-c13-nurse-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-c13-nurse-v2/figure-c13-nurse-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-c13-nurse-v2/figure-c13-nurse-v2_basecolor.jpg",
+    "sourceBytes": 333040,
+    "sourceSHA256": "06b1039a831925c75c8bde86379e54e18f45829981eb15a9eebafe0404569f1a",
+    "spikeSHA256": "06b1039a831925c75c8bde86379e54e18f45829981eb15a9eebafe0404569f1a",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-donkey-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-donkey-1948-v1/figure-donkey-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-donkey-1948-v1/figure-donkey-1948-v1.fbx",
+    "sourceBytes": 1893388,
+    "sourceSHA256": "8514a5bed2a238ab8d98261569b2e7ed36ab2e601d630fbb8e336a0a864ece50",
+    "spikeSHA256": "b381136fbd91ae4f54dc93eb5ef0a4e6b5b82b129bb803f7df4900f511a89d2d",
+    "blankedStringSpans": [
+      {
+        "offset": 1589585,
+        "length": 181
+      },
+      {
+        "offset": 1590186,
+        "length": 181
+      },
+      {
+        "offset": 1590433,
+        "length": 181
+      }
+    ]
+  },
+  {
+    "model": "figure-donkey-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-donkey-1948-v1/figure-donkey-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-donkey-1948-v1/figure-donkey-1948-v1_basecolor.jpg",
+    "sourceBytes": 550958,
+    "sourceSHA256": "3f77a6fe9af3abf4c4c0f136861cdef7547c1af497c0094789db1fb3368014b9",
+    "spikeSHA256": "3f77a6fe9af3abf4c4c0f136861cdef7547c1af497c0094789db1fb3368014b9",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-draught-horse-idle-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-draught-horse-idle-1948-v2/figure-draught-horse-idle-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-draught-horse-idle-1948-v2/figure-draught-horse-idle-1948-v2.fbx",
+    "sourceBytes": 2531980,
+    "sourceSHA256": "3f297f3eb232603f47515c7f449518f5642bbccec4a1f33fa214de95a4aafd74",
+    "spikeSHA256": "1dff96925d29b72a37241fd2ade3fcf800cb3d3df653ab3748ce3cfabb150c89",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 184
+      },
+      {
+        "offset": 1588227,
+        "length": 206
+      },
+      {
+        "offset": 1588877,
+        "length": 206
+      },
+      {
+        "offset": 1589149,
+        "length": 206
+      }
+    ]
+  },
+  {
+    "model": "figure-draught-horse-idle-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-draught-horse-idle-1948-v2/figure-draught-horse-idle-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-draught-horse-idle-1948-v2/figure-draught-horse-idle-1948-v2_basecolor.jpg",
+    "sourceBytes": 459498,
+    "sourceSHA256": "a4864b45f700f81eb9cf016aa82e8b32b837a4ad8325d6d598ec1614ca893cbe",
+    "spikeSHA256": "a4864b45f700f81eb9cf016aa82e8b32b837a4ad8325d6d598ec1614ca893cbe",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-dromedary-camel-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-dromedary-camel-1948-v1/figure-dromedary-camel-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-dromedary-camel-1948-v1/figure-dromedary-camel-1948-v1.fbx",
+    "sourceBytes": 1794476,
+    "sourceSHA256": "e2ac83d0acc68c2b1e720cdb51e3d60cc2e6999c155b8a199a9a2428018d3d50",
+    "spikeSHA256": "cceaf6556ddcbc1836c8e0bfdb9c6ca20fb051953c5f678331e458c4b599528c",
+    "blankedStringSpans": [
+      {
+        "offset": 1526514,
+        "length": 199
+      },
+      {
+        "offset": 1527151,
+        "length": 199
+      },
+      {
+        "offset": 1527416,
+        "length": 199
+      }
+    ]
+  },
+  {
+    "model": "figure-dromedary-camel-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-dromedary-camel-1948-v1/figure-dromedary-camel-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-dromedary-camel-1948-v1/figure-dromedary-camel-1948-v1_basecolor.jpg",
+    "sourceBytes": 525917,
+    "sourceSHA256": "26cbd28315bde45e0663161a8756ce32498f17afa44674e768584088ab7c4bb5",
+    "spikeSHA256": "26cbd28315bde45e0663161a8756ce32498f17afa44674e768584088ab7c4bb5",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-nubian-ibex-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-nubian-ibex-1948-v1/figure-nubian-ibex-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-nubian-ibex-1948-v1/figure-nubian-ibex-1948-v1.fbx",
+    "sourceBytes": 1625852,
+    "sourceSHA256": "4627285fe265d02cf221e70c54a9c7dafed22624f42cbf5209e7d44b88f507c8",
+    "spikeSHA256": "555c422f27305c661c83fd2a25810d3fb9e855c90532596692fbffc237cbf687",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 188
+      },
+      {
+        "offset": 1422574,
+        "length": 191
+      },
+      {
+        "offset": 1423195,
+        "length": 191
+      },
+      {
+        "offset": 1423452,
+        "length": 191
+      }
+    ]
+  },
+  {
+    "model": "figure-nubian-ibex-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-nubian-ibex-1948-v1/figure-nubian-ibex-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-nubian-ibex-1948-v1/figure-nubian-ibex-1948-v1_basecolor.jpg",
+    "sourceBytes": 532405,
+    "sourceSHA256": "21d185aa225acdda39fc06f64e8b688134b1defe729595c5ada9873fbca453a1",
+    "spikeSHA256": "21d185aa225acdda39fc06f64e8b688134b1defe729595c5ada9873fbca453a1",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-sheep-idle-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-sheep-idle-1948-v1/figure-sheep-idle-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-sheep-idle-1948-v1/figure-sheep-idle-1948-v1.fbx",
+    "sourceBytes": 2065980,
+    "sourceSHA256": "d5be4ccdafdcddfa9d6952ccc02a287ca854d7bc6e909d14925b7ff5621b6db5",
+    "spikeSHA256": "09dc1c57e5899e87e4daade98396820723e9c121ce86480a1195c08edfbe164c",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 167
+      },
+      {
+        "offset": 1443282,
+        "length": 189
+      },
+      {
+        "offset": 1443899,
+        "length": 189
+      },
+      {
+        "offset": 1444154,
+        "length": 189
+      }
+    ]
+  },
+  {
+    "model": "figure-sheep-idle-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-sheep-idle-1948-v1/figure-sheep-idle-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-sheep-idle-1948-v1/figure-sheep-idle-1948-v1_basecolor.jpg",
+    "sourceBytes": 594927,
+    "sourceSHA256": "2bb8d9615a7752430a6aa1ffd49249168a36bb1bb07878df7bb26198ff366cf8",
+    "spikeSHA256": "2bb8d9615a7752430a6aa1ffd49249168a36bb1bb07878df7bb26198ff366cf8",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-striped-hyena-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-striped-hyena-1948-v1/figure-striped-hyena-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-striped-hyena-1948-v1/figure-striped-hyena-1948-v1.fbx",
+    "sourceBytes": 2160252,
+    "sourceSHA256": "3328b4eba7c50ee2c6710afcbda0698415bfd5dd2efe9748a8274585f7fd6541",
+    "spikeSHA256": "2fe8a74b0555ad1a84583037aec2d611cca92cb95948ceada698e103b8763853",
+    "blankedStringSpans": [
+      {
+        "offset": 1784546,
+        "length": 195
+      },
+      {
+        "offset": 1785175,
+        "length": 195
+      },
+      {
+        "offset": 1785436,
+        "length": 195
+      }
+    ]
+  },
+  {
+    "model": "figure-striped-hyena-1948-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-striped-hyena-1948-v1/figure-striped-hyena-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-striped-hyena-1948-v1/figure-striped-hyena-1948-v1_basecolor.jpg",
+    "sourceBytes": 578459,
+    "sourceSHA256": "1f07aa0d7bcd8ceeb456aa8cbb86ef7e7173aa3b2b8db951f67d7333ee0f0f49",
+    "spikeSHA256": "1f07aa0d7bcd8ceeb456aa8cbb86ef7e7173aa3b2b8db951f67d7333ee0f0f49",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-c54-skymaster-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-c54-skymaster-1948-v2/figure-vehicle-c54-skymaster-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-c54-skymaster-1948-v2/figure-vehicle-c54-skymaster-1948-v2.fbx",
+    "sourceBytes": 702460,
+    "sourceSHA256": "bff7a1a30718a754c4ffdb44b276cac11f80f5adc7b6f4db5bea632fa7e978b8",
+    "spikeSHA256": "42690ab07228a5945e9222d2c9c065cd319540fa67ef600e9499338a2de64d74",
+    "blankedStringSpans": [
+      {
+        "offset": 695827,
+        "length": 161
+      },
+      {
+        "offset": 696388,
+        "length": 161
+      },
+      {
+        "offset": 696615,
+        "length": 161
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-c54-skymaster-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-c54-skymaster-1948-v2/figure-vehicle-c54-skymaster-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-c54-skymaster-1948-v2/figure-vehicle-c54-skymaster-1948-v2_basecolor.jpg",
+    "sourceBytes": 526447,
+    "sourceSHA256": "17f5ed1aab1b56f0b482643b676c9ec2f2fe85b628760c7189388dbc50313ab8",
+    "spikeSHA256": "17f5ed1aab1b56f0b482643b676c9ec2f2fe85b628760c7189388dbc50313ab8",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-canvas-lorry-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-canvas-lorry-1948-v2/figure-vehicle-canvas-lorry-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-canvas-lorry-1948-v2/figure-vehicle-canvas-lorry-1948-v2.fbx",
+    "sourceBytes": 1032220,
+    "sourceSHA256": "7890bd8173b7713c495d9ceb1e92998420bb27ef14f6e49b5d5a6c20c1392596",
+    "spikeSHA256": "11379e0f6a28405065df4fb2b3b89a53707af2d518e371ed33651e5a1f46b062",
+    "blankedStringSpans": [
+      {
+        "offset": 1024563,
+        "length": 210
+      },
+      {
+        "offset": 1025158,
+        "length": 210
+      },
+      {
+        "offset": 1025434,
+        "length": 210
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-canvas-lorry-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-canvas-lorry-1948-v2/figure-vehicle-canvas-lorry-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-canvas-lorry-1948-v2/figure-vehicle-canvas-lorry-1948-v2_basecolor.jpg",
+    "sourceBytes": 506246,
+    "sourceSHA256": "fe69d369a8f93dafa46d27fab837d06fef1dce402c4c2d838387319bb124a42c",
+    "spikeSHA256": "fe69d369a8f93dafa46d27fab837d06fef1dce402c4c2d838387319bb124a42c",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-citrus-truck-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-citrus-truck-1948-v2/figure-vehicle-citrus-truck-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-citrus-truck-1948-v2/figure-vehicle-citrus-truck-1948-v2.fbx",
+    "sourceBytes": 1291772,
+    "sourceSHA256": "8d1a7f2a2795bcddabb94ae9404143f1baeb2d527c1e716e30d58f5867adf513",
+    "spikeSHA256": "0453e0be651a8d6526aa5d499bc153b2c0e43caa305c0bfc956902f868291fa9",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 198
+      },
+      {
+        "offset": 1281607,
+        "length": 160
+      },
+      {
+        "offset": 1282166,
+        "length": 160
+      },
+      {
+        "offset": 1282392,
+        "length": 160
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-citrus-truck-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-citrus-truck-1948-v2/figure-vehicle-citrus-truck-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-citrus-truck-1948-v2/figure-vehicle-citrus-truck-1948-v2_basecolor.jpg",
+    "sourceBytes": 593017,
+    "sourceSHA256": "5c0e1e82c6b6663bafe8ddba723b86613ddb8e6acf170885e1bfa4958be39692",
+    "spikeSHA256": "5c0e1e82c6b6663bafe8ddba723b86613ddb8e6acf170885e1bfa4958be39692",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-farm-tractor-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-farm-tractor-1948-v2/figure-vehicle-farm-tractor-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-farm-tractor-1948-v2/figure-vehicle-farm-tractor-1948-v2.fbx",
+    "sourceBytes": 919980,
+    "sourceSHA256": "0c3babf52eeab15563b64d3594531fc0dd3fead288f8f184d66323e8744b2c8b",
+    "spikeSHA256": "f6867dd790ed7fc9e4ba4e2630b47f1198e1166a020521064d287a137fe79ef5",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 198
+      },
+      {
+        "offset": 912511,
+        "length": 160
+      },
+      {
+        "offset": 913070,
+        "length": 160
+      },
+      {
+        "offset": 913296,
+        "length": 160
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-farm-tractor-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-farm-tractor-1948-v2/figure-vehicle-farm-tractor-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-farm-tractor-1948-v2/figure-vehicle-farm-tractor-1948-v2_basecolor.jpg",
+    "sourceBytes": 551062,
+    "sourceSHA256": "a9fd188bd4c3e112a9afe45427f22cbcf03a02d6b07017224df81ca3c2fef7c4",
+    "spikeSHA256": "a9fd188bd4c3e112a9afe45427f22cbcf03a02d6b07017224df81ca3c2fef7c4",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-horse-wagon-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-horse-wagon-1948-v2/figure-vehicle-horse-wagon-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-horse-wagon-1948-v2/figure-vehicle-horse-wagon-1948-v2.fbx",
+    "sourceBytes": 851532,
+    "sourceSHA256": "c935c0eaa9fdc593a1ba08605f8e5dd2cea246ade451b7f7fef7d817834c19d1",
+    "spikeSHA256": "8b0ae2e0b13c56ef0df5523e3e766e7507f6ccf3bd79d8e0a4349ac290f71607",
+    "blankedStringSpans": [
+      {
+        "offset": 842297,
+        "length": 208
+      },
+      {
+        "offset": 842888,
+        "length": 208
+      },
+      {
+        "offset": 843162,
+        "length": 208
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-horse-wagon-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-horse-wagon-1948-v2/figure-vehicle-horse-wagon-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-horse-wagon-1948-v2/figure-vehicle-horse-wagon-1948-v2_basecolor.jpg",
+    "sourceBytes": 615631,
+    "sourceSHA256": "09241f87705002226130cd64939d2a03f3ef3a5cc780476b02cef02d42660144",
+    "spikeSHA256": "09241f87705002226130cd64939d2a03f3ef3a5cc780476b02cef02d42660144",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-intercity-bus-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-intercity-bus-1948-v2/figure-vehicle-intercity-bus-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-intercity-bus-1948-v2/figure-vehicle-intercity-bus-1948-v2.fbx",
+    "sourceBytes": 1173388,
+    "sourceSHA256": "96aa6ea83b56ccbeb2ff812104436fa91de71bff1b55733abd30b7b5ee4437b5",
+    "spikeSHA256": "719bdd4fdf18341335781e8eada9b8a2a7cbf227d03a7493cfbe2df8bd6aaf59",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 200
+      },
+      {
+        "offset": 1164300,
+        "length": 212
+      },
+      {
+        "offset": 1164899,
+        "length": 212
+      },
+      {
+        "offset": 1165177,
+        "length": 212
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-intercity-bus-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-intercity-bus-1948-v2/figure-vehicle-intercity-bus-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-intercity-bus-1948-v2/figure-vehicle-intercity-bus-1948-v2_basecolor.jpg",
+    "sourceBytes": 498651,
+    "sourceSHA256": "4c1c97268322d2509e23a63cd7982984b83e5d8227c354810818aeb4e4a47f80",
+    "spikeSHA256": "4c1c97268322d2509e23a63cd7982984b83e5d8227c354810818aeb4e4a47f80",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-napoleonchik-65mm-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-napoleonchik-65mm-1948-v2/figure-vehicle-napoleonchik-65mm-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-napoleonchik-65mm-1948-v2/figure-vehicle-napoleonchik-65mm-1948-v2.fbx",
+    "sourceBytes": 1080668,
+    "sourceSHA256": "47f4fcd0b50d2ee6d2d77a49907e1c8c2ab33bfa7b302b8c8cf86d54eb23714c",
+    "spikeSHA256": "c3c397e1358f0d8c6352a87e3abc8a382d343905bdfc441f6b8b114187a0ab94",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 208
+      },
+      {
+        "offset": 1074418,
+        "length": 165
+      },
+      {
+        "offset": 1074982,
+        "length": 165
+      },
+      {
+        "offset": 1075213,
+        "length": 165
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-napoleonchik-65mm-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-napoleonchik-65mm-1948-v2/figure-vehicle-napoleonchik-65mm-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-napoleonchik-65mm-1948-v2/figure-vehicle-napoleonchik-65mm-1948-v2_basecolor.jpg",
+    "sourceBytes": 472225,
+    "sourceSHA256": "a556d65480bfb34c6a4a48cb71c8bbe29a2c74f6c27fc7ece645fbe92a08afcf",
+    "spikeSHA256": "a556d65480bfb34c6a4a48cb71c8bbe29a2c74f6c27fc7ece645fbe92a08afcf",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-sandwich-convoy-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-sandwich-convoy-1948-v2/figure-vehicle-sandwich-convoy-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-sandwich-convoy-1948-v2/figure-vehicle-sandwich-convoy-1948-v2.fbx",
+    "sourceBytes": 1163740,
+    "sourceSHA256": "33241b823e4679220e8b8d5571ab9156ef1971191e36b65355c408ac46ac616c",
+    "spikeSHA256": "e871190995526d782a3f0362da91290f17c17f010647efa66ad89b25b49c3c45",
+    "blankedStringSpans": [
+      {
+        "offset": 1157095,
+        "length": 163
+      },
+      {
+        "offset": 1157667,
+        "length": 163
+      },
+      {
+        "offset": 1157896,
+        "length": 163
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-sandwich-convoy-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-sandwich-convoy-1948-v2/figure-vehicle-sandwich-convoy-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-sandwich-convoy-1948-v2/figure-vehicle-sandwich-convoy-1948-v2_basecolor.jpg",
+    "sourceBytes": 541039,
+    "sourceSHA256": "cb616806f3ef18ec4f6b9d54db31f8a5292884f65c73e9a53750234ea04971db",
+    "spikeSHA256": "cb616806f3ef18ec4f6b9d54db31f8a5292884f65c73e9a53750234ea04971db",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-vehicle-willys-jeep-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-willys-jeep-1948-v2/figure-vehicle-willys-jeep-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-willys-jeep-1948-v2/figure-vehicle-willys-jeep-1948-v2.fbx",
+    "sourceBytes": 718796,
+    "sourceSHA256": "3909114399e10de53f894633b6e0553fe72cc9cefa8b028a0ffa201db5a16e93",
+    "spikeSHA256": "cb48214717016381a7efe3f7c9fbf55a2dcf1deb6ca75dccc55953eb36d98672",
+    "blankedStringSpans": [
+      {
+        "offset": 712174,
+        "length": 159
+      },
+      {
+        "offset": 712731,
+        "length": 159
+      },
+      {
+        "offset": 712956,
+        "length": 159
+      }
+    ]
+  },
+  {
+    "model": "figure-vehicle-willys-jeep-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/figure-vehicle-willys-jeep-1948-v2/figure-vehicle-willys-jeep-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-vehicle-willys-jeep-1948-v2/figure-vehicle-willys-jeep-1948-v2_basecolor.jpg",
+    "sourceBytes": 464165,
+    "sourceSHA256": "5e260c77b1568de6dd23b30d3c0f393521eb1d17365ecbf57d2f7cb77767c64c",
+    "spikeSHA256": "5e260c77b1568de6dd23b30d3c0f393521eb1d17365ecbf57d2f7cb77767c64c",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "haifa-port-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/haifa-port-city-v1/haifa-port-city-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/haifa-port-city-v1/haifa-port-city-v1.fbx",
+    "sourceBytes": 190236,
+    "sourceSHA256": "18bd0d3194a1d0a0d491cf8396400aece9426ef46fffa923ebe64f628c48411f",
+    "spikeSHA256": "18bd0d3194a1d0a0d491cf8396400aece9426ef46fffa923ebe64f628c48411f",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "haifa-port-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/haifa-port-city-v1/haifa-port-city-v1_basecolor.jpg",
+    "sourceBytes": 1320120,
+    "sourceSHA256": "cf4dcbda98bbd04a588b15537e1e97908d315467fe35054aa158a9fdbfa710ff",
+    "spikeSHA256": "cf4dcbda98bbd04a588b15537e1e97908d315467fe35054aa158a9fdbfa710ff",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "jerusalem-stone-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/jerusalem-stone-city-v1/jerusalem-stone-city-v1.fbx",
+    "sourceBytes": 197244,
+    "sourceSHA256": "bfe5514bdb12312741ef1a3034b2944a4b1a00ad4b932374f03e7456c353b9b9",
+    "spikeSHA256": "bfe5514bdb12312741ef1a3034b2944a4b1a00ad4b932374f03e7456c353b9b9",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "jerusalem-stone-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/jerusalem-stone-city-v1/jerusalem-stone-city-v1_basecolor.jpg",
+    "sourceBytes": 1520404,
+    "sourceSHA256": "88f048c62050fee66679996410ecd5490f316ee3f82965c56bd8bce0272190ae",
+    "spikeSHA256": "88f048c62050fee66679996410ecd5490f316ee3f82965c56bd8bce0272190ae",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "kibbutz-compound-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/kibbutz-compound-v2/kibbutz-compound-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/kibbutz-compound-v2/kibbutz-compound-v2.fbx",
+    "sourceBytes": 164108,
+    "sourceSHA256": "2affd4008889dae96934edaab287e3c6ff5fee6081674788c382332fa225a847",
+    "spikeSHA256": "2affd4008889dae96934edaab287e3c6ff5fee6081674788c382332fa225a847",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "kibbutz-compound-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/kibbutz-compound-v2/kibbutz-compound-v2_basecolor.jpg",
+    "sourceBytes": 1647095,
+    "sourceSHA256": "54e2c84e16b6bdd1b6bd2d14f11159d8bb2885590511f4b6cebd32c812ae78e7",
+    "spikeSHA256": "54e2c84e16b6bdd1b6bd2d14f11159d8bb2885590511f4b6cebd32c812ae78e7",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "maabara-camp-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/maabara-camp-v1/maabara-camp-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/maabara-camp-v1/maabara-camp-v1.fbx",
+    "sourceBytes": 121980,
+    "sourceSHA256": "ad2116017a09712ed095d9d572fea300dd069e659faf7fa85a01d2b1ab91b34e",
+    "spikeSHA256": "ad2116017a09712ed095d9d572fea300dd069e659faf7fa85a01d2b1ab91b34e",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "maabara-camp-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/maabara-camp-v1/maabara-camp-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/maabara-camp-v1/maabara-camp-v1_basecolor.jpg",
+    "sourceBytes": 1180274,
+    "sourceSHA256": "da31f291b1709da8a11f61612fcd7af11a73e80e5da41b0a583f1f101238d201",
+    "spikeSHA256": "da31f291b1709da8a11f61612fcd7af11a73e80e5da41b0a583f1f101238d201",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "moshava-town-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/moshava-town-v1/moshava-town-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/moshava-town-v1/moshava-town-v1.fbx",
+    "sourceBytes": 148204,
+    "sourceSHA256": "0b86fd127f2350ab3a79d05d44bbb44a978309d68afc87e888274bda266dfbcd",
+    "spikeSHA256": "0b86fd127f2350ab3a79d05d44bbb44a978309d68afc87e888274bda266dfbcd",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "moshava-town-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/moshava-town-v1/moshava-town-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/moshava-town-v1/moshava-town-v1_basecolor.jpg",
+    "sourceBytes": 1481609,
+    "sourceSHA256": "6109d0359cbd3b724e9150b7bdce3be8c65f34ca9841f87ac45326067a9149aa",
+    "spikeSHA256": "6109d0359cbd3b724e9150b7bdce3be8c65f34ca9841f87ac45326067a9149aa",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "nahalal-moshav-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/nahalal-moshav-v1/nahalal-moshav-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/nahalal-moshav-v1/nahalal-moshav-v1.fbx",
+    "sourceBytes": 152748,
+    "sourceSHA256": "778c3940c0da49d7e640e349b8f5e78079600561829bae1bf6bb36fdf51a181f",
+    "spikeSHA256": "778c3940c0da49d7e640e349b8f5e78079600561829bae1bf6bb36fdf51a181f",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "nahalal-moshav-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/nahalal-moshav-v1/nahalal-moshav-v1_basecolor.jpg",
+    "sourceBytes": 1445686,
+    "sourceSHA256": "b8c1c03a601d24361d948006572f5ede63af2454511a2d27cf2c9f886f488f15",
+    "spikeSHA256": "b8c1c03a601d24361d948006572f5ede63af2454511a2d27cf2c9f886f488f15",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "shikun-housing-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/shikun-housing-v1/shikun-housing-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/shikun-housing-v1/shikun-housing-v1.fbx",
+    "sourceBytes": 121308,
+    "sourceSHA256": "75d72517a7e20367b2cbe8110292483a6e3cfea025aaf0475fd208e91b3fe519",
+    "spikeSHA256": "75d72517a7e20367b2cbe8110292483a6e3cfea025aaf0475fd208e91b3fe519",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "shikun-housing-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/shikun-housing-v1/shikun-housing-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/shikun-housing-v1/shikun-housing-v1_basecolor.jpg",
+    "sourceBytes": 1086753,
+    "sourceSHA256": "ead46da0a62f2a87f376a08ed0e5e88accdb7df87ae59442a17c81a0745d15c6",
+    "spikeSHA256": "ead46da0a62f2a87f376a08ed0e5e88accdb7df87ae59442a17c81a0745d15c6",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "stone-village-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/stone-village-v1/stone-village-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/stone-village-v1/stone-village-v1.fbx",
+    "sourceBytes": 316204,
+    "sourceSHA256": "e547e96e7ff2fb538c42145cc63020e147c490dc13bfd73231f6b912df2d3a03",
+    "spikeSHA256": "e547e96e7ff2fb538c42145cc63020e147c490dc13bfd73231f6b912df2d3a03",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "stone-village-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/stone-village-v1/stone-village-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/stone-village-v1/stone-village-v1_basecolor.jpg",
+    "sourceBytes": 1258062,
+    "sourceSHA256": "c5cce0f56adf35311c2f9f9a226c243b14862e9f3caf401a7954e67d8eb62161",
+    "spikeSHA256": "c5cce0f56adf35311c2f9f9a226c243b14862e9f3caf401a7954e67d8eb62161",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "tel-aviv-white-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/tel-aviv-white-city-v1/tel-aviv-white-city-v1.fbx",
+    "sourceBytes": 252028,
+    "sourceSHA256": "a694d212a058c6dd0e8bf32de4e2b7b1ca240751101e441eee682c00838ad814",
+    "spikeSHA256": "a694d212a058c6dd0e8bf32de4e2b7b1ca240751101e441eee682c00838ad814",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "tel-aviv-white-city-v1",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/tel-aviv-white-city-v1/tel-aviv-white-city-v1_basecolor.jpg",
+    "sourceBytes": 1266251,
+    "sourceSHA256": "93c16f7ec31655a9981e2ff694c405b520d8068f3fd5f0af3eb6f5a46526642d",
+    "spikeSHA256": "93c16f7ec31655a9981e2ff694c405b520d8068f3fd5f0af3eb6f5a46526642d",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "vehicle-altalena-lst-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-altalena-lst-1948-v2wl/vehicle-altalena-lst-1948-v2wl.fbx",
+    "destination": "unity/Assets/Art/Collection/vehicle-altalena-lst-1948-v2wl/vehicle-altalena-lst-1948-v2wl.fbx",
+    "sourceBytes": 481996,
+    "sourceSHA256": "5d7eeceaf474707e62d18a265dbccc3d53e20bad1c2f5af1984f5e25fe1ab03a",
+    "spikeSHA256": "895595dff1328594c3d858b3dccf98426d20dfa4b00e1ae88609e4b576e06870",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 184
+      },
+      {
+        "offset": 480225,
+        "length": 200
+      },
+      {
+        "offset": 480869,
+        "length": 200
+      },
+      {
+        "offset": 481135,
+        "length": 200
+      }
+    ]
+  },
+  {
+    "model": "vehicle-altalena-lst-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-altalena-lst-1948-v2wl/vehicle-altalena-lst-1948-v2wl_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/vehicle-altalena-lst-1948-v2wl/vehicle-altalena-lst-1948-v2wl_basecolor.jpg",
+    "sourceBytes": 425255,
+    "sourceSHA256": "05fc787dc09fe0869d73da03a42edbfd392640800016dcfd476c09953284b7f8",
+    "spikeSHA256": "05fc787dc09fe0869d73da03a42edbfd392640800016dcfd476c09953284b7f8",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "vehicle-fishing-boat-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-fishing-boat-1948-v2wl/vehicle-fishing-boat-1948-v2wl.fbx",
+    "destination": "unity/Assets/Art/Collection/vehicle-fishing-boat-1948-v2wl/vehicle-fishing-boat-1948-v2wl.fbx",
+    "sourceBytes": 359276,
+    "sourceSHA256": "85fa5288553fb4f33974ad3f3ae8e7f1b26f844d2e66164ad115aa6e011a4aff",
+    "spikeSHA256": "d4a8d896a03bebe08f44182e88fb295a8369d940d36fdac797cdb2a56caaa1aa",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 184
+      },
+      {
+        "offset": 357722,
+        "length": 155
+      },
+      {
+        "offset": 358278,
+        "length": 155
+      },
+      {
+        "offset": 358499,
+        "length": 155
+      }
+    ]
+  },
+  {
+    "model": "vehicle-fishing-boat-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-fishing-boat-1948-v2wl/vehicle-fishing-boat-1948-v2wl_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/vehicle-fishing-boat-1948-v2wl/vehicle-fishing-boat-1948-v2wl_basecolor.jpg",
+    "sourceBytes": 464603,
+    "sourceSHA256": "d92fa0a9c4e6ce4e694f90e392133b4b04066f4aabd427cdb26810ee3aa0c2fa",
+    "spikeSHA256": "d92fa0a9c4e6ce4e694f90e392133b4b04066f4aabd427cdb26810ee3aa0c2fa",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "vehicle-immigrant-steamer-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-immigrant-steamer-1948-v2wl/vehicle-immigrant-steamer-1948-v2wl.fbx",
+    "destination": "unity/Assets/Art/Collection/vehicle-immigrant-steamer-1948-v2wl/vehicle-immigrant-steamer-1948-v2wl.fbx",
+    "sourceBytes": 788588,
+    "sourceSHA256": "667b43d01f7f5c0f10ed67e5a9ff46f3812c8c1afdd08c9913aafed78b0daa97",
+    "spikeSHA256": "73677c48f34f67ce605ad081aa18bfb9b764793d7e87df8e3d052dee85393683",
+    "blankedStringSpans": [
+      {
+        "offset": 786699,
+        "length": 210
+      },
+      {
+        "offset": 787358,
+        "length": 210
+      },
+      {
+        "offset": 787634,
+        "length": 210
+      }
+    ]
+  },
+  {
+    "model": "vehicle-immigrant-steamer-1948-v2wl",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-immigrant-steamer-1948-v2wl/vehicle-immigrant-steamer-1948-v2wl_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/vehicle-immigrant-steamer-1948-v2wl/vehicle-immigrant-steamer-1948-v2wl_basecolor.jpg",
+    "sourceBytes": 446891,
+    "sourceSHA256": "4298578d39a278f84256504327dcaae264c1de76e1a2d5df9badc65818295264",
+    "spikeSHA256": "4298578d39a278f84256504327dcaae264c1de76e1a2d5df9badc65818295264",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "vehicle-steam-locomotive-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-steam-locomotive-1948-v2/vehicle-steam-locomotive-1948-v2.fbx",
+    "destination": "unity/Assets/Art/Collection/vehicle-steam-locomotive-1948-v2/vehicle-steam-locomotive-1948-v2.fbx",
+    "sourceBytes": 1848348,
+    "sourceSHA256": "4a693546fd95c720fea87ce8f7aba85f1ec39dea57f53a112967f7c37a77f7d4",
+    "spikeSHA256": "0184cb6b7be8d1deca50d2e7a82d979cf9d9955bb3ef99d1bb807d1f6c30d487",
+    "blankedStringSpans": [
+      {
+        "offset": 1903,
+        "length": 206
+      },
+      {
+        "offset": 1844684,
+        "length": 157
+      },
+      {
+        "offset": 1845244,
+        "length": 157
+      },
+      {
+        "offset": 1845467,
+        "length": 157
+      }
+    ]
+  },
+  {
+    "model": "vehicle-steam-locomotive-1948-v2",
+    "sourceCommit": "3ef0a7a5a36887aee7a24fd11ddf722507695f3c",
+    "sourcePath": "unity/Assets/Art/Settlements/Prototype/Models/vehicle-steam-locomotive-1948-v2/vehicle-steam-locomotive-1948-v2_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/vehicle-steam-locomotive-1948-v2/vehicle-steam-locomotive-1948-v2_basecolor.jpg",
+    "sourceBytes": 560287,
+    "sourceSHA256": "91e9ddd6910c5e7a0b6efc5406c5512420f2adc59791ffa43aa6ee856519fe86",
+    "spikeSHA256": "91e9ddd6910c5e7a0b6efc5406c5512420f2adc59791ffa43aa6ee856519fe86",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-arab-villager-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-arab-villager-v1/figure-arab-villager-v1.fbx",
+    "sourceBytes": 3190668,
+    "sourceSHA256": "881ac8bdf2c1470a8ad8bc21243ee519a82a4987d9cb988561ac1f7c8c3ea2b7",
+    "spikeSHA256": "881ac8bdf2c1470a8ad8bc21243ee519a82a4987d9cb988561ac1f7c8c3ea2b7",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-arab-villager-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-arab-villager-v1/figure-arab-villager-v1_basecolor.jpg",
+    "sourceBytes": 678103,
+    "sourceSHA256": "c38d1c12e2b89273b457ba017fe5a53c80102bf52252b14d6b04769a605abc4c",
+    "spikeSHA256": "c38d1c12e2b89273b457ba017fe5a53c80102bf52252b14d6b04769a605abc4c",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-builder-1950-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-builder-1950-v1/figure-builder-1950-v1.fbx",
+    "sourceBytes": 4371500,
+    "sourceSHA256": "7322942081efd614c3a8977a8de6c077c377258b86ed0b08a359e958e58d23e2",
+    "spikeSHA256": "7322942081efd614c3a8977a8de6c077c377258b86ed0b08a359e958e58d23e2",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-builder-1950-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-builder-1950-v1/figure-builder-1950-v1_basecolor.jpg",
+    "sourceBytes": 748761,
+    "sourceSHA256": "2261f0fe257a5e586f35efc396f3fe4969fd529bba33ba6040003917c228a2d5",
+    "spikeSHA256": "2261f0fe257a5e586f35efc396f3fe4969fd529bba33ba6040003917c228a2d5",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-elder-immigrant-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-elder-immigrant-v1/figure-elder-immigrant-v1.fbx",
+    "sourceBytes": 3173916,
+    "sourceSHA256": "ab7aa7f645df42dbd48d491ad6671a69c8d9b7186d5667438b2a471a9e1b3073",
+    "spikeSHA256": "ab7aa7f645df42dbd48d491ad6671a69c8d9b7186d5667438b2a471a9e1b3073",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-elder-immigrant-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-elder-immigrant-v1/figure-elder-immigrant-v1_basecolor.jpg",
+    "sourceBytes": 563869,
+    "sourceSHA256": "34851af175c91a8098341e41d9fd11524eaa3430a3bed0e631d66f3fa0dbf076",
+    "spikeSHA256": "34851af175c91a8098341e41d9fd11524eaa3430a3bed0e631d66f3fa0dbf076",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-immigrant-child-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-immigrant-child-v1/figure-immigrant-child-v1.fbx",
+    "sourceBytes": 3227500,
+    "sourceSHA256": "3343e6131a4dea9d84431946492d9fb79fd42c57286e3f29dfafc132ad96fd9b",
+    "spikeSHA256": "3343e6131a4dea9d84431946492d9fb79fd42c57286e3f29dfafc132ad96fd9b",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-immigrant-child-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-immigrant-child-v1/figure-immigrant-child-v1_basecolor.jpg",
+    "sourceBytes": 701796,
+    "sourceSHA256": "38ee2cd6b3130bb4597ef69eb5ccd3c152785ee2ffaf81014afc97f20fdff8d3",
+    "spikeSHA256": "38ee2cd6b3130bb4597ef69eb5ccd3c152785ee2ffaf81014afc97f20fdff8d3",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-immigrant-woman-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-immigrant-woman-v1/figure-immigrant-woman-v1.fbx",
+    "sourceBytes": 1508252,
+    "sourceSHA256": "a25ff2f76ea387e0eef0e60a0f4627c707d5414375c154b4c8a2c440903f6f5a",
+    "spikeSHA256": "a25ff2f76ea387e0eef0e60a0f4627c707d5414375c154b4c8a2c440903f6f5a",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-immigrant-woman-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-immigrant-woman-v1/figure-immigrant-woman-v1_basecolor.jpg",
+    "sourceBytes": 723010,
+    "sourceSHA256": "529e44ac2b447cf45f289e61314c0b90f9df68c3a41930b2ca070cf09b884e13",
+    "spikeSHA256": "529e44ac2b447cf45f289e61314c0b90f9df68c3a41930b2ca070cf09b884e13",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-kibbutz-woman-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1.fbx",
+    "sourceBytes": 4391260,
+    "sourceSHA256": "adb61cd4cf41f2401c497e279a592aa1e6aa40a170f331ba6309bc876d7a27db",
+    "spikeSHA256": "adb61cd4cf41f2401c497e279a592aa1e6aa40a170f331ba6309bc876d7a27db",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-kibbutz-woman-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/figure-kibbutz-woman-v1_basecolor.jpg",
+    "sourceBytes": 745383,
+    "sourceSHA256": "41ebb68267e9ff5e3165c5e919a303a6f4018883a151dd15aa06b7dac8762af9",
+    "spikeSHA256": "41ebb68267e9ff5e3165c5e919a303a6f4018883a151dd15aa06b7dac8762af9",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-pioneer-farmer-v1-tpose",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose.fbx",
+    "sourceBytes": 4487708,
+    "sourceSHA256": "076d74fe7424ee4039bcd936b8528f403f6a149a5221be049ff928ad8a301595",
+    "spikeSHA256": "076d74fe7424ee4039bcd936b8528f403f6a149a5221be049ff928ad8a301595",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-pioneer-farmer-v1-tpose",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/figure-pioneer-farmer-v1-tpose_basecolor.jpg",
+    "sourceBytes": 914387,
+    "sourceSHA256": "c2c87c9de673fdecee9271112bb5dca5b728f75b75ae0b119874c662738675b5",
+    "spikeSHA256": "c2c87c9de673fdecee9271112bb5dca5b728f75b75ae0b119874c662738675b5",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-soldier-1948-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-soldier-1948-v1/figure-soldier-1948-v1.fbx",
+    "sourceBytes": 281996,
+    "sourceSHA256": "f13635851969c1bb6e4c0babb5283685159805dfba4a2912bf2bc88813861782",
+    "spikeSHA256": "f13635851969c1bb6e4c0babb5283685159805dfba4a2912bf2bc88813861782",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-soldier-1948-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-soldier-1948-v1/figure-soldier-1948-v1_basecolor.jpg",
+    "sourceBytes": 1035115,
+    "sourceSHA256": "cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945",
+    "spikeSHA256": "cb30823ff65a23c418986741e4ef88f680d6dd594909d4dd6b68d1ca412d6945",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-yemenite-immigrant-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx",
+    "destination": "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1.fbx",
+    "sourceBytes": 3205100,
+    "sourceSHA256": "bf4cddddc8ef13af7c8692822578a2c189287df0d664129f62e65ef659b76c96",
+    "spikeSHA256": "bf4cddddc8ef13af7c8692822578a2c189287df0d664129f62e65ef659b76c96",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "figure-yemenite-immigrant-v1",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/figure-yemenite-immigrant-v1_basecolor.jpg",
+    "sourceBytes": 717298,
+    "sourceSHA256": "3cdeb8b6c1d77fb2260722fee622e321fa91da3ffa6720670905084f67ab7f97",
+    "spikeSHA256": "3cdeb8b6c1d77fb2260722fee622e321fa91da3ffa6720670905084f67ab7f97",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "jerusalem-stone-city-v1-3denhance",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx",
+    "destination": "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance.fbx",
+    "sourceBytes": 186892,
+    "sourceSHA256": "174391c0a7513391b76ece55481409df302a61cc0749e859f2048f50f83fb90d",
+    "spikeSHA256": "174391c0a7513391b76ece55481409df302a61cc0749e859f2048f50f83fb90d",
+    "blankedStringSpans": []
+  },
+  {
+    "model": "jerusalem-stone-city-v1-3denhance",
+    "sourceCommit": "1a5482a5864e812c1f5afdf0b31464ac92cbc7fa",
+    "sourcePath": "unity/Assets/Art/CommandModels/Models/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg",
+    "destination": "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/jerusalem-stone-city-v1-3denhance_basecolor.jpg",
+    "sourceBytes": 1593614,
+    "sourceSHA256": "d28e169fee42f814b7032cc7123a9ecdcae6ae344b991cd39ff8b5b4a13ce8b1",
+    "spikeSHA256": "d28e169fee42f814b7032cc7123a9ecdcae6ae344b991cd39ff8b5b4a13ce8b1",
+    "blankedStringSpans": []
+  }
+]

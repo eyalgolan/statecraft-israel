@@ -518,6 +518,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
+            Statecraft.Game.Map.Collection.CollectionStream.GameReady();
             Debug.Log(FormattableString.Invariant($"GAME OK {bridge.State.Date:yyyy-MM-dd} turn {bridge.State.Turn} hash {bridge.State.Hash()}"));
             // Unlike the other browser instruments, ?firstcard keeps the normal start screen, clip mapping and video players.
             // It closes the screen through its real button immediately, then gives tools/web_check.py a bounded result to
