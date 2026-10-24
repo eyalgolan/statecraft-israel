@@ -37,6 +37,8 @@ namespace Statecraft.Game.UI
         public const string RingClass = "advisor-ring-open";
         public const long RingOnlyMs = 4000;
         public const string WatchingClass = "advisor-watching", OverlayOpenClass = "advisor-overlay-open";
+        /// <summary>On the popup while a line with no picture plays its narration: the portrait row stays (owner, 24 Oct 2026, #1547).</summary>
+        public const string NarratingClass = "advisor-narrating";
         AdvisorMedia? media;
         public AdvisorMedia? Media
         {
@@ -231,7 +233,7 @@ namespace Statecraft.Game.UI
             gotIt.text = text["advisor.got_it"];
             name.text = text[m.Advisor == "meyerson" && !session.Introduced(m.Advisor) ? "advisor.meyerson.name_first" : "advisor." + m.Advisor + ".name"];
             role.text = text["advisor." + m.Advisor + ".role"];
-            if (!popup.ClassListContains(WatchingClass)) words.text = text["advisor." + m.Id + ".text"];
+            if (!Captioning) words.text = text["advisor." + m.Id + ".text"];
             UpdateWatch();
             var quoteKey = "advisor.quote." + m.Quote;
             bool verifiedQuote = AdvisorQuotes.Ids.Contains(m.Quote) && text.Has(quoteKey + ".text") && text.Has(quoteKey + ".source");
@@ -520,8 +522,15 @@ namespace Statecraft.Game.UI
 
         string CurrentScreens() => string.Join("|", ScreenNav.Screens.Where(n => hudRoot.Q("screen-" + n) is VisualElement screen && ScreenNav.IsOpen(screen)));
 
-        bool Watchable(AdvisorCatalog.Media? row) => Media != null && row != null && !session.MediaFailed.Contains(row.Picture)
-            && row.Narration.ContainsKey(hebrew ? "he" : "en");
+        /// <summary>Spec 12, per line: a clip or a supplied still with its narration, or the narration alone with the portrait.
+        /// Either needs the current language's narration; with none there is no Watch control.</summary>
+        bool Watchable(AdvisorCatalog.Media? row) => Media != null && row != null && row.Narration.ContainsKey(hebrew ? "he" : "en")
+            && !session.MediaFailed.Contains(FailureKey(row));
+        /// <summary>The file a failure is remembered by: the picture, or a voice-only line's own narration (never an empty name,
+        /// which every voice-only line would share).</summary>
+        string FailureKey(AdvisorCatalog.Media row) =>
+            string.IsNullOrEmpty(row.Picture) ? row.Narration.TryGetValue(hebrew ? "he" : "en", out var voice) ? voice : "" : row.Picture!;
+        bool Captioning => popup.ClassListContains(WatchingClass) || popup.ClassListContains(NarratingClass);
         void UpdateWatch()
         {
             bool canWatch = Watchable(Shown?.Media) && Shown!.ApprovedIn(hebrew);
@@ -529,21 +538,25 @@ namespace Statecraft.Game.UI
         }
 
         internal void Watch(AdvisorCatalog.Media row, string keyStem) => PlayMedia(row, keyStem, overlayOnly: false);
-        /// <summary>For the encyclopedia and Counsel adapters once their owners land; their source row must be approved.</summary>
+        /// <summary>For the encyclopedia and Counsel adapters once their owners land; their source row must be approved. Supplied
+        /// pictures only: a voice-only item keeps its own screen's portrait (spec 12), which those screens' owners draw.</summary>
         internal void WatchOverlay(AdvisorCatalog.Media row, string keyStem) => PlayMedia(row, keyStem, overlayOnly: true);
 
         void PlayMedia(AdvisorCatalog.Media row, string keyStem, bool overlayOnly)
         {
-            if (disposed || !Watchable(row) || HardMediaCover()) return;
+            bool hasPicture = !string.IsNullOrEmpty(row.Picture);
+            if (disposed || !Watchable(row) || HardMediaCover() || (overlayOnly && !hasPicture)) return;
             StopWatching(); watchScreens = CurrentScreens(); mediaOpener = hudRoot.focusController?.focusedElement as VisualElement;
-            bool inline = !overlayOnly && (ForceInline ?? AdvisorMedia.Inline(AdvisorLayout.Tier(hudRoot), Slot().height));
+            // Without a picture the portrait row stays and the caption takes the text's place, never the overlay (spec 12).
+            bool inline = !hasPicture || (!overlayOnly && (ForceInline ?? AdvisorMedia.Inline(AdvisorLayout.Tier(hudRoot), Slot().height)));
             var picture = inline ? mediaPicture : overlayPicture;
             var caption = inline ? words : overlayCaption;
             var label = inline ? mediaLabel : overlayLabel;
             var credit = inline ? mediaCredit : overlayCredit;
             label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
-            popup.EnableInClassList(WatchingClass, inline);
-            if (inline) mediaHead.BringToFront();
+            popup.EnableInClassList(WatchingClass, inline && hasPicture);
+            popup.EnableInClassList(NarratingClass, !hasPicture);
+            if (inline && hasPicture) mediaHead.BringToFront();
             hudRoot.EnableInClassList(OverlayOpenClass, !inline);
             if (!inline)
             {
@@ -554,7 +567,7 @@ namespace Statecraft.Game.UI
             SizeMedia(); ApplyTextFloor();
             Media!.Play(row, keyStem, hebrew, picture, caption, StopWatching, _ =>
             {
-                session.MediaFailed.Add(row.Picture); StopWatching(); UpdateWatch();
+                session.MediaFailed.Add(FailureKey(row)); StopWatching(); UpdateWatch();
             });
         }
 
@@ -577,7 +590,7 @@ namespace Statecraft.Game.UI
             bool overlayWasOpen = hudRoot.ClassListContains(OverlayOpenClass);
             Media?.Stop();
             if (popup.ClassListContains(WatchingClass)) mediaHead.SendToBack();
-            popup.RemoveFromClassList(WatchingClass); hudRoot.RemoveFromClassList(OverlayOpenClass);
+            popup.RemoveFromClassList(WatchingClass); popup.RemoveFromClassList(NarratingClass); hudRoot.RemoveFromClassList(OverlayOpenClass);
             if (Shown != null) words.text = text["advisor." + Shown.Id + ".text"];
             if (overlayWasOpen)
             {

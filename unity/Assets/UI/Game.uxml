@@ -495,13 +495,14 @@
                     <ui:Button name="advisor-close" class="advisor-close" />
                 </ui:VisualElement>
                 <ui:VisualElement name="advisor-media" class="advisor-media" />
-                <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
-                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
                 <ui:ScrollView name="advisor-body" class="advisor-body">
                     <ui:Label name="advisor-text" class="advisor-text" />
                     <ui:Label name="advisor-quote" class="advisor-quote" />
                     <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
                 </ui:ScrollView>
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). -->
+                <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
+                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />
                     <ui:Button name="advisor-more" />

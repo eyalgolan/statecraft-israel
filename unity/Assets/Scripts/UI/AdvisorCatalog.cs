@@ -35,10 +35,11 @@ namespace Statecraft.Game.UI
             public bool OpenCard { get; set; }
         }
 
-        /// <summary>Silent picture and separate narration, with live caption cue starts and disclosure/credit keys.</summary>
+        /// <summary>Silent picture and separate narration, with live caption cue starts and disclosure/credit keys. The
+        /// picture is optional: without one the advisor's portrait stays while the narration plays (owner, 24 Oct 2026, #1547).</summary>
         public sealed class Media
         {
-            public string Picture { get; set; } = "";
+            public string? Picture { get; set; }
             public Dictionary<string, string> Narration { get; set; } = new Dictionary<string, string>();
             public Dictionary<string, List<double>> Cues { get; set; } = new Dictionary<string, List<double>>();
             public string Label { get; set; } = "";
@@ -212,10 +213,12 @@ namespace Statecraft.Game.UI
                 if (!known.StreamingFile(file)) p.Add($"{at}: no StreamingAssets/{MediaFolder}/{file}");
                 return true;
             }
-            var picture = media.Picture ?? "";
-            if (!(picture.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
-                p.Add($"{at}: picture must be .mp4, .jpg or .png");
-            File(picture);
+            if (media.Picture is string picture && picture != "")       // when supplied; a row without one needs narration (below)
+            {
+                if (!(picture.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
+                    p.Add($"{at}: picture must be .mp4, .jpg or .png");
+                File(picture);
+            }
             if (string.IsNullOrWhiteSpace(media.Label)) p.Add($"{at}: media needs a disclosure label key");
             else Text(p, en, he, at, media.Label, 0);
             if (!string.IsNullOrWhiteSpace(media.Credit)) Text(p, en, he, at, media.Credit, 0);

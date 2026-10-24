@@ -1,2 +1,4 @@
 ### Added
-- The advisor popup can play a silent clip or still with separate narration and live captions, inline where there is room or in an overlay. Playback is user-started and stops when a button is pressed or another window covers it. No media files ship yet (Refs #1484).
+- The advisors' popup can play a short clip, a still or the advisor's portrait with its narration and live captions, in the popup on desktop
+  and in a centred overlay on phones; it never plays by itself, and any button or a window opening over it stops it.
+  No clip ships yet (Refs #1484).

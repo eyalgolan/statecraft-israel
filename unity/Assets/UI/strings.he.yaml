@@ -703,6 +703,8 @@ advisor.quote.q1.source: "ההכרזה על הקמת מדינת ישראל, 14 �
 
 # Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
 advisor.watch: "צפייה"
+# The media row's disclosure (OQ-16). Hebrew draft for the native reviewer (#564).
+advisor.media_label: "הנפשה וקול בבינה מלאכותית. דיאלוג בדיוני."
 
 # S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.

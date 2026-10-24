@@ -654,6 +654,8 @@ advisor.quote.q1.source: "Declaration of the Establishment of the State of Israe
 
 # Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
 advisor.watch: "Watch"
+# The media row's disclosure (owner, 24 Oct 2026, OQ-16 option 2; spec 11.3, 12): exactly this text, shown small.
+advisor.media_label: "AI animation and voice. Fictional dialogue."
 
 # S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.

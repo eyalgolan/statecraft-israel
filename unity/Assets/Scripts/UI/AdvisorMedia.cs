@@ -8,7 +8,8 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>A lazy, user-started silent picture and separate narration. The audio position drives live captions;
-    /// neither stream starts until both are ready. Owns its audio/output, and borrows rather than owns the card player.</summary>
+    /// neither stream starts until both are ready. Owns its audio/output, and borrows rather than owns the card player.
+    /// A row with no picture plays its narration alone and uses no picture player: the advisor's portrait stays.</summary>
     public sealed class AdvisorMedia : IDisposable
     {
         public const int TickMs = 50;
@@ -60,19 +61,22 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             Stop();
             this.caption = caption; caption.text = ""; this.ended = ended; this.failed = failed; stem = keyStem;
-            file = media.Picture;
-            moving = file.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
-            picture = moving ? clipPicture : stillPicture;
+            var supplied = media.Picture ?? "";
+            file = supplied;
+            moving = supplied.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase);
+            picture = supplied == "" ? null : moving ? clipPicture : stillPicture;
             Playing = true;
             var lang = hebrew ? "he" : "en";
-            if (picture == null || !media.Narration.TryGetValue(lang, out var audio) || !media.Cues.TryGetValue(lang, out var starts) || starts.Count == 0)
-            { Fail("no picture, narration or captions for " + lang); return; }
+            if (!media.Narration.TryGetValue(lang, out var audio) || !media.Cues.TryGetValue(lang, out var starts) || starts.Count == 0)
+            { Fail("no narration or captions for " + lang); return; }
+            if (supplied == "") file = audio;                              // the failure log names the voice-only line's file
+            else if (picture == null) { Fail("no player for " + supplied); return; }
             cues = starts;
             int mine = generation;
             timer = caption.schedule.Execute(Tick).Every(TickMs).StartingIn(TickMs);
             try
             {
-                picture.Load(Url(file), surface, why => { if (mine == generation && Playing) Fail("picture: " + why); });
+                picture?.Load(Url(supplied), surface, why => { if (mine == generation && Playing) Fail("picture: " + why); });
                 if (mine != generation || !Playing) return;
                 var pending = fetch(Url(audio), (clip, error) =>
                 {
@@ -90,10 +94,10 @@ namespace Statecraft.Game.UI
 
         internal void Tick()
         {
-            if (!Playing || picture == null) return;
+            if (!Playing) return;
             if (!started)
             {
-                if (!picture.Ready)
+                if (picture != null && !picture.Ready)
                 {
                     pictureMs += TickMs;
                     if (picture is StillPicture still)
@@ -120,8 +124,8 @@ namespace Statecraft.Game.UI
                     if ((decodingMs += TickMs) >= DeclarationRecording.DecodeTimeoutMs) Fail("narration decode timed out");
                     return;
                 }
-                if (!picture.Ready) return;
-                try { picture.Start(); output.Play(narration); started = true; }
+                if (picture != null && !picture.Ready) return;
+                try { picture?.Start(); output.Play(narration); started = true; }
                 catch (Exception e) { Fail("start: " + e.Message); return; }
             }
             if (output.IsPlaying && output.Position > 0) heard = true;
@@ -132,7 +136,7 @@ namespace Statecraft.Game.UI
             }
             int cue = AdvisorCaptions.At(cues, output.Position);
             if (caption != null) caption.text = cue < 0 ? "" : text[stem + ".cue." + (cue + 1)];
-            if (moving && Math.Abs(picture.Time - output.Position) > DriftS) picture.Seek(output.Position);
+            if (moving && picture != null && Math.Abs(picture.Time - output.Position) > DriftS) picture.Seek(output.Position);
         }
 
         void Fail(string why)
