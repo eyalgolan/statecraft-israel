@@ -46,6 +46,8 @@ TRANSLATIONS = ROOT / "translations"
 HE_KEY = re.compile(r"(.+)_he(_f)?$")       # name_he, title_he_f, sector_he ...: a content field's Hebrew form
 LANG = re.compile(r"[a-z]{2,3}(-[A-Za-z0-9]{2,8})*")
 RTL = {"ar", "ckb", "dv", "fa", "he", "ps", "ur", "yi"}
+# Kept in English and Hebrew only, for now: the advisors and How to play (owner, 24 October 2026, on #1604).
+HE_EN_ONLY = ("ui:advisor.", "ui:how_to_play.")
 TOKEN = re.compile(r"\{[^{}]+\}")
 OFFICE = re.compile(r"\{[a-z0-9_]+\}")     # an event's {office_id} placeholder (Offices.Placeholder in the sim)
 HEBREW = re.compile("[\u05d0-\u05ea]")
@@ -289,6 +291,11 @@ def lang_code(code: str, target: bool = False) -> str:
     return code
 
 
+def translatable(key: str, lang: str) -> bool:
+    """Whether a catalog key is translated into lang: Hebrew takes every string, other languages all but HE_EN_ONLY."""
+    return lang in ("en", "he") or not key.startswith(HE_EN_ONLY)
+
+
 def _lang_file(lang: str, name: str) -> Path:
     return TRANSLATIONS / lang_code(lang) / f"{name}.yaml"
 
@@ -376,6 +383,9 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
             not all(isinstance(v, str) for v in edits.values()) or not all(isinstance(v, bool) for v in native.values()):
         raise Refused("edits are {key: text} and native is {key: true or false}")
     rows = {r["key"]: r for r in catalog()}
+    kept = sorted(k for k in edits if not translatable(k, lang))
+    if kept:
+        raise Refused(f"{kept[0]}: the advisors and How to play stay English or Hebrew only, for now (owner, #1604)")
     if set(edits) - set(rows):
         raise Refused(f"unknown strings {sorted(set(edits) - set(rows))[:3]}")
     reviewed = {r["unit"] for r in rows.values() if r["unit"]} | {k for k in rows if k.startswith("content:")}
@@ -481,7 +491,7 @@ def catalog_for(src: str, lang: str) -> dict:
     """The rows with the source language's text on the left and the target's on the right."""
     lang_code(src)
     lang_code(lang)
-    rows = catalog()
+    rows = [r for r in catalog() if translatable(r["key"], lang)]
     src_texts, _ = load(src)
     texts, flagged = load(lang) if lang != "en" else ({}, set())
     readonly = lang == "he"
@@ -721,7 +731,9 @@ $('#main').addEventListener('input', e => {
   const r = byKey[e.target.closest('.row').dataset.key], v = e.target.value;
   if (v === r.tgt) delete edits[r.key]; else edits[r.key] = v;
   e.target.classList.toggle('dirty', r.key in edits);
+  // A tick covers the text as it was when ticked: editing it again needs a new tick.
   const rk = reviewKey(r), box = rk && document.querySelector(`[data-native="${CSS.escape(rk)}"]`);
+  if (rk) delete native[rk];
   if (box) box.checked = isRead(rk);
   changed();
 });

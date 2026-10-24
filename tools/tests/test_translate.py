@@ -281,3 +281,17 @@ def test_http_refuses_a_bad_language(server, code):
         assert call(server, "GET", f"/api/catalog?src={quote(code, safe='')}&lang=fr")[0] == 400
     status, body = call(server, "POST", "/api/save", {"lang": code, "dry": True})
     assert status == 400 and b"language code" in body
+
+
+def test_advisors_and_how_to_play_stay_english_or_hebrew(langs):
+    """Owner, 24 October 2026, on #1604: "Advisors + How to play" stay English or Hebrew only, for now."""
+    kept = ("ui:advisor.", "ui:how_to_play.")
+    for lang in ("he", "en"):
+        keys = [r["key"] for r in translate.catalog_for("en", lang)["rows"]]
+        assert any(k.startswith("ui:advisor.") for k in keys) and any(k.startswith("ui:how_to_play.") for k in keys)
+    keys = [r["key"] for r in translate.catalog_for("en", "fr")["rows"]]
+    assert keys and not any(k.startswith(kept) for k in keys)
+    assert any(k.startswith("ui:why.") for k in keys) and any(k.startswith("ui:info.") for k in keys)
+    key = next(r["key"] for r in translate.catalog() if r["key"].startswith("ui:how_to_play."))
+    with pytest.raises(translate.Refused, match="English or Hebrew only"):
+        translate.save("fr", {key: "Comment jouer"}, {}, dry=True)

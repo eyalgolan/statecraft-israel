@@ -62,7 +62,8 @@ Offline data tools (uv inline-script Python). Run from the repo root.
   Hebrew or any other started language) and the translation on the right. Hebrew is written where the game reads it:
   the events' `title_he` / `text_he` / options' `text_he` (#1064) and `strings.he.yaml` (#12), only the changed lines;
   Hebrew content names keep their sources and are edited by hand. Any other language goes to
-  `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet. Every language keeps the Hebrew
+  `translations/<lang>/{events,ui,content}.yaml`, which the game does not read yet, and leaves out the advisors
+  (`advisor.*`) and How to play (`how_to_play.*`), which stay English or Hebrew only for now (owner, #1604). Every language keeps the Hebrew
   rules (all or none per event, placeholders as in the English, one line, no direction marks; `agent-checked` until a
   native speaker has read it, #564), and nothing is written while any edited string is refused. It never commits or
   touches `status` / `reviewed_by`; a saved Hebrew edit is a `content/` or `unity/` change, so it needs a changelog
