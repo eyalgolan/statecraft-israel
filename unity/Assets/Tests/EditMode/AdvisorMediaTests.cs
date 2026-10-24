@@ -444,6 +444,8 @@ public class AdvisorMediaTests
             advisor.ForceInline = false; advisor.Watch(Picture("x.mp4", "advisor.media_label"), "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f; advisor.Media.Tick();
             for (int i = 0; i < 4; i++) yield return null;
             Small("overlay", "advisor-overlay-label", "advisor-overlay-caption", "advisor-overlay-media");
+            Assert.IsFalse(AdvisorTargets.Shown(root.Q("advisor-popup")), "the popup hides under its overlay");
+            Assert.Less(root.Q("advisor-overlay-close").worldBound.width, 100f, "the overlay's X is a button, not a bar");
         }
         finally
         {
