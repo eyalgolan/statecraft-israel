@@ -36,6 +36,7 @@ public class AdvisorCatalogTests
     [TestCase("{ picture: x.mp4, narration: { en: x.en.wav, he: x.he.wav }, cues: { en: [0.0], he: [0.0] }, label: lab }", "Hebrew narration before its approval")]
     [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.0, 2.0] }, label: lab }", "no advisor.x.cue.2")]
     [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.0] }, label: nolabel }", "no nolabel")]
+    [TestCase("{ label: lab }", "media needs narration")]          // no picture and no narration: nothing to play (spec 12)
     public void EachBrokenMediaRowIsNamed(string media, string expected)
     {
         var known = new AdvisorCatalog.Known { Signals = new[] { "new_game" }, StreamingFile = f => f.StartsWith("x.", System.StringComparison.Ordinal) };
@@ -56,6 +57,18 @@ public class AdvisorCatalogTests
         Assert.AreEqual("x.jpg", c.Messages.Single().Media!.Picture);
         Assert.IsEmpty(c.Problems(t, t, known));
     }
+
+    /// <summary>The owner's ruling of 24 October 2026 (#1547): a line without a clip keeps the advisor's portrait, so the
+    /// picture is optional when the row has narration.</summary>
+    [Test]
+    public void AGoodNarrationOnlyRowHasNoProblems()
+    {
+        var known = new AdvisorCatalog.Known { Signals = new[] { "new_game" }, StreamingFile = _ => true };
+        var c = AdvisorCatalog.Parse(Head + "messages:\n  - { id: x, advisor: dayan, signal: new_game, level: new, media: { narration: { en: x.en.wav }, cues: { en: [0.0] }, label: lab } }\n");
+        Assert.IsNull(c.Messages.Single().Media!.Picture, "no picture: the portrait stays");
+        Assert.IsEmpty(c.Problems(Strings("advisor.x.text", "advisor.x.cue.1", "lab"), Strings("advisor.x.text", "advisor.x.cue.1", "lab"), known));
+    }
+
     [Test]
     public void AVerifiedQuoteRequiresItsSourceInBothLanguages()
     {

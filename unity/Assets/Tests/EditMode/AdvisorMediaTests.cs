@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.UI;
 using Statecraft.Game;
@@ -45,7 +46,8 @@ public class AdvisorMediaTests
         Cues = new Dictionary<string, List<double>> { ["en"] = new List<double> { 0.0, 2.5 } }, Label = "lab",
     };
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text +
-        "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\nadvisor.x.cue.1: \"First.\"\nadvisor.x.cue.2: \"Second.\"\nlab: \"Label.\"\n");
+        "\nadvisor.t.teach.text: \"Teach.\"\nadvisor.t.warn.text: \"Warn.\"\nadvisor.t.crit.text: \"Critical.\"\nadvisor.x.cue.1: \"First.\"\nadvisor.x.cue.2: \"Second.\"\nlab: \"Label.\"\n" +
+        "advisor.t.teach.cue.1: \"Teach one.\"\nadvisor.t.teach.cue.2: \"Teach two.\"\n");
 
     readonly List<AdvisorMedia> owned = new List<AdvisorMedia>();
     [TearDown] public void Clean() { foreach (var media in owned) media.Dispose(); owned.Clear(); }
@@ -278,4 +280,158 @@ public class AdvisorMediaTests
         }
     }
 
+    // The owner's ruling of 24 October 2026 (#1547; spec 12; plan Task 25), per line: play the clip, or a supplied still,
+    // when present; otherwise keep the advisor's portrait and play the narration with live captions when the current
+    // language has it; otherwise the portrait and the text, with no Watch. The disclosure (#1530, OQ-16) is one small line
+    // under the live caption.
+
+    const string Disclosure = "AI animation and voice. Fictional dialogue.";
+    const string VoiceOnly = "{ narration: { en: t.en.wav }, cues: { en: [0, 2.5] }, label: advisor.media_label }";
+    static string TeachWith(string media) =>
+        AdvisorPopupTests.Fixture.Replace("level: new, actions: [{ open_screen: budget }]", "level: new, media: " + media);
+    static AdvisorCatalog.Media Voice(string label = "lab") => new AdvisorCatalog.Media
+    {
+        Narration = new Dictionary<string, string> { ["en"] = "x.en.wav" },
+        Cues = new Dictionary<string, List<double>> { ["en"] = new List<double> { 0.0, 2.5 } }, Label = label,
+    };
+    static AdvisorCatalog.Media Picture(string file, string label = "lab") => new AdvisorCatalog.Media
+    {
+        Picture = file, Narration = new Dictionary<string, string> { ["en"] = "x.en.wav" },
+        Cues = new Dictionary<string, List<double>> { ["en"] = new List<double> { 0.0, 2.5 } }, Label = label,
+    };
+
+    [Test]
+    public void ANarrationOnlyRowPlaysTheVoiceWithNoPicturePlayer()
+    {
+        var clip = new FakePicture(); var still = new FakePicture(); var output = new FakeOutput(); var caption = new Label();
+        var media = new AdvisorMedia(Text, clip, still, Immediate, output); owned.Add(media);
+        media.Play(Voice(), "advisor.x", false, new VisualElement(), caption, () => { }, why => Assert.Fail("a voice-only line plays: " + why));
+        media.Tick();
+        Assert.IsTrue(output.Played && media.Playing, "the voice starts with no picture to wait for");
+        Assert.AreEqual(0, clip.Loads + still.Loads, "no picture player is used");
+        output.Position = 0.1f; media.Tick();
+        Assert.AreEqual("First.", caption.text);
+        output.Position = 2.6f; media.Tick();
+        Assert.AreEqual("Second.", caption.text);
+        media.Stop();
+        Assert.IsTrue(output.Stopped); Assert.AreEqual("", caption.text); Assert.IsFalse(media.Playing);
+    }
+
+    [Test]
+    public void ASuppliedStillIsAPictureAndPlaysAsOne()
+    {
+        using var rig = new AdvisorPopupTests.Rig(text: Text);
+        var clip = new FakePicture { Ready = true }; var still = new FakePicture { Ready = true }; var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, clip, still, Immediate, output);
+        rig.Advisor.ForceInline = true; rig.Advisor.NewGame();
+        rig.Advisor.Watch(Picture("x.jpg"), "advisor.x"); rig.Advisor.Media.Tick();
+        Assert.AreEqual(1, still.Loads); Assert.AreEqual(0, clip.Loads);
+        Assert.IsTrue(still.Started && output.Played);
+        Assert.IsTrue(rig.Ui.Q<VisualElement>("advisor-popup").ClassListContains("advisor-watching"), "the still takes the portrait row's place");
+    }
+
+    [Test]
+    public void ANarrationOnlyLineKeepsThePortraitAndSpeaksWithLiveCaptions()
+    {
+        using var rig = new AdvisorPopupTests.Rig(catalog: TeachWith(VoiceOnly), text: Text);
+        var clip = new FakePicture(); var still = new FakePicture(); var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, clip, still, Immediate, output);
+        rig.Advisor.ForceInline = false;                                  // where a picture would take the overlay
+        rig.Advisor.NewGame();
+        Assert.AreNotEqual(DisplayStyle.None, rig.Ui.Q<Button>("advisor-watch").style.display.value, "a voice is playable: Watch shows");
+        rig.Ui.Press("advisor-watch"); rig.Advisor.Media!.Tick();
+        Assert.IsTrue(output.Played && rig.Advisor.Media.Playing);
+        var popup = rig.Ui.Q<VisualElement>("advisor-popup");
+        Assert.IsFalse(popup.ClassListContains("advisor-watching"), "the portrait row stays");
+        Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"), "no overlay without a picture");
+        Assert.AreEqual(0, clip.Loads + still.Loads, "the card's player is not borrowed");
+        output.Position = 0.1f; rig.Advisor.Media.Tick();
+        Assert.AreEqual("Teach one.", rig.Ui.Q<Label>("advisor-text").text, "the live caption takes the text's place");
+        Assert.AreEqual(Disclosure, rig.Ui.Q<Label>("advisor-media-label").text);
+        rig.Ui.Press("advisor-got-it");
+        Assert.IsTrue(output.Stopped, "any popup button stops the voice");
+        Assert.IsFalse(rig.Advisor.Media.Playing);
+    }
+
+    [TestCase("")]                                                                              // no media row
+    [TestCase("{ picture: x.mp4, narration: { he: x.he.wav }, cues: { he: [0] }, label: advisor.media_label }")] // nothing in English
+    public void ALineWithNothingToPlayHasNoWatchAndKeepsThePortraitAndText(string media)
+    {
+        using var rig = new AdvisorPopupTests.Rig(catalog: media == "" ? AdvisorPopupTests.Fixture : TeachWith(media), text: Text);
+        var clip = new FakePicture { Ready = true }; var still = new FakePicture { Ready = true }; var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, clip, still, Immediate, output);
+        rig.Advisor.ForceInline = true; rig.Advisor.NewGame();
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("advisor-watch").style.display.value, "no Watch control");
+        if (rig.Session.Catalog.Messages.First(m => m.Id == "t.teach").Media is AdvisorCatalog.Media row) rig.Advisor.Watch(row, "advisor.t.teach");
+        Assert.IsFalse(rig.Advisor.Media!.Playing || output.Played); Assert.AreEqual(0, clip.Loads + still.Loads);
+        Assert.AreEqual("Teach.", rig.Ui.Q<Label>("advisor-text").text);
+        Assert.IsFalse(rig.Ui.Q<VisualElement>("advisor-popup").ClassListContains("advisor-watching"));
+        Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+    }
+
+    [Test]
+    public void AVoiceOnlyFailureHidesThatLinesWatchByItsOwnFile()
+    {
+        using var rig = new AdvisorPopupTests.Rig(catalog: TeachWith(VoiceOnly), text: Text);
+        var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, new FakePicture(), new FakePicture(), (url, done) => { done(null, "404"); return new Done(); }, output);
+        rig.Advisor.NewGame();
+        LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("ADVISOR MEDIA failed t\\.en\\.wav: fetch"));
+        rig.Ui.Press("advisor-watch");
+        CollectionAssert.AreEquivalent(new[] { "t.en.wav" }, rig.Session.MediaFailed, "never an empty picture name that would hide every voice-only line");
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("advisor-watch").style.display.value);
+    }
+
+    /// <summary>OQ-16 (#1530): the disclosure is the exact text, one small muted line at the bar's small text size, under
+    /// the live caption, never over the picture: under the voice's caption, the inline picture's and the overlay's.</summary>
+    [UnityTest]
+    public System.Collections.IEnumerator TheDisclosureIsSmallAndUnderTheCaptionWhereverItPlays()
+    {
+        Assert.AreEqual(Disclosure, Text["advisor.media_label"]);
+        var wide = new RenderTexture(1280, 720, 0);
+        var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); panel.targetTexture = wide;
+        var go = new GameObject("AdvisorDisclosure"); go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+        var root = doc.rootVisualElement; var hudRoot = root.Q("root"); hudRoot.RemoveFromClassList("loading");
+        var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), Text);
+        var hud = new HudPresenter(root, bridge, Text); var nav = new ScreenNav(root);
+        var card = new EventCardPresenter(root, bridge, Text, null); card.Collapse(takeFocus: false);
+        var session = new AdvisorSession(AdvisorCatalog.Parse(TeachWith(VoiceOnly)), new AdvisorSettings(null), true);
+        var advisor = new AdvisorPresenter(root, bridge, Text, session, hooks: new AdvisorHooks { Card = card });
+        var output = new FakeOutput();
+        advisor.Media = new AdvisorMedia(Text, new FakePicture { Ready = true }, new FakePicture { Ready = true }, Immediate, output);
+        void Small(string where, string label, string caption, string? picture)
+        {
+            var l = root.Q<Label>(label); var c = root.Q<Label>(caption);
+            Assert.AreEqual(Disclosure, l.text, where);
+            Assert.IsTrue(AdvisorTargets.Shown(l), where + ": the disclosure shows");
+            Assert.GreaterOrEqual(l.worldBound.yMin, c.worldBound.yMax - 0.5f, where + ": under the live caption");
+            if (picture != null) Assert.GreaterOrEqual(l.worldBound.yMin, root.Q(picture).worldBound.yMax - 0.5f, where + ": never over the picture");
+            Assert.AreEqual(HudPresenter.SmallTextSize(HudPresenter.ScreenPxPerPanelPx(root.panel)), l.resolvedStyle.fontSize, 0.01f, where + ": the bar's small text size");
+            Assert.Less(l.resolvedStyle.fontSize, c.resolvedStyle.fontSize, where + ": smaller than the caption");
+        }
+        try
+        {
+            advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
+            advisor.Watch(session.Catalog.Messages.First(m => m.Id == "t.teach").Media!, "advisor.t.teach"); advisor.Media.Tick(); output.Position = 0.1f; advisor.Media.Tick();
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsTrue(AdvisorTargets.Shown(root.Q("advisor-portrait")), "a voice-only line keeps the portrait");
+            Small("voice only", "advisor-media-label", "advisor-text", null);
+
+            advisor.ForceInline = true; advisor.Watch(Picture("x.mp4", "advisor.media_label"), "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f; advisor.Media.Tick();
+            for (int i = 0; i < 4; i++) yield return null;
+            Small("inline picture", "advisor-media-label", "advisor-text", "advisor-media");
+
+            advisor.ForceInline = false; advisor.Watch(Picture("x.mp4", "advisor.media_label"), "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f; advisor.Media.Tick();
+            for (int i = 0; i < 4; i++) yield return null;
+            Small("overlay", "advisor-overlay-label", "advisor-overlay-caption", "advisor-overlay-media");
+        }
+        finally
+        {
+            advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
+            UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
+            wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
+        }
+    }
 }
