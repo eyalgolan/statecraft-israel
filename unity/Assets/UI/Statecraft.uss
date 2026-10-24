@@ -819,14 +819,15 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
-/* The last hex of each turn in a multi-turn go-to: a compact number centred on the route, not a settlement name. */
+/* The last hex of each turn in a multi-turn go-to: a number centred on the route, not a settlement name, at a city name's
+   size (.map-label-city) so it reads at the default zoom; the disc holds two digits. */
 .map-route-turn {
-    width: 26px;
-    height: 26px;
+    width: 36px;
+    height: 36px;
     translate: -50% -50%;
     padding: 0;
-    border-radius: 13px;
-    font-size: 17px;
+    border-radius: 18px;
+    font-size: 23px;
     background-color: rgba(14, 22, 38, 0.92);
 }
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }

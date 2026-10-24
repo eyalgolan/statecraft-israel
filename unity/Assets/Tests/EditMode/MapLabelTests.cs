@@ -425,6 +425,29 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
+    /// <summary>#1527's follow-up: a go-to route's turn numbers are drawn at a city name's size (they were smaller than a
+    /// town's), and the disc holds a two-digit turn.</summary>
+    [UnityTest]
+    public IEnumerator RouteTurnNumbersReadAtACitysNameSize()
+    {
+        var hd = new HdPanel(cam);
+        var labels = new MapLabelsPresenter(hd.Root, map, cam);
+        try
+        {
+            var hexes = map.Hexes.hexes.Where(h => h.land).Take(12).ToList();
+            map.ShowRoute(hexes.Select((h, i) => (h.q, h.r, i + 1)).ToList());
+            labels.Refresh(force: true);
+            yield return Settle(labels);
+            var city = labels.Labels.Single(l => l.name == "label-tel_aviv");
+            var turn = hd.Root.Query<Label>(className: MapLabelsPresenter.RouteTurnClass).ToList().Single(l => l.text == "12");
+            Assert.GreaterOrEqual(turn.resolvedStyle.fontSize, city.resolvedStyle.fontSize, "a turn number reads like a city's name");
+            var two = turn.MeasureTextSize("12", 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+            Assert.GreaterOrEqual(turn.resolvedStyle.width - turn.resolvedStyle.borderLeftWidth - turn.resolvedStyle.borderRightWidth, two.x,
+                "two digits fit the disc");
+        }
+        finally { map.ShowRoute(System.Array.Empty<(int, int, int)>()); labels.Dispose(); hd.Dispose(); }
+    }
+
     static IEnumerator Settle(MapLabelsPresenter labels)
     {
         for (int i = 0; i < 20 && labels.Labels.Concat(labels.LocalityLabels).Any(l => float.IsNaN(l.resolvedStyle.width) || l.resolvedStyle.width <= 0); i++) yield return null;

@@ -531,7 +531,7 @@ public class UnitOrdersTests
         Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
         Assert.AreEqual(arms - 1, bridge.State.Arms, "paid at once (arms_per_attack 1)");
         var line = ui.Q<Label>("toast").text;
-        StringAssert.StartsWith("The attack on hex", line);
+        StringAssert.StartsWith("The attack on Degania Alef (", line);   // the place, not the hex's coordinates
         StringAssert.DoesNotContain("unit 0", line);
         StringAssert.Contains(golani.Unit.Name, line);
         info.ShowUnit();
