@@ -1,0 +1,43 @@
+{
+  "number": 3,
+  "id": "generated-1948-03-netanya-flat-roof-porch-house",
+  "source_relative_to_coordination_v2": "remaining-batch-v2/models/03/textured-4k.glb",
+  "source_glb_sha256": "e37c527c3859cfdd83a4947754297e18c847f072978607c1ada75a6a51bca87d",
+  "source_glb_bytes": 5603748,
+  "source_triangles": 4929,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "33eff278e5c6e4776a63cda7af74e8f518ea60e59d9a53e57dc95d3d46094577",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Original provider rear has broad opening; prior local plaster panel excluded.",
+  "fbx_sha256": "0a5782459950bcf4b688581820fa9de7450e56966b4fb70bd691adaf01bfe173",
+  "compatibility_export_triangles": 4929,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 1.2644053981603065e-07,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.0005771778523921967,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house.glb"
+}

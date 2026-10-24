@@ -1,0 +1,44 @@
+{
+  "number": 4,
+  "id": "generated-1948-04-dark-basalt-house",
+  "source_relative_to_coordination_v2": "remaining-batch-v2/roof-regeneration-v4/models/04/textured-4k.glb",
+  "source_glb_sha256": "01ba4c818fc93ac1cd6e770963ae4459bf2a2d7bc6d7f5ca29ece24dc1d0d9f6",
+  "source_glb_bytes": 6953948,
+  "source_triangles": 5624,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "4eb18455b5d2ec3281a4cd6346964ec0f3109e9dcf33252a9934caf6443e4d42",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Original source review pending at full quality",
+  "fbx_sha256": "e2bc341f784d9ba436c183f3d081c1c65d8cb054c00fcd719e724531fd15f3f6",
+  "compatibility_export_triangles": 5624,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 8.429369557916289e-08,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.000359266996383667,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house.glb",
+  "appearance_note": "Lighter basalt colour variant; stable dark-basalt asset ID retained for reference continuity."
+}

@@ -1,0 +1,43 @@
+{
+  "number": 11,
+  "id": "generated-1948-11-supply-crate-stack",
+  "source_relative_to_coordination_v2": "remaining-batch-v2/models/11/textured-4k.glb",
+  "source_glb_sha256": "1fa6c1a4d1c521ad9f1d1f63f751016102c0f14e7f2fa2612f3fa53133a560af",
+  "source_glb_bytes": 5195768,
+  "source_triangles": 2126,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "93dd9c598217cc43a2a0589bcd1f6a9d426f4a366710c4684c1470daade397d5",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Original source review pending at full quality",
+  "fbx_sha256": "ec3963a8c8839b3da1a0ffa49a2c7c372408e9c195d2b40230345107de234bac",
+  "compatibility_export_triangles": 2126,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 1.2013700256829907e-07,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.00020477512589422986,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-11-supply-crate-stack/generated-1948-11-supply-crate-stack.glb"
+}

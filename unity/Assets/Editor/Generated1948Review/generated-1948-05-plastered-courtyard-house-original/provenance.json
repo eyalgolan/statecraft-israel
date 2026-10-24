@@ -1,0 +1,43 @@
+{
+  "number": 5,
+  "id": "generated-1948-05-plastered-courtyard-house-original",
+  "source_relative_to_coordination_v2": "remaining-batch-v2/models/05/textured-original-singlemesh-v3.glb",
+  "source_glb_sha256": "0373291ef4d7feb6577a7c6d9de97438de6fab1f7ebe23680f755ffcc210f212",
+  "source_glb_bytes": 5344060,
+  "source_triangles": 5466,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "107d7711c36eae8f77af10b47924814c449124249f6cfa30c592984564de7da7",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Original provider roof has documented missing upper surface; prior closed-roof derivative preserved offline and excluded.",
+  "fbx_sha256": "a3fe9a409dbe38a81eebdc6170981e97dd9e4aab3f2b77249d6cb8f9fbf097fa",
+  "compatibility_export_triangles": 5466,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 8.429369557916289e-08,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.00026112794876098633,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-05-plastered-courtyard-house-original/generated-1948-05-plastered-courtyard-house-original.glb"
+}

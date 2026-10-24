@@ -1,0 +1,43 @@
+{
+  "number": 1,
+  "id": "generated-1948-01-netanya-tiled-house-original",
+  "source_relative_to_coordination_v2": "3d-pilot-v1/house/textured-4k.glb",
+  "source_glb_sha256": "a005f5b927375c34d8d3ce603076481d6d6d04777d6e3730f6d26b8957dbc98d",
+  "source_glb_bytes": 5064628,
+  "source_triangles": 5021,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "cc605872df46350635d5d7087bc7a536975e318d59a0e1a322015ea7f59a613f",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Original provider roof has documented openings; prior closed-roof derivative preserved offline and excluded.",
+  "fbx_sha256": "9d44a86c9ca359d90f3e79b87068a52a7980082e5f1f85625e550d1b2c0670f2",
+  "compatibility_export_triangles": 5021,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 1.3783574104309082e-07,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.010188102722167969,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original.glb"
+}
