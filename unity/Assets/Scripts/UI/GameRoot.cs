@@ -480,7 +480,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) { advisor?.NewGame(); }
+                    if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
                 }, recording, text));
                 start.Show();
             }
@@ -555,7 +555,7 @@ namespace Statecraft.Game.UI
                         return new Rect(at, Vector2.one);
                     },
                 }));
-            budget.UnsubmittedChanged += on => { if (on) advisor?.Notice(AdvisorSignals.BudgetUnsubmitted); };
+            budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
             if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)

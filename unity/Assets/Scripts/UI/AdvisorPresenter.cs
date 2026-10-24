@@ -49,7 +49,7 @@ namespace Statecraft.Game.UI
         GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention, onLevel;
         readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
@@ -98,6 +98,7 @@ namespace Statecraft.Game.UI
             bridge.RefusedForAttention += onAttention;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
+            onLevel = Evaluate; session.Settings.LevelChanged += onLevel;   // a new help level applies at once (spec 6)
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
             // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
             // it while it shows, as its ring does.
@@ -150,8 +151,21 @@ namespace Statecraft.Game.UI
             }
         }
 
-        /// <summary>The Budget screen's unsubmitted state changed (BudgetPresenter.UnsubmittedChanged).</summary>
-        public void BudgetUnsubmitted(bool on) { if (on) Notice(AdvisorSignals.BudgetUnsubmitted); }
+        /// <summary>A loaded game (Continue closed the start screen): the warnings that already hold are offered at once, not
+        /// only after the next change.</summary>
+        public void Resume() => Evaluate();
+
+        /// <summary>The Budget screen's unsubmitted state changed (BudgetPresenter.UnsubmittedChanged): an edit not submitted
+        /// fires budget_unsubmitted; Submit takes it back.</summary>
+        public void BudgetUnsubmitted(bool on)
+        {
+            if (on) { Notice(AdvisorSignals.BudgetUnsubmitted); return; }
+            if (disposed) return;
+            session.Fired.Remove(AdvisorSignals.BudgetUnsubmitted);
+            session.Queue.Withdraw(AdvisorSignals.BudgetUnsubmitted, Turn, bridge.State.Date);
+            if (covered?.Signal == AdvisorSignals.BudgetUnsubmitted) covered = null;
+            Render();
+        }
 
         /// <summary>An event signal fired (spec 5): it holds for this turn.</summary>
         public void Notice(string signal)
@@ -554,6 +568,7 @@ namespace Statecraft.Game.UI
             layer.UnregisterCallback(onLaidOut);
             bridge.RefusedForAttention -= onAttention;
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
+            session.Settings.LevelChanged -= onLevel;
             if (layer.userData == (object)onCover) layer.userData = null;
             if (reopen != null) reopen.clicked -= onReopen;
             showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;
