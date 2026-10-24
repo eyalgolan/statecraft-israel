@@ -34,8 +34,9 @@ messages:
 # The three critical warnings' Hebrew is approved by the owner, a native speaker (24 October 2026, asked what Hebrew players
 # should see while the critical warnings wait for review: "Hebrew approved"), as worded in the S4 review sheet; any change
 # to their Hebrew sets them back to pending. The other five rows' Hebrew is approved by the owner too (24 October 2026,
-# asked about the S4 warning and teaching lines: "approved"), defeat_economy with the sheet's grammar fix (תורים, not
-# תורות); any later change to their Hebrew sets them back to pending.
+# asked about the S4 warning and teaching lines: "approved"), defeat_economy with תורות (so שלוש, not שלושה), the
+# owner's later ruling the same day, "plural of תור is תורות", which reverses the sheet's grammar fix; any later change
+# to their Hebrew sets them back to pending.
   - { id: dayan.city_at_risk, advisor: dayan, signal: city_at_risk, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }], media: { picture: dayan.city_at_risk.mp4, narration: { en: dayan.city_at_risk.en.wav }, cues: { en: [0.00, 4.90] }, label: advisor.media_label, credit: advisor.credit.dayan } }
   - { id: meyerson.exhausted, advisor: meyerson, signal: exhausted, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }], media: { picture: meyerson.exhausted.mp4, narration: { en: meyerson.exhausted.en.wav }, cues: { en: [0.00, 3.63] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
   - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 1 }, level: critical, he_review: approved, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }], media: { picture: meyerson.debt_ceiling.mp4, narration: { en: meyerson.debt_ceiling.en.wav }, cues: { en: [0.00, 2.63] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
