@@ -7,21 +7,53 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
       html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0e1626; }
-      #unity-canvas { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: #0e1626; display: block; }
-      #loading { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #ece4d2;
+      #player-layout { display: grid; grid-template-columns: minmax(0, 1fr);
+        --safe-top: env(safe-area-inset-top, 0px); --safe-right: env(safe-area-inset-right, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-left: env(safe-area-inset-left, 0px);
+        width: 100%; height: 100dvh; box-sizing: border-box;
+        padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
+      #player-regions { display: grid; grid-template-columns: minmax(0, 1fr) clamp(18rem, 26vw, 24rem);
+        min-width: 0; min-height: 0; }
+      #game-view { position: relative; min-width: 0; min-height: 0; }
+      #unity-canvas { width: 100%; height: 100%; background: #0e1626; display: block; }
+      #companion { min-width: 0; overflow-y: auto; padding: 12px; border-left: 1px solid #c4a05c;
+        color: #ece4d2; font: 16px/1.5 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
+      #companion h2 { font-size: 1.2em; }
+      #companion p { white-space: pre-wrap; }
+      #companion li[aria-disabled="true"] { color: #b8b0a0; }
+      @media (max-width: 700px) {
+        #player-regions { grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(min(calc(100vw * 1.5), max(0px, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 3rem))), 1fr) minmax(8rem, 30dvh);
+          overflow-y: auto; }
+        #companion { border-left: 0; border-top: 1px solid #c4a05c; padding: 8px 12px; }
+        #companion-focus { margin: 0; }
+        #companion h2 { margin-top: 8px; }
+      }
+      #loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #ece4d2;
                  font: 20px Georgia, "Times New Roman", serif; text-align: center; }
       #bar { width: 320px; height: 4px; margin-top: 12px; border: 1px solid #c4a05c; }
       #fill { width: 0; height: 100%; background: #c4a05c; }
-      #error { display: none; position: fixed; left: 10%; right: 10%; top: 40%; color: #de7868; background: #0e1626;
+      #error { display: none; position: absolute; left: 10%; right: 10%; top: 40%; color: #de7868; background: #0e1626;
                border: 1px solid #c4a05c; padding: 16px; font: 16px Georgia, serif; white-space: pre-wrap; }
     </style>
   </head>
   <body>
-    <canvas id="unity-canvas" tabindex="-1"></canvas>
-    <div id="loading">Statecraft: Israel<div id="bar"><div id="fill"></div></div></div>
-    <div id="error"></div>
+    <div id="player-layout">
+      <div id="player-regions" tabindex="-1">
+        <main id="game-view">
+          <canvas id="unity-canvas" tabindex="-1"></canvas>
+          <div id="loading">Statecraft: Israel<div id="bar"><div id="fill"></div></div></div>
+          <div id="error"></div>
+        </main>
+        <aside id="companion" aria-label="Statecraft: Israel" tabindex="-1">
+          <p id="companion-focus" dir="auto"></p>
+          <div id="companion-reading"></div>
+          <p id="companion-status" dir="auto" role="status"></p>
+        </aside>
+      </div>
+    </div>
     <script>
-      // Full-window canvas: Unity keeps the render size matched to the canvas's CSS size, so the UI Toolkit panel
+      // Unity keeps the render size matched to the canvas's CSS size, so the UI Toolkit panel
       // (ScaleWithScreenSize, 1920x1080, match 0.5) rescales on every browser resize.
       var loaderUrl = "Build/{{{ LOADER_FILENAME }}}";
       var config = {
@@ -69,6 +101,57 @@
         e.style.display = "block";
         console.error("BOOT FAIL " + message);
       }
+      // B is output only. Install after the loader resolves; no new font, library, asset or boot request.
+      function mountCompanion() {
+        var panel = document.getElementById("companion"), reading = document.getElementById("companion-reading");
+        var focus = document.getElementById("companion-focus"), status = document.getElementById("companion-status");
+        var cardKey, statusText, statusTurn;
+        function string(value) { return typeof value === "string"; }
+        function strings(value) { return Array.isArray(value) && value.every(string); }
+        function valid(p) {
+          return p && (p.language === "en" || p.language === "he") && Number.isSafeInteger(p.turn) && p.turn >= 0
+            && [p.screen, p.focus, p.title, p.body, p.status].every(string) && strings(p.context)
+            && Array.isArray(p.choices) && p.choices.every(function (c) {
+              return c && string(c.text) && typeof c.enabled === "boolean" && strings(c.notes);
+            });
+        }
+        function text(tag, value) {
+          var node = document.createElement(tag);
+          node.setAttribute("dir", "auto"); node.textContent = value;
+          return node;
+        }
+        window.statecraftCompanionPush = function (json) {
+          var p;
+          try { p = JSON.parse(json); } catch (_) { return false; }
+          if (!valid(p)) return false; // reject the whole payload before touching the last good panel
+          var key = JSON.stringify([p.language, p.screen, p.title, p.body, p.context, p.choices]);
+          if (key !== cardKey) {
+            var content = document.createElement("div");
+            if (p.screen) content.appendChild(text("h2", p.screen));
+            if (p.title) content.appendChild(text("h2", p.title));
+            p.context.forEach(function (line) { content.appendChild(text("p", line)); });
+            if (p.body) content.appendChild(text("p", p.body));
+            if (p.choices.length) {
+              var list = document.createElement("ol");
+              p.choices.forEach(function (choice) {
+                var item = text("li", choice.text);
+                item.setAttribute("aria-disabled", choice.enabled ? "false" : "true");
+                choice.notes.forEach(function (note) { item.appendChild(text("p", note)); });
+                list.appendChild(item);
+              });
+              content.appendChild(list);
+            }
+            reading.replaceChildren(content); cardKey = key;
+          }
+          panel.setAttribute("lang", p.language); // fixed allowlist, independent of game text
+          if (focus.textContent !== p.focus) focus.textContent = p.focus;
+          if (statusText !== p.status || statusTurn !== p.turn) {
+            status.replaceChildren(document.createTextNode(p.status));
+            statusText = p.status; statusTurn = p.turn;
+          }
+          return true;
+        };
+      }
       function start() {
         var script = document.createElement("script");
         script.src = loaderUrl;
@@ -77,6 +160,7 @@
           createUnityInstance(document.querySelector("#unity-canvas"), config, function (progress) {
             document.getElementById("fill").style.width = (100 * progress) + "%";
           }).then(function () {
+            mountCompanion();
             document.getElementById("loading").style.display = "none";
           }).catch(fail);
         };

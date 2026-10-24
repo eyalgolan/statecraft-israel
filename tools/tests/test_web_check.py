@@ -356,7 +356,8 @@ def test_watch_names_the_unfinished_persistence_run(capsys):
 
 
 def _clicks(*points):
-    return [f"click:{x},{y}" for x, y in points]
+    return [("end-turn:en" if (x, y) == wc.END_TURN else "end-turn:he" if (x, y) == wc.END_TURN_HE
+             else f"click:{x},{y}") for x, y in points]
 
 
 def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(capsys):
@@ -586,3 +587,49 @@ def test_commit_timeout_is_polled_while_an_unrelated_expectation_is_still_missin
         wc.watch(queue.Queue(), lambda: None, lambda: None, ["UNRELATED"], re.compile("BOOT FAIL"), 20,
                  now=lambda: clock[0], sleep=lambda seconds: clock.__setitem__(0, clock[0] + 1),
                  complete=lambda: check.done)
+
+
+@pytest.mark.parametrize("point,viewport,rect,expected", [
+    ((1800, 70), (1920, 1080), dict(left=0, top=0, width=1920, height=1080), (1800, 70)),
+    ((1800, 70), (1920, 1080), dict(left=0, top=0, width=1536, height=1080), (1440, 70)),
+    ((195, 422), (390, 844), dict(left=0, top=47, width=390, height=509.8), (195, 301.9)),
+])
+def test_game_clicks_follow_the_canvas_when_a_companion_resizes_it(point, viewport, rect, expected):
+    assert wc.canvas_point(point, viewport, rect) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("language", ["en", "he"])
+def test_end_turn_follows_mirrored_focus_with_real_keyboard_events(monkeypatch, language):
+    import asyncio
+    calls = []
+    labels = iter(["Event", "Event", wc.END_TURN_LABELS[language]])
+    async def call(method, params, sid):
+        calls.append((method, params))
+        if method == "Runtime.evaluate": return {"result": {"value": next(labels)}}
+        return {}
+    async def no_wait(_): pass
+    monkeypatch.setattr(wc.asyncio, "sleep", no_wait)
+    assert asyncio.run(wc.keyboard_end_turn(call, "page", language))
+    keys = [p for m, p in calls if m == "Input.dispatchKeyEvent"]
+    assert [(k["key"], k["type"]) for k in keys] == [
+        ("Tab", "keyDown"), ("Tab", "keyUp"), ("Enter", "keyDown"), ("Enter", "keyUp")]
+    assert not any(".focus(" in p.get("expression", "") for m, p in calls)
+
+
+def test_end_turn_keeps_the_old_player_path_without_a_companion():
+    import asyncio
+    calls = []
+    async def call(method, params, sid):
+        calls.append(method)
+        return {"result": {}}
+    assert not asyncio.run(wc.keyboard_end_turn(call, "page", "en"))
+    assert calls == ["Runtime.evaluate"]
+
+
+def test_end_turn_focus_labels_match_the_shipped_languages():
+    from pathlib import Path
+    import yaml12
+    root = Path(__file__).resolve().parents[2]
+    for language, label in wc.END_TURN_LABELS.items():
+        text = yaml12.load((root / f"unity/Assets/UI/strings.{language}.yaml").read_text())
+        assert label == text["hud.end_turn"]

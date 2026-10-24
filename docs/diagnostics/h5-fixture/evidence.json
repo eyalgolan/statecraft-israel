@@ -1,0 +1,1700 @@
+{
+  "runtime_source": "507348f9573b1e3bd44c9b65b7649f0939b0dfd8",
+  "source_audit": "3afb171f3d852665cd5d22b646a03e64ed1428fc",
+  "browser": "Google Chrome for Testing 156.0.8078.4",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "screen_reader": "NOT RUN; native-control reports Mac locked",
+  "scope": "headless DOM/Chrome AX evidence; no spoken-output or real-screen-reader claim",
+  "verified_build_files": 110,
+  "source_blobs": {
+    "unity/Assets/WebGLTemplates/Statecraft/index.html": {
+      "sha256": "a1eda9585960a01d6d053c38342279762aba60055f0b557a5ea39cd7839229a7",
+      "lines": 91,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/GameRoot.cs": {
+      "sha256": "2310ee590befa712e60060fda606e76ae102efc69c4c54c6246defe0fa74e7fc",
+      "lines": 765,
+      "matches_runtime_source_507": false
+    },
+    "unity/Assets/Scripts/UI/SimBridge.cs": {
+      "sha256": "277c426e36d9f7d70d341016cbcdf0176206f1809ac072fabaf97c194d574172",
+      "lines": 231,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/ToastPresenter.cs": {
+      "sha256": "c3a1b6822a0af4b285ded03a2783134df4241bb7c5cea9e7cd8527241e016093",
+      "lines": 47,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/EventCardPresenter.cs": {
+      "sha256": "decac20c4de7c989beec73ddb1ff09da84afe4a456d4f031b6abbd2d442ffd1b",
+      "lines": 496,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/MapFocusPresenter.cs": {
+      "sha256": "af04ddb7bcc48670369f77dcb56ad13e237fa1671dc4a4dabd8a45af927b7e33",
+      "lines": 72,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/ScreenNav.cs": {
+      "sha256": "f19d5089514b902bbf227e7984eddf20e1a240bea57ed44a0bc7e46f92f6ec1c",
+      "lines": 289,
+      "matches_runtime_source_507": false
+    },
+    "unity/Assets/Scripts/UI/HandCursor.jslib": {
+      "sha256": "977cecc595acc7849718094edc18719231b1eb4ca088041c2da13549d26474bd",
+      "lines": 4,
+      "matches_runtime_source_507": true
+    },
+    "unity/Assets/Scripts/UI/SafeArea.jslib": {
+      "sha256": "6b9c8c815cbf389edcc94607d0d5ec69adc52aac09714cf7f0e58ad5f6bc86f2",
+      "lines": 21,
+      "matches_runtime_source_507": true
+    }
+  },
+  "start_screens": {
+    "en": {
+      "dom": {
+        "title": "Statecraft Israel",
+        "language": "en-us",
+        "text": "",
+        "active": "BODY",
+        "elements": [
+          {
+            "tag": "CANVAS",
+            "id": "unity-canvas",
+            "role": null,
+            "label": null,
+            "tabindex": "-1",
+            "text": ""
+          }
+        ]
+      },
+      "ax": {
+        "nodes": [
+          {
+            "nodeId": "1",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8887/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 1,
+            "frameId": "4984E1B8EDE3F944ED49416E9E54EA2B"
+          },
+          {
+            "nodeId": "4",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "1",
+            "childIds": [
+              "11"
+            ],
+            "backendDOMNodeId": 4
+          },
+          {
+            "nodeId": "11",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "4",
+            "childIds": [
+              "3"
+            ],
+            "backendDOMNodeId": 11
+          },
+          {
+            "nodeId": "3",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "11",
+            "childIds": [],
+            "backendDOMNodeId": 3
+          }
+        ]
+      }
+    },
+    "he": {
+      "dom": {
+        "title": "Statecraft Israel",
+        "language": "en-us",
+        "text": "",
+        "active": "BODY",
+        "elements": [
+          {
+            "tag": "CANVAS",
+            "id": "unity-canvas",
+            "role": null,
+            "label": null,
+            "tabindex": "-1",
+            "text": ""
+          }
+        ]
+      },
+      "ax": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8887/index.html?lang=he"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "55B2894DCB9FBFED1A3B20DA2DC91C2B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      }
+    }
+  },
+  "ordinary_en_steps": [
+    {
+      "step": "step-00",
+      "actions": [],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "BODY",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "948f9ae0e14d6adb7361dc1a0e71423015755f7a48c28c9a9614b0d15356598f"
+    },
+    {
+      "step": "step-01",
+      "actions": [
+        {
+          "action": "click",
+          "x": 534,
+          "y": 668
+        }
+      ],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "CANVAS",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "contents"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "278d9c81f14ecc49c7ae548bedf33ff6cd47c043d4f8e808ea6465744ace617e"
+    },
+    {
+      "step": "step-02",
+      "actions": [
+        {
+          "action": "click",
+          "x": 534,
+          "y": 668
+        },
+        {
+          "action": "click",
+          "x": 510,
+          "y": 683
+        }
+      ],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "CANVAS",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "contents"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "7676aa4f31abe30deb83f153c33328e71ac0735e05c6eb7820ee71543e908d8e"
+    },
+    {
+      "step": "step-03",
+      "actions": [
+        {
+          "action": "click",
+          "x": 534,
+          "y": 668
+        },
+        {
+          "action": "click",
+          "x": 510,
+          "y": 683
+        },
+        {
+          "action": "key",
+          "key": "Tab"
+        }
+      ],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "CANVAS",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "contents"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "dbf7a20381ebf1013cafb973f7c01c96b0bd823d7c81dc4629db38a1920d3761"
+    },
+    {
+      "step": "step-04",
+      "actions": [
+        {
+          "action": "click",
+          "x": 534,
+          "y": 668
+        },
+        {
+          "action": "click",
+          "x": 510,
+          "y": 683
+        },
+        {
+          "action": "key",
+          "key": "Tab"
+        },
+        {
+          "action": "key",
+          "key": "Escape"
+        }
+      ],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "CANVAS",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "contents"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "3bac05b13b76550e588426e42722929e67de963cab033b5a2e1dfba01f3a237b"
+    },
+    {
+      "step": "step-05",
+      "actions": [
+        {
+          "action": "click",
+          "x": 534,
+          "y": 668
+        },
+        {
+          "action": "click",
+          "x": 510,
+          "y": 683
+        },
+        {
+          "action": "key",
+          "key": "Tab"
+        },
+        {
+          "action": "key",
+          "key": "Escape"
+        },
+        {
+          "action": "click",
+          "x": 1227,
+          "y": 48
+        }
+      ],
+      "DOM": {
+        "result": {
+          "type": "object",
+          "value": {
+            "text": "",
+            "active": "CANVAS",
+            "canvasLabel": null
+          }
+        }
+      },
+      "AX": {
+        "nodes": [
+          {
+            "nodeId": "2",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "RootWebArea"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 144
+            },
+            "name": {
+              "type": "computedString",
+              "value": "Statecraft Israel",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label",
+                  "superseded": true
+                },
+                {
+                  "type": "relatedElement",
+                  "value": {
+                    "type": "computedString",
+                    "value": "Statecraft Israel"
+                  },
+                  "nativeSource": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "url",
+                "value": {
+                  "type": "string",
+                  "value": "http://localhost:8888/index.html?lang=en"
+                }
+              }
+            ],
+            "childIds": [
+              "5"
+            ],
+            "backendDOMNodeId": 2,
+            "frameId": "4506DB57C2AE1B5CAAA46F459FC8E21B"
+          },
+          {
+            "nodeId": "5",
+            "ignored": true,
+            "ignoredReasons": [
+              {
+                "name": "uninteresting",
+                "value": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "role": {
+              "type": "role",
+              "value": "none"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 0
+            },
+            "parentId": "2",
+            "childIds": [
+              "12"
+            ],
+            "backendDOMNodeId": 5
+          },
+          {
+            "nodeId": "12",
+            "ignored": false,
+            "role": {
+              "type": "role",
+              "value": "generic"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 88
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                }
+              ]
+            },
+            "properties": [],
+            "parentId": "5",
+            "childIds": [
+              "4"
+            ],
+            "backendDOMNodeId": 12
+          },
+          {
+            "nodeId": "4",
+            "ignored": false,
+            "role": {
+              "type": "internalRole",
+              "value": "Canvas"
+            },
+            "chromeRole": {
+              "type": "internalRole",
+              "value": 10
+            },
+            "name": {
+              "type": "computedString",
+              "value": "",
+              "sources": [
+                {
+                  "type": "relatedElement",
+                  "attribute": "aria-labelledby"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "aria-label"
+                },
+                {
+                  "type": "contents"
+                },
+                {
+                  "type": "attribute",
+                  "attribute": "title"
+                }
+              ]
+            },
+            "properties": [
+              {
+                "name": "focusable",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              },
+              {
+                "name": "focused",
+                "value": {
+                  "type": "booleanOrUndefined",
+                  "value": true
+                }
+              }
+            ],
+            "parentId": "12",
+            "childIds": [],
+            "backendDOMNodeId": 4
+          }
+        ]
+      },
+      "original_png_sha256": "5ac3d74f8129275d9509ef09e68266c1054aa5ab798483e8c3ad121b397caa5e"
+    }
+  ],
+  "real_screen_reader": "NOT RUN; native control Mac locked/manual unlock pending",
+  "refusal_diagnostic": "No real game refusal triggered; fixture refusal text is synthetic",
+  "original_fixture_results": [
+    "accept versioned synthetic payload",
+    "announcements never steal focus",
+    "untrusted markup rendered literally",
+    "polite status receives refusal",
+    "source option order retained",
+    "malformed payload rejected atomically",
+    "invalid payload leaves DOM unchanged",
+    "duplicate sequence rejected",
+    "old session rejected",
+    "unknown schema rejected",
+    "Hebrew payload accepted",
+    "Hebrew language and direction exposed",
+    "same refusal can populate region again",
+    "queued announcement accepted",
+    "new session starts at sequence zero",
+    "teardown cancels pending callback without duplicate region",
+    "new session preserves unrelated focus"
+  ]
+}

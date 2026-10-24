@@ -1,0 +1,414 @@
+{
+  "runtime_source_commit": "aaa44832bf725afff012d1cf30eb3e06e732d3b2",
+  "integrated_main": "a250e2954b31201a02fa0ee0cf9b74ee6e77c2ec",
+  "base_source_commit": "f9d8371d693c5996399c13fe5513bd225ec2f472",
+  "source_files": {
+    "unity/Assets/Scripts/Map/DocumentVisibility.jslib": {
+      "bytes": 435,
+      "sha256": "d6b27154fb0a9f0e04bec6c9483fe978594297c43026f9b6137fcbee74851781"
+    },
+    "unity/Assets/Scripts/Map/WheelInput.jslib": {
+      "bytes": 2171,
+      "sha256": "1b3cf209d82e8e92d4fb8d9dc0847e11b699cd894545d7eed851673d2136e07f"
+    },
+    "unity/Assets/Scripts/UI/AccessibilityCompanion.cs": {
+      "bytes": 8854,
+      "sha256": "5ecb61da878e3d8a6ac0cfce734e2cd59709f0c43f6859bcb810c352a0207ec8"
+    },
+    "unity/Assets/Scripts/UI/AccessibilityCompanion.jslib": {
+      "bytes": 365,
+      "sha256": "3ced0cf04055faac5aa93c104ffec9d3711ea200755580bbd5ec46763190331c"
+    },
+    "unity/Assets/Scripts/UI/AutosavePersistence.jslib": {
+      "bytes": 1796,
+      "sha256": "2150c184539b9179c5a9b96eefc54e0fc4f3527027c4941b061fb64f27e2bc78"
+    },
+    "unity/Assets/Scripts/UI/DevicePixelRatio.jslib": {
+      "bytes": 377,
+      "sha256": "8a804e89c8e1586bf9632b0d1d661421f8cce53b5aa4065f16603331ffd9c964"
+    },
+    "unity/Assets/Scripts/UI/EventCardPresenter.cs": {
+      "bytes": 36278,
+      "sha256": "b8d311d4c9c578dfd286ef85b1ecb32d0b9fe449bb99fc07a3e478916924e4a1"
+    },
+    "unity/Assets/Scripts/UI/ExternalLink.jslib": {
+      "bytes": 2404,
+      "sha256": "9383ffd0d8030f8fcc1fd6c3a3e38616193e4786f5dac8244839274e9b993a0b"
+    },
+    "unity/Assets/Scripts/UI/GameRoot.cs": {
+      "bytes": 66016,
+      "sha256": "50c946c1fe3903baf3b3fb9a92b716862c17130ef5fc30eb98fcc30d0c6c4b23"
+    },
+    "unity/Assets/Scripts/UI/HandCursor.jslib": {
+      "bytes": 304,
+      "sha256": "977cecc595acc7849718094edc18719231b1eb4ca088041c2da13549d26474bd"
+    },
+    "unity/Assets/Scripts/UI/MapFocusPresenter.cs": {
+      "bytes": 3511,
+      "sha256": "af04ddb7bcc48670369f77dcb56ad13e237fa1671dc4a4dabd8a45af927b7e33"
+    },
+    "unity/Assets/Scripts/UI/SafeArea.jslib": {
+      "bytes": 2460,
+      "sha256": "77ee852807e278869ce74a84e14ce60ab61f4f05977f80b1e9faba7bda94a936"
+    },
+    "unity/Assets/Scripts/UI/SafeAreaFit.cs": {
+      "bytes": 4791,
+      "sha256": "267ce215cb9d0378a6cbf9cd7100190d56f1d490cec757b12807a241f5d78f70"
+    },
+    "unity/Assets/Scripts/UI/ScreenNav.cs": {
+      "bytes": 20299,
+      "sha256": "3e208f6bfa68e7c23f934f8de2a9576fe06743f3a90da7ee59e056a86f6c31af"
+    },
+    "unity/Assets/Scripts/UI/ShareShot.cs": {
+      "bytes": 8993,
+      "sha256": "989b7ed5abb8b64563dde536bf87aa7bb14be3e05889b7f1a71f427716c0f779"
+    },
+    "unity/Assets/Scripts/UI/ShareShot.jslib": {
+      "bytes": 6658,
+      "sha256": "35ab1e853596768c241f98caac0a2c4b36e411cb6dfe751d118630bc2c7b7b6b"
+    },
+    "unity/Assets/Scripts/UI/SimBridge.cs": {
+      "bytes": 15573,
+      "sha256": "9655ee1816cbbab5c0d67ed96772ecb86319f915919f3330b131d5eaf06eab78"
+    },
+    "unity/Assets/Scripts/UI/ToastPresenter.cs": {
+      "bytes": 2083,
+      "sha256": "c3a1b6822a0af4b285ded03a2783134df4241bb7c5cea9e7cd8527241e016093"
+    },
+    "unity/Assets/Scripts/UI/TurnReportPresenter.cs": {
+      "bytes": 10289,
+      "sha256": "10323fce178dc543d19f794dc80c515dc3909f0a300785b8b9995aa3fc758ce7"
+    },
+    "unity/Assets/Scripts/UI/UiDirection.cs": {
+      "bytes": 4131,
+      "sha256": "86893a481ce10bd691108d044b1cf7c2590d156773ed7aace313e62d76059c89"
+    },
+    "unity/Assets/WebGLTemplates/Statecraft/index.html": {
+      "bytes": 9439,
+      "sha256": "dee320311ae1dcce405150debf0d8384ffc878dc1edf43f1288d8b3f9135594b"
+    }
+  },
+  "runtime_dlls": {
+    "YamlDotNet.dll": {
+      "bytes": 297472,
+      "sha256": "26aa8f90d466518b46811a4eabc3985c8e89c8b9a808633015fc434c5431a28d"
+    },
+    "Statecraft.Sim.dll": {
+      "bytes": 474112,
+      "sha256": "25c71244af58d465b56cec94eb0fc25c26b4ebd3a6e3115850046933a79b9aad"
+    }
+  },
+  "base_player": {
+    "file_count": 113,
+    "receipt_sha256": "e6ff51357a92dc27fc076e0f88a18f5ce6f098ec665ba77ae3af9913209b2e13",
+    "compressed_runtime_files": {
+      "Build/3819e5553f82a81f0a8723d8c806de38.wasm.gz": {
+        "bytes": 14343950,
+        "sha256": "082dcbf97facc03ca70c55d6e41b4f080fcf04a4dea3d5c16ec760f26bddcc8f"
+      },
+      "Build/63b4c10671cf2aaf804d4c00174e8eb9.framework.js.gz": {
+        "bytes": 97719,
+        "sha256": "27e3bda280b2aff0e895c84e9d756699f32e78e02302e7be54c9ff8b7ae52403"
+      },
+      "Build/20e1f7adcfeae4edd67139e2ddfc4659.data.gz": {
+        "bytes": 25696308,
+        "sha256": "4df2277e47f3ec655bb22c489e3a8505086f1215ffbc3f63fa4355b2e70e8c61"
+      }
+    }
+  },
+  "b_player": {
+    "file_count": 113,
+    "receipt_sha256": "32b6bd65c4d1e758327acfddd35f0033e0c4fec14d0039098c947392e9b14371",
+    "compressed_runtime_files": {
+      "Build/23697bb3ca72e80a75a2eb9d942b913c.framework.js.gz": {
+        "bytes": 97863,
+        "sha256": "f53a6008ba65f0a6a88e61557452ba2bf99a41718cc4bc72ab50d476d4a3d531"
+      },
+      "Build/3ff034e841abd2b048c014f54926bb1d.wasm.gz": {
+        "bytes": 14343739,
+        "sha256": "d4e72962b8bf5fe9d1569a1149506ddfb68a45365b51bfe213a7f92bc1ce5649"
+      },
+      "Build/50b5e84dcb67404ef9f9dc89b661f148.data.gz": {
+        "bytes": 25695678,
+        "sha256": "3acfcaf89cf744aed53505ed50eb49e0b841b35189b790484cbd809c89e9f503"
+      }
+    }
+  },
+  "environment": {
+    "unity": "6000.3.25f1",
+    "dotnet_sdk": "10.0.401",
+    "macos": "27.0.1 (26A434), arm64",
+    "compression": "gzip",
+    "voiceover": "manual run pending; no automated pass",
+    "headed_browser": "Google Chrome for Testing 156.0.8078.4"
+  },
+  "note": "Final runtime has the corrected phone canvas minimum, safe-edge ownership and exactly two approved negative tabindex containers. Actual EN/HE headed flows prove the next Tab and subsequent event/End Turn keys reach the game after a panel click. Full Native ran on0b41; subsequent C# changes are comment-only and final Native template contract is separately pinned. Managed full check at9fb precedes only the two tabindex attributes and headed-check condition; 91 focused checks and actual browser gates cover finalaaa44832. Complete 113-file player receipts and raw boot samples remain in separate review evidence. VoiceOver is manual and pending.",
+  "validation_source_commit": "aaa44832bf725afff012d1cf30eb3e06e732d3b2",
+  "b_generated_build_settings": {
+    "receipt_sha256": "38580ee8c1f6aa985f0aadd6b1c99ac6caa23f107594ad242b05d2b8dfd47823",
+    "files": {
+      "unity/Assets/Settings/DefaultVolumeProfile.asset": {
+        "bytes": 24035,
+        "sha256": "463776c51ae49d4fef980e8fd268081b2f505610d79315003faae1acff8f4115"
+      },
+      "unity/Assets/Settings/Mobile_RPAsset.asset": {
+        "bytes": 4648,
+        "sha256": "5f74f2f3007db12c797817bba9f6de57dcf7c8fd16c4bf136993e02472e42731"
+      },
+      "unity/Assets/Settings/PC_RPAsset.asset": {
+        "bytes": 4669,
+        "sha256": "d22fd07b53585b4953f15c3fb088f49ec771d961bc96f7116fde0fd6cd9537aa"
+      },
+      "unity/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset": {
+        "bytes": 26038,
+        "sha256": "7b641709b9cf3d1f1af9ff61489e9bb3a72f648c46e9ada8c2d35b2061e7eab2"
+      },
+      "unity/ProjectSettings/ProjectSettings.asset": {
+        "bytes": 25532,
+        "sha256": "8128df9cf6ab7128173274f9adffeed39a7157ea45cda80fa41365785b06ade7"
+      }
+    },
+    "note": "Unity reserialized these existing settings during the build. Saved locally and restored afterwards; not committed as product changes."
+  },
+  "boot_interleaved": {
+    "order": "base,B,base,B",
+    "runs_per_block": 3,
+    "cpu": 4,
+    "exclusive_lock": true,
+    "blocks": [
+      {
+        "block": 1,
+        "player": "base",
+        "runs": [
+          {
+            "map_build_ms": 4212,
+            "first_frame_ms": 15066
+          },
+          {
+            "map_build_ms": 4344,
+            "first_frame_ms": 16043
+          },
+          {
+            "map_build_ms": 4477,
+            "first_frame_ms": 16640
+          }
+        ],
+        "medians": {
+          "map_build_ms": 4344,
+          "first_frame_ms": 16043
+        }
+      },
+      {
+        "block": 2,
+        "player": "b",
+        "runs": [
+          {
+            "map_build_ms": 4230,
+            "first_frame_ms": 15503
+          },
+          {
+            "map_build_ms": 4216,
+            "first_frame_ms": 15269
+          },
+          {
+            "map_build_ms": 4206,
+            "first_frame_ms": 15297
+          }
+        ],
+        "medians": {
+          "map_build_ms": 4216,
+          "first_frame_ms": 15297
+        }
+      },
+      {
+        "block": 3,
+        "player": "base",
+        "runs": [
+          {
+            "map_build_ms": 4135,
+            "first_frame_ms": 15184
+          },
+          {
+            "map_build_ms": 4185,
+            "first_frame_ms": 15274
+          },
+          {
+            "map_build_ms": 4160,
+            "first_frame_ms": 14962
+          }
+        ],
+        "medians": {
+          "map_build_ms": 4160,
+          "first_frame_ms": 15184
+        }
+      },
+      {
+        "block": 4,
+        "player": "b",
+        "runs": [
+          {
+            "map_build_ms": 4217,
+            "first_frame_ms": 15331
+          },
+          {
+            "map_build_ms": 4140,
+            "first_frame_ms": 15066
+          },
+          {
+            "map_build_ms": 4227,
+            "first_frame_ms": 15392
+          }
+        ],
+        "medians": {
+          "map_build_ms": 4217,
+          "first_frame_ms": 15331
+        }
+      }
+    ],
+    "existing_checker_pair_budgets": [
+      {
+        "base_block": 1,
+        "b_block": 2,
+        "metric": "map_build_ms",
+        "b_median": 4216,
+        "over_existing_budget": false
+      },
+      {
+        "base_block": 1,
+        "b_block": 2,
+        "metric": "first_frame_ms",
+        "b_median": 15297,
+        "over_existing_budget": false
+      },
+      {
+        "base_block": 3,
+        "b_block": 4,
+        "metric": "map_build_ms",
+        "b_median": 4217,
+        "over_existing_budget": false
+      },
+      {
+        "base_block": 3,
+        "b_block": 4,
+        "metric": "first_frame_ms",
+        "b_median": 15331,
+        "over_existing_budget": false
+      }
+    ],
+    "pooled_six_run_medians": {
+      "base": {
+        "map_build_ms": 4198.5,
+        "first_frame_ms": 15229.0
+      },
+      "b": {
+        "map_build_ms": 4216.5,
+        "first_frame_ms": 15314.0
+      }
+    },
+    "conclusion": "The prior +2249ms first-frame gap did not recur. Pair deltas are -746ms and +147ms; pooled B first frame is +85ms. No causal attribution or speculative scheduler change."
+  },
+  "native_full": {
+    "source": "0b41a3a313f5daf250c1c2a337af4a9c0547354d",
+    "argv": [
+      "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+      "-batchmode",
+      "-CI",
+      "false",
+      "-GITHUB_ACTIONS",
+      "false",
+      "-TF_BUILD",
+      "false",
+      "-projectPath",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/statecraft-israel/unity",
+      "-buildTarget",
+      "OSXUniversal",
+      "-runTests",
+      "-testPlatform",
+      "EditMode",
+      "-testResults",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/evidence/full-editmode-final.xml",
+      "-logFile",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/evidence/full-editmode-final.log"
+    ],
+    "started_utc": "2026-10-23T11:07:10.967511+00:00",
+    "editor_pid": 59763,
+    "exit": 0,
+    "elapsed_seconds": 1995.6610978329845,
+    "finished_utc": "2026-10-23T11:40:26.672336+00:00",
+    "counts": {
+      "total": "2356",
+      "passed": "2352",
+      "failed": "0",
+      "skipped": "4",
+      "result": "Skipped:Ignored"
+    },
+    "warning_CS": 0,
+    "error_CS": 0
+  },
+  "native_template_contract": {
+    "source": "aaa44832bf725afff012d1cf30eb3e06e732d3b2",
+    "argv": [
+      "/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity",
+      "-batchmode",
+      "-CI",
+      "false",
+      "-GITHUB_ACTIONS",
+      "false",
+      "-TF_BUILD",
+      "false",
+      "-projectPath",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/statecraft-israel/unity",
+      "-buildTarget",
+      "OSXUniversal",
+      "-runTests",
+      "-testPlatform",
+      "EditMode",
+      "-testFilter",
+      "ProjectSettingsTests",
+      "-testResults",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/evidence/native-template-final.xml",
+      "-logFile",
+      "/redacted-home/Documents/Codex/2026-10-23/status-of-my-open-prs-on/evidence/native-template-final.log"
+    ],
+    "started_utc": "2026-10-23T11:58:27.876797+00:00",
+    "editor_pid": 70790,
+    "exit": 0,
+    "elapsed_seconds": 32.06327516702004,
+    "counts": {
+      "result": "Passed",
+      "total": "6",
+      "passed": "6",
+      "failed": "0",
+      "skipped": "0"
+    },
+    "warning_CS": 0,
+    "error_CS": 0
+  },
+  "native_source_scope": {
+    "full_native_source": "0b41a3a313f5daf250c1c2a337af4a9c0547354d",
+    "final_runtime_source": "aaa44832bf725afff012d1cf30eb3e06e732d3b2",
+    "CSharp_changes_are_comment_only": true,
+    "sim_and_content_unchanged": true,
+    "changed_CSharp_files": [
+      "unity/Assets/Scripts/UI/AccessibilityCompanion.cs"
+    ]
+  },
+  "managed": {
+    "source": "9fb249c8c860ba3340359ac072ccdbab983ea2af",
+    "policy_passed": 323,
+    "sim_passed": 2443,
+    "tools_passed": 1525,
+    "tools_skipped": 5,
+    "tools_subtests_passed": 2,
+    "optional_standalone_unity_compile": "SKIPPED, no Library in clean validation checkout; actual Editor and WebGL separately tested"
+  },
+  "final_focused_tools": {
+    "source": "aaa44832bf725afff012d1cf30eb3e06e732d3b2",
+    "passed": 91
+  },
+  "approvals": {
+    "B_plan": "https://github.com/eyalgolan/statecraft-israel/issues/1119#issuecomment-6360904442",
+    "negative_tabindex_exception": "https://github.com/eyalgolan/statecraft-israel/issues/1119#issuecomment-6364098014",
+    "new_boot_request": "https://github.com/eyalgolan/statecraft-israel/pull/1230#issuecomment-6363640772"
+  }
+}

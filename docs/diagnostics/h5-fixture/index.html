@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>H5 isolated feasibility fixture — synthetic data only</title>
+<h1>H5 isolated feasibility fixture</h1>
+<p>Synthetic data only. No game connection, Unity plug-in, or screen-reader acceptance.</p>
+<button id="outside">Outside the companion region</button>
+<main id="mount"></main>
+<script>
+"use strict";
+// Deliberately outside the Unity template/Assets tree. This tests output transport
+// and lifetime only. It neither sends commands to Unity nor implements gameplay.
+window.createH5Fixture = function (host, epoch) {
+  if (!Number.isSafeInteger(epoch) || epoch < 0 || host.childElementCount) throw new Error("mount/epoch");
+  let live = true, sequence = -1, pending = 0;
+  const region = document.createElement("section");
+  region.setAttribute("aria-label", "Synthetic game companion");
+  const heading = document.createElement("h2");
+  heading.textContent = "Synthetic game companion";
+  const focus = document.createElement("p");
+  const title = document.createElement("h3");
+  const body = document.createElement("p");
+  const options = document.createElement("ol");
+  const status = document.createElement("div");
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-atomic", "true");
+  region.append(heading, focus, title, body, options, status);
+  host.append(region);
+  function valid(p) {
+    return p && p.version === 1 && p.epoch === epoch &&
+      Number.isSafeInteger(p.sequence) && p.sequence > sequence &&
+      ["en", "he"].includes(p.language) &&
+      [p.focus, p.title, p.body, p.announcement].every(v => typeof v === "string" && v.length <= 20000) &&
+      Array.isArray(p.options) && p.options.length <= 100 &&
+      p.options.every(v => typeof v === "string" && v.length <= 20000);
+  }
+  return {
+    receive(p) {
+      if (!live || !valid(p)) return false;
+      sequence = p.sequence;
+      region.lang = p.language;
+      region.dir = p.language === "he" ? "rtl" : "ltr";
+      focus.textContent = p.focus;
+      title.textContent = p.title;
+      body.textContent = p.body;
+      options.replaceChildren(...p.options.map(text => {
+        const item = document.createElement("li"); item.textContent = text; return item;
+      }));
+      cancelAnimationFrame(pending);
+      status.textContent = "";
+      const expected = sequence;
+      pending = requestAnimationFrame(() => {
+        if (live && sequence === expected) status.textContent = p.announcement;
+      });
+      return true;
+    },
+    dispose() {
+      live = false;
+      cancelAnimationFrame(pending);
+      region.remove();
+    }
+  };
+};
+console.log("H5 FIXTURE READY");
+</script>
+</html>

@@ -34,10 +34,15 @@ public class ProjectSettingsTests
     }
 
     [Test]
-    public void TheTemplateFillsTheWindowAndPersistsSaves()
+    public void TheTemplateFillsItsGameRegionAndPersistsSaves()
     {
         var html = File.ReadAllText("Assets/WebGLTemplates/Statecraft/index.html");
-        StringAssert.Contains("#unity-canvas { position: fixed; left: 0; top: 0; width: 100%; height: 100%;", html);
+        // #1119 B reserves a separate companion region; the canvas fills its game region rather than covering it.
+        // The real browser layout check covers desktop/phone bounds and safe insets. Keep the save contract here.
+        StringAssert.Contains("#player-layout { display: grid;", html);
+        StringAssert.Contains("<main id=\"game-view\">", html);
+        StringAssert.Contains("#unity-canvas { width: 100%; height: 100%;", html);
+        StringAssert.Contains("<aside id=\"companion\"", html);
         StringAssert.Contains("autoSyncPersistentDataPath: true", html);
         StringAssert.DoesNotContain("alert(", html);
     }

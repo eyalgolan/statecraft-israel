@@ -247,6 +247,41 @@ def chrome_flags(profile: str, swiftshader: bool, dpr: float = 1.0) -> list[str]
     return flags
 
 
+def canvas_point(point: tuple[float, float], viewport: tuple[int, int], rect: dict) -> tuple[float, float]:
+    """Game-relative clicks use the full reference viewport; map them into the canvas's current CSS rectangle.
+    The companion can reserve a column/row and hardware insets without changing Unity's normalized button centres."""
+    return (rect["left"] + point[0] / viewport[0] * rect["width"],
+            rect["top"] + point[1] / viewport[1] * rect["height"])
+
+
+async def keyboard_end_turn(call, sid, language: str) -> bool:
+    """B's narrower canvas can re-tier the HUD. Follow its mirrored keyboard focus instead of a fixed End Turn point.
+    Older players without the companion return False and retain their existing coordinate path."""
+    async def focus():
+        result = await call("Runtime.evaluate", {"expression": "document.getElementById('companion-focus')?.textContent",
+                                                 "returnByValue": True}, sid)
+        return result["result"].get("value")
+
+    if await focus() is None:
+        return False
+    await call("Page.bringToFront", {}, sid)
+    await call("Emulation.setFocusEmulationEnabled", {"enabled": True}, sid)
+
+    async def key(name, code):
+        for kind in ("keyDown", "keyUp"):
+            await call("Input.dispatchKeyEvent", {"type": kind, "key": name, "code": name,
+                                                  "windowsVirtualKeyCode": code}, sid)
+            if kind == "keyDown": await asyncio.sleep(.25)
+        await asyncio.sleep(.2)
+
+    for _ in range(80):
+        if await focus() == END_TURN_LABELS[language]:
+            await key("Enter", 13)
+            return True
+        await key("Tab", 9)
+    raise ValueError("End Turn never received keyboard focus in the companion")
+
+
 class Page:
     """Opens url in a new tab of the Chrome using `profile`, over the DevTools protocol, with the viewport fixed before
     the first load; the connection (and with it the override) is held on a background thread until close()."""
@@ -271,10 +306,10 @@ class Page:
 
     def command(self, name: str) -> None:
         """Runs one action on the page's CDP thread and waits for it: "reload", or "click:X,Y" (a left click at CSS
-        pixels X, Y of the viewport)."""
+        pixels X, Y of the reference viewport, mapped into the game's current canvas rectangle), or "end-turn:en|he"."""
         done, result = threading.Event(), []
         self.commands.put((name, done, result))
-        if not done.wait(10):
+        if not done.wait(60 if name.startswith("end-turn:") else 10):
             raise ValueError(f"browser action {name} did not finish")
         if result:
             raise ValueError(f"browser action {name} failed: {result[0]}")
@@ -306,6 +341,18 @@ class Page:
                 await call("Emulation.setDeviceMetricsOverride", self.metrics, sid)
                 await call("Page.navigate", {"url": self.url}, sid)
                 self.ready.set()
+
+                async def click(x, y):
+                    bounds = await call("Runtime.evaluate", {
+                        "expression": "JSON.stringify(document.getElementById('unity-canvas').getBoundingClientRect().toJSON())",
+                        "returnByValue": True}, sid)
+                    x, y = canvas_point((x, y), (self.metrics["width"], self.metrics["height"]),
+                                        json.loads(bounds["result"]["value"]))
+                    await call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, sid)
+                    for kind in ("mousePressed", "mouseReleased"):
+                        await call("Input.dispatchMouseEvent", {"type": kind, "x": x, "y": y, "button": "left",
+                                                                "clickCount": 1}, sid)
+
                 while not self.stop.is_set():
                     try:
                         name, done, result = self.commands.get_nowait()
@@ -315,10 +362,11 @@ class Page:
                         try:
                             if name.startswith("click:"):
                                 x, y = (float(v) for v in name[len("click:"):].split(","))
-                                await call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, sid)
-                                for kind in ("mousePressed", "mouseReleased"):
-                                    await call("Input.dispatchMouseEvent", {"type": kind, "x": x, "y": y, "button": "left",
-                                                                            "clickCount": 1}, sid)
+                                await click(x, y)
+                            elif name.startswith("end-turn:"):
+                                language = name.split(":", 1)[1]
+                                if not await keyboard_end_turn(call, sid, language):
+                                    await click(*(END_TURN_HE if language == "he" else END_TURN))
                             elif name == "reload":
                                 await call("Page.reload", {"ignoreCache": True}, sid)
                             else:
@@ -387,6 +435,8 @@ def drain(inbox: queue.Queue) -> list:
 # Keys do not work here: Enter sent over CDP before any click reaches no Unity button, and after New game the first event
 # card, not End turn, takes the focus.
 END_TURN, END_TURN_HE = (1840, 45), (80, 45)
+# Shipped hud.end_turn labels, checked against both UI YAML files by test_web_check.py.
+END_TURN_LABELS = {"en": "End turn", "he": "סיום התור"}
 # The start screen's buttons are not measured: their row changes as buttons are added (#1178's Star on GitHub moved New
 # game off the viewport's centre), so the game says where they are. Under ?navlog, StartScreenPresenter.ButtonCentres logs
 # each shown button's centre as a fraction of the window, again whenever the layout moves it:
@@ -530,6 +580,8 @@ class PersistenceCheck:
     def click(self, target: str | tuple[int, int]) -> None:
         if isinstance(target, str):
             click_button(self.action, self.buttons, target)
+        elif target in (END_TURN, END_TURN_HE):
+            self.action("end-turn:" + ("he" if target == END_TURN_HE else "en"))
         else:
             self.action(f"click:{target[0]},{target[1]}")
 
@@ -591,6 +643,8 @@ class StartScreenCheck:
     def click(self, target: str | tuple[int, int]) -> None:
         if isinstance(target, str):
             click_button(self.action, self.buttons, target)
+        elif target in (END_TURN, END_TURN_HE):
+            self.action("end-turn:" + ("he" if target == END_TURN_HE else "en"))
         else:
             self.action(f"click:{target[0]},{target[1]}")
 
