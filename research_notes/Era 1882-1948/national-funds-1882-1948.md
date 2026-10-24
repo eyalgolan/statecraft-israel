@@ -354,6 +354,7 @@ content work needs a value that this note does not have: [GAP].
 [V]; my reading is that the unit therefore did not change at the boundary. For the 1952 change to the Israeli pound,
 no source opened states an exchange rate; the BoI page names only the 10 per cent compulsory loan. A primary statement
 that it was at par is [GAP].
+See `../currencies-1948-93.md` §2.2 for the 1952 par (Law for the Exchange of Bank Notes and Compulsory Loan, s. 3(a)).
 
 ## 6. What the paused content work can take from this
 
