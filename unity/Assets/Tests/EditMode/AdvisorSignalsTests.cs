@@ -101,11 +101,17 @@ public class AdvisorSignalsTests
         Assert.IsNull(rig.Advisor.Shown, "Off again: gone at once");
     }
 
-    /// <summary>The owner approved these Hebrew lines word for word (24 October 2026, "Hebrew approved"); a different text
+    /// <summary>The owner approved these Hebrew lines word for word (24 October 2026: "Hebrew approved" for the critical three,
+    /// "approved" for the rest; defeat_economy with the review sheet's grammar fix, תורים); a different text
     /// needs a new approval, so it must also set he_review back to pending.</summary>
     [TestCase("dayan.city_at_risk", "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע.")]
     [TestCase("meyerson.exhausted", "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו.")]
     [TestCase("meyerson.debt_ceiling", "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ.")]
+    [TestCase("meyerson.food_short", "בתור הזה המדינה נזקקה ליותר מזון ממה שהיה לה. מחסור במזון גם מוריד את הלכידות החברתית.")]
+    [TestCase("dayan.defeat_war", "יחידה צבאית של האויב מחזיקה באחת מערי המדינה בסוף התור. המערכה הסתיימה בתבוסה.")]
+    [TestCase("ben_gurion.defeat_economy", "שלושה תורים ברציפות הסתיימו כשהחוב שלנו בתקרה או מעליה ומלאי המזון ריק, וזה מסיים את המשחק.")]
+    [TestCase("meyerson.budget_unsubmitted", "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב.")]
+    [TestCase("dayan.arms_out", "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות.")]
     public void AnApprovedHebrewLineIsTheTextTheOwnerRead(string id, string hebrew)
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
@@ -167,7 +173,7 @@ public class AdvisorSignalsTests
     }
 
     /// <summary>The owner approved the critical warnings' Hebrew (24 October 2026, "Hebrew approved"): a Hebrew player sees
-    /// them at Off, and nothing still pending (food_short at Warnings only) shows in Hebrew.</summary>
+    /// them at Off; food_short, approved too, waits for Warnings only.</summary>
     [Test]
     public void TheCriticalWarningsShowInHebrew()
     {
@@ -179,7 +185,7 @@ public class AdvisorSignalsTests
         CollectionAssert.IsSubsetOf(new[] { "meyerson.exhausted", "meyerson.debt_ceiling" }, Drain(rig));
         rig.Session.Settings.SetLevel("warnings");
         rig.Advisor.Notice(AdvisorSignals.TurnEnded);
-        CollectionAssert.DoesNotContain(Drain(rig), "meyerson.food_short", "pending Hebrew");
+        CollectionAssert.Contains(Drain(rig), "meyerson.food_short", "approved Hebrew, at Warnings only");
         foreach (var id in new[] { "dayan.city_at_risk", "meyerson.exhausted", "meyerson.debt_ceiling" })
             Assert.IsTrue(rig.Session.Catalog.Find(id)!.ApprovedIn(hebrew: true), id);
     }
@@ -289,7 +295,7 @@ public class AdvisorSignalsTests
         Assert.AreEqual(C.IsGdd, Holds(b, "arms_low"), "an empty stock");
         Assert.AreEqual(b.State.Settlements.Values.Any(x => x.State == SettlementControl.AwaitingChoice), Holds(b, "capture_waiting"));
     }
-    /// <summary>Owner, 24 October 2026: "Fire when low". Low (a DESIGN VALUE for the owner's OK) is at or below the Arms the
+    /// <summary>Owner, 24 October 2026: "Fire when low". Low (an owner-set DESIGN VALUE, "Approve 3 / costliest action") is at or below the Arms the
     /// costliest single Arms action takes under the current rules: a recruit group (mvp.arms_per_recruit_group, R-ARMS-003),
     /// an attack (mvp.arms_per_attack, R-COMBAT-004), or an Israeli type's training_arms or arms_per_fire (R-UNIT-008,
     /// R-COMBAT-007). Today an artillery group's 3. At or below it fires, above it does not, and an empty stock fires.</summary>

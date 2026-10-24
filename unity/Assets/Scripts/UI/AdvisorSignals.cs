@@ -31,8 +31,8 @@ namespace Statecraft.Game.UI
             ["situation_active"] = ctx => ctx.State.ActiveSituations.Count > 0,
             ["standing_order"] = ctx => ctx.State.Units.Values.Any(u => u.Side == Movement.PlayerSide && u.Order != ""),
             ["combat_seen"] = ctx => ctx.Bridge.Session.Last?.Why.Any(w => w.Key == WhyKeys.Engagement) == true,
-            // Owner, 24 October 2026: "Fire when low". DESIGN VALUE, for the owner's OK: low is at or below the costliest single
-            // Arms action (ArmsReserve), so an empty stock is low too.
+            // Owner, 24 October 2026: "Fire when low". Owner-set DESIGN VALUE ("Approve 3 / costliest action", same day): low is
+            // at or below the costliest single Arms action (ArmsReserve), so an empty stock is low too.
             ["arms_low"] = ctx => ctx.Content.IsGdd && ctx.State.Arms <= ArmsReserve(ctx),
             ["capture_waiting"] = ctx => ctx.State.Settlements.Values.Any(x => x.State == SettlementControl.AwaitingChoice),
             ["enemy_moved"] = ctx => ctx.Bridge.Session.Last?.Why.Any(w => w.EnemyOrder != "") == true,
