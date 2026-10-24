@@ -594,6 +594,8 @@ namespace Statecraft.Game.UI
             var label = inline ? mediaLabel : overlayLabel;
             var credit = inline ? mediaCredit : overlayCredit;
             label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
+            // Each clip's credit starts at its first line, wherever the last one was scrolled to.
+            if (credit.GetFirstAncestorOfType<ScrollView>() is ScrollView credits) credits.scrollOffset = Vector2.zero;
             popup.EnableInClassList(WatchingClass, inline && hasPicture);
             popup.EnableInClassList(NarratingClass, !hasPicture);
             if (inline && hasPicture) mediaHead.BringToFront();

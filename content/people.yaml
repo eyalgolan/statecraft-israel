@@ -1133,6 +1133,7 @@ people:
     offices:
       # Chief of Staff until 29 January 1958, after the content range.
       - { office: chief_of_staff, from: 1953-12-06, sources: *cos_1952 }
+    portrait: { file: promo/ref/people/Moshe_Dayan_CCBY_1948.jpg, license: CC BY 4.0, source: "https://commons.wikimedia.org/wiki/File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg", focus_y: 0.37 }
     status: fact-checked
   # Deputies use neutral game ratings, not claims about historical ability or loyalty.
   - id: efrati
