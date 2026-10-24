@@ -322,4 +322,59 @@ public class QualificationTests
         Assert.Equal(AttentionSystem.Cost(c, s, "unit_order"), AttentionSystem.Cost(c, s, Qualification.ReassignPioneersKind));
         Assert.Equal(0, AttentionSystem.Cost(c, s, "unit_order"));
     }
+
+    // R-TRAIN-001 with R-QUAL-004, R-QUAL-005 (#1548; owner, 24 October 2026: "Yes, count them",
+    // https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6378360813): a queued reassignment takes its
+    // city's idle civilians as a queued Train does, for its own city only.
+    [Fact]
+    public void AQueuedReassignCountsAgainstTheCitysFreeCivilians()
+    {
+        var c = Town();
+        var s = WithCity(c, new City("town_a", 12, 8, 10, 0, 0, craftsmen: 0, qualified: new Qualified(3, 1, new[] { 1, 2 })));
+        var queue = new Command[] { new Train("town_a", "recruit", 1), new ReassignCraftsmen("town_a", 2), new ReassignPioneers("town_a", "halutz", 1),
+            new ReassignPioneers("town_a", "veteran_halutz", 1), new ReassignCraftsmen("elsewhere", 5) };
+        Assert.Equal(5, Training.Ordered("town_a", queue));
+        Assert.Equal(5, Training.Available(s, "town_a", queue));   // 10 idle civilians less those 5
+        Assert.Equal(10, Training.Available(s, "town_a", new Command[] { new ReassignCraftsmen("elsewhere", 5), new ReassignPioneers("elsewhere", "halutz", 2) }));
+    }
+
+    // The count is the one the sim accepts: the orders up to Available all run, in either order, and one group more is refused.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AvailableAfterQueuedReassignsKeepsEveryOrderAccepted(bool trainFirst)
+    {
+        var c = Town();
+        var s = WithCity(c, new City("town_a", 12, 8, 4, 0, 0, craftsmen: 0, qualified: new Qualified(2, 0, new[] { 1 })));
+        s.Attention = 100;
+        var reassigns = new Command[] { new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1) };
+        Assert.Equal(2, Training.Available(s, "town_a", reassigns));
+        Command[] Orders(int recruits) => trainFirst
+            ? new Command[] { new Train("town_a", "recruit", recruits), reassigns[0], reassigns[1] }
+            : new Command[] { reassigns[0], reassigns[1], new Train("town_a", "recruit", recruits) };
+        Assert.Empty(Step(c, s, Orders(2)).Rejected);
+        Assert.Single(Step(c, s, Orders(3)).Rejected);
+    }
+
+    // R-CITY-001 with R-QUAL-004, R-QUAL-005 (#1548): every queued reassignment counts against MaxWorkers in full, so the job
+    // order up to it is accepted with the reassignments whether it runs first or last (the bound is safe, not tight).
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MaxWorkersCountsEveryQueuedReassignInAnyOrder(bool jobsFirst)
+    {
+        var c = Town();
+        var s = WithCity(c, new City("town_a", 12, 8, 6, 0, 0, craftsmen: 0, jobsDefault: false, qualified: new Qualified(2, 0, new[] { 1 })));
+        Assert.Equal(6, Cities.MaxWorkers(s, "town_a", new Command[0]));
+        Assert.Equal(4, Cities.MaxWorkers(s, "town_a", new Command[] { new ReassignCraftsmen("town_a", 2) }));
+        Assert.Equal(5, Cities.MaxWorkers(s, "town_a", new Command[] { new ReassignPioneers("town_a", "halutz", 1) }));
+        var queue = new Command[] { new ReassignCraftsmen("town_a", 2), new ReassignPioneers("town_a", "halutz", 1) };
+        var max = Cities.MaxWorkers(s, "town_a", queue);
+        Assert.Equal(3, max);
+        s.Attention = 100;
+        Command[] Orders(int jobs) => jobsFirst
+            ? new Command[] { new AssignWorkers("town_a", "job", jobs) }.Concat(queue).ToArray()
+            : queue.Append(new AssignWorkers("town_a", "job", jobs)).ToArray();
+        Assert.Empty(Step(c, s, Orders(max)).Rejected);
+    }
 }
