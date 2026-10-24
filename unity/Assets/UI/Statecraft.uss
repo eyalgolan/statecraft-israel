@@ -603,6 +603,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-got-it { margin-left: auto; }
 .lang-he .advisor-got-it { margin-left: 0; margin-right: auto; }
 .advisor-count { font-size: 15px; -unity-text-align: middle-right; }
+.lang-he .advisor-count { -unity-text-align: middle-left; }
 /* "Report a bug or idea" (#1169, FeedbackPresenter): the same backdrop over everything, the start screen too; each GitHub
    choice with the lines its form opens with under it, wrapped (a user agent is long). */
 .feedback-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }

@@ -41,8 +41,12 @@ namespace Statecraft.Game.UI
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly (VisualElement element, float px)[] floored;
         readonly IVisualElementScheduledItem follow;
+        /// <summary>The latest hide's fade end, paused by a Show or Dispose so an earlier one never acts.</summary>
+        IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
+        int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
         AdvisorCatalog.Message? covered;
 
@@ -155,6 +159,7 @@ namespace Statecraft.Game.UI
         void Show()
         {
             hidden = false;
+            fading?.Pause();
             popup.RemoveFromClassList(ScreenNav.ClosingClass);
             if (!hudRoot.ClassListContains(OpenClass))
             {
@@ -195,7 +200,8 @@ namespace Statecraft.Game.UI
             if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
             popup.AddToClassList(ScreenNav.ClosingClass);
-            popup.schedule.Execute(() =>
+            fading?.Pause();
+            fading = popup.schedule.Execute(() =>
             {
                 if (!hidden) return;                                    // shown again meanwhile
                 popup.RemoveFromClassList(ScreenNav.ClosingClass);
@@ -230,7 +236,7 @@ namespace Statecraft.Game.UI
         /// <summary>Got it, the X, or Escape from inside: seen, and the next message (if any) shows.</summary>
         public void GotIt()
         {
-            if (Shown == null) return;
+            if (Shown == null || !IsOpen) return;                       // not while it fades out under a new layer
             session.Queue.Done(Shown, Turn, bridge.State.Date);
             Shown = null;
             Render();
@@ -239,17 +245,19 @@ namespace Statecraft.Game.UI
         /// <summary>Not now: off to the next turn and into Counsel's history (spec 7.1). Not for teaching or critical messages.</summary>
         public void NotNow()
         {
-            if (Shown == null || Shown.Teaching || Shown.Critical) return;
+            if (Shown == null || !IsOpen || Shown.Teaching || Shown.Critical) return;
             session.Queue.PutOff(Shown, Turn, bridge.State.Date);
             Shown = null;
             Render();
         }
 
-        /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did.</summary>
+        /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did, and
+        /// also in the frame ScreenNav's Cancel already closed it, so GameRoot's poll does not close the screen under it too.</summary>
         public bool Escape()
         {
             var focused = layer.focusController?.focusedElement as VisualElement;
-            if (!IsOpen || focused == null || !popup.Contains(focused)) return false;
+            if (!IsOpen || focused == null || !popup.Contains(focused)) return escapedAt == Time.frameCount;
+            escapedAt = Time.frameCount;
             GotIt();
             return true;
         }
@@ -315,6 +323,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             disposed = true;
             follow.Pause();
+            fading?.Pause();
             layer.UnregisterCallback(onLaidOut);
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
