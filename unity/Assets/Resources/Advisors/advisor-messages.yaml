@@ -25,8 +25,10 @@ messages:
 # Spec 6's critical warnings (shown at every help level, Off included) and the defeat lines. Their words and speakers are the
 # recorded clips' (owner, 24 October 2026: "Adopt clip words"; talking-v3/lines.csv): dayan.city_at_risk is
 # warning.city_under_attack, meyerson.exhausted warning.economic_defeat_countdown.fix1, meyerson.debt_ceiling
-# warning.debt_ceiling (so it waits for the ceiling itself, R-END-001: debt at or above it), dayan.defeat_war
-# warning.city_held_defeat and dayan.arms_out teach.arms.
+# warning.debt_ceiling (so it waits for the ceiling itself, R-END-001: debt at or above it; owner, 24 October
+# 2026, asked about an earlier warning: "No, at the ceiling is fine"), dayan.defeat_war
+# warning.city_held_defeat and dayan.arms_out teach.arms, which fires when Arms are low (owner, 24 October 2026: "Fire
+# when low"; the threshold, AdvisorSignals.ArmsForOneRound, is a DESIGN VALUE for the owner's OK).
 # The three critical warnings' Hebrew is approved by the owner, a native speaker (24 October 2026, asked what Hebrew players
 # should see while the critical warnings wait for review: "Hebrew approved"), as worded in the S4 review sheet; any change
 # to their Hebrew sets them back to pending. The other rows wait for a native reviewer (#564).
@@ -38,6 +40,6 @@ messages:
   - { id: ben_gurion.defeat_economy, advisor: ben_gurion, signal: defeat_economy, level: warnings, he_review: pending }
 # Tasks 18 and 20's two warnings that need no encyclopedia page; the teaching rows wait for S3 (#1519).
   - { id: meyerson.budget_unsubmitted, advisor: meyerson, signal: budget_unsubmitted, level: warnings, he_review: pending, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
-  - { id: dayan.arms_out, advisor: dayan, signal: arms_out, level: warnings, he_review: pending, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }] }
+  - { id: dayan.arms_out, advisor: dayan, signal: arms_low, level: warnings, he_review: pending, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }] }
 
 pages: []

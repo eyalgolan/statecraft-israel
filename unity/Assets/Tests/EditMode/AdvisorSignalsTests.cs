@@ -189,9 +189,37 @@ public class AdvisorSignalsTests
         Assert.AreEqual(why.Any(w => w.Key == WhyKeys.Engagement), Holds(b, "combat_seen"));
         Assert.AreEqual(why.Any(w => w.EnemyOrder != ""), Holds(b, "enemy_moved"));
         b.State.Arms = 0;
-        Assert.AreEqual(C.IsGdd, Holds(b, "arms_out"));
+        Assert.AreEqual(C.IsGdd, Holds(b, "arms_low"), "an empty stock");
         Assert.AreEqual(b.State.Settlements.Values.Any(x => x.State == SettlementControl.AwaitingChoice), Holds(b, "capture_waiting"));
     }
+    /// <summary>Owner, 24 October 2026: "Fire when low". Low (a DESIGN VALUE for the owner's OK): fewer Arms than one
+    /// attack by each of our military units in reach of an enemy unit costs (R-COMBAT-004: mvp.arms_per_attack; R-COMBAT-007:
+    /// an artillery type's arms_per_fire within its range). Below that it fires, at or above it it does not, and an empty
+    /// stock always fires.</summary>
+    [Test]
+    public void ArmsAreLowBelowOneAttackByEachUnitInReach()
+    {
+        var b = Bridge();
+        var mvp = C.RulesAt(b.State.Date).Mvp!;
+        var guns = C.UnitTypes.First(t => t.Class == Combat.ArtilleryClass);
+        b.State.Units.Clear();
+        b.State.Units[1] = new Unit(1, "recruit", 10, 10, side: Movement.PlayerSide, strength: 5);
+        b.State.Units[2] = new Unit(2, "recruit", 30, 30, side: Movement.PlayerSide, strength: 5);            // no enemy near
+        b.State.Arms = 3;
+        Assert.AreEqual(0, AdvisorSignals.ArmsForOneRound(new AdvisorContext(b, null)), "no unit in reach");
+        Assert.IsFalse(Holds(b, "arms_low"), "3 Arms, no unit in reach");
+        b.State.Arms = 0;
+        Assert.IsTrue(Holds(b, "arms_low"), "an empty stock fires even with no unit in reach");
+        b.State.Units[3] = new Unit(3, "egyptian_army", 11, 10, side: "egypt", strength: 5);                   // next to unit 1
+        b.State.Units[4] = new Unit(4, guns.Id, 11 - guns.Range!.Value, 10, side: Movement.PlayerSide, strength: 5); // in range of unit 3
+        int need = mvp.ArmsPerAttack!.Value + guns.ArmsPerFire!.Value;
+        Assert.AreEqual(need, AdvisorSignals.ArmsForOneRound(new AdvisorContext(b, null)));
+        b.State.Arms = need - 1; Assert.IsTrue(Holds(b, "arms_low"), "one below");
+        b.State.Arms = need; Assert.IsFalse(Holds(b, "arms_low"), "exactly enough");
+        b.State.Arms = need + 1; Assert.IsFalse(Holds(b, "arms_low"), "above");
+        b.State.Arms = 0; Assert.IsTrue(Holds(b, "arms_low"), "empty");
+    }
+
     [Test]
     public void RefugeesAreCountedFromTheShownCities()
     {
