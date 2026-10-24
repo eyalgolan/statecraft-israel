@@ -252,11 +252,13 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Escape: closes it as the X does, only while the focus is inside it (spec 16). True when it did, and
-        /// also in the frame ScreenNav's Cancel already closed it, so GameRoot's poll does not close the screen under it too.</summary>
+        /// also in the frame ScreenNav's Cancel already closed it, so GameRoot's poll does not close the screen under it too.
+        /// That frame check comes first: Got it can bring the next message up at once, and one Escape dismisses one message.</summary>
         public bool Escape()
         {
+            if (escapedAt == Time.frameCount) return true;
             var focused = layer.focusController?.focusedElement as VisualElement;
-            if (!IsOpen || focused == null || !popup.Contains(focused)) return escapedAt == Time.frameCount;
+            if (!IsOpen || focused == null || !popup.Contains(focused)) return false;
             escapedAt = Time.frameCount;
             GotIt();
             return true;

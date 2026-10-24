@@ -189,6 +189,27 @@ public class AdvisorPopupTests
         Assert.AreEqual("budget", rig.Nav.Current);
     }
 
+    /// <summary>One Escape dismisses one message: when Got it brings the next message up at once (the focus still on Got
+    /// it), the poll's Escape in the same frame does not dismiss that one too.</summary>
+    [Test]
+    public void OneEscapeDismissesOnlyOneMessage()
+    {
+        using var rig = new Rig();
+        rig.Nav.TakesEscape = rig.Advisor.Escape;
+        rig.Advisor.NewGame();
+        rig.Ui.Press("advisor-got-it");
+        rig.EndTurn();
+        Assert.AreEqual("t.crit", rig.Advisor.Shown!.Id, "precondition: critical first, the warning behind it");
+        var gotIt = rig.Ui.Q<Button>("advisor-got-it");
+        gotIt.Focus();
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = gotIt; gotIt.SendEvent(esc); }
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id, "Cancel dismissed the critical one; the warning is up");
+        Assert.IsTrue(rig.Advisor.Escape(), "the poll in the same frame: the key is used");
+        Assert.IsTrue(rig.Advisor.IsOpen, "and the warning stays up");
+        Assert.AreEqual("t.warn", rig.Advisor.Shown?.Id);
+        Assert.IsFalse(rig.Session.Settings.Seen("t.warn"), "unread, so not seen");
+    }
+
     /// <summary>OQ-4: in Hebrew a message shows only once its Hebrew is approved.</summary>
     [TestCase("pending", false)]
     [TestCase("approved", true)]
