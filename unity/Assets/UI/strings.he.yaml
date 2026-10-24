@@ -526,6 +526,9 @@ unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף �
 # Hebrew drafts: agent-checked; native review pending (#564).
 unit.order.send_home: "שליחה הביתה"
 unit.send_home_queued: "ניתנה פקודת שליחה הביתה: היחידה תחזור הביתה בסיום התור"
+# Reinforce (#1510, R-TRAIN-004). Agent-drafted, awaiting a native read.
+unit.order.reinforce: "תגבור +{0}"
+unit.reinforce_queued: "ניתנה פקודת תגבור: כוח ההשלמה יתחיל באימון בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
 newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף אחרי התור הבא."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."

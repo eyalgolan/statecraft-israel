@@ -54,6 +54,7 @@ namespace Statecraft.Sim
             var end = c.End;
             var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { end }).Min();
             var next = SimTime.AdvanceTo(s.Date, len, boundary);
+            if (c.IsGdd) SettlementControl.Stamp(s, next);   // R-CTRL-004: dates for captures made during the orders
             var adjusted = next != SimTime.Advance(s.Date, len);
             var days = (next - s.Date).Days;
             var yf = adjusted ? days / 365.0 : SimTime.YearFraction(len);
@@ -123,6 +124,7 @@ namespace Statecraft.Sim
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
+            if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
             foreach (var cmd in commands)
             {
@@ -135,6 +137,7 @@ namespace Statecraft.Sim
                 var before = s.Attention;
                 var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
                 if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
+                if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
         }
 
@@ -197,6 +200,14 @@ namespace Statecraft.Sim
                     return Training.Start(c, s, t.City, t.Track, t.Count, why);
                 case CancelTraining t:
                     return Training.Cancel(c, s, t.Cohort, why);
+                case ReturnCraftsmen r:
+                    return Qualification.ReturnCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignCraftsmen r:
+                    return Qualification.ReassignCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignPioneers r:
+                    return Qualification.ReassignPioneers(c, s, r.City, r.Track, r.Count, why);
+                case Reinforce r:
+                    return Training.Reinforce(c, s, r.Unit, r.City, r.Count, why);
                 case PioneerWork p:
                     return Projects.Start(c, s, p.Unit, p.Action, p.Site, why);
                 case StopWork w:
@@ -205,6 +216,7 @@ namespace Statecraft.Sim
                     if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
                     if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
                     if (o.Q != null || o.R != null) return "That order names no hex";
+                    if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
                     return o.Order == Demobilization.SendHome
                         ? Demobilization.Give(c, s, o.Unit, attacked, why)
                         : Orders.Give(c, s, o.Unit, o.Order, why);

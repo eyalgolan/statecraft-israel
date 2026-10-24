@@ -28,7 +28,7 @@ public class SaveGameTests
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
             new Command[] { new AssignWorkers("town_a", "job", 1), new UnitOrder(1, "hold") },   // GDD orders: the legacy fixture refuses them
-            new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1) },   // GDD orders too
+            new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1), new ReturnCraftsmen("town_a", 1), new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1), new Reinforce(1, "town_a", 1) },   // GDD orders too
             new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3), new ResolveCapture("town_a", "raid") },
             new Command[] { new SecurityOrder(1) }, new Command[0],
         };

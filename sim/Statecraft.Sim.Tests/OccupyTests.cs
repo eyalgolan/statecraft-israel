@@ -150,7 +150,11 @@ public class OccupyTests
         Assert.Empty(result.State.Settlements);
         Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("under enemy control again"));
         Assert.Contains(Movement.NoEntry(c, result.State), h => h == (1, 0));
-        Assert.Equal(Step(c, Without(s), new Move(1, 2, 0)).State.Describe(), result.State.Describe());
+        // Spec 4.4 now captures a unit already on the target before orders. A never-captured twin must start outside.
+        var twin = Without(s);
+        Assert.Null(Movement.Move(c, twin, 1, 2, 0, new Dictionary<int, int>(), new List<Cause>()));
+        Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
+        Assert.Equal(Step(c, twin).State.Describe(), result.State.Describe());
     }
 
     // R-CTRL-013: a halutz left on the hex holds nothing (#796), so the occupation still ends.
@@ -216,6 +220,19 @@ public class OccupyTests
         Assert.Null(SettlementControl.Resolve(c, s, "town_a", SettlementControl.Occupy, new List<Cause>()));
         SettlementControl.Tick(c, s, c.RulesAt(s.Date).Mvp!, new List<Cause>());
         Assert.Equal(rng, s.RngState);
+    }
+
+    // The mvp-occupy-cost golden (#798) pins the real content's run: the scenario must really occupy Nazareth, and the run
+    // must end the turn its timer does, or the golden would pin a no-op.
+    [Fact]
+    public void TheOccupyCostScenarioOccupiesNazarethToTheTimersEnd()
+    {
+        var real = ContentLoader.Load(RealContentTests.ContentRoot());
+        var sc = Scenario.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(ScenarioTests.Dir(), "mvp-occupy-cost.yaml")));
+        var s = sc.Play(real);
+        Assert.Equal(new DateTime(1948, 12, 15), s.Date);
+        var ctrl = s.Settlements["nazareth"];
+        Assert.Equal((Movement.PlayerSide, SettlementControl.AwaitingEnd, 0, new DateTime(1948, 6, 15)), (ctrl.Owner, ctrl.State, ctrl.Turns, ctrl.Since));
     }
 
     [Theory]

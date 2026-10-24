@@ -44,13 +44,14 @@ Unit orders are free under D-A6, and their order of resolution follows R-TURN-00
 ### Minister selection TBD
 
 The player can choose ministers. TBD: minister roles, available candidates, appointment rules, costs and effects on gameplay.
+**Then decided (owner, 23 Oct 2026, "Yes, complete (Recommended)"; [#1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)):** the implemented slice is the complete MVP minister mechanic: lawful appointment (`Cabinet.Appoint`) and each mapped office's competence and budget scaling the GDD systems in its remit (R-MIN-001 to R-MIN-003). The MVP adds no further offices, candidate traits or minister actions.
 
 ### Resources and national parameters
 
 | Resource or parameter | Role | Still to define |
 |---|---|---|
 | Money | Funds development and other paid actions. Craftsmen earn more money. | Income per job, construction costs and upkeep. |
-| Arms | Available military equipment. | Decided, D-G6: "From events (sourced arms deals) and Money. Training and attacks consume it" ([impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md)). The four numbers asked on #856 and #781 are set (owner, 18 October 2026, #781: "Approve as drafted"), labelled design values in `rules.yaml`: one Arms is the equipment package for one 1,000-person recruit group, 12 Arms on 15 May 1948, IL 1m an Arms, 1 a recruit group, and 1 Attention for the buy order whatever the quantity (R-ARMS-001 to R-ARMS-003). Whether replacements consume it is open. |
+| Arms | Available military equipment. | Decided, D-G6: "From events (sourced arms deals) and Money. Training and attacks consume it" ([impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md)). The four numbers asked on #856 and #781 are set (owner, 18 October 2026, #781: "Approve as drafted"), labelled design values in `rules.yaml`: one Arms is the equipment package for one 1,000-person recruit group, 12 Arms on 15 May 1948, IL 1m an Arms, 1 a recruit group, and 1 Attention for the buy order whatever the quantity (R-ARMS-001 to R-ARMS-003). Whether replacements consume it is open. **Then decided (owner, 23 Oct 2026, "Replacements cost Arms"; [#1510](https://github.com/eyalgolan/statecraft-israel/issues/1510#issuecomment-6372356139)):** trained recruits can refill a damaged formation, and each replacement group consumes Arms as recruit training does (R-ARMS-003); built under #1510 as R-TRAIN-004. |
 | Food | Available food supply. | Production, imports, consumption and storage; stockpile or supply capacity. |
 | Social cohesion (לכידות חברתית) | National parameter describing cohesion in society. Proposed influences include housing, employment and shortages. | Scale, thresholds and gameplay effects; effects of military decisions and events. |
 | International Support | National parameter describing support from other countries. Proposed influences include military decisions and events. | Scale, thresholds and gameplay effects. |
@@ -71,6 +72,8 @@ The player can choose ministers. TBD: minister roles, available candidates, appo
 | Arab Legionnaire | Unit representing an Arab Legion soldier. | Equipment, movement, strength and behavior. |
 | Palestinian militia | Palestinian militia unit. | Equipment, movement, strength and behavior. |
 
+**Then decided (owner, 23 Oct 2026, "Two-way, keep training"; [#1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)):** craftsmen, halutzim and veteran pioneers can return to civilian life and keep their qualification, and a qualified civilian can be reassigned to the trained role without training again; the rule is built under #1511 (R-QUAL-001 to R-QUAL-007).
+
 ### Movement and civilian actions
 
 The player can move a unit at once or set a go-to route whose next step runs at End turn. Units have an integer movement allowance and pay integer biome costs; built road and rail corridors may lower those costs. Lakes and the sea are impassable, stacking is limited, there is no zone of control, and there is no transport or embarkation. A unit with its full allowance may always enter one neighbouring land hex, whatever its cost; after spending points, it needs the full cost of the next hex. End turn waits until every military unit with movement points has moved, attacked, holds an order or is skipped for the turn (`Q-MOVE-1` to `Q-MOVE-5`; owner, 23 October 2026, #1402 and #1398: "Now" for go-to, "No, strict like Civ VI", "Block like Civ" and "Approve, start building").
@@ -81,7 +84,8 @@ A civilian can be employed in an available city employment slot. A civilian can 
 
 Two transitions are defined:
 - civilian to recruit, through basic training;
-- civilian to Halutz, through pioneer training.
+- civilian to Halutz, through pioneer training;
+- craftsman, halutz and veteran pioneer back to civilian life, and a qualified civilian back into the trained role without training again (#1511, R-QUAL-001 to R-QUAL-007).
 
 These transitions are open:
 - refugee to civilian;
@@ -113,6 +117,7 @@ For the MVP the terrain types are the eight biomes in `hexes.json`, each with an
 | Visual representation and the mapping from source geography to gameplay types | TBD |
 
 No new terrain catalogue or numerical terrain modifiers are selected in this specification. Existing sourced map data is retained while these decisions remain open.
+**Then decided (owner, 23 Oct 2026, "Freeze for MVP (Recommended)"; [#1512](https://github.com/eyalgolan/statecraft-israel/issues/1512#issuecomment-6372356819)):** the eight biomes are the complete MVP terrain catalogue, with no terrain conversions; projects such as Dry swamp change project or site state, not a hex's biome. New types, overlays and conversions are deferred beyond the MVP.
 
 ### Map editor tool
 
@@ -201,11 +206,11 @@ Designated building sites and transport corridors bound the locations and routes
 | Decision | Why it changes production |
 |---|---|
 | MVP locations and map scale | The must-have and optional location roster is specified in [locations.md](locations.md). Use the existing grid in [Map units](units.md); any required extent or resolution change and the handling of closely spaced locations remain open. |
-| Terrain type (tile/hex type) | MVP: the eight `hexes.json` biomes with a movement cost per biome (Q-MOVE-1, decided). TBD: any new types, their catalogue, classification, visuals, extra properties, construction rules and terrain conversions. |
+| Terrain type (tile/hex type) | MVP: the eight `hexes.json` biomes with a movement cost per biome (Q-MOVE-1, decided). TBD: any new types, their catalogue, classification, visuals, extra properties, construction rules and terrain conversions. **Then decided (owner, 23 Oct 2026, "Freeze for MVP (Recommended)"; [#1512](https://github.com/eyalgolan/statecraft-israel/issues/1512#issuecomment-6372356819)):** no new types or conversions in the MVP. |
 | Map editor tool | See [Map editor](gdd/map-editor.md) for hex editing, location moves, undo/redo, save/reload, regeneration and reference validation. Host environment, authoring format and editable-property list remain TBD. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592)):** a Unity editor window saves `content/map/overrides.yaml`, which map generation applies last; editable are hex terrain and control and location position, while location id and sources stay. |
 | Road and rail corridors | Routes follow designated corridors. Each corridor needs predefined route geometry and construction states. The corridor list, costs and duration remain open. |
 | Unit population scale | A person or a group changes unit count, housing and job assignment, selection, movement and casualty representation. |
-| Population role model | Changing one unit between jobs and training differs from separate worker pools. Decide reassignment and return to civilian life. |
+| Population role model | Changing one unit between jobs and training differs from separate worker pools. Decide reassignment and return to civilian life. **Then decided (owner, 23 Oct 2026, "Two-way, keep training"; [#1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)):** trained civilian roles can return and be reassigned, keeping their qualification. |
 | Work and training time | Instant actions and multi-turn projects require different feedback, commitment rules, cancellation and progress displays. |
 | Food and arms supply | National pools need fewer logistics rules. Local storage and supply routes add transport, shortages and vulnerability to disruption. |
 | Settlement control | Occupation, indirect rule, annexation, displacement and destruction require explicit population, ownership and building states. |
@@ -220,6 +225,7 @@ The MVP years, monthly turns and three objectives are fixed above. These remain 
 Each objective needs a specific historical event and reference date for the completion card. For ongoing processes such as immigrant absorption, choose a defined milestone with a sourced date. Bonus amounts, the timing formula, defeat conditions and whether all objectives are required to finish the MVP remain open.
 
 Minister selection is a planned TBD mechanic with player-chosen ministers. The role of coalition, Attention, diplomacy and national policy systems in this core loop remains open.
+**Then decided (owner, 23 Oct 2026, "Yes, complete (Recommended)"; [#1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)):** R-MIN-001 to R-MIN-003 and `Cabinet.Appoint` are the complete MVP minister mechanic.
 
 ## Relationship to the existing design
 

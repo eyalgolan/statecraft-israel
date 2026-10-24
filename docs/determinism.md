@@ -18,26 +18,28 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   Round-trip decimal formatting is only a display concern: .NET and Unity Mono can spell the same carry bits
   differently. The Phase 7 minister carry correction re-pins hash1950, hash1952 and mvp-end for this representation
   only; stored values, gameplay and completion dates are unchanged.
-- **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
-  positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
-  list has six targets (#793), and no golden captures a place: player units may enter the five enemy-held ones since
-  #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
+- **Settlement control:** the player capture check runs after the route step and each order, then again in resolver
+  step 3 after enemy combat. Each check visits targets in ordinal id order and reads only unit positions, with no RNG
+  draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder`, `NoRngDraw` and `TheInstantCheckDrawsNothing`).
+  The shipped list has six targets (#793), and only `mvp-occupy-cost` captures a place (Nazareth): player units may
+  enter the five enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
   Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa is not enemy-held at the start. The smoke-orders
   move skips the lit hexes of enemy-held places on purpose (`GoldenRun.SmokeMove`), so it stays a plain move.
 - **Answering a capture (Raid and withdraw):** the units on the place leave in ascending id, each to the first free hex in
   the fixed neighbour order, and the captures still waiting at the game's end resolve in ordinal id order, with no RNG
-  draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). No golden captures a place, so none answers one.
+  draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). Only `mvp-occupy-cost` captures a place, and it answers with Occupy, so no golden Raids one.
 - **Occupation timers (resolver step 10):** after step 9's arrivals and before objectives and score, each occupied place
   in ordinal id order pays its upkeep and counts its `turns=` down, or ends as a Raid when no Israeli military unit holds
   its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
-  `OccupationDrawsNothing`). No golden occupies a place, so none moves. The `mvp-occupy-cost` golden is deferred by the
-  owner's ruling of 22 October 2026 (#1324), and it is the next step now that a capture can be reached in play (#1314; a
-  manifest golden plays the real content); `OccupyTests` plays the same run on fixture content.
+  `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
+  Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
+  same run on fixture content. No other golden occupies a place, so none moves.
 - **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
-  non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden captures a place, so
-  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, waits for the same capture (#1304);
+  non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
+  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  is refused (#800);
   `DeportNeverDominatesTests` plays both runs from the same fixture states.
 
 ## Combat draws
@@ -428,3 +430,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | smoke-orders | `9f224bd4` | same as smoke5 (was `ee6bfee5`) |
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-cautious | `f672a0f3` | rationing can no longer be set on 15 May 1948, so the scenario sets it (0.4) on the first turn the office exists (15 March 1949) and runs to 15 April 1949 (was 15 January 1949) so it acts; the snapshot moves with the three extra turns (was `95982cf8`) |
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
+| #798: the `mvp-occupy-cost` golden (the plan's PR 6 scenario; owner, 23 Oct 2026, now that a capture is reachable in play, #1304) | scenario-mvp-occupy-cost | `a767bb66` | new: Golani's unit moves to Nazareth on 15 May 1948, the scenario answers the capture with Occupy on 15 June, and the run ends on 15 December 1948 with Nazareth awaiting `EndOccupation` (`since=1948-06-15`). No existing golden moves |

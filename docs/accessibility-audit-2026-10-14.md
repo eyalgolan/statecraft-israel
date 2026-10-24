@@ -410,12 +410,98 @@ EditMode test that fails without it.
 | K5 | Opening a screen from the side rail leaves the focus on the rail button. A screen's content sits after the whole HUD in the Tab order, so reaching it means walking the rail's eight buttons, New Game, End Turn, the minimap's three buttons and star, report and share first. Walked in EditMode: 16 Tabs for the Cabinet and the Budget, 14 for Defence, the count being only where the player's button sits in the rail. `ScreenNav.Close` already hands the focus back to the rail button, so open was the asymmetric half. | `ScreenNav.Open` hands the focus to the screen it opened, after the screen's `OnOpened` action has built its rows. The screen's own X is first in its order, since the header is its first child, so the focus goes to the first control of the screen's content and the X stays one Shift+Tab back; a screen with no control of its own that can take the focus (Defence at the opening turn, whose ladder and call-up buttons are `display:none`) takes its X. Only a keyboard press hands the focus on, as `Close` already respects, so a mouse press still moves no focus. |
 
 A scroll bar is never the landing control: `defence-body`'s scroller otherwise comes before any control of Defence's
-own. The bars of the screens other than the Cabinet take no Tab stop today, because a scroll view hides its scroller
-while the content fits, but their sliders stay focusable, so a bar becomes a stop once its list overflows. That is
-K3's scope and is not changed here.
+own. When K5 landed, the bars of the screens other than the Cabinet took no Tab stop but their sliders were still
+focusable, so one would have become a stop as soon as its list overflowed. K6 below closes that: every bar is out of
+the Tab order now.
 
 Pinned in EditMode: `ScreenEntryTests` (the Cabinet and the Budget land on their first control; Defence, which has
 none usable yet, lands on its X; a pointer press hands no focus; Escape still returns it to the rail button). No UI
+string was added, so nothing goes to #564.
+
+## Every scroll bar out of the Tab order, 23 October 2026
+
+K3 again, wider. #1453 took the Cabinet's two views out of the Tab order, which is where the 23 October list found
+the stop. That was the whole of the finding as written, but not the whole of the bug: every other view's slider
+stayed `focusable`, and a `ScrollView` hides its scroller only while its content fits, so the stop returns the
+moment a view overflows.
+
+Walked in EditMode. At 1280x720, the opening turn, no screen stops on a bar, because every scroller but the seat
+list's is `display:none`:
+
+| screen | bar stops in one lap | scroller shown | slider focusable |
+|---|---|---|---|
+| cabinet (`cabinet-seats`) | 0 | yes | no, #1453 |
+| budget (`budget-rows`) | 0 | no | **yes** |
+| defence (`defence-body`) | 0 | no | **yes** |
+| why (`why-rows`) | 0 | no | **yes** |
+| timeline (`timeline-list`) | 0 | no | **yes** |
+| how to play (`how-to-play-body`) | 0 | no | **yes** |
+| objectives (`objectives-rows`) | 0 | no | **yes** |
+
+At 1280x420, the short window this audit already used a pass at, the views overflow and the stops are real:
+the Budget's bar and Defence's each take **one**, and the Cabinet still takes none. Defence is the worst case,
+since it has no control of its own at the opening turn, so its bar is very nearly all a keyboard player can land
+on. (An earlier draft of this section said Defence took two. That was the walk counting the same slider twice on
+two laps of a short screen, not two bars; the walk counts unique elements now.)
+
+| | Finding | Fix |
+|---|---|---|
+| K6 | Only the Cabinet's bars were out of the Tab order. Every other scroll view's slider was still focusable, so the stop came back whenever the view overflowed: a shorter window, or enough content in the list. `event-scroll`, `capture-scroll`, `turn-report-rows` and `end-screen-rows` are not on any screen's walk and were never checked at all. | `FocusScroll.NoScrollBarIsATabStop` applies the existing `BarsAreNotTabStops` to every `ScrollView` under the UI root, called once from `GameRoot` beside `FocusScroll`. `CabinetPresenter` keeps its own call, because many tests build that presenter without `GameRoot` and the Cabinet should not depend on the harness. |
+
+The reasoning is K3's, not wider: a bar is always in sight, a list is reached by Tabbing its rows, and the lists
+that hold labels only (`why-rows`, `defence-body`, the event card's text) have nothing to Tab to, while `KeyScroll`
+gives PageUp, PageDown, Home and End with or without focus. Focusability only: dragging and the wheel are untouched.
+
+Three views are left out of the sweep, because for them that reasoning does not hold: `turn-report-rows`,
+`end-screen-rows` and `capture-scroll`. `KeyScroll` has no target for any of them, `GameRoot` switches the paging
+keys off entirely while the turn report or the end screen is open, and their rows are plain labels, so Tab reaches
+nothing inside them. Taking their bar out would leave no keyboard route at all, which is worse than a stray stop.
+Giving `KeyScroll` a route to them is the better answer and is its own change.
+
+Pinned in EditMode: `ScrollBarTabStopTests` (in a 1280x420 window the Budget's and Defence's bars take no stop,
+with the overflow asserted as a precondition so the test cannot pass vacuously; the Cabinet stays at zero; no
+`ScrollView` in the tree keeps a focusable scroller, slider or arrow button apart from the three above; and those
+three do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
+to #564.
+
+## The focus rule looks past the element's own display, 23 October 2026
+
+K7, found while the owner was reviewing the screen-entry fix (#1489) and fixed in #1507. Not a
+symptom anyone could reach in play: a trap left in the rule the other three fixes all lean on.
+
+`FocusReturn.CanTakeFocus` decides whether handing an element the focus will work. It asked
+whether the element itself is drawn:
+
+```csharp
+e?.panel != null && e.focusable && e.enabledInHierarchy && e.resolvedStyle.display != DisplayStyle.None
+```
+
+`display: none` on a parent takes its children out of the layout, but each child keeps its own
+`resolvedStyle.display`. So a control inside a closed screen still reads `Flex`, passed the test,
+and then would not take the focus: `Focus()` did nothing and nothing had the focus, which is the
+one outcome the rule exists to prevent.
+
+| | Finding | Fix |
+|---|---|---|
+| K7 | `CanTakeFocus` tested the element's own `display` only, so anything inside a `display: none` parent passed and then refused the focus. Measured on main, a closed screen being the plain case: `screen-close-budget` reports `ownDisplay=Flex`, `enabledInHierarchy=True`, `CanTakeFocus=True`, and after `Focus()` the focused element is `<null>`. The same for `screen-cabinet` and `screen-objectives`. | `CanTakeFocus` walks from the element up to the panel and refuses if any ancestor is `display: none`, so such a control is skipped and a usable fallback takes the focus instead. |
+
+**It was a trap rather than a live bug**, and the distinction is worth keeping: every caller passes
+scopes inside an open panel, so no shipped path reached it. What it cost was the next caller who
+handed `ToOrWithin` a hidden subtree, who would have got a silent focus drop instead of the
+fallback.
+
+One thing the fix had to avoid breaking: `ScreenNav.HandFocusTo` runs in the same call that opens a
+screen (K5), so the walk could have rejected every control in a screen whose `resolvedStyle` had
+not caught up, and sent the focus to the X instead of the first control. It does not, because
+`ScreenNav.Show` sets `window.style.display = DisplayStyle.Flex` **inline**, and UI Toolkit
+reflects an inline style in `resolvedStyle` straight away rather than at the next panel pass.
+Measured from inside `HandFocusTo`: `screen-cabinet resolvedDisplay=Flex inlineDisplay=Flex`, and
+the same for the Budget and Defence. If `Show` ever moves to a class or a stylesheet rule instead,
+that stops being true and the walk would need to trust an inline `style.display`.
+
+Pinned in EditMode: `FocusHiddenParentTests` (`ToOrWithin` with a closed screen as its only scope
+leaves the focus on the last stop instead of dropping it; and a drawn scope still gives up its own
+first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
 string was added, so nothing goes to #564.
 
 ## Screenshots

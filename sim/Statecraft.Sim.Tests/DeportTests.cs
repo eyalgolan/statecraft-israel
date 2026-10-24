@@ -187,7 +187,7 @@ public class DeportTests
             // These name no place or hex: a city, a cohort, a unit's own work, a policy, a budget, an event, an office or a count.
             [typeof(SetPolicy)] = null, [typeof(AllocateBudget)] = null, [typeof(ChooseEventOption)] = null, [typeof(SetMobilization)] = null,
             [typeof(SecurityOrder)] = null, [typeof(Appoint)] = null, [typeof(AssignWorkers)] = null, [typeof(Train)] = null,
-            [typeof(CancelTraining)] = null, [typeof(StopWork)] = null, [typeof(CancelProject)] = null, [typeof(BuyArms)] = null,
+            [typeof(CancelTraining)] = null, [typeof(Reinforce)] = null, [typeof(ReturnCraftsmen)] = null, [typeof(ReassignCraftsmen)] = null, [typeof(ReassignPioneers)] = null, [typeof(StopWork)] = null, [typeof(CancelProject)] = null, [typeof(BuyArms)] = null,
         };
         var kinds = typeof(Command).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Command)) && !t.IsAbstract).OrderBy(t => t.Name, StringComparer.Ordinal);
         Assert.Equal(kinds.Select(t => t.Name), aimed.Keys.OrderBy(t => t.Name, StringComparer.Ordinal).Select(t => t.Name));

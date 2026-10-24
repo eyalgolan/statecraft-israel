@@ -277,6 +277,48 @@ public class UnitOrdersTests
         }
     }
 
+    /// <summary>#1510 (R-TRAIN-004): a damaged unit of Israel's on a city's hex gets Reinforce for its missing strength, in
+    /// English and Hebrew; a press queues the sim's Reinforce and the card says it waits for End turn. With no Arms the button
+    /// hides and the sim's reason shows; an undamaged unit, or one off a city, gets neither.</summary>
+    [Test]
+    public void ReinforceQueuesTheMissingStrengthFromTheCityTheUnitStandsIn()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (t, label) in new[] { (Text, "Reinforce +"), (he, "תגבור +") })
+        {
+            using var ui = new UiTestKit();
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var bridge = new SimBridge(g, t);
+            var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var u = g.State.Units[id];
+            var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+            PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+            var info = new InfoPanelPresenter(ui.Root, bridge, t, new Dictionary<string, string>(), selectedUnit: () => selected);
+            var button = ui.Q<Button>("info-reinforce");
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.None, button.style.display.value, "Golani at the start has lost nobody");
+
+            g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 2, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+            g.State.Arms = 0;
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.None, button.style.display.value, "no Arms, no Reinforce");
+            StringAssert.Contains("not enough Arms", ui.Q<Label>("info-reason").text, "the sim's reason shows");
+
+            g.State.Arms = 100;
+            info.ShowUnit();
+            Assert.AreEqual(DisplayStyle.Flex, button.style.display.value, "damaged, in Tel Aviv, with Arms");
+            Assert.AreEqual(t.Format("unit.order.reinforce", 2), button.text);
+            StringAssert.StartsWith(label, button.text);
+            UiTestKit.Press(button);
+            var queued = bridge.Queued.OfType<Reinforce>().Single();
+            Assert.AreEqual((id, "tel_aviv", 2), (queued.Unit, queued.City, queued.Count));
+            StringAssert.Contains(t["unit.reinforce_queued"], ui.Q<Label>("info-settlements").text, "the card says the order waits for End turn");
+            Assert.AreEqual(DisplayStyle.None, button.style.display.value, "one order a unit");
+            info.Dispose();
+        }
+    }
+
     /// <summary>Gives the state the Arms for an attack and, when Golani has no enemy in reach (the sim's Combat.Check takes no
     /// hex), puts the first enemy sim unit on the first free land hex next to it; returns Golani's sim id.</summary>
     internal static int EnemyInGolanisReach(GameState s)

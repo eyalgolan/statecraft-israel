@@ -498,6 +498,9 @@ unit.attack_queued: "Attack ordered: the unit attacks when you end the turn"
 # The unit card's player-triggered demobilisation order (R-UNIT-005, #1309).
 unit.order.send_home: "Send home"
 unit.send_home_queued: "Send home ordered: the unit goes home when you end the turn"
+# Reinforce (#1510, R-TRAIN-004): the missing strength trained from the city the unit stands in.
+unit.order.reinforce: "Reinforce +{0}"
+unit.reinforce_queued: "Reinforce ordered: the replacements start training when you end the turn"
 newgame.confirm: "Press New game again to abandon this game and start over."
 newgame.delete_failed: "The old saved game could not be removed; it will be replaced after your next turn."
 save.unreadable: "Your saved game could not be loaded ({0}). A new game has started."

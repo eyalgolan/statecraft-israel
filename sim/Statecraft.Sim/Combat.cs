@@ -111,7 +111,7 @@ namespace Statecraft.Sim
             var refused = Check(c, s, unitId, q, r, enemy);
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
-            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity);
+            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full);
             why.Add(UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target));
             return null;
         }
@@ -127,7 +127,7 @@ namespace Statecraft.Sim
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
             s.Arms -= Need(c, mvp, u);
-            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
@@ -248,7 +248,7 @@ namespace Statecraft.Sim
 
         static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             why.Add(UnitLines.Line(key, line, new[] { u }, args));
         }
 
@@ -286,7 +286,7 @@ namespace Statecraft.Sim
                 if (!s.Units.TryGetValue(d.Id, out var u)) continue;
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
-                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                     var hex = Hex(to.Item1, to.Item2);
                     why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
@@ -320,10 +320,16 @@ namespace Statecraft.Sim
                     if (s.Units.TryGetValue(id, out var x) && (top == null || x.Strength > top.Strength)) top = x;
                 if (top == null) break;
                 if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top); }
-                else s.Units[top.Id] = new Unit(top.Id, top.Type, top.Q, top.R, top.Service, top.Side, top.Strength - 1, top.Order, top.OrderTarget, top.HomeCity);
+                else s.Units[top.Id] = Lose(top);
             }
             return taken;
         }
+
+        /// <summary>R-COMBAT-003 with R-TRAIN-004: the unit one population unit weaker. A player's unit's first loss stores the
+        /// strength it had as its Full, the most replacements refill it to; no rule reads an enemy's, so it stores none.</summary>
+        internal static Unit Lose(Unit u) =>
+            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity,
+                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full);
 
         /// <summary>R-COMBAT-003: the first neighbour of the unit's hex, in the fixed order (R-MOVE-002), that is land, holds no
         /// unit of the other team, has room under mvp.stack_limit for the unit's side (R-MOVE-003) and, for the player's unit,

@@ -349,19 +349,73 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 
 ### 4c. The Hotchkiss H39 tanks: June 1948
 
-- **What and how many:** ten French Hotchkiss H39 light tanks, bought in France and shipped from Marseille to Haifa.
+- **What and how many:** ten French Hotchkiss H39 light tanks, bought in France (en.wiki says shipped from Marseille to Haifa; the port is disputed below).
   They formed a company of the 82nd Battalion, 8th Brigade, and fought in Operation Danny (Lydda airport, July 1948).
-  [V] en.wiki Hotchkiss H35 ("Ten H39s were clandestinely sold to Israel ... shipped from Marseille to Haifa in 1948");
-  Tank Encyclopedia, H39 (citing Eshel 1989, Ilan 1996).
-- **[C] When:** "early June" 1948 (Tank Encyclopedia, H39) or **15 June 1948** (Lehi Museum blog, summarising Uria
-  Aharon in *Shiryon*, April 2018). No primary source (IDF Archives, a ship's name) was reached. The ship is
-  **not found**.
-- **Condition:** the tanks arrived in poor technical condition; Tank Encyclopedia says only five of the ten could be made
-  to run by the start of Operation Danny. [S]
+  [V] en.wiki Hotchkiss H35 ("Ten H39s were clandestinely sold to Israel ... shipped from Marseille to Haifa in 1948";
+  oldid 1380585757); Tank Encyclopedia, H39 (citing Eshel 1989, Ilan 1996).
+  **[C] the port:** the "Haifa" of en.wiki is not borne out by the one account that names the port. Mass (below)
+  says the tanks were sent to **Tel Aviv** because the Haifa port still served the evacuating British army (our translation).
+  Tank Encyclopedia (archived 20 July 2024) says only that the port of Haifa was still partly run by the British, that
+  no dock with a crane able to lift the vehicles existed in Tel Aviv, and that the ship was unloaded by another ship's
+  crane; it names no unloading port. Neither names Marseille. [C, agent read 2026-10-23; a person's check pending]
+- **The ship and the day, three versions and an unresolved fourth (the issue's question):**
+  - **Mass, 15 June 1948.** Lt-Col (res) Michael Mass, "The IDF's tanks in the War of Independence: the Hotchkiss
+    tanks", Yad LaShiryon, 19 March 2018 (republished as a PDF on the Palyam procurement site,
+    https://www.palyam.org/OniyotRekhesh/H-39.pdf, p. 2; source line gives yadlashiryon.com; its price and
+    ammunition figures cite Brezner, *Nitzanei Shiryon*, which was not opened): the ten H39s: "10 טנקי ההוצ'קיס H-39 הגיעו לארץ ב-15 ביוני 1948, ארבעה ימים לאחר תחילת ההפוגה בקרבות, בסבב הפלגה השני של האונייה להובלת רכש "בוריאה"" (paraphrase: arrived in the country on 15 June 1948, four days after the start of the truce, on the second voyage of the procurement ship **Boria** (Hebrew "בוריאה") on the France-Israel line), the ship that on its first voyage reached Tel Aviv on 15 May 1948. Unloading
+    was hard (the floating crane meant to come from Haifa was caught in a storm and its upper part broke, so a crane
+    from another ship was used) and the UN observers were drawn off to watch cars
+    being unloaded from another ship. [S, agent read 2026-10-23; a person's check pending]
+  - **Ben-Gurion's diary, 13 June 1948 (two days before Mass's date).** The entry of 11 June (which names neither the ship nor the tank make; reading it as the same ship is an inference;
+    Ben-Gurion Archive, English text, https://bengurionarchive.bgu.ac.il/en/node/14496) says Arazi ("Alon") reported that a ship
+    "will arrive here Sunday evening" (13 June 1948 was a Sunday) carrying "10 12-ton tanks (each tank with a 37 mm
+    cannon, two 7.5 mm machine guns)", ten 75 mm guns and four 20 mm anti-aircraft guns. The entry of 15 June
+    (https://bengurionarchive.bgu.ac.il/en/node/14244) says: "Alon's ship [Borea II - a procurement ship sent by Yehuda
+    Arazi], which arrived here two days ago, contains, according to Shaul: ten 75 mm cannons ... 10 Hotchkiss tanks, each
+    with a 37 mm cannon and a 7.5 mm machine gun and ammunition for the above". Read as written (our reading of "two days ago"), that is arrival on
+    **13 June**. The bracketed "Borea II" is the archive's gloss on the diary, not Ben-Gurion's words, and only the
+    English text was reachable (the Hebrew page URL returned "page does not exist"). "Here" is not glossed; the diary
+    does not say which port. [V, agent read 2026-10-23; a person's check pending]
+  - **Tank Encyclopedia: "early June".** "brought back to the nascent State of Israel in early June", with no ship name
+    and no day. [S]
+  - **[C] a possible earlier shipment.** The diary of 8 June 1948 (https://bengurionarchive.bgu.ac.il/en/node/14856)
+    says "Yesterday they unloaded a ship that brought 13 Hotchkiss [tanks]" (the bracket is the archive's gloss).
+    That would be 7 June and thirteen, not ten, and it names neither ship nor port. No other source read mentions it;
+    it could be another cargo, a different weapon, or a gloss error. It is recorded and **not** resolved.
+  - **Borea-2 is not shown to be the tank ship by the Palyam page for the ship itself.** "The Story of the Arms Ship
+    Borea-2 (Santa-Chiara)", Yehuda Ben-Tzur, 1977 (https://palyam.org/English/ArmsShips/Borea.pdf), covers only the May
+    voyage: arrival at Tel Aviv on 13 May 1948, towed to Haifa by the British on 14 May, back at Tel Aviv on the late
+    morning of 15 May; cargo 5 old 65 mm guns, 200 machine guns and about 650 tons of ammunition, loaded at Marseille.
+    It says nothing of tanks or a June voyage. [V, agent read 2026-10-23; a person's check pending]
+  - **Result.** The ship is named **Boria / Borea II** by Mass and (in the archive's gloss) the diary, a name that was
+    used on the May voyage of the *Santa Chiara*; whether the June ship is the same hull is **not shown by any source
+    read**. The day is **13 June** (diary, two entries) or **15 June** (Mass; the Hebrew Wikipedia page for the H39 and
+    the existing note's Lehi Museum blog also say 15 June, both [S], not re-opened here). The port is Tel Aviv on Mass's
+    account alone. No customs, shipping-register or IDF Archives record was reached.
+    [GAP] IDF Archives, Brezner, Eshel (1989, pp. 13-18) and Ilan (1996, pp. 187, 238) are cited by others and were not
+    opened; the Hebrew diary original was not reached.
+- **Three separate facts (the issue asks to keep them apart):**
+  - **Shipped: ten.** Mass; Tank Encyclopedia; the diary of 15 June ("10 Hotchkiss tanks"); en.wiki. The 8 June diary
+    "13" stands apart (above). [V]
+  - **Made to run: five at the start of Operation Danny, six in all.** Mass: at the opening of Danny only 5 usable Hotchkiss tanks were at Battalion 82's disposal, and during the Ten Days' fighting only one more was added (our translation)
+    (p. 3); Tank Encyclopedia: "only five of the original ten tanks could be made to be operational at the beginning
+    of Operation Danny, and six in total during the war". [V] Mass adds that the 8th Brigade workshop at Tel Litvinsky
+    found low compression in every engine, and that engine and cooling work went on through the first truce. [S]
+  - **First combat use found here: Operation Danny (9 to 19 July 1948); Hotchkiss tanks photographed at Lod airport on 10 July.**
+    Mass's photo caption dates the
+    Hotchkiss at Lydda airport after the capture of Lod airport by Battalion 82 on 10 July 1948 (our translation, p. 4), and the
+    text puts the Hotchkiss and captured R-35 in the Lod airport and Yehud fighting; Tank Encyclopedia says Danny was
+    the unit's first major engagement and that the H39s were only lightly engaged. Operation Danny began on
+    9 July. A day-by-day first shot is not stated in either source. [S]
+- **Condition:** the tanks arrived in poor technical condition (low engine compression, cooling unfit for the climate,
+  and the shells that came with them were high explosive; Mass says armour-piercing heads from American 37 mm rounds
+  were fitted into some of the cases, about 400 rounds by the end of Danny per Tank Encyclopedia); Tank
+  Encyclopedia says only five of the ten could be made to run by the start of Operation Danny. [V] for high-explosive shells, poor cooling and five of ten (Mass and Tank Encyclopedia); [S] for low compression (Mass) and the 400 rounds (Tank Encyclopedia).
 - **Note for the wording:** 15 June 1948 is inside the first truce (11 June to 8 July 1948), when arms imports breached
   the truce terms (the #135 note, section 5, has the US record of that). A card on this arrival would sit with the
   existing `first_truce` event.
-- **Fit:** weak as a dated grant until the day is pinned; the month (June 1948) is [V].
+- **Fit:** still weak as a dated grant. The month (June 1948) is [V]; the day is 13 or 15 June (unless the 8 June entry is a different cargo) and no archive record
+  settles it. Either day falls inside the first truce (11 June to 8 July 1948).
 
 ### 4d. The Spitfires from Czechoslovakia: Operation Velvetta, 27 September and 22-30 December 1948
 
@@ -391,7 +445,7 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 |---|---|---|---|---|---|
 | 65 mm mountain guns | *Borea* 13 May 1948, released 14/15 May | 5 guns, about 50,000 shells | 20 May 1948, Degania (4 guns) | [S] arrival, [V] first use | 15 May 1948 |
 | Avia S-199 | first at Ekron 20 May 1948 | 25 bought; 4 assembled by 29 May | 29 May 1948, Isdud | [V] | 15 May 1948 |
-| Hotchkiss H39 | June 1948 ("early June" or 15 June) | 10 | July 1948, Operation Danny | [C] day | 15 May or 15 June 1948 |
+| Hotchkiss H39 | 13 June (Ben-Gurion's diary) or 15 June (Mass) 1948; "early June" (Tank Encyclopedia) | 10 shipped, 5 then 6 running | July 1948, Operation Danny | [C] day and port | 15 May or 15 June 1948 |
 | Spitfire (Velvetta 1) | 27 September 1948, Ramat David | 3 landed (of 6 sent) | 15 October 1948 | [V] | 15 September 1948 |
 | Spitfire (Velvetta 2) | 22, 26 and 30 December 1948 | 12 sent; landed count [C] | Operation Horev | [V] dates | 15 December 1948 |
 
@@ -441,7 +495,7 @@ should state the arrival, not the fighting, or carry the `war-casualties` review
 | Day of the government's first statement on the union | 24 or 25 April 1950 | Section 3 |
 | Napoleonchik arrival | *Borea*, 13-15 May 1948 (Ben-Tzur) vs a Polish ship, 6-7 May 1948 (*Haaretz*, unread) | 4a |
 | Napoleonchiks at Degania | four vs two | 4a |
-| Hotchkiss arrival | early June vs 15 June 1948 | 4c |
+| Hotchkiss arrival | 13 June (Ben-Gurion's diary) vs 15 June (Mass) vs early June (Tank Encyclopedia); a 7 June "13 Hotchkiss" diary entry unresolved; Tel Aviv (Mass) vs Haifa (en.wiki) | 4c |
 | Spitfires landed, Velvetta 1 and 2 | three on 27 September (101 Squadron and he.wiki agree); December counts differ by one or two between he.wiki and 101 Squadron | 4d |
 | Day and place of the C-46 crash with the fourth S-199 | 23 May, south of Latrun after diverting to Sde Dov (101 Squadron) vs night of 23-24 May, near Tel Nof/Ekron (he.wiki מבצע בלק) | 4b |
 | S-199 arrivals | one on 20 May, then 21 and 22 May, fourth lost (101 Squadron, he.wiki) vs "The first four arrived on 20 May 1948" (`units_1948.yaml` note) | 4b |

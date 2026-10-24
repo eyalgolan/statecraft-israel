@@ -65,6 +65,11 @@ public class TurnPreviewTests
         Assert.True(Simulation.IsInstant(new UnitOrder(1, Orders.Hold)));
         Assert.True(Simulation.IsInstant(new UnitOrder(1, Combat.Attack, 2, 2)));
         Assert.False(Simulation.IsInstant(new UnitOrder(1, Demobilization.SendHome)));
+        // R-QUAL-003 (#1511): Return commits at once like fortify; the city's qualification orders wait for End turn like assign_workers.
+        Assert.True(Simulation.IsInstant(new UnitOrder(1, Qualification.ReturnOrder)));
+        Assert.False(Simulation.IsInstant(new ReassignCraftsmen("town_a", 1)));
+        Assert.False(Simulation.IsInstant(new ReassignPioneers("town_a", "halutz", 1)));
+        Assert.False(Simulation.IsInstant(new ReturnCraftsmen("town_a", 1)));
         Assert.False(Simulation.IsInstant(new BuyArms(1)));
         Assert.False(Simulation.IsInstant(new ResolveCapture("lod", SettlementControl.Raid)));
         Assert.False(Simulation.IsInstant(new SetPolicy("rationing", 0.5)));
