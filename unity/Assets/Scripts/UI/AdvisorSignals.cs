@@ -10,11 +10,14 @@ namespace Statecraft.Game.UI
     /// TurnEnded only, never each frame (spec 16). A `when` condition measures one number on the state.</summary>
     public static class AdvisorSignals
     {
-        public const string NewGame = "new_game", TurnEnded = "turn_ended";
-        public static readonly IReadOnlyCollection<string> Events = new[] { NewGame, TurnEnded };
+        public const string NewGame = "new_game", TurnEnded = "turn_ended", Opening = "opening";
+        public static readonly IReadOnlyCollection<string> Events = new[] { NewGame, TurnEnded, Opening };
         public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, bool>> States = new Dictionary<string, Func<AdvisorContext, bool>>();
         /// <summary>Each condition's measure; a name ends in _at_least or _at_most, which says how its bound reads.</summary>
-        public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, double>> Measures = new Dictionary<string, Func<AdvisorContext, double>>();
+        public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, double>> Measures = new Dictionary<string, Func<AdvisorContext, double>>
+        {
+            ["cards_waiting_at_least"] = ctx => ctx.Card?.Shown != null ? 1 : 0,
+        };
         public static IEnumerable<string> Names => Events.Concat(States.Keys);
 
         /// <summary>Whether a message's `when` holds: each named measure against its bound (spec 4.1).</summary>
