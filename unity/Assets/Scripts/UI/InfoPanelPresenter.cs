@@ -269,6 +269,17 @@ namespace Statecraft.Game.UI
             showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
         }
 
+        /// <summary>#1617 (player report): the lit hexes of an open Move or Attack pick show through this card (its navy is
+        /// translucent), so a click on the card over one of them is meant for the map. True when a pick is open,
+        /// <paramref name="picked"/> (the UI element under the pointer) is this card or inside it but not inside one of its
+        /// buttons, and the hex under the pointer (<paramref name="hexUnder"/>, asked only then) is lit.</summary>
+        public bool TakesClickThrough(VisualElement? picked, System.Func<(int q, int r)?> hexUnder)
+        {
+            if (!(pick is { } p) || picked == null || (picked != panel && !panel.Contains(picked))) return false;
+            for (var e = picked; e != panel; e = e.parent) if (e is Button) return false;
+            return hexUnder() is { } h && p.hexes.Contains(h);
+        }
+
         /// <summary>A map click while the player picks a Move's or an Attack's hex (GameRoot.OnHexClicked asks first): on a lit
         /// hex it queues the sim's Move, or its UnitOrder(unit, attack, q, r), through the bridge and returns true (the click is
         /// taken, the card stays); anywhere else it only ends the pick and returns false, so the click selects as usual. False

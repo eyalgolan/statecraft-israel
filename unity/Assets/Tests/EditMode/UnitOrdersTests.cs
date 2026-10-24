@@ -162,6 +162,43 @@ public class UnitOrdersTests
         finally { Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>#1617: while a Move pick is open, a click on the unit card is the map's only where it falls on the card's
+    /// text (not a button, not another panel) over a lit hex; the hex is asked only then. With no pick open, never.</summary>
+    [Test]
+    public void OnlyALitHexUnderTheCardsTextTakesAClickThroughTheCard()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        PlacedToken? shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
+        info.ShowUnit();
+        var reach = Movement.Reachable(C, g.State, UnitCard.SimUnit(C, g.State, golani.Unit)!.Value).Keys.ToList();
+        (int q, int r)? lit = (reach[0].Q, reach[0].R);
+        var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
+        (int q, int r)? unlit = (tlv.Q, tlv.R);
+        Assert.IsFalse(reach.Contains((tlv.Q, tlv.R)), "precondition: Tel Aviv is out of Golani's reach");
+        var title = ui.Q<Label>("info-title"); var move = ui.Q<Button>("info-move");
+        var asked = 0;
+        System.Func<(int q, int r)?> At((int q, int r)? hex) => () => { asked++; return hex; };
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
+        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
+        UiTestKit.Press(move);
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "the card's text over a lit hex");
+        Assert.IsTrue(info.TakesClickThrough(ui.Q<VisualElement>("info-panel"), At(lit)), "the card's own background over a lit hex");
+        Assert.IsFalse(info.TakesClickThrough(title, At(unlit)), "the card's text over an unlit hex");
+        Assert.IsFalse(info.TakesClickThrough(title, At(null)), "the card's text off the map");
+        asked = 0;
+        Assert.IsFalse(info.TakesClickThrough(move, At(lit)), "a button keeps its click");
+        Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("top-bar"), At(lit)), "another panel keeps its click");
+        Assert.IsFalse(info.TakesClickThrough(null, At(lit)), "no UI: the map has the click anyway");
+        Assert.AreEqual(0, asked, "the hex is asked only for the card's text");
+        UiTestKit.Press(move);   // a second press ends the pick
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "the pick has ended");
+        info.Dispose();
+    }
+
     /// <summary>Slice 2 (#754): for every unit with a sim unit, Israel's and the enemy's, the card shows Fortify and Hold each
     /// only where the sim's Orders.Check takes it, and where it does not, on Israel's units the sim's reason, whatever it is
     /// (so a refusal the sim adds later, such as artillery's hold, shows with no change here); an enemy's card gives no reason
