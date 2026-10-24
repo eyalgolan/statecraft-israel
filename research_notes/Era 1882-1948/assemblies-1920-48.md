@@ -1,6 +1,8 @@
 # The Assemblies of Representatives, the Vaad Leumi and the People's Council, 1920 to 1948
 
-Researched 22 October 2026. Every URL below was opened on that date. Research note for issue #89 (Yishuv 10, the
+Researched 22 October 2026. Every URL below was opened on that date, except those keyed JTA-yymmdd in the source
+table and the passages marked "(24 Oct)": a second pass on the [GAP] rows, opened on 24 October 2026 (the owner's comment
+of 24 October 2026 on #89 lists them; agent read 2026-10-24; a person's check pending). Each JTA bulletin was opened as a web page on that day, and the dateline dates used below were read on the original bulletin PDFs. Research note for issue #89 (Yishuv 10, the
 research part only, opened by the owner's ruling of 22 October 2026 on #49). Research only: nothing here is drafted
 for the game, and no file in `content/` is changed. `legislatures.yaml`, `parties.yaml`, `governments.yaml` and the
 coalition test stay paused.
@@ -55,22 +57,50 @@ The heads of the Vaad Leumi (presidium, chairman, president) and its departments
 | CZA-30 | *30 Zionist Landmarks: Thirty Documents from the Central Zionist Archives* (Jerusalem, 1978), as reproduced by the Center for Online Judaic Studies: https://cojs.org/?p=6132 | The Zionist General Council's announcement of April 1948 |
 | WP-EN | English Wikipedia, raw wikitext of "Assembly of Representatives (Mandatory Palestine)", "1920 Assembly of Representatives election", "1925 ...", "1931 ...", "1944 ...", "Provisional State Council" | [S], comparison only. The 1920 and 1925 articles cite Zalman Abramov, *Perpetual Dilemma* (1976), pp. 87-90 and 108-109, which was not read |
 | WP-HE | Hebrew Wikipedia, raw wikitext of אספת הנבחרים, הבחירות לאספת הנבחרים הראשונה (and השנייה), הוועד הלאומי, מועצת העם | [S], comparison only |
+| JTA-260113 | JTA, "National Assembly of Palestine Opens New Session", 13 January 1926, https://www.jta.org/archive/national-assembly-of-palestine-opens-new-session | 2nd Assembly first session (opened 24 Oct) |
+| JTA-260114 | JTA, "Communist Speaker in Palestine National Assembly Hissed by Delegates", 14 January 1926, https://www.jta.org/archive/communist-speaker-in-palestine-national-assembly-hissed-by-delegates | 2nd Assembly, second sitting, presidium (opened 24 Oct) |
+| JTA-260118 | JTA, "Palestine Jewry Asks for Land Grant, Communities Ordinance and Education Allotment", 18 January 1926, https://www.jta.org/archive/palestine-jewry-asks-for-land-grant-communities-ordinance-and-education-allotment | 2nd Assembly closing day (opened 24 Oct) |
+| JTA-310105 | JTA, "Elections to Palestine Jewish Assembly Not to Be Postponed: Polling on Monday", 5 January 1931, https://www.jta.org/archive/elections-to-palestine-jewish-assembly-not-to-be-postponed-polling-on-monday-hope-revisionists-wil | 1931 polling day (opened 24 Oct) |
+| JTA-310106 | JTA, "Palestine Jewish Assembly Elections: Bright Sunshine in Jerusalem for Polls", 6 January 1931, https://www.jta.org/archive/palestine-jewish-assembly-elections-bright-sunshine-in-jerusalem-for-polls-streets-crowded-with-el | 1931 polling day, ballot cards (opened 24 Oct) |
+| JTA-310113 | JTA, "New Palestine Jewish Assembly to Meet February 4th. Vaad Leumi Decides", 13 January 1931, https://www.jta.org/archive/new-palestine-jewish-assembly-to-meet-february-4th-vaad-leumi-decides | 3rd Assembly planned first meeting (opened 24 Oct) |
+| JTA-310211 | JTA, "New Palestine Jewish Assembly Holds First Meeting", 11 February 1931, https://www.jta.org/archive/new-palestine-jewish-assembly-holds-first-meeting-only-three-absentees-miss-henrietta-szold-mr-u | 3rd Assembly first meeting (opened 24 Oct) |
+| JTA-310212 | JTA, "Arab-jewish Round Table Conference and Equal Arab and Jewish Participation in Palestine Government M...", 12 February 1931, https://www.jta.org/archive/arab-jewish-round-table-conference-and-equal-arab-and-jewish-participation-in-palestine-government-m | 3rd Assembly seat recount (opened 24 Oct) |
+| JTA-310214 | JTA, "Trouble over Negotiations with Government at Palestine Jewish Assembly Meeting", 14 February 1931, https://www.jta.org/archive/trouble-over-negotiations-with-government-at-palestine-jewish-assembly-meeting-no-decision-taken-bu | 3rd Assembly: walk-out, Vaad Leumi of 23, tax scheme (opened 24 Oct) |
+| JTA-320305 | JTA, "Unification of Palestine Jewry Effected at Closing Session of Jewish Elected Assembly", 5 March 1932, https://www.jta.org/archive/unification-of-palestine-jewry-effected-at-closing-session-of-jewish-elected-assembly-after-all-nigh | 1932 session, Vaad Leumi reshuffle, tax and budget (opened 24 Oct) |
+| JTA-391019 | JTA, "Vaad Leumi Achieves Unity; Revisionists, Farmers Enter Executive After Two-day Talks", 19 October 1939, https://www.jta.org/archive/vaad-leumi-achieves-unity-revisionists-farmers-enter-executive-after-two-day-talks | 1939 executive by party (opened 24 Oct) |
+| JTA-400926 | JTA, "Palestine Jewish Council Reaffirms Support of Britain; Adopts Large Budget", 26 September 1940, https://www.jta.org/archive/palestine-jewish-council-reaffirms-support-of-britain-adopts-large-budget | 1940 budget vote (opened 24 Oct) |
+| JTA-420310 | JTA, "Jewish Constituent Assembly in Palestine Opens Session in Jerusalem", 10 March 1942, https://www.jta.org/archive/jewish-constituent-assembly-in-palestine-opens-session-in-jerusalem | 1942 budget on the agenda (opened 24 Oct) |
+| JTA-430328 | JTA, "$7,400,000 Budget is Asked for Palestine Jews", 28 March 1943, https://www.jta.org/archive/7400000-budget-is-asked-for-palestine-jews-children-reported-starving | 1943 budget presented (opened 24 Oct) |
+| JTA-430331 | JTA, "Adopt $680,000 Budget for Jewish National Council of Palestine", 31 March 1943, https://www.jta.org/archive/adopt-680000-budget-for-jewish-national-council-of-palestine | 1943 budget vote (opened 24 Oct) |
+| JTA-440910 | JTA, "Palestine Jewish Assembly to Avoid Political Discussions at Opening Session", 10 September 1944, https://www.jta.org/archive/palestine-jewish-assembly-to-avoid-political-discussions-at-opening-session | 4th Assembly first session day (opened 24 Oct) |
+| JTA-470525 | JTA, "Palestine Jewish Assembly Chooses New National Council with Labor Majority", 25 May 1947, https://www.jta.org/archive/palestine-jewish-assembly-chooses-new-national-council-with-labor-majority | 1947 Vaad Leumi by party (opened 24 Oct) |
+| JTA-480309 | JTA, "Jewish Agency Names 13-member Cabinet; Forms Provisional Govt. Council for Jewish State", 9 March 1948, https://www.jta.org/archive/jewish-agency-names-13-member-cabinet-forms-provisional-govt-council-for-jewish-state | March 1948 plan, seats by party (opened 24 Oct) |
+| JTA-480414 | JTA, "Decision to from a Jewish Cabinet Announced in Palestine; Will Function After May 1", 14 April 1948, https://www.jta.org/archive/decision-to-from-a-jewish-cabinet-announced-in-palestine-will-function-after-may-1 | 37-member decision (opened 24 Oct) |
+| JTA-480506 | JTA, "Jewish State Council Meets in Tel Aviv; Ben Gurion Warns Arabs; Sees Jewish Victory", 6 May 1948, https://www.jta.org/archive/jewish-state-council-meets-in-tel-aviv-ben-gurion-warns-arabs-sees-jewish-victory | People's Council sitting (opened 24 Oct) |
+| JTA-290814 | JTA, "Agency Council by Unanimous Vote Approves $3,750,000 Palestine Budget for First Year", 14 August 1929, https://www.jta.org/archive/agency-council-by-unanimous-vote-approves-3750000-palestine-budget-for-first-year | Jewish Agency budget 1929 (opened 24 Oct) |
+| JTA-300903 | JTA, "Jewish Agency Likely to Cut Actions Committee's Budget to $2,000,000; Separate Budget of $750,000 Fo...", 3 September 1930, https://www.jta.org/archive/jewish-agency-likely-to-cut-actions-committees-budget-to-2000000-separate-budget-of-750000-fo | Jewish Agency budget 1930 (opened 24 Oct) |
+| JTA-300910 | JTA, "Laborites to Back Agency in Spite of Disapproval of Budget, Non-representation on Executive", 10 September 1930, https://www.jta.org/archive/laborites-to-back-agency-in-spite-of-disapproval-of-budget-non-representation-on-executive | Jewish Agency budget 1930 (opened 24 Oct) |
+| JTA-321207 | JTA, "Vaad Leumi Formally Takes over Education", 7 December 1932, https://www.jta.org/archive/vaad-leumi-formally-takes-over-education | Agency grant to the Vaad Leumi (opened 24 Oct) |
+| JTA-351205 | JTA, "Vaad Leumi Given Wide Taxing Powers", 5 December 1935, https://www.jta.org/archive/vaad-leumi-given-wide-taxing-powers | Vaad Leumi tax powers (opened 24 Oct) |
 
-Not reached: the National Library's historical newspapers (nli.org.il answers 403 to a script), so the *Doar
+(24 Oct) A JTA archive page is dated by its bulletin, and the dispatch inside it is datelined earlier: the day before in the weekday New York bulletins (the bulletin of 26 September 1940 opens "JERUSALEM, Sept. 25. (JTA)"), and two days before in the Sunday and Monday bulletins and in the London edition of 1931 and 1932 (the bulletin of 11 February 1931 opens "Jerusalem, Feb. 9th."). "Today", "yesterday" and "last night" count from the dateline, not from the bulletin date. Not reached: the National Library's historical newspapers (nli.org.il answers 403 to a script), so the *Doar
 HaYom* report of 22 April 1920 that he.wiki cites for the 1920 postponement was not read; the Seventh Eye article
 by Rafi Mann on the 1920 Assembly (read as an archive copy of 24 April 2019; it does not give the postponement);
 Abramov's *Perpetual Dilemma*; Moshe Attias, *Knesset Israel be-Eretz Israel* (1944) and *Sefer ha-Te'udot shel
 ha-Va'ad ha-Le'ummi* (1963), the standard document collections, which are not online in a readable form; the Mandate
-reports for 1920 to 1928 (only 1929 and 1930 were read).
+reports for 1920 to 1928 (only 1929 and 1930 were read). (24 Oct) The Internet Archive's copy of the Interim Report on the Civil
+Administration of Palestine, 1921 (https://archive.org/details/civil-administration-of-palestine) was found, but its download links
+answered HTTP 500 on 24 Oct 2026 for the text and the PDF, so it was not read; the JTA archive starts in 1923, so there is no JTA
+report of the 1920 vote.
 
 ## 1. The four Assemblies at a glance
 
 | Assembly | Election | First session | Members | Lists with seats | Voters | Electors | Turnout |
 |---|---|---|---|---|---|---|---|
 | First | 19 April 1920 [V] EJ-PL; Jerusalem later [C], see §2 | October 1920 [V] EJ-PL; 7 October 1920 [S] WP-EN | 314 [V] KN-AR, EJ-PL | 20 [V] KN-AR, EJ-PL | 22,200 [V] KN-AR | 28,765 [V] EJ-PL | 77% [V] EJ-PL |
-| Second | 6 December 1925 [V] EJ-PL | [GAP] | 221 [V] KN-AR, EJ-PL, MR-1930 | 26 KN-AR; 25 EJ-PL [C] | 36,437 [V] KN-AR | 64,764 [V] EJ-PL | 57% [V] EJ-PL |
-| Third | 5 January 1931 [V] MR-1930, EJ-PL | [GAP] | 71 [V] KN-AR, MR-1930, EJ-PL | 12 MR-1930, KN-AR; 14 EJ-PL [C] | 50,436 [V] MR-1930, KN-AR | 75,046 voters' cards MR-1930; 89,656 EJ-PL [C] | 65% MR-1930; 56% EJ-PL [C] |
-| Fourth | 1 August 1944 [V] EJ-PL, UN-JA11; 2 August AJYB-46 [C] | September 1944 [V] AJYB-46; 12 or 13 September [C], see §5 | 171 [V] KN-AR, EJ-PL, UN-JA11 | 18 [V] KN-AR, EJ-PL | 202,448 [V] UN-NC84, KN-AR; others [C] | 300,018 [V] UN-NC84, UN-JA11 | 67% [V] EJ-PL |
+| Second | 6 December 1925 [V] EJ-PL | 11 January 1926 [V] JTA-260113, see §3 | 221 [V] KN-AR, EJ-PL, MR-1930 | 26 KN-AR; 25 EJ-PL [C] | 36,437 [V] KN-AR | 64,764 [V] EJ-PL | 57% [V] EJ-PL |
+| Third | 5 January 1931 [V] MR-1930, EJ-PL, JTA-310105 | 9 February 1931 [V] JTA-310211, see §4 | 71 [V] KN-AR, MR-1930, EJ-PL | 12 MR-1930, KN-AR; 14 EJ-PL [C] | 50,436 [V] MR-1930, KN-AR | 75,046 voters' cards MR-1930; 89,656 EJ-PL [C] | 65% MR-1930; 56% EJ-PL [C] |
+| Fourth | 1 August 1944 [V] EJ-PL, UN-JA11; 2 August AJYB-46 [C] | September 1944 [V] AJYB-46; 12 September [V] JTA-440910, see §5 | 171 [V] KN-AR, EJ-PL, UN-JA11 | 18 [V] KN-AR, EJ-PL | 202,448 [V] UN-NC84, KN-AR; others [C] | 300,018 [V] UN-NC84, UN-JA11 | 67% [V] EJ-PL |
 
 KN-AR gives, for each Assembly in turn, its members, the lists represented and the voters, as in the table: "The
 first had 314 members, representing 20 lists elected by 22,200 voters", and so on to "171 members, representing 18
@@ -90,8 +120,8 @@ Regulation 12 is marked as amended in 1937 and 1948, and 14 and 15 in 1948, so w
 text is a [GAP]. In practice the third Assembly sat for over 13 years (below).
 
 Against the design (§2): the sizes 314, 221, 71 and 171 are confirmed. The design's dates "from 6 Dec 1925", "from
-5 Jan 1931" and "from Aug 1944" are election dates, not first sessions; the first sessions of the second and third
-Assemblies are a [GAP]. The design's 1944 values (2 August, 173 seats) are not preferred: see §5.
+5 Jan 1931" and "from Aug 1944" are election dates, not first sessions. (24 Oct) The first sessions are now found: 11 January 1926
+for the second Assembly (§3) and 9 February 1931 for the third (§4). The design's 1944 values (2 August, 173 seats) are not preferred: see §5.
 
 ## 2. The first Assembly, 1920
 
@@ -116,6 +146,12 @@ and Jaffa by eight days, citing *Doar HaYom*, 22 April 1920, p. 14, which was no
 Orthodox "held separate elections in Jerusalem on 3 May, from which women were banned" (citing Abramov, p. 90) [S]. EJ-PL gives only 19 April 1920 for the
 election and says the 51 Orthodox delegates were "chosen at separate polls by Orthodox men" [V], without a date for
 those polls. Neither value is preferred. The day Jerusalem voted is a [GAP] until the 1920 press is read.
+
+(24 Oct) Searched again and not found. Read: AJYB-21 pp. 236-238 again (its chronology has the call of 19 March and the 6 May
+date for the Assembly, and nothing on the polling day or on the Orthodox polls); the JTA archive (no bulletins before 1923); the
+Internet Archive's copy of the 1921 Interim Report (download failed, see "Not reached"); web searches whose only hits were the
+same en.wiki and he.wiki articles already read. The Jerusalem and Orthodox poll days stay [C] between 3 May and "eight days
+after 19 April" (27 April, computed here: 19 April plus 8 days), both [S], with no value preferred.
 
 ### Result
 
@@ -153,6 +189,18 @@ Size: 221 (KN-AR, EJ-PL table, MR-1930 para. 22) [V]. EJ-PL's prose says the Rev
 additional delegates of their own"; its table notes "Including 20 Yemenites elected at separate polls". So 201 were
 elected on 6 December and 20 later (EJ-PL) [V]; the day of the Yemenite poll is a [GAP]. Agudat Israel kept its
 boycott (EJ-PL) [V].
+
+(24 Oct) First session [V]: JTA-260113, a bulletin dated Wednesday 13 January 1926: "The first session of the newly elected
+Assefath Ha'nivcharim, the National Assembly of Palestine Jews, was opened here Monday night in the Theatre Zion in the presence
+of 201 deputies". Monday before its dateline of 12 January is 11 January 1926 (computed here). The 201 present match the 201 elected on
+6 December and not the 221 with the Yemenite 20 (EJ-PL, above); that is a reading, not a statement of the bulletin. JTA-260114
+(dateline 13 January) reports the second sitting "yesterday", that is on 12 January, and that "One Yemenite Jew was also elected to the praesidium", so the Yemenites were in
+the Assembly by 13 January; the day of their separate poll is still a [GAP]. JTA-260118: the Assembly "sat in session four
+days" and closed on Friday morning (15 January 1926, computed here; dateline 16 January) after an all-night sitting.
+JTA-260113 also gives the turnout as "Thirty-three thousand eight hundred and forty-five persons, representing 52.3 per cent of the
+total number of electors", a third value besides 36,437 (KN-AR) and 35,987 (WP-EN) [C]; 33,845 is 52.3% of about 64,700 (computed
+here), close to EJ-PL's 64,764 electors, but EJ-PL gives 57% voting. Not settled. The same bulletin says the two labour parties
+"together secured 84 seats" and the Revisionists "hold 15", matching 54 + 30 and 15 in the table below [V].
 
 Seats by list. No source read gives the full list with a primary record. Two partial lists:
 
@@ -220,6 +268,29 @@ so the 961 are not explained. [C] EJ-PL: Revisionists "16, including 5 Sephardim
 and General Zionists 4 (MR-1930: 5). he.wiki אספת הנבחרים gives the Revisionists 11 and the General Zionists 4 [S]; he.wiki הבחירות לאספת הנבחרים השלישית
 gives the Revisionists 10 and the General Zionists 5 in its summary table but 4 in its results table [S]. Preferred:
 MR-1930. Lists represented: 12 (MR-1930, KN-AR) or 14 (EJ-PL) [C]; preferred 12.
+
+(24 Oct) What the JTA bulletins add for 1931 [V as dated bulletins]:
+
+- Polling day: JTA-310105 (Monday 5 January 1931 bulletin, dateline 4 January) says the elections "will take place on Monday", and the Vaad Leumi
+had declined to postpone them; JTA-310106 (bulletin of 6 January, dateline 5 January) reports polling "to-day". 5 January 1931 was a Monday (computed
+here), so the poll was 5 January. JTA-310106: 85,000 ballot cards distributed,
+about 10,000 entitled voters not traced, 114 constituencies. The 85,000 cards differ from MR-1930's 75,046 cards delivered [C]; not settled.
+- First meeting: the Vaad Leumi fixed 4 February for it (JTA-310113, bulletin of 13 January, dispatch datelined 11 January: "held last night", so the night of 10 January), but the first meeting
+was held at the Straus Health Centre on the afternoon of 9 February 1931: JTA-310211 is the bulletin of 11 February, and its dispatch is
+datelined "Jerusalem, Feb. 9th." and says "first meeting held this afternoon" (read on the original bulletin). Ben-Gurion
+took the chair; the presidium had six members, among them a Yemenite rabbi (the bulletin names all six);
+three of the 71 were abroad (the bulletin names Szold, Ussishkin and Jabotinsky); the Revisionists refused places in the presidium.
+- Seats: JTA-310211 gives Labour 32 of 71 and the Revisionists 15. JTA-310212 (bulletin of 12 February, dispatch datelined 10 February, so the recount was on 10 February) says the Revisionists
+"to-day incidentally increased its representation from 15 to 16 seats" by successfully contesting a fifth General Zionist seat
+"claiming in their favour a balance of 178 votes"; the General Zionists were left with four. The bulletin states only the move from 15 to 16 and from 5 to 4. The following is a reading, not a statement of the bulletin: this reconciles the [C] above, MR-1930's
+10 + 5 = 15 Revisionists and 5 General Zionists are the first count, and EJ-PL's 16 and 4 are the count after the recount [V].
+Preferred for the final seats: Revisionists 16, General Zionists 4. "Labour 32" (JTA) against Mapai 27 (MR-1930's "Labour") is
+not reconciled: JTA's Labour may include the smaller labour lists, but no source read says so [C].
+- The Vaad Leumi: JTA-310214 (bulletin of 14 February): after the Revisionists walked out on a 37 to 29 roll-call, a new Vaad
+Leumi of 23 was elected, "eleven Labourites, and twelve others, four Sephardim, three Mizrachists, three General Zionists, one
+Yemenite, and one woman representative", with five seats "reserved" for the Revisionists; the same session approved "the
+proposals for the taxation scheme, the organisation of the Jewish Community and the Rabbinical Office" [V], which matches
+EJ-PL and MR-1930 in §7.
 
 ## 5. The fourth Assembly, 1944, and the boycotts
 
@@ -346,7 +417,10 @@ Aliyah Hadashah 19 and 173 seats in all [S] [C]; not preferred.
 AJYB-46 p. 460: "In September 1944, the Assefath Hanivcharim held its first session", which "closed with the election of
 a permanent body, the Vaad Leumi (National Council) of 42 members, with all factions represented" [V]. JTA-440913 is a
 bulletin dated 13 September 1944 describing "today's opening session" [V]; the KN-AR page shows a photograph captioned
-"The Assembly of Representatives, 12.9.1944" [V]. [C] 12 or 13 September 1944. Neither is preferred: no source read states the day of the session in words.
+"The Assembly of Representatives, 12.9.1944" [V]. (24 Oct) 12 September 1944 [V]: JTA-440910, a bulletin dated Sunday 10 September 1944 (dispatch datelined 8 September), says the first session "will open here
+next Tuesday", and 12 September 1944 was a Tuesday (computed here). That agrees with the Knesset photograph caption 12.9.1944
+and with JTA-440913, whose dispatch is datelined 12 September (bulletin of 13 September) and says "today's opening session". 13 September is not the day. The same JTA-440910 bulletin says political issues would wait for "the second session which
+will take place after the High Holidays".
 
 ## 6. Budget approval
 
@@ -392,11 +466,40 @@ levies: the first, the "Sela ha-Yishuv", was voluntary; the second was an assess
 compulsory. The page dates the constitution's approval to 1925. EJ-PL [V]: the second session of the first Assembly was delayed partly by "the Sephardim's and Farmers'
 objections to the proposed self-taxation system".
 
-How each year's budget was actually voted (dates, amounts, tallies): [GAP]. No session record was read.
+How each year's budget was actually voted (dates, amounts, tallies): partly closed (24 Oct). The Assembly's own minutes were
+not read, so no tally and no complete yearly series. Dated JTA bulletins [V] show the practice:
+
+- 1931 and 1932: the 1931 session (bulletin of 14 February 1931) approved "the proposals for the taxation scheme" (JTA-310214);
+  the closing bulletin of the 1932 session reports the Vaad Leumi leaders telling JTA that it "decided on the taxation system and the budget" (JTA-320305). No amount.
+- December 1932: the Jewish Agency was to "contribute the sum of £40,000 annually to the Vaad Leumi for the support of the
+  schools" (the bulletin prints "Â£40,000"), and the Vaad Leumi became "responsible for the entire budget and control of the school
+  system" (JTA-321207).
+- December 1935: the Government gave the Vaad Leumi power to levy a tax of ten percent of the rental value of Jewish-owned
+  property (JTA-351205).
+- 25 September 1940 (dispatch datelined 25 September, bulletin of 26 September): the Assembly, "holding its eighth extraordinary session, today adopted a budget for the coming year"
+  (JTA-400926). The bulletin's figures are garbled by the scan ("1480,000 income and 1170,000 expenditures", with "L130,000" in
+  Government grants in the same text), so the amounts are not used.
+- 9 March 1942 (dispatch datelined 9 March, bulletin of 10 March): the three-day session, opened "today", "will also vote on the budget for the Vaad Leumi" (JTA-420310).
+- 26 and 30 March 1943: on 26 March (JTA-430328, bulletin of 28 March) the Assembly "was asked today to approve a $7,400,000 budget to meet the needs of Palestine's
+Jews", of which the Government would give $400,000 (JTA-430328); on 30 March (JTA-430331, bulletin of 31 March) it "today approved a budget of $680,000 to finance
+the activities of the Jewish National Council for the 1943-1944 fiscal period" (JTA-430331). The two figures differ by a factor of
+about ten (680,000 / 7,400,000 = 9.2%, computed here) and the bulletins print dollars and do not state the currency actually used;
+whether the first is the whole community's need and the second the Vaad Leumi's own budget is not stated [C]. Neither is preferred.
+
+The Assembly's approval is [V] for 1932, 1940 and 1943, in addition to the legal powers above. Dates of the
+votes in the other years, the amounts, and the tallies stay [GAP].
 
 ### The Jewish Agency's budget
 
-[GAP]. No source read says how the Jewish Agency's budget was approved before 1948. What was found: from August 1929 the
+(24 Oct) Partly closed for 1929 and 1930, [GAP] for 1931 to 1948. JTA-290814 [V]: on 13 August 1929 (dispatch datelined Zurich, 13 August; bulletin of 14 August) "By a unanimous vote the Council of
+the Jewish Agency in a session which lasted one hour today approved the budget for the Palestine work for the coming year in the
+amount of $3,750,000", a budget "previously decided upon at the Sixteenth Zionist Biennial Congress", recommended by the budget
+committee of the Council. In September 1930 the budget went the other way round [V]: JTA-300903 says the Zionist Actions Committee had
+adopted a budget for general work, that a cut to $2,000,000 with a separate $750,000 for colonization was "considered by the budget
+committee of the Jewish Agency" and was likely to be adopted by the Administrative Committee; JTA-300910 says "the Administrative
+Committee of the Jewish Agency adopted a budget for which it did not vote" ("it" is the Labour fraction speaking), so the Administrative
+Committee, not the Council, voted the 1930 budget (a reading of that phrase, not a stated fact). The sequence is Actions Committee, budget committee, Administrative or Council vote;
+the amounts adopted in 1930 are not stated. For the years after 1930 no source read says which body approved it. Earlier finding: from August 1929 the
 enlarged Agency's constitution "provided for parity between Zionists and non-Zionists on its three governing bodies:
 the 224-member council, the administrative committee, and the executive" (EJ-JA) [V], but EJ-JA does not say which body
 approved the budget. AJYB-46 p. 461 gives the Agency's income and expenditure for 5704 (1943-44), £P2,867,751 and
@@ -418,9 +521,11 @@ Va'ad Le'ummi was headed by a presidium of three, assisted by an executive counc
 | First (October 1920) | 36 | Ahdut ha-Avodah 8, Sephardim 6, Ha-Po'el ha-Za'ir 5, Orthodox 5, Progressives 3, Farmers 2, Yemenites 2, Mizrachi 1, Clerks 1; Dizengoff, Jabotinsky, Margolis-Kalvaryski and Yellin "elected on a personal basis" | EJ-PL [V]. The figures add up to 37 with the four personal members (computed here), one more than 36 [C, internal]; not resolved |
 | Second (1926) | 38 | "18 representing the United Bloc (Mizrachi, Sephardim, Yemenites, Farmers, and others), 9 for Ahdut ha-Avodah, 5 for Ha-Po'el ha-Za'ir, and 2 each for Women, Revisionists, and the Democratic group" | EJ-PL [V]; adds up to 38 (computed here). The year of the session is not given; the second Assembly was elected in December 1925 |
 | Third (1931) | 23 | Mapai 11, Sephardim 4, Mizrachi 3, General Zionists 3, Women 1, Yemenites 1 (EJ-PL); "11 were Labour, four Sephardim, three Mizrahi, three General Zionists, and two were members representing the smaller factions" (MR-1930 para. 23). The Revisionists declined to join after the Assembly rejected their three resolutions (MR-1930 para. 23) | [V], the two agree. MR-1930 para. 24: the General Council "will, in due course, form from amongst its members an Executive Committee, of about seven members" |
-| Third, from 1932 | not given | The Revisionists "were given 5 seats in the following year, leaving Mapai with 10 seats and the three other main parties with 2 each" | EJ-PL [V]. Read literally this changes the whole council, not only adds 5; the new size is a [GAP] |
+| Third, from 1932 | 22 (computed here) | JTA-320305 (bulletin of 5 March 1932, dispatch datelined 4 March): the Revisionists re-entered, so the Vaad Leumi "will now consist of 10 Labour representatives, 5 Revisionists, 2 General Zionists, 2 Mizrachists, 1 Sephardi, 1 Yemenite, and one Women's representative". EJ-PL: the Revisionists "were given 5 seats in the following year, leaving Mapai with 10 seats and the three other main parties with 2 each" | [V]. The JTA and EJ-PL agree on Mapai 10 and Revisionists 5; they differ on the Sephardim (1, against "2 each") [C]; preferred JTA, the dated bulletin. The size 22 is the sum of the figures (10 + 5 + 2 + 2 + 1 + 1 + 1), not a stated total |
 | Fourth (September 1944) | 42 | Mapai 15 and 8 "from the other two left-wing parties" (EJ-PL); "with all factions represented" (AJYB-46 p. 460). Ben-Zvi president, Remez chairman (EJ-PL; signed so in UN-JA11) | [V]. The other 19 seats by party: [GAP] |
 | Fourth, in 1948 | Executive of 14 | "the 14 members of the Executive of the Va'ad Le'ummi" sat in the People's Council (EJ-PL) | [V]; their parties: [GAP] |
+| Executive, 18 October 1939 (not tied to an Assembly's first year) | 18 | JTA-391019 (bulletin of 19 October 1939, dispatch datelined 18 October, "announced today"): "The 18-member Executive includes six representatives of the Mapai, Zionist labor party; two Revisionist, two of the Sephardic group and one each of the Mizrachi, the Poel Hamizrachi, the German imigrants' organization [sic], the General Zionists 'A', General Zionists 'B' and the farmers" | [V]. The parties named add up to 16 (6 + 2 + 2 + 6, computed here), not 18 [C, internal]; the same bulletin says Rutenberg (president) and Szold held "the balance of voting power" but does not say they are the other two of the 18, so that is not filled in. The only Vaad Leumi executive with its parties found |
+| Fifth Vaad Leumi, May 1947 (elected by the closing session of the fourth Assembly) | not given | JTA-470525 (bulletin of 25 May 1947, dispatch datelined 23 May: "elected last night", so the night of 22 May 1947): "15 from the Mapai; five from the Tenua L'Achdut Avoda; four from the Hashomer Hatzair; six from the Mizrachi; four Aliys Hadasha; two General Zionists and several representing minority parties" | [V]. The named seats add up to 36 (computed here); the "several" others are not counted. This is the Vaad Leumi of 1947, not the one elected in September 1944 in the row above |
 
 The heads: EJ-GOV gives "David Yellin (1920-29), Pinhas Rutenberg (1929-31), Izhak Ben-Zvi (1931-44), and David Remez
 (1944-48), with Ben-Zvi as president", which differs from EJ-VL's presidium of three from 1920 to 1925 [C, inside
@@ -429,6 +534,13 @@ EJ]. The offices note for #88 sets out both and prefers EJ-VL; this note does no
 The executive (ועד פועל, later הנהלה) of each period by party: [GAP]. he.wiki הוועד הלאומי lists the names of the
 executive members for each Assembly, without parties and without dates [S]; it would let a later pass assign parties
 from biographies, but that is inference and is not done here.
+
+(24 Oct) Searched again. Closed for one executive only: the 18-member Executive of October 1939 by party (table above, JTA-391019). The
+executives of the other periods by party stay [GAP]. Read: the JTA bulletins listed in the source table and the searches "Vaad Leumi
+executive elected", "Vaad Leumi new executive" and "National Council Palestine executive committee elected" in the JTA archive, whose
+hits give the full council's parties (1931, 1932, 1947), the presidium of the 1931 Assembly (named in the §4 notes above) and the
+1939 executive, but no other executive by party. MR-1930 para. 24 (seen above) says the 1931 General Council would form an Executive
+Committee "of about seven members" without naming it.
 
 Who the Vaad Leumi said it represented, in February 1948: the cable in UN-JA11 lists the parties that took part in the
 1944 election with their seats (§5), and Shertok's letter says "The only Jewish party or group which is outside the
@@ -450,6 +562,18 @@ NAOR page numbers below are the flipbook's (265 = printed 263, 266 = printed 264
 - Size: 37 (EJ-PL, CZA-30, NAOR) [V]. Built from "the 14 members of the Executive of the Va'ad Le'ummi ..., the 11
   members of the Jewish Agency Executive from the yishuv, and 12 delegates from parties not represented on either"
   (EJ-PL) [V]. "Chaim Weizmann was the president of the Council and its 38th member" (EJ-PL) [V].
+- (24 Oct) JTA-480414 (bulletin of 14 April 1948, dispatch datelined 13 April) [V]: the Jewish Agency announced that a 13-man cabinet would be formed "in accordance
+with the decision adopted yesterday in Tel Aviv by the Zionist Actions Committee", which "decided that the central Jewish authority
+would he [sic] composed of 37 members, including the 13 Cabinet members", to be joined by Arab delegates "who recognize the Jewish State".
+Counted from the dateline, "yesterday" is 12 April, the same as EJ-PL; the body is called the Zionist Actions Committee here and the
+Zionist General Council in EJ-PL and CZA-30, and no source read says whether they are one body. The
+bulletin counts the 13 ministers inside the 37, while EJ-PL says 37 plus Weizmann as the 38th member; not reconciled.
+- (24 Oct) An earlier plan, JTA-480309 (bulletin of 9 March 1948, dispatch datelined 8 March) [V]: a "31-member Provisional Council of Government and cabinet of 13"
+  was named late the night before the dateline, that is on 7 March, with seats "ten to the Palestine Labor Party, [th]ree to the Mizrachi Organization, two to the
+  Mizrachi laborites, four to the General [Zi]onists, two to the United Labor Party, two to the Revisionists, and one each to the
+  [Ali]yah Hadasha, the Yemenite community, the Sephardic community, the Agudas Israel, the Agudah laborites and the Communists", and
+  the Jewish National Council to be represented by two members. The named seats add up to 29 (computed here), and the two for the
+  Jewish National Council make 31, as stated; several letters of the bulletin are lost in the scan (restored in square brackets above). It is a plan of March, not the 37 of April, and it is not used below.
 - Basis: seats were proportionate to the 1944 election, and the groups that had boycotted it (Agudat Israel, the
   Revisionists, the Sephardim and the Communist Party, in NAOR's list) were added in April 1948 (NAOR p. 265) [V].
 
@@ -471,6 +595,10 @@ Seats by party:
 | Independent | none | none | none | 1 (Gruenbaum) |
 | Total | 37 (computed here) | 37 (computed here) | 37 (computed here) | 37 (computed here) |
 
+(24 Oct) Searched again and not found. Read: JTA-480309, JTA-480414 and JTA-480506 (above) and the JTA hits for "People's Council",
+"Provisional Council of Government" and "Zionist General Council" for March to May 1948; none gives the 37 seats by party, so the
+Wikipedia columns stay [S] and the seats by party stay [C] between them and EJ-PL and NAOR.
+
 [C] Preferred: EJ-PL, which NAOR matches line by line. The Wikipedia figures may count members by later party, or
 count Aliyah Hadashah members elected on the General Zionist side; that is not checked.
 
@@ -479,6 +607,9 @@ count Aliyah Hadashah members elected on the General Zionist side; that is not c
   Revisionists and Communists sat in the Council but not in the Administration (NAOR p. 266) [V].
 - Sittings: NAOR p. 266 records Ben-Gurion addressing the People's Council on 4 May 1948 [V]. he.wiki dates its first
   sitting to 4 May 1948 and counts four sittings in all [S]. The full list of sittings is a [GAP].
+  (24 Oct) JTA-480506, a bulletin dated 6 May 1948 (dispatch datelined 5 May), reports Ben-Gurion "addressing a session of the 37-member National Council of the
+  Jewish State" "today" and that the session "adjourned for two days"; "today" is 5 May, one day after the 4 May of NAOR and he.wiki, and the
+  bulletin does not say it is the same sitting [C]. It also says "its budget will be adopted this week".
 - End: "On May 14, the People's Council and the People's Administration became respectively the Provisional Council
   of State and the Provisional Government" (EJ-PL; NAOR p. 266) [V]. The Provisional State Council's last meeting was on
   3 February 1949 (KN-PSC) [V]. Its budget role is in [budget-approval-1948-56.md](../budget-approval-1948-56.md).
@@ -491,19 +622,23 @@ design choice; both dates are given above.
 
 Disagreements [C], with the preferred value: the 1944 election date (1 August over 2 August); the 1944 size (171 over
 173); 1944 voters (202,448 of 300,018); Mapai's 1944 seats (63 over 64); Aliyah Hadashah's 1944 seats (18, against 16
-and 19); the 1944 opening session (12 or 13 September, not settled); 1931 turnout and electors (MR-1930's 50,436 of
+and 19); 1931 turnout and electors (MR-1930's 50,436 of
 75,046, 65%, over EJ-PL's 89,656 and 56%); 1931 Revisionist and General Zionist seats (MR-1930); 1931 lists
 represented (12 over 14); 1925 votes (36,437 or 35,987, not settled); 1925 women's seats (9 or 13, not settled); 1925
 lists (26 or 25); the 1920 Orthodox seats (51 over 53); the 1920 Vaad Leumi size (36, though its parts add to 37);
 the 1920 Jerusalem vote (eight days later, or 3 May, not settled); the People's Council's party seats (EJ-PL and NAOR
-over Wikipedia).
+over Wikipedia). (24 Oct) New: 1925 turnout has a third value, 33,845 (JTA-260113); the 1943 budget, $7,400,000 asked against
+$680,000 approved; the date of a sitting reported in the bulletin of 6 May (5 May, against 4 May in NAOR and he.wiki); the 1932 Sephardic seats on the Vaad Leumi (1 in JTA-320305, "2 each" in EJ-PL); the 1939 executive's
+party count (16 named of 18). Closed by a dated bulletin: the 1944 opening session (12 September); the 1931 Revisionist and General
+Zionist seats (final count 16 and 4).
 
-Gaps [GAP]: the first sessions of the second and third Assemblies; the day of the 1920 Jerusalem and Orthodox polls;
+Gaps [GAP]: the day of the 1920 Jerusalem and Orthodox polls;
 the day of the 1925 Yemenite poll; the full 1925 list of seats; the seats of the small 1944 lists; whether the 9,219
 soldiers' votes are in the 1944 total; whether the 1944 boycotters later joined the Vaad Leumi; the party make-up of
-each Vaad Leumi executive (#89 asks for it; only the full Vaad Leumi's parties were found, §7); the 1932 and 1944 Vaad Leumi beyond the parties named; the 1928 Gazette wording of
-regulation 13 and its 1934 amendment; the record of any annual budget vote in the Assembly; how the Jewish Agency's
-budget was approved before 1948; the People's Council's sittings.
+each Vaad Leumi executive (#89 asks for it; only the 1939 executive and the full Vaad Leumi's parties were found, §7); the 1944 Vaad Leumi beyond the parties named; the 1928 Gazette wording of
+regulation 13 and its 1934 amendment; the dates, amounts and tallies of the annual budget votes in the Assembly (only 1932, 1940
+and 1943 are dated, §6); which body approved the Jewish Agency's budget after 1930; the People's Council's seats by party in a source
+beyond EJ-PL and NAOR, and its full list of sittings.
 
 Where to look next: Attias, *Sefer ha-Te'udot shel ha-Va'ad ha-Le'ummi* (1963) and *Knesset Israel be-Eretz Israel*
 (1944); the Mandate reports for 1920 to 1928 on UNISPAL; the Hebrew press of April 1920, December 1925, January 1931 and
