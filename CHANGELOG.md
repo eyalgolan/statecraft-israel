@@ -84,9 +84,16 @@ checks this (see `CONTRIBUTING.md`).
 - The simulation can name the player's cities the enemy is likely to attack or enter this turn, by running the
   enemy's own orders on a copy of the game; it changes nothing and draws no random number. The advisors' city warning
   will read it (Refs #1484).
+- Advisor help levels in Settings, applied at once, and advisor warnings: a city under attack, Money and Food exhausted together, debt at its ceiling, a Food shortage, a budget left unsubmitted and low Arms. Critical warnings show at every help level. Every warning's Hebrew is approved by the owner; the Settings help-level labels and the war-loss line on the end screen await a native read. A loaded game hears the warnings that already hold. The end screen names a war loss (Refs #1484).
 - The advisors' popup can play a short clip, a still or the advisor's portrait with its narration and live captions, in the popup on desktop
   and in a centred overlay on phones; it never plays by itself, and any button or a window opening over it stops it.
   No clip ships yet (Refs #1484).
+- The first advisor clips, in English: David Ben-Gurion's greeting, Attention and event-card lines, Golda Meyerson's
+  city and training lines and Moshe Dayan's movement line in the opening chain now have a Watch clip, as do Golda
+  Meyerson's two economy warnings (Money and Food exhausted, debt at the ceiling) and Moshe Dayan's city-at-risk warning,
+  war-defeat line and low-Arms line. Each is a real archival photograph, colorized or tinted, animated and lip-synced
+  with AI to a synthetic voice, with live captions, the label "AI animation and voice. Fictional dialogue." and the
+  photograph's credit. Hebrew keeps the portrait and the text until its narration is approved (Refs #1484).
 - Defence screen (#755): in the GDD loop it hides the per-rung turn-length legend, names the war state, shows a truce line
   while a truce the player accepted is in force, and has a Prisoners panel (enemy prisoners held, prisoners returned, our
   soldiers held). The sim exposes `Combat.TruceUntil`, the end of the truce in force.
