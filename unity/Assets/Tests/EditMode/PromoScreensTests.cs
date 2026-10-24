@@ -676,7 +676,7 @@ public class PromoScreensTests
     /// minimap (over the info panel, which it is drawn above), and nothing on it leaves it or its panel sideways; every
     /// one-line text fits its box.</summary>
     [UnityTest]
-    public IEnumerator BothScreensFitEveryWindowShape()
+    public IEnumerator BothScreensFitEveryWindowShape([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var problems = new List<string>();
@@ -685,6 +685,7 @@ public class PromoScreensTests
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40
             var go = new GameObject("ScreensTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -709,7 +710,9 @@ public class PromoScreensTests
                     var where = $"{w}x{h} {s}";
                     var screen = root.Q("screen-" + s); var sr = screen.worldBound;
                     if (!(sr.width > 300)) { problems.Add($"{where}: the screen is {sr}"); continue; }
-                    if (sr.yMin < root.Q("top-bar").worldBound.yMax - 0.5f) problems.Add($"{where}: starts over the top bar");
+                    // #40: on the tight three-row HUD a screen takes the whole window (the mobile-modal pattern).
+                    var fullWindowScreens = root.Q("root").ClassListContains(HudPresenter.TightClass) && root.Q("root").ClassListContains(HudPresenter.ThreeRowClass);
+                    if (!fullWindowScreens && sr.yMin < root.Q("top-bar").worldBound.yMax - 0.5f) problems.Add($"{where}: starts over the top bar");
                     // Clear of the minimap column, or (two-row HUD, #210) full width with the column hidden.
                     var column = root.Q("right-column");
                     if (column.resolvedStyle.display != DisplayStyle.None && sr.Overlaps(column.worldBound)) problems.Add($"{where}: overlaps the minimap column {column.worldBound}");
@@ -921,8 +924,10 @@ public class PromoScreensTests
     }
 
     /// <summary>#210: at a phone-shaped 390x844 and at 960x600 every screen is usable: at least 500 logical px wide and
-    /// 300 tall, under the top bar. In the two-row HUD (390x844) a screen takes the full width, the minimap column and the
-    /// info panel under it are hidden and ignore map clicks, and the toast sits below the screen.</summary>
+    /// 300 tall, under the top bar. In the two-row HUD a screen takes the full width, the minimap column and the info panel
+    /// under it are hidden and ignore map clicks, and the toast sits below the screen. On a phone held upright (390x844, the
+    /// tight three-row HUD) a screen takes the whole window instead, over the bar and the side menu (#40, the owner's ruling
+    /// on #1135, 22 Oct 2026), and the toast at the window's foot keeps clear of the screen's header and its X.</summary>
     [UnityTest]
     public IEnumerator EveryScreenIsUsableInANarrowWindow()
     {
@@ -960,6 +965,8 @@ public class PromoScreensTests
                 for (int i = 0; i < 6; i++) yield return null;
                 bool twoRow = root.Q("root").ClassListContains(HudPresenter.TwoRowClass);
                 if ((w, h) == (390, 844) && !twoRow) problems.Add("390x844 is not the two-row HUD");
+                bool takesWindow = root.Q("root").ClassListContains(HudPresenter.TightClass) && root.Q("root").ClassListContains(HudPresenter.ThreeRowClass);
+                if ((w, h) == (390, 844) && !takesWindow) problems.Add("390x844 is not the tight three-row HUD");
                 var bar = root.Q("top-bar").worldBound;
                 foreach (var s in ScreenNav.Screens)
                 {
@@ -968,15 +975,30 @@ public class PromoScreensTests
                     var where = $"{w}x{h} {s}";
                     var r = root.Q("screen-" + s).worldBound;
                     if (!(r.width >= 500f && r.height >= 300f)) problems.Add($"{where}: the screen is only {r.width:0} x {r.height:0}");
-                    if (r.yMin < bar.yMax - 0.5f) problems.Add($"{where}: starts over the top bar");
                     var t = toast.worldBound;
-                    if (t.Overlaps(r)) problems.Add($"{where}: the toast {t} covers the screen {r}");
+                    if (takesWindow)
+                    {
+                        var window = root.worldBound;
+                        if (r.yMin > window.yMin + 12f || r.xMin > window.xMin + 12f || r.xMax < window.xMax - 12f || r.yMax < window.yMax - 12f)
+                            problems.Add($"{where}: the screen {r} does not take the window {window}");
+                        var header = root.Q("screen-" + s).Q(className: "screen-header").worldBound;
+                        var close = root.Q("screen-close-" + s).worldBound;
+                        if (!(t.width > 0)) problems.Add($"{where}: precondition: the toast shows");
+                        else if (t.Overlaps(header) || t.Overlaps(close)) problems.Add($"{where}: the toast {t} covers the screen's header {header} or its X {close}");
+                        if (t.yMax > window.yMax + 0.5f) problems.Add($"{where}: the toast {t} leaves the window {window}");
+                    }
+                    else
+                    {
+                        if (r.yMin < bar.yMax - 0.5f) problems.Add($"{where}: starts over the top bar");
+                        if (t.Overlaps(r)) problems.Add($"{where}: the toast {t} covers the screen {r}");
+                    }
                     if (twoRow)
                     {
                         var panel = root.panel.visualTree.worldBound;
-                        // Full width right of the left icon column (HUD round 2, #398), which stays in view to switch screens.
+                        // Full width right of the left icon column (HUD round 2, #398), which stays in view to switch screens
+                        // (on the tight three-row HUD the screen takes the window instead, above).
                         var column = root.Q("left-column").worldBound;
-                        if (r.xMin < column.xMax - 0.5f) problems.Add($"{where}: covers the left icon column {column}");
+                        if (!takesWindow && r.xMin < column.xMax - 0.5f) problems.Add($"{where}: covers the left icon column {column}");
                         if (r.width < panel.width - 40f - 68f) problems.Add($"{where}: not full width ({r.width:0} of {panel.width:0})");
                         foreach (var hidden in new[] { "right-column", "info-panel" })
                             if (root.Q(hidden).resolvedStyle.display != DisplayStyle.None) problems.Add($"{where}: {hidden} shows under the screen");

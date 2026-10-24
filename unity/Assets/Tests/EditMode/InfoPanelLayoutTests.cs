@@ -39,12 +39,13 @@ public class InfoPanelLayoutTests
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
-                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null)
+                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null, int uiScale = 100)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("InfoPanelTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -72,6 +73,15 @@ public class InfoPanelLayoutTests
             info.Dispose(); card.Dispose(); hud.Dispose();
             Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
         }
+    }
+
+    /// <summary>#40: the panel is a ScrollView now: a label may run past its bottom edge only when the panel scrolls to it
+    /// (the Cabinet list's pattern). Sideways and upward it must always stay inside.</summary>
+    static bool InsideOrScrollsTo(Rect r, ScrollView panel)
+    {
+        var p = panel.worldBound;
+        if (r.xMin < p.xMin - 0.5f || r.xMax > p.xMax + 0.5f || r.yMin < p.yMin - 0.5f) return false;
+        return r.yMax <= p.yMax + 0.5f || panel.verticalScroller.highValue > 0f;
     }
 
     /// <summary>A label's text fits its box: on one line, or wrapped within its height.</summary>
@@ -111,7 +121,7 @@ public class InfoPanelLayoutTests
     /// its box, the panel lies in the window, and it overlaps neither the minimap nor the event card (unless the card's backdrop
     /// covers it, the panel disabled under it), at every window size.</summary>
     [UnityTest]
-    public IEnumerator InfoPanelTextStaysInsideThePanel()
+    public IEnumerator InfoPanelTextStaysInsideThePanel([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var g = WithAnEventOpen();
         var lod = C.SettlementHexes.Single(s => s.Id == "lod");
@@ -132,10 +142,33 @@ public class InfoPanelLayoutTests
                     problems.Add($"{w}x{h}: the panel {panel.worldBound} overlaps the event card {root.Q("event-card").worldBound} with no backdrop over it");
                 foreach (var l in panel.Query<Label>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
                 {
-                    if (!Inside(l.worldBound, panel.worldBound)) problems.Add($"{w}x{h}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
+                    if (!InsideOrScrollsTo(l.worldBound, root.Q<ScrollView>("info-panel"))) problems.Add($"{w}x{h}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
                     if (!TextFits(l)) problems.Add($"{w}x{h}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
                 }
-            });
+            }, uiScale: uiScale);
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#40, owner decision of 22 Oct 2026 (a condition on #1135): the info panel is a ScrollView, whose rows the scroll
+    /// content container lays out, and in Hebrew they still mirror: the hex's terrain sign sits right of its facts, as on
+    /// the row-reversed panel before (#550). In English it sits left of them. At every window size and scale, Lydda's hex.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheInfoPanelsRowsMirror([Values(100, 125, 150)] int uiScale)
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var g = WithAnEventOpen();
+        var lod = C.SettlementHexes.Single(s => s.Id == "lod");
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in Windows)
+                yield return Rendered(w, h, g, (root, info) => info.Show(lod.Q, lod.R), root =>
+                {
+                    var at = $"{(hebrew ? "he" : "en")} {w}x{h} at {uiScale}%";
+                    var thumb = root.Q("info-thumb").worldBound; var body = root.Q(className: "info-body").worldBound;
+                    if (!(thumb.width > 0) || !(body.width > 0)) { problems.Add($"{at}: precondition: the sign {thumb} and the facts {body} show"); return; }
+                    if (hebrew ? !(thumb.xMin >= body.xMax - 0.5f) : !(thumb.xMax <= body.xMin + 0.5f))
+                        problems.Add($"{at}: the sign {thumb} is not {(hebrew ? "right" : "left")} of the facts {body}");
+                }, text: hebrew ? he : null, hebrew: hebrew, uiScale: uiScale);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
@@ -145,7 +178,7 @@ public class InfoPanelLayoutTests
     /// the panel lies in the window, clear of the minimap, the left column and the top bar, and every shown label and
     /// button lies inside the panel with its text fitting its box.</summary>
     [UnityTest]
-    public IEnumerator TheGddCityAndSitePanelsFitEveryWindow()
+    public IEnumerator TheGddCityAndSitePanelsFitEveryWindow([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
         var city = C.SettlementHexes.Single(s => s.Id == "tel_aviv");
@@ -190,10 +223,10 @@ public class InfoPanelLayoutTests
                             if (panel.worldBound.Overlaps(root.Q(other).worldBound)) problems.Add($"{at}: the panel {panel.worldBound} overlaps the {other} {root.Q(other).worldBound}");
                         foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
                         {
-                            if (!Inside(l.worldBound, panel.worldBound)) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
+                            if (!InsideOrScrollsTo(l.worldBound, root.Q<ScrollView>("info-panel"))) problems.Add($"{at}: '{l.text}' {l.worldBound} leaves the panel {panel.worldBound}");
                             if (!TextFits(l)) problems.Add($"{at}: '{l.text}' does not fit its box {l.contentRect} ({l.name})");
                         }
-                    }, hebrew ? he : Text, hebrew);
+                    }, hebrew ? he : Text, hebrew, uiScale: uiScale);
                 }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }

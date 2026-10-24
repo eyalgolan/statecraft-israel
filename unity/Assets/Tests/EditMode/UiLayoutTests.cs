@@ -237,11 +237,12 @@ public class UiLayoutTests
 
     /// <summary>The real Game.uxml on the real PanelSettings (and so the real theme), rendered at <paramref name="w"/> x
     /// <paramref name="h"/>, with the HUD and the Cabinet screen filled from the opening of the historical game.</summary>
-    static IEnumerator Filled(int w, int h, string? screen, System.Action<VisualElement> check)
+    static IEnumerator Filled(int w, int h, string? screen, System.Action<VisualElement> check, int uiScale = 100)
     {
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("LayoutTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -300,7 +301,7 @@ public class UiLayoutTests
     /// <summary>Playtest 1, item 2: the Cabinet lineup is a list inside the screen panel, below its header, filling the
     /// panel; rows that do not fit scroll instead of spilling over the top bar.</summary>
     [UnityTest]
-    public IEnumerator TheCabinetListStaysInsideItsPanel()
+    public IEnumerator TheCabinetListStaysInsideItsPanel([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         foreach (var (w, h) in Windows)
             yield return Filled(w, h, "cabinet", root =>
@@ -323,7 +324,7 @@ public class UiLayoutTests
                     if (r.worldBound.yMax > view.yMax + 0.5f)
                         Assert.Greater(list.verticalScroller.highValue, 0f, $"{w}x{h}: {r.name} runs past the panel and the list does not scroll");
                 }
-            });
+            }, uiScale);
     }
 
     /// <summary>Playtest 1, item 3: the camera learns how much of the window the top bar covers, at every window shape,
@@ -357,7 +358,7 @@ public class UiLayoutTests
     // screen at every size; the Cabinet list grew out of its screen over the top bar. Checked with every screen filled by
     // its presenter (an event open on the card), at 16:9 and at the wider viewports a browser window leaves.
     [UnityTest]
-    public IEnumerator FilledScreensStayInsideTheirPanelsAndTheTopBarFits()
+    public IEnumerator FilledScreensStayInsideTheirPanelsAndTheTopBarFits([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var c = ContentLoader.Load(Paths.Content);
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
@@ -380,6 +381,7 @@ public class UiLayoutTests
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40
             var go = new GameObject("LayoutTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -458,7 +460,7 @@ public class UiLayoutTests
     /// 1040 px wide, below the top bar and inside the layer; its option buttons stay inside it with their text; and its
     /// media header is 16:9 whenever the card has the height for it (on a full card it gives way first, as before).</summary>
     [UnityTest]
-    public IEnumerator EveryEventCardFitsTheDecisionLayer()
+    public IEnumerator EveryEventCardFitsTheDecisionLayer([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
         foreach (var (w, h) in CardWindows)
@@ -466,6 +468,7 @@ public class UiLayoutTests
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40
             var go = new GameObject("LayoutTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -537,7 +540,7 @@ public class UiLayoutTests
         if (!Inside(c, l)) problems.Add($"{where}: the card {c} leaves the decision layer {l}");
         // Centred between the layer's paddings: on a phone held upright the layer keeps the left rail's room free at its left
         // (the owner's ruling on #859: no rail button under the card), so the card centres right of the rail.
-        float padL = layer.resolvedStyle.paddingLeft, padR = layer.resolvedStyle.paddingRight;
+        float padL = layer.resolvedStyle.paddingLeft, padR = layer.resolvedStyle.paddingRight, padT = layer.resolvedStyle.paddingTop, padB = layer.resolvedStyle.paddingBottom;
         if (Mathf.Abs((c.xMin - l.xMin - padL) - (l.xMax - padR - c.xMax)) > 1f) problems.Add($"{where}: the card {c} is not centred in the layer {l} (paddings {padL}, {padR})");
         if (c.width > CardMaxWidth + 1.5f) problems.Add($"{where}: the card is {c.width:0} px wide, over {CardMaxWidth}");
         if (c.yMin < bar.worldBound.yMax - 0.5f) problems.Add($"{where}: the card {c} starts over the top bar {bar.worldBound}");
@@ -548,7 +551,10 @@ public class UiLayoutTests
         if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
             problems.Add($"{where}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px) while the photograph shows");
         var band = root.Q("event-photo");
-        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - 1f)
+        // "As tall as the layer" is as tall as its room: the layer's bound less its paddings (the two-row layer keeps 92 px
+        // at its bottom for the taller bar, #831). A card filling that room gave the header way first; only with room to
+        // spare must a shown header keep 16:9 (#40: at 125%/150% the card fills smaller rooms this pin never measured).
+        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - padT - padB - 1f)
         {
             var want = band.layout.width / EventCardPresenter.MediaAspect;
             if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare; {LayoutState(root)}");

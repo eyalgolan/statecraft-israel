@@ -57,12 +57,13 @@ public class TopBarTests
     /// score in the plate. <paramref name="widest"/> false keeps the turn-1 values. <paramref name="collapsed"/> (with
     /// <paramref name="withEvent"/>) hides the open card to its "Decision waiting" button, as Hide does.</summary>
     static IEnumerator Rendered(int w, int h, bool hebrew, System.Action<VisualElement, UiText> check, bool widest = true, bool withEvent = false,
-                                bool collapsed = false, System.Func<VisualElement, IEnumerator>? afterRender = null)
+                                bool collapsed = false, System.Func<VisualElement, IEnumerator>? afterRender = null, int uiScale = 100)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("TopBarTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -285,7 +286,7 @@ public class TopBarTests
     /// at the bar's right end, End Turn at its left); and every panel under the bar, and under the hanging plate, starts below
     /// them.</summary>
     [UnityTest]
-    public IEnumerator TheBarFitsEveryWindowInEnglishAndHebrew()
+    public IEnumerator TheBarFitsEveryWindowInEnglishAndHebrew([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -343,7 +344,7 @@ public class TopBarTests
                         if (r.xMin < plate.xMax && r.xMax > plate.xMin && r.yMin < plate.yMax - 0.5f && name != "event-layer" && name != "right-column")
                             problems.Add($"{at}: {name} {r} starts under the hanging plate {plate}");
                     }
-                });
+                }, uiScale: uiScale);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
@@ -413,7 +414,11 @@ public class TopBarTests
                     if (!(band.height > 0) || !(scrim.height > 0) || !(gutter.height > 0)) { problems.Add($"{at}: precondition: the backdrop shows"); return; }
                     if (Mathf.Abs(band.yMin - bar.yMax) > 0.5f) problems.Add($"{at}: the band starts at {band.yMin:0}, not at the bar's bottom {bar.yMax:0}");
                     if (band.xMin > root.worldBound.xMin + 0.5f || band.xMax < root.worldBound.xMax - 0.5f) problems.Add($"{at}: the band {band} is not the window's width");
-                    if (band.yMax < scrim.yMin - 0.5f || band.yMax < gutter.yMin - 0.5f) problems.Add($"{at}: a gap between the band {band} and the backdrop {scrim} or the strip {gutter}");
+                    // On the tight three-row window (#40) the side menu is a row under the bar: the band stops at the row's top and
+                    // the strip, the window's width, takes over from there down to the backdrop.
+                    bool stripBridges = gutter.yMin <= band.yMax + 0.5f && gutter.yMax >= scrim.yMin - 0.5f
+                        && gutter.xMin <= root.worldBound.xMin + 0.5f && gutter.xMax >= root.worldBound.xMax - 0.5f;
+                    if (band.yMax < scrim.yMin - 0.5f && !stripBridges || band.yMax < gutter.yMin - 0.5f) problems.Add($"{at}: a gap between the band {band} and the backdrop {scrim} or the strip {gutter}");
                     if (band.yMax > column.yMin + 0.5f) problems.Add($"{at}: the band {band} reaches over the column's discs {column}");
                     foreach (var x in new[] { 0.1f, 0.5f, 0.9f })
                     {

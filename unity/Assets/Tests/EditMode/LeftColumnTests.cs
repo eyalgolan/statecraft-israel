@@ -62,12 +62,13 @@ public class LeftColumnTests
     /// navigation, the decision card (open when the session has an event), the info panel on Lydda's hex, the minimap and the
     /// border caption. <paramref name="photos"/>: the card shows its event's photograph (the taller card).</summary>
     static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, System.Action<VisualElement, ScreenNav> check, System.Action<VisualElement, ScreenNav>? act = null,
-                                EventImageCatalog? photos = null)
+                                EventImageCatalog? photos = null, int uiScale = 100)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("LeftColumnTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -135,7 +136,7 @@ public class LeftColumnTests
     /// px with no caption showing, clear of the info panel, the decision card and its backdrop, the minimap column and the
     /// border caption, and the toast.</summary>
     [UnityTest]
-    public IEnumerator TheColumnFitsEveryWindowInEnglishAndHebrew()
+    public IEnumerator TheColumnFitsEveryWindowInEnglishAndHebrew([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
         var g = WithAnEventOpen();
@@ -165,7 +166,31 @@ public class LeftColumnTests
                                                       ("the border caption", root.Q("map-layer").worldBound) })
                         if (r.Overlaps(hull)) problems.Add($"{at}: the column {hull} overlaps {name} {r}");
                     if (!root.Q(Column).enabledInHierarchy) problems.Add($"{at}: the column is disabled under the open card (the top bar is not)");
-                });
+                }, uiScale: uiScale);
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#40, owner decision of 22 Oct 2026 (phones at 100% take the tight HUD, on #1135): on a phone held upright the
+    /// HUD is tight and three-row, and an open screen takes the window (the mobile-modal pattern), however far the bar's
+    /// rows grew: it starts at the window's top inset, over the bar, not part-way down it, and lies in the window, in
+    /// English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator OnAPhoneAScreenTakesTheWindow()
+    {
+        var problems = new List<string>();
+        var g = WithAnEventOpen();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (390, 844), (360, 800), (375, 667) })
+                yield return Rendered(w, h, hebrew, g, (root, nav) =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h}";
+                    var hud = root.Q("root");
+                    if (!hud.ClassListContains(HudPresenter.TightClass) || !hud.ClassListContains(HudPresenter.ThreeRowClass)) problems.Add($"{at}: precondition: the tight three-row HUD");
+                    var window = root.worldBound; var screen = root.Q("screen-cabinet").worldBound;
+                    if (!(screen.width > 0)) { problems.Add($"{at}: precondition: the Cabinet shows"); return; }
+                    if (screen.yMin > window.yMin + 12f)   // its 8 px inset, give or take the panel's scaling problems.Add($"{at}: the screen {screen} starts {screen.yMin - window.yMin:0} px down, not at the window's top");
+                    if (screen.xMin < window.xMin - 0.5f || screen.xMax > window.xMax + 0.5f || screen.yMax > window.yMax + 0.5f) problems.Add($"{at}: the screen {screen} leaves the window {window}");
+                }, (root, nav) => nav.Toggle("cabinet"));
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
@@ -203,7 +228,9 @@ public class LeftColumnTests
     }
 
     /// <summary>Each screen opens clear of the column at every window size (a screen under the column would hide the button
-    /// that closes it), and the toast too, in English and Hebrew.</summary>
+    /// that closes it), and the toast too, in English and Hebrew. On the tight three-row HUD (a phone held upright) a screen
+    /// takes the window instead and covers the whole side menu, its own X closing it (#40, the owner's ruling on #1135,
+    /// 22 Oct 2026; OnAPhoneAScreenTakesTheWindow).</summary>
     [UnityTest]
     public IEnumerator EveryScreenAndTheToastOpenClearOfTheColumn()
     {
@@ -223,7 +250,10 @@ public class LeftColumnTests
                     yield return Rendered(w, h, hebrew, g, (root, nav) =>
                     {
                         var r = root.Q("screen-" + screen).worldBound;
+                        var hud = root.Q("root");
+                        bool takesWindow = hud.ClassListContains(HudPresenter.TightClass) && hud.ClassListContains(HudPresenter.ThreeRowClass);
                         if (!(r.width > 0)) problems.Add($"{at}: precondition: the {screen} screen shows");
+                        else if (takesWindow) { if (!(r.Contains(Hull(root).min) && r.Contains(Hull(root).max))) problems.Add($"{at}: the {screen} screen {r} takes the window but leaves part of the column {Hull(root)} uncovered"); }
                         else if (r.Overlaps(Hull(root))) problems.Add($"{at}: the {screen} screen {r} covers the column {Hull(root)}");
                     }, (root, nav) => nav.Toggle(screen));
             }

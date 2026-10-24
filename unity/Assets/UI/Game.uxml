@@ -132,7 +132,7 @@
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="info-panel" class="panel info-panel">
+        <ui:ScrollView name="info-panel" class="panel info-panel">
             <!-- The selected hex's terrain sign on its map colour, beside its real facts (no tile yields: owner ruling). -->
             <Statecraft.Game.UI.UiIcon name="info-thumb" class="info-thumb" />
             <ui:VisualElement class="info-body">
@@ -170,7 +170,7 @@
                  second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
             <ui:VisualElement name="info-gdd" class="info-gdd" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
-        </ui:VisualElement>
+        </ui:ScrollView>
         <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
              the bottom left (the info panel starts right of the lane). Icon-only as the side menu: each one's name is its text,
              drawn clear, and its tooltip (HoverTip). After the info panel in the tree, so Tab reaches them after its actions. -->
