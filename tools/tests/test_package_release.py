@@ -10,7 +10,7 @@ import package_release
 
 REPO = Path(package_release.REPO)
 SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
-SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
+SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days"]
 
 
 def photo_manifest(build, reviewed=True, shareable=True):

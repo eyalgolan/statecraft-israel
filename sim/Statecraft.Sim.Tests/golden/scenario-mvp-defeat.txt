@@ -3,7 +3,7 @@ ind{
   food_supply=0 [0000000000000000]
   housing=0.12527429756872116 [3FC008FCF98B23CA]
   intl_standing=0.7900000000000003 [3FE947AE147AE14A]
-  morale=0.6206843611464106 [3FE3DCA57308664A]
+  morale=0.6006843611464106 [3FE338CE68CAF5A6]
   security=0.5061322526321603 [3FE0323C441030A6]
 pol{
   border_settlement=0.2 [3FC999999999999A]
@@ -23,7 +23,7 @@ shift{
   food_supply=-0.04999999999999999 [BFA9999999999998]
   housing=0.039999999999999994 [3FA47AE147AE147A]
   intl_standing=0.29000000000000026 [3FD28F5C28F5C294]
-  morale=-0.030000000000000027 [BF9EB851EB851EC0]
+  morale=-0.050000000000000044 [BFA99999999999A0]
   security=0.16500000000000015 [3FC51EB851EB8524]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
@@ -50,7 +50,7 @@ debt=299.4401207128381 [4072B70ABC043EE9]
 fx=-74.99043132809655 [C052BF633A14C6F2]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.4380036636522637 [3FDC084084BA89BB]
+stab=0.4365036636522637 [3FDBEFAD0FFE1F3C]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -79,6 +79,7 @@ fired[
   operation_horev
   operation_yoav
   reparations_claim
+  reparations_vote
   rhodes_talks
   second_truce
   sinai_withdrawal
@@ -111,6 +112,7 @@ chosen{
   operation_horev=launch
   operation_yoav=stop_at_ceasefire
   reparations_claim=refuse
+  reparations_vote=negotiate
   rhodes_talks=send_delegation
   second_truce=comply
   sinai_withdrawal=withdraw

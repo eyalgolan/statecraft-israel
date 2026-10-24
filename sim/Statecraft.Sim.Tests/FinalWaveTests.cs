@@ -16,7 +16,7 @@ public class FinalWaveTests
 
     /// <summary>The events with a sensitive tag (spec 5.5): pinned, so a new one cannot miss the owner's review table.</summary>
     static readonly string[] SensitiveEvents =
-        { "altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
 
     /// <summary>The resources a sensitive option may not raise (EventRules.NoGainTargets, internal to the sim).</summary>
     static readonly string[] Resources = { "treasury", "fx_reserves", "food_supply", "morale", "intl_standing" };
@@ -67,7 +67,9 @@ public class FinalWaveTests
     {
         // The owner signed off all seven on 2026-10-10 (docs/oss/DECISIONS.md D11), and re-reviewed altalena,
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
-        Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real)); // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026
+        // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564) waits for the
+        // owner's review, so the gate blocks a shareable build until the maintainer sets sensitivity-reviewed.
+        Assert.Equal(new[] { "reparations_vote" }, ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
             ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",

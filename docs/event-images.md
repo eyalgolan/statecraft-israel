@@ -1,7 +1,7 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 27 of the 35 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 28 of the 36 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
