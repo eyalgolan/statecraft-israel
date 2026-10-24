@@ -154,8 +154,9 @@
                     <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
                     <ui:Button name="info-fortify" />
                     <ui:Button name="info-hold" />
-                    <!-- Skip is UI-only: it drops this unit from the needs-orders cycle for this turn. -->
-                    <ui:Button name="info-skip" />
+                    <!-- Skip is UI-only: it drops this unit from the needs-orders cycle for this turn. Hidden until the unit card
+                         shows it (InfoPanelPresenter sets its display on every render). -->
+                    <ui:Button name="info-skip" style="display: none;" />
                     <!-- Attack (#754): shown only when the sim's Combat.Check takes some hex; the pick shows each hex's odds. -->
                     <ui:Button name="info-attack" />
                     <!-- Send home (#1309): shown only when the sim's Demobilization.Check takes the unit. -->
