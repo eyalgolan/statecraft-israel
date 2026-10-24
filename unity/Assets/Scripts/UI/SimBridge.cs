@@ -46,6 +46,8 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Cause>>? Committed;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
+        /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
+        public event Action? RefusedForAttention;
 
         readonly UiText text;
         readonly Func<GameSession, IReadOnlyList<Command>, StepResult> step;
@@ -80,6 +82,7 @@ namespace Statecraft.Game.UI
             StartProject p => FormattableString.Invariant($"project:{p.Q},{p.R}"),
             CancelProject x => FormattableString.Invariant($"unproject:{x.Project}"),
             ResolveCapture r => "capture:" + r.Settlement,
+            EndOccupation e => "endocc:" + e.Settlement,
             _ => c.Kind,
         };
 
@@ -185,6 +188,8 @@ namespace Statecraft.Game.UI
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
                 case ResolveCapture _: return null;
+                // Answering the end of an occupation (#799): the sim refuses a place not awaiting the end with its own reason.
+                case EndOccupation _: return null;
                 default: return text["order.invalid"];
             }
         }
@@ -229,7 +234,10 @@ namespace Statecraft.Game.UI
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
             if (!CanPay(c))
+            {
+                Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
                 return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
+            }
             var old = QueuedLike(c);
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
             Notify(Changed);

@@ -41,6 +41,7 @@ public class SimBridgeGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),
+        [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),
     };
 
     static IEnumerable<Type> CommandTypes() =>

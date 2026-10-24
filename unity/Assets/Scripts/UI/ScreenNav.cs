@@ -44,7 +44,7 @@ namespace Statecraft.Game.UI
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
-            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
+            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass) || r.ClassListContains(AdvisorPresenter.OverlayOpenClass);   // an End Turn outcome clip covers all but itself
             bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
             bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
             bool modal = (r.ClassListContains(EventCardPresenter.OpenClass) || r.ClassListContains(CaptureDialogPresenter.OpenClass)) && !start && !screen && !outcome;
@@ -78,6 +78,9 @@ namespace Statecraft.Game.UI
                 over.SetEnabled(now);
                 if (!was && now) (over.userData as System.Action)?.Invoke();   // EndScreenPresenter: Close takes the focus
             }
+            // The advisors' popup (spec 4.2) hides under every layer above and comes back when they close: every layer calls
+            // this method when its class changes, so the popup needs no class of its own here.
+            (r.Q(AdvisorPresenter.LayerName)?.userData as System.Action)?.Invoke();
         }
 
         /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen, a

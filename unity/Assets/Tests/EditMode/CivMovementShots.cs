@@ -67,7 +67,7 @@ public class CivMovementShots
         for (int i = 0; i < 30 && !(ui.Q("top-bar").worldBound.height > 0); i++) yield return null;
         yield return Frames(5);
         GameSceneTests.HideTheOpeningCard(ui);
-        if (root.Guide != null && root.Guide.IsOpen) UiTestKit.Press(ui.Q<Button>("guide-skip"));
+        if (root.Advisor != null && root.Advisor.IsOpen) UiTestKit.Press(ui.Q<Button>("advisor-close"));
         yield return Frames(3);
         booted(rt, ps, ui, root);
     }

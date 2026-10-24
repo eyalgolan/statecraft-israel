@@ -389,7 +389,7 @@
                 <ui:Label name="how-to-play-end-turn" class="how-to-play-line" />
                 <ui:Label name="how-to-play-why" class="how-to-play-line" />
             </ui:ScrollView>
-            <!-- Opens the first-turn guide again (#42, FirstTurnGuidePresenter), which closes this screen. -->
+            <!-- Opens the advisor opening chain again (#1484, AdvisorPresenter), which closes this screen. -->
             <ui:Button name="how-to-play-guide" class="how-to-play-guide" />
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
@@ -425,6 +425,16 @@
                     <ui:Button name="settings-sound-high" text="High" class="settings-switch" />
                 </ui:VisualElement>
             </ui:VisualElement>
+            <!-- How much the advisors say (spec 6, AdvisorSettings): four levels, the one set carries .settings-choice-selected. -->
+            <ui:VisualElement class="row settings-row">
+                <ui:Label name="settings-advisors-label" text="Advisors" class="settings-name" />
+                <ui:VisualElement class="row settings-choices settings-advisors">
+                    <ui:Button name="settings-advisors-new" class="settings-switch" />
+                    <ui:Button name="settings-advisors-experienced" class="settings-switch" />
+                    <ui:Button name="settings-advisors-warnings" class="settings-switch" />
+                    <ui:Button name="settings-advisors-off" class="settings-switch" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <!-- The UI's language (#1036): SettingsPresenter names each language in itself; the one in use carries .settings-choice-selected. -->
             <ui:VisualElement class="row settings-row">
                 <ui:Label name="settings-language-label" text="Language" class="settings-name" />
@@ -455,22 +465,40 @@
             </ui:VisualElement>
             <Statecraft.Game.UI.UiFrame />
         </ui:VisualElement>
-        <!-- The first-turn guide (#42, FirstTurnGuidePresenter): a gold ring round the step's part of the HUD and a short panel
-             in the other half of the window. It takes no pointer outside the panel, so the HUD stays usable under it. Over the
-             screens and the decision layer, under the turn report, the outcome clips and the start screen. -->
-        <ui:VisualElement name="first-turn-guide" class="guide-layer" picking-mode="Ignore">
-            <ui:VisualElement name="guide-ring" class="guide-ring" picking-mode="Ignore" />
-            <ui:VisualElement name="guide-dock" class="guide-dock" picking-mode="Ignore">
-                <ui:VisualElement name="guide-panel" class="panel guide-panel">
-                    <ui:Label name="guide-count" class="muted guide-count" />
-                    <ui:Label name="guide-title" class="title guide-title" />
-                    <ui:Label name="guide-text" class="guide-text" />
-                    <ui:VisualElement class="row guide-actions">
-                        <ui:Button name="guide-skip" />
-                        <ui:Button name="guide-next" class="guide-next" />
+        <!-- The advisors' popup (spec 7.1, AdvisorPresenter): the right column's upper part, or a sheet under the bar on an
+             upright phone, placed in code (AdvisorLayout). Not modal: the layer takes no pointer outside the popup. It
+             hides under every modal layer (ScreenNav.DisableCovered calls the presenter). -->
+        <ui:VisualElement name="advisor-layer" class="advisor-layer" picking-mode="Ignore">
+            <ui:VisualElement name="advisor-ring" class="advisor-ring" picking-mode="Ignore" />
+            <ui:VisualElement name="advisor-popup" class="panel advisor-popup">
+                <ui:VisualElement class="row advisor-head">
+                    <ui:VisualElement name="advisor-portrait" class="advisor-portrait"><ui:Button name="advisor-watch" class="advisor-watch" /></ui:VisualElement>
+                    <ui:VisualElement class="advisor-names">
+                        <ui:Label name="advisor-name" class="title advisor-name" />
+                        <ui:Label name="advisor-role" class="muted advisor-role" />
                     </ui:VisualElement>
-                    <Statecraft.Game.UI.UiFrame filigree="true" />
+                    <ui:Button name="advisor-close" class="advisor-close" />
                 </ui:VisualElement>
+                <ui:VisualElement name="advisor-media" class="advisor-media" />
+                <ui:ScrollView name="advisor-body" class="advisor-body">
+                    <ui:Label name="advisor-text" class="advisor-text" />
+                    <ui:Label name="advisor-quote" class="advisor-quote" />
+                    <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
+                </ui:ScrollView>
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). The credit
+                     scrolls in the room the caption and the buttons leave (Dayan's runs to seven lines). -->
+                <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
+                <ui:ScrollView name="advisor-media-credits" class="advisor-media-credits">
+                    <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
+                <ui:VisualElement class="row advisor-actions">
+                    <ui:Button name="advisor-show-me" />
+                    <ui:Button name="advisor-more" />
+                    <ui:Button name="advisor-not-now" />
+                    <ui:Button name="advisor-got-it" class="advisor-got-it" />
+                </ui:VisualElement>
+                <ui:Label name="advisor-count" class="muted advisor-count" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.
@@ -509,6 +537,19 @@
                 <ui:VisualElement name="outcome-media" class="outcome-media" picking-mode="Ignore"><ui:Label name="outcome-label" class="outcome-label" picking-mode="Ignore" /></ui:VisualElement>
                 <ui:Label name="outcome-caption" class="title outcome-caption" picking-mode="Ignore" />
                 <ui:Label name="outcome-hint" class="muted outcome-hint" picking-mode="Ignore" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- User-started advisor media, after outcome clips; the start screen/feedback still cover it. -->
+        <ui:VisualElement name="advisor-overlay" class="advisor-overlay">
+            <ui:VisualElement name="advisor-overlay-frame" class="panel advisor-overlay-frame">
+                <ui:Button name="advisor-overlay-close" class="advisor-close" />
+                <ui:VisualElement name="advisor-overlay-media" class="advisor-overlay-media" />
+                <ui:ScrollView class="advisor-overlay-words">
+                    <ui:Label name="advisor-overlay-caption" class="advisor-text" />
+                    <ui:Label name="advisor-overlay-label" class="muted advisor-media-label" />
+                    <ui:Label name="advisor-overlay-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
         </ui:VisualElement>

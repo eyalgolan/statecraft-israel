@@ -212,12 +212,12 @@ Category: game-system. Scope: ui, docs, marketing, code.
 | In use | Where |
 |---|---|
 | תור {0} | strings.he.yaml hud.turn |
-| תורים של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
+| תורות של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
 | {0} תורות | strings.he.yaml city.turns (#869) |
 
 **Recommendation (see status).**
 - English: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy strings.
-- Hebrew: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether the variants need alignment.
+- Hebrew: The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").
 - Reasons: (1) The current rules set all five turn lengths to month.
 
 **Decision owner.** Eyal.

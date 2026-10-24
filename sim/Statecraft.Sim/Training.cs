@@ -44,7 +44,7 @@ namespace Statecraft.Sim
         /// starts with (cities.yaml, D-D5), a camp site of that kind built for it (sites.yaml city), or, for industry, a
         /// completed industry project in it (R-PROJ-003). A camp or a project being built does not count.</summary>
         public static bool HasFacility(Content c, GameState s, string city, string facility) =>
-            c.Cities.First(k => k.Id == city).Facilities.Contains(facility)
+            c.Cities.FirstOrDefault(k => k.Id == city)?.Facilities.Contains(facility) == true   // an annexed city (R-CTRL-016) has none
             || (facility == Industry && s.CityProjects.Values.Any(p => p.City == city && p.Kind == Industry && p.BuiltOn != null))
             || c.Sites.Any(x => x.City == city && x.Kinds.Contains(facility) && s.Sites.TryGetValue(x.Id, out var w) && w.BuiltOn != null);
 
@@ -52,15 +52,17 @@ namespace Statecraft.Sim
         /// city's jobs first (R-CRAFT-002), so only the employed beyond its craftsmen are civilians in work.</summary>
         public static int Idle(City city) => city.Civilians - Math.Max(0, city.Employed - city.Craftsmen);
 
-        /// <summary>The groups the Train and Reinforce orders in <paramref name="pending"/> (this turn's queue) take from
-        /// <paramref name="city"/>, every track together.</summary>
+        /// <summary>The groups the Train, Reinforce, ReassignCraftsmen and ReassignPioneers orders in <paramref name="pending"/>
+        /// (this turn's queue) take from <paramref name="city"/>'s idle civilians, every track together (#1548; owner, 24 October
+        /// 2026: "Yes, count them").</summary>
         public static int Ordered(string city, IEnumerable<Command> pending) =>
-            pending.OfType<Train>().Where(t => t.City == city).Sum(t => t.Count) + pending.OfType<Reinforce>().Where(t => t.City == city).Sum(t => t.Count);
+            pending.OfType<Train>().Where(t => t.City == city).Sum(t => t.Count) + pending.OfType<Reinforce>().Where(t => t.City == city).Sum(t => t.Count)
+            + pending.OfType<ReassignCraftsmen>().Where(t => t.City == city).Sum(t => t.Count) + pending.OfType<ReassignPioneers>().Where(t => t.City == city).Sum(t => t.Count);
 
         /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
-        /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there,
-        /// and less a pending AssignWorkers' rise in jobs. A count up to it keeps every one of those orders accepted, whatever
-        /// order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
+        /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there
+        /// and every queued reassignment (R-QUAL-004, R-QUAL-005), and less a pending AssignWorkers' rise in jobs. A count up to
+        /// it keeps every one of those orders accepted, whatever order they run in. A pending CancelTraining is not counted, since it may run after the Train.</summary>
         public static int Available(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];

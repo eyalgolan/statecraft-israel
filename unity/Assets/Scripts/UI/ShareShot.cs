@@ -19,6 +19,8 @@ namespace Statecraft.Game.UI
     {
         /// <summary>The game's itch page, the link the post carries (owner's decision, 20 Oct 2026).</summary>
         public const string Itch = "https://eyalgolan.itch.io/statecraft-israel";
+        /// <summary>The game's GitHub repository, the post's second link (owner, 24 Oct 2026).</summary>
+        public const string Repo = ExternalLink.Repository;
         /// <summary>The picture's long side at most: a DPR-3 phone frame encoded at full size can exhaust the WebGL heap.</summary>
         public const int MaxSide = 1920;
         /// <summary>The site buttons, in the panel's order: the owner's list (#1237; LinkedIn kept, at the end, owner 21 Oct
@@ -36,11 +38,11 @@ namespace Statecraft.Game.UI
         public static Action<string> Copy = DefaultCopy;
         public static Func<CopyResult> Copied = DefaultCopied;
 
-        /// <summary>The post, in the UI's language, with the in-game date and turn and the itch URL.</summary>
-        public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch);
+        /// <summary>The post, in the UI's language, with the in-game date and turn, the itch URL and the repository's.</summary>
+        public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch, Repo);
 
-        /// <summary>A site's share link. X and WhatsApp take the text, which ends with the URL; Telegram takes the URL and the
-        /// text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only the URL.</summary>
+        /// <summary>A site's share link. X and WhatsApp take the text, which carries both URLs; Telegram takes the itch URL and
+        /// the text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only a URL, the itch one.</summary>
         public static string IntentUrl(string site, string text) => site switch
         {
             "x" => "https://x.com/intent/post?text=" + Uri.EscapeDataString(text),

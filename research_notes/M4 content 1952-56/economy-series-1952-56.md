@@ -1,6 +1,6 @@
 # M4 content research: annual economic series, 1952 to 1956
 
-Researched 2026-10-22. All URLs were opened on that date. Research only, for step 1 of issue #24: no test, golden or `content/rules.yaml` change goes with it (step 2 stays paused).
+Researched 2026-10-22. All URLs were opened on that date. Follow-up pass 2026-10-24 (issue #24, research part): sections 2.3 and 4.2 and the open items were extended; every page cited there was opened by an agent on 2026-10-24, and a person's check is pending. Research only, for step 1 of issue #24: no test, golden or `content/rules.yaml` change goes with it (step 2 stays paused).
 
 **Purpose.** #24 step 1 asks for sourced annual series for 1952 to 1956: GNP and the national accounts, each year's fiscal stance, unemployment, and the official and black-market price indexes. This note gives each figure with its table and page, and gives both values where the sources disagree. It proposes no calibration targets; choosing anchors is step 2.
 
@@ -113,7 +113,54 @@ Defence spending in the national accounts (line 2b of Table 12 above) went from 
 
 The 1954-55 columns are actuals; the 1955-56 columns are estimates and include the special Defence Fund Budget of 50 million IL (text, p. 217). The source is the Accountant General's financial reports. Read as printed: the 33.0 sits in the expenditure column of 1954-55, so revenue exceeded expenditure that year, and the 0.5 sits in the revenue column of 1955-56. In words: the 1955-56 estimates carry a deficit of 0.5 million IL; Table 142 (p. 218) prints it as "Surplus of Expenditure 0.5". The text on p. 219 says "the revenue surplus from the financial year 1954-55 was absorbed".
 
-**[GAP]** Budget outturns for 1952-53, 1953-54 and 1956-57: not in the opened chapters of BoI 1955 or BoI 1956 (the BoI 1956 public-finance chapter was not opened; it is in the same file set and may close this gap, a follow-up). The candidates are the Accountant General's reports and CBS *Expenditures and Receipts of the Government* cited by Patinkin (p. 45).
+**[GAP, partly closed on 2026-10-24]** Budget outturns for 1952-53, 1953-54 and 1956-57: see section 2.3 for what the follow-up found and what is still open.
+
+### 2.3 Budget outturns 1952-53, 1953-54 and 1956-57 (follow-up, agent read 2026-10-24; a person's check pending)
+
+Every page below was opened on 2026-10-24. Hebrew and Bank of Israel pages are scans with a poor text layer, so the figures were read on a rendered image of the page unless marked otherwise.
+
+**Short answer.** Only the *Ordinary Budget* of 1952-53 is closed (2.3.1). For 1953-54 only a secondary cash series was found (2.3.2). For 1956-57 there is the first nine months and the calendar year 1957, not the financial year (2.3.3). The Treasury's full financial reports for these years were not found online.
+
+#### 2.3.1 1952-53, Ordinary Budget (State Comptroller, Annual Report No. 5, 1954, pp. 108-109) [V]
+URL: https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1954-5/1954-5-401-Otzar.pdf (chapter 4, Ministry of Finance, "the financial report for 1952/53"; p. 109 checked on the page image).
+
+| IL | Line |
+|---|---|
+| 168,450,000 | authorisation under section 1 of the 1952/53 Budget Law |
+| 4,465,000 | authorisation under section 1 of the Budget Law (No. 2) 1952/53 |
+| 172,915,000 | sum of the two |
+| 171,966 | surplus carried from the previous year, "according to the Treasury's calculations" |
+| 173,086,966 | legal authorisation |
+| 186,849,489 | actual expenditure in the Ordinary Budget |
+| 13,762,523 | spent without legal authorisation (the difference) |
+| 181,088,989 | actual revenue in the revenue-estimate items |
+| 5,641,698 | receipts from internal loans not in the revenue estimate |
+| 186,730,687 | total revenue and receipts |
+| 118,802 | excess of expenditure over revenue (186,849,489 less 186,730,687, as printed) |
+
+The Comptroller says the overspending came mainly from price rises not fully allowed for when the budget was drawn up, from the cost of the Compulsory Education Law, and from the need to repay debts above the amount expected (p. 109, paraphrased). A supplementary budget of only about IL 4.5 million was put to the Knesset at the end of the year, "instead of about 18 million" (p. 109). He adds that the picture is right in its main lines although the assignment of entries to the right year was "not fully uniform" (p. 109). The figures rest on the financial report published in May 1954 (p. 108). The two authorisations (168,450,000 and 4,465,000) match the 1952/53 law and the Budget Law (No. 2) in `../budget-approval-1948-56.md`. **This is the Ordinary Budget only.** The Development Budget outturn for 1952-53 is not in this passage [GAP].
+
+A wider, rougher view of the same year is in the Comptroller's survey in Annual Report No. 4 (1953), "Government budgets and other public bodies in the national economy, 1951/52 and 1952/53": https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1953-4/1953-4-303-KalkalaLeumit.pdf [V, Tables 1 and 6A checked on page images]. Government own revenue, regular and irregular, column (א) "סכום נקי" (the net amount, before transfers to other bodies), IL millions: 185 in 1951/52 and 270 in 1952/53 (Table 1, p. 62). Column (ג), "הסך הכולל (אחרי ההעברות מכספי האוצר לגופים אחרים)" (the total after transfers from the Treasury to other bodies), gives 155 and 233; the text under the table says about 37 million of the 270 was transferred in 1952/53 (and about 30 million in 1951/52). Table 6A (p. 65) splits it by source: taxes and similar receipts 106 and 163; additions to the internal debt 36 and 30; receipts from abroad 43 and 77 (1951/52 and 1952/53). The survey says that where final accounts were not yet ready it used estimates from approved budgets and interim reports (p. 61), so the 1952/53 column is partly provisional. These totals use the survey's own definition and are not the Ordinary Budget of the table above [C on scope, not on value].
+
+#### 2.3.2 1953-54 [S] and [GAP]
+- The Comptroller's Annual Report No. 5 says only that the Treasury's comprehensive report for 1953/54 reached him on 30 September 1954, in time, and that transfers over the budget were much smaller than in earlier years (pp. 108 and 110). It prints no totals for 1953/54 [V, same file as above].
+- A secondary series: *Statistisches Jahrbuch für das Ausland 1958*, p. 126*, table "Haushaltsausgaben und -einnahmen" for Israel, million Israeli pounds, financial year 1 April to 31 March, "only cash expenditure and receipts of the central administration" (the national institutions such as the Jewish National Fund and the Jewish Agency are not in it). URL: https://digi.bib.uni-mannheim.de/fileadmin/statjahrb/514402342_1958/pdf/514402342_0693.pdf . The page's own source line was not read, so the underlying Israeli source is unknown. The figures were read from the page's text layer, not on an image, and the independent reviewer could not reopen this host (connection refused), so a person should recheck both Mannheim pages [S].
+
+| IL millions | 1953/54 | 1954/55 | 1955/56 | 1956/57 |
+|---|---|---|---|---|
+| Expenditure, total | 356.21 | 511.84 | 662.56 (provisional) | 688.61 (provisional) |
+| Revenue, total | 225.60 | 335.54 | 424.40 (provisional) | 475.58 (provisional) |
+| Excess of expenditure, as printed | 130.61 | 176.30 | 238.16 | 213.03 |
+
+In the 1958 edition the page's footnotes read "Vorläufige Zahlen" (provisional) for the 1955/56 and 1956/57 columns and "Geschätzte Zahlen" (estimated) for 1957/58 only. Neither Mannheim page prints a "Quelle" line.
+
+The 1957 edition (p. 134*, https://digi.bib.uni-mannheim.de/fileadmin/statjahrb/514402342_1957/pdf/514402342_0805.pdf) prints the same 1953/54 to 1955/56 columns but, for 1956/57, a different figure, which that edition marks as an estimate: expenditure 636.58, revenue 468.30 [C]. Its 1953/54 deficit is printed as 136,61 (confirmed on the page image by the owner's review), which does not match 356.21 less 225.60 (130.61); it is the source's own printing slip. The same page gives 1951/52 as expenditure 195.91 and revenue 104.71, "without extraordinary defence expenditure". These cash series are not comparable with the Bank of Israel's budget totals in 2.2 (for example 670.4 million actual for 1954-55 against 511.84 here), which cover the whole budget including counterpart funds and loans [C on scope].
+
+#### 2.3.3 1956-57 [V] for part of the year, [GAP] for the whole
+- **First nine months (April to December 1956).** BoI 1956 ("Annual Report 1956", chapter XX, "The financial activities of the Government", source the Accountant General): https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201956/part%20three/pe_20.pdf . Table XX-1, p. 355 (rendered image checked; its title reads April-December 1956, the text layer misreads it): total receipts 771.5 and total payments 771.5 IL millions. Receipts: taxes and other obligatory payments 414.8; unrequited receipts from abroad 111.7; foreign long-term loans 89.3 and short-term 30.4; domestic long-term loans 26.2; collections on loans 14.8; short-term loans from the banking system 84.3. Payments: current goods and services 450.7; transfers and subsidies 58.9; capital account 85.9; Development Budget loans 135.0; also redemption of long-term debts abroad 20.6, payments of long-term debts to the public 6.2 and payments of short-term debts and advances (net) 14.2, which with the four lines above make 771.5. The chapter says Government purchases exceeded current transfers from the public by IL 180.7 million (p. 357). A footnote says IL 65 million of the banking-system loan was converted into a long-term loan by a law of March 1957.
+- **Fiscal revenue.** Table XX-2, p. 360 (rendered image checked), IL millions: April 1955 to March 1956 466.6; April to December 1955 299.3; April to December 1956 405.4, up 106.1 or 35.4 percent. Taxes on income 151.4, taxes on expenditure 164.1, licence and service fees 13.2 for April to December 1956.
+- **Calendar year 1957, not the financial year.** BoI 1957, chapter XVII: https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201957/part%20three/pe_17.pdf . The Government "balance of payments" balances at 1,156.3 IL millions (Table XVII-2, p. 235, rendered image checked by the reviewer). Revenue from taxes was IL 518.1 million in 1957 against 426.1 million in 1956, up 21.6 percent (Table XVII-7, p. 242, and text p. 240). The chapter notes a considerable fall in defence expenditure in 1957 (p. 231) and that its 1957 figures, which record gross values, are "not strictly comparable" with April-December 1956 (p. 233). It is the Bank's calendar-year view, not the Accountant General's report.
+- **[GAP] The financial-year outturn for 1956-57.** The Comptroller's Annual Report No. 8 (1958) lists a section "budget execution for the financial year 1956/57 according to the comprehensive report on the revenue and expenditure of the State for the year ended 31.3.1957" at pp. 69-73 (contents page: https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1958-8/1958-8-001.pdf , read). The file for that section exists (https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1958-8/1958-8-201-Ttaktziv.pdf , pp. 65-74; page 69 read on its image). It gives the total 1956/57 authorisation, IL 867,704,785: 769,300,000 under the 1956/57 Budget Law (published 18 May 1956), 72,700,000 under Budget Law No. 3 for 1956/57 (published 5 May 1957), and 25,704,785 of surpluses carried from 1955/56 (1,681,885 Ordinary Budget and 24,022,900 Development Budget). It gives no totals of actual expenditure or revenue, so the gap stands. The file at pp. 74-78 (https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1958-8/1958-8-202-Otzar.pdf) has no totals either. The Accountant General's report in *Reshumot* is the next place to look.
 
 ## 3. Unemployment
 
@@ -164,6 +211,12 @@ Patinkin's index is the CBS cost-of-living index from *Statistical Abstract* No.
 
 No black-market price index for goods was found: not in Patinkin, BoI 1955 or BoI 1956, and a web search found none. Patinkin says the official index does not include black-market prices ("black markets (whose prices are not reflected in the index) began to appear at an early date", p. 109), and that the rise of almost 60 percent from September 1951 to June 1952 "exaggerates the true one" because the September 1951 index "does not reflect the rise that had already taken place in the black-market prices" (p. 111). The only black-market price series found is the black-market rate for the dollar (4.3).
 
+**Follow-up, agent read 2026-10-24; a person's check pending. Still [GAP]: no black-market price series for goods.** Searches in English and Hebrew found only qualitative material, none of it with prices:
+- Guy Seidman, "Unexceptional for Once: Austerity and Food Rationing in Israel, 1939-1959", *Southern California Interdisciplinary Law Journal* 18 (2008), pp. 95-130: https://gould.usc.edu/why/students/orgs/ilj/assets/docs/18-1%20Seidman.pdf [V, read]. On p. 128-129 it reports Agriculture Minister Lavon saying that perhaps 80 to 90 percent of foods were fairly distributed at fixed prices while admitting leaks (the passage gives no date), and a Jerusalem Post report of September 1951 (cited in his note 191, not opened here) on road searches that found 200 kilograms of cucumbers, 600 eggs and other goods: quantities, not prices. On p. 129 he writes that from 1952 rationing was gradually eased and turned into a price-control tool.
+- Abstract of Schein (2024), "The economic response of the Israeli government to a rapid influx of immigrants ... 1948-1953", *Economic History of Developing Regions* 39(1), 28-48, https://doi.org/10.1080/20780389.2023.2220075 : it says rationing fostered a "flourishing black market" and that the government began ending rationing in 1952; the abstract has no prices, and the full text returned 403 from this box [S, abstract only].
+
+If a person can reach the CBS *Statistical Abstract* volumes or the Ministry of Rationing and Supply files at the Israel State Archives, those are the places a price comparison could sit; neither was checked.
+
 ### 4.3 Exchange rates, IL per US dollar
 
 **Official rates (Patinkin, Table 43, p. 121)** [V]. Sources: IMF, *International Financial Statistics*, X, 1957, p. 255, and Lubell's appendixes, p. 54.
@@ -201,6 +254,6 @@ The table prints December 1953 twice (old and new money series, pp. 142-143); bo
 
 1. Open the CBS *Statistical Abstract* volumes Nos. 4 to 9 (1952/53 to 1957/58) for the primary pages Patinkin cites: No. 8, pp. 148-49 (black-market rate); No. 9, p. 111 (national income) and p. 285 (cost-of-living index). No digitised copy was found; the National Library of Israel or a university library holds print copies.
 2. Open the Bank of Israel *Annual Report 1957* (p. 11, Table II-1; p. 18, Table II-6), the source of Patinkin's revised 1955 and 1956 national accounts and government saving.
-3. Budget outturns for the financial years 1952-53, 1953-54 and 1956-57 (section 2.2 gap).
+3. Budget outturns: 1952-53 Ordinary Budget is closed (2.3.1). Still open: the 1952-53 Development Budget, the 1953-54 Ordinary and Development budgets, and the whole 1956-57 financial year (2.3.2 and 2.3.3). Comptroller Annual Report No. 8 (1958), pp. 65-74, gives the 1956/57 authorisation (IL 867,704,785) but no actual totals (2.3.3); the next place is the Accountant General's reports in *Reshumot*.
 4. Resolve the June 1954 survey figure (8.0 percent unemployed in BoI 1955 against 91.4 percent employed in BoI 1956; the labour force figures are in section 3.2).
-5. A black-market goods price index, if one exists (section 4.2). If none does, step 2 could calibrate against the official index and say so.
+5. A black-market goods price index, if one exists (section 4.2; searched again on 2026-10-24, still not found). If none does, step 2 could calibrate against the official index and say so.

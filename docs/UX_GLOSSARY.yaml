@@ -197,15 +197,14 @@ concepts:
     in_use:
     - form: תור {0}
       where: strings.he.yaml hud.turn
-    - form: תורים של רבעון / חודש / שבוע
+    - form: תורות של רבעון / חודש / שבוע
       where: strings.he.yaml defence.turn_*
     - form: '{0} תורות'
       where: strings.he.yaml city.turns (#869)
   recommendation:
     en: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy
       strings.
-    he: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether
-      the variants need alignment.
+    he: 'The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").'
     reasons:
     - The current rules set all five turn lengths to month.
   decision_owner: Eyal

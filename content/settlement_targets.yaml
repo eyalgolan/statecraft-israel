@@ -1,14 +1,17 @@
 # GDD Phase 6 settlement-control targets (docs/gdd/settlement-control.md; R-CTRL-001). Owner ruling Q-TGT-1 (a), 18 October
 # 2026 (#783): only the `arab_town` rows of map/settlements_1948.yaml that a sourced operation names. Each row:
-#   { id, q, r, operation, sources: [{ url, checked }], status }
+#   { id, q, r, operation, sources: [{ url, checked }], residents, residents_sources, annexation (stayed only), status }
 # The list ships with the six rows the owner approved for list and sensitivity suitability on 19 October 2026
 # (https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6267660409), filled by the owner's go-ahead of
 # 21 October 2026 (#793). Gaza is excluded. The rows come from research_notes/GDD phase 6/settlement-targets.md, which keeps
 # the historical accounts, conflicts and source gaps. The owner sensitivity-reviewed the six rows and checked each row's
 # operation against its sources (#793, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840): each is `status: sensitivity-reviewed` (Q-TGT-3 (b)). The
+# owner sensitivity-reviewed the residents fields on 24 October 2026 (#799,
+# https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627). The
 # Morris link is a bibliographic record, not the book's text. Each `checked` date stays the research packet's
 # (18 October 2026).
-# The game annotations of that ruling (residents' default outcome; Jaffa what-if only) are not fields of this file.
+# residents (R-CTRL-016, #799): fled or stayed, per the owner's per-place ruling (#793); a stayed row's annexation block holds
+# the people who join the player's population (OWNER QUESTION 1 (a) on #799). Jaffa is captured only in a what-if.
 # Capture applies only to a target also on mvp.enemy_held_localities (rules.yaml): jaffa is not, since it is Israeli-held
 # at the start, so it is captured only if an alternate-timeline card returns it to Arab control. lod and ramla share a hex.
 targets:
@@ -19,7 +22,11 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: fled                  # Q-ANNEX-1: the ruling's default ("default is fled", #783); Jaffa is captured only in a what-if (#793)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: acre
     q: 7
@@ -28,7 +35,18 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: stayed                # Q-ANNEX-1: "Count as stayed" (owner, #793); about 5,000 remained after the surrender (Morris pp. 228-232)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # Approved by the owner on #799, 24 Oct 2026 (OWNER QUESTION 1 (a), the starting-city rule): the census-day count,
+    # 8 November 1948, CBS Statistical Abstract No. 3 (1951/52), list of settlements, p. 142, row "עכו (עיר)": 4,016. It counts
+    # everyone present on the day, so it may include people displaced from elsewhere (research_notes/GDD phase 6/
+    # annexation-residents.md).
+    annexation:
+      people: { value: 4016, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf", checked: 2026-10-23 }] }
+      employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (Q-START-1: the national share, as cities.yaml's seven towns)
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: nazareth
     q: 7
@@ -37,7 +55,18 @@ targets:
     sources:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: stayed                # Q-ANNEX-1: stayed (owner, #793); the expulsion order of 17 July was not carried out (Morris p. 419)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # Approved by the owner on #799, 24 Oct 2026 (OWNER QUESTION 1 (a), the starting-city rule): the census-day count,
+    # 8 November 1948, CBS Statistical Abstract No. 3 (1951/52), list of settlements, p. 141, row "נצרת (עיר)": 16,994. It counts
+    # everyone present on the day, so it may include people displaced from elsewhere (research_notes/GDD phase 6/
+    # annexation-residents.md).
+    annexation:
+      people: { value: 16994, status: sourced, date: 1948-11-08, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf", checked: 2026-10-23 }] }
+      employed_share: { value: 0.439, status: design, sources: [{ url: "https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf", checked: 2026-10-15 }] }   # DESIGN VALUE: owner-set balance, not a historical figure (Q-START-1: the national share, as cities.yaml's seven towns)
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: lod
     q: -3
@@ -48,7 +77,11 @@ targets:
       - { url: "https://archives.mod.gov.il/sites/English/Exhibitions/Pages/Yitzhak-Rabin.aspx", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Danny.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: fled                  # Q-ANNEX-1: the ruling's default ("Default 'fled'; Morris isn't enough", #793)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: ramla
     q: -3
@@ -59,7 +92,11 @@ targets:
       - { url: "https://archives.mod.gov.il/sites/English/Exhibitions/Pages/Yitzhak-Rabin.aspx", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Danny.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: fled                  # Q-ANNEX-1: the ruling's default ("Default 'fled'; Morris isn't enough", #793)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed
   - id: beersheba
     q: -9
@@ -69,5 +106,9 @@ targets:
       - { url: "https://m.knesset.gov.il/About/Occasion/Documents/IndependenceWar.pdf", checked: 2026-10-18 }
       - { url: "https://jewishvirtuallibrary.org/jsource/History/Yoav.html", checked: 2026-10-18 }
       - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
-    # The owner sensitivity-reviewed this row (#793): https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840
+    residents: fled                  # Q-ANNEX-1: the ruling's default ("Default 'fled'; Morris isn't enough", #793)
+    residents_sources:
+      - { url: "https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6252718065", checked: 2026-10-23 }
+      - { url: "https://www.cambridge.org/core/books/birth-of-the-palestinian-refugee-problem-revisited/8AE72A6813CEA7DDDE8F9386313F0D97", checked: 2026-10-18 }
+    # The owner sensitivity-reviewed this row (#793) and its residents fields on 24 October 2026 (#799): https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627
     status: sensitivity-reviewed

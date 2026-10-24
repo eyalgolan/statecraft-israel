@@ -95,6 +95,9 @@ def test_release_mode_refuses_unknown_licence(make_repo, capsys):
     root = make_repo({"ASSETS.yaml": rules, "img/a.png": b"\x89PNG"})
     assert run(root) == 0
     assert run(root, "--release") == 1
+    out = capsys.readouterr().out
+    assert "assets: ASSETS.yaml: licence-unknown img/*.png" in out
+    assert "owner-verify img/*.png" not in out
 
 
 def test_portraits_file_is_read_too(make_repo, capsys):

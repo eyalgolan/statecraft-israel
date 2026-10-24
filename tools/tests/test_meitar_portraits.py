@@ -1,4 +1,4 @@
-"""Meitar CC BY 4.0 portraits (#30: Remez, Levin; #6: Dov Yosef) keep source, runtime, credit and licence together."""
+"""Meitar CC BY 4.0 portraits (#30: Remez, Levin; #6: Dov Yosef; #1484: Dayan, advisors spec 11.1) keep source, runtime, credit and licence together."""
 from pathlib import Path
 import re
 
@@ -12,6 +12,8 @@ BATCH = {
               "Benno Rothenberg"),
     "dov_yosef": ("Dov_Yosef_(997008137381905171).jpg", "promo/ref/people/Dov_Yosef_CCBY_1949.jpg", 0.36,
                   "Benno Rothenberg"),
+    "dayan": ("Moshe_and_Ruth_Dayan_(997008137270105171).jpg", "promo/ref/people/Moshe_Dayan_CCBY_1948.jpg", 0.37,
+              "Benno Rothenberg"),
 }
 PEOPLE = {p["id"]: p for p in yaml12.load((ROOT / "content/people.yaml").read_text(encoding="utf-8"))["people"]}
 RULES = yaml12.load((ROOT / "ASSETS.portraits.yaml").read_text(encoding="utf-8"))["rules"]
