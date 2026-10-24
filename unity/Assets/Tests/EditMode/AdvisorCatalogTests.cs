@@ -27,6 +27,35 @@ public class AdvisorCatalogTests
     static List<string> ProblemsOf(string messages, params string[] keys) =>
         AdvisorCatalog.Parse(Head + messages).Problems(Strings(keys), Strings(keys), Fixture);
 
+    [TestCase("{ picture: ../x.mp4, narration: { en: x.en.wav }, cues: { en: [0] }, label: lab }", "file name") ]
+    [TestCase("{ picture: x.gif, narration: { en: x.en.wav }, cues: { en: [0.0] }, label: lab }", "picture must be .mp4, .jpg or .png")]
+    [TestCase("{ picture: missing.mp4, narration: { en: x.en.wav }, cues: { en: [0.0] }, label: lab }", "no StreamingAssets/advisors/missing.mp4")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.mp3 }, cues: { en: [0.0] }, label: lab }", "narration must be .wav")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.5] }, label: lab }", "cues start at 0")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.0, 3.0, 2.0] }, label: lab }", "cues must rise")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.wav, he: x.he.wav }, cues: { en: [0.0], he: [0.0] }, label: lab }", "Hebrew narration before its approval")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.0, 2.0] }, label: lab }", "no advisor.x.cue.2")]
+    [TestCase("{ picture: x.mp4, narration: { en: x.en.wav }, cues: { en: [0.0] }, label: nolabel }", "no nolabel")]
+    public void EachBrokenMediaRowIsNamed(string media, string expected)
+    {
+        var known = new AdvisorCatalog.Known { Signals = new[] { "new_game" }, StreamingFile = f => f.StartsWith("x.", System.StringComparison.Ordinal) };
+        var c = AdvisorCatalog.Parse(Head + "messages:\n  - { id: x, advisor: dayan, signal: new_game, level: new, media: " + media + " }\n");
+        var t = Strings("advisor.x.text", "advisor.x.cue.1", "lab");
+        var problems = c.Problems(t, t, known);
+        Assert.IsTrue(problems.Any(p => p.Contains(expected)), $"expected '{expected}' in:\n{string.Join("\n", problems)}");
+    }
+
+    [Test]
+    public void AGoodMediaRowHasNoProblems()
+    {
+        var known = new AdvisorCatalog.Known { Signals = new[] { "new_game" }, StreamingFile = _ => true };
+        var c = AdvisorCatalog.Parse(Head + "messages:\n  - { id: x, advisor: dayan, signal: new_game, level: new, he_review: approved, " +
+            "media: { picture: x.jpg, narration: { en: x.en.wav, he: x.he.wav }, cues: { en: [0.0, 2.5], he: [0.0, 2.8] }, label: lab } }\n");
+        var t = Strings("advisor.x.text", "advisor.x.cue.1", "advisor.x.cue.2", "lab");
+        Assert.IsNotNull(c.Messages.Single().Media);
+        Assert.AreEqual("x.jpg", c.Messages.Single().Media!.Picture);
+        Assert.IsEmpty(c.Problems(t, t, known));
+    }
     [Test]
     public void AVerifiedQuoteRequiresItsSourceInBothLanguages()
     {
