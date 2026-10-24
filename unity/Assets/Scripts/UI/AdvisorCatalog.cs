@@ -14,6 +14,7 @@ namespace Statecraft.Game.UI
     /// pages. A Unity-side file, never part of the hashed game content.</summary>
     public sealed class AdvisorCatalog
     {
+        public const string MediaFolder = "advisors";
         public const string ResourcePath = "Advisors/advisor-messages";
         public const string Path = "Assets/Resources/Advisors/advisor-messages.yaml";
         public static readonly string[] AdvisorIds = { "ben_gurion", "meyerson", "dayan" };
@@ -34,6 +35,17 @@ namespace Statecraft.Game.UI
             public bool OpenCard { get; set; }
         }
 
+        /// <summary>Silent picture and separate narration, with live caption cue starts and disclosure/credit keys. The
+        /// picture is optional: without one the advisor's portrait stays while the narration plays (owner, 24 Oct 2026, #1547).</summary>
+        public sealed class Media
+        {
+            public string? Picture { get; set; }
+            public Dictionary<string, string> Narration { get; set; } = new Dictionary<string, string>();
+            public Dictionary<string, List<double>> Cues { get; set; } = new Dictionary<string, List<double>>();
+            public string Label { get; set; } = "";
+            public string Credit { get; set; } = "";
+        }
+
         public sealed class Message
         {
             public string Id { get; set; } = "";
@@ -49,6 +61,7 @@ namespace Statecraft.Game.UI
             public string Quote { get; set; } = "";
             public string DisagreesWith { get; set; } = "";
             public string HeReview { get; set; } = Pending;
+            public Media? Media { get; set; }
 
             /// <summary>Teaching (help levels new and experienced) as against advice and warnings (spec 7.1's button sets).</summary>
             public bool Teaching => Level == "new" || Level == "experienced";
@@ -64,6 +77,7 @@ namespace Statecraft.Game.UI
             public string ShowMe { get; set; } = "";
             public List<string> Rules { get; set; } = new List<string>();
             public string HeReview { get; set; } = Pending;
+            public Media? Media { get; set; }
             public bool ApprovedIn(bool hebrew) => !hebrew || HeReview == Approved;
         }
 
@@ -127,6 +141,7 @@ namespace Statecraft.Game.UI
         {
             Signals = AdvisorSignals.Names.ToList(), Conditions = AdvisorSignals.Measures.Keys.ToList(),
             Screens = ScreenNav.Screens, Targets = AdvisorTargets.Names,
+            StreamingFile = f => System.IO.File.Exists(System.IO.Path.Combine(Application.streamingAssetsPath, MediaFolder, f)),
         };
 
         /// <summary>Every problem, one line each (spec 4.1).</summary>
@@ -165,6 +180,7 @@ namespace Statecraft.Game.UI
                 }
                 if (m.HeReview != Pending && m.HeReview != Approved) p.Add($"{at}: he_review must be pending or approved");
                 Text(p, en, he, at, "advisor." + m.Id + ".text", MaxWords);
+                CheckMedia(p, at, "advisor." + m.Id, m.Media, m.HeReview, en, he, known);
             }
             if (Cycle() is string c) p.Add("requires has a cycle: " + c);
             foreach (var g in Pages.GroupBy(x => x.Id).Where(g => g.Count() > 1)) p.Add($"page {g.Key}: listed more than once");
@@ -177,8 +193,50 @@ namespace Statecraft.Game.UI
                 if (page.HeReview != Pending && page.HeReview != Approved) p.Add($"{at}: he_review must be pending or approved");
                 Text(p, en, he, at, "advisor.page." + page.Id + ".title", 0);
                 Text(p, en, he, at, "advisor.page." + page.Id + ".text", 0);
+                CheckMedia(p, at, "advisor.page." + page.Id, page.Media, page.HeReview, en, he, known);
             }
             return p;
+        }
+
+        static void CheckMedia(List<string> p, string at, string stem, Media? media, string heReview, UiText en, UiText he, Known known)
+        {
+            if (media == null) return;
+            bool File(string file)
+            {
+                if (string.IsNullOrWhiteSpace(file) || file.Contains("/") || file.Contains("\\") || file == "." || file == ".." || file.Contains(":"))
+                { p.Add($"{at}: media uses a file name within StreamingAssets/{MediaFolder}"); return false; }
+                if (!known.StreamingFile(file)) p.Add($"{at}: no StreamingAssets/{MediaFolder}/{file}");
+                return true;
+            }
+            if (media.Picture is string picture && picture != "")       // when supplied; a row without one needs narration (below)
+            {
+                if (!(picture.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || picture.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
+                    p.Add($"{at}: picture must be .mp4, .jpg or .png");
+                File(picture);
+            }
+            if (string.IsNullOrWhiteSpace(media.Label)) p.Add($"{at}: media needs a disclosure label key");
+            else Text(p, en, he, at, media.Label, 0);
+            if (!string.IsNullOrWhiteSpace(media.Credit)) Text(p, en, he, at, media.Credit, 0);
+            if (media.Narration == null || media.Cues == null) { p.Add($"{at}: narration and cues must be language maps"); return; }
+            if (media.Narration.Count == 0) p.Add($"{at}: media needs narration");
+            if (heReview != Approved && (media.Narration.ContainsKey("he") || media.Cues.ContainsKey("he"))) p.Add($"{at}: Hebrew narration before its approval");
+            foreach (var lang in media.Cues.Keys)
+                if (!media.Narration.ContainsKey(lang)) p.Add($"{at}: cues for {lang} without narration");
+            int? count = null;
+            foreach (var narration in media.Narration)
+            {
+                var lang = narration.Key; var file = narration.Value ?? "";
+                if (lang != "en" && lang != "he") p.Add($"{at}: unknown narration language '{lang}'");
+                if (!file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) p.Add($"{at}: narration must be .wav");
+                File(file);
+                if (!media.Cues.TryGetValue(lang, out var starts) || starts == null || starts.Count == 0 || starts[0] != 0)
+                { p.Add($"{at}: {lang} cues start at 0"); continue; }
+                if (starts.Any(x => double.IsNaN(x) || double.IsInfinity(x)) || starts.Where((x, i) => i > 0 && x <= starts[i - 1]).Any())
+                    p.Add($"{at}: {lang} cues must rise and be finite");
+                if (count.HasValue && count.Value != starts.Count) p.Add($"{at}: cue counts must match across languages");
+                count = starts.Count;
+                for (int i = 1; i <= starts.Count; i++) Text(p, en, he, at, stem + ".cue." + i, 0);
+            }
         }
 
         void CheckAct(List<string> p, string at, Act a, Known known)
