@@ -1,0 +1,27 @@
+{
+  "id": "generated-1948-14-syrian-renault-r35",
+  "number": 14,
+  "archive": "statecraft-vehicles-aircraft-01.zip",
+  "archive_sha256": "ccd947ef72a0fffb983d5aa21c6c2c14c682b4f3318e25528d77ae9bfe29f7cb",
+  "member": "14-syrian-renault-r35-textured-4k.glb",
+  "source_glb_sha256": "b842c074f8a3bf5095b24ac1d9a7e384ba4cbac56452af10910c400914bf2271",
+  "geometry_model_id": "9b87d05b-2354-4ce2-8969-6c856ac2e09d",
+  "source_animation_count": 0,
+  "imported_animation_count": 0,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "texture_sha256": "08ce3c7b11c7eb305eba957af93292050b911785eff866bf1d338acef6cf880e",
+  "compatibility_fbx_sha256": "5b9d43691d18d95b7fb9c0cd718a396498c0dee01931bef257f1de6d8215e462",
+  "triangles": 6329,
+  "geometry_max_vertex_error": 8.940696716308594e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.2.2 LTS",
+  "source_format": "Delivered textured GLB; no provider FBX exists in these original archives",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export; no pivot, mesh or UV rewrite; all zero source clips retained; map extracted byte-for-byte",
+  "historical_status": "Candidate paint/markings/subtype are unverified; no historical deployment represented"
+}

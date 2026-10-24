@@ -1,0 +1,27 @@
+{
+  "id": "generated-1948-16-egyptian-dakota-c47",
+  "number": 16,
+  "archive": "statecraft-vehicles-aircraft-02.zip",
+  "archive_sha256": "9ac6f7f3582dc3f9b8a0963a08fe7abde9b26731a05f65e5e455a718ae4b6e79",
+  "member": "16-egyptian-dakota-c47-textured-4k.glb",
+  "source_glb_sha256": "cc191b7f8c53a92eee593fc65dba32a7928f13f0d27c200428d1815856e168aa",
+  "geometry_model_id": "01377dc9-a051-4991-a492-86c856201fea",
+  "source_animation_count": 0,
+  "imported_animation_count": 0,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "texture_sha256": "f6211855f58ffacf62afb97c6a00e5e246877dbddc0f96ce896532a42812f82d",
+  "compatibility_fbx_sha256": "f21fc3ce019375d5dc90bb57f8ffee3f50e47e4f5c93cb8b82034ad179a7354a",
+  "triangles": 6854,
+  "geometry_max_vertex_error": 8.024520781191313e-08,
+  "uv_max_error": 0.0,
+  "triangle_connectivity": "identical",
+  "blender": "5.2.2 LTS",
+  "source_format": "Delivered textured GLB; no provider FBX exists in these original archives",
+  "decimation": false,
+  "welding": false,
+  "conversion": "Standard glTF Y-up / FBX Y-up compatibility export; no pivot, mesh or UV rewrite; all zero source clips retained; map extracted byte-for-byte",
+  "historical_status": "Candidate paint/markings/subtype are unverified; no historical deployment represented"
+}

@@ -1,0 +1,1 @@
+- Preserve the three generated vehicle candidates as original-source, losslessly imported editor-only review art; remove reduced LODs and all player/Resources review hooks. Record Tal Heuberger’s CC BY-NC-ND 4.0 credit for these new models and their colour maps.
