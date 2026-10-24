@@ -434,8 +434,8 @@ namespace Statecraft.Sim
         /// <summary>The outcome is not one the command knows. The helpers list only known ones.</summary>
         public const string UnknownOutcome = "unknown_outcome";
 
-        /// <summary>Every id, in a fixed order.</summary>
-        public static IReadOnlyList<string> Ids { get; } = new[] { Attention, NeedsUnit, NoFreeHex, NoOneToDeport, NotInPlay, AlreadyCity, NotAwaiting, UnknownOutcome };
+        /// <summary>Every id, in a fixed order. Read-only: it cannot be cast back to an array and changed.</summary>
+        public static IReadOnlyList<string> Ids { get; } = Array.AsReadOnly(new[] { Attention, NeedsUnit, NoFreeHex, NoOneToDeport, NotInPlay, AlreadyCity, NotAwaiting, UnknownOutcome });
 
         public string Id { get; }
         public IReadOnlyList<object> Args { get; }

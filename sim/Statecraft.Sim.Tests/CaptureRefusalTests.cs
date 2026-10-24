@@ -38,6 +38,10 @@ public class CaptureRefusalTests
         Assert.Equal(new[] { "attention", "needs_unit", "no_free_hex", "no_one_to_deport", "not_in_play", "already_city", "not_awaiting", "unknown_outcome" },
             CaptureRefusal.Ids);
         Assert.Throws<ArgumentException>(() => new CaptureRefusal("made_up", "English"));
+        // The list cannot be cast back to an array and changed (Codex pre-review of #1572, should-fix 1).
+        Assert.IsNotType<string[]>(CaptureRefusal.Ids);
+        Assert.Throws<NotSupportedException>(() => ((IList<string>)CaptureRefusal.Ids)[0] = "made_up");
+        Assert.Equal("attention", CaptureRefusal.Ids[0]);
     }
 
     // R-CTRL-007, R-CTRL-008: with mvp.deport_in_play off, Deport's refusal is not_in_play, which the dialog uses to leave it
