@@ -38,6 +38,7 @@ namespace Statecraft.Game.UI
         readonly AdvisorHooks hooks; readonly bool hebrew;
         readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
+        readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly (VisualElement element, float px)[] floored;
         readonly IVisualElementScheduledItem follow;
         float flooredFor;
@@ -64,7 +65,7 @@ namespace Statecraft.Game.UI
             floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onGotIt; notNow.clicked += onNotNow;
-            onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged;
+            onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
             // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
@@ -155,14 +156,27 @@ namespace Statecraft.Game.UI
         {
             hidden = false;
             popup.RemoveFromClassList(ScreenNav.ClosingClass);
-            if (!hudRoot.ClassListContains(OpenClass) && ScreenNav.Moves())
+            if (!hudRoot.ClassListContains(OpenClass))
             {
-                popup.AddToClassList(ScreenNav.OpeningClass);
-                popup.RegisterCallback<GeometryChangedEvent>(EndOpening);
+                // The layer was display:none, so it has no size until the next layout: unseen until Place puts it in its slot
+                // (else it would draw at the layer's top-left for a frame or more).
+                popup.style.visibility = Visibility.Hidden;
+                if (ScreenNav.Moves())
+                {
+                    popup.AddToClassList(ScreenNav.OpeningClass);
+                    popup.RegisterCallback<GeometryChangedEvent>(EndOpening);
+                }
             }
             hudRoot.AddToClassList(OpenClass);
             follow.Resume();
-            Place();
+            layer.UnregisterCallback(onLaidOut);
+            if (Place(null) == null) layer.RegisterCallback(onLaidOut);
+        }
+
+        /// <summary>Once, on the layer's first layout after Show: places the popup, which makes it visible.</summary>
+        void PlaceWhenLaidOut(GeometryChangedEvent e)
+        {
+            if (Place(null) != null) layer.UnregisterCallback(onLaidOut);
         }
 
         void EndOpening(GeometryChangedEvent e)
@@ -176,6 +190,7 @@ namespace Statecraft.Game.UI
             if (hidden) return;
             hidden = true;
             follow.Pause();
+            layer.UnregisterCallback(onLaidOut);
             var focused = layer.focusController?.focusedElement as VisualElement;
             if (focused != null && layer.Contains(focused)) { focused.Blur(); FocusReturn.To(hudRoot.Q<Button>("end-turn")); }
             if (!ScreenNav.Moves()) { hudRoot.RemoveFromClassList(OpenClass); return; }
@@ -266,7 +281,8 @@ namespace Statecraft.Game.UI
             var slot = OnPixels(Slot());
             var at = AdvisorLayout.Place(slot, popup.resolvedStyle.height > 0 ? popup.resolvedStyle.height : slot.height, avoid);
             popup.style.left = at.xMin; popup.style.top = at.yMin;
-            popup.style.width = at.width; popup.style.maxHeight = slot.height;
+            popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
+            popup.style.visibility = Visibility.Visible;
             return at;
         }
 
@@ -299,6 +315,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             disposed = true;
             follow.Pause();
+            layer.UnregisterCallback(onLaidOut);
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
             showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onGotIt; notNow.clicked -= onNotNow;

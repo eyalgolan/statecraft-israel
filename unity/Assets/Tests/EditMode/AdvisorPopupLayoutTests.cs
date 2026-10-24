@@ -46,11 +46,37 @@ public class AdvisorPopupLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>The review of Task 6: on its first show the popup must not draw at the layer's top-left before it is placed,
+    /// and it must place itself once the layer is laid out (no Place() by hand).</summary>
+    [UnityTest]
+    public IEnumerator ThePopupNeverShowsBeforeItIsPlaced()
+    {
+        var problems = new List<string>();
+        yield return Shown(1920, 1080, false, (root, advisor) =>
+        {
+            var popup = root.Q("advisor-popup");
+            bool placed = popup.style.left.keyword == StyleKeyword.Undefined;      // a value set by Place
+            bool invisible = popup.style.visibility.keyword == StyleKeyword.Undefined && popup.style.visibility.value == Visibility.Hidden;
+            if (!placed && !invisible) problems.Add($"drawn before it is placed: visibility {popup.style.visibility}, left {popup.style.left}");
+        }, placeByHand: false, justShown: true);
+        yield return Shown(1920, 1080, false, (root, advisor) =>
+        {
+            var popup = root.Q("advisor-popup");
+            if (popup.resolvedStyle.visibility != Visibility.Visible) problems.Add($"not visible once laid out: {popup.resolvedStyle.visibility}");
+            if (!Inside(popup.worldBound, advisor.Slot())) problems.Add($"{popup.worldBound} leaves its slot {advisor.Slot()}");
+            if (popup.worldBound.xMin < 1f && popup.worldBound.yMin < 1f) problems.Add($"at the top-left: {popup.worldBound}");
+        }, placeByHand: false);
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     static bool Inside(Rect inner, Rect outer) =>
         inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
 
-    /// <summary>Game.uxml at w x h with the HUD, the card collapsed, and a two-sentence fixture message shown.</summary>
-    internal static IEnumerator Shown(int w, int h, bool hebrew, System.Action<VisualElement, AdvisorPresenter> check)
+    /// <summary>Game.uxml at w x h with the HUD, the card collapsed, and a two-sentence fixture message shown. With
+    /// <paramref name="justShown"/> the check runs right after NewGame, before any frame; with <paramref name="placeByHand"/>
+    /// false the popup is left to place itself.</summary>
+    internal static IEnumerator Shown(int w, int h, bool hebrew, System.Action<VisualElement, AdvisorPresenter> check,
+        bool placeByHand = true, bool justShown = false)
     {
         var text = hebrew
             ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text + "\nadvisor.t.teach.text: \"משפט ראשון ארוך למדי כדי לבדוק גלישה. ומשפט שני.\"\n", "strings.he.yaml")
@@ -76,8 +102,9 @@ public class AdvisorPopupLayoutTests
         try
         {
             advisor.NewGame();
+            if (justShown) { check(root, advisor); yield break; }
             for (int i = 0; i < 5; i++) yield return null;
-            advisor.Place();
+            if (placeByHand) advisor.Place();
             for (int i = 0; i < 2; i++) yield return null;
             check(root, advisor);
         }
