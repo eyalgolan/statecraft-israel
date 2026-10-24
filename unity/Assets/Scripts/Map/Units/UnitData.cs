@@ -240,9 +240,9 @@ namespace Statecraft.Game.Map.Units
         public const string SlouchHat = "slouch_hat", SteelHelmet = "steel_helmet", WoolCap = "wool_cap";
         public static readonly IReadOnlyList<string> Headgears = new[] { SlouchHat, SteelHelmet, WoolCap };
         /// <summary>The equipment a row can put on its token (<see cref="UnitVehicle"/>): the 65 mm mountain gun (the
-        /// "Napoleonchik") and the jeep.</summary>
-        public const string Gun65mm = "gun_65mm", Jeep = "jeep";
-        public static readonly IReadOnlyList<string> VehicleTypes = new[] { Gun65mm, Jeep };
+        /// "Napoleonchik"), the jeep and the improvised "sandwich" armoured car (#1536).</summary>
+        public const string Gun65mm = "gun_65mm", Jeep = "jeep", ArmouredCar = "armoured_car";
+        public static readonly IReadOnlyList<string> VehicleTypes = new[] { Gun65mm, Jeep, ArmouredCar };
         /// <summary>The uniform default where no source ties headgear to a unit: the 1948 photographs' bush hat and Mk II
         /// steel helmet (docs/units.md, "Sources").</summary>
         public static readonly IReadOnlyList<string> DefaultHeadgear = new[] { SlouchHat, SteelHelmet, SlouchHat };

@@ -264,6 +264,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
+| H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
 
 - **The vehicles are data:** `vehicles` in `units_1948.yaml` (`type`, `from`, `note`, `sources`), checked by

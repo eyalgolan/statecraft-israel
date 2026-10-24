@@ -2,6 +2,8 @@
 
 Researched 2026-10-23. All URLs were opened on that date. Research only, for issue #116: no rules file, test, golden or `content/` change goes with it (the era's rules file and calibration tests, #119, stay paused).
 
+**Second pass, 24 Oct 2026.** Closes the [GAP] rows named in the owner's comment on #116 of 24 Oct. Every new bullet or row is marked "(24 Oct)". Pages were read on rendered images by an agent on 2026-10-24; a person's check of the sources is pending. Research only, as above: no code and nothing under `content/`. Outcome: the 1977 float day, the 1969 reserves and the 1957-60 reserves are closed; the 1973-74 and 1976 aid split is closed from one report; the defence share of GNP is closed for 1966-68 only; US aid for 1977 and the defence share for 1957-64 stay [GAP], with what was searched.
+
 **Purpose.** #116 asks for Bank of Israel and CBS anchors for the 1957-77 era: the 1962, 1967 and 1974 devaluations, the 1965-67 slowdown and recession, growth after 1967, defence spending's share of GDP, and aid and loans after 1973, with proposed calibration anchors for #119. This note gives each figure with its report, table and printed page, and gives both values where the sources disagree. Section 7 lists the values at the years the era design names for the calibration test; which of them become targets is #119's decision.
 
 **Conventions** (the same as `new-economic-policy-1952.md` and `economy-series-1952-56.md`)
@@ -25,6 +27,8 @@ Researched 2026-10-23. All URLs were opened on that date. Research only, for iss
 - **BoI 1975**, chapters I, III, V and X: https://www.boi.org.il/media/fyxh5ad2/pe_1.pdf , https://www.boi.org.il/media/nyalfvw3/pe_3.pdf , https://www.boi.org.il/media/lsjkwxsz/pe_5.pdf , https://www.boi.org.il/media/01hdep0x/pe_10.pdf
 - **BoI 1977**, chapter I: https://boi.org.il/media/ceynupzc/pe_1.pdf
 - **BoI rates** = Bank of Israel, "Changes in Exchange Rates until October 1977" (web page, last updated 31/01/2023 as printed on it): https://www.boi.org.il/en/economic-roles/financial-markets/changes-in-exchange-rates-until-october-1977/ . The live page returned a browser check to scripts on 2026-10-23, so the Wayback copy was read: http://web.archive.org/web/20240529015717/https://boi.org.il/en/economic-roles/financial-markets/changes-in-exchange-rates-until-october-1977/
+
+- **Opened on 2026-10-24 (second pass; agent read, a person's check pending):** BoI 1957 chapter III; BoI 1958 chapters I-IV; BoI 1959 chapters I-IX and XX; BoI 1960 chapters I-IX; BoI 1961 chapters I-IX; BoI 1962 to 1966 chapters I-IX (searched for defence); BoI 1963 chapter III and luchote.pdf; BoI 1964 chapter III; BoI 1970, all 19 chapter files (tables read: III-27 and VII-1); BoI 1974 chapters III-VI (read: V, pp. 124, 131, 135); BoI 1976 chapter V; BoI 1977 chapter I (again); BoI paper "Israel's financial account liberalization" (https://boi.org.il/media/ujapwwrt/neum190e.pdf, no day for the float); JTA bulletin of 31 Oct 1977 (section 3); TIME 14 Nov 1977; GAO ID-78-31 (p. i). Not reachable on 2026-10-24: the BoI report pages for 1976 and 1977 (browser check, no Wayback copy), the CIA Reading Room (maintenance page), the Washington Post archive (HTTP 403).
 
 The chapter links of the 1967 to 1977 reports sit on the Bank's report pages (for example https://www.boi.org.il/en/communication-and-publications/regular-publications/bank-of-israel-annual-report/bank-of-israel-annual-report-1975/), which also returned a browser check, so the links were taken from Wayback copies of those pages (1968, 1971, 1973, 1975). Each PDF was downloaded directly from boi.org.il.
 
@@ -128,7 +132,8 @@ The page prints the labels "Fixed rate*" ("* With one-time adjustments") beside 
 - **1971** [V for the month]. BoI 1971, chapter I (p. 3), calls it "the devaluation of August 1971"; chapters I and III, the only ones opened, do not state the official rates in words; the day and rate (22.8.71, 4.20) are from BoI rates only [S for the day].
 - **1974** [V, C on the day]. BoI 1974, p. 549: "the change in the rate of exchange of the Israeli pound on November 9, 1974"; p. 552: "Until the devaluation of the Israeli pound on November 9, foreign currency reserves had declined by $ 816 million (IL 3,427 million)" (computed here: IL 4.20 per dollar, the pre-devaluation rate in BoI rates). BoI rates gives 10.11.74. Our reading, as for 1962: announced on one day, effective the next; no opened source says so.
 - **1975 onwards** [V]. BoI 1975, pp. 52-53: "In 1975 a more flexible exchange rate system was introduced, with a view to making it an instrument of current balance of payments policy and to diminish the need for large devaluations with all their unsettling effects." BoI 1975, chapter X, puts the average official rate at IL 4.5 per dollar in 1974 and IL 6.3 in 1975, with the average import levy down from 27.2 to 15 percent (p. 209).
-- **October 1977** [V]. BoI 1977, p. 3: "At the end of 1977 an economic reform was introduced, the main features of which were the liberalization of foreign currency control, the unification of exchange rates, and the floating of the Israeli pound." The last official rate in BoI rates is 10.78 on 17.10.77; the page's sources switch to Bank of Israel circulars from 31.10.1977. The exact day of the float is [GAP] in the opened sources (our reading of the table is late October 1977).
+- **October 1977** [V]. BoI 1977, p. 3: "At the end of 1977 an economic reform was introduced, the main features of which were the liberalization of foreign currency control, the unification of exchange rates, and the floating of the Israeli pound." The last official rate in BoI rates is 10.78 on 17.10.77; the page's sources switch to Bank of Israel circulars from 31.10.1977. The exact day of the float was [GAP] in the first pass; see the next bullet.
+- **The day of the float (24 Oct)** [S for the day, one contemporary source]. JTA, *Daily News Bulletin*, Monday 31 October 1977, vol. XLIV no. 203, p. 1, "Abolition of currency regulations and other sweeping measures are introduced to create a free economy" (http://pdfs.jta.org/1977/1977-10-31_203.pdf, a scan, read as an image; web copy: https://www.jta.org/archive/abolition-of-currency-regulations-and-other-sweeping-measures-are-introduced-to-create-a-free-econom, whose page prints the bulletin date, 31 October). The item's dateline in the bulletin is "JERUSALEM, Oct. 30 (JTA)", one day before the bulletin date. It says: "Israel was plunged into a new economic era Friday when the government announced the abolition of currency regulations ... The first move was to establish a free-floating currency. The Israel Pound which stood at IL 10.36 to $1 last week is expected to drop to IL 15 to $1 when the banks reopen tomorrow. The banks remained closed today". Counting back from the dateline: the announcement was Friday 28 October 1977 (computed here: 28 Oct 1977 was a Friday); "today" is Sunday 30 October; the banks were to reopen Monday 31 October, which is the day the BoI rates page switches to Bank of Israel circulars (31.10.1977). The same item says the VAT rise (8 to 12 percent) starts "Tuesday" (1 November) and that the creeping devaluation "has been abolished". Our reading: announced and approved by the Cabinet on 28 October, first trading day with the floating rate 31 October. The source does not print "28 October" or "31 October" for these events; both are counted from the dateline. TIME, 14 Nov 1977, "Israel: A Push Toward Capitalism" (https://time.com/archive/6845748/israel-a-push-toward-capitalism/, text read by an agent): the pound "quickly plunged 46% against the dollar, from 10.3 to 15.2"; it gives no day. BoI 1977, chapter I, p. 13, says only "At the end of October 1977 a sweeping reform was introduced in the balance of payments sphere" (a second passage from the p. 3 one quoted above).
 
 ## 4. Defence spending's share of GNP
 
@@ -162,7 +167,17 @@ The two reports differ by 0.1 to 0.3 points for 1971-74. Suggestion for step 2: 
 | 1967 | 2,165 | 29.3 | BoI 1968, Table VII-4, p. 133 |
 | 1968 | 2,534 | 29.0 | BoI 1968, Table VII-4, p. 133 |
 
-**[GAP]** Annual defence shares of GNP for 1957-68: only the 1961-66 and 1967-72 averages above were found. Candidates: the public-sector chapters of the 1957-65 annual reports (same file pattern as BoI 1966, not opened), and the CBS *Statistical Abstract*.
+### 4.3 Defence share of GNP, second pass (24 Oct) [V]
+
+**BoI 1970, Table VII-1, "Indicators of public sector operations, 1966-70", p. 129** (https://www.boi.org.il/media/qt3dypbe/pe_7.pdf, chapter VII, link taken from the Wayback copy of the BoI 1970 report page; read as an image). Row "Weight of public sector consumption expenditure on defense in GNP", with footnote f "Excluding defense expenditure not classified as public consumption":
+
+| Year | 1966 | 1967 | 1968 | 1969 | 1970 |
+|---|---|---|---|---|---|
+| Percent of GNP | 10.2 | 17.6 | 18.0 | 20.2 | 26.0 |
+
+The text of the same chapter (p. 130) says: "The weight of its consumption expenditure on defense in GNP amounted to 26 percent in 1970, as opposed to 18-20 percent in the years 1967-69 and 9-10 percent in 1965-66." So 1965 is only a range, "9-10 percent" (with 1966 at 10.2 on the table). Comparison with section 4.1 [C by definition, our reading]: this row is public consumption expenditure on defence; section 4.1 is noncivilian public consumption, and BoI 1974 prints 20.0 for 1969 against 20.2 here, so the two measures are close but not the same series.
+
+**Still [GAP]: 1957-64 (annual), and 1965 as a single figure.** Searched and not found (24 Oct): the English chapters I, II, III, VII (and, where present, IV-IX) of BoI 1957 to 1966 were opened and searched for "defen[cs]e", "security" and "weight of"; they give security and special budgets only in IL millions and as a share of public consumption or of public expenditure, never as a share of GNP. Examples: BoI 1961, p. 86, public consumption was "about 20 per cent of the gross national product in 1961" and "expenditure on defense and special budgets of the Government - 34 per cent" of it; BoI 1964, chapter VII, security and special budgets IL 770 million, "38 percent of total public consumption". Our reading: multiplying the two (about 7 percent of GNP in 1961) would mix two different bases, so it is not entered as a value. Lead only, not opened: Aharoni (1998, *Annals of the AAPSS*), citing Berglas (1983, Falk Institute discussion paper 83:01), as reported in a search summary: defence in the budget took 8.3 percent of GNP a year in 1955-61 apart from 1956, and 16 percent a year in 1962-72 [S, summary of a search result, source not opened]. The CBS series "Defence Expenditure in Israel" and Berglas's annual table were not reachable.
 
 ## 5. Aid, loans, reserves and foreign debt
 
@@ -190,7 +205,19 @@ The two reports differ by 0.1 to 0.3 points for 1971-74. Suggestion for step 2: 
 - **1973, the emergency aid.** BoI 1973, p. 103, footnote 21: "Because of the emergency situation in Israel, the U.S. approved $ 2,200 million in aid to this country. Part of the sum was received in the latter part of 1973 in the form of a grant." In the fourth quarter of 1973, intergovernmental transfers totalled $723 million, "with the bulk of the sum connected with the special emergency grant made available by the U.S. Government in 1973" (p. 103). The same page gives unilateral transfers for 1973 as $2,190 million, against $2,173 million in BoI 1975, Table V-1 [C] (our reading: a revision).
 - **1975.** BoI 1975, p. 99: "Capital movement as assistance from the United States government expanded by $1 billion this year and totalled $1.9 billion, of which $1.5 billion were granted as military aid." The same page says that, unlike earlier years, most of the financial aid came as long-term loans, "which totalled $1.2 billion, and only a small proportion as a grant".
 - **1977.** BoI 1977, pp. 3 and 6: "Another notable development was the smaller capital inflow of the public sector and the consequent reduction of its weight in total capital imports", which the report calls "an outcome of the contraction of defense-related U.S. government aid". The same report (p. 6) gives net long-term borrowing as "roughly $500 million in 1977, about a third of the 1975 volume".
-- **[GAP]** US aid amounts for 1976 and 1977, and the split of 1973-74 US aid between grants and loans: the capital-imports chapters of BoI 1976 and BoI 1977 were not opened (their chapter links were not found in the time available).
+- **US aid by year, grants and loans (24 Oct)** [V]. BoI 1976, chapter V, Table V-2 "U.S. government aid and defense imports, 1972-1976", p. 123 (https://www.boi.org.il/media/vkhhx3ad/pe_5.pdf; read as an image), $ millions:
+
+| Year | Grants | Loans | Total | Direct defense imports |
+|---|---|---|---|---|
+| 1972 | 71 | 191 | 262 | 490 |
+| 1973 | 820 | 237 | 1,057 | 1,253 |
+| 1974 | 672 | 150 | 822 | 1,224 |
+| 1975 | 642 | 1,200 | 1,842 | 1,846 |
+| 1976 | 1,183 | 542 | 1,725 | 1,603 |
+
+  The table's note says indirect defence imports were $300 million in 1976. The text agrees: p. 126, "Total U.S. government grants doubled this year and reached $ 1,183 million as against $ 642 million in 1975. Especially notable was the military grant, which was increased from $ 254 million in 1975 to $ 850 million this year"; p. 133, "Gross U.S. government loans, which reached $1.2 billion in 1975, decreased this year to approximately half a billion dollars"; p. 119, assistance "$ 1.7 billion as against $1.8 billion in 1975". The 1975 row agrees with BoI 1975, p. 99 (loans $1.2 billion).
+- **1973-74 in the report of the time (24 Oct)** [V, C]. BoI 1974, chapter V (https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201974/part%20one/pe_5.pdf), p. 131: "U.S. government grants totalled $ 790 million in 1974, compared with $ 834 million the year before. Of this sum, $ 705 million was a special military grant for financing procurements in the U.S., $ 50 million was for economic and technical aid, and $ 35 million for the absorption of Jewish immigrants from the Soviet Union." p. 135: "U.S. government military credits totalled $335 million in 1974, of which $110 million was on account of the preceding U.S. fiscal year; in 1973 gross receipts from this source totalled $ 300 million." Conflict with Table V-2 of BoI 1976: grants 834 (1973) and 790 (1974) against 820 and 672; loans 300 and 335 (gross military credits) against 237 and 150, and BoI 1975 Table V-1 (above) has U.S. government loans 252 and 147. Our reading: later revision and gross against net, which none of the three reports states. Both values stay.
+- **[GAP] US aid for 1977.** Not found. The chapter of BoI 1977 on capital imports was not reachable: the report page on boi.org.il returns a browser check, no Wayback copy of the page exists, and web searches returned only chapters I and XXI of that report. What BoI 1977 does say is in the bullet above (smaller public-sector inflow, "contraction of defense-related U.S. government aid"). [V] for p. i only: GAO report ID-78-31, *U.S. Economic Assistance for Israel*, p. i (read as an image): "From $150 million in 1976, the cash grant increased to $300 million annually in fiscal years 1977 and 1978" (US fiscal years, economic aid only, so it is not comparable to the table above and does not close this row).
 
 ### 5.3 Foreign exchange reserves, end of year, $ millions
 
@@ -217,7 +244,20 @@ The definition changes between reports, so the series are kept apart.
 | 1976 | | 1,156 | BoI 1977, Table I-1, p. 4 |
 | 1977 | | 1,359 | BoI 1977, Table I-1, p. 4 |
 
-BoI 1975, Table III-5, p. 52, also gives "Total official reserve assets" (Bank of Israel plus deposits with other central monetary institutions): 483, 758, 1,287, 1,979, 1,258 and 1,289 for 1970-75 [V]. **[GAP]** 1957-60 and 1969 reserve levels: not in the opened chapters.
+BoI 1975, Table III-5, p. 52, also gives "Total official reserve assets" (Bank of Israel plus deposits with other central monetary institutions): 483, 758, 1,287, 1,979, 1,258 and 1,289 for 1970-75 [V]. 
+
+**Reserve levels 1957-60 and 1969 (24 Oct)** [V]. End of year, $ millions, foreign exchange reserves as the Bank printed them in the table of commitments to the rest of the world (deposits abroad plus monetary gold; the foreign deposits in Israeli banks are not netted):
+
+| End of year | Total | Deposits abroad / gold | Source, read as an image |
+|---|---|---|---|
+| 1957 | 84.9; 83.9; 83.5 [C] | 81.4 / 3.5; 80.4 / 3.5; 80.0 / 3.5 | BoI 1957 Table III-12, p. 44; BoI 1958 Table III-15, p. 40; BoI 1959 Table III-13, p. 42 |
+| 1958 | 129.9; 129.8 [C] | 126.4 / 3.5; 126.3 / 3.5 | BoI 1958 Table III-15, p. 40; BoI 1959 Table III-13, p. 42 |
+| 1959 | 168.3; 168.4 [C] | 160.5 / 7.8; 160.6 / 7.8 | BoI 1960 Table III-12, p. 39; BoI 1959 Table III-13, p. 42 (text, p. 41: "$168.4 million at the end of 1959") |
+| 1960 | 270.4 | 263.8 / 6.3, plus 0.3 net balances on payments agreements | BoI 1960 Table III-12, p. 39; BoI 1961 Table III-15, p. 44 (same 270.4) |
+
+BoI 1959 Table III-13 also prints 1954-56: 81.4, 90.4 and 87.0 (the 1956 figure agrees with BoI 1957). Net reserves, BoI 1961 Table III-15, p. 44: 175.0 (1960) and 248.7 (1961), that is reserves net of short-term liabilities. Files: https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201957/part%20one/pe_3.pdf , .../Annual%20Report%201958/part%20one/pe_3.pdf , https://www.boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201959/part%20one%20-%20the%20development%20of%20the%20economy/pe_3.pdf , the same folder name under .../Annual%20Report%201960/ , and .../Annual%20Report%201961/part%20one/pe_3.pdf . The 1961 value in this table (365.7) agrees with the first-pass row above.
+
+**1969** [V]. BoI 1970, chapter III, Table III-27 "Foreign currency reserves, 1965-70", p. 74 (https://www.boi.org.il/media/4m1pfw3h/pe_3.pdf; read as an image): assets with the Bank of Israel at the end of 1969, $412.4 million (foreign currency reserves 366.7, gold 45.7; gold with the IMF nil); net balances with the Bank of Israel, 338.7. Same table, p. 75: total gross assets in foreign currency 729.1 and net foreign currency assets 402.5 at the end of 1969 (1968: 916.2 and 684.9; 1970: 848.7 and 346.1). The text, p. 77, says the net reserves fell from $402 million to $346 million in 1970. These are the economy's net reserves ("gross balances of the Bank of Israel, Government, and banking institutions, less foreign currency liabilities"), not the same basis as the $412.4 million at the Bank of Israel. The 1970 row (458.6 at the Bank of Israel) agrees with BoI 1975 Table III-5 in the first-pass table. Our reading: the 1969 value of 412.4 is on the same "at the Bank of Israel" definition as the 1970-75 rows above.
 
 ### 5.4 Foreign debt, end of year, $ millions
 
@@ -274,7 +314,6 @@ Suggestion for step 2:
 
 ## 8. Open items
 
-1. Open the capital-imports chapters of BoI 1976 and BoI 1977 for US aid by year and its grant/loan split (section 5.2 gap).
-2. Annual defence shares of GNP for 1957-68 (section 4.2 gap), and reserve levels for 1957-60 and 1969 (section 5.3 gap).
-3. The exact day of the October 1977 float.
-4. Check the Bank of Israel series against the CBS *Statistical Abstract* volumes the tables cite, and against Ben-Porath (ed.) and Halevi and Klinov-Malul, none of which was opened here.
+1. Left open after the second pass (24 Oct): US aid for 1977 (section 5.2); annual defence shares of GNP for 1957-64 and a single figure for 1965 (section 4.3). Closed on 24 Oct: US aid 1973-76 split, defence share 1966-68, reserves 1957-60 and 1969, the day of the float.
+2. Check the BoI 1977 chapter on capital imports once its link is reachable, and Berglas (1983) for the defence series.
+3. Check the Bank of Israel series against the CBS *Statistical Abstract* volumes the tables cite, and against Ben-Porath (ed.) and Halevi and Klinov-Malul, none of which was opened here.

@@ -188,6 +188,30 @@ capture.delta_count: "{0:+#,##0;-#,##0}"
 capture.none: "None of the choices can be made this turn. The units stay, and the decision waits."
 # The hidden dialog's button. {0} the place's name.
 capture.reopen: "Decision waiting: {0}"
+# The end of an occupation in the same dialog (R-CTRL-014 to R-CTRL-016; #802). SENSITIVE, as above. Annex then Withdraw, no
+# puppet regime (Q-PUP-1 (c)). Annex has two descriptions, for a place whose residents fled at capture ("territory only, no
+# gain") and one where they stayed. The preview under each is the sim's resources only, so its heading says so; the people,
+# homes and jobs Annex adds are in the description, with no number. {0} the place's name.
+capture.end.intro: "The occupation period in {0} is over. Choose whether to annex the place or withdraw. Your choice takes effect at End turn; until you choose, the unit stays and the occupation upkeep continues."
+capture.end.option.annex: "Annex"
+capture.end.option.withdraw: "Withdraw"
+capture.end.about.annex_fled: "The place stays under Israeli control. Its residents fled when it was captured, so no people, homes or jobs are added. The occupation upkeep ends, and no unit has to stay."
+capture.end.about.annex_stayed: "The place stays under Israeli control, and its residents join the population with their homes and jobs. The occupation upkeep ends, and no unit has to stay."
+capture.end.about.withdraw: "The units leave, and the place is under enemy control again. The occupation upkeep ends."
+capture.end.changes: "Resource changes at once:"
+capture.end.changes_none: "Resource changes at once: none"
+capture.end.none: "Neither choice can be made this turn. The unit stays, the occupation upkeep continues, and the decision waits."
+# Why an option cannot be chosen, under its disabled button (owner, 24 October 2026 on #799, "button explains"), one line per
+# refusal id the sim gives (CaptureRefusal; Q-TECH-5: the dialog never shows the sim's English). SENSITIVE, as above. An
+# option out of play (not_in_play) is not shown, so it has no line. {0} the place's name; attention: {1} what the choice
+# needs, {2} what is left.
+capture.refusal.attention: "Not enough Attention this turn: this needs {1:0.0}, and {2:0.0} is left."
+capture.refusal.needs_unit: "An Israeli military unit must be in {0} for this."
+capture.refusal.no_free_hex: "A unit in {0} has no free hex next to it to withdraw to."
+capture.refusal.no_one_to_deport: "Its residents fled when it was captured, so there is no one to deport."
+capture.refusal.already_city: "{0} is already a city."
+capture.refusal.not_awaiting: "{0} is not waiting for this decision."
+capture.refusal.unknown_outcome: "This choice is not known."
 start.listen: "Play the recording"
 start.stop: "Stop the recording"
 start.loading: "Loading the recording…"
@@ -520,6 +544,13 @@ city.groups: "{0} groups"
 city.turns_one: "1 turn"
 city.turns: "{0} turns"
 city.cancel_ordered: "Cancel ordered"
+# Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, no Money, no training; {0}: the qualified groups kept.
+city.return_craftsmen: "Return craftsmen to civilian life: 1 group"
+city.reassign_craftsmen: "Reassign craftsmen: 1 of {0}"
+city.reassign_halutz: "Reassign halutzim: 1 of {0}"
+city.reassign_veteran_halutz: "Reassign veteran pioneers: 1 of {0}"
+# A pioneer group's Return (R-QUAL-003); {0}: its name, site.group.
+pioneer.return: "Return {0} to civilian life"
 # City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
 # turns from content), the order, and a project under way or finished. Refusals the map actions share use their
 # info.map_action_reason.* strings; these are the city projects' own.

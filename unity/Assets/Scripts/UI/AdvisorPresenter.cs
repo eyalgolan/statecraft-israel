@@ -39,6 +39,8 @@ namespace Statecraft.Game.UI
         readonly VisualElement ring;
         string? target;
         Action? putBack;
+        /// <summary>The selection a rebuilt presenter takes over from the one before it (ChainState.PutBack).</summary>
+        Action? adopted;
         IVisualElementScheduledItem? ringOnly;
 
         readonly VisualElement hudRoot, layer, popup, portrait;
@@ -108,6 +110,7 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0)
             {
                 openingGame = bridge.Session;
+                adopted = session.Chain.PutBack; session.Chain.PutBack = null;
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
@@ -140,10 +143,10 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0 && ReferenceEquals(openingGame, bridge.Session)) return;
             session.Queue.Reset(); session.Fired.Clear(); session.FiredTurn = Turn;
             Shown = null; covered = null;
-            session.Chain.Step = -1;
+            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
             ClearTarget();
             Notice(AdvisorSignals.NewGame);
-            if (session.AutoShow && session.Settings.HasFile && session.Settings.Level == "new" && !session.Settings.OpeningSeen
+            if (session.AutoShow && session.Settings.HasFile && !session.Settings.OpeningSeen
                 && !hudRoot.ClassListContains(StartScreenPresenter.OpenClass) && chain.Any(InTour))
             {
                 session.Settings.MarkOpeningSeen();
@@ -306,7 +309,8 @@ namespace Statecraft.Game.UI
             target = name;
             if (AdvisorTargets.ShowsCity(name) || AdvisorTargets.ShowsUnit(name))
             {
-                putBack = hooks.KeepSelection?.Invoke();
+                putBack = adopted ?? hooks.KeepSelection?.Invoke();   // after a rebuild, the selection found before it
+                adopted = null;
                 (AdvisorTargets.ShowsUnit(name) ? hooks.ShowUnit : hooks.ShowCity)?.Invoke();
             }
             hudRoot.AddToClassList(RingClass);
@@ -403,7 +407,7 @@ namespace Statecraft.Game.UI
         void CloseChain(bool restoreCard)
         {
             if (disposed || session.Chain.Step < 0) return;
-            session.Chain.Step = -1;
+            session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
             Shown = null; covered = null;
             ClearTarget();
             Hide();
@@ -560,7 +564,8 @@ namespace Statecraft.Game.UI
         public void Dispose()
         {
             if (disposed) return;
-            if (session.Chain.Step >= 0) putBack = null;  // a rebuilt UI takes its own selection hook
+            // A rebuild (a language switch) resumes the chain: the selection it found goes on to the rebuilt presenter.
+            if (session.Chain.Step >= 0) { session.Chain.PutBack = putBack ?? adopted; putBack = null; }
             ClearTarget();
             disposed = true;
             follow.Pause();

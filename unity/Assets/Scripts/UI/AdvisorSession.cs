@@ -23,6 +23,9 @@ namespace Statecraft.Game.UI
             public int Step = -1, OpenTurn;
             public bool CardWasOpen, EventShown;
             public string? CardEvent;
+            /// <summary>Puts back the selection the chain found, carried over a rebuild (a language switch) to the rebuilt
+            /// presenter's first city or unit, so closing the chain later still restores the player's own.</summary>
+            public Action? PutBack;
         }
         public ChainState Chain { get; } = new ChainState();
 
