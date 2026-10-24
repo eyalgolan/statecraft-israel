@@ -595,8 +595,9 @@ event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
 
 # The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
-# quote. Each step is the advisor's recorded line, without balance values; Attention and the event card use the copy
-# fixes the owner approved on 24 October 2026 ("Approve all 8").
+# quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the
+# copy-fix wording ("next month", "when the month ends") the owner approved in chat on 24 October 2026, 04:14 UTC:
+# "Approve all 8".
 advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
 advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
 advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
