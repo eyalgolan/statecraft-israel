@@ -51,7 +51,7 @@ The player can choose ministers. TBD: minister roles, available candidates, appo
 | Resource or parameter | Role | Still to define |
 |---|---|---|
 | Money | Funds development and other paid actions. Craftsmen earn more money. | Income per job, construction costs and upkeep. |
-| Arms | Available military equipment. | Decided, D-G6: "From events (sourced arms deals) and Money. Training and attacks consume it" ([impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md)). The four numbers asked on #856 and #781 are set (owner, 18 October 2026, #781: "Approve as drafted"), labelled design values in `rules.yaml`: one Arms is the equipment package for one 1,000-person recruit group, 12 Arms on 15 May 1948, IL 1m an Arms, 1 a recruit group, and 1 Attention for the buy order whatever the quantity (R-ARMS-001 to R-ARMS-003). Whether replacements consume it is open. **Then decided (owner, 23 Oct 2026, "Replacements cost Arms"; [#1510](https://github.com/eyalgolan/statecraft-israel/issues/1510#issuecomment-6372356139)):** trained recruits can refill a damaged formation, and each replacement group consumes Arms as recruit training does (R-ARMS-003); the rule is built under #1510. |
+| Arms | Available military equipment. | Decided, D-G6: "From events (sourced arms deals) and Money. Training and attacks consume it" ([impact plan §5](superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md)). The four numbers asked on #856 and #781 are set (owner, 18 October 2026, #781: "Approve as drafted"), labelled design values in `rules.yaml`: one Arms is the equipment package for one 1,000-person recruit group, 12 Arms on 15 May 1948, IL 1m an Arms, 1 a recruit group, and 1 Attention for the buy order whatever the quantity (R-ARMS-001 to R-ARMS-003). Whether replacements consume it is open. **Then decided (owner, 23 Oct 2026, "Replacements cost Arms"; [#1510](https://github.com/eyalgolan/statecraft-israel/issues/1510#issuecomment-6372356139)):** trained recruits can refill a damaged formation, and each replacement group consumes Arms as recruit training does (R-ARMS-003); built under #1510 as R-TRAIN-004. |
 | Food | Available food supply. | Production, imports, consumption and storage; stockpile or supply capacity. |
 | Social cohesion (לכידות חברתית) | National parameter describing cohesion in society. Proposed influences include housing, employment and shortages. | Scale, thresholds and gameplay effects; effects of military decisions and events. |
 | International Support | National parameter describing support from other countries. Proposed influences include military decisions and events. | Scale, thresholds and gameplay effects. |
@@ -72,7 +72,7 @@ The player can choose ministers. TBD: minister roles, available candidates, appo
 | Arab Legionnaire | Unit representing an Arab Legion soldier. | Equipment, movement, strength and behavior. |
 | Palestinian militia | Palestinian militia unit. | Equipment, movement, strength and behavior. |
 
-**Then decided (owner, 23 Oct 2026, "Two-way, keep training"; [#1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)):** craftsmen, halutzim and veteran pioneers can return to civilian life and keep their qualification, and a qualified civilian can be reassigned to the trained role without training again; the rule is built under #1511.
+**Then decided (owner, 23 Oct 2026, "Two-way, keep training"; [#1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)):** craftsmen, halutzim and veteran pioneers can return to civilian life and keep their qualification, and a qualified civilian can be reassigned to the trained role without training again; the rule is built under #1511 (R-QUAL-001 to R-QUAL-007).
 
 ### Movement and civilian actions
 
@@ -84,7 +84,8 @@ A civilian can be employed in an available city employment slot. A civilian can 
 
 Two transitions are defined:
 - civilian to recruit, through basic training;
-- civilian to Halutz, through pioneer training.
+- civilian to Halutz, through pioneer training;
+- craftsman, halutz and veteran pioneer back to civilian life, and a qualified civilian back into the trained role without training again (#1511, R-QUAL-001 to R-QUAL-007).
 
 These transitions are open:
 - refugee to civilian;

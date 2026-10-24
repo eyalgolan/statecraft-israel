@@ -19,7 +19,11 @@ public class DesignValuesTests
     {
         ("rules.yaml", "attention_cost.assign_workers"),
         ("rules.yaml", "attention_cost.train"),
+        ("rules.yaml", "attention_cost.reinforce"),
         ("rules.yaml", "attention_cost.cancel_training"),
+        ("rules.yaml", "attention_cost.return_craftsmen"),
+        ("rules.yaml", "attention_cost.reassign_craftsmen"),
+        ("rules.yaml", "attention_cost.reassign_pioneers"),
         ("rules.yaml", "attention_cost.pioneer_work"),
         ("rules.yaml", "attention_cost.stop_work"),
         ("rules.yaml", "mvp.people_per_unit"),

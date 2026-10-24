@@ -26,8 +26,10 @@ namespace Statecraft.Game.UI
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
-        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton, sendHomeButton, skipButton;
-        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold, onAttack, onSendHome, onSkip;
+        readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton, sendHomeButton, skipButton, reinforceButton;
+        /// <summary>The Reinforce order the card offers now (#1510), or null: what its button queues.</summary>
+        Reinforce? reinforce;
+        readonly System.Action onCamp, onHousing, onDefence, onMove, onFortify, onHold, onAttack, onSendHome, onSkip, onReinforce;
         readonly System.Func<PlacedToken?> selectedUnit;
         readonly System.Action? unitDone;
         bool unitMode;
@@ -131,6 +133,9 @@ namespace Statecraft.Game.UI
             onSkip = Skip;
             skipButton.clicked += onSkip;
             skipButton.text = text["unit.order.skip"];
+            reinforceButton = panel.Q<Button>("info-reinforce");
+            onReinforce = () => { if (reinforce is Reinforce r) { bridge.Queue(r); Render(); } };
+            reinforceButton.clicked += onReinforce;
             bridge.Changed += Render;
             panel.parent?.RegisterCallback<GeometryChangedEvent>(OnHudGeometry);
             Render();
@@ -139,7 +144,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; EndPick(); }
+        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -526,6 +531,21 @@ namespace Statecraft.Game.UI
             var sendHomeWhy = orderUnit is int du ? Demobilization.Check(c, s, du, bridge.Session.Now.Attacked) : null;
             sendHomeButton.style.display = orderUnit != null && sendHomeWhy == null ? DisplayStyle.Flex : DisplayStyle.None;
             skipButton.style.display = own == true && orderUnit != null && bridge.NeedsOrders.Contains(orderUnit.Value) ? DisplayStyle.Flex : DisplayStyle.None;
+            // Reinforce (#1510, R-TRAIN-004): offered for a unit of Israel's that has lost strength and stands in a city, for
+            // the missing strength up to the city's free civilians; the sim's own Reinforce, run on a copy, decides, and its
+            // refusal shows as the other orders' do. None while one is queued for the unit.
+            reinforce = null;
+            var reinforceQueued = orderUnit is int rq && bridge.QueuedLike(new Reinforce(rq, "", 0)) != null;
+            if (orderUnit is int ru && own && !reinforceQueued && s.Units.TryGetValue(ru, out var formation) && Training.Room(s, formation) > 0
+                && c.SettlementHexes.FirstOrDefault(h => h.Q == formation.Q && h.R == formation.R && s.Cities.ContainsKey(h.Id)) is { } home)
+            {
+                var n = System.Math.Max(1, System.Math.Min(Training.Room(s, formation), Training.Available(s, home.Id, bridge.Queued)));
+                var why = Training.Reinforce(c, s.Clone(), ru, home.Id, n, new List<Cause>());
+                if (why == null) reinforce = new Reinforce(ru, home.Id, n);
+                else if (!refusals.Contains(why)) refusals.Add(why);
+            }
+            reinforceButton.style.display = reinforce != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (reinforce is Reinforce offer) reinforceButton.text = text.Format("unit.order.reinforce", offer.Count);
             panel.EnableInClassList(UnitClass, unit != null);
             if (unit != null)
             {
@@ -543,7 +563,7 @@ namespace Statecraft.Game.UI
                     && c.UnitTypes.FirstOrDefault(t => t.Id == military.Type) is { MovementPoints: > 0 } type
                     ? text.Format("unit.points", Movement.PointsLeft(c, s, pu, bridge.Spent), type.MovementPoints) : "";
                 var routeLine = orderUnit is int routeUnit ? GoToLine(routeUnit) : "";
-                var lines = new[] { card.Body, points, order, routeLine, standing }.Where(x => x != "");
+                var lines = new[] { card.Body, points, order, routeLine, standing, reinforceQueued ? text["unit.reinforce_queued"] : "" }.Where(x => x != "");
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
                 ShowLocalities("");
                 region.text = "";   // a unit's card names no sub-district (the last hex's would stay under it)

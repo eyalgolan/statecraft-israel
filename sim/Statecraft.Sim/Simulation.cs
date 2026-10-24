@@ -200,6 +200,14 @@ namespace Statecraft.Sim
                     return Training.Start(c, s, t.City, t.Track, t.Count, why);
                 case CancelTraining t:
                     return Training.Cancel(c, s, t.Cohort, why);
+                case ReturnCraftsmen r:
+                    return Qualification.ReturnCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignCraftsmen r:
+                    return Qualification.ReassignCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignPioneers r:
+                    return Qualification.ReassignPioneers(c, s, r.City, r.Track, r.Count, why);
+                case Reinforce r:
+                    return Training.Reinforce(c, s, r.Unit, r.City, r.Count, why);
                 case PioneerWork p:
                     return Projects.Start(c, s, p.Unit, p.Action, p.Site, why);
                 case StopWork w:
@@ -208,6 +216,7 @@ namespace Statecraft.Sim
                     if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
                     if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
                     if (o.Q != null || o.R != null) return "That order names no hex";
+                    if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
                     return o.Order == Demobilization.SendHome
                         ? Demobilization.Give(c, s, o.Unit, attacked, why)
                         : Orders.Give(c, s, o.Unit, o.Order, why);

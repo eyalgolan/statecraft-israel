@@ -464,6 +464,46 @@ with the overflow asserted as a precondition so the test cannot pass vacuously; 
 three do keep theirs, so the exclusion cannot be dropped by accident). No UI string was added, so nothing goes
 to #564.
 
+## The focus rule looks past the element's own display, 23 October 2026
+
+K7, found while the owner was reviewing the screen-entry fix (#1489) and fixed in #1507. Not a
+symptom anyone could reach in play: a trap left in the rule the other three fixes all lean on.
+
+`FocusReturn.CanTakeFocus` decides whether handing an element the focus will work. It asked
+whether the element itself is drawn:
+
+```csharp
+e?.panel != null && e.focusable && e.enabledInHierarchy && e.resolvedStyle.display != DisplayStyle.None
+```
+
+`display: none` on a parent takes its children out of the layout, but each child keeps its own
+`resolvedStyle.display`. So a control inside a closed screen still reads `Flex`, passed the test,
+and then would not take the focus: `Focus()` did nothing and nothing had the focus, which is the
+one outcome the rule exists to prevent.
+
+| | Finding | Fix |
+|---|---|---|
+| K7 | `CanTakeFocus` tested the element's own `display` only, so anything inside a `display: none` parent passed and then refused the focus. Measured on main, a closed screen being the plain case: `screen-close-budget` reports `ownDisplay=Flex`, `enabledInHierarchy=True`, `CanTakeFocus=True`, and after `Focus()` the focused element is `<null>`. The same for `screen-cabinet` and `screen-objectives`. | `CanTakeFocus` walks from the element up to the panel and refuses if any ancestor is `display: none`, so such a control is skipped and a usable fallback takes the focus instead. |
+
+**It was a trap rather than a live bug**, and the distinction is worth keeping: every caller passes
+scopes inside an open panel, so no shipped path reached it. What it cost was the next caller who
+handed `ToOrWithin` a hidden subtree, who would have got a silent focus drop instead of the
+fallback.
+
+One thing the fix had to avoid breaking: `ScreenNav.HandFocusTo` runs in the same call that opens a
+screen (K5), so the walk could have rejected every control in a screen whose `resolvedStyle` had
+not caught up, and sent the focus to the X instead of the first control. It does not, because
+`ScreenNav.Show` sets `window.style.display = DisplayStyle.Flex` **inline**, and UI Toolkit
+reflects an inline style in `resolvedStyle` straight away rather than at the next panel pass.
+Measured from inside `HandFocusTo`: `screen-cabinet resolvedDisplay=Flex inlineDisplay=Flex`, and
+the same for the Budget and Defence. If `Show` ever moves to a class or a stylesheet rule instead,
+that stops being true and the walk would need to trust an inline `style.display`.
+
+Pinned in EditMode: `FocusHiddenParentTests` (`ToOrWithin` with a closed screen as its only scope
+leaves the focus on the last stop instead of dropping it; and a drawn scope still gives up its own
+first control, asserted on `minimap-overview` so the fallback cannot satisfy the test). No UI
+string was added, so nothing goes to #564.
+
 ## Screenshots
 
 In `.superpowers/a11y-2026-10-14/` (1568x752 unless noted), with the driver and the contrast, colour-vision and

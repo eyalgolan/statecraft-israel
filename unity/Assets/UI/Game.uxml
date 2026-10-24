@@ -160,6 +160,9 @@
                     <ui:Button name="info-attack" />
                     <!-- Send home (#1309): shown only when the sim's Demobilization.Check takes the unit. -->
                     <ui:Button name="info-send-home" />
+                    <!-- Reinforce (#1510): shown only when the sim's Training.Reinforce takes the unit's missing strength from the
+                         city it stands in; else its reason shows. -->
+                    <ui:Button name="info-reinforce" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
                 <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
