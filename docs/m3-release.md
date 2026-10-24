@@ -306,7 +306,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
 | `degania_defence` | security, war-casualties | the defence of Degania Alef and Degania Bet, 20 May 1948: military text only, no casualty figures, no gun count (the four-or-two record is unresolved, [C] in the YAML); the stopped-vehicle photograph's identification (Syrian per the NLI record, a Universal Carrier per Commons) is flagged for review (#1565) |
 
-`degania_defence` (#1565) appears in the table because the pinned set requires every sensitive event there; its sign-off is **pending**. It is `fact-checked`, and only the owner's review moves it to `sensitivity-reviewed`.
+`degania_defence` (#1565) was signed off separately: the owner approved its card text, effects and photograph alt text on 24 October 2026 ("approved", [#1568](https://github.com/eyalgolan/statecraft-israel/pull/1568#issuecomment-6382907187)), and it is `sensitivity-reviewed`.
 
 **Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
 (`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner

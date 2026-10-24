@@ -3,8 +3,8 @@ ind{
   food_supply=0.4 [3FD999999999999A]
   housing=0.4196029067993164 [3FDADAC626809D49]
   intl_standing=0.5 [3FE0000000000000]
-  morale=0.6661611576738152 [3FE5513134426299]
-  security=0.4724423632812501 [3FDE3C7EE4E26D4A]
+  morale=0.6676494389238152 [3FE55D625B2BDB6E]
+  security=0.4874423632812501 [3FDF3241743E9640]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
@@ -14,14 +14,14 @@ eff{
   building_houses=0.06960290679931641 [3FB1D17F0068DB8C]
   food_lifts_cohesion=0.03968750000000001 [3FA451EB851EB853]
   homes_lift_morale=0.06101609664916992 [3FAF3D807746887A]
-  safety_lifts_morale=0.04448856640625001 [3FA6C73493858364]
+  safety_lifts_morale=0.045976847656250014 [3FA78A47021D10B4]
   work_lifts_cohesion=0.0409689946183953 [3FA4F9E358126F9E]
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
   intl_standing=0 [0000000000000000]
   morale=-0.07000000000000006 [BFB1EB851EB851F0]
-  security=0.14000000000000012 [3FC1EB851EB851F0]
+  security=0.15500000000000014 [3FC3D70A3D70A3DC]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -44,11 +44,12 @@ debt=17.901888251868293 [4031E6E226026BC2]
 fx=76.85902112083348 [405336FA33B92365]
 rung=5;cf=0;
 mob=0.8 [3FE999999999999A]
-stab=0.6554157308031643 [3FE4F92A6922AC48]
+stab=0.6577489846986975 [3FE50C4799484270]
 att=4 [4010000000000000]
 fired[
   altalena
   bernadotte_assassination
+  degania_defence
   first_truce
   idf_founding
   jerusalem_ceasefire
@@ -65,6 +66,7 @@ pending[
 chosen{
   altalena=enforce
   bernadotte_assassination=outlaw
+  degania_defence=jordan_valley
   first_truce=accept
   idf_founding=one_army
   jerusalem_military_government=military_government

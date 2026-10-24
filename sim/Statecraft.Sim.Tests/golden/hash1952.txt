@@ -1,10 +1,10 @@
 1952-01-15;11400714819323200433;Historical;44;
 ind{
-  food_supply=0.8555635490815091 [3FEB60C6CEDE8D7F]
+  food_supply=0.8555395682661614 [3FEB60948444634F]
   housing=0.08527449992708651 [3FB5D48CB45E9D83]
   intl_standing=0.8300000000000003 [3FEA8F5C28F5C292]
-  morale=0.49164470757140455 [3FDF771B5D115298]
-  security=0.5061322526321603 [3FE0323C441030A6]
+  morale=0.4931447075714044 [3FDF8FAED1CDBD14]
+  security=0.5211322526321603 [3FE0AD1D8BBE4521]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
@@ -17,14 +17,14 @@ eff{
   homes_lift_morale=0.012822260189952167 [3F8A428EA169C610]
   rationing_feeds=0.3399999999208376 [3FD5C28F5C133334]
   rationing_grates=-0.15 [BFC3333333333333]
-  safety_lifts_morale=0.05054370052651369 [3FA9E0DD298F75A0]
-  work_lifts_cohesion=0.019278747119669364 [3F93BDCED18C1E3E]
+  safety_lifts_morale=0.0520437005265136 [3FAAA578CF72C98B]
+  work_lifts_cohesion=0.019278747119669332 [3F93BDCED18C1E35]
 shift{
   food_supply=0.15000000000000002 [3FC3333333333334]
   housing=0 [0000000000000000]
   intl_standing=0.3300000000000003 [3FD51EB851EB8524]
   morale=-0.08000000000000007 [BFB47AE147AE1480]
-  security=0.16500000000000015 [3FC51EB851EB8524]
+  security=0.18000000000000016 [3FC70A3D70A3D710]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -49,7 +49,7 @@ debt=223.94012071283805 [406BFE1578087DD0]
 fx=-12.990431328096559 [C029FB19D0A63796]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.44381788073928824 [3FDC67831CC9EFF7]
+stab=0.4471162321139136 [3FDC9D8D669C2906]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -60,6 +60,7 @@ fired[
   austerity_1949
   bernadotte_assassination
   clothing_rationing_1950
+  degania_defence
   education_registration_1951
   elections_1949
   first_new_yishuv
@@ -93,6 +94,7 @@ chosen{
   austerity_1949=impose
   bernadotte_assassination=outlaw
   clothing_rationing_1950=extend
+  degania_defence=jordan_valley
   education_registration_1951=press_plan
   elections_1949=hold
   first_new_yishuv=continue
@@ -150,14 +152,14 @@ units[
   13:veteran_soldier@-4,23|side=israel|strength=2
   15:veteran_halutz@-3,19/6
 site{
-  beit_kama=done,1949-06-15
-  beit_kama_field=done,1951-10-15
-  beit_shemesh=done,1949-11-15
-  beit_shemesh_field=done,1952-01-15
-  gilat=done,1950-04-15
-  kiryat_shmona=done,1950-09-15
-  mefalsim=done,1951-02-15
-  reim=done,1951-07-15
+  beit_kama=done,1949-08-15
+  beit_kama_field=done,1951-12-15
+  beit_shemesh=done,1950-01-15
+  beit_shemesh_field=b,15,2,3FD9DB22D0E56044
+  gilat=done,1950-06-15
+  kiryat_shmona=done,1950-11-15
+  mefalsim=done,1951-04-15
+  reim=done,1951-09-15
 cproj[
   16:housing@tel_aviv,-4,20/done,1949-10-15
   17:housing@tel_aviv,-3,19/done,1950-06-15
@@ -166,6 +168,6 @@ cproj[
   20:housing@tel_aviv,-2,19/4,3FDB851EB851EB88
 next=21
 obj{
-  yishuvim=1951-07-15
-food=2734,1390,0
+  yishuvim=1951-09-15
+food=2733,1390,0
 arms=12

@@ -17,6 +17,8 @@ office: defense_minister
 # `to` is exclusive: the day after the Syrian withdrawal.
 from: 1948-05-15
 to: 1948-05-21
+# R-EVT-006: after One Army on the same first turn (owner, 24 October 2026, #1568: "One Army first").
+order: 1
 options:
   - id: jordan_valley
     text: Send the guns to the Jordan Valley
@@ -60,4 +62,6 @@ sources:
 # [C] unresolved: four guns or two at Degania. Ben-Gurion's diary of 21 May, en.wiki and he.wiki say four; his note
 # of 19 May says two; Ben-Tzur leaves it open (research_notes/gdd-phase-7-sourcing.md, section 4a). The card states
 # no number. No casualty figures: the checked sources give none that the card needs (the issue's rule).
-status: fact-checked
+# The owner's sensitivity review, 24 October 2026, of the card text, effects and photograph alt text as written: "approved"
+# (#1568: https://github.com/eyalgolan/statecraft-israel/pull/1568#issuecomment-6382907187).
+status: sensitivity-reviewed

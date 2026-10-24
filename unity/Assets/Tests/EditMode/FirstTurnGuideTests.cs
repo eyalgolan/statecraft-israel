@@ -458,6 +458,10 @@ public class FirstTurnGuideTests
     /// <summary>The first card's first option, pressed as a click would.</summary>
     static void AnswerTheCard() => UiTestKit.Press(Ui.Q("event-options").Query<Button>().First());
 
+    /// <summary>The opening turn's two cards answered, One Army then the defence of Degania (R-EVT-006; owner, 24 October
+    /// 2026, #1568: "One Army first").</summary>
+    static void AnswerTheOpeningCards() { AnswerTheCard(); AnswerTheCard(); }
+
     /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
     /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
     /// guide goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
@@ -472,7 +476,12 @@ public class FirstTurnGuideTests
         Assert.AreEqual(FirstTurnGuidePresenter.EventStep, guide.Step, "precondition: the event step");
         Assert.IsTrue(card.Shown != null && !card.Collapsed, "precondition: its card open");
         AnswerTheCard();
-        Assert.IsNull(card.Shown, "precondition: the opening turn has one card, now answered");
+        Assert.AreEqual("degania_defence", card.Shown?.Id, "One Army answered, the turn's second card opens");
+        Assert.AreEqual(FirstTurnGuidePresenter.EventStep, guide.Step, "and the event step stays, explaining it");
+        // The owner's report was a mouse player's: the second card, which took the focus as it opened, answered with the
+        // pointer (a keyboard Submit inside the card hands the focus to End Turn instead, EventCardPresenter.Choose).
+        DecisionCardTests.PressWithPointer(Ui.Q("event-options").Query<Button>().First());
+        Assert.IsNull(card.Shown, "precondition: the opening turn's two cards, now answered");
         Assert.IsTrue(guide.IsOpen);
         Assert.AreEqual(Array.IndexOf(FirstTurnGuidePresenter.Steps, "objectives"), guide.Step, "the guide goes on to Objectives");
         Assert.AreEqual(En.Format("guide.step", 6, 6), Ui.Q<Label>("guide-count").text, "the count the player was shown stays");
@@ -491,7 +500,7 @@ public class FirstTurnGuideTests
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var guide = game.Guide!; var card = game.Card!;
         guide.Close();
-        AnswerTheCard();
+        AnswerTheOpeningCards();
         Assert.IsNull(card.Shown, "precondition: no card left this turn");
         UiTestKit.Press(Ui.Q<Button>("nav-how-to-play")); UiTestKit.Press(Ui.Q<Button>("how-to-play-guide"));
         Assert.IsTrue(guide.IsOpen);
@@ -516,7 +525,7 @@ public class FirstTurnGuideTests
         game.Begin(Inputs, 0, startScreen: true);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var guide = game.Guide!; var info = game.Info!; var units = game.Units!;
-        if (cardAnswered) { guide.Close(); AnswerTheCard(); guide.Open(); }
+        if (cardAnswered) { guide.Close(); AnswerTheOpeningCards(); guide.Open(); }
         var move = Array.IndexOf(FirstTurnGuidePresenter.Steps, "move");
         for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
         Assert.IsTrue(info.ShowsUnit && units.Selected != null, "precondition: the move step shows a unit's card");
@@ -538,7 +547,7 @@ public class FirstTurnGuideTests
         var guide = game.Guide!;
         for (int i = 0; i < FirstTurnGuidePresenter.EventStep; i++) UiTestKit.Press(Ui.Q<Button>("guide-next"));
         UiTestKit.Press(Ui.Q<Button>("guide-skip"));
-        AnswerTheCard();
+        AnswerTheOpeningCards();
         Assert.IsFalse(guide.IsOpen, "closed, it stays closed");
         Assert.AreEqual(-1, guide.Step);
         Assert.IsFalse(Ui.Q("root").ClassListContains(FirstTurnGuidePresenter.OpenClass));
@@ -549,8 +558,9 @@ public class FirstTurnGuideTests
         lone.Dispose();
         rig.Guide.Open();                                               // another guide open on the same HUD (the root's class)
         for (int i = 0; i < FirstTurnGuidePresenter.EventStep; i++) rig.Guide.Next();
-        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
-        Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // One Army
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // then Degania (R-EVT-006)
+        Assert.IsNull(rig.Card.Shown, "precondition: the opening turn's two cards answered");
         Assert.AreEqual(-1, lone.Step, "the disposed guide was not called");
     }
 

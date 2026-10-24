@@ -70,7 +70,7 @@ public class EventRetimingTests
     [InlineData("austerity_1949", "1949-05-15")]
     [InlineData("armistice_syria", "1949-08-15")]
     [InlineData("frumkin_commission", "1950-01-15")]
-    [InlineData("first_new_yishuv", "1951-07-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791)
+    [InlineData("first_new_yishuv", "1951-09-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791); 15 July before #1565's turn-1 card (owner: "Accept the shift", #1568)
     [InlineData("maabarot_policy", "1950-04-15")]
     [InlineData("law_of_return", "1950-07-15")]
     [InlineData("clothing_rationing_1950", "1950-07-15")]

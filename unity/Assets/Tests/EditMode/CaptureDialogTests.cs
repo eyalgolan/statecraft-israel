@@ -422,7 +422,11 @@ public class CaptureDialogTests
         Assert.IsTrue(r.Shows("event-card") && !r.Shows("capture-card"), "the card again, the dialog behind it");
         Press(r.Root.Q("event-options").Q<Button>());
         yield return Frames(3);
-        Assert.IsNull(r.Card.Shown, "precondition: the card is answered");
+        Assert.AreEqual("degania_defence", r.Card.Shown?.Id, "One Army answered, the turn's second card (R-EVT-006)");
+        Assert.IsFalse(r.Shows("capture-card"), "and the dialog still waits behind a card");
+        Press(r.Root.Q("event-options").Q<Button>());
+        yield return Frames(3);
+        Assert.IsNull(r.Card.Shown, "precondition: the opening turn's two cards are answered");
         Assert.IsTrue(r.Shows("capture-card"), "then the dialog");
         Assert.AreSame(r.Element, r.Focused, "answered from the keyboard, the dialog that opens takes the focus (not End turn)");
     }

@@ -78,10 +78,11 @@ public class TurnReportTests
             Assert.LessOrEqual(lines.Length, HudModel.MaxCauses, id);
             foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
-        // The fixed turn's own causes: Security moved by One Army, then by the border villages' effect, the larger first.
+        // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
+        // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
+        // (the second line before #1565) is left out.
         var security = k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n');
-        Assert.AreEqual("Security +1.5% (One Army)", security[0]);
-        StringAssert.EndsWith("(Border villages)", security[1]);
+        CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
         StringAssert.StartsWith("Money ", k.Ui.Q<Label>("turn-report-causes-treasury").text, "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }

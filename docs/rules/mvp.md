@@ -458,6 +458,8 @@ R-EVT-004: An option's effects apply when it is chosen or delegated, on that tur
 
 R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the unit grants, city effects and project unlocks (R-EFX-006), the policies it sets (by id), then the security level, then the way back to the record (`rejoin`, R-ALT-009), each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
 
+R-EVT-006: Among the events eligible on a turn with the same `from` (and, for objective cards, the same place in `objectives.yaml`, R-OBJ-007), an event's `order` (default 0) decides before the id (ordinal): a lower order fires first, takes a soft slot first and is shown first. With every `order` 0 the order is R-EVT-002's. `degania_defence` has `order: 1`, so One Army (`idf_founding`) opens the game and the defence of Degania comes second on the same turn (owner, 24 October 2026, #1568: "One Army first").
+
 ## Alternate timelines
 
 The alternate-timeline mechanism ([the plan](../superpowers/plans/2026-10-17-alternate-timelines.md); the owner's answers, 17 October 2026, #945).

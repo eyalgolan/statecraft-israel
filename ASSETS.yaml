@@ -778,9 +778,9 @@ rules:
   - glob: "unity/Assets/UI/EventImages/degania_defence.jpg"
     licence: CC-BY-4.0
     source: "https://commons.wikimedia.org/wiki/File:Degania_Alef_(997008872726705171.jpg"
-    status: owner-verify
+    status: verified
     artist: "Moshe Marlin Levin"
     credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
     adapted: "graded and cropped"
-    note: "A stopped armoured carrier under the eucalyptus trees at Degania Alef, catalogue-dated 20 May 1948 (the archive's own date, cited as the catalogue's): #1565's in-window frame. Original 1950x1187, SHA-1 308a21f73e2eb2a4ed360d33848c128e6b96c43a; VRTS ticket 2021092910005788. Commons licence, credit and SHA-1 read through the Commons API 24 October 2026. Made by tools/event_images.py, centred crop [0.5, 0.5, 1.0]. sensitive: true - the card is tagged war-casualties, so the owner signs it off. The NLI titles the vehicle the Syrian tank stopped at the entrance; it is visibly a Universal Carrier and Commons files it under 'Universal Carriers in Israeli service', so the identification is flagged for the owner's review (see event-images.yaml)."
+    note: "Owner sign-off, 24 October 2026 (#1568): the photograph is approved ('Use, neutral alt text'), sensitivity review included ('approved'). A stopped armoured carrier under the eucalyptus trees at Degania Alef, catalogue-dated 20 May 1948 (the archive's own date, cited as the catalogue's): #1565's in-window frame. Original 1950x1187, SHA-1 308a21f73e2eb2a4ed360d33848c128e6b96c43a; VRTS ticket 2021092910005788. Commons licence, credit and SHA-1 read through the Commons API 24 October 2026. Made by tools/event_images.py, centred crop [0.5, 0.5, 1.0]. sensitive: true - the card is tagged war-casualties, so the owner signs it off. The NLI titles the vehicle the Syrian tank stopped at the entrance; it is visibly a Universal Carrier and Commons files it under 'Universal Carriers in Israeli service', so the identification is flagged for the owner's review (see event-images.yaml)."
 removed: []

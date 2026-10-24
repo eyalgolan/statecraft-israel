@@ -81,6 +81,7 @@
     "objective": { "$ref": "#/definitions/id", "description": "The objective (objectives.yaml) whose completion card this is. It fires only once that objective is completed, and has exactly one option." },
     "site": { "$ref": "#/definitions/id", "description": "A swamp site (sites.yaml) whose works this event is about. In the GDD loop it fires only while that site is being worked; the legacy loop ignores it." },
     "prisoners": { "enum": ["egypt", "jordan", "lebanon", "syria"], "description": "The front whose prisoners this exchange card returns (R-POW-004). It fires only while that front holds prisoners or the player's soldiers, and has exactly one option. Jordan's card also returns the Iraqi prisoners." },
+    "order": { "type": "integer", "description": "Default 0. Among the cards that fire on the same turn with the same from, a lower order comes first, then the id (R-EVT-006). Set it only to put one card after another on purpose." },
     "from": { "$ref": "#/definitions/date", "description": "First day of the window." },
     "to": { "$ref": "#/definitions/date", "description": "End of the window (exclusive). Leave out for an open window." },
     "conditions": {
