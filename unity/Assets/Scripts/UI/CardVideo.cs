@@ -19,6 +19,15 @@ namespace Statecraft.Game.UI
         /// <summary>How long a clip may take to be ready before the card gives up on it.</summary>
         public const long PrepareTimeoutMs = 8000;
 
+        bool held;
+        internal bool Prepared { get; private set; }
+        public double Time => player?.time ?? 0;
+        public void Seek(double time)
+        {
+            if (player == null || !Prepared || double.IsNaN(time) || double.IsInfinity(time)) return;
+            player.time = Math.Max(0, player.length > 0 ? Math.Min(player.length, time) : time);
+        }
+
         GameObject? go; VideoPlayer? player; RenderTexture? rt;
         VisualElement? target; Action<string>? onFail; Action? onEnded; IVisualElementScheduledItem? timeout;
 
@@ -51,16 +60,17 @@ namespace Statecraft.Game.UI
         /// <paramref name="ended"/>.</summary>
         /// <param name="prepareTimeoutMs">How long it may take to be ready (default PrepareTimeoutMs).</param>
         public void Play(string url, VisualElement header, Action<string> failed, bool loop = true, Action? ended = null,
-            long prepareTimeoutMs = PrepareTimeoutMs)
+            long prepareTimeoutMs = PrepareTimeoutMs, bool held = false)
         {
             Stop();
             Ensure();
             var was = RenderTexture.active; RenderTexture.active = rt; GL.Clear(false, true, Color.black); RenderTexture.active = was;
+            this.held = held;
             target = header; onFail = failed; onEnded = loop ? null : ended; Current = url;
             player!.isLooping = loop;
             player.url = url;
             player.Prepare();
-            timeout = header.schedule.Execute(() => { if (Current == url && !Showing) Fail("not ready after " + prepareTimeoutMs + " ms"); }).StartingIn(prepareTimeoutMs);
+            timeout = header.schedule.Execute(() => { if (Current == url && !Prepared) Fail("not ready after " + prepareTimeoutMs + " ms"); }).StartingIn(prepareTimeoutMs);
         }
 
         /// <summary>Puts the playing clip back on <paramref name="header"/>'s background (after the card reset it to the
@@ -76,7 +86,7 @@ namespace Statecraft.Game.UI
         {
             timeout?.Pause(); timeout = null;
             if (player != null) { player.Stop(); player.url = ""; }
-            target = null; onFail = null; onEnded = null; Current = null; Showing = false;
+            target = null; onFail = null; onEnded = null; Current = null; Showing = false; Prepared = false; held = false;
         }
 
         public void Dispose()
@@ -111,9 +121,18 @@ namespace Statecraft.Game.UI
         void OnPrepared(VideoPlayer p)
         {
             if (target == null) return;
+            Prepared = true;
+            if (!held) Release();
+        }
+
+        /// <summary>Shows and starts a held, prepared picture only when its separate narration is ready.</summary>
+        public void Release()
+        {
+            held = false;
+            if (!Prepared || player == null || target == null) return;
             target.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
             Showing = true;
-            p.Play();
+            player.Play();
             Debug.Log("VIDEO playing " + Current);
         }
 
