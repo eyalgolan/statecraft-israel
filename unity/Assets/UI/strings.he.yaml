@@ -680,3 +680,16 @@ settings.advisors.new: "חדשים במשחקי אסטרטגיה"
 settings.advisors.experienced: "מנוסים"
 settings.advisors.warnings: "אזהרות בלבד"
 settings.advisors.off: "כבוי"
+
+# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564).
+advisor.ben_gurion.city_at_risk.text: "סביר שהאויב יתקוף באחת מהערים שלנו בתור הזה. אם יחידת אויב מחזיקה באחת מהערים שלנו בסוף תור, המלחמה אבודה."
+advisor.ben_gurion.exhausted.text: "הכסף והמזון אזלו שניהם. אם יישארו אזולים כמה תורות ברציפות, הכלכלה תקרוס והמשחק יסתיים בהפסד."
+advisor.meyerson.debt_ceiling.text: "החוב שלנו קרוב לתקרה. בתקרה הכסף נחשב אזול, ואם גם המזון ייגמר הכלכלה תתחיל להישבר."
+advisor.meyerson.food_short.text: "בתור הזה המדינה נזקקה ליותר מזון ממה שהיה לה. מחסור במזון גם מוריד את הלכידות החברתית."
+advisor.ben_gurion.defeat_war.text: "יחידת אויב החזיקה באחת מהערים שלנו בסוף התור, וזה מסיים את המשחק."
+advisor.ben_gurion.defeat_economy.text: "הכסף והמזון נשארו אזולים יותר מדי תורות ברציפות, וזה מסיים את המשחק."
+end.outcome.defeat_war: "האויב מחזיק בעיר."
+
+# Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
+advisor.quote.q1.text: "«מדינת ישראל תהא פתוחה לעליה יהודית ולקיבוץ גלויות;»"
+advisor.quote.q1.source: "ההכרזה על הקמת מדינת ישראל, 14 במאי 1948"

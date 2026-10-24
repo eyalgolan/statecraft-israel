@@ -42,14 +42,14 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? ringOnly;
 
         readonly VisualElement hudRoot, layer, popup, portrait;
-        readonly Label name, role, words, count;
+        readonly Label name, role, words, count, quote, quoteSource;
         readonly Button showMe, more, notNow, gotIt, close;
         readonly Button? reopen;
         readonly Action onReopen;
         GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
-        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose;
+        readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose, onAttention;
         readonly IReadOnlyList<AdvisorCatalog.Message> chain;
         readonly Action<IReadOnlyList<Rejection>> onTurn;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
@@ -74,17 +74,20 @@ namespace Statecraft.Game.UI
             portrait = popup.Q<VisualElement>("advisor-portrait");
             name = popup.Q<Label>("advisor-name"); role = popup.Q<Label>("advisor-role");
             words = popup.Q<Label>("advisor-text"); count = popup.Q<Label>("advisor-count");
+            quote = popup.Q<Label>("advisor-quote"); quoteSource = popup.Q<Label>("advisor-quote-source");
             showMe = popup.Q<Button>("advisor-show-me"); more = popup.Q<Button>("advisor-more");
             notNow = popup.Q<Button>("advisor-not-now"); gotIt = popup.Q<Button>("advisor-got-it"); close = popup.Q<Button>("advisor-close");
             showMe.text = text["advisor.show_me"]; more.text = text["advisor.more"]; notNow.text = text["advisor.not_now"];
             gotIt.text = text["advisor.got_it"]; close.text = text["advisor.close"];
-            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx) };
+            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx), (quote, 20f), (quoteSource, 15f) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
             reopen = root.Q<Button>("how-to-play-guide");
             onReopen = () => { this.hooks.CloseScreens?.Invoke(); OpenChain(); };
             if (reopen != null) { reopen.text = text["how_to_play.guide"]; reopen.clicked += onReopen; }
             showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
+            onAttention = () => Notice(AdvisorSignals.AttentionRefused);
+            bridge.RefusedForAttention += onAttention;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
@@ -179,6 +182,12 @@ namespace Statecraft.Game.UI
             name.text = text[m.Advisor == "meyerson" && !session.Introduced(m.Advisor) ? "advisor.meyerson.name_first" : "advisor." + m.Advisor + ".name"];
             role.text = text["advisor." + m.Advisor + ".role"];
             words.text = text["advisor." + m.Id + ".text"];
+            var quoteKey = "advisor.quote." + m.Quote;
+            bool verifiedQuote = AdvisorQuotes.Ids.Contains(m.Quote) && text.Has(quoteKey + ".text") && text.Has(quoteKey + ".source");
+            quote.text = verifiedQuote ? text[quoteKey + ".text"] : "";
+            quoteSource.text = verifiedQuote ? text[quoteKey + ".source"] : "";
+            Display(quote, verifiedQuote); Display(quoteSource, verifiedQuote);
+
             var picture = portraits?.Get(session.Catalog.AdvisorOf(m.Advisor).Person);
             popup.EnableInClassList(NoPortraitClass, picture == null);
             portrait.style.backgroundImage = picture == null ? new StyleBackground(StyleKeyword.Null) : new StyleBackground(picture);
@@ -509,6 +518,7 @@ namespace Statecraft.Game.UI
             disposed = true;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
+            bridge.RefusedForAttention -= onAttention;
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
             if (reopen != null) reopen.clicked -= onReopen;

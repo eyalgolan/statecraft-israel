@@ -126,7 +126,7 @@ namespace Statecraft.Game.UI
         public static Known Shipped() => new Known
         {
             Signals = AdvisorSignals.Names.ToList(), Conditions = AdvisorSignals.Measures.Keys.ToList(),
-            Screens = ScreenNav.Screens, Targets = AdvisorTargets.Names,
+            Screens = ScreenNav.Screens, Targets = AdvisorTargets.Names, Quotes = AdvisorQuotes.Ids,
         };
 
         /// <summary>Every problem, one line each (spec 4.1).</summary>
@@ -157,6 +157,11 @@ namespace Statecraft.Game.UI
                 if (m.Actions.Count > 2) p.Add($"{at}: at most two actions");
                 foreach (var a in m.Actions) CheckAct(p, at, a, known);
                 if (m.Quote != "" && !known.Quotes.Contains(m.Quote)) p.Add($"{at}: quote '{m.Quote}' is not on the verified list (spec 3.3)");
+                if (m.Quote != "")
+                {
+                    Text(p, en, he, at, "advisor.quote." + m.Quote + ".text", 0);
+                    Text(p, en, he, at, "advisor.quote." + m.Quote + ".source", 0);
+                }
                 if (m.DisagreesWith != "")
                 {
                     var o = Find(m.DisagreesWith);

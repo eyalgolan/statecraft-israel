@@ -1051,3 +1051,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 
 /* The help-level choices can wrap within narrow Settings screens (spec6). */
 .settings-advisors { flex-wrap: wrap; flex-shrink: 1; }
+
+/* Only spec3.3 verified quotes, separated from the advisor's game dialogue, with their source. */
+.advisor-quote { white-space: normal; font-size: 20px; -unity-font-style: italic; margin: 2px 12px 0 12px; border-left-width: 2px; border-color: var(--gold-dim); padding-left: 8px; }
+.lang-he .advisor-quote { border-left-width: 0; border-right-width: 2px; padding-left: 0; padding-right: 8px; }
+.advisor-quote-source { white-space: normal; font-size: 15px; margin: 2px 12px 6px 12px; }

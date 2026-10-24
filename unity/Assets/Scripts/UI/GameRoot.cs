@@ -283,7 +283,7 @@ namespace Statecraft.Game.UI
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
-            Own(new BudgetPresenter(root, bridge, text));
+            var budget = Own(new BudgetPresenter(root, bridge, text));
             Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
@@ -392,7 +392,13 @@ namespace Statecraft.Game.UI
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
             pointer.IsOverUi = overUi;
-            Action<int, int> onHex = (q, r) => OnHexClicked(map, unitLayer, info, q, r);
+            Action<int, int> onHex = (q, r) =>
+            {
+                OnHexClicked(map, unitLayer, info, q, r);
+                if (info.ShowsUnit) advisor?.Notice(AdvisorSignals.UnitShown);
+                else if (info.Selected is (int sq, int sr) && bridge.Content.SettlementHexes.Any(h => h.Q == sq && h.R == sr && bridge.State.Cities.ContainsKey(h.Id)))
+                    advisor?.Notice(AdvisorSignals.CityShown);
+            };
             pointer.HexClicked += onHex;
             // #1063: a click on a city's name pill is a click on the city's hex (its settlement hex, where the city panel opens).
             Func<Vector2, (int q, int r)?> pillHex = p =>
@@ -554,6 +560,7 @@ namespace Statecraft.Game.UI
                         return new Rect(at, Vector2.one);
                     },
                 }));
+            budget.UnsubmittedChanged += on => { if (on) advisor?.Notice(AdvisorSignals.BudgetUnsubmitted); };
             if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)

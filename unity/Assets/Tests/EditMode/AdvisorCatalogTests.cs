@@ -28,6 +28,17 @@ public class AdvisorCatalogTests
         AdvisorCatalog.Parse(Head + messages).Problems(Strings(keys), Strings(keys), Fixture);
 
     [Test]
+    public void AVerifiedQuoteRequiresItsSourceInBothLanguages()
+    {
+        CollectionAssert.AreEqual(new[] { "q1", "q2", "q3", "q4" }, AdvisorQuotes.Ids);
+        var c = AdvisorCatalog.Parse(Head + "messages:\n  - { id: x, advisor: meyerson, signal: new_game, level: new, quote: q1 }\n");
+        var text = Strings("advisor.x.text", "advisor.quote.q1.text");
+        var problems = c.Problems(text, text, AdvisorCatalog.Shipped());
+        Assert.IsTrue(problems.Any(p => p.Contains("no advisor.quote.q1.source in strings.en.yaml")));
+        Assert.IsTrue(problems.Any(p => p.Contains("no advisor.quote.q1.source in strings.he.yaml")));
+    }
+
+    [Test]
     public void ParsesAMessageWithEveryField()
     {
         var c = AdvisorCatalog.Parse(Head + "messages:\n  - { id: a.one, advisor: meyerson, signal: turn_ended, when: { debt_ratio_at_least: 0.8 }, " +

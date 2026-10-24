@@ -33,6 +33,8 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
+        /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
+        public event Action? RefusedForAttention;
 
         readonly UiText text;
         readonly Func<GameSession, IReadOnlyList<Command>, StepResult> step;
@@ -198,7 +200,10 @@ namespace Statecraft.Game.UI
             if (State.GameOver != null) return Refuse(text["order.game_over"]);
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
             if (!CanPay(c))
+            {
+                RefusedForAttention?.Invoke();
                 return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
+            }
             var old = QueuedLike(c);
             if (old != null) queue[queue.IndexOf(old)] = c; else queue.Add(c);
             Changed?.Invoke();

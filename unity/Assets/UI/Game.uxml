@@ -496,6 +496,8 @@
                 </ui:VisualElement>
                 <ui:ScrollView name="advisor-body" class="advisor-body">
                     <ui:Label name="advisor-text" class="advisor-text" />
+                    <ui:Label name="advisor-quote" class="advisor-quote" />
+                    <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
                 </ui:ScrollView>
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />

@@ -19,4 +19,13 @@ messages:
   - { id: opening.event, advisor: ben_gurion, signal: opening, level: new, he_review: pending, requires: [opening.move], when: { cards_waiting_at_least: 1 }, actions: [{ show_me: decision_waiting }, { open_card: true }] }
   - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: pending, requires: [opening.event], actions: [{ show_me: nav_objectives }] }
 
+# Spec 6's critical warnings (shown at every help level, Off included) and the defeat lines. debt_ratio_at_least 0.8: a
+# presentation value for "close to the ceiling", for the owner to confirm; the ceiling itself is the sim's (R-END-001).
+  - { id: ben_gurion.city_at_risk, advisor: ben_gurion, signal: city_at_risk, level: critical, he_review: pending, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }] }
+  - { id: ben_gurion.exhausted, advisor: ben_gurion, signal: exhausted, level: critical, he_review: pending, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
+  - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 0.8 }, level: critical, he_review: pending, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }] }
+  - { id: meyerson.food_short, advisor: meyerson, signal: food_short, level: warnings, he_review: pending, priority: 2, repeat: every, cooldown_turns: 2 }
+  - { id: ben_gurion.defeat_war, advisor: ben_gurion, signal: defeat_war, level: warnings, he_review: pending }
+  - { id: ben_gurion.defeat_economy, advisor: ben_gurion, signal: defeat_economy, level: warnings, he_review: pending }
+
 pages: []
