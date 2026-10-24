@@ -363,6 +363,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    it changes at once, in the muted ink; neither takes a Tab stop. */
 .capture-about { white-space: normal; margin: 0 4px 2px 4px; }
 .capture-preview { white-space: normal; margin: 0 4px 8px 4px; }
+/* A refused option's reason, in the preview's place and the same quiet ink (owner, 24 October 2026 on #799, "button explains"). */
+.capture-refusal { white-space: normal; margin: 0 4px 8px 4px; }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. It starts
    right of the left icon lane (84 px, as the toast; #1236: Star, Report and Share sit at the lane's foot) and keeps its right
