@@ -641,17 +641,71 @@ advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
 advisor.step: "Step {0} of {1}"
 
+# Advisor help levels (spec6). English and Hebrew approved by the owner, 24 October 2026 ("approved both").
+settings.advisors: "Advisors"
+settings.advisors.new: "New to strategy games"
+settings.advisors.experienced: "Experienced"
+settings.advisors.warnings: "Warnings only"
+settings.advisors.off: "Off"
+
+# S4 Task16 warnings (spec6). Their Hebrew is approved by the owner (24 October 2026); see advisor-messages.yaml. "three": rules.yaml defeat_turns (R-END-002, a
+# design value). Change that line if the rule changes. The clip lines (city_at_risk, exhausted, debt_ceiling, defeat_war,
+# arms_out) are the recorded words, word for word (advisor-messages.yaml); change them only with a new recording. The other
+# three (food_short, defeat_economy, budget_unsubmitted) and end.outcome.defeat_war are approved by the owner, 24 October
+# 2026 ("approved both").
+advisor.dayan.city_at_risk.text: "An enemy attack is aimed at one of the country's cities. Review its defenders and the combat preview before the enemy phase resolves."
+advisor.meyerson.exhausted.text: "Money and Food are exhausted together. Restore either one before the defeat counter reaches its limit."
+advisor.meyerson.debt_ceiling.text: "Debt has reached the ceiling. If Food is also empty at turn end, the defeat counter begins or continues."
+advisor.meyerson.food_short.text: "This turn the country needed more Food than it had. A Food shortage also lowers Social cohesion."
+advisor.dayan.defeat_war.text: "An enemy military unit holds one of the country's cities at turn end. The campaign has ended in defeat."
+advisor.ben_gurion.defeat_economy.text: "Three turns in a row ended with our debt at or above the ceiling and the Food stock empty, and that ends the game."
+end.outcome.defeat_war: "The enemy holds a city."
+advisor.meyerson.budget_unsubmitted.text: "The budget has changes that are not submitted. They will not apply when the turn ends until you submit the budget."
+advisor.dayan.arms_out.text: "Arms equip military training and are spent in attacks. Buying Arms with Money before the stock runs short keeps those choices available."
+
+# Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
+# 24 October 2026 ("approved both").
+advisor.quote.q1.text: "“THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;”"
+advisor.quote.q1.source: "Declaration of the Establishment of the State of Israel, 14 May 1948"
+
 # Advisor media control (spec12). Hebrew UI draft for the native reviewer (#564).
 advisor.watch: "Watch"
 # The media row's disclosure (owner, 24 Oct 2026, OQ-16 option 2; spec 11.3, 12): exactly this text, shown small.
 advisor.media_label: "AI animation and voice. Fictional dialogue."
 
-# S6a caption keys: same text as the C68 recorded opening lines; no media row/files assigned.
+# Each advisor clip's photograph credit (spec 11.4; CONTENT_POLICY's advisor exception): the photograph, its date,
+# photographer or agency, collection and id, licence, and the changes. Shown small beside the disclosure.
+advisor.credit.ben_gurion: "Photograph: David Ben-Gurion, 16 April 1951, Israeli Government Press Office, National Photo Collection D683-095, public domain (PD-Israel). Tinted, set on an AI-made office background, then animated and lip-synced with AI (Kling 3.0 Pro, Sync 3)."
+advisor.credit.meyerson: "Photograph: Golda Meyerson (later Meir) with the children of Kibbutz Shefayim, 24 July 1950, Théodore Brauner, Government Press Office, National Photo Collection D703-086, public domain (PD-Israel). Colorized with Dreamina, cropped, then animated and lip-synced with AI (Kling 3.0 Pro, Sync 3); the AI also moves the people around her and the flag."
+advisor.credit.dayan: "Photograph: Moshe Dayan, 9 December 1953, NLI 997008136641805171. Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection / CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Flipped to its true orientation, colorized with Dreamina, cropped, then animated and lip-synced with AI (Kling 3.0 Pro, Sync 3)."
+
+# Caption keys: same text as the C68 recorded opening lines. The lines with an English clip (S6b, Task 26) are cut at
+# the clip's sentence and clause pauses; their start times are the media rows' cues.
 # Hebrew cues remain agent drafts and require the parent opening row’s native approval.
-advisor.opening.greeting.cue.1: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
-advisor.opening.attention.cue.1: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
-advisor.opening.city.cue.1: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
-advisor.opening.training.cue.1: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
-advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
-advisor.opening.event.cue.1: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
+advisor.opening.greeting.cue.1: "The country has urgent needs and limited means."
+advisor.opening.greeting.cue.2: "The decisions are theirs,"
+advisor.opening.greeting.cue.3: "and the advisers will explain what each choice changes."
+advisor.opening.attention.cue.1: "Attention is the capacity for decisions this month."
+advisor.opening.attention.cue.2: "It refills next month, and any amount left now does not carry over."
+advisor.opening.city.cue.1: "A city shows its housing, housing condition, jobs, and people."
+advisor.opening.city.cue.2: "Employment brings in Money, while overcrowding can weaken Social cohesion."
+advisor.opening.training.cue.1: "Training uses civilians without work, Money, and time."
+advisor.opening.training.cue.2: "Halutz and craftsman training supports development;"
+advisor.opening.training.cue.3: "military training also requires Arms."
+advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of each hex."
+advisor.opening.move.cue.2: "A farther destination creates a route that continues on later turns."
+advisor.opening.event.cue.1: "An event card presents a decision and shows its effects."
+advisor.opening.event.cue.2: "A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.cue.1: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
+
+# The S4 warning and teaching lines with an English clip: each text cut at its sentence end, as above.
+advisor.dayan.city_at_risk.cue.1: "An enemy attack is aimed at one of the country's cities."
+advisor.dayan.city_at_risk.cue.2: "Review its defenders and the combat preview before the enemy phase resolves."
+advisor.meyerson.exhausted.cue.1: "Money and Food are exhausted together."
+advisor.meyerson.exhausted.cue.2: "Restore either one before the defeat counter reaches its limit."
+advisor.meyerson.debt_ceiling.cue.1: "Debt has reached the ceiling."
+advisor.meyerson.debt_ceiling.cue.2: "If Food is also empty at turn end, the defeat counter begins or continues."
+advisor.dayan.defeat_war.cue.1: "An enemy military unit holds one of the country's cities at turn end."
+advisor.dayan.defeat_war.cue.2: "The campaign has ended in defeat."
+advisor.dayan.arms_out.cue.1: "Arms equip military training and are spent in attacks."
+advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs short keeps those choices available."

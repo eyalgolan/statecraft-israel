@@ -34,12 +34,16 @@ namespace Statecraft.Game.UI
         public bool HasFile => store != null;
         public string Level { get; private set; }
         public int LevelRank => Array.IndexOf(Levels, Level);
+        /// <summary>The help level changed (Settings): the popup applies it at once (spec 6).</summary>
+        public event Action? LevelChanged;
 
         public void SetLevel(string level)
         {
             if (Array.IndexOf(Levels, level) < 0) throw new ArgumentException("unknown help level: " + level, nameof(level));
+            if (level == Level) return;
             Level = level;
             Write(LevelKey, level);
+            LevelChanged?.Invoke();
         }
 
         public bool Seen(string id) => seen.Contains(id);
