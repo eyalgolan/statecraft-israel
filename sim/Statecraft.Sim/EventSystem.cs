@@ -40,8 +40,10 @@ namespace Statecraft.Sim
                 // R-ALT-008: a road the player took is not crowded out of its window. With no consequence card eligible the first
                 // key is the same for every event, and (From, id) is a total order (ids are unique), so the order is as before.
                 // R-OBJ-007 (Q-CARD-2): objective cards of the same From come after that From's other events, in objectives.yaml's order.
+                // R-EVT-006: then an event's `order` (default 0), then the id, so with every order 0 the order is as before.
                 .OrderBy(e => e.Kind == EventKinds.Consequence ? 0 : 1).ThenBy(e => e.From)
-                .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Id, StringComparer.Ordinal)
+                .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
+                .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             var hardCount = eligible.Count(e => e.Anchor == "hard");
             var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard")

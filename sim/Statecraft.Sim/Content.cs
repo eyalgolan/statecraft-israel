@@ -1096,6 +1096,9 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
+        /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
+        public int Order { get; set; }
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }

@@ -170,7 +170,7 @@ public class LeftColumnTests
     }
 
     /// <summary>Review of #859 at fb2a8dc (WebGL) and the owner's ruling there (17 October 2026): on a phone held upright,
-    /// 390x844, 360x800 and 375x667, with a photo card open (turn 0's One Army and turn 1's The First Truce, taller than
+    /// 390x844, 360x800 and 375x667, with a photo card open (turn 0's One Army, shown before Degania, and turn 1's The First Truce, taller than
     /// WithAnEventOpen's card, which the test above uses), no rail button sits under the card, Why? and Settings included
     /// (they did on main), in English and Hebrew.</summary>
     [UnityTest]
@@ -180,7 +180,7 @@ public class LeftColumnTests
         Assert.IsNotNull(catalog, "precondition: the photo catalog");
         var problems = new List<string>();
         var turn0 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        CollectionAssert.AreEqual(new[] { "idf_founding" }, turn0.State.PendingEvents, "precondition: One Army at turn 0");
+        CollectionAssert.AreEqual(new[] { "idf_founding", "degania_defence" }, turn0.State.PendingEvents, "precondition: One Army first at turn 0 (R-EVT-006)");
         var turn1 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         turn1.Step(new Command[0]);
         Assert.IsNotEmpty(turn1.State.PendingEvents, "precondition: an event at turn 1");

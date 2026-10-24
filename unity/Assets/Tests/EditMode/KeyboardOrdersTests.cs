@@ -44,7 +44,8 @@ public class KeyboardOrdersTests
     }
 
     /// <summary>Map.unity on a 1280x720 panel, a new GDD game begun as GameBoot.Ready does with no start screen, and the
-    /// opening event card answered from the keyboard (which hands the focus to End Turn).</summary>
+    /// opening turn's two event cards (One Army, then the defence of Degania, R-EVT-006) answered from the keyboard (the
+    /// first hands the focus to the second, the second to End Turn).</summary>
     IEnumerator Boot()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
@@ -64,7 +65,10 @@ public class KeyboardOrdersTests
         Assert.AreEqual("event-card", FocusedName, "precondition: the open card has the focus");
         yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
         yield return Enter();
-        Assert.AreEqual("end-turn", FocusedName, "the answered card hands the focus to End Turn");
+        Assert.AreEqual("event-card", FocusedName, "One Army answered hands the focus to the turn's second card (Degania)");
+        yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
+        yield return Enter();
+        Assert.AreEqual("end-turn", FocusedName, "the last answered card hands the focus to End Turn");
     }
 
     SimBridge Bridge => root.Bridge!;

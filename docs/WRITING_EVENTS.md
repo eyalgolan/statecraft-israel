@@ -38,6 +38,7 @@ schema too, or that test fails. Keep the comment when you copy a file.
 | `office` | no | The office id of the minister the event goes to when the player does not answer it. |
 | `from` | yes | First day of the window, `YYYY-MM-DD`. |
 | `to` | no | Day the window ends (exclusive). Must be after `from`. Leave it out for an open window. |
+| `order` | no (default `0`) | A whole number. Among the cards that fire on the same turn with the same `from`, a lower `order` comes first, then the id (R-EVT-006). Leave it out unless one card must come after another: `degania_defence` has `order: 1`, so One Army opens the game (owner, 24 October 2026, #1568). |
 | `conditions` | no | Indicator bounds that must hold when it fires. See below. |
 | `kind` | no (default `historical`) | `consequence` for a card that exists only on a road not taken; `reconvergence` for an outside event with course-specific text. See below. |
 | `requires` | no | Fires only after every listed requirement holds. See below. |
@@ -72,7 +73,7 @@ Write plain description. Do not put words in anyone's mouth: no invented quotes
 ### anchor
 
 - `soft`: an event that may or may not fire. At most 3 non-hard events fire per turn (the earliest `from` first, then
-  by id), so a soft event can wait for a later turn inside its window.
+  by `order`, then by id), so a soft event can wait for a later turn inside its window.
 - `hard`: an event that must happen. Every eligible hard event fires. It needs one option marked `historical: true`;
   in Historical mode, if the player leaves it unanswered it resolves to that option.
 

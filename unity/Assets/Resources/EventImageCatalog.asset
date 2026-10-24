@@ -83,6 +83,15 @@ MonoBehaviour:
       and cropped"
     sensitive: 0
     sensitivityReviewed: 0
+  - eventId: degania_defence
+    image: {fileID: 2800000, guid: a34a45b249b3144d9a8d9da796da12ee, type: 3}
+    alt: A stopped tracked armoured carrier under the eucalyptus trees at Degania
+      Alef; the archive's catalogue dates the slide to 20 May 1948.
+    credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel
+      / The Pritzker Family National Photography Collection \xB7 CC BY 4.0 \xB7 graded
+      and cropped"
+    sensitive: 1
+    sensitivityReviewed: 1
   - eventId: elections_1949
     image: {fileID: 2800000, guid: 8c959d4b13cfc4b7a8a5ac3c7a46b480, type: 3}
     alt: A voter drops his envelope into the ballot box at a polling station on election

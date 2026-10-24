@@ -9,12 +9,12 @@ from pathlib import Path
 import package_release
 
 REPO = Path(package_release.REPO)
-SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
-SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
+SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
+SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
 
 
 def photo_manifest(build, reviewed=True, shareable=True):
-    """The event-photos.json Build.Web writes (Build.PhotoManifestJson): the 7 sensitive photographs and one other."""
+    """The event-photos.json Build.Web writes (Build.PhotoManifestJson): the 8 sensitive photographs and one other."""
     photos = [{"event_id": e, "sensitive": True, "sensitivity_reviewed": reviewed} for e in SENSITIVE_PHOTOS]
     photos.append({"event_id": "maabarot_policy", "sensitive": False, "sensitivity_reviewed": False})
     (build / package_release.PHOTO_MANIFEST).write_text(json.dumps({"version": 1, "shareable": shareable, "photos": photos}))

@@ -95,6 +95,35 @@ public class EventRulesGddTests
         Assert.Equal(new[] { "c" }, next.PendingEvents);
     }
 
+    // R-EVT-006: among the cards of the same `from` (and, for objective cards, the same objective place), an event's
+    // `order` (default 0) comes before the id, so a later `order` waits behind the others for the slots and the queue.
+    [Fact]
+    public void OrderComesBeforeTheIdAmongTheSameFrom()
+    {
+        var c = ContentLoader.Load(Fixture.Write(events: new Dictionary<string, string>
+        {
+            ["a.yaml"] = Soft("a", "1948-05-15") + "order: 1\n",
+            ["b.yaml"] = Soft("b", "1948-05-15"),
+            ["c.yaml"] = Soft("c", "1948-05-15"),
+            ["d.yaml"] = Soft("d", "1948-05-01") + "order: 5\n",
+        }));
+        Assert.Equal(1, c.Events.Single(e => e.Id == "a").Order);
+        Assert.Equal(0, c.Events.Single(e => e.Id == "b").Order);   // the default
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(new[] { "d", "b", "c" }, s.PendingEvents);   // from still comes first; a waits behind b and c
+        Assert.Equal(new[] { "a" }, Simulation.Step(c, s, new List<Command>()).State.PendingEvents);
+    }
+
+    // R-EVT-006 on the real start (owner, 24 October 2026, #1568: "One Army first"): One Army opens the game, and the
+    // defence of Degania, the same turn's other card, comes second.
+    [Fact]
+    public void OneArmyOpensTheGameAndDeganiaComesSecond()
+    {
+        Assert.Equal(new[] { "idf_founding", "degania_defence" }, Run[0].PendingEvents);
+        Assert.Equal(1, Event("degania_defence").Order);
+        Assert.Equal(new[] { "degania_defence" }, C.Events.Where(e => e.Order != 0).Select(e => e.Id));
+    }
+
     const string Choice = @"
 id: choice
 title: A choice
