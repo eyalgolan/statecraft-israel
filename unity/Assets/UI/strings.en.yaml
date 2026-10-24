@@ -192,6 +192,17 @@ capture.delta_count: "{0:+#,##0;-#,##0}"
 capture.none: "None of the choices can be made this turn. The units stay, and the decision waits."
 # The hidden dialog's button. {0} the place's name.
 capture.reopen: "Decision waiting: {0}"
+# Settlement control on the map, in the selected place's panel, and the lasting International Support count (#803).
+# SENSITIVE: every line waits for the owner's review through R-GATE-002.
+map.control.awaiting_choice: "Decision pending"
+map.control.occupied: "Occupied"
+map.control.awaiting_end: "Occupation period over"
+map.control.depopulated: "Depopulated"
+info.control.awaiting_choice: "{0}: captured, decision pending"
+info.control.occupied: "{0}: occupied, {1} turns left"
+info.control.awaiting_end: "{0}: occupation period over, decision pending"
+info.control.depopulated: "{0}: residents displaced, place depopulated"
+hud.standing_displaced_places: "Places depopulated by Deport: {0}"
 start.listen: "Play the recording"
 start.stop: "Stop the recording"
 start.loading: "Loading the recording…"

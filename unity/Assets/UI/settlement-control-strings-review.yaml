@@ -1,0 +1,29 @@
+# R-GATE-002. An AI-assisted change must not set this to sensitivity-reviewed.
+status: pending
+strings:
+  - { key: capture.intro, en: "Israeli units hold {0}, and no enemy unit is there. Choose what happens next. Your choice takes effect at End turn; until you choose, the units stay.", he: "כוחות ישראליים מחזיקים ב־{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום." }
+  - { key: capture.option.raid, en: "Raid and withdraw", he: "פשיטה ונסיגה" }
+  - { key: capture.option.occupy, en: "Occupy", he: "שחרור" }
+  - { key: capture.option.deport, en: "Deport", he: "גירוש" }
+  - { key: capture.about.raid, en: "The units leave at once, and the place is under enemy control again. Its residents are unchanged.", he: "הכוחות יוצאים מיד, והמקום חוזר לשליטת האויב. מצב התושבים לא משתנה." }
+  - { key: capture.about.occupy, en: "One unit stays and holds the place for a set number of turns, at a Money cost each turn. Its residents are not affected.", he: "יחידה אחת נשארת ומחזיקה במקום מספר קבוע של תורות, בעלות כספית בכל תור. התושבים לא מושפעים." }
+  - { key: capture.about.deport, en: "The residents are displaced, and the place is depopulated. Social cohesion and International support fall, and International support keeps falling for the rest of the game.", he: "התושבים נעקרים ממקומם, והמקום מתרוקן מתושביו. הלכידות החברתית והתמיכה הבינלאומית יורדות, והתמיכה הבינלאומית ממשיכה לרדת עד סוף המשחק." }
+  - { key: capture.changes, en: "Changes at once:", he: "שינויים מיידיים:" }
+  - { key: capture.changes_none, en: "Changes at once: none", he: "שינויים מיידיים: אין" }
+  - { key: capture.caption.attention, en: "Attention", he: "תשומת לב" }
+  - { key: capture.caption.food, en: "Food", he: "מזון" }
+  - { key: capture.caption.arms, en: "Arms", he: "נשק" }
+  - { key: capture.caption.score, en: "Score", he: "ניקוד" }
+  - { key: capture.delta_attention, en: "{0:+0.0;-0.0}", he: "{0:+0.0;-0.0}" }
+  - { key: capture.delta_count, en: "{0:+#,##0;-#,##0}", he: "{0:+#,##0;-#,##0}" }
+  - { key: capture.none, en: "None of the choices can be made this turn. The units stay, and the decision waits.", he: "אף אחת מהאפשרויות אינה זמינה בתור הזה. הכוחות נשארים במקום, וההחלטה ממתינה." }
+  - { key: capture.reopen, en: "Decision waiting: {0}", he: "החלטה ממתינה: {0}" }
+  - { key: map.control.awaiting_choice, en: "Decision pending", he: "החלטה ממתינה" }
+  - { key: map.control.occupied, en: "Occupied", he: "מוחזק" }
+  - { key: map.control.awaiting_end, en: "Occupation period over", he: "תקופת ההחזקה הסתיימה" }
+  - { key: map.control.depopulated, en: "Depopulated", he: "מרוקן מתושביו" }
+  - { key: info.control.awaiting_choice, en: "{0}: captured, decision pending", he: "{0}: נכבש, החלטה ממתינה" }
+  - { key: info.control.occupied, en: "{0}: occupied, {1} turns left", he: "{0}: מוחזק, תורות שנותרו: {1}" }
+  - { key: info.control.awaiting_end, en: "{0}: occupation period over, decision pending", he: "{0}: תקופת ההחזקה הסתיימה, החלטה ממתינה" }
+  - { key: info.control.depopulated, en: "{0}: residents displaced, place depopulated", he: "{0}: התושבים נעקרו ממקומם, המקום מרוקן מתושביו" }
+  - { key: hud.standing_displaced_places, en: "Places depopulated by Deport: {0}", he: "מקומות שרוקנו מתושביהם בעקבות גירוש: {0}" }
