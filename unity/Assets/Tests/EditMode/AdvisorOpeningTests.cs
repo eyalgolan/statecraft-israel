@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-/// <summary>Opening-chain core lifecycle (spec9.2–9.3). Scene/layout parity with the guide is a separate group below.</summary>
+/// <summary>Opening-chain core lifecycle (spec 9.2-9.3). Scene and layout parity with the guide is in AdvisorOpeningParityTests.</summary>
 public class AdvisorOpeningTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);
@@ -59,6 +59,21 @@ public class AdvisorOpeningTests
     {
         using var rig = new Rig(He, Store()); rig.Advisor.NewGame();
         Assert.IsFalse(rig.Advisor.InChain); Assert.IsFalse(rig.Session.Settings.OpeningSeen);
+    }
+
+    /// <summary>While every opening line is pending in Hebrew, How to play has no button that would open nothing, and asking
+    /// for the chain leaves the screen the player is on open.</summary>
+    [Test]
+    public void ThePendingChainHasNoReopenButtonInHebrew()
+    {
+        using (var en = new Rig(En, Store()))
+            Assert.AreEqual(DisplayStyle.Flex, en.Ui.Q<Button>("how-to-play-guide").style.display.value, "English: the button shows");
+        using var rig = new Rig(He, Store());
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("how-to-play-guide").style.display.value, "Hebrew, all pending: no button");
+        rig.Ui.Press("nav-how-to-play");
+        rig.Advisor.OpenChain();
+        Assert.IsFalse(rig.Advisor.InChain);
+        Assert.AreEqual("how-to-play", rig.Nav.Current, "How to play stays open");
     }
 
     [Test]
@@ -131,6 +146,8 @@ public class AdvisorOpeningTests
         using var rig = new Rig(En, Store()); rig.Advisor.OpenChain();
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) rig.Advisor.NextStep();
         Assert.IsTrue(rig.Card.Collapsed); Assert.AreEqual(5, rig.Advisor.ChainStep);
+        Assert.AreEqual("event-reopen", AdvisorTargets.Find(rig.Ui.Root.Q("root"), AdvisorTargets.DecisionWaiting, rig.Card).Single().name, "(1) the ring's target");
+        Assert.IsTrue(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass), "(1) the ring shows");
         rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed); Assert.IsFalse(rig.Advisor.IsOpen);
         rig.Card.Collapse(); Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual(5, rig.Advisor.ChainStep);
         rig.Ui.Press("advisor-show-me"); UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());

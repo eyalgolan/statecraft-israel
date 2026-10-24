@@ -191,6 +191,7 @@ public class AdvisorOpeningParityTests
         public readonly ScreenNav Nav;
         public readonly EventCardPresenter Card;
         public readonly AdvisorPresenter Advisor;
+        public readonly InfoPanelPresenter Info;
         readonly List<IDisposable> owned = new List<IDisposable>();
 
         public Rig(UiText text, SettingsStore? settings = null)
@@ -202,7 +203,7 @@ public class AdvisorOpeningParityTests
             Card = Own(new EventCardPresenter(Ui.Root, Bridge, text, null));
             Own(new HowToPlayPresenter(Ui.Root, text));
             var (info, advisor) = PanelAndAdvisor(Ui.Root, Bridge, text, settings, Card, () => Nav.Close());
-            Own(info);
+            Info = Own(info);
             Advisor = Own(advisor);
         }
 
@@ -215,13 +216,17 @@ public class AdvisorOpeningParityTests
         }
     }
 
-    /// <summary>The six steps, in the order a player meets them: the move step (#1141, owner, 21 October 2026) after
-    /// training and before the event card, which keeps its own step's number.</summary>
+    /// <summary>The seven steps, in the order a player meets them (spec 9.2): the greeting first, then the guide's six with
+    /// the guide's targets; the move step (#1141, owner, 21 October 2026) after training and before the event card.</summary>
     [Test]
     public void HasSevenStepsInOrder()
     {
         CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.attention", "opening.city", "opening.training", "opening.move", "opening.event", "opening.objectives" }, Steps);
         Assert.AreEqual(5, AdvisorPresenter.EventStep);
+        var targets = AdvisorCatalog.Load().Messages.Where(m => m.Signal == AdvisorSignals.Opening)
+            .Select(m => m.Actions.FirstOrDefault(a => a.ShowMe != "")?.ShowMe ?? "").ToArray();
+        CollectionAssert.AreEqual(new[] { "", "attention", "city_housing", "city_training", "unit_move", "decision_waiting", "nav_objectives" }, targets,
+            "the guide's targets, in its order");
         foreach (var text in new[] { En, He }) foreach (var key in Steps)
             Assert.IsFalse(string.IsNullOrWhiteSpace(text["advisor." + key + ".text"]), key);
     }
@@ -363,7 +368,11 @@ public class AdvisorOpeningParityTests
         var map = Object.FindFirstObjectByType<MapScene>();
         var city = AdvisorTargets.CityHex(bridge.Content, bridge.State)!.Value;
         bool Outlined() { var t = map.Terrain.transform.Find(MapScene.SelectionName); return t != null && t.GetComponent<MeshRenderer>().enabled; }
-        void ToCity() { UiTestKit.Press(Ui.Q<Button>("advisor-got-it")); Assert.AreEqual(city, info.Selected, "step 2 shows the advisor's city"); }
+        void ToCity()
+        {
+            for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));   // past the greeting and Attention
+            Assert.AreEqual(city, info.Selected, "step 3 shows the advisor's city");
+        }
         void Click(int q, int r) => GameRoot.OnHexClicked(map, units, info, q, r);
 
         Assert.IsTrue(advisor.InChain && info.Selected == null && !info.ShowsUnit, "precondition: a new game, nothing selected");
@@ -520,7 +529,9 @@ public class AdvisorOpeningParityTests
         card.Collapse(); Assert.AreEqual(5, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); AnswerTheCard();
         Assert.IsNull(card.Shown); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
-        Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text);
+        Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
+        Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
+        Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
     }
 
     /// <summary>Path B: the card was answered before the advisor reaches its event step (a returning player opening it from How
@@ -595,6 +606,27 @@ public class AdvisorOpeningParityTests
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
         Assert.AreEqual(-1, lone.ChainStep, "the disposed advisor was not called");
+    }
+
+    /// <summary>The game changing under an open step (a + or − on the city's workers raises SimBridge.Changed) draws the step
+    /// again without showing its city again: a hex the player picked meanwhile stays selected (review of the S2 draft).</summary>
+    [Test]
+    public void TheGameChangingKeepsThePlayersSelectionOnAStep()
+    {
+        using var rig = new Rig(En, new SettingsStore(TempDir()));
+        rig.Advisor.OpenChain(); rig.Advisor.NextStep(); rig.Advisor.NextStep();
+        Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "precondition: the city step");
+        var city = AdvisorTargets.CityHex(rig.Bridge.Content, rig.Bridge.State)!.Value;
+        Assert.AreEqual(city, rig.Info.Selected, "precondition: it shows its city");
+        var other = rig.Bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city);
+        rig.Info.Show(other.Item1, other.Item2);                        // the player picks another hex under the open advisor
+        int changed = 0; rig.Bridge.Changed += () => changed++;
+        Assert.IsNull(rig.Bridge.Queue(new AssignWorkers("tel_aviv", "job", 1)), "precondition: the order is queued");
+        Assert.AreEqual(1, changed, "precondition: the game changed");
+        Assert.AreEqual(other, rig.Info.Selected, "the player's hex stays");
+        Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "on the same step");
+        rig.Ui.Press("advisor-close");
+        Assert.AreEqual(other, rig.Info.Selected, "and Skip keeps the player's choice");
     }
 
     // --- Presentation only ------------------------------------------------------------------------------------------
@@ -729,7 +761,7 @@ public class AdvisorOpeningParityTests
     {
         var problems = new List<string>();
         // Statecraft.uss: .advisor-count, .advisor-name, .advisor-text, Button (Skip and Next).
-        var stylesheet = new Dictionary<string, float> { ["advisor-count"] = 15f, ["advisor-name"] = 29f, ["advisor-text"] = 22f, ["advisor-close"] = 19f, ["advisor-got-it"] = 19f };
+        var stylesheet = new Dictionary<string, float> { ["advisor-count"] = 15f, ["advisor-name"] = 24f, ["advisor-text"] = 22f, ["advisor-close"] = 19f, ["advisor-got-it"] = 19f };
         CollectionAssert.AreEqual(new[] { 15f, 24f, 22f, 19f },
             new[] { AdvisorPresenter.CountPx, AdvisorPresenter.NamePx, AdvisorPresenter.TextPx, AdvisorPresenter.ButtonPx },
             "the presenter's sizes mirror the stylesheet's");
@@ -747,8 +779,10 @@ public class AdvisorOpeningParityTests
                         if (Mathf.Abs(size - HudPresenter.FlooredTextSize(px, HudPresenter.ScreenPxPerPanelPx(root.panel))) > 0.01f)
                             problems.Add($"{at}: {name} is {size} px, not the stylesheet's {px} px (the desktop sizes stay)");
                     }
-                    if (root.Q("advisor-name").resolvedStyle.fontSize <= root.Q("advisor-text").resolvedStyle.fontSize)
-                        problems.Add($"{at}: the title is not larger than the text");
+                    // Where the floor lifts both (the phone), the name (24 px) and the text (22 px) meet at the floor; it is
+                    // never smaller. TheGuideReadsAtTheItchEmbedSize holds it larger where neither is floored.
+                    if (root.Q("advisor-name").resolvedStyle.fontSize < root.Q("advisor-text").resolvedStyle.fontSize)
+                        problems.Add($"{at}: the title is smaller than the text");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
