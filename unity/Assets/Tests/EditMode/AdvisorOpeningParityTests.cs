@@ -30,8 +30,6 @@ public class AdvisorOpeningParityTests
     static void Begin(GameRoot game, GameInputs inputs, int smoke, bool startScreen = false)
     {
         game.Begin(inputs, smoke, startScreen: startScreen);
-        // Task9 temporarily retains the legacy presenter. Test the replacement alone; Task11 removes this disposal.
-        game.Guide?.Dispose();
     }
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
@@ -174,12 +172,36 @@ public class AdvisorOpeningParityTests
         game.Advisor!.NextStep(); game.Advisor.NextStep(); var session = game.AdvisorSession;
         Assert.AreEqual(2, game.Advisor.ChainStep);
         UiTestKit.Press(Ui.Q<Button>("nav-settings")); UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
-        game.Guide?.Dispose(); // the temporary legacy presenter is not part of this replacement test
         Assert.AreSame(session, game.AdvisorSession); Assert.IsFalse(game.Advisor!.IsOpen); Assert.AreEqual(2, session!.Chain.Step);
         if (!Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
-        UiTestKit.Press(Ui.Q<Button>("settings-language-en")); game.Guide?.Dispose();
+        UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
         if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
         Assert.AreSame(session, game.AdvisorSession); Assert.IsTrue(game.Advisor!.InChain); Assert.AreEqual(2, game.Advisor.ChainStep);
+    }
+
+    /// <summary>A language switch on a step that shows its city: the rebuilt chain shows the city again, and closing it puts
+    /// back the hex the player had selected before the chain opened, not the advisor's city (review of the S2 head).</summary>
+    [Test]
+    public void ALanguageSwitchOnTheCityStepStillPutsBackTheSelectionItFound()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.CloseChain();
+        var map = Object.FindFirstObjectByType<MapScene>(); var bridge = game.Bridge!;
+        var city = AdvisorTargets.CityHex(bridge.Content, bridge.State)!.Value;
+        var hex = bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city && game.Units!.UnitToSelectAt(h.Item1, h.Item2) == null);
+        GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
+        Assert.AreEqual(hex, game.Info!.Selected, "precondition: the player's hex");
+        game.Advisor.OpenChain();
+        for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        Assert.AreEqual(city, game.Info!.Selected, "precondition: the city step shows its city");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings")); UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt chain"); Assert.AreEqual("opening.city", Steps[game.Advisor.ChainStep]);
+        Assert.AreEqual(city, game.Info!.Selected, "shows its city again");
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        Assert.AreEqual(hex, game.Info!.Selected, "closing puts back the player's hex");
     }
 
     // --- Skip, Escape and How to play -------------------------------------------------------------------------------
@@ -191,6 +213,7 @@ public class AdvisorOpeningParityTests
         public readonly ScreenNav Nav;
         public readonly EventCardPresenter Card;
         public readonly AdvisorPresenter Advisor;
+        public readonly InfoPanelPresenter Info;
         readonly List<IDisposable> owned = new List<IDisposable>();
 
         public Rig(UiText text, SettingsStore? settings = null)
@@ -202,7 +225,7 @@ public class AdvisorOpeningParityTests
             Card = Own(new EventCardPresenter(Ui.Root, Bridge, text, null));
             Own(new HowToPlayPresenter(Ui.Root, text));
             var (info, advisor) = PanelAndAdvisor(Ui.Root, Bridge, text, settings, Card, () => Nav.Close());
-            Own(info);
+            Info = Own(info);
             Advisor = Own(advisor);
         }
 
@@ -215,13 +238,17 @@ public class AdvisorOpeningParityTests
         }
     }
 
-    /// <summary>The six steps, in the order a player meets them: the move step (#1141, owner, 21 October 2026) after
-    /// training and before the event card, which keeps its own step's number.</summary>
+    /// <summary>The seven steps, in the order a player meets them (spec 9.2): the greeting first, then the guide's six with
+    /// the guide's targets; the move step (#1141, owner, 21 October 2026) after training and before the event card.</summary>
     [Test]
     public void HasSevenStepsInOrder()
     {
         CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.attention", "opening.city", "opening.training", "opening.move", "opening.event", "opening.objectives" }, Steps);
         Assert.AreEqual(5, AdvisorPresenter.EventStep);
+        var targets = AdvisorCatalog.Load().Messages.Where(m => m.Signal == AdvisorSignals.Opening)
+            .Select(m => m.Actions.FirstOrDefault(a => a.ShowMe != "")?.ShowMe ?? "").ToArray();
+        CollectionAssert.AreEqual(new[] { "", "attention", "city_housing", "city_training", "unit_move", "decision_waiting", "nav_objectives" }, targets,
+            "the guide's targets, in its order");
         foreach (var text in new[] { En, He }) foreach (var key in Steps)
             Assert.IsFalse(string.IsNullOrWhiteSpace(text["advisor." + key + ".text"]), key);
     }
@@ -307,7 +334,9 @@ public class AdvisorOpeningParityTests
         yield return null; rig.Ui.Q<Button>("advisor-got-it").Focus();
         Assert.IsTrue(rig.Advisor.Escape(), "Escape skips it");
         Assert.IsFalse(rig.Advisor.InChain);
-        Assert.IsFalse(rig.Advisor.Escape(), "and does nothing when it is closed");
+        // The guide's "Escape does nothing when closed" cannot be asked again here: Time.frameCount does not move in an
+        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.OneEscapeInThePopupLeavesTheScreenUnderItOpen).
+        Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.OpenClass), "and it stays closed");
 
         rig.Card.Collapse();                                           // the player hid the card before opening the advisor
         rig.Advisor.OpenChain();
@@ -323,7 +352,7 @@ public class AdvisorOpeningParityTests
     /// advisor closes as the turn advances, at any step, and the new turn's card is left to its own rule (a new event opens),
     /// not hidden or shown by what the advisor found on the old card (review of #1209, follow-up 1).</summary>
     [Test]
-    public void EndTurnClosesTheGuide([Values(0, 1, 2, AdvisorPresenter.EventStep)] int step, [Values(false, true)] bool cardHidden)
+    public void EndTurnClosesTheChain([Values(0, 1, 2, AdvisorPresenter.EventStep)] int step, [Values(false, true)] bool cardHidden)
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true);
@@ -363,7 +392,11 @@ public class AdvisorOpeningParityTests
         var map = Object.FindFirstObjectByType<MapScene>();
         var city = AdvisorTargets.CityHex(bridge.Content, bridge.State)!.Value;
         bool Outlined() { var t = map.Terrain.transform.Find(MapScene.SelectionName); return t != null && t.GetComponent<MeshRenderer>().enabled; }
-        void ToCity() { UiTestKit.Press(Ui.Q<Button>("advisor-got-it")); Assert.AreEqual(city, info.Selected, "step 2 shows the advisor's city"); }
+        void ToCity()
+        {
+            for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));   // past the greeting and Attention
+            Assert.AreEqual(city, info.Selected, "step 3 shows the advisor's city");
+        }
         void Click(int q, int r) => GameRoot.OnHexClicked(map, units, info, q, r);
 
         Assert.IsTrue(advisor.InChain && info.Selected == null && !info.ShowsUnit, "precondition: a new game, nothing selected");
@@ -508,8 +541,8 @@ public class AdvisorOpeningParityTests
     /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
     /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
     /// advisor goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
-    [Test]
-    public void AnsweringTheCardOnItsStepGoesOnToTheNext()
+    [UnityTest]
+    public IEnumerator AnsweringTheCardOnItsStepGoesOnToTheNext()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
@@ -520,7 +553,10 @@ public class AdvisorOpeningParityTests
         card.Collapse(); Assert.AreEqual(5, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); AnswerTheCard();
         Assert.IsNull(card.Shown); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
-        Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text);
+        Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
+        Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
+        for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
+        Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
     }
 
     /// <summary>Path B: the card was answered before the advisor reaches its event step (a returning player opening it from How
@@ -573,7 +609,7 @@ public class AdvisorOpeningParityTests
     /// <summary>A closed or disposed advisor takes no notice of the game changing (it listens to SimBridge.Changed only while it
     /// lives, and acts on it only while it is open).</summary>
     [Test]
-    public void AClosedGuideIgnoresTheGameChanging()
+    public void AClosedChainIgnoresTheGameChanging()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true);
@@ -592,9 +628,31 @@ public class AdvisorOpeningParityTests
         lone.Dispose();
         rig.Advisor.OpenChain();                                               // another advisor open on the same HUD (the root's class)
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) rig.Advisor.NextStep();
+        rig.Card.Reopen();                                                     // the chain's event step waits for the card
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
         Assert.AreEqual(-1, lone.ChainStep, "the disposed advisor was not called");
+    }
+
+    /// <summary>The game changing under an open step (a + or − on the city's workers raises SimBridge.Changed) draws the step
+    /// again without showing its city again: a hex the player picked meanwhile stays selected (review of the S2 draft).</summary>
+    [Test]
+    public void TheGameChangingKeepsThePlayersSelectionOnAStep()
+    {
+        using var rig = new Rig(En, new SettingsStore(TempDir()));
+        rig.Advisor.OpenChain(); rig.Advisor.NextStep(); rig.Advisor.NextStep();
+        Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "precondition: the city step");
+        var city = AdvisorTargets.CityHex(rig.Bridge.Content, rig.Bridge.State)!.Value;
+        Assert.AreEqual(city, rig.Info.Selected, "precondition: it shows its city");
+        var other = rig.Bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city);
+        rig.Info.Show(other.Item1, other.Item2);                        // the player picks another hex under the open advisor
+        int changed = 0; rig.Bridge.Changed += () => changed++;
+        Assert.IsNull(rig.Bridge.Queue(new AssignWorkers("tel_aviv", "job", 1)), "precondition: the order is queued");
+        Assert.AreEqual(1, changed, "precondition: the game changed");
+        Assert.AreEqual(other, rig.Info.Selected, "the player's hex stays");
+        Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual("opening.city", Steps[rig.Advisor.ChainStep], "on the same step");
+        rig.Ui.Press("advisor-close");
+        Assert.AreEqual(other, rig.Info.Selected, "and Skip keeps the player's choice");
     }
 
     // --- Presentation only ------------------------------------------------------------------------------------------
@@ -693,9 +751,9 @@ public class AdvisorOpeningParityTests
     /// <see cref="GuideTextOnScreenPx"/> on screen and its smallest line, the step count, at least the owner's text floor
     /// (HudPresenter.TextFloorPx). Before the change they were 12.7 and 10.7 at 1280x720. On screen px are the resolved size
     /// times the panel's scale (EditMode draws at one pixel per CSS px). Every size and step is logged, the phone (390x844)
-    /// too, which is held to the floor alone (about 0.49 scale; <see cref="TheGuideKeepsTheTextFloorOnEveryWindow"/>).</summary>
+    /// too, which is held to the floor alone (about 0.49 scale; <see cref="TheChainKeepsTheTextFloorOnEveryWindow"/>).</summary>
     [UnityTest]
-    public IEnumerator TheGuideReadsAtTheItchEmbedSize()
+    public IEnumerator TheChainReadsAtTheItchEmbedSize()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -706,7 +764,7 @@ public class AdvisorOpeningParityTests
                     float scale = root.panel.scaledPixelsPerPoint;
                     float OnScreen(string name) => root.Q(name).resolvedStyle.fontSize * scale;
                     var panel = root.Q("advisor-popup").worldBound;
-                    Debug.Log($"GUIDE SIZE {at}: scale {scale:0.###}, text {OnScreen("advisor-text"):0.#} px, title {OnScreen("advisor-name"):0.#} px, " +
+                    Debug.Log($"ADVISOR SIZE {at}: scale {scale:0.###}, text {OnScreen("advisor-text"):0.#} px, title {OnScreen("advisor-name"):0.#} px, " +
                               $"count {OnScreen("advisor-count"):0.#} px, buttons {OnScreen("advisor-got-it"):0.#} px on screen; panel {panel.width * scale:0}x{panel.height * scale:0} px");
                     if (w == 390) return;
                     if (OnScreen("advisor-text") < GuideTextOnScreenPx - 0.01f)
@@ -725,11 +783,11 @@ public class AdvisorOpeningParityTests
     /// keeps them over it (1920x1080, 1280x720) they are the stylesheet's sizes from #1283, unchanged. Before the change
     /// the phone's text was about 10.8 px on screen.</summary>
     [UnityTest]
-    public IEnumerator TheGuideKeepsTheTextFloorOnEveryWindow()
+    public IEnumerator TheChainKeepsTheTextFloorOnEveryWindow()
     {
         var problems = new List<string>();
         // Statecraft.uss: .advisor-count, .advisor-name, .advisor-text, Button (Skip and Next).
-        var stylesheet = new Dictionary<string, float> { ["advisor-count"] = 15f, ["advisor-name"] = 29f, ["advisor-text"] = 22f, ["advisor-close"] = 19f, ["advisor-got-it"] = 19f };
+        var stylesheet = new Dictionary<string, float> { ["advisor-count"] = 15f, ["advisor-name"] = 24f, ["advisor-text"] = 22f, ["advisor-close"] = 19f, ["advisor-got-it"] = 19f };
         CollectionAssert.AreEqual(new[] { 15f, 24f, 22f, 19f },
             new[] { AdvisorPresenter.CountPx, AdvisorPresenter.NamePx, AdvisorPresenter.TextPx, AdvisorPresenter.ButtonPx },
             "the presenter's sizes mirror the stylesheet's");
@@ -747,8 +805,10 @@ public class AdvisorOpeningParityTests
                         if (Mathf.Abs(size - HudPresenter.FlooredTextSize(px, HudPresenter.ScreenPxPerPanelPx(root.panel))) > 0.01f)
                             problems.Add($"{at}: {name} is {size} px, not the stylesheet's {px} px (the desktop sizes stay)");
                     }
-                    if (root.Q("advisor-name").resolvedStyle.fontSize <= root.Q("advisor-text").resolvedStyle.fontSize)
-                        problems.Add($"{at}: the title is not larger than the text");
+                    // Where the floor lifts both (the phone), the name (24 px) and the text (22 px) meet at the floor; it is
+                    // never smaller. TheChainReadsAtTheItchEmbedSize holds it larger where neither is floored.
+                    if (root.Q("advisor-name").resolvedStyle.fontSize < root.Q("advisor-text").resolvedStyle.fontSize)
+                        problems.Add($"{at}: the title is smaller than the text");
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
@@ -780,7 +840,7 @@ public class AdvisorOpeningParityTests
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
-        var go = new GameObject("FirstTurnGuideTest");
+        var go = new GameObject("AdvisorOpeningTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
         doc.panelSettings = ps;

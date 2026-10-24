@@ -11,14 +11,15 @@ advisors:
 messages:
 # The opening chain (spec 9.2): shown once on the first new game, step by step, each pointing at the part of the HUD the
 # first-turn guide pointed at; its event step speaks before the card opens, and its Show me opens the card (spec 9.3).
-  - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: pending }
-# C68 opening.attention.fix1: pending owner copy-fix approval; Hebrew remains pending.
-  - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: pending, requires: [opening.greeting], actions: [{ show_me: attention }] }
-  - { id: opening.city, advisor: meyerson, signal: opening, level: new, he_review: pending, requires: [opening.attention], actions: [{ show_me: city_housing }] }
-  - { id: opening.training, advisor: meyerson, signal: opening, level: new, he_review: pending, requires: [opening.city], actions: [{ show_me: city_training }] }
-  - { id: opening.move, advisor: dayan, signal: opening, level: new, he_review: pending, requires: [opening.training], actions: [{ show_me: unit_move }] }
-# C68 opening.event.fix1: pending owner copy-fix approval; Hebrew remains pending.
-  - { id: opening.event, advisor: ben_gurion, signal: opening, level: new, he_review: pending, requires: [opening.move], when: { cards_waiting_at_least: 1 }, actions: [{ show_me: decision_waiting }, { open_card: true }] }
-  - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: pending, requires: [opening.event], actions: [{ show_me: nav_objectives }] }
+# The seven opening lines' Hebrew: approved by the owner, a native speaker, in chat on 24 October 2026 (about 11:42 IDT):
+# "Approved".
+  - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: approved }
+# opening.attention and opening.event: copy-fix wording approved by the owner in chat, 24 October 2026, 04:14 UTC: "Approve all 8".
+  - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.greeting], actions: [{ show_me: attention }] }
+  - { id: opening.city, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.attention], actions: [{ show_me: city_housing }] }
+  - { id: opening.training, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.city], actions: [{ show_me: city_training }] }
+  - { id: opening.move, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.training], actions: [{ show_me: unit_move }] }
+  - { id: opening.event, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 1 }, actions: [{ show_me: decision_waiting }, { open_card: true }] }
+  - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.event], actions: [{ show_me: nav_objectives }] }
 
 pages: []

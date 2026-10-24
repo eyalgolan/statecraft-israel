@@ -63,28 +63,8 @@ how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לרא�
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
-# How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
+# How to play's button that opens the advisor opening chain again (#1484). For the native reviewer (#564).
 how_to_play.guide: "הצגת עצות הפתיחה שוב"
-# The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
-# For the native reviewer (#564).
-guide.step: "שלב {0} מתוך {1}"
-guide.next: "הבא"
-guide.done: "סיום"
-guide.skip: "דילוג על המדריך"
-guide.attention.title: "תשומת לב"
-guide.attention.text: "רוב ההוראות עולות תשומת לב. כאן מוצג כמה נשאר לכם בתור הזה. היא מתמלאת מחדש בתחילת כל תור, ותשומת לב שלא ניצלתם אינה עוברת לתור הבא."
-guide.city.title: "דיור ומשרות בעיר"
-guide.city.text: "בחרו עיר כדי לראות את הדיור והמשרות בה. הכפתורים + ו־− קובעים כמה אנשים עובדים, ובהם בעלי מלאכה. ההוראה מתבצעת בסיום התור."
-guide.training.title: "אימון והכשרה"
-guide.training.text: "במחנה צבאי אפשר לאמן אזרחים ללא עבודה כמגויסים. בהכשרה (מחנה הכשרה לחלוצים) אפשר להכשיר אותם כחלוצים שבונים יישובים. הכפתורים מציגים עלות ומשך הכשרה."
-# The move step (#1141): agent-drafted Hebrew, not yet read by a native speaker, in unit.order.move's, unit.move_pick's
-# and unit.move_queued's terms. For the native reviewer (#564).
-guide.move.title: "תנועת יחידה"
-guide.move.text: "בחרו אחת מהיחידות שלכם, לחצו על תנועה ובחרו משושה מואר. היחידה תנוע בסיום התור."
-guide.event.title: "כרטיס אירוע"
-guide.event.text: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור. כרטיס שלא עניתם עליו עובר לשר האחראי."
-guide.objectives.title: "יעדים"
-guide.objectives.text: "במסך היעדים מופיעים יעדי המשחק ולצד כל אחד התאריך שבו השלמתם אותו לעומת התאריך ההיסטורי. השלמת יעד מביאה גם את הכרטיס שלו."
 # The advisors (spec 3.1, 14): the names as in people.yaml (name_he) and the spec; "יועצת" for Meyerson, the speaker's own
 # gender. Agent-drafted. For the native reviewer (#564).
 advisor.ben_gurion.name: "דוד בן-גוריון"
@@ -214,6 +194,25 @@ capture.delta_attention: "{0:+0.0;-0.0}"
 capture.delta_count: "{0:+#,##0;-#,##0}"
 capture.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. הכוחות נשארים במקום, וההחלטה ממתינה."
 capture.reopen: "החלטה ממתינה: {0}"
+# The end of an occupation (#802). SENSITIVE, agent-drafted, for the native reviewer (#564). The state is "held" (מוחזק,
+# תקופת ההחזקה; owner, #803), never שחרור, which is Occupy's name only (owner, #1317). Direct option names: סיפוח, נסיגה.
+capture.end.intro: "תקופת ההחזקה ב־{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
+capture.end.option.annex: "סיפוח"
+capture.end.option.withdraw: "נסיגה"
+capture.end.about.annex_fled: "המקום נשאר בשליטה ישראלית. תושביו נמלטו בעת הכיבוש, ולכן לא מתווספים תושבים, בתים או מקומות עבודה. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום."
+capture.end.about.annex_stayed: "המקום נשאר בשליטה ישראלית, ותושביו מצטרפים לאוכלוסייה עם בתיהם ומקומות העבודה שלהם. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום."
+capture.end.about.withdraw: "הכוחות יוצאים, והמקום חוזר לשליטת האויב. עלות ההחזקה מסתיימת."
+capture.end.changes: "שינויים מיידיים במשאבים:"
+capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
+capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
+# Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
+capture.refusal.attention: "אין די תשומת לב בתור הזה: נדרש {1:0.0}, ונותר {2:0.0}."
+capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב־{0}."
+capture.refusal.no_free_hex: "ליחידה ב־{0} אין משבצת פנויה סמוכה לסגת אליה."
+capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
+capture.refusal.already_city: "{0} כבר עיר."
+capture.refusal.not_awaiting: "{0} אינו ממתין להחלטה הזו."
+capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
 start.loading: "טוען את ההקלטה…"
@@ -669,20 +668,14 @@ event.effect.housing_capacity: "קיבולת דיור"
 event.effect.job_slots: "מקומות עבודה"
 event.effect.condition: "מצב הדיור"
 
-# Agent-drafted, NOT approved: he_review pending in advisor-messages.yaml (spec OQ-4). For the native reviewer (#564).
-# C68: agent-drafted translation of opening.greeting; native review pending.
+# The opening chain (#1484). Agent-drafted; approved by the owner, a native speaker, in chat on 24 October 2026 (about
+# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4).
 advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
-# C68: agent-drafted translation of opening.attention.fix1; native review pending.
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
-# C68: agent-drafted translation of opening.city; native review pending.
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
-# C68: agent-drafted translation of opening.training; native review pending.
 advisor.opening.training.text: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-# C68: agent-drafted translation of opening.move; native review pending.
 advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
-# C68: agent-drafted translation of opening.event.fix1; native review pending.
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
-# C68: agent-drafted translation of opening.objectives; native review pending.
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 advisor.next: "הבא"
 advisor.done: "סיום"
