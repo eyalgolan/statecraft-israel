@@ -49,13 +49,13 @@ public class RealContentTests
         }
     }
 
-    /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
+    /// <summary>R-ALT-004 on the real content: every one of the 32 alternatives carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.Equal(30, alternatives.Count);
+        Assert.Equal(32, alternatives.Count);   // +2: reparations_vote's reject and referendum (#1564)
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 

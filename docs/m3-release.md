@@ -304,6 +304,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `operation_horev` | security, war-casualties | military text only |
 | `bernadotte_assassination` | security, terror | the `terror` tag follows the Israeli government's own Prevention of Terrorism Ordinance |
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
+| `reparations_vote` | holocaust | the vote on talks with Germany and the riot of 7 January 1952: the card states the rally, the broken windows and the tear gas in sober terms, with no casualty or crowd figures; the "reject" and "referendum" options (#1564) |
 
 **Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
 (`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner

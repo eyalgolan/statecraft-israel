@@ -25,7 +25,7 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 35 ordinary events
+    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 36 ordinary events, the reparations vote included (#1564)
     /// except the four conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
@@ -39,7 +39,7 @@ public class EventRetimingTests
         // remain unfinished (R-OBJ-005), so neither of their completion cards is expected.
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
         Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(35, record.Count);
+        Assert.Equal(36, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -79,6 +79,7 @@ public class EventRetimingTests
     [InlineData("iraqi_exodus", "1951-03-15")]
     [InlineData("israel_bonds", "1951-05-15")]
     [InlineData("forex_crisis_1951", "1951-11-15")]
+    [InlineData("reparations_vote", "1951-12-15")]               // #1564: the vote of 9 January 1952, window from 15 December 1951 (R-TURN-002)
     public void EachEventFiresOnItsTurn(string id, string date) =>
         Assert.Equal(DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture), CardDate(id));
 

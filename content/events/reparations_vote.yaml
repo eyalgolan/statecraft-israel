@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+id: reparations_vote
+title: The Reparations Vote
+text: 'For three sittings, 7 to 9 January 1952, the Knesset debates the government''s announcement on reparations from Germany. On the first day a rally led by Herut marches on the house; stones break the chamber''s windows, the sitting is interrupted, and police answer with tear gas. {prime_minister} asks the house to empower its Foreign Affairs Committee to open direct talks with West Germany on the claim of 1.5 billion dollars.'
+# For the native reviewer (#564): הכנסת, השילומים, ועדת החוץ and מערב גרמניה follow he.wiki "הסכם השילומים"
+# (https://he.wikipedia.org/wiki/הסכם_השילומים), as reparations_claim's Hebrew does. The dollar amount in words'
+# digits, as the English writes it.
+title_he: ההצבעה על השילומים
+text_he: 'במשך שלוש ישיבות, מ-7 עד 9 בינואר 1952, הכנסת דנה בהצהרת הממשלה על השילומים מגרמניה. ביום הראשון צועדת לעבר משכן הכנסת הפגנה בהובלת החרות; אבנים מנפצות את חלונות המליאה, הישיבה מופסקת, והמשטרה משיבה בגז מדמיע. {prime_minister} מבקש מהכנסת להסמיך את ועדת החוץ לפתוח במשא ומתן ישיר עם מערב גרמניה על תביעה של 1.5 מיליארד דולר.'
+text_he_review: agent-checked
+anchor: hard
+tags: [holocaust]
+office: prime_minister
+# R-TURN-002: the vote is 9 January 1952, so the window opens on the 15th on or before it, 15 December 1951, and the
+# card reaches the player on the turn before the decision (EventRetimingTests). `to` is exclusive: the day after the
+# vote. The window stays inside the MVP, which ends on 15 January 1952 (content/rules.yaml, mvp.end).
+from: 1951-12-15
+to: 1952-01-10
+options:
+  - id: negotiate
+    text: Open direct talks with West Germany
+    text_he: לפתוח במשא ומתן ישיר עם מערב גרמניה
+    historical: true
+    recommended: true
+    effects:
+      # No positive delta may appear on a holocaust-tagged card (Q-EFX-2, owner, 15 October 2026), and the talks'
+      # material yield belongs to the agreement of September 1952, after the MVP: 0 by design, no balance claim made.
+      - { target: intl_standing, delta: 0 }
+  - id: reject
+    text: Reject any negotiation with Germany
+    text_he: לדחות כל משא ומתן עם גרמניה
+    # The opposition's motion "flatly rejecting" negotiations was put to the house and defeated on 9 January 1952
+    # (JTA); Herut, Mapam and the General Zionists spoke against talks from 7 January (protocol of sitting 38, JTA).
+    alternative:
+      basis: debated
+      by: Herut, Mapam and the General Zionists in the Knesset
+      date: 1952-01-07
+      sources:
+        - { url: "https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany", checked: 2026-10-24 }
+        - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+    effects:
+      - { target: intl_standing, delta: 0 }
+  - id: referendum
+    text: Put the question to a referendum
+    text_he: להעביר את ההכרעה במשאל עם
+    # Herut's leader asked the Prime Minister in sitting 38, 7 January 1952, to "go to the people, hold a referendum"
+    # before deciding (protocol, opened; paraphrased here). The Foreign Minister opposed holding one (JTA).
+    alternative:
+      basis: debated
+      by: Herut in the Knesset
+      date: 1952-01-07
+      sources:
+        - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+    effects:
+      - { target: intl_standing, delta: 0 }
+sources:
+  # JTA bulletin of 10 January 1952, item datelined Jerusalem, 9 January: after a 10-hour debate the Knesset votes
+  # 61 for, 50 against, five abstaining and four absent to empower the Foreign Affairs Committee "to take adequate
+  # steps according to the circumstances", opening direct negotiations on claims of 1.5 billion dollars; the
+  # opposition's motion flatly rejecting negotiations is defeated; a day of rioting outside the Knesset on Monday.
+  - { url: "https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany", checked: 2026-10-24 }
+  # Second Knesset, sitting 38 of 7 January 1952 (the Sharett Archive's reproduction of Divrei HaKnesset vol. 10):
+  # the debate on the government's announcement opens; the Prime Minister speaks first; Herut's leader asks him to
+  # put the question to a referendum. Sitting 39 (8 January) is at dataid 2213.
+  - { url: "https://www.sharett.org.il/cgi-webaxy/sal/sal.pl?lang=he&ID=880900_sharett_new&act=show&dbid=bookfiles&dataid=2212", checked: 2026-10-24 }
+  # en.wiki, secondary, beside the primary sources: the roads around the building blocked on 7 January 1952, the
+  # rally of about 15,000, stones breaking the chamber's windows, police hoses and tear gas, the sitting interrupted
+  # for the first time in the Knesset's history, and the 61-50 vote. The rally's size and the injury figures rest on
+  # this one source, so the card says neither number.
+  - { url: "https://en.wikipedia.org/wiki/Reparations_Agreement_between_Israel_and_the_Federal_Republic_of_Germany", checked: 2026-10-24 }
+# [C] unresolved: the abstention count. JTA's bulletin has five abstaining and four absent; he.wiki "הסכם השילומים"
+# has six abstaining and three absent. The Knesset record of sitting 40 (9 January 1952), which would settle it, was
+# not found opened (research_notes/M4 content 1952-56/reparations-vote-1952.md, open item 1). The card states no
+# abstention count.
+status: fact-checked

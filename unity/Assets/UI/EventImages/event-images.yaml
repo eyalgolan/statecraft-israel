@@ -384,3 +384,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "The objective card absorb_immigrants (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). NLI title 'עולים מטרנסילבניה רומניה מגיעים באוניה לנמל חיפה' (immigrants from Transylvania, Romania, arrive by ship at Haifa port), description 'עולים חדשים יורדים מכבש הספינה' (new immigrants come down the ship's gangway), taken 25 June 1951; NLI archive ARC. 4* 2068 / 6027. A generic arrival, not the card's own date (the card is December 1949). Unnamed adults on the gangway and men in uniform caps at its foot; no child, nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-21. Owner sign-off, 21 October 2026 (coordinator session): approved for the objective 2 card (#1268). Not a sensitive picture, so sensitivity_reviewed stays false (docs/event-images.md: only the sensitive pictures need that flag)."
+  - event: reparations_vote
+    file: reparations_vote.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Jerusalem_(997008136934005171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/3/32/Jerusalem_%28997008136934005171.jpg"
+    sha1: 90a4d3fcf0ad73364905bea087cf1efa7d297932
+    original_size: [1889, 1338]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "Police set up barriers on a wet Jerusalem street by the Knesset ahead of the demonstration over the reparations agreement with Germany, January 1952."
+    crop: [0.5, 0.5, 1.0]
+    sensitive: true
+    sensitivity_reviewed: false
+    note: "The card is tagged holocaust and the photograph shows a violent day, so the owner signs it off (#1564). NLI title: police set up barriers and prepare for a planned demonstration by the Knesset over the reparations agreements with Germany; dated January 1952, the event's own month. Picked from the eleven-frame Rothenberg series 997008136933705171-997008136934705171 (the frame #1564 names as its example): a street scene with police, barriers and onlookers, not a near-portrait. VRTS ticket 2021092910005788. Licence, credit and SHA-1 read through the Commons API, 24 October 2026."
