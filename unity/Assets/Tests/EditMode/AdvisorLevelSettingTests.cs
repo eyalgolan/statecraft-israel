@@ -6,6 +6,7 @@ using System.IO;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.UI;
+using Statecraft.Sim;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -15,6 +16,7 @@ using Object = UnityEngine.Object;
 /// <summary>Spec 6: four help levels in Settings, the one set marked, kept in the settings file, applied at once.</summary>
 public class AdvisorLevelSettingTests
 {
+    static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
@@ -40,7 +42,7 @@ public class AdvisorLevelSettingTests
     }
 
     /// <summary>"New to strategy games" is the longest choice: at a phone's width, in both languages, every choice stays in
-    /// the Settings screen.</summary>
+    /// the Settings screen. The HUD sets the screen's tier for the window (HudPresenter), as in the game.</summary>
     [UnityTest]
     public IEnumerator TheRowFitsOnAPhoneInBothLanguages()
     {
@@ -56,12 +58,15 @@ public class AdvisorLevelSettingTests
                 go.SetActive(true);
                 var root = doc.rootVisualElement; root.Q("root").RemoveFromClassList("loading");
                 if (hebrew) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+                var text = hebrew ? He : En;
+                var hud = new HudPresenter(root, new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text), text);
                 var nav = new ScreenNav(root);
-                var settings = new SettingsPresenter(root, hebrew ? He : En, null, advisors: new AdvisorSettings(null));
+                var settings = new SettingsPresenter(root, text, null, advisors: new AdvisorSettings(null));
                 nav.Open("settings");
                 try
                 {
-                    for (int i = 0; i < 6; i++) yield return null;
+                    for (int i = 0; i < 30 && !(root.Q("screen-settings").layout.width > 0); i++) yield return null;
+                    for (int i = 0; i < 3; i++) yield return null;
                     var screen = root.Q("screen-settings").worldBound;
                     foreach (var level in AdvisorSettings.Levels)
                     {
@@ -72,7 +77,7 @@ public class AdvisorLevelSettingTests
                 }
                 finally
                 {
-                    settings.Dispose(); nav.Dispose();
+                    settings.Dispose(); nav.Dispose(); hud.Dispose();
                     Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
                 }
             }
