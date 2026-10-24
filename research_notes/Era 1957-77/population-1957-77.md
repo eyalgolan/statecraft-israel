@@ -1,6 +1,8 @@
 # Immigration, emigration and population, 1957-1977
 
-Researched 23 October 2026. Every URL below was opened on that date. Research note for issue #115 (1957-77 3, the
+Researched 23 October 2026. Every URL below was opened on that date. Second pass, 24 October 2026: the [GAP] rows
+are worked in section 8 (new bullets and tables marked "(24 Oct)"); the Statistical Abstract volumes opened that day are
+listed there. Research note for issue #115 (1957-77 3, the
 research part only, opened by the owner's ruling of 22 October 2026 on #49). Research only: nothing here is drafted
 for the game, and no file in `content/` is changed. The `aliyah.yaml` rows, #102's emigration rows and the calibration
 checkpoints stay paused.
@@ -42,9 +44,9 @@ Soviet aliyah total and for Operation Yachin.
 | wiki Soviet | Wikipedia, "1970s Soviet Union aliyah" (the design's §2.4 source) | https://en.wikipedia.org/wiki/1970s_Soviet_Union_aliyah |
 | wiki Yachin | Wikipedia, "Operation Yachin" (the design's §2.4 source) | https://en.wikipedia.org/wiki/Operation_Yachin |
 
-Not read: Moshe Sicron's CBS monographs (no copy was reachable), the Statistical Abstracts of the 1960s and 1970s
-(no scan was found on the CBS site, so the yearly tables of those editions are not used) and Sabatello's emigration
-study, which Bachi cites for his revised estimates. Nothing below is checked against them.
+Not read: Moshe Sicron's CBS monographs (no copy was reachable) and Sabatello's emigration study, which Bachi cites
+for his revised estimates. Nothing below is checked against them. The Statistical Abstracts of 1957-1978, which the
+first pass could not find, were opened in the second pass (24 Oct); sections 1 to 6 do not use them, section 8 does.
 
 ---
 
@@ -173,9 +175,11 @@ immigrants, 1948-1979). "Potential immigrants" are listed from 1969 on.
 - Our reading of the last column: up to 1969 the "Not known" continent in 1a is mostly the non-Jewish immigrants
   (T4.2 note 4), and the Jewish immigrants of unknown residence are only the small remainder. 1957 is the exception
   in size: 1,410 immigrants of other religions in one year, against 50 to 380 in every other year of 1952-1969.
-  Neither table says who they were. [GAP]
+  Neither table says who they were. [GAP] (24 Oct: see 8f, 1,367 of them were immigrants and 43 tourists settling; who
+  they were is still [GAP].)
 - For the content work, which counts the Jewish population (design §5.4): the 1a rows include non-Jews. The Jewish
-  split by continent is [GAP] in the tables read; only the Jewish yearly total is sourced (this table).
+  split by continent is [GAP] in the tables read; only the Jewish yearly total is sourced (this table). (24 Oct: the
+  Jewish split for 1957-1970 is in 8a; from 1971 it is not published.)
 
 ### 1d. CBS's own description of the waves
 
@@ -229,7 +233,7 @@ The totals on offer:
   by country of birth, Tolts counts emigrants from the FSU, so the two are close but not the same measure.
 - Cross-check, derived: Bachi's 106,000 for 1969-1975 against Tolts's 103.7 thousand for 1970-1975 leaves about
   2,300 for 1969. Tolts has no 1969 figure, so a 1969 value is [GAP] in the sources read; the 2,300 is a remainder
-  of two different sources, not a sourced figure.
+  of two different sources, not a sourced figure. (24 Oct: see 8b for the CBS 1969-71 count and the bound it gives.)
 - Our reading: Wikipedia's 163,000 is close to Tolts's 164,000, which covers 1970-1988, not only the 1970s. The
   1970s sum from Tolts's own table is 148.6 thousand.
 - [C] Preferred: Tolts's yearly series, the only yearly one found. For one rounded total in event text: **about
@@ -246,7 +250,7 @@ The totals on offer:
   Tangier" (cited there to Laskier, 1994), and "From then till 1964, 97,005 Jews left Morocco" (cited to Abecassis).
   The dates "between November 1961 and spring 1964" carry no citation.
 - [V] CBS SA 2010 T4.4, page 233, immigrants born in Morocco: 1952-1960 95,945; **1961-1971 130,507**; 1972-1979
-  7,780. CBS gives no figure for 1961-1964 alone. [GAP]
+  7,780. CBS gives no figure for 1961-1964 alone. [GAP] (24 Oct: still [GAP], see 8g.)
 - [V] 1a, all of Africa by last residence, 1961-1964, derived: 18,048 + 41,816 + 38,672 + 17,340 = 115,876. By
   birth (1b): 18,163 + 42,036 + 38,834 + 17,638 = 116,671.
 - [C] Preferred: 97,005 as the operation's figure if the event text needs one (it is the exact count, the 90,000 is
@@ -256,7 +260,7 @@ The totals on offer:
 ### 2c. Romania
 
 [V] CBS SA 2010 T4.4, page 234, immigrants born in Romania: 1952-1960 32,462; 1961-1971 86,184; 1972-1979 18,418. No
-yearly split was found. [GAP]
+yearly split was found. [GAP] (24 Oct: still [GAP], see 8g.)
 
 ---
 
@@ -280,10 +284,9 @@ estimate". Period totals are **derived** (average x years):
 
 - Our reading of two cells: the scan prints "10.292" (1961-64, column 2) and, in the 1948-51 row above these, "7.649",
   with a full stop where the other cells have a comma. Both are read as thousands (10,292 and 7,649).
-- 1957 alone is [GAP]: it sits inside the 1955-57 average. The average applied to one year gives 10,394 (or 9,333),
+- 1957 alone is [GAP] in Bachi (24 Oct: CBS prints 11,400 for 1957, see 8c): it sits inside the 1955-57 average. The average applied to one year gives 10,394 (or 9,333),
   which is a per-year rate for 1955-57, not a sourced 1957 figure.
-- 1976 and 1977 are [GAP]: Bachi's series ends in 1975, and no yearly CBS emigration series for the 1970s was
-  reachable (see Sources).
+- 1976 and 1977 are [GAP] in Bachi, whose series ends in 1975 (24 Oct: CBS estimates for both years are in 8c).
 - What the columns measure, Bachi §9.1, page 116: the excess of departures over returns is set 2, headed "Very exaggerated" in his summary table; the
   revised estimates come from following up "the number of residents who left in each year and did not return after a
   given span of time"; and "Almost always these estimates of set 3 are lower than those of set 2. However, they have
@@ -428,10 +431,10 @@ the Census results "Arabs" also included "others"."
   427,828 in T4.2 for 1961-1971 (derived from 1a; T4.4 prints the same 427,828 as its 1961-1971 grand total), a
   difference of 13.1 thousand. Jews: 411.8 thousand here against 424,220 in CBS 1365 Table 1 (derived), 12.4
   thousand apart. T2.3 note 2 says it includes immigrating citizens, which would make it larger, not smaller. The potential immigrants (44,488 in 1969-71, derived from 1c) do not explain it either (our reading: T4.2 counts them, and
-  removing all 44,488 would overshoot the 13.1 thousand). The sources read do not explain the gap. [GAP] Preferred for the arrivals rows: T4.2 (1a); T2.3 is a calibration
+  removing all 44,488 would overshoot the 13.1 thousand). The sources read in the first pass do not explain the gap (24 Oct: 8e explains it by arithmetic). Preferred for the arrivals rows: T4.2 (1a); T2.3 is a calibration
   cross-check only.
 - The next CBS period, 1972-1982, runs past the era and is not used. Yearly sources of growth for 1957-1977 are
-  [GAP]: the 2010 table gives long periods only.
+  [GAP] in the 2010 table, which gives long periods only (24 Oct: the yearly series is in 8d).
 
 ---
 
@@ -452,13 +455,305 @@ Not a model, only the arithmetic the sources allow:
 
 ## 7. Gaps
 
+First-pass list, with the second-pass result (24 Oct) after each row; what is left is in 8h.
+
 - Jewish immigrants by continent of residence (1a includes non-Jews; the Jewish split is not published in the tables
-  read).
-- Who the 1,410 immigrants of other religions in 1957 were.
-- Yearly emigration for any year (Bachi gives period averages to 1975); emigration in 1976 and 1977.
-- Yearly sources of growth (natural increase, migration balance) for 1957-1977.
-- The 12-13 thousand gap between CBS T2.3's immigrants for 1961-1971 and the immigrant tables.
-- Soviet arrivals in 1969 (Tolts starts in 1970).
-- Moroccan arrivals for 1961-1964 alone; Romanian arrivals by year.
-- Sicron, the 1960s-1970s Statistical Abstracts and Sabatello were not reachable; nothing here is checked against
-  them.
+  read). 24 Oct: Jewish split by birth in two columns for 1957-1970 found (8a); 1971-1977 not published.
+- Who the 1,410 immigrants of other religions in 1957 were. 24 Oct: 1,367 immigrants + 43 tourists settling (8f); who
+  they were is still open.
+- Yearly emigration for any year (Bachi gives period averages to 1975); emigration in 1976 and 1977. 24 Oct: CBS
+  yearly estimates for 1957, 1961-1970 and a four-year series for 1959-1977 found (8c).
+- Yearly sources of growth (natural increase, migration balance) for 1957-1977. 24 Oct: found (8d).
+- The 12-13 thousand gap between CBS T2.3's immigrants for 1961-1971 and the immigrant tables. 24 Oct: explained by
+  arithmetic (8e).
+- Soviet arrivals in 1969 (Tolts starts in 1970). 24 Oct: bounded, still no CBS yearly figure (8b).
+- Moroccan arrivals for 1961-1964 alone; Romanian arrivals by year. 24 Oct: still open (8g).
+- Sicron and Sabatello were not reachable; nothing here is checked against them. The 1957-1978 Statistical Abstracts
+  were reached on 24 Oct (section 8).
+
+---
+
+## 8. Second pass, 24 October 2026 (the [GAP] rows of the first pass)
+
+Scope: the [GAP] rows the owner listed on #115 on 24 October 2026. Research only; nothing here is drafted for the game.
+Every figure in this section is tagged (24 Oct). All pages below were read by an agent on 2026-10-24 as rendered page
+images (the text layer of these scans is unusable); a person's check is still pending.
+
+The first pass said the Statistical Abstracts of the 1960s and 1970s were not reachable. They are: the scanned volumes
+sit in `publications/DocLib/shnaton_saruk/` on the CBS site, one PDF per edition, named
+`shnaton{year}_num{number}.pdf` with number = year - 1949 (the 1963 edition is No. 14). Volume N holds the data to the
+year before its date (the 1966 edition ends in 1965). The editions opened, with the tables used:
+
+| Key | Edition and table | Printed page (PDF p.) |
+|---|---|---|
+| SA14 | SA No. 14 (1963), https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf: Table 2 (sources of increase), Table 3, Table 4 (immigrants), Table 13 (emigrants) | 16-17 (45-46); 109; 110 (135); 121 (146) |
+| SA17 | SA No. 17 (1966), .../shnaton1966_num17.pdf: Table D/4, Table D/14 | 92 (127); 103 (138) |
+| SA18 | SA No. 18 (1967), .../shnaton1967_num18.pdf: Table D/4, Table D/14 | 89 (154); 97 (162) |
+| SA19 | SA No. 19 (1968), .../shnaton1968_num19.pdf: Table B/2, Table D/4, Table D/14 | 18 (93); 91 (165); 99 (173) |
+| SA21 | SA No. 21 (1970), .../shnaton1970_num21.pdf: Table B/2, Table D/4, Table D/14 | 24 (77); 113 (166); 124 (177) |
+| SA22 | SA No. 22 (1971), .../shnaton1971_num22.pdf, English section: Table E/9, Table D/5 | 133 (622); 114 (641) |
+| SA23 | SA No. 23 (1972), .../shnaton1972_num23.pdf: Table V/1, Table V/9 | 127 (185); 135 (193) |
+| SA24 | SA No. 24 (1973), .../shnaton1973_num24.pdf: Table V/2 | 127 (182) |
+| SA26 | SA No. 26 (1975), .../shnaton1975_num26.pdf: Table ii/2, Table iv/4 | 20 (72); 112 (164) |
+| SA27 | SA No. 27 (1976), .../shnaton1976_num27.pdf: Table iv/4 | 111 (164) |
+| SA28 | SA No. 28 (1977), .../shnaton1977_num28.pdf: Table ii/2, Table iv/5 | 20 (65); 113 (158) |
+| SA29 | SA No. 29 (1978), .../shnaton1978_num29.pdf: Table ii/2, Table iv/5, Table v/1, Table v/3 | 32 (79); 127 (174); 136 (183); 138 (185) |
+
+Also opened: the Jewish Virtual Library table "Total Immigration to Israel from the Former Soviet Union" (secondary,
+8b), and CBS SA 2018 Table 4.4 (the file the JVL table cites, 8b).
+
+### 8a. Jewish immigrants by continent of birth, 1957-1970 (24 Oct)
+
+Closes the last bullet of 1c for 1957-1970. [V] SA17 Table D/4 (1957-1960 and 1962), SA19 Table D/4, page 91
+(1961 and 1963-1966), SA21 Table D/4 (1967-1969). The CBS table prints two columns only, "Asia-Africa" and "Europe-America", plus "Not known". It counts
+"immigrants" and leaves tourists who settled out of the row: the Jewish total in 1c is this total plus the tourists
+settling (1957: 69,733 + 1,491 = 71,224, SA14 Table 3, page 109).
+
+| Year | Total | Asia-Africa | Europe-America | Not known |
+|---|---|---|---|---|
+| 1957 | 69,733 | 29,361 | 39,763 | 609 |
+| 1958 | 25,919 | 11,490 | 14,428 | 1 |
+| 1959 | 22,987 | 7,635 | 15,348 | 4 |
+| 1960 | 23,487 | 6,801 | 16,684 | 2 |
+| 1961 | 46,571 | 21,999 | 24,565 | 7 |
+| 1962 | 59,473 | 46,677 | 12,793 | 3 |
+| 1963 | 62,086 | 43,054 | 19,028 | 4 |
+| 1964 | 52,193 | 21,831 | 30,362 | - |
+| 1965 | 28,501 | 13,476 | 15,025 | - |
+| 1966 | 13,451 | 5,914 | 7,537 | - |
+| 1967 | 12,237 | 8,222 | 4,015 | - |
+| 1968 | 18,087 | 13,357 | 4,724 | 6 |
+| 1969 (incl. potential immigrants) | 32,679 | 15,066 | 17,308 | 305 |
+| **1957-1969, derived** | **467,404** | **244,883** | **221,580** | **941** |
+
+- Checks, derived: every row sums to its total. 1961-1964 sums to 133,561 + 86,748 + 14 = 220,323, the period row of
+  SA19 and SA21. Tourists settling are not in these totals: 1964 54,716 - 52,193 = 2,523, 1965 30,736 - 28,501 = 2,235,
+  1966 15,730 - 13,451 = 2,279, 1967 14,327 - 12,237 = 2,090; SA23 Table V/1 (page 127) prints the same four tourist
+  figures.
+- 1957 and 1958 are also printed by four continents, [V] SA14 Table 4, page 110: 1957 Asia 5,249, Africa 24,112, Europe
+  38,889, America and Oceania 874, not known 609; 1958 Asia 7,597, Africa 3,893, Europe 13,626, America and Oceania 802,
+  not known 1. They add up to the rows above (5,249 + 24,112 = 29,361; 38,889 + 874 = 39,763). From 1959 the tables merge
+  Asia with Africa and Europe with America, so a Jewish split into four continents is [GAP] for 1959-1969.
+- [C] Two editions print different splits for 1961 and 1963. SA14 (page 110, 1961 only; its table ends in 1962) and SA17 (page 92, 1961 and 1963): 1961 22,004 /
+  24,564 / 3; 1963 (SA17 only) 43,055 / 19,029 / 2. SA18-SA21: 1961 21,999 / 24,565 / 7; 1963 43,054 / 19,028 / 4. Same totals
+  (46,571 and 62,086), a difference of 5 and 1 people. Preferred: the later one, which the three later volumes repeat.
+- [C] Against 1b (all religions, birth): 1957 Asia plus Africa is 5,223 + 24,413 = 29,636 there, against 29,361 for
+  Jews here. The Jewish figures are the smaller, as they should be.
+- 1970: [V] SA22 Table E/9, page 133, "Jews" by continent of birth: total 36,928 = Asia-Africa 13,598 + Europe 13,895 +
+  America 9,196 + not known 239 (immigrants 19,889, potential immigrants 10,409, tourists who changed status 1,583 and
+  5,047). [C] This 1970 total differs from 36,750 (SA23 Table V/1, page 127, which from 1970 "incl. non-Jews and excl.
+  immigrating citizens", note 5) and from the 35,795 Jews of 1c (CBS 1365). Three bases, and no source read says which
+  is which. The 1970 row is not comparable with the rows above: it includes tourists settling.
+- **1971-1977: the Jewish-only split by continent is not published in the editions read.** From 1970 the CBS tables
+  carry non-Jews inside the immigrant counts (SA23 Table V/1 note 5; SA29 Table v/1 note 4, although the table is still
+  titled "(Jews)" and its totals, 19,754 for 1976 and 21,429 for 1977, are the all-religions totals of 1a). So the 1a
+  residence split is the only yearly continent split for 1971-1977, and it includes non-Jews. [GAP] for the Jewish-only
+  split of those seven years. Our reading: 1b/1a stay the rows to use.
+- Note for the Jewish rows 1957-1969: the 1a residence split of 1957-1969 includes non-Jews, so Jewish rows built from
+  this table (birth, two columns) and 1a rows (residence, four columns) are two different series. Both are kept.
+
+### 8b. Soviet arrivals in 1969 (24 Oct)
+
+- [V] CBS counts by country of birth start in SA24 Table V/2, page 127 (the page does not say "all religions"; our reading: its 1969-71 grand total, 116,484, equals the all-religions total of V/1): U.S.S.R. 1972 31,649 (331
+  potential immigrants + 31,318 immigrants); 1969-1971 together 18,645 (1,014 + 17,631). Poland 1969-1971 5,707; Iran
+  5,321; India 5,160; U.S.A. 14,503. The table prints ".." for Morocco, Algeria, Tunisia and Libya in both periods.
+- Derived: Tolts's 1970 + 1971 is 1.0 + 13.0 = 14.0 thousand (2a), so CBS 1969-1971 minus Tolts leaves 18,645 - 14,000 =
+  4,645 for 1969 on a mixed basis (born in the USSR against emigrants from the FSU). This replaces the 2,300 remainder
+  of the first pass (Bachi 106,000 minus Tolts 103.7 thousand) as the better bound; the two differ, and neither is a
+  yearly CBS figure. [C]
+- [S] The Jewish Virtual Library table (https://www.jewishvirtuallibrary.org/total-immigration-to-israel-from-former-soviet-union,
+  opened 2026-10-24) prints "Immigrants from F.S.U.": 1968 224, 1969 3,019, 1970 992, 1971 12,839, 1972 31,652,
+  1973 33,477, 1974 16,816, 1975 8,531, 1976 7,279, 1977 8,348, and names "Israel Central Bureau of Statistics" with a
+  link to SA 2018 Table 4.4. That file (opened 2026-10-24) gives periods only, for example USSR (former) in Europe
+  1961-1971 29,376 and 1972-1979 137,134, so the yearly values cannot be checked against the file it cites. Two of the
+  values do match a CBS table: 1977 8,348 is the USSR "last country of residence" total of SA29 Table v/3 (page 138),
+  and 1972 31,652 is near SA24's 31,649 (by birth, so only weak support). Our reading: the JVL series is the CBS last-residence count.
+  Not confirmed for 1969.
+- [S] Wikipedia, "1970s Soviet Union aliyah", is the source of the 231 (1968) and 3,033 (1969) found in a search
+  summary; the page was not opened here and the figures count exit visas, not arrivals.
+- 1969 alone, as a CBS figure, is therefore still [GAP]. Candidate values, none preferred as a CBS figure: 3,019 [S, JVL,
+  last residence], 3,033 [S, visas], about 4,645 [derived, mixed bases]. For the rows nothing changes: the 1969 arrivals
+  from the USSR are inside 1a's `europe` column.
+
+### 8c. Emigration: 1957 alone, 1961-1975 revisions, 1976 and 1977 (24 Oct)
+
+**1957.** [V] SA14 Table 13, page 121 (PDF 146), "Emigrants, by population groups and year of emigration": for 1957,
+"persons declaring emigration" 6,411 (Jews 6,039, others 372) and "all emigrants (estimate)" 11,400 (Jews 11,000,
+others 400, rate 6.4 per 1,000 Jews). The same 11,400 is printed again in SA17 Table D/14 (page 103), SA18 Table D/14
+(page 97), SA19 Table D/14 (page 99), SA21 Table D/14 (page 124, "11.4" thousand) and SA22 Table D/5 (page 114).
+Neighbours in SA14: 1956 11,400 (6,245 declared), 1958 11,700 (7,724), 1955 6,400. Derived: the three CBS estimates
+for 1955-57 add to 6,400 + 11,400 + 11,400 = 29,200, an average of 9,733 a year, against Bachi's 10,394 (excess of
+departures) and 9,333 (revised) for the same years (3a). [C] The CBS estimate for 1957 alone and Bachi's average are
+different measures; the first pass's 10,394 is not a 1957 figure. Preferred for 1957: 11,400 (CBS estimate), with
+6,411 as the floor of those who declared it.
+
+**1961-1971, the series is revised more than once.** Both printings are given.
+
+| Year | SA17-SA19 (units) | SA21 (thousands) | SA22 (thousands) |
+|---|---|---|---|
+| 1961 | 7,330 | 6.5 | 6.5 |
+| 1962 | 7,644 | 9.0 | 9.0 |
+| 1963 | 10,866 | 8.0 | 8.0 |
+| 1964 | 9,121 | 7.5 | 7.5 |
+| 1965 | 7,941 | 7.5 | 7.0 |
+| 1966 | 7,793 | 8.5 | 8.5 |
+| 1967 | 10,529 | 9.5 | 9.0 |
+| 1968 | - | 8.0 | 7.0 |
+| 1969 | - | 7.5 | 6.0 |
+| 1970 | - | - | 6.0 |
+
+[V] SA17 page 103 (1961-1965), SA18 page 97 (1966), SA19 page 99 (1967), SA21 page 124, SA22 page 114. The 1961-65
+figures first printed are Table D/14's "all emigrants (estimate)" with the new method CBS began in 1961. SA21 and
+SA22 say in note 1: "Estimates on all emigrants since 1961 were compiled by a new method, which differs from that used
+until 1960"; SA22 marks the revised cells with a section sign. [C] Preferred: the latest printing (SA22), 1961-64 from
+SA21 where SA22 did not change them. The 1961-64 sum on the first printing is 34,961, on the revised one 31.0 thousand;
+Bachi's 1961-64 revised estimate is 40,536 (3a).
+
+**A CBS series that runs to 1977.** From 1959 CBS counts the residents who left in a year and did not return within one,
+two, three and four years: [V] SA29 Table iv/5, page 127 (PDF 174), "Residents who did not return from abroad within
+four years and residents who returned after up to four years abroad", thousands. "All departing" counts every trip,
+so, our reading, it is not emigration; our reading: the "did not return after 4 years" column is the nearest CBS figure to Bachi's. Footnote 1:
+"Figures in brackets are estimates."
+
+| Year of departure | All departing | Not back after 1 year | after 2 | after 3 | after 4 years |
+|---|---|---|---|---|---|
+| 1959 | 55.0 | 15.3 | 13.2 | 11.9 | 11.2 |
+| 1960 | 63.3 | 15.1 | 12.6 | 11.1 | 10.4 |
+| 1961 | 75.9 | 14.4 | 11.5 | 9.9 | 9.0 |
+| 1962 | 86.2 | 18.4 | 14.6 | 12.8 | 11.6 |
+| 1963 | 103.5 | 17.7 | 13.9 | 11.7 | 10.6 |
+| 1964 | 89.6 | 17.2 | 12.9 | 10.6 | 9.1 |
+| 1965 | 97.1 | 17.8 | 12.8 | 10.2 | 8.8 |
+| 1966 | 115.8 | 21.0 | 15.4 | 12.5 | 10.9 |
+| 1967 | 108.6 | 22.7 | 16.4 | 12.8 | 10.7 |
+| 1968 | 128.1 | 19.6 | 12.7 | 8.8 | 7.0 |
+| 1969 | 139.0 | 18.8 | 11.4 | 7.8 | 6.2 |
+| 1970 | 142.4 | 20.1 | 12.3 | 8.5 | 7.1 |
+| 1971 | 170.0 | 22.4 | 13.6 | 10.6 | 9.0 |
+| 1972 | 184.8 | 20.3 | 13.4 | 9.9 | 7.9 |
+| 1973 | 207.6 | 29.9 | 21.4 | 17.2 | 14.8 |
+| 1974 | 233.9 | 33.1 | 23.5 | 18.9 | (16.0-16.5) |
+| 1975 | 246.6 | 30.2 | 20.3 | (15.5) | (12.0-14.0) |
+| **1976** | 256.9 | 32.7 | (22.5) | (17.5) | **(13.0-16.0)** |
+| **1977** | 290.4 | (32.0) | (20.5) | (15.0) | **(10.0-15.0)** |
+
+- **1976 and 1977 are no longer [GAP].** CBS's own estimate of the residents who left and did not come back within four
+  years is 13.0 to 16.0 thousand for 1976 and 10.0 to 15.0 thousand for 1977, both in brackets (estimates, partly
+  projected). The first edition to print 1976 (SA28, Table iv/5 part b, page 113) gave 12.0 to 17.0 for 1976 and 12.0 to
+  15.0 for 1975 against 12.0-14.0 here; the ranges moved between editions. [C] The 1973 range printed there (14.5-15.0) became 14.8 in SA29, inside it.
+- Checks, derived: against Bachi's revised estimate (3a), 1961-64 on the four-year column is 9.0 + 11.6 + 10.6 + 9.1 =
+  40.3 thousand (Bachi 40,536) and 1965-68 is 8.8 + 10.9 + 10.7 + 7.0 = 37.4 thousand (Bachi 35,640). Close for those
+  two periods; for 1969-73 (6.2 + 7.1 + 9.0 + 7.9 + 14.8 = 45.0 thousand) it is twice Bachi's 21,105, so the two
+  series do not measure the same thing in the 1970s and are not mixed here.
+- [C] The same CBS tables from the 1970s print other counts of the same people: SA26 Table iv/4 (page 112) and SA27 Table
+  iv/4 (page 111) give "departed in the year and did not return within 12 months" (1973: 38,300 then 34,300; 1974:
+  about 40,000 then 39,000) and a "balance" of the residents staying abroad more than a year (SA27: 1971 4,600; 1972
+  3,900; 1973 10,500; 1974 20,600; 1975 (16,900)). That balance is the net change of those abroad, not a count of
+  leavers.
+- Net view for 1975-1977, derived from section 8d: Jewish immigrants minus the migration balance is 19.7 - 0.6 = 19.1
+  (1975), 19.5 - 7.0 = 12.5 (1976), 21.3 - 7.0 = 14.3 (1977) thousand. That is everything the balance subtracts
+  (residents leaving net of returns and the net movement of travellers), not emigration alone. For 1976 and 1977 it sits
+  next to CBS's 13.0-16.0 and 10.0-15.0.
+- Preferred for #102's yearly rows: the four-year CBS column for 1959-1977 (brackets kept), with 11,400 for 1957 from
+  the older estimate (the new series starts in 1959, so the two are different methods across 1958/1959).
+
+### 8d. Sources of growth by year, 1957-1977 (24 Oct)
+
+Closes the last bullet of section 5b. Jewish population, thousands except where marked. 1957-1961 are [V] SA14 Table 2,
+pages 16-17 (units); 1962-1967 [V] SA19 Table B/2 (page 18); 1968 [V] SA21 Table B/2 (page 24); 1969-1971 [V] SA26
+Table ii/2 (page 20); 1972-1977 [V] SA29 Table ii/2 (page 32), the same rows as SA28 for 1972-1976 (1977 from SA29 alone). "Immigrants" in the CBS table
+leaves out tourists settling, which the table counts under the net movement of travellers.
+
+| Year | Natural increase | Migration balance | Immigrants (where printed) | Total increase | Population at end |
+|---|---|---|---|---|---|
+| 1957 | 34.173 | +61.113 | 69.733 | 95.286 | 1,762.741 |
+| 1958 | 32.854 | +14.553 | 25.919 | 47.407 | 1,810.148 |
+| 1959 | 33.993 | +14.700 | 22.987 | 48.693 | 1,858.841 |
+| 1960 | 35.065 | +17.283 | 23.487 | 52.348 | 1,911.189 |
+| 1961, previous-census basis | 33.049 | +41.246 | 46.571 | 74.295 | 1,985.484 |
+| 1961, census basis | 32.7 | +37.8 | - | 70.5 | 1,981.7 |
+| 1962 | 32.2 | +55.0 | - | 87.2 | 2,068.9 |
+| 1963 | 33.7 | +53.0 | - | 86.7 | 2,155.6 |
+| 1964 | 35.6 | +48.0 | - | 83.6 | 2,239.2 |
+| 1965 | 37.0 | +22.9 | - | 59.9 | 2,299.1 |
+| 1966 | 37.5 | +8.3 | - | 45.8 | 2,344.9 |
+| 1967 | 34.4 | +4.3 | - | 38.7 | 2,383.6 |
+| 1968 | 38.5 | +12.7 | - | 51.2 | 2,434.8 |
+| 1969 | 40.1 | +31.8 | - | 71.9 | 2,506.8 |
+| 1970 | 43.0 | +32.2 | - | 75.2 | 2,582.0 |
+| 1971 | 47.0 | +33.0 | - | 80.0 | 2,662.0 |
+| 1972 | 44.8 | +45.9 | 55.4 | 90.7 | 2,752.7 |
+| 1973 | 44.2 | +48.0 | 54.2 | 92.3 | 2,845.0 |
+| 1974 | 49.3 | +12.7 | 31.3 | 62.0 | 2,906.9 |
+| 1975 | 51.8 | +0.6 | 19.7 | 52.5 | 2,959.4 |
+| 1976 | 53.9 | +7.0 | 19.5 | 61.0 | 3,020.4 |
+| 1977 | 50.0 | +7.0 | 21.3 | 56.9 | 3,077.3 |
+
+- Checks, derived: natural + balance = total in the rows (for example 1977: 50.0 + 7.0 = 57.0 against 56.9, a rounding
+  step). The end of 1977, 3,077.3, equals the end of 1977 in 4a. Chained from the 1961 census basis, natural increase for
+  1962-1977 adds to 673.0 and the balance to 422.4, 1,095.4 together, against 3,077.3 - 1,981.7 = 1,095.6, 0.2 apart
+  (mixed editions, rounding). For 1957-1961 on the previous-census basis the sum is 169.134 + 148.895 = 318.029 =
+  1,985.484 - 1,667.455 (SA14 prints 1,667,455 for the end of 1956).
+- The two census breaks of 4a sit inside one year's rows, not as a separate item. Derived: 1961, total increase 74.295
+  (previous basis) against 70.5 (census basis) is 3.8; 1972, 87.4 (SA26) against 90.7 (SA28) is 3.3. These are the same
+  3.8 and 3.3 as in 4a.
+- [C] 1969 and 1972-1974 are printed twice. 1969: SA21 has natural 40.1, balance +21.5, end 2,496.4; SA26 has 40.1,
+  +31.8, 2,506.8. 1972-74, SA26 (before) against SA28 (after): balance 42.5 / 40.6 / 6.8 against 45.9 / 48.0 / 12.7;
+  end 2,749.4 / 2,834.2 / 2,890.3 against 2,752.7 / 2,845.0 / 2,906.9. The introduction that explains the revision was
+  not read. Preferred: the later printing; the first pass's 4a already uses it for the year ends.
+- Total population (Jews and non-Jews), same tables: 1957 natural increase 41,498 and migration balance +62,066
+  (SA14, page 16); 1972-1977 natural 63.0, 63.2, 69.2, 71.2, 74.7, 70.5 and balance 46.2, 50.1, 14.3, 0.3, 7.4, 7.4
+  thousand (SA29, page 32).
+
+### 8e. The 12-13 thousand gap in 5b (24 Oct)
+
+The first pass found T2.3's immigrants for 1961-1971 (414.7 thousand, Jews 411.8) 13.1 thousand below the immigrant
+tables (427,828; Jews 424,220) and could not explain it. Arithmetic from the Statistical Abstracts explains most of it:
+
+- [V] From 1969 CBS splits the tourists who settled into those who "changed their status to immigrants" and those who
+  "changed their status to potential immigrants": 1969 5,125 in all, 1,558 of them as immigrants (SA21 Table D/4, page
+  113), so 3,567 as potential immigrants (derived); 1970 6,789 tourists settling (SA23 Table V/1) of which
+  1,583 as immigrants (SA22 Table E/9), so 5,206 (derived; this mixes two bases: SA22's own Jewish split of 1970 is 1,583 + 5,047 = 6,630, and the 159 between it and 6,789 is unexplained); 1971 4,229 as potential immigrants (SA23 Table V/9, page 135).
+- Derived: 3,567 + 5,206 + 4,229 = 13,002. T4.2's 1961-1971 total 427,828 minus 13,002 is 414,826, against T2.3's 414.7
+  thousand (0.1 thousand apart). With SA22's own 1970 figure of 5,047 the sum is 12,843 and the result 414,985. For Jews,
+  424,220 - 13,002 = 411,218 against 411.8 thousand (0.6 apart; the 1970-71 totals include some non-Jews, see 8a).
+- Our reading: T2.3 counts the immigrants, the potential immigrants and the tourists who became immigrants, and does not
+  count the tourists who became potential immigrants; T4.2 counts all of them. No CBS text read says this; it is the
+  arithmetic that closes the gap. The first pass tested all 44,488 potential immigrants of 1969-71 and found
+  that they overshoot; only the part that were tourists first matters.
+- Consequence for the content work: the immigrants of T4.2 (1a) are the arrivals to use, and 13 thousand of 1969-71
+  are people who first came as tourists and then settled as potential immigrants. 
+### 8f. The 1,410 immigrants of other religions in 1957 (24 Oct)
+
+- [V] SA14 Table 2, page 17 (PDF 46), "Others" (non-Jews), 1957: immigrants 1,367, against 14 to 71 in each year of
+  1952-1956, 174 in 1958, 58 in 1959 and 157 in 1960 (315 in 1950 is the next largest of the table). Derived: 1,367 immigrants + 43 tourists settling
+  = 1,410, the other-religion count of 1c (the Jewish tourists settling were 1,491; 1,491 + 43 = 1,534 = 72,634 - 71,100,
+  where 71,100 is the "immigrants" of the table for all groups).
+- Who they were: no CBS table read says. The Polish repatriation of 1956-58 (the "Gomulka aliyah", Wikipedia) is the same
+  years, but nothing read ties the 1,367 to it. [GAP] for who they were. [S] lead only.
+
+### 8g. Morocco 1961-1964 alone and Romania by year (24 Oct)
+
+- Searched: the table lists of SA No. 8 to No. 29 (1957 to 1978 editions). Until 1964 the Abstracts print country of birth
+  only cumulatively (SA No. 10, Table 6, page 63: 15 V 1948 to 1958, "Tunisia, Algeria, Morocco & Libya" together) or
+  for the population by period of immigration, which counts survivors, not arrivals (SA14 Table 23; SA No. 13 Table
+  18). From SA24 (1973) the tables give country of birth for 1969-1971 and 1972, with Morocco, Algeria, Tunisia, Libya
+  and Rumania printed as "..". A yearly Moroccan or Romanian series for 1961-1964 is not in the volumes read.
+- [S] The page "Data on immigration to Israel from Morocco" on moroccanjews.org, under "Jewish emigration from Morocco"
+  (opened 2026-10-24; the full URL is not written out because the repo's home-path check rejects its first path segment)
+  lists Moroccan immigrants by year and attributes them to the "Jewish Agency", with no table or page:
+  1957 8,578; 1958 1,803; 1959 3,325; 1960 4,108; 1961 11,476; 1962 35,748; 1963 36,874 (1948/49-1963 total 210,347).
+  Derived: 1961 + 1962 + 1963 = 84,098. It has nothing for 1964. A lead, not a source: not used for the rows, and no
+  figure here is preferred.
+- Morocco 1961-1964 alone and Romania by year stay [GAP]. The period figures of 2b and 2c stand.
+
+### 8h. What is still [GAP] after the second pass (24 Oct)
+
+- The Jewish-only continent split for 1959-1969 by four continents, and for 1971-1977 at all (8a).
+- A CBS yearly figure for the Soviet arrivals of 1969 alone (8b).
+- Who the 1,367 non-Jewish immigrants of 1957 were (8f).
+- Moroccan arrivals for 1961-1964 alone; Romanian arrivals by year (8g).
+- Emigration for 1958 on the four-year series (it starts in 1959), and any figure for 1976-1977 that is not an estimate in
+  brackets (8c).
+- The introduction that explains the 1972-74 revision of the sources-of-growth table (8d); Sicron and Sabatello (not
+  reachable, as before).
