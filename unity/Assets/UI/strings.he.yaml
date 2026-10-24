@@ -545,7 +545,7 @@ unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף �
 # Hebrew drafts: agent-checked; native review pending (#564).
 unit.order.send_home: "שליחה הביתה"
 unit.send_home_queued: "ניתנה פקודת שליחה הביתה: היחידה תחזור הביתה בסיום התור"
-# Reinforce (#1510, R-TRAIN-004). Agent-drafted, awaiting a native read.
+# Reinforce (#1510, R-TRAIN-004). Approved by Beri, a native speaker, on #564 (24 Oct 2026).
 unit.order.reinforce: "תגבור +{0}"
 unit.reinforce_queued: "ניתנה פקודת תגבור: כוח ההשלמה יתחיל באימון בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
@@ -600,6 +600,13 @@ city.groups: "{0} קבוצות"
 city.turns_one: "תור אחד"
 city.turns: "{0} תורות"
 city.cancel_ordered: "הביטול הוזמן"
+# Return and Reassign (#1511). "שיבוץ" is a first placement, "שיבוץ מחדש" is for people who were placed before.
+# Approved by Beri, a native speaker, on #1540 (24 Oct 2026).
+city.return_craftsmen: "החזרת בעלי מלאכה לחיים אזרחיים: קבוצה אחת"
+city.reassign_craftsmen: "שיבוץ מחדש של בעלי מלאכה: 1 מתוך {0}"
+city.reassign_halutz: "שיבוץ מחדש של חלוצים: 1 מתוך {0}"
+city.reassign_veteran_halutz: "שיבוץ מחדש של חלוצים ותיקים: 1 מתוך {0}"
+pioneer.return: "החזרת {0} לחיים אזרחיים"
 # City projects on the chosen hex (#1122). The kind names come from content/projects.yaml name_he, nouns ("מעברה"), so
 # every sentence takes them as nouns; "הקמת" keeps the order line's gender neutral. The resource id in no_resource has no
 # Hebrew name yet (no content kind requires one). For the native reviewer (#564).
