@@ -18,7 +18,7 @@ The [admission receipt](generated-buildings-props-admission.json) identifies eve
 |11 crates|2126|Editor-only; no sourced map role|
 |12 wall|2146|Editor-only; no sourced map role|
 
-Mesh and animation import compression are Off. Every source clip is kept; all eleven provider GLBs contain zero clips and zero skins. Texture import is uncompressed, Crunch is off for every platform, and max size is 4096, matching the source. There are no `-near`/`-far` files or new generated LODs. Existing main catalog entries, placements and 54 baked mesh sub-assets are unchanged.
+Mesh and animation import compression are Off. Every source clip is kept; all eleven provider GLBs contain zero clips and zero skins. Texture import is Compressed (GPU block compression, per the owner's 24 October 2026 ruling), Crunch is off for every platform, and max size is 4096, matching the source. There are no `-near`/`-far` files or new generated LODs. Existing main catalog entries, placements and 54 baked mesh sub-assets are unchanged.
 
 ## Loading and placement dependency
 

@@ -42,7 +42,7 @@ namespace Statecraft.Game.EditorTools
                     throw new InvalidOperationException("Lossless mesh/animation import required: " + Ids[i]);
                 var texture = material.mainTexture;
                 var ti = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture)) as TextureImporter;
-                if (texture == null || ti == null || ti.crunchedCompression || ti.textureCompression != TextureImporterCompression.Uncompressed || ti.maxTextureSize < 4096)
+                if (texture == null || ti == null || ti.crunchedCompression || ti.textureCompression != TextureImporterCompression.Compressed || ti.maxTextureSize < 4096)
                     throw new InvalidOperationException("Exact original full-size colour map required: " + Ids[i]);
                 var go = UnityEngine.Object.Instantiate(source);
                 foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;

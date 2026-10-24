@@ -9,7 +9,7 @@
   ],
   "mesh_import_compression": "Off",
   "animation_import_compression": "Off; all source clips kept (0 for all 11 static sources)",
-  "texture_import": "Uncompressed, no Crunch, max 4096",
+  "texture_import": "Compressed, no Crunch, max 4096",
   "new_generated_lods": 0,
   "campaign_activation": "held for streaming dependency and art/sensitivity sign-off",
   "known_defective_originals": [

@@ -57,7 +57,7 @@ public class Generated1948AssetTests
             Assert.AreEqual(receipt.embedded_dimensions[1], texture.height, receipt.id);
             var ti = (TextureImporter)AssetImporter.GetAtPath(image);
             Assert.IsFalse(ti.crunchedCompression, image);
-            Assert.AreEqual(TextureImporterCompression.Uncompressed, ti.textureCompression, image);
+            Assert.AreEqual(TextureImporterCompression.Compressed, ti.textureCompression, image);
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + receipt.id + ".prefab"));
         }
