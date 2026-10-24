@@ -70,6 +70,10 @@ namespace Statecraft.Game.UI
         FirstTurnGuidePresenter? guide;
         /// <summary>Tests: the first-turn guide of the last Begin.</summary>
         internal FirstTurnGuidePresenter? Guide => guide;
+        AdvisorPresenter? advisor;
+        /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
+        internal AdvisorPresenter? Advisor => advisor;
+        internal AdvisorSession? AdvisorSession { get; private set; }
         FeedbackPresenter? feedback;
         SharePresenter? share;
         InfoPanelPresenter? info;
@@ -297,7 +301,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape();
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.Escape() == true;
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -465,7 +469,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) firstTurn?.NewGame();
+                    if (!shown && start?.Resumed == false) { firstTurn?.NewGame(); advisor?.NewGame(); }
                 }, recording, text));
                 start.Show();
             }
@@ -513,6 +517,18 @@ namespace Statecraft.Game.UI
             guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
                 card, showCity, () => nav?.Close(), bridge, keepSelection, showUnit));
             if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
+            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
+            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
+            // where the guide does: the start screen shows and a settings file remembers what was seen.
+            if (keep == null || AdvisorSession == null)
+            {
+                bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
+                // As the guide's: no settings file for an automated run, which then never reads or writes the player's.
+                AdvisorSession = new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
+            }
+            advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
+                new AdvisorHooks { Card = card, OpenScreen = s => nav?.Open(s) }));
+            if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             DiagLog.BootPhase("screens ready");
@@ -625,7 +641,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -768,7 +784,8 @@ namespace Statecraft.Game.UI
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
+            // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).

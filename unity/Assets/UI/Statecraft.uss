@@ -577,6 +577,33 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* How to play's button that opens the guide again: under the lines, never squeezed by them. */
 .how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
 .lang-he .how-to-play-guide { align-self: flex-end; }
+/* The advisors' popup (spec 7.1, AdvisorPresenter): placed in code in the free upper part of the right column (AdvisorLayout),
+   400 px wide; not modal, so the layer takes no pointer. It slides 16 px in from the right while it fades in (0.25 s) and
+   fades out (0.15 s): ScreenNav's opening and closing classes, with a slide instead of the screens' scale (spec 16). */
+.advisor-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.advisor-open .advisor-layer { display: flex; }
+.advisor-popup {
+    position: absolute; width: 400px; padding: 12px 14px 8px 14px; background-color: var(--navy-solid); border-color: var(--gold);
+    transition-property: translate, opacity; transition-duration: 0.25s, 0.25s; transition-timing-function: ease-out, ease-out;
+}
+.advisor-popup.window-opening { translate: 16px 0; opacity: 0; transition-duration: 0s, 0s; }
+.advisor-popup.window-closing { opacity: 0; transition-property: opacity; transition-duration: 0.15s; }
+.advisor-popup.advisor-critical { border-color: var(--down); border-width: 2px; }
+.advisor-head { align-items: flex-start; }
+.advisor-portrait { width: 96px; height: 120px; flex-shrink: 0; margin-right: 10px; border-width: 1px; border-color: var(--gold); background-size: cover; }
+.lang-he .advisor-portrait { margin-right: 0; margin-left: 10px; }
+.advisor-no-portrait .advisor-portrait { display: none; }
+.advisor-names { flex-grow: 1; flex-shrink: 1; }
+.advisor-name { color: var(--gold-light); font-size: 24px; white-space: normal; }
+.advisor-role { font-size: 15px; letter-spacing: 2px; }
+.advisor-close { min-width: 44px; min-height: 44px; -unity-text-align: middle-center; }
+.advisor-body { flex-shrink: 1; min-height: 0; }
+.advisor-text { white-space: normal; font-size: 22px; margin: 6px 0 8px 0; }
+.advisor-actions { flex-wrap: wrap; }
+.advisor-got-it { margin-left: auto; }
+.lang-he .advisor-got-it { margin-left: 0; margin-right: auto; }
+.advisor-count { font-size: 15px; -unity-text-align: middle-right; }
+.lang-he .advisor-count { -unity-text-align: middle-left; }
 /* "Report a bug or idea" (#1169, FeedbackPresenter): the same backdrop over everything, the start screen too; each GitHub
    choice with the lines its form opens with under it, wrapped (a user agent is long). */
 .feedback-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.6); padding: 16px; }

@@ -93,6 +93,22 @@ guide.event.title: "An event card"
 guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
 guide.objectives.title: "Objectives"
 guide.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
+# The advisors (spec 3.1 and 7.1; AdvisorPresenter). Their names as the popup shows them: Golda Meyerson's first appearance
+# in a profile adds "(later Meir)" (owner, 23 October 2026). "Advisor" is a game role, not an office they held.
+advisor.ben_gurion.name: "David Ben-Gurion"
+advisor.meyerson.name_first: "Golda Meyerson (later Meir)"
+advisor.meyerson.name: "Golda Meyerson"
+advisor.dayan.name: "Moshe Dayan"
+advisor.ben_gurion.role: "Advisor"
+advisor.meyerson.role: "Advisor"
+advisor.dayan.role: "Advisor"
+advisor.show_me: "Show me"
+advisor.more: "Tell me more"
+advisor.not_now: "Not now"
+advisor.got_it: "Got it"
+advisor.close: "X"
+# {0} this message's place this turn, {1} how many can show this turn.
+advisor.count: "{0} of {1}"
 # The Settings screen (#40): its title, the tilt-shift option and the button that says what is set.
 settings.title: "Settings"
 settings.tiltshift: "Blur at the top and bottom of the map"

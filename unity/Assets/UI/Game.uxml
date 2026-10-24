@@ -470,6 +470,32 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <!-- The advisors' popup (spec 7.1, AdvisorPresenter): the right column's upper part, or a sheet under the bar on an
+             upright phone, placed in code (AdvisorLayout). Not modal: the layer takes no pointer outside the popup. It
+             hides under every modal layer (ScreenNav.DisableCovered calls the presenter). -->
+        <ui:VisualElement name="advisor-layer" class="advisor-layer" picking-mode="Ignore">
+            <ui:VisualElement name="advisor-popup" class="panel advisor-popup">
+                <ui:VisualElement class="row advisor-head">
+                    <ui:VisualElement name="advisor-portrait" class="advisor-portrait" />
+                    <ui:VisualElement class="advisor-names">
+                        <ui:Label name="advisor-name" class="title advisor-name" />
+                        <ui:Label name="advisor-role" class="muted advisor-role" />
+                    </ui:VisualElement>
+                    <ui:Button name="advisor-close" class="advisor-close" />
+                </ui:VisualElement>
+                <ui:ScrollView name="advisor-body" class="advisor-body">
+                    <ui:Label name="advisor-text" class="advisor-text" />
+                </ui:ScrollView>
+                <ui:VisualElement class="row advisor-actions">
+                    <ui:Button name="advisor-show-me" />
+                    <ui:Button name="advisor-more" />
+                    <ui:Button name="advisor-not-now" />
+                    <ui:Button name="advisor-got-it" class="advisor-got-it" />
+                </ui:VisualElement>
+                <ui:Label name="advisor-count" class="muted advisor-count" />
+                <Statecraft.Game.UI.UiFrame filigree="true" />
+            </ui:VisualElement>
+        </ui:VisualElement>
         <!-- The turn report (#1037, TurnReportPresenter): after End Turn, each top-bar number that changed and the sim's causes.
              A backdrop over the HUD (ScreenNav.DisableCovered disables what it covers), under the outcome clips' layer. -->
         <ui:VisualElement name="turn-report" class="turn-report">

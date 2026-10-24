@@ -78,6 +78,9 @@ namespace Statecraft.Game.UI
                 over.SetEnabled(now);
                 if (!was && now) (over.userData as System.Action)?.Invoke();   // EndScreenPresenter: Close takes the focus
             }
+            // The advisors' popup (spec 4.2) hides under every layer above and comes back when they close: every layer calls
+            // this method when its class changes, so the popup needs no class of its own here.
+            (r.Q(AdvisorPresenter.LayerName)?.userData as System.Action)?.Invoke();
         }
 
         /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen, a
