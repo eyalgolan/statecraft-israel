@@ -1,0 +1,11 @@
+# Events (ro) for tools/translate.py. The English in content/ and unity/Assets/UI/ is the source of record.
+# The game does not read this file yet. Same rules as the Hebrew (docs/WRITING_EVENTS.md): an event is all or none,
+# placeholders match the English, one line each; review: agent-checked until a native speaker has read it (#564).
+# The tool rewrites this file: comments other than this header are not kept.
+first_truce:
+  title: "Primul Armistiţiu"
+  text: "Consiliul de Securitate a cerut o încetare a focului de patru săptămâni, supervizată de mediatorul ONU, contele Folke Bernadotte. Niciuna dintre părți nu are voie să introducă combatanți sau material de război în Palestina ori în statele arabe, iar Consiliul a avertizat că va recurge la măsuri prevăzute în Capitolul VII dacă acești termeni vor fi încălcați. {prime_minister} trebuie să decidă dacă Israelul acceptă."
+  options:
+    accept: "Acceptă armistițiul începând la 11 Iunie"
+    refuse: "Refuză armistițiul și continua lupta"
+  review: "agent-checked"
