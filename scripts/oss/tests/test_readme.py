@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[3]
 CONCEPT = "docs/images/hero-concept-1936.jpg"
@@ -14,7 +15,7 @@ def read(rel: str) -> str:
 
 def images(text: str) -> list[str]:
     return [a or b for a, b in re.findall(r'<img src="([^"]+)"|!\[[^\]]*\]\(([^)]+)\)', text)
-            if not (a or b).startswith("https://img.shields.io")]
+            if urlparse(a or b).hostname != "img.shields.io"]
 
 
 def section(text: str, heading: str) -> str:
