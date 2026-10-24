@@ -80,7 +80,7 @@ public class FinalWaveTests
     [Fact]
     public void AShareableBuildNeedsEveryAlternateCardSignedOff()
     {
-        Assert.Empty(ReleaseGate.AlternateUnsigned(Real));
+        Assert.Equal(new[] { "jerusalem_demilitarisation_guard", "rafah_force_pressure" }, ReleaseGate.AlternateUnsigned(Real));
         var c = AlternateTimelineTests.Load(("parent.yaml", AlternateTimelineTests.Parent), ("after_road.yaml", AlternateTimelineTests.Consequence), ("outside.yaml", AlternateTimelineTests.Outside));
         Assert.Equal(new[] { "after_road", "outside" }, ReleaseGate.AlternateUnsigned(c));
         var signed = AlternateTimelineTests.Consequence + "status: fact-checked\nreviewed_by: a-reviewer\nreviewed_on: 2026-10-20\n";

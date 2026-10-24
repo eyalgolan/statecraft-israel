@@ -432,6 +432,76 @@ options:
 
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
+    // Task 12, #939: exact cards accepted by the owner in comment 6372987388 (23 October 2026).
+    public static IEnumerable<object[]> SliceOneCards()
+    {
+        yield return new object[] { "jerusalem_demilitarisation_guard", "jerusalem_military_government", "accept_demilitarisation", "1948-08-15" };
+        yield return new object[] { "rafah_force_pressure", "sinai_withdrawal", "hold_el_arish", "1949-02-15" };
+    }
+
+    // R-ALT-005, R-ALT-008, R-ALT-012
+    [Theory]
+    [MemberData(nameof(SliceOneCards))]
+    public void ASliceOneCardComesOnItsRoad(string card, string parent, string option, string turn)
+    {
+        var run = AltRun.Play(Real, new Dictionary<string, string> { [parent] = option });
+        var first = run.FirstOrDefault(s => s.FiredEvents.Contains(card));
+        Assert.NotNull(first);
+        Assert.Equal(DateTime.Parse(turn, System.Globalization.CultureInfo.InvariantCulture), first!.Date);
+        Assert.DoesNotContain(card, GoldenRun.PlayToEnd(Real).FiredEvents);
+    }
+
+    // R-ALT-003, R-ALT-009: no extra resource delta, invented advocate or refund of the parent's effects.
+    [Theory]
+    [InlineData("jerusalem_demilitarisation_guard", "jerusalem_military_government", "continue_demilitarisation", "return_military_government", "1948-08-04", "1948-10-04")]
+    [InlineData("rafah_force_pressure", "sinai_withdrawal", "keep_rafah_force", "complete_pullback", "1949-01-17", "1949-03-17")]
+    public void TheAcceptedSliceOneChoicesHaveNoNumericDeltaAndRejoinOnlyTheirParent(
+        string card, string parent, string stay, string rejoin, string from, string to)
+    {
+        var e = Assert.Single(Real.Events, e => e.Id == card);
+        Assert.Equal(DateTime.Parse(from, System.Globalization.CultureInfo.InvariantCulture), e.From);
+        Assert.Equal(DateTime.Parse(to, System.Globalization.CultureInfo.InvariantCulture), e.To);
+        Assert.Equal(new[] { stay, rejoin }, e.Options.Select(o => o.Id));
+        Assert.All(e.Options, o =>
+        {
+            Assert.Empty(o.Effects);
+            Assert.NotNull(o.Alternative);
+            Assert.Equal("design", o.Alternative!.Basis);
+            Assert.Empty(o.Alternative.By);
+            Assert.Null(o.Alternative.Date);
+            Assert.False(o.Historical);
+            Assert.False(o.Recommended);
+        });
+        Assert.Empty(e.Options.Single(o => o.Id == stay).Rejoin);
+        Assert.Equal(parent, e.Options.Single(o => o.Id == rejoin).Rejoin);
+    }
+
+    // Task 12's fail-open check, R-ALT-005 and R-ALT-009: mutate a disposable copy, never the real content.
+    [Theory]
+    [InlineData("jerusalem_demilitarisation_guard", "jerusalem_military_government", "accept_demilitarisation")]
+    [InlineData("rafah_force_pressure", "sinai_withdrawal", "hold_el_arish")]
+    public void ARealSliceOneCardCannotFollowItsParentsHistoricalOption(string card, string parent, string road)
+    {
+        var source = RealContentTests.ContentRoot();
+        var copy = Fixture.Write();
+        foreach (var file in System.IO.Directory.EnumerateFiles(source, "*", System.IO.SearchOption.AllDirectories))
+        {
+            var destination = System.IO.Path.Combine(copy, System.IO.Path.GetRelativePath(source, file));
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(destination)!);
+            System.IO.File.Copy(file, destination, overwrite: true);
+        }
+        ContentLoader.Load(copy); // The unmodified copy must be valid before testing a refusal.
+        var historical = Assert.Single(Real.Events, e => e.Id == parent).Options.Single(o => o.Historical).Id;
+        var path = System.IO.Path.Combine(copy, "events", card + ".yaml");
+        var yaml = System.IO.File.ReadAllText(path);
+        Assert.Contains("option: " + road, yaml);
+        System.IO.File.WriteAllText(path, yaml.Replace("option: " + road, "option: " + historical));
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(copy));
+        Assert.Equal("events/" + card + ".yaml", ex.File);
+        Assert.StartsWith("events[" + card + "].", ex.Field);
+        Assert.Contains("road", ex.Message);
+    }
+
     // R-ALT-012
     [Fact]
     public void TheHistoricalRunRaisesNoConsequenceCard()
@@ -594,8 +664,8 @@ variants:
     }
 
     /// <summary>Review focus 2: every consequence card in content/ fires in a run that takes its road (and, for a second
-    /// card, the first card's option too), with the reference player's orders everywhere else. Until a content slice adds
-    /// one, there is none; AltRunWalksTheRoadBack pins the helper on fixtures.</summary>
+    /// card, the first card's option too), with the reference player's orders everywhere else.
+    /// AltRunWalksTheRoadBack also pins the helper on fixtures.</summary>
     [Fact]
     public void EveryConsequenceCardFiresWhenItsRoadIsTaken()
     {

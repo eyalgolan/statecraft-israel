@@ -10,6 +10,7 @@ import package_release
 
 REPO = Path(package_release.REPO)
 SENSITIVE_PHOTOS = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "ten_days"]
+ALTERNATE_FIXTURE_CARDS = ("jerusalem_demilitarisation_guard", "rafah_force_pressure")
 SENSITIVE = ["altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "ten_days"]
 
 
@@ -20,10 +21,11 @@ def photo_manifest(build, reviewed=True, shareable=True):
     (build / package_release.PHOTO_MANIFEST).write_text(json.dumps({"version": 1, "shareable": shareable, "photos": photos}))
 
 
-def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
+def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True, alternates_reviewed=True):
     """A build folder with index.html, the real content copied into StreamingAssets/content and the photo manifest.
     forces_checked: the starting forces' rows in units_1948.yaml are fact-checked, as the owner's person check of
-    21 October 2026 left them (R-UNIT-006, Q-START-3; #1240); False sets every row back to draft, as before it."""
+    21 October 2026 left them (R-UNIT-006, Q-START-3; #1240); False sets every row back to draft, as before it.
+    alternates_reviewed: TEST-ONLY fictional review of the two #939 copies. No real content file is changed."""
     build = tmp_path / "Web-brotli"
     (build / "StreamingAssets").mkdir(parents=True)
     (build / "index.html").write_text("<html></html>")
@@ -38,6 +40,18 @@ def fake_build(tmp_path, reviewed, photos_reviewed=True, forces_checked=True):
     units.write_text(re.sub(r"(?m)^  status: .*$", f"  status: {forces}", units.read_text(encoding="utf-8")), encoding="utf-8")
     targets = content / "settlement_targets.yaml"   # #793's rows, as the owner's review would leave them (Q-TGT-3 (b))
     targets.write_text(re.sub(r"(?m)^    status: .*$", f"    status: {status}", targets.read_text(encoding="utf-8")), encoding="utf-8")
+    # TEST-ONLY fixture data: these two files are copies below tmp_path, never the source content.
+    # Keep positive packaging tests independent of real human sign-off and exercise unsigned copies below.
+    for event_id in ALTERNATE_FIXTURE_CARDS:
+        f = content / "events" / f"{event_id}.yaml"
+        text = f.read_text(encoding="utf-8")
+        text = re.sub(r"(?m)^reviewed_(?:by|on):[^\n]*(?:\n|$)", "", text)
+        alternate_status = "fact-checked" if alternates_reviewed else "draft"
+        text = re.sub(r"(?m)^status: .*$", f"status: {alternate_status}", text)
+        if alternates_reviewed:
+            text += ("\n# TEST-ONLY fictional review, not a person's historical or language approval.\n"
+                     "reviewed_by: package-fixture-reviewer\nreviewed_on: 2026-10-24\n")
+        f.write_text(text, encoding="utf-8")
     photo_manifest(build, reviewed=photos_reviewed)
     return build
 
@@ -61,6 +75,18 @@ def test_packaging_is_refused_until_every_starting_row_is_fact_checked(tmp_path,
     assert "PACKAGE REFUSED" in out
     for row in ("golani", "egyptian_expeditionary_force", "arab_liberation_army"):
         assert row in out
+
+
+def test_packaging_refuses_each_unsigned_consequence_copy(tmp_path, capsys):
+    # R-ALT-011: every other fake-build gate is clear; these two copied cards alone remain unsigned.
+    build = fake_build(tmp_path, reviewed=True, alternates_reviewed=False)
+    zip_path = tmp_path / "out.zip"
+    assert package_release.main(["--build", str(build), "--zip", str(zip_path)]) == 1
+    assert not zip_path.exists()
+    out = capsys.readouterr().out
+    assert "PACKAGE REFUSED" in out
+    for event_id in ALTERNATE_FIXTURE_CARDS:
+        assert event_id in out
 
 
 def test_packaging_writes_the_zip_once_all_are_reviewed(tmp_path, capsys):
