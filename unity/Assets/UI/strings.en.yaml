@@ -648,6 +648,8 @@ advisor.meyerson.food_short.text: "This turn the country needed more Food than i
 advisor.ben_gurion.defeat_war.text: "An enemy unit held one of our cities at the end of the turn, and that ends the game."
 advisor.ben_gurion.defeat_economy.text: "Three turns in a row ended with our debt at or above the ceiling and the Food stock empty, and that ends the game."
 end.outcome.defeat_war: "The enemy holds a city."
+advisor.meyerson.budget_unsubmitted.text: "The budget has changes that are not submitted. They will not apply when the turn ends until you submit the budget."
+advisor.dayan.arms_out.text: "Our Arms stock is empty. One Arms equips one recruit group."
 
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
 advisor.quote.q1.text: "“THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;”"

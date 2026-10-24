@@ -29,9 +29,9 @@ namespace Statecraft.Game.UI
     {
         public const string OpenClass = "advisor-open", LayerName = "advisor-layer", CriticalClass = "advisor-critical",
             NoPortraitClass = "advisor-no-portrait";
-        /// <summary>Statecraft.uss sizes (.advisor-name, .advisor-role, .advisor-text, Button, .advisor-count), in panel px,
+        /// <summary>Statecraft.uss sizes (.advisor-name, .advisor-role, .advisor-text, Button, .advisor-count, .advisor-quote, .advisor-quote-source), in panel px,
         /// raised where they would be under the text floor on screen (HudPresenter.FlooredTextSize).</summary>
-        public const float NamePx = 24f, RolePx = 15f, TextPx = 22f, ButtonPx = 19f, CountPx = 15f;
+        public const float NamePx = 24f, RolePx = 15f, TextPx = 22f, ButtonPx = 19f, CountPx = 15f, QuotePx = 20f, QuoteSourcePx = 15f;
         /// <summary>The fade out (Statecraft.uss .advisor-popup.window-closing), in ms.</summary>
         public const long HideMs = 150;
         public const string RingClass = "advisor-ring-open";
@@ -83,7 +83,7 @@ namespace Statecraft.Game.UI
             notNow = popup.Q<Button>("advisor-not-now"); gotIt = popup.Q<Button>("advisor-got-it"); close = popup.Q<Button>("advisor-close");
             showMe.text = text["advisor.show_me"]; more.text = text["advisor.more"]; notNow.text = text["advisor.not_now"];
             gotIt.text = text["advisor.got_it"]; close.text = text["advisor.close"];
-            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (quote, 20f), (quoteSource, 15f) };
+            floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (close, ButtonPx), (count, CountPx), (quote, QuotePx), (quoteSource, QuoteSourcePx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
             reopen = root.Q<Button>("how-to-play-guide");

@@ -16,18 +16,20 @@ namespace Statecraft.Game.UI
         public static readonly IReadOnlyCollection<string> Events = new[] { NewGame, TurnEnded, Opening, AttentionRefused, BudgetUnsubmitted, CityShown, UnitShown };
         public static readonly IReadOnlyDictionary<string, Func<AdvisorContext, bool>> States = new Dictionary<string, Func<AdvisorContext, bool>>
         {
-            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003, docs/rules/mvp.md:343-351).
+            // Spec 6's critical warnings and the defeat lines (R-END-001 to R-END-003, docs/rules/mvp.md:377-381).
             ["city_at_risk"] = ctx => Threats.CitiesAtRisk(ctx.Content, ctx.State).Count > 0,
             ["exhausted"] = ctx => ctx.State.ExhaustedTurns > 0,
             ["in_debt"] = ctx => ctx.State.Debt > 0,
             ["food_short"] = ctx => ctx.State.FoodUnmet > 0,
             ["defeat_war"] = ctx => ctx.State.GameOver == GameOverCodes.DefeatWar,
-            ["defeat_economy"] = ctx => ctx.State.GameOver == GameOverCodes.DefeatEconomy,            ["project_unlocked"] = ctx => ctx.State.UnlockedProjects.Count > 0,
+            ["defeat_economy"] = ctx => ctx.State.GameOver == GameOverCodes.DefeatEconomy,
+            ["project_unlocked"] = ctx => ctx.State.UnlockedProjects.Count > 0,
             // A halutz with no project (R-SITE-001, D-D6: one project per unit): pioneer work is waiting to be given.
             ["idle_pioneer"] = ctx => ctx.State.Units.Values.Any(u => u.Side == "" && Projects.IsPioneer(u.Type) && !Projects.IsBusy(ctx.State, u.Id)),
             ["corridor_started"] = ctx => ctx.State.Corridors.Count > 0,
             ["cabinet_vacancy"] = ctx => ctx.Bridge.Vacancies.Count > 0,
-            ["situation_active"] = ctx => ctx.State.ActiveSituations.Count > 0,            ["standing_order"] = ctx => ctx.State.Units.Values.Any(u => u.Side == Movement.PlayerSide && u.Order != ""),
+            ["situation_active"] = ctx => ctx.State.ActiveSituations.Count > 0,
+            ["standing_order"] = ctx => ctx.State.Units.Values.Any(u => u.Side == Movement.PlayerSide && u.Order != ""),
             ["combat_seen"] = ctx => ctx.Bridge.Session.Last?.Why.Any(w => w.Key == WhyKeys.Engagement) == true,
             ["arms_out"] = ctx => ctx.Content.IsGdd && ctx.State.Arms == 0,
             ["capture_waiting"] = ctx => ctx.State.Settlements.Values.Any(x => x.State == SettlementControl.AwaitingChoice),

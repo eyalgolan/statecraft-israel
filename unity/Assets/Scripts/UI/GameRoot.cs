@@ -288,15 +288,18 @@ namespace Statecraft.Game.UI
             Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
             Own(new ObjectivesPresenter(root, bridge, text));
-            // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
-            // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
-            // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
+            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
+            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
+            // where the guide does: the start screen shows and a settings file remembers what was seen. Made before
+            // Settings, whose help-level row (spec 6) reads and sets the session's level.
             if (keep == null || AdvisorSession == null)
             {
                 bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
-                // Final S1 store isolation; initialize once before Settings uses the advisor level.
                 AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
             }
+            // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
+            // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
+            // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
             Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
@@ -537,9 +540,7 @@ namespace Statecraft.Game.UI
             guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
                 card, showCity, () => nav?.Close(), bridge, keepSelection, showUnit));
             if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
-            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
-            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
-            // where the guide does: the start screen shows and a settings file remembers what was seen.
+            // The advisors' popup, over the session made before Settings (above).
             advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
                 new AdvisorHooks
                 {

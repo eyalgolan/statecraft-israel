@@ -696,6 +696,8 @@ advisor.meyerson.food_short.text: "בתור הזה המדינה נזקקה לי�
 advisor.ben_gurion.defeat_war.text: "יחידת אויב החזיקה באחת מהערים שלנו בסוף התור, וזה מסיים את המשחק."
 advisor.ben_gurion.defeat_economy.text: "שלושה תורות ברציפות הסתיימו כשהחוב שלנו בתקרה או מעליה ומלאי המזון ריק, וזה מסיים את המשחק."
 end.outcome.defeat_war: "האויב מחזיק בעיר."
+advisor.meyerson.budget_unsubmitted.text: "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב."
+advisor.dayan.arms_out.text: "מלאי הנשק שלנו ריק. יחידת נשק אחת מציידת קבוצת מגויסים אחת."
 
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
 advisor.quote.q1.text: "«מדינת ישראל תהא פתוחה לעליה יהודית ולקיבוץ גלויות;»"

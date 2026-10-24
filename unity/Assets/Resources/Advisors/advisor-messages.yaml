@@ -29,5 +29,8 @@ messages:
   - { id: meyerson.food_short, advisor: meyerson, signal: food_short, level: warnings, he_review: pending, priority: 2, repeat: every, cooldown_turns: 2 }
   - { id: ben_gurion.defeat_war, advisor: ben_gurion, signal: defeat_war, level: warnings, he_review: pending }
   - { id: ben_gurion.defeat_economy, advisor: ben_gurion, signal: defeat_economy, level: warnings, he_review: pending }
+# Tasks 18 and 20's two warnings that need no encyclopedia page; the teaching rows wait for S3 (#1519).
+  - { id: meyerson.budget_unsubmitted, advisor: meyerson, signal: budget_unsubmitted, level: warnings, he_review: pending, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
+  - { id: dayan.arms_out, advisor: dayan, signal: arms_out, level: warnings, he_review: pending, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }] }
 
 pages: []
