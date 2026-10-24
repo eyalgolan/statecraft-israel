@@ -378,7 +378,9 @@ people:
     portrait: { file: promo/ref/people/Bechor-Shalom_Sheetrit.jpg, license: Public domain, source: "https://commons.wikimedia.org/wiki/File:Bechor-Shalom_Shitreet.jpg", focus_y: 0.18 }
     offices:
       - { office: police_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
-      - { office: minority_affairs_minister, from: 1948-05-14, to: 1949-03-10, sources: *prov }
+      # Held to the ministry's dissolution, 13 June 1949 (owner ruling, 24 Oct 2026, #1534: the working ministry, not the
+      # cabinet roster): he.wiki "משרד המיעוטים", citing the Ma'ariv item of that day, "משרד המיעוטים פורק היום רשמית".
+      - { office: minority_affairs_minister, from: 1948-05-14, to: 1949-06-13, sources: [*gov0_k, { url: "https://he.wikipedia.org/wiki/משרד_המיעוטים", checked: 2026-10-24 }] }
       - { office: police_minister, from: 1949-03-10, to: 1950-11-01, sources: *first }
       # Second Knesset from 20 August 1951: Mapai faction (Knesset faction records, row 25992); to then, the Sephardim
       # list (row 25845), his person party. Issue #457.

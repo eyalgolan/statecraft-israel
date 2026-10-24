@@ -27,6 +27,7 @@ attention_cost:
   move: 0                                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   buy_arms: 1                            # DESIGN VALUE: owner-set balance, not a historical figure (D-A6, D-G6, #781: one order, whatever the quantity)
   resolve_capture: 0                     # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; Q-TECH-3: one key, so Raid, Occupy and Deport cost the same; proposed on #797)
+  end_occupation: 0                      # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; R-CTRL-014: one key for Annex and Withdraw, as resolve_capture; proposed on #799)
 # Turn length on each security rung, rungs 1 to 5 (R-TURN-001). The GDD MVP plays monthly turns on every rung (D-B1), so
 # turns from 15 May 1948 end on the 15th of each month.
 turn_lengths: [month, month, month, month, month]

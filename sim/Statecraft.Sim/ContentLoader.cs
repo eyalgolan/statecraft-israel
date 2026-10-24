@@ -59,6 +59,8 @@ namespace Statecraft.Sim
         public const string SettlementsFileName = "map/settlements_1948.yaml";
         public const string MapLocationsFileName = "map/locations_1948.yaml";
         public const string SettlementTargetsFileName = "settlement_targets.yaml";
+        /// <summary>The two values of a target row's <c>residents</c> (R-CTRL-016).</summary>
+        public const string Fled = "fled", Stayed = "stayed";
         /// <summary>The settlements_1948.yaml row type a settlement target must have (Q-TGT-1 (a)).</summary>
         public const string ArabTown = "arab_town";
 
@@ -1662,8 +1664,37 @@ namespace Statecraft.Sim
                     if (!Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || source.Checked == default)
                         throw new ContentException(SettlementTargetsFileName, at + $".sources[{i}]", "needs an https url and a checked date");
                 }
+                ValidateResidents(x, at);
                 Status(SettlementTargetsFileName, at + ".status", x.Status);
             }
+        }
+
+        /// <summary>R-CTRL-016 (Q-ANNEX-1; OWNER QUESTION 1 (a) on #799): a target's residents are fled or stayed, with at least
+        /// one source; only a stayed row has an annexation block, whose people are a sourced whole number and whose employed
+        /// share is from 0 to 1, each checked as a cities.yaml value.</summary>
+        static void ValidateResidents(SettlementTarget x, string at)
+        {
+            const string f = SettlementTargetsFileName;
+            if (x.Residents != Fled && x.Residents != Stayed)
+                throw new ContentException(f, at + ".residents", $"must be {Fled} or {Stayed}, not '{x.Residents}'");
+            if (x.ResidentsSources.Count == 0) throw new ContentException(f, at + ".residents_sources", "needs at least one source");
+            for (int i = 0; i < x.ResidentsSources.Count; i++)
+            {
+                var source = x.ResidentsSources[i];
+                if (source == null || !Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || source.Checked == default)
+                    throw new ContentException(f, at + $".residents_sources[{i}]", "needs an https url and a checked date");
+            }
+            if (x.Residents == Fled)
+            {
+                if (x.Annexation != null) throw new ContentException(f, at + ".annexation", "a fled place adds nothing on annexation, so it has no annexation block");
+                return;
+            }
+            if (x.Annexation == null) throw new ContentException(f, at + ".annexation", "required for a stayed place");
+            var people = CityValueOf(f, at + ".annexation.people", x.Annexation.People);
+            Whole(f, at + ".annexation.people", people);
+            if (people.Status != "sourced") throw new ContentException(f, at + ".annexation.people.status", "must be sourced: a resident count is a fact the owner approves");
+            var share = CityValueOf(f, at + ".annexation.employed_share", x.Annexation.EmployedShare);
+            if (share.Value < 0 || share.Value > 1) throw new ContentException(f, at + ".annexation.employed_share.value", "must be a number from 0 to 1");
         }
     }
 }

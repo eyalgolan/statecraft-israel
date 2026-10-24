@@ -13,7 +13,8 @@ CI cannot run Unity (CONTRIBUTING.md, "What CI runs"), so two PRs can each be gr
    except unity/Library and the Unity-MCP NuGet download). The first run APFS-clones the main checkout's Library.
    launchd starts tools/unity_postmerge_launch.py, which moves this worktree to origin/main and runs this script from
    it, so a merged change to the script takes effect on the next run.
-3. builds the sim DLLs (tools/build_sim_for_unity.py), then runs the full EditMode suite through
+3. builds the sim DLLs (tools/build_sim_for_unity.py), then the Unity-MCP warm-up launch (UnityMcpGuard.WarmUp; a
+   failed warm-up is a broken run and the tests do not start), then runs the full EditMode suite through
    `machine_lock.py --shared --wait-unity --timeout 14400`, never with -nographics, and afterwards reverts
    unity/ProjectSettings and unity/Assets/Settings (also on an exception). A Unity still running after
    --unity-timeout-min (90) minutes, counted from its start, is stopped by the PID machine_lock recorded for it
@@ -74,6 +75,9 @@ MAX_FAILURES = 50
 MAX_MESSAGE = 500
 # Kept between runs: Unity's import cache, and the Unity-MCP plugin's NuGet download (it fetches it on first open).
 KEEP = ("/unity/Library/", "/unity/Assets/Plugins/NuGet/", "/unity/Assets/Plugins/NuGet.meta")
+# The launch before the tests that leaves the Unity-MCP plugin's gate defines in ProjectSettings, so the test launch
+# compiles and loads the plugin (CONTRIBUTING.md); the defines are reverted after every run, so it runs every time.
+WARM_UP = "Statecraft.Game.EditorTools.UnityMcpGuard.WarmUp"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 # No result (PASS or FAIL) for main's tip this long after the commit means the job is stuck or failing quietly: the
 # longest legitimate run is the lock wait (LOCK_TIMEOUT), Unity (UNITY_TIMEOUT_MIN) and 30 min for the poll and build.
@@ -289,11 +293,19 @@ def unity_path(version: str) -> str:
     return f"/Applications/Unity/Hub/Editor/{version}/Unity.app/Contents/MacOS/Unity"
 
 
-def unity_command(wt: Path, version: str, xml: Path, log: Path) -> list[str]:
+def _unity(wt: Path, version: str) -> list[str]:
     return ["uv", "run", str(TOOLS / "machine_lock.py"), "--shared", "--wait-unity", "--timeout", str(LOCK_TIMEOUT),
             "--", unity_path(version), "-batchmode", "-CI", "false", "-GITHUB_ACTIONS", "false", "-TF_BUILD", "false",
-            "-projectPath", str(wt / "unity"), "-buildTarget", "OSXUniversal", "-runTests", "-testPlatform", "EditMode",
-            "-testResults", str(xml), "-logFile", str(log)]
+            "-projectPath", str(wt / "unity"), "-buildTarget", "OSXUniversal"]
+
+
+def warmup_command(wt: Path, version: str, log: Path) -> list[str]:
+    # No -quit: the warm-up exits by itself once the plugin's resolver has run (UnityMcpGuard.WarmUp).
+    return _unity(wt, version) + ["-executeMethod", WARM_UP, "-logFile", str(log)]
+
+
+def unity_command(wt: Path, version: str, xml: Path, log: Path) -> list[str]:
+    return _unity(wt, version) + ["-runTests", "-testPlatform", "EditMode", "-testResults", str(xml), "-logFile", str(log)]
 
 
 def fill_plist(text: str, *, uv: str, repo: str, home: str, path: str) -> str:
@@ -402,6 +414,7 @@ def tidy(wt: Path, runs: Path, cap_bytes: int) -> str:
 
 def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path, timeout_min: float) -> tuple[Results, int, str]:
     xml, log, build_log = run_dir / "editmode.xml", run_dir / "unity.log", run_dir / "build-sim.log"
+    warm_log = run_dir / "warmup.log"
     try:
         prepare_worktree(repo, wt, sha)
     except (subprocess.CalledProcessError, RuntimeError) as e:
@@ -418,8 +431,12 @@ def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path, timeout_min: float)
         return Results(broken=f"Unity {version} (unity/ProjectSettings/ProjectVersion.txt) is not installed"), -1, ""
     try:
         with open(run_dir / "machine-lock.log", "w") as f:
-            code, stopped = run_with_timeout(unity_command(wt, version, xml, log), run_dir / "lock-holder", cwd=wt,
+            warm, stopped = run_with_timeout(warmup_command(wt, version, warm_log), run_dir / "lock-holder", cwd=wt,
                                              stdout=f, timeout=timeout_min * 60, grace=UNITY_GRACE)
+            code = warm
+            if warm == 0 and stopped is None:
+                code, stopped = run_with_timeout(unity_command(wt, version, xml, log), run_dir / "lock-holder", cwd=wt,
+                                                 stdout=f, timeout=timeout_min * 60, grace=UNITY_GRACE)
     finally:
         subprocess.run(["git", "checkout", "--", "unity/ProjectSettings", "unity/Assets/Settings"], cwd=wt,
                        capture_output=True)
@@ -429,6 +446,9 @@ def run_suite(repo: Path, wt: Path, sha: str, run_dir: Path, timeout_min: float)
     if code == 3 and not log.is_file():
         lock_text = (run_dir / "machine-lock.log").read_text(errors="replace")
         return Results(broken=f"machine_lock timed out after {LOCK_TIMEOUT} s waiting for Unity"), code, lock_text
+    if warm != 0:
+        warm_text = warm_log.read_text(errors="replace") if warm_log.is_file() else ""
+        return Results(broken=f"the Unity-MCP warm-up launch failed (exit {warm})"), warm, warm_text
     return parse_results(xml), code, text
 
 
