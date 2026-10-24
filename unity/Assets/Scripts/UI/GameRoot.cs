@@ -506,14 +506,17 @@ namespace Statecraft.Game.UI
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
                 var shownUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                // It reads the UI of the Begin it runs in, so after a language switch rebuilt the UI it still puts back what
+                // the advisor found before (AdvisorSession.ChainState.PutBack).
                 return () =>
                 {
+                    if (this.info is not { } nowInfo || this.units is not { } nowUnits) return;
                     // Under a screen, or the player picked another than the advisor's city or unit: kept.
-                    if (info.Covered || (info.ShowsUnit ? unitLayer.Selected != shownUnit : info.Selected != city)) return;
-                    unitLayer.Select(unit);
-                    if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
-                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
-                    else { map.ClearSelection(); info.Clear(); }
+                    if (nowInfo.Covered || (nowInfo.ShowsUnit ? nowUnits.Selected != shownUnit : nowInfo.Selected != city)) return;
+                    nowUnits.Select(unit);
+                    if (nowUnits.Selected != null) { map.ClearSelection(); nowInfo.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); nowInfo.Show(q, r); }
+                    else { map.ClearSelection(); nowInfo.Clear(); }
                 };
             };
             // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
