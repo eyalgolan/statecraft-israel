@@ -1,9 +1,15 @@
 # Immigration, emigration and population, 1977-1993
 
-Researched 23 October 2026. Every URL below was opened on that date. Research note for issue #147 (1977-93, the
+Researched 23 October 2026. Every URL below not marked "(opened 24 Oct)" was opened on 23 October. Research note for issue #147 (1977-93, the
 research part only, opened by the owner's ruling of 22 October 2026 on #49). Research only: nothing here is drafted
 for the game, and no file in `content/` is changed. The `aliyah.yaml` rows, #102's emigration rows and the calibration
 checkpoints stay paused.
+
+Gaps revisited 24 October 2026, after the owner's "Research part open" comment on #147 of that day. Every source added
+on 24 October was opened that day and is marked "(opened 24 Oct)" in the Sources table. Of the five rows the owner
+listed, two are closed (1c-bis, and the Ethiopia yearly arrivals series inside 2b), one is closed for the natural-increase half and open for the migration half
+(5b), and two stay [GAP] with what was read this time (the start of Operation Moses in 2b, yearly emigration in 3a).
+Where this pass added a derived series, the arithmetic is shown. An agent opened these sources; a person's check of them is still pending.
 
 ## Purpose
 
@@ -17,6 +23,9 @@ value is given and one is named. The design also asks how CBS classifies the Asi
 - [V] read this session in a primary source: a CBS table or publication, or Tolts's paper (all listed under Sources).
   Tables were read from the page image as well as from the text layer; where the two differ, the page image is what
   is reported.
+- From 24 October the tag [V] is also used for what a contemporaneous newspaper or wire report (JTA bulletins of the
+  day, the *Los Angeles Times* of 1985) says, and each such item is marked as press. It is a record of what was
+  reported then, not a government count.
 - [S] secondary only (Wikipedia, the Jewish Agency's history page, the World Jewish Congress). Usable as a lead, to be
   confirmed before encoding.
 - [C] two sources disagree; every value is given, and the preferred one is named where the sources allow it.
@@ -44,11 +53,35 @@ value is given and one is named. The design also asks how CBS classifies the Asi
 | wiki Solomon | Wikipedia, "Operation Solomon" (the design's §2.5 source) | https://en.wikipedia.org/wiki/Operation_Solomon |
 | JA | The Jewish Agency, "Ethiopian Jewish Aliyot: Operation Moses [1984], Operation Solomon [1991]" (Internet Archive copy of 4 June 2019; the live page returns 404) | http://web.archive.org/web/20190604081933/http://www.jewishagency.org:80/historical-aliyah/content/28831 |
 | WJC | World Jewish Congress, "This week in Jewish history: Operation Moses" (17 November 2020; the page credits the Israel Ministry of Foreign Affairs) | https://www.worldjewishcongress.org/en/news/this-week-in-jewish-history--operation-moses-israel-airlifts-thousands-of-ethiopian-jews-to-safety-11-2-2020 |
+| CBS 1365 HE | CBS Publication 1365, Hebrew edition of the same publication (opened 24 Oct): Table D "Immigrants by religion, year of immigration and age", printed page 24 (PDF p. 16); definitions section 3, paragraph "Religion", printed page 22 (PDF p. 14) | https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/h_print.pdf |
+| CBS SA 2010 T3.1 | *Statistical Abstract of Israel 2010*, Table 3.1 "Marriages, divorces, live births, deaths, natural increase, infant deaths and stillbirths, by religion", absolute numbers, printed page 171 (total population) and 172 (Jews) (PDF p. 1-2) (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2010/3.%20shnatonvitalstatistics/st03_01.pdf |
+| JVL country-year | Jewish Virtual Library, "Total Immigration to Israel by Select Country by Year (1948 - Present)", column Ethiopia; the page's source line reads "Israel Central Bureau of Statistics" (opened 24 Oct) | https://www.jewishvirtuallibrary.org/total-immigration-to-israel-by-country-per-year |
+| JVL Ethiopia | Jewish Virtual Library, "Total Immigration from Ethiopia (1948 - Present)", same source line (opened 24 Oct) | https://www.jewishvirtuallibrary.org/total-immigration-from-ethiopia-1948-present |
+| LAT 1985 | *Los Angeles Times*, "Operation Moses: Chronology of an Exodus", 8 July 1985 (opened 24 Oct) | https://www.latimes.com/archives/la-xpm-1985-07-08-mn-9858-story.html |
+| JTA 1984-11-28 | JTA Daily News Bulletin, 28 November 1984, "Dulzing: Jewish Agency is Preparing for 'a Sudden Jump in Immigration'" (opened 24 Oct) | https://www.jta.org/archive/dulzing-jewish-agency-is-preparing-for-a-sudden-jump-in-immigration (bulletin PDF: http://pdfs.jta.org/1984/1984-11-28_220.pdf) |
+| JTA 1985-01-04 | JTA, 4 January 1985, "Curtain Lifted on Ethiopian Jewry Rescue" (the archive truncates the title) (opened 24 Oct) | https://www.jta.org/archive/curtain-lifted-on-ethiopian-jewry-rescue-vast-majority-of-ethiopian-jews-are-now-in-israel-about-1 (PDF: http://pdfs.jta.org/1985/1985-01-04_002.pdf) |
+| JTA 1985-01-07 | JTA, 7 January 1985, "Airlift of Ethiopian Jews Has Been Halted, Apparently Because of Its Premature Disclosure" (opened 24 Oct) | https://www.jta.org/archive/airlift-of-ethiopian-jews-has-been-halted-apparently-because-of-its-premature-disclosure (PDF: http://pdfs.jta.org/1985/1985-01-07_003.pdf) |
+| JTA 1985-01-08 | JTA, 8 January 1985, "The Airlift Story" (opened 24 Oct) | https://www.jta.org/archive/the-airlift-story (PDF: http://pdfs.jta.org/1985/1985-01-08_004.pdf) |
+| JTA 1985-03-26 | JTA, 26 March 1985, "U.S. Praised for Its Role in Weekend Airlift of Ethiopian Jews from Sudan" (opened 24 Oct) | https://www.jta.org/archive/u-s-praised-for-its-role-in-weekend-airlift-of-ethiopian-jews-from-sudan (PDF: http://pdfs.jta.org/1985/1985-03-26_058.pdf) |
+| JTA 1998-06-24 | JTA, 24 June 1998, "Ethiopian Exodus: a Timeline" (opened 24 Oct) | https://www.jta.org/archive/ethiopian-exodus-a-timeline-3 |
+| JTA 1991-05-28 | JTA, 28 May 1991, "Airlift of 14,000 Ethiopian Jews Accomplished in Just 40 Flights" (opened 24 Oct) | https://www.jta.org/archive/airlift-of-14000-ethiopian-jews-accomplished-in-just-40-flights (PDF: http://pdfs.jta.org/1991/1991-05-28_100.pdf) |
+| JTA 1980-12-31 | JTA, 31 December 1980, "The Urgent Problem of Yordim" (opened 24 Oct) | https://www.jta.org/archive/the-urgent-problem-of-yordim (PDF: http://pdfs.jta.org/1980/1980-12-31_249.pdf) |
+| JTA 1985-12-12 | JTA, 12 December 1985, "News Brief" on the CBS report to the Cabinet (opened 24 Oct) | https://www.jta.org/archive/three-hundred-and-thirty-thousand-jews-have-emigrated (PDF: http://pdfs.jta.org/1985/1985-12-12_231.pdf) |
+| JTA 1988-11-21 | JTA, 21 November 1988, "Israel's Population at 4.46 Million; Arabs Still Growing Twice As Fast", on the *Statistical Abstract of Israel 1988* (opened 24 Oct) | https://www.jta.org/archive/israels-population-at-4-46-million-arabs-still-growing-twice-as-fast (PDF: http://pdfs.jta.org/1988/1988-11-21_212.pdf) |
+| CBS SA 2012 T2.3 | *Statistical Abstract of Israel 2012*, Table 2.3 "Sources of population growth" (opened 24 Oct; periods only, none starting in 1977 or ending in 1993) | https://www.cbs.gov.il/he/publications/doclib/2012/2.%20shnatonpopulation/st02_03.pdf |
+| CBS SA 2012 T4.13 | same volume, Table 4.13 "Israelis" (departures and returns of Israelis staying abroad continuously for one year or more, 2007-2010) (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2012/4.%20shnatonimmigration/st04_13.pdf |
+| CBS SA 2018 T4.10 | *Statistical Abstract of Israel 2018*, Table 4.10, the same title for 2013-2016 (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2018/4.%20shnatonimmigration/st04_10.pdf |
+| CBS SA 2012 ch. 4 list | *Statistical Abstract of Israel 2012*, chapter 4 "Immigration and emigration" table list (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2012/4.%20shnatonimmigration/st04_00.pdf |
+| CBS SA 2018 ch. 4 list | *Statistical Abstract of Israel 2018*, chapter 4 table list (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2018/4.%20shnatonimmigration/st04_00.pdf |
+| JPR Staetsky | Daniel Staetsky, *Israelis abroad: The transformation of the Jewish Diaspora?*, Jewish Policy Research, March 2025, 35 pages (opened 24 Oct) | https://www.jpr.org.uk/sites/default/files/attachments/Israelis%20abrod%20-%20transformation%20of%20the%20Jewish%20Diaspora_0.pdf |
+| CIA Reading Room | "In Ethiopians' Exodus, Moses Was American" (a reprint of a Los Angeles Times piece of 30 March 1985; record CIA-RDP90-00965R000605190003-1) (tried, not readable: the site returned a maintenance page on 24 Oct) | https://www.cia.gov/readingroom/node/1868581 |
+| JVL Operation Moses | Jewish Virtual Library, "Operation Moses" (tried, not readable: the text loads by script and the page returned no body on 24 Oct) | https://www.jewishvirtuallibrary.org/operation-moses |
+| ISA catalogue | Israel State Archives, "The immigration of the Jews of Ethiopia to Israel, 1948-1985" (tried, not readable: HTTP 403 on 24 Oct) | https://catalog.archives.gov.il/site/en/publication/the-immigration-of-the-jews-of-ethiopia-to-israel-1948-1985/ |
 
 Also opened, not usable for this era: *Statistical Abstract of Israel 2010*, Table 4.10, "Departures and returns of
 Israelis staying abroad continuously for one year or more" (st04_10.pdf in the same folder as T4.2); it covers 2005-2008
-only. Not read: the Statistical Abstracts of the 1980s and 1990s (no scan was found on the CBS site), CBS's own
-emigration studies, the sources Wikipedia cites for the Ethiopian operations (Kaplan and Salamon, the *New York Times*
+only. Not read: the Statistical Abstracts of the 1980s and 1990s (no scan was found on the CBS site; searched again on
+24 October, see 3a), CBS's own emigration studies, the sources Wikipedia cites for the Ethiopian operations (Kaplan and Salamon, the *New York Times*
 and *Boston Globe* reports), and the IDF and Foreign Ministry pages on the operations. Nothing below is checked against
 them.
 
@@ -172,9 +205,9 @@ immigrants).
   religions 833 + 263 = 1,096).
 - 1984: Jews 18,776 + other religions 868 = 19,644, 337 short of 19,981. Note (5), page 33: "In 1984, excl. 337
   immigrants whose religion was not stated or was not known, but are included in the total."
-- From 1985 the split by religion is not printed. Note (5): "In 1985, the registration of religion at the time of
-  immigration ceased." So **the Jewish share of the immigrants is [GAP] for 1985-1993** in the tables read; the
-  table points to "Table D in the Introduction" of the same publication, which is not in the English edition.
+- From 1985 the split by religion is not printed in the English edition. Note (5): "In 1985, the registration of
+  religion at the time of immigration ceased." The table points to "Table D in the Introduction", which the English
+  edition does not contain. **Closed on 24 October from the Hebrew edition of the same publication: see 1c-bis.**
 - **A misprint on page 31**: the Jewish potential immigrants of 1979 are printed 4,715 (page image). Derived: Jews
   35,662 - Jewish immigrants 20,947 = 14,715, and grand-total potential 15,062 - other religions' potential 347 =
   14,715. Our reading: 4,715 should read 14,715.
@@ -182,6 +215,54 @@ immigrants).
   religions include immigrants whose religion was not stated.
 - Note (1), page 33: "Including immigrants and potential immigrants (as of 1969) who had an immigrant visa at arrival
   and tourists who changed their status to immigrants or potential immigrants. Excluding immigrating citizens."
+
+### 1c-bis. The Jewish share of the immigrants, 1985-1993 (closed 24 Oct)
+
+[V] CBS 1365 Hebrew edition, Table D, printed page 24 (PDF p. 16), thousands, read from the page image as well as the
+text layer (they agree). The columns are total, Jews, other religions, not known, and "% Jews", which the page's footnote (2)
+gives as the percentage of those whose religion is known (the column header's footnote (3) points to the definitions).
+Footnote (1) sends to note (1) of Table 1, so the
+population is the same as in 1c: immigrants and potential immigrants, tourists who changed status included, immigrating
+citizens excluded.
+
+| Year | Total | Jews | Other religions | Not known | % Jews, as printed |
+|---|---|---|---|---|---|
+| 1985 | 10.6 | 8.9 | 0.5 | 1.3 | 94.9 |
+| 1986 | 9.5 | 8.0 | 0.5 | 1.1 | 94.3 |
+| 1987 | 13.0 | 11.1 | 0.6 | 1.3 | 95.1 |
+| 1988 | 13.0 | 11.3 | 0.6 | 1.2 | 95.3 |
+| 1989 | 24.1 | 21.5 | 1.3 | 1.3 | 94.0 |
+| 1990 | 199.5 | 184.6 | 7.6 | 7.3 | 96.0 |
+| 1991 | 176.1 | 152.0 | 14.2 | 9.9 | 91.4 |
+| 1992 | 77.1 | 60.6 | 10.4 | 6.0 | 85.3 |
+| 1993 | 76.8 | 59.0 | 11.7 | 6.2 | 83.5 |
+
+- Checks, derived: the totals equal 1a rounded to thousands in all nine years (for example 1990, 199,516 to 199.5;
+  1993, 76,805 to 76.8). Jews + other religions + not known comes within 0.1 of the total in every year (1985:
+  8.9 + 0.5 + 1.3 = 10.7 against 10.6; 1992: 60.6 + 10.4 + 6.0 = 77.0 against 77.1). The printed percentage matches
+  Jews / (Jews + other religions) to within 0.3 points, which is the rounding of the thousands (1985: 8.9 / 9.4 =
+  94.7 against 94.9; 1989: 21.5 / 22.8 = 94.3 against 94.0; 1993: 59.0 / 70.7 = 83.5, exact).
+- Sums, derived: Jews 1985-1993, 8.9 + 8.0 + 11.1 + 11.3 + 21.5 + 184.6 + 152.0 + 60.6 + 59.0 = 517.0 thousand. All
+  arrivals of the same years, 10.6 + 9.5 + 13.0 + 13.0 + 24.1 + 199.5 + 176.1 + 77.1 + 76.8 = 599.7 thousand, so the
+  Jews are 517.0 / 599.7 = 86.2% of all arrivals. Other religions, 0.5 + 0.5 + 0.6 + 0.6 + 1.3 + 7.6 + 14.2 + 10.4 +
+  11.7 = 47.4 thousand, so among those whose religion is known the share is 517.0 / (517.0 + 47.4) = 91.6%. Our
+  reading: 91.6% answers "share of Jews among immigrants whose religion is known" for the whole period, 86.2% answers
+  "Jews as a share of all arrivals"; the two differ because 1985-1993 leaves 35.6 thousand unknown (1.3 + 1.1 + 1.3 +
+  1.2 + 1.3 + 7.3 + 9.9 + 6.0 + 6.2).
+- What "not known" means (definitions section, "Religion", page 22, our translation): from 1985 the religion is
+  recorded after the immigrant applies at the Interior Ministry's population registry office for an identity card
+  (before 1985 it was recorded at entry), and until then the entry reads "not registered". Up to 1989 Table D put
+  both the "not registered" and those registered "no religion" under "not known"; from 1990 those registered "no
+  religion" are under "other religions" and "not known" holds only the not yet registered. That is a break in the
+  series at 1989-1990: the "other religions" column of 1990-1993 holds people the earlier years left in "not known".
+- Why the unknowns do not shrink (page 22, our translation): "Experience shows that the share of Jews among the
+  immigrants changes to a small degree." Reasons given: some leave the country or die before their religion is
+  registered, and children under 16 need no identity card and so stay unregistered.
+- Together with 1c this gives the Jewish immigrants for the whole era: 1977-1984 from Table 1 (159,295, derived in 1c)
+  and 1985-1993 from Table D (517.0 thousand, rounded to a hundred). The two tables share the population, but 1984 and
+  1985 sit on different registration rules (religion at entry against religion at the registry), so the join is a
+  break, not a continuous series.
+- Still open in this row: the Jewish split by continent for any year (see 7).
 
 ### 1d. CBS's own description of the period
 
@@ -247,12 +328,59 @@ thousands":
 
 CBS does not date the operations. What it counts:
 - [V] CBS 1365 Table 2, page 34, immigrants whose last residence was Ethiopia: 1970-1979 326; **1980-1984 12,579**;
-  1985-1989 4,396; 1990-2001 45,102. No yearly figure for Ethiopia is printed for these years. [GAP]
+  1985-1989 4,396; 1990-2001 45,102. CBS 1365 prints no yearly figure for Ethiopia for these years; the yearly series
+  is under "Yearly arrivals from Ethiopia" below (24 Oct).
 - [V] CBS SA 2010 T4.4, page 233, born in Ethiopia: 1972-1979 306; 1980-1989 16,965; 1990-1999 39,651.
 - [V] 1a, all of Africa by last residence: 1984 8,885 (against 3,094 in 1983 and 2,318 in 1985); 1991 20,251 (against
   4,472 in 1990 and 4,075 in 1992). Our reading: the two Ethiopian airlifts are the spikes in the `africa` column, as
   the design's §5.4 assumes (Ethiopia is `africa`).
 - [V] CBS 1365, page XVII: Operation Moses in 1984, "over 8,000 Ethiopian immigrants".
+
+
+**Yearly arrivals from Ethiopia, 1977-1993 (closed 24 Oct, tagged [S])**
+
+[S] JVL country-year, column Ethiopia, which the page credits to the CBS; the CBS yearly table itself was not found.
+Last country of residence, persons:
+
+| Year | Ethiopia | Africa, all (1a) | Ethiopia as % of Africa, derived |
+|---|---|---|---|
+| 1977 | 90 | 1,620 | 5.6% |
+| 1978 | 37 | 1,683 | 2.2% |
+| 1979 | 45 | 1,340 | 3.4% |
+| 1980 | 259 | 1,007 | 25.7% |
+| 1981 | 650 | 1,170 | 55.6% |
+| 1982 | 950 | 1,555 | 61.1% |
+| 1983 | 2,393 | 3,094 | 77.3% |
+| 1984 | 8,327 | 8,885 | 93.7% |
+| 1985 | 1,886 | 2,318 | 81.4% |
+| 1986 | 236 | 982 | 24.0% |
+| 1987 | 231 | 1,205 | 19.2% |
+| 1988 | 595 | 1,334 | 44.6% |
+| 1989 | 1,448 | 1,861 | 77.8% |
+| 1990 | 4,121 | 4,472 | 92.2% |
+| 1991 | 20,014 | 20,251 | 98.8% |
+| 1992 | 3,648 | 4,075 | 89.5% |
+| 1993 | 863 | 1,431 | 60.3% |
+| **1977-1993, derived** | **45,793** | **58,283** | **78.6%** |
+
+- [C] The two JVL pages disagree on 1984 and 1985. The country-year page prints 8,327 for 1984 and 1,886 for 1985; the
+  Ethiopia page prints 1,886 for 1984 and 8,327 for 1985. Kept: 8,327 for 1984 and 1,886 for 1985, because of the
+  checks below, and because CBS 1365 (page XVII) places Operation Moses in 1984.
+  The Ethiopia page's own overview line ("Up to Operation Moses (1948-1984) 6,720", "Operation Moses (1985) ~ 7,500")
+  fits its yearly table, that is 1984 = 1,886, so that page contradicts CBS 1365 Table 2; this note follows CBS.
+- [V] Checks, derived, against the four Ethiopia cells of CBS 1365 Table 2 (page 34): 1970-1979, 13 + 7 + 40 + 41 + 24 +
+  19 + 10 + 90 + 37 + 45 = 326, exact; 1980-1984, 259 + 650 + 950 + 2,393 + 8,327 = 12,579, exact; 1985-1989, 1,886 +
+  236 + 231 + 595 + 1,448 = 4,396, exact; 1990-2001, 4,121 + 20,014 + 3,648 + 863 + 1,197 + 1,312 + 1,411 + 1,661 +
+  3,110 + 2,290 + 2,201 + 3,274 = 45,102, exact. Swapping 1984 and 1985 would break the 1980-1984 and 1985-1989 sums,
+  so the series is anchored to CBS on all four periods, though each year inside a period is [S].
+- Every yearly value is at or below the `africa` total of 1a for the same year (1984, 8,327 of 8,885; 1991, 20,014 of
+  20,251), as it must be.
+- Two readings, both ours. 1984 holds 8,327 although Operation Moses ran from late November into January: the
+  arrivals of the first days of January 1985 are in 1985's 1,886 together with the later Operation Joshua arrivals.
+  CBS 1365's own text says "over 8,000" for the operation, so the year column and the text are the same order.
+  Second, 1991's 20,014 is the Operation Solomon year; 14,325 or 14,087 of them (see below) arrived in the two days of
+  Solomon, so about 5,700 to 5,900 arrived in the other eleven months (20,014 - 14,325 = 5,689; 20,014 - 14,087 =
+  5,927).
 
 **Operation Moses**
 
@@ -261,16 +389,35 @@ CBS does not date the operations. What it counts:
 | Start | 21 November 1984 | [S] wiki Moses, "Beginning November 21, 1984" (no citation on the sentence) |
 | Start | 18 November 1984 | [S] WJC: "On 18 November 1984, the State of Israel launched Operation Moses, a seven-week covert operation" |
 | Start | "Mid-1984" | [S] JA |
+| First flight | 20 November 1984, "The first flight under Operation Moses leaves Khartoum airport, bound for Europe and then Israel." | [V] LAT 1985, a chronology compiled in July 1985 and printed 8 July 1985 (a 1985 press chronology, not a government record) |
 | End | 5 January 1985 | [S] wiki Moses ("ending January 5, 1985"); [S] WJC ("The operation came to a halt on 5 January 1985, when news of the activity leaked to the international media") |
+| End | 6 January 1985 | [V] LAT 1985 ("Jan. 4, 1985--The Israeli government announces that it has been receiving Ethiopian Jews through a secret airlift from Sudan. Two days later, Sudanese officials halt the flights"); [V] JTA 1985-03-26 ("Operation Moses was halted January 6 due to premature disclosure of its details") |
+| End | last flight left Brussels "at midnight Saturday" | [V] JTA 1985-01-08 ("The last flight, before TEA withdrew from the operation yesterday, left Brussels at midnight Saturday"); the item is datelined Brussels, Monday 7 January 1985 (printed in the bulletin of Tuesday 8 January), so the Saturday is 5 January and TEA's "yesterday" is Sunday 6 January, which also backs the 6 January halt in the row above |
 | End | "November 1985" (the leak) | [S] JA: "News of the rescue leaked out to the foreign media in November 1985" |
+| Number | about 10,000, 35 flights | [V] JTA 1985-01-04 (Levinsky, Jewish Agency: "about 10,000 Ethiopian Jews arrived in Israel recently"); JTA 1985-01-07 ("There were 35 flights since last November, by a Belgian charter airline") |
+| Number | 40 flights, some 10,000 | [V] JTA 1985-01-08 ("TEA made 40 flights in that period, bringing some 10,000 Ethiopian Jewish refugees from Khartoum, Sudan to Tel Aviv") |
+| Number | 6,000 to 8,000 | [S] JTA 1998-06-24, a retrospective timeline, which also dates the operation to "December 1984" |
+| Number | about 8,000 | [V] JTA 1985-03-26 ("Some 8,000 Jews were reportedly brought to Israel during that operation") |
 | Number | about 8,000 | [S] wiki Moses ("some 8,000"); [S] WJC ("approximately 8,000 ... aboard 30 flights"); [S] JA ("8,000 Jews were flown from Khartoum"); [V] CBS 1365 page XVII ("over 8,000") |
 | Why it stopped | Peres's press conference confirming the airlift | [S] wiki Moses, cited there to a source Wikipedia itself tags as needing a better one |
 
 - [C] The end date: two sources say 5 January 1985; JA's "November 1985" cannot be right, since the follow-up airlift
-  it describes next is dated March 1985 by Wikipedia (below; JA itself gives it no date). Preferred: **5 January 1985**.
-- [C] The start: 18 or 21 November 1984, neither from a primary source. Not settled here. [GAP] for a primary source.
-- The number: about 8,000, and CBS's own "over 8,000" agrees. It fits inside CBS's 12,579 Ethiopian arrivals of
-  1980-1984.
+  it describes next is dated March 1985 by Wikipedia (below; JA itself gives it no date). Two contemporaneous JTA and
+  LAT items add 6 January for the halt and Saturday 5 January for the last flight out of Brussels. Our reading: the
+  last plane left around midnight between 5 and 6 January and the halt is dated by the day after. Preferred, as
+  before: **5 January 1985** for the end of the flights, with 6 January as the halt.
+- [C] The start: 18 November (WJC), 20 November (LAT 1985, the first flight leaving Khartoum) or 21 November 1984
+  (Wikipedia). Our reading, not a source statement: a plane that left Khartoum on the 20th and stopped over in Brussels
+  at about midnight (JTA 1985-01-08 describes the midnight stopovers) would reach Tel Aviv on the 21st, which would
+  make the 20th and the 21st the same flight counted at two ends. The 18th stays unexplained. [GAP] for a government
+  or archive record of the first flight: (24 Oct) Searched again and not found. Read: LAT 1985; JTA 1984-11-28 (Dulzin
+  says only that "the Jewish Agency is preparing for a sudden jump in immigration", no flight date); JTA 1985-01-04,
+  01-07, 01-08 and 1985-03-26; JTA 1998-06-24, which gives "December 1984". Tried and not readable: the CIA Reading
+  Room item "In Ethiopians' Exodus, Moses Was American" (the site returned a maintenance page), the Jewish Virtual
+  Library "Operation Moses" page (the text loads by script and returned no body), and the Israel State Archives
+  catalogue entry for "The immigration of the Jews of Ethiopia to Israel 1948-1985" (HTTP 403).
+- The number: about 8,000, and CBS's own "over 8,000" agrees; the contemporaneous JTA reports range from about 8,000
+  to about 10,000. It fits inside CBS's 12,579 Ethiopian arrivals of 1980-1984 and inside the 8,327 of 1984 above.
 
 **Operation Joshua**
 
@@ -282,6 +429,10 @@ CBS does not date the operations. What it counts:
   Kaplan and Salamon, 2004).
 - [S] JA, undated: "After mediation by the US, Numeiri allowed six American Hercules planes to airlift the last
   remaining Ethiopian Jews in Sudan".
+- [V] JTA 1985-03-26: a "three-day evacuation" "over the weekend" before Monday 25 March (the item's dateline; printed in the bulletin of Tuesday 26 March), with the operation, reported
+  from the LAT, beginning "at dawn last Friday" (22 March 1985); "there are no precise figures"; "about 900 Ethiopian
+  Jews lived as refugees in Sudan for about a year". LAT 1985's chronology: "March 22, 1985--Under CIA direction, the
+  last of the Ethiopian Jews in Sudan are airlifted to Israel."
 - [C] Preferred for event text: **22 March 1985, about 500**, marked [S] until a primary source is read. The 650 is a
   single newspaper figure.
 
@@ -302,7 +453,15 @@ CBS does not date the operations. What it counts:
 - [C] Preferred for event text, all [S]: **24-25 May 1991, 14,325 people in 36 hours, $35 million**. The exact
   count and the 36 hours come with a contemporary newspaper citation on Wikipedia; JA's 14,000 is a round number, and
   its 48 hours and $40 million carry no source.
-- Check, derived: the 14,325 fit inside CBS's 1991 `africa` total of 20,251 (1a).
+- [C] JTA 1991-05-28, an item datelined Tel Aviv, 27 May 1991, three days after the airlift began: "14,087 Ethiopian Jews, comprising over 3,000 families,
+  were airlifted from Addis Ababa to Israel over the weekend within some 30 hours", "accomplished in a mere 40 flights",
+  "The first flight reportedly arrived in Israel around 6 p.m. Friday local time" (Friday 24 May 1991). That is a third
+  count (14,087, against 14,325 and 14,000), 30 hours against 36 and 48, and 40 flights against 35 aircraft. The
+  contemporaneous 14,087 is the figure nearest the event; the 14,325 is the one Wikipedia cites to the *New York Times*
+  of 26 May, which was not opened. Preferred for event text: **24-25 May 1991, 14,087 (JTA) or 14,325 (NYT as cited)**,
+  to be settled from a primary count.
+- Check, derived: the 14,325 fit inside CBS's 1991 `africa` total of 20,251 (1a), and so do the 14,087 and the
+  JVL country-year figure for Ethiopia, 20,014.
 
 ---
 
@@ -310,9 +469,71 @@ CBS does not date the operations. What it counts:
 
 ### 3a. Yearly emigration
 
-No yearly series for 1977-1993 was reachable. [GAP] CBS's departures-and-returns table in the 2010 Abstract (T4.10)
-starts in 2005; the Statistical Abstracts of the period are not on the CBS site; and the 1957-77 note's source (Bachi)
-ends in 1975.
+No CBS-labelled yearly emigration series for 1977-1993 was reachable. [GAP] (24 Oct) Searched again and not found.
+Read: CBS SA 2010 T4.10 (starts 2005), CBS SA 2012 Table 4.13 (departures and returns for 2007-2010, in thousands,
+by age and sex) and CBS SA 2018 Table 4.10 (2013-2016); CBS SA 2012 and 2018 chapter 4 table lists (thirteen and twelve
+tables, none a yearly series before 1990); the JPR report by Staetsky, *Israelis abroad* (March 2025), whose CBS
+series starts in 1990 and which lists the CBS emigration papers of the period without reproducing them (Rabi 1978,
+Lamdany 1983, Paltiel 1986 and 1990); JTA daily bulletins found by search. The Statistical Abstracts of the period are
+not on the CBS site. The 1957-77 note's source (Bachi) ends in 1975. What was found instead:
+
+- [V] (contemporaneous press, reporting the CBS) JTA 1980-12-31: the director of the Central Bureau of Statistics "acknowledged, however, that a
+  record. 30,000 Israelis left the country permanently this year compared to fewer than 7000 in each of the two
+  preceding years" (as printed, with its typographical slips). One year, 1980, against 1978 and 1979; the article does
+  not say whether gross or net; no series.
+- [V] (same kind) JTA 1988-11-21, on the *Statistical Abstract of Israel 1988*: "The number of Israelis living abroad
+  for more than one year increased by 9,200 in 1987, compared with 13,900 in 1986. An additional 1,000 persons were
+  deducted from the population to account for the difference between those departing and returning among potential
+  immigrants and others." Two years, a net increase of the stock abroad, not gross departures.
+- [V] (same kind) JTA 1985-12-12, on a CBS report to the Cabinet: "Three hundred and thirty thousand Jews have emigrated from
+  Israel since the establishment of the State", "a further 120,000 non-Jews had left during this period". A cumulative
+  figure to 1985; no year.
+- These three measure different things (permanent departures in 1980, not stated whether gross or net; the net increase of those abroad for a year or more in
+  1986-87, a cumulative count), so they are not combined here. They are the only CBS emigration numbers found for
+  1977-1993 outside the period balances of 3b.
+
+### 3a-bis. A derived yearly net outflow (not a CBS series)
+
+[V] inputs, derived output. Immigrants are CBS SA 2010 T4.2 (1a). "Change minus natural" is the year's change in the
+population (4a) less the natural increase (5b), both CBS; it is what the population gained from immigration, less
+what it lost to emigration, plus corrections. The last column is then immigrants less that residual:
+the net number of residents the population lost to departures and corrections in the year. Thousands.
+
+| Year | Immigrants, T4.2 | Total population: change minus natural | Immigrants minus that residual |
+|---|---|---|---|
+| 1977 | 21,429 | +7.4 | 14.0 |
+| 1978 | 26,394 | +17.0 | 9.4 |
+| 1979 | 37,222 | +30.6 | 6.6 |
+| 1980 | 20,428 | +17.5 | 2.9 |
+| 1981 | 12,599 | -11.2 | 23.8 |
+| 1982 | 13,723 | +17.0 | -3.3 |
+| 1983 | 16,906 | +13.9 | 3.0 |
+| 1984 | 19,981 | +10.4 | 9.6 |
+| 1985 | 10,642 | -4.8 | 15.4 |
+| 1986 | 9,505 | -4.8 | 14.3 |
+| 1987 | 12,965 | +5.4 | 7.6 |
+| 1988 | 13,034 | -1.0 | 14.0 |
+| 1989 | 24,050 | +10.6 | 13.5 |
+| 1990 | 199,516 | +187.5 | 12.0 |
+| 1991 | 176,100 | +162.6 | 13.5 |
+| 1992 | 77,057 | +60.4 | 16.7 |
+| 1993 | 76,805 | +52.4 | 24.4 |
+
+- Reading the column: it understates net departures by the number of immigrating citizens, who are not in T4.2 (T2.3,
+  note 2; the 1983-1989 gap between T2.3 and T4.2 is 12.5 thousand, 1.8 a year, derived in 3b). It also carries the
+  1983 census correction and any religion-registry corrections, and it is the net of departures and returns, not gross
+  departures.
+- Break at 1983: the 1983 row uses the previous-census population of both years (4,148.5 - 4,063.6 = 84.9); the 1984
+  row starts from the census-based 1983 population (4,199.7 - 4,118.6 = 81.1). The census correction itself (-29.9
+  thousand, 4a) is left out of both rows.
+- 1982 is not usable: the Arab population of the Golan was added that year (T2.3 note 9, 4a), so its residual of
+  17.0 and the -3.3 are inflated by roughly the 11 to 14 thousand of 4a.
+- 1981 (23.8) and 1993 (24.4) are the two high values that no source read explains. They are shown as derived, not
+  as findings.
+- Cross-check against the press figures above, derived, same order and not equal: 1986, 14.3 (plus about 1.8 of
+  immigrating citizens, 16.1) against 13.9 + 1.0 = 14.9; 1987, 7.6 (9.4) against 9.2 + 1.0 = 10.2. The CBS stock figure
+  counts only those abroad a year or more, so it is not the same quantity.
+- Not comparable to the 30,000 of 1980: the article does not say whether that is gross or net, and this column is a net (1980: 2.9).
 
 ### 3b. What CBS's sources of growth imply
 
@@ -422,8 +643,54 @@ table (page 86): "Until 1995, before publication of the Census results "Arabs" a
   936.2 = 4,051.8 against 4,063.6, 11.8 apart, which note 9 puts down to the Golan addition being left out of growth.
 - The 1983-1989 rows begin on the 1983 census basis: Jews 3,349.6 against 3,373.2 at the end of 1982 in T2.1,
   derived -23.6, the same break as the two 1983 rows of 4a; total 4,033.7 against 4,063.6, -29.9.
-- Yearly sources of growth for 1977-1993 are [GAP]: the 2010 table gives long periods only, and none starts in 1977
-  or ends in 1993.
+- Yearly sources of growth, 24 Oct: the natural-increase half is closed from CBS SA 2010 T3.1 (5b); the migration balance
+  as CBS labels it is still [GAP] by year: (24 Oct) Searched again and not found. Read: T2.3 in the 2010 and 2012
+  Abstracts (periods only, none starting in 1977 or ending in 1993), T3.1, T4.2, T4.10 and the other tables listed in 3a.
+  The derived residual in 5b stands in for it and is marked as derived.
+
+### 5b. Yearly natural increase (CBS) and the derived residual
+
+[V] CBS SA 2010 T3.1, printed pages 171 (total population) and 172 (Jews), absolute numbers. For every year 1975-1994
+the printed live births less deaths equals the printed natural increase (checked cell by cell for both groups, 40
+rows). The population change is from 4a (thousands). "Change minus natural" is derived and is the migration balance
+plus corrections; it is not a CBS figure.
+
+| Year | Natural increase, Jews | Jewish population change | Change minus natural, Jews | Natural increase, total | Total population change | Change minus natural, total |
+|---|---|---|---|---|---|---|
+| 1977 | 49,815 | +56.9 | +7.1 | 70,364 | +77.8 | +7.4 |
+| 1978 | 47,028 | +63.9 | +16.9 | 67,449 | +84.4 | +17.0 |
+| 1979 | 47,001 | +77.2 | +30.2 | 68,010 | +98.6 | +30.6 |
+| 1980 | 47,853 | +64.3 | +16.4 | 67,957 | +85.5 | +17.5 |
+| 1981 | 47,347 | +37.6 | -9.7 | 67,223 | +56.0 | -11.2 |
+| 1982 | 48,001 | +52.9 | +4.9 | 68,915 | +85.9 | +17.0 |
+| 1983 | 50,011 | +62.9 | +12.9 | 70,993 | +84.9 | +13.9 |
+| 1984 | 49,421 | +59.2 | +9.8 | 70,673 | +81.1 | +10.4 |
+| 1985 | 49,921 | +45.5 | -4.4 | 71,283 | +66.5 | -4.8 |
+| 1986 | 48,425 | +44.2 | -4.2 | 69,926 | +65.1 | -4.8 |
+| 1987 | 47,264 | +51.5 | +4.2 | 69,778 | +75.2 | +5.4 |
+| 1988 | 47,408 | +46.1 | -1.3 | 71,278 | +70.3 | -1.0 |
+| 1989 | 46,862 | +58.1 | +11.2 | 72,157 | +82.8 | +10.6 |
+| 1990 | 48,092 | +229.6 | +181.5 | 74,615 | +262.1 | +187.5 |
+| 1991 | 47,027 | +197.9 | +150.9 | 74,459 | +237.1 | +162.6 |
+| 1992 | 48,210 | +97.9 | +49.7 | 76,735 | +137.1 | +60.4 |
+| 1993 | 49,149 | +92.7 | +43.6 | 79,303 | +131.7 | +52.4 |
+
+- T3.1 notes (page 177): note 1, "Excl. soldiers killed in war"; note 5, "Incl. births and deaths in East Jerusalem as of
+  1970, and in the Golan as of 1982 ..."; note 6, "Incl. religion unknown". The total-population column has the Golan
+  Arab addition in 1982 inside its population change (4a), so the 1982 residual is inflated; the Jewish column has no
+  such break.
+- 1983 and 1984: as in 3a-bis. The 1983 row uses the previous-census populations, the 1984 row starts from the census
+  base, and the census correction (Jews -23.6, total -29.9 thousand, 4a) is outside both.
+- [C] The yearly natural increase does not add up to the period natural increase of T2.3 (5): Jews 1983-1989, T3.1 sum
+  339,312 against 339.7 thousand; Jews 1990-1995, 290,746 against 291.7; Jews 1972-1982, 532,730 against 532.5; total
+  1983-1989, 496,088 against 494.8; total 1990-1995, 467,658 against 465.9; total 1972-1982, 753,044 against 752.7.
+  The gaps are 0.2 to 1.8 thousand (0.4, 1.0 and 0.2 for Jews; 1.3, 1.8 and 0.3 for the total). Neither table's notes
+  explain it. Both values are kept; preferred: T3.1 for a yearly value, T2.3 for a period total.
+- Cross-check, derived: the Jewish residual of 1983-1989 sums to 12.9 + 9.8 - 4.4 - 4.2 + 4.2 - 1.3 + 11.2 = 28.2
+  thousand, against the T2.3 migration balance for Jews 1983-1989 of 27.7 (5).
+- The yearly Jewish residual is 4.9 to 30.2 thousand in 1977-1980 and 1982-1984, below zero in 1981 (-9.7), 1985 (-4.4),
+  1986 (-4.2) and 1988 (-1.3), and 181.5, 150.9, 49.7 and 43.6 in 1990-1993. Those sign changes are the years in which
+  the net of immigration and emigration was a loss, on this derivation.
 
 ---
 
@@ -434,19 +701,23 @@ Not a model, only the arithmetic the sources allow:
 - Checkpoints (4a): end of 1977, 3,077.3 thousand Jews (1972 census basis); end of 1983, 3,412.5 (1983 census basis;
   3,436.1 on the previous basis); end of 1993, 4,335.2 (1983 census basis). 1993 is not a census year (4b).
 - Arrivals 1977-1993 (1a): 768,356, of which 529,478 in 1990-1993 (derived from 1a: 199,516 + 176,100 + 77,057 +
-  76,805). The rows include non-Jews; the Jewish count is printed only to 1984 (1c).
-- Emigration: no yearly figure (3a). The derived Jewish figure in 3b (net outflow less the religion balance) is about
+  76,805). The rows include non-Jews; the Jewish count is printed in CBS 1365 Table 1 to 1984 and, from the Hebrew edition's Table D, for 1985-1993 (1c-bis).
+- Emigration: no CBS-labelled yearly figure (3a); a derived yearly net outflow is in 3a-bis. The derived Jewish figure in 3b (net outflow less the religion balance) is about
   12 thousand a year in 1972-1989 and about 20 thousand a year in 1990-1995, period averages only.
 - The 1983 census break: -23.6 thousand Jews (4a, 5).
 
 ## 7. Gaps
 
-- Yearly emigration for any year of 1977-1993; a labelled CBS emigration estimate for the period.
-- Jewish immigrants for 1985-1993 (religion not registered from 1985; Table D of CBS 1365 not in the English edition), and the Jewish
-  split by continent for any year.
-- Yearly immigrants from Ethiopia and from the USSR in CBS (only periods); the CBS birth-table placement of Asian-
-  republic Soviet immigrants before 1995.
-- A primary source for the dates and numbers of Operations Moses, Joshua and Solomon; the start of Moses (18 or 21
-  November 1984) is unsettled.
+Closed on 24 October: the Jewish share of the immigrants for 1985-1993 (1c-bis); yearly arrivals from Ethiopia (2b,
+tagged [S] with an exact reconciliation to CBS); the yearly natural increase (5b).
+
+Still open:
+- A CBS-labelled yearly emigration series for any year of 1977-1993 (3a); the derived net outflow in 3a-bis and the
+  three press-reported figures stand in.
+- The yearly migration balance as CBS labels it (5b); the derived residual stands in.
+- The Jewish split by continent for any year.
+- Yearly immigrants from the USSR in CBS (only periods; Tolts gives yearly FSU emigrants to Israel, 2a); the CBS
+  birth-table placement of Asian-republic Soviet immigrants before 1995.
+- A government or archive record of the first flight of Operation Moses (18, 20 or 21 November 1984, 2b), and primary
+  counts for Moses, Joshua and Solomon; this pass added contemporaneous press only.
 - The 1983 census day and its count against the running estimate.
-- Yearly sources of growth (natural increase, migration balance) for 1977-1993.
