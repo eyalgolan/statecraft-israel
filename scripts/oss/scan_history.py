@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import oss_policy as P  # noqa: E402
 
 ACCEPTED = "docs/oss/history-accepted.tsv"
-SECRET_PATTERN_NAMES = frozenset(P.SECRET_PATTERNS)
+SECRET_KINDS = frozenset(P.SECRET_PATTERNS)
 
 
 def _kinds(line: str) -> list[str]:
@@ -82,15 +82,15 @@ def main(argv: list[str] | None = None) -> int:
     refs = [args.ref] if args.ref and not args.all else ["--all"]
     hits = scan(args.repo, refs)
     done = accepted(args.repo)
-    open_secret_rows = 0
+    open_secrets = 0
     for commit, path, kind in hits:
         state = "accepted" if (commit, path, kind) in done else "OPEN"
-        open_secret_rows += state == "OPEN" and kind in SECRET_PATTERN_NAMES
+        open_secrets += state == "OPEN" and kind in SECRET_KINDS
         print(f"{commit}  {path}  {kind}  {state}")
     count = len(subprocess.run(["git", "-C", str(args.repo), "rev-list", *refs], capture_output=True, text=True,
                                check=True).stdout.split())
     print(f"scanned {count} commits ({' '.join(refs)}): {len(hits) or 'no'} findings, "
-          f"{open_secret_rows} open secret-shape findings")
+          f"{open_secrets} open secret-shape findings")
     print("NOTE: information only. An OPEN secret-shape row must be revoked or rotated at its provider (owner step), "
           f"then recorded in {ACCEPTED}; history is never rewritten.")
     return 0
