@@ -93,7 +93,7 @@ namespace Statecraft.Game.EditorTools
             imp.mipmapEnabled = true;
             imp.isReadable = false;
             imp.maxTextureSize = 4096;
-            imp.textureCompression = TextureImporterCompression.Uncompressed;
+            imp.textureCompression = TextureImporterCompression.Compressed;
             imp.crunchedCompression = false;
             foreach (string target in new[] { "Standalone", "WebGL" }) imp.ClearPlatformTextureSettings(target);
             imp.SaveAndReimport();

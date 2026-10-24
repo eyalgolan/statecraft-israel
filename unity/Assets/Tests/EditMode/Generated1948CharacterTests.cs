@@ -53,7 +53,7 @@ public class Generated1948CharacterTests
         Assert.IsNotNull(map);
         Assert.GreaterOrEqual(map.maxTextureSize, 4096);
         Assert.IsFalse(map.crunchedCompression);
-        Assert.AreEqual(TextureImporterCompression.Uncompressed, map.textureCompression);
+        Assert.AreEqual(TextureImporterCompression.Compressed, map.textureCompression);
         foreach (var target in new[] { "Standalone", "WebGL" })
             Assert.IsFalse(map.GetPlatformTextureSettings(target).overridden, "no hidden downsize/compression override");
         string original = Path.GetFullPath(Path.Combine(Application.dataPath, "../..", "asset-sources/generated-1948", id, "original_basecolor.jpg"));
