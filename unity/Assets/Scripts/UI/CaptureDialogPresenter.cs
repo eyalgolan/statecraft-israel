@@ -7,17 +7,21 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The capture dialog (GDD Phase 6 PR 10, #802; docs/gdd/settlement-control.md): when a settlement's record
-    /// awaits the player's choice (SettlementControl.AwaitingChoice), the first such place in the sim's ordinal order, with
-    /// its name in the UI's language and one button per option that SettlementControl.CaptureOptions offers, in the
-    /// helper's order: the option's name (the GDD's words, Q-UI-1 (b)), its plain description, and the helper's preview of
-    /// what it changes at once (Q-UI-2 (a)). The target row's operation line is not shown (owner, 22 October 2026, #1317).
-    /// An option the helper refuses (today Occupy, #798, and Deport, #800, "not built yet") is not shown, so a newly built
-    /// one appears by itself. The dialog holds no order, cost or rule of its own (Q-TECH-5): it formats the sim's numbers
-    /// as the top bar does, and nothing more.
+    /// <summary>The capture and end-of-occupation dialog (GDD Phase 6 PR 10, #802; docs/gdd/settlement-control.md): when a
+    /// settlement's record awaits the player's choice (SettlementControl.AwaitingChoice) or the end of its occupation
+    /// (AwaitingEnd, R-CTRL-014), the first such place in one ordinal pass over the places, whichever decision it has (owner,
+    /// 24 October 2026 on #802, "By settlement order"), with its name in the UI's language and one button per option that
+    /// SettlementControl.CaptureOptions or EndOptions lists, in the helper's order: the option's name (the GDD's words,
+    /// Q-UI-1 (b)), its plain description, and the helper's preview of what it changes at once (Q-UI-2 (a)). The target
+    /// row's operation line is not shown (owner, 22 October 2026, #1317). An option the helper refuses stays in its place,
+    /// disabled, with the reason for its refusal id in the UI's language (owner, 24 October 2026 on #799, "button explains";
+    /// never the sim's English), except one refused as out of play (Deport while mvp.deport_in_play is off, R-CTRL-007),
+    /// which is not shown until the owner's review. The dialog holds no order, cost or rule of its own (Q-TECH-5): it
+    /// formats the sim's numbers as the top bar does, and nothing more.
     /// <para>It sits in the decision card's place and style (Game.uxml "capture-card"), modal like it (OpenClass; ScreenNav.
     /// DisableCovered), and waits while a decision card is open: one window at a time. A choice is an order
-    /// (ResolveCapture, through SimBridge.Queue): it takes effect at End Turn, and the dialog goes on to the next capture.
+    /// (ResolveCapture or EndOccupation, through SimBridge.Queue): it takes effect at End Turn, and the dialog goes on to the
+    /// next place.
     /// Opening puts the focus on the dialog itself, so no option is lit as if recommended; Tab reaches the options in order,
     /// then Hide. Hide, or Escape, collapses it to "Decision waiting: place" without choosing; an unanswered capture waits,
     /// its units staying (R-CTRL-008). No picture, no sound, no video (impact plan section 4.1 item 6).</para></summary>
@@ -33,7 +37,7 @@ namespace Statecraft.Game.UI
         readonly Button hide, reopen; readonly Button? endTurn;
         readonly SimBridge bridge; readonly UiText text; readonly EventCardPresenter? eventCard;
         readonly IReadOnlyDictionary<string, string>? namesHe;
-        readonly Func<Content, GameState, string, IReadOnlyList<CaptureOption>> optionsFor;
+        readonly Func<Content, GameState, string, IReadOnlyList<CaptureOption>> optionsFor, endOptionsFor;
         readonly Action onHide, onReopen, onUncovered, onRender;
         readonly EventCallback<PointerDownEvent> onHidePointer;
         readonly EventCallback<NavigationSubmitEvent> onHideSubmit;
@@ -52,13 +56,16 @@ namespace Statecraft.Game.UI
         /// it (EventCardPresenter.Rendered). Null: no card (the dialog then follows SimBridge.Changed itself).</param>
         /// <param name="namesHe">Each settlement's Hebrew name, by id (the map's parse of settlements_1948.yaml, as the info
         /// panel gets it; ContentNames.Settlement).</param>
-        /// <param name="helper">Test seam: the options helper; null is SettlementControl.CaptureOptions.</param>
+        /// <param name="helper">Test seam: the capture options helper; null is SettlementControl.CaptureOptions.</param>
+        /// <param name="endHelper">Test seam: the end-of-occupation options helper; null is SettlementControl.EndOptions.</param>
         public CaptureDialogPresenter(VisualElement root, SimBridge bridge, UiText text, EventCardPresenter? eventCard,
             IReadOnlyDictionary<string, string>? namesHe = null,
-            Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? helper = null)
+            Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? helper = null,
+            Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? endHelper = null)
         {
             this.bridge = bridge; this.text = text; this.eventCard = eventCard; this.namesHe = namesHe;
             optionsFor = helper ?? SettlementControl.CaptureOptions;
+            endOptionsFor = endHelper ?? SettlementControl.EndOptions;
             card = root.Q<VisualElement>("capture-card"); layer = card.parent; hudRoot = root.Q("root") ?? root;
             endTurn = hudRoot.Q<Button>("end-turn");
             title = card.Q<Label>("capture-title");
@@ -66,7 +73,6 @@ namespace Statecraft.Game.UI
             options = card.Q<VisualElement>("capture-options");
             hide = card.Q<Button>("capture-hide"); reopen = layer.Q<Button>("capture-reopen");
             hide.text = text["event.hide"];
-            none.text = text["capture.none"];
             onHide = Collapse; onReopen = Reopen; onRender = Render;
             onUncovered = () => { focusedFor = null; if (Showing) FocusCard(Shown!, force: true); };
             onHidePointer = _ => hideByPointer = true;
@@ -83,15 +89,18 @@ namespace Statecraft.Game.UI
             Render();
         }
 
-        /// <summary>The place awaiting the choice that the dialog is for (open or hidden), or null when every capture awaiting
-        /// the choice has a queued answer, or there is none.</summary>
+        /// <summary>The place awaiting a decision that the dialog is for (open or hidden), or null when every place awaiting
+        /// one has a queued answer, or there is none.</summary>
         public string? Shown { get; private set; }
+
+        /// <summary>True when <see cref="Shown"/> awaits the end of its occupation (EndOptions, EndOccupation), not a capture.</summary>
+        public bool Ending { get; private set; }
 
         /// <summary>True while the dialog is hidden behind "Decision waiting: place" (Hide, Escape).</summary>
         public bool Collapsed => Shown != null && collapsedFor == Shown;
 
-        /// <summary>The options the dialog shows: the helper's, those it does not refuse, in its order.</summary>
-        public IReadOnlyList<CaptureOption> Offered { get; private set; } = Array.Empty<CaptureOption>();
+        /// <summary>The options the dialog shows, offered or refused: the helper's, in its order, less one out of play.</summary>
+        public IReadOnlyList<CaptureOption> Listed { get; private set; } = Array.Empty<CaptureOption>();
 
         /// <summary>The decision card is open: the dialog waits behind it.</summary>
         bool CardOpen => eventCard?.Shown != null && !eventCard.Collapsed;
@@ -102,10 +111,11 @@ namespace Statecraft.Game.UI
         {
             var c = bridge.Content; var s = bridge.State;
             if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; }
-            // The sim's order (Settlements is ordinal); a place with a queued answer has had its choice.
-            var waiting = s.Settlements.Where(kv => kv.Value.State == SettlementControl.AwaitingChoice
-                && bridge.QueuedLike(new ResolveCapture(kv.Key, "")) == null).Select(kv => kv.Key).ToList();
+            // One pass in the sim's order (Settlements is ordinal), captures and ends of occupation alike (owner, 24 October
+            // 2026 on #802, "By settlement order"); a place with a queued answer has had its choice.
+            var waiting = s.Settlements.Where(kv => Waits(kv.Key, kv.Value.State)).Select(kv => kv.Key).ToList();
             Shown = waiting.FirstOrDefault();
+            Ending = Shown != null && s.Settlements[Shown].State == SettlementControl.AwaitingEnd;
             if (Shown == null) collapsedFor = null;
             var shown = Shown != null && !Collapsed && !CardOpen;
             if (!shown) focusedFor = null;   // hidden (behind the card, or by Hide): shown again, it takes the focus again
@@ -116,39 +126,66 @@ namespace Statecraft.Game.UI
             hudRoot.EnableInClassList(OpenClass, shown);
             ScreenNav.DisableCovered(hudRoot);
             options.Clear();
-            if (Shown == null) { Offered = Array.Empty<CaptureOption>(); return; }
-            var id = Shown;
+            if (Shown == null) { Listed = Array.Empty<CaptureOption>(); return; }
+            var id = Shown; var ending = Ending;
+            var stem = ending ? EndStem : CaptureStem;
             var name = ContentNames.Settlement(text, c, id, namesHe);
             title.text = name;
-            intro.text = text.Format("capture.intro", name);
+            intro.text = text.Format(stem + ".intro", name);
+            none.text = text[stem + ".none"];
             reopen.text = text.Format("capture.reopen", name);
-            Offered = optionsFor(c, s, id).Where(o => o.Refusal == null && o.Preview != null).ToList();
-            foreach (var o in Offered)
+            Listed = (ending ? endOptionsFor : optionsFor)(c, s, id).Where(o => o.Refused?.Id != CaptureRefusal.NotInPlay).ToList();
+            foreach (var o in Listed)
             {
                 var outcome = o.Outcome;
-                var b = new Button(() => Choose(id, outcome)) { name = "capture-option-" + outcome, text = text["capture.option." + outcome] };
+                var b = new Button(() => Choose(id, outcome, ending)) { name = "capture-option-" + outcome, text = text[stem + ".option." + outcome] };
                 b.AddToClassList(EventCardPresenter.OptionClass); b.AddToClassList(OptionClass);
+                b.SetEnabled(o.Refused == null);   // disabled: no Tab stop, no click, no submit
                 options.Add(b);
                 // Under the option, not in it: the button's label stays the choice itself, and a Label takes no Tab stop.
-                var about = new Label(text["capture.about." + outcome]) { name = "capture-about-" + outcome };
+                var about = new Label(text[stem + ".about." + About(s, id, outcome, ending)]) { name = "capture-about-" + outcome };
                 about.AddToClassList("capture-about");
                 options.Add(about);
-                var preview = new Label(PreviewText(c, s, o.Preview!, text)) { name = "capture-preview-" + outcome };
-                preview.AddToClassList("muted"); preview.AddToClassList("capture-preview");
-                options.Add(preview);
+                // Refused: why, in the UI's language, and no preview (the sim gives none). Else the sim's preview.
+                var line = o.Refused != null ? new Label(RefusalText(o.Refused, name, text)) { name = "capture-refusal-" + outcome }
+                    : o.Preview != null ? new Label(PreviewText(c, s, o.Preview, text, ending)) { name = "capture-preview-" + outcome } : null;
+                if (line == null) continue;
+                line.AddToClassList("muted"); line.AddToClassList(o.Refused != null ? "capture-refusal" : "capture-preview");
+                options.Add(line);
             }
-            none.style.display = Offered.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            none.style.display = Listed.All(o => o.Refused != null) ? DisplayStyle.Flex : DisplayStyle.None;
             count.text = waiting.Count > 1 ? text.Format("event.more", waiting.Count - 1) : "";
             if (shown && focusedFor != id) FocusCard(id, force: false);
         }
+
+        const string CaptureStem = "capture", EndStem = "capture.end";
+
+        /// <summary>Whether <paramref name="id"/>, in <paramref name="state"/>, awaits a decision with no answer queued yet.</summary>
+        bool Waits(string id, string state) =>
+            state == SettlementControl.AwaitingChoice ? bridge.QueuedLike(new ResolveCapture(id, "")) == null
+            : state == SettlementControl.AwaitingEnd && bridge.QueuedLike(new EndOccupation(id, "")) == null;
+
+        /// <summary>The description's key under the stem: the outcome's own, except Annex, which says what the place adds,
+        /// nothing when its residents fled at capture (R-CTRL-016, "territory only, no gain") and its residents, homes and
+        /// jobs when they stayed. No number: those are the sim's (Q-UI-2 (a)).</summary>
+        static string About(GameState s, string id, string outcome, bool ending) =>
+            ending && outcome == SettlementControl.Annex ? (s.Settlements[id].Fled ? "annex_fled" : "annex_stayed") : outcome;
+
+        /// <summary>A refusal's line in the UI's language: capture.refusal.&lt;id&gt; with {0} the place's name and the sim's
+        /// values after it. Never the sim's English (Q-TECH-5).</summary>
+        public static string RefusalText(CaptureRefusal r, string place, UiText t) =>
+            t.Format("capture.refusal." + r.Id, new object[] { place }.Concat(r.Args).ToArray());
 
         /// <summary>The preview's lines (Q-UI-2 (a)): a heading, then each quantity the option changes at once, in
         /// CapturePreview's order, in the turn report's form (report.line: the caption, then the change as the top bar shows
         /// it): Attention; Money, the net change of the Treasury less the debt, as the bar's "Money (net)"; Food; Arms; Social
         /// cohesion and International support as the difference of the two shown 0-100 values; the score. A change the bar
-        /// would show as nothing is left out, as there; with none left, capture.changes_none. Every number is the helper's.</summary>
-        public static string PreviewText(Content c, GameState s, CapturePreview p, UiText t)
+        /// would show as nothing is left out, as there; with none left, capture.changes_none. Every number is the helper's.
+        /// <paramref name="ending"/>: the end dialog's heading, which names them as resources, since Annex's people, homes
+        /// and jobs are in its description, not here.</summary>
+        public static string PreviewText(Content c, GameState s, CapturePreview p, UiText t, bool ending = false)
         {
+            var stem = ending ? EndStem : CaptureStem;
             var lines = new List<string>();
             void Line(string caption, string change) => lines.Add(t.Format("report.line", t[caption], change));
             if (p.Attention != 0) Line("capture.caption.attention", t.Format("capture.delta_attention", p.Attention));
@@ -164,7 +201,7 @@ namespace Statecraft.Game.UI
             Points("hud.caption.cohesion", "morale", p.SocialCohesion);
             Points("hud.caption.standing", "intl_standing", p.InternationalSupport);
             if (p.Score != 0) Line("capture.caption.score", t.Format("capture.delta_count", p.Score));
-            return lines.Count == 0 ? t["capture.changes_none"] : t["capture.changes"] + "\n" + string.Join("\n", lines);
+            return lines.Count == 0 ? t[stem + ".changes_none"] : t[stem + ".changes"] + "\n" + string.Join("\n", lines);
         }
 
         /// <summary>Hide: the dialog gives the map back and waits behind "Decision waiting: place", which takes the focus when
@@ -214,11 +251,11 @@ namespace Statecraft.Game.UI
             });
         }
 
-        void Choose(string id, string outcome)
+        void Choose(string id, string outcome, bool ending)
         {
-            // The bridge raises Refused (the toast shows it) or Changed (the dialog goes on to the next capture, which takes
-            // the focus). Answered from the keyboard with no capture left, the focus goes to End turn (#41 M1).
-            bridge.Queue(new ResolveCapture(id, outcome));
+            // The bridge raises Refused (the toast shows it) or Changed (the dialog goes on to the next place, which takes
+            // the focus). Answered from the keyboard with no place left, the focus goes to End turn (#41 M1).
+            bridge.Queue(ending ? new EndOccupation(id, outcome) : (Command)new ResolveCapture(id, outcome));
             if (Shown == null && presses.ByKeyboard) FocusReturn.To(endTurn);
         }
 

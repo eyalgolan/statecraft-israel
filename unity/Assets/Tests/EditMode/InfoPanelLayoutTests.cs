@@ -164,6 +164,8 @@ public class InfoPanelLayoutTests
                     for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Cohorts.Add(id, new Cohort(id, k == 0 ? "recruit" : "halutz", "tel_aviv", 12, 4)); }
                     for (int k = 0; k < 2; k++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, "halutz", city.Q, city.R)); }
                     // With the ma'abarot policy every project kind is a Build button: the city's tallest project part (#1122).
+                    // #1511: the city's own hex also lays out Return craftsmen, Reassign craftsmen, halutz and veteran, and a Return per pioneer group.
+                    if (what.StartsWith("city")) { var x = s.Cities["tel_aviv"]; s.Cities["tel_aviv"] = x.WithCraftsmen(2).WithQualified(new Qualified(1, 1, new[] { 3, 5 })).WithCounts(x.Civilians, x.Employed, x.Refugees); }
                     if (what == "city with the policy") s.Policies[MapActions.MaabarotPolicy] = 1;
                     if (what == "field") s.Sites[site.Id] = SiteWork.Built(site.Id, s.Date);   // #1124: the yishuv built, its field's Plow
                     var at = $"{(hebrew ? "he" : "en")} {w}x{h} {what}";

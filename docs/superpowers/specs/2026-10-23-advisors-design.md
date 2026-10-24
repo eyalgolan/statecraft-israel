@@ -444,6 +444,17 @@ as the first Golda colorization was (it changed her hair). Ribbon and insignia c
 a guess and are recorded as one. Faithful colorization is allowed for these three photographs and is recorded in the
 credit ("Amend to my route", section 11.3).
 
+**Amendment for the first English clips (owner, 24 October 2026, "Record amendment").** Two changes beyond colorization
+are approved, and each clip's credit line and `ASSETS.yaml` row say exactly what was changed:
+
+- Ben-Gurion (`opening.greeting`, `opening.attention`, `opening.event`): the 1951 portrait is tinted and painted
+  locally, his face still the photograph, and set on an AI-generated office background (an empty room drawn from two
+  1949 photographs of his office, with the flag the owner asked for).
+- Golda (`opening.city`, `opening.training`, `meyerson.exhausted`, `meyerson.debt_ceiling`): the clip is the raw Kling
+  3.0 Pro and Sync 3 output of the colorized crop, with no composite and nothing painted out ("A, raw", about 14:10
+  IDT). The whole frame is animated: the camera pushes in and pans, the flag waves and the people around her change
+  expression.
+
 ### 11.2 The route (slice S6b)
 
 The owner's rulings, verbatim, from the coordinator session ("in chat"):
