@@ -10,6 +10,278 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
+public class ResourceHudTests
+{
+    static readonly Content C = ContentLoader.Load(Paths.Content);
+    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static SimBridge Bridge(UiText t, Content? c = null) => new SimBridge(GameSession.New(c ?? C, GoldenRun.Seed, Mode.Historical), t);
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void StocksShowActualCountsAndChangesWithoutRetiringTheExistingMeters(bool he)
+    {
+        var t = Text(he); var b = Bridge(t);
+        b.State.Food = 1234567; b.State.Arms = int.MaxValue;
+        var opening = HudModel.From(b, t);
+        Assert.AreEqual(t.Format("hud.people", 1234567), opening.For("food").Value);
+        Assert.AreEqual(t.Format("hud.people", int.MaxValue), opening.For("arms").Value);
+        Assert.IsEmpty(opening.For("food").Delta);
+        b.EndTurn();
+        b.State.Food = b.Session.Previous!.Food - 23;
+        b.State.Arms = b.Session.Previous.Arms - 2;
+        var m = HudModel.From(b, t);
+        foreach (var (id, delta) in new[] { ("food", -23), ("arms", -2) })
+        {
+            Assert.AreEqual(t.Format("hud.delta_people", delta), m.For(id).Delta, id);
+            Assert.AreEqual(-1, m.For(id).Sign, id);
+            Assert.AreEqual(t.Format("hud.people", -delta), m.For(id).SayChange, id);
+        }
+        CollectionAssert.IsSubsetOf(new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx", "food", "arms" }, HudModel.MeterIds);
+        using var ui = new UiTestKit();
+        using var hud = new HudPresenter(ui.Root, b, t);
+        foreach (var (id, caption) in new[] { ("food", he ? "מזון" : "Food"), ("arms", he ? "נשק" : "Arms") })
+        {
+            var meter = ui.Q<VisualElement>("meter-" + id);
+            Assert.AreEqual(caption, meter.Q<Label>(className: "meter-name").text);
+            Assert.AreEqual(m.For(id).Value, ui.Q<Label>(id + "-value").text);
+            Assert.AreEqual(HudModel.Spoken(t, caption, m.For(id)), meter.tooltip);
+        }
+    }
+
+    [Test]
+    public void StockCausesAreTheSimsOwnMessagesForTheStockOnly()
+    {
+        var b = Bridge(Text(false));
+        var turn = new StepResult(b.State, new[] {
+            new Cause("economy", "food", -3, "food small"), new Cause("effects", "arms", 9, "arms first"),
+            new Cause("effects", "food", 7, "food first"), new Cause("effects", "food_supply", 1, "indicator, not stock"),
+            new Cause("economy", "food", 0, "no change"), new Cause("effects", "arms", -9, "arms tie") }, new Rejection[0]);
+        CollectionAssert.AreEqual(new[] { turn.Why[2].Message, turn.Why[0].Message }, HudModel.Causes(turn, "food"));
+        CollectionAssert.AreEqual(new[] { turn.Why[1].Message, turn.Why[5].Message }, HudModel.Causes(turn, "arms"));
+        Assert.IsEmpty(HudModel.Causes(null, "food"));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ALoadedSessionKeepsTheActualStockDeltas(bool he)
+    {
+        var t = Text(he); var played = Bridge(t);
+        Assert.IsNull(played.Queue(new BuyArms(3))); played.EndTurn();
+        var loaded = new SimBridge(GameSession.Load(C, played.Session.Save.Write(), out var warnings), t);
+        Assert.IsEmpty(warnings);
+        foreach (var id in new[] { "food", "arms" })
+        {
+            var before = HudModel.From(played, t).For(id); var after = HudModel.From(loaded, t).For(id);
+            Assert.AreEqual(before.Value, after.Value, id); Assert.AreEqual(before.Delta, after.Delta, id);
+            Assert.AreEqual(before.Sign, after.Sign, id);
+        }
+    }
+
+    [Test]
+    public void LegacyContentDoesNotPretendToHaveNationalStocks()
+    {
+        var t = Text(false); var b = Bridge(t, SimBridgeGddTests.Legacy);
+        using var ui = new UiTestKit(); using var hud = new HudPresenter(ui.Root, b, t);
+        foreach (var id in new[] { "food", "arms" })
+        {
+            Assert.IsEmpty(HudModel.From(b, t).For(id).Value);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("meter-" + id).style.display.value);
+        }
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("defence-arms").style.display.value);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void PurchaseQueuesReplacesAndWithdrawsWithoutSpendingTheStockOrMoneyEarly(bool he)
+    {
+        var t = Text(he); var b = Bridge(t); using var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var count = ui.Q<IntegerField>("arms-count"); count.value = 3;
+        var stock = b.State.Arms; var cash = b.State.Treasury; var attention = b.AttentionLeft;
+        ui.Press("arms-buy");
+        Assert.AreEqual(3, ((BuyArms)b.QueuedLike(new BuyArms(1))!).Count);
+        Assert.AreEqual(stock, b.State.Arms); Assert.AreEqual(cash, b.State.Treasury);
+        Assert.AreEqual(attention - b.Price(new BuyArms(3)), b.AttentionLeft, 1e-9);
+        count.value = 5; ui.Press("arms-buy");
+        Assert.AreEqual(1, b.Queued.OfType<BuyArms>().Count());
+        Assert.AreEqual(5, ((BuyArms)b.QueuedLike(new BuyArms(1))!).Count);
+        Assert.IsNotEmpty(ui.Q<Label>("arms-pending").text);
+        ui.Press("arms-withdraw");
+        Assert.IsNull(b.QueuedLike(new BuyArms(1))); Assert.AreEqual(attention, b.AttentionLeft, 1e-9);
+        Assert.IsEmpty(ui.Q<Label>("arms-pending").text);
+        count.value = 2; ui.Press("arms-buy"); b.EndTurn();
+        Assert.AreEqual(stock + 2, b.State.Arms);
+        Assert.IsNull(b.QueuedLike(new BuyArms(1)));
+        Assert.IsFalse(ui.Q<Button>("arms-withdraw").enabledSelf);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void AttentionRefusalAndReplacementUseTheBridgesOwnPaymentDecision(bool he)
+    {
+        var t = Text(he); var b = Bridge(t); using var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var policy = new SetPolicy(C.Policies[0].Id, 0.5);
+        b.State.Attention = b.Price(new BuyArms(2)) + b.Price(policy);
+        Assert.IsNull(b.Queue(new BuyArms(2)));
+        Assert.IsNull(b.Queue(policy));
+        Assert.AreEqual(0, b.AttentionLeft, 1e-9, "precondition: the two real orders spend the available Attention");
+        Assert.IsTrue(b.CanPay(new BuyArms(4)), "a replacement refunds its existing Attention price");
+        ui.Q<IntegerField>("arms-count").value = 4;
+        Assert.AreEqual(b.CanPay(new BuyArms(4)), ui.Q<Button>("arms-buy").enabledSelf);
+        ui.Press("arms-buy"); Assert.AreEqual(4, ((BuyArms)b.QueuedLike(new BuyArms(1))!).Count);
+        ui.Press("arms-withdraw");
+        b.State.Attention = b.Price(policy); // a state with no Attention beyond the remaining policy order
+        defence.Render();
+        Assert.IsFalse(b.CanPay(new BuyArms(4)), "precondition: Attention cannot pay");
+        Assert.IsFalse(ui.Q<Button>("arms-buy").enabledSelf);
+        Assert.IsNotEmpty(ui.Q<Label>("arms-reason").text);
+        Assert.IsNotNull(b.Queue(new BuyArms(4)), "Queue and the control agree on refusal");
+        Assert.IsNull(b.QueuedLike(new BuyArms(1)));
+    }
+
+    [Test]
+    public void InvalidCountsAreRefusedByTheSimAndDoNotChangeTheStock()
+    {
+        var t = Text(false); var b = Bridge(t); using var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        using var toast = new ToastPresenter(ui.Root, b, t);
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        ui.Q<IntegerField>("arms-count").value = 0;
+        var stock = b.State.Arms;
+        ui.Press("arms-buy");
+        Assert.AreEqual(0, ((BuyArms)b.QueuedLike(new BuyArms(1))!).Count, "the UI delegates count validity to the sim");
+        var turn = b.EndTurn();
+        Assert.AreEqual(1, turn.Rejected.Count);
+        StringAssert.Contains("Buy at least 1 Arms", ui.Q<Label>("toast").text);
+        Assert.AreEqual(stock, b.State.Arms);
+        Assert.IsEmpty(b.Queued);
+        Assert.IsEmpty(ui.Q<Label>("arms-pending").text);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void GameOverDisablesPurchaseAndNamesTheReason(bool he)
+    {
+        var t = Text(he); var b = Bridge(t); b.State.GameOver = GameOverCodes.MvpEnded;
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        Assert.IsFalse(ui.Q<Button>("arms-buy").enabledSelf);
+        Assert.AreEqual(t["order.game_over"], ui.Q<Label>("arms-reason").text);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void TheQuoteUsesTheCurrentRuleAndBridgePrices(bool he)
+    {
+        var t = Text(he); var b = Bridge(t); using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var quote = ui.Q<Label>("arms-quote").text;
+        StringAssert.Contains(PlayerText.Money(C, "treasury", C.RulesAt(b.State.Date).Mvp!.ArmsPrice!.Value), quote);
+        StringAssert.Contains(t.Format("arms.quote", PlayerText.Money(C, "treasury", C.RulesAt(b.State.Date).Mvp!.ArmsPrice!.Value), b.Price(new BuyArms(1)), b.AttentionLeft), quote);
+        Assert.AreEqual(t["arms.count"], ui.Q<IntegerField>("arms-count").label);
+    }
+
+    [UnityTest]
+    public IEnumerator StocksAndPurchaseFitTheEnglishAndHebrewWindows()
+    {
+        foreach (bool he in new[] { false, true })
+        foreach (var (w, h) in new[] { (1920, 1080), (1280, 720), (1366, 768), (1760, 1000), (2560, 1080),
+            (1920, 1200), (1440, 900), (1024, 768), (1280, 1024), (1024, 1024), (960, 1080), (800, 1000),
+            (1531, 784), (390, 844), (375, 667) })
+        {
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture = rt;
+            var go = new GameObject("ResourceHudLayout"); go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+            HudPresenter? hud = null; DefencePresenter? defence = null; UiDirection? direction = null;
+            try
+            {
+                var root = doc.rootVisualElement; var t = Text(he); var b = Bridge(t);
+                root.Q("root").RemoveFromClassList("loading");
+                if (he) root.Q("root").AddToClassList(UiLanguage.HebrewClass);
+                hud = new HudPresenter(root, b, t);
+                b.Queue(new BuyArms(3)); b.EndTurn();
+                b.State.Food = int.MaxValue; b.State.Arms = 123456;
+                hud.Render();
+                for (int i = 0; i < 12; i++) yield return null;
+                var at = $"{(he ? "he" : "en")} {w}x{h}"; var bar = root.Q("top-bar").worldBound;
+                foreach (var id in new[] { "food", "arms" })
+                {
+                    var meter = root.Q("meter-" + id); Assert.IsNotNull(meter, at + ": " + id);
+                    Assert.Greater(meter.worldBound.width, 0, at);
+                    foreach (var label in meter.Query<Label>().ToList())
+                    {
+                        var r = label.worldBound;
+                        Assert.GreaterOrEqual(r.xMin + 0.5f, meter.worldBound.xMin, at + ": " + label.text);
+                        Assert.LessOrEqual(r.xMax, meter.worldBound.xMax + 0.5f, at + ": " + label.text);
+                        Assert.GreaterOrEqual(r.yMin + 0.5f, bar.yMin, at + ": " + label.text);
+                        Assert.LessOrEqual(r.yMax, bar.yMax + 0.5f, at + ": " + label.text);
+                    }
+                    var caption = meter.Q<Label>(className: "meter-name");
+                    Assert.GreaterOrEqual(caption.resolvedStyle.fontSize * root.panel.scaledPixelsPerPoint, HudPresenter.TextFloorPx - 0.1f, at + ": caption floor");
+                }
+                var visible = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None).ToList();
+                TestContext.WriteLine($"{at}: bar {bar}; classes {string.Join(",", root.Q("root").GetClasses())}; bar classes {string.Join(",", root.Q("top-bar").GetClasses())}");
+                Assert.AreEqual(9, visible.Count, at + ": all existing and new meters stay");
+                for (int i = 0; i < visible.Count; i++)
+                for (int j = i + 1; j < visible.Count; j++)
+                {
+                    var a = visible[i].worldBound; var z = visible[j].worldBound;
+                    var dx = Mathf.Min(a.xMax, z.xMax) - Mathf.Max(a.xMin, z.xMin);
+                    var dy = Mathf.Min(a.yMax, z.yMax) - Mathf.Max(a.yMin, z.yMin);
+                    // Adjacent transformed rectangles can share a 0.00003 px edge from float arithmetic.
+                    Assert.LessOrEqual(Mathf.Min(dx, dy), 0.001f, $"{at}: {visible[i].name} {a} overlaps {visible[j].name} {z}; intersection {dx:R} x {dy:R}");
+                }
+                root.Q("screen-defence").style.display = DisplayStyle.Flex;
+                defence = new DefencePresenter(root, b, t); direction = new UiDirection(root, b);
+                var count = root.Q<IntegerField>("arms-count"); Assert.IsNotNull(count, at);
+                count.value = 123456; defence.Render();
+                for (int i = 0; i < 8; i++) yield return null;
+                var panel = root.Q("defence-arms");
+                foreach (var e in new VisualElement[] { count, root.Q("arms-buy"), root.Q("arms-withdraw"), root.Q("arms-quote") })
+                {
+                    Assert.Greater(e.worldBound.width, 0, at + ": " + e.name);
+                    Assert.GreaterOrEqual(e.worldBound.xMin + 0.5f, panel.worldBound.xMin, at + ": " + e.name);
+                    Assert.LessOrEqual(e.worldBound.xMax, panel.worldBound.xMax + 0.5f, at + ": " + e.name);
+                }
+            }
+            finally { direction?.Dispose(); defence?.Dispose(); hud?.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); Object.DestroyImmediate(rt); }
+        }
+    }
+
+    [Test]
+    public void RealStockCausesReachTheMeterTipAndTheTurnReport()
+    {
+        var t = Text(false); var b = Bridge(t);
+        b.State.FxReserves = 0; b.State.ActiveSituations.Add(EconomySystem.FxCrisis);
+        Assert.IsNull(b.Queue(new BuyArms(2)));
+        var turn = b.EndTurn();
+        using var ui = new UiTestKit(); using var hud = new HudPresenter(ui.Root, b, t);
+        using var tip = new MeterTip(ui.Root, b, t, new[] { ui.Q<VisualElement>("meter-food"), ui.Q<VisualElement>("meter-arms") });
+        foreach (var id in new[] { "food", "arms" })
+        {
+            var cause = turn.Why.First(w => w.Target == id && w.Delta != 0);
+            StringAssert.Contains(cause.Message, tip.Lines(ui.Q<VisualElement>("meter-" + id)).causes, id);
+            var line = TurnReportPresenter.Lines(b, t).Single(l => l.Meter == id);
+            CollectionAssert.Contains(line.Causes, cause.Message, id);
+            StringAssert.Contains(HudModel.From(b, t).For(id).Delta, line.Heading, id);
+        }
+    }
+
+    [Test]
+    public void DisposingTheScreenUnhooksThePurchaseButtons()
+    {
+        var t = Text(false); var b = Bridge(t); using var ui = new UiTestKit();
+        var defence = new DefencePresenter(ui.Root, b, t); defence.Dispose();
+        ui.Press("arms-buy"); Assert.IsEmpty(b.Queued);
+    }
+}
+
 public class HudTests
 {
     static readonly Content C = ContentLoader.Load(Paths.Content);

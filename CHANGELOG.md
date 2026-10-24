@@ -27,6 +27,7 @@ checks this (see `CONTRIBUTING.md`).
   near-edge clicks select the visible hex. Sea holes and ground outside the board still use the real map (refs #18).
 
 ### Added
+- The HUD shows the national Food and Arms stocks, turn changes and sim causes in English and Hebrew; Defence queues, replaces and withdraws Arms purchases through the sim bridge; on a phone Food and Arms share the second meter line, so the bar keeps its 440 px maximum (Refs #731).
 - Completed recruit cohorts become one military formation each, conserving their population strength. Israeli military
   formations pay Money upkeep in step 7, borrowing a shortfall without ongoing Arms consumption; recruits promote after
   service, preserving their identity and orders. Initial upkeep IL 0.05m per formation per turn, six service turns, and

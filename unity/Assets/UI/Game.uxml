@@ -90,6 +90,20 @@
                         <ui:VisualElement class="meter-row"><ui:Label name="fx-value" class="meter-value" /><ui:Label name="fx-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <ui:VisualElement name="meter-food" class="meter meter-pool">
+                    <Statecraft.Game.UI.UiIcon glyph="biome-coastal_plain" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Food" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="food-value" class="meter-value" /><ui:Label name="food-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="meter-arms" class="meter meter-pool">
+                    <Statecraft.Game.UI.UiIcon glyph="helmet" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Arms" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="arms-value" class="meter-value" /><ui:Label name="arms-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="nav" class="nav">
                 <ui:Button name="new-game" text="New game" class="nav-button bar-button"><Statecraft.Game.UI.UiIcon glyph="restart" class="nav-disc" /></ui:Button>
@@ -344,6 +358,18 @@
                         <ui:Label name="mob-cost" class="muted wrap" />
                         <Statecraft.Game.UI.UiFrame shadow="false" />
                     </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="defence-arms" class="defence-panel">
+                    <ui:Label name="defence-title-arms" class="section-title" />
+                    <ui:Label name="arms-quote" class="muted wrap" />
+                    <ui:VisualElement class="row arms-controls">
+                        <ui:IntegerField name="arms-count" class="arms-count" />
+                        <ui:Button name="arms-buy" />
+                        <ui:Button name="arms-withdraw" />
+                    </ui:VisualElement>
+                    <ui:Label name="arms-pending" class="wrap" />
+                    <ui:Label name="arms-reason" class="reason wrap" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
                 </ui:VisualElement>
                 <ui:VisualElement name="defence-budget" class="defence-panel defence-budget">
                     <ui:Label name="defence-title-budget" class="section-title budget-title" />

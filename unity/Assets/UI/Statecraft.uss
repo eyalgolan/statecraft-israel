@@ -112,11 +112,16 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .meter-caption-row { flex-direction: row; align-items: flex-end; }
 /* In the bar a long caption wraps rather than widen its meter; on the roomy bar it keeps one line, as in the promo (B8). */
 .meter .meter-name { max-width: 120px; }
+/* Nine meters: let the longest caption use its natural width before wrapping, so its two-line body stays clear of
+   the 70 px bar's edge. The other tiers still wrap it to the room their meter provides. */
+.hud-pools #meter-standing .meter-name { max-width: none; }
 .top-bar--roomy .meter .meter-name { max-width: none; white-space: nowrap; }
 #security-level { font-size: 15px; color: var(--ink-dim); margin-left: 6px; white-space: nowrap; flex-shrink: 0; }
 .meter-row { flex-direction: row; align-items: flex-end; }
 .meter-value { font-size: 21px; color: var(--ink); }
 .meter-delta { font-size: 16px; margin-left: 7px; }
+.top-bar--compact .meter-pool .meter-row { flex-direction: column; align-items: flex-start; }
+.top-bar--compact .meter-pool .meter-delta { margin-left: 0; }
 /* The screen buttons: a round, gold-rimmed icon with its name under it (the name keeps them legible without tooltips). */
 .nav { flex-direction: row; flex-shrink: 0; align-items: center; }
 .nav-button {
@@ -159,6 +164,11 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    (78% of the bar, so they always take the first row) above, the screen buttons and End Turn below; the panels move down. */
 .hud-two-row .top-bar { height: 216px; padding-top: 6px; padding-bottom: 4px; flex-wrap: wrap; justify-content: space-between; align-content: space-around; }
 .hud-two-row .meters { width: 78%; flex-grow: 1; }
+.hud-pools.hud-two-row .meters { flex-wrap: wrap; }
+.hud-pools.hud-two-row .nav { flex-basis: 50%; flex-grow: 1; }
+.hud-pools.hud-two-row .meter { flex-basis: 20%; min-width: 160px; }
+.hud-pools.hud-two-row .meter .meter-name { max-width: 170px; }
+.hud-pools.hud-two-row #meter-standing .meter-name { max-width: 170px; }
 .hud-two-row .right-column, .hud-two-row .left-column, .hud-two-row .event-gutter, .hud-two-row .event-layer, .hud-two-row .screen, .hud-two-row .toast { top: 232px; }
 /* #380's re-tier gives a square window (1024x1024) the two-row bar: the event layer keeps the 92 px the bar grew by free at its
    bottom (padding: the backdrop still reaches the window's bottom), so the centred card stays where the stacked bar left it,
@@ -177,10 +187,15 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    no empty band lies between the stats and the map (#1089, the owner: 440 px "stays as the maximum, not a fixed height"). */
 .hud-three-row .top-bar { height: 440px; }
 .hud-three-row .meters { width: 100%; flex-wrap: wrap; }
-/* Each meter a quarter of the row, so the seven always take two lines (four, then three) and the bar's second line is
+/* Each meter a quarter of the row (the GDD bar's too, over its two-row 20%), so the seven always take two lines (four, then three) and the bar's second line is
    never an empty band (a phone's turn-1 values would otherwise fit one line). A quarter (~190 px) is wider than the widest
    meter there (~154 px). */
-.hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
+.hud-three-row .meter, .hud-pools.hud-three-row .meter { flex-basis: 25%; flex-grow: 0; flex-shrink: 0; }
+/* The nine GDD meters keep the same two lines (#731): Food and Arms, short captions over a count, share the second line's
+   last quarter at their own width, so the bar stays within its 440 px at 390x844 (the owner, 22 October 2026: "the phone
+   top bar keeps the 440 px maximum from #1089"; a third line for Arms alone took it to 455-500 px). A count too wide for
+   the quarter (ResourceHudTests sets Food to int.MaxValue) still wraps to a line of its own rather than clip. */
+.hud-pools.hud-three-row .meter-pool { flex-basis: auto; min-width: 0; }
 /* At the floor's 25 px (#642) a caption may take most of its quarter, not the 120 px that would break "Immigration" inside the
    word (170 px: a phone's quarter, about 193 px, keeps 5% free, PromoHudTests), and "Security" and its level, too wide for a
    quarter side by side, wrap the level under the caption. */
@@ -986,6 +1001,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
 .lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
 .lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
+.lang-he .top-bar--compact .meter-pool .meter-row { align-items: flex-end; }
+.lang-he .top-bar--compact .meter-pool .meter-delta { margin-right: 0; }
 .lang-he .turn-box { align-items: flex-start; }
 .lang-he .top-bar { padding: 0 8px 0 14px; }
 .lang-he .date-box { margin-right: 0; margin-left: 10px; padding: 0 12px 0 10px; }
@@ -1038,3 +1055,10 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .timeline-diverged { border-left-width: 3px; padding-left: 8px; }
 .lang-he .timeline-diverged { border-left-width: 0; border-right-width: 3px; padding-left: 4px; padding-right: 8px; }
 #timeline-difference, #timeline-rejoined { color: var(--gold-light); }
+
+.arms-controls { flex-wrap: wrap; align-items: center; }
+.arms-count { flex-grow: 1; min-width: 200px; margin: 4px; }
+.arms-count .unity-base-field__label { min-width: 0; width: auto; margin-right: 12px; color: var(--ink); font-size: 18px; }
+.arms-count .unity-base-field__input { min-width: 80px; min-height: 34px; color: var(--ink); background-color: var(--navy-deep); font-size: 20px; border-width: 1px; border-color: var(--gold-dim); }
+.lang-he .arms-count { flex-direction: row-reverse; }
+.lang-he .arms-count .unity-base-field__label { margin-right: 0; margin-left: 12px; }

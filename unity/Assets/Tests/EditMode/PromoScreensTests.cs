@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -473,10 +474,19 @@ public class PromoScreensTests
             texts["soldiers-held"] = Text.Format("defence.soldiers_held", s.SoldiersHeld.Values.Sum() * ppu);
             texts["defence-budget-share"] = $"{PlayerText.Percent(s.Budget[DefencePresenter.BudgetLine])} of budget spending";
             bars["mob-bar"] = (float)callUp; bars["defence-budget-bar"] = (float)s.Budget[DefencePresenter.BudgetLine];
+            texts["arms-quote"] = Text.Format("arms.quote",
+                PlayerText.Money(C, "treasury", C.RulesAt(s.Date).Mvp!.ArmsPrice!.Value), bridge.Price(new BuyArms(1)), bridge.AttentionLeft);
+            var quantity = ui.Q<IntegerField>("arms-count");
+            Assert.AreEqual(1, quantity.value, "the default player-entered purchase count");
             foreach (var name in new[] { "screen-cabinet", "screen-defence" })
             {
                 foreach (var t in ui.Q<VisualElement>(name).Query<TextElement>().ToList().Where(t => t.text.Any(char.IsDigit)))
                 {
+                    if (quantity.Contains(t))
+                    {
+                        Assert.AreEqual(quantity.value.ToString(CultureInfo.InvariantCulture), t.text, $"{where}: the purchase input shows its actual value");
+                        continue;
+                    }
                     Assert.IsTrue(texts.ContainsKey(t.name), $"{where}: '{t.text}' in {t.name} is a figure no test binds to the sim");
                     Assert.AreEqual(texts[t.name], t.text, $"{where}: {t.name}");
                 }

@@ -276,6 +276,7 @@ public class HebrewUiTests
     static readonly (string where, string key)[] StaticTexts =
     {
         ("loading", "boot.loading"),
+        ("meter-food/meter-name", "hud.caption.food"), ("meter-arms/meter-name", "hud.caption.arms"),
         ("meter-treasury/meter-name", "hud.caption.treasury"), ("meter-immigration/meter-name", "hud.caption.immigration"),
         ("meter-security/meter-name", "hud.caption.security"), ("meter-support/meter-name", "hud.caption.support"),
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),

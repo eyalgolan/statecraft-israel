@@ -193,7 +193,7 @@ public class TopBarTests
             string at = $"{(he ? "he" : "en")} widest={widest} {phase.name}";
             var labels = root.Q("top-bar").Query<Label>(className: "meter-name").ToList()
                 .Where(l => Shown(l) && !string.IsNullOrEmpty(l.text)).ToList();
-            Assert.AreEqual(8, labels.Count, "seven captions and Security level must be exercised");
+            Assert.AreEqual(10, labels.Count, "nine captions (with Food and Arms, #731) and Security level must be exercised");
             var ink = new List<(Label label, Rect bounds)>();
             foreach (var l in labels)
             {
@@ -373,7 +373,8 @@ public class TopBarTests
     /// <summary>Review of #624: the one-row bar's edge. 4:3 (1646 logical px) and 1662 keep the one-row bar with its icons; a
     /// fullscreen 5:4 (1585) and 1610 or 1612 take the stacked bar with its icons (the one-row bar does not hold the widest
     /// values there); just above NarrowBelowPx (1642) one row, just below (1635) stacked; a square window (1382) the stacked
-    /// bar without icons. The logical widths are logged, the numbers HudPresenter's notes quote.</summary>
+    /// bar without icons. #731 preserves the one-row edge but drops the icons at these boundary windows for nine meters.
+    /// The logical widths are logged, the numbers HudPresenter's notes quote.</summary>
     [UnityTest]
     public IEnumerator TheOneRowBarReachesFiveByFour()
     {
@@ -385,7 +386,7 @@ public class TopBarTests
                 bool narrow = r.ClassListContains(HudPresenter.NarrowClass);
                 TestContext.WriteLine($"{w}x{h}: panel {root.worldBound.width:0.0} x {root.worldBound.height:0.0}, bar {root.Q("top-bar").worldBound.width:0.0}; narrow {narrow}, compact {root.Q("top-bar").ClassListContains(HudPresenter.CompactClass)}, two rows {r.ClassListContains(HudPresenter.TwoRowClass)}");
                 if (narrow == oneRow) problems.Add($"{w}x{h} ({root.Q("top-bar").worldBound.width:0} px): {(oneRow ? "not the one-row bar" : "the one-row bar")}");
-                if (oneRow && root.Q("top-bar").ClassListContains(HudPresenter.CompactClass)) problems.Add($"{w}x{h}: the one-row bar dropped its icons");
+                if (!root.Q("top-bar").ClassListContains(HudPresenter.CompactClass)) problems.Add($"{w}x{h}: the nine-meter boundary bar must drop its icons to keep the text clear");
             });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
@@ -505,7 +506,7 @@ public class TopBarTests
                     labels.Add(root.Q<Label>("attention"));   // the captions' query also holds security-level (class meter-name)
                     labels.Add(root.Q<Label>("turn")); labels.Add(root.Q<Label>("date"));   // the plate's date line
                     labels = labels.Distinct().ToList();
-                    if (labels.Count != 11) problems.Add($"{at}: precondition: 11 small labels (Social cohesion's caption with #380), found {labels.Count}");
+                    if (labels.Count != 13) problems.Add($"{at}: precondition: 13 small labels (Food and Arms added by #731), found {labels.Count}");
                     foreach (var l in labels)
                     {
                         if (string.IsNullOrEmpty(l.text) || !(l.worldBound.height > 0)) { problems.Add($"{at}: precondition: {l.name} '{l.text}' shows"); continue; }
@@ -586,7 +587,8 @@ public class TopBarTests
     /// so no empty band lies between the stats and the map. Its last row (the screen buttons, Attention and End Turn) ends at
     /// the bar's bottom, the panels under it move up with it (they start at most the stylesheet's 16 px below it; the panel's
     /// pixel snapping reads it as 14 to 17), and at 390x844 it is at most 440 px tall (the snapping reads 440 as 440.8, hence
-    /// the 441 bound, not an overshoot); in both languages, with turn 1's values and with the widest.</summary>
+    /// the 441 bound, not an overshoot), with the nine GDD meters (#731; the owner, 22 October 2026: "the phone top bar keeps
+    /// the 440 px maximum from #1089"); in both languages, with turn 1's values and with the widest.</summary>
     [UnityTest]
     public IEnumerator OnAPhoneTheBarEndsAtItsLastRow()
     {
@@ -599,6 +601,8 @@ public class TopBarTests
                         string at = $"{(hebrew ? "he" : "en")} {w}x{h}{(widest ? " widest" : " turn 1")}";
                         if (!root.Q("root").ClassListContains(HudPresenter.ThreeRowClass)) { problems.Add($"{at}: precondition: the three-row bar"); return; }
                         var barEl = root.Q("top-bar");
+                        int meters = barEl.Query(className: "meter").ToList().Count(Shown);
+                        if (meters != 9) problems.Add($"{at}: precondition: the nine GDD meters, Food and Arms among them (#731), found {meters}");
                         var bar = barEl.worldBound;
                         var s = barEl.resolvedStyle;
                         float last = barEl.Children().Where(k => k.resolvedStyle.position == Position.Relative && Shown(k))

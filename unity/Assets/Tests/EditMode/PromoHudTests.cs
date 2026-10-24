@@ -147,8 +147,8 @@ public class PromoHudTests
     }
 
     /// <summary>The bar at every window shape, after a turn has played and with the widest late-game values, changes and
-    /// date (the tiers: HudPresenter). 16:9 and a 16:10 MacBook browser keep the icons on the one-row bar; 16:10 fullscreen
-    /// keeps them on the stacked bar; 4:3 and 5:4 drop them; square and narrower windows wrap into two rows. Everywhere:
+    /// date (the tiers: HudPresenter). With nine meters (#731), 1920 keeps the 70 px bar without icons; ultrawide has room
+    /// for icons. Smaller windows stack changes or wrap the meters, without lowering the text floor. Everywhere:
     /// every meter label stays inside its meter and the bar, no two meters' labels overlap, the meters keep 5% spare room
     /// and stay 12 px clear of the screen buttons, End Turn and the badge, the badge holds its widest line inside its trim at
     /// a fixed width, and the panels start below the bar (reviews N2, N3, N5, N7).</summary>
@@ -166,11 +166,12 @@ public class PromoHudTests
         // moved, each to the tier the seven meters' measured widths need (HudPresenter's notes): 1280x720 and 1366x768 (the
         // floor raises their captions to 18 and 17 px), 1920x1200 and 1440x900 (16:10) take the stacked bar with its icons;
         // 1280x1024 (5:4) drops them; 1024x1024 (square) takes two rows. Every fit assert below is unchanged.
-        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, true, false, false),
-                                                              (1366, 768, true, true, false, false), (1760, 1000, true, false, false, false),
+        // #731: nine meters drop icons sooner and wrap when the raised captions need it; all fit/clearance assertions stay.
+        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, false, false, false, false), (1280, 720, false, true, true, false),
+                                                              (1366, 768, false, true, false, false), (1760, 1000, false, false, false, false),
                                                               (2560, 1080, true, false, false, false),
-                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
-                                                              (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
+                                                              (1920, 1200, false, true, false, false), (1440, 900, false, true, true, false),
+                                                              (1024, 768, false, true, true, false), (1280, 1024, false, true, true, false),
                                                               (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
                                                               (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {
@@ -196,16 +197,22 @@ public class PromoHudTests
                 for (int i = 0; i < 6; i++) yield return null;
                 if (threeRow)
                 {
-                    // #380 (a consequence of the owner's "tighten + re-tier", 16 October 2026): a phone's seven meters take two lines with the turn-1 values
-                    // too, so the bar's second meter line is never an empty band. A line's meters share their centre (.meters
+                    // #731: a phone's nine meters take two lines with the turn-1 values too (Food and Arms share the second
+                    // line's last quarter, so the bar keeps its 440 px maximum: the owner, 22 October 2026), and the bar's
+                    // second meter line is never an empty band. A line's meters share their centre (.meters
                     // align-items: center); their tops differ with their captions' lines.
                     // (Within a line the centres can differ by a pixel: review of #831, so lines are 3 px apart or more.)
                     var centres = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
                         .Select(m => m.worldBound.center.y).OrderBy(y => y).ToList();
                     var lines = 1 + centres.Zip(centres.Skip(1), (a, b) => b - a).Count(d => d > 3f);
-                    Assert.AreEqual(2, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
+                    Assert.AreEqual(2, lines, $"{w}x{h}: nine meters take two lines with the turn-1 values");
                 }
-                if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
+                if ((w, h) == (1920, 1080))
+                {
+                    Assert.IsTrue(root.Q("top-bar").ClassListContains(HudPresenter.CompactClass), "#731: nine meters keep the 70 px bar by dropping icons at 1920");
+                    Assert.IsFalse(root.Q("root").ClassListContains(HudPresenter.NarrowClass));
+                }
+                if ((w, h) == (2560, 1080))
                 {
                     // Review P1: with typical (turn-1) values at 16:9, and at 21:9 (#398), the bar has room for the promo's sizes.
                     var at = $"{w}x{h}";

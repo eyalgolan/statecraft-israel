@@ -11,7 +11,8 @@ namespace Statecraft.Game.UI
     /// section 3) with the current level, the ordered one and each level's turn length, the UN ceasefire clock in full war,
     /// security orders to raise or lower the level, the reserve call-up as a bar with the level's minimum marked and its
     /// yearly cost, and the defence share of the national budget. Orders are queued for End Turn. The promo's forces
-    /// readiness and strength, intelligence and procurement panels are left out: the sim does not model them yet. The call-up
+    /// readiness and strength, and intelligence panels are left out. Arms purchases read the national pool's rules and queue
+    /// through SimBridge (#731); the screen never applies a purchase itself. The call-up
     /// and the budget share show what the turn will end with (a queued order's value, else today's). The screen renders only
     /// while it is open (a change while it is hidden is caught up when ScreenNav opens it).</summary>
     public sealed class DefencePresenter : IDisposable
@@ -24,6 +25,10 @@ namespace Statecraft.Game.UI
         public static readonly UnityEngine.Vector2 LeaderPortrait = new UnityEngine.Vector2(190f, 200f);
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly Button escalate, deEscalate, mobUp, mobDown; readonly Action onEscalate, onDeEscalate, onMobUp, onMobDown;
+        readonly IntegerField armsCount;
+        readonly Button buyArms, withdrawArms;
+        readonly Action onBuyArms, onWithdrawArms;
+        readonly EventCallback<ChangeEvent<int>> onArmsCount;
 
         public DefencePresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits = null)
         {
@@ -33,6 +38,15 @@ namespace Statecraft.Game.UI
             onEscalate = () => Order(+1); onDeEscalate = () => Order(-1);
             onMobUp = () => Mobilize(+MobilizationStep); onMobDown = () => Mobilize(-MobilizationStep);
             escalate.clicked += onEscalate; deEscalate.clicked += onDeEscalate; mobUp.clicked += onMobUp; mobDown.clicked += onMobDown;
+            armsCount = screen.Q<IntegerField>("arms-count"); armsCount.label = text["arms.count"];
+            armsCount.SetValueWithoutNotify(1);
+            buyArms = screen.Q<Button>("arms-buy"); buyArms.text = text["arms.buy"];
+            withdrawArms = screen.Q<Button>("arms-withdraw"); withdrawArms.text = text["arms.withdraw"];
+            onBuyArms = () => bridge.Queue(new BuyArms(armsCount.value));
+            onWithdrawArms = () => Withdraw(new BuyArms(1));
+            onArmsCount = _ => RenderArms();
+            buyArms.clicked += onBuyArms; withdrawArms.clicked += onWithdrawArms;
+            armsCount.RegisterValueChangedCallback(onArmsCount);
             foreach (var (name, key) in Sections) screen.Q<Label>(name).text = text[key].ToUpperInvariant();   // the promo's capitals; a caseless script is unchanged
             screen.Q<Label>("defence-screen-title").text = text["defence.title"];
             screen.Q<Label>("defence-title-prisoners").text = text["defence.section_prisoners"].ToUpperInvariant();   // #755, as Sections
@@ -47,6 +61,7 @@ namespace Statecraft.Game.UI
         {
             ("defence-title-leadership", "defence.section_leadership"), ("defence-title-ladder", "defence.section_ladder"),
             ("defence-title-callup", "defence.section_callup"), ("defence-title-budget", "defence.section_budget"),
+            ("defence-title-arms", "defence.section_arms"),
         };
 
         bool dirty;
@@ -62,6 +77,8 @@ namespace Statecraft.Game.UI
             bridge.Changed -= OnChanged;
             if (screen.userData is System.Action) screen.userData = null;
             escalate.clicked -= onEscalate; deEscalate.clicked -= onDeEscalate; mobUp.clicked -= onMobUp; mobDown.clicked -= onMobDown;
+            buyArms.clicked -= onBuyArms; withdrawArms.clicked -= onWithdrawArms;
+            armsCount.UnregisterValueChangedCallback(onArmsCount);
             foreach (var office in Leaders) PersonCard.Clear(screen.Q<VisualElement>("lead-" + office));
             screen.Q<UiBar>("mob-bar").Mark = null;
         }
@@ -128,6 +145,23 @@ namespace Statecraft.Game.UI
                 case TurnLength.Week: return "defence.turn_week";
                 default: throw new ArgumentOutOfRangeException(nameof(length), length, "no string for this turn length");
             }
+        }
+
+        void RenderArms()
+        {
+            var c = bridge.Content; var s = bridge.State;
+            screen.Q("defence-arms").style.display = c.IsGdd ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!c.IsGdd) return;
+            var order = new BuyArms(armsCount.value);
+            var pending = bridge.QueuedLike(order) as BuyArms;
+            screen.Q<Label>("arms-quote").text = text.Format("arms.quote",
+                PlayerText.Money(c, "treasury", c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value), bridge.Price(order), bridge.AttentionLeft);
+            screen.Q<Label>("arms-pending").text = pending == null ? "" : text.Format("arms.pending", pending.Count);
+            var reason = s.GameOver != null ? text["order.game_over"] : bridge.CanPay(order) ? "" : text["arms.no_attention"];
+            screen.Q<Label>("arms-reason").text = reason;
+            buyArms.SetEnabled(reason.Length == 0);
+            armsCount.SetEnabled(s.GameOver == null);
+            withdrawArms.SetEnabled(pending != null);
         }
 
         public void Render()
@@ -205,6 +239,7 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("mob-cost").text = text.Format("defence.mob_cost", PlayerText.Money(c, "treasury", EconomySystem.MobilizationCost(c, s.Date, proposed)));
             screen.Q<Button>("escalate").SetEnabled(target < 5);
             screen.Q<Button>("de-escalate").SetEnabled(target > 1);
+            RenderArms();
         }
     }
 }

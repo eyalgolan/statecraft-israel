@@ -289,7 +289,7 @@ public class UiLayoutTests
                 {
                     bool inPlate = l.GetFirstAncestorOfType<VisualElement>() != null && root.Q(className: "date-box").Contains(l);
                     Assert.IsTrue(Inside(l.worldBound, inPlate ? plate : bar), $"{w}x{h}: '{l.text}' {l.worldBound} is outside the {(inPlate ? "plate " + plate : "top bar " + bar)}");
-                    Assert.GreaterOrEqual(l.worldBound.yMin, bar.yMin + 2f, $"{w}x{h}: '{l.text}' sits flush against the top edge");
+                    Assert.GreaterOrEqual(l.worldBound.yMin, bar.yMin + 2f, $"{w}x{h}: '{l.text}' sits flush against the top edge; label {l.worldBound}, box {l.contentRect}, parent {l.parent.worldBound}, font {l.resolvedStyle.fontSize}; {LayoutState(root)}");
                 }
                 foreach (var name in new[] { "event-card", "screen-cabinet", "screen-budget", "screen-defence", "screen-why", "toast" })
                     if (root.Q(name).resolvedStyle.display != DisplayStyle.None)
@@ -548,10 +548,12 @@ public class UiLayoutTests
         if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
             problems.Add($"{where}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px) while the photograph shows");
         var band = root.Q("event-photo");
-        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - 1f)
+        // The two-row layer reserves bottom padding for the border label. A card filling the usable content has no
+        // spare room for 16:9, even though its height is less than the layer's padded world bounds.
+        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < layer.contentRect.height - 1f)
         {
             var want = band.layout.width / EventCardPresenter.MediaAspect;
-            if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare; {LayoutState(root)}");
+            if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare; card height {c.height}, layer height {l.height}, layer content height {layer.contentRect.height}, padding {layer.resolvedStyle.paddingTop}/{layer.resolvedStyle.paddingBottom}; {LayoutState(root)}");
         }
     }
 
