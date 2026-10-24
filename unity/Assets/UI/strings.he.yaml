@@ -643,19 +643,12 @@ event.effect.job_slots: "מקומות עבודה"
 event.effect.condition: "מצב הדיור"
 
 # Agent-drafted, NOT approved: he_review pending in advisor-messages.yaml (spec OQ-4). For the native reviewer (#564).
-# C68: agent-drafted translation of opening.greeting; native review pending.
 advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
-# C68: agent-drafted translation of opening.attention.fix1; native review pending.
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
-# C68: agent-drafted translation of opening.city; native review pending.
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
-# C68: agent-drafted translation of opening.training; native review pending.
 advisor.opening.training.text: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-# C68: agent-drafted translation of opening.move; native review pending.
 advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
-# C68: agent-drafted translation of opening.event.fix1; native review pending.
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
-# C68: agent-drafted translation of opening.objectives; native review pending.
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 advisor.next: "הבא"
 advisor.done: "סיום"

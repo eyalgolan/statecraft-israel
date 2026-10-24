@@ -595,16 +595,13 @@ event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
 
 # The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
-# quote. Each step carries the first-turn guide's facts (#42), without balance values. The owner reviews every line.
+# quote. Each step is the advisor's recorded line, without balance values; Attention and the event card use the copy
+# fixes the owner approved on 24 October 2026 ("Approve all 8").
 advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
-# C68: opening.attention.fix1; pending owner copy-fix approval.
-# Original non-fix1 recording: Attention is the capacity for decisions this month. It refills next turn, and any amount left now does not carry over.
 advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
 advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
 advisor.opening.training.text: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
 advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
-# C68: opening.event.fix1; pending owner copy-fix approval.
-# Original non-fix1 recording: An event card presents a decision and shows its effects. A card left unanswered at End turn goes to the responsible minister.
 advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
 advisor.next: "Next"

@@ -97,7 +97,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
             // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
-            // it while it shows, as the guide's ring does.
+            // it while it shows, as its ring does.
             follow = layer.schedule.Execute(Place).Every(100);
             follow.Pause();
             hudRoot.RemoveFromClassList(OpenClass);

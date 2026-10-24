@@ -505,11 +505,11 @@ namespace Statecraft.Game.UI
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
-                var guideUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                var shownUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
                 return () =>
                 {
                     // Under a screen, or the player picked another than the advisor's city or unit: kept.
-                    if (info.Covered || (info.ShowsUnit ? unitLayer.Selected != guideUnit : info.Selected != city)) return;
+                    if (info.Covered || (info.ShowsUnit ? unitLayer.Selected != shownUnit : info.Selected != city)) return;
                     unitLayer.Select(unit);
                     if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
                     else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
