@@ -71,6 +71,8 @@ namespace Statecraft.Game.UI
         /// <summary>Tests: the first-turn guide of the last Begin.</summary>
         internal FirstTurnGuidePresenter? Guide => guide;
         AdvisorPresenter? advisor;
+        /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
+        internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
         /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
         internal AdvisorPresenter? Advisor => advisor;
         internal AdvisorSession? AdvisorSession { get; private set; }
@@ -479,12 +481,18 @@ namespace Statecraft.Game.UI
             // that can move, its ring and its card, as a click on it would (OnHexClicked), and centres the camera on its hex.
             Action showCity = () =>
             {
-                if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
+                if (AdvisorTargets.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
                 unitLayer.Select(null); map.Select(q, r); info.Show(q, r);
+                var cityHex = bridge.Content.HexAt(q, r);
+                if (cityHex != null)
+                {
+                    camRig.LookAt = map.Frame.ToWorld(cityHex.Lon, cityHex.Lat, 0);
+                    cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+                }
             };
             Action showUnit = () =>
             {
-                if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
+                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
                 unitLayer.Select(id);
                 if (unitLayer.Selected != null)
                 {
@@ -492,7 +500,7 @@ namespace Statecraft.Game.UI
                     var token = unitLayer.Tokens.First(t => t.Token.Unit.Id == id);
                     var hex = bridge.Content.HexAt(token.Q, token.R)!;
                     camRig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                    camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
+                    camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
                     cameraController.Settle(); SyncMinimap(); labels?.Refresh();
                 }
             };
@@ -502,8 +510,8 @@ namespace Statecraft.Game.UI
             {
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
-                var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State);
-                var guideUnit = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
+                var guideUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
                 return () =>
                 {
                     // Under a screen, or the player picked another than the guide's city or unit: kept.
@@ -521,10 +529,31 @@ namespace Statecraft.Game.UI
             // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
             // where the guide does: the start screen shows and a settings file remembers what was seen.
             if (keep == null || AdvisorSession == null)
-                AdvisorSession = new AdvisorSession(AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(SettingsFile()),
                     autoShow: showsStart && !FirstCardCheckRequested() && SettingsFile() != null);
             advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
-                new AdvisorHooks { Card = card, OpenScreen = s => nav?.Open(s) }));
+                new AdvisorHooks
+                {
+                    Card = card, OpenScreen = s => nav?.Open(s), CloseScreens = () => nav?.Close(), ShowCity = showCity, ShowUnit = showUnit, KeepSelection = keepSelection,
+                    MapTarget = () =>
+                    {
+                        (int q, int r)? selected = info.Selected;
+                        if (info.ShowsUnit)
+                        {
+                            var token = unitLayer.Tokens.FirstOrDefault(t => t.Token.Unit.Id == unitLayer.Selected);
+                            selected = token.Token != null ? (token.Q, token.R) : ((int, int)?)null;
+                        }
+                        if (selected is not (int q, int r) || root.panel == null || bridge.Content.HexAt(q, r) is not { } hex) return null;
+                        var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                        ground.y = map.Terrain.SampleHeight(ground) + map.Terrain.transform.position.y;
+                        var camera = Camera.main;
+                        if (camera == null) return null;
+                        var viewport = camera.WorldToViewportPoint(ground);
+                        if (viewport.z <= 0) return null;
+                        var at = MapLabelsPresenter.ToPanel(viewport, camera.rect, root.panel.visualTree.layout.size, Vector2.zero);
+                        return new Rect(at, Vector2.one);
+                    },
+                }));
             if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)

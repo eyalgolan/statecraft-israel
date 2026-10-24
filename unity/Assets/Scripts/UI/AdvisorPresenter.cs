@@ -17,6 +17,7 @@ namespace Statecraft.Game.UI
         public Action? ShowCity, ShowUnit;
         public Func<Action>? KeepSelection;
         public Func<Rect?>? MapTarget;
+        public Action? CloseScreens;
     }
 
     /// <summary>The advisors' popup (spec 4.2, 7.1): one message at a time, in the right column's free upper part or a sheet
@@ -43,6 +44,9 @@ namespace Statecraft.Game.UI
         readonly VisualElement hudRoot, layer, popup, portrait;
         readonly Label name, role, words, count;
         readonly Button showMe, more, notNow, gotIt, close;
+        readonly Button? reopen;
+        readonly Action onReopen;
+        GameSession? openingGame;
         readonly SimBridge bridge; readonly UiText text; readonly AdvisorSession session; readonly PortraitCatalog? portraits;
         readonly AdvisorHooks hooks; readonly bool hebrew;
         readonly Action onChanged, onCover, onShowMe, onGotIt, onNotNow, onClose;
@@ -77,6 +81,9 @@ namespace Statecraft.Game.UI
             floored = new (VisualElement, float)[] { (name, NamePx), (role, RolePx), (words, TextPx), (showMe, ButtonPx), (more, ButtonPx), (notNow, ButtonPx), (gotIt, ButtonPx), (count, CountPx) };
             onShowMe = ShowMe; onGotIt = GotIt; onNotNow = NotNow;
             onClose = () => { if (session.Chain.Step >= 0) CloseChain(); else GotIt(); };
+            reopen = root.Q<Button>("how-to-play-guide");
+            onReopen = () => { this.hooks.CloseScreens?.Invoke(); OpenChain(); };
+            if (reopen != null) { reopen.text = text["how_to_play.guide"]; reopen.clicked += onReopen; }
             showMe.clicked += onShowMe; gotIt.clicked += onGotIt; close.clicked += onClose; notNow.clicked += onNotNow;
             onChanged = Evaluate; onTurn = _ => Notice(AdvisorSignals.TurnEnded); onCover = CoverChanged; onLaidOut = PlaceWhenLaidOut;
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
@@ -88,6 +95,7 @@ namespace Statecraft.Game.UI
             hudRoot.RemoveFromClassList(OpenClass);
             if (session.Chain.Step >= 0)
             {
+                openingGame = bridge.Session;
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
@@ -103,7 +111,7 @@ namespace Statecraft.Game.UI
             || (hudRoot.ClassListContains(HudPresenter.TwoRowClass) && hudRoot.ClassListContains(ScreenNav.ScreenOpenClass));
 
         /// <summary>Showing a message: on screen and not fading out.</summary>
-        public bool IsOpen => hudRoot.ClassListContains(OpenClass) && !popup.ClassListContains(ScreenNav.ClosingClass);
+        public bool IsOpen => !disposed && hudRoot.ClassListContains(OpenClass) && !popup.ClassListContains(ScreenNav.ClosingClass);
 
         /// <summary>The message on screen, or null.</summary>
         public AdvisorCatalog.Message? Shown { get; private set; }
@@ -116,6 +124,8 @@ namespace Statecraft.Game.UI
         public void NewGame()
         {
             if (disposed) return;
+            // StartScreen's close and NewGamePresenter.Started can report the same new session (Task7).
+            if (session.Chain.Step >= 0 && ReferenceEquals(openingGame, bridge.Session)) return;
             session.Queue.Reset(); session.Fired.Clear(); session.FiredTurn = Turn;
             Shown = null; covered = null;
             session.Chain.Step = -1;
@@ -293,7 +303,7 @@ namespace Statecraft.Game.UI
             }
             // The ring stays on the named HUD control; the popup also keeps clear of its selected map hex (spec7.3).
             if ((AdvisorTargets.ShowsUnit(target) || AdvisorTargets.ShowsCity(target)) && hooks.MapTarget?.Invoke() is Rect map)
-                return map;
+                return Local(map);
             return local;
         }
 
@@ -327,6 +337,8 @@ namespace Statecraft.Game.UI
         public void OpenChain()
         {
             if (disposed) return;
+            hooks.CloseScreens?.Invoke();
+            openingGame = bridge.Session;
             var first = NextChainStep(-1);
             if (first < 0) return;                         // no unreviewed Hebrew, even when explicitly asked
             if (session.Chain.Step < 0)
@@ -499,6 +511,7 @@ namespace Statecraft.Game.UI
             layer.UnregisterCallback(onLaidOut);
             bridge.Changed -= onChanged; bridge.TurnEnded -= onTurn;
             if (layer.userData == (object)onCover) layer.userData = null;
+            if (reopen != null) reopen.clicked -= onReopen;
             showMe.clicked -= onShowMe; gotIt.clicked -= onGotIt; close.clicked -= onClose; notNow.clicked -= onNotNow;
             hudRoot.RemoveFromClassList(OpenClass);
         }

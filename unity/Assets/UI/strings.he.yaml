@@ -64,7 +64,7 @@ objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
 objectives.open: "טרם הושלם; בהיסטוריה ב־{0}"
 # How to play's button that opens the first-turn guide again (#42). For the native reviewer (#564).
-how_to_play.guide: "הצגת המדריך לתור הראשון"
+how_to_play.guide: "הצגת עצות הפתיחה שוב"
 # The first-turn guide (#42): agent-drafted Hebrew, the How to play screen's terms (#1041) and the city panel's (city.*).
 # For the native reviewer (#564).
 guide.step: "שלב {0} מתוך {1}"

@@ -72,7 +72,7 @@ objectives.title: "Objectives"
 objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
 # How to play's button that opens the first-turn guide again (#42).
-how_to_play.guide: "Show the first-turn guide"
+how_to_play.guide: "Show the opening advice again"
 # The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): six steps, each pointing at its part of the HUD
 # (FirstTurnGuidePresenter). Like the How to play lines, they describe the sim without balance values. {0} the step, {1} the
 # number of steps.

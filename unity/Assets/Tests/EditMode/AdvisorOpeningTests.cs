@@ -22,6 +22,7 @@ public class AdvisorOpeningTests
     [TearDown] public void Clean() { foreach (var d in dirs) if (Directory.Exists(d)) Directory.Delete(d, true); dirs.Clear(); }
 
     // Approval is simulated ONLY in the test's in-memory copy. Shipped Hebrew stays pending.
+    static AdvisorCatalog Pending() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: approved", "he_review: pending"));
     static AdvisorCatalog Approved() => AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved"));
 
     sealed class Rig : IDisposable
@@ -40,8 +41,8 @@ public class AdvisorOpeningTests
             Bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
             hud = new HudPresenter(Ui.Root, Bridge, text); Nav = new ScreenNav(Ui.Root);
             Card = new EventCardPresenter(Ui.Root, Bridge, text, null);
-            Session = session ?? new AdvisorSession(approved ? Approved() : AdvisorCatalog.Load(), new AdvisorSettings(store), true);
-            Advisor = new AdvisorPresenter(Ui.Root, Bridge, text, Session, hooks: new AdvisorHooks { Card = Card });
+            Session = session ?? new AdvisorSession(approved ? Approved() : Pending(), new AdvisorSettings(store), true);
+            Advisor = new AdvisorPresenter(Ui.Root, Bridge, text, Session, hooks: new AdvisorHooks { Card = Card, CloseScreens = () => Nav.Close() });
         }
         public void Dispose() { Advisor.Dispose(); Card.Dispose(); Nav.Dispose(); hud.Dispose(); Ui.Dispose(); }
     }
@@ -69,6 +70,14 @@ public class AdvisorOpeningTests
         using var automated = new Rig(En, null); automated.Advisor.NewGame(); Assert.IsFalse(automated.Advisor.InChain);
     }
 
+    [TestCase("off")] [TestCase("experienced")] [TestCase("warnings")]
+    public void AQuieterHelpLevelDoesNotAutomaticallyStartTeaching(string level)
+    {
+        var store = Store(); store.Write(AdvisorSettings.LevelKey, level);
+        using var rig = new Rig(En, store); rig.Advisor.NewGame(); Assert.IsFalse(rig.Advisor.InChain);
+        rig.Advisor.OpenChain(); Assert.IsTrue(rig.Advisor.InChain, "explicitly requested advice remains available");
+    }
+
     [Test]
     public void TheOldGuidesSeenMarkPreventsAnAutomaticChain()
     {
@@ -88,6 +97,23 @@ public class AdvisorOpeningTests
             rig.Ui.Press("advisor-close"); Assert.IsFalse(rig.Advisor.InChain);
             Assert.IsFalse(rig.Card.Collapsed, "restore the opening card");
         }
+    }
+
+    [Test]
+    public void DuplicateNewGameNotificationsDoNotResetTheOpenChain()
+    {
+        using var rig = new Rig(En, Store()); rig.Advisor.NewGame(); rig.Advisor.NextStep(); rig.Advisor.NextStep();
+        rig.Advisor.NewGame(); Assert.AreEqual(2, rig.Advisor.ChainStep, "the same session, not another new game");
+        rig.Bridge.Replace(GameSession.New(C, GoldenRun.Seed, Mode.Historical)); rig.Advisor.NewGame();
+        Assert.IsFalse(rig.Advisor.InChain, "a genuinely new session resets the old chain; its profile has seen it");
+    }
+
+    [Test]
+    public void HowToPlaysButtonOpensTheChainAgain()
+    {
+        using var rig = new Rig(En, Store()); rig.Ui.Press("nav-how-to-play"); rig.Ui.Press("how-to-play-guide");
+        Assert.IsTrue(rig.Advisor.InChain); Assert.AreEqual(0, rig.Advisor.ChainStep); Assert.IsNull(rig.Nav.Current);
+        Assert.AreEqual("Show the opening advice again", rig.Ui.Q<Button>("how-to-play-guide").text);
     }
 
     [Test]
