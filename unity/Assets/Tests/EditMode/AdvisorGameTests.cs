@@ -45,12 +45,31 @@ public class AdvisorGameTests
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         game.Begin(Inputs, 0);                                           // the tools' Begin: no start screen
+        Assert.IsFalse(game.AdvisorSession!.AutoShow, "no start screen: never by itself");
         Assert.IsNotNull(game.Advisor);
         Assert.IsNotNull(Ui.Q(AdvisorPresenter.LayerName).userData, "the cover hook is set");
         Ui.Q<Button>("end-turn").Focus();
         game.Bridge!.EndTurn();
         Assert.IsFalse(game.Advisor!.IsOpen, "no start screen: never by itself");
         Assert.IsEmpty(game.AdvisorSession!.Queue.History);
+    }
+
+    /// <summary>With the start screen but no settings file to remember what was seen, they never show by themselves.</summary>
+    [Test]
+    public void NoSettingsFileMeansSilentEvenWithTheStartScreen()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), null);
+        game.Begin(Inputs, 0, startScreen: true);
+        Assert.IsFalse(game.AdvisorSession!.AutoShow);
+    }
+
+    /// <summary>The positive control for the two silent cases: the start screen and a settings file, as a player boots it.</summary>
+    [Test]
+    public void TheStartScreenAndASettingsFileLetThemShowByThemselves()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        Assert.IsTrue(game.AdvisorSession!.AutoShow);
     }
 
     [Test]
