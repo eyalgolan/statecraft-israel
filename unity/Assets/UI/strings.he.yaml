@@ -125,10 +125,11 @@ feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק �
 # Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
 # it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
 # on #1182 (20 Oct 2026). share.post no longer says "בקוד פתוח" (open source) since the code licence changed (#1371,
-# 22 Oct 2026): agent-checked, for the native reviewer (#564).
+# 22 Oct 2026): agent-checked, for the native reviewer (#564). share.post's second link, "קוד המקור" (the source code,
+# the GitHub repository; owner, 24 Oct 2026): agent-checked, for the native reviewer (#564).
 share.open: "שיתוף"
 share.title: "שיתוף תמונה מהמשחק"
-share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי. {0}, תור {1}. לשחק: {2}"
+share.post: "ניהול מדינת ישראל ב־1948 במשחק Statecraft: Israel, משחק אסטרטגיה חינמי. {0}, תור {1}. לשחק: {2} · קוד המקור: {3}"
 share.native: "שיתוף"
 share.download: "הורדת התמונה"
 share.attach: "האתרים האלה לא מקבלים תמונה דרך קישור: יש לצרף לפוסט את התמונה שהורדה."
