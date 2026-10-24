@@ -62,7 +62,7 @@ def test_the_packager_still_finds_every_file_of_a_rendered_page(tmp_path):
 def run_use_current_page(page_html: str, current_html: str) -> dict:
     """Runs the page's own script (up to its fetch) in node, feeds useCurrentPage the current copy, and returns the
     names the page would then load."""
-    script = re.search(r"<script>(.*)</script>", page_html, re.S).group(1).split("fetch(location.href")[0]
+    script = re.search(r"<script>(.*)</script>", page_html, re.S | re.I).group(1).split("fetch(location.href")[0]
     driver = (script + "\nuseCurrentPage(" + json.dumps(current_html) + ");\n"
               "console.log(JSON.stringify({loaderUrl: loaderUrl, config: config}));\n")
     out = subprocess.run(["node", "-e", driver], capture_output=True, text=True, check=True).stdout
