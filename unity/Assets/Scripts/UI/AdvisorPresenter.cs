@@ -100,7 +100,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += onChanged; bridge.TurnEnded += onTurn;
             layer.userData = onCover;                                   // ScreenNav.DisableCovered calls it
             // The slot moves with the layout (a window resized, "Decision waiting" or the toast shown), so the popup follows
-            // it while it shows, as the guide's ring does.
+            // it while it shows, as its ring does.
             follow = layer.schedule.Execute(Place).Every(100);
             follow.Pause();
             hudRoot.RemoveFromClassList(OpenClass);
@@ -427,10 +427,18 @@ namespace Statecraft.Game.UI
             if (Covered(hudRoot)) { Hide(); return; }
             if (session.Chain.Step == EventStep && hooks.Card?.Shown == null)
             {
-                NextStep();                                 // the card was answered: on to the next step, which keeps the
-                if (InChain) FocusReturn.To(gotIt);         // focus, so Enter does not end the turn (#1323)
+                NextStep();                                 // the card was answered: on to the next step
+                if (InChain) TakeFocusFromTheCard();
             }
             else ShowStep(session.Chain.Step);
+        }
+
+        /// <summary>The answered card hands the focus to End turn (#41 M1) while the popup, hidden under the card, cannot take
+        /// it yet: Next takes it now if it can and again on the next tick, so Enter goes on rather than ending the turn (#1323).</summary>
+        void TakeFocusFromTheCard()
+        {
+            FocusReturn.To(gotIt);
+            gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
         }
 
         void ShowMe()

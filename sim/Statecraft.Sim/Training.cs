@@ -44,7 +44,7 @@ namespace Statecraft.Sim
         /// starts with (cities.yaml, D-D5), a camp site of that kind built for it (sites.yaml city), or, for industry, a
         /// completed industry project in it (R-PROJ-003). A camp or a project being built does not count.</summary>
         public static bool HasFacility(Content c, GameState s, string city, string facility) =>
-            c.Cities.First(k => k.Id == city).Facilities.Contains(facility)
+            c.Cities.FirstOrDefault(k => k.Id == city)?.Facilities.Contains(facility) == true   // an annexed city (R-CTRL-016) has none
             || (facility == Industry && s.CityProjects.Values.Any(p => p.City == city && p.Kind == Industry && p.BuiltOn != null))
             || c.Sites.Any(x => x.City == city && x.Kinds.Contains(facility) && s.Sites.TryGetValue(x.Id, out var w) && w.BuiltOn != null);
 

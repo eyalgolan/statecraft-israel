@@ -198,6 +198,15 @@ namespace Statecraft.Sim
         public ResolveCapture(string settlement, string outcome) { Settlement = settlement; Outcome = outcome; }
     }
 
+    /// <summary>Answers the end of <see cref="Settlement"/>'s occupation with <see cref="Outcome"/>: annex or withdraw
+    /// (SettlementControl.End, R-CTRL-014 to R-CTRL-017; no puppet regime, Q-PUP-1 (c)). GDD v0.1 loop only.</summary>
+    public sealed class EndOccupation : Command
+    {
+        public override string Kind => SettlementControl.EndKind;
+        public string Settlement { get; } public string Outcome { get; }
+        public EndOccupation(string settlement, string outcome) { Settlement = settlement; Outcome = outcome; }
+    }
+
     public sealed class Rejection
     {
         public Command Command { get; } public string Reason { get; }
@@ -255,6 +264,7 @@ namespace Statecraft.Sim
                     case Move _: break;
                     case BuyArms _: break;
                     case ResolveCapture r: Text(r.Settlement, "Settlement"); Text(r.Outcome, "Outcome"); break;
+                    case EndOccupation e: Text(e.Settlement, "Settlement"); Text(e.Outcome, "Outcome"); break;
                     case SetMobilization _: case SecurityOrder _: break;
                     default: throw new ArgumentException("unknown command type " + cmd.GetType().Name, "commands");
                 }

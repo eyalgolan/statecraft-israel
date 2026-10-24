@@ -239,6 +239,8 @@ namespace Statecraft.Sim
                     return Pools.BuyArms(c, s, a.Count, why);
                 case ResolveCapture x:
                     return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
+                case EndOccupation x:
+                    return SettlementControl.End(c, s, x.Settlement, x.Outcome, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

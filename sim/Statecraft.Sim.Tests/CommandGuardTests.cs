@@ -33,6 +33,7 @@ public class CommandGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),   // refused (nothing awaits a decision), like BuyArms(0)
+        [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),   // refused (nothing awaits the end of an occupation)
     };
 
     static IEnumerable<Type> CommandTypes() =>

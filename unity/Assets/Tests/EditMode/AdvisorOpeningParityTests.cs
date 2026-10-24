@@ -30,8 +30,6 @@ public class AdvisorOpeningParityTests
     static void Begin(GameRoot game, GameInputs inputs, int smoke, bool startScreen = false)
     {
         game.Begin(inputs, smoke, startScreen: startScreen);
-        // Task9 temporarily retains the legacy presenter. Test the replacement alone; Task11 removes this disposal.
-        game.Guide?.Dispose();
     }
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
@@ -174,10 +172,9 @@ public class AdvisorOpeningParityTests
         game.Advisor!.NextStep(); game.Advisor.NextStep(); var session = game.AdvisorSession;
         Assert.AreEqual(2, game.Advisor.ChainStep);
         UiTestKit.Press(Ui.Q<Button>("nav-settings")); UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
-        game.Guide?.Dispose(); // the temporary legacy presenter is not part of this replacement test
         Assert.AreSame(session, game.AdvisorSession); Assert.IsFalse(game.Advisor!.IsOpen); Assert.AreEqual(2, session!.Chain.Step);
         if (!Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
-        UiTestKit.Press(Ui.Q<Button>("settings-language-en")); game.Guide?.Dispose();
+        UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
         if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
         Assert.AreSame(session, game.AdvisorSession); Assert.IsTrue(game.Advisor!.InChain); Assert.AreEqual(2, game.Advisor.ChainStep);
     }
@@ -519,8 +516,8 @@ public class AdvisorOpeningParityTests
     /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
     /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
     /// advisor goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
-    [Test]
-    public void AnsweringTheCardOnItsStepGoesOnToTheNext()
+    [UnityTest]
+    public IEnumerator AnsweringTheCardOnItsStepGoesOnToTheNext()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
@@ -533,6 +530,7 @@ public class AdvisorOpeningParityTests
         Assert.IsNull(card.Shown); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
         Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
         Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
+        for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
         Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement, "Next has the focus again (#1323)");
     }
 
@@ -817,7 +815,7 @@ public class AdvisorOpeningParityTests
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
-        var go = new GameObject("FirstTurnGuideTest");
+        var go = new GameObject("AdvisorOpeningTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
         doc.panelSettings = ps;
