@@ -24,10 +24,11 @@ public class AdvisorSignalsTests
         b.State.ExhaustedTurns = 1; b.State.Debt = Ceiling(b) * 0.85; b.State.FoodUnmet = 3;
         Assert.IsTrue(Holds(b, "exhausted")); Assert.IsTrue(Holds(b, "in_debt")); Assert.IsTrue(Holds(b, "food_short"));
         Assert.AreEqual(0.85, AdvisorSignals.Measures["debt_ratio_at_least"](new AdvisorContext(b, null)), 1e-9);
-        // meyerson.debt_ceiling's bound: "close to the ceiling" starts at 0.8 of it, not below.
-        var close = new System.Collections.Generic.Dictionary<string, double> { ["debt_ratio_at_least"] = 0.8 };
-        b.State.Debt = Ceiling(b) * 0.79; Assert.IsFalse(AdvisorSignals.When(new AdvisorContext(b, null), close), "0.79");
-        b.State.Debt = Ceiling(b) * 0.8; Assert.IsTrue(AdvisorSignals.When(new AdvisorContext(b, null), close), "0.8");
+        // meyerson.debt_ceiling's bound, read from the shipped row: the ceiling itself (R-END-001: Money is exhausted at or above it).
+        var atCeiling = AdvisorCatalog.Parse(System.IO.File.ReadAllText(AdvisorCatalog.Path)).Find("meyerson.debt_ceiling")!.When;
+        b.State.Debt = Ceiling(b) * 0.99; Assert.IsFalse(AdvisorSignals.When(new AdvisorContext(b, null), atCeiling), "below the ceiling");
+        b.State.Debt = Ceiling(b); Assert.IsTrue(AdvisorSignals.When(new AdvisorContext(b, null), atCeiling), "at the ceiling");
+        b.State.Debt = Ceiling(b) * 1.1; Assert.IsTrue(AdvisorSignals.When(new AdvisorContext(b, null), atCeiling), "above the ceiling");
         b.State.GameOver = GameOverCodes.DefeatWar;
         Assert.IsTrue(Holds(b, "defeat_war")); Assert.IsFalse(Holds(b, "defeat_economy"));
     }
@@ -57,10 +58,10 @@ public class AdvisorSignalsTests
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         using var rig = new AdvisorPopupTests.Rig(catalog: System.IO.File.ReadAllText(AdvisorCatalog.Path), text: text);
         rig.Session.Settings.SetLevel("off");
-        rig.Bridge.State.ExhaustedTurns = 1; rig.Bridge.State.Debt = Ceiling(rig.Bridge) * 0.9; rig.Bridge.State.FoodUnmet = 3;
+        rig.Bridge.State.ExhaustedTurns = 1; rig.Bridge.State.Debt = Ceiling(rig.Bridge); rig.Bridge.State.FoodUnmet = 3;
         rig.Advisor.Notice(AdvisorSignals.TurnEnded);
         var shown = Drain(rig);
-        CollectionAssert.IsSubsetOf(new[] { "ben_gurion.exhausted", "meyerson.debt_ceiling" }, shown);
+        CollectionAssert.IsSubsetOf(new[] { "meyerson.exhausted", "meyerson.debt_ceiling" }, shown);
         CollectionAssert.DoesNotContain(shown, "meyerson.food_short", "Off");
         Assert.IsTrue(shown.All(id => rig.Session.Catalog.Find(id)!.Critical), "Off: nothing but critical");
         rig.Session.Settings.SetLevel("warnings");
@@ -87,6 +88,21 @@ public class AdvisorSignalsTests
         var shown = new System.Collections.Generic.List<string>();
         while (rig.Advisor.Shown is AdvisorCatalog.Message m) { shown.Add(m.Id); rig.Ui.Press("advisor-got-it"); }
         return shown;
+    }
+
+    /// <summary>The owner's 24 October 2026 ruling ("Adopt clip words"): these messages say the recorded clips' words, by
+    /// the clips' speakers (talking-v3/lines.csv), so a clip can attach to its message; a text edit needs a new recording.</summary>
+    [TestCase("dayan.city_at_risk", "dayan", "An enemy attack is aimed at one of the country's cities. Review its defenders and the combat preview before the enemy phase resolves.")]
+    [TestCase("meyerson.exhausted", "meyerson", "Money and Food are exhausted together. Restore either one before the defeat counter reaches its limit.")]
+    [TestCase("meyerson.debt_ceiling", "meyerson", "Debt has reached the ceiling. If Food is also empty at turn end, the defeat counter begins or continues.")]
+    [TestCase("dayan.defeat_war", "dayan", "An enemy military unit holds one of the country's cities at turn end. The campaign has ended in defeat.")]
+    [TestCase("dayan.arms_out", "dayan", "Arms equip military training and are spent in attacks. Buying Arms with Money before the stock runs short keeps those choices available.")]
+    public void AClipLineKeepsTheRecordedWordsAndSpeaker(string id, string advisor, string words)
+    {
+        var m = AdvisorCatalog.Parse(System.IO.File.ReadAllText(AdvisorCatalog.Path)).Find(id);
+        Assert.IsNotNull(m, id);
+        Assert.AreEqual(advisor, m!.Advisor);
+        Assert.AreEqual(words, En["advisor." + id + ".text"]);
     }
 
     [Test]
