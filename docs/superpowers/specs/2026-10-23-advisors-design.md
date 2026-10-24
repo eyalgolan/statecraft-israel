@@ -53,6 +53,7 @@ as the option's label; "(Recommended)" marks the option we had recommended.
 | Voices | "Yes, both": save the three chosen aide voices, then render the Hebrew lines with ElevenLabs `eleven_v3` |
 | Private people | "By role (Recommended)": private people are named by their role in research notes; public figures keep their names. This spec follows the same rule |
 | Video sources | Ben-Gurion: "1951 official PM portrait"; Golda: "1964 desk photo (Recommended)"; Dayan: "1956 map briefing (Recommended)". Choosing them approved downloading those Commons originals |
+| Which lines talk (24 October 2026) | "select some dayan, some ben gurion and some golda to match the budget. the rest of the advisor screen would use their photos for now until we have more tolens": only some lines of each advisor get a clip; every other line shows the advisor's portrait, with the narration where one exists (sections 7.1, 12) |
 | Price and ads | "the game is never going to charge any money. ever", and then "the game is never going to have ads" (`docs/oss/DECISIONS.md` D1, `:15`) |
 
 How "The real figures talking" is carried out (part of the approved design): the real figures' own voices or likeness
@@ -159,11 +160,12 @@ shown one at a time. We copy that shape.
 | `priority` | 1 to 3; a higher one jumps the queue |
 | `repeat` | `once`, or `every` with a `cooldown_turns` |
 | `actions` | Up to two buttons: `show_me` (highlight a UI element by name, as the guide's ring does, `FirstTurnGuidePresenter.cs:278-303`), `open_screen` (a side screen by name, `ScreenNav.cs:13`), `encyclopedia` (a page id). The dismiss controls (section 7.1) are the popup's own, not data |
-| `video` | Optional: the silent clip's file, the narration file per language, and the caption cues per language (section 12) |
+| `media` | Optional: a silent clip or still (itself optional), the narration file per language, and the caption cues per language (section 12). With narration but no picture, the advisor's popup portrait is the picture |
 | `quote` | Optional id from the verified list (section 3.3); only these lines show a quote |
 
 A load-time test checks that every message names a known advisor, signal, condition, screen and string key in both
-languages, that every `video` row's files and cues exist in both languages, that `requires` has no cycle, and that every
+languages, that every `media` row's supplied files and cues exist in both languages, that a row without a picture has
+narration, that `requires` has no cycle, and that every
 `quote` is on the list.
 
 ### 4.2 The runtime
@@ -284,7 +286,9 @@ bar's date and the toast, so neither is used.
 ```
 
 - **Portrait**: a still archival photograph cropped round the face, about 96x120, in the info panel's gold frame. Never
-  flipped, never animated. When the message has a clip, a small play badge on it is the "Watch" button (section 12).
+  flipped, never animated. When the message has a clip or narration in the current language, a small play badge on it is
+  the "Watch" button (section 12). If that line has narration but no clip, the portrait stays visible while the voice and
+  live captions play. If it has neither, the normal portrait and text remain and there is no Watch button.
 - **Name and label**: the advisor's name (section 3.1) and "Advisor" in small capitals; never quotation marks or italics.
   The name wraps and never shrinks (Hebrew names are longer).
 - **Text**: one or two sentences, 22 px panel size like `.guide-text`, raised to the 12 screen px text floor
@@ -437,20 +441,24 @@ outreach happens without the owner.** The consent letters are kept as ElevenLabs
 
 ## 12. Video and sound
 
-- **Never autoplays.** The popup's play badge ("Watch") plays the clip, as do the encyclopedia and Counsel.
+- **Never autoplays.** The popup's play badge ("Watch") plays the available media, as do the encyclopedia and Counsel.
+  Per line: play the clip (or a supplied still) when present; otherwise keep the advisor's portrait visible and play narration when present;
+  otherwise show the portrait and text with no Watch control. "Present" means available in the current UI language.
 - **Small, inside the popup** where the popup's slot has room for the picture, two caption lines and the buttons (about
   460 logical px tall): 1920x1080, 1280x720, 1366x768, 1024x768 and 960x1080. The picture, 364x205 at 400 px wide,
-  takes the portrait row's place; the live caption takes the text's place; the buttons stay.
+  takes the portrait row's place when a clip or explicit media still exists. With narration only, the portrait row stays;
+  the live caption uses the text's place. The buttons stay.
 - **In a centred overlay** where it has no room: a phone held sideways (400 px free) and an upright phone (the sheet).
   The overlay follows `.outcome-layer` (`Statecraft.uss:322-332`), keeps the captions under the picture, and closes with
   its own X and Escape. The choice is made from the measured slot height, not from a guess at the device.
 - **Captions are live text**, never burned into the clip: timed cue strings per language (`advisor.<id>.cue.<n>` with a
   start time), the same text as the narration, under the text floor and direction rules, and in Counsel's history. A
   version with burned captions may be made for sharing outside the game; it is not the game's file.
-- **The picture is a silent clip** on the existing player. `CardVideo` is silent by design: "A silent clip player ... No
+- **A clip is silent** on the existing player. `CardVideo` is silent by design: "A silent clip player ... No
   audio is output" (`CardVideo.cs:9-15`), `audioOutputMode = VideoAudioOutputMode.None` (`:102`), into one 960x540
   RenderTexture (`:18`, `:90-109`); the encoder passes `-an` (`tools/encode_event_videos.py:42-45`) and its check rejects
-  any audio stream (`:111-126`). Neither changes.
+  any audio stream (`:111-126`). Neither changes. A line without a clip does not borrow the video player; it uses the
+  advisor's existing portrait.
 - **The narration is a separate audio file**, fetched and played the way the start screen's recording is
   (`DeclarationRecording.cs:41-56`: a fetched `AudioClip`, an output with a play position; `SourceOutput`, an
   `AudioSource`, `:240-261`). The captions follow the audio's play position. Any button, the X, a layer opening over the
