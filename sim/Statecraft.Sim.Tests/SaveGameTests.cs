@@ -28,12 +28,55 @@ public class SaveGameTests
             new Command[] { new Appoint("finance_minister", "pm_one"), new MapAction("housing", 2, 0) },
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
             new Command[] { new AssignWorkers("town_a", "job", 1), new UnitOrder(1, "hold") },   // GDD orders: the legacy fixture refuses them
-            new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1) },   // GDD orders too
+            new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1), new ReturnCraftsmen("town_a", 1), new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1), new Reinforce(1, "town_a", 1) },   // GDD orders too
             new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3), new ResolveCapture("town_a", "raid") },
             new Command[] { new SecurityOrder(1) }, new Command[0],
         };
         foreach (var o in orders) g.Step(o);
         return g;
+    }
+
+    // R-SAVE-003: the open turn's committed orders are written after the turns and read back in order.
+    [Fact]
+    public void TheOpenTurnRoundTrips()
+    {
+        var save = new SaveGame(new string('a', 64), 7, Mode.Historical, SaveGame.GddRuleset, new string('b', 64));
+        save.SetOpen(new Command[] { new Move(1, 2, 3), new UnitOrder(1, Orders.Hold) });
+        var text = save.Write();
+        Assert.StartsWith("statecraft-save 3\n", text);
+        Assert.Contains("open\nmove 1 2 3\norder 1 hold\nend ", text);
+        var back = SaveGame.Parse(text);
+        Assert.Equal(3, back.Version);
+        Assert.Equal(new[] { "move", "unit_order" }, back.Open.Select(x => x.Kind));
+    }
+
+    // R-SAVE-003: a finished turn ends the open one.
+    [Fact]
+    public void RecordingATurnClearsTheOpenTurn()
+    {
+        var c = TurnPreviewTests.Plain();
+        var session = GameSession.New(c, 1, Mode.Historical);
+        session.Save.SetOpen(new Command[] { new Move(0, 1, 1) });
+        session.Step(new Command[0]);
+        Assert.Empty(session.Save.Open);
+        Assert.DoesNotContain("\nopen\n", session.Save.Write());
+    }
+
+    // R-SAVE-003: the open turn holds committed orders only (R-TURN-004); a waiting order there means the save was edited.
+    [Fact]
+    public void AnOpenTurnWithAWaitingOrderIsRefused()
+    {
+        var text = "statecraft-save 3\ncontent " + new string('a', 64) + "\nseed 1\nmode Historical\nruleset gdd-0.1\nopen\narms 1\nend " + new string('b', 64) + "\n";
+        var e = Assert.Throws<SaveException>(() => SaveGame.Parse(text));
+        Assert.Equal(7, e.Line);
+    }
+
+    // R-SAVE-002 is unchanged: an older schema has no open turn, and a line "open" in it is refused.
+    [Fact]
+    public void ASchema2SaveWithAnOpenLineIsRefused()
+    {
+        var text = "statecraft-save 2\ncontent " + new string('a', 64) + "\nseed 1\nmode Historical\nruleset gdd-0.1\nturn\nopen\nend " + new string('b', 64) + "\n";
+        Assert.Throws<SaveException>(() => SaveGame.Parse(text));
     }
 
     [Fact]
@@ -111,7 +154,7 @@ public class SaveGameTests
         var c = Fixture1();
         var text = Played(c).Save.Write();
         var lines = text.Split('\n');
-        Assert.Equal("statecraft-save 2", lines[0]);
+        Assert.Equal("statecraft-save 3", lines[0]);
         Assert.Equal("content " + c.Hash, lines[1]);
         Assert.Equal("seed 99", lines[2]);
         Assert.Equal("mode Historical", lines[3]);
@@ -157,7 +200,7 @@ public class SaveGameTests
     }
 
     [Theory]
-    [InlineData("statecraft-save 3", 1, "line 1: save schema version 3 is newer than this game (2)")]
+    [InlineData("statecraft-save 4", 1, "line 1: save schema version 4 is newer than this game (3)")]
     [InlineData("statecraft-save x", 1, "line 1: bad schema version")]
     [InlineData("chess-save 1", 1, "line 1: expected 'statecraft-save'")]
     public void BadHeadersAreRejected(string first, int line, string message)
@@ -178,7 +221,7 @@ public class SaveGameTests
     {
         var c = Fixture1();
         var lines = Played(c).Save.Write().Split('\n').ToList();
-        lines.Insert(6, command);                                             // after the first "turn" (schema 2: the ruleset line is line 5)
+        lines.Insert(6, command);                                             // after the first "turn" (schemas 2 and 3: ruleset is line 5)
         var ex = Assert.Throws<SaveException>(() => GameSession.Load(c, string.Join("\n", lines), out _));
         Assert.Equal(7, ex.Line);
         Assert.Equal("line 7: " + message, ex.Message);
@@ -255,7 +298,7 @@ public class SaveGameTests
         Assert.Throws<ArgumentNullException>(() => g.Step(new Command[] { new Appoint(null!, "pm_one") }));
         Assert.Throws<ArgumentNullException>(() => g.Step(new Command[] { new MapAction(null!, 1, 1) }));
         Assert.Empty(g.Save.Turns);                                  // nothing half-recorded
-        Assert.StartsWith("statecraft-save 2\n", g.Save.Write());
+        Assert.StartsWith("statecraft-save 3\n", g.Save.Write());
     }
 
     [Fact]
@@ -514,7 +557,7 @@ public class SaveGameTests
 
     [Theory]
     [InlineData("statecraft-save 0", "unknown save schema version 0")]
-    [InlineData("statecraft-save 3", "save schema version 3 is newer than this game (2)")]
+    [InlineData("statecraft-save 4", "save schema version 4 is newer than this game (3)")]
     [InlineData("statecraft-save -1", "bad schema version")]
     public void SchemaVersionsOutsideOneAreRefused(string first, string message)
     {
@@ -542,7 +585,7 @@ public class SaveGameTests
         var g = GameSession.New(Fixture1(), 1, Mode.Historical);
         Assert.Throws<ArgumentException>(() => g.Step(new Command[] { new Foreign() }));
         g.Step(new Command[0]);
-        Assert.StartsWith("statecraft-save 2\n", g.Save.Write());
+        Assert.StartsWith("statecraft-save 3\n", g.Save.Write());
         Assert.Single(g.Save.Turns);
     }
 
@@ -582,7 +625,7 @@ public class SaveGameTests
         var g = GameSession.New(c, 1, Mode.Historical);
         g.Step(HistoricalAI.Commands(c, g.State));
         var text = g.Save.Write();
-        Assert.StartsWith("statecraft-save 2\n", text);
+        Assert.StartsWith("statecraft-save 3\n", text);
         Assert.Contains("\nruleset gdd-0.1\n", text);
         Assert.Equal("gdd-0.1", SaveGame.Parse(text).Ruleset);
         Assert.Equal(g.State.Hash(), GameSession.Load(c, text, out var warnings).State.Hash());
@@ -595,10 +638,10 @@ public class SaveGameTests
     {
         var c = Fixture1();
         var g = Played(c);
-        var v1 = g.Save.Write().Replace("statecraft-save 2\n", "statecraft-save 1\n").Replace("ruleset legacy\n", "");
+        var v1 = g.Save.Write().Replace("statecraft-save 3\n", "statecraft-save 1\n").Replace("ruleset legacy\n", "");
         Assert.Equal("legacy", SaveGame.Parse(v1).Ruleset);
         Assert.Equal(g.State.Hash(), GameSession.Load(c, v1, out _).State.Hash());
-        Assert.StartsWith("statecraft-save 2\n", SaveGame.Parse(v1).Write());   // written back as schema 2
+        Assert.StartsWith("statecraft-save 3\n", SaveGame.Parse(v1).Write());   // written back as the current schema
         Assert.Contains("\nruleset legacy\n", SaveGame.Parse(v1).Write());
     }
 
@@ -615,7 +658,7 @@ public class SaveGameTests
         Assert.Equal(SaveException.OlderRules, ex.Code);
         Assert.Equal("This save was made with an earlier version of the game's rules.", ex.Message);
         Assert.DoesNotContain("new game", ex.Message);
-        var v1 = g.Save.Write().Replace("statecraft-save 2\n", "statecraft-save 1\n").Replace("ruleset legacy\n", "");
+        var v1 = g.Save.Write().Replace("statecraft-save 3\n", "statecraft-save 1\n").Replace("ruleset legacy\n", "");
         var ex1 = Assert.Throws<SaveException>(() => GameSession.Load(real, v1, out _));
         Assert.Equal((ex.Code, ex.Message), (ex1.Code, ex1.Message));
     }
@@ -633,8 +676,8 @@ public class SaveGameTests
         Assert.Contains("This save was made with a newer version of the game", ex.Message);
         Assert.DoesNotContain("new game", ex.Message);
         Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => GameSession.Load(real, text, out _)).Code);
-        var schema3 = text.Replace("statecraft-save 2\n", "statecraft-save 3\n");
-        Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(schema3)).Code);
+        var schema4 = text.Replace("statecraft-save 3\n", "statecraft-save 4\n");
+        Assert.Equal(SaveException.NewerVersion, Assert.Throws<SaveException>(() => SaveGame.Parse(schema4)).Code);
     }
 
     // R-SAVE-001

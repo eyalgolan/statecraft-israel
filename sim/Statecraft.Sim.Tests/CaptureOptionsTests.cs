@@ -32,17 +32,17 @@ public class CaptureOptionsTests
             typeof(CaptureOption).GetProperties().Select(p => p.Name).OrderBy(x => x, StringComparer.Ordinal).ToArray());
     }
 
-    // R-CTRL-007, R-CTRL-008: only Raid is built in this PR. Occupy (PR 6) and Deport (PR 8) carry the "not built yet"
+    // R-CTRL-007, R-CTRL-008: Raid (PR 5) and Occupy (PR 6, #798) are built. Deport (PR 8) carries the "not built yet"
     // refusal and no preview; a place not awaiting the choice offers nothing.
     [Fact]
-    public void OnlyRaidIsBuiltYet()
+    public void OnlyRaidAndOccupyAreBuiltYet()
     {
         var c = Load();
         var s = Awaiting(c, "town_a");
         var options = SettlementControl.CaptureOptions(c, s, "town_a");
-        Assert.Null(options[0].Refusal);
-        Assert.NotNull(options[0].Preview);
-        Assert.All(options.Skip(1), o => { Assert.Contains("not built yet", o.Refusal); Assert.Null(o.Preview); });
+        Assert.All(options.Take(2), o => { Assert.Null(o.Refusal); Assert.NotNull(o.Preview); });
+        Assert.Contains("not built yet", options[2].Refusal);
+        Assert.Null(options[2].Preview);
         Assert.Empty(SettlementControl.CaptureOptions(c, s, "town_c"));
         Assert.Empty(SettlementControl.CaptureOptions(c, s, "nowhere"));
     }

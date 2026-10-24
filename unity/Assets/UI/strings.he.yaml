@@ -31,6 +31,9 @@ hud.nav.cabinet: "ממשלה"
 # The Cabinet disc's tip while a seat is vacant that the player can fill (#1109). For the native reviewer (#564).
 hud.nav.cabinet_vacant: "ממשלה: יש תפקיד פנוי. אפשר למנות אליו מישהו."
 hud.nav.budget: "תקציב"
+# The Budget disc's tip while the Budget screen has changes that are not submitted and could be (#1109). For the native reviewer (#564).
+# Approved by Beri, a native speaker, on #1352 (22 Oct 2026).
+hud.nav.budget_unsubmitted: "תקציב: השינויים עוד לא הוגשו. בלי הגשה, סיום התור לא יחיל אותם."
 hud.nav.defence: "ביטחון"
 hud.nav.why: "למה?"
 hud.nav.how_to_play: "איך משחקים"
@@ -243,6 +246,13 @@ defence.mob: "{0} מכוחות המילואים גויסו (דרגה {1} דור�
 defence.mob_cost: "עלות שנתית של {0} בשכר ובאובדן עבודה"
 defence.ceasefire_stops: "הספירה להפסקת אש של האו״ם נעצרת אם מורידים את הדרגה"
 defence.ceasefire_starts: "הפסקת אש של האו״ם: {0} שבועות מההגעה לדרגה 5"
+# The GDD Defence screen (#755). Approved by Beri, a native speaker, on #564 (23 Oct 2026). Plain counts, nothing celebratory.
+defence.war_state: "מצב המלחמה: דרגה {0}, נקבעת לפי אירועי המלחמה"
+defence.truce: "הפוגה בתוקף: היחידות שלנו אינן יכולות לתקוף עד {0}"
+defence.section_prisoners: "שבויים"
+defence.prisoners_held: "שבויי אויב בידינו: {0:N0}"
+defence.prisoners_returned: "שבויים שהוחזרו: {0:N0}"
+defence.soldiers_held: "חיילינו המוחזקים בידי האויב: {0:N0}"
 defence.budget_share: "{0} מהוצאות התקציב"
 defence.budget_none: "אין בתקציב סעיף ביטחון"
 defence.section_leadership: "הנהגה"
@@ -452,6 +462,10 @@ unit.subtitle: "{0} · {1}"
 unit.service.army: "צבא היבשה"
 unit.service.air: "חיל האוויר"
 unit.service.navy: "חיל הים"
+# טיוטות לכרטיס של יחידה שהוקמה במהלך המשחק (#1396); agent-checked, native review pending (#564).
+unit.type.veteran_soldier: "חיילים ותיקים"
+unit.strength: "כוח: {0}"
+unit.home_city: "עיר הבית: {0}"
 unit.position: "מיקום: {0}, מאז {1}"
 unit.position_plain: "מיקום: {0}"
 unit.formed: "הוקמה: {0}"
@@ -497,6 +511,9 @@ unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף �
 # Hebrew drafts: agent-checked; native review pending (#564).
 unit.order.send_home: "שליחה הביתה"
 unit.send_home_queued: "ניתנה פקודת שליחה הביתה: היחידה תחזור הביתה בסיום התור"
+# Reinforce (#1510, R-TRAIN-004). Agent-drafted, awaiting a native read.
+unit.order.reinforce: "תגבור +{0}"
+unit.reinforce_queued: "ניתנה פקודת תגבור: כוח ההשלמה יתחיל באימון בסיום התור"
 newgame.confirm: "יש ללחוץ שוב על משחק חדש כדי לעזוב את המשחק הזה ולהתחיל מחדש."
 newgame.delete_failed: "לא ניתן היה להסיר את השמירה הקודמת; היא תוחלף אחרי התור הבא."
 save.unreadable: "לא ניתן היה לטעון את המשחק השמור ({0}). משחק חדש התחיל."
@@ -524,7 +541,9 @@ city.jobs: "משרות: {0} מתוך {1} מאוישות"
 # native reviewer (#564).
 city.craftsmen: "בעלי מלאכה: {0}"
 city.refugees: "פליטים ממתינים: {0}"
-city.recruits: "מגויסים: {0}"
+# #1345: every Israeli formation the city houses.
+# Approved by Beri, a native speaker, on #1345 (23 Oct 2026).
+city.soldiers: "חיילים בעיר: {0}"
 city.workers: "בעבודה: {0}"
 city.train_recruit: "אימון מגויסים: קבוצה אחת, {0}, {1}"
 city.train_halutz: "הכשרת חלוצים: קבוצה אחת, {0}, {1}"

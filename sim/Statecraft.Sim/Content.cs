@@ -653,6 +653,29 @@ namespace Statecraft.Sim
         /// <summary>IL millions the Treasury pays a turn for each population unit of the player's soldiers held (R-POW-005;
         /// Q-POW-4). Required in the GDD loop, &gt;= 0.</summary>
         public double? HeldSoldierCostPerTurn { get; set; }
+        /// <summary>X, the turns every occupation lasts before the place awaits EndOccupation (R-CTRL-012; Q-OCC-3 (a), one X
+        /// for every place). Required in the GDD loop, &gt;= 1.</summary>
+        public int? OccupationTurns { get; set; }
+        /// <summary>IL millions the Treasury pays a turn for each occupied place (R-CTRL-011; Q-OCC-1 (a)). Required in the GDD
+        /// loop, &gt;= 0.</summary>
+        public double? OccupationUpkeepPerTurn { get; set; }
+        /// <summary>Social cohesion (morale) lost at once by a Deport (R-CTRL-018; Q-DEP-5 (c)). Required in the GDD loop, &gt;= 0.</summary>
+        public double? DeportCohesionCost { get; set; }
+        /// <summary>International Support (intl_standing) lost at once by a Deport (R-CTRL-018; Q-DEP-5 (c)). Required in the GDD
+        /// loop, &gt;= 0.</summary>
+        public double? DeportSupportCost { get; set; }
+        /// <summary>International Support lost each turn in resolver step 10 for each place in DisplacedByPlayer, for the rest
+        /// of the game (R-CTRL-018; Q-DEP-5 (c)). Required in the GDD loop, &gt;= 0.</summary>
+        public double? DeportSupportDragPerTurn { get; set; }
+        /// <summary>How far International Support's ceiling falls below 1 for each place in DisplacedByPlayer, for the rest of
+        /// the game (R-CTRL-018; Q-DEP-5 (c)). Required in the GDD loop, &gt;= 0.</summary>
+        public double? DeportSupportCeilingDrop { get; set; }
+        /// <summary>IL millions the Treasury pays at once for a Deport, borrowing what it lacks (R-CTRL-018; owner, 22 October
+        /// 2026, #1327: Deport's Money at or below Occupy's and Raid's in every state). Required in the GDD loop, &gt;= 0.</summary>
+        public double? DeportMoneyCost { get; set; }
+        /// <summary>Whether ResolveCapture may answer with Deport (R-CTRL-007). Off, the default and the real content's value,
+        /// Deport is refused as not built yet until its cards and dialog are reviewed (Phase 6 PRs 9 and 10).</summary>
+        public bool DeportInPlay { get; set; }
     }
 
     /// <summary>One row of rules.yaml mvp.combat_table (R-COMBAT-002, R-COMBAT-003): it applies from an attack : defence

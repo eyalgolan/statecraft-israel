@@ -70,7 +70,7 @@ public class CityPanelTests
         Assert.AreEqual(En.Format("city.jobs", city.Employed, city.JobSlots), ui.Q<Label>("city-jobs").text);
         Assert.AreEqual(En.Format("city.craftsmen", 3), ui.Q<Label>("city-craftsmen").text);
         Assert.AreEqual(En.Format("city.refugees", En.Format("city.groups", city.Refugees)), ui.Q<Label>("city-refugees").text);
-        Assert.AreEqual(En.Format("city.recruits", En.Format("city.groups", city.Recruits)), ui.Q<Label>("city-recruits").text);
+        Assert.AreEqual(En.Format("city.soldiers", En.Format("city.groups", 0)), ui.Q<Label>("city-soldiers").text);
         Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", city.Employed)), ui.Q<Label>("city-workers").text);
     }
 
@@ -91,6 +91,35 @@ public class CityPanelTests
         var city = bridge.State.Cities[City];
         Assert.AreEqual(15, Cities.Housed(bridge.State, city), "precondition: the sim houses the recruits and the trainees too");
         Assert.AreEqual(En.Format("city.housing_condition", 15, En.Format("city.groups", city.HousingCapacity), PlayerText.Percent(city.Condition!.Value)), ui.Q<Label>("city-housing").text);
+    }
+
+    [Test]
+    public void TheSoldiersLineCountsEveryIsraeliFormationHousedInTheCity([Values] bool hebrew)
+    {
+        // #1345 (owner ruling, 23 Oct 2026, option b): since #1130 trained recruits are formations housed in their home city
+        // (R-HOUSE-003, R-UNIT-004), so the line counts every Israeli formation whose HomeCity is the city, the same sum
+        // Cities.Housed takes: a recruit group, a promoted veteran, guns and armoured cars, wherever they stand. A formation
+        // homed elsewhere and an Arab unit are not the city's.
+        var t = hebrew ? He : En;
+        using var ui = new UiTestKit();
+        var bridge = Bridge(t, s =>
+        {
+            void Add(string type, string side, int strength, string home)
+            {
+                var id = s.NextId++;
+                s.Units.Add(id, new Unit(id, type, CityHex.q, CityHex.r, 0, side, strength, "", "", home));
+            }
+            Add("recruit", "israel", 2, City);
+            Add("veteran_soldier", "israel", 3, City);
+            Add("artillery", "israel", 1, City);
+            Add("armoured_car", "israel", 1, City);
+            Add("recruit", "israel", 4, "jerusalem");
+            Add("egyptian_army", "egypt", 5, City);
+        });
+        using var panel = Panel(ui, bridge, t);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.AreEqual(0, bridge.State.Cities[City].Recruits, "precondition: nothing writes City.Recruits since #1130");
+        Assert.AreEqual(t.Format("city.soldiers", t.Format("city.groups", 7)), ui.Q<Label>("city-soldiers").text);
     }
 
     [Test]

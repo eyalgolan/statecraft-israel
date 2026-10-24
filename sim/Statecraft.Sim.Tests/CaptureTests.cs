@@ -27,7 +27,11 @@ public class CaptureTests
 
     /// <summary>MovementTests' 6 x 3 coastal plain with the four places; <paramref name="targets"/> lists the targets in
     /// file order.</summary>
-    internal static Content Load(params string[] targets)
+    internal static Content Load(params string[] targets) => Load(null, targets);
+
+    /// <summary>As <see cref="Load(string[])"/>, with <paramref name="edit"/> run on the files before they load (DeportTests
+    /// turns Deport on with it, Q-TECH-3).</summary>
+    internal static Content Load(Action<Dictionary<string, string>>? edit, params string[] targets)
     {
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
@@ -38,6 +42,7 @@ public class CaptureTests
             ["settlement_targets.yaml"] = targets.Length == 0 ? "targets: []\n" : "targets:\n" + string.Concat(targets.Select(id => { var p = Places.Single(x => x.Id == id); return Target(p.Id, p.Q, p.R); })),
         });
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a, town_c, town_e]");
+        edit?.Invoke(files);
         return ContentLoader.Load(Fixture.Write(files));
     }
 
@@ -237,5 +242,85 @@ public class CaptureTests
         }
         Assert.False(Reaches("gaza"));
         Assert.True(Reaches("acre"));
+    }
+
+    // R-CTRL-004 (owner, 23 October 2026, OQ-2: "Instant"): a move that ends on an enemy-held target with no enemy unit
+    // there captures it at once, before End turn; End turn stamps the turn's end as Since, as step 3 does.
+    [Fact]
+    public void AMoveEndingOnATargetCapturesItAtOnce()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new Move(1, 1, 0) });
+        Assert.Equal(SettlementControl.AwaitingChoice, now.State.Settlements["town_a"].State);
+        Assert.Equal(default(DateTime), now.State.Settlements["town_a"].Since);
+        var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0) }).State;
+        Assert.Equal(ended.Date, ended.Settlements["town_a"].Since);
+    }
+
+    // R-CTRL-004: passing through a target captures nothing (R-MOVE-005 lets a path pass through it): 0,0 to 2,0 crosses 1,0.
+    [Fact]
+    public void PassingThroughATargetCapturesNothing()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 0));
+        Assert.Equal(new[] { (1, 0), (2, 0) }, Movement.Path(c, s, 1, 2, 0));   // precondition: the path crosses town_a
+        Assert.Empty(Simulation.Preview(c, s, new Command[] { new Move(1, 2, 0) }).State.Settlements);
+    }
+
+    // R-CTRL-004: a unit that captured and left keeps the capture; only enemy units alone on it take it back, in step 3.
+    [Fact]
+    public void ACaptureStaysWhenTheUnitLeaves()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 1));
+        var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0), new Move(1, 0, 1) }).State;
+        Assert.Equal(SettlementControl.AwaitingChoice, ended.Settlements["town_a"].State);
+    }
+
+    // R-CTRL-004: the check draws nothing.
+    [Fact]
+    public void TheInstantCheckDrawsNothing()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 1));
+        Assert.Equal(s.RngState, Simulation.Preview(c, s, new Command[] { new Move(1, 1, 0) }).State.RngState);
+    }
+
+    // R-CTRL-007: the answer stays deferred: given in the capture's turn, it runs at End turn after the capturing move.
+    [Fact]
+    public void TheAnswerGivenInTheCapturesTurnRunsAtEndTurn()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, Soldier(1, 0, 1));
+        var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0), new ResolveCapture("town_a", SettlementControl.Raid) });
+        Assert.Empty(ended.Rejected);
+        Assert.False(ended.State.Settlements.ContainsKey("town_a"));
+    }
+
+    // R-CTRL-004: the automatic route stop is checked before any order (spec 4.4, 6.3).
+    [Fact]
+    public void ARouteStopCapturesBeforeAnyPlayerOrder()
+    {
+        var c = Load(AllTargets);
+        var s = With(c, new Unit(1, "soldier", 0, 1, side: "israel", strength: 2,
+            order: Movement.GoTo, orderTarget: "1,0"));
+        var now = Simulation.Preview(c, s, Array.Empty<Command>());
+        Assert.Equal((1, 0), (now.State.Units[1].Q, now.State.Units[1].R));
+        Assert.Equal(SettlementControl.AwaitingChoice, now.State.Settlements["town_a"].State);
+        Assert.Equal(default(DateTime), now.State.Settlements["town_a"].Since);
+    }
+
+    // R-CTRL-004: same-turn answers preserve the capture date, including Deport's ownerless record (#1327).
+    [Theory]
+    [InlineData(SettlementControl.Occupy)]
+    [InlineData(SettlementControl.Deport)]
+    public void ANewCaptureAnsweredInTheSameTurnKeepsItsCaptureDate(string outcome)
+    {
+        var c = DeportTests.Load();
+        var s = With(c, Soldier(1, 0, 1));
+        var ended = Simulation.Step(c, s, new Command[] { new Move(1, 1, 0), new ResolveCapture("town_a", outcome) });
+        Assert.Empty(ended.Rejected);
+        Assert.Equal(ended.State.Date, ended.State.Settlements["town_a"].Since);
     }
 }

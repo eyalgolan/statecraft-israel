@@ -248,6 +248,7 @@ namespace Statecraft.Game.UI
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
+            FocusScroll.NoScrollBarIsATabStop(root);                       // no scroll bar takes a Tab stop (#41 K3, widened from the Cabinet's two)
             Own(new NavigationGuard(root));                                // the camera keys (WASD, arrows) never move UI focus (B6)
             if (DiagLog.Nav) Own(new NavEventLog(root));                   // ?navlog: every UI pointer/submit event (playtest 2, P2-4)
             // The Illustration switch's silent loops (event-videos.yaml, Resources): none in the automated runs (CardVideo.ForcedOff).
@@ -347,14 +348,15 @@ namespace Statecraft.Game.UI
             showUnits();
             DiagLog.BootPhase("units layer built");
             var localitiesAt = LocalitiesAt(map);
+            var townNamesHe = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe);
             var info = this.info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
                 selectedUnit: () => unitLayer.Selected is string id ? unitLayer.Tokens.First(p => p.Token.Unit.Id == id) : (Statecraft.Game.Map.Units.PlacedToken?)null,
                 regions: regions, localitiesAt: localitiesAt,
                 townHex: InfoPanelPresenter.TownHex(map.SettlementsFor(inputs.Map.SettlementsYaml), map.Hexes),
-                townNamesHe: map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe),
+                townNamesHe: townNamesHe,
                 showReachable: map.ShowReachable,
-                unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token.Unit) == id)
-                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd).Title).FirstOrDefault()));
+                unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
+                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault()));
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -478,7 +480,7 @@ namespace Statecraft.Game.UI
             };
             Action showUnit = () =>
             {
-                if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token.Unit)) is not string id) return;
+                if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
                 unitLayer.Select(id);
                 if (unitLayer.Selected != null)
                 {
@@ -497,7 +499,7 @@ namespace Statecraft.Game.UI
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State);
-                var guideUnit = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token.Unit));
+                var guideUnit = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
                 return () =>
                 {
                     // Under a screen, or the player picked another than the guide's city or unit: kept.
@@ -843,7 +845,7 @@ namespace Statecraft.Game.UI
                 if (hud.ClassListContains(EventCardPresenter.OpenClass)) { log("SMOKE FAIL the event card did not hide"); yield break; }
             }
             var move = GoldenRun.SmokeMove(bridge.Content, bridge.State);
-            var token = units.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token.Unit) == move.Unit)
+            var token = units.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == move.Unit)
                 .Select(p => (Statecraft.Game.Map.Units.PlacedToken?)p).FirstOrDefault();
             if (!(token is { } t)) { log(FormattableString.Invariant($"SMOKE FAIL unit {move.Unit} has no token on the map")); yield break; }
             log(FormattableString.Invariant($"SMOKE ORDERS move unit {move.Unit} to {move.Q},{move.R}"));

@@ -14,7 +14,7 @@
         <ui:VisualElement name="event-gutter" class="event-gutter" />
         <ui:VisualElement name="left-column" class="left-column" picking-mode="Ignore">
             <ui:Button name="nav-cabinet" text="Cabinet" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="columns" class="nav-disc" /><ui:VisualElement class="nav-badge" picking-mode="Ignore" /></ui:Button>
-            <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /></ui:Button>
+            <ui:Button name="nav-budget" text="Budget" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="ledger" class="nav-disc" /><ui:VisualElement class="nav-badge" picking-mode="Ignore" /></ui:Button>
             <ui:Button name="nav-defence" text="Defence" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="helmet" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-why" text="Why?" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="question" class="nav-disc" /></ui:Button>
             <ui:Button name="nav-timeline" text="Timeline" class="nav-button rail-button"><Statecraft.Game.UI.UiIcon glyph="hourglass" class="nav-disc" /></ui:Button>
@@ -158,6 +158,9 @@
                     <ui:Button name="info-attack" />
                     <!-- Send home (#1309): shown only when the sim's Demobilization.Check takes the unit. -->
                     <ui:Button name="info-send-home" />
+                    <!-- Reinforce (#1510): shown only when the sim's Training.Reinforce takes the unit's missing strength from the
+                         city it stands in; else its reason shows. -->
+                    <ui:Button name="info-reinforce" />
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
                 <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
@@ -319,6 +322,9 @@
                             <ui:VisualElement name="rung-1" class="rung"><ui:Label name="rung-1-name" class="grow rung-name" /><ui:Label name="rung-1-turn" class="muted rung-turn" /></ui:VisualElement>
                         </ui:VisualElement>
                         <ui:Label name="ceasefire" class="muted wrap" />
+                        <!-- #755: the GDD loop's war state and the truce in force (R-WAR-002, R-COMBAT-009). -->
+                        <ui:Label name="war-state" class="wrap" />
+                        <ui:Label name="truce" class="muted wrap" />
                         <ui:VisualElement class="row">
                             <ui:Button name="de-escalate" text="Lower the level" />
                             <ui:Button name="escalate" text="Raise the level" />
@@ -343,6 +349,14 @@
                     <ui:Label name="defence-title-budget" class="section-title budget-title" />
                     <Statecraft.Game.UI.UiBar name="defence-budget-bar" class="ui-bar--budget big-bar grow" />
                     <ui:Label name="defence-budget-share" class="budget-share" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
+                </ui:VisualElement>
+                <!-- #755: the prisoners held and returned and our soldiers held (R-POW-001, R-POW-004, R-POW-005), GDD loop only. -->
+                <ui:VisualElement name="defence-prisoners" class="defence-panel">
+                    <ui:Label name="defence-title-prisoners" class="section-title" />
+                    <ui:Label name="prisoners-held" class="wrap" />
+                    <ui:Label name="prisoners-returned" class="wrap" />
+                    <ui:Label name="soldiers-held" class="wrap" />
                     <Statecraft.Game.UI.UiFrame shadow="false" />
                 </ui:VisualElement>
             </ui:ScrollView>

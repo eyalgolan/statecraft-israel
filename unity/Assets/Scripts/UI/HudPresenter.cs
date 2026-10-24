@@ -114,7 +114,8 @@ namespace Statecraft.Game.UI
         /// <summary>The left icon column (promo 03): the screens' buttons (ScreenNav.Screens).</summary>
         public const string RailName = "left-column";
         /// <summary>#1109: the class on a side-menu button whose screen has something the player can do this turn
-        /// (Statecraft.uss shows the button's BadgeClass dot). Only Cabinet has one: a vacant seat to fill (SimBridge.Vacancies).</summary>
+        /// (Statecraft.uss shows the button's BadgeClass dot). Cabinet has one: a vacant seat to fill (SimBridge.Vacancies); Budget
+        /// another, an edited budget not submitted (BudgetPresenter, SimBridge.BudgetUnsubmitted).</summary>
         public const string ActionClass = "nav-action", BadgeClass = "nav-badge";
         readonly HoverTip? railTips, barTips;
         /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>

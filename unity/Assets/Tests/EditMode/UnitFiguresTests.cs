@@ -416,7 +416,13 @@ public class UnitFiguresTests
             }
             var flag = go.Find(UnitPlinth.FlagName);
             Assert.IsNotNull(flag, "a marker on the pole");
-            Assert.AreEqual(UnitFlags.PennantMeshName, flag.GetComponent<MeshFilter>().sharedMesh.name, "the neutral pennant (Q-ART-1), not a flag");
+            Assert.AreEqual(UnitFlags.MeshName(UnitFlags.Jordan), flag.GetComponent<MeshFilter>().sharedMesh.name, "Transjordan's sourced 1948 flag (#756), not the pennant");
+            var cloth = flag.GetComponent<MeshRenderer>().sharedMaterials;
+            var want = UnitFlags.Colours(UnitFlags.Jordan);
+            Assert.AreEqual(1 + want.Count, cloth.Length, "the pole in the palette, then each cloth colour");
+            for (int i = 0; i < want.Count; i++)   // a material's colour comes back through a float round trip
+                Assert.Less(((Vector4)(cloth[i + 1].color - want[i])).magnitude, 1e-3f, $"cloth colour {i}");
+            Assert.AreSame(Resources.Load<Material>(UnitMaterials.RingResource).shader, cloth[1].shader, "the cloth unlit");
             // On the force's own ground (#226, ruling 9): the spot's hex is not Israeli-held on the window's first day.
             var control = Control1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Control1948.FileName)));
             foreach (var u in units.Where(u => u.Side != UnitData.Israel && UnitRoster.OnMap(u)))

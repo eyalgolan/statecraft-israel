@@ -1294,7 +1294,15 @@ namespace Statecraft.Sim
                     if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
                     if (v < 0) throw new ContentException(file, "mvp." + key, "must be >= 0");
                 }
-                foreach (var (key, v) in new[] { ("prisoner_shortfall_cohesion", m.PrisonerShortfallCohesion), ("held_soldier_cost_per_turn", m.HeldSoldierCostPerTurn) })
+                // R-CTRL-011, R-CTRL-012 (Q-OCC-1 (a), Q-OCC-3 (a)): required, so a missing key is never read as an occupation
+                // that never ends or costs nothing.
+                if (m.OccupationTurns == null) throw new ContentException(file, "mvp.occupation_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.OccupationTurns < 1) throw new ContentException(file, "mvp.occupation_turns", "must be >= 1");
+                foreach (var (key, v) in new[] { ("prisoner_shortfall_cohesion", m.PrisonerShortfallCohesion), ("held_soldier_cost_per_turn", m.HeldSoldierCostPerTurn), ("occupation_upkeep_per_turn", m.OccupationUpkeepPerTurn),
+                    // R-CTRL-018 (Q-DEP-5 (c)): required, so a missing key is never read as a Deport that costs nothing
+                    ("deport_cohesion_cost", m.DeportCohesionCost), ("deport_support_cost", m.DeportSupportCost),
+                    ("deport_support_drag_per_turn", m.DeportSupportDragPerTurn), ("deport_support_ceiling_drop", m.DeportSupportCeilingDrop),
+                    ("deport_money_cost", m.DeportMoneyCost) })
                 {
                     if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
                     if (!(v >= 0 && IsFinite(v.Value))) throw new ContentException(file, "mvp." + key, "must be a finite number >= 0");

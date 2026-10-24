@@ -95,7 +95,9 @@ namespace Statecraft.Game.UI
             var waiting = Row(host, "city-waiting-row"); waiting.AddToClassList(PairsClass);
             Line(waiting, "city-refugees", text.Format("city.refugees", Groups(text, city.Refugees)));
             Line(waiting, "city-overflow", text.Format("city.overflow", Cities.Overflow(s, city)));
-            Line(host, "city-recruits", text.Format("city.recruits", Groups(text, city.Recruits)));
+            // #1345: trained recruits are formations housed in their home city since #1130, so the line counts every Israeli
+            // formation the city houses (Cities.Soldiers, part of Cities.Housed), not City.Recruits, which nothing writes now.
+            Line(host, "city-soldiers", text.Format("city.soldiers", Groups(text, Cities.Soldiers(s, city))));
 
             // The Assign stepper: the ordered count (or the current one), one group a press, within R-CITY-001's limits as
             // the sim gives them with this turn's Train orders; stepping back to the current count withdraws the order.

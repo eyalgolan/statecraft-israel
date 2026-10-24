@@ -79,7 +79,7 @@ public class RaidTests
         var s = Awaiting(c, Soldier(1, 1, 0), Soldier(6, 1, 0), Soldier(7, 2, 0), Enemy(3, 0, 0), Enemy(4, 0, 1), Enemy(5, 1, 1));
         var before = s.Clone();
         var why = new List<Cause>();
-        Assert.Contains("Unit 6 has no free hex", SettlementControl.Resolve(c, s, "town_a", SettlementControl.Raid, why));
+        Assert.Contains("A unit has no free hex", SettlementControl.Resolve(c, s, "town_a", SettlementControl.Raid, why));
         Assert.Empty(why);
         Assert.Equal(before.Describe(), s.Describe());
         Assert.Single(Step(c, before, Raid()).Rejected);
@@ -91,7 +91,6 @@ public class RaidTests
     [InlineData("town_c", "raid", "not awaiting a decision")]   // a target with no record
     [InlineData("nowhere", "raid", "not awaiting a decision")]   // not a settlement
     [InlineData("town_a", "surrender", "not known")]
-    [InlineData("town_a", "occupy", "not built yet")]
     [InlineData("town_a", "deport", "not built yet")]
     public void ResolveCaptureIsRefusedWithAReason(string id, string outcome, string reason)
     {

@@ -107,6 +107,9 @@ namespace Statecraft.Sim
         public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
         public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The places the player has deported, the permanent record of R-CTRL-018 and R-CTRL-019: a count of places,
+        /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
+        public int DisplacedByPlayer;
 
         public double TotalPopulation => Population.Values.Sum();
 
@@ -251,6 +254,7 @@ namespace Statecraft.Sim
             if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
             if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
+            if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
             return sb.ToString();
         }
     }

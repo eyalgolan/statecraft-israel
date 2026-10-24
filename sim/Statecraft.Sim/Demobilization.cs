@@ -18,20 +18,16 @@ namespace Statecraft.Sim
         static bool Signed(GameState s, string front) =>
             s.ChosenOptions.TryGetValue("armistice_" + front, out var o) && o == "sign";
 
-        /// <summary>The front <paramref name="u"/> fights on (owner, 22 October 2026, #1309): of the enemy units it attacks
-        /// (the hex its attack order names) or borders (an adjacent hex), the ones whose side belongs to a front (R-POW-004's
+        /// <summary>The front <paramref name="u"/> fights on (owner, 22 October 2026, #1309): of the enemy units it attacked
+        /// this turn or borders (an adjacent hex), the ones whose side belongs to a front (R-POW-004's
         /// map; the ALA and the local forces belong to none, Q-OBJ-1, so they name no front - accepted per maintainer comment 6341877062 on #1309), the nearest
         /// one's, ties by the lowest unit id. Null when no front-bearing enemy unit is attacked or bordered: the ruling's
         /// "no enemy units in play" case, which any signed armistice covers (accepted per maintainer comment 6341877062
         /// on #1309: a frontless enemy counts as none in play).</summary>
-        internal static string? Front(GameState s, Unit u)
+        internal static string? Front(GameState s, Unit u, IReadOnlyDictionary<int, (int Q, int R)>? attacked = null)
         {
             (int Q, int R)? attacks = null;
-            if (u.Order == Combat.Attack)
-            {
-                var parts = u.OrderTarget.Split(',');
-                attacks = (int.Parse(parts[0], CultureInfo.InvariantCulture), int.Parse(parts[1], CultureInfo.InvariantCulture));
-            }
+            if (attacked != null && attacked.TryGetValue(u.Id, out var target)) attacks = target;
             var candidates = s.Units.Values
                 .Where(e => e.Side != "" && e.Side != Movement.PlayerSide && Prisoners.FrontOf.ContainsKey(e.Side))
                 .Where(e => MapActions.Distance(u.Q, u.R, e.Q, e.R) == 1 || (attacks != null && attacks.Value == (e.Q, e.R)))
@@ -45,12 +41,13 @@ namespace Statecraft.Sim
         /// Changes nothing: the unit card asks it before it offers Send home. Refused for an unknown unit, a unit with no
         /// side (a halutz) or an enemy unit, as the standing orders are; then while the armistice on the unit's front is
         /// unsigned, or - no enemy attacked or bordered - while no armistice is signed at all.</summary>
-        public static string? Check(Content c, GameState s, int unitId)
+        public static string? Check(Content c, GameState s, int unitId,
+                                    IReadOnlyDictionary<int, (int Q, int R)>? attacked = null)
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (u.Side == "") return "Only a military unit takes that order";
             if (u.Side != Movement.PlayerSide) return "That unit is not yours";
-            var front = Front(s, u);
+            var front = Front(s, u, attacked);
             if (front != null)
                 return Signed(s, front) ? null : $"The armistice with {PlayerText.Capitalised(front)} is not signed";
             return Prisoners.Fronts.Any(f => Signed(s, f)) ? null : "No armistice is signed";
@@ -60,9 +57,10 @@ namespace Statecraft.Sim
         /// leaves the map and its strength joins the nearest city's civilians, employed count untouched, so the people count
         /// in the city's jobs and housing rules from the same turn. Refused, state untouched, with <see cref="Check"/>'s
         /// reason.</summary>
-        internal static string? Give(Content c, GameState s, int unitId, List<Cause> why)
+        internal static string? Give(Content c, GameState s, int unitId,
+                                     IReadOnlyDictionary<int, (int Q, int R)>? attacked, List<Cause> why)
         {
-            var refused = Check(c, s, unitId);
+            var refused = Check(c, s, unitId, attacked);
             if (refused != null) return refused;
             var u = s.Units[unitId];
             var city = Nearest(c, u.Q, u.R);
@@ -71,13 +69,15 @@ namespace Statecraft.Sim
             s.Cities[city] = x.WithCounts(x.Civilians + u.Strength, x.Employed, x.Refugees);
             var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), u.Strength, FormattableString.Invariant(
-                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now")));
+                $"Unit {unitId} is sent home: its {u.Strength * ppu:N0} people are civilians in {PlayerText.Settlement(c, city)} now"),
+                key: WhyKeys.SentHome, units: new[] { new UnitRef(u) },
+                args: new[] { (u.Strength * ppu).ToString(CultureInfo.InvariantCulture), city }));
             return null;
         }
 
         /// <summary>The nearest of the cities by hex distance to its settlement hex; a tie takes the city's id in ordinal
         /// order (agent default - the ruling sets no tie break).</summary>
-        static string Nearest(Content c, int q, int r) => c.Cities
+        internal static string Nearest(Content c, int q, int r) => c.Cities
             .OrderBy(x => { var h = c.SettlementHexes.First(h => h.Id == x.Id); return MapActions.Distance(q, r, h.Q, h.R); })
             .ThenBy(x => x.Id, StringComparer.Ordinal)
             .First().Id;

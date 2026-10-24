@@ -21,7 +21,7 @@ namespace Statecraft.Sim
     /// </code>
     /// Kinds: set_policy (policy, level), allocate_budget (shares: {office: share}), choose_event_option (event, option),
     /// set_mobilization (level), security_order (delta), appoint (office, person), map_action (action, q, r), assign_workers
-    /// (city, role, count), train (city, track, count), cancel_training (cohort), pioneer_work (unit, action, site), stop_work
+    /// (city, role, count), train (city, track, count), cancel_training (cohort), return_craftsmen (city, count), reassign_craftsmen (city, count), reassign_pioneers (city, track, count), pioneer_work (unit, action, site), stop_work
     /// (unit), move (unit, q, r; GDD content only), unit_order (unit, order, and q, r for an attack; GDD content only). A turn with no
     /// scripted command passes; events nobody answered are delegated, as in the game. A command the sim rejects fails the run.</summary>
     public sealed class Scenario
@@ -64,6 +64,8 @@ namespace Statecraft.Sim
             ["security_order"] = new[] { "delta" }, ["appoint"] = new[] { "office", "person" },
             ["map_action"] = new[] { "action", "q", "r" }, ["assign_workers"] = new[] { "city", "role", "count" },
             ["train"] = new[] { "city", "track", "count" }, ["cancel_training"] = new[] { "cohort" },
+            ["return_craftsmen"] = new[] { "city", "count" }, ["reassign_craftsmen"] = new[] { "city", "count" }, ["reassign_pioneers"] = new[] { "city", "track", "count" },
+            ["reinforce"] = new[] { "unit", "city", "count" },
             ["pioneer_work"] = new[] { "unit", "action", "site" }, ["stop_work"] = new[] { "unit" },
             ["unit_order"] = new[] { "unit", "order", "q", "r" },   // q and r: an attack's hex only (R-COMBAT-001)
             ["start_project"] = new[] { "project", "city", "q", "r" }, ["cancel_project"] = new[] { "project" },
@@ -96,6 +98,10 @@ namespace Statecraft.Sim
                 case "assign_workers": return new AssignWorkers(Str(c, "city"), Str(c, "role"), Whole(c, "count"));
                 case "train": return new Train(Str(c, "city"), Str(c, "track"), Whole(c, "count"));
                 case "cancel_training": return new CancelTraining(Whole(c, "cohort"));
+                case "return_craftsmen": return new ReturnCraftsmen(Str(c, "city"), Whole(c, "count"));
+                case "reassign_craftsmen": return new ReassignCraftsmen(Str(c, "city"), Whole(c, "count"));
+                case "reassign_pioneers": return new ReassignPioneers(Str(c, "city"), Str(c, "track"), Whole(c, "count"));
+                case "reinforce": return new Reinforce(Whole(c, "unit"), Str(c, "city"), Whole(c, "count"));
                 case "pioneer_work": return new PioneerWork(Whole(c, "unit"), Str(c, "action"), Str(c, "site"));
                 case "stop_work": return new StopWork(Whole(c, "unit"));
                 case "unit_order": return new UnitOrder(Whole(c, "unit"), Str(c, "order"), c.ContainsKey("q") ? Whole(c, "q") : (int?)null, c.ContainsKey("r") ? Whole(c, "r") : (int?)null);
@@ -142,6 +148,8 @@ namespace Statecraft.Sim
             SetPolicy p => $"{p.Policy} {p.Level}", ChooseEventOption e => $"{e.EventId}/{e.OptionId}", SetMobilization m => m.Level.ToString(CultureInfo.InvariantCulture),
             SecurityOrder o => o.Delta.ToString(CultureInfo.InvariantCulture), Appoint a => $"{a.Office} {a.Person}", MapAction m => $"{m.Action} {m.Q},{m.R}",
             AssignWorkers w => $"{w.City} {w.Role} {w.Count}", Train t => $"{t.City} {t.Track} {t.Count}", CancelTraining t => t.Cohort.ToString(CultureInfo.InvariantCulture),
+            ReturnCraftsmen r => $"{r.City} {r.Count}", ReassignCraftsmen r => $"{r.City} {r.Count}", ReassignPioneers r => $"{r.City} {r.Track} {r.Count}",
+            Reinforce r => FormattableString.Invariant($"{r.Unit} {r.City} {r.Count}"),
             PioneerWork p => FormattableString.Invariant($"{p.Unit} {p.Action} {p.Site}"), StopWork w => w.Unit.ToString(CultureInfo.InvariantCulture),
             UnitOrder o => FormattableString.Invariant($"{o.Unit} {o.Order}") + (o.Q is int q && o.R is int r ? FormattableString.Invariant($" {q},{r}") : ""),
             StartProject p => FormattableString.Invariant($"{p.ProjectKind} {p.City} {p.Q},{p.R}"), CancelProject p => p.Project.ToString(CultureInfo.InvariantCulture),

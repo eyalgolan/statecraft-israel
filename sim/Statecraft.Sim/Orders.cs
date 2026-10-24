@@ -24,7 +24,7 @@ namespace Statecraft.Sim
         static string Hex(Unit u) => string.Format(CultureInfo.InvariantCulture, "{0},{1}", u.Q, u.R);
 
         static Unit With(Unit u, string order, string target) =>
-            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, order, target, u.HomeCity);
+            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, order, target, u.HomeCity, u.Full);
 
         /// <summary>R-ORDER-001's refusals: null when <see cref="Give"/> takes the order, else the reason shown to the player.
         /// Changes nothing: the unit card asks it before it offers fortify or hold (#754). Refused for an unknown order or
@@ -54,7 +54,8 @@ namespace Statecraft.Sim
             s.Units[unitId] = order == Fortify ? With(u, Fortifying, here) : With(u, Hold, "");
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 0, order == Fortify
                 ? $"Unit {unitId} is fortifying hex {here}; it is fortified from the end of the turn"
-                : $"Unit {unitId} holds hex {here}", enemy ? order : ""));
+                : $"Unit {unitId} holds hex {here}", enemy ? order : "", key: order == Fortify ? WhyKeys.Fortifying : WhyKeys.Holds,
+                units: new[] { new UnitRef(u) }, args: new[] { here }));
             return null;
         }
 
@@ -69,8 +70,8 @@ namespace Statecraft.Sim
                 {
                     s.Units[u.Id] = With(u, "", "");
                     if (u.Order == Fortify)
-                        why.Add(new Cause("map", u.Id.ToString(CultureInfo.InvariantCulture), 0,
-                            $"Unit {u.Id} left hex {u.OrderTarget} and is no longer fortified"));
+                        why.Add(UnitLines.Line(WhyKeys.FortifyLost,
+                            $"Unit {u.Id} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
                 }
                 else if (u.Order == Fortifying) s.Units[u.Id] = With(u, Fortify, u.OrderTarget);
             }

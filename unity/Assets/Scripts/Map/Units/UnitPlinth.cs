@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Statecraft.Game.Map.Units
@@ -250,9 +251,10 @@ namespace Statecraft.Game.Map.Units
         /// <paramref name="centre"/> under <paramref name="token"/>, and <paramref name="side"/>'s flag when it has one (the neutral
         /// pennant when the map draws the side without one, <see cref="UnitFlags.HasPennant"/>).
         /// <paramref name="own"/> takes ownership of each per-token mesh; <paramref name="shared"/> returns the shared flag
-        /// mesh for a key. Returns the base's top at its centre.</summary>
+        /// mesh for a key; <paramref name="flagCloth"/> the side's cloth materials (<see cref="UnitFlags.ClothMaterials"/>).
+        /// Returns the base's top at its centre.</summary>
         public static float Build(MapScene map, Transform token, Vector3 centre, float radius, string side, Func<Mesh, Mesh> own,
-            Func<string, Func<Mesh>, Mesh> shared, Material paint, Material rim, Material flagWhite, Material flagBlue)
+            Func<string, Func<Mesh>, Mesh> shared, Material paint, Material rim, Func<string, Material[]> flagCloth)
         {
             var ground = HeightAt(map); var c = new Vector2(centre.x, centre.z);
             var at = new Vector3(centre.x, 0f, centre.z); var scale = new Vector3(radius, 1f, radius);
@@ -274,7 +276,7 @@ namespace Statecraft.Game.Map.Units
                     ? UnitShowcase.Piece(token, FlagName, shared("unit-pennant", UnitFlags.BuildPennant), paint, foot, Quaternion.identity, UnitBadge.FigureHeightM * UnitShowcase.FigureScale)
                     : UnitShowcase.Piece(token, FlagName, shared("unit-flag-" + side, () => UnitFlags.Build(side)!), paint, foot, Quaternion.identity,
                         UnitBadge.FigureHeightM * UnitShowcase.FigureScale);
-                if (!pennant) flag.GetComponent<MeshRenderer>().sharedMaterials = new[] { paint, flagWhite, flagBlue };
+                if (!pennant) flag.GetComponent<MeshRenderer>().sharedMaterials = new[] { paint }.Concat(flagCloth(side)).ToArray();
                 flag.AddComponent<UnitFlagFacing>();   // owner ruling, 2026-10-15: the cloth turns about the pole to face the camera
                 var cam = Camera.main; if (cam != null) UnitFlagFacing.Face(flag.transform, cam.transform.position);
             }

@@ -55,9 +55,9 @@ namespace Statecraft.Sim
                 // fortify (Movement.Move), and step 2 would resolve it inside the truce (owner, #1263).
                 if (truce && u.Order == Combat.Attack)
                 {
-                    s.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
-                    why.Add(new Cause("map", id.ToString(System.Globalization.CultureInfo.InvariantCulture), 0,
-                        $"Unit {id}'s attack on hex {u.OrderTarget} ends: a truce is on"));
+                    s.Units[id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
+                    why.Add(UnitLines.Line(WhyKeys.AttackEndedTruce,
+                        $"Unit {id}'s attack on hex {u.OrderTarget} ends: a truce is on", new[] { u }, u.OrderTarget));
                 }
                 if (Script(c, s, u) is (int q, int r) && Movement.Toward(c, s, u, q, r) is (int tq, int tr)
                     && Movement.Move(c, s, id, tq, tr, spent, why, enemy: true) == null) continue;

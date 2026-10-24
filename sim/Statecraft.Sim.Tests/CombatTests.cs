@@ -46,7 +46,68 @@ public class CombatTests
         return why;
     }
 
-    // R-HOUSE-003, R-COMBAT-001: issuing an attack preserves the existing formation's housing home.
+    // R-COMBAT-001 (owner, 23 October 2026: "Instant, like Civ"): the attack is fought when it is given; the unit keeps no order.
+    [Fact]
+    public void AnAttackIsFoughtWhenGiven()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1, 6), Enemy(2, 3, 1, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Empty(now.Rejected);
+        Assert.Contains(now.Why, w => w.Message.StartsWith("The attack on hex 3,1"));
+        Assert.Equal("", now.State.Units[1].Order);
+        Assert.Equal(s.Arms - 2, now.State.Arms);
+    }
+
+    // R-COMBAT-001: the attack ends the unit's movement; a unit with no points left cannot attack.
+    [Fact]
+    public void AnAttackEndsTheUnitsMovement()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1, 6), Enemy(2, 3, 1, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1), new Move(1, 2, 2) });
+        Assert.Equal(0, Movement.PointsLeft(c, now.State, 1, now.Spent));
+        Assert.Equal("That hex is out of reach this turn", now.Rejected.Single().Reason);
+        var tired = Simulation.Preview(c, s, new Command[] { new Move(1, 2, 2), new Move(1, 2, 1), new Move(1, 2, 2), new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.Equal("That unit has no movement points left this turn", tired.Rejected.Single().Reason);
+    }
+
+    // R-COMBAT-002: a player's engagement draws once, when its order runs; step 2 draws only for the enemy.
+    [Fact]
+    public void APlayersAttackDrawsWhenGiven()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1, 6), Enemy(2, 3, 1, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.NotEqual(s.RngState, now.State.RngState);
+        var ended = Step(c, s, new UnitOrder(1, Combat.Attack, 3, 1));
+        Assert.DoesNotContain(ended.State.Units.Values, u => u.Side == "israel" && u.Order == Combat.Attack);
+    }
+
+    // R-COMBAT-004: the Arms are checked and paid at the order, from the stock as it is.
+    [Fact]
+    public void AnAttackTheStockCannotPayIsRefused()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1, 6), Enemy(2, 3, 1, 1));
+        s.Arms = 0;
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) });
+        Assert.StartsWith("An attack needs", now.Rejected.Single().Reason);
+        Assert.Equal(s.Hash(), now.State.Hash());
+    }
+
+    // R-COMBAT-009: after accepting a truce, an attack in its window is refused at the click.
+    [Fact]
+    public void AnAttackInAnAcceptedTruceIsRefused()
+    {
+        var c = Load();
+        var s = With(c, Soldier(1, 2, 1, 6), Enemy(2, 3, 1, 1));
+        s.ChosenOptions["first_truce"] = "accept";
+        s.Date = new DateTime(1948, 6, 15);
+        Assert.Equal("A truce is in force", Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 3, 1) }).Rejected.Single().Reason);
+    }
+
+    // R-HOUSE-003, R-COMBAT-001: an attack keeps the formation's home: the survivor is still housed there.
     [Fact]
     public void GivingAnAttackRetainsTheFormationsHomeAndHousing()
     {
@@ -55,11 +116,12 @@ public class CombatTests
         Assert.Equal("town_a", s.Units[1].HomeCity);
         Assert.Equal(15, Cities.Housed(s, s.Cities["town_a"]));
 
-        Assert.Null(Combat.Give(c, s, 1, 2, 0, new List<Cause>()));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
 
-        var u = s.Units[1];
-        Assert.Equal((1, "israel", 5, "town_a", Combat.Attack, "2,0"), (u.Id, u.Side, u.Strength, u.HomeCity, u.Order, u.OrderTarget));
-        Assert.Equal(15, Cities.Housed(s, s.Cities["town_a"]));
+        Assert.Empty(now.Rejected);
+        var u = now.State.Units[1];
+        Assert.Equal((1, "israel", "town_a", ""), (u.Id, u.Side, u.HomeCity, u.Order));
+        Assert.Equal(15 - (5 - u.Strength), Cities.Housed(now.State, now.State.Cities["town_a"]));
     }
 
     // R-HOUSE-003, R-COMBAT-001: ending an attack does not release a surviving formation's housing.
@@ -132,18 +194,16 @@ public class CombatTests
         var city = g.State.Cities["town_a"];
         Assert.Equal(city.Civilians + city.Craftsmen + city.Recruits + 2, Cities.Housed(g.State, city));
 
-        var result = g.Step(new Command[] { new UnitOrder(recruit.Id, Combat.Attack, 2, 0) });
-
-        Assert.Empty(result.Rejected);
-        var survivor = g.State.Units[recruit.Id];
+        Assert.Null(g.Commit(new UnitOrder(recruit.Id, Combat.Attack, 2, 0)));
+        var survivor = g.Now.State.Units[recruit.Id];
         Assert.Equal((recruit.Id, "israel", 1, "town_a"), (survivor.Id, survivor.Side, survivor.Strength, survivor.HomeCity));
         var loaded = GameSession.Load(c, g.Save.Write(), out var warning);
         Assert.Empty(warning);
-        Assert.Equal(g.State.Hash(), loaded.State.Hash());
-        Assert.Equal(g.State.Describe(), loaded.State.Describe());
-        Assert.Equal(survivor.Canonical(), loaded.State.Units[recruit.Id].Canonical());
-        city = loaded.State.Cities["town_a"];
-        Assert.Equal(city.Civilians + city.Craftsmen + city.Recruits + 1, Cities.Housed(loaded.State, city));
+        Assert.Equal(g.Now.State.Hash(), loaded.Now.State.Hash());
+        Assert.Equal(g.Now.State.Describe(), loaded.Now.State.Describe());
+        Assert.Equal(survivor.Canonical(), loaded.Now.State.Units[recruit.Id].Canonical());
+        city = loaded.Now.State.Cities["town_a"];
+        Assert.Equal(city.Civilians + city.Craftsmen + city.Recruits + 1, Cities.Housed(loaded.Now.State, city));
     }
 
     // R-COMBAT-001: an attack names an adjacent hex that holds an enemy unit, and the player's unit must have the Arms for
@@ -180,12 +240,11 @@ public class CombatTests
         s.Arms = 2;
         var given = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0)).State;   // resolved the same turn
         Assert.Equal(0, given.Arms);
-        Assert.Equal("That unit already has that order", Assert.Single(Step(c, given, new UnitOrder(1, Combat.Attack, 2, 0)).Rejected).Reason);
-        Assert.Equal("That unit already has that order", Combat.Check(c, given, 1, 2, 0));
+        Assert.Equal("", given.Units[1].Order);
     }
 
     // R-COMBAT-001: Check is null exactly where Give takes the attack (the unit card offers the target, #754), changes
-    // nothing, and counts the attacks already standing as Give does (Q-COMBAT-4).
+    // nothing. Player attacks already standing in an old in-memory state do not reserve Arms under the instant rule.
     [Fact]
     public void CheckIsNullForAnAttackGiveTakes()
     {
@@ -198,7 +257,7 @@ public class CombatTests
         Assert.Equal(before, s.Hash());
         Assert.Empty(Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0)).Rejected);
         s.Units[1] = Attacking(s.Units[1], 2, 0);
-        Assert.Equal("An attack needs 2 Arms and the stock has 2, of which 2 go to attacks already ordered", Combat.Check(c, s, 3, 2, 0));
+        Assert.Null(Combat.Check(c, s, 3, 2, 0));
     }
 
     // R-ENEMY-001: with enemy, Check runs the same checks with the sides swapped and asks for no Arms (Q-ENEMY-4), as Give
@@ -243,8 +302,7 @@ public class CombatTests
         }
     }
 
-    // Q-COMBAT-4: the Arms are paid at resolution, so a new attack counts the attacks already ordered. With the stock for
-    // one attack, two new orders in one turn: the first is taken, the second refused (#1194 review).
+    // R-COMBAT-004: Arms are paid at each order. With the stock for one attack, the first spends it and the second is refused.
     [Fact]
     public void ASecondAttackTheStockCannotPayForIsRefused()
     {
@@ -253,7 +311,7 @@ public class CombatTests
         s.Arms = 2;   // the fixture's attack takes 2
         var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0), new UnitOrder(3, Combat.Attack, 2, 0));
         var refused = Assert.Single(r.Rejected);
-        Assert.Equal("An attack needs 2 Arms and the stock has 2, of which 2 go to attacks already ordered", refused.Reason);
+        Assert.Equal("An attack needs 2 Arms and the stock has 0", refused.Reason);
         Assert.Equal("", r.State.Units[3].Order);
         Assert.Equal(0, r.State.Arms);
     }
@@ -271,10 +329,10 @@ public class CombatTests
         Assert.Equal(2, r.State.Units[4].Strength);   // the new hex was attacked
     }
 
-    // R-COMBAT-002, R-COMBAT-004: the attack resolves in the turn it is given, in step 2; the player's unit pays the Arms then.
+    // R-COMBAT-002, R-COMBAT-004: the attack resolves when it is given; the player's unit pays the Arms then.
     // Below 2:1 the fixture's row has both sides lose 1.
     [Fact]
-    public void AnAttackResolvesInStepTwoAndSpendsArms()
+    public void AnAttackResolvesAtOnceAndSpendsArms()
     {
         var c = Load();
         var s = With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 3));
@@ -282,21 +340,21 @@ public class CombatTests
         Assert.Empty(r.Rejected);
         Assert.Equal((4, 2), (r.State.Units[1].Strength, r.State.Units[2].Strength));
         Assert.Equal(s.Arms - 2, r.State.Arms);
-        Assert.Equal((Combat.Attack, "2,0"), (r.State.Units[1].Order, r.State.Units[1].OrderTarget));
+        Assert.Equal(("", ""), (r.State.Units[1].Order, r.State.Units[1].OrderTarget));
     }
 
-    // R-COMBAT-002: several units attack one hex together, their strengths summed, as one engagement: 2 + 2 against 2 is 2:1.
+    // R-COMBAT-002: player attacks are separate engagements in click order, and the preview counts the selected unit alone.
     [Fact]
-    public void JointAttacksAddTheirStrengths()
+    public void PlayerAttacksFightSeparatelyInClickOrder()
     {
         var c = Load();
         var s = With(c, Soldier(1, 3, 0, 2), Soldier(3, 1, 1, 2), Enemy(2, 2, 0, 2));
         Assert.Equal(100, Combat.Preview(c, s, 1, 2, 0)!.Value.RatioPercent);
         var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0), new UnitOrder(3, Combat.Attack, 2, 0));
         Assert.Empty(r.Rejected);
-        var e = r.State.Units[2];
-        Assert.Equal((1, 2, 2), (e.Strength, r.State.Units[1].Strength, r.State.Units[3].Strength));   // 4 against 2, the 2:1 row: the defenders lose 1, the attackers nothing
-        Assert.NotEqual((2, 0), (e.Q, e.R));   // and retreat
+        Assert.Equal(2, r.Why.Count(x => x.Key == WhyKeys.Engagement));
+        Assert.Equal((1, 2), (r.State.Units[1].Strength, r.State.Units[3].Strength));
+        Assert.False(r.State.Units.ContainsKey(2));
         Assert.Equal(s.Arms - 4, r.State.Arms);
     }
 
@@ -318,8 +376,7 @@ public class CombatTests
         Assert.Null(Combat.Preview(plain, With(plain, Soldier(1, 3, 0, 9)), 1, 2, 0));   // nothing to attack
     }
 
-    // R-COMBAT-002: engagements resolve in ascending attacker id, so the order the units were added in changes nothing, and
-    // when the Arms last for one attack only, the lower id attacks and the other is called off.
+    // R-COMBAT-002: standing enemy engagements resolve in ascending attacker id, independent of insertion order.
     [Fact]
     public void AttackersResolveInAscendingId()
     {
@@ -331,9 +388,8 @@ public class CombatTests
         var why = Resolve(c, a);
         Resolve(c, b);
         Assert.Equal(a.Hash(), b.Hash());
-        Assert.Equal((4, 2, 5, 3), (a.Units[1].Strength, a.Units[2].Strength, a.Units[3].Strength, a.Units[4].Strength));
-        Assert.Equal("", a.Units[3].Order);
-        Assert.Contains(why, x => x.Message == "Unit 3's attack on hex 4,0 is called off: it needs 2 Arms and the stock has 0");
+        Assert.Equal((4, 2, 4, 2), (a.Units[1].Strength, a.Units[2].Strength, a.Units[3].Strength, a.Units[4].Strength));
+        Assert.Equal(2, why.Count(x => x.Key == WhyKeys.Engagement));
     }
 
     // R-COMBAT-003: a defender the row sends back retreats to the first free neighbour in the fixed order: (3, 0) holds the
@@ -391,6 +447,16 @@ public class CombatTests
         Assert.Equal((1, 2, 4, 5), (s.Units[1].Strength, s.Units[3].Strength, s.Units[2].Strength, s.Units[4].Strength));
     }
 
+    // R-COMBAT-003 with R-TRAIN-004: an engagement's loss stores a player's unit's strength before it, and no enemy's.
+    [Fact]
+    public void AnEngagementsLossStoresThePlayersStartingStrength()
+    {
+        var c = Load();
+        var s = With(c, Attacking(Soldier(1, 3, 0, 2), 2, 0), Enemy(2, 2, 0, 5));
+        Resolve(c, s);   // 2 against 5: both sides lose 1
+        Assert.Equal((1, 2, 4, 0), (s.Units[1].Strength, s.Units[1].Full, s.Units[2].Strength, s.Units[2].Full));
+    }
+
     // R-COMBAT-006 (Q-CIV-4, "2+3"): the engagement's Why line gives the people each side lost, in the same words for both.
     [Fact]
     public void TheWhyLineGivesPeopleLostOnBothSides()
@@ -412,27 +478,6 @@ public class CombatTests
         Resolve(c, s);
         Assert.Equal((2, 5, 1), (s.Units[1].Strength, s.Units[2].Strength, s.Units[4].Strength));   // 6 against 3, 2:1: the defender loses 1
         Assert.Equal(arms, s.Arms);
-    }
-
-    // R-COMBAT-001: attack is a standing order: it repeats each turn while its hex holds an enemy unit next to the attacker,
-    // and ends, with a line, once it does not.
-    [Fact]
-    public void AnAttackStandsUntilItsHexIsEmpty()
-    {
-        var c = Load();
-        var s = With(c, Soldier(1, 3, 0, 9), Enemy(2, 2, 0, 5));
-        var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0));
-        Assert.Equal((8, 4), (r.State.Units[1].Strength, r.State.Units[2].Strength));   // 9 against 5, below 2:1
-        Assert.Equal(Combat.Attack, r.State.Units[1].Order);
-        r = Step(c, r.State);   // no order: the attack stands, against a unit its AI fortified on turn 1 (R-ENEMY-003)
-        Assert.Equal((7, 3, 2, 0), (r.State.Units[1].Strength, r.State.Units[2].Strength, r.State.Units[2].Q, r.State.Units[2].R));   // 8 against 4 x 150%, below 2:1
-        Assert.Equal(Combat.Attack, r.State.Units[1].Order);
-        r = Step(c, Step(c, r.State).State);   // 7 against 3 x 150%, below 2:1; then 6 against 2 x 150%, 2:1
-        var e = r.State.Units[2];
-        Assert.Equal((1, 1, 0), (e.Strength, e.Q, e.R));   // lost 1 and retreated
-        Assert.Equal(s.Arms - 8, r.State.Arms);
-        Assert.Equal("", r.State.Units[1].Order);
-        Assert.Contains(r.Why, x => x.Message == "Unit 1's attack on hex 2,0 ends: no enemy unit is there");
     }
 
     // R-COMBAT-005, R-COMBAT-001 (Q-CIV-2, "Enemy units only, no effect"): enemy units on town_a's hex may be attacked; the
@@ -477,7 +522,7 @@ public class CombatTests
     }
 
     // R-COMBAT-005, R-ENEMY-001: over the reference war run (the goldens' run to the game's end), steps 1 and 2 run on each
-    // turn's end state, with its standing attacks and the enemy's orders, change only the units, the Arms and the RNG. The run
+    // turn's end state, with its instant attacks and the enemy's orders, change only the units, the Arms and the RNG. The run
     // has engagements, so the test is not empty: since #1240 the real start has none (Golani's 4 against the Syrian 3 is under
     // the policy's 3:2), so unit 0 starts at its old 5 (ReferencePlayerTests.AtFive).
     [Fact]

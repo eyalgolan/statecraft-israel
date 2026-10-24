@@ -28,7 +28,7 @@ verify* mark on the Jewish Virtual Library (JVL) total of 482,857 for 1919-1948,
 
 | Key | Source | Where read |
 |---|---|---|
-| CBS SA 2010 | Central Bureau of Statistics, *Statistical Abstract of Israel 2010*, Table 4.2 "Immigrants, by period of immigration and last continent of residence", page 231 | https://www.cbs.gov.il/he/publications/doclib/2010/4.%20shnatonimmigration/st04_02.pdf |
+| CBS SA 2010 | Central Bureau of Statistics, *Statistical Abstract of Israel 2010*, Table 4.2 "Immigrants, by period of immigration and last continent of residence", pages 230-231 (notes on p. 231) | https://www.cbs.gov.il/he/publications/doclib/2010/4.%20shnatonimmigration/st04_02.pdf |
 | CBS 1365 | CBS Publication 1365, *Immigration to Israel 2002-2006* (2009), Table 3 "Immigrants, by period of immigration and continent of birth", page 35 | https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf |
 | Barron 1922 | J. B. Barron, *Palestine: Report and General Abstracts of the Census of 1922* (Jerusalem, 1923), page 3 and the erratum before Table I | https://archive.org/details/PalestineCensus1922 |
 | Mills 1931 | E. Mills, *Census of Palestine 1931: Population of Villages, Towns and Administrative Areas* (Jerusalem, 1932), "Summary for Palestine" (PDF p. 11) | https://archive.org/details/CensusOfPalestine1931.PopulationOfVillagesTownsAndAdministrativeAreas |
@@ -194,7 +194,7 @@ Check, derived: 528,702 - 83,790 = 444,912, and 117,226 + 327,686 = 444,912. Bot
 
 ### 4a. The CBS original
 
-[V] CBS SA 2010, Table 4.2, page 231, "Immigrants, by period of immigration and last continent of residence".
+[V] CBS SA 2010, Table 4.2, page 230 (notes 1 and 3 on page 231), "Immigrants, by period of immigration and last continent of residence".
 Columns as in `content/aliyah.yaml`:
 
 | Period | Total | Asia | Africa | Europe | America and Oceania | Not known |

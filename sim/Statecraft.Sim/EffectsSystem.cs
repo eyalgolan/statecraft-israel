@@ -119,18 +119,26 @@ namespace Statecraft.Sim
         static double Base(Content c, GameState s, Indicator i) =>
             c.IsGdd && i.Id == Cities.HousingIndicator ? Cities.HousingLevel(s) ?? i.Base : i.Base;
 
-        /// <summary>clamp(inner + event shift) to [0, 1].</summary>
+        /// <summary>clamp(inner + event shift) to [0, its <see cref="Ceiling"/>].</summary>
         internal static double Level(Content c, GameState s, Indicator i) =>
-            Math.Max(0, Math.Min(1, Inner(c, s, i) + s.IndicatorShifts[i.Id]));
+            Math.Max(0, Math.Min(Ceiling(c, s, i.Id), Inner(c, s, i) + s.IndicatorShifts[i.Id]));
+
+        /// <summary>The most an indicator can reach: 1, except International Support after a Deport, whose ceiling is 1 less
+        /// mvp.deport_support_ceiling_drop for each place in DisplacedByPlayer, never below 0, for the rest of the game
+        /// (R-CTRL-018; Q-DEP-5 (c)). Every write goes through <see cref="Level"/> or <see cref="Shift"/>, so none passes it.</summary>
+        static double Ceiling(Content c, GameState s, string id) =>
+            id == SettlementControl.SupportIndicator && s.DisplacedByPlayer > 0
+                ? Math.Max(0, 1 - c.RulesAt(s.Date).Mvp!.DeportSupportCeilingDrop!.Value * s.DisplacedByPlayer)
+                : 1;
 
         /// <summary>Moves an indicator's level by <paramref name="delta"/> through its permanent shift (the layer event
-        /// choices and crises use), clamped to [0, 1]. The shift is set so the level lands exactly on the visible result.
+        /// choices and crises use), clamped to [0, its <see cref="Ceiling"/>]. The shift is set so the level lands exactly on the visible result.
         /// Returns the change actually applied (0 when the indicator was already at the clamp).</summary>
         public static double Shift(Content c, GameState s, string indicator, double delta)
         {
             var ind = c.At(s.Date).Indicators.First(i => i.Id == indicator);
             var level = Level(c, s, ind);
-            var newLevel = Math.Max(0, Math.Min(1, level + delta));
+            var newLevel = Math.Max(0, Math.Min(Ceiling(c, s, ind.Id), level + delta));
             s.IndicatorShifts[ind.Id] = newLevel - Inner(c, s, ind);
             s.Indicators[ind.Id] = newLevel;
             return newLevel - level;

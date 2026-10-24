@@ -37,6 +37,8 @@ Primary and official:
 | Law of Return 1950 | חוק השבות, תש"י-1950, as published (Sefer HaHukim 51, 5710, p. 159), Knesset scan | https://fs.knesset.gov.il/1/law/1_lsr_209667.pdf |
 | Law of Return amendment 1954 | חוק השבות (תיקון), תשי"ד-1954 (Law No. 55), Knesset scan | https://fs.knesset.gov.il/2/law/2_lsr_209666.pdf |
 | Entry into Israel Law 1952 | Entry into Israel Law, 5712-1952, English translation on the UNODC legal library | https://www.unodc.org/cld/uploads/res/document/law-no--5712-1952--entry-into-israel-law_html/Entry_Into_Israel_1952.pdf |
+| Comptroller report 3 | דין וחשבון שנתי מס' 3, the State Comptroller's report for the 1951/52 financial year (Jerusalem, 31 December 1952): chapter ט "משרד הפנים", p. 75 (a one-page scan); read 2026-10-23 (#1423) | https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1952-3/1952-3-322-Pnim.pdf |
+| Comptroller report 3, front matter | The same report's title page and table of contents (its ministry chapters, pp. V-IX, include none for a Ministry of Immigration); read 2026-10-23 (#1423) | https://library.mevaker.gov.il/sites/DigitalLibrary/Documents/1950-2008/1952-3/1952-3-001.pdf |
 | FRUS 1950 V d364 | McDonald (Tel Aviv), 19 February 1950: Shiloah's account of the 17 February meeting | https://history.state.gov/historicaldocuments/frus1950v05/d364 |
 | FRUS 1950 V d365 | Fritzlan (Amman), 20 February 1950: the King's terms as told to the US Legation by Kirkbride, with an editorial footnote | https://history.state.gov/historicaldocuments/frus1950v05/d365 |
 | FRUS 1950 V d370 | McDonald (Tel Aviv), 26 February 1950: the 24 February meeting | https://history.state.gov/historicaldocuments/frus1950v05/d370 |
@@ -112,6 +114,33 @@ holder).**
   not a rename. The Knesset rows support he.wiki.
 
 **Where the functions went.** No source was found that records a transfer order in October 1951 (see "Not reached").
+One official record dates the move of the ministry's services, and puts it in **March 1952**, not October 1951:
+
+- The State Comptroller's report for the 1951/52 financial year, chapter "משרד הפנים", p. 75: "הפעולות הארגוניות
+  והכספיות של שירותי העלייה וההתאזרחות נבדקו עד סוף השנה הנסקרת במשרד העלייה. במארס 1952 הועברו שירותים אלה למשרד הפנים,
+  במידה שהם פועלים בארץ. הביקורת עסקה גם בבדיקת תהליך ההעברה." ("The organisational and financial operations of the
+  immigration and naturalisation services were audited up to the end of the year under review in the Ministry of
+  Immigration. In March 1952 these services were transferred to the Ministry of the Interior, in so far as they operate
+  in the country. The audit also examined the transfer process.") [V, agent read 2026-10-23 from the page scan; a person's check pending] Comptroller report 3. The Comptroller's wording suggests that a body it still calls "משרד
+  העלייה" held these services after 8 October 1951 until their move to Interior in March 1952 (no day given); the report
+  does not say so in terms. The report names no instrument, no legal basis and no minister for the interval, and it says
+  nothing of the services abroad ("במידה שהם פועלים בארץ"); none of that is inferred here. The report's table of
+  contents (pp. V-IX) has no chapter for a Ministry of Immigration.
+- **[C] with the reading above that the ministry ended on 8 October 1951.** The Knesset rows end the minister's post
+  that day; the Comptroller audited these services "במשרד העלייה" up to the end of the year under review and dates their
+  move to Interior to March 1952; it does not say who the minister was. Both are recorded; the note does not choose
+  between "the office ended" and "the department ended".
+- Negative search for the instrument (2026-10-23), with what each returned:
+  - Reshumot / Yalkut HaPirsumim: the Nevo scans (`nevo.co.il/law_word/law10/yalkut-NNNN.pdf`) answer scripted
+    requests with a reCAPTCHA page, so no Yalkut issue of October 1951 to March 1952 was read; Hebrew web searches for
+    "העברת סמכויות" with "שר העליה" and "שר הפנים" returned only later transfers. **not reached.**
+  - Government protocols and the State Archives catalogue: catalog.archives.gov.il and archives.gov.il return HTTP
+    403. **not reached.**
+  - *Government Year-Book* 5712 (1951) and 5713 (1952): no online copy found (archive.org search: no hit; HathiTrust
+    returns 403; the Google Books API refused on quota). **not reached.**
+  - knesset.gov.il redirects to a geo-block page from this network, so the Knesset legislation page for the Law of
+    Return and its bill file were not read live.
+
 What the statutes show:
 
 - The Law of Return, as passed on 20 Tammuz 5710 (**5 July 1950**), put the Minister of Immigration in charge of the
@@ -122,8 +151,17 @@ What the statutes show:
   **Minister of the Interior**. [S] Entry into Israel Law 1952 (UNODC translation; the day of passage was not checked).
 - The Law of Return (Amendment), 5714-1954, passed on **23 August 1954**, replaced "שר העליה" with "שר הפנים" in
   sections 2 and 5 of the Law of Return. [V] Law of Return amendment 1954 (Knesset scan). So the statute itself still
-  named the Minister of Immigration for almost three years after the office ended; how those powers were exercised in
-  the gap (October 1951 to August 1954) is **not found** here.
+  named the Minister of Immigration for almost three years after the office ended. The same scan (Wayback copy of the
+  Knesset PDF, re-read 2026-10-23) is Sefer HaHukim 163, 3 Elul 5714 (1 September 1954), p. 174; it is signed by Moshe
+  Sharett as Prime Minister and Yosef Serlin as "שר הבריאות" and "ממלא מקום שר הפנים" (two lines under his name), and
+  its footnote gives the bill and its explanatory notes as "ה"ח 192, תשי"ד, עמ' 88". [V, agent read 2026-10-23; a
+  person's check pending] That explanatory note is the likeliest place for the reason; it was **not reached** (Knesset
+  site geo-blocked, no other copy found).
+- **Who exercised the Law of Return powers from 8 October 1951 to 23 August 1954: not found.** No source read names a
+  minister for them in that interval. The Comptroller (above) has the immigration and naturalisation services
+  inside "משרד העלייה" until March 1952 and inside the Ministry of the Interior after it, but says nothing of the
+  statutory power itself. That Shapira, as Interior Minister, exercised it is a guess and is not stated here as
+  fact.
 - The Interior Minister from 8 October 1951 was the same person, Shapira, who had held Interior alongside Immigration
   since 10 March 1949 (Knesset OData: GovMinistryID 724 from 10 March 1949, 735 from 1 November 1950, 746 from
   8 October 1951; `people.yaml` has the same terms). [V] Knesset OData. The holder and the Interior portfolio both run
@@ -311,19 +349,73 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 
 ### 4c. The Hotchkiss H39 tanks: June 1948
 
-- **What and how many:** ten French Hotchkiss H39 light tanks, bought in France and shipped from Marseille to Haifa.
+- **What and how many:** ten French Hotchkiss H39 light tanks, bought in France (en.wiki says shipped from Marseille to Haifa; the port is disputed below).
   They formed a company of the 82nd Battalion, 8th Brigade, and fought in Operation Danny (Lydda airport, July 1948).
-  [V] en.wiki Hotchkiss H35 ("Ten H39s were clandestinely sold to Israel ... shipped from Marseille to Haifa in 1948");
-  Tank Encyclopedia, H39 (citing Eshel 1989, Ilan 1996).
-- **[C] When:** "early June" 1948 (Tank Encyclopedia, H39) or **15 June 1948** (Lehi Museum blog, summarising Uria
-  Aharon in *Shiryon*, April 2018). No primary source (IDF Archives, a ship's name) was reached. The ship is
-  **not found**.
-- **Condition:** the tanks arrived in poor technical condition; Tank Encyclopedia says only five of the ten could be made
-  to run by the start of Operation Danny. [S]
+  [V] en.wiki Hotchkiss H35 ("Ten H39s were clandestinely sold to Israel ... shipped from Marseille to Haifa in 1948";
+  oldid 1380585757); Tank Encyclopedia, H39 (citing Eshel 1989, Ilan 1996).
+  **[C] the port:** the "Haifa" of en.wiki is not borne out by the one account that names the port. Mass (below)
+  says the tanks were sent to **Tel Aviv** because the Haifa port still served the evacuating British army (our translation).
+  Tank Encyclopedia (archived 20 July 2024) says only that the port of Haifa was still partly run by the British, that
+  no dock with a crane able to lift the vehicles existed in Tel Aviv, and that the ship was unloaded by another ship's
+  crane; it names no unloading port. Neither names Marseille. [C, agent read 2026-10-23; a person's check pending]
+- **The ship and the day, three versions and an unresolved fourth (the issue's question):**
+  - **Mass, 15 June 1948.** Lt-Col (res) Michael Mass, "The IDF's tanks in the War of Independence: the Hotchkiss
+    tanks", Yad LaShiryon, 19 March 2018 (republished as a PDF on the Palyam procurement site,
+    https://www.palyam.org/OniyotRekhesh/H-39.pdf, p. 2; source line gives yadlashiryon.com; its price and
+    ammunition figures cite Brezner, *Nitzanei Shiryon*, which was not opened): the ten H39s: "10 טנקי ההוצ'קיס H-39 הגיעו לארץ ב-15 ביוני 1948, ארבעה ימים לאחר תחילת ההפוגה בקרבות, בסבב הפלגה השני של האונייה להובלת רכש "בוריאה"" (paraphrase: arrived in the country on 15 June 1948, four days after the start of the truce, on the second voyage of the procurement ship **Boria** (Hebrew "בוריאה") on the France-Israel line), the ship that on its first voyage reached Tel Aviv on 15 May 1948. Unloading
+    was hard (the floating crane meant to come from Haifa was caught in a storm and its upper part broke, so a crane
+    from another ship was used) and the UN observers were drawn off to watch cars
+    being unloaded from another ship. [S, agent read 2026-10-23; a person's check pending]
+  - **Ben-Gurion's diary, 13 June 1948 (two days before Mass's date).** The entry of 11 June (which names neither the ship nor the tank make; reading it as the same ship is an inference;
+    Ben-Gurion Archive, English text, https://bengurionarchive.bgu.ac.il/en/node/14496) says Arazi ("Alon") reported that a ship
+    "will arrive here Sunday evening" (13 June 1948 was a Sunday) carrying "10 12-ton tanks (each tank with a 37 mm
+    cannon, two 7.5 mm machine guns)", ten 75 mm guns and four 20 mm anti-aircraft guns. The entry of 15 June
+    (https://bengurionarchive.bgu.ac.il/en/node/14244) says: "Alon's ship [Borea II - a procurement ship sent by Yehuda
+    Arazi], which arrived here two days ago, contains, according to Shaul: ten 75 mm cannons ... 10 Hotchkiss tanks, each
+    with a 37 mm cannon and a 7.5 mm machine gun and ammunition for the above". Read as written (our reading of "two days ago"), that is arrival on
+    **13 June**. The bracketed "Borea II" is the archive's gloss on the diary, not Ben-Gurion's words, and only the
+    English text was reachable (the Hebrew page URL returned "page does not exist"). "Here" is not glossed; the diary
+    does not say which port. [V, agent read 2026-10-23; a person's check pending]
+  - **Tank Encyclopedia: "early June".** "brought back to the nascent State of Israel in early June", with no ship name
+    and no day. [S]
+  - **[C] a possible earlier shipment.** The diary of 8 June 1948 (https://bengurionarchive.bgu.ac.il/en/node/14856)
+    says "Yesterday they unloaded a ship that brought 13 Hotchkiss [tanks]" (the bracket is the archive's gloss).
+    That would be 7 June and thirteen, not ten, and it names neither ship nor port. No other source read mentions it;
+    it could be another cargo, a different weapon, or a gloss error. It is recorded and **not** resolved.
+  - **Borea-2 is not shown to be the tank ship by the Palyam page for the ship itself.** "The Story of the Arms Ship
+    Borea-2 (Santa-Chiara)", Yehuda Ben-Tzur, 1977 (https://palyam.org/English/ArmsShips/Borea.pdf), covers only the May
+    voyage: arrival at Tel Aviv on 13 May 1948, towed to Haifa by the British on 14 May, back at Tel Aviv on the late
+    morning of 15 May; cargo 5 old 65 mm guns, 200 machine guns and about 650 tons of ammunition, loaded at Marseille.
+    It says nothing of tanks or a June voyage. [V, agent read 2026-10-23; a person's check pending]
+  - **Result.** The ship is named **Boria / Borea II** by Mass and (in the archive's gloss) the diary, a name that was
+    used on the May voyage of the *Santa Chiara*; whether the June ship is the same hull is **not shown by any source
+    read**. The day is **13 June** (diary, two entries) or **15 June** (Mass; the Hebrew Wikipedia page for the H39 and
+    the existing note's Lehi Museum blog also say 15 June, both [S], not re-opened here). The port is Tel Aviv on Mass's
+    account alone. No customs, shipping-register or IDF Archives record was reached.
+    [GAP] IDF Archives, Brezner, Eshel (1989, pp. 13-18) and Ilan (1996, pp. 187, 238) are cited by others and were not
+    opened; the Hebrew diary original was not reached.
+- **Three separate facts (the issue asks to keep them apart):**
+  - **Shipped: ten.** Mass; Tank Encyclopedia; the diary of 15 June ("10 Hotchkiss tanks"); en.wiki. The 8 June diary
+    "13" stands apart (above). [V]
+  - **Made to run: five at the start of Operation Danny, six in all.** Mass: at the opening of Danny only 5 usable Hotchkiss tanks were at Battalion 82's disposal, and during the Ten Days' fighting only one more was added (our translation)
+    (p. 3); Tank Encyclopedia: "only five of the original ten tanks could be made to be operational at the beginning
+    of Operation Danny, and six in total during the war". [V] Mass adds that the 8th Brigade workshop at Tel Litvinsky
+    found low compression in every engine, and that engine and cooling work went on through the first truce. [S]
+  - **First combat use found here: Operation Danny (9 to 19 July 1948); Hotchkiss tanks photographed at Lod airport on 10 July.**
+    Mass's photo caption dates the
+    Hotchkiss at Lydda airport after the capture of Lod airport by Battalion 82 on 10 July 1948 (our translation, p. 4), and the
+    text puts the Hotchkiss and captured R-35 in the Lod airport and Yehud fighting; Tank Encyclopedia says Danny was
+    the unit's first major engagement and that the H39s were only lightly engaged. Operation Danny began on
+    9 July. A day-by-day first shot is not stated in either source. [S]
+- **Condition:** the tanks arrived in poor technical condition (low engine compression, cooling unfit for the climate,
+  and the shells that came with them were high explosive; Mass says armour-piercing heads from American 37 mm rounds
+  were fitted into some of the cases, about 400 rounds by the end of Danny per Tank Encyclopedia); Tank
+  Encyclopedia says only five of the ten could be made to run by the start of Operation Danny. [V] for high-explosive shells, poor cooling and five of ten (Mass and Tank Encyclopedia); [S] for low compression (Mass) and the 400 rounds (Tank Encyclopedia).
 - **Note for the wording:** 15 June 1948 is inside the first truce (11 June to 8 July 1948), when arms imports breached
   the truce terms (the #135 note, section 5, has the US record of that). A card on this arrival would sit with the
   existing `first_truce` event.
-- **Fit:** weak as a dated grant until the day is pinned; the month (June 1948) is [V].
+- **Fit:** still weak as a dated grant. The month (June 1948) is [V]; the day is 13 or 15 June (unless the 8 June entry is a different cargo) and no archive record
+  settles it. Either day falls inside the first truce (11 June to 8 July 1948).
 
 ### 4d. The Spitfires from Czechoslovakia: Operation Velvetta, 27 September and 22-30 December 1948
 
@@ -353,7 +445,7 @@ the Spitfire `from: '1948-10-15'`, the first sourced sortie. 27 September 1948 a
 |---|---|---|---|---|---|
 | 65 mm mountain guns | *Borea* 13 May 1948, released 14/15 May | 5 guns, about 50,000 shells | 20 May 1948, Degania (4 guns) | [S] arrival, [V] first use | 15 May 1948 |
 | Avia S-199 | first at Ekron 20 May 1948 | 25 bought; 4 assembled by 29 May | 29 May 1948, Isdud | [V] | 15 May 1948 |
-| Hotchkiss H39 | June 1948 ("early June" or 15 June) | 10 | July 1948, Operation Danny | [C] day | 15 May or 15 June 1948 |
+| Hotchkiss H39 | 13 June (Ben-Gurion's diary) or 15 June (Mass) 1948; "early June" (Tank Encyclopedia) | 10 shipped, 5 then 6 running | July 1948, Operation Danny | [C] day and port | 15 May or 15 June 1948 |
 | Spitfire (Velvetta 1) | 27 September 1948, Ramat David | 3 landed (of 6 sent) | 15 October 1948 | [V] | 15 September 1948 |
 | Spitfire (Velvetta 2) | 22, 26 and 30 December 1948 | 12 sent; landed count [C] | Operation Horev | [V] dates | 15 December 1948 |
 
@@ -369,13 +461,18 @@ should state the arrival, not the fighting, or carry the `war-casualties` review
 ## Not reached, and gaps
 
 - **The October 1951 transfer of the Ministry of Immigration's functions.** No government decision, Reshumot notice or
-  Yalkut HaPirsumim entry was found. The Israel State Archives catalogue (catalog.archives.gov.il) returned HTTP 403 to
-  scripted requests, so its record-group description of the Ministry of Immigration was not read. The State Comptroller's
-  1951-2 report, Interior chapter (`library.mevaker.gov.il/.../1951-2-225-Pnim.pdf`), was downloaded but its OCR text is
-  unreadable. A reader with the printed *Government Year-Book* 5713 (1952) or the ISA files could settle where the
-  ministry's departments went.
+  Yalkut HaPirsumim entry was found. Re-searched for #1423 on 2026-10-23 (section 1 lists what each search returned):
+  the only dated record found is the State Comptroller's, which puts the transfer of the immigration and naturalisation
+  services to Interior in March 1952; the instrument behind it is still not found. The Israel State Archives catalogue
+  (catalog.archives.gov.il) returned HTTP 403 to scripted requests, so its record-group description of the Ministry of
+  Immigration was not read. The State Comptroller's 1951-2 report, Interior chapter
+  (`library.mevaker.gov.il/.../1951-2-225-Pnim.pdf`), was downloaded but its OCR text is unreadable. (Read as page
+  images for #1423 on 2026-10-23: the Interior chapter, pp. 96-98, covers the population registry and identity cards (p.
+  97 notes over 50,000 unprocessed change-of-address forms of immigrants, "העולים"), local-authority budgets and
+  by-laws; it says nothing of the Ministry of Immigration, its services or any transfer.) A reader with the printed
+  *Government Year-Book* 5713 (1952) or the ISA files could settle where the ministry's departments went.
 - **How the Law of Return's "Minister of Immigration" powers were exercised from October 1951 to August 1954**: not
-  found.
+  found (re-searched for #1423; the 1954 bill's explanatory notes, ה"ח 192, p. 88, were not reached).
 - ***Documents on the Foreign Policy of Israel*, vol. 5 (1950)** and the government's 1950 protocols at the ISA: not
   reached (no online text found; the ISA site returned 403). They would give the day of the cabinet's February 1950
   decision. Nevo 1984 cites the series (vol. 3) for 1949, not for this decision.
@@ -391,13 +488,14 @@ should state the arrival, not the fighting, or carry the `war-casualties` review
 | Item | Versions | Where |
 |---|---|---|
 | Successor to the Ministry of Immigration | Interior (statutes of 1952 and 1954; same holder) vs Prime Minister (`rules.yaml` assumption, no source) vs none until 1968 (he.wiki) | Section 1 |
+| End of the Ministry of Immigration | 8 October 1951, no Immigration row after the Second Government (Knesset OData) vs immigration and naturalisation services still in "משרד העלייה" to the end of 1951/52, moved to Interior in March 1952 (Comptroller report 3, p. 75) | Section 1 |
 | en.wiki "renamed" the ministry | rename (en.wiki) vs a new ministry in 1968 after a gap (he.wiki, Knesset rows) | Section 1 |
 | Day of the Israeli cabinet's agreement in principle | between 19 and 24 February 1950; not found | Section 2 |
 | FRUS d364 "February 1" | garbled; probably 17-19 February | Section 2 |
 | Day of the government's first statement on the union | 24 or 25 April 1950 | Section 3 |
 | Napoleonchik arrival | *Borea*, 13-15 May 1948 (Ben-Tzur) vs a Polish ship, 6-7 May 1948 (*Haaretz*, unread) | 4a |
 | Napoleonchiks at Degania | four vs two | 4a |
-| Hotchkiss arrival | early June vs 15 June 1948 | 4c |
+| Hotchkiss arrival | 13 June (Ben-Gurion's diary) vs 15 June (Mass) vs early June (Tank Encyclopedia); a 7 June "13 Hotchkiss" diary entry unresolved; Tel Aviv (Mass) vs Haifa (en.wiki) | 4c |
 | Spitfires landed, Velvetta 1 and 2 | three on 27 September (101 Squadron and he.wiki agree); December counts differ by one or two between he.wiki and 101 Squadron | 4d |
 | Day and place of the C-46 crash with the fourth S-199 | 23 May, south of Latrun after diverting to Sde Dov (101 Squadron) vs night of 23-24 May, near Tel Nof/Ekron (he.wiki מבצע בלק) | 4b |
 | S-199 arrivals | one on 20 May, then 21 and 22 May, fourth lost (101 Squadron, he.wiki) vs "The first four arrived on 20 May 1948" (`units_1948.yaml` note) | 4b |

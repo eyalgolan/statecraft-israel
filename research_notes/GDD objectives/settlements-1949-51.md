@@ -113,7 +113,7 @@ are land.
 | 5 | HaSolelim / הסוללים | Kibbutz | 21 Jul 1949 **[S]**; July **[V]** | Lower Galilee | 32.75067, 35.23758 | (7, 9) hills | Pass | Yes / No / No | Saffuriya 3.9 km |
 | 6 | Meron / מירון | Moshav | 22 May 1949 **[S]**; 1949 **[V]** | Upper Galilee | 32.98738, 35.43982 | (11, 5) mountains | Pass | Yes / No / No | Next to Lebanon line; Meron village (sources); hex shared with Sasa |
 | 7 | Kiryat Shmona / קריית שמונה | Transit camp, then town | 18 Jul 1949 first families; 26 Dec 1949 camp; CBS 1950 **[C]** | Hula valley | 33.21316, 35.57461 | (14, 2) hills | Pass | Yes / No / No | On Lebanon line hex; al-Khalisa 0.7 km |
-| 8 | Megiddo / מגידו | Kibbutz | 1 or 2 Feb 1949 **[C]** | Jezreel valley | 32.58041, 35.17968 | (5, 11) coastal plain | Pass | Yes / No / No | Next to Jordan lines; Lajjun 600 m (sources) |
+| 8 | Megiddo / מגידו | Kibbutz | 2 Feb 1949 (kibbutz's own text; its Hebrew date reads as 1 Feb, our reading) vs 1 Feb (Gvati list) **[C]** | Jezreel valley | 32.58041, 35.17968 | (5, 11) coastal plain | Pass | Yes / No / No | Next to Jordan lines; Lajjun 600 m (sources) |
 | 9 | Rehov / רחוב | Moshav | 13 Sep 1951 **[V]** | Beit She'an valley | 32.45080, 35.48915 | (8, 13) valley | Pass | Yes / Yes / No | Next to Jordan line; Faruna (source) |
 | 10 | Ma'agan Michael / מעגן מיכאל | Kibbutz | 25 Aug 1949 **[V]** | Carmel coast | 32.55597, 34.91571 | (2, 12) coastal plain | Pass | Yes / Yes / See note | Area depopulated except one tribe (en Wikipedia); hex shared with Or Akiva |
 | 11 | HaBonim / הבונים | Cooperative moshav | 18 Jul 1949 **[S]** | Carmel coast | 32.63663, 34.93271 | (3, 10) coastal plain | Pass | Yes / No / No | Kafr Lam (sources) |
@@ -129,13 +129,13 @@ are land.
 | 21 | Or Akiva / אור עקיבא | Transit camp, then town | 17 Apr 1951 **[S, Wikipedia]** | Carmel coast | 32.50776, 34.91984 | (2, 12) coastal plain | Pass | Yes / No / **[C]** | Barrat Qisarya (contested in source); hex shared with Ma'agan Michael |
 | 22 | Beit Kama / בית קמה | Kibbutz | 18 Apr 1949 **[V]** | Northern Negev | 31.44853, 34.76108 | (-8, 28) hills | Pass | Yes / Yes / Yes | None |
 | 23 | Gilat / גילת | Moshav | 4 Dec 1949 **[V]** | Northern Negev | 31.32798, 34.65203 | (-10, 30) lowland | Pass | Yes / Yes / Yes | None; hex shared with Tifrah |
-| 24 | Patish / פטיש | Moshav | 3 or 4 Mar 1950 **[C]** | Northern Negev | 31.32739, 34.56004 | (-11, 30) lowland | Pass | Yes / No / Yes | None |
+| 24 | Patish / פטיש | Moshav | 3 or 4 Mar 1950 **[C]**; no day-level source found | Northern Negev | 31.32739, 34.56004 | (-11, 30) lowland | Pass | Yes / No / Yes | None |
 | 25 | Re'im / רעים | Kibbutz | 20 Oct 1949 **[V]** | Western Negev | 31.38552, 34.45932 | (-12, 29) coastal plain | Pass | Yes / Yes / Yes | Next to 1950 Gaza lines |
-| 26 | Nahal Oz / נחל עוז | Nahal outpost, then kibbutz | 15, 25 or 26 Jul 1951 **[C]** | Gaza border | 31.47277, 34.49746 | (-11, 28) coastal plain | Pass | Yes / No / Yes | Next to Gaza lines; next to Gaza's hex |
+| 26 | Nahal Oz / נחל עוז | Nahal outpost, then kibbutz | 15, 25 or 26 Jul 1951 **[C]**; 25 Jul: Gvati; scroll (our reading); Frankel's arrival (as of 2026-10-23) | Gaza border | 31.47277, 34.49746 | (-11, 28) coastal plain | Pass | Yes / No / Yes | Next to Gaza lines; next to Gaza's hex |
 | 27 | Sderot / שדרות | Transit camp, then town | April 1951 **[S]** | Western Negev | 31.52901, 34.59434 | (-9, 27) coastal plain | Pass | Yes / No / No | On Gaza line hex; Najd (source) |
-| 28 | Beit Guvrin / בית גוברין | Kibbutz | 23 May or 2 Jun 1949 **[C]** | Lachish area | 31.61302, 34.89595 | (-5, 26) hills | Pass | Yes / No / No | On Jordan line hex; Bayt Jibrin 0.9 km |
+| 28 | Beit Guvrin / בית גוברין | Kibbutz | 23 May or 2 Jun 1949 **[C]**; 2 Jun has the kibbutz's own site | Lachish area | 31.61302, 34.89595 | (-5, 26) hills | Pass | Yes / No / No | On Jordan line hex; Bayt Jibrin 0.9 km |
 | 29 | Ahuzam / אחוזם | Moshav | 2 or 30 Oct 1950 **[C]** | Lachish area | 31.55340, 34.77020 | (-7, 26) coastal plain | Pass | Yes / No / See note | Abu Jabir (source); 'Iraq el Manshiya 5.8 km |
-| 30 | Yotvata / יטבתה | Nahal outpost, then kibbutz | 30 or 31 Oct 1951 **[C]** | Arava | 29.89552, 35.05929 | (-16, 51) desert | Pass | Yes / No / Yes | On Jordan (Arava) line hex |
+| 30 | Yotvata / יטבתה | Nahal outpost, then kibbutz | 30 or 31 Oct 1951 **[C]**; Nahal association list adds 15 Oct 1951 (entry inconsistent: 14 Elul 5711 / 15 Oct 1951) | Arava | 29.89552, 35.05929 | (-16, 51) desert | Pass | Yes / No / Yes | On Jordan (Arava) line hex |
 
 "Crit. 4: Yes" means no source read places the settlement at or next to a depopulated locality and no
 `localities_1948.tsv` place without a `today` entry is in its hex or a neighbour. It is absence of evidence in the
@@ -263,10 +263,46 @@ sources read, not a gazetteer check.
 
 ### 8. Megiddo (מגידו), kibbutz
 
-- **Founded: [C, one day].** Gvati: 1.2.49, HaKibbutz HaArtzi. Hebrew Wikipedia: "on 2 February 1949 kibbutz Megiddo
-  was founded", citing an Al HaMishmar item dated 2 February 1949 (not read). English Wikipedia: 2 February 1949. The
-  kibbutz archive's "historical background" page gives 2 February 1949, but its text is the Hebrew Wikipedia article
-  word for word, so it is not independent. CBS: 1949.
+- **Founded: [C, one day; the kibbutz's own quoted line may be internally inconsistent, on our reading].** Tags below are [S] unless stated;
+  "agent read 2026-10-23; a person's check pending" applies to every page added here that was opened.
+  - Gvati: 1.2.49, HaKibbutz HaArtzi (the appendix list, as the note already cites it); his prose, on the
+    benyehuda.org page above, says four kibbutzim "went onto the land in Shvat 5709 (February 1949)" and names
+    Megiddo first but gives no day. [S]
+  - The kibbutz's own pages. (a) An excerpt of its founding scroll, shown on the settlement list at ofra.org.il
+    (page "אודות קיבוץ מגידו"): "היום, יום ב' בשבט תש"ט (02.02.1949), שנה ראשונה למדינת ישראל, עלינו כאן חברי הקיבוץ
+    'השומר הצעיר' על שם יוסף קפלן ואנו מניחים יסוד לישוב חדש במולדת" ("Today, 'yom bet' of Shvat 5709 (02.02.1949),
+    the first year of the State of Israel, we members of the kibbutz 'HaShomer HaTza'ir' named after Yosef Kaplan
+    came up here and lay the foundation of a new settlement in the homeland"), marked "(from the founding scroll)".
+    The scroll itself was not seen, only this quotation on a third-party list. [S]
+    (b) Two member memorial pages on megiddo.co.il (objDoc OID 889907 and OID 889911)
+    carry the line "2.2.1949 יום העלייה על הקרקע" (2.2.1949, the day of going onto the land); the first page's life story
+    says he "עלה ב-2 בפברואר 1949 עם קבוצת המייסדים על הקרקע במגידו", the second's "בשניים בפברואר 1949 עלה עם חברי
+    הגרעין להקים את מגידו". These were written decades later; they show what the kibbutz records, not an event
+    report. [S]
+  - **Our reading of the scroll's Hebrew date.** The quotation has no day-of-month number: "יום ב' בשבט" can
+    mean "the 2nd of Shvat" or "Monday in Shvat". We read it as the 2nd of Shvat, which is our interpretation. On
+    that reading it falls on Tuesday 1 February 1949, while Wednesday 2 February 1949 is 3 Shvat (our reading,
+    `convertdate`; 1 Shvat 5709 = Monday 31 January 1949); the Hebrew day would then agree with Gvati's 1.2.49 and
+    not with the Gregorian date in the same line. Read as "Monday", it matches neither 1 nor 2 February (Mondays
+    in Shvat 5709 are 31 January and 7 February). The reading is ours and does not show which date is right. [C]
+  - Hebrew Wikipedia (oldid 43556011): "on 2 February 1949 kibbutz Megiddo was founded". The reference attached to
+    that sentence is not a newspaper but a note on a 1951 survey map (NLI, Eran Laor map collection). The Al HaMishmar
+    item of 2 February 1949, p. 15, is cited elsewhere in the article, after a sentence about the group's members
+    coming from Mishmar HaEmek, under the headline "קיבוץ השוה"צ ע"ש יוסף קפלן עלה על הקרקע בעמק המערבי" ("the
+    Hashomer Hatzair kibbutz named after Yosef Kaplan went onto the land in the western valley"). So the article's
+    own citation gives us the headline only, in a paper dated 2 February; what day the headline's event fell on is
+    not stated in it. The
+    article's sentence that in "February 1949" they went onto the land opposite the mouth of Nahal Iron is cited
+    to Al HaMishmar of 4 May 1949, p. 44 (not read by us). Wikipedia is a citation here, not a source we read
+    through. [S]
+  - English Wikipedia (oldid 1374533944): 2 February 1949. CBS: 1949. The kibbutz archive's "historical background"
+    page repeats the Hebrew Wikipedia text, so it is not independent.
+  - **[GAP]** The Al HaMishmar item of 2 February 1949 (and 4 May 1949) was not opened: nli.org.il returns a
+    Cloudflare "Checking your browser" page (HTTP 403) to curl, and the Jpress address returns 403. A JTA archive
+    search for Megiddo in February 1949 found nothing. So no contemporary record has been read, and the one-day gap
+    stays open: the sources that say 2.2 are the kibbutz's later text (the scroll excerpt, the member memorial
+    pages written long after) or Wikipedia, and on our reading the scroll excerpt's Hebrew date points to
+    1 February.
 - **Founders. [V]** A Hashomer Hatzair group named after Yosef Kaplan, Holocaust survivors from Poland and Hungary:
   both Wikipedias, the archive page.
 - **Location and hex.** CBS 32.58041, 35.17968 (Hebrew Wikipedia 37 m). Hex (5, 11), coastal plain. Nahalal's hex is
@@ -279,6 +315,11 @@ sources read, not a gazetteer check.
 - **Sources.** Gvati and CBS; https://he.wikipedia.org/w/index.php?oldid=43556011 ;
   https://en.wikipedia.org/w/index.php?oldid=1374533944 ;
   https://archive.megiddo.co.il/archiyon_http/ViewPage.asp?pagesCatID=28306&siteName=megido . All checked 2026-10-14.
+  Added 2026-10-23 (agent read; a person's check pending):
+  https://www.ofra.org.il/adminML/ajaxXML/getXMLGlobalSetelmentsList.asp (the founding-scroll excerpt, in the
+  "אודות קיבוץ מגידו" entry); https://www.megiddo.co.il/objDoc.asp?PID=877627&OID=889907&DivID=1 and
+  https://www.megiddo.co.il/objDoc.asp?DivID=1&OID=889911&PID=877627 ; Gvati as above
+  (https://benyehuda.org/read/14684).
 
 ### 9. Rehov (רחוב), moshav
 
@@ -529,6 +570,24 @@ sources read, not a gazetteer check.
 ### 24. Patish (פטיש), moshav
 
 - **Founded: [C, one day].** Gvati: 4.3.50, Tnuat HaMoshavim. English Wikipedia: 3 March 1950. CBS: 1950.
+  Searched again 2026-10-23 (agent read; a person's check pending); the day is not settled:
+  - Hebrew Wikipedia (oldid 43958443): "the moshav was established on 3 March 1950" (המושב הוקם ב-3 במרץ 1950); the
+    article cites no source for it. English Wikipedia (oldid 1376022818): "established on 3 March 1950", no source
+    for the day either; its only reference is Dayan, on the 1955 attack. [S] each, and the two should not be counted as two independent
+    sources.
+  - Merhavim Regional Council's page for Patish (read through the Wayback Machine, snapshot of
+    https://www.merchavim.org.il/%D7%A4%D7%98%D7%99%D7%A9/ ; the live page returned 403 to us on 23 Oct): "מושב פטיש הוקם
+    בשנת 1950 על ידי עולים ממצרים" ("founded in 1950 by immigrants from Egypt"), then, in our translation (not a quotation), after a month and a half the
+    Egyptians left the site and immigrants from Tunis settled there for a week, then immigrants from Kurdistan sent
+    by the Jewish Agency. Year only, no day. So the founding the day would mark is, in this account, the Egyptian
+    group's arrival; English Wikipedia says the Kurdish group settled "in May that year". The sources do not say
+    whether 3/4 March is the arrival of the first group or the Kurdish settlement. [S]
+  - Calendar facts, our reading (`convertdate`): 3 March 1950 was a Friday, 14 Adar 5710 (Purim); 4 March 1950 was
+    a Saturday, 15 Adar 5710 (Shushan Purim). This does not favour either day and is not used to choose.
+  - **[GAP]** No newspaper item, Tnuat HaMoshavim or Jewish Agency record was reached: nli.org.il / Jpress returned
+    403 to us on 23 Oct, news1.co.il archive and hamichlol returned 403, and no site of the moshav itself was found. The Or movement
+    page (https://or1.org.il/settlments/%D7%A4%D7%98%D7%99%D7%A9/) returned HTML with no readable text about the
+    moshav (no "1950" in it); the Moshavim of Israel site (Wayback snapshot) says only "founded in 1950".
 - **Founders. [S]** Hebrew Wikipedia: the site was first called Imara C; immigrants from Egypt, then from Tunisia,
   left; the Jewish Agency then settled immigrants from Kurdistan.
 - **Location and hex.** CBS 31.32739, 34.56004 (Hebrew Wikipedia 19 m). Hex (-11, 30), lowland.
@@ -565,6 +624,47 @@ sources read, not a gazetteer check.
   - 26 July 1951: Hebrew Wikipedia ("founded on 26 July 1951 as the first Nahal outpost", citing HaBoker; it also
     cites a Sha'arim report of 26 July 1951 on the ceremony; neither read).
   - CBS and English Wikipedia: 1951. 25 July has two lines of evidence (Gvati; the scroll as quoted).
+  - Searched again 2026-10-23 (agent read; a person's check pending):
+    - **Kibbutz Story, checked word for word:** the scroll text is quoted as "היום, כ"א לירח תמוז שנת ה' אלפים
+      התשי"א, שנה רביעית לעצמאות ישראל, אנו תוקעים יתד ראשונה להקמת ישוב חיילים בגבול הארץ" ("Today, the 21st of
+      the month of Tammuz, 5711, the fourth year of Israel's independence, we drive the first stake for a soldiers'
+      settlement on the country's border"). `convertdate`: 21 Tammuz 5711 is Wednesday 25 July 1951, 22 Tammuz is
+      Thursday 26 July 1951, 11 Tammuz is Sunday 15 July 1951 (our reading; the Nahal list's pair "11 Tammuz /
+      15 July" is consistent). The passage read names no archive for the scroll; it is a quotation, not an image. [S]
+    - **Yad Ben-Zvi, Et-Mol 273, web version, Nadav Frankel (doctoral research on the Nahal outposts, Bar-Ilan),**
+      https://ybz.org.il/%D7%A0%D7%97%D7%9C-%D7%A2%D7%95%D7%96/ (blog entry dated 29.10.23): "בצוהרי 25 ביולי 1951
+      הגיעה פלוגת חיילים ... לנקודה הנמצאת כשני קילומטרים מגבול ישראל מצרים" ("at noon on 25 July 1951 a company
+      of soldiers reached the point about two kilometres from the Israel-Egypt border"); the same entry says the
+      company mustered at Kibbutz Saad "ביום העלייה אל הקרקע" and that "היו ליום העלייה גם חלקים חגיגיים יותר, וטקס
+      נערך בנקודת ההתיישבות" with Shomroni, Moshe Dayan and Avraham Herzfeld, where "הוכרזה מגילת העלייה" (the scroll of going up
+      was proclaimed; his excerpt of it omits the Tammuz date). It prints a caption "עיתון שערים, 26 ביולי 1951"
+      between the arrival paragraph and the ceremony paragraph (the entry does not say what it illustrates, so it is
+      not counted as support for either), and a photo caption "העליה לקרקע נחלאים א,
+      יולי 1951 (ארכיון צה"ל)". The entry gives no footnote tying a given sentence to a given source; it says it relies
+      mainly on archive sources, the outpost's bulletin and interviews. This is the first source read that dates the
+      arrival to a day. The article never writes "25 July" next to "יום העלייה"; that the ceremony fell on the same
+      day rests on "ביום העלייה אל הקרקע" (the Saad muster) and "היו ליום העלייה גם חלקים חגיגיים", and 25 July
+      for that day is our reading from the noon-arrival sentence. A modern article, so [S].
+    - **Hebrew Wikipedia (oldid 44023010), as cited:** "היישוב הוקם ב-26 ביולי 1951" cited to HaBoker, 17 January
+      1952, p. 31, "יום הולדת בערבות הנגב" ("birthday in the Negev plains"); the ceremony participants cited to Sha'arim,
+      26 July 1951, p. 37, "נח"ל התנחל בגבול מצרים" ("Nahal settled on the Egyptian border"). Citations only; neither item
+      was seen, so we do not know whether either states the day. The Sha'arim item's date (26 July) is the paper's
+      date, not a stated founding day. [S]
+    - **Israel Defense and Security Forum (idsf.org.il), 26 July 2025:** "ב-26 ביולי 1951 ירדו כמה צעירים מהמשאית"
+      ("on 26 July 1951 a few young people got off the truck"), no source given, and it is an anniversary piece dated
+      the 26th. [S, no source given]
+    - Gvati's 25.7.51 and the scroll's 21 Tammuz both give 25 July; Frankel's noon arrival on 25 July is the first
+      source read that gives the arrival day. The 26 July sources read are Wikipedia's and the anniversary
+      piece. We do not call it settled because the Sha'arim and HaBoker items are unread and the scroll itself was
+      not seen. Which sources are independent of which is not stated by any of them.
+    - **[GAP]** HaBoker 17 January 1952 p. 31 (the HaBoker item Hebrew Wikipedia cites at oldid 44023010; issue #1472 also asks for a HaBoker item of 26 July 1951, which that revision does not cite, and none was located) and Sha'arim 26 July 1951 p. 37 not opened (nli.org.il /
+      Jpress 403); no image or catalogue record of the 21 Tammuz scroll found (a search for one returned nothing);
+      the IDF archive photo "העליה לקרקע נחלאים א, יולי 1951" is not dated to a day on the page; Et-Mol 273 PDF
+      (https://files.ybz.org.il/periodicals/Etmol/273/273.5.pdf) returns 403 from our fetcher (Cloudflare), so we
+      did not read it ourselves. The repository owner's 23 Oct review reports that it opens for him (HTTP 200, 4 pages), and that it has the same
+      "בצוהרי 25 ביולי 1951" arrival line; that the ceremony line reads "בטקס הוקראה מגילת העלייה" (the scroll of going up was read aloud),
+      where the web page quoted above has "הוכרזה"; that one clipping is credited "שערים, 26.7.1951"; and that there are no footnotes,
+      only a two-item "לעיון נוסף" (further reading) list. That is his reading, relayed, not ours, and it does not settle the day. `objective-cards.md:347` still says 26 July and is not changed here, since the day is not settled.
 - **Founders. [V]** The first Nahal outpost, "Nahala'im A", facing Gaza (Nahal association; Kibbutz Story; English
   Wikipedia); turned over to a civilian garin on 16 September 1953 (Nahal association) **[S]**.
 - **Location and hex.** CBS 31.47277, 34.49746 (Hebrew Wikipedia 7 m). Hex (-11, 28), coastal plain. Gaza's hex is a
@@ -576,7 +676,8 @@ sources read, not a gazetteer check.
   of the kibbutz on 7 October 2023.
 - **Sources.** Gvati and CBS; https://www.nahal.co.il/%D7%94%D7%99%D7%90%D7%97%D7%96%D7%95%D7%99%D7%95%D7%AA/ ;
   https://www.kibbutz-story.com/post/nahal-oz ; https://he.wikipedia.org/w/index.php?oldid=44023010 ;
-  https://en.wikipedia.org/w/index.php?oldid=1379237702 . All checked 2026-10-14.
+  https://en.wikipedia.org/w/index.php?oldid=1379237702 . All checked 2026-10-14. Added 2026-10-23: the Yad Ben-Zvi
+  Et-Mol entry and https://idsf.org.il/history/nahal-oz/ , both agent read.
 
 ### 27. Sderot (שדרות), transit camp, then town
 
@@ -598,11 +699,41 @@ sources read, not a gazetteer check.
 
 ### 28. Beit Guvrin (בית גוברין), kibbutz
 
-- **Founded: [C].**
-  - 23 May 1949: Gvati (23.5.49, HaKibbutz HaMeuhad, region "Lachish"); Palmach database, Beit Guvrin entry.
-  - 2 June 1949: Palmach database, "Shalhevet" hachshara entry. English Wikipedia: founded "on the eve of Shavuot"
-    1949; Shavuot 5709 (6 Sivan) was 3 June 1949, so its eve is 2 June.
-  - CBS: 1949. The Palmach site gives both dates on two pages.
+- **Founded: [C].** Two dates, 23 May and 2 June 1949, each with its own sources; the sources give no way to choose between them.
+  Tag stays [C]; agent read 2026-10-23; a person's check pending.
+  - 23 May 1949: Gvati (23.5.49, HaKibbutz HaMeuhad, region "Lachish"); Palmach database, Beit Guvrin entry
+    (itemId 7976): "founded on 23 May 1949 by members of three hachsharot" (our translation), also headed "founded in May 1949" (our translation). The
+    database gives no ceremony and no source for the day. Our reading: 23 May 1949 was Monday, 24 Iyar 5709
+    (Hebcal converter).
+  - 2 June 1949: Palmach database, hachshara "Shalhevet, Apikim" (itemId 5401): after the war, "in March 1949 they went
+    out for a short reorganisation at Afikim and, together with the Yetzivim hachshara from Kinneret and the Bnei Horin
+    hachshara from Ein Harod, founded on 2 June 1949 kibbutz Beit Guvrin" (our translation). The kibbutz's own site (Wayback copies of
+    2015-08-18, betgovrin.org.il "About us" and "History"): "date of going onto the land: Thursday, eve of Shavuot, 5
+    Sivan 5709, 2 June 1949" (our translation), and "the ceremony of going onto the land was held on the eve of Shavuot 5709 (2 June 1949)
+    at ten in the morning" (our translation), with President Weizmann, Prime Minister Ben-Gurion and Lt Gen Yaakov Dori among the invited. English
+    Wikipedia (oldid 1375241236): founded "on the eve of Shavuot" 1949, no day, and its only citation (Morris) covers the depopulation, not the Shavuot date. It names only Yetzivim and Bnei Horin as first residents, not Shalhevet. Our reading:
+    2 June 1949 was Thursday, 5 Sivan 5709, "Erev Shavuot" in the Hebcal converter, so the kibbutz site's weekday,
+    Hebrew day and Gregorian day agree with each other; Shavuot (6 Sivan) was 3 June.
+  - Gvati's narrative chapter (same book as the table) lists Beit Guvrin in the paragraph that opens "Iyar (April 1949)" (our translation),
+    not in the one that opens "Sivan (May 1949)" (our translation). Our reading: 24 Iyar 5709 falls inside Iyar, 5 Sivan does not, so the
+    narrative sits with 23 May; Gvati's "(April)" gloss does not match Iyar 5709 (30 April to 28 May, from the Hebcal dates above), so
+    this is weak evidence.
+  - CBS and Hebrew Wikipedia (oldid 43555500): 1949 only.
+  - What each date marks, from the words: the kibbutz site calls 2 June the day of going onto the land and holds the
+    ceremony that morning. The Palmach database's 23 May entry has no event named. The Shalhevet entry is the only
+    place where the same hachshara founds the kibbutz on 2 June, whereas the kibbutz site says Shalhevet "joined the
+    Yetzivim kibbutz a few weeks after going onto the land" (our translation) and was released from the Palmach on 12 October 1949.
+    So the sources disagree on whether Shalhevet was there on the day. No source reached says 23 May was an earlier
+    arrival of one group; that remains a guess and is not recorded as a finding.
+  - The kibbutz site also says the group was sent "about eight months after the capture of the area" (our translation; the capture is
+    dated there 19 Tishrei 5709; our reading, Hebcal converts that to 22 October 1948, while Hebrew Wikipedia's article gives 27 October 1948) as part of a Kibbutz HaMeuhad operation to settle 11 places.
+- **Not read.** No contemporary newspaper: nli.org.il returns HTTP 403 from here and no Wayback copy of a JPress page
+  was found. Hebrew Wikipedia's kibbutz article gives no day and cites no newspaper. The Israel Land Authority's 2016
+  conservation survey of Beit Guvrin
+  (https://apps.land.gov.il/IturTabotData/nispachim/jerus/1052288/12.pdf) is said by a search summary to describe the
+  ceremony; the PDF was fetched through Wayback but not read (no PDF text tool here), so it is not counted. Yad
+  Ben-Zvi: no page for the kibbutz found. Gap: the Davar, Al HaMishmar or HaTzofe report of 2 or 3 June 1949, and
+  whoever wrote the Palmach database's 23 May date.
 - **Founders. [V]** Three Palmach hachsharot, "Yetzivim", "Shalhevet" and "Bnei Horin" (Palmach database, both
   entries); former Palmach members (English Wikipedia).
 - **Location and hex.** CBS 31.61302, 34.89595 (Hebrew Wikipedia 8 m). Hex (-5, 26), hills.
@@ -613,7 +744,10 @@ sources read, not a gazetteer check.
   fled the assault. `localities_1948.tsv`: Beit Jibrin 0.9 km, same hex, no `today`.
 - **Sources.** Gvati and CBS; https://palmach.org.il/history/database/?itemId=7976 ;
   https://palmach.org.il/history/database/?itemId=5401 ; https://he.wikipedia.org/w/index.php?oldid=43555500 ;
-  https://en.wikipedia.org/w/index.php?oldid=1375241236 . All checked 2026-10-14.
+  https://en.wikipedia.org/w/index.php?oldid=1375241236 . Checked 2026-10-14. Added 2026-10-23:
+  https://web.archive.org/web/20150818193517id_/http://www.betgovrin.org.il:80/%D7%90%D7%95%D7%93%D7%95%D7%AA%D7%99%D7%A0%D7%95/ ;
+  https://web.archive.org/web/20150818193523id_/http://www.betgovrin.org.il:80/%D7%90%D7%95%D7%93%D7%95%D7%AA%D7%99%D7%A0%D7%95/%D7%94%D7%99%D7%A1%D7%98%D7%95%D7%A8%D7%99%D7%94/ ;
+  https://www.hebcal.com/converter?cfg=json&gy=1949&gm=6&gd=2&g2h=1 (also gm=5&gd=23, gm=4&gd=30, gm=5&gd=28, and gy=1948&gm=10&gd=22). Page titles read: itemId 7976 "Beit Guvrin", itemId 5401 "Shalhevet, Apikim".
 
 ### 29. Ahuzam (אחוזם), moshav
 
@@ -636,6 +770,30 @@ sources read, not a gazetteer check.
   land was on 30 October 1951 (citing HaBoker, 1 November 1951, not read). The Hevel Eilot Regional Council page
   quotes Yehiel Bentov's memoir for 30 October 1951, but marks the passage as taken from Wikipedia, so it is not
   independent. CBS: 1951.
+  Searched again 2026-10-23 (agent read; a person's check pending); the day is still not settled:
+  - Hebrew Wikipedia (oldid 43944113): "טקס העלייה על הקרקע התקיים ב-30 באוקטובר 1951" ("the going-onto-the-land
+    ceremony took place on 30 October 1951"), cited to HaBoker, 1 November 1951, article 53, headline "נח"ל התנחל בעין
+    ראדיאן" ("Nahal settled at Ein Radian"). We have the citation, not the item; the headline is Wikipedia's. [S]
+    The same article says the Jewish Agency and the Ministry of Agriculture took part in financing, citing the same
+    item. The date on the item itself and what its text says about the day were not seen.
+  - The Nahal association's outpost list (read through the Wayback Machine, snapshot of
+    https://www.nahal.co.il/%D7%94%D7%99%D7%90%D7%97%D7%96%D7%95%D7%99%D7%95%D7%AA/ ), entry "יוטבתה": "תאריך
+    הקמה: י"ד אלול תשי"א, 15 אוקטובר 1951" (date of founding: 14 Elul 5711, 15 October 1951), "ההיאחזות ה-3 של
+    הנח"ל", civilianisation "ט' טבת תשי"ח, 1 ינואר 1958". The two halves of the founding entry disagree: by `convertdate`
+    14 Elul 5711 is Saturday 15 September 1951 (our reading), not 15 October (15 Oct 1951 is 15 Tishrei 5712). The
+    same list gives Nahal Oz 15 July 1951, Gonen 15 August 1951 and Gonen's civilianisation 15 March 1953, so the
+    "15th" recurs in several entries; we note that and draw no conclusion about what it means. The list does not say
+    what its date marks. It also gives civilianisation in January 1958, where the section below says a civilian
+    kibbutz from 1957 (Hevel Eilot council page); that difference is not pursued here. [S, and itself inconsistent]
+  - A search-engine summary of the Hevel Eilot page (https://www.eilot.org.il/yotvata/) says the main group arrived on
+    28 October 1951 and a flag-raising ceremony took place on the 30th. We could not re-read the page (HTTP 403 from
+    here, Wayback also 403), so this is a lead, not a finding. If the page does say that, then 28 October (arrival),
+    30 October (ceremony) and 31 October (Gvati) would be three different events or readings.
+  - Calendar, our reading (`convertdate`): 30 October 1951 was Tuesday 30 Tishrei 5712; 31 October was Wednesday,
+    1 Heshvan 5712; HaBoker's 1 November was a Thursday. No source read gives a Hebrew date for the ceremony.
+  - **[GAP]** The HaBoker item (1 November 1951, article 53) was not opened: NLI/Jpress return 403 / a Cloudflare page. No
+    other contemporary or IDF/Nahal-archive record was reached. A JTA search for November 1951 found nothing. The
+    one-day conflict stays [C], and which event each date marks stays open.
 - **Founders. [S]** The third Nahal outpost, near the well that supplied Eilat (Hebrew Wikipedia); the Moroccan garin
   of the Nahal platoon from Ein Harod as its advance force (council page); a civilian kibbutz from 1957 (council
   page).

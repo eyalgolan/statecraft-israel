@@ -57,6 +57,10 @@ namespace Statecraft.Game.UI
             AssignWorkers w => "work:" + w.City,
             Train t => "train:" + t.City + ":" + t.Track,
             CancelTraining x => FormattableString.Invariant($"untrain:{x.Cohort}"),
+            ReturnCraftsmen r => "retcraft:" + r.City,
+            ReassignCraftsmen r => "regcraft:" + r.City,
+            ReassignPioneers r => "regpioneer:" + r.City + ":" + r.Track,
+            Reinforce x => FormattableString.Invariant($"reinforce:{x.Unit}"),
             PioneerWork w => FormattableString.Invariant($"unit:{w.Unit}"),
             StopWork w => FormattableString.Invariant($"unit:{w.Unit}"),
             UnitOrder o => FormattableString.Invariant($"order:{o.Unit}"),
@@ -83,6 +87,10 @@ namespace Statecraft.Game.UI
         /// <summary>The vacant seats the player can fill, less those an appointment queued now fills (Cabinet.Vacancies): the
         /// side menu's Cabinet badge (#1109).</summary>
         public IReadOnlyList<Office> Vacancies => Cabinet.Vacancies(Content, State, queue);
+
+        /// <summary>Whether the Budget screen's <paramref name="draft"/> is not what End turn will apply and Submit can apply it
+        /// (EconomySystem.Unsubmitted): the side menu's Budget badge (#1109).</summary>
+        public bool BudgetUnsubmitted(IReadOnlyDictionary<string, double> draft) => EconomySystem.Unsubmitted(Content, State, draft, queue);
 
         /// <summary>Attention left after paying for the queued orders at this turn's prices.</summary>
         public double AttentionLeft => AttentionSystem.Left(Content, State, queue);
@@ -123,8 +131,16 @@ namespace Statecraft.Game.UI
                 case Train t:
                     return Unknown("city", t.City, Content.Cities.Select(x => x.Id))
                         ?? Unknown("training", t.Track, Content.UnitTypes.Where(x => !string.IsNullOrEmpty(x.Facility)).Select(x => x.Id));
+                // Return and reassignment (#1511): the city id only; the sim refuses a count, a track or a busy civilian with its own reason.
+                case ReturnCraftsmen r: return Unknown("city", r.City, Content.Cities.Select(x => x.Id));
+                case ReassignCraftsmen r: return Unknown("city", r.City, Content.Cities.Select(x => x.Id));
+                case ReassignPioneers r: return Unknown("city", r.City, Content.Cities.Select(x => x.Id));
                 case CancelTraining x:
                     return Unknown("cohort", x.Cohort.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Cohorts.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                // Replacements (#1510): ids only; the sim refuses a full, enemy or misplaced unit and the training checks itself.
+                case Reinforce x:
+                    return Unknown("unit", x.Unit.ToString(System.Globalization.CultureInfo.InvariantCulture), State.Units.Keys.Select(k => k.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+                        ?? Unknown("city", x.City, Content.Cities.Select(k => k.Id));
                 // Pioneer work (#378, camp/field/swamp #1124, corridors #786): ids only; the sim refuses a busy unit, a built site or segment, a kind
                 // mismatch or a short Treasury with its own reason. A corridor action names "corridor:N", N from 1.
                 case PioneerWork w:

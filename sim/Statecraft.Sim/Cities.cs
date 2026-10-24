@@ -132,6 +132,14 @@ namespace Statecraft.Sim
         {
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
+            return n + Soldiers(s, x);
+        }
+
+        /// <summary>R-HOUSE-003, R-UNIT-004 (Q-HOUSE-5): the Israeli formations the city houses, their strength summed:
+        /// recruits, veterans, guns and armoured cars whose home it is, wherever they stand (#1345, the panel's soldiers line).</summary>
+        public static int Soldiers(GameState s, City x)
+        {
+            var n = 0;
             foreach (var u in s.Units.Values) if (u.Side == "israel" && u.HomeCity == x.Id) n += u.Strength;
             return n;
         }

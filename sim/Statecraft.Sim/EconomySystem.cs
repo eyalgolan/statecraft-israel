@@ -106,5 +106,24 @@ namespace Statecraft.Sim
             s.Budget = new Dictionary<string, double>(shares);
             return null;
         }
+
+        /// <summary>#1109: whether the Budget screen's <paramref name="draft"/> differs from what End turn will apply (the
+        /// AllocateBudget in <paramref name="pending"/>, this turn's queue, else today's budget) and Submit can still make them
+        /// agree this turn: a draft back at today's budget withdraws the queued one for nothing; any other needs the Attention
+        /// left once a queued budget is refunded (SimBridge.CanPay's rule) to pay for allocate_budget. False when the game is
+        /// over. A query only: the side menu's Budget badge reads it, so the trap of an edited budget that End turn never
+        /// applies is visible.</summary>
+        public static bool Unsubmitted(Content c, GameState s, IReadOnlyDictionary<string, double> draft, IEnumerable<Command> pending)
+        {
+            var list = pending.ToList();
+            var queued = list.OfType<AllocateBudget>().LastOrDefault();
+            if (s.GameOver != null || Same(draft, queued?.Shares ?? s.Budget)) return false;
+            return Same(draft, s.Budget)
+                || AttentionSystem.Cost(c, s, "allocate_budget") <= AttentionSystem.Left(c, s, list.Where(x => !(x is AllocateBudget))) + 1e-9;
+        }
+
+        /// <summary>The Budget screen's comparison: every line of either map within 1e-9, a missing line counting as 0.</summary>
+        static bool Same(IReadOnlyDictionary<string, double> a, IReadOnlyDictionary<string, double> b) =>
+            a.Keys.Union(b.Keys).All(k => Math.Abs((a.TryGetValue(k, out var x) ? x : 0) - (b.TryGetValue(k, out var y) ? y : 0)) <= 1e-9);
     }
 }

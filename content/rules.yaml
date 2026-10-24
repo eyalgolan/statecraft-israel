@@ -15,6 +15,10 @@ attention_cost:
   assign_workers: 0.5                    # DESIGN VALUE: owner-set balance, not a historical figure (D-A6)
   train: 1                               # DESIGN VALUE: owner-set balance, not a historical figure (D-A6)
   cancel_training: 0.5                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A6)
+  return_craftsmen: 0.5                  # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: as assign_workers, the normal Attention of an order, #1511 owner ruling)
+  reassign_craftsmen: 0.5                # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: as assign_workers, the normal Attention of an order, #1511 owner ruling)
+  reassign_pioneers: 0                   # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free, the normal Attention of an order, #1511 owner ruling)
+  reinforce: 1                           # DESIGN VALUE: owner-set balance, not a historical figure (D-A6; owner, 24 October 2026, #1510: "1, like Train")
   pioneer_work: 0                        # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   stop_work: 0                           # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free)
   unit_order: 0                          # DESIGN VALUE: owner-set balance, not a historical figure (D-A6: unit orders are free; R-ORDER-001, #746)
@@ -219,6 +223,35 @@ mvp:
   prisoner_shortfall_cohesion: 0.01      # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-POW-5: Social cohesion lost per unit of the prisoners' Food not given)
   points_per_prisoner_unit_returned: 10  # DESIGN VALUE: owner-set balance, not a historical figure (D-B6, Q-POW-2: points per population unit of prisoners returned)
   held_soldier_cost_per_turn: 0.005      # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, Q-POW-4: IL millions a turn per population unit of our soldiers held)
+  # Occupation (R-CTRL-011, R-CTRL-012; Q-OCC-1 (a) and Q-OCC-3 (a), owner, 18 October 2026, #783 batches 3 and 4: one unit
+  # stays with Money upkeep per turn, one X for every place, both "labelled design values proposed by agents for owner
+  # override"). Accepted by the owner on 22 October 2026 (https://github.com/eyalgolan/statecraft-israel/pull/1324#issuecomment-6338594839).
+  # X is 6 monthly turns, half a year, the length of
+  # build_yishuv_turns and veteran_halutz_service, so an occupation begun in the war ends well inside the game. The upkeep
+  # is derived as held_soldier_cost_per_turn is (#751): one month of income_per_job_per_year (0.06 / 12) for the one
+  # population unit that stays. Neither is a historical figure.
+  occupation_turns: 6                    # DESIGN VALUE: owner-set balance, not a historical figure (D-F4, Q-OCC-3: X, the turns every occupation lasts)
+  occupation_upkeep_per_turn: 0.005      # DESIGN VALUE: owner-set balance, not a historical figure (D-F4, Q-OCC-1: IL millions a turn per occupied place)
+  # Deport (R-CTRL-018; owner ruling 1, "honest cost, no reward"; Q-DEP-5 (c), owner, 18 October 2026, #783 "Accept all 16
+  # drafts": fixed costs to Social cohesion and International Support, a fixed International Support drag a turn and a lower
+  # International Support ceiling for the rest of the game; "sizes are labelled design values the balance pass sets;
+  # DeportNeverDominates must hold with a margin"). Proposed on #800 and accepted by the owner on 22 October 2026, per
+  # place, with the Money cost below (#1327: https://github.com/eyalgolan/statecraft-israel/pull/1327#issuecomment-6350226175);
+  # design values the balance pass (#813) may revisit. "Large" is read as 1.5
+  # times the largest single event move on either parameter in content (0.10). The drag and the ceiling drop count per
+  # place deported (DisplacedByPlayer counts places, Q-CAP-2 (b)). None is a historical figure.
+  deport_cohesion_cost: 0.15             # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-DEP-5: Social cohesion lost at once)
+  deport_support_cost: 0.15              # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-DEP-5: International Support lost at once)
+  deport_support_drag_per_turn: 0.005    # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-DEP-5: International Support lost each turn after, per place)
+  deport_support_ceiling_drop: 0.25      # DESIGN VALUE: owner-set balance, not a historical figure (D-C1, Q-DEP-5: International Support ceiling lowered for good, per place)
+  # Deport's Money cost (owner decision, 22 October 2026: https://github.com/eyalgolan/statecraft-israel/pull/1327#issuecomment-6337946480):
+  # set so that Deport's Money is at or below Occupy's and Raid's in every state. Occupy pays at most
+  # occupation_upkeep_per_turn for all 44 turns (0.22); a depopulated hex shared with a city takes no new project, so the
+  # city may spend less, and the dearest project is housing (6, projects.yaml). 0.22 + 6, rounded up to a quarter million.
+  deport_money_cost: 6.25                # DESIGN VALUE: owner-set balance, not a historical figure (D-C6, #1327: IL millions paid at once for a Deport)
+  # Deport stays out of play until the owner has reviewed its cards (Phase 6 PR 9) and its dialog (PR 10): with this off,
+  # ResolveCapture(..., deport) is refused as not built yet (R-CTRL-007; plan, PR 8 sensitivity gate). PR 10 lifts it.
+  deport_in_play: false
 # Coalition stability lost by replacing a minister (Cabinet.Appoint): a seat taken from the minister's party, or a
 # reshuffle within it.
 appoint_stability_cost_other_party: 0.06

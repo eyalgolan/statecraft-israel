@@ -464,6 +464,13 @@ public class PromoScreensTests
             texts["mob-down"] = "-5%"; texts["mob-up"] = "+5%";   // the step, DefencePresenter.MobilizationStep
             Assert.AreEqual(0.05, DefencePresenter.MobilizationStep, 1e-12);
             texts["ceasefire"] = s.Rung == 5 ? Text.Format("defence.ceasefire", s.CeasefireWeeksLeft) : "";
+            // #755: the war state, the truce in force (the sim's R-COMBAT-009 window) and the prisoner counts in people.
+            texts["war-state"] = Text.Format("defence.war_state", s.Rung);
+            texts["truce"] = Combat.TruceUntil(s) is DateTime until ? Text.Format("defence.truce", Statecraft.Game.Map.Control1948.DateText(until, k => Text[k])) : "";
+            var ppu = C.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+            texts["prisoners-held"] = Text.Format("defence.prisoners_held", s.PrisonersHeld.Values.Sum() * ppu);
+            texts["prisoners-returned"] = Text.Format("defence.prisoners_returned", s.PrisonersReturned.Values.Sum() * ppu);
+            texts["soldiers-held"] = Text.Format("defence.soldiers_held", s.SoldiersHeld.Values.Sum() * ppu);
             texts["defence-budget-share"] = $"{PlayerText.Percent(s.Budget[DefencePresenter.BudgetLine])} of budget spending";
             bars["mob-bar"] = (float)callUp; bars["defence-budget-bar"] = (float)s.Budget[DefencePresenter.BudgetLine];
             foreach (var name in new[] { "screen-cabinet", "screen-defence" })

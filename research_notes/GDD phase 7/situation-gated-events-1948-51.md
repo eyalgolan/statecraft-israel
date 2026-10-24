@@ -28,7 +28,7 @@ for R-TURN-003 if the historical run is in that situation on that turn. This not
 
 - Every URL below was opened on **2026-10-16** (the check date for all of them). Two research helpers read the pages
   first; every quotation tagged [V] below was then re-fetched and matched verbatim in the page text by the note's
-  author, the same day. JTA bulletin dates are the pages' own `datePublished`.
+  author, the same day. JTA bulletin dates are the pages' own `datePublished`. The Suez complaint sources added for issue #1426 (section 1d) were read on **2026-10-23** by an AI agent; a person's check is pending. The seamen's strike sources added for issue #1425 (section 2a) were read on **2026-10-23** by an AI agent; a person's check is pending.
 - Tags, as in the #135 note:
   - **[V] verified**: read in a primary or official record (FRUS, UN resolution text) or in the period press (JTA
     Daily News Bulletin), quoted verbatim.
@@ -56,7 +56,9 @@ Primary and official:
 | FRUS 1950 V d309 | Secretary of State to the Embassy in Israel, 4 January 1950, on Jerusalem | https://history.state.gov/historicaldocuments/frus1950v05/d309 |
 | UNGA 303 (IV) | General Assembly resolution 303 (IV), 9 December 1949, "Palestine: question of an international regime for the Jerusalem area" (UN PDF, text layer) | https://documents.un.org/api/symbol/access?s=A/RES/303(IV)&l=en&t=pdf |
 | UNSC 93 (1951) | Security Council resolution 93, 18 May 1951 (UN compilation PDF, text layer) | https://documents.un.org/api/symbol/access?s=S/RES/93(1951)&l=en&t=pdf |
-| UNSC 95 (1951) | Security Council resolution 95, 1 September 1951 (UN compilation PDF, text layer) | https://documents.un.org/api/symbol/access?s=S/RES/95(1951)&l=en&t=pdf |
+| UNSC 95 (1951) | Security Council resolution 95, 1 September 1951 (UN compilation PDF, text layer; its page images re-read 2026-10-23 for #1426) | https://documents.un.org/api/symbol/access?s=S/RES/95(1951)&l=en&t=pdf |
+| S/2241 | Israel's complaint: letter dated 11 July 1951 from the permanent representative of Israel to the President of the Security Council, as reprinted in the Council's Official Records (printed pp. 9-10); read as page images 2026-10-23 (#1426) | https://digitallibrary.un.org/record/480045 (scan: https://digitallibrary.un.org/record/480045/files/S_2241-EN.pdf) |
+| S/PV.549 to S/PV.558 | Security Council Official Records, Sixth Year, 549th to 558th meetings (26 July to 1 September 1951); cover pages and agenda read 2026-10-23 (#1426) | https://documents.un.org/api/symbol/access?s=S/PV.549&l=en&t=pdf (same pattern for 550 to 558) |
 
 Period press (JTA Daily News Bulletin, by bulletin date):
 
@@ -158,11 +160,32 @@ window's last day. A card here would be the arc's second step, or folded into `h
   own text was not opened. Mostly support up, not down. Not recommended.
 - **Korea, June to July 1950.** The cabinet's decision to back the Security Council (said to be 2 July 1950) is a
   **lead** only: the pages carrying it (an NLI blog, a Detroit Jewish News scan) returned 403. Support up, not down.
-- **Security Council resolution 95, 1 September 1951** (turn 15 August 1951, inside the 1951 stretch). [V] UNSC 95
-  (1951) finds Egypt's practice "an abuse of the exercise of the right of visit, search and seizure" and "Calls upon
-  Egypt to terminate the restrictions"; adopted by 8 votes to none with 3 abstentions (China, India, the Soviet Union;
-  the text layer reads "Adopted at the 668th meeting"; not checked against the scan). It answers Israel's own complaint, so it is support **up**; the
-  date Israel filed the complaint was not found. A fit for a card on its own merits, not for a "low support" gate.
+- **Security Council resolution 95, 1 September 1951** (turn 15 August 1951, inside the 1951 stretch). Three dated
+  steps, kept apart (all read 2026-10-23 for #1426 as page images; [V, agent read; a person's check pending]):
+  1. **The complaint, S/2241.** A letter "dated 11 July 1951" from Abba Eban, "Permanent Representative of Israel to
+     the United Nations", to the President of the Council, asking "that the following item be placed on the agenda of
+     the Security Council for urgent discussion"; the item is "Restrictions imposed by Egypt on the passage of ships
+     through the Suez Canal." Under the heading, the reprint carries "[Original text: English]" and "[12 July 1951]".
+     The UN Digital Library record (480045) gives the letter date as 1951-07-11 and the document date as 1951-07-12. So:
+     written and dated **11 July 1951**; issued as S/2241 under **12 July 1951**. Neither source uses the word
+     "circulated" or records the day of receipt: whether 12 July is the day it was circulated is **not found**. The scan
+     is the Official Records reprint (printed pp. 9-10), not the mimeographed original; resolution 95's own footnote
+     cites it as "Sixth Year, Supplement for July, August and September 1951, document S/2241".
+  2. **The Council's meetings.** The item, "(a) Restrictions imposed by Egypt on the passage of ships through the
+     Suez Canal (S/2241)", is on the agenda of the 549th meeting, **26 July 1951**; at that meeting the Council invited
+     the representatives of Israel, Egypt and Iraq to take part without vote (UNSC 95 compilation, "Decision"). The
+     meeting records that discuss it are the 549th (26 July), 550th and 551st (both 1 August), 552nd and 553rd (both 16
+     August), 555th (27 August), 556th (29 August) and 558th (1 September). The 554th (23 August) and 557th (31 August)
+     records hold only an official communiqué; their text layer does not mention Suez.
+  3. **The resolution, 1 September 1951.** [V] UNSC 95 (1951) finds Egypt's practice "an abuse of the exercise of the
+     right of visit, search and seizure" and "Calls upon Egypt to terminate the restrictions". The compilation heads it
+     "[S/2322]". The scan (printed p. 11) reads "Adopted at the 558th meeting by 8 votes to none, with 3 abstentions
+     (China, India, Union of Soviet Socialist Republics)"; the text layer's "668th" is an OCR error. The 558th meeting
+     record (1 September 1951) has the same count: "The draft resolution was adopted by 8 votes to none, with 3
+     abstentions", China, India and the Soviet Union abstaining.
+
+  It answers Israel's own complaint, so it is support **up**. A fit for a card on its own merits, not for a "low
+  support" gate.
 
 ## 2. Low social cohesion
 
@@ -175,11 +198,59 @@ Turn: 15 November 1951 (the same turn as `forex_crisis_1951`; just **after** the
 - [V] JTA 29 Nov 1951: the Prime Minister in the Knesset called the strike "a criminal attempt by enemies of the state
   to sabotage the nation's vital arteries" and said "there was not and there is not a strike"; the seamen's union was in
   a dispute with the Histadrut.
-- [V] JTA 4 Dec 1951: "The strike is in its fourth week"; talks with the Histadrut were reopening. So it began in about
-  the second week of November; the start day was not found.
+- [V] JTA 4 Dec 1951: "The strike is in its fourth week"; talks with the Histadrut were reopening.
 - [V] JTA 17 Dec 1951: "Thirty police and scores of strikers were injured", the worst violence of a strike "now in its
   second month".
-- The end of the strike was **not found**; no date is given here.
+- **Start, Monday 12 November 1951** (issue #1425; read 2026-10-23 from the scans by Claude Code, an AI, not yet by a
+  person):
+  - [V] JTA Daily News Bulletin, 13 Nov 1951 (Vol. XVIII No. 219), p. 3, "350 Israel Seamen Halt Work in Dispute with
+    Histadrut", dateline "HAIFA, Nov. 12": "Some 350 Israeli seamen today 'resigned' from their jobs in a dispute
+    between the seamen's union and the Histadrut. As a result, three Israeli vessels are tied up in the harbor here."
+    The union wanted its own hiring offices; the Histadrut called the "resignations" unjustified.
+    http://pdfs.jta.org/1951/1951-11-13_219.pdf
+  - [V] *The Jerusalem Post*, Tuesday 13 Nov 1951, p. 1, "350 Sailors Quit, Eight Israel Ships Tied Up", dateline
+    "HAIFA, Monday": "About 350 sailors signed off eight Israel ships in Haifa and Tel Aviv Ports today in accordance
+    with a decision taken at the Seamen's conference here yesterday." The crew of the s.s. Elath walked off that
+    afternoon; "the rest of the seamen are to go ashore tomorrow morning" (13 November). Shoham said the 24-hour notice
+    broke a labour agreement requiring one month's notice.
+    https://archive.org/details/per_jerusalem-post_the-jerusalem-post_1951-11-13_27_7407
+  - The ship count differs: three vessels tied up in Haifa (JTA) against crews signing off eight ships in Haifa and Tel
+    Aviv (Post). This may be a difference of scope (ships already idle on 12 November against crews that resigned) rather
+    than a conflict; not settled.
+  - The form was a collective resignation, not a declared strike; the Post of 14 Nov (p. 1) quotes the Communications
+    Minister, D. Z. Pinkas, that "they could not be considered strikers, but merely people who have resigned from their
+    jobs". JTA calls it a strike from 15 Nov on. The [S] he.wiki article (שביתת הימאים (1951)) has the resignations on
+    13 November and an open strike call only after 21 November, citing the Hebrew press, which is not readable here.
+  - Checks: 12 Nov to 4 Dec is the 23rd day, inside the fourth week, as JTA says on 4 Dec; 12 Nov to 17 Dec is the 36th
+    day, so "second month" on 17 Dec also fits. (Our arithmetic.)
+- **End, return to work voted 23, 24 or 25 December 1951** ([C], below):
+  - [V] JTA Daily News Bulletin, 26 Dec 1951 (No. 248), p. 2, "Israeli Seamen End Strike; First Vessel Leaves for
+    Trieste", dateline "TEL AVIV, Dec. 25": "A general meeting of Israel's striking seamen today ratified decisions of
+    their representative group to call off the strike and return to work immediately. The vote was 400-3." Terms as
+    reported: the strikers return to work; the Histadrut "will press for release from military service of strikers
+    conscripted when they quit their jobs"; all questions in dispute go to the Histadrut Council, whose decisions the
+    seamen accept; 120 seamen to return within days, the rest to wait for ships now abroad.
+    http://pdfs.jta.org/1951/1951-12-26_248.pdf
+  - [C] he.wiki gives the general meeting as **24 December** and the vote as unanimous (JTA: 400-3), citing *HaBoker*, 25 Dec 1951, "הימאים הפסיקו את
+    שביתתם" (not readable here: NLI returns 403). A cable written on 25 December may report a meeting held the night
+    before; that is our reading, not a source. JTA of 27 Dec 1951 says the seamen "formally ended their strike against the Histadrut yesterday"; the item has no dateline, so the day it means is not shown. https://www.jta.org/archive/israeli-seamen-returning-to-ships-jobs-provided-for-all
+  - [C] [S] The Israel Democracy Institute's survey "כאן שביתה! על תרבות השביתות הישראלית" gives the end as "23 בדצמבר 1951" and the length as 43 days (12 November to 23 December is 42 days counting both ends; the source does not say how it counts), citing the Knesset's "הכנסת השנייה" page. https://www.idi.org.il/parliaments/11092/11096. The day stays open between 23, 24 and 25 December.
+- **Parties, ports, ships and the path to a settlement, as the sources give them:**
+  - The Seamen's Association (its secretariat elected at the seamen's convention in early November) against the
+    Histadrut (secretary-general Mordecai Namir) and the shipping companies Shoham and M. Dizengoff (*Jerusalem Post* 13 and 14 Nov;
+    JTA 21 Nov). The disputed points as JTA gives them: the union's own hiring offices (JTA 13 Nov) and autonomy within the
+    Histadrut (JTA 21 Nov); the right to strike in foreign ports is the account of the Histadrut's representative in the United States
+    of the seamen's demands (JTA 21 Dec).
+  - Ports: Haifa and Tel Aviv; abroad, New York and Baltimore, where 59 strikers on the *Yafo* and the *Haifa* were held
+    on Ellis Island and deported to Israel (JTA 21 Dec 1951, https://www.jta.org/archive/striking-israeli-seamen-deported-from-u-s-to-israel-on-greek-ship ).
+    Ships named: *Elath*, *Akko*, *Meir Dizengoff* (Post 13-14 Nov), *Kedma* (JTA 21 Nov), *Negba* (JTA 29 Nov).
+  - Path to a settlement (no third-party mediator is named in the reports read): Pinkas convened officials on 14 Nov to end the tie-up (JTA 15 Nov 1951, No. 221, p. 3,
+    http://pdfs.jta.org/1951/1951-11-15_221.pdf ); the Histadrut was reported to be considering a separate seamen's union while other vessels prepared to
+    leave with volunteer crews it provided (JTA 21 Nov, https://www.jta.org/archive/striking-israeli-seamen-agree-to-sail-ships-with-jews-from-libya );
+    a "new approach for an agreement" with the Histadrut was reported on 4 December, with negotiations that "now appear near" (JTA 4 Dec); the end came through an agreement with the
+    organising committee of the new Histadrut-sponsored union (JTA 26 Dec).
+  - [S] he.wiki also records an earlier, separate dispute on the *Negba* that began in Marseille in June 1951 and spread
+    to other Shoham ships in July 1951; it is not part of the November-December dispute and is not a start date for it.
 - **Options on the record:** the government's line was police action, call-up notices and foreign crews; a negotiated
   settlement through the Histadrut was the other course being tried. Sensitivity: low; keep to the labour dispute.
 
@@ -240,7 +311,7 @@ Sourced candidates inside it, by turn:
 | 15 May 1951 | Resolution 93 and Israel's response (1c) | Low international support | UNSC 93 (1951); JTA 15 May, 13 Jun 1951 | 15 June 1951 (dated 18 May) | 1 + 5 months | Overlaps `hula_drainage` (ends 18 May) |
 | 15 May 1951 | The religious underground's plot (2b) | Low cohesion; sensitive | JTA 25 May, 1 Jun, 6 Jun 1951 | 15 June 1951, if the window opens after 15 May | 1 + 5 months | `terror` tag likely |
 | 15 July 1951 | The Second Knesset election (2d) | Civic anchor, not gated | JTA 1 Aug, 10 Aug 1951 | 15 August 1951 (end of July) | 3 + 3 months | |
-| 15 August 1951 | Resolution 95 on the Suez Canal (1d) | Support up | UNSC 95 (1951) | 15 September 1951 (dated 1 September) | 4 + 2 months | Complaint date not found |
+| 15 August 1951 | Resolution 95 on the Suez Canal (1d) | Support up | UNSC 95 (1951); S/2241; S/PV.549-558 | 15 September 1951 (dated 1 September) | 4 + 2 months | Complaint S/2241 dated 11 July 1951 (issued 12 July); on the agenda 26 July |
 
 The two May 1951 candidates would shorten the stretch to 5 months if their window opens after 15 May; a window opening
 on 15 May itself would share the turn on which `israel_bonds` already fires. A card at the end of July 1951 splits it
@@ -256,8 +327,7 @@ into 3 and 3 months; one dated 1 September 1951 into 4 and 2. In each case only 
 - **Detroit Jewish News scans (Bentley Library):** 403. Two leads rest on them (the Korea cabinet decision, the
   February 1951 vote).
 - **FRUS 1951 V** on the Hula after resolution 93: not opened (the site rate-limited a helper).
-- The end of the seamen's strike, the day of the May 1951 arrests and the date Israel filed the Suez complaint: not
-  found.
+- The day of the May 1951 arrests: not found.
 
 ## Summary
 

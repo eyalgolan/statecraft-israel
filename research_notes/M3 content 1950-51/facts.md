@@ -220,12 +220,12 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
 - **Parsing warning:** The JVL table is right-to-left and the row label sits *after* the data. A WebFetch summariser mis-shifted the rows, giving "1950 = 175,279". The figures above come from parsing the raw HTML. The row sums check exactly (57,565+26,162+81,195+1,954+3,687 = 170,563, and so on), and they match the existing 1948 and 1949 rows in `aliyah.yaml`.
 - **Totals cross-checks:**
   - https://www.jewishvirtuallibrary.org/total-immigration-to-israel-by-year : 1950 = 170,563; 1951 = 175,279. [V]
-  - CBS, *Immigration to Israel 2002–2006* (Publication 1365, 2009), Table 1 (1948–2006): 1950 = 170,215 immigrants + potential immigrants … total **170,563**; 1951 total **175,279**. [V] https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf
+  - CBS, *Immigration to Israel 2002–2006* (Publication 1365, 2009), Table 1 (1948–2006): 1950 = 170,215 Jews … total **170,563**; 1951 total **175,279**. [V] https://www.cbs.gov.il/he/publications/DocLib/2009/1365/pdf/e_print.pdf
 - **1948–51 first wave:** **687,624** total. 48% Europe, 34% Asia, 14% Africa. Two-thirds of the Europeans came from Poland and Romania. Iraq supplied 52% of the Asian arrivals. [V] same CBS publication.
 
 ### 4b. Immigrants 15 May 1948 – 1951 by country of birth (CBS)
 - **Source:** Publication 1365, the period table. The 1948–51 column was extracted from the PDF text. [V, parsed]
-- Annual 1950 vs 1951 splits by country were **not found** [GAP].
+- Annual 1950 vs 1951 splits: now found in the CBS Statistical Abstracts of the time, see "Annual 1950 and 1951" below. Morocco, Tunisia and Algeria are only given together there, and Egypt and Sudan not at all.
 - **Figures:**
   - Iraq **123,371**
   - Romania **117,950**
@@ -245,6 +245,56 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
 - **Cross-checks:**
   - These match a Jewish Agency archive summary found in search: Iraq 123.3k, Rumania 118.0k, Poland 106.4k, Yemen and Aden 48.3k, Morocco/Tunisia/Algeria 45.4k. Morocco + Tunisia + Algeria = 45,366 ✓.
   - The page itself (https://archive.jewishagency.org/society-and-politics/content/36566) now returns 404.
+
+#### Annual 1950 and 1951 by country of birth (CBS Statistical Abstracts, issue #1419)
+Read 2026-10-23 from the scanned page images of the two PDFs by Claude Code (an AI), not yet by a person; every column below was checked against the printed subtotals.
+- **1950:** CBS, *Statistical Abstract of Israel* No. 2 (1950/51), Table 6 "Jewish Immigrants, by Country of Origin or Birth (1919 – III 1951)", printed p. 27 (PDF p. 57), column "1950". https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1951_num2.pdf [V]
+- **1951:** CBS, *Statistical Abstract of Israel* No. 3 (1951/52), Table 6 "Jewish Immigrants, by Country of Origin (1919 – III 1952)", printed p. 26 (PDF p. 55), column "1951 I–XII". The same table's column "15 V 1948 – 31 XII 1951" is given for comparison with Publication 1365. https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1952_num3.pdf [V]
+
+| Country of birth (as printed) | 1950, Jewish immigrants (SA 2) | 1951, Jewish immigrants (SA 3) | 15 V 48 – 31 XII 51, Jewish immigrants (SA 3) | 1948–51, all immigrants (Pub. 1365, above) |
+|---|---|---|---|---|
+| **All countries** | **169,405** | **173,901** | 684,275 | 687,624 |
+| Asia | 57,760 | 103,327 | 237,378 | |
+| Iraq | 32,453 | 89,088 | 123,265 | 123,371 |
+| Iran | 10,519 | 9,444 | 21,784 | 21,910 |
+| Yemen | 8,650 | 698 | 45,279 (Yemen and Aden) | 48,315 (Yemen, including the former Aden: Pub. 1365 Table 5 note 7, printed p. 39) |
+| Aden | 2,692 (Aden and other Asia) | 239 | see Yemen | |
+| Turkey | 2,439 | 1,198 | 34,294 | 34,547 |
+| Syria and Lebanon | 1,007 | 316 | 2,898 | |
+| Other Asia | see Aden | 2,344 | 9,858 | |
+| Africa | 25,820 | 20,124 | 93,295 | |
+| Morocco, Algeria, Tunisia (one row) | 9,567 | 11,369 | 45,111 | 45,366 (28,263 + 13,293 + 3,810) |
+| Libya | 9,189 | 6,570 | 31,175 | 30,972 |
+| Union of South Africa | 183 | 43 | 621 | |
+| Other Africa (no Egypt or Sudan row is printed; that they fall here is our reading, not stated) | 6,881 | 2,142 | 16,388 | Egypt and Sudan 16,028 |
+| Europe | 83,337 | 49,535 | 331,299 | |
+| Romania | 46,178 | 40,208 | 117,660 | 117,950 |
+| Poland | 26,499 | 3,505 | 106,136 | 106,414 |
+| Hungary | 2,721 | 1,273 | 14,301 | 14,324 |
+| U.S.S.R. | 2,286 | 566 | 6,201 | |
+| Bulgaria | 960 | 1,161 | 37,210 | 37,260 |
+| Germany | 932 | 463 | 8,150 | 8,210 |
+| Czechoslovakia | 632 | 295 | 18,731 | 18,788 (parse slightly ambiguous, see the list above) |
+| Other Europe (the 9 smaller rows) | 3,129 | 2,064 | | |
+| America and Oceania | 1,006 | 671 | 3,516 | |
+| Not stated | 1,482 | 244 | 18,787 | |
+
+- **Checksums** (our arithmetic on the printed rows):
+  - 1950: 57,760 + 25,820 + 83,337 + 1,006 + 1,482 = 169,405, the printed total. Asia, Africa, Europe and America each equal the sum of their country rows.
+  - 1951: 103,327 + 20,124 + 49,535 + 671 + 244 = 173,901, the printed total; the continents also equal their country rows. "Other Europe" above is our sum of Latvia/Lithuania, Yugoslavia, Greece, Austria, United Kingdom, Netherlands, France, Italy and "other countries", which the table prints one by one.
+- **Against the totals in 4a** [C]:
+  - The annual totals of 169,405 and 173,901 leave out the travellers permitted to settle in 1950 and 1951: SA 2 Table 2 "Jewish Immigrants", note 1 (printed p. 25), and SA 3 Table 3, note 1 (printed p. 25), both say "except those permitted to stay in 1950 and 1951"; SA 2 Table 2 gives 169,405 for 1950 (its 1951 row covers January to March only) and SA 3 Table 3 gives 169,405 and 173,901. Table 6 itself says so only indirectly (its footnote 4 includes such travellers for 1948 and 1949 only). CBS *Statistical Abstract* No. 14 (1963), Table 3 "Immigrants and Tourists Settling, by Year (Jews)", printed p. 109 (PDF p. 134), adds them: **1950 = 170,249** (of which 844 tourists settling) and **1951 = 175,095** (of which 1,194). 169,405 + 844 = 170,249 and 173,901 + 1,194 = 175,095. https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1963_num14.pdf [V]
+  - Publication 1365 Table 1 (printed p. 30) gives each year for all immigrants and for Jews: 1950 = 170,563 all, 170,215 Jews; 1951 = 175,279 all, 175,129 Jews. The 4a totals are the all-immigrant figures, so they do not compare with the Jewish-only tables here. Against Publication 1365's Jewish figures, SA 14 is 34 higher for 1950 (170,249 against 170,215) and 34 lower for 1951 (175,095 against 175,129); the volumes read do not explain this. [C]
+  - The 4a continent rows are all-immigrant figures too (they sum to 170,563), while SA 2 counts Jewish immigrants only, so the two series should not be compared row by row or mixed.
+  - The 1948–51 period column: SA 3's 684,275 counts Jewish immigrants and Publication 1365 Table 5's 687,624 counts all immigrants, so their 3,349 gap is not like for like. Against Publication 1365's Jewish rows in Table 1 (101,819 + 239,576 + 170,215 + 175,129 = 686,739), SA 3 is 2,464 lower. Most country rows differ by under 300, and Yemen by 3,036 (45,279 for Yemen and Aden in SA 3, against 48,315 in Publication 1365). [C]
+- **Definitions:**
+  - Country of birth for these years; the tables use nationality only for 1919–34 and for the 1946 visa-less immigrants (footnote 1 of both tables).
+  - SA No. 2 Tables 2 and 6 and SA No. 3 Tables 3 and 6 have no "potential immigrants" category (the rest of each volume was not searched for one). Publication 1365 Table 1 has that column, but it is empty for 1950 and 1951 (it starts in 1969); its 170,215 for 1950 is the Jews column.
+- **Not in these tables** [GAP]:
+  - Morocco, Tunisia and Algeria separately for 1950 or 1951 (one combined row in SA 2, SA 3 and SA 4).
+  - Egypt and Sudan for 1950 or 1951 (no row of their own; presumably inside "other countries" of Africa, not stated).
+  - Aden separately for 1950 (one cell with "other countries" of Asia).
+  - SA No. 4 (1952/53) Table 5 gives only the whole period 15 V 1948 – 31 XII 1952 and the year 1952, not 1950 or 1951 (printed p. 28). SA No. 14 Table 4 gives continents only. A later CBS series by year and country (for example a special-series volume on immigration 1948–72) was not found online.
 
 ### 4c. Operations
 - **On Wings of Eagles (Yemen and Aden):**
@@ -278,7 +328,7 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
   - **Pauker–Rubin understanding:** about 4,000 per month [S]. https://en.wikipedia.org/wiki/Jewish_emigration_from_Romania
   - **Exit closure:** [C] "orders of 1951" (1959 Detroit Jewish News) vs. "drastically reduced by 1952" (Ioanid via Wilson Center). https://www.wilsoncenter.org/event/book-launch-the-ransom-the-jews-the-story-the-extraordinary-secret-bargain-between-romania-and
   - The AJYB 1952 estimate has Romania's Jewish population falling from 335,000 (1950) to 280,000 (mid-1951). https://www.bjpa.org/content/upload/bjpa/1952/1952worldpop.pdf [S]
-- **Poland:** CBS 1948–51 Poland-born = 106,414. No reliable annual figures were found [GAP]. Exits were encouraged roughly 1949–51 [S].
+- **Poland:** CBS 1948–51 Poland-born = 106,414. Annual: **26,499 in 1950** (SA No. 2, Table 6, p. 27) and **3,505 in 1951** (SA No. 3, Table 6, p. 26), without travellers permitted to settle; see 4b. [V] Exits were encouraged roughly 1949–51 [S].
 - **North Africa and Libya:**
   - CBS 1948–51: Morocco 28,263, Tunisia 13,293, Algeria 3,810, Libya 30,972.
   - **Selective immigration:** In **November 1951** the Jewish Agency (via the Coordinating Committee) adopted selection guidelines for North African aliyah: young, healthy, working-age people. This held at least to 1956. [S] Secondary sources only: Avi Picard, *Olim Bemesorah* (2013); Daniel Ben Simon; jewishrefugees.org.uk https://www.jewishrefugees.org.uk/2013/10/israels-painful-selection-of-moroccan.html . Disputed by Shifra Shvarts. Primary document not seen.
@@ -324,8 +374,25 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
   - Infant mortality 157 per 1,000 (Davidovich and Shvarts 2004; Hacohen 2003).
   - Worst-camp unemployment 90–96% (Roby 2015).
   - Migdal Gad: two faucets for about 1,000 people (Shapira 2014).
-- **Winter 1950–51 flooding and storms:** [GAP] Not found in the sources read.
-  - en.wiki 1950: the **6 Nov 1950** "Shelter campaign" appealed to the public to house immigrant children for the winter. [S]
+- **Winter 1950–51 flooding and storms** (researched 2026-10-23 for #1420; every JTA page below was opened that day, its date is the page's own bulletin date, and "today"/"yesterday"/"last night" in a quote count from the dispatch, so the event day is not fixed more closely than that; [V] here means an agent read the page, and a person's check is pending):
+  - **Before the rains: the shelter campaign, kept separate.** en.wiki 1950: the **6 Nov 1950** "Shelter campaign" appealed to the public to house immigrant children for the winter. [S] The JTA bulletin of 6 Dec 1950 describes "the special campaign now being conducted by the Israel Government and the Jewish Agency among the urban population to secure shelter for children" (our reading: the same campaign; the bulletin gives no start date). [V] https://www.jta.org/archive/rains-flood-refugee-camps-in-israel-government-seeks-shelter-for-6000-children
+  - **Winter preparations, November 1950** (government and army; in the sources read here they come before the first storm report, 6 Dec 1950: our reading):
+    - JTA 1 Nov 1950: the Knesset Finance Committee voted "500,000 Israel pounds for the preparation of 'work villages' for immigrants for the coming winter", plus 500,000 pounds for the Welfare Ministry's care of immigrants. [V] https://www.jta.org/archive/israel-parliamentary-committee-votes-3000000-for-plans-to-absorb-immigrants
+    - JTA 22 Nov 1950: "The Israel Army will take over some 40 work villages and semi-permanent camps on December 1 for a period of four months"; the army would run transport, keep the roads open and give medical and child-welfare help; "some 1,500 children will be wintered in Army camps"; "some 200 physicians have been called up from the reserves". [V] https://www.jta.org/archive/israel-army-to-take-over-immigrant-work-camps-for-four-winter-months-calls-up-doctors
+    - JTA 24 Nov 1950: at a Cabinet meeting "Labor Minister Golda Myerson was today given complete charge of the government's program in behalf of immigrants living in work villages and semi-permanent camps"; "Three thousand new wooden huts must be built before the winter sets in, the Cabinet decided." [V] https://www.jta.org/archive/golda-myerson-named-to-head-government-program-for-immigrants-in-work-camps
+    - Maariv (Arik Bender, 15 Apr 2020, a retrospective): the army operation was called "מבצע מעברות", and Chief of Staff Yadin wrote in an order of the day of **17 Nov 1950** that "הממשלה החליטה להטיל על צה"ל להטות שכם למשימה הגדולה הזאת" (the government decided to charge the IDF with shouldering this great task). [S] The order itself was not reached. https://www.maariv.co.il/news/military/article-759860
+  - **The storms, as reported:**
+    - JTA 6 Dec 1950: "The first intense rainfall yesterday has affected adversely many immigrant camps in various parts of the country"; "Despite specially-fitted double flaps, many tents were flooded". The Jewish Agency said "At least 6,000 children of school age need homes during the winter", and Social Welfare Minister Rabbi I. M. Lewin appealed to the public to take them in. No camp is named. [V] (link above)
+    - JTA 8 Jan 1951: "The long-awaited rains came down in torrents in Israel last night"; they "brought terrible hardships to newcomers living in tents and huts in 'work villages,' particularly in the Jerusalem and Rehovot sectors. Tents collapsed and roofs of huts were blown away in a number of immigrant villages in the north. Police and army units were summoned to several villages to aid the immigrants." [V] https://www.jta.org/archive/heavy-rains-save-crops-in-israel-immigrants-in-work-villages-suffer-from-inundation
+    - Maariv 2020 (above): "גשמי הזעף" flooded the immigrant camps and ma'abarot "בראשית שנות ה־50" (in the early 1950s), and the press of the time ran pictures of soldiers pulling immigrants out of the floods and the mud. It gives no day and no camp for the floods. [S]
+  - **Other measures during the winter:**
+    - JTA 14 Dec 1950: the Finance Committee voted 500,000 pounds "for use in work settlements known as 'Maabarot'". [V] https://www.jta.org/archive/israel-parliamentary-committee-votes-1400000-for-use-in-work-settlements
+    - JTA 29 Dec 1950: the Vatican's representative put a convent in the Haifa district at the authorities' disposal "for the use of 200 immigrant children" for four months. [V] https://www.jta.org/archive/vatican-offers-convent-in-haifa-as-winter-shelter-for-jewish-immigrant-children
+    - JTA 2 Jan 1951: the Jewish Agency's plan was partly in effect; "Some 4,500 canvas huts have been erected in various work centers as have been 5,000 tin structures." [V] https://www.jta.org/archive/jewish-agency-begins-work-on-improving-conditions-in-immigrant-work-centers
+    - JTA 2 Mar 1951: OSE took "Over 300 sick and undernourished immigrant children" out of the camps' huts and tents for "the entire winter period", with government and Jewish Agency support. [V] https://www.jta.org/archive/ose-in-israel-provides-shelter-for-300-sick-children-from-immigrant-games
+  - **[GAP] Named camps, casualties and totals for winter 1950–51.** No source read names a camp hit in December 1950 or January 1951 (only "the Jerusalem and Rehovot sectors" and "the north"). None gives deaths, a count of flooded tents or of evacuees for that winter. Nothing is extrapolated. The Knesset record, *Davar* and the *Palestine Post* (NLI, HTTP 403) and the IDF Archives were not reached.
+  - **[C] Snow, and the Ein Shemer collapse.** Rossetto (*Quest* 4, 2012, in a paragraph citing Hacohen, *Immigrants in Turmoil*, pp. 129-161) says "The 1950-1951's winter was particularly severe, with heavy snow falls across the country". [S] https://www.quest-cdecjournal.it/space-of-transit-place-of-memory-maabarah-and-literary-landscapes-of-arab-jews/ Maariv 2020 dates the collapse of the dining-hall roof at the Ein Shemer immigrant camp under snow, four killed and five hurt, to "6 בפברואר 1951". [S] The JTA bulletin of **8 Feb 1950** reports a collapse that may be the same event (our reading), in the February 1950 snowstorm (four dead at the Ein Shemer camp under snow; JTA says a mess-hall wall and "many injured", Maariv a dining-hall roof and five hurt): "Four Jews were killed and many injured last night when a wall of a mess hall at the Ein Shemer immigrant camp for Yemenites collapsed under the weight of snow." [V] https://www.jta.org/archive/snow-since-in-jerusalum-broken-crops-affected-damages-reach-millions-of-dollars No JTA report of snow in winter 1950–51 was found. Both versions are kept; the note does not decide whether these are one event or two, or which year.
+  - **Not this winter (kept apart):** heavy rains flooded immigrant camps in **December 1949** (JTA 27 Dec 1949, https://www.jta.org/archive/heavy-rains-flood-immigrant-camps-in-israel-children-contract-pneumonia-aid-urged) [V], in winter 1949–50. The great storm of **December 1951** (JTA 26 Dec 1951, "Israel's 11-day Storm Ends; Heavy Damages Reported", https://www.jta.org/archive/israels-11-day-storm-ends-heavy-damages-reported) is winter 1951–52 [V]. Maariv 2020 quotes a Knesset debate of 20 Dec 1951 on the ma'abarot in that month [S]. Neither belongs to winter 1950–51. (JTA: titles and dates only.)
 - **End:** Most residents were rehoused 1957–60. The last ma'abara (Hatzrot Yosef) was dismantled 20 Jan 2004 (he.wiki). en.wiki says "around 1963".
 
 ---
@@ -482,10 +549,31 @@ Researched 2026-10-10. All URLs were checked on that date unless noted.
   - First-year sales were over **$52m** against a $25m goal. The 3.5% "Independence Issue".
   - [V] https://en.wikipedia.org/wiki/Israel_Bonds ; https://www.jewishvirtuallibrary.org/state-of-israel-bonds
   - [C] en.wiki "1950 in Israel" says "6 Sep 1950: the first State of Israel Bond issue is launched in the United States". This conflicts with the Bonds article and JVL, which say May 1951. Treat **May 1951** as the launch.
-- **Unemployment:** [GAP]
-  - No rate found. The Falk Institute labour study has "Estimates of Unemployment, Jews: 1949–1959", but the PDF was too large to fetch: https://en.falk.huji.ac.il/sites/default/files/falk/files/laborhovne.pdf
-  - The ILO reported a +25% rise in Israeli unemployment (Sep 1951 JTA brief). [S] https://jta.org/archive/israel-was-one-of-five-countries-to-show
-  - Ma'abarot worst-case unemployment was 90–96% (Roby).
+- **Unemployment** (issue #1422; read 2026-10-23 from the page images by Claude Code, an AI, not yet by a person):
+  - **Falk Institute estimate, Jews, annual averages** [V]: Avner Hovne, *The Labor Force in Israel* (Maurice Falk Institute for Economic Research in Israel, Jerusalem, 1961; preface dated May 1961), Table 7 "Estimates of Unemployment, Jews: 1949–1959", Part A, printed p. 27 (PDF p. 43); the same figures are in the Summary Table, Part B "Jews", printed p. 13 (PDF p. 29). https://en.falk.huji.ac.il/sites/default/files/falk/files/laborhovne.pdf
+
+    | Year | Registered unemployed, daily average (thousands) | Estimated unemployed, labour-force definition (thousands) | Per cent of civilian labour force | Civilian labour force, Jews (thousands, Summary Table B) |
+    |---|---|---|---|---|
+    | 1949 | 6.4 | 29.6 | **9.5** | 310.0 |
+    | 1950 | 5.9 | 28.2 | **6.8** | 412.5 |
+    | 1951 | 6.3 | 29.3 | **5.8** | 505.8 |
+
+    - **What it is:** an estimate, not a count. Column 2 is computed from column 1 with a regression Hovne fitted on the 1954–58 weeks for which both the labour exchanges and the Labour Force Survey exist: Y = 11.7 + 2.8X (Table 7 sources). The survey only began in June 1954 (p. 26), so for 1949–51 every figure in columns 2 and 3 is a back-projection. Our check: 11.7 + 2.8 × 6.4 = 29.6, × 5.9 = 28.2, × 6.3 = 29.3; and 29.6 / 310.0 = 9.5%, 28.2 / 412.5 = 6.8%, 29.3 / 505.8 = 5.8%.
+    - **Definition and population:** the labour-force definition is a person aged 14 or over who did not work one hour in the survey week and was actively seeking work (p. 26). Jews only. Annual averages. The regression input (column 1) counts people aged 18 and over seeking wage or salaried work through the General Labour Exchanges, on a single day (p. 26).
+    - **Jews and non-Jews together** (Summary Table, Part A, printed p. 12, PDF p. 28): 1949 **32.6 thousand, 9.5%**; 1950 **31.0 thousand, 6.9%**; 1951 **33.2 thousand, 6.1%** of a civilian labour force of 342.9, 450.1 and 545.0 thousand. The non-Jewish part excludes the Negev Bedouin, about 13,000–14,000 people (footnote 1, p. 13). [V]
+    - Hovne's text (p. 28) sums it up as "very high in 1949 (9.5 per cent), decreased to about 7 per cent for 1950 through 1952"; that sentence describes Part A. The Jews-only column gives 6.8% and 5.8% for 1950 and 1951.
+  - **Registered unemployed, the official count** [V]: CBS, *Statistical Abstract of Israel* No. 10 (1958/59), Table 14 "Daily Average of Unemployed, by Sex, Month, Occupation, District and Sub-District (1949–1958)", printed p. 308 (PDF p. 349), the source Hovne cites for column 1. The English title is the one printed on the continuation page (printed p. 309, PDF p. 350); page 308 itself is headed in Hebrew only (ממוצע יומי של דורשי עבודה, work seekers). https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1959_num10.pdf
+    - Yearly daily average: **1949 6,351; 1950 5,908; 1951 6,337**.
+    - By sex: 1949 men 5,556, women 795; 1951 men 5,277, women 1,060; 1950 not given ("..").
+    - Monthly range: 1949 from 1,081 (January) to 10,007 (December); 1950 from 9,822 (January) down to 4,463 (September) and 4,032 (October; SA No. 4 prints 4,932, see below); 1951 from 4,980 (March) to 9,682 (December).
+    - Scope (footnote 1): up to the end of 1953, registrations at the labour exchanges affiliated to the "Centre of Labour Exchanges". The table does not say Jews only; Hovne uses it as his Jewish series.
+  - **Earlier print of the same series** [C]: CBS, *Statistical Abstract of Israel* No. 4 (1952/53), Table 5 "Daily Average of Unemployed, by Months (1949–1952)", printed p. 83 (PDF p. 97). https://www.cbs.gov.il/he/publications/DocLib/shnaton_saruk/shnaton1953_num4.pdf
+    - Yearly average 1949 **6,850**, 1950 **5,907**, 1951 **6,337**.
+    - It adds a rate: "Unemployed as percentage of total wage earners", 1949 **2.8**, 1950 **2.2**, 1951 **2.0**. This is registered unemployment against wage earners, not the labour-force rate above; the two must not be mixed.
+    - Differences from SA No. 10: June 1950 is 4,609 (SA 10: 4,809) and October 1950 is 4,932 (SA 10: 4,032). Our arithmetic: SA 4's twelve 1950 months average 5,908 and SA 10's average 5,850, so SA 4's months fit the yearly figure both volumes print. For 1949 the twelve months average 6,351 in both volumes, so SA 4's 6,850 does not match its own months. Which print is right was not settled from a third source.
+  - **ILO, via a JTA brief dated 19 September 1951:** Israel was one of five countries "to show an increase in unemployment in June of this year as compared with June, 1951", a 25 percent increase. [S] https://jta.org/archive/israel-was-one-of-five-countries-to-show . The brief's date and its "June, 1951" cannot both be right, so which two Junes the ILO compared is not settled. For comparison only (our arithmetic): the CBS daily average for June 1951, 5,765, is 25% above SA No. 4's June 1950 (4,609) and 20% above SA No. 10's (4,809).
+  - **Ma'abarot, kept apart from the national series:** worst-case unemployment of 90–96% (Roby). This is a figure for the transit camps, not a national rate, and is not comparable with any of the series above.
+  - Still missing [GAP]: a 1949–51 labour-force-survey estimate made at the time (the survey only began in June 1954; Hovne's figures above are back-projections), and the registered series for non-Jews.
 
 ---
 

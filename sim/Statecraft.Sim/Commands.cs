@@ -85,6 +85,44 @@ namespace Statecraft.Sim
         public CancelTraining(int cohort) { Cohort = cohort; }
     }
 
+    /// <summary>Returns <see cref="Count"/> of <see cref="City"/>'s craftsmen to civilian life, keeping their qualification
+    /// (Qualification.ReturnCraftsmen, R-QUAL-002). GDD v0.1 loop only.</summary>
+    public sealed class ReturnCraftsmen : Command
+    {
+        public override string Kind => Qualification.ReturnCraftsmenKind;
+        public string City { get; } public int Count { get; }
+        public ReturnCraftsmen(string city, int count) { City = city; Count = count; }
+    }
+
+    /// <summary>Puts <see cref="Count"/> of <see cref="City"/>'s qualified craftsmen back among its craftsmen, with no
+    /// training (Qualification.ReassignCraftsmen, R-QUAL-004). GDD v0.1 loop only.</summary>
+    public sealed class ReassignCraftsmen : Command
+    {
+        public override string Kind => Qualification.ReassignCraftsmenKind;
+        public string City { get; } public int Count { get; }
+        public ReassignCraftsmen(string city, int count) { City = city; Count = count; }
+    }
+
+    /// <summary>Puts <see cref="Count"/> of <see cref="City"/>'s qualified halutzim (<see cref="Track"/> `halutz`) or veteran
+    /// pioneers (`veteran_halutz`) back on the map as units, with no training (Qualification.ReassignPioneers, R-QUAL-005).
+    /// GDD v0.1 loop only.</summary>
+    public sealed class ReassignPioneers : Command
+    {
+        public override string Kind => Qualification.ReassignPioneersKind;
+        public string City { get; } public string Track { get; } public int Count { get; }
+        public ReassignPioneers(string city, string track, int count) { City = city; Track = track; Count = count; }
+    }
+
+    /// <summary>Starts <see cref="Count"/> groups of <see cref="City"/>'s civilians without work training as replacements for
+    /// damaged formation <see cref="Unit"/>, which stands on the city's settlement hex (Training.Reinforce, R-TRAIN-004; #1510).
+    /// GDD v0.1 loop only.</summary>
+    public sealed class Reinforce : Command
+    {
+        public override string Kind => Training.ReinforceKind;
+        public int Unit { get; } public string City { get; } public int Count { get; }
+        public Reinforce(int unit, string city, int count) { Unit = unit; City = city; Count = count; }
+    }
+
     /// <summary>Sends halutz unit <see cref="Unit"/> to do pioneer work <see cref="Action"/> (build_yishuv) at designated site
     /// <see cref="Site"/> (Projects.Start, R-SITE-001). GDD v0.1 loop only.</summary>
     public sealed class PioneerWork : Command
@@ -174,6 +212,20 @@ namespace Statecraft.Sim
         public StepResult(GameState state, IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected) { State = state; Why = why; Rejected = rejected; }
     }
 
+    /// <summary>The state after the turn's committed orders (spec 2026-10-23 section 3), before End turn: what
+    /// the screen shows, the movement points each unit has spent, the turn's Why lines so far and the refused orders.</summary>
+    public sealed class PreviewResult
+    {
+        public GameState State { get; }
+        public IReadOnlyDictionary<int, int> Spent { get; }
+        public IReadOnlyDictionary<int, (int Q, int R)> Attacked { get; }
+        public IReadOnlyList<Cause> Why { get; }
+        public IReadOnlyList<Rejection> Rejected { get; }
+        public PreviewResult(GameState state, IReadOnlyDictionary<int, int> spent, IReadOnlyDictionary<int, (int Q, int R)> attacked,
+                             IReadOnlyList<Cause> why, IReadOnlyList<Rejection> rejected)
+        { State = state; Spent = spent; Attacked = attacked; Why = why; Rejected = rejected; }
+    }
+
     /// <summary>Checks that every text an order carries can be saved: a null id or a lone surrogate would make the save
     /// unwritable or lossy, so Step refuses the whole batch before anything happens (a programmer error, like a null Command).</summary>
     static class CommandText
@@ -191,6 +243,10 @@ namespace Statecraft.Sim
                     case AssignWorkers w: Text(w.City, "City"); Text(w.Role, "Role"); break;
                     case Train t: Text(t.City, "City"); Text(t.Track, "Track"); break;
                     case CancelTraining _: break;
+                    case ReturnCraftsmen r: Text(r.City, "City"); break;
+                    case ReassignCraftsmen r: Text(r.City, "City"); break;
+                    case ReassignPioneers r: Text(r.City, "City"); Text(r.Track, "Track"); break;
+                    case Reinforce r: Text(r.City, "City"); break;
                     case PioneerWork p: Text(p.Action, "Action"); Text(p.Site, "Site"); break;
                     case StopWork _: break;
                     case UnitOrder o: Text(o.Order, "Order"); break;

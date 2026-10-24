@@ -31,7 +31,8 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!, flagWhite = null!, flagBlue = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
         /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
@@ -141,9 +142,6 @@ namespace Statecraft.Game.Map.Units
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
-            layer.flagWhite = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
-            layer.flagBlue = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
-            layer.flagBlue.renderQueue = layer.flagWhite.renderQueue + 1;   // the blue over the white
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
@@ -381,6 +379,13 @@ namespace Statecraft.Game.Map.Units
             return mesh;
         }
 
+        /// <summary>A side's flag cloth materials, made once per side and shared by its tokens.</summary>
+        Material[] FlagCloth(string side)
+        {
+            if (!flagCloth.TryGetValue(side, out var mats)) flagCloth[side] = mats = UnitFlags.ClothMaterials(side, ringTemplate, assets.Own);
+            return mats;
+        }
+
         /// <summary>Takes a mesh built for one token: freed with the tokens (<see cref="FreeTokenMeshes"/>).</summary>
         Mesh TokenMesh(Mesh m) { tokenMeshes.Add(UnitPlinth.Upload(m)); return m; }
 
@@ -428,7 +433,7 @@ namespace Statecraft.Game.Map.Units
                         // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
                         float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
                         plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
-                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, flagWhite, flagBlue);
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, FlagCloth);
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)

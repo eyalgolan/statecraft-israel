@@ -136,7 +136,7 @@ namespace Statecraft.Sim
                 var delta = (int)x.Delta;
                 var housing = x.Field == HousingField ? Math.Max(0, city.HousingCapacity + delta) : city.HousingCapacity;
                 var jobs = x.Field == JobsField ? Math.Max(city.Employed, city.JobSlots + delta) : city.JobSlots;
-                s.Cities[x.City] = new City(city.Id, housing, jobs, city.Civilians, city.Employed, city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault);
+                s.Cities[x.City] = new City(city.Id, housing, jobs, city.Civilians, city.Employed, city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault, city.Qualified);
                 var applied = housing - city.HousingCapacity + jobs - city.JobSlots;
                 why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})"));
             }
@@ -149,8 +149,6 @@ namespace Statecraft.Sim
                 why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
-            // R-COMBAT-009: accepting a truce ends the player's standing attacks (owner ruling 2, 22 Oct 2026, #750).
-            if (Combat.PlayerTruces.Any(t => t.Event == eventId && t.Option == o.Id)) Combat.EndAttacksForTruce(s, why);
             // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
             if (Get(c, eventId).Prisoners is var front && front != "") Prisoners.Return(c, s, front, why);
         }

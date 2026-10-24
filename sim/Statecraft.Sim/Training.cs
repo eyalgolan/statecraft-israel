@@ -15,6 +15,7 @@ namespace Statecraft.Sim
     {
         public const string TrainKind = "train";
         public const string CancelKind = "cancel_training";
+        public const string ReinforceKind = "reinforce";
 
         /// <summary>The craftsman's unit type id (D-D4; R-CRAFT-001).</summary>
         public const string Craftsman = "craftsman";
@@ -51,9 +52,10 @@ namespace Statecraft.Sim
         /// city's jobs first (R-CRAFT-002), so only the employed beyond its craftsmen are civilians in work.</summary>
         public static int Idle(City city) => city.Civilians - Math.Max(0, city.Employed - city.Craftsmen);
 
-        /// <summary>The groups the Train orders in <paramref name="pending"/> (this turn's queue) take from
+        /// <summary>The groups the Train and Reinforce orders in <paramref name="pending"/> (this turn's queue) take from
         /// <paramref name="city"/>, every track together.</summary>
-        public static int Ordered(string city, IEnumerable<Command> pending) => pending.OfType<Train>().Where(t => t.City == city).Sum(t => t.Count);
+        public static int Ordered(string city, IEnumerable<Command> pending) =>
+            pending.OfType<Train>().Where(t => t.City == city).Sum(t => t.Count) + pending.OfType<Reinforce>().Where(t => t.City == city).Sum(t => t.Count);
 
         /// <summary>R-TRAIN-001 with R-CITY-001: the groups still free to train in <paramref name="city"/> once the orders in
         /// <paramref name="pending"/> (this turn's queue) have run: <see cref="Idle"/>, less every track's Train order there,
@@ -73,7 +75,39 @@ namespace Statecraft.Sim
         /// lacks. The trainees leave the civilians at once, and the cohort takes the next id. Refused, state untouched, when the
         /// city or track is unknown, the count is below 1, the city has no such facility (<see cref="HasFacility"/>), or it has fewer civilians without
         /// work. Step has already refused it in the legacy loop.</summary>
-        public static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why)
+        public static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why) => Start(c, s, city, track, count, why, null);
+
+        /// <summary>R-TRAIN-004 (#1510; owner, 23 October 2026: "Replacements cost Arms" and "Default (Recommended)"):
+        /// <paramref name="count"/> groups of <paramref name="city"/>'s civilians without work train as replacements for the
+        /// player's formation <paramref name="unit"/>, which stands on the city's settlement hex. The course is the trained type
+        /// of the unit's side and class (a veteran soldier's is the recruit's basic training), and <see cref="Start"/>'s checks,
+        /// Money and Arms apply. Refused, state untouched, for a unit that is unknown, not military or not the player's, an
+        /// unknown city, a unit off the city's hex, a type no course trains, or a count past its <see cref="Unit.Full"/> less
+        /// its strength and the replacements already training for it.</summary>
+        public static string? Reinforce(Content c, GameState s, int unit, string city, int count, List<Cause> why)
+        {
+            if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
+            if (u.Side == "") return "Only a military unit takes that order";
+            if (u.Side != Movement.PlayerSide) return "That unit is not yours";
+            if (!s.Cities.ContainsKey(city)) return "There is no such city";
+            var hex = c.SettlementHexes.First(h => h.Id == city);
+            if ((u.Q, u.R) != (hex.Q, hex.R)) return FormattableString.Invariant($"Unit {unit} is not in {PlayerText.Settlement(c, city)}");
+            var type = c.UnitTypes.First(t => t.Id == u.Type);
+            var course = c.UnitTypes.FirstOrDefault(t => t.Side == type.Side && t.Class == type.Class && t.Facility != "");
+            if (course == null) return FormattableString.Invariant($"Unit {unit} cannot take replacements");
+            var room = Room(s, u);
+            if (room <= 0) return FormattableString.Invariant($"Unit {unit} has no losses to replace");
+            if (count > room) return FormattableString.Invariant($"Unit {unit} can take {room} more {(room == 1 ? "group" : "groups")}");
+            return Start(c, s, city, course.Id, count, why, unit);
+        }
+
+        /// <summary>R-TRAIN-004: the groups <paramref name="u"/> can still take: the strength it had before its first loss, less
+        /// its strength and the replacements already training for it (0 for a unit that has lost nobody). The unit card reads
+        /// it for the Reinforce button's count.</summary>
+        public static int Room(GameState s, Unit u) =>
+            (u.Full == 0 ? u.Strength : u.Full) - u.Strength - s.Cohorts.Values.Where(k => k.Unit == u.Id).Sum(k => k.Count);
+
+        static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why, int? unit)
         {
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             var type = c.UnitTypes.FirstOrDefault(t => t.Id == track && t.Facility != "");
@@ -93,13 +127,17 @@ namespace Statecraft.Sim
             EconomySystem.PayOrBorrow(c, s, cost, "for training", why);
             // R-HOUSE-003: trainees remain housed as a cohort, and recruits keep their home city's housing as formations.
             // A pioneer unit leaves city housing; a craftsman remains. The employed share also reads the new counts.
-            s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees);
+            // R-QUAL-006: the trainees are taken from the unqualified civilians first; a qualified one taken loses its
+            // qualification, which is part of the civilians that remain.
+            var lost = Math.Max(0, x.Qualified.Total - (x.Civilians - count));
+            s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees).WithQualified(lost == 0 ? x.Qualified : x.Qualified.Lose(lost));
             var id = s.NextId++;
             // The plan's reading of D-A6, not part of the owner's ruling: the turn of the order is the first training turn, so
             // with training_turns 3 an order on turn T is done at the end of T+2 (TrainingTests.ACohortOrderedOnTurnTWithThreeTurnsFinishesAtTheEndOfTurnTPlusTwo). For "done at the end of
             // T+3", open the cohort with type.TrainingTurns + 1 here; nothing else changes.
-            s.Cohorts.Add(id, new Cohort(id, type.Id, city, count, type.TrainingTurns, (int)arms));
-            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} began {Course(type)}, cost {PlayerText.Money(c, "treasury", cost)}"));
+            s.Cohorts.Add(id, new Cohort(id, type.Id, city, count, type.TrainingTurns, (int)arms, unit));
+            var aim = unit is int target ? FormattableString.Invariant($" as replacements for unit {target}") : "";
+            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} began {Course(type)}{aim}, cost {PlayerText.Money(c, "treasury", cost)}"));
             if (arms > 0)
             {
                 s.Arms -= (int)arms;
@@ -137,11 +175,32 @@ namespace Statecraft.Sim
         {
             foreach (var k in s.Cohorts.Values.ToList())
             {
+                // R-TRAIN-004 (owner, 23 October 2026, "Default"): replacements whose unit is gone (destroyed, captured, sent
+                // home) or off the city's hex are cancelled as R-TRAIN-002 cancels a cohort, before they lose a turn.
+                Unit? target = null;
+                if (k.Unit is int aim)
+                {
+                    var at = c.SettlementHexes.First(h => h.Id == k.City);
+                    if (!s.Units.TryGetValue(aim, out target) || (target.Q, target.R) != (at.Q, at.R))
+                    {
+                        why.Add(new Cause("city", k.City, 0, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: unit {aim} is no longer in {PlayerText.Settlement(c, k.City)}, so its replacements stop training")));
+                        Cancel(c, s, k.Id, why);
+                        continue;
+                    }
+                }
                 if (k.TurnsLeft > 1) { s.Cohorts[k.Id] = k.WithTurnsLeft(k.TurnsLeft - 1); continue; }
                 s.Cohorts.Remove(k.Id);
                 var type = c.UnitTypes.First(t => t.Id == k.Type);
                 var name = PlayerText.Settlement(c, k.City);
-                if (type.Side != "")
+                if (target != null)
+                {
+                    // The unit keeps its type, service and order (a veteran stays one); full again, it forgets its Full.
+                    var strength = target.Strength + k.Count;
+                    s.Units[target.Id] = new Unit(target.Id, target.Type, target.Q, target.R, target.Service, target.Side, strength,
+                        target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full);
+                    why.Add(new Cause("city", k.City, k.Count, FormattableString.Invariant($"{name}: {Groups(k.Count)} finished {Course(type)} and joined unit {target.Id}")));
+                }
+                else if (type.Side != "")
                 {
                     var hex = c.SettlementHexes.First(h => h.Id == k.City);
                     var id = s.NextId++;

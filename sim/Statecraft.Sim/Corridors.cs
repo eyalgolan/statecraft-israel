@@ -50,6 +50,8 @@ namespace Statecraft.Sim
             if ((def.Kind == Rail) != wantRail) return wantRail ? $"{def.Name} is not a railway" : $"{def.Name} is not a road";
             var index = n - 1;
             var name = SegmentName(def, index);
+            if (def.Segments[index].Hexes.Any(h => SettlementControl.DepopulatedAt(c, s, h[0], h[1])))   // R-CTRL-020 (Q-DEP-7 (c))
+                return $"{name} crosses a depopulated place, where nothing can be built";
             s.Corridors.TryGetValue(def.Id, out var work);
             if (work?.Segments[index] is SegmentWork seg)
                 return seg.BuiltOn == null ? $"{name} is already being built" : $"{name} is already built";
@@ -112,7 +114,7 @@ namespace Statecraft.Sim
                     if (u.Type != "halutz") continue;
                     var service = u.Service + 1;
                     var promoted = service >= r.VeteranHalutzService!.Value;
-                    s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                     if (promoted) why.Add(new Cause("map", w.Id, 1, "A group of halutzim became veteran pioneers"));
                 }
                 s.Corridors[w.Id] = cur;
