@@ -499,6 +499,18 @@ public class HebrewUiTests
         }
     }
 
+    /// <summary>The Hebrew plural of a game turn is "תורים" (#1589); "תורות" is the wrong form and mixed with the
+    /// legacy defence.turn_* strings.</summary>
+    [Test]
+    public void TheHebrewPluralOfATurnIsTorimInTheThreeStringsThatCountThem()
+    {
+        foreach (var key in new[] { "how_to_play.training", "capture.about.occupy", "city.turns" })
+        {
+            StringAssert.Contains("תורים", He[key], key);
+            StringAssert.DoesNotContain("תורות", He[key], key);
+        }
+    }
+
     // --- The house ---------------------------------------------------------------------------------------------------
 
     /// <summary>In Hebrew the half circle is the same picture mirrored (#199): the first seat, the coalition's, is at the
