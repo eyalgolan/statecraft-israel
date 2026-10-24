@@ -20,13 +20,16 @@ public class AdvisorShowMeTests
     static UiText Text() => UiText.Parse(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text +
         "\nadvisor.t.att.text: \"Attention.\"\nadvisor.t.city.text: \"A city.\"\n");
 
-    [Test]
-    public void EveryNameIsKnownAndEverySideMenuButtonHasOne()
+    /// <summary>Find returns only what is shown with a size, so the HUD is laid out first (the layout harness).</summary>
+    [UnityTest]
+    public IEnumerator EveryNameIsKnownAndEverySideMenuButtonHasOne()
     {
         foreach (var s in ScreenNav.Screens) CollectionAssert.Contains(AdvisorTargets.Names, AdvisorTargets.Nav(s));
-        using var ui = new UiTestKit();
-        foreach (var (name, element) in new[] { ("attention", "attention"), ("nav_objectives", "nav-objectives"), ("nav_budget", "nav-budget") })
-            Assert.AreEqual(element, AdvisorTargets.Find(ui.Root.Q("root"), name, null).Single().name, name);
+        yield return AdvisorPopupLayoutTests.Shown(1280, 720, false, (root, advisor) =>
+        {
+            foreach (var (name, element) in new[] { ("attention", "attention"), ("nav_objectives", "nav-objectives"), ("nav_budget", "nav-budget") })
+                Assert.AreEqual(element, AdvisorTargets.Find(root.Q("root") ?? root, name, null).Single().name, name);
+        });
     }
 
     [Test]

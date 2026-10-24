@@ -76,8 +76,8 @@ section 11.3.)
 Already decided, and kept as they are:
 
 - **The perspective and sourcing rules** of `docs/CONTENT_POLICY.md` sections 1 and 2. This PR amends principle 2 and the
-  AI-likeness lines (`CONTENT_POLICY.md:28-29`, `:99-100`) to match the rulings above (section 19).
-- **Portraits** are public domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (`CONTENT_POLICY.md:35-39`, `:80-83`).
+  AI-likeness lines (`CONTENT_POLICY.md:28-34`, `:104-118`) to match the rulings above (section 19).
+- **Portraits** are public domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (`CONTENT_POLICY.md:39-44`, `:85-88`).
   Government Press Office photographs tagged only `PD-Israel` are accepted for the free release by D-P
   (`docs/oss/DECISIONS.md:32`), and there is no paid release (`:50`).
 - **In-game AI narration** (15 October 2026, #639, recorded in
@@ -85,7 +85,7 @@ Already decided, and kept as they are:
   never as a real person, disclosed, with an `ASSETS.yaml` row. The real-figure clips (S6b) need that file's rules 1
   and 9 (`:16`, `:24`) amended for the three advisors; the first clip PR does it (the plan's Task 26).
 - **ElevenLabs output in the game** is recorded in `ASSETS.yaml` as AI-generated (the 18 October ruling on #39,
-  `docs/oss/DECISIONS.md:82`).
+  `docs/oss/DECISIONS.md:83`).
 
 ## 3. Personas and voice rules
 

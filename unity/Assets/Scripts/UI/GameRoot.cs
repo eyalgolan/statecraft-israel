@@ -673,6 +673,9 @@ namespace Statecraft.Game.UI
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
             // then render and load the photo catalog for a game that is going away (#592; since the GDD cutover a new game's
             // card waits under the screen, so New Game's Begin would load it).
+            // The advisors before the card: a card going away is a layer closing, which must not make a popup that is itself
+            // going away draw its step again and show its city or unit on a camera being destroyed.
+            if (advisor != null) { owned.Remove(advisor); advisor.Dispose(); }
             if (card != null) { owned.Remove(card); card.Dispose(); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
