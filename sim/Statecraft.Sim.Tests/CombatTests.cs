@@ -447,6 +447,16 @@ public class CombatTests
         Assert.Equal((1, 2, 4, 5), (s.Units[1].Strength, s.Units[3].Strength, s.Units[2].Strength, s.Units[4].Strength));
     }
 
+    // R-COMBAT-003 with R-TRAIN-004: an engagement's loss stores a player's unit's strength before it, and no enemy's.
+    [Fact]
+    public void AnEngagementsLossStoresThePlayersStartingStrength()
+    {
+        var c = Load();
+        var s = With(c, Attacking(Soldier(1, 3, 0, 2), 2, 0), Enemy(2, 2, 0, 5));
+        Resolve(c, s);   // 2 against 5: both sides lose 1
+        Assert.Equal((1, 2, 4, 0), (s.Units[1].Strength, s.Units[1].Full, s.Units[2].Strength, s.Units[2].Full));
+    }
+
     // R-COMBAT-006 (Q-CIV-4, "2+3"): the engagement's Why line gives the people each side lost, in the same words for both.
     [Fact]
     public void TheWhyLineGivesPeopleLostOnBothSides()

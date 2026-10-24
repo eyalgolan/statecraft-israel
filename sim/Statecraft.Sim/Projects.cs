@@ -91,7 +91,7 @@ namespace Statecraft.Sim
                 if (u.Type == "halutz")
                 {
                     var service = u.Service + 1;
-                    u = new Unit(u.Id, service >= r.VeteranHalutzService!.Value ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    u = new Unit(u.Id, service >= r.VeteranHalutzService!.Value ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                 }
             }
         }
@@ -234,7 +234,7 @@ namespace Statecraft.Sim
                 if (u.Type != "halutz") continue;
                 var service = u.Service + 1;
                 var promoted = service >= r.VeteranHalutzService!.Value;
-                s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                 if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers"));
             }
             Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
@@ -357,7 +357,7 @@ namespace Statecraft.Sim
                 var k = c.ProjectKinds.First(x => x.Id == p.Kind);
                 var x = s.Cities[p.City];
                 var condition = x.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
-                s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault);
+                s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault, x.Qualified);
                 why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished"));
             }
         }

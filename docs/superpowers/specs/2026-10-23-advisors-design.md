@@ -58,6 +58,7 @@ as the option's label; "(Recommended)" marks the option we had recommended.
 | Voices | "Yes, both": save the three chosen aide voices, then render the Hebrew lines with ElevenLabs `eleven_v3` |
 | Private people | "By role (Recommended)": private people are named by their role in research notes; public figures keep their names. This spec follows the same rule |
 | Video sources | Ben-Gurion: "1951 official PM portrait"; Golda: "1964 desk photo (Recommended)"; Dayan: "1956 map briefing (Recommended)". Choosing them approved downloading those Commons originals |
+| Which lines talk (24 October 2026) | "select some dayan, some ben gurion and some golda to match the budget. the rest of the advisor screen would use their photos for now until we have more tolens": only some lines of each advisor get a clip; every other line shows the advisor's portrait, with the narration where one exists (sections 7.1, 12) |
 | Price and ads | "the game is never going to charge any money. ever", and then "the game is never going to have ads" (`docs/oss/DECISIONS.md` D1, `:15`) |
 
 How "The real figures talking" is carried out (part of the approved design): the real figures' own voices or likeness
@@ -134,14 +135,14 @@ broadcast clarity" in them describes diction and recording style only, never a p
 
 ### 3.3 The verified quotes list
 
-From a research note checked on 23 October 2026 (Codex cx285). Only these may appear, and only as labelled quotes:
+From a research note checked on 23 October 2026 (Codex cx285); Q3's punctuation and Q4's date were corrected against their sources on 24 October 2026 (Codex cx439, re-checked). Only these may appear, and only as labelled quotes:
 
 | # | Speaker | Text | Source | Use |
 |---|---|---|---|---|
 | Q1 | The Declaration (a document, not a personal line) | "THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;" Hebrew: «מדינת ישראל תהא פתוחה לעליה יהודית ולקיבוץ גלויות;» | Declaration of the Establishment of the State of Israel, *Iton Rishmi* no. 1, 14 May 1948, p. 1; Knesset official Hebrew and English texts | Usable, attributed to the Declaration, never to Ben-Gurion |
 | Q2 | The Declaration | "WE EXTEND our hand to all neighboring states and their peoples in an offer of peace and good neighborliness," Hebrew: «אנו מושיטים יד שלום ושכנות טובה לכל המדינות השכנות ועמיהן,» | As Q1; the Knesset's current English page (American spelling). One official edition is used throughout, never mixed with the British-spelling CBS edition | Usable, as Q1 |
-| Q3 | Ben-Gurion | «קמה מדינת ישראל. תמה הישיבה הזאת.» English (a translation, labelled so): "The State of Israel has arisen. This session is closed." | People's Council, fourth sitting, 14 May 1948, official protocol, p. 26 (Knesset PDF); the ceremony recording | Usable. The Hebrew is the quote; the punctuation is the protocol's (two full stops, no exclamation mark) |
-| Q4 | Golda Meyerson | "A dank eich vos ihr seit geblieben Yidden" ("Thank you for having remained Jews") | Golda Meir, *My Life* (Putnam, 1975), ch. 9, p. 183; the memoir's later account of Rosh Hashanah, 3 October 1948 | Usable, labelled as a recollection in *My Life* (1975), spoken in Yiddish. The Hebrew «תודה שנשארתם יהודים» is labelled a translation |
+| Q3 | Ben-Gurion | «קמה מדינת־ישראל! תמה הישיבה הזאת.» English (a translation, labelled so): "The State of Israel has arisen! This session is closed." | People's Council, fourth sitting, 14 May 1948, official protocol, printed p. 26 (Knesset PDF `0_ptm_258582.pdf`, its page 3; checked 24 October 2026); the ceremony recording | Usable. The Hebrew is the quote; the punctuation is the protocol's: an exclamation mark after «ישראל», a full stop at the end, and a maqaf in «מדינת־ישראל» |
+| Q4 | Golda Meyerson | "A dank eich vos ihr seit geblieben Yidden" ("Thank you for having remained Jews") | Golda Meir, *My Life* (Putnam, 1975), ch. 9, p. 183; the memoir's later account of the first day of Rosh Hashanah 5709, 4 October 1948 (the festival began at sunset on 3 October; the crowd scene was on 4 October: Gennady Estraikh, "The Moscow Choral Synagogue and Its Rabbinate, 1940s-1980s", *Iudaica Russica* 14 (2025), p. 10, checked 24 October 2026) | Usable, labelled as a recollection in *My Life* (1975), spoken in Yiddish. The Hebrew «תודה שנשארתם יהודים» is labelled a translation |
 | - | Golda Meyerson, Chicago | "You cannot decide whether we should fight or not. We will." | *My Life*, which dates it 21 January 1948; the event was 25 January 1948 | **Not usable as stated**: the memoir's date is wrong and no contemporaneous transcript was opened |
 | - | Ben-Gurion, the Negev | "In the Negev the people and State of Israel will be tested" | «בנגב ייבחן העם בישראל ומדינתו», *Davar*, 17 January 1955 | **Not usable as stated**: the English "will/shall" is a translation, and 1955 is outside the game's period |
 | - | Dayan | none | No short, non-political 1948-52 line was found in a primary source | **No Dayan quote** |
@@ -166,11 +167,12 @@ shown one at a time. We copy that shape.
 | `priority` | 1 to 3; a higher one jumps the queue |
 | `repeat` | `once`, or `every` with a `cooldown_turns` |
 | `actions` | Up to two buttons: `show_me` (highlight a UI element by name, as the guide's ring does, `FirstTurnGuidePresenter.cs:278-303`), `open_screen` (a side screen by name, `ScreenNav.cs:13`), `encyclopedia` (a page id). The dismiss controls (section 7.1) are the popup's own, not data |
-| `video` | Optional: the silent clip's file, the narration file per language, and the caption cues per language (section 12) |
+| `media` | Optional: a silent clip or still (itself optional), the narration file per language, and the caption cues per language (section 12). With narration but no picture, the advisor's popup portrait is the picture |
 | `quote` | Optional id from the verified list (section 3.3); only these lines show a quote |
 
 A load-time test checks that every message names a known advisor, signal, condition, screen and string key in both
-languages, that every `video` row's files and cues exist in both languages, that `requires` has no cycle, and that every
+languages, that every `media` row's supplied files and cues exist in both languages, that a row without a picture has
+narration, that `requires` has no cycle, and that every
 `quote` is on the list.
 
 ### 4.2 The runtime
@@ -291,7 +293,9 @@ bar's date and the toast, so neither is used.
 ```
 
 - **Portrait**: a still archival photograph cropped round the face, about 96x120, in the info panel's gold frame. Never
-  flipped, never animated. When the message has a clip, a small play badge on it is the "Watch" button (section 12).
+  flipped, never animated. When the message has a clip or narration in the current language, a small play badge on it is
+  the "Watch" button (section 12). If that line has narration but no clip, the portrait stays visible while the voice and
+  live captions play. If it has neither, the normal portrait and text remain and there is no Watch button.
 - **Name and label**: the advisor's name (section 3.1) and "Advisor" in small capitals; never quotation marks or italics.
   The name wraps and never shrinks (Hebrew names are longer).
 - **Text**: one or two sentences, 22 px panel size like `.guide-text`, raised to the 12 screen px text floor
@@ -522,10 +526,13 @@ review. Approving one language approves no other.
 
 ## 12. Video and sound
 
-- **Never autoplays.** The popup's play badge ("Watch") plays the clip, as do the encyclopedia and Counsel.
+- **Never autoplays.** The popup's play badge ("Watch") plays the available media, as do the encyclopedia and Counsel.
+  Per line: play the clip (or a supplied still) when present; otherwise keep the advisor's portrait visible and play narration when present;
+  otherwise show the portrait and text with no Watch control. "Present" means available in the current UI language.
 - **Small, inside the popup** where the popup's slot has room for the picture, two caption lines and the buttons (about
   460 logical px tall): 1920x1080, 1280x720, 1366x768, 1024x768 and 960x1080. The picture, 364x205 at 400 px wide,
-  takes the portrait row's place; the live caption takes the text's place; the buttons stay.
+  takes the portrait row's place when a clip or explicit media still exists. With narration only, the portrait row stays;
+  the live caption uses the text's place. The buttons stay.
 - **In a centred overlay** where it has no room: a phone held sideways (400 px free) and an upright phone (the sheet).
   The overlay follows `.outcome-layer` (`Statecraft.uss:322-332`), keeps the captions under the picture, and closes with
   its own X and Escape. The choice is made from the measured slot height, not from a guess at the device.
@@ -538,7 +545,8 @@ review. Approving one language approves no other.
 - **The picture is a silent clip** on the existing player. `CardVideo` is silent by design: "A silent clip player ... No
   audio is output" (`CardVideo.cs:9-15`), `audioOutputMode = VideoAudioOutputMode.None` (`:102`), into one 960x540
   RenderTexture (`:18`, `:90-109`); the encoder passes `-an` (`tools/encode_event_videos.py:42-45`) and its check rejects
-  any audio stream (`:111-126`). Neither changes: the sound Sync 3 puts in its output is dropped from the picture.
+  any audio stream (`:111-126`). Neither changes: the sound Sync 3 puts in its output is dropped from the picture. A line
+  without a clip does not borrow the video player; it uses the advisor's existing portrait.
 - **The voice is a separate audio file**, the same WAV the lip-sync used, fetched and played the way the start screen's
   recording is (`DeclarationRecording.cs:41-56`: a fetched `AudioClip`, an output with a play position; `SourceOutput`,
   an `AudioSource`, `:240-261`). The captions follow the audio's play position, and so does the picture: lip-sync makes
