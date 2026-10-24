@@ -257,6 +257,49 @@ def test_unity_runs_under_the_shared_lock_with_graphics_and_ci_flags_off(tmp_pat
     assert unity[unity.index("-testResults") + 1] == str(tmp_path / "r.xml")
 
 
+def test_the_warm_up_launch_runs_the_guard_method_under_the_same_lock_without_quit(tmp_path):
+    cmd = up.warmup_command(Path("/wt"), "6000.3.25f1", tmp_path / "w.log")
+    test = up.unity_command(Path("/wt"), "6000.3.25f1", tmp_path / "r.xml", tmp_path / "u.log")
+    # Same lock, Unity, flags and project as the test launch; only the method and log differ.
+    assert cmd[:cmd.index("-executeMethod")] == test[:test.index("-runTests")]
+    assert cmd[cmd.index("-executeMethod") + 1] == "Statecraft.Game.EditorTools.UnityMcpGuard.WarmUp"
+    # -quit would exit before the plugin's resolver runs on the first editor update.
+    assert "-quit" not in cmd and "-runTests" not in cmd
+    assert cmd[cmd.index("-logFile") + 1] == str(tmp_path / "w.log")
+
+
+def _suite(tmp_path, monkeypatch, warm_code):
+    """run_suite with git, the sim build and Unity faked; returns its result and the Unity launches in order."""
+    wt, run_dir = tmp_path / "wt", tmp_path / "run"
+    (wt / "unity/ProjectSettings").mkdir(parents=True)
+    (wt / "unity/ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.3.25f1\n")
+    run_dir.mkdir()
+    launches = []
+
+    def fake_run(cmd, record, **kw):
+        launches.append("warm-up" if "-executeMethod" in cmd else "tests")
+        if "-runTests" in cmd:
+            results_xml(tmp_path, [("T.A", "Passed", "")]).replace(run_dir / "editmode.xml")
+            return 0, None
+        return warm_code, None
+
+    monkeypatch.setattr(up, "prepare_worktree", lambda *a: None)
+    monkeypatch.setattr(up.subprocess, "run", lambda *a, **k: subprocess.CompletedProcess(a, 0))
+    monkeypatch.setattr(up, "unity_path", lambda version: sys.executable)   # an existing file stands in for Unity
+    monkeypatch.setattr(up, "run_with_timeout", fake_run)
+    return up.run_suite(tmp_path, wt, SHA, run_dir, 90), launches
+
+
+def test_the_warm_up_runs_before_the_tests(tmp_path, monkeypatch):
+    (r, code, _), launches = _suite(tmp_path, monkeypatch, 0)
+    assert launches == ["warm-up", "tests"] and code == 0 and r.broken is None and r.total == 1
+
+
+def test_a_failed_warm_up_is_a_broken_run_and_the_tests_never_start(tmp_path, monkeypatch):
+    (r, code, _), launches = _suite(tmp_path, monkeypatch, 1)
+    assert launches == ["warm-up"] and code == 1 and "warm-up" in r.broken and not up.passed(r, code)
+
+
 def test_the_plist_template_polls_no_more_often_than_every_ten_minutes():
     text = (up.TOOLS / "unity_postmerge.plist.in").read_text(encoding="utf-8")
     filled = up.fill_plist(text, uv="/opt/uv", repo="/r", home="/h", path="/usr/bin:/bin")
