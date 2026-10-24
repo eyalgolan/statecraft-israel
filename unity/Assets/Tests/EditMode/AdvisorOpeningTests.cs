@@ -85,12 +85,15 @@ public class AdvisorOpeningTests
         using var automated = new Rig(En, null); automated.Advisor.NewGame(); Assert.IsFalse(automated.Advisor.InChain);
     }
 
+    /// <summary>The plan's assumption (c): the opening chain is the first game's onboarding, as the guide was, so it ignores
+    /// the help level (review of the S2 head).</summary>
     [TestCase("off")] [TestCase("experienced")] [TestCase("warnings")]
-    public void AQuieterHelpLevelDoesNotAutomaticallyStartTeaching(string level)
+    public void AnyHelpLevelGetsTheOpeningChainOnItsFirstGame(string level)
     {
         var store = Store(); store.Write(AdvisorSettings.LevelKey, level);
-        using var rig = new Rig(En, store); rig.Advisor.NewGame(); Assert.IsFalse(rig.Advisor.InChain);
-        rig.Advisor.OpenChain(); Assert.IsTrue(rig.Advisor.InChain, "explicitly requested advice remains available");
+        using var rig = new Rig(En, store); rig.Advisor.NewGame();
+        Assert.IsTrue(rig.Advisor.InChain, "the first new game shows the chain at " + level);
+        Assert.IsTrue(rig.Session.Settings.OpeningSeen);
     }
 
     [Test]

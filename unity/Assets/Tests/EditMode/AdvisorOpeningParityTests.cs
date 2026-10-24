@@ -179,6 +179,31 @@ public class AdvisorOpeningParityTests
         Assert.AreSame(session, game.AdvisorSession); Assert.IsTrue(game.Advisor!.InChain); Assert.AreEqual(2, game.Advisor.ChainStep);
     }
 
+    /// <summary>A language switch on a step that shows its city: the rebuilt chain shows the city again, and closing it puts
+    /// back the hex the player had selected before the chain opened, not the advisor's city (review of the S2 head).</summary>
+    [Test]
+    public void ALanguageSwitchOnTheCityStepStillPutsBackTheSelectionItFound()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.CloseChain();
+        var map = Object.FindFirstObjectByType<MapScene>(); var bridge = game.Bridge!;
+        var city = AdvisorTargets.CityHex(bridge.Content, bridge.State)!.Value;
+        var hex = bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R)).First(h => h != city && game.Units!.UnitToSelectAt(h.Item1, h.Item2) == null);
+        GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
+        Assert.AreEqual(hex, game.Info!.Selected, "precondition: the player's hex");
+        game.Advisor.OpenChain();
+        for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+        Assert.AreEqual(city, game.Info!.Selected, "precondition: the city step shows its city");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings")); UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt chain"); Assert.AreEqual("opening.city", Steps[game.Advisor.ChainStep]);
+        Assert.AreEqual(city, game.Info!.Selected, "shows its city again");
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        Assert.AreEqual(hex, game.Info!.Selected, "closing puts back the player's hex");
+    }
+
     // --- Skip, Escape and How to play -------------------------------------------------------------------------------
 
     sealed class Rig : IDisposable
@@ -327,7 +352,7 @@ public class AdvisorOpeningParityTests
     /// advisor closes as the turn advances, at any step, and the new turn's card is left to its own rule (a new event opens),
     /// not hidden or shown by what the advisor found on the old card (review of #1209, follow-up 1).</summary>
     [Test]
-    public void EndTurnClosesTheGuide([Values(0, 1, 2, AdvisorPresenter.EventStep)] int step, [Values(false, true)] bool cardHidden)
+    public void EndTurnClosesTheChain([Values(0, 1, 2, AdvisorPresenter.EventStep)] int step, [Values(false, true)] bool cardHidden)
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true);
@@ -584,7 +609,7 @@ public class AdvisorOpeningParityTests
     /// <summary>A closed or disposed advisor takes no notice of the game changing (it listens to SimBridge.Changed only while it
     /// lives, and acts on it only while it is open).</summary>
     [Test]
-    public void AClosedGuideIgnoresTheGameChanging()
+    public void AClosedChainIgnoresTheGameChanging()
     {
         var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
         Begin(game, Inputs, 0, startScreen: true);
@@ -726,9 +751,9 @@ public class AdvisorOpeningParityTests
     /// <see cref="GuideTextOnScreenPx"/> on screen and its smallest line, the step count, at least the owner's text floor
     /// (HudPresenter.TextFloorPx). Before the change they were 12.7 and 10.7 at 1280x720. On screen px are the resolved size
     /// times the panel's scale (EditMode draws at one pixel per CSS px). Every size and step is logged, the phone (390x844)
-    /// too, which is held to the floor alone (about 0.49 scale; <see cref="TheGuideKeepsTheTextFloorOnEveryWindow"/>).</summary>
+    /// too, which is held to the floor alone (about 0.49 scale; <see cref="TheChainKeepsTheTextFloorOnEveryWindow"/>).</summary>
     [UnityTest]
-    public IEnumerator TheGuideReadsAtTheItchEmbedSize()
+    public IEnumerator TheChainReadsAtTheItchEmbedSize()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -739,7 +764,7 @@ public class AdvisorOpeningParityTests
                     float scale = root.panel.scaledPixelsPerPoint;
                     float OnScreen(string name) => root.Q(name).resolvedStyle.fontSize * scale;
                     var panel = root.Q("advisor-popup").worldBound;
-                    Debug.Log($"GUIDE SIZE {at}: scale {scale:0.###}, text {OnScreen("advisor-text"):0.#} px, title {OnScreen("advisor-name"):0.#} px, " +
+                    Debug.Log($"ADVISOR SIZE {at}: scale {scale:0.###}, text {OnScreen("advisor-text"):0.#} px, title {OnScreen("advisor-name"):0.#} px, " +
                               $"count {OnScreen("advisor-count"):0.#} px, buttons {OnScreen("advisor-got-it"):0.#} px on screen; panel {panel.width * scale:0}x{panel.height * scale:0} px");
                     if (w == 390) return;
                     if (OnScreen("advisor-text") < GuideTextOnScreenPx - 0.01f)
@@ -758,7 +783,7 @@ public class AdvisorOpeningParityTests
     /// keeps them over it (1920x1080, 1280x720) they are the stylesheet's sizes from #1283, unchanged. Before the change
     /// the phone's text was about 10.8 px on screen.</summary>
     [UnityTest]
-    public IEnumerator TheGuideKeepsTheTextFloorOnEveryWindow()
+    public IEnumerator TheChainKeepsTheTextFloorOnEveryWindow()
     {
         var problems = new List<string>();
         // Statecraft.uss: .advisor-count, .advisor-name, .advisor-text, Button (Skip and Next).
@@ -781,7 +806,7 @@ public class AdvisorOpeningParityTests
                             problems.Add($"{at}: {name} is {size} px, not the stylesheet's {px} px (the desktop sizes stay)");
                     }
                     // Where the floor lifts both (the phone), the name (24 px) and the text (22 px) meet at the floor; it is
-                    // never smaller. TheGuideReadsAtTheItchEmbedSize holds it larger where neither is floored.
+                    // never smaller. TheChainReadsAtTheItchEmbedSize holds it larger where neither is floored.
                     if (root.Q("advisor-name").resolvedStyle.fontSize < root.Q("advisor-text").resolvedStyle.fontSize)
                         problems.Add($"{at}: the title is smaller than the text");
                 });
