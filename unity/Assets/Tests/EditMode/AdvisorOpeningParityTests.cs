@@ -312,7 +312,9 @@ public class AdvisorOpeningParityTests
         yield return null; rig.Ui.Q<Button>("advisor-got-it").Focus();
         Assert.IsTrue(rig.Advisor.Escape(), "Escape skips it");
         Assert.IsFalse(rig.Advisor.InChain);
-        Assert.IsFalse(rig.Advisor.Escape(), "and does nothing when it is closed");
+        // The guide's "Escape does nothing when closed" cannot be asked again here: Time.frameCount does not move in an
+        // edit-mode test, so Escape keeps answering "used this frame" (AdvisorPopupTests.OneEscapeInThePopupLeavesTheScreenUnderItOpen).
+        Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.OpenClass), "and it stays closed");
 
         rig.Card.Collapse();                                           // the player hid the card before opening the advisor
         rig.Advisor.OpenChain();
@@ -603,6 +605,7 @@ public class AdvisorOpeningParityTests
         lone.Dispose();
         rig.Advisor.OpenChain();                                               // another advisor open on the same HUD (the root's class)
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) rig.Advisor.NextStep();
+        rig.Card.Reopen();                                                     // the chain's event step waits for the card
         UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
         Assert.AreEqual(-1, lone.ChainStep, "the disposed advisor was not called");
