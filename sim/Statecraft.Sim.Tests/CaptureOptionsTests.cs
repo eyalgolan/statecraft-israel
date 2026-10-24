@@ -28,7 +28,7 @@ public class CaptureOptionsTests
         var options = SettlementControl.CaptureOptions(c, Awaiting(c, "town_a"), "town_a");
         Assert.Equal(new[] { SettlementControl.Raid, SettlementControl.Occupy, SettlementControl.Deport }, options.Select(o => o.Outcome).ToArray());
         Assert.NotEqual(SettlementControl.Deport, options[0].Outcome);
-        Assert.Equal(new[] { "Outcome", "Preview", "Refusal" },
+        Assert.Equal(new[] { "Outcome", "Preview", "Refusal", "Refused" },
             typeof(CaptureOption).GetProperties().Select(p => p.Name).OrderBy(x => x, StringComparer.Ordinal).ToArray());
     }
 

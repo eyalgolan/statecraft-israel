@@ -174,7 +174,7 @@ function noticeCredits(): Map<string, { who: string; collection: string; licence
   if (start < 0 || end < 0) throw new Error('site: NOTICE has no "Portraits:" paragraph');
   const para = text.slice(start, end);
   const out = new Map<string, { who: string; collection: string; licence: string; licenceUrl: string; adapted: string }>();
-  const blocks = [...para.matchAll(/(CC BY(?:-SA)? 4\.0) \((https:\/\/creativecommons\.org\/licenses\/[^)]+)\),([\s\S]*?)via Wikimedia(?:\s|\n)+Commons([\s\S]*?)(?=CC BY(?:-SA)? 4\.0 \(https|$)/g)];
+  const blocks = [...para.matchAll(/(CC BY(?:-SA)? 4\.0) \((https:\/\/creativecommons\.org\/licenses\/[^)]+)\),([\s\S]*?)via Wikimedia\s+Commons([\s\S]*?)(?=CC BY(?:-SA)? 4\.0 \(https|$)/g)];
   for (const [, licence, url, collection, body] of blocks) {
     for (const m of body.matchAll(/^- ([a-z_]+)\.jpg: (.+?), (CC BY(?:-SA)? 4\.0), cropped\.$/gm)) {
       if (m[3] !== licence) throw new Error(`site: NOTICE lists ${m[1]}.jpg as ${m[3]} under ${licence}`);

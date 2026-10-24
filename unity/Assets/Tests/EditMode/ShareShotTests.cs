@@ -22,16 +22,59 @@ public class ShareShotTests
     static UiText En => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
 
+    /// <summary>The post carries the itch page and the GitHub repository (owner, 24 Oct 2026: "when a user shares a post it
+    /// will include a link to the game on itch and to the github repo").</summary>
     [Test]
-    public void ThePostNamesTheGameTheDateTheTurnAndTheItchPage()
+    public void ThePostNamesTheGameTheDateTheTurnTheItchPageAndTheRepository()
     {
+        Assert.AreEqual("https://github.com/eyalgolan/statecraft-israel", ShareShot.Repo);
         Assert.AreEqual("I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. 15 May 1948, turn 0. "
-            + "Play: https://eyalgolan.itch.io/statecraft-israel", ShareShot.Text(En, "15 May 1948", 0));
+            + "Play: https://eyalgolan.itch.io/statecraft-israel · Code: https://github.com/eyalgolan/statecraft-israel",
+            ShareShot.Text(En, "15 May 1948", 0));
         var he = ShareShot.Text(He, "15 במאי 1948", 3);
         StringAssert.Contains("15 במאי 1948", he);
         StringAssert.Contains("3", he);
-        StringAssert.EndsWith("https://eyalgolan.itch.io/statecraft-israel", he);
+        StringAssert.Contains("https://eyalgolan.itch.io/statecraft-israel", he);
+        StringAssert.Contains("https://github.com/eyalgolan/statecraft-israel", he);
         Assert.IsTrue(UiDirection.HasRightToLeft(he), "the Hebrew post is Hebrew");
+    }
+
+    /// <summary>X's limit is 280 by its own count (twitter-text v3): any URL is 23, a character in its light ranges (Latin,
+    /// Hebrew, most punctuation) is 1 and any other (the bidi marks Format puts round the URLs) is 2. The longest real post,
+    /// the last turn's longest date (rules.yaml ends the game on 15 January 1952), fits in both languages.</summary>
+    [Test]
+    public void TheLongestPostFitsInAPostOnX([Values(false, true)] bool hebrew)
+    {
+        var text = hebrew ? He : En;
+        var date = hebrew ? "30 בספטמבר 1951" : "30 September 1951";
+        var post = ShareShot.Text(text, date, 999);
+        StringAssert.Contains(date, post);
+        Assert.LessOrEqual(XLength(post), 280, post);
+    }
+
+    static int XLength(string post)
+    {
+        var parts = post.Split(new[] { ShareShot.Itch, ShareShot.Repo }, StringSplitOptions.None);
+        int n = 23 * (parts.Length - 1);
+        foreach (var c in string.Concat(parts)) n += c <= 4351 || (c >= 8192 && c <= 8205) || (c >= 8208 && c <= 8223) || (c >= 8242 && c <= 8247) ? 1 : 2;
+        return n;
+    }
+
+    /// <summary>Every share path carries both links where the site takes a text: the share sheet and Copy get the post (the
+    /// panel tests), X, WhatsApp and Telegram its text. Facebook and LinkedIn take only a URL, the itch page.</summary>
+    [Test]
+    public void TheTextLinksCarryTheItchPageAndTheRepository([Values(false, true)] bool hebrew)
+    {
+        var post = ShareShot.Text(hebrew ? He : En, "15 May 1948", 0);
+        foreach (var site in new[] { "x", "whatsapp", "telegram" })
+        {
+            var link = Uri.UnescapeDataString(ShareShot.IntentUrl(site, post));
+            StringAssert.Contains(ShareShot.Itch, link, site);
+            StringAssert.Contains(ShareShot.Repo, link, site);
+        }
+        var itch = Uri.EscapeDataString(ShareShot.Itch);
+        Assert.AreEqual("https://www.facebook.com/sharer/sharer.php?u=" + itch, ShareShot.IntentUrl("facebook", post));
+        Assert.AreEqual("https://www.linkedin.com/sharing/share-offsite/?url=" + itch, ShareShot.IntentUrl("linkedin", post));
     }
 
     [Test]
@@ -123,6 +166,7 @@ public class ShareShotTests
             Assert.AreEqual(canShareFiles ? text["share.native"] : text["share.download"], ui.Q<Button>("share-go").text);
             SettingsScreenTests.PressWithPointer(ui.Q<Button>("share-go"));
             CollectionAssert.AreEqual(new[] { post + " | " + ShareShot.Itch }, shared, "the press asks the browser once");
+            StringAssert.Contains(ShareShot.Repo, post, "the share sheet's text carries the repository too");
             Assert.AreEqual(canShareFiles ? DisplayStyle.None : DisplayStyle.Flex, fallback.style.display.value,
                 "the attach note only where files cannot be shared");
             var links = ShareShot.Sites.Where(s => s != "instagram").ToArray();
@@ -308,6 +352,8 @@ public class ShareShotTests
             Assert.AreEqual(DisplayStyle.None, said.style.display.value, "nothing to say before the press");
             SettingsScreenTests.PressWithPointer(copy);
             CollectionAssert.AreEqual(new[] { ui.Q<Label>("share-post").text }, copies, "one copy, of the post, on the press");
+            StringAssert.Contains(ShareShot.Itch, copies[0], "the copied text links the itch page");
+            StringAssert.Contains(ShareShot.Repo, copies[0], "and the repository");
             // The batch editor idles between frames unless asked for one, and the panel's scheduler runs on those frames.
             var until = Time.realtimeSinceStartup + 0.6f;
             while (Time.realtimeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }

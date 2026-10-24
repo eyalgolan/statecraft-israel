@@ -71,28 +71,8 @@ how_to_play.why: "After a turn, open Why? to see each change and its cause."
 objectives.title: "Objectives"
 objectives.done: "Completed on {0}; historically {1}"
 objectives.open: "Not completed yet; historically {0}"
-# How to play's button that opens the first-turn guide again (#42).
+# How to play's button that opens the advisor opening chain again (#1484).
 how_to_play.guide: "Show the opening advice again"
-# The first-turn guide (#42; Q-ONB-1, owner, 17 October 2026, #784): six steps, each pointing at its part of the HUD
-# (FirstTurnGuidePresenter). Like the How to play lines, they describe the sim without balance values. {0} the step, {1} the
-# number of steps.
-guide.step: "Step {0} of {1}"
-guide.next: "Next"
-guide.done: "Done"
-guide.skip: "Skip the guide"
-guide.attention.title: "Attention"
-guide.attention.text: "Most orders cost Attention. This shows how much you have left this turn. It refills at the start of each turn, and Attention you leave unspent does not carry over."
-guide.city.title: "A city's housing and jobs"
-guide.city.text: "Select a city to see its housing and jobs. The + and − buttons set how many people, including craftsmen, work. The order takes effect when you end the turn."
-guide.training.title: "Training"
-guide.training.text: "At a military camp, train civilians without work as recruits. At a Hakhshara (pioneer training camp), train them as halutzim (pioneers who build settlements). Buttons show cost and training time."
-# The move step (#1141, owner, 21 October 2026): the unit card's Move button (unit.order.move, unit.move_pick).
-guide.move.title: "Moving a unit"
-guide.move.text: "Select one of your units, press Move, and choose a lit hex. The unit moves when you end the turn."
-guide.event.title: "An event card"
-guide.event.text: "An event card asks for a decision. Answering it costs Attention, and your choice takes effect when you end the turn. A card you leave unanswered goes to the responsible minister."
-guide.objectives.title: "Objectives"
-guide.objectives.text: "Objectives lists the game's goals, with the date you completed each beside the historical one. Completing one also brings its card."
 # The advisors (spec 3.1 and 7.1; AdvisorPresenter). Their names as the popup shows them: Golda Meyerson's first appearance
 # in a profile adds "(later Meir)" (owner, 23 October 2026). "Advisor" is a game role, not an office they held.
 advisor.ben_gurion.name: "David Ben-Gurion"
@@ -140,7 +120,7 @@ feedback.itch: "No GitHub account? Comment on itch"
 # in-game date ({0}), the turn ({1}) and the itch URL ({2}).
 share.open: "Share"
 share.title: "Share a picture of the game"
-share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. {0}, turn {1}. Play: {2}"
+share.post: "I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. {0}, turn {1}. Play: {2} · Code: {3}"
 share.native: "Share"
 share.download: "Download the picture"
 share.attach: "These sites can't take a picture through a link: attach the downloaded picture to your post."
@@ -208,6 +188,30 @@ capture.delta_count: "{0:+#,##0;-#,##0}"
 capture.none: "None of the choices can be made this turn. The units stay, and the decision waits."
 # The hidden dialog's button. {0} the place's name.
 capture.reopen: "Decision waiting: {0}"
+# The end of an occupation in the same dialog (R-CTRL-014 to R-CTRL-016; #802). SENSITIVE, as above. Annex then Withdraw, no
+# puppet regime (Q-PUP-1 (c)). Annex has two descriptions, for a place whose residents fled at capture ("territory only, no
+# gain") and one where they stayed. The preview under each is the sim's resources only, so its heading says so; the people,
+# homes and jobs Annex adds are in the description, with no number. {0} the place's name.
+capture.end.intro: "The occupation period in {0} is over. Choose whether to annex the place or withdraw. Your choice takes effect at End turn; until you choose, the unit stays and the occupation upkeep continues."
+capture.end.option.annex: "Annex"
+capture.end.option.withdraw: "Withdraw"
+capture.end.about.annex_fled: "The place stays under Israeli control. Its residents fled when it was captured, so no people, homes or jobs are added. The occupation upkeep ends, and no unit has to stay."
+capture.end.about.annex_stayed: "The place stays under Israeli control, and its residents join the population with their homes and jobs. The occupation upkeep ends, and no unit has to stay."
+capture.end.about.withdraw: "The units leave, and the place is under enemy control again. The occupation upkeep ends."
+capture.end.changes: "Resource changes at once:"
+capture.end.changes_none: "Resource changes at once: none"
+capture.end.none: "Neither choice can be made this turn. The unit stays, the occupation upkeep continues, and the decision waits."
+# Why an option cannot be chosen, under its disabled button (owner, 24 October 2026 on #799, "button explains"), one line per
+# refusal id the sim gives (CaptureRefusal; Q-TECH-5: the dialog never shows the sim's English). SENSITIVE, as above. An
+# option out of play (not_in_play) is not shown, so it has no line. {0} the place's name; attention: {1} what the choice
+# needs, {2} what is left.
+capture.refusal.attention: "Not enough Attention this turn: this needs {1:0.0}, and {2:0.0} is left."
+capture.refusal.needs_unit: "An Israeli military unit must be in {0} for this."
+capture.refusal.no_free_hex: "A unit in {0} has no free hex next to it to withdraw to."
+capture.refusal.no_one_to_deport: "Its residents fled when it was captured, so there is no one to deport."
+capture.refusal.already_city: "{0} is already a city."
+capture.refusal.not_awaiting: "{0} is not waiting for this decision."
+capture.refusal.unknown_outcome: "This choice is not known."
 start.listen: "Play the recording"
 start.stop: "Stop the recording"
 start.loading: "Loading the recording…"
@@ -540,6 +544,13 @@ city.groups: "{0} groups"
 city.turns_one: "1 turn"
 city.turns: "{0} turns"
 city.cancel_ordered: "Cancel ordered"
+# Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, no Money, no training; {0}: the qualified groups kept.
+city.return_craftsmen: "Return craftsmen to civilian life: 1 group"
+city.reassign_craftsmen: "Reassign craftsmen: 1 of {0}"
+city.reassign_halutz: "Reassign halutzim: 1 of {0}"
+city.reassign_veteran_halutz: "Reassign veteran pioneers: 1 of {0}"
+# A pioneer group's Return (R-QUAL-003); {0}: its name, site.group.
+pioneer.return: "Return {0} to civilian life"
 # City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
 # turns from content), the order, and a project under way or finished. Refusals the map actions share use their
 # info.map_action_reason.* strings; these are the city projects' own.
@@ -615,16 +626,14 @@ event.effect.job_slots: "job slots"
 event.effect.condition: "housing condition"
 
 # The opening chain (spec 9.2; AdvisorPresenter): game dialogue in each advisor's persona, labelled "Advisor", never a
-# quote. Each step carries the first-turn guide's facts (#42), without balance values. The owner reviews every line.
+# quote. Each step is the advisor's recorded line, without balance values. opening.attention and opening.event use the
+# copy-fix wording ("next month", "when the month ends") the owner approved in chat on 24 October 2026, 04:14 UTC:
+# "Approve all 8".
 advisor.opening.greeting.text: "The country has urgent needs and limited means. The decisions are theirs, and the advisers will explain what each choice changes."
-# C68: opening.attention.fix1; pending owner copy-fix approval.
-# Original non-fix1 recording: Attention is the capacity for decisions this month. It refills next turn, and any amount left now does not carry over.
 advisor.opening.attention.text: "Attention is the capacity for decisions this month. It refills next month, and any amount left now does not carry over."
 advisor.opening.city.text: "A city shows its housing, housing condition, jobs, and people. Employment brings in Money, while overcrowding can weaken Social cohesion."
 advisor.opening.training.text: "Training uses civilians without work, Money, and time. Halutz and craftsman training supports development; military training also requires Arms."
 advisor.opening.move.text: "A unit moves at once, and terrain sets the cost of each hex. A farther destination creates a route that continues on later turns."
-# C68: opening.event.fix1; pending owner copy-fix approval.
-# Original non-fix1 recording: An event card presents a decision and shows its effects. A card left unanswered at End turn goes to the responsible minister.
 advisor.opening.event.text: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.text: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
 advisor.next: "Next"
@@ -632,23 +641,30 @@ advisor.done: "Done"
 # {0} the step, {1} the steps in the chain now.
 advisor.step: "Step {0} of {1}"
 
-# Advisor help levels (spec6). Hebrew is an agent draft for the native reviewer (#564).
+# Advisor help levels (spec6). English and Hebrew approved by the owner, 24 October 2026 ("approved both").
 settings.advisors: "Advisors"
 settings.advisors.new: "New to strategy games"
 settings.advisors.experienced: "Experienced"
 settings.advisors.warnings: "Warnings only"
 settings.advisors.off: "Off"
 
-# S4 Task16 warnings (spec6). Agent-drafted Hebrew; native review pending (#564).
-advisor.ben_gurion.city_at_risk.text: "The enemy is likely to attack one of our cities this turn. If an enemy unit holds any of our cities at the end of a turn, the war is lost."
-advisor.ben_gurion.exhausted.text: "Money and Food have both run out. If they stay exhausted for a few turns in a row, the economy collapses and the game is lost."
-advisor.meyerson.debt_ceiling.text: "Our debt is close to the ceiling. At the ceiling, Money counts as exhausted, and if Food runs out as well the economy starts to break."
+# S4 Task16 warnings (spec6). Their Hebrew is approved by the owner (24 October 2026); see advisor-messages.yaml. "three": rules.yaml defeat_turns (R-END-002, a
+# design value). Change that line if the rule changes. The clip lines (city_at_risk, exhausted, debt_ceiling, defeat_war,
+# arms_out) are the recorded words, word for word (advisor-messages.yaml); change them only with a new recording. The other
+# three (food_short, defeat_economy, budget_unsubmitted) and end.outcome.defeat_war are approved by the owner, 24 October
+# 2026 ("approved both").
+advisor.dayan.city_at_risk.text: "An enemy attack is aimed at one of the country's cities. Review its defenders and the combat preview before the enemy phase resolves."
+advisor.meyerson.exhausted.text: "Money and Food are exhausted together. Restore either one before the defeat counter reaches its limit."
+advisor.meyerson.debt_ceiling.text: "Debt has reached the ceiling. If Food is also empty at turn end, the defeat counter begins or continues."
 advisor.meyerson.food_short.text: "This turn the country needed more Food than it had. A Food shortage also lowers Social cohesion."
-advisor.ben_gurion.defeat_war.text: "An enemy unit held one of our cities at the end of the turn, and that ends the game."
-advisor.ben_gurion.defeat_economy.text: "Money and Food stayed exhausted for too many turns in a row, and that ends the game."
+advisor.dayan.defeat_war.text: "An enemy military unit holds one of the country's cities at turn end. The campaign has ended in defeat."
+advisor.ben_gurion.defeat_economy.text: "Three turns in a row ended with our debt at or above the ceiling and the Food stock empty, and that ends the game."
 end.outcome.defeat_war: "The enemy holds a city."
+advisor.meyerson.budget_unsubmitted.text: "The budget has changes that are not submitted. They will not apply when the turn ends until you submit the budget."
+advisor.dayan.arms_out.text: "Arms equip military training and are spent in attacks. Buying Arms with Money before the stock runs short keeps those choices available."
 
-# Spec3.3 verified Q1, attributed to the Declaration, never a person. Hebrew source label is pending native review.
+# Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
+# 24 October 2026 ("approved both").
 advisor.quote.q1.text: "“THE STATE OF ISRAEL will be open for Jewish immigration and for the Ingathering of the Exiles;”"
 advisor.quote.q1.source: "Declaration of the Establishment of the State of Israel, 14 May 1948"
 
@@ -680,3 +696,4 @@ advisor.opening.move.cue.1: "A unit moves at once, and terrain sets the cost of 
 advisor.opening.move.cue.2: "A farther destination creates a route that continues on later turns."
 advisor.opening.event.cue.1: "An event card presents a decision and shows its effects. A card left unanswered when the month ends goes to the responsible minister."
 advisor.opening.objectives.cue.1: "Objectives define the campaign's goals and compare each completion date with its historical date. Completion awards points and opens the objective's event card."
+

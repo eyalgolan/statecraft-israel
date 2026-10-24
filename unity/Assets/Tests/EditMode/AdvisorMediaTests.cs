@@ -163,11 +163,27 @@ public class AdvisorMediaTests
         rig.Advisor.Media = new AdvisorMedia(Text, pic, null, Immediate, output);
         rig.Advisor.ForceInline = false;
         rig.Advisor.NewGame();
+        // ScreenNav's Cancel trickles down from the root and closes the open screen unless a layer takes it first: GameRoot
+        // gives the overlay that turn through TakesEscape (GameRoot.cs, nav!.TakesEscape), wired here the same way.
+        rig.Nav.TakesEscape = () => rig.Advisor.CloseOverlay() || rig.Advisor.OverlayClosedThisFrame || rig.Advisor.Escape();
+        rig.Ui.Press("nav-budget");                                       // a screen under the overlay
+        Assert.AreEqual("budget", rig.Nav.Current, "precondition");
+        var close = rig.Ui.Q<Button>("advisor-overlay-close");
+
         rig.Advisor.Watch(Row, "advisor.x");
         Assert.IsTrue(rig.HudRoot.ClassListContains("advisor-overlay-open"));
-        Assert.IsTrue(rig.Advisor.CloseOverlay());
-        Assert.IsTrue(pic.Stopped && output.Stopped);
+        rig.Ui.Press("advisor-overlay-close");
+        Assert.IsTrue(pic.Stopped && output.Stopped, "the X stops picture and narration");
         Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        Assert.AreEqual("budget", rig.Nav.Current, "the X closes only the overlay");
+
+        pic.Stopped = output.Stopped = false;
+        rig.Advisor.Watch(Row, "advisor.x");
+        Assert.IsTrue(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        using (var esc = NavigationCancelEvent.GetPooled()) { esc.target = close; close.SendEvent(esc); }
+        Assert.IsTrue(pic.Stopped && output.Stopped, "Escape stops picture and narration");
+        Assert.IsFalse(rig.HudRoot.ClassListContains("advisor-overlay-open"));
+        Assert.AreEqual("budget", rig.Nav.Current, "Escape closes only the overlay, not the screen under it");
         Assert.IsFalse(rig.Advisor.CloseOverlay(), "nothing to close");
     }
     [Test]
@@ -428,6 +444,8 @@ public class AdvisorMediaTests
             advisor.ForceInline = false; advisor.Watch(Picture("x.mp4", "advisor.media_label"), "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f; advisor.Media.Tick();
             for (int i = 0; i < 4; i++) yield return null;
             Small("overlay", "advisor-overlay-label", "advisor-overlay-caption", "advisor-overlay-media");
+            Assert.IsFalse(AdvisorTargets.Shown(root.Q("advisor-popup")), "the popup hides under its overlay");
+            Assert.Less(root.Q("advisor-overlay-close").worldBound.width, 100f, "the overlay's X is a button, not a bar");
         }
         finally
         {

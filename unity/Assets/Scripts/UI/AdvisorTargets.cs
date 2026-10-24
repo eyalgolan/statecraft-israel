@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The guide's real HUD targets and selection rules, shared by advisor Show me (spec7.3).</summary>
+    /// <summary>The real HUD targets and selection rules of Show me and the opening chain (spec 7.3; the first-turn guide's, #42).</summary>
     public static class AdvisorTargets
     {
         public const float MoveStepDistanceM = 40000f;
@@ -65,7 +65,7 @@ namespace Statecraft.Game.UI
             return true;
         }
 
-        /// <summary>The city the guide shows in the info panel: the first city (cities.yaml order) with a training facility at
+        /// <summary>The city the opening chain shows in the info panel: the first city (cities.yaml order) with a training facility at
         /// the start (Training.HasFacility, the sim's helper), else the first city; its settlement hex, or null with none.</summary>
         public static (int q, int r)? CityHex(Content c, GameState s)
         {
@@ -77,7 +77,7 @@ namespace Statecraft.Game.UI
             return null;
         }
 
-        /// <summary>The unit the guide shows on its move step: the first of <paramref name="units"/> (the drawn tokens' rows, in
+        /// <summary>The unit the opening chain shows on its move step: the first of <paramref name="units"/> (the drawn tokens' rows, in
         /// units.yaml order) whose sim unit has a hex in Movement.Reachable now, so its card shows Move
         /// (InfoPanelPresenter.MoveTargets' rule); its id, or null with none (the legacy loop, or no unit able to move).</summary>
         public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitEntry> units) =>

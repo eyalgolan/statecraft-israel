@@ -4,6 +4,11 @@ Researched 22 October 2026. Every URL below was opened on that date. Research no
 research part only, opened by the owner's ruling of 22 October 2026 on #49). Research only: nothing here is drafted
 for the game, and no file in `content/` is changed. The era rule-file values and `currency.yaml` (#66) stay paused.
 
+Follow-up of 24 October 2026, after the owner's comment of 24 October on #91: the [GAP] rows for the Jewish Agency and
+Keren Hayesod budgets (1924/25 to 1931/32 and 1945/46 to 1947/48) and for a yearly JNF series were searched again.
+Every new passage is marked "(24 Oct)". Every source marked "(24 Oct)" in the Sources table was opened by an agent
+(Claude Code) on 24 October 2026, and none has been checked by a person yet.
+
 ## Purpose
 
 Fix sourced values for §5.3 and §9 of [the Yishuv design](../../docs/superpowers/specs/2026-10-10-era-yishuv-design.md):
@@ -21,7 +26,7 @@ October 2026 the issue had only the owner's two status comments. This note is th
   scan (all listed under Sources). Tables were read from the page image, and their sums were redone.
 - [FTS] read only as a snippet in the Internet Archive full-text search, inside a lending-only scan that could not be
   opened. The words are the search index's OCR, and the page was not seen. Usable as a lead, not as a value.
-- [S] secondary only (Wikipedia). The exact page and revision are named.
+- [S] secondary only: Wikipedia, or contemporaneous press (the JTA archive, which reports documents it may not quote exactly) and advocacy documents. The exact page, revision or article is named.
 - [C] two sources disagree; every value is given, and the preferred one is named.
 - [GAP] not found in any source read. No value is filled in by inference.
 - **Derived** marks a number this note computed. The arithmetic is shown next to it.
@@ -32,6 +37,9 @@ October 2026 the issue had only the owner's two status comments. This note is th
 - Raised decimal points (66·7) are written as full stops, and thousands separators that the scan prints as full
   stops (£7.356.000) as commas.
 - £E is the Egyptian pound, £P (also printed LP or £) the Palestine pound. No amount below is converted between them.
+- (24 Oct) The Zionist Congress protocols print "Pfund" or "£" without saying which pound. They are written "£"
+  here, as printed. German quotes are copied from the page, with thousands separators printed as full stops written as
+  commas. Page numbers for the Congress volumes are the printed ones (the PDF position is in the Sources table).
 
 ## Sources
 
@@ -40,6 +48,17 @@ October 2026 the issue had only the owner's two status comments. This note is th
 | Survey I | *A Survey of Palestine*, prepared December 1945 to January 1946 for the Anglo-American Committee of Inquiry, Vol. I, chapter IX, paragraphs 168-173 and Table 4 (pages 376-377, PDF p. 381-382) | https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf |
 | Survey II | the same, Vol. II: chapter XIV paragraph 2 (page 535, PDF p. 9); chapter XXII paragraph 88 (page 912, PDF p. 388) and the "Summary of income, expenditure and investments of the Jewish national funds and institutions in Palestine during the period, October 1917 - September 1944" (page 914, PDF p. 390; dash adapted) | https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20II.pdf |
 | AR 1927 to AR 1938 | *Report by His Majesty's Government ... to the Council of the League of Nations on the Administration of Palestine and Trans-Jordan* for the year named (Colonial Office; the 1938 report is Colonial No. 166/1939). Pages as cited below | https://archive.org/details/report-admin-palestine-1927 (and `-1928`, `-1929`, `-1930`, `-1933`, `-1934`, `-1938`) |
+| AR 1926, AR 1931, AR 1932 (24 Oct) | the same, for the years 1926, 1931 and 1932 (Colonial No. 26/1927, 75/1932 and 82/1933). Read on the page image: AR 1926 p. 81 (PDF p. 86), AR 1931 pp. 18-19 (PDF p. 33-34), AR 1932 pp. 21-22 (PDF p. 38-39). AR 1925 (Colonial No. 20/1926) was also searched and has no Zionist budget or spending total | https://archive.org/details/report-admin-palestine-1926 (and `-1931`, `-1932`, `-1925`) |
+| Cong XIII (24 Oct) | *Stenographisches Protokoll der Verhandlungen des XIII. Zionistenkongresses*, Karlsbad 1923, pp. 444-445 (PDF p. 453-454), the treasurer's remarks on the Palestine budget | https://archive.org/details/zionistencongressxiiikarlsbad1923.ocr |
+| Cong XIV (24 Oct) | the same, XIV Congress, Vienna 1925: p. 295 (PDF p. 295, Ussishkin for the Keren Kayemeth), pp. 681 and 683 (PDF p. 681, 683, the budget resolutions); p. 633 is the Budget Commission's report | https://archive.org/details/zionistencongressxivwien1925.ocr |
+| Cong XV (24 Oct) | the same, XV Congress, Basle 1927: pp. 62-63 (PDF p. 93-94, Weizmann on the finances), p. 270 (PDF p. 301, Ussishkin), p. 472 (PDF p. 503, world organisation budget), pp. 507-508 (PDF p. 538-539, Palestine budget 5688) | https://archive.org/details/zionistencongressxvbasel1927.ocr. |
+| Cong XVI (24 Oct) | the same, XVI Congress, Zürich 1929: p. 274 (PDF p. 393, Ussishkin). And the English *Resolutions of the 16th Zionist Congress*, Zürich, 28 July to 11 August 1929, pp. 27-29 (PDF p. 29-31, Palestine budget 5690) | https://archive.org/details/zionistencongressxvizurich1929.ocr ; https://www.bjpa.org/content/upload/bjpa/reso/RESOLUTIONS%20OF%20THE%2016TH%20ZIONIST%20CONGRESS%20ZURICH%20JULY%2028TH%20TO%20AUGUST%2011TH,%201929.pdf |
+| Cong XVII (24 Oct) | the same, XVII Congress, Basle 1931 (Council of the Jewish Agency sitting): pp. 548-549 (PDF p. 545-546, Senator's finance report), pp. 578-582 (PDF p. 575-579, Budget and Finance Commission) | https://archive.org/details/zionistencongressxviibasel1931.ocr |
+| Cong XVIII (24 Oct) | the English *Resolutions of the 18th Zionist Congress*, Prague, 21 August to 3 September 1933, p. 27 (PDF p. 29, proposed budget of the Jewish Agency for 5694) | https://www.bjpa.org/content/upload/bjpa/reso/RESOLUTIONS%20OF%20THE%2018TH%20ZIONIST%20CONGRESS%20PRAGUE%20AUGUST%2021ST%20TO%20SEPT%203RD,%201933.pdf |
+| Cong XIX (24 Oct) | the same, XIX Congress, Lucerne 1935: p. 190 (PDF p. 187, Ussishkin) | https://archive.org/details/zionistencongressxixluzern1935.ocr. |
+| JTA (24 Oct) | Jewish Telegraphic Agency archive, six articles: 13 September 1927, 9 June 1929, 4 September 1930, 21 August 1933, 24 December 1946, 28 August 1947 (slugs in 1e and 1f; also opened, no figure: 30 September 1930, `keren-hayesods-budget-more-socialistic-than-those-of-labor-governments-palestine-labor-congress-to`). The dates used are the bulletin dates; the events are usually a day or more earlier. Contemporaneous press, not the documents it reports | https://www.jta.org/archive/ + the slug named where used |
+| UNSCOP (24 Oct) | United Nations Special Committee on Palestine, report to the General Assembly, Vol. III, Annex A, verbatim record of the 17th meeting, Jerusalem, 6 July 1947 (Mr. Eliezer Kaplan for the Jewish Agency, summing up the economic evidence after Mr. F. Bernstein's testimony). The HTML has no page numbers | https://www.un.org/unispal/document/auto-insert-185027/ |
+| Black Paper (24 Oct) | *The Black Paper on the Jewish Agency and Zionist Terrorism*, memorandum of the Arab Higher Committee Delegation, New York, 12 March 1948, PDF p. 6. An advocacy document | https://www.bjpa.org/content/upload/bjpa/the_/THE%20BLACK%20PAPER%20ON%20THE%20JEWISH%20AGENCY%20AND%20ZIONIST%20TERRORISM%2024TH%20MARCH,%201948.pdf |
 | Kaplan 1946 | Eliezer Kaplan (then treasurer of the Jewish Agency), "Private and Public Investment in the Jewish National Home", in J. B. Hobman (ed.), *Palestine's Economic Future* (London, 1946), pages 112-114 (PDF p. 111-113) | https://archive.org/details/in.ernet.dli.2015.190303 |
 | Berlin | Howard M. Berlin, *The Palestine Currency Board: Its History and Currency* (EconSciences Books). The running head reads "Berlin (2022)"; the Internet Archive record is dated 5 December 2025. Pages 5-7, 11, 28, 37-38, 62, 67 (PDF p. 17-19, 23, 40, 49-50, 74, 79) | https://archive.org/details/httpseconsciences.come-978-625-7501-25-5 |
 | BoI APB | Bank of Israel, "Anglo Palestine Bank Series" (archive copy of 10 April 2026; the live page returned a bot check) | https://web.archive.org/web/20260410160014/https://boi.org.il/en/economic-roles/banknotes-and-coins/anglo-palestine-bank-series/ |
@@ -78,9 +97,15 @@ Collected" for selected years. These are three different measures; they are not 
 | 5694 (Oct 1933 - Sep 1934) | Keren Hayesod spending | £P 166,600 [V] | AR 1934 p. 32 |
 | 1934 | Keren Hayesod collections | £P 242,805 [V] | AR 1934 p. 32 |
 | 1934 | receipts of the Zionist funds | £P 739,300 [V] (Keren Hayesod 255,800) | AR 1934 p. 33 |
+| 1926 (calendar year) | Zionist Organisation spending on economic and social services, six items | £E 300,500 [V] (derived, no total printed) (24 Oct) | AR 1926 p. 81 |
+| "5690" as printed (1 Oct 1930 - 30 Sep 1931) | Jewish Agency, Emergency Fund and Hebrew University spending | £P 797,000 [V] (of it Keren Hayesod through the Agency 318,000) (24 Oct) | AR 1931 p. 18-19 |
+| 5692 (1 Oct 1931 - 30 Sep 1932) | the same: spending, and revenue | spending "half a million pounds" [V]; revenue £P 498,700 [V] (of it Keren Hayesod 204,600) (24 Oct) | AR 1932 pp. 21-22 |
+| Apr 1929 - Mar 1931 (the note's reading; the article says "the previous two-year period") | Keren Hayesod income, two years | £ 647,177 [S] (as JTA reported the Keren Hayesod's report) (24 Oct) | JTA 21 Aug 1933 |
+| Apr 1931 - Mar 1932 | Keren Hayesod income | £ 259,825 [S] (as JTA reported) (24 Oct) | JTA 21 Aug 1933 |
+| Apr 1932 - Mar 1933 | Keren Hayesod income | £ 140,252 [S] (as JTA reported) (24 Oct) | JTA 21 Aug 1933 |
 | 5705 (1944/45) | Keren Hayesod income from contributions | £2,340,000, my reading (see 1c) | Kaplan p. 113-114 |
 | 1944-45 | Keren Hayesod annual expenditure | £P 3,874,000 [V] | Survey II p. 912 |
-| 1945/46, 1946/47, 1947/48 | any Jewish Agency or Keren Hayesod budget | [GAP] | |
+| 1945/46, 1946/47, 1947/48 | any Jewish Agency or Keren Hayesod budget in pounds | [GAP] (24 Oct) Searched again and not found; what was read, and the dollar and all-bodies figures that exist, are in 1f | |
 
 Table rows checked:
 
@@ -103,6 +128,38 @@ Table rows checked:
   expenditure of the Zionist institutions amounted in the year 5693 to £P.454,000": Keren Hayesod 168,000, Keren
   Kayemeth Leisrael 151,000, Hadassah 75,000, WIZO 20,000 (414,000), Hebrew University 35,000, Hebrew Technical
   Institute 5,000 (454,000). Both sums check.
+- (24 Oct) AR 1926 p. 81: "The Zionist Organisation expended the following sums in 1926 on economic and social
+  services", as education 71,500, industrial loans and grants 17,000, health 100,000, settlement of immigrants 80,000,
+  cultural work among immigrants 11,000, "Loans to farmers, purchase of agricultural machinery and agricultural research" 21,000. The six sum to
+  300,500 (derived). No total is printed, and the items differ from the report year October 1926 to September 1927 in
+  AR 1927, so the two are not added. The page also records £E 15,000 advanced to the township of Tel Aviv, which is
+  not spending in the list.
+- (24 Oct) AR 1931 pp. 18-19, paragraphs 11-12: "During the year 5690 (1st October, 1930-30th September, 1931) the
+  Jewish Agency, the Emergency Fund for Palestine, and the Hebrew University expended £P797,000 (dash adapted)".
+  Sources of income: Keren Hayesod through the Agency 318,000, JNF 151,000, Hadassah 94,000, WIZO 23,000, Palestine
+  Emergency Fund 166,000, Hebrew University 45,000; they sum to 797,000 (derived). The Keren Hayesod funds were
+  assigned to agricultural colonization 112,267, education 84,741, investments in land and buildings 38,509,
+  immigration and public works 25,209, national communal institutions 21,830, "Public Health and Sanitation" 5,828, urban
+  colonization 2,545, 'Religious and other "Mizrahi" Institutions' 1,792, administration and miscellaneous 25,323;
+  they sum to 318,044 (derived), which is the printed total. My reading: "5690" is the year 5691, because the same report calls 1931-1932 "the year 5691"
+  (paragraph 13), and AR 1932 calls 1931-1932 "the year 5692". The OCR text layer reads education as 64,741; the image
+  reads 84,741, which makes the total.
+- (24 Oct) AR 1932 pp. 21-22, paragraph 9: the Jewish Agency, the Emergency Fund and the Hebrew University "expended
+  the sum of half a million pounds" from 1 October 1931 to 30 September 1932. Revenue as printed: Keren Hayesod
+  204,600, Hadassah 95,500, JNF 97,700, WIZO 20,000 (417,800), Emergency Fund 38,900, Hebrew University 35,400, Hebrew
+  Technical College 6,600, total £P 498,700 (417,800 + 38,900 + 35,400 + 6,600 = 498,700, derived). The Keren
+  Hayesod's 204,600 was assigned to agricultural colonization 71,700, education 40,000, national and communal
+  institutions 14,700, investments in land and buildings 13,700, immigration and public works 10,700, public health
+  6,200, "Religious and Mizrahi Institutions" 3,900, "Other expenditure" 43,700 (sum 204,600, derived). The OCR text layer misreads three of these
+  figures (Emergency Fund 88,900, University 935,400, other 48,700); the image gives the values above.
+- (24 Oct) JTA 21 August 1933 (slug
+  `keren-hayesod-two-year-report-to-congress-finds-funds-basic-conception-retains-appeal`) reports the Keren Hayesod's
+  report to the XVIII Congress, for 1 April 1931 to 31 March 1933: "The income for the two years of the report
+  amounted to 400,077 pounds", against 647,177 pounds for "the previous two-year period" (which the note reads as April 1929 to March 1931; the article gives no dates), of which 259,825 in the first year
+  and 140,252 in the second (259,825 + 140,252 = 400,077, derived). The same article gives 4,821,510 pounds raised
+  worldwide in twelve years, 2,409,392 of it in the United States. The report itself was not seen. These years overlap
+  AR 1933's £P 172,236 "this year" and AR 1934's 242,805 only loosely (different year ends); no row above is a
+  duplicate of another.
 - AR 1934 pp. 32-33: "The collections of the Keren Hayesod, which is the principal financial instrument of the Jewish
   Agency, amounted to £P.242,805." Spending in 5694: ten items summing to 166,600. Receipts in 1934: Keren Hayesod
   255,800 ("£243,000 collections, on account of debts, £12,800"), JNF 207,500, Hadassah 70,000, WIZO 40,000, Central
@@ -135,11 +192,13 @@ My reading: the two funds are Keren Hayesod and the JNF; the table does not name
 | 1942/43 | 2,855,000 | 335.6 |
 | 1943/44 | 4,502,000 | 311.3 |
 
-The years 1924/25 to 1931/32 are not in the table: [GAP]. The per-head column is the total divided by the immigrants
-of the calendar year printed beside it (for example 492,000 / 7,844 = 62.7, and 1,706,000 / 4,547 = 375.2; derived
-checks). One row does not: for 1942/43 the page prints 18,507 immigrants (for 1943), which gives 154.3 (derived), but
-prints 335.6, which is 2,855,000 / 8,507 (derived). My reading: one of the two figures in that row is a misprint; the
-page does not say which.
+The years 1924/25 to 1931/32 are not in the table: [GAP]. (24 Oct) Searched again and not found in Kaplan's measure: his
+table is the only place that prints those years, and no other copy of it was found. Keren Hayesod's own income for
+1931/32 is in 1a (259,825), and the JNF's for 1924/25 in 2c; they are other measures. The per-head column is the total
+divided by the immigrants of the calendar year printed beside it (for example 492,000 / 7,844 = 62.7, and 1,706,000 /
+4,547 = 375.2; derived checks). One row does not: for 1942/43 the page prints 18,507 immigrants (for 1943), which gives
+154.3 (derived), but prints 335.6, which is 2,855,000 / 8,507 (derived). My reading: one of the two figures in that row
+is a misprint; the page does not say which.
 
 ### 1c. Keren Hayesod and Jewish Agency totals
 
@@ -185,6 +244,150 @@ page does not say which.
 | Recruitment and rescue fund, to the end of 5705 | £1,174,000 [V] (622,000 recruitment, 552,000 rescue) | Kaplan p. 114 |
 
 These lines are not the Haganah budget; they are what passed through the Agency's books under those headings.
+
+### 1e. Congress budgets and the Palestine Executive's accounts, 1921 to 1934 (24 Oct)
+
+The Zionist Congresses voted a Palestine budget for the Zionist Organisation (from 1929 for the work the Jewish Agency
+shared), and in the debates the treasurers and the president gave what had actually come in. This is a third measure,
+beside the Mandate reports' spending and Kaplan's collections in 1a and 1b, so none of these rows is added to those.
+"Executive" below is the Zionist Executive in Palestine, whose income came mostly from Keren Hayesod.
+
+| Year | Measure | Amount | Source |
+|---|---|---|---|
+| 1919/20, 1920/21, 1921/22, 1922/23 | income of the Palestine Executive | £ 332,876; 330,000; 330,000 (on a budget of 656,000); 338,000 (on a budget of 430,000) [V] | Cong XIII p. 445 |
+| 1922 | budget voted 656,000; income 390,000; spending 470,000 | £ [V]; [C] with the row above (330,000 and 338,000 against 390,000) | Cong XV p. 62 |
+| 1923 | income 356,000; spending 304,000 | £ [V]; the Cong XIII treasurer expected "ungefähr 355,000" for the year then closing | Cong XV p. 62; Cong XIII p. 445 |
+| 1923/24 (5684) | Palestine budget after the additions, as the Executive's treasurer summed it (Kaplansky, same page, puts the commission's own budget of the day before at 381,000) | £ 397,000 [V]; [C] with 381,000 | Cong XIII pp. 444-445 |
+| end of 1922, 1923, 1924, 1925, 1926, 1927 | accumulated deficit of the Executive | £ 90,000; 37,000; 37,000; 15,000; 71,000; 151,000 [V] | Cong XV p. 62-63 |
+| 1927 | budget voted 500,000; income 500,000; spending 580,000 | £ [V] (the Congress met in September; the page does not say these are estimates) | Cong XV p. 62-63 |
+| 1925/26 (5686) | Palestine budget voted by the XIV Congress | £ 600,000 [V] (20 items; agriculture 270,000, education 84,000, health 40,000, immigration 39,000, labour 38,000, trade and industry 38,000) | Cong XIV p. 681 (report p. 633) |
+| 1925/26 (5686) | organisation budget of the London Executive, maximum | £ 40,000 [V] | Cong XIV p. 683 |
+| 1927/28 (5688) | world organisation budget | £ 38,000 [V] (income: shekel 10,000, gold shekel 13,000, special contributions 15,000; spending: regular 28,000, deficit of the London Executive 10,000) | Cong XV p. 472 |
+| 1927/28 (5688) | Palestine budget: Keren Hayesod and Hadassah / Keren Kayemeth Leisrael | £ 631,832 / £ 300,000 [V] | Cong XV p. 507-508 |
+| 1927/28 | "the budget of the World Zionist Organization for the next two years" | "£632,000 ($3,180,000) each year" [S] (as JTA reported) | JTA 13 Sep 1927 (`basle-zionist-congress-concludes-its-sessions-a632000-budget-adopted`) |
+| Oct 1927 - Jun 1929 | Palestine Executive debt | £ 400,000 down to £ 260,000, "reduced £140,000 by the Keren Hayesod" [S] (as JTA reported Sacher) | JTA 9 Jun 1929 (`zionist-executive-in-palestine-reduces-deficit-by-a140000`) |
+| 1929/30 (5690) | Palestine budget voted by the XVI Congress | £P 750,000 [V] (A 181,200, B 147,975, C 420,825) | Res XVI pp. 27-29 |
+| 1929/30 | the same, after the Executive's two cuts | "bis auf 550,000 Pfund" [V]; receipts 130,000 from America and 220,000 from other countries, 350,000 together (printed: "einem tatsächlichen Eingang von 350.000 Pfund") | Cong XVII p. 548-549 |
+| 1930/31 (5691) | budget set by the Administrative Committee in August 1930 | £ 545,000 [V], 145,000 of it for obligations, "das eigentliche Budget nur etwa 400,000" | Cong XVII p. 549 |
+| 1930/31 | receipts the Executive then expected | £ 310,000 to 320,000 [V] (America about 130,000, Europe 150,000, Baron Rothschild's gift 30,000: 310,000, derived) | Cong XVII p. 549 |
+| Sep 1930 | budget adopted by the Administrative Committee | $ 3,325,000 [S] (as JTA reported); [C] with the £ 545,000 above, not reconciled | JTA 4 Sep 1930 (`agencys-closing-session-approves-3325000-budget-elects-new-executive-and-adopts-resolutions-cla`) |
+| 1931/32 (5692) | budget adopted by the Congress / proposed by the Council's finance commission | £ 366,000 / £ 351,000 [V] | Cong XVII p. 578-582 |
+| 1933/34 (5694) | proposed budget of the Jewish Agency | £ 175,000 [V] (income: Keren Hayesod 170,000, Palestine 5,000) | Res XVIII p. 27 |
+
+Table rows checked (24 Oct):
+
+- (24 Oct) Cong XIII pp. 444-445 (page images): "unsere Einnahmen im Jahre 1919-20 332,876 Pfund, im Jahre 1920-21
+  330,000 Pfund, im Jahre 1921-22 330,000 Pfund auf ein Budget von 656,000 Pfund, also 60 Prozent, und im Jahre
+  1922-23 338,000 Pfund auf ein Budget von 430,000 Pfund, also 70 Prozent." Speaker: the Executive's treasurer, S. A.
+  van Vriesland (named on p. 444). The 397,000 is his own sum: "Im A. C. betrug das Budget 355,000 Pfund, der
+  Wirtschaftsrat hat 365,000 Pfund vorgeschlagen", then 10,000 for labour and immigration and "22,000 Pfund
+  hinzugefügt", which gives 397,000 (365,000 + 10,000 + 22,000, derived). His three named parts of the 22,000 (12,000
+  + 4,000 + 5,000) sum to 21,000 (derived); the page does not explain the 1,000. A motion on the same page splits
+  397,000 into 360,000 and 37,000 held back until the money is in; the vote is not on the page. The next speaker,
+  Kaplansky (A. C.), says the budget now before the Congress is not identical with the one the commission adopted the
+  day before, "in der Höhe von 381.000 Pfund" (381,000); both figures are kept and not reconciled.
+- (24 Oct) [C] 1922 income. Cong XIII (1923) gives 330,000 for 1921/22 and 338,000 for 1922/23; Cong XV p. 62
+  (Weizmann, 1927) gives "die tatsächliche Einnahme der palästinensischen Zionistischen Exekutive betrug 390,000
+  Pfund" for "1922", spending 470,000, and "ein Defizit von 90,000 Pfund" (390,000 - 470,000 = -80,000, and the year
+  "mit einem Fehlbetrag von über 10,000 Pfund begonnen hatte", derived). Both kept. My reading: the two speakers count
+  different receipts or different twelve months; neither page says so. For 1923 the two agree to within 1,000 (356,000
+  and "ungefähr 355,000").
+- (24 Oct) Cong XV pp. 62-63 (page image): the deficit is the accumulated one, my reading, because "Im Jahre 1926
+  macht das Defizit einen Sprung auf 71,000 Pfund, und in diesem Jahre, im Jahre 1927, sind wir ... gezwungen, ein
+  Defizit von 151,000 Pfund anzukündigen", then 80,000 of 1927 "ergibt sich ... ein Kumulativdefizit von 151,000
+  Pfund" (71,000 + 80,000 = 151,000, derived; 500,000 income against 580,000 spending is 80,000). The change of the
+  accumulated deficit by year is, derived: 1925 a surplus of 22,000 (37,000 - 15,000), 1926 a deficit of 56,000
+  (71,000 - 15,000). For 1923: 90,000 - (356,000 - 304,000) = 38,000, and the page prints 37,000. Weizmann also names
+  422,000, "vielleicht auch 430,000 oder 450,000" as the Keren Hayesod's and the Executive's estimate of next year's
+  income.
+- (24 Oct) Cong XIV p. 681 (page image): "Der Kongreß bewilligt für die Palästina Arbeit der Zionistischen
+  Organisation im Jahre 5686 folgendes Budget". The 20 items sum to 600,000 (derived: 270,000 + 84,000 + 38,000 +
+  39,000 + 38,000 + 40,000 + 9,000 + 3,000 + 2,000 + 13,500 + 19,000 + 5,000 + 4,500 + 5,000 + 4,000 + 5,000 + 8,000 +
+  7,000 + 3,000 + 3,000). The resolutions on the next pages deduct 15,000 from it to repay a loan of 50,000 (p. 682,
+  text layer); the Budget Commission's report on p. 633 reads agriculture 270,000 against 300,000 asked by the
+  colonisation commission.
+- (24 Oct) Cong XV p. 472 (page image) and pp. 507-508 (page image): the income of the Palestine budget sums to
+  631,832 (247,000 + 112,832 + 265,000 + 7,000, derived; the America line is "Dollar 1,200,000" = £ 247,000). The
+  Executive's items sum to 481,832 (derived), less 12,500 for "Reduktion von Verpflichtungen" gives 469,332, and with
+  92,500 for Keren Hayesod organisation and loan repayments (38,000 + 54,500) and 70,000 "Auf Rechnung des Defizits"
+  the total is 631,832 (derived). JTA's "£632,000" is 631,832 rounded, my reading; the Congress page is for 5688 only,
+  and JTA says "each year" of two.
+- (24 Oct) Res XVI pp. 27-29 (page image): A, various liabilities of the Keren Hayesod and the Palestine Executive
+  181,200 (62,490 + 73,710 + 45,000); B, Keren Hayesod budget not in the Executive's 147,975 (38,000 + 81,100 + 7,000
+  + 19,875 + 2,000); C, budget of the Palestine Executive 420,825 (204,500 + 55,750 + 8,500 + 1,000 + 86,875 + 18,900
+  + 2,300 + 3,500 + 13,500 + 25,000 + 1,000); "Total... 750,000" (derived: 181,200 + 147,975 + 420,825 = 750,000). The
+  1929/30 spending in 1a (764,000) is a different measure.
+- (24 Oct) Cong XVII pp. 548-549 (page image), Dr. Werner Senator for the Executive: "Die Exekutive sah sich daher
+  genötigt, das Budget von 750,000 Pfund herabzusetzen, und zwar in zwei Etappen bis auf 550,000 Pfund." Receipts "aus
+  Amerika 450,000 Pfund erwartet, aus den nichtamerikanischen Ländern 350,000 Pfund, die tatsächlichen Eingänge aber
+  waren 130,000 und 220,000 Pfund" (so 800,000 expected, derived; the 350,000 received is printed a few lines later: "einem tatsächlichen Eingang von 350.000 Pfund"). On the next budget:
+  "Wir haben ein Budget von nur 545,000 Pfund aufgestellt, worin ein Betrag von 145,000 Pfund für die Zahlung von
+  Verpflichtungen enthalten war." The page also says the Executive then expected 310,000 to 320,000 in total. The
+  600,000 the page mentions as raised for the victims of the 1929 disturbances is relief money, not budget.
+- (24 Oct) [C] 1930/31: Senator's £ 545,000 and JTA's "$3,325,000". JTA lists $725,000 for debts, $600,000 for land
+  and colonization, $380,000 education, $430,000 medical, $105,000 Palestine Executive, $90,000 London Executive and
+  $50,000 immigration, which sum to $2,380,000 (derived), so the article does not list the whole budget. The article
+  does not say what the dollar figure covers or how it is turned into pounds, and no conversion is made here. AR
+  1931's spending of £P 797,000 is in 1a.
+- (24 Oct) Cong XVII pp. 578-582 (page images of pp. 578, 580 and 582): the chair of the finance commission, Dr. Bernhard
+  Kahn, says "das Budget von 366,000 Pfund, das der Zionistenkongreß annahm", and proposes a global budget of 351,000,
+  with income of 250,000 "auf 250.000 Pfund geschätzten Ergebnis der Sammlungen des Keren Hajessod und von Drives in
+  Amerika" and 45,000 from American Hadassah (p. 578; the rest of the 351,000 comes from "Inkasso von Außenständen,
+  Erneuerung von Darlehen"). On p. 579 Kahn asks the Council to adopt the 351,000 "nur in meinem Namen", although the
+  commission adopted it 13 to 11. On p. 580, answering Daiches about the 5,000 Pfund of "Net collections" (receipts
+  from loans given in Palestine) and a further 51,500 Pfund "von speziellen Finanztransaktionen", he says "diese
+  Posten sind aber keineswegs eine sehr sichere Grundlage". Ussishkin moved that all budget proposals go to the
+  Administrative Committee, and a Yugoslav delegate's amendment to that motion, that the Committee fix the budget
+  between 366,000 and 351,000, was passed by the Council 37 to 18 ("mit 37 gegen 18 Stimmen"); the figure the
+  Committee fixed is not on these pages.
+- (24 Oct) Res XVIII p. 27 (page image): income 175,000 (170,000 + 5,000); expenditure: liabilities of the Keren
+  Hayesod 35,446 (16,727 + 2,275 + 450 + 2,994 + 13,000), its administration 17,000, administration in London 4,500,
+  Palestine budget 77,900 (19,500 + 6,500 + 8,500 + 20,000 + 750 + 500 + 4,500 + 2,400 + 8,250 + 1,000 + 6,000),
+  134,846 in all, and "Payment on account of Debts of the Jewish Agency" 40,154, total 175,000 (derived: 35,446 +
+  21,500 + 77,900 = 134,846; 134,846 + 40,154 = 175,000). Liabilities of the Agency in 5694 were 156,000, which less
+  40,154 leaves 115,846 "for consolidation in the next years".
+
+Not found for the 1924/25 to 1931/32 window: a budget voted for 1924/25 (5685), the figure for 1928/29 (5689; Cong XV
+only says the Actions Committee will fix it), and the Executive's actual income and spending for 1928 to 1931 beyond the
+rows above. AR 1925 was searched and has no total. It has two partial figures: £E 26,000 spent "in 1924 and 1925" on pure-bred stock, and, on printed p. 68, "the expenditure of the Agency on these schools was £E.63,000 for the year ending the 30th of September, 1925" (the Jewish schools controlled by the Jewish Agency through its Palestine Committee, 132 schools).
+
+### 1f. 1945 to 1948 (24 Oct)
+
+| Item | Value | Source |
+|---|---|---|
+| Spending in Palestine by "the main Jewish bodies", October 1945 to October 1946 | "an additional £12 million" [V]; "£45 million" for 1917 to October 1945, "about £57 million" together | UNSCOP 17th meeting, 6 Jul 1947 |
+| Jewish Agency and Palestine Foundation Fund | income "about £27 million", spent "about £29 million" [V], period not stated | UNSCOP 17th meeting |
+| Budget committee of the XXII Congress, December 1946 | "$62,000,000 budget for the coming year", "more than double the $24,000,000 of the current year" [S] (as JTA reported) | JTA 24 Dec 1946 (`zionist-congress-formulates-political-policy-insists-on-jewish-commonwealth`) |
+| United Palestine Appeal and its agencies, January to July 1947 | spent $ 39,835,765 [S] (as JTA reported); Jewish Agency immigration and refugee relief $ 11,315,317; agricultural development $ 5,646,782 | JTA 28 Aug 1947 (`palestine-appeal-agencies-spent-nearly-40000000-in-seven-months`) |
+| Jewish Agency "security and military organizations" | $ 3,808,697 in 1946 and $ 6,075,000 in 1947 [S], no source given | Black Paper PDF p. 6 |
+| Jewish Agency budget in pounds, 1945/46, 1946/47, 1947/48 | [GAP] | |
+
+- (24 Oct) UNSCOP 17th meeting (HTML, no page numbers): "The total expenditure of the main Jewish bodies for the
+  period 1917 to October 1945 was £45 million. From October 1945 to October 1946 the same bodies spent in Palestine an
+  additional £12 million. The total expenditure of these bodies therefore came to about £57 million." (45 + 12 = 57,
+  derived.) "The income of these institutions reached a figure of £53 million. Of this the Jewish Agency and its
+  financial instrument, the Palestine Foundation Fund, had an income of about £27 million and spent about £29
+  million." My reading: the £27 million and £29 million cover the whole period to October 1946, because they are
+  shares of the £53 million of income and £57 million of spending. [C] with Kaplan (1c): both sets of figures are the same
+  man's. The record puts this passage in the statement of "Mr. KAPLAN (Jewish Agency)", after the Chairman closes Mr.
+  Bernstein's testimony; Bernstein himself calls him "my colleague, Mr. E. KAPLAN", which is Eliezer Kaplan, the
+  treasurer of 1c. His 1946 book gives £19,950,000 income and £19,884,000 spending to September 1945 for Keren Hayesod
+  and the Agency; the scopes are not stated, and a rise of about £7 million in one year (27 - 19.95 = 7.05, derived) is
+  far above his own 1944/45 income of £2,340,000, so his two statements are not reconciled. Neither is preferred.
+- (24 Oct) JTA 24 Dec 1946 does not say whose budget the $62,000,000 is, and the dollars are not turned into pounds
+  here.
+- (24 Oct) JTA 28 Aug 1947: the OCR of the archive's text has gaps ("###") throughout the article; the amounts above are
+  as printed. The article calls the $ 39,835,765 "spent from January through July of ###s year by the United Palestine
+  Appeal and its agencies" and the two items "the budget of the Jewish Agency"; the year 1947 follows from the date of
+  the bulletin.
+- (24 Oct) Black Paper: an advocacy document of the Arab Higher Committee Delegation, 12 March 1948. It says "The budget of the Jewish Agency over many years has always
+  included large sums of money for 'security and military organizations'. In the year 1946 the Jewish Agency spent
+  $3,808,697 and in 1947 $6,075,000" and gives no source. It is [S] and not the Haganah budget; these are not values for the game.
+- (24 Oct) [GAP] (24 Oct) Searched again and not found: a Jewish Agency or Keren Hayesod budget in pounds for 1945/46,
+  1946/47 or 1947/48. Read: UNSCOP 17th meeting; JTA 24 Dec 1946, 28 Aug 1947; the Jewish Agency's executive-report
+  excerpts for the XXII Congress (israeled.org, 102 PDF pages; a text search for "budget", "expenditure", "Keren
+  Hayesod" and "Haganah" found no figure); the Black Paper. Not reachable: the XXII Congress protocol and the
+  treasurer's reports (no open copy found).
 
 ## 2. Jewish National Fund: land and land spending
 
@@ -241,7 +444,39 @@ content work needs a value that this note does not have: [GAP].
   4,388,179 + 1,605,439 + 1,240,099 = 9,944,241). Keren Kayemeth's column checks. The table's "Total" column is not
   the sum of its six fund columns (for contributions the six give 29,178,245, derived, and the column prints
   29,892,961), so this note uses only the single-fund columns.
-- A yearly JNF series for 1918 to 1948 was not found in an open source: [GAP] for the years not listed.
+- A yearly JNF series for 1918 to 1948 was not found in an open source: [GAP] for the years not listed. (24 Oct)
+  Narrowed: six income figures from Ussishkin's reports to the Congresses are in 2c; the series is still open.
+
+### 2c. JNF income from the Congress reports (24 Oct)
+
+Income, not spending, as the Keren Kayemeth's chairman M. M. Ussishkin gave it to each Congress. Years are the ones he
+names.
+
+| Period | Value | Source |
+|---|---|---|
+| the year before the XIII Congress (1922/23) | "ca. 83,000 Pfund" [V] | Cong XIV p. 295 |
+| 5685 (1924/25) | "260,000 Pfund" [V] | Cong XIV p. 295 |
+| "im letzten Jahre" before the XV Congress (September 1927) | 281,000 Pfund [V]; "vor fünf Jahren ... nur 70,000" | Cong XV p. 270 |
+| the two years since the XV Congress (to July 1929) | "brutto 550,000 Pfund" [V] | Cong XVI p. 274 |
+| between the XVII and XVIII Congresses (1931 to 1933) | "rund 400,000 Pfund brutto" [V] | Cong XIX p. 190 |
+| between the XVIII and XIX Congresses (1933 to 1935) | "ungefähr 600,000 Pfund" [V] | Cong XIX p. 190 |
+
+- (24 Oct) Cong XIV p. 295 (page image): "Im Jahre vor dem letzten Kongreß [sic: the page prints "Kondreß"] beliefen sich die Einnahmen des
+  Nationalfonds auf ca. 83,000 Pfund. Im letzten Jahre, das heißt im Jahre 5685, erreichten unsere Einkünfte die Höhe
+  von 260,000 Pfund." The same page gives Europe's share as 30 per cent the year before the XIII Congress and 63 per
+  cent in 5685.
+- (24 Oct) Cong XV p. 270 (page image): "Unsere Einkünfte betrugen im letzten Jahre 281,000 Pfund; vor fünf Jahren
+  waren es nur 70,000 Pfund. Die Einkünfte haben sich also mehr als vervierfacht." (281,000 / 70,000 = 4.0, derived.)
+  The year is not named; my reading is the Jewish year before the Congress, which the page does not say.
+- (24 Oct) Cong XVI p. 274 (page image): "Unsere Einkünfte in den zwei Jahren seit dem letzten Kongress betragen
+  brutto 550,000 Pfund", "beinahe dieselbe Ziffer" as the two years between the XIV and XV Congresses, which the page
+  does not give. He adds that Canada gave 68,000 and that expenses of collection fell by 13 per cent.
+- (24 Oct) Cong XIX p. 190 (page image): "in den letzten zwei Jahren zwischen dem XVIII. und XIX. Kongreß unsere
+  Einnahmen um 50 Prozent gestiegen sind"; (600,000 - 400,000) / 400,000 = 50 per cent, derived, so the printed figure
+  fits. The OCR text layer reads "jo"; the image reads 50.
+- (24 Oct) Not found in the XVII (1931) and XVIII (1933) Ussishkin reports (text layer searched): a money figure for
+  the two years to 1931 or a yearly figure after 1925. The Congress protocols were searched in German by text layer,
+  not read in full.
 
 ## 3. Kofer HaYishuv and the emergency taxes
 
@@ -354,6 +589,7 @@ content work needs a value that this note does not have: [GAP].
 [V]; my reading is that the unit therefore did not change at the boundary. For the 1952 change to the Israeli pound,
 no source opened states an exchange rate; the BoI page names only the 10 per cent compulsory loan. A primary statement
 that it was at par is [GAP].
+See `../currencies-1948-93.md` §2.2 for the 1952 par (Law for the Exchange of Bank Notes and Compulsory Loan, s. 3(a)).
 
 ## 6. What the paused content work can take from this
 
@@ -362,7 +598,8 @@ Not values for the game, only which sourced numbers bear on which key in §5.3 a
 - `donations_per_year`: Kaplan's collected funds (1b) for the years he prints; the Mandate reports' Keren Hayesod
   collections for 1933 and 1934 (1a).
 - The Jewish Agency budget for calibration: the Mandate reports' yearly spending for 1926/27 to 1929/30 and 5693-5694
-  (1a); Survey II's 1944-45 Keren Hayesod expenditure.
+  (1a); Survey II's 1944-45 Keren Hayesod expenditure. (24 Oct) The budgets voted and the Executive's accounts for
+  1921 to 1934 are in 1e, and 1930/31 to 1931/32 spending in 1a.
 - The levy (`levy_policy: voluntary_levy`): Kofer HaYishuv's 5699 and 5700 income exists only as [FTS]; every later
   year is a gap.
 - `mobilization_cost_per_year`: the 1946 Haganah figure is "less than £400,000" [FTS]; the October 1947 figure is £3.3
@@ -376,9 +613,13 @@ Population per head for any of these is in the population note
 ## 7. Gaps
 
 - Jewish Agency and Keren Hayesod budgets for 1920/21 to 1925/26, 1930/31, 1931/32 and 1935/36 to 1947/48, except
-  Kaplan's collected totals and the Survey's 1944-45 expenditure.
-- Kaplan's collected funds for 1924/25 to 1931/32, and after 1943/44.
-- A yearly JNF land-spending series, and JNF land held in 1948.
+  Kaplan's collected totals and the Survey's 1944-45 expenditure. (24 Oct) 1925/26, 1927/28, 1929/30, 1930/31, 1931/32
+  and 1933/34 now have a budget voted or spending figure (1a, 1e). Still open: a budget for 1924/25 and 1928/29, any for
+  1934/35 to 1944/45 beyond AR 1934, and 1945/46 to 1947/48 in pounds (1f; searched again on 24 Oct).
+- Kaplan's collected funds for 1924/25 to 1931/32, and after 1943/44. (24 Oct) Still open; Keren Hayesod income for
+  1931/32 and 1932/33 is in 1a.
+- A yearly JNF land-spending series, and JNF land held in 1948. (24 Oct) JNF income at six dates is in 2c; the yearly
+  series is still open.
 - Kofer HaYishuv income after 5700, and the emergency tax and mobilisation appeal yields; a primary source for their
   1940 and 1942 start dates.
 - Any Haganah budget other than the 1946 and October 1947 figures.
