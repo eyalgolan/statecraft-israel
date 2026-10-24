@@ -1072,5 +1072,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-overlay .advisor-media-label { display: flex; }
 .advisor-overlay-words { flex-shrink: 1; min-height: 0; }
 
-.advisor-watching .advisor-head { display: none; }
+.advisor-watching .advisor-head { position: absolute; right: 8px; top: 8px; margin: 0; }
 .advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
+
+.advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }

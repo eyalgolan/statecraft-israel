@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Statecraft.Game.UI;
+using Statecraft.Game;
+using Statecraft.Sim;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -234,6 +236,46 @@ public class AdvisorMediaTests
         Assert.IsTrue(rig.Advisor.Media.Playing);
         rig.Ui.Press("advisor-watch");
         Assert.IsFalse(rig.Advisor.Media.Playing); Assert.AreEqual(1, pic.Loads);
+    }
+
+    [UnityTest]
+    public System.Collections.IEnumerator InlineKeepsItsXAndAPhoneStopsItBeforeUsingTheOverlay()
+    {
+        var wide = new RenderTexture(1280, 720, 0); var phone = new RenderTexture(390, 844, 0);
+        var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); panel.targetTexture = wide;
+        var go = new GameObject("AdvisorMediaGeometry"); go.SetActive(false);
+        var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
+        doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+        var root = doc.rootVisualElement; var hudRoot = root.Q("root"); hudRoot.RemoveFromClassList("loading");
+        var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), Text);
+        var hud = new HudPresenter(root, bridge, Text); var nav = new ScreenNav(root);
+        var card = new EventCardPresenter(root, bridge, Text, null); card.Collapse(takeFocus: false);
+        var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
+        var advisor = new AdvisorPresenter(root, bridge, Text, session, hooks: new AdvisorHooks { Card = card });
+        var pic = new FakePicture { Ready = true }; var output = new FakeOutput();
+        advisor.Media = new AdvisorMedia(Text, pic, null, Immediate, output);
+        try
+        {
+            advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
+            advisor.ForceInline = true; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
+            for (int i = 0; i < 4; i++) yield return null;
+            Assert.IsTrue(AdvisorTargets.Shown(root.Q("advisor-close")), "inline keeps X usable");
+            advisor.ForceInline = null; panel.targetTexture = phone;
+            for (int i = 0; i < 6; i++) yield return null;
+            Assert.IsTrue(hudRoot.ClassListContains(HudPresenter.ThreeRowClass));
+            Assert.IsFalse(advisor.Media.Playing, "inline stops when the new tier has no room; no automatic replay");
+            advisor.ForceInline = false; advisor.Watch(Row, "advisor.x"); advisor.Media.Tick(); output.Position = 0.1f;
+            for (int i = 0; i < 6; i++) yield return null;
+            var picture = root.Q("advisor-overlay-media").worldBound;
+            Assert.Greater(picture.height, 0); Assert.AreEqual(EventCardPresenter.MediaAspect, picture.width / picture.height, 0.02f);
+            Assert.GreaterOrEqual(root.Q("advisor-overlay-caption").resolvedStyle.fontSize * root.panel.scaledPixelsPerPoint, HudPresenter.TextFloorPx - 0.01f);
+        }
+        finally
+        {
+            advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
+            UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
+            wide.Release(); phone.Release(); UnityEngine.Object.DestroyImmediate(wide); UnityEngine.Object.DestroyImmediate(phone);
+        }
     }
 
 }

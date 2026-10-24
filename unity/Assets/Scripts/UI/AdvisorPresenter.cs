@@ -44,7 +44,7 @@ namespace Statecraft.Game.UI
             set { if (ReferenceEquals(media, value)) return; StopWatching(); media?.Dispose(); media = value; UpdateWatch(); }
         }
         internal bool? ForceInline { get; set; }
-        readonly VisualElement mediaPicture, overlay, overlayPicture;
+        readonly VisualElement mediaPicture, overlay, overlayPicture, mediaHead;
         readonly Label mediaLabel, mediaCredit, overlayCaption, overlayLabel, overlayCredit;
         readonly Button watch, overlayClose;
         readonly Action onWatch, onOverlayClose;
@@ -94,6 +94,7 @@ namespace Statecraft.Game.UI
             layer = root.Q<VisualElement>(LayerName);
             popup = layer.Q<VisualElement>("advisor-popup");
             ring = layer.Q("advisor-ring");
+            mediaHead = popup.Q(className: "advisor-head");
             mediaPicture = popup.Q("advisor-media"); mediaLabel = popup.Q<Label>("advisor-media-label"); mediaCredit = popup.Q<Label>("advisor-media-credit");
             overlay = hudRoot.Q("advisor-overlay"); overlayPicture = overlay.Q("advisor-overlay-media");
             overlayCaption = overlay.Q<Label>("advisor-overlay-caption"); overlayLabel = overlay.Q<Label>("advisor-overlay-label"); overlayCredit = overlay.Q<Label>("advisor-overlay-credit");
@@ -107,7 +108,12 @@ namespace Statecraft.Game.UI
             hudRoot.RegisterCallback(onMediaPointer, TrickleDown.TrickleDown); hudRoot.RegisterCallback(onMediaSubmit, TrickleDown.TrickleDown);
             overlay.RegisterCallback(onMediaCancel);
 
-            onMediaGeometry = _ => SizeMedia();
+            onMediaGeometry = _ =>
+            {
+                SizeMedia(); ApplyTextFloor();
+                if (Media?.Playing == true && ForceInline == null && popup.ClassListContains(WatchingClass) && layer.layout.width > 0
+                    && !AdvisorMedia.Inline(AdvisorLayout.Tier(hudRoot), Slot().height)) StopWatching();
+            };
             hudRoot.RegisterCallback(onMediaGeometry); mediaPicture.RegisterCallback(onMediaGeometry); overlayPicture.RegisterCallback(onMediaGeometry);
 
             portrait = popup.Q<VisualElement>("advisor-portrait");
@@ -531,6 +537,7 @@ namespace Statecraft.Game.UI
             var credit = inline ? mediaCredit : overlayCredit;
             label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
             popup.EnableInClassList(WatchingClass, inline);
+            if (inline) mediaHead.BringToFront();
             hudRoot.EnableInClassList(OverlayOpenClass, !inline);
             if (!inline)
             {
@@ -562,7 +569,9 @@ namespace Statecraft.Game.UI
         void StopWatching()
         {
             bool overlayWasOpen = hudRoot.ClassListContains(OverlayOpenClass);
-            Media?.Stop(); popup.RemoveFromClassList(WatchingClass); hudRoot.RemoveFromClassList(OverlayOpenClass);
+            Media?.Stop();
+            if (popup.ClassListContains(WatchingClass)) mediaHead.SendToBack();
+            popup.RemoveFromClassList(WatchingClass); hudRoot.RemoveFromClassList(OverlayOpenClass);
             if (Shown != null) words.text = text["advisor." + Shown.Id + ".text"];
             if (overlayWasOpen)
             {
