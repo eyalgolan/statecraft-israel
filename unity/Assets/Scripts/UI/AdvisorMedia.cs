@@ -40,8 +40,8 @@ namespace Statecraft.Game.UI
         Action<string>? failed;
         string file = "", stem = "";
         bool started, heard, moving, disposed;
-        int generation, loadingMs, stalledMs, decodingMs, startingMs, pictureMs;
-        ulong bytes;
+        int generation, loadingMs, stalledMs, decodingMs, startingMs, pictureMs, pictureStalledMs;
+        ulong bytes, pictureBytes;
 
         public AdvisorMedia(UiText text, IPicture? clip, IPicture? still, DeclarationRecording.Fetch fetch, DeclarationRecording.IOutput output)
         { this.text = text; clipPicture = clip; stillPicture = still; this.fetch = fetch; this.output = output; }
@@ -93,7 +93,18 @@ namespace Statecraft.Game.UI
             if (!Playing || picture == null) return;
             if (!started)
             {
-                if (!picture.Ready && (pictureMs += TickMs) >= CardVideo.PrepareTimeoutMs) { Fail("picture preparation timed out"); return; }
+                if (!picture.Ready)
+                {
+                    pictureMs += TickMs;
+                    if (picture is StillPicture still)
+                    {
+                        ulong progress = still.Bytes;
+                        pictureStalledMs = progress > pictureBytes ? 0 : pictureStalledMs + TickMs; pictureBytes = progress;
+                        if (pictureStalledMs >= DeclarationRecording.StallTimeoutMs || pictureMs >= DeclarationRecording.LoadCapMs)
+                        { Fail("picture fetch timed out"); return; }
+                    }
+                    else if (pictureMs >= CardVideo.PrepareTimeoutMs) { Fail("picture preparation timed out"); return; }
+                }
                 if (narration == null)
                 {
                     loadingMs += TickMs;
@@ -142,7 +153,7 @@ namespace Statecraft.Game.UI
             if (caption != null) caption.text = "";
             caption = null; ended = null; failed = null;
             started = heard = false;
-            loadingMs = stalledMs = decodingMs = startingMs = pictureMs = 0; bytes = 0;
+            loadingMs = stalledMs = decodingMs = startingMs = pictureMs = pictureStalledMs = 0; bytes = pictureBytes = 0;
         }
 
         static void Release(AudioClip? clip)
@@ -186,6 +197,7 @@ namespace Statecraft.Game.UI
         Texture2D? image;
         VisualElement? target;
         int generation;
+        internal ulong Bytes => request?.downloadedBytes ?? 0;
         public bool Ready => image != null;
         public double Time => 0;
         public void Seek(double time) { }
@@ -194,7 +206,10 @@ namespace Statecraft.Game.UI
             Stop(); this.target = target; int mine = generation;
             var pending = UnityWebRequestTexture.GetTexture(url);
             request = pending;
-            pending.SendWebRequest().completed += _ =>
+            UnityWebRequestAsyncOperation operation;
+            try { operation = pending.SendWebRequest(); }
+            catch { request = null; pending.Dispose(); throw; }
+            operation.completed += _ =>
             {
                 if (mine != generation) { pending.Dispose(); return; }
                 request = null;
