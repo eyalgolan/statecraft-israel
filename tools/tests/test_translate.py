@@ -1,4 +1,9 @@
 """tools/translate.py: the Hebrew editor writes only the lines it means to, and refuses what the loader or tests refuse."""
+import http.client
+import json
+import threading
+from http.server import HTTPServer
+
 import pytest
 
 import translate
@@ -80,9 +85,22 @@ def test_refuses_what_the_loader_or_tests_refuse(bad, message):
         translate.set_event(EVENT, bad)
 
 
-def test_warns_on_latin_letters():
-    _, warnings = translate.set_event(EVENT, changes(title_he="The vote"))
+def test_refuses_a_hebrew_event_field_without_hebrew_letters():
+    """EventRules: a Hebrew event field must be in Hebrew letters."""
+    with pytest.raises(translate.Refused, match="Hebrew letters"):
+        translate.set_event(EVENT, changes(title_he="The vote"))
+
+
+def test_warns_on_latin_letters_beside_hebrew():
+    _, warnings = translate.set_event(EVENT, changes(title_he="ההצבעה לפי פרק VII"))
     assert any("Latin" in w for w in warnings)
+
+
+@pytest.mark.parametrize("value", ["ההצבעה {", "ההצבעה }", "ההצבעה }{"])
+def test_refuses_a_stray_brace_in_an_event(value):
+    """EventRules: no '{' or '}' outside an {office_id} placeholder."""
+    with pytest.raises(translate.Refused, match="stray"):
+        translate.set_event(EVENT, changes(title_he=value))
 
 
 UI_EN = 'a.one: "One {0}"\na.two: "Two"\nb.three: "Three"\n'
@@ -182,3 +200,84 @@ def test_hebrew_saves_into_the_event_and_the_ui_file(tmp_path, monkeypatch):
     after = (events / "altalena.yaml").read_text(encoding="utf-8").split("\n")
     assert [line for line in before.split("\n") if line not in after] == \
         [line for line in before.split("\n") if line.startswith(("title_he:", "text_he_review:"))]
+
+
+FR = {"event:altalena:title": "L'Altalena", "event:altalena:text": "{defense_minister} décide.",
+      "event:altalena:option:enforce": "Imposer", "event:altalena:option:compromise": "Céder"}
+
+
+def test_an_edited_text_goes_back_to_agent_checked(langs):
+    """#564: a native read covers only the text that was read."""
+    name = "content:people.yaml#people.ben_gurion.name"
+    assert translate.save("fr", {**FR, name: "David Ben Gourion"}, {"event:altalena": True, name: True})["errors"] == {}
+    _, flagged = translate.load("fr")
+    assert flagged == set()
+    translate.save("fr", {"event:altalena:option:compromise": "Accepter les deux", name: "D. Ben Gourion"}, {})
+    _, flagged = translate.load("fr")
+    assert flagged == {"event:altalena", name}
+    # An edit that leaves the text as it was keeps the read.
+    translate.save("fr", {**FR, "event:altalena:option:compromise": "Accepter les deux"}, {"event:altalena": True})
+    translate.save("fr", {"event:altalena:title": "L'Altalena"}, {})
+    assert "event:altalena" not in translate.load("fr")[1]
+
+
+@pytest.mark.parametrize("native", [{"event:nope": True}, {"content:people.yaml#people.nobody.name": True},
+                                    {"ui:hud.turn": True}])
+def test_refuses_unknown_review_keys(native, langs):
+    for lang in ("fr", "he"):
+        with pytest.raises(translate.Refused, match="unknown review keys"):
+            translate.save(lang, {}, native, dry=True)
+
+
+def test_a_language_is_never_a_path(langs):
+    (langs / "fr<img src=x onerror=alert(1)>").mkdir()
+    (langs / "ro").mkdir()
+    assert translate.languages() == ["en", "he", "ro"]
+    for code in ("/tmp/x", "../x", "fr/x", "FR"):
+        with pytest.raises(translate.Refused):
+            translate.catalog_for("en", code)
+        with pytest.raises(translate.Refused):
+            translate.catalog_for(code, "fr")
+
+
+@pytest.fixture
+def server(langs):
+    httpd = HTTPServer(("127.0.0.1", 0), translate.Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    yield httpd.server_address[1]
+    httpd.shutdown()
+    httpd.server_close()
+
+
+def call(port, method, path, body=None, **headers):
+    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+    good = {"Host": f"127.0.0.1:{port}", "Origin": f"http://127.0.0.1:{port}", "Content-Type": "application/json"}
+    headers = {k: v for k, v in {**good, **{k.replace("_", "-"): v for k, v in headers.items()}}.items() if v is not None}
+    data = body if isinstance(body, bytes) else json.dumps(body).encode() if body is not None else None
+    conn.request(method, path, body=data, headers=headers)
+    response = conn.getresponse()
+    return response.status, response.read()
+
+
+def test_http_serves_this_page_only(server, langs):
+    assert call(server, "GET", "/api/langs")[0] == 200
+    assert call(server, "GET", "/api/langs", Host="evil.example")[0] == 403
+    assert call(server, "GET", "/", Host="evil.example")[0] == 403
+    assert call(server, "POST", "/api/save", {"lang": "fr", "dry": True})[0] == 200
+    assert call(server, "POST", "/api/save", {"lang": "fr", "dry": True}, Host="evil.example")[0] == 403
+    assert call(server, "POST", "/api/save", {"lang": "fr", "dry": True}, Origin="http://evil.example")[0] == 403
+    assert call(server, "POST", "/api/save", {"lang": "fr", "dry": True}, Origin=None)[0] == 403
+    assert call(server, "POST", "/api/save", b"lang=fr", Content_Type="application/x-www-form-urlencoded")[0] == 415
+    assert call(server, "POST", "/api/save", b"{not json")[0] == 400
+    assert call(server, "POST", "/api/save", b"[]")[0] == 400
+    assert call(server, "POST", "/api/save", b"{}", Content_Length=str(translate.MAX_BODY + 1))[0] == 413
+
+
+@pytest.mark.parametrize("code", ["/tmp/x", "..", "FR", "en"])
+def test_http_refuses_a_bad_language(server, code):
+    from urllib.parse import quote
+    if code != "en":
+        assert call(server, "GET", f"/api/catalog?lang={quote(code, safe='')}")[0] == 400
+        assert call(server, "GET", f"/api/catalog?src={quote(code, safe='')}&lang=fr")[0] == 400
+    status, body = call(server, "POST", "/api/save", {"lang": code, "dry": True})
+    assert status == 400 and b"language code" in body

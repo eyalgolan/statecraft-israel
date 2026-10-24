@@ -12,9 +12,12 @@ Hebrew is written where the game reads it: the events' title_he / text_he / opti
 unity/Assets/UI/strings.he.yaml (#12), changing only the edited lines so comments and layout stay. Hebrew content names
 are shown but not edited here: they carry their own sources. Any other language is written to
 translations/<lang>/{events,ui,content}.yaml, which the game does not read yet. Every language keeps the Hebrew rules
-(docs/WRITING_EVENTS.md; tools/tests/test_hebrew_ui.py): an event is all or none, placeholders match the English, one
-line, no direction marks; a new translation is marked agent-checked until a native speaker has read it (#564). Every
-write is read back first, and nothing is written when any edited string is refused. It never touches status,
+(docs/WRITING_EVENTS.md; the sim's EventRules): an event is all or none, placeholders match the English with no stray
+'{' or '}', one line, no direction marks, and a Hebrew event field has Hebrew letters. Of tools/tests/test_hebrew_ui.py
+it applies only the general rules (every key has a value, the same format tokens, no direction marks), not its checks of
+particular keys' wording, so run the tests after saving. A translation is marked agent-checked until a native speaker
+has read it, and goes back to agent-checked when its text changes (#564). Every write is read back first, and nothing
+is written when any edited string is refused. It never touches status,
 reviewed_by or reviewed_on, and it does not commit.
 """
 from __future__ import annotations
@@ -22,6 +25,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
 import sys
 import webbrowser
@@ -43,6 +47,9 @@ HE_KEY = re.compile(r"(.+)_he(_f)?$")       # name_he, title_he_f, sector_he ...
 LANG = re.compile(r"[a-z]{2,3}(-[A-Za-z0-9]{2,8})*")
 RTL = {"ar", "ckb", "dv", "fa", "he", "ps", "ur", "yi"}
 TOKEN = re.compile(r"\{[^{}]+\}")
+OFFICE = re.compile(r"\{[a-z0-9_]+\}")     # an event's {office_id} placeholder (Offices.Placeholder in the sim)
+HEBREW = re.compile("[\u05d0-\u05ea]")
+MAX_BODY = 4_000_000
 BIDI = re.compile("[\u202a-\u202e\u2066-\u2069]")
 REVIEW = "agent-checked"
 
@@ -51,13 +58,18 @@ class Refused(ValueError):
     """An edit the loader or the tests would refuse; nothing is written."""
 
 
-def _check(name: str, value: str, english: str | None, hebrew: bool = True) -> list[str]:
+def _check(name: str, value: str, english: str | None, hebrew: bool = True, event: bool = False) -> list[str]:
+    """One value's rules; raises Refused, returns the warnings. event: an event field, read by the sim's EventRules."""
     if "\n" in value or "\r" in value:
         raise Refused(f"{name}: keep it on one line")
     if BIDI.search(value):
         raise Refused(f"{name}: no direction marks (U+202A-U+202E, U+2066-U+2069); keep logical order")
     if english is not None and Counter(TOKEN.findall(value)) != Counter(TOKEN.findall(english)):
         raise Refused(f"{name}: placeholders differ from the English ({', '.join(TOKEN.findall(english)) or 'none'})")
+    if event and re.search("[{}]", OFFICE.sub("", value)):
+        raise Refused(f"{name}: stray '{{' or '}}' outside an {{office_id}} placeholder")
+    if event and hebrew and not HEBREW.search(value):
+        raise Refused(f"{name}: must be Hebrew, in Hebrew letters")
     if hebrew and re.search("[A-Za-z]", TOKEN.sub("", value)):
         return [f"{name}: Latin letters; the Hebrew fields are written in Hebrew letters"]
     return []
@@ -81,7 +93,10 @@ def _parse(path: Path):
 
 
 def _write(path: Path, text: str) -> None:
-    path.write_bytes(text.encode("utf-8"))
+    """Write beside the file, then replace it, so a crash never leaves half a file."""
+    tmp = path.with_name(f".{path.name}.tmp")
+    tmp.write_bytes(text.encode("utf-8"))
+    os.replace(tmp, path)
 
 
 def _indent(line: str) -> int:
@@ -206,7 +221,7 @@ def check_unit(fields: list[tuple[str, str, str]], hebrew: bool) -> list[str]:
     filled = [f for f in fields if f[1]]
     if filled and len(filled) != len(fields):
         raise Refused("all or none: the title, the body and every option's text (docs/WRITING_EVENTS.md)")
-    return [w for name, value, english in filled for w in _check(name, value, english, hebrew)]
+    return [w for name, value, english in filled for w in _check(name, value, english, hebrew, event=True)]
 
 
 def _events() -> dict[str, tuple[Path, dict]]:
@@ -267,8 +282,15 @@ def catalog() -> list[dict]:
     return rows
 
 
+def lang_code(code: str, target: bool = False) -> str:
+    """A language code as a folder name may hold it (fr, ar, pt-BR); never a path. A target is not English."""
+    if not isinstance(code, str) or not LANG.fullmatch(code) or (target and code == "en"):
+        raise Refused(f"language code {code!r}: lowercase ISO 639 (fr, ar, pt-BR){', not en' if target else ''}")
+    return code
+
+
 def _lang_file(lang: str, name: str) -> Path:
-    return TRANSLATIONS / lang / f"{name}.yaml"
+    return TRANSLATIONS / lang_code(lang) / f"{name}.yaml"
 
 
 def _lang_data(lang: str, name: str) -> dict:
@@ -277,7 +299,7 @@ def _lang_data(lang: str, name: str) -> dict:
 
 
 def languages() -> list[str]:
-    found = sorted(p.name for p in TRANSLATIONS.iterdir() if p.is_dir() and LANG.match(p.name)) \
+    found = sorted(p.name for p in TRANSLATIONS.iterdir() if p.is_dir() and LANG.fullmatch(p.name)) \
         if TRANSLATIONS.exists() else []
     return ["en", "he"] + [code for code in found if code not in ("en", "he")]
 
@@ -349,20 +371,31 @@ The tool rewrites this file: comments other than this header are not kept."""
 def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = False) -> dict:
     """Check every edited string, and write them all only when none is refused. native: event unit or content key ->
     whether a native speaker has read it (a missing one keeps its state; a new translation starts agent-checked)."""
-    if not LANG.fullmatch(lang) or lang == "en":
-        raise Refused(f"language code {lang!r}: lowercase ISO 639 (fr, ar, pt-BR), not en")
+    lang_code(lang, target=True)
+    if not isinstance(edits, dict) or not isinstance(native, dict) or \
+            not all(isinstance(v, str) for v in edits.values()) or not all(isinstance(v, bool) for v in native.values()):
+        raise Refused("edits are {key: text} and native is {key: true or false}")
     rows = {r["key"]: r for r in catalog()}
     if set(edits) - set(rows):
         raise Refused(f"unknown strings {sorted(set(edits) - set(rows))[:3]}")
+    reviewed = {r["unit"] for r in rows.values() if r["unit"]} | {k for k in rows if k.startswith("content:")}
+    if set(native) - reviewed:
+        raise Refused(f"unknown review keys {sorted(set(native) - reviewed)[:3]}")
     old, flagged = load(lang)
     new = {**old, **{k: v if k.startswith("ui:") else v.strip() for k, v in edits.items()}}
     hebrew = lang == "he"
 
+    def changed(key: str) -> bool:
+        keys = [r["key"] for r in rows.values() if r["unit"] == key] if key.startswith("event:") else [key]
+        return any(new.get(k, "") != old.get(k, "") for k in keys)
+
     def read(key: str) -> bool:
-        """Whether an event unit or content key counts as read by a native speaker after this save."""
+        """Whether an event unit or content key counts as read by a native speaker after this save: a ticked box, or
+        a text that was read and has not changed (a native read covers only the text that was read)."""
         if key in native:
             return native[key]
-        return bool(old.get(key + ":title" if key.startswith("event:") else key)) and key not in flagged
+        return bool(old.get(key + ":title" if key.startswith("event:") else key)) and key not in flagged \
+            and not changed(key)
 
     errors, warnings = {}, {}
     units = {rows[k]["unit"] for k in edits if rows[k]["unit"]} | {k for k in native if k.startswith("event:")}
@@ -446,6 +479,8 @@ def save(lang: str, edits: dict[str, str], native: dict[str, bool], dry: bool = 
 
 def catalog_for(src: str, lang: str) -> dict:
     """The rows with the source language's text on the left and the target's on the right."""
+    lang_code(src)
+    lang_code(lang)
     rows = catalog()
     src_texts, _ = load(src)
     texts, flagged = load(lang) if lang != "en" else ({}, set())
@@ -468,10 +503,13 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, code: int, value) -> None:
         self._send(code, json.dumps(value, ensure_ascii=False).encode("utf-8"))
 
-    def _local(self) -> bool:
-        # Refuse another site's page (DNS rebinding) and a plain form post (no JSON content type).
+    def _hosts(self) -> tuple[str, str]:
         port = self.server.server_address[1]
-        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
+        return f"127.0.0.1:{port}", f"localhost:{port}"
+
+    def _local(self) -> bool:
+        # Refuse a request for another name (DNS rebinding: another site's page that resolves to 127.0.0.1).
+        return self.headers.get("Host") in self._hosts()
 
     def _route(self, routes: dict, arg) -> None:
         if not self._local():
@@ -491,13 +529,28 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, PAGE.encode("utf-8"), "text/html")
         query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
         self._route({"/api/langs": lambda q: {"langs": languages(), "rtl": sorted(RTL)},
-                     "/api/catalog": lambda q: catalog_for(q.get("src", "en"), q["lang"])}, query)
+                     "/api/catalog": lambda q: catalog_for(q.get("src", "en"), q.get("lang"))}, query)
 
     def do_POST(self) -> None:  # noqa: N802
+        # Checked before the body is read: the Host, then the Origin (only this page may post; a browser always sends
+        # it on a POST, so a missing one is refused too), the content type and the size.
+        if not self._local() or self.headers.get("Origin") not in tuple(f"http://{h}" for h in self._hosts()):
+            return self._json(403, {"error": "local only"})
         if self.headers.get("Content-Type") != "application/json":
             return self._json(415, {"error": "JSON only"})
-        body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
-        self._route({"/api/save": lambda b: save(b["lang"], b.get("edits", {}), b.get("native", {}),
+        try:
+            length = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            return self._json(411, {"error": "Content-Length required"})
+        if not 0 <= length <= MAX_BODY:
+            return self._json(413, {"error": f"at most {MAX_BODY} bytes"})
+        try:
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            return self._json(400, {"error": "bad JSON"})
+        if not isinstance(body, dict):
+            return self._json(400, {"error": "bad JSON: expected an object"})
+        self._route({"/api/save": lambda b: save(b.get("lang"), b.get("edits", {}), b.get("native", {}),
                                                  bool(b.get("dry")))}, body)
 
     def log_message(self, *args) -> None:
@@ -567,13 +620,15 @@ const dir = l => rtl.includes(l.split('-')[0]) ? 'rtl' : 'ltr';
 const value = r => r.key in edits ? edits[r.key] : r.tgt;
 const isDirty = () => Object.keys(edits).length + Object.keys(native).length > 0;
 const reviewKey = r => r.unit || (r.key.startsWith('content:') ? r.key : null);
-const isRead = k => k in native ? native[k] : !flagged.has(k) && rows.some(r => reviewKey(r) === k && r.tgt);
+// A native read covers only the text that was read: an edited text is not read until its box is ticked again.
+const isRead = k => k in native ? native[k] : !flagged.has(k) && rows.some(r => reviewKey(r) === k && r.tgt)
+  && !rows.some(r => reviewKey(r) === k && r.key in edits);
 
 async function init() {
   const l = await api('/api/langs'); langs = l.langs; rtl = l.rtl;
   const keep = (sel, v) => { sel.value = v; };
-  $('#src').innerHTML = langs.map(c => `<option>${c}</option>`).join('');
-  $('#lang').innerHTML = langs.filter(c => c !== 'en').map(c => `<option>${c}</option>`).join('') + '<option value="+">New language…</option>';
+  $('#src').innerHTML = langs.map(c => `<option>${esc(c)}</option>`).join('');
+  $('#lang').innerHTML = langs.filter(c => c !== 'en').map(c => `<option>${esc(c)}</option>`).join('') + '<option value="+">New language…</option>';
   keep($('#src'), localGet('src', 'en')); keep($('#lang'), localGet('lang', 'he'));
   if (!$('#src').value) $('#src').value = 'en'; if (!$('#lang').value || $('#lang').value === '+') $('#lang').value = 'he';
   await load();
@@ -665,7 +720,10 @@ $('#main').addEventListener('input', e => {
   if (e.target.tagName !== 'TEXTAREA') return;
   const r = byKey[e.target.closest('.row').dataset.key], v = e.target.value;
   if (v === r.tgt) delete edits[r.key]; else edits[r.key] = v;
-  e.target.classList.toggle('dirty', r.key in edits); changed();
+  e.target.classList.toggle('dirty', r.key in edits);
+  const rk = reviewKey(r), box = rk && document.querySelector(`[data-native="${CSS.escape(rk)}"]`);
+  if (box) box.checked = isRead(rk);
+  changed();
 });
 $('#main').addEventListener('change', e => {
   const k = e.target.dataset.native; if (!k) return;
