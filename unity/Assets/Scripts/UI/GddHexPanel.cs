@@ -168,21 +168,16 @@ namespace Statecraft.Game.UI
 
         /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
         /// Qualification.CheckReturn takes the group (not one at work). Pioneer groups have no map token and so no unit card:
-        /// this sits beside the places that list them. Once ordered the button reads "Ordered" and is off.</summary>
+        /// this sits beside the places that list them. A unit order, it takes effect at once (R-TURN-004): the group leaves
+        /// the lists, and its Build buttons with it.</summary>
         static void PioneerReturn(VisualElement host, SimBridge bridge, UiText text, int unit)
         {
             if (Qualification.CheckReturn(bridge.State, unit) != null) return;
-            var ordered = ReturnQueued(bridge, unit);
-            // A queued Build or Stop for the group is another key (unit:N), so the queue would not replace it: the sim would refuse one of them.
+            // A Build or Stop queued for the group waits for End turn, which the group would no longer be there for.
             var working = bridge.Queued.Any(x => (x is PioneerWork w && w.Unit == unit) || (x is StopWork sw && sw.Unit == unit));
-            Button(host, $"pioneer-return-{unit}", ordered ? text["site.ordered"] : text.Format("pioneer.return", Group(text, bridge.State, unit)),
-                () => bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder))).SetEnabled(!ordered && !working);
+            Button(host, $"pioneer-return-{unit}", text.Format("pioneer.return", Group(text, bridge.State, unit)),
+                () => bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder))).SetEnabled(!working);
         }
-
-        /// <summary>A Return is queued for the group. It runs before Build at End turn, so the unit has left by then and the sim
-        /// refuses the Build ("no such unit"): the Build buttons are off once it is.</summary>
-        static bool ReturnQueued(SimBridge bridge, int unit) =>
-            bridge.QueuedLike(new UnitOrder(unit, Qualification.ReturnOrder)) is UnitOrder o && o.Order == Qualification.ReturnOrder;
 
         static void Workers(SimBridge bridge, string city, int current, int count)
         {
@@ -230,7 +225,7 @@ namespace Statecraft.Game.UI
                     Button(host, $"site-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken && !ReturnQueued(bridge, u.Id));
+                        () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }
@@ -270,7 +265,7 @@ namespace Statecraft.Game.UI
                     Button(host, $"corridor-build-{u.Id}", ordered ? text["site.ordered"]
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
-                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken && !ReturnQueued(bridge, u.Id));
+                        () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
                     PioneerReturn(host, bridge, text, u.Id);
                 }
             }

@@ -1071,9 +1071,9 @@ public class CityPanelTests
     }
 
     [Test]
-    public void AGroupWithAReturnOrderedCannotBeSentToBuildToo()
+    public void AReturnedGroupLeavesTheSiteListAtOnce()
     {
-        // Return runs first at End turn, so the unit has left when Build runs and the sim refuses it (Projects.cs, "no such unit").
+        // R-TURN-004: Return is a unit order, so it takes effect at once; the group is a civilian again and offers no Build.
         using var ui = new UiTestKit();
         int idle = 0;
         var bridge = Bridge(En, s => idle = AddHalutz(s));
@@ -1081,11 +1081,13 @@ public class CityPanelTests
         panel.Show(SiteDef.Q, SiteDef.R);
         Assert.IsTrue(ui.Q<Button>($"site-build-{idle}").enabledSelf, "precondition: an idle group can build");
         UiTestKit.Press(ui.Q<Button>($"pioneer-return-{idle}"));
-        Assert.IsFalse(ui.Q<Button>($"site-build-{idle}").enabledSelf);
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(ui.Root.Q<Button>($"site-build-{idle}"));
+        Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"));
     }
 
     [Test]
-    public void ACorridorGroupWithAReturnOrderedCannotBeSentToBuildToo()
+    public void AReturnedCorridorGroupLeavesTheSegmentAtOnce()
     {
         using var ui = new UiTestKit();
         int idle = 0;
@@ -1096,7 +1098,8 @@ public class CityPanelTests
         var box = SegmentBox(ui, "burma_road", 1);
         Assert.IsTrue(box.Q<Button>($"corridor-build-{idle}").enabledSelf, "precondition: an idle group can build");
         UiTestKit.Press(box.Q<Button>($"pioneer-return-{idle}"));
-        Assert.IsFalse(SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{idle}").enabledSelf);
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{idle}"));
     }
 
     [Test]
@@ -1129,10 +1132,11 @@ public class CityPanelTests
             var button = ui.Q<Button>($"pioneer-return-{idle}");
             Assert.AreEqual(t.Format("pioneer.return", GddHexPanel.Group(t, bridge.State, idle)), button.text);
             UiTestKit.Press(button);
-            var order = bridge.QueuedLike(new UnitOrder(idle, Qualification.ReturnOrder)) as UnitOrder;
-            Assert.IsNotNull(order); Assert.AreEqual((idle, Qualification.ReturnOrder), (order!.Unit, order.Order));
-            Assert.AreEqual(t["site.ordered"], ui.Q<Button>($"pioneer-return-{idle}").text);
-            Assert.IsFalse(ui.Q<Button>($"pioneer-return-{idle}").enabledSelf);
+            // R-TURN-004: a unit order is committed at once, not queued.
+            var order = bridge.Session.Committed.OfType<UnitOrder>().Single();
+            Assert.AreEqual((idle, Qualification.ReturnOrder), (order.Unit, order.Order));
+            Assert.IsEmpty(bridge.Queued);
+            Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"), "the group has returned");
         }
     }
 
