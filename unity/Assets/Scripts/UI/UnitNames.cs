@@ -10,7 +10,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>#1399: names a unit snapshot and formats the structured Why lines that contain one. A starting force is
     /// named by its units_1948.yaml row (name_he in Hebrew where the row has one); a raised unit by its type and home city
-    /// (UnitCard.RaisedType; the city's Hebrew name from <c>namesHe</c>, the map's parse, as the unit card does).</summary>
+    /// (unit.name.&lt;type&gt;: one formation, singular, as the lines' verbs are, never the type's plural label; the city's
+    /// Hebrew name from <c>namesHe</c>, the map's parse, as the unit card does).</summary>
     public static class UnitNames
     {
         public static string Of(UnitRef unit, Content c, IReadOnlyList<UnitEntry> rows, UiText text,
@@ -27,7 +28,7 @@ namespace Statecraft.Game.UI
                 }
             }
 
-            var type = UnitCard.RaisedType(unit.Type, text) ?? unit.Type;
+            var type = text.Has("unit.name." + unit.Type) ? text["unit.name." + unit.Type] : unit.Type;
             return string.IsNullOrEmpty(unit.HomeCity)
                 ? type
                 : text.Format("unit.raised_name", type, ContentNames.Settlement(text, c, unit.HomeCity, namesHe));

@@ -201,7 +201,8 @@ namespace Statecraft.Game.UI
         (int unit, IReadOnlyDictionary<(int Q, int R), int> hexes)? MoveTargets()
         {
             var unit = unitMode ? selectedUnit() : null;
-            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token) is int id)) return null;
+            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token) is int id)
+                || bridge.GoingHome(id)) return null;
             var reach = Movement.Reachable(bridge.Content, bridge.State, id, bridge.Spent);
             return reach.Count == 0 ? null : (id, reach);
         }
@@ -256,13 +257,16 @@ namespace Statecraft.Game.UI
             return text.Format("unit.attack_odds", who, p.RatioPercent) + "\n" + string.Join("\n", bands);   // one band a line
         }
 
-        /// <summary>The shown unit's sim id, or null when it can take no order: no unit card, no sim unit for it, or the game
-        /// is over (the bridge would refuse every order).</summary>
-        int? OrderUnit()
+        /// <summary>The shown unit's sim id, or null: no unit card, no sim unit for it, or the game is over.</summary>
+        int? ShownUnit()
         {
             var unit = unitMode ? selectedUnit() : null;
             return unit == null || bridge.State.GameOver != null ? null : UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token);
         }
+
+        /// <summary>The shown unit's sim id, or null when it can take no order: none is shown (ShownUnit), or Send home is
+        /// queued for it (the bridge refuses it every other order, spec 3.2).</summary>
+        int? OrderUnit() => ShownUnit() is int id && !bridge.GoingHome(id) ? id : (int?)null;
 
         /// <summary>Fortify, Hold or Send home's button: queues the sim's order for the shown unit (one per unit: another
         /// UnitOrder is replaced). A refusal is raised by the bridge (Refused); the card redraws either way.</summary>
@@ -513,7 +517,7 @@ namespace Statecraft.Game.UI
             moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
             // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, as given,
             // on Israel's units only (an enemy's card would only repeat the sim's English "That unit is not yours").
-            var orderUnit = OrderUnit();
+            var orderUnit = OrderUnit(); var shownUnit = ShownUnit();
             var own = unit?.Token.Unit.Side == UnitData.Israel;
             var refusals = new List<string>();
             foreach (var (order, button) in new[] { (Orders.Fortify, fortifyButton), (Orders.Hold, holdButton) })
@@ -535,7 +539,7 @@ namespace Statecraft.Game.UI
             // the missing strength up to the city's free civilians; the sim's own Reinforce, run on a copy, decides, and its
             // refusal shows as the other orders' do. None while one is queued for the unit.
             reinforce = null;
-            var reinforceQueued = orderUnit is int rq && bridge.QueuedLike(new Reinforce(rq, "", 0)) != null;
+            var reinforceQueued = shownUnit is int rq && bridge.QueuedLike(new Reinforce(rq, "", 0)) != null;
             if (orderUnit is int ru && own && !reinforceQueued && s.Units.TryGetValue(ru, out var formation) && Training.Room(s, formation) > 0
                 && c.SettlementHexes.FirstOrDefault(h => h.Q == formation.Q && h.R == formation.R && s.Cities.ContainsKey(h.Id)) is { } home)
             {
@@ -554,15 +558,15 @@ namespace Statecraft.Game.UI
                 // The orders' state under the card's lines: the pick asks for a hex (an attack's with each lit hex's odds, Q-UI-1).
                 var order = pick is { attack: true } ap ? string.Join("\n", new[] { text["unit.attack_pick"] }.Concat(ap.hexes.Select(h => Odds(ap.unit, h.q, h.r))).Where(x => x != ""))
                     : pick != null ? text["unit.move_pick"] : "";
-                var standing = orderUnit is int su && s.Units.TryGetValue(su, out var shown)
+                var standing = shownUnit is int su && s.Units.TryGetValue(su, out var shown)
                     ? shown.Order == Orders.Fortify || shown.Order == Orders.Fortifying ? text["unit.fortify_queued"]
                     : shown.Order == Orders.Hold ? text["unit.hold_queued"]
                     : bridge.QueuedLike(new UnitOrder(su, Demobilization.SendHome)) != null ? text["unit.send_home_queued"] : ""
                     : "";
-                var points = orderUnit is int pu && s.Units.TryGetValue(pu, out var military) && military.Side == Movement.PlayerSide
+                var points = shownUnit is int pu && s.Units.TryGetValue(pu, out var military) && military.Side == Movement.PlayerSide
                     && c.UnitTypes.FirstOrDefault(t => t.Id == military.Type) is { MovementPoints: > 0 } type
                     ? text.Format("unit.points", Movement.PointsLeft(c, s, pu, bridge.Spent), type.MovementPoints) : "";
-                var routeLine = orderUnit is int routeUnit ? GoToLine(routeUnit) : "";
+                var routeLine = shownUnit is int routeUnit ? GoToLine(routeUnit) : "";
                 var lines = new[] { card.Body, points, order, routeLine, standing, reinforceQueued ? text["unit.reinforce_queued"] : "" }.Where(x => x != "");
                 title.text = card.Title; subtitle.text = card.Subtitle; settlements.text = string.Join("\n", lines);
                 ShowLocalities("");

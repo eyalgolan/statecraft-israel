@@ -378,6 +378,34 @@ public class UnitOrdersTests
         }
     }
 
+    /// <summary>Codex's review of #1527, finding 3, on the card: once Send home is queued for a unit, the card offers it no
+    /// other order (Move, Fortify, Hold, Attack, Reinforce, Skip, nor Send home again) and says the unit goes home.</summary>
+    [Test]
+    public void AUnitGoingHomeIsOfferedNoOtherOrder()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+        var u = g.State.Units[id];
+        var city = C.SettlementHexes.Single(h => h.Id == "tel_aviv");
+        g.State.Units[id] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength - 2, u.Order, u.OrderTarget, u.HomeCity, u.Strength);
+        g.State.Arms = 100;
+        PlacedToken? selected = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => selected);
+        var orders = new[] { "info-move", "info-fortify", "info-hold", "info-reinforce", "info-skip" }.Select(n => ui.Q<Button>(n)).ToList();
+        info.ShowUnit();
+        foreach (var b in orders) Assert.IsTrue(Shown(b), $"precondition: {b.name} is offered");
+
+        Assert.IsNull(bridge.Queue(new UnitOrder(id, Demobilization.SendHome)));
+        info.ShowUnit();
+        foreach (var b in orders.Append(ui.Q<Button>("info-attack")).Append(ui.Q<Button>("info-send-home")))
+            Assert.IsFalse(Shown(b), $"{b.name} is not offered to a unit going home");
+        StringAssert.Contains(Text["unit.send_home_queued"], ui.Q<Label>("info-settlements").text, "the card says it goes home");
+        info.Dispose();
+    }
+
     /// <summary>Gives the state the Arms for an attack and, when Golani has no enemy in reach (the sim's Combat.Check takes no
     /// hex), puts the first enemy sim unit on the first free land hex next to it; returns Golani's sim id.</summary>
     internal static int EnemyInGolanisReach(GameState s)
