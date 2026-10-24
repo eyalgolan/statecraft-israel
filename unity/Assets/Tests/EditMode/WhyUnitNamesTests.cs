@@ -75,25 +75,26 @@ public class WhyUnitNamesTests
     public void EveryUnitReadsGrammaticallyInEveryLineInBothLanguages()
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        var en = En; var he = He; var rows = Rows;   // each property parses its file again: once here, not per line
         var enemy = new UnitRef(s.Units.Values.First(u => u.Side != "" && u.Side != Movement.PlayerSide));
-        var plurals = new[] { "city.track_recruit", "unit.type.veteran_soldier", "city.track_armoured_car", "city.track_halutz" }.Select(k => En[k]).ToList();
+        var plurals = new[] { "city.track_recruit", "unit.type.veteran_soldier", "city.track_armoured_car", "city.track_halutz" }.Select(k => en[k]).ToList();
         var checkedLines = 0;
         foreach (var unit in EveryUnit(s))
         {
-            var en = UnitNames.Of(unit, C, Rows, En);
-            Assert.IsFalse(plurals.Any(p => en.StartsWith(p, System.StringComparison.Ordinal)), $"{unit.Type}: '{en}' is plural");
+            var english = UnitNames.Of(unit, C, rows, en);
+            Assert.IsFalse(plurals.Any(p => english.StartsWith(p, System.StringComparison.Ordinal)), $"{unit.Type}: '{english}' is plural");
             foreach (var key in WhyKeys.All)
             {
                 var units = key == WhyKeys.Engagement ? new[] { unit, enemy } : new[] { unit };
                 var cause = new Cause("map", "0", 0, "fallback", key: key, units: units, args: Args(key));
-                foreach (var text in new[] { En, He })
+                foreach (var text in new[] { en, he })
                 {
-                    var name = UnitNames.Of(unit, C, Rows, text);
+                    var name = UnitNames.Of(unit, C, rows, text);
                     StringAssert.DoesNotContain(unit.Type, name, $"{unit.Type} has a name in {text["ui.lang"]}");
-                    var line = UnitNames.Line(cause, C, Rows, text).Replace(UiText.LeftToRightMark.ToString(), "");   // the marks around a Latin value
+                    var line = UnitNames.Line(cause, C, rows, text).Replace(UiText.LeftToRightMark.ToString(), "");   // the marks around a Latin value
                     StringAssert.Contains(name, line, key);
                     StringAssert.DoesNotContain("{", line, key);
-                    if (text == He)
+                    if (text == he)
                         Assert.IsTrue(line.StartsWith(name + ": ", System.StringComparison.Ordinal) || line.Contains("של " + name)
                             || key == WhyKeys.Engagement || key == WhyKeys.OnItsWay && line.StartsWith(name + " בדרך ", System.StringComparison.Ordinal),
                             $"{key}: no verb may agree with '{name}': {line}");
