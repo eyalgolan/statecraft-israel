@@ -53,3 +53,37 @@ def test_cli_pass_is_explicitly_limited(tmp_path, capsys):
     assert 'DIMENSIONS OK' in out
     assert 'not gameplay provenance' in out
     assert m.main([]) == 1
+
+
+def test_resolve_runtime_error_is_a_named_refusal(tmp_path):
+    import contextlib
+    import io
+    from unittest.mock import patch
+    m = module()
+    path = tmp_path / 'loop.png'
+    with patch.object(m.Path, 'resolve', side_effect=RuntimeError('Symlink loop')):
+        errors = m.validate([path])
+        assert any('cannot read image' in error and 'loop.png' in error for error in errors)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            assert m.main([str(path)]) == 1
+        assert 'DIMENSIONS REFUSED:' in output.getvalue()
+        assert 'loop.png' in output.getvalue()
+
+
+def test_pillow_pixel_guard_is_a_named_refusal(tmp_path):
+    import contextlib
+    import io
+    from unittest.mock import patch
+    m = module()
+    path = tmp_path / 'tiny.png'
+    Image.new('RGB', (8, 8)).save(path)
+    prior_limit = Image.MAX_IMAGE_PIXELS
+    with patch.object(Image, 'MAX_IMAGE_PIXELS', 16):
+        errors = m.validate([path])
+        assert any('cannot read image' in error and 'tiny.png' in error for error in errors)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            assert m.main([str(path)]) == 1
+        assert 'DIMENSIONS REFUSED:' in output.getvalue()
+    assert Image.MAX_IMAGE_PIXELS == prior_limit

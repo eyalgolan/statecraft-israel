@@ -18,7 +18,11 @@ def validate(paths):
     errors, unique = [], set()
     for path in paths:
         p = Path(path)
-        resolved = p.resolve()
+        try:
+            resolved = p.resolve()
+        except (OSError, RuntimeError) as exc:
+            errors.append(f'{p}: cannot read image ({exc})')
+            continue
         if resolved in unique:
             errors.append(f'{p}: duplicate path (does not count as another screenshot)')
             continue
@@ -27,7 +31,7 @@ def validate(paths):
             with Image.open(p) as image:
                 width, height = image.size
                 image.verify()
-        except (OSError, ValueError, UnidentifiedImageError) as exc:
+        except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
             errors.append(f'{p}: cannot read image ({exc})')
             continue
         if width < 1920 or height < 1080:
