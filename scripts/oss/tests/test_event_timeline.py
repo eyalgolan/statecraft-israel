@@ -48,3 +48,23 @@ def test_defaults_match_the_sim():
 def test_real_content_every_event_lands_in_an_era():
     rows = m.load(ROOT)
     assert rows and all(r['era'] != '-' for r in rows)
+
+
+def test_invalid_status_is_an_argparse_error_listing_schema_choices(tmp_path, capsys):
+    import json
+    import pytest
+    schema = json.loads((ROOT / 'content/schema/event.schema.json').read_text(encoding='utf-8'))
+    with pytest.raises(SystemExit) as error:
+        m.main(['--root', str(repo(tmp_path)), '--status', 'drfat'])
+    assert error.value.code == 2
+    out, err = capsys.readouterr()
+    assert out == ''
+    assert 'invalid choice' in err and 'drfat' in err
+    for status in schema['properties']['status']['enum']:
+        assert status in err
+
+
+def test_status_choices_match_the_schema_enum():
+    import json
+    schema = json.loads((ROOT / 'content/schema/event.schema.json').read_text(encoding='utf-8'))
+    assert list(m.STATUS_CHOICES) == schema['properties']['status']['enum']

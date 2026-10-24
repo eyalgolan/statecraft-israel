@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # The sim's defaults for a missing key (GameEvent in sim/Statecraft.Sim/Content.cs; a test keeps them equal).
 DEFAULT_ANCHOR = "soft"
 DEFAULT_STATUS = "draft"
+STATUS_CHOICES = ("draft", "fact-checked", "historian-reviewed", "sensitivity-reviewed")
 
 
 def load(root: Path) -> list[dict]:
@@ -48,7 +49,7 @@ def render(rows: list[dict]) -> str:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--root", type=Path, default=ROOT)
-    p.add_argument("--status", help="only events with this review status")
+    p.add_argument("--status", choices=STATUS_CHOICES, help="only events with this review status")
     a = p.parse_args(argv)
     rows = load(a.root)
     if a.status:
