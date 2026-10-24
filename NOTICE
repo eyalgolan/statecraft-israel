@@ -84,6 +84,26 @@ under CC BY-SA 4.0:
 - kahana.jpg: Knesset photographer / Knesset Archives, 1949-1981, CC BY-SA 4.0, cropped.
   https://commons.wikimedia.org/wiki/File:Kalman_Kahana_(00360304).jpg
 
+Advisor clips (unity/Assets/StreamingAssets/advisors/; per-file records in ASSETS.yaml). Each is an archival
+photograph, colorized or tinted, cropped, then animated and lip-synced with AI to a synthetic voice, labelled in the game
+"AI animation and voice. Fictional dialogue." with its credit.
+CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
+- opening.move.mp4, dayan.city_at_risk.mp4, dayan.defeat_war.mp4, dayan.arms_out.mp4: Benno Rothenberg / Meitar
+  Collection / National Library of Israel / The Pritzker Family National Photography Collection, CC BY 4.0. Moshe Dayan,
+  9 December 1953, NLI 997008136641805171. Flipped to its true orientation, colorized (Dreamina), cropped, animated
+  (Kling 3.0 Pro) and lip-synced (Sync 3).
+  https://commons.wikimedia.org/wiki/File:Moshe_Dayan_(997008136641805171).jpg
+Public domain (PD-Israel), Government Press Office, National Photo Collection, via Wikimedia Commons:
+- opening.greeting.mp4, opening.attention.mp4, opening.event.mp4: David Ben-Gurion, 16 April 1951, D683-095. Tinted, set
+  on an AI-made office background, animated and lip-synced.
+  https://commons.wikimedia.org/wiki/File:Prime_minister_David_Ben-Gurion,_1951.jpg
+- opening.city.mp4, opening.training.mp4, meyerson.exhausted.mp4, meyerson.debt_ceiling.mp4: Golda Meyerson (later Meir)
+  with the children of Kibbutz Shefayim, 24 July 1950, Théodore Brauner, D703-086. Colorized (Dreamina), cropped,
+  animated and lip-synced; the AI also moves the people around her and the flag.
+  https://commons.wikimedia.org/wiki/File:Golda_Meir_with_children_of_Kibbutz_Shfayim.jpg
+The clips' voices are synthetic, made with ElevenLabs and Fish Audio from Israel State Archives recordings
+(ISA-Collections-Recordings-00113hj, recorded by Ralph Hellinger; ISA-Collections-MiscFilms-0010ouo).
+
 Event-card photographs (unity/Assets/UI/EventImages/; per-file records in ASSETS.yaml). Each is adapted: graded and
 cropped (shown in black and white with a navy-sepia tone, cropped and resized; nothing else changed).
 CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), via Wikimedia Commons:
