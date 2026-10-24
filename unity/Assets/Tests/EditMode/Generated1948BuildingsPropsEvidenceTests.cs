@@ -15,6 +15,8 @@ using Object = UnityEngine.Object;
 
 public class Generated1948BuildingsPropsEvidenceTests
 {
+    static readonly string[] Regenerated = { "Tiled house", "Porch house", "Courtyard house" };
+
     [UnityTest, Explicit("Actual Play Mode game-camera evidence; run after category preparation")]
     public IEnumerator CaptureRunningReview()
     {
@@ -30,7 +32,7 @@ public class Generated1948BuildingsPropsEvidenceTests
         }
         Assert.IsNotNull(review); Assert.AreEqual(11, review!.PlacedCount);
         var camera = Camera.main; var rig = camera.GetComponent<CameraRig>();
-        string dir = Path.Combine(Paths.RepoRoot, "captures", "buildings-props-originals-review-v2"); Directory.CreateDirectory(dir);
+        string dir = Path.Combine(Paths.RepoRoot, "captures", "buildings-props-regenerated-review-v3"); Directory.CreateDirectory(dir);
         int oldQuality = QualitySettings.GetQualityLevel();
         try
         {
@@ -44,13 +46,13 @@ public class Generated1948BuildingsPropsEvidenceTests
                 rig.LookAt = bounds.center; rig.Distance = CameraController.MinDistance; rig.Yaw = 0f; rig.Apply();
                 yield return null;
                 string file = sample.name.ToLowerInvariant().Replace(' ', '-'); Capture(camera, Path.Combine(dir, file + ".png"));
-                if (sample.name.Contains("roof gaps") || sample.name.Contains("rear opening"))
+                if (Regenerated.Contains(sample.name))
                 {
                     rig.Yaw = 180f; rig.Apply(); yield return null; Capture(camera, Path.Combine(dir, file + "-rear.png"));
                 }
             }
-            File.WriteAllText(Path.Combine(dir, "README.txt"), "Actual Unity Editor Play Mode, runtime Start placement, real MapScene CameraRig at its fixed elevated pitch. PC quality,3840x2160. Camera.Render captures exclude screen-space GUI labels/HUD. Editor-only original-source inspection; no campaign variation is activated. Known source roof/rear defects are intentionally retained. Not a native player or new historical deployment.\n");
-            Debug.Log("BUILDINGS/PROPS EDITOR ORIGINALS EVIDENCE: all11 + known defect views -> " + dir);
+            File.WriteAllText(Path.Combine(dir, "README.txt"), "Actual Unity Editor Play Mode, runtime Start placement, real MapScene CameraRig at its fixed elevated pitch. PC quality,3840x2160. Camera.Render captures exclude screen-space GUI labels/HUD. Editor-only source inspection; no campaign variation is activated. 01, 03 and 05 are the 24 October 2026 regenerations (#1379), shown front and rear. Not a native player or new historical deployment.\n");
+            Debug.Log("BUILDINGS/PROPS EDITOR EVIDENCE: all11 + regenerated front/rear views -> " + dir);
         }
         finally { QualitySettings.SetQualityLevel(oldQuality, true); }
         yield return new ExitPlayMode();

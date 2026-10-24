@@ -21,7 +21,7 @@ public class Generated1948BuildingsPropsTests
             .Any(m => m.GetCustomAttributes(typeof(RuntimeInitializeOnLoadMethodAttribute), false).Length != 0));
     }
 
-    [Test] public void EditorReviewNamesAllOriginalsAndMarksKnownSourceDefects()
+    [Test] public void EditorReviewNamesAllElevenModelsWithNoSourceDefectMarks()
     {
         var scene = EditorSceneManager.OpenScene(Generated1948BuildingsPropsReview.ScenePath, OpenSceneMode.Additive);
         var review = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Generated1948BuildingsPropsReview>()).Single();
@@ -32,8 +32,8 @@ public class Generated1948BuildingsPropsTests
             Assert.IsNotNull(review.Prefabs[i]); Assert.IsNotNull(review.Materials[i]);
             StringAssert.StartsWith(Generated1948BuildingsPropsReview.AssetFolder, AssetDatabase.GetAssetPath(review.Prefabs[i]));
         }
-        Assert.AreEqual(2, review.Labels.Count(s => s.Contains("roof gaps")));
-        Assert.AreEqual(1, review.Labels.Count(s => s.Contains("rear opening")));
+        // 01, 03 and 05 were regenerated on #1379; no label may still mark a roof gap or rear opening.
+        Assert.IsFalse(review.Labels.Any(s => s.Contains("roof gaps") || s.Contains("rear opening")));
     }
 
     [Test] public void EditorSamplesFitPlatformAndTouchFloor()

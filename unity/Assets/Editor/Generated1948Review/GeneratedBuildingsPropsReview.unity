@@ -188,11 +188,11 @@ MonoBehaviour:
   - {fileID: 2100000, guid: c8fe9ea8f7ae54452af11c4a53828fa6, type: 2}
   - {fileID: 2100000, guid: 8c6704bc2eba64a65be95011757daece, type: 2}
   labels:
-  - Original tiled house (roof gaps)
+  - Tiled house
   - Netanya balcony house
-  - Original porch house (rear opening)
+  - Porch house
   - Tiberias stone house
-  - Original courtyard house (roof gaps)
+  - Courtyard house
   - Bedouin enclosed tent
   - Khaki canvas tent
   - Stone well

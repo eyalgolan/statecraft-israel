@@ -26,8 +26,8 @@ namespace Statecraft.Game.EditorTools
             var scene = EditorSceneManager.OpenScene(Generated1948BuildingsPropsReview.ScenePath, OpenSceneMode.Additive);
             var review = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Generated1948BuildingsPropsReview>()).Single();
             var serialized = new SerializedObject(review);
-            string[] names = { "Original tiled house (roof gaps)", "Netanya balcony house", "Original porch house (rear opening)",
-                "Tiberias stone house", "Original courtyard house (roof gaps)", "Bedouin enclosed tent", "Khaki canvas tent",
+            string[] names = { "Tiled house", "Netanya balcony house", "Porch house",
+                "Tiberias stone house", "Courtyard house", "Bedouin enclosed tent", "Khaki canvas tent",
                 "Stone well", "Low sandbag position", "Supply crates", "Low stone wall" };
             var prefabs = serialized.FindProperty("prefabs"); var materials = serialized.FindProperty("materials"); var labels = serialized.FindProperty("labels");
             prefabs.arraySize = materials.arraySize = labels.arraySize = Ids.Length;
