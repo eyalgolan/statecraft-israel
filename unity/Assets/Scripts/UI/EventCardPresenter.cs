@@ -165,13 +165,15 @@ namespace Statecraft.Game.UI
 
         /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
         public void Collapse() => Collapse(takeFocus: true);
+        int collapsedAt = -1;
+        internal bool CollapsedThisFrame => collapsedAt == UnityEngine.Time.frameCount;
 
         /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
         /// advisor opening chain hides the card while its popup has the focus).</summary>
         public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
-            collapsedFor = Shown.Id;
+            collapsedFor = Shown.Id; collapsedAt = UnityEngine.Time.frameCount;
             Render();
             if (!takeFocus) return;
             if (hideByPointer) { hideByPointer = false; return; }
@@ -289,7 +291,7 @@ namespace Statecraft.Game.UI
                 rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
                 options.Add(rejoin);
             }
-            card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
+            card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
         }

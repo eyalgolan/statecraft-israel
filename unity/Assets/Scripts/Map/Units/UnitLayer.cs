@@ -310,6 +310,21 @@ namespace Statecraft.Game.Map.Units
                 .Where(s => s != null).Select(s => (s!.Value.Q, s.Value.R)).ToList();
             var entries = fresh.Select(t => new UnitEntry { Id = t.Unit.Id, Side = t.Unit.Side, Service = t.Unit.Service, Anchors = new List<UnitAnchor> { t.Anchor } }).ToList();
             foreach (var kv in ground.Place(entries, XZ(map), Debug.LogWarning, taken)) movedSpots[kv.Key] = kv.Value;
+            // A sim unit with no clear spot within a hex is still drawn, compact on its own sim hex: left out, it could not
+            // be seen or selected, and End turn waits for it (UnitPlacer.OnOwnHex). The spots are placed in token order.
+            var toXZ = XZ(map);
+            var used = tokens.Select(t => spots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
+                .Where(s => s != null).Select(s => (s!.Value.X, s.Value.Z)).ToList();
+            foreach (var t in fresh)
+            {
+                if (movedSpots.ContainsKey(t.Anchor) || t.StateUnit == null || !(shownContent?.HexAt(t.StateUnit.Q, t.StateUnit.R) is MapHex hex)) continue;
+                var c = toXZ(hex.Lon, hex.Lat);
+                var spot = UnitPlacer.OnOwnHex(hex.Q, hex.R, (c.x, c.y), ground.HexSizeM, used, 1.5 * ground.RingRadius(true),
+                    (x, z) => ground.Clear(t.Unit.Service, new Vector2((float)x, (float)z), true, false, c));
+                movedSpots[t.Anchor] = spot;
+                used.Add((spot.X, spot.Z));
+                Debug.Log($"UNITS {t.Unit.Id} (unit {t.StateUnit.Id}) drawn compact on its own hex ({hex.Q},{hex.R})");
+            }
             MovedSpotsPlaced += fresh.Count;
             drawSpots = new Dictionary<UnitAnchor, AnchorSpot>(spots.Count + movedSpots.Count);
             foreach (var kv in spots) drawSpots[kv.Key] = kv.Value;
@@ -330,12 +345,15 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>What a click on hex (q, r) selects: the unit standing there, unless it is already selected (a second
         /// click shows the hex, so a token never hides the hex's map actions) or the "units" toggle hides the layer; null
-        /// means show the hex.</summary>
+        /// means show the hex. Where several tokens stand on the hex (a unit drawn on its own crowded hex,
+        /// UnitPlacer.OnOwnHex), each click selects the next of them in drawing order, then the hex, so every one can be
+        /// clicked.</summary>
         public string? UnitToSelectAt(int q, int r)
         {
             if (!gameObject.activeInHierarchy) return null;
-            var hit = At(q, r);
-            return hit != null && hit.Value.Token.Unit.Id != Selected ? hit.Value.Token.Unit.Id : null;
+            var here = placed.Where(p => p.Q == q && p.R == r).Select(p => p.Token.Unit.Id).ToList();
+            int i = Selected == null ? -1 : here.IndexOf(Selected);
+            return i + 1 < here.Count ? here[i + 1] : null;
         }
 
         /// <summary>The token on hex (q, r), or null.</summary>

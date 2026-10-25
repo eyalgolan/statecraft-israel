@@ -155,7 +155,8 @@ namespace Statecraft.Sim
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             // Owner decision "Allow borrowing" (2026-10-15, #378 question 13): a short Treasury borrows, as map actions do.
             var (cost, turns) = Terms(r, action);
-            EconomySystem.PayOrBorrow(c, s, cost, camp ? "to build a training camp" : plow ? "to plow fields" : drain ? "to drain a swamp" : "to build a yishuv", why);
+            EconomySystem.PayOrBorrow(c, s, cost, camp ? "to build a training camp" : plow ? "to plow fields" : drain ? "to drain a swamp" : "to build a yishuv", why,
+                camp ? CauseKeys.Purpose.TrainingCamp : plow ? CauseKeys.Purpose.Plow : drain ? CauseKeys.Purpose.Drain : CauseKeys.Purpose.Yishuv);
             // The same reading of D-A6 as training's: the turn of the order is the first build turn, so with
             // build_yishuv_turns 6 an order on turn T is built at the end of T+5
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
@@ -318,7 +319,7 @@ namespace Statecraft.Sim
             if (s.MapActionsTurnDate != s.Date) { s.MapActionsTurnDate = s.Date; s.MapActionsThisTurn = 0; }
             s.MapActionsThisTurn++;
             var name = PlayerText.Settlement(c, city);
-            EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why);
+            EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why, CauseKeys.Purpose.Project, k.Id);
             var id = s.NextId++;
             s.CityProjects.Add(id, new CityProject(id, kind, city, q, r, k.Turns));
             why.Add(new Cause("city", city, 1, $"{name}: {k.Name} began, cost {PlayerText.Money(c, "treasury", k.Cost)}"));

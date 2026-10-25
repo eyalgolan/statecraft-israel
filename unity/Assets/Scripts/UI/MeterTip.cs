@@ -8,19 +8,20 @@ namespace Statecraft.Game.UI
 {
     /// <summary>Each top-bar number explains itself (#1037): while the pointer is over a meter, or after a tap on it (a
     /// touchscreen has no hover), a tip under the bar gives the meter in words (its tooltip, HudModel.Spoken: the value
-    /// and this turn's change) and the turn's main causes, which are the sim's own messages (HudModel.Causes). A second
+    /// and this turn's change) and the turn's main causes, the sim's own causes worded by CauseText (HudModel.Causes). A second
     /// tap on the same meter closes it, a tap on another moves it, and a tap anywhere else or End Turn closes it; a mouse
     /// click pins nothing, as the mouse hovers (#1108). It shows only while the meter can take the pointer, so a report or
     /// an outcome clip over the bar hides it. The tip is centred under the meter and kept inside the window. Nothing is
     /// computed here; the tip takes no clicks. Its two labels are the meter's words in the UI's language and the causes,
-    /// which the sim gives in English (#55), so each takes its own direction.</summary>
+    /// which are in the UI's language where the line has a key (B1) and in the sim's English where it has none yet (#55),
+    /// so each takes its own direction.</summary>
     public sealed class MeterTip : IDisposable
     {
         public const string TipName = "meter-tip";
         /// <summary>The gap between the tip and the window's edge, and between the meter and the tip.</summary>
         const float Margin = 8f;
 
-        readonly VisualElement layer, tip; readonly Label words, causesLine; readonly SimBridge bridge; readonly UiText text;
+        readonly VisualElement layer, tip; readonly Label words; readonly VisualElement causesBox; readonly SimBridge bridge; readonly UiText text;
         readonly List<VisualElement> meters = new List<VisualElement>();
         readonly EventCallback<PointerEnterEvent> onEnter; readonly EventCallback<PointerLeaveEvent> onLeave;
         readonly EventCallback<ClickEvent> onClick; readonly EventCallback<GeometryChangedEvent> onTipGeometry;
@@ -32,7 +33,7 @@ namespace Statecraft.Game.UI
         public MeterTip(VisualElement root, SimBridge bridge, UiText text, IEnumerable<VisualElement> meters)
         {
             tip = root.Q<VisualElement>(TipName); layer = tip.parent; this.bridge = bridge; this.text = text;
-            words = tip.Q<Label>("meter-tip-words"); causesLine = tip.Q<Label>("meter-tip-causes");
+            words = tip.Q<Label>("meter-tip-words"); causesBox = tip.Q<VisualElement>("meter-tip-causes");
             onEnter = e => { hovered = (VisualElement)e.currentTarget; Refresh(); };
             onLeave = e => { if (hovered == e.currentTarget) hovered = null; Refresh(); };
             // #1108: a mouse click pinned the tip, so it outlived the pointer's leave; the mouse has hover, only a tap pins. A
@@ -83,12 +84,13 @@ namespace Statecraft.Game.UI
         /// <summary>The meter the tip is shown for, or null.</summary>
         public VisualElement? ShownFor => shownFor;
 
-        /// <summary>The tip's two lines for <paramref name="meter"/> (an element named "meter-" + a HudModel.MeterIds id): its
-        /// words, with the causes' heading when there are causes, and the causes ("" when none).</summary>
-        public (string words, string causes) Lines(VisualElement meter)
+        /// <summary>The tip's lines for <paramref name="meter"/> (an element named "meter-" + a HudModel.MeterIds id): its
+        /// words, with the causes' heading when there are causes, and the causes, one a line (none when none).</summary>
+        public (string words, IReadOnlyList<string> causes) Lines(VisualElement meter)
         {
-            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length));
-            return causes.Count == 0 ? (meter.tooltip, "") : (meter.tooltip + "\n" + text["hud.causes"], string.Join("\n", causes));
+            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length),
+                w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text));   // no meter counts a unit line
+            return causes.Count == 0 ? (meter.tooltip, causes) : (meter.tooltip + "\n" + text["hud.causes"], causes);
         }
 
         /// <summary>Shows the tip for the hovered meter, else the tapped one, with today's words (HudPresenter.Render calls
@@ -98,8 +100,17 @@ namespace Statecraft.Game.UI
             var target = hovered ?? pinned;
             if (target == null || !target.enabledInHierarchy || string.IsNullOrEmpty(target.tooltip) || !(target.worldBound.width > 0)) { Hide(); return; }
             var (w, c) = Lines(target);
-            words.text = w; causesLine.text = c;
-            causesLine.style.display = c.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            words.text = w;
+            // One label a cause, each with its own direction (UiDirection): a Hebrew line and a line still in English (B1).
+            causesBox.Clear();
+            foreach (var line in c)
+            {
+                var label = new Label { pickingMode = PickingMode.Ignore };
+                label.AddToClassList("meter-tip-line");
+                causesBox.Add(label);
+                label.text = line;   // set once in the panel, so UiDirection's change callback gives it its direction
+            }
+            causesBox.style.display = c.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
             shownFor = target;
             tip.style.display = DisplayStyle.Flex;
             Place();

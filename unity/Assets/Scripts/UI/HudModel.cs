@@ -52,14 +52,15 @@ namespace Statecraft.Game.UI
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "not a top-bar meter"),
         };
 
-        /// <summary>The main causes of a meter's change in <paramref name="turn"/> (#1037): the messages of the sim's own causes
-        /// (StepResult.Why) for the quantity the meter shows, the largest change first (each meter's causes share its unit),
+        /// <summary>The main causes of a meter's change in <paramref name="turn"/> (#1037): the sim's own causes
+        /// (StepResult.Why) for the quantity the meter shows, each worded by <paramref name="line"/> (CauseText.Line: the
+        /// player's language, B1), the largest change first (each meter's causes share its unit),
         /// the sim's order breaking a tie, at most <see cref="MaxCauses"/>. Nothing is computed or reworded here: a cause is
         /// matched by its target, as <see cref="From"/> reads the state (Money: the Treasury and the debt; Immigration: the
         /// population system's arrivals; Social cohesion: morale; International support: intl_standing; Foreign currency:
         /// fx_reserves; Security: security). Public support is an average the sim computes from the indicators
         /// (EffectsSystem.Approval) and no cause names it, so it has none.</summary>
-        public static IReadOnlyList<string> Causes(StepResult? turn, string meter)
+        public static IReadOnlyList<string> Causes(StepResult? turn, string meter, Func<Cause, string> line)
         {
             if (turn == null) return Array.Empty<string>();
             Func<Cause, bool> match = meter switch
@@ -73,7 +74,7 @@ namespace Statecraft.Game.UI
                 _ => w => false,
             };
             return turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
-                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => x.w.Message).ToList();
+                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i).Take(MaxCauses).Select(x => line(x.w)).ToList();
         }
 
         public static HudModel From(SimBridge b, UiText t)

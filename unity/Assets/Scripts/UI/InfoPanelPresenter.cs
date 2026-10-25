@@ -17,6 +17,9 @@ namespace Statecraft.Game.UI
     /// and Send home after the unit's front signs its armistice (#1309).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
+        readonly System.Action? clearSelection;
+        readonly EventCallback<NavigationCancelEvent> onCancel;
+
         /// <summary>The class of a fact row (Game.uxml): a sign, then the fact's line; hidden while the line is empty.</summary>
         public const string RowClass = "info-row";
         /// <summary>On the panel while it shows a unit's card: the rows keep their lines but drop the hex signs (Statecraft.uss).</summary>
@@ -90,9 +93,12 @@ namespace Statecraft.Game.UI
             System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
             System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, System.Func<int, string?>? unitName = null,
             System.Action? unitDone = null,
-            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null)
+            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
+            this.clearSelection = clearSelection;
+            onCancel = e => { if (!e.isPropagationStopped && Escape()) e.StopPropagation(); };
+            panel.RegisterCallback(onCancel);
             this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt; this.townHex = townHex;
             this.townNamesHe = townNamesHe;
             title = panel.Q<Label>("info-title"); subtitle = panel.Q<Label>("info-subtitle"); region = panel.Q<Label>("info-region"); settlements = panel.Q<Label>("info-settlements");
@@ -147,13 +153,27 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
+        public void Dispose() { panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
         /// the left column (InfoPanelLayoutTests).</summary>
         public const float ShortBelowPx = 1040f;
         public const string ShortClass = "info-short";
+
+        /// <summary>Escape dismisses a reachable selection and its pick, without queuing an order (playtest B9). Covers keep
+        /// priority. Focus on one of the panel's controls, which the clear hides, goes to the map stop (as after a press, #41).</summary>
+        public bool Escape()
+        {
+            var hud = panel.parent;
+            if (Covered || !panel.enabledInHierarchy || hud?.ClassListContains(ScreenNav.ScreenOpenClass) == true
+                || (Selected == null && !ShowsUnit)) return false;
+            var focused = panel.panel?.focusController?.focusedElement as VisualElement;
+            bool inside = focused != null && (focused == panel || panel.Contains(focused));
+            Clear(); clearSelection?.Invoke();
+            if (inside) FocusReturn.To(mapFocus);
+            return true;
+        }
 
         public (int q, int r)? Selected { get; private set; }
 
@@ -237,7 +257,8 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Move's or Attack's button: starts its pick (the sim's hexes lit), or ends it when pressed again; a press
-        /// of the other ends the open pick and starts its own.</summary>
+        /// of the other ends the open pick and starts its own. A unit that can move never stays without a pick: RenderLines
+        /// opens Move's again at once (a second press of Move keeps its hexes lit; a second press of Attack goes back to Move).</summary>
         void TogglePick(bool attack)
         {
             var again = pick?.attack == attack;
@@ -353,10 +374,24 @@ namespace Statecraft.Game.UI
             for (var e = picked; e != panel; e = e.parent) if (e is Button) return false;
             if (!(hexUnder() is { } h)) return false;
             if (clickThrough is { } known && known.hex == h) return known.takes;
-            var takes = p.hexes.Contains(h) || RouteTo(p, h.q, h.r).Count > 0;   // RouteTo: PickTarget's go-to rule
+            var takes = Takes(p, h.q, h.r);
             clickThrough = (h, takes);
             return takes;
         }
+
+        /// <summary>True when (q, r) is one of a city's settlement hexes (GameRoot.CityAt): a left click there shows the city
+        /// even while Move picks (owner, 25 Oct 2026: "Clicking another unit or a city still selects it").</summary>
+        public bool IsCity(int q, int r) => GameRoot.CityAt(bridge.Content, bridge.State, q, r) != null;
+
+        /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
+        public bool MovePicking => pick is { attack: false };
+
+        /// <summary>True when a pick is open and PickTarget would give an order for (q, r): a lit hex, or, for Move, an unlit
+        /// hex with a go-to route. A right click (GameRoot.OnHexOrdered) gives one only then.</summary>
+        public bool PickTakes(int q, int r) => pick is { } p && Takes(p, q, r);
+
+        bool Takes((int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack, (int q, int r)? touchRoute) p,
+            int q, int r) => p.hexes.Contains((q, r)) || RouteTo(p, q, r).Count > 0;   // RouteTo: PickTarget's go-to rule
 
         /// <summary>A map click while the player picks a Move's or an Attack's hex (GameRoot.OnHexClicked asks first): a lit
         /// hex gives the Move or attack; an unlit hex with a route gives go-to. Touch previews that route on the first tap and
@@ -543,6 +578,16 @@ namespace Statecraft.Game.UI
                 && (open.session != bridge.Session || open.turn != s.Turn || unit == null || UnitCard.SimUnit(c, s, unit.Value.Token) != open.unit))
                 EndPick();
             var moves = MoveTargets();
+            if (pick is { attack: false } && moves == null) EndPick();   // no Move any more (Send home queued, no points, game over)
+            // Civ (owner, 25 Oct 2026: "the unit must move when you click on the fucking lit hex"; spec 2.1, "Selecting a unit
+            // lights its one-turn reach"): a shown unit that can move has its Move pick open, with no press of Move. Its
+            // button stays (keyboard, the guide); pressing it, or Attack again, comes back here and lights the reach again.
+            if (pick == null && moves is { } armed)
+            {
+                var hexes = armed.hexes.Keys.Select(h => (h.Q, h.R)).ToList();
+                pick = (armed.unit, new HashSet<(int q, int r)>(hexes), bridge.Session, s.Turn, false, null);
+                showReachable?.Invoke(hexes);
+            }
             moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
             // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, as given,
             // on Israel's units only (an enemy's card would only repeat the sim's English "That unit is not yours").

@@ -403,6 +403,59 @@ public class GameSceneTests
         }
     }
 
+    /// <summary>#1654 (owner, 25 Oct 2026, "Civ: select, then click"), through the game's own wiring: selecting Golani lights
+    /// its reach with no Move press, the camera holds its right drag on the pointer's tap rule, and a right click that the
+    /// game's MapPointer raises on a lit hex moves Golani there at once (GameRoot's HexOrdered subscription).</summary>
+    [UnityTest]
+    public IEnumerator ARightClickThroughTheGamesPointerMovesTheSelectedUnit()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var cam = Camera.main!;
+        var rt = new RenderTexture(1920, 1080, 0);
+        var camRt = new RenderTexture(1920, 1080, 24);
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        try
+        {
+            doc.panelSettings = ps;
+            cam.targetTexture = camRt;
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(Inputs, 0);
+            var ui = doc.rootVisualElement;
+            HideTheOpeningCard(ui);
+            yield return null;
+            var bridge = root.Bridge!; var c = bridge.Content;
+            var layer = root.Units!;
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(c, bridge.State, golani.Token.Unit)!.Value;
+            GameRoot.OnHexClicked(map, layer, root.Info!, golani.Q, golani.R);
+            Assert.IsTrue(root.Info!.MovePicking, "selecting Golani opened its Move pick");
+            int Room((int q, int r) h) => bridge.State.Units.Values.Select(u => MapActions.Distance(u.Q, u.R, h.q, h.r))
+                .Concat(c.SettlementHexes.Select(x => MapActions.Distance(x.Q, x.R, h.q, h.r))).Min();
+            var lit = Movement.Reachable(c, bridge.State, id).Keys.Select(k => (k.Q, k.R)).OrderByDescending(Room).First();
+            Assert.GreaterOrEqual(Room(lit), 1, "precondition: no unit or settlement on the lit hex");
+            var pointer = Object.FindFirstObjectByType<MapPointer>();
+            var camera = cam.GetComponent<CameraController>();
+            Assert.IsNotNull(camera.HoldsMouseDrag, "the camera holds its right drag on the pointer's tap rule");
+            Assert.IsNotNull(camera.HoldsTouchDrag, "and its one-finger drag");
+            var probe = AimAt(lit.Item1, lit.Item2);
+            Assert.IsTrue(pointer.HandleRightClick(probe), "the right click picks the lit hex");
+            Assert.AreEqual(lit, (bridge.State.Units[id].Q, bridge.State.Units[id].R), "the right click moved Golani at once");
+            Assert.IsTrue(root.Info.ShowsUnit, "Golani's card stays");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (ps != null) Object.DestroyImmediate(ps);
+            if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+            if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
+        }
+    }
+
     /// <summary>Since the GDD cutover the game opens on its first card, One Army (idf_founding, window from 15 May 1948 per
     /// #567: the order it asks about was signed on 26 May, before the next monthly turn), and its photograph covers the map. A
     /// player hides it to use the map; so do these tests.</summary>

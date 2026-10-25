@@ -49,6 +49,10 @@ public class TurnReportTests
         }
     }
 
+    /// <summary>A row's causes, one label each, in order.</summary>
+    static List<string> Causes(UiTestKit ui, string meter) =>
+        ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
+
     [Test]
     public void TheFixedTurnReportsEachChangedNumberWithTheSimsOwnCauses()
     {
@@ -70,19 +74,19 @@ public class TurnReportTests
             // The heading is the bar's caption and the very change the bar shows next to the number.
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
-            var causes = k.Ui.Root.Q<Label>("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id);
+            var causes = k.Ui.Root.Q("turn-report-causes-" + id);
+            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
-            var lines = causes!.text.Split('\n');
+            var lines = Causes(k.Ui, id);
             CollectionAssert.AreEqual(expected, lines, id);
-            Assert.LessOrEqual(lines.Length, HudModel.MaxCauses, id);
+            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
             foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
         // The fixed turn's own causes: Security moved by One Army, then by the border villages' effect, the larger first.
-        var security = k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n');
+        var security = Causes(k.Ui, "security");
         Assert.AreEqual("Security +1.5% (One Army)", security[0]);
         StringAssert.EndsWith("(Border villages)", security[1]);
-        StringAssert.StartsWith("Money ", k.Ui.Q<Label>("turn-report-causes-treasury").text, "Money's main cause is the economy's line");
+        StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
 
@@ -107,7 +111,7 @@ public class TurnReportTests
                 return text.Format("report.enemy_" + w.EnemyOrder, hebrew ? row.NameHe : row.Name);
             }).ToList();
             Assert.AreEqual(text["report.enemy"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.EnemyRow).text);
-            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
             CollectionAssert.AreEqual(expected, lines);
             CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
         }
@@ -132,7 +136,7 @@ public class TurnReportTests
             var turn = k.Bridge.EndTurn();
             Assert.IsFalse(turn.Why.Any(w => w.Message.StartsWith($"Unit {ala} will attack")), "the attack stands: no order this turn");
             Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith($"The attack on hex {a.Q},{a.R - 1}")), "and it engages");
-            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
             CollectionAssert.Contains(lines, hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units");
         }
     }
@@ -235,8 +239,14 @@ public class TurnReportTests
         StringAssert.StartsWith(He["hud.caption.security"] + ":", heading);
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security"), k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n'),
-            "the causes are the sim's messages, as on the Why screen");
+        var causes = Causes(k.Ui, "security");
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+            "the causes are the sim's, worded as on the Why screen");
+        // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
+        Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
+        // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
+        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
+            k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 
     /// <summary>The smoke run plays as a player does: it closes each turn's report before the next turn (GameRoot.Smoke).</summary>
