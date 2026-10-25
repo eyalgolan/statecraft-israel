@@ -268,8 +268,9 @@ routes:
   status: draft
   note: The makeshift bypass of Latrun built in May-June 1948, from just east of Dayr Muhaysin by Bayt Jiz and Bayt
     Susin, up to Bayt Mahsir and Saris, joining the old Jerusalem road. The first jeep attempt failed on the night of
-    30-31 May and a second got through the next night (31 May - 1 June); the steepest section opened to vehicles on 10
-    June and the road was completed on 14 June 1948 (Burma Road (Israel)), the date the map shows it from.
+    30-31 May and a second got through the next night (31 May - 1 June); the steepest section opened to vehicles, with
+    tractor help, on 10 June (Burma Road (Israel)); fully motorised traffic from 11 June (Isseroff, Burma Road); and the
+    road was completed on 14 June 1948 (Burma Road (Israel)), the date the map shows it from.
   to_verify:
   - Built after the 1946 map, so the trace follows the tracks the map shows between the places the source names; the
     1948 line differs where the builders cut new road (the steep ascent above Bayt Susin).
@@ -282,6 +283,8 @@ routes:
   sources:
   - url: https://en.wikipedia.org/wiki/Burma_Road_(Israel)
     checked: '2026-10-11'
+  - url: https://web.archive.org/web/20210415133543/https://zionism-israel.com/dic/Burma_Road.htm
+    checked: '2026-10-25'
 - id: tel_aviv_haifa_road
   name: Tel Aviv–Haifa road (by Ra'anana and Hadera)
   kind: road
@@ -480,9 +483,10 @@ routes:
   from: '1949-09-20'
   status: draft
   note: The new track Israel Railways laid in the summer of 1949 from the Rosh HaAyin–Petah Tikva branch west along the
-    Yarkon to a new Tel Aviv North station (renamed Bnei Brak after 1954), about 7 km. With the bypass west of Tulkarm it
-    carried the Haifa–Tel Aviv passenger service from 20 September 1949, the date the map shows it from (Israel Railways,
-    50 Years of Israel Railways, 1998, p. 15).
+    Yarkon to a new Tel Aviv North station, 7 km (he.wiki, Bnei Brak–Ramat HaHayal station), renamed Bnei Brak from
+    November 1954 (en.wiki, Bnei Brak–Ramat HaHayal railway station). With the bypass west of Tulkarm it carried the
+    Haifa–Tel Aviv passenger service from 20 September 1949, the date the map shows it from (Israel Railways, 50 Years of
+    Israel Railways, 1998, p. 15).
   to_verify:
   - Built after the 1946 map, so the trace follows the tracks the map shows between the two stations, not the 1949
     alignment; where the new track left the branch is not given by any source read.
@@ -495,6 +499,8 @@ routes:
     checked: '2026-10-15'
   - url: https://en.wikipedia.org/wiki/Bnei_Brak_railway_station
     checked: '2026-10-15'
+  - url: https://he.wikipedia.org/wiki/%D7%AA%D7%97%D7%A0%D7%AA_%D7%94%D7%A8%D7%9B%D7%91%D7%AA_%D7%91%D7%A0%D7%99_%D7%91%D7%A8%D7%A7_%E2%80%93_%D7%A8%D7%9E%D7%AA_%D7%94%D7%97%D7%99%D7%99%D7%9C
+    checked: '2026-10-25'
 # --- Built 1950: the Tel Aviv–Netanya road (#786; owner, 17 October 2026, #782: Q-COR-3) ---------------------------------
 # Not on the 1946 map, and no source read gives its 1950 line, so the owner decided (18 October 2026, #786, Q-COR-3 (b))
 # that it is drawn as straight draft lines between the five places The Jerusalem Post of 30 July 1950 names
