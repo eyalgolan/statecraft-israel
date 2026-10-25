@@ -174,7 +174,8 @@ public class RealContentTests
         foreach (var a in C.PopulationAnchors) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
         // #791's cards remain drafts until the human source/sensitivity reviews. Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
-        var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
+        // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
+        var objectiveDrafts = new[] { "first_new_yishuv" };
         Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         Assert.Empty(ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
