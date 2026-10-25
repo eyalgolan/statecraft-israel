@@ -757,6 +757,6 @@ advisor.dayan.defeat_war.cue.2: "The campaign has ended in defeat."
 advisor.dayan.arms_out.cue.1: "Arms equip military training and are spent in attacks."
 advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs short keeps those choices available."
 
-# C120: new UI copy; Hebrew is an agent draft pending native review.
-city.workers_ordered: "At End turn: {0}"
-city.workers_cost: "At End turn · Attention per order: {0:0.###}"
+# Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
+city.workers_ordered: "In work after End turn: {0}"
+city.workers_cost: "Costs {0:0.0} Attention · takes effect at End turn"

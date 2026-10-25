@@ -31,6 +31,8 @@ namespace Statecraft.Game.UI
         /// <summary>On the city's own hex, on a stacked bar or a short window, the project part folds behind this toggle
         /// ("City projects (N)") and the list it opens (owner ruling on #1150, 21 Oct 2026; Statecraft.uss .city-projects-list).</summary>
         public const string ToggleName = "city-projects-toggle", ListName = "city-projects-list", OpenClass = "info-projects-open";
+        /// <summary>The name over each city's block on a hex that holds two (Statecraft.uss).</summary>
+        public const string CityNameClass = "city-part-name";
         const string LineClass = "info-gdd-line", RowClass = "info-gdd-row", PairsClass = "info-gdd-pairs";
 
         public static void Hide(VisualElement host) { host.Clear(); host.style.display = DisplayStyle.None; }
@@ -45,11 +47,14 @@ namespace Statecraft.Game.UI
             string? title = null;
             if (c.IsGdd)
             {
-                foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
+                // A hex with two cities (Rishon LeZion and Rehovot) shows two stat blocks: each gets its own part, named, so the
+                // player can tell whose jobs stepper is whose (playtest B6). One city's block needs no name: the title has it.
+                var cities = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)).ToList();
+                foreach (var at in cities)
                 {
                     var part = new VisualElement { name = "city-part-" + at.Id };
                     host.Add(part);
-                    Line(part, "city-name", townName(at.Id)).AddToClassList("title");
+                    if (cities.Count > 1) Line(part, "city-name", townName(at.Id)).AddToClassList(CityNameClass);
                     City(part, bridge, text, at.Id);
                 }
                 var cityHere = host.childCount > 0;
@@ -113,7 +118,8 @@ namespace Statecraft.Game.UI
             Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
             Line(workers, "city-workers", text.Format(queued == null ? "city.workers" : "city.workers_ordered", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
-            // Same per-order price as the queue: changing an existing target does not buy another order.
+            // The Assign order's Attention price (the queue's, at this turn's start) and when it applies (playtest B7): the
+            // Jobs line stays the sim's actual count until End turn. Changing a queued target does not buy another order.
             Line(host, "city-workers-cost", text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):

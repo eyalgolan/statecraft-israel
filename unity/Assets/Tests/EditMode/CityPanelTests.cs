@@ -1165,12 +1165,15 @@ public class CityPanelTests
             Assert.AreEqual("name:" + h.Id, part!.Q<Label>("city-name").text);
             Assert.IsNotNull(part!.Q<Button>("city-workers-less"), "the name belongs to its own jobs stepper");
         }
+        var single = C.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() == 1);
+        GddHexPanel.Render(host, projects, bridge, text, single.Key.Q, single.Key.R, id => "name:" + id);
+        Assert.IsNull(host.Q<Label>("city-name"), "one city's block is not named again under the panel's title");
     }
 
     [TestCase(false)] [TestCase(true)]
     public void WorkerChangesNameTheirTimingAndActualAttentionPrice(bool hebrew)
     {
-        var text = hebrew ? He : En; var bridge = Bridge(text, s => s.Rung = 2); // 0.625 Attention, not a rounded 0.6.
+        var text = hebrew ? He : En; var bridge = Bridge(text, s => s.Rung = 2);   // a fractional price (0.625)
         using var ui = new UiTestKit(); using var panel = Panel(ui, bridge, text);
         panel.Show(CityHex.q, CityHex.r);
         var city = bridge.State.Cities["tel_aviv"]; int before = city.Employed;
@@ -1181,7 +1184,7 @@ public class CityPanelTests
         Assert.AreEqual(before, city.Employed, "queued work does not pretend the simulation already ran");
         Assert.AreEqual(text.Format("city.workers_ordered", GddHexPanel.Groups(text, before - 1)), ui.Q<Label>("city-workers").text);
         Assert.AreEqual(text.Format("city.jobs", before, city.JobSlots), ui.Q<Label>("city-jobs").text);
-        StringAssert.Contains("0.625", ui.Q<Label>("city-workers-cost").text, "show this rung's actual fractional price");
+        StringAssert.Contains("0.6", ui.Q<Label>("city-workers-cost").text, "the price as the HUD and the cards show Attention (one decimal)");
         double left = bridge.AttentionLeft;
         if (before > 1)
         {

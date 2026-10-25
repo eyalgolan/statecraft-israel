@@ -5,12 +5,18 @@ using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>External pages open only after a completed activation. WebGL arms the browser's native release while
-    /// Unity handles the press; that release must still belong to this button's bounds, or the gesture is cancelled.</summary>
+    /// <summary>Opens a web page outside the game (#1168: the "Star on GitHub" buttons in Settings and on the start screen).
+    /// On WebGL a browser lets a page open a new tab only inside the player's own click or key event, and Unity handles
+    /// input on the next frame, outside it, so Application.OpenURL there can be popup-blocked. ExternalLink.jslib instead
+    /// arms a one-shot listener on the press, which calls window.open on the release inside that real gesture, and only
+    /// when the pointer is released over the same button (playtest B10: a press dragged off it cancels, as on any button).
+    /// In the editor and in desktop builds the page opens on `clicked`, which Clickable gives only for a completed click.</summary>
     public static class ExternalLink
     {
+        /// <summary>The game's repository, which the Star buttons open.</summary>
         public const string Repository = "https://github.com/eyalgolan/statecraft-israel";
-        /// <summary>Tests replace this recorder and restore Default, so no external page opens.</summary>
+
+        /// <summary>What Open does with the URL. Tests put a recorder here (and put Default back), so no browser opens.</summary>
         public static Action<string> Opener = Default;
         public static void Open(string url) => Opener(url);
 
