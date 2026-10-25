@@ -159,6 +159,8 @@ boot.loading: "טוען את מפת 1948…"
 toast.refused: "לא בוצע: {0}"
 event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
+# Approved: owner, 25 Oct 2026 (recommendations page, item 4).
+event.more_one: "החלטה ממתינה נוספת: {0}"
 event.hide: "הסתר"
 event.reopen: "החלטה ממתינה"
 event.illustration: "איור"
@@ -815,3 +817,8 @@ advisor.dayan.defeat_war.cue.1: "יחידה צבאית של האויב מחזי�
 advisor.dayan.defeat_war.cue.2: "המערכה הסתיימה בתבוסה."
 advisor.dayan.arms_out.cue.1: "אימון צבאי דורש נשק, ונשק נצרך בהתקפות."
 advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
+
+# Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
+# Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
+city.workers_ordered: "בסיום התור: {0}"
+city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"

@@ -271,6 +271,8 @@ namespace Statecraft.Game.UI
         /// goes to the screen's top-bar button, so the next Tab carries on from there (#41 M1); an open decision card
         /// takes it instead (EventCardPresenter, when its cover closes).</summary>
         public bool Close() => Close(handFocus: true);
+        int closedFrame = -1;
+        public bool ClosedThisFrame => closedFrame == UnityEngine.Time.frameCount;
 
         /// <param name="handFocus">False when the screen's X was pressed with the pointer: the focus is not handed on.</param>
         bool Close(bool handFocus)
@@ -279,7 +281,7 @@ namespace Statecraft.Game.UI
             var screen = root.Q<VisualElement>("screen-" + Current); var button = root.Q<Button>("nav-" + Current);
             var focused = root.panel?.focusController?.focusedElement as VisualElement;
             var inside = focused != null && (focused == screen || screen.Contains(focused));
-            Open(null);
+            Open(null); closedFrame = UnityEngine.Time.frameCount;
             if (handFocus && inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
             return true;
         }
