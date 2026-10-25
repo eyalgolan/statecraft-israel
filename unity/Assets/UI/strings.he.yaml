@@ -181,7 +181,7 @@ event.rejoin: "חוזר למסלול ההיסטורי."
 # Agent-drafted, for the native reviewer (#564). Q-UI-1 (b): direct Hebrew equivalents of the GDD's words, except the
 # owner's own (22 October 2026, #1317): Occupy is "שחרור", and the Deport line is the owner's "displaced" wording.
 # Gender-neutral phrasing ("יש לבחור").
-capture.intro: "כוחות ישראליים מחזיקים ב־{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
+capture.intro: "כוחות ישראליים מחזיקים ב{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
 capture.option.raid: "פשיטה ונסיגה"
 capture.option.occupy: "שחרור"
 capture.option.deport: "גירוש"
@@ -200,7 +200,7 @@ capture.none: "אף אחת מהאפשרויות אינה זמינה בתור ה�
 capture.reopen: "החלטה ממתינה: {0}"
 # The end of an occupation (#802). SENSITIVE, agent-drafted, for the native reviewer (#564). The state is "held" (מוחזק,
 # תקופת ההחזקה; owner, #803), never שחרור, which is Occupy's name only (owner, #1317). Direct option names: סיפוח, נסיגה.
-capture.end.intro: "תקופת ההחזקה ב־{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
+capture.end.intro: "תקופת ההחזקה ב{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
 capture.end.option.annex: "סיפוח"
 capture.end.option.withdraw: "נסיגה"
 capture.end.about.annex_fled: "המקום נשאר בשליטה ישראלית. תושביו נמלטו בעת הכיבוש, ולכן לא מתווספים תושבים, בתים או מקומות עבודה. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום."
@@ -211,8 +211,8 @@ capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
 # Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
 capture.refusal.attention: "אין די תשומת לב בתור הזה: נדרש {1:0.0}, ונותר {2:0.0}."
-capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב־{0}."
-capture.refusal.no_free_hex: "ליחידה ב־{0} אין משבצת פנויה סמוכה לסגת אליה."
+capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
+capture.refusal.no_free_hex: "ליחידה ב{0} אין משבצת פנויה סמוכה לסגת אליה."
 capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
 capture.refusal.already_city: "{0} כבר עיר."
 capture.refusal.not_awaiting: "{0} אינו ממתין להחלטה הזו."
@@ -326,8 +326,8 @@ why.line.destroyed: "{0}: היחידה הושמדה"
 why.line.retreated: "{0}: נסיגה למשושה {1}"
 why.line.surrendered_prisoners: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים כשבויים"
 why.line.surrendered_held: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים בידי האויב"
-why.line.sent_home: "{0}: שחרור הביתה; {1:N0} איש הם כעת אזרחים ב־{2}"
-why.line.withdrew: "{0}: נסיגה מ־{1} למשושה {2}"
+why.line.sent_home: "{0}: שחרור הביתה; {1:N0} איש הם כעת אזרחים ב{2}"
+why.line.withdrew: "{0}: נסיגה מ{1} למשושה {2}"
 why.line.on_its_way: "{0} בדרך למשושה {1}"
 why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
 why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
@@ -395,16 +395,20 @@ why.region.america_oceania: "אמריקה ואוקיאניה"
 why.region.unknown: "ארץ המוצא לא נרשמה"
 # A hex in the unit lines (HexPlaces), after the lines' "משושה": a settlement's hex is its name alone ("משושה חיפה"); any
 # other hex is said from the nearest settlement, {0} the km (to the nearest 5), {1} the compass point, {2} the settlement,
-# with a maqaf after the prefix as in why.line.sent_home. Agent-drafted Hebrew; native review pending (#564).
-why.hex.away: "{0} ק״מ {1} ל־{2}"
-why.hex.north: "צפונית"
-why.hex.north_east: "צפון־מזרחית"
-why.hex.east: "מזרחית"
-why.hex.south_east: "דרום־מזרחית"
-why.hex.south: "דרומית"
-why.hex.south_west: "דרום־מערבית"
-why.hex.west: "מערבית"
-why.hex.north_west: "צפון־מערבית"
+# joined to its prefix ("לחיפה"). Native review: owner, 25 Oct 2026 (recommendations page), #1636: why.hex.away, the
+# eight why.hex.<point> words, and a one-letter prefix joined straight to a name placeholder ("ל{2}", "ב{0}", "מ{1}") in
+# why.line.sent_home, why.line.withdrew, capture.intro, capture.end.intro, capture.refusal.needs_unit,
+# capture.refusal.no_free_hex, cabinet.reason.not_career_officer and city.project_reason.no_resource. UiText.Format adds
+# the maqaf before a digit or a Latin letter (HE-07).
+why.hex.away: "{0} ק״מ {1} ל{2}"
+why.hex.north: "מצפון"
+why.hex.north_east: "מצפון־מזרח"
+why.hex.east: "ממזרח"
+why.hex.south_east: "מדרום־מזרח"
+why.hex.south: "מדרום"
+why.hex.south_west: "מדרום־מערב"
+why.hex.west: "ממערב"
+why.hex.north_west: "מצפון־מערב"
 # The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
@@ -566,7 +570,7 @@ cabinet.reason.is_president: "{0} כבר בתפקיד הנשיא"
 cabinet.reason.is_chief_of_staff: "{0} כבר בתפקיד הרמטכ״ל"
 cabinet.reason.already_holds: "{0} כבר בתפקיד {1}"
 cabinet.reason.no_government: "אין ממשלה מכהנת"
-cabinet.reason.not_career_officer: "ל־{0} אין שירות קבע בצה״ל"
+cabinet.reason.not_career_officer: "ל{0} אין שירות קבע בצה״ל"
 cabinet.reason.party_not_coalition: "{0} ממפלגת {1}, שאינה בקואליציה"
 info.biome.sea: "ים"
 info.biome.lake: "אגם"
@@ -712,7 +716,7 @@ city.project_start: "הקמת {0}: {1}, {2}"
 city.project_ordered: "הוזמנה הקמת {0}"
 city.project_building: "{0} עבור {1}: עוד {2}"
 city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
-city.project_reason.no_resource: "ב־{0} אין {1} עבור {2}"
+city.project_reason.no_resource: "ב{0} אין {1} עבור {2}"
 # turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
 city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
