@@ -122,6 +122,12 @@ namespace Statecraft.Game.UI
         readonly HoverTip? railTips, barTips;
         /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>
         readonly MeterTip? meterTip;
+        /// <summary>Pass the same map names used by Why to the meter causes.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe
+        {
+            get => meterTip?.TownNamesHe;
+            set { if (meterTip != null) meterTip.TownNamesHe = value; }
+        }
 
         /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
         /// by what the three-row bar grows past, or shrinks under, its 440 px (#1089).</summary>
