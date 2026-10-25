@@ -154,6 +154,14 @@ checks this (see `CONTRIBUTING.md`).
 - Unity EditMode runs start with a warm-up launch (`UnityMcpGuard.WarmUp`, in CONTRIBUTING.md and the post-merge job),
   so the Unity-MCP plugin is loaded when the tests start, and the `UnityMcpGuardTests` that need it now fail instead of
   passing when it is missing.
+- Units now move as soon as their order is given, their card shows the movement points left, and Why lines name units
+  instead of showing simulation numbers (#1398, #1399).
+- Units can follow routes over several turns. The map previews each turn’s stopping point, and touch confirms a route on
+  the second tap.
+- End turn now waits for every military unit to move or receive an order, with a Skip this turn action, automatic unit
+  cycling and dimmed spent-unit badges.
+- Hebrew place and person names now join a one-letter prefix directly ("לחיפה", "בתל אביב"); a maqaf stays only before a
+  digit or a name still shown in English. A hex off a town now reads "10 ק״מ מדרום־מערב לחיפה" (Refs #1527).
 
 ### Fixed
 - The city panel's Recruits line, stuck at 0 since trained recruits became formations, now reads "Soldiers
@@ -197,6 +205,24 @@ checks this (see `CONTRIBUTING.md`).
   תורים (#1589).
 - On the two-row bar (a window narrower than about square, e.g. 960x1080) the "no hex chosen" hint wraps to two lines
   and ends left of the minimap column, so it no longer covers the border layer's label (refs #1227).
+- A unit raised in play is named as one unit in the Why lines and toasts ("Recruit unit, Tel Aviv", "Halutz group"),
+  not by its type's plural ("Recruits, Tel Aviv") or a raw id ("halutz"). The Hebrew unit lines no longer give a unit's
+  name a verb that suits only feminine names, so the Arab forces' lines read correctly too.
+- Once Send home is queued for a unit, it takes no other order: the card offers none, a Reinforce for it is refused,
+  and a Reinforce queued before Send home is withdrawn and its Attention refunded.
+- Switching the language in Settings keeps this turn's "Skip this turn" choices.
+- A unit's lines in the toast and on the Why screen name a place, never a hex's coordinates: a town's hex by the
+  town's name, any other hex from the nearest town ("a hex 10 km east of Haifa"). A one-point move says
+  "1 movement point". A go-to route's turn numbers are drawn at a city name's size.
+- A click on a hex seen through the unit card while Move or Attack is picking now does what the same click on the map
+  does: a lit hex gives the move or the attack, and an unlit hex with a route gives the go-to. Before, the card took the
+  click and nothing happened. An unlit hex with no route stays blocked, the card's buttons keep their clicks, and with no
+  pick open the card blocks the map as before (#1617, player report).
+- An advisor clip no longer freezes on its first frame while the narration and captions run on, when the clip falls
+  behind and the web host cannot seek in it: one seek that does not take is not repeated.
+- How to play's "Moving a unit" step no longer picks a unit whose card has no Move button: one that already
+  spent its movement this turn, or one with Send home queued. It shows the next unit that can still move, or just its
+  text when none can.
 
 ### Changed
 - A schema 2 save of the GDD game that has a player attack, or that no longer replays to its saved hash, is refused with
@@ -234,6 +260,7 @@ checks this (see `CONTRIBUTING.md`).
   call the game free instead of open source (owner, 22 October 2026). The changed Hebrew is agent-checked (#564).
 - A shared post now links the game's GitHub repository as well as its itch page ("Play: ... · Code: ..."), in the
   share sheet, Copy, X, WhatsApp and Telegram. Facebook and LinkedIn take only a URL, so they still link the itch page.
+- Attacks now resolve as soon as their target is chosen, and the result appears immediately with the units' names.
 
 ## [0.2.1] - 2026-10-22
 
