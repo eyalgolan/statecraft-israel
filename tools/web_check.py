@@ -18,7 +18,8 @@ Options: --query Q (page URL query, without '?'), --expect TEXT (repeatable), --
 --persistence (play one normal turn, wait for its matching IndexedDB commit, reload and Continue, then play another
 turn and reload as soon as its matching commit arrives; both reloads must report the saved date, turn and hash), --startscreen new|recording (#908: on a fresh
 profile, the real start screen every player sees first: "new" presses New game, "recording" first presses Play the
-recording and waits for RECORDING playing; then End turn must log TURN 1; any console Exception, RECORDING failed or
+recording and waits for RECORDING playing; then End turn must log TURN 1, pressing "Skip this turn" on each unit End
+turn selects while units still need orders (EndTurn; --persistence ends its turns so too); any console Exception, RECORDING failed or
 BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
 buttons where its "start buttons" line says they are (StartButtons).
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
@@ -270,8 +271,9 @@ class Page:
         self.thread.join(5)
 
     def command(self, name: str) -> None:
-        """Runs one action on the page's CDP thread and waits for it: "reload", or "click:X,Y" (a left click at CSS
-        pixels X, Y of the viewport)."""
+        """Runs one action on the page's CDP thread and waits for it: "reload", "click:X,Y" (a left click at CSS
+        pixels X, Y of the viewport), or "probe:X,Y" (a middle-button click there: EndTurn's probe, which no button, map
+        or camera acts on, while ?navlog names the element under it)."""
         done, result = threading.Event(), []
         self.commands.put((name, done, result))
         if not done.wait(10):
@@ -318,6 +320,12 @@ class Page:
                                 await call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, sid)
                                 for kind in ("mousePressed", "mouseReleased"):
                                     await call("Input.dispatchMouseEvent", {"type": kind, "x": x, "y": y, "button": "left",
+                                                                            "clickCount": 1}, sid)
+                            elif name.startswith("probe:"):
+                                x, y = (float(v) for v in name[len("probe:"):].split(","))
+                                await call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": x, "y": y}, sid)
+                                for kind in ("mousePressed", "mouseReleased"):
+                                    await call("Input.dispatchMouseEvent", {"type": kind, "x": x, "y": y, "button": "middle",
                                                                             "clickCount": 1}, sid)
                             elif name == "reload":
                                 await call("Page.reload", {"ignoreCache": True}, sid)
@@ -438,6 +446,151 @@ class StartButtons:
         return round(fx * self.viewport[0]), round(fy * self.viewport[1])
 
 
+class ConsoleTail:
+    """The console messages so far, numbered, fed from the stderr reader thread (like StartButtons), so a driver that is
+    waiting for the game's answer to its click sees it come in. `wait` returns the first match after mark `since`."""
+
+    KEEP = 5000
+
+    def __init__(self):
+        self.cond, self.lines, self.count = threading.Condition(), [], 0
+
+    def feed(self, text: str) -> None:
+        with self.cond:
+            self.count += 1
+            self.lines.append((self.count, text))
+            del self.lines[:-self.KEEP]
+            self.cond.notify_all()
+
+    def mark(self) -> int:
+        with self.cond:
+            return self.count
+
+    def wait(self, pattern: re.Pattern, since: int, timeout: float, group: str | None = None) -> re.Match | None:
+        """The first message numbered after `since` that `pattern` matches (with group(1) == `group` when given), waiting
+        up to `timeout` seconds for it; None when none comes."""
+        deadline = time.monotonic() + timeout
+        with self.cond:
+            while True:
+                for n, text in self.lines:
+                    m = pattern.match(text) if n > since else None
+                    if m and (group is None or m.group(1) == group):
+                        return m
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    return None
+                self.cond.wait(left)
+
+
+# What ?navlog's NavEventLog says of a press and a click: the deepest UI element under the pointer, by name.
+NAV_DOWN = re.compile(r"^NAV f=\d+ t=\d+ ui pointerdown id=\d+ at \([^)]*\) target=(\S+)$")
+NAV_CLICK = re.compile(r"^NAV f=\d+ t=\d+ ui click count=\d+ target=(\S+)$")
+# A left press the map takes: not over the UI, or (#1617) on the unit card's text over a lit hex of its armed Move pick,
+# which moves the unit. So EndTurn finds Skip with the middle button, which only the UI's pointer events see.
+NAV_MAP = re.compile(r"^NAV f=\d+ t=\d+ map click at \([^)]*\) overUi=False$")
+# The unit card is the info panel (Statecraft.uss .info-panel: left 84 px, bottom 16 px, width 452 px, in both languages;
+# in Hebrew only its rows mirror). Its order buttons wrap in one row container (Game.uxml), whose lines each start at
+# the body's start edge (left, or right in Hebrew), under the unit's description lines and over the reason and notes.
+# Probes keep PROBE_INSET px inside the panel's frame.
+INFO_PANEL_LEFT, INFO_PANEL_RIGHT, INFO_PANEL_BOTTOM, INFO_PANEL_MAX_HEIGHT, PROBE_INSET = 84, 536, 16, 640, 26
+ORDER_ROW = {"build-camp", "build-housing", "info-defence", "info-primary-orders", "info-move", "info-fortify", "info-hold",
+             "info-skip", "info-attack", "info-send-home", "info-reinforce"}
+ABOVE_ORDERS = {"info-title", "info-subtitle", "info-region", "info-settlements", "info-localities", "info-placement"}
+SKIP = "info-skip"
+# Well over the units a turn has needing orders (8 on a new game, 9 on turn 2, 0.3.0 RC): a turn that never ends fails.
+MAX_SKIPS = 40
+
+
+class EndTurn:
+    """Ends the turn as a player does since #1527 U4: End turn selects a unit that still needs orders (HudPresenter) instead
+    of ending the turn, so press that unit's "Skip this turn" and End turn again, until the game logs the next TURN line, at
+    most `max_skips` times (GameRoot.Smoke's loop, through the browser). The unit card's buttons move with its text, so
+    Skip is found where the game draws it: a middle-button probe reports the element under it (?navlog NAV_DOWN) and acts
+    on nothing (a left press on the card's text can move the unit, NAV_MAP), then a left click presses Skip. A missed End
+    turn, a probe the map takes, a card with no Skip, or a turn that never ends fails at once. Returns the number of Skips."""
+
+    def __init__(self, action, tail: ConsoleTail, hebrew: bool, settle=time.sleep, max_skips=MAX_SKIPS, answer=5.0,
+                 turn_wait=3.0, viewport=VIEWPORT):
+        self.action, self.tail, self.hebrew, self.settle = action, tail, hebrew, settle
+        self.max_skips, self.answer, self.turn_wait = max_skips, answer, turn_wait
+        self.point = END_TURN_HE if hebrew else END_TURN
+        self.bottom = viewport[1] - INFO_PANEL_BOTTOM
+        self.skip_at: tuple[int, int] | None = None  # where Skip was last: cards of one kind keep it there
+
+    def __call__(self) -> int:
+        for skips in range(self.max_skips + 1):
+            since = self.tail.mark()
+            x, y = self.point
+            print(f"click end-turn at ({x}, {y})")
+            self.action(f"click:{x},{y}")
+            if self.tail.wait(NAV_CLICK, since, self.answer, "end-turn") is None:
+                raise ValueError(f"END TURN FAIL the click at ({x}, {y}) did not press end-turn within {self.answer:g} s")
+            if self.tail.wait(TURN_STATE, since, self.turn_wait) is not None:
+                print(f"END TURN the turn ended after {skips} Skip(s)")
+                return skips
+            if skips == self.max_skips:
+                break
+            self.settle(1)                           # the camera goes to the unit and its card lays out
+            if not self.skip(since):
+                print(f"END TURN the turn ended after {skips} Skip(s)")
+                return skips
+        raise ValueError(f"END TURN FAIL End turn still selected a unit needing orders after {self.max_skips} Skips")
+
+    def skip(self, since: int) -> bool:
+        """Clicks the shown unit card's Skip; False when the turn ended after all (a late TURN line), so nothing was pressed."""
+        if self.skip_at is not None and self.probe(*self.skip_at):
+            return True
+        x0 = INFO_PANEL_RIGHT - PROBE_INSET if self.hebrew else INFO_PANEL_LEFT + PROBE_INSET
+        rows, seen = [], []
+        for y in range(self.bottom - PROBE_INSET, self.bottom - INFO_PANEL_MAX_HEIGHT, -10):
+            if self.tail.wait(TURN_STATE, since, 0) is not None:
+                return False
+            target = self.press(x0, y)
+            seen.append(target)
+            if target == SKIP:
+                self.click_skip(x0, y)
+                return True
+            if target in ORDER_ROW and (not rows or rows[-1] - y > 20):
+                rows.append(y)
+            elif target in ABOVE_ORDERS and rows:
+                break
+        step = -20 if self.hebrew else 20
+        for y in rows:
+            for x in range(x0 + step, INFO_PANEL_LEFT + PROBE_INSET if self.hebrew else INFO_PANEL_RIGHT - PROBE_INSET, step):
+                if self.probe(x, y):
+                    return True
+        raise ValueError(f"END TURN FAIL End turn selected a unit, but its card shows no {SKIP} (order rows at y "
+                         f"{rows or 'none'}; pressed {', '.join(dict.fromkeys(seen))})")
+
+    def probe(self, x: int, y: int) -> bool:
+        """Clicks Skip when it is at x, y (True)."""
+        if self.press(x, y) != SKIP:
+            return False
+        self.click_skip(x, y)
+        return True
+
+    def press(self, x: int, y: int) -> str:
+        """The UI element a middle-button probe at x, y reaches."""
+        since = self.tail.mark()
+        self.action(f"probe:{x},{y}")
+        down = self.tail.wait(NAV_DOWN, since, self.answer)
+        if self.tail.wait(NAV_MAP, since, 0) is not None:
+            raise ValueError(f"END TURN FAIL a press at ({x}, {y}) reached the map, not the unit card")
+        if down is None:
+            raise ValueError(f"END TURN FAIL a press at ({x}, {y}) reached no UI element within {self.answer:g} s "
+                             f"(the page needs ?{NAVLOG})")
+        print(f"probe ({x}, {y}): {down.group(1)}")
+        return down.group(1)
+
+    def click_skip(self, x: int, y: int) -> None:
+        since = self.tail.mark()
+        print(f"click {SKIP} at ({x}, {y})")
+        self.action(f"click:{x},{y}")
+        if self.tail.wait(NAV_CLICK, since, self.answer, SKIP) is None:
+            raise ValueError(f"END TURN FAIL the click at ({x}, {y}) did not press {SKIP} within {self.answer:g} s")
+        self.skip_at = (x, y)
+
+
 def click_button(action, buttons: StartButtons, name: str) -> None:
     """A left click on a start-screen button where the game says it is; printed, so a stalled run shows where it clicked."""
     x, y = buttons.point(name)
@@ -447,10 +600,12 @@ def click_button(action, buttons: StartButtons, name: str) -> None:
 
 class PersistenceCheck:
     """Drives and checks the two reloads of issue #910. `action` is Page.command (injected, so the unit tests need no
-    browser); a reload keeps the page's profile and origin, so its IndexedDB autosave."""
+    browser); a reload keeps the page's profile and origin, so its IndexedDB autosave. Each turn ends through EndTurn."""
 
-    def __init__(self, action, buttons: StartButtons, settle=time.sleep, now=time.monotonic, save_timeout=15.0):
+    def __init__(self, action, buttons: StartButtons, tail: ConsoleTail, settle=time.sleep, now=time.monotonic,
+                 save_timeout=15.0):
         self.action, self.buttons, self.settle, self.now, self.save_timeout = action, buttons, settle, now, save_timeout
+        self.end_turn = EndTurn(action, tail, hebrew=False, settle=settle)
         self.stage, self.saved, self._done = "first_boot", None, False
         self.pending, self.acknowledged, self.deadline = None, None, None
 
@@ -501,7 +656,7 @@ class PersistenceCheck:
             self.click(NEW_GAME)
             self.settle(2)
             self.stage = "first_turn"
-            self.click(END_TURN)
+            self.end_turn()
         elif self.stage == "first_turn" and kind == "TURN":
             self._turn(state, 1, "first End turn after New game")
             self.saved, self.stage = state, "first_commit"
@@ -516,7 +671,7 @@ class PersistenceCheck:
             self.click(CONTINUE)
             self.settle(2)
             self.stage = "second_turn"
-            self.click(END_TURN)
+            self.end_turn()
         elif self.stage == "second_turn" and kind == "TURN":
             self._turn(state, self.saved[1] + 1, "End turn after Continue")
             self.saved, self.stage = state, "second_commit"
@@ -553,12 +708,12 @@ def query_value(query: str, key: str) -> str | None:
 
 class StartScreenCheck:
     """Issue #908: the start screen of a fresh profile, as a player meets it (no automation flag skips it). New game
-    (after Play the recording when `recording`) and End turn must reach the map's first turn. `action` is Page.command;
-    `buttons` says where the start screen's buttons are."""
+    (after Play the recording when `recording`) and End turn (EndTurn: Skip each unit it selects) must reach the map's
+    first turn. `action` is Page.command; `buttons` says where the start screen's buttons are; `tail` is the console."""
 
-    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, settle=time.sleep):
+    def __init__(self, action, recording: bool, hebrew: bool, buttons: StartButtons, tail: ConsoleTail, settle=time.sleep):
         self.action, self.recording, self.buttons, self.settle = action, recording, buttons, settle
-        self.end_turn = END_TURN_HE if hebrew else END_TURN
+        self.end_turn = EndTurn(action, tail, hebrew, settle=settle)
         self.stage, self.done = "boot", False
 
     def feed(self, text: str) -> None:
@@ -585,8 +740,8 @@ class StartScreenCheck:
     def new_game(self) -> None:
         self.click(NEW_GAME)
         self.settle(2)
-        self.click(self.end_turn)
         self.stage = "turn"
+        self.end_turn()
 
     def click(self, target: str | tuple[int, int]) -> None:
         if isinstance(target, str):
@@ -620,6 +775,8 @@ def watch(inbox, poll, join_reader, expect, fail, timeout, now=time.time, sleep=
             if on_text is not None and on_text(t):
                 continue
             print("console:", t)
+        if texts:
+            last = now()      # again: a driver (EndTurn) may have waited in on_text while the page kept logging
         if status == "fail":
             print(f"FAIL: {texts[-1]}")
             return 1
@@ -666,16 +823,16 @@ def page_query(a) -> str:
     return f"{a.query}&{NAVLOG}" if a.query else NAVLOG
 
 
-def run_plan(a, command, buttons: StartButtons):
+def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail):
     """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
-    Page.command; `buttons` is fed the console by the caller."""
+    Page.command; `buttons` and `tail` are fed the console by the caller."""
     if a.persistence and a.startscreen:
         raise ValueError("--persistence and --startscreen are separate runs")
     if a.startscreen:
-        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons)
+        driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons, tail)
         fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
     elif a.persistence:
-        driver, fail, what = PersistenceCheck(command, buttons), a.fail, "the end of the --persistence run"
+        driver, fail, what = PersistenceCheck(command, buttons, tail), a.fail, "the end of the --persistence run"
     else:
         return None, re.compile(a.fail), {}
     return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
@@ -711,7 +868,7 @@ def main() -> int:
         sys.exit(str(e))
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
-    buttons = StartButtons((w, h))
+    buttons, tail = StartButtons((w, h)), ConsoleTail()
 
     def on_text(text: str) -> bool:
         err = res_error(text, res)
@@ -734,6 +891,7 @@ def main() -> int:
                     console = CONSOLE.search(line)
                     if console:
                         buttons.feed(console.group(1))     # here, not in watch: a driver waiting in settle() sees it
+                        tail.feed(console.group(1))        # and one waiting for the game's answer to its click
                     inbox.put(line)
             for line in rejoin.flush():
                 inbox.put(line)
@@ -743,7 +901,7 @@ def main() -> int:
             page = Page(profile, url, w, h, a.dpr, a.mobile)
             page.open()
             print(f"viewport {w}x{h} at DPR {a.dpr:g}{' mobile' if a.mobile else ''} (expect res={res})")
-            driver, fail, plan = run_plan(a, page.command, buttons)
+            driver, fail, plan = run_plan(a, page.command, buttons, tail)
 
             def handle_text(text: str) -> bool:
                 consumed = on_text(text)

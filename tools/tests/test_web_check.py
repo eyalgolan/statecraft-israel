@@ -282,6 +282,154 @@ def test_page_query_adds_navlog_only_to_the_start_screen_runs():
     assert wc.page_query(_args("--query", "golden")) == "golden"
 
 
+class FakeGame:
+    """Answers a driver's clicks as ?navlog's game does, through a real ConsoleTail: End turn (either layout's) selects a
+    unit while `units` still need orders, else ends the turn: a TURN line in the console EndTurn reads (a driver's own
+    TURN lines are fed by the test). The unit card is EN_CARD, its rows mirrored in Hebrew: a probe names the element under
+    it (a "map" one is taken by the map), and a click on Skip skips a unit."""
+
+    def __init__(self, units=0, card=None, hebrew=False, answers=True):
+        self.tail, self.units, self.answers = wc.ConsoleTail(), units, answers
+        self.card, self.hebrew, self.actions, self.turn = card or EN_CARD, hebrew, [], 1
+
+    def nav(self, what):
+        self.tail.feed(f"NAV f=1 t=1 {what}")
+
+    def at(self, x, y):
+        if self.hebrew:
+            x = wc.INFO_PANEL_LEFT + wc.INFO_PANEL_RIGHT - x
+        inside = wc.INFO_PANEL_LEFT <= x <= wc.INFO_PANEL_RIGHT and y >= 1080 - wc.INFO_PANEL_BOTTOM - wc.INFO_PANEL_MAX_HEIGHT
+        return next((name for (x0, x1, y0, y1), name in self.card if x0 <= x <= x1 and y0 <= y <= y1),
+                    "info-region" if inside else "top-bar")
+
+    def __call__(self, action):
+        self.actions.append(action)
+        kind, _, at = action.partition(":")
+        if not self.answers or not at:
+            return
+        x, y = (int(v) for v in at.split(","))
+        if kind == "click" and (x, y) in (wc.END_TURN, wc.END_TURN_HE):
+            self.nav("ui click count=1 target=end-turn")
+            if self.units == 0:
+                self.tail.feed(f"TURN {self.turn} 1948-06-15 hash bb")
+            self.turn += self.units == 0
+        elif kind == "probe":
+            target = self.at(x, y)
+            if target == "map":                      # a press the UI does not take: the map's hex click
+                self.nav(f"map click at ({x}, {1080 - y}) overUi=False")
+            else:
+                self.nav(f"ui pointerdown id=0 at ({x}, {y}) target={target}")
+        elif kind == "click":
+            target = self.at(x, y)
+            self.nav(f"ui click count=1 target={target}")
+            self.units -= target == "info-skip"
+
+
+# The unit card of the RC build at 1920x1080 (English): ((x0, x1, y0, y1), the element there); elsewhere the description.
+EN_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 200, 976, 1002), "info-skip"), ((206, 290, 976, 1002), "info-attack"),
+           ((96, 300, 930, 956), "info-defence"), ((306, 380, 930, 956), "info-move"), ((84, 536, 920, 1009), "VisualElement")]
+# Skip second in its line: found along the line, not at its start.
+SECOND_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 180, 976, 1002), "info-move"), ((186, 300, 976, 1002), "info-skip"),
+               ((84, 536, 960, 1009), "VisualElement")]
+NO_SKIP_CARD = [((84, 536, 1010, 1064), "info-reason"), ((96, 180, 976, 1002), "info-move"), ((84, 536, 960, 1009), "VisualElement")]
+
+
+def _quiet():
+    """A PersistenceCheck's game, buttons and console."""
+    game = FakeGame()
+    return game, _buttons(), game.tail
+
+
+def _quiet_start():
+    """An English New game StartScreenCheck's game, recording, hebrew, buttons and console."""
+    game = FakeGame()
+    return game, False, False, _buttons(), game.tail
+
+
+def _end_turn(game, **kw):
+    return wc.EndTurn(game, game.tail, game.hebrew, settle=lambda s: None, answer=0.05, turn_wait=0.05, **kw)
+
+
+def test_end_turn_skips_each_unit_it_selects_then_ends_the_turn(capsys):
+    game = FakeGame(units=3)
+    assert _end_turn(game)() == 3 and game.units == 0
+    clicks = [a for a in game.actions if a.startswith("click:")]
+    assert clicks == _clicks(wc.END_TURN, (110, 998)) * 3 + _clicks(wc.END_TURN), "only End turn and Skip are left-clicked"
+    probes = [a for a in game.actions if a.startswith("probe:")]
+    assert probes.count("probe:110,998") == 3 and len(probes) == 7, "Skip is looked for once, then probed where it was"
+    assert "END TURN the turn ended after 3 Skip(s)" in capsys.readouterr().out
+
+
+def test_end_turn_with_no_unit_needing_orders_is_one_click():
+    game = FakeGame()
+    assert _end_turn(game)() == 0 and game.actions == _clicks(wc.END_TURN)
+
+
+@pytest.mark.parametrize("hebrew", [False, True])
+def test_end_turn_finds_skip_along_its_line_in_either_layout(hebrew):
+    game = FakeGame(units=1, card=SECOND_CARD, hebrew=hebrew)
+    assert _end_turn(game)() == 1
+    x = int([a for a in game.actions if a.startswith("click:")][1].split(":")[1].split(",")[0])
+    assert (wc.INFO_PANEL_LEFT + wc.INFO_PANEL_RIGHT - x if hebrew else x) in range(186, 301)
+    assert game.actions[-1] == "click:" + ",".join(map(str, wc.END_TURN_HE if hebrew else wc.END_TURN))
+
+
+def test_end_turn_fails_when_the_turn_never_ends():
+    game = FakeGame(units=100)
+    with pytest.raises(ValueError, match="END TURN FAIL End turn still selected a unit needing orders after 2 Skips"):
+        _end_turn(game, max_skips=2)()
+    assert game.units == 98
+
+
+def test_end_turn_fails_on_a_card_without_skip():
+    with pytest.raises(ValueError, match="card shows no info-skip .*order rows at y \\[998\\]"):
+        _end_turn(FakeGame(units=1, card=NO_SKIP_CARD))()
+
+
+def test_end_turn_fails_when_its_click_misses_end_turn():
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(1840, 45\\) did not press end-turn"):
+        _end_turn(FakeGame(answers=False))()
+
+
+def test_a_click_that_does_not_press_skip_fails():
+    game = FakeGame(units=1)
+    probe_at = game.at
+    game.at = lambda x, y: probe_at(x, y) if game.actions[-1].startswith("probe:") else "info-hold"   # the card moved
+    with pytest.raises(ValueError, match="END TURN FAIL the click at \\(110, 998\\) did not press info-skip"):
+        _end_turn(game)()
+
+
+def test_a_probe_that_reaches_the_map_fails_at_once():
+    game = FakeGame(units=1, card=[((0, 2000, 0, 2000), "map")])
+    with pytest.raises(ValueError, match="END TURN FAIL a press at \\(110, 1038\\) reached the map"):
+        _end_turn(game)()
+    assert sum(a.startswith("probe:") for a in game.actions) == 1
+
+
+def test_console_tail_waits_for_a_match_after_the_mark_from_another_thread():
+    tail = wc.ConsoleTail()
+    tail.feed("NAV f=1 t=1 ui click count=1 target=end-turn")
+    since = tail.mark()
+    assert tail.wait(wc.NAV_CLICK, since, 0, "end-turn") is None, "lines before the mark do not count"
+    threading.Timer(0.05, tail.feed, ["NAV f=2 t=2 ui click count=1 target=info-skip"]).start()
+    assert tail.wait(wc.NAV_CLICK, since, 5, "info-skip").group(1) == "info-skip"
+    assert tail.wait(wc.NAV_DOWN, since, 0) is None
+
+
+def test_watch_does_not_stall_while_a_driver_waits_on_lines_that_keep_coming(capsys):
+    inbox, t = queue.Queue(), [0.0]
+    inbox.put(line("GAME OK 1948-05-15 turn 0 hash aa"))
+
+    def on_text(text):
+        if text.startswith("GAME OK"):
+            t[0] += 30                      # EndTurn's Skips took 30 s, the page logging all along
+            inbox.put(line("TURN 1 1948-06-15 hash bb"))
+        return False
+    rc = wc.watch(inbox, lambda: None, lambda: None, ["TURN 1"], re.compile("BOOT FAIL"), 300, now=lambda: t[0],
+                  sleep=lambda s: t.__setitem__(0, t[0] + s), on_text=on_text, stall=20)
+    assert rc == 0, capsys.readouterr().out
+
+
 def _committed_turn(check, generation, date, turn, digest):
     receipt = f"{generation} {date} turn {turn} hash {digest}"
     check.feed("AUTOSAVE PENDING " + receipt)
@@ -290,8 +438,9 @@ def _committed_turn(check, generation, date, turn, digest):
 
 
 def test_persistence_check_reloads_after_a_settled_and_an_immediate_autosave(capsys):
-    actions, sleeps = [], []
-    check = wc.PersistenceCheck(actions.append, _buttons(), sleeps.append)
+    sleeps, game = [], FakeGame()
+    actions = game.actions
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, sleeps.append)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa00")
     check.feed("TURN 1 1948-06-01 turn 1 hash one")       # malformed diagnostic is ignored
     _committed_turn(check, 1, "1948-06-01", 1, "aaa1")
@@ -314,7 +463,7 @@ def _played_to_the_settled_reload(check):
 
 
 def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_saved_turn():
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
     _played_to_the_settled_reload(check)
     check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-15 turn 1 hash bb")
@@ -324,14 +473,14 @@ def test_persistence_check_fails_when_the_immediate_reload_did_not_load_the_save
 
 
 def test_persistence_check_fails_when_the_settled_reload_did_not_load_the_saved_turn():
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
     _played_to_the_settled_reload(check)
     with pytest.raises(ValueError, match="PERSISTENCE FAIL settled reload got 1948-05-15 turn 0"):
         check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
 
 def test_persistence_check_fails_when_continue_started_a_new_game():
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
     _played_to_the_settled_reload(check)
     check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-15 turn 1 hash bb")
@@ -340,7 +489,7 @@ def test_persistence_check_fails_when_continue_started_a_new_game():
 
 
 def test_persistence_check_fails_when_the_first_boot_is_not_a_fresh_game():
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
     with pytest.raises(ValueError, match="expected turn 0"):
         check.feed("GAME OK 1948-06-15 turn 1 hash bb")
 
@@ -360,8 +509,9 @@ def _clicks(*points):
 
 
 def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(capsys):
-    actions = []
-    check = wc.StartScreenCheck(actions.append, recording=False, hebrew=False, buttons=_buttons(), settle=lambda s: None)
+    game = FakeGame()
+    actions = game.actions
+    check = wc.StartScreenCheck(game, recording=False, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     assert actions == _clicks(AT["start-new-game"], wc.END_TURN)
     assert not check.done
@@ -372,15 +522,15 @@ def test_start_screen_check_presses_new_game_then_end_turn_and_needs_turn_1(caps
 
 
 def test_start_screen_check_fails_at_once_when_the_game_never_says_where_new_game_is():
-    check = wc.StartScreenCheck(lambda a: None, False, False, buttons=_buttons(""), settle=lambda s: None)
+    check = wc.StartScreenCheck(lambda a: None, False, False, buttons=_buttons(""), tail=wc.ConsoleTail(), settle=lambda s: None)
     with pytest.raises(ValueError, match="START SCREEN FAIL no centre for start-new-game"):
         check.feed("GAME OK 1948-05-15 turn 0 hash aa")
 
 
 def test_start_screen_check_plays_the_recording_first_and_waits_for_it_hebrew_layout():
-    actions = []
-    buttons = _buttons()
-    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=True, buttons=buttons, settle=lambda s: None)
+    game = FakeGame()
+    actions, buttons = game.actions, _buttons()
+    check = wc.StartScreenCheck(game, recording=True, hebrew=True, buttons=buttons, tail=game.tail, settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     assert actions == _clicks(AT["start-listen"])
     check.feed("TURN 1 1948-06-15 hash bb")            # no New game before the recording plays
@@ -394,8 +544,8 @@ def test_start_screen_check_plays_the_recording_first_and_waits_for_it_hebrew_la
 
 def test_start_screen_check_fails_on_a_saved_game_or_a_wrong_turn():
     with pytest.raises(ValueError, match="START SCREEN FAIL the first boot is turn 3"):
-        wc.StartScreenCheck(lambda a: None, False, False, _buttons(), lambda s: None).feed("GAME OK 1948-08-15 turn 3 hash aa")
-    check = wc.StartScreenCheck(lambda a: None, False, False, _buttons(), lambda s: None)
+        wc.StartScreenCheck(*_quiet_start(), lambda s: None).feed("GAME OK 1948-08-15 turn 3 hash aa")
+    check = wc.StartScreenCheck(*_quiet_start(), lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     with pytest.raises(ValueError, match="START SCREEN FAIL End turn after New game logged turn 2"):
         check.feed("TURN 2 1948-07-15 hash cc")
@@ -409,8 +559,9 @@ def test_query_value():
 
 
 def test_start_screen_check_english_recording_uses_the_english_layout():
-    actions = []
-    check = wc.StartScreenCheck(actions.append, recording=True, hebrew=False, buttons=_buttons(), settle=lambda s: None)
+    game = FakeGame()
+    actions = game.actions
+    check = wc.StartScreenCheck(game, recording=True, hebrew=False, buttons=_buttons(), tail=game.tail, settle=lambda s: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("RECORDING playing audio/declaration.wav (9.29 s, at 0.20 s)")
     assert actions == _clicks(AT["start-listen"], AT["start-new-game"], wc.END_TURN)
@@ -421,9 +572,10 @@ def _args(*argv):
 
 
 def _plan(*argv):
-    driver, fail, plan = wc.run_plan(_args(*argv), lambda action: None, _buttons())
+    game = FakeGame()
+    driver, fail, plan = wc.run_plan(_args(*argv), game, _buttons(), game.tail)
     if driver is not None:
-        driver.settle = lambda seconds: None
+        driver.settle = driver.end_turn.settle = lambda seconds: None
     return driver, fail, plan
 
 
@@ -445,7 +597,7 @@ def test_a_start_screen_run_fails_on_boot_fail_exceptions_and_the_recording_what
 def test_the_start_screen_run_takes_the_hebrew_layout_from_the_query():
     he, _, _ = _plan("--startscreen", "recording", "--query", "lang=he&smoke=0")
     en, _, _ = _plan("--startscreen", "recording")
-    assert (he.end_turn, en.end_turn) == (wc.END_TURN_HE, wc.END_TURN)
+    assert (he.end_turn.point, en.end_turn.point) == (wc.END_TURN_HE, wc.END_TURN)
 
 
 def test_persistence_and_start_screen_are_separate_runs():
@@ -511,8 +663,9 @@ def test_mobile_only_flips_the_emulation_flag():
 
 
 def test_persistence_check_does_not_reload_turn_two_before_its_commit_ack():
-    actions = []
-    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    game = FakeGame()
+    actions = game.actions
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, lambda seconds: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
     check.feed("TURN 1 1948-06-15 hash bb")
@@ -536,8 +689,9 @@ def test_persistence_check_does_not_reload_turn_two_before_its_commit_ack():
     "AUTOSAVE OK 2 1948-06-15 turn 1 hash bb",  # old turn/date
 ])
 def test_a_stale_or_mismatched_save_ack_cannot_authorize_reload(ack):
-    actions = []
-    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    game = FakeGame()
+    actions = game.actions
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, lambda seconds: None)
     _played_to_the_settled_reload(check)
     check.buttons.feed(LAID_OUT)  # the reloaded page reports its own layout
     check.feed("GAME OK 1948-06-15 turn 1 hash bb")
@@ -552,7 +706,7 @@ def test_a_stale_or_mismatched_save_ack_cannot_authorize_reload(ack):
 
 def test_a_commit_timeout_fails_even_without_any_further_console_line():
     clock = [0.0]
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("TURN 1 1948-06-15 hash bb")
     clock[0] = 5
@@ -561,14 +715,15 @@ def test_a_commit_timeout_fails_even_without_any_further_console_line():
 
 
 def test_an_indexeddb_failure_fails_the_driver_loudly():
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None)
     with pytest.raises(ValueError, match="IndexedDB autosave failed"):
         check.feed("AUTOSAVE FAIL 1 1948-06-15 turn 1 hash bb")
 
 
 def test_commit_ack_before_turn_diagnostic_is_not_lost():
-    actions = []
-    check = wc.PersistenceCheck(actions.append, _buttons(), lambda seconds: None)
+    game = FakeGame()
+    actions = game.actions
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, lambda seconds: None)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("AUTOSAVE PENDING 1 1948-06-15 turn 1 hash bb")
     check.feed("AUTOSAVE OK 1 1948-06-15 turn 1 hash bb")
@@ -579,7 +734,7 @@ def test_commit_ack_before_turn_diagnostic_is_not_lost():
 
 def test_commit_timeout_is_polled_while_an_unrelated_expectation_is_still_missing():
     clock = [0.0]
-    check = wc.PersistenceCheck(lambda action: None, _buttons(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
+    check = wc.PersistenceCheck(*_quiet(), lambda seconds: None, now=lambda: clock[0], save_timeout=5)
     check.feed("GAME OK 1948-05-15 turn 0 hash aa")
     check.feed("TURN 1 1948-06-15 hash bb")
     with pytest.raises(ValueError, match="no matching IndexedDB commit within 5s"):
