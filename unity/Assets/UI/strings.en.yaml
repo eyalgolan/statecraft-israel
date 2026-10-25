@@ -517,6 +517,14 @@ unit.draft_wikipedia: "Draft: from Wikipedia only, not yet checked against a pub
 unit.draft: "Draft: not yet checked by a historian"
 unit.defence: "Open the Defence screen"
 unit.raised_name: "{0}, {1}"
+# A unit raised in play, named as one formation in the Why lines and toasts ({0} of unit.raised_name): singular, as the
+# lines' verbs are ("was destroyed", "its people"), never the type's plural label (Codex's review of #1527).
+unit.name.recruit: "Recruit unit"
+unit.name.veteran_soldier: "Veteran soldier unit"
+unit.name.artillery: "Artillery unit"
+unit.name.armoured_car: "Armoured car unit"
+unit.name.halutz: "Halutz group"
+unit.name.veteran_halutz: "Veteran halutz group"
 # The unit card's Move order (GDD Phase 5 PR 15, #754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "Move"
 unit.move_pick: "Choose a lit hex to move to now, or another hex to send the unit there over several turns"

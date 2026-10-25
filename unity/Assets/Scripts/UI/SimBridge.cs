@@ -28,6 +28,8 @@ namespace Statecraft.Game.UI
         /// <summary>The movement points each unit has spent this turn.</summary>
         public IReadOnlyDictionary<int, int> Spent => Session.Now.Spent;
         public IReadOnlyList<Command> Queued => deferred;
+        /// <summary>The units skipped this turn: Settings' language switch carries them to the rebuilt bridge with Queued.</summary>
+        public IReadOnlyCollection<int> Skipped => skipped;
         /// <summary>R-MOVE-010: the units End turn waits for, in ascending id, less those skipped this turn and those going home.</summary>
         public IReadOnlyList<int> NeedsOrders => Movement.NeedsOrders(Content, State, Spent).Where(id => !skipped.Contains(id) && !GoingHome(id)).ToList();
         /// <summary>The orders the last turn ran with (empty until a turn has run, and after a refused batch): what the player
@@ -115,7 +117,21 @@ namespace Statecraft.Game.UI
 
         IReadOnlyList<Command> All => Session.Committed.Concat(deferred).ToList();
 
-        bool GoingHome(int unit) => deferred.Any(x => x is UnitOrder o && o.Unit == unit && o.Order == Demobilization.SendHome);
+        /// <summary>Whether Send home is queued for the unit: it then takes no other order (spec 3.2), deferred or instant.</summary>
+        public bool GoingHome(int unit) => deferred.Any(x => IsSendHome(x) && UnitOf(x) == unit);
+
+        static bool IsSendHome(Command c) => c is UnitOrder o && o.Order == Demobilization.SendHome;
+
+        /// <summary>The unit an order is given to (a move, a unit order, a reinforcement, pioneer work or its stop), or null.</summary>
+        static int? UnitOf(Command c) => c switch
+        {
+            Move m => m.Unit,
+            UnitOrder o => o.Unit,
+            Reinforce x => x.Unit,
+            PioneerWork w => w.Unit,
+            StopWork w => w.Unit,
+            _ => (int?)null,
+        };
 
         /// <summary>Skips the unit for this turn: not an order, not saved, nothing in the game changes (spec 7.2).</summary>
         public void Skip(int unit) { if (skipped.Add(unit)) Notify(Changed); }
@@ -221,10 +237,9 @@ namespace Statecraft.Game.UI
             var bad = Validate(c);
             if (bad != null) return Refuse(bad);
             if (State.GameOver != null) return Refuse(text["order.game_over"]);
+            if (UnitOf(c) is int unit && !IsSendHome(c) && GoingHome(unit)) return Refuse(text["order.going_home"]);
             if (Simulation.IsInstant(c))
             {
-                var unit = c is Move m ? m.Unit : ((UnitOrder)c).Unit;
-                if (GoingHome(unit)) return Refuse(text["order.going_home"]);
                 var before = Session.Now.Why.Count;
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
@@ -238,6 +253,10 @@ namespace Statecraft.Game.UI
                 Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
                 return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
             }
+            // Send home takes the unit's place in the queue: an order queued for it earlier (a reinforcement) is withdrawn, and
+            // its Attention refunded, so End turn never acts on a unit it sends home in the same turn. Withdrawing only refunds,
+            // so the check above still holds.
+            if (IsSendHome(c)) deferred.RemoveAll(x => UnitOf(x) == UnitOf(c) && Key(x) != Key(c));
             var old = QueuedLike(c);
             if (old != null) deferred[deferred.IndexOf(old)] = c; else deferred.Add(c);
             Notify(Changed);

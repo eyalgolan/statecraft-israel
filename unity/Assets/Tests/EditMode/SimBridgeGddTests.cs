@@ -75,6 +75,37 @@ public class SimBridgeGddTests
         Assert.IsEmpty(bridge.Session.Committed);
     }
 
+    /// <summary>Codex's review of #1527, finding 3: Send home queued first, a deferred order for the unit (Reinforce, the
+    /// one a soldier can take) is refused like an instant one, and only Send home stays queued.</summary>
+    [Test]
+    public void SendHomeThenReinforceRefusesTheReinforcement()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var unit = bridge.NeedsOrders[0];
+        var home = new UnitOrder(unit, Demobilization.SendHome);
+        Assert.IsNull(bridge.Queue(home));
+        Assert.AreEqual(Text["order.going_home"], bridge.Queue(new Reinforce(unit, "tel_aviv", 1)));
+        CollectionAssert.AreEqual(new Command[] { home }, bridge.Queued.ToList());
+    }
+
+    /// <summary>Codex's review of #1527, finding 3, the other order: Reinforce queued first, Send home takes the unit's
+    /// place in the queue. The reinforcement is withdrawn and its Attention refunded, so End turn never trains replacements
+    /// for a unit that goes home in the same turn.</summary>
+    [Test]
+    public void ReinforceThenSendHomeWithdrawsTheReinforcement()
+    {
+        var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
+        var unit = bridge.NeedsOrders[0]; var other = bridge.NeedsOrders[1];
+        var start = bridge.AttentionLeft;
+        var kept = new Reinforce(other, "tel_aviv", 1);
+        Assert.IsNull(bridge.Queue(new Reinforce(unit, "tel_aviv", 1)));
+        Assert.IsNull(bridge.Queue(kept));
+        var home = new UnitOrder(unit, Demobilization.SendHome);
+        Assert.IsNull(bridge.Queue(home));
+        CollectionAssert.AreEqual(new Command[] { kept, home }, bridge.Queued.ToList(), "the other unit's order stays");
+        Assert.AreEqual(start - bridge.Price(kept) - bridge.Price(home), bridge.AttentionLeft, 1e-9, "the withdrawn order is refunded");
+    }
+
     [Test]
     public void SkippedUnitsAndUnitsGoingHomeDoNotNeedOrders()
     {

@@ -308,28 +308,30 @@ why.effects: "השפעות מתמשכות"
 why.situations: "מצבים"
 why.other: "אחר"
 why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
-# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564).
-why.line.unit_moved: "{0} נעה למשושה {1} תמורת {2} נקודות תנועה"
-why.line.unit_moved_one: "{0} נעה למשושה {1} תמורת נקודת תנועה אחת"
-why.line.fortify_lost: "{0} עזבה את משושה {1} ואינה מבוצרת עוד"
-why.line.fortifying: "{0} מתבצרת במשושה {1}; היא תהיה מבוצרת מסוף התור"
-why.line.holds: "{0} מחזיקה במשושה {1}"
+# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564). HE-15: {0} is any unit's name, the
+# Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the name opens the
+# line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
+why.line.unit_moved: "{0}: תנועה למשושה {1} תמורת {2} נקודות תנועה"
+why.line.unit_moved_one: "{0}: תנועה למשושה {1} תמורת נקודת תנועה אחת"
+why.line.fortify_lost: "{0}: יציאה ממשושה {1}, והביצור שם אבד"
+why.line.fortifying: "{0}: התבצרות במשושה {1}; הביצור חל מסוף התור"
+why.line.holds: "{0}: החזקה במשושה {1}"
 why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: שביתת נשק בתוקף"
-why.line.attack_ordered: "{0} תתקוף את משושה {1}"
+why.line.attack_ordered: "{0}: פקודת התקפה על משושה {1}"
 why.line.attack_ended: "ההתקפה של {0} על משושה {1} מסתיימת: אין שם יחידת אויב"
-why.line.holds_fire: "{0} אינה יורה: אין התקפה על משושה {1} לתמוך בה"
+why.line.holds_fire: "{0}: ללא ירי, כי אין התקפה על משושה {1} לתמוך בה"
 why.line.attack_called_off: "ההתקפה של {0} על משושה {1} מבוטלת: נדרשים {2} כלי נשק ובמלאי יש {3}"
 why.line.engagement: "ההתקפה על משושה {2} ({0} נגד {1}, יחס כוחות {3}%): התוקפים איבדו {4:N0} איש והמגינים איבדו {5:N0} איש"
-why.line.destroyed: "{0} הושמדה"
-why.line.retreated: "{0} נסוגה למשושה {1}"
-why.line.surrendered_prisoners: "{0} נכנעה עם {1:N0} איש: לא היה לה משושה לסגת אליו. הם מוחזקים כשבויים"
-why.line.surrendered_held: "{0} נכנעה עם {1:N0} איש: לא היה לה משושה לסגת אליו. הם מוחזקים בידי האויב"
-why.line.sent_home: "{0} נשלחת הביתה: {1:N0} אנשיה הם כעת אזרחים ב־{2}"
-why.line.withdrew: "{0} נסוגה מ־{1} למשושה {2}"
+why.line.destroyed: "{0}: היחידה הושמדה"
+why.line.retreated: "{0}: נסיגה למשושה {1}"
+why.line.surrendered_prisoners: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים כשבויים"
+why.line.surrendered_held: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים בידי האויב"
+why.line.sent_home: "{0}: שחרור הביתה; {1:N0} איש הם כעת אזרחים ב־{2}"
+why.line.withdrew: "{0}: נסיגה מ־{1} למשושה {2}"
 why.line.on_its_way: "{0} בדרך למשושה {1}"
-why.line.stopped_no_route: "{0} נעצרה: אין מסלול שמגיע למשושה {1}"
-why.line.stopped_full: "{0} נעצרה: משושה {1} מלא"
-why.line.arrived: "{0} הגיעה למשושה {1}"
+why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
+why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
+why.line.arrived: "{0}: הגעה למשושה {1}"
 # A hex in the unit lines (HexPlaces), after the lines' "משושה": a settlement's hex is its name alone ("משושה חיפה"); any
 # other hex is said from the nearest settlement, {0} the km (to the nearest 5), {1} the compass point, {2} the settlement,
 # with a maqaf after the prefix as in why.line.sent_home. Agent-drafted Hebrew; native review pending (#564).
@@ -538,6 +540,14 @@ unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
 # Hebrew draft for a raised unit's type and home city (#1399); native review pending (#564).
 unit.raised_name: "{0}, {1}"
+# A unit raised in play, named as one formation in the Why lines and toasts (Codex's review of #1527): agent-drafted Hebrew,
+# native review pending (#564). יחידת as the UI's "היחידה"; קבוצת חלוצים as site.group.
+unit.name.recruit: "יחידת מגויסים"
+unit.name.veteran_soldier: "יחידת חיילים ותיקים"
+unit.name.artillery: "יחידת ארטילריה"
+unit.name.armoured_car: "יחידת שריוניות"
+unit.name.halutz: "קבוצת חלוצים"
+unit.name.veteran_halutz: "קבוצת חלוצים ותיקים"
 # The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "תנועה"
 # Hebrew route draft for #1398; native review pending (#564).
