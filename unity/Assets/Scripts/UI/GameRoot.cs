@@ -594,7 +594,7 @@ namespace Statecraft.Game.UI
                 StartCoroutine(FirstCardCheck(root, card!, Debug.Log));
             if (smoke > 0)
             {
-                if (Application.isPlaying) StartCoroutine(smokeOrders ? SmokeOrders(root, bridge, unitLayer, onHex, Debug.Log) : Smoke(root, bridge, card!, smoke, Debug.Log));
+                if (Application.isPlaying) StartCoroutine(smokeOrders ? SmokeOrders(root, bridge, unitLayer, (q, r) => onHex(q, r, false), Debug.Log) : Smoke(root, bridge, card!, smoke, Debug.Log));
                 else Debug.LogWarning("SMOKE FAIL the smoke run needs play mode or a player");
             }
             if (Application.isPlaying && PixelErrorProfile.Requested()) StartCoroutine(PixelErrorProfile.Run(map.Terrain));

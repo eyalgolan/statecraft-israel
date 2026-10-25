@@ -96,7 +96,8 @@ public class OccupiedCityPillTests
         // Valid occupied-city fixture, before any commit. Rebuild tokens from that state, as the live bridge does.
         Assert.IsEmpty(bridge.Session.Committed, "precondition: no preview commands before fixture placement");
         Assert.IsFalse(bridge.Session.State.Units.Values.Any(u => u.Order == Movement.GoTo));
-        bridge.Session.State.Units[bId].Q = city.Q; bridge.Session.State.Units[bId].R = city.R;
+        var u = bridge.Session.State.Units[bId];   // Unit is immutable: put B on the city as UnitOrdersTests does
+        bridge.Session.State.Units[bId] = new Unit(u.Id, u.Type, city.Q, city.R, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
         layer.Show(c, bridge.State);
         rig.Select("golani");
         var at = rig.Centre(city.Q, city.R);
