@@ -145,3 +145,15 @@ def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_word
         assert en[key] == template, key
         assert not re.search('[A-Za-z]', he[key]), key
     assert sorted(k for k in en if k.startswith('cabinet.reason.')) == sorted('cabinet.reason.' + k for k, _, _ in paths)
+
+
+def test_the_hebrew_plural_of_a_turn_is_torot_never_torim():
+    """The owner's ruling (24 Oct 2026, #1589): the plural of תור (a game turn) is תורות. #1589 changed it to תורים by
+    mistake and #1612 changed it back; this keeps it from drifting again. Every string that counts turns must say
+    תורות, and no Hebrew string may say תורים."""
+    he = strings('strings.he.yaml')
+    assert [key for key, value in he.items() if 'תורים' in value] == []
+    for key in ('how_to_play.training', 'capture.about.occupy', 'unit.go_to_given', 'city.turns',
+                'defence.turn_quarter', 'defence.turn_month', 'defence.turn_week',
+                'advisor.opening.move.text', 'advisor.opening.move.cue.2', 'advisor.ben_gurion.defeat_economy.text'):
+        assert 'תורות' in he[key], key
