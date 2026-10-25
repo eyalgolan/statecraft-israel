@@ -43,7 +43,7 @@ namespace Statecraft.Sim
             if (count < 1) return "Buy at least 1 Arms";
             if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
-            EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why);
+            EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why, CauseKeys.Purpose.Arms);
             s.Arms += count;
             why.Add(new Cause("economy", "arms", count, FormattableString.Invariant($"Bought {count} Arms, cost {PlayerText.Money(c, "treasury", cost)}")));
             return null;
