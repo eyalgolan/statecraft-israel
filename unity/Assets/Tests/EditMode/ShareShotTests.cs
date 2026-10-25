@@ -496,7 +496,7 @@ public class ShareShotTests
                 StringAssert.DoesNotContain(text["share.site_picture"], note.text, "download must not claim clipboard success");
             }
             else if (result != ShareShot.CopyResult.Picture)
-                StringAssert.Contains(hebrew ? "אפשר לשתף או להוריד את התמונה בכפתור שלמעלה" :
+                StringAssert.Contains(hebrew ? "התמונה עדיין זמינה לשיתוף או להורדה" :
                     "Share or download the picture with the button above", note.text,
                     "the note must fit both Share and Download, including a refused share sheet");
             Assert.AreEqual(DisplayStyle.Flex, note.style.display.value);
