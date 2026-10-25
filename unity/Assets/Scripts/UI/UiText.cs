@@ -44,7 +44,9 @@ namespace Statecraft.Game.UI
         /// line the bidi rules would otherwise draw "-$4.2m" as "$4.2m-" and split "15 May 1948" into "May 1948 15". A value
         /// with Hebrew in it is left alone: a Hebrew word (a seat unit) between marks would make the space next to it left to
         /// right, and a value Format has already made from a Hebrew pattern has its own values marked. Every other pattern,
-        /// so all of English, gives string.Format's text unchanged.</summary>
+        /// so all of English, gives string.Format's text unchanged. A value written straight after a Hebrew letter (a
+        /// one-letter prefix, "ל{2}") takes a maqaf when it starts with a digit or a Latin letter (HE-07): "לחיפה" but
+        /// "ל־Haifa" where a name has no Hebrew form yet.</summary>
         public string Format(string key, params object[] args)
         {
             var pattern = this[key];
@@ -56,8 +58,27 @@ namespace Statecraft.Game.UI
             {
                 if (!m.Groups[1].Success) return m.Value.Substring(1);              // "{{" or "}}"
                 var value = string.Format(CultureInfo.InvariantCulture, "{0" + m.Groups[2].Value + "}", Arg(args, m.Groups[1].Value));
-                return value.Length == 0 || UiDirection.HasRightToLeft(value) ? value : LeftToRightMark + value + LeftToRightMark;
+                var marked = value.Length == 0 || UiDirection.HasRightToLeft(value) ? value : LeftToRightMark + value + LeftToRightMark;
+                return m.Index > 0 && IsHebrewLetter(pattern[m.Index - 1]) && StartsWithNumeralOrLatin(value) ? Maqaf + marked : marked;
             });
+        }
+
+        /// <summary>U+05BE HEBREW PUNCTUATION MAQAF.</summary>
+        const char Maqaf = '\u05BE';
+
+        static bool IsHebrewLetter(char c) => c >= '\u05D0' && c <= '\u05EA';
+
+        /// <summary>Whether the value's first letter or digit, past any direction mark, is a digit or a non-Hebrew letter
+        /// (HE-07: a prefix joins a Hebrew word directly, "לחיפה", and takes a maqaf before a numeral or Latin letters,
+        /// "ל־Haifa", "ב־15 במאי 1948").</summary>
+        static bool StartsWithNumeralOrLatin(string value)
+        {
+            foreach (var c in value)
+            {
+                if (c == LeftToRightMark || c == '\u200F' || c == '\u061C' || c >= '\u202A' && c <= '\u202E' || c >= '\u2066' && c <= '\u2069') continue;
+                return char.IsLetterOrDigit(c) && !IsHebrewLetter(c);
+            }
+            return false;
         }
 
         static object? Arg(object[] args, string index)

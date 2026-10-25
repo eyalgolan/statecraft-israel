@@ -43,6 +43,23 @@ public class HebrewValuesTests
         Assert.IsFalse(UiDirection.RightToLeft(appointed), appointed);
     }
 
+    /// <summary>HE-07: a value written straight after a Hebrew letter, a one-letter prefix ("ב{0}"), is joined to it when
+    /// it starts with a Hebrew letter, ה included and a name of two words alike, and takes a maqaf when it starts with a
+    /// digit or a Latin letter. A prefix the pattern already gives a maqaf ("ב־{0}", a date) gets no second one.</summary>
+    [Test]
+    public void APrefixJoinsAHebrewValueAndTakesAMaqafBeforeADigitOrLatinLetters()
+    {
+        Assert.AreEqual("ליחידה בהרצליה אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "הרצליה"));
+        Assert.AreEqual("ליחידה בתל אביב אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "תל אביב"));
+        Assert.AreEqual("ליחידה ב־" + Lrm + "Herzliya" + Lrm + " אין משבצת פנויה סמוכה לסגת אליה.",
+            He.Format("capture.refusal.no_free_hex", "Herzliya"));
+        Assert.AreEqual("ב־" + Lrm + "3" + Lrm + " אין מים עבור דיור", He.Format("city.project_reason.no_resource", "3", "מים", "דיור"));
+        // The value itself unprefixed is left as it was.
+        Assert.AreEqual(Lrm + "Herzliya" + Lrm + " כבר עיר.", He.Format("capture.refusal.already_city", "Herzliya"));
+        Assert.AreEqual("נוסד ב־" + Lrm + "15" + Lrm + " במאי " + Lrm + "1948" + Lrm,
+            He.Format("site.built", He.Format("date.day_month_year", 15, He["date.month_5"], 1948)));
+    }
+
     /// <summary>A value with Hebrew in it is not wrapped. A Hebrew word (the seat unit by body, #550) between marks would
     /// make the space between it and an English neighbour left to right, and the space would move to the wrong side; a
     /// value Format has made from a Hebrew pattern (the spoken amount inside the meter's spoken line) has its own values

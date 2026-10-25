@@ -43,9 +43,25 @@ public class WhyHexPlacesTests
     {
         // (6,8) is the hex east of Haifa's (5,8): 8.5 km between the centres, said to the nearest 5 km.
         Assert.AreEqual(GolaniName(En) + " moved to a hex 10 km east of Haifa for 2 movement points", UnitNames.Line(Moved("6,8", 2), C, Rows, En));
-        StringAssert.Contains("משושה 10 ק״מ מזרחית ל־חיפה", UnitNames.Line(Moved("6,8", 2), C, Rows, He, NamesHe));
+        StringAssert.Contains("משושה 10 ק״מ ממזרח לחיפה", UnitNames.Line(Moved("6,8", 2), C, Rows, He, NamesHe));
         // (-3,20) is one hex from Tel Aviv, Lod and Rishon LeZion alike: the first in settlement_hexes.yaml's order wins.
         StringAssert.Contains("a hex 10 km south-east of Tel Aviv", UnitNames.Line(Moved("-3,20", 2), C, Rows, En));
+    }
+
+    /// <summary>A one-letter prefix joins a Hebrew place name directly, a name of two words included ("לחיפה", "בתל
+    /// אביב"), and takes a maqaf before a name with no Hebrew form yet, which is shown in English (HE-07: "מ־Jaffa").</summary>
+    [Test]
+    public void APrefixJoinsAHebrewPlaceNameAndTakesAMaqafBeforeAnEnglishOne()
+    {
+        const char lrm = UiText.LeftToRightMark;
+        StringAssert.Contains("אזרחים בתל אביב", UnitNames.Line(new Cause("map", "0", 0, "", key: WhyKeys.SentHome,
+            units: new[] { Golani }, args: new[] { "500", "tel_aviv" }), C, Rows, He, NamesHe));
+        // NamesHe has no Jaffa: its English name, after a maqaf. The hex it withdrew to is Haifa's, in Hebrew.
+        StringAssert.Contains("נסוגה מ־" + lrm + "Jaffa" + lrm + " למשושה חיפה", UnitNames.Line(new Cause("map", "0", 0, "",
+            key: WhyKeys.Withdrew, units: new[] { Golani }, args: new[] { "jaffa", "5,8" }), C, Rows, He, NamesHe));
+        // No Hebrew names at all: Haifa in English, after a maqaf.
+        StringAssert.Contains("משושה " + lrm + "10" + lrm + " ק״מ ממזרח ל־" + lrm + "Haifa" + lrm,
+            UnitNames.Line(Moved("6,8", 2), C, Rows, He, null));
     }
 
     /// <summary>Every unit line, in both languages, with a hex of negative q (the Hebrew bidi case: "-3,20" showed as

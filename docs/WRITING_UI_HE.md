@@ -98,6 +98,7 @@ For the native reviewer: record any overrule of the adopted ״ convention, and c
 ### HE-07 Maqaf
 Status: proposed, native. Reason: the Academy's punctuation rules use a maqaf when a prefix meets a numeral or Latin letters, for example "ה־12" and "ב־DNA". r12a says the maqaf is the proper character for a hyphen between compounds, that keyboards often lack it so a hyphen-minus is substituted, and that lines should not break next to it.
 - Today: "יישובים ב-1948: {0}" (`info.localities`) uses a hyphen-minus. "מ־{0} עד {1}" (`why.turn`) uses a maqaf. The date pattern joins the prefix to the month name with no hyphen ("{0} ב{1} {2}", `date.day_month_year`), which is ordinary Hebrew for a prefix before a word.
+- Code: a placeholder written straight after a prefix ("ב{0}") is joined to a Hebrew value ("בתל אביב"), and UiText.Format adds the maqaf when the value starts with a digit or a Latin letter ("ב־Haifa", for a name with no Hebrew form yet). Write "ב־{0}" only where the value is always a numeral or a date.
 - Candidate: "יישובים ב־1948: {0}".
 - A second place: the map legend joins two colour words with a hyphen-minus, "כתום-אדום" (`map.legend_held`, also `map.legend_armistice`). r12a's note on the hyphen between compounds points to the maqaf there too. Candidate: "כתום־אדום".
 For the native reviewer: confirm the maqaf for prefixes before numerals and Latin letters, for the colour compound, and the numeral range style in `why.turn`.
