@@ -34,7 +34,7 @@ namespace Statecraft.Sim
             foreach (var kv in Arrivals(c, s.Date, to).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Population[kv.Key] = (s.Population.TryGetValue(kv.Key, out var v) ? v : 0) + kv.Value;
-                if (kv.Value > 0) why.Add(new Cause("population", kv.Key, kv.Value, FormattableString.Invariant($"{kv.Value:N0} immigrants arrived ({PlayerText.Region(c, kv.Key)})")));
+                if (kv.Value > 0) why.Add(new Cause("population", kv.Key, kv.Value, FormattableString.Invariant($"{kv.Value:N0} immigrants arrived ({PlayerText.Region(c, kv.Key)})"), key: CauseKeys.Arrived));
             }
         }
     }

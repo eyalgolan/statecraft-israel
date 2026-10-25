@@ -42,6 +42,8 @@ namespace Statecraft.Game.UI
         readonly List<Action> unbindSites = new List<Action>();
         readonly List<(VisualElement part, bool enabled)> covered = new List<(VisualElement, bool)>();
         Button? opener;
+        /// <summary>The post as it is shared and copied (ShareShot.Text); the label shows ShareShot.Shown's form of it.</summary>
+        string postText = "";
         UnityEngine.Texture2D? picture;   // the preview's, released on Close
         IVisualElementScheduledItem? copyPoll;
         bool capturing, canShareFiles, disposed;
@@ -108,7 +110,8 @@ namespace Statecraft.Game.UI
                 var shown = HudModel.From(bridge, text);
                 ShareShot.Keep(png, ShareShot.FileName(bridge.State.Date));
                 canShareFiles = ShareShot.CanShareFiles();
-                post.text = ShareShot.Text(text, shown.Date, bridge.State.Turn);
+                postText = ShareShot.Text(text, shown.Date, bridge.State.Turn);
+                post.text = ShareShot.Shown(postText, text["ui.lang"] == UiLanguage.Hebrew);
                 go.text = text[canShareFiles ? "share.native" : "share.download"];
                 fallback.style.display = instagramNote.style.display = DisplayStyle.None;
                 copyPoll?.Pause();
@@ -116,7 +119,7 @@ namespace Statecraft.Game.UI
                 ShowPreview(png);
                 foreach (var unbind in unbindSites) unbind();
                 unbindSites.Clear();
-                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, post.text)));
+                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, postText)));
                 opener = from;
                 // Each part's own state comes back on Close. The panel takes every press meanwhile, so no screen opens or
                 // closes under it; a resize may still run ScreenNav.DisableCovered, and Close then puts back the states from before.
@@ -137,7 +140,7 @@ namespace Statecraft.Game.UI
         void Send(VisualElement note)
         {
             if (!IsOpen) return;
-            ShareShot.Share(post.text, ShareShot.Itch);
+            ShareShot.Share(postText, ShareShot.Itch);
             if (!canShareFiles) { note.style.display = DisplayStyle.Flex; return; }
             // The share sheet can still be refused on the release (ShareShot.jslib); then the picture downloads and the
             // note shows, as where files cannot be shared. A refusal comes at once; a few seconds is enough to wait.
@@ -175,7 +178,7 @@ namespace Statecraft.Game.UI
             if (!IsOpen) return;
             copyPoll?.Pause();
             copied.style.display = DisplayStyle.None;
-            ShareShot.Copy(post.text);
+            ShareShot.Copy(postText);
             // A press whose release never reached the browser (shorter than a frame, or another press first) copies
             // nothing and stays Pending: after a few seconds the panel says so rather than staying silent.
             var giveUpAt = UnityEngine.Time.realtimeSinceStartup + 4.5f;

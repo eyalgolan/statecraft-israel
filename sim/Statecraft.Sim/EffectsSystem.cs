@@ -94,9 +94,10 @@ namespace Statecraft.Sim
             {
                 var delta = s.Indicators[i.Id] - before[i.Id];
                 if (Math.Abs(delta) <= 1e-9) continue;
-                var names = v.Effects.Where(e => e.Target == i.Id && moved.Contains(e.Id)).Select(e => e.Name).ToList();
-                var from = names.Count > 0 ? $" ({string.Join(", ", names)})" : "";
-                why.Add(new Cause("effects", i.Id, delta, $"{PlayerText.Change(c, i.Id, delta)}{from}"));
+                var effects = v.Effects.Where(e => e.Target == i.Id && moved.Contains(e.Id)).ToList();
+                var from = effects.Count > 0 ? $" ({string.Join(", ", effects.Select(e => e.Name))})" : "";
+                why.Add(new Cause("effects", i.Id, delta, $"{PlayerText.Change(c, i.Id, delta)}{from}",
+                    key: CauseKeys.EffectChange, args: effects.Select(e => e.Id).ToList()));
             }
             UpdateSituations(c, s, why);
         }
@@ -152,8 +153,10 @@ namespace Statecraft.Sim
                 bool on = s.ActiveSituations.Contains(sit.Id);
                 bool turnOn = sit.OnBelow.HasValue ? v < sit.OnBelow.Value : v > sit.OnAbove!.Value;
                 bool turnOff = sit.OffAbove.HasValue ? v > sit.OffAbove.Value : v < sit.OffBelow!.Value;
-                if (!on && turnOn) { s.ActiveSituations.Add(sit.Id); why.Add(new Cause("situations", sit.Id, 1, $"{sit.Name} began ({PlayerText.Target(c, sit.Indicator)} at {PlayerText.Percent(v)})")); }
-                else if (on && turnOff) { s.ActiveSituations.Remove(sit.Id); why.Add(new Cause("situations", sit.Id, -1, $"{sit.Name} ended ({PlayerText.Target(c, sit.Indicator)} at {PlayerText.Percent(v)})")); }
+                if (!on && turnOn) { s.ActiveSituations.Add(sit.Id); why.Add(new Cause("situations", sit.Id, 1, $"{sit.Name} began ({PlayerText.Target(c, sit.Indicator)} at {PlayerText.Percent(v)})",
+                    key: CauseKeys.SituationBegan, args: new[] { sit.Indicator, CauseKeys.Number(v) })); }
+                else if (on && turnOff) { s.ActiveSituations.Remove(sit.Id); why.Add(new Cause("situations", sit.Id, -1, $"{sit.Name} ended ({PlayerText.Target(c, sit.Indicator)} at {PlayerText.Percent(v)})",
+                    key: CauseKeys.SituationEnded, args: new[] { sit.Indicator, CauseKeys.Number(v) })); }
             }
         }
 

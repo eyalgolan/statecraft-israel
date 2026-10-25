@@ -126,7 +126,7 @@ namespace Statecraft.Sim
             if (arms > s.Arms) return FormattableString.Invariant($"{name}: not enough Arms for {Course(type)} (need {arms}, have {s.Arms})");
             var cost = count * type.TrainingCost;
             // Owner decision "Allow borrowing" (2026-10-15, #468 question 1): a short Treasury borrows, as map actions do.
-            EconomySystem.PayOrBorrow(c, s, cost, "for training", why);
+            EconomySystem.PayOrBorrow(c, s, cost, "for training", why, CauseKeys.Purpose.Training);
             // R-HOUSE-003: trainees remain housed as a cohort, and recruits keep their home city's housing as formations.
             // A pioneer unit leaves city housing; a craftsman remains. The employed share also reads the new counts.
             // R-QUAL-006: the trainees are taken from the unqualified civilians first; a qualified one taken loses its
