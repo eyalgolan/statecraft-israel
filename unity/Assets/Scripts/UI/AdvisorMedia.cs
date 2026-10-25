@@ -40,7 +40,8 @@ namespace Statecraft.Game.UI
         Action? ended;
         Action<string>? failed;
         string file = "", stem = "";
-        bool started, heard, moving, disposed;
+        bool started, heard, moving, disposed, unseekable;
+        double sought = -1;
         int generation, loadingMs, stalledMs, decodingMs, startingMs, pictureMs, pictureStalledMs;
         ulong bytes, pictureBytes;
 
@@ -136,7 +137,15 @@ namespace Statecraft.Game.UI
             }
             int cue = AdvisorCaptions.At(cues, output.Position);
             if (caption != null) caption.text = cue < 0 ? "" : text[stem + ".cue." + (cue + 1)];
-            if (moving && picture != null && Math.Abs(picture.Time - output.Position) > DriftS) picture.Seek(output.Position);
+            if (moving && picture != null && !unseekable)
+            {
+                // A seek that did not take is not repeated: a host that serves no byte ranges cannot seek, so the browser puts
+                // the clip back at its start, and seeking again every tick held the picture on its first frame (v0.3.0 release
+                // check). The picture then plays on unsynced.
+                if (sought >= 0 && picture.Time < sought - DriftS) unseekable = true;
+                else if (Math.Abs(picture.Time - output.Position) > DriftS) { sought = output.Position; picture.Seek(sought); }
+                else sought = -1;
+            }
         }
 
         void Fail(string why)
@@ -156,7 +165,7 @@ namespace Statecraft.Game.UI
             output.Stop(); Release(narration); narration = null;
             if (caption != null) caption.text = "";
             caption = null; ended = null; failed = null;
-            started = heard = false;
+            started = heard = unseekable = false; sought = -1;
             loadingMs = stalledMs = decodingMs = startingMs = pictureMs = pictureStalledMs = 0; bytes = pictureBytes = 0;
         }
 

@@ -96,7 +96,7 @@
             </ui:VisualElement>
             <ui:VisualElement class="turn-box">
                 <ui:Label name="attention" class="muted" />
-                <ui:Button name="end-turn" text="End turn" class="end-turn" />
+                <ui:Button name="end-turn" text="A unit needs orders" class="end-turn" />
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- The map's keyboard stop (#41 B1b, #1116): after End Turn in the Tab order, before the minimap's buttons and the
@@ -149,11 +149,17 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
-                    <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
-                    <ui:Button name="info-move" />
-                    <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
-                    <ui:Button name="info-fortify" />
-                    <ui:Button name="info-hold" />
+                    <!-- Keep the three primary orders together when the laptop panel has room; the group still wraps on phones. -->
+                    <ui:VisualElement name="info-primary-orders" class="row info-primary-orders">
+                        <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
+                        <ui:Button name="info-move" />
+                        <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
+                        <ui:Button name="info-fortify" />
+                        <ui:Button name="info-hold" />
+                    </ui:VisualElement>
+                    <!-- Skip is UI-only: it drops this unit from the needs-orders cycle for this turn. Hidden until the unit card
+                         shows it (InfoPanelPresenter sets its display on every render). -->
+                    <ui:Button name="info-skip" style="display: none;" />
                     <!-- Attack (#754): shown only when the sim's Combat.Check takes some hex; the pick shows each hex's odds. -->
                     <ui:Button name="info-attack" />
                     <!-- Send home (#1309): shown only when the sim's Demobilization.Check takes the unit. -->
@@ -482,9 +488,12 @@
                     <ui:Label name="advisor-quote" class="advisor-quote" />
                     <ui:Label name="advisor-quote-source" class="muted advisor-quote-source" />
                 </ui:ScrollView>
-                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). -->
+                <!-- The disclosure and credit: under the live caption, never over the picture (spec 12, OQ-16). The credit
+                     scrolls in the room the caption and the buttons leave (Dayan's runs to seven lines). -->
                 <ui:Label name="advisor-media-label" class="muted advisor-media-label" />
-                <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                <ui:ScrollView name="advisor-media-credits" class="advisor-media-credits">
+                    <ui:Label name="advisor-media-credit" class="muted advisor-media-label" />
+                </ui:ScrollView>
                 <ui:VisualElement class="row advisor-actions">
                     <ui:Button name="advisor-show-me" />
                     <ui:Button name="advisor-more" />
@@ -637,12 +646,12 @@
         <!-- The name of an icon-only button, beside it on hover and on keyboard focus (HoverTip; UI Toolkit draws `tooltip`
              only in Editor UI). Last, so it draws over the panels; it takes no clicks. -->
         <ui:Label name="hud-tip" class="hud-tip" picking-mode="Ignore" />
-        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. Two
-             lines of their own: the meter in the UI's words, then the sim's causes, which are English (#55), so each label
-             takes its own direction in the Hebrew UI (UiDirection). -->
+        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. The
+             meter in the UI's words, then one label per cause: a cause is in the UI's language where it has a key (B1) and in
+             the sim's English where it has none yet (#55), so each label takes its own direction in the Hebrew UI (UiDirection). -->
         <ui:VisualElement name="meter-tip" class="meter-tip" picking-mode="Ignore">
             <ui:Label name="meter-tip-words" class="meter-tip-line" picking-mode="Ignore" />
-            <ui:Label name="meter-tip-causes" class="meter-tip-line" picking-mode="Ignore" />
+            <ui:VisualElement name="meter-tip-causes" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -24,7 +24,9 @@ public class AdvisorMediaTests
         public void Load(string url, VisualElement target, Action<string> failed) { Loads++; }
         public void Start() { Started = true; Stopped = false; }
         public void Stop() => Stopped = true;
-        public void Seek(double t) { Seeks.Add(t); Time = t; }
+        /// <summary>False: as a browser whose host serves no byte ranges, every seek puts the clip back at its start.</summary>
+        public bool Seekable = true;
+        public void Seek(double t) { Seeks.Add(t); Time = Seekable ? t : 0; }
     }
 
     sealed class FakeOutput : DeclarationRecording.IOutput
@@ -81,6 +83,36 @@ public class AdvisorMediaTests
         CollectionAssert.AreEqual(new[] { 3.0 }, pic.Seeks);
         output.Position = 3.5f; pic.Time = 3.45; media.Tick();
         Assert.AreEqual(1, pic.Seeks.Count, "within 0.1 s: left alone");
+    }
+
+    /// <summary>The v0.3.0 release check: a host without byte ranges cannot seek, so each seek put the clip back at 0 and the
+    /// next tick seeked again, holding the picture on its first frame while the narration ran. One seek that does not take
+    /// ends the correction for that clip, and the picture plays on.</summary>
+    [Test]
+    public void ASeekThatDoesNotTakeIsNotRepeated()
+    {
+        var (media, pic, output, _) = Make();
+        pic.Seekable = false; pic.Ready = true; media.Tick();
+        output.Position = 0.3f; media.Tick();                                   // started late: 0.3 s behind
+        Assert.AreEqual(1, pic.Seeks.Count, "the first drift is corrected");
+        for (int i = 0; i < 100; i++)
+        {
+            output.Position += AdvisorMedia.TickMs / 1000f; pic.Time += AdvisorMedia.TickMs / 1000.0;
+            media.Tick();
+        }
+        Assert.AreEqual(1, pic.Seeks.Count, "a seek that came back at the start is not repeated every tick");
+        Assert.Greater(pic.Time, 4.9, "the picture advances");
+    }
+
+    [Test]
+    public void ASeekThatTakesLeavesTheCorrectionOn()
+    {
+        var (media, pic, output, _) = Make();
+        pic.Ready = true; media.Tick();
+        output.Position = 1.0f; pic.Time = 0.5; media.Tick();
+        output.Position = 1.05f; pic.Time = 1.05; media.Tick();
+        output.Position = 3.0f; pic.Time = 2.5; media.Tick();
+        CollectionAssert.AreEqual(new[] { 1.0, 3.0 }, pic.Seeks);
     }
 
     [Test]
@@ -454,4 +486,110 @@ public class AdvisorMediaTests
             wide.Release(); UnityEngine.Object.DestroyImmediate(wide);
         }
     }
+
+    /// <summary>The v0.3.0 release check (24 October 2026, dayan.arms_out): with a clip playing in the popup, the picture and
+    /// Dayan's seven-line credit squeezed the live caption to its first line and cramped the buttons. At every window and UI
+    /// scale where a shipped clip plays in the popup, each of its captions shows all its lines inside the popup, the
+    /// disclosure still shows, and the buttons keep the size they had before Watch.</summary>
+    [UnityTest]
+    public System.Collections.IEnumerator EveryClipsCaptionShowsWholeAndTheButtonsKeepTheirSize()
+    {
+        var clips = AdvisorCatalog.Load().Messages.Where(m => !string.IsNullOrEmpty(m.Media?.Picture)).ToList();
+        Assert.That(clips.Select(m => m.Id), Does.Contain("dayan.arms_out"), "precondition: the clip the release check caught");
+        (int w, int h)[] windows = { (1920, 1080), (1280, 720), (1366, 768), (1024, 768), (960, 1080), (390, 844), (844, 390) };
+        var problems = new List<string>(); int inlineChecks = 0;
+        foreach (var scale in new[] { 1f, 1.25f, 1.5f })
+            foreach (var (w, h) in windows)
+            {
+                string at = $"{w}x{h} at {scale * 100:0}%";
+                var rt = new RenderTexture(w, h, 0);
+                var panel = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+                panel.targetTexture = rt;
+                // SettingsPresenter.ApplyScale's rule: a UI scale divides the reference resolution.
+                panel.referenceResolution = new Vector2Int(Mathf.RoundToInt(panel.referenceResolution.x / scale), Mathf.RoundToInt(panel.referenceResolution.y / scale));
+                var go = new GameObject("AdvisorClipCaption"); go.SetActive(false);
+                var doc = go.AddComponent<UIDocument>(); doc.panelSettings = panel;
+                doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
+                var root = doc.rootVisualElement; root.Q("root").RemoveFromClassList("loading");
+                var bridge = new SimBridge(GameSession.New(ContentLoader.Load(Paths.Content), GoldenRun.Seed, Mode.Historical), Text);
+                var hud = new HudPresenter(root, bridge, Text); var nav = new ScreenNav(root);
+                var card = new EventCardPresenter(root, bridge, Text, null); card.Collapse(takeFocus: false);
+                var session = new AdvisorSession(AdvisorCatalog.Parse(AdvisorPopupTests.Fixture), new AdvisorSettings(null), true);
+                var advisor = new AdvisorPresenter(root, bridge, Text, session, hooks: new AdvisorHooks { Card = card });
+                var output = new FakeOutput();
+                advisor.Media = new AdvisorMedia(Text, new FakePicture { Ready = true }, new FakePicture { Ready = true }, Immediate, output);
+                try
+                {
+                    advisor.NewGame(); for (int i = 0; i < 6; i++) yield return null;
+                    var popup = root.Q("advisor-popup");
+                    var buttons = root.Query<Button>().Where(b => b.parent.ClassListContains("advisor-actions") && AdvisorTargets.Shown(b)).ToList();
+                    var before = buttons.Select(b => b.worldBound.size).ToList();
+                    foreach (var m in clips)
+                        for (int cue = 0; cue < m.Media!.Cues["en"].Count; cue++)
+                        {
+                            advisor.Watch(m.Media, "advisor." + m.Id); advisor.Media.Tick();
+                            output.Position = (float)m.Media.Cues["en"][cue] + 0.01f; advisor.Media.Tick();
+                            for (int i = 0; i < 4; i++) yield return null;
+                            if (!popup.ClassListContains(AdvisorPresenter.WatchingClass)) continue;   // the overlay's own layout
+                            inlineChecks++;
+                            string what = $"{at} {m.Id} cue {cue + 1}";
+                            var caption = root.Q<Label>("advisor-text");
+                            Assert.AreEqual(Text[$"advisor.{m.Id}.cue.{cue + 1}"], caption.text, what + ": precondition");
+                            var shown = root.Q<ScrollView>("advisor-body").contentViewport.worldBound;
+                            if (!Inside(caption.worldBound, shown) || !Inside(caption.worldBound, popup.worldBound))
+                                problems.Add($"{what}: the caption {caption.worldBound} is cut to {shown}");
+                            if (!AdvisorTargets.Shown(root.Q("advisor-media-label")) || !Inside(root.Q("advisor-media-label").worldBound, popup.worldBound))
+                                problems.Add($"{what}: the disclosure does not show");
+                            var credit = root.Q<Label>("advisor-media-credit");
+                            if (m.Media.Credit != "" && !(root.Q("advisor-media-credits").worldBound.height >= credit.resolvedStyle.fontSize))
+                                problems.Add($"{what}: no line of the credit shows ({root.Q("advisor-media-credits").worldBound})");
+                            for (int b = 0; b < buttons.Count; b++)
+                                if (buttons[b].worldBound.width < before[b].x - 0.5f || buttons[b].worldBound.height < before[b].y - 0.5f
+                                    || !Inside(buttons[b].worldBound, popup.worldBound))
+                                    problems.Add($"{what}: {buttons[b].name} is {buttons[b].worldBound.size}, was {before[b]}");
+                        }
+                }
+                finally
+                {
+                    advisor.Dispose(); card.Dispose(); nav.Dispose(); hud.Dispose();
+                    UnityEngine.Object.DestroyImmediate(go); UnityEngine.Object.DestroyImmediate(panel);
+                    rt.Release(); UnityEngine.Object.DestroyImmediate(rt);
+                }
+            }
+        Assert.Greater(inlineChecks, 0, "no window played a clip in the popup");
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static bool Inside(Rect inner, Rect outer) =>
+        inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
+    [Test]
+    public void ClickingThePortraitUsesTheSameWatchAction()
+    {
+        using var rig = new AdvisorPopupTests.Rig(catalog: TeachWith("{ picture: x.mp4, narration: { en: t.en.wav }, cues: { en: [0, 2.5] }, label: advisor.media_label }"), text: Text);
+        var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, new FakePicture { Ready = true }, new FakePicture(), Immediate, output);
+        rig.Advisor.ForceInline = true; rig.Advisor.NewGame();
+        var portrait = rig.Ui.Root.Q("advisor-portrait");
+        using (var click = ClickEvent.GetPooled())
+        {
+            click.target = portrait;
+            typeof(ClickEvent).GetProperty("button")!.SetValue(click, 0);
+            portrait.SendEvent(click);
+        }
+        rig.Advisor.Media.Tick();
+        Assert.IsTrue(rig.Advisor.Media.Playing && output.Played, "the picture itself starts Watch");
+        UiTestKit.Press(rig.Ui.Root.Q<Button>("advisor-watch"));
+        Assert.IsFalse(rig.Advisor.Media.Playing, "the nested Watch strip still toggles exactly once");
+        using (var bubble = ClickEvent.GetPooled())
+        {
+            bubble.target = rig.Ui.Root.Q<Button>("advisor-watch");
+            typeof(ClickEvent).GetProperty("button")!.SetValue(bubble, 0); rig.Ui.Root.Q<Button>("advisor-watch").SendEvent(bubble);
+        }
+        Assert.IsFalse(rig.Advisor.Media.Playing, "a strip click bubbling through the portrait does not start it again");
+        rig.Advisor.Dispose();
+        using var after = ClickEvent.GetPooled(); after.target = portrait;
+        typeof(ClickEvent).GetProperty("button")!.SetValue(after, 0); portrait.SendEvent(after);
+        Assert.IsFalse(rig.Advisor.Media.Playing, "disposed portrait is unwired");
+    }
+
 }

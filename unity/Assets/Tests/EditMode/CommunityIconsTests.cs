@@ -304,4 +304,25 @@ public class CommunityIconsTests
                 });
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+    [Test]
+    public void AnExternalPressCanBeCancelledBeforeItsClick()
+    {
+        var opened = new List<string>(); ExternalLink.Opener = opened.Add;
+        try
+        {
+            using var ui = new UiTestKit(); var button = ui.Q<Button>("hud-star");
+            var undo = ExternalLink.Bind(button, ExternalLink.Repository);
+            using (var down = PointerDownEvent.GetPooled())
+            {
+                down.target = button; typeof(PointerDownEvent).GetProperty("button")!.SetValue(down, 0); button.SendEvent(down);
+            }
+            Assert.IsEmpty(opened, "pointer down alone must not open a page; dragging off cancels the click");
+            SettingsScreenTests.PressWithPointer(button);
+            Assert.AreEqual(1, opened.Count, "one completed pointer click opens once");
+            UiTestKit.Press(button); Assert.AreEqual(2, opened.Count, "keyboard Submit still opens once");
+            undo(); SettingsScreenTests.PressWithPointer(button); Assert.AreEqual(2, opened.Count, "Dispose removes the binding");
+        }
+        finally { ExternalLink.Opener = ExternalLink.Default; }
+    }
+
 }

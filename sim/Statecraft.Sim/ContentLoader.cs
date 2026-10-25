@@ -1428,6 +1428,7 @@ namespace Statecraft.Sim
                     if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
                         throw new ContentException(cf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
                 Status(cf, at + ".status", x.Status);
+                Review(cf, at, x.ReviewedBy, x.ReviewedByGiven, x.ReviewedOn, x.ReviewedOnGiven);
             }
         }
 

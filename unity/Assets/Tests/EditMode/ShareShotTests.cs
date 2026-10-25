@@ -39,6 +39,23 @@ public class ShareShotTests
         Assert.IsTrue(UiDirection.HasRightToLeft(he), "the Hebrew post is Hebrew");
     }
 
+    /// <summary>Playtest, 25 Oct 2026: in the Hebrew panel "https://" ended one line and the rest of the URL began the next.
+    /// The label puts a word joiner after each break point inside a URL ('/', ':', '.', '-'), so no line break falls inside
+    /// it; English is shown as shared, and what is shared and copied never carries the joiners.</summary>
+    [Test]
+    public void TheHebrewPanelKeepsEachUrlOnOneLine()
+    {
+        var en = ShareShot.Text(En, "15 November 1948", 6);
+        Assert.AreEqual(en, ShareShot.Shown(en, false), "English unchanged");
+        var he = ShareShot.Text(He, "15 בנובמבר 1948", 6);
+        var shown = ShareShot.Shown(he, true);
+        var j = ShareShot.WordJoiner.ToString();
+        StringAssert.Contains($"https:{j}/{j}/{j}eyalgolan.{j}itch.{j}io/{j}statecraft-{j}israel", shown);
+        StringAssert.Contains($"https:{j}/{j}/{j}github.{j}com/{j}eyalgolan/{j}statecraft-{j}israel", shown);
+        Assert.AreEqual(he, shown.Replace(j, ""), "nothing else changes");
+        StringAssert.DoesNotContain(j, he, "the shared post carries no joiner");
+    }
+
     /// <summary>X's limit is 280 by its own count (twitter-text v3): any URL is 23, a character in its light ranges (Latin,
     /// Hebrew, most punctuation) is 1 and any other (the bidi marks Format puts round the URLs) is 2. The longest real post,
     /// the last turn's longest date (rules.yaml ends the game on 15 January 1952), fits in both languages.</summary>
@@ -157,7 +174,7 @@ public class ShareShotTests
             Assert.IsTrue(share.IsOpen);
             CollectionAssert.AreEqual(new[] { "statecraft-1948-05-15.png" }, kept);
             var post = ShareShot.Text(text, HudModel.From(bridge, text).Date, bridge.State.Turn);
-            Assert.AreEqual(post, ui.Q<Label>("share-post").text, "the panel shows the post");
+            Assert.AreEqual(ShareShot.Shown(post, hebrew), ui.Q<Label>("share-post").text, "the panel shows the post");
             Assert.IsFalse(ui.Q<VisualElement>("screen-settings").enabledSelf, "out of Tab's reach under the panel");
             var fallback = ui.Q<VisualElement>("share-fallback");
             Assert.AreEqual(DisplayStyle.None, fallback.style.display.value, "no attach note before the press");
@@ -210,7 +227,7 @@ public class ShareShotTests
             Assert.AreEqual(DisplayStyle.None, note.style.display.value, "no note before the press");
             CollectionAssert.IsEmpty(shared, "nothing is shared before the press");
             if (keyboard) UiTestKit.Press(button); else SettingsScreenTests.PressWithPointer(button);
-            var post = ui.Q<Label>("share-post").text;
+            var post = ShareShot.Text(text, HudModel.From(bridge, text).Date, bridge.State.Turn);
             CollectionAssert.AreEqual(new[] { post + " | " + ShareShot.Itch }, shared, "the share sheet, or the download, once");
             CollectionAssert.IsEmpty(opened, "no web page: Instagram has no share link");
             Assert.AreEqual(canShareFiles ? DisplayStyle.None : DisplayStyle.Flex, note.style.display.value,
@@ -351,7 +368,8 @@ public class ShareShotTests
             Assert.AreEqual(text["share.copy"], copy.text);
             Assert.AreEqual(DisplayStyle.None, said.style.display.value, "nothing to say before the press");
             SettingsScreenTests.PressWithPointer(copy);
-            CollectionAssert.AreEqual(new[] { ui.Q<Label>("share-post").text }, copies, "one copy, of the post, on the press");
+            CollectionAssert.AreEqual(new[] { ShareShot.Text(text, HudModel.From(bridge, text).Date, bridge.State.Turn) }, copies,
+                "one copy, of the post (not the label's joiners), on the press");
             StringAssert.Contains(ShareShot.Itch, copies[0], "the copied text links the itch page");
             StringAssert.Contains(ShareShot.Repo, copies[0], "and the repository");
             // The batch editor idles between frames unless asked for one, and the panel's scheduler runs on those frames.
