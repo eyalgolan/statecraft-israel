@@ -161,13 +161,17 @@ namespace Statecraft.Game.UI
         public const float ShortBelowPx = 1040f;
         public const string ShortClass = "info-short";
 
-        /// <summary>Escape dismisses a reachable selection and its pick, without queuing an order. Covers keep priority.</summary>
+        /// <summary>Escape dismisses a reachable selection and its pick, without queuing an order (playtest B9). Covers keep
+        /// priority. Focus on one of the panel's controls, which the clear hides, goes to the map stop (as after a press, #41).</summary>
         public bool Escape()
         {
             var hud = panel.parent;
             if (Covered || !panel.enabledInHierarchy || hud?.ClassListContains(ScreenNav.ScreenOpenClass) == true
                 || (Selected == null && !ShowsUnit)) return false;
+            var focused = panel.panel?.focusController?.focusedElement as VisualElement;
+            bool inside = focused != null && (focused == panel || panel.Contains(focused));
             Clear(); clearSelection?.Invoke();
+            if (inside) FocusReturn.To(mapFocus);
             return true;
         }
 

@@ -885,8 +885,11 @@ public class UnitOrdersTests
         nav.Open("settings"); Cancel(ui.Root);
         Assert.IsNull(nav.Current, "first Escape closes the covering screen");
         Assert.IsTrue(info.ShowsUnit, "the same Cancel does not also dismiss the underlying selection");
-        Cancel(ui.Q<VisualElement>("info-panel"));
-        Assert.IsFalse(info.ShowsUnit, "Escape dismisses the unit card without needing a new production API in this test");
+        var move = ui.Q<Button>("info-move");
+        move.Focus(); Assert.AreSame(move, move.focusController?.focusedElement, "precondition: the focus is on Move");
+        Cancel(move);
+        Assert.IsFalse(info.ShowsUnit, "Escape from a card control dismisses the unit card");
+        Assert.AreSame(ui.Q<VisualElement>("map-focus"), move.focusController?.focusedElement, "the focus goes to the map stop, not lost with the hidden Move");
         info.Show(golani.StateUnit!.Q, golani.StateUnit!.R); Assert.IsNotNull(info.Selected);
         Cancel(ui.Q<VisualElement>("info-panel")); Assert.IsNull(info.Selected, "Escape dismisses the hex panel too");
         Assert.IsEmpty(bridge.Queued, "closing selection does not alter the turn's orders");

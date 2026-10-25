@@ -759,4 +759,4 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
 city.workers_ordered: "In work after End turn: {0}"
-city.workers_cost: "Costs {0:0.0} Attention · takes effect at End turn"
+city.workers_cost: "Costs {0:0.0} Attention · the change takes effect at End turn"
