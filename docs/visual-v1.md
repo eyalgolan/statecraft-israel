@@ -1,5 +1,7 @@
 # Visual v1: measurements, budgets and checkpoints
 
+**Current camera:** follow [map-editor](gdd/map-editor.md#camera-and-editing-surface). Multiple-yaw poses below are art/test checkpoints, not player controls. This file owns visual measurements/history, not movement, camp capacity or place rosters.
+
 Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets: `promo/final/03-gameplay-1936.png`,
 `promo/final/02-map-diorama.png`. Poses: `PromoPose.Gameplay03` (34.86 E, 32.00 N, 60 km, yaw 10) and
 `PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0). Since #174 the camera keeps its view on the map, and centres
@@ -789,9 +791,6 @@ The Deferred row "Runtime quality fallback" (review I1), sized by the DPR-2 stre
   change the URP asset. Even on WebGL it stays off under `?vprofile`, `?profile` and `?shot` (instruments that must see the
   tier as configured) and with `?nofallback`; every change logs `QUALITY level=<n> scale=<s> tiltshift=<on|off>
   p95_ms=<ms>`.
-- **The player's quality choice (#40).** Automatic in Settings is this behaviour. High (the PC tier at render scale 1.0)
-  and Low (the Mobile tier at 0.8) fix the quality: the fallback holds while one is set (`QualityFallbackDriver.Feed`),
-  and every switch starts it again from the top (`GraphicsQuality.Changed`).
 - **Presentation only:** it reads no sim state and writes only the render scale and the tilt-shift flag, so turns, hashes
   and saves cannot change. The goldens and the 5-turn smoke match with it in the build: `uv run tools/web_check.py
   unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect` values from `docs/determinism.md`: PASS.
@@ -1066,10 +1065,10 @@ WebGL frame profile can no longer draw it), and `?borderproof` / `-borderproof` 
 the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (Palestine Gazette No. 1552, Supplement No. 2,
 30 Jan 1947, pp. 125-133, in force 1 Jan 1947) revoked and replaced the whole Schedule, so it alone defines them; the 1942
 (No. 1163) and 1945 (No. 1415) changes are superseded (cited, not read). No later amendment was found (two web searches,
-2026-10-11; then the Gazette's 1947 and 1948 indexes, read 2026-10-16: `research_notes/Map borders/subdistrict-names-and-amendments-1947-48.md` section 3);
-**the check is closed** (owner ruling, 2026-10-23, #196), and the note's section 3.3 gaps are recorded in the file.
+2026-10-11); **the check stays open**: the Palestine Gazette's 1947 and 1948 indexes, or "Laws of Palestine 1947"
+(subsidiary legislation) at the National Library of Israel, would close it.
 - *True lines:* `content/map/subdistricts_1948.geojson` (status `sensitivity-reviewed`, checked 2026-10-11; names as in
-  the Gazette, Hebrew from the Gazette's 1945 Hebrew schedule (owner ruling, 2026-10-23, #196), Arabic from Wikipedia, the source noted per row), written by `tools/borders_digitise.py` from the Survey of Palestine map
+  the Gazette, Hebrew and Arabic from Wikipedia, the source noted per row), written by `tools/borders_digitise.py` from the Survey of Palestine map
   "Administrative Divisions" (1:750,000, drawn April 1946, red boundary overprint May 1947; map 6 of the "Maps of
   Palestine" prepared for UNSCOP, June 1947), two Commons scans of different prints (National Library of Israel), SHA-256
   checked. Method: the graticule (35-36 E x 30-33 N) georeferences each scan (affine, rms 5-6 px, about 0.2 km); the red
@@ -1112,8 +1111,7 @@ the game's start: the Administrative Divisions (Amendment) Proclamation, 1947 (P
   Lisan) stay as built; the Mandate frontier outline stays; Samaria District in Arabic stays "لواء السامرة" (no official
   Arabic Mandate text reachable online; "لواء نابلس" is the common usage; unverified, noted in the file); the Hebrew and
   Arabic names from Wikipedia are accepted for now; the sensitivity review is done (`sensitivity-reviewed`), while the
-  1947-48 amendment check stays open. Owner rulings, 2026-10-23 (#196): the Hebrew names follow the Gazette's 1945 Hebrew
-  schedule headings, and the amendment check is closed (the research note above, sections 2 and 3).
+  1947-48 amendment check stays open.
 - *1949 armistice lines (armistice-lines, #196):* `content/map/armistice_lines_1949.geojson` (true lines, draft) and
   `armistice_hexes_1949.yaml` (snapped), from the agreements and their annexed maps
   (`research_notes/Map borders/armistice-lines-1949.md`, "Built"): Syria (line and three-part DMZ), Lebanon (the
@@ -1646,9 +1644,8 @@ and the calm and swells are also behind `seatexture`.
   - Each hull, plus a margin, lies in open sea and meets no breakwater or mole piece. The kits now record each piece as
     a "breakwater" in the census. `SeaCraftTests.NoHullEverMeetsABreakwaterOrMole` sweeps five landmark scales and 16
     draws each.
-  - Each boat is its real length x `SettlementKits.ModelScale` (the train's 24x, #1094): a felucca 12 m (about 290 m), a
-    cutter 10, a moored fishing boat 8, the coastal steamer 50 (about 1,200 m). Design values, not sourced. Before #1094
-    a felucca was 34 landmark metres (2 km at the default scale).
+  - Sizes are symbolic, like the buildings: a felucca is 34 landmark metres (2 km at the default scale), a quarter of a
+    hex across, about promo 03's share.
   - Every boat heads east or west, give or take 35 degrees, so the north-looking gameplay camera sees its sails side-on.
   - The sails are lit as cloth turned mostly to the sky (each face's normal tipped up by 0.7). Lit as flat plates, the
     face the camera saw was often the one turned from the sun, and the sails read grey.
@@ -2270,12 +2267,9 @@ blocks, village houses, red-roofed villas), Jaffa 6 → 7, Tel Aviv 8 → 7.
   - It is 4 km across, about 4 times the real one. The drawn 1948 roads (300 m ribbons) meet by Jaffa Gate and loop
     round the north and east, so at any readable size they cross inside the square, through gaps in the walls.
     Since #319 the map cuts each road and the railway at the walls (`docs/routes.md`, "Jerusalem's Old City"), so none
-    runs inside them.
-  - Round 2 fitted the Haram's platform where it kept clear of every route's traced line: 1.3 x 1.1 km, wider than long,
-    with Al-Aqsa in its south-east corner, and it drew a gate wherever a road met the walls (13). Since #319 the platform
-    runs north-south (1.1 x 1.7 km, the real one's shape) against the east and south walls, Al-Aqsa stands across its
-    south end, and the walls have the seven gates open before 1948 on their real sides, the Golden Gate left sealed
-    (sources in `SettlementKits.Jerusalem`). The roads' traced lines inside the walls still keep houses off them.
+    runs inside them. The Haram's shape below, and the gates, are still as round 2 placed them.
+  - Only one place in its south-east quadrant fits a platform clear of every route: 1.3 x 1.1 km, wider than long. Al-Aqsa
+    therefore stands in its south-east corner, not across its south end.
   - The citadel is moved east off the drawn Hebron road.
   - The houses inside the walls are capped at two storeys, and the Dome's walls and drum are 30x high, so the walls and
     the Dome stand above the roofs.
@@ -3461,50 +3455,3 @@ warmth guard now compares each material with the same material in promo 02.
 - **Where main stands** (d031af36, 3 WebGL `?shot` captures, spread 0.0000): sand 0.2952 (-0.085, paler and less
   orange) and sea -0.2000 (+0.060, less blue; 0.008 short of the band's edge): both outside their bands, so `art_checkpoint.sh` exits 3 on main until
   the art follow-up on #695 lands. This section only sets the measure.
-
-
-## Issue #391 QA record, 19 October 2026
-
-Technical checks on main `9e57134201f74412bf3d7513e26b600a9c760f5c`, macOS 27.0.1 arm64,
-Unity 6000.3.25f1. No grade, shader, threshold or asset changed. This is an agent-run QA record, not the
-person's judgement of judea30 requested in #391; that remains pending before closing the issue.
-
-The three existing `GradeTests` passed: `ColourBlindPlayersStillTellCoastAndSelectionApart`,
-`ColourBlindPlayersTellTheBorderStylesApart` and `ColourBlindPlayersTellTheNeutralBandFromBothSides`.
-EditMode XML: 3 total, 3 passed, 0 failed, 0 skipped; exit 0 and 0 C# warnings/errors. These are the existing
-simulated-vision checks at their sampled points, not a human accessibility or full-suite sign-off.
-`MapCapture.Promo -extraPose judea30:35.10:31.85:30000:10` also completed: six 1920x1080 editor renders
-(gameplay03, diorama02, judea30, each Mobile and PC).
-
-WebGL reused the unmodified local buildB from the Firefox #437 check, built from the same 9e source;
-every file was checked against its original SHA256 manifest. Two `web_check.py --query golden&shot`
-attempts exited 1: gameplay03 received 624 of 625 chunks, so the collector rejected `SHOT done`. Both failed
-logs and partial capture sets were kept. Collecting the console through the existing `headed.Browser` CDP
-connection, headless, instead of stderr then completed all 13 shots through the same `web_check.ShotCollector`:
-all PNG SHA256s and 1920x1080 sizes verified, all 8 manifest goldens matched, exit 0. The standalone transport
-harness and exact commands are included in the contribution's PR description. No repository tool changed;
-the successful CDP run does not turn the two failed stderr runs into passes or establish their exact cause.
-
-Current `art_compare.py` completed with exit 0. Its WebGL diorama02 material guards, using the existing
-`MATERIAL_MASK` and bands from T77 above:
-
-| Material | Measured warmth | Promo band | Result |
-|---|---|---|---|
-| Sand | 0.3130 | [0.3037, 0.4556] | PASS |
-| Sea | -0.2337 | [-0.3119, -0.2080] | PASS |
-
-The HUD-masked diorama02 saturation was 0.4192, below 0.48. Whole-frame warmth was 0.1486 (HUD-masked 0.1664),
-above the issue's old 0.145 top (and T74's masked 0.151 top). As T77 specifies, those whole-frame warmth bands
-are information only, not the current material gate. Neither the old band nor the current bands were adjusted.
-
-For a reproducible diagnostic, dark non-blue pixels (B<=R, Rec.709 luma 0.06–0.30 on sRGB/255, outside
-`HUD_MASK`) gave judea30 median-colour hues 27.5 degrees on Mobile and 26.4 on PC. This selection also includes
-wood, props and their shadows; it is not terrain segmentation or the older bare-terrain probe. These numbers
-cannot replace a person's look, and no new hue tolerance or human acceptance is inferred. The full measurement
-script, counts, RGB medians and image hashes accompany the PR; the older before/after results in #391 remain
-attributed to their original authors and heads.
-
-Captures and colour-blind comparison images were retained locally with hashes. Left panels of comparisons
-are in-engine captures at the source above; right panels are the existing AI-generated promo references,
-not gameplay. Pending: a person's look at judea30 and the transport anomaly noted above. No simulation hash,
-human review flag, licence declaration or release gate changed.

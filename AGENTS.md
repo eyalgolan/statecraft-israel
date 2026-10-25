@@ -8,7 +8,7 @@ Help the project stay historically grounded, readable, and technically consisten
 
 ## Core rules
 
-- The game design of record is [`docs/GDD.md`](docs/GDD.md) (v0.2, 17 October 2026, #856; v0.1 by the owner, 12 October 2026). Follow it. Where an older spec, plan or ruling disagrees, the GDD wins. Anything it marks Open, Proposal or TBD needs an owner decision before it is built: do not invent values or rules for it.
+- The game design of record is [`docs/GDD.md`](docs/GDD.md) (current revision and provenance are recorded there). Follow it. Where an older spec, plan or ruling disagrees, the GDD wins. Anything it marks Open, Proposal or TBD needs an owner decision before it is built: do not invent values or rules for it.
 - Every historical fact must be sourced. If a fact is not supported by a cited source, do not add it.
 - No invented quotes. Paraphrase, and never put words in a real person’s mouth.
 - Use the Israeli framing set in `docs/CONTENT_POLICY.md`, section 1. It is a stated design decision and is not reopened in content work.
@@ -56,7 +56,7 @@ Before writing or editing content, review:
 
 - `dotnet test sim/Statecraft.sln` loads all of `content/` and must pass with 0 warnings.
 - `uv run scripts/oss/check_repo.py` runs the repository policy checks that CI runs.
-- If you change `sim/`, `content/` or `unity/`, add a changelog fragment `changelog.d/<branch-or-issue>.md` (`changelog.d/README.md`); a line under `## [Unreleased]` in `CHANGELOG.md` still works.
+- If you change `sim/`, `content/` or `unity/`, add a line under `## [Unreleased]` in `CHANGELOG.md`.
 - If the PR finishes a Phase 1 PR or a phase of #374, update the Roadmap table in `README.md` and `README.he.md` (`CONTRIBUTING.md`, rule 9).
 - `scripts/check.sh` runs every check CI runs in one command: the changelog rule, the reviewed_by guard, the GDD lint, the policy checker tests, `check_repo.py`, the rule IDs, the sim build, the sim tests and the tools tests. It stops at the first failure.
 
@@ -98,9 +98,8 @@ For changes under `sim/`, `tools/`, `scripts/` or `unity/`, not only content.
 
 **Pull requests**
 - Branch from `main`, one focused change per PR, no force-push to `main`. Fill in `.github/pull_request_template.md`, including "AI assistance". Use "Fixes #N" only if the PR completes the issue, otherwise "Refs #N".
-- Add a changelog fragment `changelog.d/<branch-or-issue>.md` (or a line under `## [Unreleased]` in `CHANGELOG.md`) for any change to `sim/`, `content/` or `unity/` (tests excepted).
+- Add a line under `## [Unreleased]` in `CHANGELOG.md` for any change to `sim/`, `content/` or `unity/` (tests excepted).
 - Write the test first and check it fails without the change.
-- A change a player can see (models, the map, characters, the UI, the website) needs before/after screenshots in the PR description: the same game state, camera and zoom, with the changed area labelled. Reviewers can't judge a visual change from the diff alone.
 
 **Leave to the maintainer**
 - The framing in `docs/CONTENT_POLICY.md` section 1, sensitivity tags and the release gates.

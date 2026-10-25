@@ -1,5 +1,7 @@
 # M0–M2 decisions log (rulings)
 
+**Historical record:** preserve dated rulings/release observations in context. [The GDD](GDD.md) and current feature owners supersede older gameplay definitions. This is evidence, not another active numerical catalogue.
+
 These are the decisions made while building M0–M2 where the spec or plan was silent, wrong, or in conflict with itself. Each entry gives what was decided, why, and what it costs if the decision is wrong. The full ledger, with 83 ruling lines plus task history, was kept during the build. This digest keeps the ones that shape the game or the codebase.
 
 ## Simulation rules (M1)
