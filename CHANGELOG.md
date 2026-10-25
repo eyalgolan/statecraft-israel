@@ -223,6 +223,18 @@ checks this (see `CONTRIBUTING.md`).
 - How to play's "Moving a unit" step no longer picks a unit whose card has no Move button: one that already
   spent its movement this turn, or one with Send home queued. It shows the next unit that can still move, or just its
   text when none can.
+- In Hebrew, the turn report, the top-bar tips and the Why screen now give the money, foreign currency, immigration,
+  ongoing-effect, situation and security lines in Hebrew. Lines from events, military upkeep and other systems are
+  still in English for now (B1, first part).
+- The Hebrew share panel keeps each link (the itch page, the GitHub repository) whole on one line; "https://" no longer
+  ends one line with the rest of the link on the next. English and the text that is shared and copied are unchanged.
+- The Hebrew "not enough Attention" refusal no longer has two colons in a row; it now reads as the owner approved.
+- The Hebrew text now puts the Why screen's name in gershayim (״למה?״) when a sentence names it, as the owner asked.
+- Playtest follow-ups: "1 more decision waiting" in the singular; a hex with two cities names each city's block; the jobs
+  stepper shows its Attention price and that the change takes effect at End turn; a click on an advisor's portrait plays
+  its clip, as Watch does; Escape closes the unit card or the hex panel; Star on GitHub, Report a bug and the share links
+  open only when the press is released over the same button; at 1512x982 the top bar keeps "International support" on
+  one line and the unit card keeps Move, Fortify and Hold together.
 
 ### Changed
 - A schema 2 save of the GDD game that has a player attack, or that no longer replays to its saved hash, is refused with
@@ -261,6 +273,9 @@ checks this (see `CONTRIBUTING.md`).
 - A shared post now links the game's GitHub repository as well as its itch page ("Play: ... · Code: ..."), in the
   share sheet, Copy, X, WhatsApp and Telegram. Facebook and LinkedIn take only a URL, so they still link the itch page.
 - Attacks now resolve as soon as their target is chosen, and the result appears immediately with the units' names.
+- Hebrew: the owner reviewed and approved the unit names and unit Why lines, and reworded the movement advisor line,
+  three capture refusals, the End turn help, the advisor Show me and More buttons, two of Dayan's advisor lines and the
+  truce line.
 
 ## [0.2.1] - 2026-10-22
 
