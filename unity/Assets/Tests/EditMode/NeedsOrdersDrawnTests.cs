@@ -107,7 +107,7 @@ public class NeedsOrdersDrawnTests
     /// <summary>The safety net: a unit that needs orders and has no token is skipped with a log line and a toast, and End
     /// turn selects the next one; on e262d289 End turn did nothing at all.</summary>
     [UnityTest]
-    public IEnumerator EndTurnSkipsAUnitWithNoTokenAndSelectsTheNext()
+    public IEnumerator EndTurnSkipsAUnitWithNoTokenAndSelectsTheNext([Values(false, true)] bool covered)
     {
         VisualElement ui = null!; GameRoot root = null!;
         yield return Boot((u, g) => { ui = u; root = g; });
@@ -116,12 +116,25 @@ public class NeedsOrdersDrawnTests
         var lost = bridge.NeedsOrders[0]; var next = bridge.NeedsOrders[1];
         HideTokens(bridge, layer, () => new[] { lost });
         layer.Select(null);
+        if (covered)
+        {
+            UiTestKit.Press(ui.Q<Button>("nav-defence"));
+            yield return null;
+            Assert.IsTrue(root.Info!.Covered, "precondition: Defence covers the unit card");
+        }
         LogAssert.Expect(LogType.Log, $"END TURN unit {lost} needs orders but has no token to select; skipped this turn");
         UiTestKit.Press(ui.Q<Button>("end-turn"));
         yield return null;
         Assert.IsTrue(bridge.IsSkipped(lost), "the unit with no token is skipped");
         Assert.IsNotNull(layer.Selected, "End turn selects the next unit");
         Assert.AreEqual(next, UnitCard.SimUnit(bridge.Content, bridge.State, layer.Tokens.First(t => t.Token.Unit.Id == layer.Selected).Token));
+        if (covered)
+        {
+            for (int i = 0; i < 30; i++) yield return null;
+            Assert.IsFalse(root.Info!.Covered, "the safety net still reveals the next unit");
+            Assert.IsTrue(ui.Q("info-panel").enabledInHierarchy);
+            Assert.IsFalse(ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
+        }
         StringAssert.Contains("skips this turn", ui.Q<Label>("toast").text, "the player is told");
     }
 
