@@ -212,7 +212,7 @@ capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
 # Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
 # attention, no_free_hex and not_awaiting: native review: owner, 25 Oct 2026 (recommendations page, item 6).
-capture.refusal.attention: "אין די תשומת לב בתור הזה: עלות: {1:0.0}; יתרה: {2:0.0}."
+capture.refusal.attention: "אין די תשומת לב בתור הזה. עלות: {1:0.0}; יתרה: {2:0.0}."
 capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
 capture.refusal.no_free_hex: "ליחידה ב{0} אין משושה פנוי סמוך שאפשר לסגת אליו."
 capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
