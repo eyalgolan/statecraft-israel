@@ -72,8 +72,16 @@ public class EndTurnCycleSceneTests
         var text = UiText.Parse(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
         var expectedTitle = UnitCard.For(token, bridge.State, text, bridge.Content.IsGdd, bridge.Content).Title;
         var date = bridge.State.Date; var needs = bridge.NeedsOrders.Count;
-        // Exercise both existing cover rules, independent of the test machine's resolved panel width.
-        ui.Q("root").EnableInClassList(HudPresenter.TwoRowClass, twoRows);
+        // Exercise both existing cover rules. The HUD sets its tier from the panel width on every layout, so a class set
+        // by hand is gone after the next frame: the two-row case renders at 960x1080, as DecisionCardTests' narrow tier.
+        if (twoRows)
+        {
+            var narrow = new RenderTexture(960, 1080, 24, RenderTextureFormat.ARGB32);
+            ps!.targetTexture = narrow;
+            rt!.Release(); Object.DestroyImmediate(rt); rt = narrow;
+            for (int i = 0; i < 10; i++) yield return null;
+        }
+        Assert.AreEqual(twoRows, ui.Q("root").ClassListContains(HudPresenter.TwoRowClass), "precondition: the HUD tier");
         UiTestKit.Press(ui.Q<Button>("nav-" + screen));
         yield return null;
         Assert.IsTrue(root.Info.Covered, "precondition: the real side screen covers the card");

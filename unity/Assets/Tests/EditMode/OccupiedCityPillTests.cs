@@ -74,9 +74,11 @@ public class OccupiedCityPillTests
         public void Dispose()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Object.DestroyImmediate(panel);
-            panelTarget.Release(); Object.DestroyImmediate(panelTarget);
-            cameraTarget.Release(); Object.DestroyImmediate(cameraTarget);
+            // As EndTurnCycleSceneTests' TearDown: the scene change can already have unloaded these, and Unity's == is
+            // false for a destroyed object, so each is released only while it still exists.
+            if (panel != null) Object.DestroyImmediate(panel);
+            if (panelTarget != null) { panelTarget.Release(); Object.DestroyImmediate(panelTarget); }
+            if (cameraTarget != null) { cameraTarget.Release(); Object.DestroyImmediate(cameraTarget); }
             if (Directory.Exists(saves)) Directory.Delete(saves, true);
         }
     }
