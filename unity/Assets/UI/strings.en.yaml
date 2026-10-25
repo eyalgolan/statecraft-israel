@@ -138,7 +138,8 @@ start.new_game: "New game"
 boot.loading: "Loading the map of 1948…"
 toast.refused: "Not done: {0}"
 event.office: "{0}: {1}"
-event.more: "{0} more decision(s) waiting"
+event.more: "{0} more decisions waiting"
+event.more_one: "{0} more decision waiting"
 event.hide: "Hide"
 event.reopen: "Decision waiting"
 event.illustration: "Illustration"
@@ -755,3 +756,7 @@ advisor.dayan.defeat_war.cue.1: "An enemy military unit holds one of the country
 advisor.dayan.defeat_war.cue.2: "The campaign has ended in defeat."
 advisor.dayan.arms_out.cue.1: "Arms equip military training and are spent in attacks."
 advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs short keeps those choices available."
+
+# Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
+city.workers_ordered: "At End turn: {0}"
+city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
