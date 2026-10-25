@@ -867,4 +867,33 @@ public class UnitOrdersTests
         Assert.IsTrue(GameRoot.SmokeOrdersRequested(null, new[] { "Statecraft", "-smoke-orders" }, false));
         Assert.IsFalse(GameRoot.SmokeOrdersRequested("http://localhost/?smoke-orders", new[] { "Statecraft" }, false), "desktop reads only the command line");
     }
+    [TestCase(false)] [TestCase(true)]
+    public void EscapeClearsTheUnitOrHexWithoutGivingAnOrder(bool hebrew)
+    {
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical); var bridge = new SimBridge(g, text);
+        var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        PlacedToken? selected = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var towns = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+        using var info = new InfoPanelPresenter(ui.Root, bridge, text, towns, selectedUnit: () => selected);
+        using var nav = new ScreenNav(ui.Root);
+        static void Cancel(VisualElement target)
+        {
+            using var e = NavigationCancelEvent.GetPooled(); e.target = target; target.SendEvent(e);
+        }
+        info.ShowUnit(); Assert.IsTrue(info.ShowsUnit);
+        nav.Open("settings"); Cancel(ui.Root);
+        Assert.IsNull(nav.Current, "first Escape closes the covering screen");
+        Assert.IsTrue(info.ShowsUnit, "the same Cancel does not also dismiss the underlying selection");
+        var move = ui.Q<Button>("info-move");
+        move.Focus(); Assert.AreSame(move, move.focusController?.focusedElement, "precondition: the focus is on Move");
+        Cancel(move);
+        Assert.IsFalse(info.ShowsUnit, "Escape from a card control dismisses the unit card");
+        Assert.AreSame(ui.Q<VisualElement>("map-focus"), move.focusController?.focusedElement, "the focus goes to the map stop, not lost with the hidden Move");
+        info.Show(golani.StateUnit!.Q, golani.StateUnit!.R); Assert.IsNotNull(info.Selected);
+        Cancel(ui.Q<VisualElement>("info-panel")); Assert.IsNull(info.Selected, "Escape dismisses the hex panel too");
+        Assert.IsEmpty(bridge.Queued, "closing selection does not alter the turn's orders");
+    }
+
 }

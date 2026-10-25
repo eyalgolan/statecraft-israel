@@ -149,11 +149,14 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
-                    <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
-                    <ui:Button name="info-move" />
-                    <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
-                    <ui:Button name="info-fortify" />
-                    <ui:Button name="info-hold" />
+                    <!-- Keep the three primary orders together when the laptop panel has room; the group still wraps on phones. -->
+                    <ui:VisualElement name="info-primary-orders" class="row info-primary-orders">
+                        <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
+                        <ui:Button name="info-move" />
+                        <!-- Fortify and Hold (#754): each shown only when the sim's Orders.Check takes it; else its reason shows. -->
+                        <ui:Button name="info-fortify" />
+                        <ui:Button name="info-hold" />
+                    </ui:VisualElement>
                     <!-- Skip is UI-only: it drops this unit from the needs-orders cycle for this turn. Hidden until the unit card
                          shows it (InfoPanelPresenter sets its display on every render). -->
                     <ui:Button name="info-skip" style="display: none;" />

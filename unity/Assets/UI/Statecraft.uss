@@ -1076,3 +1076,10 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
 
 .advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }
+
+/* Playtest B11: the narrow (not compact) bar has room for each caption on one line; compact and phone tiers keep wrapping. */
+.top-bar--caption-line .meter .meter-name { max-width: none; white-space: nowrap; }
+/* Playtest B11: Move, Fortify and Hold wrap as one group, so Hold is never left alone on a line; a small window wraps inside it. */
+.info-primary-orders { flex-wrap: wrap; max-width: 100%; flex-shrink: 0; }
+/* Playtest B6: the city's name over its block on a hex that holds two cities (GddHexPanel.CityNameClass). */
+.city-part-name { -unity-font-style: bold; color: var(--gold-light); margin-top: 6px; }
