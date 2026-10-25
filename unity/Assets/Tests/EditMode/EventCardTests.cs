@@ -764,7 +764,11 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         using var card = new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null);
         Assert.IsNotNull(card.Shown, "precondition: a pending card shows");
         string actual = ui.Q<Label>("event-count").text;
-        if (hebrew) Assert.AreEqual(text.Format("event.more", remaining), actual, "Hebrew retains the existing count label");
+        if (hebrew)
+        {
+            Assert.AreEqual("החלטה ממתינה נוספת: {0}", text["event.more_one"], "the owner's singular label (25 Oct)");
+            Assert.AreEqual(text.Format(remaining == 1 ? "event.more_one" : "event.more", remaining), actual);
+        }
         else Assert.AreEqual(remaining == 1 ? "1 more decision waiting" : "2 more decisions waiting", actual);
     }
 
