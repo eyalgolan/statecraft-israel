@@ -163,5 +163,42 @@ def test_real_cleanup_permission_errors_are_not_suppressed(monkeypatch):
     def denied(pid, sig):
         raise PermissionError("actual signal denied")
     monkeypatch.setattr(ml.os, "killpg", denied)
+    monkeypatch.setattr(ml.subprocess, "check_output", lambda *a, **k: "4242 S\n")  # a live member refused it
     with pytest.raises(PermissionError, match="actual signal denied"):
         ml.stop_command_group(Child(), grace=0)
+
+
+def test_zombie_only_group_eperm_on_cleanup_signal_counts_as_retired(monkeypatch):
+    class Child:
+        pid = 4242
+        waited = False
+        def wait(self):
+            self.waited = True
+            return -15
+    def denied(pid, sig):
+        raise PermissionError("Darwin: group holds only our unreaped zombie")
+    monkeypatch.setattr(ml.os, "killpg", denied)
+    monkeypatch.setattr(ml.subprocess, "check_output", lambda *a, **k: "4242 Z\n")
+    child = Child()
+    ml.stop_command_group(child, grace=0)
+    assert child.waited
+
+
+@pytest.mark.parametrize('sig', [signal.SIGTERM, signal.SIGHUP, signal.SIGINT])
+def test_holder_signal_with_default_action_child_exits_128_plus_sig(tmp_path, sig):
+    # A plain child dies from the forwarded signal before cleanup runs; on Darwin its unreaped zombie made the
+    # cleanup killpg raise EPERM, so the holder crashed with exit 1 (review of the C210 draft, 12 of 12 runs).
+    ready = tmp_path / 'ready'
+    env = {**os.environ, 'STATECRAFT_MACHINE_LOCK': str(tmp_path / 'machine.lock'), ml.HOLDER_ENV: str(ready)}
+    p = subprocess.Popen([sys.executable, ml.__file__, '--exclusive', '--', 'sleep', '30'],
+                         env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    child = None
+    try:
+        wait_for(lambda: ready.exists())
+        child = int(ready.read_text().split()[1])
+        os.kill(p.pid, sig)
+        _, stderr = p.communicate(timeout=8)
+        assert p.returncode == 128 + sig, stderr
+        assert not live(child)
+    finally:
+        cleanup([p], [child] if child else [])

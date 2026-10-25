@@ -128,12 +128,15 @@ def stop_command_group(child: subprocess.Popen, grace: float = 1.0) -> None:
         except ProcessLookupError:
             return False
         except PermissionError:
-            if sig != 0:
-                raise  # Never treat a failed cleanup signal as successful retirement.
-            # Darwin may report EPERM for a process group containing only orphan zombies.
+            # Darwin reports EPERM, not ESRCH, for a group holding only zombies: our own not-yet-reaped child
+            # (a forwarded signal often kills it first) or orphans awaiting their reaper. That group is retired.
             rows = subprocess.check_output(["ps", "-axo", "pgid=,stat="], text=True)
-            return any(int(parts[0]) == child.pid and not parts[1].startswith("Z")
-                       for row in rows.splitlines() if len(parts := row.split()) == 2)
+            if not any(int(parts[0]) == child.pid and not parts[1].startswith("Z")
+                       for row in rows.splitlines() if len(parts := row.split()) == 2):
+                return False
+            if sig != 0:
+                raise  # A live member refused the signal: never treat that as successful retirement.
+            return True
 
     if send(signal.SIGTERM):
         deadline = time.monotonic() + grace
