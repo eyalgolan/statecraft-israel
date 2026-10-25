@@ -6,17 +6,20 @@ anchor: hard
 tags: [holocaust]
 office: prime_minister
 # The Knesset debated the government's announcement on reparations in sittings 38 to 40, 7 to 9 January 1952 (the
-# protocols of sittings 38 and 39, Sharett Archive, below). In sitting 38 the Prime Minister gave the claim of the note of
-# 12 March 1951, 1.5 billion dollars as the minimum for absorbing about half a million survivors; Rimalt (General
-# Zionists) asked that the item be taken off the agenda, Hazan (Mapam) said his party would vote against, and Begin
-# (Herut) said there would be no negotiations and asked that the question be put to the people first. On 9 January the
-# Knesset voted 61 to 50, with five abstaining and four absent (JTA; the Hebrew Wikipedia count is six abstaining and
-# three absent, and the record of sitting 40 is not yet opened), to empower the Foreign Affairs Committee "to take
-# adequate steps according to the circumstances"; an opposition motion rejecting any negotiations was defeated, and
-# the Foreign Minister opposed a referendum (JTA). On 7 January opponents rallied outside the Knesset, stones were
-# thrown into the chamber (the Speaker, in sitting 38) and the police used hoses and tear gas (en.wiki). The text names
-# the parties, not their leaders, and leaves the riot to the turn it happens in. Research note:
-# research_notes/M4 content 1952-56/reparations-vote-1952.md.
+# protocols of sittings 38 and 39, Sharett Archive, below). In sitting 38 the Prime Minister gave the claim of the note
+# of 12 March 1951, 1.5 billion dollars as the minimum for absorbing about half a million immigrants from the countries
+# under Nazi rule; Rimalt (General Zionists) asked that the item be taken off the agenda, Hazan (Mapam) said his party
+# would vote against, and Begin (Herut) said there would be no negotiations and asked that the question be put to the
+# people first ("לך אל העם, ערוך משאל עם"), offered as a way out. In the same passage he says he is not really proposing
+# a vote, doubting one is possible and saying the murdered had already voted against contact with Germany, yet that he
+# would accept a yes. So "asks for a referendum" is his call as made in the debate, not a formal motion; JTA has the
+# Foreign Minister arguing against holding one. On 9 January the Knesset voted 61 to 50, with five abstaining and four
+# absent (JTA; the Hebrew Wikipedia count is six abstaining and three absent, and the record of sitting 40 is not yet
+# opened), to empower the Foreign Affairs Committee "to take adequate steps according to the circumstances"; an
+# opposition motion rejecting any negotiations was defeated, and the Foreign Minister opposed a referendum (JTA). On 7
+# January opponents rallied outside the Knesset, stones were thrown into the chamber (the Speaker, in sitting 38) and
+# the police used hoses and tear gas (en.wiki). The text names the parties, not their leaders, and leaves the riot to
+# the turn it happens in. Research note: research_notes/M4 content 1952-56/reparations-vote-1952.md.
 # The window opens on 15 December 1951, the monthly turn date before the vote, so the card reaches the player on the
 # turn before the decision (R-TURN-002); it closes the day after the vote.
 from: 1951-12-15

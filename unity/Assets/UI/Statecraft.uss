@@ -199,6 +199,7 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    the window's foot (padding, so its backdrop still reaches it, DecisionCardTests.TheBackdropReachesTheWindowsEdgesAtEveryTier). */
 .hud-three-row .event-layer { justify-content: flex-start; padding-left: 72px; padding-bottom: 88px; }
 .turn-box { width: 150px; flex-shrink: 1; min-width: 150px; align-items: flex-end; }
+.turn-box.needs-orders { width: 230px; min-width: 230px; }   /* the blocked End turn label and its hourglass, EN and HE */
 #attention { font-size: 15px; }   /* the audit's floor (H4): 15 px in the stylesheet */
 .end-turn {
     -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 20px;
@@ -363,6 +364,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
    it changes at once, in the muted ink; neither takes a Tab stop. */
 .capture-about { white-space: normal; margin: 0 4px 2px 4px; }
 .capture-preview { white-space: normal; margin: 0 4px 8px 4px; }
+/* A refused option's reason, in the preview's place and the same quiet ink (owner, 24 October 2026 on #799, "button explains"). */
+.capture-refusal { white-space: normal; margin: 0 4px 8px 4px; }
 .draft { display: none; color: var(--down); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); -unity-text-align: middle-center; }
 /* The info panel: the hex's terrain sign (UiIcon on the biome's map colour, InfoPanelPresenter) beside its facts. It starts
    right of the left icon lane (84 px, as the toast; #1236: Star, Report and Share sit at the lane's foot) and keeps its right
@@ -549,32 +552,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .end-screen-line { white-space: normal; margin-bottom: 6px; }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
-/* The first-turn guide (#42, FirstTurnGuidePresenter): shown while the root has guide-open. The layer and the ring take no
-   pointer; the ring goes round the step's targets (placed in code), the dock holds the panel at the bottom of the window,
-   or at the top (guide-dock-top) when the targets are in the lower half. */
-.guide-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
-.guide-open .guide-layer { display: flex; }
-.guide-ring { position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
-/* Attention sits about 3 px over End Turn in the bar: while the guide shows, more room under it keeps step 1's ring (4 px
-   round Attention) at least 4 px clear of End Turn's gold border, so the two read as two boxes (review of #1209;
-   FirstTurnGuideTests). 5 px is what the one-row bar's 70 px holds with End Turn in it; the taller narrow bar takes 8. */
-.guide-open #attention { margin-bottom: 5px; }
-.guide-open.hud-narrow #attention { margin-bottom: 8px; }
-.guide-dock { position: absolute; left: 0; right: 0; bottom: 16px; flex-direction: row; justify-content: center; padding: 0 16px; }
-.guide-dock.guide-dock-top { bottom: auto; top: 16px; }
-/* Sizes raised for player feedback (21 October 2026, "too small"): the panel scales with the window (0.67 at 1280x720, the
-   itch embed), so the text is 22 px (about 15 on screen there) and the step count 18 (the owner's 12 px floor); the panel
-   is wider in step, so a step keeps about its line count (FirstTurnGuideTests.TheGuideReadsAtTheItchEmbedSize). Where the
-   scale is small (a phone, about 0.49) FirstTurnGuidePresenter raises them to the owner's 12 px floor on screen; its CountPx,
-   TitlePx, TextPx and ButtonPx mirror these sizes and Button's 19 px. */
-.guide-panel { flex-grow: 1; flex-shrink: 1; max-width: 640px; padding: 14px 18px; background-color: var(--navy-solid); border-color: var(--gold); }
-.guide-count { font-size: 18px; }
-.guide-title { color: var(--gold-light); font-size: 29px; white-space: normal; }
-.guide-text { white-space: normal; font-size: 22px; margin: 4px 0 8px 0; }
-.guide-actions { justify-content: space-between; }
-.guide-actions > Button { min-height: 44px; }
-.guide-next, .lang-he .guide-next { min-width: 120px; -unity-text-align: middle-center; }
-/* How to play's button that opens the guide again: under the lines, never squeezed by them. */
+/* How to play's button that opens the opening advice again: under the lines, never squeezed by them. */
 .how-to-play-guide { flex-shrink: 0; align-self: flex-start; min-height: 44px; margin-top: 8px; }
 .lang-he .how-to-play-guide { align-self: flex-end; }
 /* The advisors' popup (spec 7.1, AdvisorPresenter): placed in code in the free upper part of the right column (AdvisorLayout),
@@ -841,6 +819,17 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
     -unity-text-align: middle-center;
     white-space: nowrap;
 }
+/* The last hex of each turn in a multi-turn go-to: a number centred on the route, not a settlement name, at a city name's
+   size (.map-label-city) so it reads at the default zoom; the disc holds two digits. */
+.map-route-turn {
+    width: 36px;
+    height: 36px;
+    translate: -50% -50%;
+    padding: 0;
+    border-radius: 18px;
+    font-size: 23px;
+    background-color: rgba(14, 22, 38, 0.92);
+}
 .map-label-city { font-size: 23px; color: rgb(250, 242, 224); }
 .map-label-town, .map-label-arab_town { font-size: 19px; }
 /* #1063: the city under the pointer (its hexes or its pill) lights its pill, ivory like the map's selected-hex outline, to say
@@ -1038,3 +1027,50 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .timeline-diverged { border-left-width: 3px; padding-left: 8px; }
 .lang-he .timeline-diverged { border-left-width: 0; border-right-width: 3px; padding-left: 4px; padding-right: 8px; }
 #timeline-difference, #timeline-rejoined { color: var(--gold-light); }
+
+/* Show me's gold ring (spec 7.3), round the named part of the HUD; the guide's ring, moved. The layer shows for the ring
+   alone too (the encyclopedia's Show me), with the popup hidden. */
+.advisor-ring { display: none; position: absolute; border-width: 3px; border-color: var(--gold-light); border-radius: 6px; }
+.advisor-ring-open .advisor-layer, .advisor-ring-open .advisor-ring { display: flex; }
+.advisor-popup { display: none; }
+.advisor-open .advisor-popup { display: flex; }
+/* Under Attention's ring, End Turn's border is kept clear of it (AdvisorOpeningParityTests): 5 px in the
+   one-row bar, 8 in the narrow one. */
+.advisor-ring-open #attention { margin-bottom: 5px; }
+.advisor-ring-open.hud-narrow #attention { margin-bottom: 8px; }
+
+/* The help-level choices can wrap within narrow Settings screens (spec6). */
+.settings-advisors { flex-wrap: wrap; flex-shrink: 1; }
+
+/* Only spec3.3 verified quotes, separated from the advisor's game dialogue, with their source. */
+.advisor-quote { white-space: normal; font-size: 20px; -unity-font-style: italic; margin: 2px 12px 0 12px; border-left-width: 2px; border-color: var(--gold-dim); padding-left: 8px; }
+.lang-he .advisor-quote { border-left-width: 0; border-right-width: 2px; padding-left: 0; padding-right: 8px; }
+.advisor-quote-source { white-space: normal; font-size: 15px; margin: 2px 12px 6px 12px; }
+
+/* User-started advisor media: live caption replaces the prose; no shipped media row means no Watch badge. */
+.advisor-watch { display: none; position: absolute; bottom: 0; left: 0; right: 0; min-width: 0; font-size: 15px; padding: 1px 2px; }
+.advisor-media, .advisor-media-label { display: none; }
+.advisor-media { width: 100%; height: 205px; flex-shrink: 0; background-size: contain; background-color: var(--navy-deep); }
+.advisor-watching .advisor-media, .advisor-watching .advisor-media-label { display: flex; }
+.advisor-narrating .advisor-media-label { display: flex; }   /* a voice-only line: portrait and caption stay, the disclosure under it */
+.advisor-watching .advisor-portrait { display: none; }
+.advisor-media-label { white-space: normal; font-size: 15px; flex-shrink: 0; }
+/* While a clip plays in the popup, the live caption and the buttons keep their full size; the credit's scroll view takes
+   what is left (the v0.3.0 release check: Dayan's seven-line credit cut the caption to one line). */
+.advisor-media-credits { display: none; flex-shrink: 1; min-height: 0; }
+.advisor-watching .advisor-media-credits, .advisor-narrating .advisor-media-credits { display: flex; }
+.advisor-watching .advisor-body, .advisor-actions, .advisor-count { flex-shrink: 0; }
+.advisor-overlay { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; justify-content: center; align-items: center; background-color: rgba(5, 9, 18, 0.72); padding: 16px; }
+.advisor-overlay-open .advisor-overlay { display: flex; }
+.advisor-overlay-open .advisor-layer { display: none; }
+.advisor-overlay-frame { width: 1000px; max-width: 100%; max-height: 100%; padding: 16px 20px; }
+.advisor-overlay-frame > .advisor-close { align-self: flex-end; }   /* the X at the top corner, not a full-width bar */
+.lang-he .advisor-overlay-frame > .advisor-close { align-self: flex-start; }
+.advisor-overlay-media { width: 100%; height: 540px; flex-shrink: 0; background-size: contain; background-color: var(--navy-deep); }
+.advisor-overlay .advisor-media-label { display: flex; }
+.advisor-overlay-words { flex-shrink: 1; min-height: 0; }
+
+.advisor-watching .advisor-head { position: absolute; right: 8px; top: 8px; margin: 0; }
+.advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
+
+.advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }

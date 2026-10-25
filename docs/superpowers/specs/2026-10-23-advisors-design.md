@@ -214,7 +214,7 @@ the slice adds a read-only helper (in Unity, never in the sim's hash).
 | Cabinet | Meyerson | R-MIN (`mvp.md:365-369`) | Exists: `SimBridge.Vacancies` (`:85`), already the Cabinet badge (`HudPresenter.cs:484`) |
 | Food | Meyerson | R-FOOD (`mvp.md:321-325`) | Exists: `Food`, `FoodNeed`, `FoodUnmet` (`GameState.cs:94-98`) |
 | National meters | Meyerson | R-NAT (`mvp.md:375-381`) | Exists: `Indicators` (`:33`), `ActiveSituations` (`:38`, set by `EffectsSystem.UpdateSituations`, `EffectsSystem.cs:139`) |
-| Units, movement, go-to | Dayan | R-MOVE (`mvp.md:195-213`) | The sim side exists: `Movement.NeedsOrders` (`sim/Statecraft.Sim/Movement.cs:182`), `GameSession.Committed` and `Now` (`GameSession.cs:22-26`). Needs: the Unity side, which still queues one Move per unit; the civ-movement slices (U1 to U4) add it, and the advisor reads their "Move picked" and "order committed" points |
+| Units, movement, go-to | Dayan | R-MOVE (`mvp.md:195-213`) | The sim side exists: `Movement.NeedsOrders` (`sim/Statecraft.Sim/Movement.cs:182`), `GameSession.Committed` and `Now` (`GameSession.cs:22-26`). The Unity side exists too: since #1527 (U1 to U5) a move, go-to or attack is committed at the click and End turn waits for the units that need orders; the advisor reads its "Move picked" and "order committed" points |
 | Standing orders, Send home | Dayan | R-ORDER (`mvp.md:219-223`), R-UNIT-005 (`:169`) | Exists: a unit's `Order` |
 | Combat | Dayan | R-COMBAT (`mvp.md:229-249`) | Exists: the turn's Why lines (`StepResult.Why`, `Commands.cs:172`; `PreviewResult.Why`, `:184`) |
 | Arms | Dayan | R-ARMS (`mvp.md:331-335`) | Exists: `GameState.Arms` (`:102`) |
@@ -443,6 +443,17 @@ Dayan's eye patch, the pose, the people around and the objects. A colorization t
 as the first Golda colorization was (it changed her hair). Ribbon and insignia colours that the photograph cannot show are
 a guess and are recorded as one. Faithful colorization is allowed for these three photographs and is recorded in the
 credit ("Amend to my route", section 11.3).
+
+**Amendment for the first English clips (owner, 24 October 2026, "Record amendment").** Two changes beyond colorization
+are approved, and each clip's credit line and `ASSETS.yaml` row say exactly what was changed:
+
+- Ben-Gurion (`opening.greeting`, `opening.attention`, `opening.event`): the 1951 portrait is tinted and painted
+  locally, his face still the photograph, and set on an AI-generated office background (an empty room drawn from two
+  1949 photographs of his office, with the flag the owner asked for).
+- Golda (`opening.city`, `opening.training`, `meyerson.exhausted`, `meyerson.debt_ceiling`): the clip is the raw Kling
+  3.0 Pro and Sync 3 output of the colorized crop, with no composite and nothing painted out ("A, raw", about 14:10
+  IDT). The whole frame is animated: the camera pushes in and pans, the flag waves and the people around her change
+  expression.
 
 ### 11.2 The route (slice S6b)
 

@@ -945,4 +945,210 @@ public class CityPanelTests
                 Assert.IsTrue(found, $"{d.Id}:{n} has a hex that offers Build");
             }
     }
+
+    // ---- #1511: Return and Reassign (the sim's orders from #1523; the buttons only queue them) ----
+
+    static Action<GameState> Qualify(int craftsmen, int veterans, params int[] halutzim) =>
+        s => { var x = s.Cities[City]; s.Cities[City] = x.WithQualified(new Qualified(craftsmen, veterans, halutzim)).WithCounts(x.Civilians, x.Employed, x.Refugees); };
+
+    [Test]
+    public void ReturnCraftsmenQueuesOneMoreGroupAPressUpToTheCitysCraftsmen()
+    {
+        foreach (var t in new[] { En, He })
+        {
+            using var ui = new UiTestKit();
+            var bridge = Bridge(t, s => s.Cities[City] = s.Cities[City].WithCraftsmen(2));
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(CityHex.q, CityHex.r);
+            var button = ui.Q<Button>("city-return-craftsmen");
+            Assert.AreEqual(t["city.return_craftsmen"], button.text);
+            UiTestKit.Press(button); UiTestKit.Press(ui.Q<Button>("city-return-craftsmen"));
+            Assert.AreEqual(2, (bridge.QueuedLike(new ReturnCraftsmen(City, 1)) as ReturnCraftsmen)?.Count, "two presses, two groups, one order");
+            Assert.AreEqual(t.Format("city.train_ordered", 2), ui.Q<Label>("city-return-craftsmen-ordered").text);
+            Assert.IsFalse(ui.Q<Button>("city-return-craftsmen").enabledSelf, "no more than the city's two craftsmen");
+        }
+        using var none = new UiTestKit();
+        using var bare = Panel(none, Bridge(En), En);
+        bare.Show(CityHex.q, CityHex.r);
+        Assert.IsNull(none.Root.Q<Button>("city-return-craftsmen"), "no craftsmen, no Return");
+    }
+
+    [Test]
+    public void ReassignOffersEachQualifiedRoleWithItsCountAndQueuesTheSimsOrder()
+    {
+        foreach (var t in new[] { En, He })
+        {
+            using var ui = new UiTestKit();
+            var bridge = Bridge(t, Qualify(2, 1, 3, 5));
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(CityHex.q, CityHex.r);
+            Assert.AreEqual(t.Format("city.reassign_craftsmen", 2), ui.Q<Button>("city-reassign-craftsmen").text);
+            Assert.AreEqual(t.Format("city.reassign_halutz", 2), ui.Q<Button>("city-reassign-halutz").text);
+            Assert.AreEqual(t.Format("city.reassign_veteran_halutz", 1), ui.Q<Button>("city-reassign-veteran_halutz").text);
+            UiTestKit.Press(ui.Q<Button>("city-reassign-craftsmen"));
+            UiTestKit.Press(ui.Q<Button>("city-reassign-halutz"));
+            UiTestKit.Press(ui.Q<Button>("city-reassign-veteran_halutz"));
+            Assert.AreEqual(1, (bridge.QueuedLike(new ReassignCraftsmen(City, 1)) as ReassignCraftsmen)?.Count);
+            Assert.AreEqual(1, (bridge.QueuedLike(new ReassignPioneers(City, "halutz", 1)) as ReassignPioneers)?.Count);
+            Assert.AreEqual(1, (bridge.QueuedLike(new ReassignPioneers(City, "veteran_halutz", 1)) as ReassignPioneers)?.Count);
+            Assert.IsFalse(ui.Q<Button>("city-reassign-veteran_halutz").enabledSelf, "the only qualified veteran is ordered");
+            Assert.IsTrue(ui.Q<Button>("city-reassign-halutz").enabledSelf, "a second qualified halutz group is left");
+        }
+    }
+
+    [Test]
+    public void ReassignIsDisabledWhenNoCivilianIsWithoutWork()
+    {
+        // The sim refuses a reassignment beyond the civilians without work (R-QUAL-004), so the button is off, and a queued
+        // reassignment takes one of them for the next press.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(50, 50)(s); Qualify(2, 0)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsFalse(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "every civilian is in work");
+
+        using var one = new UiTestKit();
+        var b2 = Bridge(En, s => { Counts(50, 49)(s); Qualify(2, 0)(s); });
+        using var p2 = Panel(one, b2, En);
+        p2.Show(CityHex.q, CityHex.r);
+        UiTestKit.Press(one.Q<Button>("city-reassign-craftsmen"));
+        Assert.IsFalse(one.Q<Button>("city-reassign-craftsmen").enabledSelf, "one civilian without work, one group ordered");
+    }
+
+    [Test]
+    public void ReassignCountsThisTurnsTrainOrdersAgainstTheCiviliansWithoutWork()
+    {
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(50, 49)(s); Qualify(2, 0)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsTrue(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "precondition: one civilian without work");
+        UiTestKit.Press(ui.Q<Button>("city-train-recruit"));
+        Assert.IsFalse(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "the trainee took it; the sim would refuse the reassignment");
+    }
+
+    [Test]
+    public void AQueuedReassignmentIsCountedOnceAgainstTheCiviliansWithoutWork()
+    {
+        // #1552: Training.Available already takes a queued reassignment off the idle civilians, so the panel must not take it
+        // off again. Two civilians without work: one craftsman group ordered leaves one for the halutz group and for a Train.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(50, 48)(s); Qualify(2, 0, 3)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        UiTestKit.Press(ui.Q<Button>("city-reassign-craftsmen"));
+        Assert.IsTrue(ui.Q<Button>("city-reassign-halutz").enabledSelf, "one civilian without work is left for the halutz group");
+        Assert.IsTrue(ui.Q<Button>("city-train-recruit").enabledSelf, "and for a Train");
+        UiTestKit.Press(ui.Q<Button>("city-reassign-halutz"));
+        Assert.IsFalse(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "both civilians are ordered");
+        Assert.IsFalse(ui.Q<Button>("city-train-recruit").enabledSelf, "none is left to train");
+    }
+
+    [Test]
+    public void AQueuedReassignmentDoesNotCostTheCityItsOwnQualifications()
+    {
+        // Training.Ordered counts the reassignments too, but a reassignment leaves the civilians where they are, so only a
+        // Train or Reinforce can cost qualifications (R-QUAL-006). 3 civilians, all qualified: ordering the halutz group
+        // must leave the craftsman reassignable.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(3, 0)(s); Qualify(1, 0, 3, 5)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        UiTestKit.Press(ui.Q<Button>("city-reassign-halutz"));
+        Assert.IsTrue(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "the craftsman is still qualified");
+    }
+
+    [Test]
+    public void AGroupWithABuildOrderedCannotBeReturnedToo()
+    {
+        using var ui = new UiTestKit();
+        int idle = 0;
+        var bridge = Bridge(En, s => idle = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        UiTestKit.Press(ui.Q<Button>($"site-build-{idle}"));
+        Assert.IsFalse(ui.Q<Button>($"pioneer-return-{idle}").enabledSelf);
+    }
+
+    [Test]
+    public void AReturnedGroupLeavesTheSiteListAtOnce()
+    {
+        // R-TURN-004: Return is a unit order, so it takes effect at once; the group is a civilian again and offers no Build.
+        using var ui = new UiTestKit();
+        int idle = 0;
+        var bridge = Bridge(En, s => idle = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.IsTrue(ui.Q<Button>($"site-build-{idle}").enabledSelf, "precondition: an idle group can build");
+        UiTestKit.Press(ui.Q<Button>($"pioneer-return-{idle}"));
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(ui.Root.Q<Button>($"site-build-{idle}"));
+        Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"));
+    }
+
+    [Test]
+    public void AReturnedCorridorGroupLeavesTheSegmentAtOnce()
+    {
+        using var ui = new UiTestKit();
+        int idle = 0;
+        var bridge = Bridge(En, s => idle = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        var (q, r) = SegmentHex("burma_road", 1);
+        panel.Show(q, r);
+        var box = SegmentBox(ui, "burma_road", 1);
+        Assert.IsTrue(box.Q<Button>($"corridor-build-{idle}").enabledSelf, "precondition: an idle group can build");
+        UiTestKit.Press(box.Q<Button>($"pioneer-return-{idle}"));
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{idle}"));
+    }
+
+    [Test]
+    public void ReassignCountsTheQualificationAQueuedTrainTakesFirst()
+    {
+        // R-QUAL-006: a Train that leaves fewer civilians than the city has qualified costs craftsmen first. 3 civilians, all
+        // qualified (1 craftsman, 2 halutz groups): after Train recruits the craftsman is gone when Reassign would run.
+        using var ui = new UiTestKit();
+        var bridge = Bridge(En, s => { Counts(3, 0)(s); Qualify(1, 0, 3, 5)(s); });
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(CityHex.q, CityHex.r);
+        Assert.IsTrue(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "precondition: a craftsman can be reassigned");
+        UiTestKit.Press(ui.Q<Button>("city-train-recruit"));
+        Assert.IsFalse(ui.Q<Button>("city-reassign-craftsmen").enabledSelf, "the sim would refuse it: no qualified craftsman is left");
+        Assert.IsTrue(ui.Q<Button>("city-reassign-halutz").enabledSelf, "the halutz groups are still qualified");
+    }
+
+    [Test]
+    public void AnIdlePioneerGroupOnTheCityHexOffersReturnAndTheOrderIsTheSims()
+    {
+        foreach (var t in new[] { En, He })
+        {
+            using var ui = new UiTestKit();
+            int idle = 0, busy = 0;
+            var other = C.Sites.First(x => Projects.IsYishuvSite(x) && x.Id != Site).Id;
+            var bridge = Bridge(t, s => { busy = AddHalutz(s); idle = AddHalutz(s); s.Sites[other] = new SiteWork(other, busy, 3, null); });
+            using var panel = Panel(ui, bridge, t);
+            panel.Show(CityHex.q, CityHex.r);
+            Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{busy}"), "a group at work must stop first (Qualification.CheckReturn)");
+            var button = ui.Q<Button>($"pioneer-return-{idle}");
+            Assert.AreEqual(t.Format("pioneer.return", GddHexPanel.Group(t, bridge.State, idle)), button.text);
+            UiTestKit.Press(button);
+            // R-TURN-004: a unit order is committed at once, not queued.
+            var order = bridge.Session.Committed.OfType<UnitOrder>().Single();
+            Assert.AreEqual((idle, Qualification.ReturnOrder), (order.Unit, order.Order));
+            Assert.IsEmpty(bridge.Queued);
+            Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"), "the group has returned");
+        }
+    }
+
+    [Test]
+    public void TheSiteListOffersReturnBesideBuildForAnIdleGroup()
+    {
+        using var ui = new UiTestKit();
+        int idle = 0;
+        var bridge = Bridge(En, s => idle = AddHalutz(s));
+        using var panel = Panel(ui, bridge, En);
+        panel.Show(SiteDef.Q, SiteDef.R);
+        Assert.IsNotNull(ui.Root.Q<Button>($"site-build-{idle}"), "precondition: the group is offered Build");
+        Assert.IsNotNull(ui.Root.Q<Button>($"pioneer-return-{idle}"));
+    }
 }

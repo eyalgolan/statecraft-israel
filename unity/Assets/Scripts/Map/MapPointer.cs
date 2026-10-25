@@ -124,6 +124,10 @@ namespace Statecraft.Game.Map
         /// the hex of the terrain under the pointer. GameRoot also asks it for the hover.</summary>
         public (int q, int r)? HexAt(Vector2 pos) => HexAt(pos, IsOverUi != null && IsOverUi(pos), true);
 
+        /// <summary>The hex a click at <paramref name="pos"/> would pick were no UI there (HexAt without the UI check).
+        /// GameRoot asks it for a click on the unit card over a lit hex (#1617).</summary>
+        public (int q, int r)? HexUnder(Vector2 pos) => HexAt(pos, false, true);
+
         (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills)
         {
             if (overUi) return null;                                    // the UI is asked first, whatever else is missing

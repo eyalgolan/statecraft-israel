@@ -60,7 +60,7 @@ namespace Statecraft.Game.UI
             return GameSession.New(c, newSeed(), Mode.Historical);
         }
 
-        /// <summary>Writes the save after every turn. A write that fails (a full or read-only disk) never stops the game:
+        /// <summary>Writes the save after every committed order and every turn. A write that fails (a full or read-only disk) never stops the game:
         /// the reason goes to <paramref name="onError"/>. Dispose the result to stop autosaving.</summary>
         public static IDisposable Autosave(SimBridge bridge, SaveStore store, UiText text, Action<string>? onError = null)
         {
@@ -70,7 +70,7 @@ namespace Statecraft.Game.UI
                 {
                     store.WriteAutosave(bridge.Session.Save.Write());
                     // Capture this save, not the mutable session at an asynchronous commit's completion.
-                    var state = bridge.State;
+                    var state = bridge.TurnStart;
                     var generation = System.Threading.Interlocked.Increment(ref saveGeneration);
                     var receipt = FormattableString.Invariant($"{generation} {state.Date:yyyy-MM-dd} turn {state.Turn} hash {state.Hash()}");
                     UnityEngine.Debug.Log("AUTOSAVE PENDING " + receipt);
@@ -86,8 +86,10 @@ namespace Statecraft.Game.UI
                     onError?.Invoke(text["save.write_failed"]);
                 }
             }
+            Action<IReadOnlyList<Cause>> onCommit = _ => Save(Array.Empty<Rejection>());
+            bridge.Committed += onCommit;
             bridge.TurnEnded += Save;
-            return new Unsubscribe(() => bridge.TurnEnded -= Save);
+            return new Unsubscribe(() => { bridge.Committed -= onCommit; bridge.TurnEnded -= Save; });
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR

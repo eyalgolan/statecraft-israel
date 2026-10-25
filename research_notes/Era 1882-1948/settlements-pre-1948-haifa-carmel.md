@@ -7,6 +7,11 @@ settlements file and `tools/settlement_hexes.py` stay with #61, and rows with a 
 abandonment date need the owner's sensitivity review before they enter the game; none is proposed
 here. Method, sources and tags are those of the Galilee note (#1429) and the Negev note (#1403).
 
+Update 2026-10-24: the [GAP] rows were worked again by an agent (Claude Code) for #97 (owner's 24 Oct
+"Research part open" comment). Anything opened that day is marked "(24 Oct)". A person's check is
+still pending, and no row below was moved to [V] by this update. New tag used once for coordinates:
+**[S, Wikidata]**, a single source that is a Wikidata statement read through its API.
+
 ## How it was done
 
 - Every page was fetched on 23 October 2026 with the User-Agent
@@ -33,9 +38,16 @@ here. Method, sources and tags are those of the Galilee note (#1429) and the Neg
   and it lists land units, so several kibbutzim and most of the Krayot are not named at all; "not
   listed by name" therefore proves nothing. The text layer drops blank columns, so a lone population
   figure cannot be assigned to the Arab or Jewish column; figures are given only where all three
-  columns (Arabs, Jews, Total) survive.
-- **Census of Palestine 1931**: not used. #1429 found that the archive.org scan has no usable text
-  layer. [GAP]
+  columns (Arabs, Jews, Total) survive. (24 Oct) The page images of the same item were opened
+  (`https://archive.org/download/palestine-village-statistics-1945/page/n46_w1400.jpg`, `n47` and
+  `n48`, printed pages 47 to 49 of the Haifa sub-district table), and the columns were read directly
+  for the rows in section 1b. The editor's notes of the 1970 edition were not used.
+- **Census of Palestine 1931**: (24 Oct) the PDF of the archive.org item (https://archive.org/details/CensusOfPalestine1931.PopulationOfVillagesTownsAndAdministrativeAreas, file `PalestineCensus1931.pdf`; 124 pages, 29.6 MB) was
+  downloaded and read. Its embedded OCR is still unusable for the figures, but the pages render
+  legibly as images (Ghostscript `-sDEVICE=pnggray -r220`), so the Haifa sub-district table
+  ("Sub-District Haifa", PDF pages 98 to 109, printed pages 87 to 98; printed number = PDF page minus
+  11) was read by eye. Only the rows in section 1b were read; every other row of that table is
+  unread here. [GAP] for those. Earlier note: #1429 found the scan has no usable text layer.
 - **Hebrew Wikipedia** was read through the MediaWiki API as the wikitext of the current revision,
   cited by `oldid`. It is a lead and a cross-check, not an authority; a fact resting on it alone is
   marked **[S, Wikipedia]**. Where an article cites a newspaper item that was not opened here, the
@@ -130,6 +142,37 @@ disagreement, a rename, a move or an earlier founding written out below.
 | מעיין צבי (Ma'yan Zevi) | 290 | 1938 | 32.56817, 34.94065 | חוף הכרמל, `30.8.38`, האיחוד | not listed by name | [V]; moved 1942, part 2 |
 | בית אורן (Bet Oren) | 317 | 1939 | 32.73091, 35.00490 | הר הכרמל, `1.10.39`, הקיבוץ המאוחד | not listed by name | [V]; first site 1939, moved 1940, part 2 |
 
+### 1b. Presence checks read from page images (24 Oct)
+
+Both sources are used as presence checks only, as above. 1931 columns: occupied houses, persons,
+and Jews (male + female); each row's religion columns add up to its persons column (checked here).
+1945 columns: Jewish population, and Jewish-owned land in dunums, from the same row.
+
+| Locality | Census 1931 (printed page; houses; persons; Jews) | Village Statistics 1945 (printed page; Jews; Jewish land) |
+|---|---|---|
+| Atlit | p. 87; 193; 948; 287 + 209 = 496 | p. 47; 510 (Arabs 150); 5,262 |
+| Ahuzat Sir Herbert Samuel | p. 87; 42; 97; 55 + 42 = 97 | inside "Haifa (Urban)" |
+| Bat Shelomo | p. 88; 19; 86; 26 + 25 = 51 | p. 47; 90; 7,501 |
+| Haifa | p. 91; 12,351; 50,403; 8,232 + 7,691 = 15,923 | p. 48; 75,500 (Arabs 62,800); 27,623 |
+| Kefar Hassidim | p. 93; 104; 420; 212 + 208 = 420 | p. 48; 980; 16,408 |
+| Kufritta (Kefar 'Atta) | p. 94; 13; 33; 17 + 12 = 29 | p. 48; 1,690; 5,194 |
+| Shefeiya | p. 96; 18; 208; 92 + 76 = 168 | p. 48 "Meir Shefeiya"; 330; 2,497 |
+| Yajur, with the sub-entries Nesher Factory, Nesher Labourers Group, Nesher Station, Mesheq Yajur | p. 97; 291; 1,449; 471 + 387 = 858 | p. 48 "Mesheq Yagur"; 1,220; 4,084. p. 48 "Nesher"; 1,400 (Arabs 1,430); 2,748 |
+| Zikhron Ya'aqov | p. 98; 191; 1,429; 601 + 591 = 1,192 | p. 49; 1,740; 11,860 |
+
+Rows read in 1945 only: Kefar ham Maccabi (p. 48; 210; 1,660), Usha (p. 49; 180; 894), Ramat Yohanan
+(p. 49; 420; 3,536), Sh'ar ha 'Amaqim (p. 49; 360; 2,676), Qiryat 'Amal (p. 48; 530; 2,832), "El Ro-i"
+(p. 47; 360; 569), Qiryat Haroshet (p. 49; 240; 715), "Tiv'on (Alonim) (previously Qusqus-Tab'un)"
+(p. 49; Jews 320, Arabs 370; 5,771) and "Ya'arot hak Karmel (previously Khirbat Shallala)" (p. 49; 360;
+6,213). Each row's land columns add up to its total (for example Zikhron Ya'aqov 13 + 11,860 + 698 =
+12,571; Ya'arot hak Karmel 64 + 6,213 = 6,277).
+
+Our reading of the 1931 table: in the pages read, Nesher is not a row of its own; its factory, labourers' group
+and station sit under Yajur. Kufritta had 13 houses and 29 Jews in 1931, against 1,690 Jews in
+1945; that fits the near-abandonment of 1929 and the resettlement of 1930 that he.wiki describes (part
+2), but the table does not say why. The 1931 row "Shefeiya" is read as the Meir Shefeya area because
+its Jewish columns are large (168), but the row does not name the colony.
+
 ## 2. Disagreements, renames and moves for CBS localities
 
 Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
@@ -140,7 +183,10 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   מרומניה"; "בהתחלה, נקרא שמה של המושבה 'זמרין'"; "הברון רוטשילד נתן למקום את השם 'זכרון יעקב'
   על שם אביו ג'יימס (יעקב) מאיר רוטשילד, בעת שחנך את בית הכנסת שנבנה בלב המושבה". [S, Wikipedia]
 - **Rename** Zamarin to Zikhron Ya'akov; the year of the rename is not given in the passages read.
-  [GAP]
+  [GAP] (24 Oct) The same article, in its account of 1883, quotes a *HaMagid* item of 28 Elul 5643
+  (1883) under the headline "נדיב בלתי-ידוע מציל את זכרון יעקב", so by that article the name
+  Zikhron Ya'akov was already in print in 1883. *HaMagid* itself was not opened. [S, Wikipedia]
+  The year the name was given stays [GAP].
 
 ### Atlit (CBS 53)
 - CBS **1904**; Gvati `1904`.
@@ -167,6 +213,14 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   "בשנת 1942 עברו למקום הנוכחי בגלל מחלת הקדחת שנבעה מקרבתם לביצות". [S, Wikipedia]
 - **Move date** 1942. CBS's coordinate is the present site; the 1938 site has no coordinate here.
   [GAP]
+- (24 Oct) Same article, of the first site: "היישוב הוקם בתחילתו בצומת כביש 4 עם הכביש המוליך לתחנת
+  הרכבת של זכרון יעקב, בקרבת האזור בו היו שאריות ביצות כבארה כישוב חומה ומגדל". That is a description,
+  not a coordinate; the coordinate stays [GAP]. [S, Wikipedia]
+- **Rename** (24 Oct): "בתחילה נקרא הקיבוץ 'מעין', על שם מעין הנמצא באזור בנימינה, ליד מבצר שוני.
+  בשנת 1945 הוסף לשמו 'צבי'". So Ma'yan became Ma'yan Zevi in **1945**. [S, Wikipedia] Gvati's
+  name-origin cell for the row reads "ע"ש צבי (הארי) פרנק שהיה מנהל פיק"א בארץ" (named for Zevi
+  (Harry) Frank, who was PICA's director in the country), which agrees on the person but gives no
+  year.
 
 ### Bet Oren (CBS 317)
 - CBS **1939**; Gvati `1.10.39`. [V]
@@ -175,12 +229,37 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
 - **Move date** October 1940. Village Statistics 1945 has a land unit "Ya‘arot hak Karmel (previously
   Khirbat Shallala)". **Our reading:** its former name is the site of the 1939 point, so it may be
   the land unit of the first site; that link is not shown by any source read here.
+- (24 Oct) The link is now shown by two sources read together. The he.wiki Bet Oren passage above
+  puts the 1939 ascent at "לח'ירבת שלאלה", and Village Statistics 1945 (printed p. 49, read as an
+  image) lists "Ya‘arot hak Karmel (previously Khirbat Shallala)" as a Jewish land unit (Jews 360;
+  Arab land 64, Jewish land 6,213 dunums, total 6,277). he.wiki `חוות משמר הכרמל`, oldid **42420180**,
+  opens "(בעבר נקראה יערות הכרמל, וכן ידועה גם בשם ח'ירבת שלאלה)" and says of the 1939 group: "הם
+  התיישבו במבני החווה שעל הגבעה ביחד עם משפחת ברגר שנותרה במקום"; "הקבוצה עברה לבית אורן באוקטובר
+  1940"; and that the farm lies "כקילומטר מקיבוץ בית אורן". [S, Wikipedia] The same article says the
+  hill was bought in 1934 by a group of Haifa Jews for a planned settlement named Ya'arot HaCarmel,
+  and that a religious pioneer group, Mishmar HaCarmel, went up on 4 October 1935 ("בערב שבת שובה
+  תחילת שנת תרצ"ו (4 באוקטובר 1935)"), so Ya'arot HaCarmel is an earlier Jewish settlement on the
+  same hill, not Bet Oren itself. [S, Wikipedia] Its end, two he.wiki passages that
+  differ. The farm article (oldid **42420180**) says in its lead: "היישוב נעזב אחרי מאורעות
+  תרצ"ו-תרצ"ט בעקבות החלטת המוסדות המיישבים" (the settlement was abandoned after the 1936 to 1939
+  events, following a decision of the settling bodies). The disambiguation page `יערות הכרמל`, oldid
+  **42620318**, says it was a Jewish settlement "שפונה בתחילת מלחמת העצמאות" (evacuated at the start of
+  the War of Independence). **[C]** after 1936 to 1939 against the start of 1948; no day in either.
+  Village Statistics 1945, which post-dates the first end, still lists 360 Jews at "Ya‘arot hak Karmel".
+  [S, Wikipedia] The farm's
+  coordinate is Wikidata Q16132058, 32.72594722, 35.01347222 (read 2026-10-24, [S, Wikidata]).
+  **Computed here:** against CBS's Bet Oren point (32.73091, 35.00490) that is 0.55 km south and 0.80 km
+  east (0.00496 degrees of latitude at 111.2 km, 0.00857 degrees of longitude at 93.6 km, 32.7 N),
+  square root of the sum of squares 0.97 km, which fits the article's "about a kilometre".
 
 ### Newe Yam, first named Ma'apilim (CBS 312)
 - CBS **1939**; Gvati `23.5.39`. [V]
 - he.wiki `נווה ים`, oldid **44083397**: "הקיבוץ נקרא בתחילה מעפילים, והתמקם על הגבעה שעליה נמצא כיום
   פארק המים, ולאחר כמה שנים עבר למיקומו הנוכחי". [S, Wikipedia]
-- **Rename** Ma'apilim to Newe Yam and a **move**, neither dated in the article. [GAP]
+- **Rename** Ma'apilim to Newe Yam and a **move**, neither dated in the passage above. [GAP]
+  (24 Oct) The same article, further on: "ב-1947 קיבל הקיבוץ את שמו הנוכחי". So the rename is dated
+  **1947**. [S, Wikipedia] The move "after a few years" has no year; the first site is "the hill
+  where the water park now is", with no coordinate. [GAP]
 
 ### Ein Carmel (CBS 426)
 - CBS **1947**; Gvati `1947`.
@@ -247,6 +326,14 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   the passage) and **resettled 1930**. **Renames:** כפר עטא to כפר אתא (after the textile works of
   1934; year of the rename not given) [GAP], and to קריית אתא at the merger decided in 1965. Rows for
   the owner's sensitivity review.
+- (24 Oct) Searched again for the year of the rename Kfar Atta to Kfar Ata and not found. Read: he.wiki
+  `קריית אתא`, oldid **44062796**, again; it says the colony was renamed after the textile works built
+  in 1934 and prints no year for the rename. Its footnote for the 1941 local council cites *HaTzofe*,
+  27 June 1941, "פתיחת המועצה המקומית בכפר עטה" (spelled with a final ה), which is a contemporaneous
+  spelling and a date for the council, not for the rename. That item sits on the National Library of
+  Israel newspaper site, and `https://www.nli.org.il` and `https://www.nli.org.il/en/newspapers`
+  answered HTTP 403 to `curl` on 24 Oct, so it was not opened. Census 1931 (above) prints "Kufritta";
+  Village Statistics 1945 prints "Kefar ‘Atta (Kufritta)". [GAP]
 
 ### Kiryat Bialik (CBS 9500)
 - CBS **1934**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -254,6 +341,12 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   לחיפה"; "שמה הראשון היה 'שכונת עולי גרמניה'". [S, Wikipedia]
 - **[S]** year 1934, day 18 July 1934 [S, Wikipedia]. **Rename** from שכונת עולי גרמניה; year not
   given. [GAP]
+- (24 Oct) he.wiki, same revision: "משנפטר חיים נחמן ביאליק הוחלט לקרוא על שמו את שני היישובים
+  הסמוכים, קריית ביאליק וכפר ביאליק". Bialik died on 4 July 1934 (he.wiki `חיים נחמן ביאליק`, oldid **43995182**, read
+  2026-10-24; the same revision says "ביאליק נפטר בווינה ב-4 ביולי 1934"; infobox `תאריך פטירה = 4 ביולי 1934`). So the name Bialik dates from after 4 July
+  1934, and the article's founding day, 18 July 1934, is 14 days later (18 minus 4); which name the
+  neighbourhood carried on the day it was founded is not stated. [S, Wikipedia] **Our reading:** CBS's
+  1934 holds under either name. The year of the first name's replacement stays [GAP].
 
 ### Kiryat Motzkin (CBS 8200)
 - CBS **1934**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -302,7 +395,10 @@ is proposed about how it appears in the game. None is a CBS locality under its o
   הקמת קיבוץ חלופי עין כרמל`, `תאריך נטישה = 1950`. The article lists a *Davar* item, "חמש שנים לעין
   הים", 25 July 1941, not opened here. [S, Wikipedia]
 - Founded **1936**, left **1950** for Ein Carmel, after this era. [S, Wikipedia] Not in Gvati.
-  [checked 2026-10-23: no row] Coordinate: [GAP].
+  [checked 2026-10-23: no row] Coordinate: (24 Oct) Wikidata Q6766525, 32.690592, 34.94652 (read through
+  `wbgetentities`, 2026-10-24; the item has no reference on the coordinate). [S, Wikidata] **Computed
+  here:** 0.34 km from CBS's Atlit point (0.16 km south, 0.30 km east) and 1.59 km from CBS's Ein Carmel
+  point; it is a point for the site as Wikidata gives it, not a boundary or a map reading.
 
 ### Nahalat Ya'akov (merged into Kfar Hasidim)
 - he.wiki `כפר חסידים`, oldid **43319822**: the first group went onto the land "באפריל 1925 ... בנקודה
@@ -311,13 +407,21 @@ is proposed about how it appears in the game. None is a CBS locality under its o
   חסידים (נחלת יעקב, עבודת ישראל), אך לא הצליחו להיאחז בקרקע, נטשו והקימו את כפר חסידים". [S,
   Wikipedia]
 - **[C]** 1924 against April 1925 for the first settling, both Wikipedia. **Our reading:** use April
-  1925, the dated statement. The date the point was left or merged is a [GAP]. Coordinate: [GAP].
+  1925, the dated statement. The date the point was left or merged is a [GAP]. Coordinate: [GAP]. (24 Oct) Searched again and not
+  found. Read: Wikidata `wbsearchentities`, `search=נחלת יעקב`, `language=he`, `limit=5`, URL
+  `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=נחלת+יעקב&language=he&limit=5&format=json`,
+  run 2026-10-24, which returned 2 items: Q12018804 (Downtown quarter of Haifa, a different place) and
+  Q6511901 (a disambiguation page). Neither is the Nahalat Ya'akov of Kfar Hasidim.
 
 ### Kiryat Haim (merged into Haifa)
 - he.wiki `קריית חיים`, oldid **44097134**: infobox `תאריך ייסוד = 1933`; "160 המתיישבים הראשונים ...
   נכנסו לבתיהם בתחילת 1933"; "ב-1950 סופחה קריית חיים לחיפה, יחד עם שכנתה קריית שמואל". [S,
   Wikipedia]
-- Founded **early 1933**, annexed to Haifa **1950**. [S, Wikipedia] Coordinate: [GAP].
+- Founded **early 1933**, annexed to Haifa **1950**. [S, Wikipedia] Coordinate: (24 Oct) two present-day quarter points, which
+  differ: Wikidata Q2655674, 32.828333, 35.067222 [S, Wikidata], and the he.wiki infobox, oldid **44097134**,
+  `{{coord|32|49|26.39|N|35|4|12|E}}`, which **computed here** is 32.82400, 35.07000 (49/60 + 26.39/3600 =
+  0.82400; 4/60 + 12/3600 = 0.07000). They are about 0.55 km apart (0.48 km north-south, 0.26 km
+  east-west). **Our reading:** both are centre points of the quarter, not the 1933 site.
 
 ### Kiryat Shmuel (merged into Haifa)
 - he.wiki `קריית שמואל (חיפה)`, oldid **43128203**: "בניית התשתית לשכונה החלה בט"ו בתמוז תרצ"ה (16
@@ -325,13 +429,15 @@ is proposed about how it appears in the game. None is a CBS locality under its o
   כשכונה לעיר חיפה". [S, Wikipedia]
 - **[C]** on the merger: 1952 in its own article against 1950 in the Kiryat Haim article, both
   Wikipedia. **Our reading:** both are after this era; keep both. Founding: infrastructure **16 July
-  1935**, first houses **19 May 1938**. Coordinate: [GAP].
+  1935**, first houses **19 May 1938**. Coordinate: (24 Oct) Wikidata Q185687, 32.83401944, 35.06784167 [S, Wikidata], a point
+  of the present neighbourhood.
 
 ### Kiryat Binyamin (merged into Kiryat Ata)
 - he.wiki `קריית בנימין`, oldid **40121015**: "בינואר שנת 1937 (14.1.37) עלו על הקרקע ארבע המשפחות
   הראשונות"; "שבעבר הייתה יישוב נפרד עד שבשנת 1965 אוחדה עם כפר אתא וביחד היו לקריית אתא". [S,
   Wikipedia]
-- Founded **14 January 1937**, merged **1965**. [S, Wikipedia] Coordinate: [GAP].
+- Founded **14 January 1937**, merged **1965**. [S, Wikipedia] Coordinate: (24 Oct) Wikidata Q12411132, 32.79916667, 35.09388889
+  [S, Wikidata], a point of the present neighbourhood.
 
 ### Kiryat Amal, Elroi and Kiryat Haroshet (merged into Kiryat Tiv'on)
 - Kiryat Amal: "עלתה לקרקע ב-9 בספטמבר 1937" (he.wiki `קריית עמל`, oldid **43691566**); joined with
@@ -341,20 +447,38 @@ is proposed about how it appears in the game. None is a CBS locality under its o
 - Kiryat Haroshet: he.wiki `קריית חרושת`, oldid **43792388**: "היא נוסדה ב-1935 ... עד לסיפוחה לקריית
   טבעון בשנת 1979"; "בשנת 1934 הניח טאוב את אבן הפינה". The Kiryat Tiv'on article says only that
   agreement was reached in April 1978. [S, Wikipedia]
-- All three stood before 1948 (Village Statistics 1945 names each as a land unit, see part 2). No
-  coordinate for any of them here. [GAP]
+- All three stood before 1948 (Village Statistics 1945 names each as a land unit, see part 2). (24 Oct)
+  Coordinates, all [S, Wikidata] (statements read 2026-10-24; those of Kiryat Amal and Elroi are
+  referenced "imported from" a Wikipedia edition, that of Kiryat Haroshet has no reference) and all
+  points of today's neighbourhoods, not of the 1948 land units: Kiryat Amal Q12029237,
+  32.70752778, 35.13075; Elroi Q11878352, 32.71066667, 35.10472222; Kiryat Haroshet Q139304838, 32.6925,
+  35.1095. Village Statistics 1945 figures for the three units are in section 1b.
 
 ## 4. Gaps and what was not done
 
+- (24 Oct) What this update closed: the 1931 and 1945 presence figures of section 1b; two rename years
+  (Newe Yam 1947, Ma'yan Zevi 1945); seven coordinates (part 3, [S, Wikidata], neighbourhood points) and
+  the first-site coordinate of Bet Oren (part 2); and the question whether "Ya‘arot hak Karmel" is Bet
+  Oren's first site (it is the same hill, part 2). What it did not close is listed below.
 - [GAP] **Completeness of part 3.** Part 3 lists the abandoned and merged places found from the CBS
   rows' own histories and the 1945 land units. It is not shown to be complete. Village Statistics
   1945 also names "Ya‘arot hak Karmel (previously Khirbat Shallala)" and "Giv‘ot Zeid (previously
   part of Esh Sheikh Bureik)"; the first may be Bet Oren's first site (part 2), for the second, CBS has no
-  row of that name; neither was checked further.
-- [GAP] **Census of Palestine 1931**: not used (no usable text layer, see #1429).
-- [GAP] **Coordinates of abandoned, moved and merged places**: none has one here.
-- [GAP] **Rename years** for Zamarin, Kfar Ata, Ma'apilim, Ramat HaTzafon and the first name of
-  Kiryat Bialik are not in the passages read.
+  row of that name; neither was checked further. (24 Oct) Both were read in the 1945 page images (printed pp. 47 and 49,
+  section 1b). "Giv‘ot Zeid" (Jews 110; Jewish land 1,581 dunums): he.wiki `גבעות זייד`, oldid **43158155**,
+  calls it a kibbutz "באזור עמק יזרעאל, ליד בית זייד" that "הוקם ב-1940" and "פורק סופית ב-1957", so it
+  belongs to the valleys note, not here (already in `settlements-pre-1948-valleys.md`, under Bet Zeid) [S, Wikipedia]
+  (Wikidata Q5565575, property P571, gives 1940, the same year, read 2026-10-24 [S, Wikidata]). "Ya‘arot hak Karmel" is in part 2 under Bet Oren. The part 3 list is
+  still not shown to be complete.
+- [GAP] **Census of Palestine 1931**: (24 Oct) read for nine rows only (section 1b); the other rows of
+  its Haifa sub-district table, and the Census as a source of founding dates, are not used.
+- [GAP] **Coordinates of abandoned, moved and merged places**: (24 Oct) seven now have a Wikidata
+  point (part 3) and the first site of Bet Oren has one (part 2). Still none: Nahalat Ya'akov, the first
+  sites of Ma'yan Zevi and Newe Yam. No map sheet of the Survey of Palestine was read, so there is no
+  coordinate with a sheet reference.
+- [GAP] **Rename years**: (24 Oct) Ma'apilim to Newe Yam (1947) and Ma'yan to Ma'yan Zevi (1945) are now
+  dated (part 2). Still open: Zamarin to Zikhron Ya'akov (in print by 1883, part 2), Kfar Atta to Kfar Ata,
+  Ramat HaTzafon and Usha to Ramat Yohanan, and the first name of Kiryat Bialik (after 4 July 1934).
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources. Eight of
   the 22 rows (Nesher, the Krayot, Kiryat Tiv'on, Meir Shefeya and Kfar HaNo'ar HaDati) have no Gvati

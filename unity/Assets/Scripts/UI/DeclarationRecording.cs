@@ -201,7 +201,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The game's fetch: UnityWebRequestMultimedia from StreamingAssets, as WAV.</summary>
-        static IRequest WebFetch(string url, Action<AudioClip?, string?> done) => new WebRequest(url, done);
+        internal static IRequest WebFetch(string url, Action<AudioClip?, string?> done) => new WebRequest(url, done);
 
         sealed class WebRequest : IRequest
         {

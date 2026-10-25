@@ -290,7 +290,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
   (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
   sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the eight ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the nine ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 

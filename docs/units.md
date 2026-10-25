@@ -264,6 +264,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
+| H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
 
 - **The vehicles are data:** `vehicles` in `units_1948.yaml` (`type`, `from`, `note`, `sources`), checked by
@@ -416,21 +417,22 @@ checks every anchor and logs each spot and its distance.
 - A button opens the Defence screen. In the GDD loop the card also gives the Move order (GDD Phase 5 PR 15, slice 1,
   #754; Q-UI-2's name, "Move" / "תנועה"). The button shows only when `Movement.Reachable` has a hex for the unit (the
   token's sim unit is its row's starting force, `UnitCard.SimUnit`), and not once the game is over. Pressing it lights
-  exactly those hexes (`MapScene.ShowReachable`, a band half the selection's width); a click on a lit hex queues the
-  sim's `Move` through `SimBridge` and the card says the move waits for End turn; any other click, a second press, a
-  turn or another selection ends the pick. The sim refuses a move that is no longer possible at End turn with its own
-  reason. Slice 2 adds Fortify and Hold (Q-UI-2's "Fortify" / "ביצור", "Hold" / "החזקה"): each button shows only where
+  exactly those hexes (`MapScene.ShowReachable`, a band half the selection's width); a click on a lit hex moves the unit at once
+  through `SimBridge`, and the move is final (R-TURN-004; owner, 23 October 2026, #1398: "No undo, like Civ"); a click
+  on a farther land hex the unit has a route to gives it a go-to that continues on later turns (on touch, the first tap
+  shows the route and a second tap confirms it); any other click, a second press, a turn or another selection ends the
+  pick. The sim refuses a move that is not possible at the click, with its own reason. Slice 2 adds Fortify and Hold (Q-UI-2's "Fortify" / "ביצור", "Hold" / "החזקה"): each button shows only where
   the sim's `Orders.Check` takes the order, and where it does not, the card shows the sim's reason as the sim gives it
-  (in English for now, as the End turn toast does). A press queues the sim's `UnitOrder` through `SimBridge` (one standing
-  order per unit: Hold replaces a queued Fortify, and either replaces a queued attack) and the card says when it takes
+  (in English for now, as the End turn toast does). A press gives the sim's `UnitOrder` through `SimBridge` at once (one standing
+  order per unit: Hold replaces a Fortify, and either replaces a go-to) and the card says when it takes
   effect. Slice 3 adds Attack (Q-UI-2's "Attack" / "התקפה"): the button shows only where the sim's `Combat.Check` takes
-  some unit's hex, and the sim's reasons for the enemy hexes in reach it refuses (no Arms, the attack it already has)
+  some unit's hex, and the sim's reasons for the enemy hexes in reach it refuses (no Arms, no movement points left)
   show as the others do. Pressing it lights those hexes; for each the card gives the units there by name, the sim's
   strength ratio (`Combat.Preview`) and its `combat_table` row's outcome bands (`Combat.Outcomes`: how many faces of the
-  draw give each outcome, and the people each side loses), as Q-UI-1 decided. A click on a lit hex queues the sim's
-  `UnitOrder(unit, attack, q, r)` through `SimBridge`, and the card says the attack comes at End turn, with that hex's
-  odds. `Orders.Give` and `Combat.Give` run `Orders.Check` and `Combat.Check` first, so the card and End turn refuse the
-  same orders for the same reasons. Tests: `UnitOrdersTests`,
+  draw give each outcome, and the people each side loses), as Q-UI-1 decided. A click on a lit hex gives the sim's
+  `UnitOrder(unit, attack, q, r)` through `SimBridge`, and the attack is fought at once (owner, 23 October 2026, #1398:
+  "Instant, like Civ"); its Why lines show as a toast. `Orders.Give` and `Combat.Give` run `Orders.Check` and
+  `Combat.Check` first, so the card and the click refuse the same orders for the same reasons. Tests: `UnitOrdersTests`,
   `InfoPanelLayoutTests.TheUnitCardWithItsOrdersFitsEveryWindow`.
 
 **The Avia S-199** (`UnitModels.AviaS199`; type `avia-s199-101sqn-1948`):

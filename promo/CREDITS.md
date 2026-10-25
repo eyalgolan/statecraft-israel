@@ -129,6 +129,15 @@ Burg, Eshkol, Efrati and Naftali look older in their photographs than they were 
 than the game's period; nothing earlier qualifies (their Commons portraits from 1950-1951 are Government Press Office
 files, PD-Israel only). Likeness check by the maintainer still needed for all eight.
 
+### Moshe Dayan, the advisors' popup portrait, 24 October 2026 (advisors spec 11.1; licence and artist re-checked on Commons that day)
+- Moshe Dayan: crop of Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National
+  Photography Collection, 7 December 1948, CC BY 4.0 (attribution in NOTICE):
+  https://commons.wikimedia.org/wiki/File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg
+  Identity: NLI record 997008137270105171, "Moshe and Ruth Dayan". Dayan in uniform with the eye patch on his left eye
+  (the scan is not mirrored); Ruth Dayan, on the right of the frame, is left out of the crop. Black and white as
+  published: not colorized, retouched or AI-altered. Original 1403 x 908 (SHA-1
+  b1e62d0c0a28ccb32d5d712103eff40e3aeee591); crop box x=430, y=170, w=520, h=659; output 404 x 512 (scale 0.777).
+
 ## Facts shown (verified 2026-10-09)
 - Provisional Government (May 1948): 13 ministers and portfolios; Provisional State Council 37 members,
   coalition 30 / opposition 7, Mapai 10, president Chaim Weizmann (Wikipedia: Provisional government of

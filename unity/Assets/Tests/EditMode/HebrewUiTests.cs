@@ -147,6 +147,26 @@ public class HebrewUiTests
         Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
     }
 
+    /// <summary>Codex's review of #1527, finding 4: the language switch keeps this turn's "Skip this turn" choices as it
+    /// keeps the queued orders, so End turn does not ask again for a unit the player skipped.</summary>
+    [Test]
+    public void TheLanguageSwitchKeepsThisTurnsSkips()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var skipped = game.Bridge!.NeedsOrders[0];
+        game.Bridge.Skip(skipped);
+
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt");
+        Assert.IsTrue(game.Bridge!.IsSkipped(skipped), "the skip is kept");
+        CollectionAssert.DoesNotContain(game.Bridge.NeedsOrders.ToList(), skipped);
+    }
+
     /// <summary>A language named in the address or on the command line (the store page's "?lang=he" link) holds for that
     /// visit over the stored choice; without one the stored choice holds; with neither, English.</summary>
     [Test]
@@ -281,7 +301,7 @@ public class HebrewUiTests
         ("meter-cohesion/meter-name", "hud.caption.cohesion"), ("meter-standing/meter-name", "hud.caption.standing"), ("meter-fx/meter-name", "hud.caption.fx"),
         ("nav-cabinet", "hud.nav.cabinet"), ("nav-budget", "hud.nav.budget"), ("nav-defence", "hud.nav.defence"),
         ("nav-why", "hud.nav.why"), ("nav-timeline", "nav.timeline"), ("nav-how-to-play", "hud.nav.how_to_play"), ("nav-objectives", "hud.nav.objectives"),
-        ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn"),
+        ("new-game", "hud.new_game"), ("end-turn", "hud.end_turn_needs_orders"),
         ("event-draft", "event.draft"),
         ("budget-screen-title", "budget.title"), ("budget-reset", "budget.reset"), ("budget-submit", "budget.submit"),
         ("defence-screen-title", "defence.title"), ("de-escalate", "defence.lower"), ("escalate", "defence.raise"),
@@ -292,7 +312,7 @@ public class HebrewUiTests
         ("settings-quality-high", "settings.quality.high"), ("settings-quality-low", "settings.quality.low"),
         ("settings-sound-label", "settings.sound"), ("settings-sound-off", "settings.sound.off"),
         ("settings-sound-low", "settings.sound.low"), ("settings-sound-high", "settings.sound.high"),
-        ("settings-language-label", "settings.language"),
+        ("settings-advisors-label", "settings.advisors"), ("settings-language-label", "settings.language"),
         ("settings-uiscale-label", "settings.uiscale"),
         ("settings-community-label", "settings.community"), ("settings-star", "community.star"), ("start-star", "community.star"),
         ("settings-report", "feedback.open"), ("start-report", "feedback.open"), ("feedback-title", "feedback.open"),   // #1169

@@ -8,9 +8,15 @@ abandonment date need the owner's sensitivity review before they enter the game;
 here. Method, sources and tags are those of the Galilee note (#1429), the Haifa and Carmel note
 (#1435), the coastal plain and Sharon note (#1477) and the Negev note (#1403).
 
+Second pass (24 October 2026, Refs #97, branch `laneHQ-97-jerusalem-corridor`): the [GAP] rows of
+this note were worked again. Everything marked "agent read 2026-10-24" was opened and read on that
+day by an AI agent (Claude Code) working for Beri; a person's check of those readings is pending
+(CONTENT_POLICY section 2, item 6). A row that could not be closed stays [GAP] with "(24 Oct)
+Searched again and not found. Read: ..." and the list of what was read.
+
 ## How it was done
 
-- Every page was fetched on 23 October 2026 with the User-Agent
+- Every page in the first pass was fetched on 23 October 2026 and in the second pass on 24 October, with the User-Agent
   `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
 - **Founding year and coordinates (official).** Central Bureau of Statistics, localities file 2024,
   https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx (checked 2026-10-23),
@@ -33,9 +39,19 @@ here. Method, sources and tags are those of the Galilee note (#1429), the Haifa 
   used only as a **presence check**: a Jewish locality named in a 1945 land unit existed by then. It
   is not a founding source, and it lists land units, so several localities are not named at all;
   "not listed by name" therefore proves nothing. The text layer drops blank columns, so a lone
-  population figure cannot be assigned to the Arab or Jewish column; no figure is given here.
-- **Census of Palestine 1931**: not used. #1429 found that the archive.org scan has no usable text
-  layer. [GAP]
+  population figure cannot be assigned to the Arab or Jewish column; the first pass therefore gave
+  no figure. (24 Oct) The figures in part 1b were read instead from rendered page images of the
+  archive.org PDF
+  https://archive.org/download/palestine-village-statistics-1945/Village%20Statistics%201945.pdf
+  (downloaded 2026-10-24, 7,105,432 bytes), printed pages 50, 51, 56, 57 and 58, which are the same
+  numbers as the PDF page numbers. The digits of the rows used were read from the image at 200 dpi
+  and, where the text layer had them (Qiryat Anavim, Ramat Rahel, Qaliniya and Motsa, Atarot), they
+  agree with it.
+- **Census of Palestine 1931**, *Population of villages, towns and administrative areas*, the
+  archive.org scan named above. (24 Oct) The text layer is unusable (as #1429 found), so the pages
+  were rendered to images with Ghostscript and read by eye: the Jerusalem sub-district table,
+  printed pages 37 to 44 (PDF pages 48 to 55), and the Bethlehem sub-district table, printed pages
+  35 and 36 (PDF pages 46 and 47). The Hebron sub-district table was not read.
 - **Hebrew Wikipedia** was read through the MediaWiki API as the wikitext of the current revision,
   cited by `oldid`. It is a lead and a cross-check, not an authority; a fact resting on it alone is
   marked **[S, Wikipedia]**. Where an article cites a newspaper item that was not opened here, the
@@ -92,9 +108,41 @@ rename written out below.
 | מעלה החמישה (Ma'ale HaHamisha) | 286 | 1938 | 31.81773, 35.11054 | הרי יהודה, `19.7.38`, האיחוד | not listed by name (our reading: possibly the Qiryat Anavim unit above) | [V]; part 2 |
 | כפר אוריה (Kefar Uriyya) | 364 | 1944 | 31.79261, 34.94732 | שפלת יהודה, `2.8.44`, תנועת המושבים | Ramle: "Kefar Uriya" (a Ramle sub-district table, not Jerusalem) | [V]; founded 1913, left 1929, part 2 |
 | נווה אילן (Newe Ilan) | 405 | 1946 | 31.80828, 35.08093 | הרי יהודה, `27.10.46`, האיחוד | not applicable, founded after 1945 | [V]; kibbutz 1946, present village 1971-72, part 2 |
-| ירושלים (Jerusalem) | 3000 | ותיק | 31.78381, 35.22047 | [GAP] no row | Jerusalem: "Jerusalem (Urban)" | pre-1882 city; no founding date sought |
+| ירושלים (Jerusalem) | 3000 | ותיק | 31.78381, 35.22047 | no row; (24 Oct) only a rainfall-table cell, part 4 | Jerusalem: "Jerusalem (Urban)" | pre-1882 city; no founding date sought |
 
 All six CBS rows have a Gvati row (6 of 6), and CBS and Gvati give the same year in every one.
+
+### 1b. Census 1931 and Village Statistics 1945 figures (read from page images, 24 Oct)
+
+Census 1931: houses (occupied), persons, Jews male + female, as printed. Village Statistics 1945:
+Jewish population, and Jewish-owned land in dunums where the row has it. Arithmetic is shown where
+a total was checked.
+
+| Place | Census 1931 (printed page) | Village Statistics 1945 (printed page) | Tag |
+|---|---|---|---|
+| Qiryat Anavim | 29 houses, 109 persons, Jews 57 + 52 = 109 (p. 42) | row "Qiryat ‘Anavim and Ma‘ale": Jews 610; Jewish land 3,498, public 71, total 3,569 (3,498 + 71 = 3,569) (p. 58) | [S, census 1931; agent read 2026-10-24; a person's check pending] [S, Village Statistics 1945; agent read 2026-10-24; a person's check pending] |
+| Ramat Rahel | 45 houses, 131 persons, Jews 68 + 63 = 131 (p. 42) | Jews 370; Arab land 36, Jewish land 109, total 145 (36 + 109 = 145) (p. 58) | same two tags |
+| Moza (Motsa), with the Moza Illit land | 20 houses, 151 persons, Jews 71 + 80 = 151; a sub-entry "Arza" (p. 41) | row "Qaliniya and Motsa": Arabs 910, Jews 350, total 1,260; Jewish land 1,084 (p. 58) | same two tags |
+| Neve Ya'akov | 20 houses, 101 persons, Jews 56 + 45 = 101 (p. 42) | Jews 190; Jewish land 472, public 17, total 489 (p. 57) | same two tags |
+| Atarot | 23 houses, 112 persons, Jews 61 + 51 = 112 (p. 37) | Jews 160; Jewish land 433, public 68, total 501 (p. 56) | same two tags |
+| Har Tuv | 24 houses, 107 persons: Moslems 3 (male), Jews 50 + 51 = 101, Christians 3 (male); 3 + 101 + 3 = 107 (p. 39) | Jews 80; Arab land 45, Jewish land 4,547, public 157, total 4,749 (p. 57) | same two tags |
+| Migdal Eder | 4 houses, 23 persons, no Jews: Moslems 7 + 2, Christians 5 + 9; 7 + 2 + 5 + 9 = 23 (Bethlehem sub-district, p. 36) | no unit of that name in the Jerusalem or Hebron table pages read | [S, census 1931; agent read 2026-10-24; a person's check pending] |
+
+Not in the 1931 Jerusalem table, because founded later: Moza Illit (1933), Ma'ale HaHamisha (1938),
+Newe Ilan (1946). Kefar Uriyya (in the Ramle sub-district table in 1945) was not looked up in 1931.
+**Our reading** of the table: Atarot, Neve Ya'akov, Har Tuv, Moza, Qiryat Anavim and Ramat Rahel
+each have a Jewish population in the 1931 census; for Ramat Rahel, which he.wiki says was left in
+1929 and resettled in the early 1930s (part 2), the table shows 131 Jews. The Migdal Eder site
+has none. The census date is not read here.
+
+**Completeness check of the 1945 Jerusalem table, printed pages 56 to 58.** Every row with a Jewish
+population figure was read: Atarot 160; Har Tuv 80; Jericho 170 (Arabs 2,840, total 3,010);
+Jerusalem (Urban) 97,000; Nabi Musa and Palestine Potash Concession (North) 1,270 (Arabs 1,380,
+total 2,650); Neve Ya'aqov 190; Qaliniya and Motsa 350; Qiryat Anavim and Ma'ale 610; Ramat Rahel 370.
+That is nine rows. Except Jerusalem, Jericho and the Potash unit (Kalya, part 3), each is a
+place this note covers. Kefar Uriyya is not among them (it is in the Ramle table). This does not
+show that no other Jewish place stood in the corridor: a kibbutz inside an Arab village's land unit
+has no row of its own.
 
 ## 2. Earlier foundings, moves and renames for CBS localities
 
@@ -107,7 +155,9 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   "בעקבות הכפר הערבי קריית אל-ענב".
 - The 1945 unit named "Qiryat ‘Anavim and" plus a next line beginning "Ma‘ale". **Our reading:** the second
   name is Ma'ale HaHamisha, whose land came from Qiryat Anavim (below); the text layer does not
-  show the rest of the name.
+  show the rest of the name. (24 Oct) The page image of p. 58 prints the row as "Qiryat ‘Anavim and"
+  with "Ma‘ale" at the start of the next line and nothing after it, so the printed name stops at
+  "Ma‘ale"; "HaHamisha" remains our reading.
 
 ### Ma'ale HaHamisha (CBS 286)
 - CBS **1938**; Gvati `19.7.38`. [V]
@@ -148,6 +198,22 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
 - **Left in 1929:** the same article has the residents leaving at the time of the 1929 riots, and the
   houses burned afterwards, with no single day in the passages read. **Rename:** "המקום נקרא במקור
   'קריית משה' ... אך שונה ל'כפר אוריה'"; the year of the rename is not given. [GAP]
+  (24 Oct) Searched again and not found. Read: he.wiki `כפר אוריה`, oldid **44104326** (a later
+  revision than 43728110), which gives the reason as the similarity of the sound to Khirbat
+  Kafruriyya ("שונה ל'כפר אוריה' בעקבות דמיון הצלילים לשמה של ח'רבת כפרוריה") and cites Z. Vilnai,
+  *Hebrew Names of Settlements Derived from Arabic*, Bulletin of the Israel Exploration Society 18
+  (1954), p. 272, https://www.jstor.org/stable/23729685; that JSTOR page was not opened here, so no
+  year is confirmed. Also run: the JTA site search `https://www.jta.org/?s=Kfar+Uria` (day run
+  2026-10-24, no date filter; the page reported 622 results, a fuzzy count); I read the headlines
+  of the first results page only (10 items), and none names Kefar Uriyya; the other pages were not
+  read, so this is not a negative for the archive.
+  Coordinates of the old site: he.wiki `כפר אוריה` oldid 44104326 prints 31.79330014, 34.94659163 [S,
+  Wikipedia]; Wikidata Q659949 prints 31.7936, 34.948397 [S, Wikidata]; the CBS string in part 1
+  gives 31.79261, 34.94732 (computed here). The he.wiki and CBS pairs differ by 0.00069 degrees of
+  latitude (about 77 m at 111.2 km a degree) and 0.00073 degrees of longitude (about 69 m at
+  94.6 km a degree at this latitude), about 103 m (computed here). The article says the moshav was
+  rebuilt "על חורבות המושב הישן", so the three points are read as one site, our reading. No map
+  sheet was read.
   **Resettled 1944:** "המושב הוקם מחדש על חורבות המושב הישן ב־1944 על ידי יהודים דתיים יוצאי
   כורדיסטן". [S, Wikipedia]
 - **Village Statistics 1945** names "Kefar Uriya" in the Ramle sub-district table, not the Jerusalem
@@ -184,6 +250,10 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   1993; no source read here says it is a misprint. Use 1894 and label it "our reading".
 - Village Statistics 1945: "Qaliniya and Motsa" in the Jerusalem sub-district table; the unit also
   includes the neighbouring Arab village (our reading). **Renamed 1933, annexed 1993.** [S, Wikipedia]
+- (24 Oct) Coordinate: he.wiki `מוצא` oldid 43885172 prints 31.79391944, 35.16845833 [S, Wikipedia];
+  Wikidata Q2916387 (described there as a Jerusalem neighbourhood) prints 31.793919, 35.168458 [S,
+  Wikidata]. The same pair, so Wikidata is not independent of the article; no map sheet was read.
+- (24 Oct) 1931: "Motsa" has 20 houses and 151 Jews, with the sub-entry "Arza", census p. 41 (part 1b).
 
 ### Atarot
 - he.wiki `עטרות`, oldid **43943172**: "היישוב הוקם ב-1912, ופונה והוחרב במלחמת העצמאות"; "התיישבה
@@ -199,7 +269,10 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   עטרות. בלילה פונו תושביה לנוה־יעקב (שכונה חצי־חקלאית בצפון ירושלים)". **Evacuated the night of
   14 May 1948.** This rests on Gvati; he.wiki gives April for the women and children and puts the order to leave on the day of the High Commissioner's departure, 14 May, which is consistent with Gvati (our reading). Gvati has a row for Bnei Atarot, `7.8.48`,
   "ע"ש הישוב עטרות שננטש במלחמת השחרור ועבר לכאן", which is after the cut-off and in another
-  region. Coordinate: [GAP].
+  region. Coordinate (24 Oct): he.wiki `עטרות` oldid 43943172 prints 31.85, 35.21666667 [S, Wikipedia];
+  Wikidata Q2921103 prints 31.85, 35.216667 [S, Wikidata]. Both are a rounded pair, not a surveyed
+  point, and Wikidata is not independent of the article. No map sheet was read.
+- (24 Oct) 1931 and 1945 counts: 112 Jews (census p. 37) and 160 Jews (Village Statistics p. 56), part 1b.
 
 ### Neve Ya'akov (the colony, not the 1970 neighbourhood)
 - he.wiki `נווה יעקב (מושבה)`, oldid **44067999**: infobox `תאריך ייסוד = 1925`, `תאריך נטישה =
@@ -209,7 +282,20 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - Gvati, narrative: "ב־16.5 הותקפה נוה־יעקב על־ידי כוחות גדולים. ההתקפה נהדפה, אולם אחרי האבדות
   שנגרמו למגינים הוחלט לסגת בלילה מהמקום". **Left the night of 16 May 1948.** Gvati has no appendix row. [checked 2026-10-23: no row]
 - Village Statistics 1945 names "Neve Ya‘aqov" in the Jerusalem sub-district table. **First name**
-  "Kefar Ivri" (the Hebrew village); the year of the rename is not given. [GAP] Coordinate: [GAP].
+  "Kefar Ivri" (the Hebrew village); the year of the rename is not given. [GAP]
+  (24 Oct) Searched again, the day is not found; a window is. Read: he.wiki `נווה יעקב (מושבה)`,
+  oldid **44067999**: the association "הכפר העברי" was founded in Jerusalem on 13 Sivan 5681
+  (19 June 1921), the name "כפר עברי" or "הכפר העברי" was the association's, and "לקראת עליית המושבה
+  על הקרקע נקבע שמה ל'נווה יעקב'", sometimes with both names used together. The article cites
+  Doar HaYom of 27 April 1925 for the name; that item was not opened here (nli.org.il returns 403
+  from this machine). So the colony took its second name between June 1921 and the ascent to the
+  land in 1925, **our reading** of the article, not a dated source. [S, Wikipedia]
+  Coordinate (24 Oct): he.wiki oldid 44067999 prints 31.834269, 35.232499 [S, Wikipedia]; Wikidata
+  Q30527673 ("מושבה יהודית ... וחרבה במלחמת העצמאות") prints the same pair [S, Wikidata]. The 1970
+  neighbourhood's items (Wikidata Q2918013, 31.841111, 35.2425) are a different place, about 1 km
+  away (0.0068 degrees of latitude = 0.76 km; 0.0100 degrees of longitude = 0.95 km; 1.2 km,
+  computed here), and are not used.
+- (24 Oct) 1931 and 1945 counts: 101 Jews (census p. 42) and 190 Jews (Village Statistics p. 57), part 1b.
 
 ### Har Tuv
 - he.wiki `הר-טוב`, oldid **43696711**: infobox `תאריך ייסוד = 1883`, `תאריך נטישה = 16 במאי 1948`;
@@ -223,7 +309,11 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - **[C]** on the evacuation: Gvati, narrative: "עוד ישוב יהודי אחד פונה ב־15 במאי: הרטוב" and "אנשיו הועברו
   לכפר־אוריה", against he.wiki "בליל 16 במאי 1948". **Our reading:** the two can describe one night
   that spans the date; keep both. Gvati lists it among seven places "פונו או נכבשו זמנית וחזרו
-  לשליטתנו", and he.wiki says "מספר מתיישבים שבו, אך היישוב לא הוקם מחדש". Coordinate: [GAP].
+  לשליטתנו", and he.wiki says "מספר מתיישבים שבו, אך היישוב לא הוקם מחדש". Coordinate (24 Oct):
+  he.wiki `הר-טוב` oldid 43696711 prints 31.76470556, 34.99961111 [S, Wikipedia]; Wikidata Q2919698
+  ("מושבה לשעבר בישראל") prints 31.764706, 34.999611 [S, Wikidata]. The same pair; no map sheet was
+  read. The industrial zone item Q107476220 (31.7735, 34.9981) is a different object and is not used.
+- (24 Oct) 1931 and 1945 counts: 101 Jews of 107 persons (census p. 39) and 80 Jews (Village Statistics p. 57), part 1b.
 
 ### Beit HaArava
 - he.wiki `בית הערבה`, oldid **43568559**: "בית הערבה הוקם לראשונה כקיבוץ בכ"ה בתשרי ה'ת"ש (8
@@ -233,7 +323,16 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
 - Gvati, narrative, names it among the nine places "שפונו מיושביהם ונכבשו על־ידי האויב". Not in the
   appendix. [checked 2026-10-23: no row] **Our reading:** the Jerusalem sub-district table also
   lists Jericho, but no source read here puts Beit HaArava's land unit in it, and the table does not
-  name it. Sub-district [GAP]. **Non-combatants ordered out 15 May 1948** ("ב-15 במאי 1948 ניתנת הוראה להוציא את האוכלוסייה הבלתי-לוחמת מבית הערבה"); **evacuation decided 17 May and complete by 20 May 1948.** [S, Wikipedia] Coordinate: [GAP].
+  name it. Sub-district: (24 Oct) Village Statistics 1945 p. 57 has a unit "Jericho" (Arabs 2,840, Jews 170, total
+  3,010) inside the table headed Jerusalem Sub-District, and no unit named Beit HaArava; the 170
+  Jews are not shown to be Beit HaArava's, so the sub-district stays [GAP] for this place, and the
+  owner's question (Jerusalem or Jericho) is not answered by the 1945 table. The 1931 census
+  contents list a separate "Jericho Sub-district"; that table was not opened. Coordinate (24 Oct),
+  **[C]**: Wikidata Q2777198 ("התנחלות וקיבוץ באזור יריחו") and en.wiki `Beit HaArava` oldid
+  1374528553 print 31.808197, 35.475797 and 31.80833333, 35.47583333 [S, Wikidata], [S, Wikipedia];
+  he.wiki `בית הערבה` oldid 43568559 prints 31.807376, 35.498901 [S, Wikipedia]. The longitudes
+  differ by 0.0231 degrees, about 2.2 km at 94.6 km a degree (computed here). Each is the point of the page's
+  present-day subject, not shown to be the 1939 to 1948 kibbutz site, so none is used. **Non-combatants ordered out 15 May 1948** ("ב-15 במאי 1948 ניתנת הוראה להוציא את האוכלוסייה הבלתי-לוחמת מבית הערבה"); **evacuation decided 17 May and complete by 20 May 1948.** [S, Wikipedia] Coordinate: [GAP].
 
 ### Gush Etzion: Kefar Etzion, Masuot Yitzhak, Ein Tzurim and Revadim
 - Four kibbutzim (Gvati, narrative: "ארבעה קיבוצים היו בגוש: כפר־עציון, משׂוּאוֹת, עין־צורים
@@ -255,32 +354,92 @@ rows with later years for `בית הערבה` (code 3645, 1980, Jordan-Jericho s
   Wikipedia] Gvati's row `17.11.48` is the refounding, and the narrative says it went up "אחרי שחבריו
   שוחררו מהשבי".
 - **Migdal Eder (predecessor)**: he.wiki `מגדל עדר`, oldid **42481770**: "היישוב נוסד בחורף שנת
-  תרפ"ז, 1927"; "חרב בימי מאורעות תרפ"ט". [S, Wikipedia]
+  תרפ"ז, 1927"; "חרב בימי מאורעות תרפ"ט". [S, Wikipedia] (24 Oct) Census 1931, Bethlehem
+  sub-district p. 36: "Migdal ‘Eder", 4 houses, 23 persons, no Jews (part 1b). Coordinate: he.wiki
+  oldid 42481770 prints 31.640232, 35.142458 [S, Wikipedia]; Wikidata Q12408820 ("former Jewish
+  settlement in Mandatory Palestine") prints the same [S, Wikidata]. The same oldid's location-map parameters
+  (`רוחב=31.645833|אורך=35.131178`) put the pin about 1.2 km from that pair; "the same" covers the
+  coordinate display only, not the map pin.
 - **12 to 14 May 1948**, Gvati, narrative: "ב־12.5.1948 הסתער הלגיון הערבי ... על הישובים בגוש
   עציון", "ב־13 במאי פרצו הערבים לכפר־עציון" (the sentence goes on to the deaths of those found
   there; not repeated here), the other three surrendered the next day, and "גוש עציון נכנע ביום
   הכרזת המדינה: 14 במאי 1948". **Kefar Etzion fell 13 May; the other three on 14 May 1948.**
 - None of the four is a Gvati founding row for the pre-1948 site, and none is a CBS row for its pre-1948 site (CBS has rows for the refounded Kefar Etzion, Masuot
-  Yitzhak, Ein Tzurim and Revadim, with the later years above). Village
-  Statistics 1945: [GAP], see part 4. Coordinates: [GAP].
+  Yitzhak, Ein Tzurim and Revadim, with the later years above).
+- (24 Oct) **Village Statistics 1945 and the sub-district.** Read: Hebron Sub-District Table I, printed
+  pages 50 and 51 (images). No unit is named Etzion, Masuot, Ein Tzurim or Revadim, and the only row
+  with a Jewish population is "Beit Ummar", Jews 80, Jewish land 567 dunums; the table's totals give
+  Jews 80 and Jewish land 6,132 dunums for the whole sub-district. Wikidata Q2893117 puts Beit Ummar
+  at 31.621389, 35.102222 [S, Wikidata], about 3.5 km from the Kefar Etzion point below, the Wikidata pair 31.65, 35.116667 (0.0286
+  degrees of latitude = 3.2 km; 0.0145 degrees of longitude = 1.4 km; computed here). **Our reading:**
+  the Gush Etzion land lay in the Hebron sub-district's units and Beit Ummar's 80 Jews are the
+  only candidate for its Jewish population in that table; no source read says so, so the question
+  stays open. The Jerusalem table (pages 56 to 58) has no Etzion row either. [S, Village Statistics
+  1945; agent read 2026-10-24; a person's check pending]
+- (24 Oct) **Coordinates.** Kefar Etzion: he.wiki `כפר עציון` oldid 44106932 prints 31.64986563,
+  35.11525132 [S, Wikipedia]; Wikidata Q2291811 prints 31.65, 35.116667 [S, Wikidata]; these are the
+  present kibbutz's points (Gvati's row above dates the refounding to 1967); that the 1943
+  kibbutz stood on exactly the same ground is not shown, so read them as the Kefar Etzion area, our reading.
+  Masuot Yitzhak (Gush Etzion), Wikidata Q6753223 (he label "משואות יצחק (גוש עציון)", description
+  "קיבוץ לשעבר בגוש עציון") prints 31.6608524, 35.1086073 [S, Wikidata]. Ein Tzurim and Revadim
+  of Gush Etzion: (24 Oct) Searched again and not found. Read: Wikidata search
+  (`wbsearchentities`, language he) for "עין צורים (גוש עציון)" and "רבדים (גוש עציון)", day run
+  2026-10-24, 0 results for each; the he.wiki pages `עין צורים` and `רבדים` print the coordinates of the
+  refounded kibbutzim in the south (31.69596, 34.71987 and 31.77385, 34.81595), which are not the
+  Gush sites. Coordinates for those two sites: [GAP].
+
+### Kalya (Palestine Potash Company works and housing, north shore of the Dead Sea)
+- (24 Oct) en.wiki `Kalya`, oldid **1374532040**: infobox `founded = 1929 (original) 1968 (current)`;
+  "It was originally established in 1929 but was occupied and destroyed by the Jordanians in 1948; it
+  was later rebuilt in 1968 after the Six-Day War"; "The company, chartered in 1929, set up its first
+  plant on the north shore of the Dead Sea at Kalya", and "housing was built to accommodate
+  employees of the Palestine Potash Company", which "employed both Arabs and Jews". [S, Wikipedia]
+  Coordinate: 31.74861111, 35.46611111 [S, Wikipedia] (en.wiki; the page's infobox gives it as
+  31 44 55 N, 35 27 58 E).
+- Village Statistics 1945 p. 57: the land unit "Nabi Musa and Palestine Potash Concession (North)",
+  Arabs 1,380, Jews 1,270, total 2,650; Jewish land 65 dunums, public land 82,957, total 122,248.
+  [S, Village Statistics 1945; agent read 2026-10-24; a person's check pending] **Our reading:**
+  the 1,270 Jews are the Potash Company's workforce and families at Kalya and at the southern works,
+  but the table does not say so; the unit is "(North)" and the company's southern concession is a
+  different unit that is in no row read here.
+- **Our reading:** a company works with housing, not a kibbutz or a moshav; the word "kibbutz" in
+  the article describes the 1968 settlement. Gvati has no pre-1948 row for it (his `קליה` row is the
+  1968 Nahal outpost, part 4, and a narrative line places it next to the Kallia hotel). Whether it
+  counts as a Jewish locality for the game is the owner's call and none is proposed here. The 1931
+  census page for it was not opened. Pre-1948 coordinate of the works: [GAP]; the point above is the
+  present kibbutz's.
 
 ## 4. Gaps and what was not done
 
-- [GAP] **Gush Etzion in Village Statistics 1945.** The 1945 sub-district of the four kibbutzim is
-  not established. The Jerusalem sub-district table has no unit with their names, and a search of the
-  Hebron sub-district table's text layer for Etzion spellings found no unit with their names. They may be
-  unnamed land units; "not listed by name" proves nothing.
-- [GAP] **Kalya.** Gvati has a row `קליה`, בקעת הירדן, `1.2.68`, האיחוד (a 1968 Nahal outpost, "קם
-  לתחיה ים המוות"), and a narrative line that places it next to "מלון 'קליה' הזכור לרבים מתקופת
-  המאנדט". Whether a Jewish settlement stood there before 15 May 1948 is not established by anything
-  read here; he.wiki `קליה`, oldid **38683480**, is a short disambiguation page. No row.
-- [GAP] **Completeness of part 3.** Part 3 lists the abandoned and merged places named in Gvati's
-  list of nine, in the 1945 table and in the articles read. It is not shown to be complete: Gvati's
-  other places lost in the war (Kefar Darom, Mishmar HaYarden) are outside this region.
-- [GAP] **Census of Palestine 1931**: not used (no usable text layer, see #1429).
-- [GAP] **Coordinates of abandoned, moved and merged places**: none has one here.
+- [GAP] **Gush Etzion in Village Statistics 1945.** (24 Oct) Partly closed, part 3: the Hebron table
+  has no unit named for the four kibbutzim and the only Jewish population in it is Beit Ummar's 80.
+  The sub-district of the four kibbutzim is still not established by a source; the 1945 Hebron table
+  is the best candidate, our reading.
+- [GAP] **Kalya.** (24 Oct) Moved to part 3: en.wiki gives a 1929 company settlement destroyed in 1948
+  and the 1945 table has a Potash unit with 1,270 Jews. Still open: whether Kalya itself, as
+  opposed to the northern concession as a whole, is the unit; the 1931 census page was not opened;
+  Gvati has no pre-1948 row. he.wiki `קליה` oldid 38683480 is still the short disambiguation page.
+- [GAP] **Completeness of part 3.** (24 Oct) The 1945 Jerusalem table's nine Jewish-population rows
+  are all accounted for (part 1b), which supports but does not prove completeness: kibbutzim inside
+  an Arab village's land unit have no row. Gvati's other places lost in the war (Kefar Darom,
+  Mishmar HaYarden) are outside this region.
+- **Census of Palestine 1931**: (24 Oct) used, from page images, for the Jerusalem sub-district and
+  two Bethlehem pages (part 1b). Not read: the Hebron and Jericho sub-district tables and the Ramle
+  table (Kefar Uriyya).
+- [GAP] **Coordinates of abandoned, moved and merged places**: (24 Oct) found as page coordinates,
+  tagged [S, Wikipedia] or [S, Wikidata], for Atarot, Neve Ya'akov, Har Tuv, Moza, Migdal Eder,
+  Kefar Etzion, Masuot Yitzhak (Gush Etzion), Kefar Uriyya and Kalya (parts 2 and 3). None is a
+  surveyed point or a map-sheet reading; no Survey of Palestine sheet was opened. Beit HaArava has two
+  conflicting pairs and none is used; Ein Tzurim and Revadim (Gush Etzion) and the 1946 site of
+  Newe Ilan have none.
 - [GAP] **Rename years** for Kefar Uriyya (from Qiryat Moshe) and Neve Ya'akov (from the Hebrew
-  Village) are not in the passages read.
+  Village): (24 Oct) searched again and not found as a dated source; for Neve Ya'akov the window
+  June 1921 to the 1925 ascent is our reading of he.wiki, for Kefar Uriyya there is none (part 2).
+- [GAP] **Gvati row for Jerusalem.** (24 Oct) Searched again and not found. Read: a copy of the text
+  of https://benyehuda.org/read/14684 fetched on 2026-10-24 by another lane of this project (about
+  21,000 non-empty lines); a search for lines that begin with "ירושלים" found six: five are running
+  prose or a bibliography entry, and the one standing alone is a cell in a rainfall table (mm),
+  "ירושלים 550", not a locality row.
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources. All six
   CBS rows have a Gvati row; none of the places in part 3 has one for its pre-1948 site.
