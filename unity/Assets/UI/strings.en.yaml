@@ -824,6 +824,11 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 city.workers_ordered: "At End turn: {0}"
 city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
 
+share.site_picture: "Picture copied: paste it into the post"
+share.site_text: "Only the text was copied. Share or download the picture with the button above."
+share.site_failed: "The picture could not be copied. Share or download the picture with the button above."
+share.site_downloaded: "Attach the downloaded picture to the post."
+
 # C136 B1 event/upkeep cause templates.
 why.cause.military_upkeep: "{0} {1} (military upkeep)"
 why.cause.event_new: "New: {0}"

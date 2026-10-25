@@ -888,6 +888,13 @@ advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי 
 city.workers_ordered: "בסיום התור: {0}"
 city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"
 
+# #1653 Hebrew drafts: native review pending (#564); no owner approval claimed.
+share.site_picture: "התמונה הועתקה: אפשר להדביק אותה בפוסט"
+share.site_text: "רק הטקסט הועתק. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
+share.site_failed: "לא ניתן להעתיק את התמונה. אפשר לשתף או להוריד את התמונה בכפתור שלמעלה."
+# C149 Hebrew draft: native review pending (#564); owner approved the behavior, not this translation.
+share.site_downloaded: "אפשר לצרף לפוסט את התמונה שהורדה."
+
 # C136 B1 event/upkeep cause templates — native review pending (#564); no owner approval claimed.
 # C136: native review pending (#564).
 why.cause.military_upkeep: "{0} {1} (אחזקת יחידות צבאיות)"
