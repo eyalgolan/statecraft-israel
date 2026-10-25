@@ -43,6 +43,23 @@ public class HebrewValuesTests
         Assert.IsFalse(UiDirection.RightToLeft(appointed), appointed);
     }
 
+    /// <summary>HE-07: a value written straight after a Hebrew letter, a one-letter prefix ("ב{0}"), is joined to it when
+    /// it starts with a Hebrew letter, ה included and a name of two words alike, and takes a maqaf when it starts with a
+    /// digit or a Latin letter. A prefix the pattern already gives a maqaf ("ב־{0}", a date) gets no second one.</summary>
+    [Test]
+    public void APrefixJoinsAHebrewValueAndTakesAMaqafBeforeADigitOrLatinLetters()
+    {
+        Assert.AreEqual("ליחידה בהרצליה אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "הרצליה"));
+        Assert.AreEqual("ליחידה בתל אביב אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "תל אביב"));
+        Assert.AreEqual("ליחידה ב־" + Lrm + "Herzliya" + Lrm + " אין משבצת פנויה סמוכה לסגת אליה.",
+            He.Format("capture.refusal.no_free_hex", "Herzliya"));
+        Assert.AreEqual("ב־" + Lrm + "3" + Lrm + " אין מים עבור דיור", He.Format("city.project_reason.no_resource", "3", "מים", "דיור"));
+        // The value itself unprefixed is left as it was.
+        Assert.AreEqual(Lrm + "Herzliya" + Lrm + " כבר עיר.", He.Format("capture.refusal.already_city", "Herzliya"));
+        Assert.AreEqual("נוסד ב־" + Lrm + "15" + Lrm + " במאי " + Lrm + "1948" + Lrm,
+            He.Format("site.built", He.Format("date.day_month_year", 15, He["date.month_5"], 1948)));
+    }
+
     /// <summary>A value with Hebrew in it is not wrapped. A Hebrew word (the seat unit by body, #550) between marks would
     /// make the space between it and an English neighbour left to right, and the space would move to the wrong side; a
     /// value Format has made from a Hebrew pattern (the spoken amount inside the meter's spoken line) has its own values
@@ -109,25 +126,40 @@ public class HebrewValuesTests
         Assert.AreEqual("15 May 1948 to 1 June 1948", en.Format("why.turn", "15 May 1948", "1 June 1948"));
     }
 
-    /// <summary>Every Hebrew key formats to the English-free pattern with marks only around the values: taking the marks
-    /// out gives string.Format's text back.</summary>
+    /// <summary>Every Hebrew key formats to the English-free pattern with marks only around the values, and a maqaf only
+    /// where a value written straight after a Hebrew letter starts with a digit or a Latin letter (HE-07): taking the marks
+    /// out gives string.Format's text back with that maqaf, at exactly that place, and nowhere else.</summary>
     [Test]
     public void TakingTheMarksOutOfAnyHebrewLineGivesTheOldTextBack()
     {
         var he = He;
         var args = new object[] { "$-4.2m", "15 May 1948", 2.5, 46, "IL 3.0m", "Mapai", 7, 1948 };
-        int wrapped = 0;
+        int wrapped = 0, joined = 0;
         foreach (var key in Keys(UiPaths.StringsHebrew))
         {
-            string expected;
-            try { expected = Plain(he, key, args); }
+            try { Plain(he, key, args); }
             catch (FormatException) { continue; }
+            var pattern = he[key];
+            var expected = FormatItem.Replace(pattern, m =>
+            {
+                if (!m.Groups[1].Success) return m.Value.Substring(1);
+                var value = string.Format(CultureInfo.InvariantCulture, "{0" + m.Groups[2].Value + "}", args[int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)]);
+                var maqaf = m.Index > 0 && pattern[m.Index - 1] >= 'א' && pattern[m.Index - 1] <= 'ת'
+                    && value.Length > 0 && char.IsLetterOrDigit(value[0]) && !(value[0] >= 'א' && value[0] <= 'ת');
+                if (maqaf) joined++;
+                return (maqaf ? "־" : "") + value;
+            });
             var got = he.Format(key, args);
             Assert.AreEqual(expected, got.Replace(Lrm, ""), key);
             if (got.IndexOf(Lrm, StringComparison.Ordinal) >= 0) wrapped++;
         }
         Assert.Greater(wrapped, 20, "Hebrew templates with values are wrapped");
+        Assert.Greater(joined, 0, "a prefix before a digit or Latin value takes a maqaf");
     }
+
+    // UiText's format item, an escaped brace included.
+    static readonly System.Text.RegularExpressions.Regex FormatItem =
+        new System.Text.RegularExpressions.Regex(@"\{\{|\}\}|\{(\d+)((?:,\s*-?\d+)?(?::[^{}]*)?)\}");
 
     [Test]
     public void TheFirstLetterRuleSkipsTheMarks()
