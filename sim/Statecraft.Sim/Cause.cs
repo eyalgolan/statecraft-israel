@@ -45,12 +45,10 @@ namespace Statecraft.Sim
         public const string MoneyFlows = "money_flows";
         /// <summary>Foreign currency moved by Delta. Args: exports, donations and loans, imports.</summary>
         public const string FxFlows = "fx_flows";
-        /// <summary>Delta borrowed into the debt. Args: what for (<see cref="Deficit"/> or <see cref="CivilianUpkeep"/>).</summary>
+        /// <summary>Delta borrowed into the debt. Args: what for (a <see cref="Purpose"/>), then that purpose's values.</summary>
         public const string Borrowed = "borrowed";
         /// <summary>Target money moved by Delta, for civilian upkeep. No args.</summary>
         public const string CivilianUpkeep = "civilian_upkeep";
-        /// <summary>The Borrowed purpose for the end-of-turn deficit.</summary>
-        public const string Deficit = "deficit";
         public const string FxCrisisBegan = "fx_crisis_began", FxCrisisEased = "fx_crisis_eased";
         /// <summary>Target (food_supply) moved by Delta while the foreign currency crisis cuts food imports. No args.</summary>
         public const string FxCrisisFood = "fx_crisis_food";
@@ -68,6 +66,24 @@ namespace Statecraft.Sim
         /// <summary>The call-up was raised or lowered to a level's minimum. Args: the new call-up, the security level.</summary>
         public const string CallUpRaised = "call_up_raised", CallUpLowered = "call_up_lowered";
         public const string Ceasefire = "ceasefire";
+
+        /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit).</summary>
+        public static class Purpose
+        {
+            public const string Deficit = "deficit", CivilianUpkeep = "civilian_upkeep", MilitaryUpkeep = "military_upkeep",
+                Corridor = "corridor", Arms = "arms", Training = "training", Prisoners = "prisoners", TrainingCamp = "training_camp",
+                Plow = "plow", Drain = "drain", Yishuv = "yishuv", Deport = "deport", Occupation = "occupation";
+            /// <summary>Args: the project kind's id.</summary>
+            public const string Project = "project";
+            /// <summary>Args: the event's id, its English title as shown, and "1" when its title_he names it (no variant title).</summary>
+            public const string Event = "event";
+
+            public static readonly IReadOnlyList<string> All = new[]
+            {
+                Deficit, CivilianUpkeep, MilitaryUpkeep, Corridor, Arms, Training, Prisoners, TrainingCamp, Plow, Drain, Yishuv,
+                Deport, Occupation, Project, Event,
+            };
+        }
 
         public static readonly IReadOnlyList<string> All = new[]
         {

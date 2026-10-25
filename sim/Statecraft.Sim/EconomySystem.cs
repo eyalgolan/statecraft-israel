@@ -37,15 +37,15 @@ namespace Statecraft.Sim
         /// <summary>Pays <paramref name="cost"/> from the Treasury, borrowing what it lacks: the shortfall goes to Debt and the
         /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the cause ("for training").
         /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).
-        /// <paramref name="purposeKey"/> names the purpose for the UI (CauseKeys.Borrowed); a caller without one keeps the
-        /// English line on screen (B1: not yet localized).</summary>
-        public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey = "")
+        /// <paramref name="purposeKey"/> (a CauseKeys.Purpose) and <paramref name="purposeArgs"/> say the same purpose for the
+        /// UI (CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message.</summary>
+        public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
         {
             s.Treasury -= cost;
             if (s.Treasury >= 0) return;
             s.Debt += -s.Treasury;
             why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} {purpose}",
-                key: purposeKey == "" ? "" : CauseKeys.Borrowed, args: purposeKey == "" ? null : new[] { purposeKey }));
+                key: CauseKeys.Borrowed, args: new[] { purposeKey }.Concat(purposeArgs).ToList()));
             s.Treasury = 0;
         }
 
@@ -55,7 +55,7 @@ namespace Statecraft.Sim
             var cost = Cities.AnnualUpkeep(c, s, r) * yearFraction;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
-            PayOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.CivilianUpkeep);
+            PayOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         }
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
@@ -71,7 +71,7 @@ namespace Statecraft.Sim
             {
                 s.Debt += -s.Treasury;
                 why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} to cover the deficit",
-                    key: CauseKeys.Borrowed, args: new[] { CauseKeys.Deficit }));
+                    key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit }));
                 s.Treasury = 0;
             }
 

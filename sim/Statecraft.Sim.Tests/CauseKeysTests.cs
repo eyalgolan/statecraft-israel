@@ -19,11 +19,11 @@ public class CauseKeysTests
     {
         Assert.Equal(CauseKeys.All.Distinct().Count(), CauseKeys.All.Count);
         Assert.Empty(CauseKeys.All.Intersect(WhyKeys.All));
+        Assert.Equal(CauseKeys.Purpose.All.Distinct().Count(), CauseKeys.Purpose.All.Count);
     }
 
     /// <summary>The reference run to the end: every line of the population, effects, situations and security systems has a
-    /// known key, and so has every line EconomySystem writes. Other files also write "economy" lines (military upkeep,
-    /// Food, Arms, borrowing for other purposes); they are outside the B1 slice and keep their English line for now.</summary>
+    /// known key.</summary>
     [Fact]
     public void TheReferenceRunKeysEveryLineOfTheSlice()
     {
@@ -31,12 +31,35 @@ public class CauseKeysTests
         Assert.NotEmpty(lines);
         foreach (var w in lines.Where(w => Keyed.Contains(w.System)))
             Assert.True(CauseKeys.All.Contains(w.Key), $"[{w.System}] {w.Message}: no key");
-        foreach (var w in lines.Where(w => w.System == "economy" && FromEconomySystem(w.Message)))
-            Assert.True(CauseKeys.All.Contains(w.Key), $"[economy] {w.Message}: no key");
         // Each key the run reaches, at least once (the rest are covered below on the fixture).
         foreach (var key in new[] { CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.FxCrisisBegan, CauseKeys.Arrived,
                      CauseKeys.EffectChange, CauseKeys.SituationBegan, CauseKeys.RungChanged, CauseKeys.CallUpRaised, CauseKeys.CallUpLowered })
             Assert.Contains(lines, w => w.Key == key);
+    }
+
+    /// <summary>Other files also write "economy" lines, so EconomySystem's own are checked at the producer: its turn step and
+    /// the civilian upkeep, on every state of the reference run, as they are, with the Treasury short, and with the currency
+    /// crisis starting and easing. Every line they write has a key.</summary>
+    [Fact]
+    public void EveryLineEconomySystemWritesHasAKey()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var lines = new List<Cause>();
+        for (int t = 0; t < 1000 && s.GameOver == null; t++)
+        {
+            foreach (var change in new Action<GameState>[] { _ => { }, x => x.Treasury = -50, x => x.FxReserves = -1e6,
+                         x => { x.ActiveSituations.Add(EconomySystem.FxCrisis); x.FxReserves = 1e6; } })
+            {
+                var x = s.Clone(); change(x);
+                EconomySystem.Apply(Real, x, 0.25, lines);
+                EconomySystem.PayCivilianUpkeep(Real, x, Real.RulesAt(x.Date).Mvp!, 0.25, lines);
+            }
+            s = Simulation.Step(Real, s, GoldenRun.Orders(Real, s)).State;
+        }
+        foreach (var w in lines) Assert.True(CauseKeys.All.Contains(w.Key), $"[{w.System}] {w.Message}: no key");
+        foreach (var key in new[] { CauseKeys.MoneyFlows, CauseKeys.FxFlows, CauseKeys.Borrowed, CauseKeys.FxCrisisBegan, CauseKeys.FxCrisisEased })
+            Assert.Contains(lines, w => w.Key == key);
+        Assert.All(lines.Where(w => w.Key == CauseKeys.Borrowed), w => Assert.Contains(w.Args[0], CauseKeys.Purpose.All));
     }
 
     /// <summary>The values parse back to exactly the numbers the English line printed, as invariant text.</summary>
@@ -125,19 +148,17 @@ public class CauseKeysTests
     public void CivilianUpkeepAndItsBorrowingAreKeyed()
     {
         var s = new GameState { Treasury = 0, Debt = 0 }; var why = new List<Cause>();
-        EconomySystem.PayOrBorrow(Fix, s, 3, "for civilian upkeep", why, CauseKeys.CivilianUpkeep);
+        EconomySystem.PayOrBorrow(Fix, s, 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         var line = Assert.Single(why);
         Assert.Equal((CauseKeys.Borrowed, "Borrowed IL 3.0m for civilian upkeep"), (line.Key, line.Message));
-        Assert.Equal(new[] { CauseKeys.CivilianUpkeep }, line.Args);
+        Assert.Equal(new[] { CauseKeys.Purpose.CivilianUpkeep }, line.Args);
 
         why.Clear();
-        EconomySystem.PayOrBorrow(Fix, s, 3, "for training", why);   // a purpose outside the slice: English, no key
-        Assert.Equal("", Assert.Single(why).Key);
+        EconomySystem.PayOrBorrow(Fix, s, 3, "to build a housing project", why, CauseKeys.Purpose.Project, "housing");
+        line = Assert.Single(why);
+        Assert.Equal(CauseKeys.Borrowed, line.Key);
+        Assert.Equal(new[] { CauseKeys.Purpose.Project, "housing" }, line.Args);
     }
-
-    static bool FromEconomySystem(string m) =>
-        new[] { "(tax ", "(exports ", "to cover the deficit", "(civilian upkeep)", "Foreign currency reserves are exhausted",
-            "Foreign currency crisis eased", "food imports cut)" }.Any(x => m.Contains(x));
 
     static string Money(Cause w, int i) => PlayerText.Money(Real, "treasury", Number(w, i));
     static double Number(Cause w, int i) => double.Parse(w.Args[i], NumberStyles.Float, CultureInfo.InvariantCulture);

@@ -30,7 +30,7 @@ namespace Statecraft.Game.UI
                 case CauseKeys.FxCrisisFood:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 case CauseKeys.Borrowed:
-                    return text.Format(key + "." + cause.Args[0], PlayerText.Money(c, cause.Target, cause.Delta));
+                    return Borrowed(cause, c, text, namesHe);
                 case CauseKeys.FxCrisisBegan:
                 case CauseKeys.FxCrisisEased:
                 case CauseKeys.Ceasefire:
@@ -54,6 +54,28 @@ namespace Statecraft.Game.UI
                     return text.Format(key, PlayerText.Percent(Number(cause.Args[0])), cause.Args[1]);
                 default:
                     return UnitNames.Line(cause, c, rows, text, namesHe);
+            }
+        }
+
+        /// <summary>A borrowing line, by its purpose (CauseKeys.Purpose): why.cause.borrowed.&lt;purpose&gt;, with what the
+        /// purpose names in the UI's language (a project kind, a settlement, an event's title).</summary>
+        static string Borrowed(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
+        {
+            var key = "why.cause.borrowed." + cause.Args[0];
+            var amount = PlayerText.Money(c, cause.Target, cause.Delta);
+            switch (cause.Args[0])
+            {
+                case CauseKeys.Purpose.Project:
+                    return text.Format(key, amount, ContentNames.Of(text, c.ProjectKinds.First(k => k.Id == cause.Args[1])));
+                case CauseKeys.Purpose.Deport:
+                case CauseKeys.Purpose.Occupation:
+                    return text.Format(key, amount, ContentNames.Settlement(text, c, cause.Args[1], namesHe));
+                case CauseKeys.Purpose.Event:
+                    // The title as the card shows it: title_he, unless a variant gives its own (English) title.
+                    var he = cause.Args[3] == "1" ? c.Events.First(e => e.Id == cause.Args[1]).TitleHe : "";
+                    return text.Format(key, amount, he != "" && text["ui.lang"] == UiLanguage.Hebrew ? he : cause.Args[2]);
+                default:
+                    return text.Format(key, amount);
             }
         }
 

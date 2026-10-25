@@ -296,7 +296,7 @@ namespace Statecraft.Sim
             }
             // Deport never pays (owner, 22 October 2026, #1327): its Money stays at or below Occupy's and Raid's.
             why.Add(new Cause("economy", "treasury", -r.DeportMoneyCost!.Value, $"{PlayerText.Change(c, "treasury", -r.DeportMoneyCost.Value)} (Deport of {name})"));
-            EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why);
+            EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why, CauseKeys.Purpose.Deport, id);
             return null;
         }
 
@@ -359,7 +359,7 @@ namespace Statecraft.Sim
                     why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}"));
                     continue;
                 }
-                EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why);
+                EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why, CauseKeys.Purpose.Occupation, id);
                 if (x.State == AwaitingEnd) continue;
                 var left = x.Turns - 1;
                 s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left, x.Fled);

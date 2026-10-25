@@ -85,7 +85,7 @@ public class CauseTextTests
         // Civilian upkeep: the real content's places cost nothing yet, so the line is the sim's own (EconomySystem.PayCivilianUpkeep),
         // and the borrowing comes from PayOrBorrow with that purpose.
         why.Add(new Cause("economy", "treasury", -2, PlayerText.Change(C, "treasury", -2) + " (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
-        EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, "for civilian upkeep", why, CauseKeys.CivilianUpkeep);
+        EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         s.ActiveSituations.Add(EconomySystem.FxCrisis); s.FxReserves = 1e6;
         EconomySystem.Apply(C, s, 0.25, why);
         s.ActiveSituations.Remove(EconomySystem.FxCrisis); s.FxReserves = -1e6;
@@ -109,6 +109,48 @@ public class CauseTextTests
             Assert.AreEqual(w.Message, CauseText.Line(w, content, NoRows, en), w.Key);
             AssertHebrew(CauseText.Line(w, content, NoRows, he), w.Key);
         }
+    }
+
+    /// <summary>Borrowing for every purpose PayOrBorrow's callers give (the English purpose as each caller words it): English
+    /// is the Message, Hebrew is Hebrew, and an event's title is its title_he.</summary>
+    [Test]
+    public void EveryBorrowingPurposeIsWordedInBothLanguages()
+    {
+        var place = C.SettlementTargets[0].Id; var placeName = C.SettlementNames[place];
+        var housing = C.ProjectKinds.First(k => k.Id == "housing");
+        var ev = C.Events.First(e => e.TitleHe != "");
+        var purposes = new (string Key, string English, string[] Args)[]
+        {
+            (CauseKeys.Purpose.CivilianUpkeep, "for civilian upkeep", new string[0]),
+            (CauseKeys.Purpose.MilitaryUpkeep, "for military upkeep", new string[0]),
+            (CauseKeys.Purpose.Corridor, "to build a corridor segment", new string[0]),
+            (CauseKeys.Purpose.Arms, "for Arms", new string[0]),
+            (CauseKeys.Purpose.Training, "for training", new string[0]),
+            (CauseKeys.Purpose.Prisoners, "for our soldiers held by the enemy", new string[0]),
+            (CauseKeys.Purpose.TrainingCamp, "to build a training camp", new string[0]),
+            (CauseKeys.Purpose.Plow, "to plow fields", new string[0]),
+            (CauseKeys.Purpose.Drain, "to drain a swamp", new string[0]),
+            (CauseKeys.Purpose.Yishuv, "to build a yishuv", new string[0]),
+            (CauseKeys.Purpose.Project, "to build " + housing.Name, new[] { housing.Id }),
+            (CauseKeys.Purpose.Deport, $"for the Deport of {placeName}", new[] { place }),
+            (CauseKeys.Purpose.Occupation, $"for the occupation of {placeName}", new[] { place }),
+            (CauseKeys.Purpose.Event, $"for {ev.Title}", new[] { ev.Id, ev.Title, "1" }),
+        };
+        CollectionAssert.AreEquivalent(CauseKeys.Purpose.All.Where(p => p != CauseKeys.Purpose.Deficit), purposes.Select(p => p.Key), "every purpose");
+        var en = En; var he = He;
+        foreach (var (key, english, args) in purposes)
+        {
+            var why = new List<Cause>();
+            var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+            EconomySystem.PayOrBorrow(C, s, s.Treasury + 3, english, why, key, args);
+            var line = why.Single();
+            Assert.AreEqual(line.Message, CauseText.Line(line, C, NoRows, en), key);
+            AssertHebrew(CauseText.Line(line, C, NoRows, he), key);
+        }
+        var title = new Cause("economy", "debt", 3, "x", key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Event, ev.Id, ev.Title, "1" });
+        StringAssert.Contains(ev.TitleHe, CauseText.Line(title, C, NoRows, he), "the event's Hebrew title");
+        StringAssert.Contains(housing.NameHe, CauseText.Line(new Cause("economy", "debt", 3, "x", key: CauseKeys.Borrowed,
+            args: new[] { CauseKeys.Purpose.Project, housing.Id }), C, NoRows, he), "the project kind's Hebrew name");
     }
 
     /// <summary>A line with no key yet keeps the sim's English; a unit line is still UnitNames' (#1399).</summary>

@@ -127,7 +127,8 @@ public class TrainingTests
         Assert.Equal(0, after.Treasury);
         Assert.Equal(3.1, after.Debt, 9);   // the IL 0.1m the Treasury lacked
         Assert.Single(after.Cohorts);
-        Assert.Contains(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m for training");
+        var borrowed = Assert.Single(why, x => x.System == "economy" && x.Target == "debt" && x.Message == "Borrowed IL 0.1m for training");
+        Assert.Equal((CauseKeys.Borrowed, CauseKeys.Purpose.Training), (borrowed.Key, Assert.Single(borrowed.Args)));   // B1: worded in Hebrew too
         var none = s.Clone();
         none.Treasury = 0;
         Assert.Empty(Step(c, none, new Train("town_a", "recruit", 3)).Rejected);   // an empty Treasury trains too
