@@ -162,3 +162,15 @@ def test_the_cause_line_names_are_contents_names_in_english_and_hebrew_without_l
             assert en[prefix + r['id']] == r['name'], prefix + r['id']
             assert not re.search('[A-Za-z]', he[prefix + r['id']]), prefix + r['id']
     assert all(not re.search('[A-Za-z]', re.sub(r'\{[^}]*\}', '', he[k])) for k in he if k.startswith('why.cause.'))   # {0:N0} aside
+
+
+def test_the_hebrew_plural_of_a_turn_is_torot_never_torim():
+    """The owner's ruling (24 Oct 2026, #1589): the plural of תור (a game turn) is תורות. #1589 changed it to תורים by
+    mistake and #1612 changed it back; this keeps it from drifting again. Every string that counts turns must say
+    תורות, and no Hebrew string may say תורים."""
+    he = strings('strings.he.yaml')
+    assert [key for key, value in he.items() if 'תורים' in value] == []
+    for key in ('how_to_play.training', 'capture.about.occupy', 'unit.go_to_given', 'city.turns',
+                'defence.turn_quarter', 'defence.turn_month', 'defence.turn_week',
+                'advisor.opening.move.text', 'advisor.opening.move.cue.2', 'advisor.ben_gurion.defeat_economy.text'):
+        assert 'תורות' in he[key], key
