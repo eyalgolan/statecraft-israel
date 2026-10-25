@@ -54,7 +54,7 @@ public class AdvisorOpeningParityTests
             ShowCity = () => { if (AdvisorTargets.CityHex(bridge.Content, bridge.State) is (int q, int r)) info.Show(q, r); },
             ShowUnit = () =>
             {
-                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, tokens, bridge.Spent) is not string id) return;
+                if (AdvisorTargets.UnitToShow(bridge, tokens) is not string id) return;
                 shown = new PlacedToken(tokens.First(t => t.Unit.Id == id), new AnchorSpot(0, 0, 0, 0, false)); info.ShowUnit();
             },
         });
@@ -258,51 +258,56 @@ public class AdvisorOpeningParityTests
     [Test]
     public void TheMoveStepsUnitCanMove()
     {
-        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+        var s = bridge.State;
         var rows = UnitRoster.FromState(UnitRows, C, s, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
-        var id = AdvisorTargets.UnitToShow(C, s, rows, new Dictionary<int, int>());
+        var id = AdvisorTargets.UnitToShow(bridge, rows);
         Assert.IsNotNull(id, "a new game has a unit that can move");
         var row = rows.Single(u => u.Id == id);
         Assert.AreEqual(UnitData.Israel, row.Side);
         Assert.IsNotEmpty(Movement.Reachable(C, s, UnitCard.SimUnit(C, s, row)!.Value), "the sim has a hex for it");
         var first = rows.First(u => UnitCard.SimUnit(C, s, u) is int i && Movement.Reachable(C, s, i).Count > 0);
         Assert.AreEqual(first.Id, id, "the first such row");
-        Assert.IsNull(AdvisorTargets.UnitToShow(SimBridgeGddTests.Legacy, s, rows, new Dictionary<int, int>()), "the legacy loop: no unit to show");
+        var legacy = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), En);
+        Assert.IsNull(AdvisorTargets.UnitToShow(legacy, rows), "the legacy loop: no unit to show");
     }
 
-    /// <summary>Since moves are instant (#1527), a unit can spend its movement before How to play reopens the tour: the move
-    /// step then shows the next unit whose card still has Move (InfoPanelPresenter.MoveTargets' rule, with the turn's spent
-    /// points), and none once no unit can move, as in the legacy loop (the step's text without a target).</summary>
+    /// <summary>Since moves are instant (#1527), a unit can spend its movement, or have Send home queued, before How to play
+    /// reopens the tour: the move step then shows the next unit whose card still has Move (InfoPanelPresenter.MoveReach, the
+    /// card's rule), and none once no unit can move, as in the legacy loop (the step's text without a target).</summary>
     [Test]
-    public void TheMoveStepSkipsAUnitThatSpentItsMovement()
+    public void TheMoveStepSkipsAUnitWhoseCardHasNoMove()
     {
-        var session = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        var rows = UnitRoster.FromState(UnitRows, C, session.State, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
-        var first = AdvisorTargets.UnitToShow(C, session.Now.State, rows, session.Now.Spent);
-        Assert.IsNotNull(first, "precondition: a new game has a unit that can move");
-        void SpendAll(UnitEntry row)
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+        var rows = UnitRoster.FromState(UnitRows, C, bridge.State, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
+        int Sim(string row) => UnitCard.SimUnit(C, bridge.State, rows.Single(u => u.Id == row))!.Value;
+        void SpendAll(string row)
         {
-            var id = UnitCard.SimUnit(C, session.Now.State, row)!.Value;
+            var id = Sim(row);
             for (int i = 0; i < 20; i++)
             {
-                var reach = Movement.Reachable(C, session.Now.State, id, session.Now.Spent);
+                var reach = Movement.Reachable(C, bridge.State, id, bridge.Spent);
                 if (reach.Count == 0) return;
                 var far = reach.OrderByDescending(kv => kv.Value).First().Key;
-                Assert.IsNull(session.Commit(new Move(id, far.Q, far.R)), $"{row.Id}: the sim takes a move it offered");
+                Assert.IsNull(bridge.Queue(new Move(id, far.Q, far.R)), $"{row}: the sim takes a move it offered");
             }
-            Assert.Fail($"{row.Id}: still has movement after 20 moves");
+            Assert.Fail($"{row}: still has movement after 20 moves");
         }
-        SpendAll(rows.Single(u => u.Id == first));
-        Assert.IsNotEmpty(Movement.Reachable(C, session.State, UnitCard.SimUnit(C, session.State, rows.Single(u => u.Id == first))!.Value),
-            "precondition: with nothing spent the sim would still offer it hexes");
-        var next = AdvisorTargets.UnitToShow(C, session.Now.State, rows, session.Now.Spent);
-        Assert.IsNotNull(next, "another unit can still move");
-        Assert.AreNotEqual(first, next, "the unit that spent its movement is not shown");
-        Assert.IsNotEmpty(Movement.Reachable(C, session.Now.State, UnitCard.SimUnit(C, session.Now.State, rows.Single(u => u.Id == next))!.Value, session.Now.Spent),
-            "the shown unit's card has Move");
-        foreach (var row in rows.Where(u => UnitCard.SimUnit(C, session.Now.State, u) is int id && Movement.Reachable(C, session.Now.State, id, session.Now.Spent).Count > 0).ToList())
+        var first = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsNotNull(first, "precondition: a new game has a unit that can move");
+        SpendAll(first!);
+        Assert.IsNotEmpty(Movement.Reachable(C, bridge.State, Sim(first!)), "precondition: with nothing spent the sim would still offer it hexes");
+        var second = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsNotNull(second, "another unit can still move");
+        Assert.AreNotEqual(first, second, "the unit that spent its movement is not shown");
+        Assert.IsNotNull(InfoPanelPresenter.MoveReach(bridge, Sim(second!)), "the shown unit's card has Move");
+        Assert.IsNull(bridge.Queue(new UnitOrder(Sim(second!), Demobilization.SendHome)));
+        Assert.IsNotEmpty(Movement.Reachable(C, bridge.State, Sim(second!), bridge.Spent), "precondition: the sim alone would still move it");
+        var third = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsTrue(third != first && third != second, $"a unit going home is not shown either ({third})");
+        foreach (var row in rows.Where(u => UnitCard.SimUnit(C, bridge.State, u) is int id && InfoPanelPresenter.MoveReach(bridge, id) != null).Select(u => u.Id).ToList())
             SpendAll(row);
-        Assert.IsNull(AdvisorTargets.UnitToShow(C, session.Now.State, rows, session.Now.Spent), "no unit can move: none to show");
+        Assert.IsNull(AdvisorTargets.UnitToShow(bridge, rows), "no unit can move: none to show");
     }
 
     /// <summary>Skip at any step closes it; Next walks the seven steps and Done closes it; Escape skips; How to play's button
@@ -484,7 +489,7 @@ public class AdvisorOpeningParityTests
         var move = Array.IndexOf(Steps, "opening.move");
         for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         Assert.AreEqual(move, advisor.ChainStep);
-        var id = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token), bridge.Spent);
+        var id = AdvisorTargets.UnitToShow(bridge, units.Tokens.Select(t => t.Token));
         Assert.IsNotNull(id, "precondition: a drawn unit can move");
         Assert.AreEqual(id, units.Selected, "the advisor's unit, with its ring");
         Assert.IsTrue(info.ShowsUnit, "its card in the info panel");
@@ -526,7 +531,7 @@ public class AdvisorOpeningParityTests
                     Assert.AreEqual(move, advisor.ChainStep, "precondition: the advisor is on its move step");
                     for (int frame = 0; frame < 5; frame++) yield return null;
 
-                    var id = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token), bridge.Spent);
+                    var id = AdvisorTargets.UnitToShow(bridge, units.Tokens.Select(t => t.Token));
                     Assert.IsNotNull(id, "precondition: a drawn unit can move");
                     var token = units.Tokens.Single(t => t.Token.Unit.Id == id);
                     var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token);

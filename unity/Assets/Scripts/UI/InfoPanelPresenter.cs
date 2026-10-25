@@ -204,10 +204,18 @@ namespace Statecraft.Game.UI
         (int unit, IReadOnlyDictionary<(int Q, int R), int> hexes)? MoveTargets()
         {
             var unit = unitMode ? selectedUnit() : null;
-            if (unit == null || bridge.State.GameOver != null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token) is int id)
-                || bridge.GoingHome(id)) return null;
+            if (unit == null || !(UnitCard.SimUnit(bridge.Content, bridge.State, unit.Value.Token) is int id)) return null;
+            return MoveReach(bridge, id) is { } reach ? (id, reach) : null;
+        }
+
+        /// <summary>The hexes sim unit <paramref name="id"/>'s Move can go to now, as its card offers them (Movement.Reachable with
+        /// the turn's spent points), or null when its card has no Move: the game is over, Send home is queued for it, or no hex
+        /// is in reach. The advisor's move step picks its unit by it too (AdvisorTargets.UnitToShow).</summary>
+        public static IReadOnlyDictionary<(int Q, int R), int>? MoveReach(SimBridge bridge, int id)
+        {
+            if (bridge.State.GameOver != null || bridge.GoingHome(id)) return null;
             var reach = Movement.Reachable(bridge.Content, bridge.State, id, bridge.Spent);
-            return reach.Count == 0 ? null : (id, reach);
+            return reach.Count == 0 ? null : reach;
         }
 
         /// <summary>The shown unit's sim id, the hexes its attack can name (each unit's hex the sim's Combat.Check takes: the
