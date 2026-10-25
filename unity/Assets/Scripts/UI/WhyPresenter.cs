@@ -67,7 +67,7 @@ namespace Statecraft.Game.UI
                 rows.Add(header);
                 foreach (var w in lines)
                 {
-                    var line = new Label(UnitNames.Line(w, bridge.Content, units, text, townNamesHe)) { name = "why-" + i++ };
+                    var line = new Label(CauseText.Line(w, bridge.Content, units, text, townNamesHe)) { name = "why-" + i++ };
                     line.AddToClassList("why-line");
                     rows.Add(line);
                 }

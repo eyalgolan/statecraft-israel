@@ -42,7 +42,7 @@ public class WhyScreenTests
         var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
         new WhyPresenter(ui.Root, bridge, Text) { Units = Rows };
         var r = bridge.EndTurn();
-        var expected = WhyPresenter.Order.SelectMany(sys => r.Why.Where(w => w.System == sys).Select(w => UnitNames.Line(w, C, Rows, Text))).ToList();
+        var expected = WhyPresenter.Order.SelectMany(sys => r.Why.Where(w => w.System == sys).Select(w => CauseText.Line(w, C, Rows, Text))).ToList();
         var shown = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-line").ToList().Select(l => l.text).ToList();
         Assert.AreEqual(expected, shown);
     }
