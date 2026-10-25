@@ -164,6 +164,41 @@ public class CauseTextTests
             Assert.AreEqual(UnitNames.Line(w, C, NoRows, He), CauseText.Line(w, C, NoRows, He));
     }
 
+    /// <summary>C136: a positive producer set prevents missing keys from being silently skipped by the existing tests.</summary>
+    [Test]
+    public void EveryEventAndUpkeepLineUsesATemplateAndKeepsItsEnglish()
+    {
+        var en = En; var he = He;
+        var lines = Turns().SelectMany(t => t.Why).Where(w => w.System == "events" || w.Key == CauseKeys.MilitaryUpkeep).ToList();
+        Assert.IsNotEmpty(lines);
+        Assert.IsTrue(lines.Any(w => w.Key == CauseKeys.MilitaryUpkeep));
+        foreach (var w in lines)
+        {
+            CollectionAssert.Contains(CauseKeys.All, w.Key, w.Message);
+            Assert.AreEqual(w.Message, CauseText.Line(w, C, NoRows, en), w.Key);
+            AssertHebrew(CauseText.Line(w, C, NoRows, he), w.Key);
+        }
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        foreach (var row in C.Events.SelectMany(e => e.Options).SelectMany(o => EventSystem.OptionEffects(C, s, o)))
+        {
+            CollectionAssert.Contains(CauseKeys.All, row.Key);
+            Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, en), row.Key);
+            AssertHebrew(CauseText.Line(row, C, NoRows, he), row.Key);
+        }
+    }
+
+    [Test]
+    public void AResolvedEventUsesItsHistoricalContentSnapshots()
+    {
+        var w = new Cause("events", "example", 0, "Delegated to Previous name: Previous choice",
+            key: CauseKeys.EventDelegated, args: new[] { "Previous choice", "הבחירה הקודמת", "Previous name", "השם הקודם" });
+        Assert.AreEqual(w.Message, CauseText.Line(w, C, NoRows, En));
+        var line = CauseText.Line(w, C, NoRows, He);
+        StringAssert.Contains("השם הקודם", line);
+        StringAssert.Contains("הבחירה הקודמת", line);
+        AssertHebrew(line, w.Key);
+    }
+
     static void AssertHebrew(string line, string key)
     {
         Assert.IsTrue(UiDirection.RightToLeft(line), $"{key}: '{line}' reads right to left");

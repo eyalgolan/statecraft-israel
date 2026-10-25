@@ -887,3 +887,57 @@ advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי 
 # Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
 city.workers_ordered: "בסיום התור: {0}"
 city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"
+
+# C136 B1 event/upkeep cause templates — native review pending (#564); no owner approval claimed.
+# C136: native review pending (#564).
+why.cause.military_upkeep: "{0} {1} (אחזקת יחידות צבאיות)"
+# C136: native review pending (#564).
+why.cause.event_new: "אירוע חדש: {0}"
+# C136: native review pending (#564).
+why.cause.event_chosen: "נבחרה אפשרות: {0}"
+# C136: native review pending (#564).
+why.cause.event_delegated: "ההכרעה הועברה אל {0}: {1}"
+# C136: native review pending (#564).
+why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ביצוע חלקי: {1}"
+# C136: native review pending (#564).
+why.cause.cabinet: "הממשלה"
+# C136: native review pending (#564).
+why.cause.event_amount: "{0}: שינוי {1}"
+# C136: native review pending (#564).
+why.cause.event_stock: "{0}: {1} יחידות"
+# C136: native review pending (#564).
+why.cause.event_grant_one: "יחידות: {0:0}; סוג: {1}; מיקום: {2}"
+# C136: native review pending (#564).
+why.cause.event_grant_many: "יחידות: {0:0}; סוג: {1}; מיקום: {2}"
+# C136: native review pending (#564).
+why.cause.event_city: "יישוב: {0}; {1}; שינוי {2}"
+# C136: native review pending (#564).
+why.cause.event_unlock: "אפשר כעת לבנות {0}"
+# C136: native review pending (#564).
+why.cause.event_policy: "{0}: נקבע ערך של {1}"
+# C136: native review pending (#564).
+why.cause.event_set_rung: "נקבעה רמת ביטחון: {0:0}"
+# C136: native review pending (#564).
+why.cause.event_rejoin: "חזרה למסלול ההיסטורי: {0}"
+# C136: native review pending (#564).
+why.name.rationing: "קיצוב"
+# C136: native review pending (#564).
+why.name.housing_construction: "בניית דיור"
+# C136: native review pending (#564).
+why.name.border_settlement: "התיישבות בגבול"
+# C136: native review pending (#564).
+why.name.maabarot: "מעברות"
+# C136: native review pending (#564).
+why.cause.event_amount_from: "{0}: שינוי {1} ({2})"
+# C136: native review pending (#564).
+why.cause.event_stock_from: "{0}: {1} יחידות ({2})"
+# C136: native review pending (#564).
+why.cause.event_grant_one_from: "יחידות: {0:0}; סוג: {1}; מיקום: {2} ({3})"
+# C136: native review pending (#564).
+why.cause.event_grant_many_from: "יחידות: {0:0}; סוג: {1}; מיקום: {2} ({3})"
+# C136: native review pending (#564).
+why.cause.event_city_from: "יישוב: {0}; {1}; שינוי {2} ({3})"
+# C136: native review pending (#564).
+why.cause.event_unlock_from: "אפשר כעת לבנות {0} ({1})"
+# C136: native review pending (#564).
+why.cause.event_policy_from: "{0}: נקבע ערך של {1} ({2})"

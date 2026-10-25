@@ -50,7 +50,7 @@ namespace Statecraft.Sim
             {
                 s.FiredEvents.Add(e.Id);
                 s.PendingEvents.Add(e.Id);
-                why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}"));
+                why.Add(new Cause("events", e.Id, 0, $"New: {Title(c, s, e)}", key: CauseKeys.EventNew, args: Context(Title(c, s, e), HebrewTitle(c, s, e))));
             }
         }
 
@@ -69,7 +69,7 @@ namespace Statecraft.Sim
         }
 
         /// <param name="share">The share of each numeric effect that applies: 1, except for a disloyal minister's delegation (R-EVT-003).</param>
-        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0)
+        static void Resolve(Content c, GameState s, string eventId, EventOption o, string how, List<Cause> why, double share = 1.0, bool delegated = false, Person? minister = null)
         {
             s.PendingEvents.Remove(eventId);
             s.ChosenOptions[eventId] = o.Id;
@@ -77,7 +77,11 @@ namespace Statecraft.Sim
             var title = Title(c, s, Get(c, eventId));
             var variant = Timeline.Variant(c, s, Get(c, eventId));
             var titleHe = variant == null || variant.Title == "";   // the event's title_he names it, as on its card (B1)
-            why.Add(new Cause("events", eventId, 0, $"{how}: {Cabinet.Fill(c, s, o.Text, fillDate)}"));
+            var localizedTitle = HebrewTitle(c, s, Get(c, eventId));
+            why.Add(new Cause("events", eventId, 0, $"{how}: {Cabinet.Fill(c, s, o.Text, fillDate)}",
+                key: !delegated ? CauseKeys.EventChosen : share < 1 ? CauseKeys.EventDelegatedPartial : CauseKeys.EventDelegated,
+                args: new[] { Cabinet.Fill(c, s, o.Text, fillDate), SnapshotText(c, s, fillDate, o.Text, o.TextHe),
+                    minister?.Name ?? "", minister == null ? "" : LocalName(minister) }));
             foreach (var fx in o.Effects.Where(fx => Reaches(s, fx.Target)))
             {
                 var delta = fx.Delta * share;
@@ -85,7 +89,8 @@ namespace Statecraft.Sim
                 if (fx.Target == "treasury")
                 {
                     // R-MONEY-003: the cost first, then what was borrowed for it, as every other payment borrows.
-                    why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));
+                    why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
+                        key: CauseKeys.EventAmount, args: Context(title, localizedTitle)));
                     if (delta < 0) EconomySystem.PayOrBorrow(c, s, -delta, $"for {title}", why, CauseKeys.Purpose.Event, eventId, title, titleHe ? "1" : "0");
                     else s.Treasury += delta;
                     continue;
@@ -110,7 +115,8 @@ namespace Statecraft.Sim
                 }
                 else if (fx.Target == "fx_reserves") s.FxReserves += delta;
                 else change = EffectsSystem.Shift(c, s, fx.Target, delta);
-                why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));
+                why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})",
+                    key: fx.Target == Pools.FoodTarget || fx.Target == Pools.ArmsTarget ? CauseKeys.EventStock : CauseKeys.EventAmount, args: Context(title, localizedTitle)));
             }
             // R-EFX-006: the structured effects after the numeric ones, in list order. The loader has checked every target.
             foreach (var g in o.GrantUnits)
@@ -118,7 +124,8 @@ namespace Statecraft.Sim
                 // R-EFX-003 (Q-HFX-2): free; the deal's cost is the option's numeric effects. The units take the next ids.
                 var (place, q, r) = GrantPlace(c, g);
                 for (int i = 0; i < g.N; i++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, g.Type, q, r)); }
-                why.Add(new Cause("events", g.Type, g.N, $"{Granted(g, place)} ({title})"));
+                why.Add(new Cause("events", g.Type, g.N, $"{Granted(g, place)} ({title})",
+                    key: CauseKeys.EventGrant, args: Context(title, localizedTitle, GrantCity(c, g))));
             }
             foreach (var x in o.CityEffects)
             {
@@ -132,7 +139,8 @@ namespace Statecraft.Sim
                     if (city.Condition is not double now) continue;
                     var condition = Math.Min(1.0, Math.Max(0.0, now + x.Delta));
                     s.Cities[x.City] = city.WithCondition(condition);
-                    why.Add(new Cause("events", x.City + "." + x.Field, condition - now, $"{CityChange(c, x.City, x.Field, condition - now)} ({title})"));
+                    why.Add(new Cause("events", x.City + "." + x.Field, condition - now, $"{CityChange(c, x.City, x.Field, condition - now)} ({title})",
+                        key: CauseKeys.EventCity, args: Context(title, localizedTitle, x.City, x.Field)));
                     continue;
                 }
                 var delta = (int)x.Delta;
@@ -140,15 +148,17 @@ namespace Statecraft.Sim
                 var jobs = x.Field == JobsField ? Math.Max(city.Employed, city.JobSlots + delta) : city.JobSlots;
                 s.Cities[x.City] = new City(city.Id, housing, jobs, city.Civilians, city.Employed, city.Refugees, city.Recruits, city.Condition, city.Craftsmen, city.JobsDefault, city.Qualified);
                 var applied = housing - city.HousingCapacity + jobs - city.JobSlots;
-                why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})"));
+                why.Add(new Cause("events", x.City + "." + x.Field, applied, $"{CityChange(c, x.City, x.Field, applied)} ({title})",
+                    key: CauseKeys.EventCity, args: Context(title, localizedTitle, x.City, x.Field)));
             }
             // R-EFX-008: after the city effects. A kind already unlocked stays so, with no second cause.
             foreach (var kind in o.UnlockProjects)
-                if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})"));
+                if (s.UnlockedProjects.Add(kind)) why.Add(new Cause("events", kind, 1, $"{Unlocked(c, kind)} ({title})", key: CauseKeys.EventUnlock, args: Context(title, localizedTitle)));
             foreach (var kv in o.SetPolicy.Where(k => s.Policies.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Policies[kv.Key] = kv.Value;
-                why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})"));
+                why.Add(new Cause("events", kv.Key, kv.Value, $"{PlayerText.Target(c, kv.Key)} set to {PlayerText.Percent(kv.Value)} ({title})",
+                    key: CauseKeys.EventPolicy, args: Context(title, localizedTitle)));
             }
             if (o.SetRung.HasValue) SecuritySystem.SetRung(c, s, o.SetRung.Value, why);
             // R-POW-004: an exchange card returns its front's prisoners, whichever way it was resolved (it has one option).
@@ -200,8 +210,27 @@ namespace Statecraft.Sim
         {
             var rows = new List<OptionEffectPreview>();
             void Add(OptionEffectPreviewKind kind, string target, double delta, string message, string contextId, string contextName,
-                string amount, string field = "") =>
-                rows.Add(new OptionEffectPreview(new Cause("events", target, delta, message), kind, contextId, contextName, amount, field));
+                string amount, string field = "")
+            {
+                var key = kind switch
+                {
+                    OptionEffectPreviewKind.Amount => CauseKeys.EventAmount,
+                    OptionEffectPreviewKind.Stock => CauseKeys.EventStock,
+                    OptionEffectPreviewKind.UnitGrant => CauseKeys.EventGrant,
+                    OptionEffectPreviewKind.City => CauseKeys.EventCity,
+                    OptionEffectPreviewKind.ProjectUnlock => CauseKeys.EventUnlock,
+                    OptionEffectPreviewKind.SetPolicy => CauseKeys.EventPolicy,
+                    OptionEffectPreviewKind.SetRung => CauseKeys.EventSetRung,
+                    OptionEffectPreviewKind.Rejoin => CauseKeys.EventRejoin,
+                    _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+                };
+                var args = kind == OptionEffectPreviewKind.UnitGrant ? Context("", "", contextId)
+                    : kind == OptionEffectPreviewKind.City ? Context("", "", contextId, field)
+                    : kind == OptionEffectPreviewKind.Rejoin ? Context("", "", contextName,
+                        SnapshotText(c, s, s.Date, c.Events.First(e => e.Id == contextId).Title, c.Events.First(e => e.Id == contextId).TitleHe))
+                    : Context("", "");
+                rows.Add(new OptionEffectPreview(new Cause("events", target, delta, message, key: key, args: args), kind, contextId, contextName, amount, field));
+            }
 
             foreach (var fx in o.Effects.Where(fx => Reaches(s, fx.Target)))
             {
@@ -248,6 +277,20 @@ namespace Statecraft.Sim
             return rows;
         }
 
+        // C136: presentation snapshots only. No parsing of English Message and no decision/RNG/state change.
+        // Resolve content placeholders at the same historical date before later appointments can change their names.
+        static string LocalName(Person p) => p.NameHe != "" ? p.NameHe : p.Name;
+        static string SnapshotText(Content c, GameState s, DateTime date, string english, string hebrew) =>
+            Cabinet.Fill(c, s, hebrew != "" ? hebrew : english, date, hebrew != "" ? LocalName : (Func<Person, string>?)null);
+        static string HebrewTitle(Content c, GameState s, GameEvent e)
+        {
+            var variant = Timeline.Variant(c, s, e);
+            return variant != null && variant.Title != "" ? Title(c, s, e)
+                : SnapshotText(c, s, FillDate(e, s.Date), e.Title, e.TitleHe);
+        }
+        static string[] Context(string englishTitle, string hebrewTitle, params string[] values) =>
+            new[] { englishTitle, hebrewTitle }.Concat(values).ToArray();
+
         /// <summary>The minister <see cref="Delegate"/> hands the event to in this state: its office's holder today, or null
         /// (no office, or nobody holds it: the cabinet decides). Simulation.DelegatedTo asks it after the queued orders.</summary>
         public static Person? DelegatedTo(Content c, GameState s, GameEvent e) => e.Office == "" ? null : Cabinet.Holder(c, s, e.Office);
@@ -269,7 +312,7 @@ namespace Statecraft.Sim
                 var minister = DelegatedTo(c, s, e);
                 if (e.Objective != "" || e.Prisoners != "")   // R-POW-004: an exchange card, like an objective's, has one option and draws nothing
                 {
-                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why);
+                    Resolve(c, s, id, e.Options[0], $"delegated to {minister?.Name ?? "the cabinet"}", why, delegated: true, minister: minister);
                     continue;
                 }
                 var competence = (minister?.Competence ?? 5) / 10.0;
@@ -280,7 +323,7 @@ namespace Statecraft.Sim
                 var share = anchored == null && mvp != null && minister != null && minister.Loyalty < mvp.DelegationLoyaltyFloor
                     ? mvp.DisloyalEffectShare!.Value : 1.0;
                 var how = $"delegated to {minister?.Name ?? "the cabinet"}" + (share < 1 ? ", carried out half-heartedly" : "");
-                Resolve(c, s, id, option, how, why, share);
+                Resolve(c, s, id, option, how, why, share, delegated: true, minister: minister);
             }
             s.RngState = rng.State;
         }
