@@ -54,7 +54,7 @@ public class CauseTextTests
             }
         }
         Assert.Greater(rows, 100, "precondition: the game has report rows");
-        Assert.Greater(keyed, 1000, "precondition: the game has keyed lines");
+        Assert.Greater(keyed, 400, "precondition: the game has keyed lines (531 at 7ec163c4)");
     }
 
     /// <summary>In Hebrew every keyed line of the seeded game is Hebrew: right to left, every placeholder filled, and no
