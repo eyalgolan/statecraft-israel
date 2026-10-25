@@ -143,8 +143,15 @@ namespace Statecraft.Game.UI
                 row.Add(heading);
                 if (line.Causes.Count > 0)
                 {
-                    var causes = new Label(string.Join("\n", line.Causes)) { name = "turn-report-causes-" + line.Meter };
-                    causes.AddToClassList("turn-report-causes");
+                    // One label a cause, so each takes its own direction (UiDirection): in Hebrew a line with a key (B1) is
+                    // right to left and a line still in English left to right.
+                    var causes = new VisualElement { name = "turn-report-causes-" + line.Meter };
+                    foreach (var cause in line.Causes)
+                    {
+                        var label = new Label(cause);
+                        label.AddToClassList("turn-report-causes");
+                        causes.Add(label);
+                    }
                     row.Add(causes);
                 }
                 rows.Add(row);

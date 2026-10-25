@@ -643,12 +643,12 @@
         <!-- The name of an icon-only button, beside it on hover and on keyboard focus (HoverTip; UI Toolkit draws `tooltip`
              only in Editor UI). Last, so it draws over the panels; it takes no clicks. -->
         <ui:Label name="hud-tip" class="hud-tip" picking-mode="Ignore" />
-        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. Two
-             lines of their own: the meter in the UI's words, then the sim's causes, which are English (#55), so each label
-             takes its own direction in the Hebrew UI (UiDirection). -->
+        <!-- A top-bar number's explanation under the bar, on hover or after a tap (MeterTip, #1037); it takes no clicks. The
+             meter in the UI's words, then one label per cause: a cause is in the UI's language where it has a key (B1) and in
+             the sim's English where it has none yet (#55), so each label takes its own direction in the Hebrew UI (UiDirection). -->
         <ui:VisualElement name="meter-tip" class="meter-tip" picking-mode="Ignore">
             <ui:Label name="meter-tip-words" class="meter-tip-line" picking-mode="Ignore" />
-            <ui:Label name="meter-tip-causes" class="meter-tip-line" picking-mode="Ignore" />
+            <ui:VisualElement name="meter-tip-causes" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

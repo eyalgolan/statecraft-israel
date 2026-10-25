@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
 using Statecraft.Game.UI;
@@ -29,7 +30,8 @@ public class MeterTipTests
     /// <summary>Shown only when MeterTip set it so (an unset inline display reads as Flex, the default).</summary>
     internal static bool Shown(VisualElement tip) => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
     static string Words(VisualElement root) => root.Q<Label>("meter-tip-words").text;
-    static string CausesLine(VisualElement root) => root.Q<Label>("meter-tip-causes").text;
+    /// <summary>The tip's causes, one label each (B1), joined a line each.</summary>
+    static string CausesLine(VisualElement root) => string.Join("\n", root.Q("meter-tip-causes").Query<Label>().ToList().Select(l => l.text));
 
     /// <summary>After the fixed opening turn, at 1280x720 and 390x844 in English and Hebrew: hovering the bar's first and
     /// last numbers shows each one's words and the sim's causes under the bar and inside the window; leaving hides it.</summary>
