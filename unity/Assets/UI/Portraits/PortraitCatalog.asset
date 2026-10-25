@@ -85,6 +85,9 @@ MonoBehaviour:
   - personId: dori
     image: {fileID: 2800000, guid: 7ec048d34e0e45a7adc5115351c9d4df, type: 3}
     focusY: 0.3
+  - personId: dayan
+    image: {fileID: 2800000, guid: 7fb530d514e93429ab298ab0a2028c29, type: 3}
+    focusY: 0.37
   - personId: efrati
     image: {fileID: 2800000, guid: 4dd54ceeb228b42d78fb51f76da9ecc8, type: 3}
     focusY: 0.47

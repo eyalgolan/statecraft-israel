@@ -67,6 +67,29 @@ public class AdvisorPopupTests
 
     static bool Displayed(Button b) => b.style.display.value != DisplayStyle.None;
 
+    /// <summary>Spec 3.2: a real quote shows only from the verified list, styled as a quote with its source under it; the
+    /// advisor's own line stays plain game dialogue.</summary>
+    [Test]
+    public void AQuoteShowsWithItsSourceAndOnlyThere()
+    {
+        using var rig = new Rig(catalog: Fixture.Replace("level: new, actions: [{ open_screen: budget }]", "level: new, quote: q1"));
+        rig.Advisor.NewGame();
+        Assert.AreEqual(En["advisor.quote.q1.text"], rig.Ui.Q<Label>("advisor-quote").text);
+        Assert.AreEqual(En["advisor.quote.q1.source"], rig.Ui.Q<Label>("advisor-quote-source").text);
+        Assert.AreEqual("Teach.", rig.Ui.Q<Label>("advisor-text").text, "the advisor's own line stays plain");
+        rig.Ui.Press("advisor-got-it");
+        rig.EndTurn();
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Label>("advisor-quote").style.display.value, "a message without a quote shows none");
+    }
+    [Test]
+    public void AnUnverifiedQuoteNeverShowsEvenInAnUncheckedFixture()
+    {
+        using var rig = new Rig(catalog: Fixture.Replace("level: new, actions: [{ open_screen: budget }]", "level: new, quote: q9"));
+        rig.Advisor.NewGame();
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Label>("advisor-quote").style.display.value);
+        Assert.AreEqual("", rig.Ui.Q<Label>("advisor-quote-source").text);
+    }
+
     [Test]
     public void ATeachingMessageShowsItsAdvisorTextAndButtons()
     {

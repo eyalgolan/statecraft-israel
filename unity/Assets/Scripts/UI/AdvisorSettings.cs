@@ -12,7 +12,7 @@ namespace Statecraft.Game.UI
     public sealed class AdvisorSettings
     {
         public const string LevelKey = "advisor_level", SeenKey = "advisor_seen", OpeningKey = "advisor_opening";
-        /// <summary>The first-turn guide's line (spec 9.3: honoured, so a player who saw the guide gets no chain by itself).</summary>
+        /// <summary>The legacy first-turn guide's saved line (spec 9.3: honoured, so a player who saw the guide gets no chain by itself).</summary>
         public const string GuideSeenKey = "first_turn_guide";
         /// <summary>Spec 6, from the chattiest; a message shows when its level's index (AdvisorCatalog.Levels) is at least this one's.</summary>
         public static readonly string[] Levels = { "new", "experienced", "warnings", "off" };
@@ -34,12 +34,16 @@ namespace Statecraft.Game.UI
         public bool HasFile => store != null;
         public string Level { get; private set; }
         public int LevelRank => Array.IndexOf(Levels, Level);
+        /// <summary>The help level changed (Settings): the popup applies it at once (spec 6).</summary>
+        public event Action? LevelChanged;
 
         public void SetLevel(string level)
         {
             if (Array.IndexOf(Levels, level) < 0) throw new ArgumentException("unknown help level: " + level, nameof(level));
+            if (level == Level) return;
             Level = level;
             Write(LevelKey, level);
+            LevelChanged?.Invoke();
         }
 
         public bool Seen(string id) => seen.Contains(id);

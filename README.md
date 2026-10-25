@@ -130,6 +130,8 @@ flowchart LR
 
 ## Play
 
+<iframe frameborder="0" src="https://itch.io/embed/5179460" width="552" height="167"><a href="https://eyalgolan.itch.io/statecraft-israel">Statecraft: Israel by eyalgolan</a></iframe>
+
 Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.2.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.1), a pre-release) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
@@ -180,9 +182,9 @@ You need Unity **6000.3.25f1 (6.3 LTS)** with Web Build Support; the exact versi
 
 This project is built with heavy AI assistance, disclosed here using itch.io's categories:
 - **Code:** written with AI coding agents and reviewed through tests and review gates.
-- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. Tal Heuberger made the 3D models with Tripo, an AI 3D tool. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such.
+- **Graphics:** the concept and promo images in `promo/` are AI-generated, as is the start screen's painting, and the web page's tab icon was drawn with AI help. Tal Heuberger made the 3D models with Tripo, an AI 3D tool. The game's terrain comes from real elevation data. The portraits are public-domain, CC0, CC BY 4.0 or CC BY-SA 4.0 photographs (credited in NOTICE), and the event cards use archival photographs; on some cards an Illustration switch plays a short, silent AI-generated loop, and a few historical orders show a short AI-generated clip at End turn, both labelled as such. Some advisor lines have a short clip of the advisor speaking: a real archival photograph, colorized or tinted, animated and lip-synced with AI, labelled "AI animation and voice. Fictional dialogue." and credited.
 - **Text:** event and content text was drafted with AI, and every fact is checked against the cited source.
-- **Sound:** the game's three short sound effects (turn ended, refused order, event card) were made with ElevenLabs, and the trailer's music is AI-generated (ElevenLabs Music). The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives).
+- **Sound:** the game's three short sound effects (turn ended, refused order, event card) were made with ElevenLabs, and the trailer's music is AI-generated (ElevenLabs Music). The start screen can play the original 1948 recording of Ben-Gurion reading the Declaration (Israel State Archives). The advisors' clip voices are synthetic (ElevenLabs and Fish Audio voice clones made from Israel State Archives recordings) and speak game dialogue, never quotes.
 
 Nothing is generated live while you play.
 
