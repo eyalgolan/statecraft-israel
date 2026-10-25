@@ -417,9 +417,9 @@ namespace Statecraft.Game.UI
             // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
             Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
-            Action<int, int> onHex = (q, r) =>
+            Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
-                OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
+                OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen, cityPill);
                 if (info.ShowsUnit) advisor?.Notice(AdvisorSignals.UnitShown);
                 else if (info.Selected is (int sq, int sr) && bridge.Content.SettlementHexes.Any(h => h.Q == sq && h.R == sr && bridge.State.Cities.ContainsKey(h.Id)))
                     advisor?.Notice(AdvisorSignals.CityShown);
@@ -642,13 +642,21 @@ namespace Statecraft.Game.UI
         /// hex moves it; a click on another unit's hex or on a city selects that unit or shows the city, as in Civ, lit or
         /// not (owner, 25 Oct 2026: "Clicking another unit or a city still selects it"; a right click moves there:
         /// OnHexOrdered).</summary>
-        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
+        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false, bool cityPill = false)
         {
             if (info.Covered)
             {
                 // A screen covers the panel: the click moves neither the ring nor the card (#210), and MapPointer's outline
                 // goes back to the hex the panel shows (or away, while it shows a unit).
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
+                return;
+            }
+            // #1661: a name pill means the city even when another unit stands there. A badge/terrain or keyboard
+            // pick keeps the existing unit-first routing; the event carries intent, not a mutable "last hit" flag.
+            if (cityPill && info.IsCity(q, r))
+            {
+                units.Select(null);
+                info.Show(q, r);
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
