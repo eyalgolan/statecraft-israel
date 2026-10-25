@@ -49,9 +49,9 @@ public class HebrewValuesTests
     [Test]
     public void APrefixJoinsAHebrewValueAndTakesAMaqafBeforeADigitOrLatinLetters()
     {
-        Assert.AreEqual("ליחידה בהרצליה אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "הרצליה"));
-        Assert.AreEqual("ליחידה בתל אביב אין משבצת פנויה סמוכה לסגת אליה.", He.Format("capture.refusal.no_free_hex", "תל אביב"));
-        Assert.AreEqual("ליחידה ב־" + Lrm + "Herzliya" + Lrm + " אין משבצת פנויה סמוכה לסגת אליה.",
+        Assert.AreEqual("ליחידה בהרצליה אין משושה פנוי סמוך שאפשר לסגת אליו.", He.Format("capture.refusal.no_free_hex", "הרצליה"));
+        Assert.AreEqual("ליחידה בתל אביב אין משושה פנוי סמוך שאפשר לסגת אליו.", He.Format("capture.refusal.no_free_hex", "תל אביב"));
+        Assert.AreEqual("ליחידה ב־" + Lrm + "Herzliya" + Lrm + " אין משושה פנוי סמוך שאפשר לסגת אליו.",
             He.Format("capture.refusal.no_free_hex", "Herzliya"));
         Assert.AreEqual("ב־" + Lrm + "3" + Lrm + " אין מים עבור דיור", He.Format("city.project_reason.no_resource", "3", "מים", "דיור"));
         // The value itself unprefixed is left as it was.

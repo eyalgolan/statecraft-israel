@@ -14,7 +14,8 @@ messages:
 # The opening chain (spec 9.2): shown once on the first new game, step by step, each pointing at the part of the HUD the
 # first-turn guide pointed at; its event step speaks before the card opens, and its Show me opens the card (spec 9.3).
 # The seven opening lines' Hebrew: approved by the owner, a native speaker, in chat on 24 October 2026 (about 11:42 IDT):
-# "Approved".
+# "Approved". opening.move's Hebrew (text and cue.2, בתורות הבאות) changed with a new approval: native review: owner,
+# 25 Oct 2026 (recommendations page, item 3).
   - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: approved, media: { picture: opening.greeting.mp4, narration: { en: opening.greeting.en.wav }, cues: { en: [0.00, 4.31, 6.64] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
 # opening.attention and opening.event: copy-fix wording approved by the owner in chat, 24 October 2026, 04:14 UTC: "Approve all 8".
   - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.greeting], actions: [{ show_me: attention }], media: { picture: opening.attention.mp4, narration: { en: opening.attention.en.wav }, cues: { en: [0.00, 4.44] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
@@ -36,7 +37,8 @@ messages:
 # to their Hebrew sets them back to pending. The other five rows' Hebrew is approved by the owner too (24 October 2026,
 # asked about the S4 warning and teaching lines: "approved"), defeat_economy with תורות (so שלוש, not שלושה), the
 # owner's later ruling the same day, "plural of תור is תורות", which reverses the sheet's grammar fix; any later change
-# to their Hebrew sets them back to pending.
+# to their Hebrew sets them back to pending. dayan.city_at_risk (text and cue.2) and dayan.arms_out (text and cue.1)
+# changed with a new approval: native review: owner, 25 Oct 2026 (recommendations page, items 10 and 9).
   - { id: dayan.city_at_risk, advisor: dayan, signal: city_at_risk, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: defence }], media: { picture: dayan.city_at_risk.mp4, narration: { en: dayan.city_at_risk.en.wav }, cues: { en: [0.00, 4.90] }, label: advisor.media_label, credit: advisor.credit.dayan } }
   - { id: meyerson.exhausted, advisor: meyerson, signal: exhausted, level: critical, he_review: approved, priority: 3, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }], media: { picture: meyerson.exhausted.mp4, narration: { en: meyerson.exhausted.en.wav }, cues: { en: [0.00, 3.63] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
   - { id: meyerson.debt_ceiling, advisor: meyerson, signal: in_debt, when: { debt_ratio_at_least: 1 }, level: critical, he_review: approved, priority: 2, repeat: every, cooldown_turns: 3, actions: [{ open_screen: budget }], media: { picture: meyerson.debt_ceiling.mp4, narration: { en: meyerson.debt_ceiling.en.wav }, cues: { en: [0.00, 2.63] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
