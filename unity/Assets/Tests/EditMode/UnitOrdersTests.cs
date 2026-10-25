@@ -875,7 +875,8 @@ public class UnitOrdersTests
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical); var bridge = new SimBridge(g, text);
         var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
         PlacedToken? selected = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
-        using var info = new InfoPanelPresenter(ui.Root, bridge, text, new Dictionary<string, string>(), selectedUnit: () => selected);
+        var towns = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+        using var info = new InfoPanelPresenter(ui.Root, bridge, text, towns, selectedUnit: () => selected);
         using var nav = new ScreenNav(ui.Root);
         static void Cancel(VisualElement target)
         {

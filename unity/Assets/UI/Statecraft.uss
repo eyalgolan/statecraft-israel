@@ -1080,4 +1080,4 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* Playtest B11: Move, Fortify and Hold wrap as one group, so Hold is never left alone on a line; a small window wraps inside it. */
 .info-primary-orders { flex-wrap: wrap; max-width: 100%; flex-shrink: 0; }
 /* Playtest B6: the city's name over its block on a hex that holds two cities (GddHexPanel.CityNameClass). */
-.city-part-name { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); color: var(--gold-light); margin-top: 6px; }
+.city-part-name { -unity-font-style: bold; color: var(--gold-light); margin-top: 6px; }

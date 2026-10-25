@@ -161,7 +161,7 @@ public class CityPanelTests
         var order = bridge.QueuedLike(new AssignWorkers(City, "job", 0)) as AssignWorkers;
         Assert.IsNotNull(order, "the stepper queues an AssignWorkers order");
         Assert.AreEqual(employed - 1, order!.Count);
-        Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", employed - 1)), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count");
+        Assert.AreEqual(En.Format("city.workers_ordered", En.Format("city.groups", employed - 1)), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count, at End turn (playtest B7)");
         UiTestKit.Press(ui.Q<Button>("city-workers-more"));
         Assert.IsNull(bridge.QueuedLike(new AssignWorkers(City, "job", 0)), "back at the current count: no order is left queued");
     }
