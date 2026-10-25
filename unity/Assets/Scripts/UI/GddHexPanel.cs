@@ -46,7 +46,12 @@ namespace Statecraft.Game.UI
             if (c.IsGdd)
             {
                 foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
-                    City(host, bridge, text, at.Id);
+                {
+                    var part = new VisualElement { name = "city-part-" + at.Id };
+                    host.Add(part);
+                    Line(part, "city-name", townName(at.Id)).AddToClassList("title");
+                    City(part, bridge, text, at.Id);
+                }
                 var cityHere = host.childCount > 0;
                 // A hex may hold two sites, a yishuv or the Hula swamp and the field it readies (R-FIELD-001, R-SWAMP-001): each
                 // gets its own part, the one to finish first on top, and its name is the title (#1124).
@@ -106,8 +111,10 @@ namespace Statecraft.Game.UI
             var max = Cities.MaxWorkers(s, id, bridge.Queued);
             var workers = Row(host, "city-workers-row");
             Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
-            Line(workers, "city-workers", text.Format("city.workers", Groups(text, target)));
+            Line(workers, "city-workers", text.Format(queued == null ? "city.workers" : "city.workers_ordered", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
+            // Same per-order price as the queue: changing an existing target does not buy another order.
+            Line(host, "city-workers-cost", text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
             // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's

@@ -17,6 +17,9 @@ namespace Statecraft.Game.UI
     /// and Send home after the unit's front signs its armistice (#1309).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
+        readonly System.Action? clearSelection;
+        readonly EventCallback<NavigationCancelEvent> onCancel;
+
         /// <summary>The class of a fact row (Game.uxml): a sign, then the fact's line; hidden while the line is empty.</summary>
         public const string RowClass = "info-row";
         /// <summary>On the panel while it shows a unit's card: the rows keep their lines but drop the hex signs (Statecraft.uss).</summary>
@@ -90,9 +93,12 @@ namespace Statecraft.Game.UI
             System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
             System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, System.Func<int, string?>? unitName = null,
             System.Action? unitDone = null,
-            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null)
+            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
+            this.clearSelection = clearSelection;
+            onCancel = e => { if (!e.isPropagationStopped && Escape()) e.StopPropagation(); };
+            panel.RegisterCallback(onCancel);
             this.settlementNames = settlementNames; this.regions = regions; this.localitiesAt = localitiesAt; this.townHex = townHex;
             this.townNamesHe = townNamesHe;
             title = panel.Q<Label>("info-title"); subtitle = panel.Q<Label>("info-subtitle"); region = panel.Q<Label>("info-region"); settlements = panel.Q<Label>("info-settlements");
@@ -147,13 +153,23 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
+        public void Dispose() { panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
         /// the left column (InfoPanelLayoutTests).</summary>
         public const float ShortBelowPx = 1040f;
         public const string ShortClass = "info-short";
+
+        /// <summary>Escape dismisses a reachable selection and its pick, without queuing an order. Covers keep priority.</summary>
+        public bool Escape()
+        {
+            var hud = panel.parent;
+            if (Covered || !panel.enabledInHierarchy || hud?.ClassListContains(ScreenNav.ScreenOpenClass) == true
+                || (Selected == null && !ShowsUnit)) return false;
+            Clear(); clearSelection?.Invoke();
+            return true;
+        }
 
         public (int q, int r)? Selected { get; private set; }
 

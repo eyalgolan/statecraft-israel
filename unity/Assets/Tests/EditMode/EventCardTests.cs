@@ -752,4 +752,20 @@ sources: [{ url: ""https://example.org/record"", checked: 2026-10-17 }]
         card.Render();
         Assert.AreEqual(He.Format("event.alt_origin", "הדרך שלא נבחרה", "A different road title", "מה שקרה"), ui.Q<Label>("event-alt-banner").text);
     }
+    [TestCase(false, 1)] [TestCase(false, 2)] [TestCase(true, 1)] [TestCase(true, 2)]
+    public void MoreDecisionsUseARealPlural(bool hebrew, int remaining)
+    {
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        g.State.Date = new System.DateTime(1948, 6, 15);
+        g.State.PendingEvents.Clear();
+        foreach (var e in C.Events.Take(remaining + 1)) g.State.PendingEvents.Add(e.Id);
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, new SimBridge(g, text), text, null);
+        Assert.IsNotNull(card.Shown, "precondition: a pending card shows");
+        string actual = ui.Q<Label>("event-count").text;
+        if (hebrew) Assert.AreEqual(text.Format("event.more", remaining), actual, "Hebrew retains the existing count label");
+        else Assert.AreEqual(remaining == 1 ? "1 more decision waiting" : "2 more decisions waiting", actual);
+    }
+
 }

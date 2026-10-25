@@ -1074,3 +1074,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .advisor-no-portrait.advisor-has-media .advisor-portrait { display: flex; }
 
 .advisor-watching .advisor-head > .advisor-portrait, .advisor-watching .advisor-head > .advisor-names { display: none; }
+
+/* C120/B11: the ordinary stacked laptop has room for the caption's natural line; the compact/phone tiers retain wrapping. */
+.top-bar--caption-line .meter .meter-name { max-width: none; white-space: nowrap; }
+/* Keep Move/Fortify/Hold together before the outer action row wraps. Inside the group small windows may still wrap. */
+.info-primary-orders { flex-wrap: wrap; max-width: 100%; flex-shrink: 0; }

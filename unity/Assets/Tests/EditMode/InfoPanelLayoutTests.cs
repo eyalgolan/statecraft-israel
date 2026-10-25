@@ -495,4 +495,26 @@ public class InfoPanelLayoutTests
             }
         });
     }
+    [UnityTest]
+    public IEnumerator LaptopPrimaryUnitOrdersStayTogether([Values(false, true)] bool hebrew)
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var data = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var token = Statecraft.Game.Map.Units.UnitRoster.FromState(data, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        Statecraft.Game.Map.Units.PlacedToken? selected = new Statecraft.Game.Map.Units.PlacedToken(token, new Statecraft.Game.Map.Units.AnchorSpot(0, 0, 0, 0, false));
+        yield return Rendered(1512, 982, g, (root, info) => info.ShowUnit(), root =>
+        {
+            var move = root.Q("info-move"); var fortify = root.Q("info-fortify"); var hold = root.Q("info-hold");
+            foreach (var b in new[] { move, fortify, hold })
+            {
+                Assert.IsTrue(Shown(b), b.name + " precondition");
+                Assert.Greater(b.worldBound.width, 0f, b.name + " is laid out");
+                Assert.IsTrue(Inside(b.worldBound, root.Q("info-panel").worldBound), b.name + " stays inside the panel");
+            }
+            Assert.That(fortify.worldBound.yMin, Is.EqualTo(move.worldBound.yMin).Within(1f));
+            Assert.That(hold.worldBound.yMin, Is.EqualTo(move.worldBound.yMin).Within(1f), "Hold does not get stranded on a line of its own");
+        }, text: text, hebrew: hebrew, unit: () => selected);
+    }
+
 }
