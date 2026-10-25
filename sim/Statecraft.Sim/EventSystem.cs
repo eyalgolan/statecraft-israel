@@ -75,6 +75,8 @@ namespace Statecraft.Sim
             s.ChosenOptions[eventId] = o.Id;
             var fillDate = FillDate(Get(c, eventId), s.Date);
             var title = Title(c, s, Get(c, eventId));
+            var variant = Timeline.Variant(c, s, Get(c, eventId));
+            var titleHe = variant == null || variant.Title == "";   // the event's title_he names it, as on its card (B1)
             why.Add(new Cause("events", eventId, 0, $"{how}: {Cabinet.Fill(c, s, o.Text, fillDate)}"));
             foreach (var fx in o.Effects.Where(fx => Reaches(s, fx.Target)))
             {
@@ -84,7 +86,7 @@ namespace Statecraft.Sim
                 {
                     // R-MONEY-003: the cost first, then what was borrowed for it, as every other payment borrows.
                     why.Add(new Cause("events", fx.Target, change, $"{PlayerText.Change(c, fx.Target, change)} ({title})"));
-                    if (delta < 0) EconomySystem.PayOrBorrow(c, s, -delta, $"for {title}", why);
+                    if (delta < 0) EconomySystem.PayOrBorrow(c, s, -delta, $"for {title}", why, CauseKeys.Purpose.Event, eventId, title, titleHe ? "1" : "0");
                     else s.Treasury += delta;
                     continue;
                 }

@@ -45,7 +45,8 @@ namespace Statecraft.Sim
         {
             rung = ClampRung(rung);
             s.CeasefireWeeksLeft = CeasefireWeeksAfter(c, s.Date, s.Rung, s.CeasefireWeeksLeft, rung);
-            if (rung != s.Rung) why.Add(new Cause("security", "rung", rung - s.Rung, FormattableString.Invariant($"Security level {s.Rung} to {rung}")));
+            if (rung != s.Rung) why.Add(new Cause("security", "rung", rung - s.Rung, FormattableString.Invariant($"Security level {s.Rung} to {rung}"),
+                key: CauseKeys.RungChanged, args: new[] { CauseKeys.Number(s.Rung), CauseKeys.Number(rung) }));
             s.Rung = rung;
             RaiseToFloor(c, s, why);
             if (c.IsGdd) SendHomeToFloor(c, s, why);
@@ -56,7 +57,7 @@ namespace Statecraft.Sim
         {
             if (!(level >= 0 && level <= 1)) return "Mobilization must be between 0 and 1";
             s.Mobilization = level;
-            why.Add(new Cause("security", "mobilization", level, $"reserve call-up set to {PlayerText.Percent(level)}"));
+            why.Add(new Cause("security", "mobilization", level, $"reserve call-up set to {PlayerText.Percent(level)}", key: CauseKeys.CallUpSet));
             RaiseToFloor(c, s, why);
             return null;
         }
@@ -67,7 +68,8 @@ namespace Statecraft.Sim
             var floor = MinMobilization(c, s.Date, rung);
             if (s.Mobilization < floor)
             {
-                why.Add(new Cause("security", "mobilization", floor - s.Mobilization, FormattableString.Invariant($"reserve call-up raised to {PlayerText.Percent(floor)}, the minimum for security level {rung}")));
+                why.Add(new Cause("security", "mobilization", floor - s.Mobilization, FormattableString.Invariant($"reserve call-up raised to {PlayerText.Percent(floor)}, the minimum for security level {rung}"),
+                    key: CauseKeys.CallUpRaised, args: new[] { CauseKeys.Number(floor), CauseKeys.Number(rung) }));
                 s.Mobilization = floor;
             }
         }
@@ -81,7 +83,8 @@ namespace Statecraft.Sim
             var floor = MinMobilization(c, s.Date, rung);
             if (s.Mobilization > floor)
             {
-                why.Add(new Cause("security", "mobilization", floor - s.Mobilization, FormattableString.Invariant($"reserves sent home: call-up lowered to {PlayerText.Percent(floor)}, the minimum for security level {rung}")));
+                why.Add(new Cause("security", "mobilization", floor - s.Mobilization, FormattableString.Invariant($"reserves sent home: call-up lowered to {PlayerText.Percent(floor)}, the minimum for security level {rung}"),
+                    key: CauseKeys.CallUpLowered, args: new[] { CauseKeys.Number(floor), CauseKeys.Number(rung) }));
                 s.Mobilization = floor;
             }
         }
@@ -103,7 +106,7 @@ namespace Statecraft.Sim
             s.CeasefireWeeksLeft = Math.Max(0, s.CeasefireWeeksLeft - weeks);
             if (s.CeasefireWeeksLeft == 0)
             {
-                why.Add(new Cause("security", "ceasefire", 0, "UN ceasefire imposed: full war ends"));   // the rung cause SetRung adds carries the -2
+                why.Add(new Cause("security", "ceasefire", 0, "UN ceasefire imposed: full war ends", key: CauseKeys.Ceasefire));   // the rung cause SetRung adds carries the -2
                 SetRung(c, s, 3, why);
             }
         }

@@ -201,7 +201,7 @@ public class InfoPanelLayoutTests
     }
 
     /// <summary>GDD Phase 5 PR 15, slices 1 to 3 (#754): Golani's card at the start with its Move, Fortify and Hold buttons,
-    /// as it is, picking a Move's hex (the pick line under the card's lines), with Fortify queued (its line), after the
+    /// as it is, picking a Move's hex (the pick line under the card's lines, there from the selection too), with Fortify queued (its line), after the
     /// armistices with Send home offered (#1309: its button) and queued (its line, and no other order: #1527's follow-up), on the turn
     /// after a Hold (Hold refused, with the sim's reason), and picking an Attack's hex (an enemy put in its reach if none is) (the
     /// pick line, the enemy's name, strength ratio and outcome bands), at every window size in English and Hebrew: the panel lies in the
@@ -237,8 +237,10 @@ public class InfoPanelLayoutTests
                         if (Shown(move) == goingHome) { problems.Add($"{at}: precondition: the Move button shows unless the unit is going home"); return; }
                         if (Shown(root.Q<Button>("info-send-home")) != (state == "armistice")) problems.Add($"{at}: Send home visibility");
                         var lines = root.Q<Label>("info-settlements").text;
-                        foreach (var (key, when) in new[] { ("unit.move_pick", "info-move"), ("unit.fortify_queued", "info-fortify"), ("unit.send_home_queued", "info-send-home"), ("unit.attack_pick", "info-attack") })
-                            if (lines.Contains((hebrew ? he : Text)[key]) != (state == when)) problems.Add($"{at}: {key} shows: {state != when}");
+                        // A unit that can move has its Move pick open from the selection (owner, 25 Oct 2026): its line shows in
+                        // every state but going home (no Move) and an Attack's pick.
+                        foreach (var (key, shows) in new[] { ("unit.move_pick", !goingHome && state != "info-attack"), ("unit.fortify_queued", state == "info-fortify"), ("unit.send_home_queued", goingHome), ("unit.attack_pick", state == "info-attack") })
+                            if (lines.Contains((hebrew ? he : Text)[key]) != shows) problems.Add($"{at}: {key} shows: {!shows}");
                         if (Shown(root.Q<Button>("info-hold")) == (state == "holding" || goingHome)) problems.Add($"{at}: precondition: Hold shows only while it is not held and the unit is not going home");
                         if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
                         foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))

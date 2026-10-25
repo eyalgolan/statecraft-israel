@@ -226,8 +226,9 @@ public class UnitsFromStateTests
         Assert.AreEqual(Text["unit.service.army"], ui.Q<Label>("info-subtitle").text);
         var points = C.UnitTypes.Single(t => t.Id == raised.Type).MovementPoints;
         Assert.AreEqual(Text.Format("unit.strength", raised.Strength) + "\n" + Text.Format("unit.home_city", C.SettlementNames[raised.HomeCity])
-            + "\n" + Text.Format("unit.points", points, points),   // #1398 (U1): the card shows the movement points left
-            ui.Q<Label>("info-settlements").text, "strength, home city and movement points, and no empty sector line");
+            + "\n" + Text.Format("unit.points", points, points)   // #1398 (U1): the card shows the movement points left
+            + "\n" + Text["unit.move_pick"],   // owner, 25 Oct 2026: selecting a unit that can move opens its Move pick
+            ui.Q<Label>("info-settlements").text, "strength, home city, movement points and the Move pick, and no empty sector line");
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Button>("info-move").style.display.value);
         Assert.AreEqual(Text["unit.order.move"], ui.Q<Button>("info-move").text);
         info.Dispose();
