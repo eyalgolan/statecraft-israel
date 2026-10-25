@@ -104,16 +104,17 @@ public class AdvisorSignalsTests
     }
 
     /// <summary>The owner approved these Hebrew lines word for word (24 October 2026: "Hebrew approved" for the critical three,
-    /// "approved" for the rest; defeat_economy with תורות and שלוש, the owner's later ruling: "plural of תור is תורות"); a different text
-    /// needs a new approval, so it must also set he_review back to pending.</summary>
-    [TestCase("dayan.city_at_risk", "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע.")]
+    /// "approved" for the rest; defeat_economy with תורות and שלוש, the owner's later ruling: "plural of תור is תורות";
+    /// city_at_risk and arms_out reworded with a new approval, owner, 25 Oct 2026, recommendations page items 10 and 9); a
+    /// different text needs a new approval, so it must also set he_review back to pending.</summary>
+    [TestCase("dayan.city_at_risk", "התקפת אויב מכוונת לאחת מערי המדינה. יש לבדוק את מגיני העיר ואת תחזית הקרב לפני ביצוע שלב האויב.")]
     [TestCase("meyerson.exhausted", "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו.")]
     [TestCase("meyerson.debt_ceiling", "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ.")]
     [TestCase("meyerson.food_short", "בתור הזה המדינה נזקקה ליותר מזון ממה שהיה לה. מחסור במזון גם מוריד את הלכידות החברתית.")]
     [TestCase("dayan.defeat_war", "יחידה צבאית של האויב מחזיקה באחת מערי המדינה בסוף התור. המערכה הסתיימה בתבוסה.")]
     [TestCase("ben_gurion.defeat_economy", "שלוש תורות ברציפות הסתיימו כשהחוב שלנו בתקרה או מעליה ומלאי המזון ריק, וזה מסיים את המשחק.")]
     [TestCase("meyerson.budget_unsubmitted", "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב.")]
-    [TestCase("dayan.arms_out", "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות.")]
+    [TestCase("dayan.arms_out", "אימון צבאי דורש נשק, ונשק נצרך בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות.")]
     public void AnApprovedHebrewLineIsTheTextTheOwnerRead(string id, string hebrew)
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
