@@ -51,7 +51,7 @@ public class TurnReportTests
 
     /// <summary>A row's causes, one label each, in order.</summary>
     static List<string> Causes(UiTestKit ui, string meter) =>
-        ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-causes").ToList().Select(l => l.text).ToList();
+        ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
 
     [Test]
     public void TheFixedTurnReportsEachChangedNumberWithTheSimsOwnCauses()
@@ -246,7 +246,7 @@ public class TurnReportTests
         Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
         // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
         Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
-            k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-causes").ToList().Count);
+            k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 
     /// <summary>The smoke run plays as a player does: it closes each turn's report before the next turn (GameRoot.Smoke).</summary>

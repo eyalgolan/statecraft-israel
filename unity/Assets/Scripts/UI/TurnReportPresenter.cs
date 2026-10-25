@@ -146,10 +146,11 @@ namespace Statecraft.Game.UI
                     // One label a cause, so each takes its own direction (UiDirection): in Hebrew a line with a key (B1) is
                     // right to left and a line still in English left to right.
                     var causes = new VisualElement { name = "turn-report-causes-" + line.Meter };
+                    causes.AddToClassList("turn-report-causes");
                     foreach (var cause in line.Causes)
                     {
                         var label = new Label(cause);
-                        label.AddToClassList("turn-report-causes");
+                        label.AddToClassList("turn-report-cause");
                         causes.Add(label);
                     }
                     row.Add(causes);

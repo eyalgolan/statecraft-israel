@@ -546,7 +546,9 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .turn-report-rows { flex-shrink: 1; min-height: 0; }
 .turn-report-row { margin-bottom: 10px; }
 .turn-report-heading { white-space: normal; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
-.turn-report-causes { white-space: normal; padding-left: 12px; }
+/* A row's causes: one label each (B1: each takes its own direction), set as one block, as the one label was. */
+.turn-report-causes { padding: 4px 2px 4px 14px; margin: 1px 3px; }
+.turn-report-cause { white-space: normal; margin: 0; padding: 0; }
 /* The end screen (#812) reuses the report's backdrop and panel: its outcome in the heading face, one line per part. */
 .end-screen-outcome { white-space: normal; margin-bottom: 10px; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 .end-screen-line { white-space: normal; margin-bottom: 6px; }
