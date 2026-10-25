@@ -1,0 +1,29 @@
+TURN 6 at fix3-en-r5-001-s
+PRESS 1 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-003-after-press)
+PRESS 2 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-008-after-press)
+PRESS 3 'A unit needs orders' -> unit card: Carmeli Brigade (fix3-en-r5-017-after-press)
+PRESS 4 'A unit needs orders' -> unit card: Givati Brigade (fix3-en-r5-024-after-press)
+PRESS 5 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-030-after-press)
+PRESS 6 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-035-after-press)
+PRESS 7 'A unit needs orders' -> unit card: Negev Brigade (fix3-en-r5-041-after-press)
+PRESS 8 'End turn' -> (fix3-en-r5-047-after-press)
+TURN 7 at fix3-en-r5-049-s
+PRESS 9 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-053-after-press)
+PRESS 10 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-058-after-press)
+PRESS 11 'A unit needs orders' -> unit card: Carmeli Brigade (fix3-en-r5-064-after-press)
+PRESS 12 'A unit needs orders' -> unit card: Kiryati Brigade (fix3-en-r5-071-after-press)
+PRESS 13 'A unit needs orders' -> unit card: Givati Brigade (fix3-en-r5-077-after-press)
+PRESS 14 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-083-after-press)
+PRESS 15 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-088-after-press)
+PRESS 16 'End turn' -> (fix3-en-r5-097-after-press)
+TURN 8 at fix3-en-r5-099-s
+PRESS 17 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-105-after-press)
+PRESS 18 'A unit needs orders' -> unit card: Golani Brigade (fix3-en-r5-110-after-press)
+PRESS 19 'A unit needs orders' -> unit card: Carmeli Brigade (fix3-en-r5-116-after-press)
+PRESS 20 'A unit needs orders' -> unit card: Kiryati Brigade (fix3-en-r5-123-after-press)
+PRESS 21 'A unit needs orders' -> unit card: Givati Brigade (fix3-en-r5-129-after-press)
+PRESS 22 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-135-after-press)
+PRESS 23 'A unit needs orders' -> unit card: Etzioni Brigade (fix3-en-r5-140-after-press)
+PRESS 24 'End turn' -> (fix3-en-r5-149-after-press)
+TURN 9 at fix3-en-r5-151-s
+DONE turn=9 needs-orders presses ok=21 bad=0

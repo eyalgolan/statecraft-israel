@@ -1,0 +1,8 @@
+16:17:45 [warning] UNITS no clear spot within one hex of  for givati; not drawn
+16:17:45 [log] UNITS givati (unit 4) drawn compact on its own hex (-1,17)
+16:21:11 [warning] UNITS no clear spot within one hex of  for negev; not drawn
+16:21:11 [warning] UNITS no clear spot within one hex of  for carmeli; not drawn
+16:21:11 [warning] UNITS no clear spot within one hex of  for brigade_7; not drawn
+16:21:11 [log] UNITS negev (unit 7) drawn compact on its own hex (-2,18)
+16:21:11 [log] UNITS carmeli (unit 1) drawn compact on its own hex (-1,16)
+16:21:11 [log] UNITS brigade_7 (unit 13) drawn compact on its own hex (-1,17)
