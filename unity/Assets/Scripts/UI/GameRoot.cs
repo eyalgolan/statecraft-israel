@@ -516,7 +516,7 @@ namespace Statecraft.Game.UI
             };
             Action showUnit = () =>
             {
-                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
+                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token), bridge.Spent) is not string id) return;
                 camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
                 FocusUnit(id);
             };
@@ -527,7 +527,7 @@ namespace Statecraft.Game.UI
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
-                var shownUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                var shownUnit = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token), bridge.Spent);
                 // It reads the UI of the Begin it runs in, so after a language switch rebuilt the UI it still puts back what
                 // the advisor found before (AdvisorSession.ChainState.PutBack).
                 return () =>
