@@ -1,3 +1,4 @@
 ### Fixed
 
-- When End turn finds a unit needing orders, close a side screen that covers its card so the player can see and order the selected unit.
+- When End turn waits for a unit's orders and a screen covers the unit card, it closes that screen, so the player sees
+  the unit it selected and can order it.

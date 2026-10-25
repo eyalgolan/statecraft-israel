@@ -1,3 +1,4 @@
 ### Fixed
 
-- Event effects and military upkeep in the turn report and Why screen use translation keys, including option previews and the event context. English wording is preserved; the new Hebrew is pending native review.
+- The turn report and the Why screen show event effects, option previews, objective completions, prisoner exchanges
+  and military upkeep in the chosen language. The English is unchanged; the new Hebrew awaits native review.

@@ -1,3 +1,4 @@
 ### Fixed
 
-- Arrival messages use the corner placement while the turn report covers a waiting decision card, leaving the report's heading readable.
+- Arrival messages no longer cover the turn report's heading when a decision card waits under the report: they take
+  their corner place until the report closes.
