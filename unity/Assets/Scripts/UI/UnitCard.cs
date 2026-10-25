@@ -34,8 +34,8 @@ namespace Statecraft.Game.UI
         public static int? SimUnit(Content c, GameState s, UnitToken token) =>
             token.SimId is int id ? s.Units.ContainsKey(id) ? id : (int?)null : SimUnit(c, s, token.Unit);
 
-        /// <summary>A raised unit's type on screen (#1396), or null for a type no raised unit has. The card's title and the
-        /// Why lines' unit names (UnitNames, #1399) both read it.</summary>
+        /// <summary>A raised unit's type on screen (#1396), or null for a type no raised unit has: the card's title. The Why
+        /// lines name the unit as one formation instead (unit.name.&lt;type&gt;, UnitNames).</summary>
         public static string? RaisedType(string type, UiText text) => type switch
         {
             "recruit" => text["city.track_recruit"],

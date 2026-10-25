@@ -57,7 +57,7 @@ public class WhyHexPlacesTests
         StringAssert.Contains("אזרחים בתל אביב", UnitNames.Line(new Cause("map", "0", 0, "", key: WhyKeys.SentHome,
             units: new[] { Golani }, args: new[] { "500", "tel_aviv" }), C, Rows, He, NamesHe));
         // NamesHe has no Jaffa: its English name, after a maqaf. The hex it withdrew to is Haifa's, in Hebrew.
-        StringAssert.Contains("נסוגה מ־" + lrm + "Jaffa" + lrm + " למשושה חיפה", UnitNames.Line(new Cause("map", "0", 0, "",
+        StringAssert.Contains("נסיגה מ־" + lrm + "Jaffa" + lrm + " למשושה חיפה", UnitNames.Line(new Cause("map", "0", 0, "",
             key: WhyKeys.Withdrew, units: new[] { Golani }, args: new[] { "jaffa", "5,8" }), C, Rows, He, NamesHe));
         // No Hebrew names at all: Haifa in English, after a maqaf.
         StringAssert.Contains("משושה " + lrm + "10" + lrm + " ק״מ ממזרח ל־" + lrm + "Haifa" + lrm,

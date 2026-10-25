@@ -232,6 +232,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
+            if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
             {
                 Statecraft.HexTiles.HexTilesLook.Apply(map, true);

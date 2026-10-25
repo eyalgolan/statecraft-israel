@@ -147,6 +147,26 @@ public class HebrewUiTests
         Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
     }
 
+    /// <summary>Codex's review of #1527, finding 4: the language switch keeps this turn's "Skip this turn" choices as it
+    /// keeps the queued orders, so End turn does not ask again for a unit the player skipped.</summary>
+    [Test]
+    public void TheLanguageSwitchKeepsThisTurnsSkips()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        game.Begin(Inputs, 0);
+        var skipped = game.Bridge!.NeedsOrders[0];
+        game.Bridge.Skip(skipped);
+
+        UiTestKit.Press(Ui.Q<Button>("settings-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "precondition: the UI was rebuilt");
+        Assert.IsTrue(game.Bridge!.IsSkipped(skipped), "the skip is kept");
+        CollectionAssert.DoesNotContain(game.Bridge.NeedsOrders.ToList(), skipped);
+    }
+
     /// <summary>A language named in the address or on the command line (the store page's "?lang=he" link) holds for that
     /// visit over the stored choice; without one the stored choice holds; with neither, English.</summary>
     [Test]

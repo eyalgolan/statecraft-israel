@@ -202,7 +202,7 @@ public class InfoPanelLayoutTests
 
     /// <summary>GDD Phase 5 PR 15, slices 1 to 3 (#754): Golani's card at the start with its Move, Fortify and Hold buttons,
     /// as it is, picking a Move's hex (the pick line under the card's lines), with Fortify queued (its line), after the
-    /// armistices with Send home queued (#1309: its button and its line), on the turn
+    /// armistices with Send home offered (#1309: its button) and queued (its line, and no other order: #1527's follow-up), on the turn
     /// after a Hold (Hold refused, with the sim's reason), and picking an Attack's hex (an enemy put in its reach if none is) (the
     /// pick line, the enemy's name, strength ratio and outcome bands), at every window size in English and Hebrew: the panel lies in the
     /// window, and every shown label and button lies inside the panel with its text fitting its box.</summary>
@@ -214,13 +214,15 @@ public class InfoPanelLayoutTests
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var (w, h) in Windows)
-                foreach (var state in new[] { "", "info-move", "info-fortify", "info-send-home", "holding", "info-attack" })
+                foreach (var state in new[] { "", "info-move", "info-fortify", "armistice", "info-send-home", "holding", "info-attack" })
                 {
                     var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
                     var token = Statecraft.Game.Map.Units.UnitRoster.FromState(units, C, g.State, null, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
                     if (state == "holding") g.Step(new Command[] { new UnitOrder(UnitCard.SimUnit(C, g.State, token.Unit)!.Value, Orders.Hold) });
                     if (state == "info-attack") UnitOrdersTests.EnemyInGolanisReach(g.State);
-                    if (state == "info-send-home") foreach (var front in Prisoners.Fronts) g.State.ChosenOptions["armistice_" + front] = "sign";
+                    // "armistice": Send home is offered beside the other orders; "info-send-home": pressed, the unit takes no other order.
+                    if (state == "armistice" || state == "info-send-home") foreach (var front in Prisoners.Fronts) g.State.ChosenOptions["armistice_" + front] = "sign";
+                    var goingHome = state == "info-send-home";
                     var t = hebrew ? he : Text;
                     var names = Statecraft.Game.Map.Units.UnitRoster.FromState(units, C, g.State, null, (row, a, q, r) => a)
                         .Where(x => UnitCard.SimUnit(C, g.State, x.Unit) != null)
@@ -232,12 +234,12 @@ public class InfoPanelLayoutTests
                     {
                         var panel = root.Q("info-panel"); var window = root.worldBound;
                         var move = root.Q<Button>("info-move");
-                        if (!Shown(move)) { problems.Add($"{at}: precondition: the Move button shows"); return; }
-                        if (Shown(root.Q<Button>("info-send-home")) != (state == "info-send-home")) problems.Add($"{at}: Send home visibility");
+                        if (Shown(move) == goingHome) { problems.Add($"{at}: precondition: the Move button shows unless the unit is going home"); return; }
+                        if (Shown(root.Q<Button>("info-send-home")) != (state == "armistice")) problems.Add($"{at}: Send home visibility");
                         var lines = root.Q<Label>("info-settlements").text;
                         foreach (var (key, when) in new[] { ("unit.move_pick", "info-move"), ("unit.fortify_queued", "info-fortify"), ("unit.send_home_queued", "info-send-home"), ("unit.attack_pick", "info-attack") })
                             if (lines.Contains((hebrew ? he : Text)[key]) != (state == when)) problems.Add($"{at}: {key} shows: {state != when}");
-                        if (Shown(root.Q<Button>("info-hold")) == (state == "holding")) problems.Add($"{at}: precondition: Hold shows only while it is not held");
+                        if (Shown(root.Q<Button>("info-hold")) == (state == "holding" || goingHome)) problems.Add($"{at}: precondition: Hold shows only while it is not held and the unit is not going home");
                         if (!Inside(panel.worldBound, window)) problems.Add($"{at}: the panel {panel.worldBound} leaves the window {window}");
                         foreach (var l in panel.Query<TextElement>().ToList().Where(l => !string.IsNullOrEmpty(l.text) && Shown(l)))
                         {
