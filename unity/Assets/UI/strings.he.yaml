@@ -59,8 +59,8 @@ how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ו
 how_to_play.training: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
 how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור."
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
-# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
-how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: הזיזו אותה, בצרו אותה, החזיקו בה או דלגו עליה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
+# Civ movement U4: agent-drafted Hebrew; native review: owner, 25 Oct 2026 (recommendations page, item 7).
+how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
 how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
@@ -77,8 +77,9 @@ advisor.dayan.name: "משה דיין"
 advisor.ben_gurion.role: "יועץ"
 advisor.meyerson.role: "יועצת"
 advisor.dayan.role: "יועץ"
-advisor.show_me: "הראו לי"
-advisor.more: "ספרו לי עוד"
+# advisor.show_me and advisor.more: native review: owner, 25 Oct 2026 (recommendations page, item 8).
+advisor.show_me: "הצגה"
+advisor.more: "מידע נוסף"
 advisor.not_now: "לא עכשיו"
 advisor.got_it: "הבנתי"
 advisor.close: "X"
@@ -210,12 +211,13 @@ capture.end.changes: "שינויים מיידיים במשאבים:"
 capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
 # Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
-capture.refusal.attention: "אין די תשומת לב בתור הזה: נדרש {1:0.0}, ונותר {2:0.0}."
+# attention, no_free_hex and not_awaiting: native review: owner, 25 Oct 2026 (recommendations page, item 6).
+capture.refusal.attention: "אין די תשומת לב בתור הזה: עלות: {1:0.0}; יתרה: {2:0.0}."
 capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
-capture.refusal.no_free_hex: "ליחידה ב{0} אין משבצת פנויה סמוכה לסגת אליה."
+capture.refusal.no_free_hex: "ליחידה ב{0} אין משושה פנוי סמוך שאפשר לסגת אליו."
 capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
 capture.refusal.already_city: "{0} כבר עיר."
-capture.refusal.not_awaiting: "{0} אינו ממתין להחלטה הזו."
+capture.refusal.not_awaiting: "אין החלטה ממתינה עבור {0}."
 capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
@@ -308,15 +310,16 @@ why.effects: "השפעות מתמשכות"
 why.situations: "מצבים"
 why.other: "אחר"
 why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
-# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564). HE-15: {0} is any unit's name, the
-# Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the name opens the
-# line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
+# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564), except #1631's 16 lines and
+# attack_ended_truce: native review: owner, 25 Oct 2026 (recommendations page, items 1 and 11). HE-15: {0} is any
+# unit's name, the Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the
+# name opens the line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
 why.line.unit_moved: "{0}: תנועה למשושה {1} תמורת {2} נקודות תנועה"
 why.line.unit_moved_one: "{0}: תנועה למשושה {1} תמורת נקודת תנועה אחת"
 why.line.fortify_lost: "{0}: יציאה ממשושה {1}, והביצור שם אבד"
 why.line.fortifying: "{0}: התבצרות במשושה {1}; הביצור חל מסוף התור"
 why.line.holds: "{0}: החזקה במשושה {1}"
-why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: שביתת נשק בתוקף"
+why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: הפוגה בתוקף"
 why.line.attack_ordered: "{0}: פקודת התקפה על משושה {1}"
 why.line.attack_ended: "ההתקפה של {0} על משושה {1} מסתיימת: אין שם יחידת אויב"
 why.line.holds_fire: "{0}: ללא ירי, כי אין התקפה על משושה {1} לתמוך בה"
@@ -606,7 +609,7 @@ unit.defence: "פתיחת מסך הביטחון"
 # Hebrew draft for a raised unit's type and home city (#1399); native review pending (#564).
 unit.raised_name: "{0}, {1}"
 # A unit raised in play, named as one formation in the Why lines and toasts (Codex's review of #1527): agent-drafted Hebrew,
-# native review pending (#564). יחידת as the UI's "היחידה"; קבוצת חלוצים as site.group.
+# native review: owner, 25 Oct 2026 (recommendations page, item 1). יחידת as the UI's "היחידה"; קבוצת חלוצים as site.group.
 unit.name.recruit: "יחידת מגויסים"
 unit.name.veteran_soldier: "יחידת חיילים ותיקים"
 unit.name.artillery: "יחידת ארטילריה"
@@ -790,12 +793,13 @@ event.effect.job_slots: "מקומות עבודה"
 event.effect.condition: "מצב הדיור"
 
 # The opening chain (#1484). Agent-drafted; approved by the owner, a native speaker, in chat on 24 October 2026 (about
-# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4).
+# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4). opening.move's בתורות הבאות:
+# native review: owner, 25 Oct 2026 (recommendations page, item 3).
 advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
 advisor.opening.training.text: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 advisor.next: "הבא"
@@ -811,7 +815,8 @@ settings.advisors.off: "כבוי"
 
 # S4 Task16 warnings (spec6). Approved by the owner, a native speaker (24 October 2026; advisor-messages.yaml records the
 # rulings); any change needs a new approval. end.outcome.defeat_war is approved too (24 October 2026, "approved both").
-advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
+# dayan.city_at_risk and dayan.arms_out reworded: native review: owner, 25 Oct 2026 (recommendations page, items 10 and 9).
+advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. יש לבדוק את מגיני העיר ואת תחזית הקרב לפני ביצוע שלב האויב."
 advisor.meyerson.exhausted.text: "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.text: "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
 advisor.meyerson.food_short.text: "בתור הזה המדינה נזקקה ליותר מזון ממה שהיה לה. מחסור במזון גם מוריד את הלכידות החברתית."
@@ -820,7 +825,7 @@ advisor.dayan.defeat_war.text: "יחידה צבאית של האויב מחזיק
 advisor.ben_gurion.defeat_economy.text: "שלוש תורות ברציפות הסתיימו כשהחוב שלנו בתקרה או מעליה ומלאי המזון ריק, וזה מסיים את המשחק."
 end.outcome.defeat_war: "האויב מחזיק בעיר."
 advisor.meyerson.budget_unsubmitted.text: "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב."
-advisor.dayan.arms_out.text: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
+advisor.dayan.arms_out.text: "אימון צבאי דורש נשק, ונשק נצרך בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
 
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
 # 24 October 2026 ("approved both").
@@ -853,19 +858,19 @@ advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחי
 advisor.opening.training.cue.2: "הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח;"
 advisor.opening.training.cue.3: "אימון צבאי דורש גם נשק."
 advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה."
-advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה."
 advisor.opening.event.cue.2: "כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.cue.1: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 
 # The S4 warning and teaching lines with an English clip: each text cut at its sentence end, as above.
 advisor.dayan.city_at_risk.cue.1: "התקפת אויב מכוונת לאחת מערי המדינה."
-advisor.dayan.city_at_risk.cue.2: "בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
+advisor.dayan.city_at_risk.cue.2: "יש לבדוק את מגיני העיר ואת תחזית הקרב לפני ביצוע שלב האויב."
 advisor.meyerson.exhausted.cue.1: "הכסף והמזון אזלו יחד."
 advisor.meyerson.exhausted.cue.2: "החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.cue.1: "החוב הגיע לתקרה."
 advisor.meyerson.debt_ceiling.cue.2: "אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
 advisor.dayan.defeat_war.cue.1: "יחידה צבאית של האויב מחזיקה באחת מערי המדינה בסוף התור."
 advisor.dayan.defeat_war.cue.2: "המערכה הסתיימה בתבוסה."
-advisor.dayan.arms_out.cue.1: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות."
+advisor.dayan.arms_out.cue.1: "אימון צבאי דורש נשק, ונשק נצרך בהתקפות."
 advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
