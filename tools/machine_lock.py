@@ -171,18 +171,21 @@ def main(argv: list[str] | None = None) -> int:
         signals = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
         previous = {}
         pending = None
+        stopping = False
 
         def interrupted(signum, frame):
-            nonlocal pending
+            nonlocal pending, stopping
             if child is None:
                 # Popen may have spawned but not returned its handle yet. Defer until ownership is known.
                 pending = pending or signum
                 return
             try:
                 os.killpg(child.pid, signum)
-            except ProcessLookupError:
-                pass
-            raise SystemExit(128 + signum)
+            except (ProcessLookupError, PermissionError):
+                pass  # gone, or only its zombie is left (Darwin EPERM); stop_command_group below decides
+            if not stopping:  # a second signal must not abort the cleanup already under way
+                stopping = True
+                raise SystemExit(128 + signum)
 
         try:
             for sig in signals:
@@ -198,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             return child.wait()
         finally:
             # Cleanup must finish under the lock even if another terminal signal arrives.
+            stopping = True
             for sig in previous:
                 signal.signal(sig, signal.SIG_IGN)
             try:
