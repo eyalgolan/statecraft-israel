@@ -11,8 +11,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The turn report (#1037; the first outside play-test, #1038: "I see the values changing, but I don't really
     /// understand what's happening"). When a turn has run, a short panel names each top-bar number that changed, with the
-    /// change the bar shows (HudModel.From) and its main causes, which are the sim's own cause messages
-    /// (StepResult.Why, through HudModel.Causes). "See all" opens the Why screen with every cause; Close, Esc or Cancel
+    /// change the bar shows (HudModel.From) and its main causes, the sim's own causes in the player's language
+    /// (StepResult.Why, through HudModel.Causes and CauseText, B1). "See all" opens the Why screen with every cause; Close, Esc or Cancel
     /// closes it. Nothing is computed or reworded here, so no rule lives in the UI.
     /// <para>While it shows, the root has <see cref="OpenClass"/>: ScreenNav.DisableCovered disables the top bar, the panels
     /// and the decision layer under it, as under an End Turn outcome clip, which is drawn over the report (Game.uxml order)
@@ -102,7 +102,8 @@ namespace Statecraft.Game.UI
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
-                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id)));
+                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
+                    w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text))));
             }
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
@@ -117,18 +118,17 @@ namespace Statecraft.Game.UI
         {
             var turn = bridge.Session.Last;
             if (turn == null) return Array.Empty<string>();
-            var forces = bridge.Content.StartingForces; bool hebrew = text["ui.lang"] == UiLanguage.Hebrew;
-            string Name(int id)
+            string Name(Cause cause, int id)
             {
-                var row = id < forces.Count ? units?.FirstOrDefault(u => u.Id == forces[id].Row) : null;
-                if (row == null) return text.Format("report.unit", id);
-                return hebrew && !string.IsNullOrEmpty(row.NameHe) ? row.NameHe : row.Name;
+                var snapshot = cause.Units.FirstOrDefault(u => u.Id == id);
+                if (snapshot != null) return UnitNames.Of(snapshot, bridge.Content, units ?? Array.Empty<UnitEntry>(), text);
+                return text.Format("report.unit", id);
             }
             // An engagement (#1297) names its enemy attackers, one line each, and gives no line if it names none: its Target is
             // a hex, not a unit. An order names its unit, Target.
             return turn.Why.Where(w => w.EnemyOrder != "")
                 .SelectMany(w => (w.EnemyOrder == Combat.Attack ? w.EnemyAttackers : new[] { int.Parse(w.Target, CultureInfo.InvariantCulture) })
-                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(id)))).ToList();
+                    .Select(id => text.Format("report.enemy_" + w.EnemyOrder, Name(w, id)))).ToList();
         }
 
         void Show()
@@ -143,8 +143,16 @@ namespace Statecraft.Game.UI
                 row.Add(heading);
                 if (line.Causes.Count > 0)
                 {
-                    var causes = new Label(string.Join("\n", line.Causes)) { name = "turn-report-causes-" + line.Meter };
+                    // One label a cause, so each takes its own direction (UiDirection): in Hebrew a line with a key (B1) is
+                    // right to left and a line still in English left to right.
+                    var causes = new VisualElement { name = "turn-report-causes-" + line.Meter };
                     causes.AddToClassList("turn-report-causes");
+                    foreach (var cause in line.Causes)
+                    {
+                        var label = new Label(cause);
+                        label.AddToClassList("turn-report-cause");
+                        causes.Add(label);
+                    }
                     row.Add(causes);
                 }
                 rows.Add(row);

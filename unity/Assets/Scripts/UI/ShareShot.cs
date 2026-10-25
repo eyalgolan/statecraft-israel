@@ -41,6 +41,24 @@ namespace Statecraft.Game.UI
         /// <summary>The post, in the UI's language, with the in-game date and turn, the itch URL and the repository's.</summary>
         public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch, Repo);
 
+        /// <summary>The post as the panel shows it (playtest, 25 Oct 2026). In the right-to-left Hebrew paragraph a URL broke
+        /// across lines, "https://" ending one line and the rest starting the next, so in Hebrew each URL is kept whole: a word
+        /// joiner (U+2060) after each '/', ':', '.' and '-' takes away the line breaks the text generator allows there.
+        /// UiText.Format's marks already keep the URL a left-to-right run. (Rich text's nobr and a U+2066 isolate were tried
+        /// and changed nothing under the advanced text generator.) English shows the post as it is. Only the label takes
+        /// this: the text shared, posted and copied stays <see cref="Text"/>'s.</summary>
+        public static string Shown(string post, bool hebrew) =>
+            hebrew ? post.Replace(Itch, OneLine(Itch)).Replace(Repo, OneLine(Repo)) : post;
+
+        public const char WordJoiner = (char)0x2060;
+
+        static string OneLine(string url)
+        {
+            var line = new System.Text.StringBuilder(url.Length * 2);
+            foreach (var c in url) { line.Append(c); if (c == '/' || c == ':' || c == '.' || c == '-') line.Append(WordJoiner); }
+            return line.ToString();
+        }
+
         /// <summary>A site's share link. X and WhatsApp take the text, which carries both URLs; Telegram takes the itch URL and
         /// the text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only a URL, the itch one.</summary>
         public static string IntentUrl(string site, string text) => site switch

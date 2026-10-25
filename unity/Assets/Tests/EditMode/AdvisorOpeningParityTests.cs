@@ -54,7 +54,7 @@ public class AdvisorOpeningParityTests
             ShowCity = () => { if (AdvisorTargets.CityHex(bridge.Content, bridge.State) is (int q, int r)) info.Show(q, r); },
             ShowUnit = () =>
             {
-                if (AdvisorTargets.UnitToShow(bridge.Content, bridge.State, tokens) is not string id) return;
+                if (AdvisorTargets.UnitToShow(bridge, tokens) is not string id) return;
                 shown = new PlacedToken(tokens.First(t => t.Unit.Id == id), new AnchorSpot(0, 0, 0, 0, false)); info.ShowUnit();
             },
         });
@@ -258,16 +258,56 @@ public class AdvisorOpeningParityTests
     [Test]
     public void TheMoveStepsUnitCanMove()
     {
-        var s = GameSession.New(C, GoldenRun.Seed, Mode.Historical).State;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+        var s = bridge.State;
         var rows = UnitRoster.FromState(UnitRows, C, s, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
-        var id = AdvisorTargets.UnitToShow(C, s, rows);
+        var id = AdvisorTargets.UnitToShow(bridge, rows);
         Assert.IsNotNull(id, "a new game has a unit that can move");
         var row = rows.Single(u => u.Id == id);
         Assert.AreEqual(UnitData.Israel, row.Side);
         Assert.IsNotEmpty(Movement.Reachable(C, s, UnitCard.SimUnit(C, s, row)!.Value), "the sim has a hex for it");
         var first = rows.First(u => UnitCard.SimUnit(C, s, u) is int i && Movement.Reachable(C, s, i).Count > 0);
         Assert.AreEqual(first.Id, id, "the first such row");
-        Assert.IsNull(AdvisorTargets.UnitToShow(SimBridgeGddTests.Legacy, s, rows), "the legacy loop: no unit to show");
+        var legacy = new SimBridge(GameSession.New(SimBridgeGddTests.Legacy, GoldenRun.Seed, Mode.Historical), En);
+        Assert.IsNull(AdvisorTargets.UnitToShow(legacy, rows), "the legacy loop: no unit to show");
+    }
+
+    /// <summary>Since moves are instant (#1527), a unit can spend its movement, or have Send home queued, before How to play
+    /// reopens the tour: the move step then shows the next unit whose card still has Move (InfoPanelPresenter.MoveReach, the
+    /// card's rule), and none once no unit can move, as in the legacy loop (the step's text without a target).</summary>
+    [Test]
+    public void TheMoveStepSkipsAUnitWhoseCardHasNoMove()
+    {
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), En);
+        var rows = UnitRoster.FromState(UnitRows, C, bridge.State, _ => true, (row, a, q, r) => a).Select(t => t.Unit).ToList();
+        int Sim(string row) => UnitCard.SimUnit(C, bridge.State, rows.Single(u => u.Id == row))!.Value;
+        void SpendAll(string row)
+        {
+            var id = Sim(row);
+            for (int i = 0; i < 20; i++)
+            {
+                var reach = Movement.Reachable(C, bridge.State, id, bridge.Spent);
+                if (reach.Count == 0) return;
+                var far = reach.OrderByDescending(kv => kv.Value).First().Key;
+                Assert.IsNull(bridge.Queue(new Move(id, far.Q, far.R)), $"{row}: the sim takes a move it offered");
+            }
+            Assert.Fail($"{row}: still has movement after 20 moves");
+        }
+        var first = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsNotNull(first, "precondition: a new game has a unit that can move");
+        SpendAll(first!);
+        Assert.IsNotEmpty(Movement.Reachable(C, bridge.State, Sim(first!)), "precondition: with nothing spent the sim would still offer it hexes");
+        var second = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsNotNull(second, "another unit can still move");
+        Assert.AreNotEqual(first, second, "the unit that spent its movement is not shown");
+        Assert.IsNotNull(InfoPanelPresenter.MoveReach(bridge, Sim(second!)), "the shown unit's card has Move");
+        Assert.IsNull(bridge.Queue(new UnitOrder(Sim(second!), Demobilization.SendHome)));
+        Assert.IsNotEmpty(Movement.Reachable(C, bridge.State, Sim(second!), bridge.Spent), "precondition: the sim alone would still move it");
+        var third = AdvisorTargets.UnitToShow(bridge, rows);
+        Assert.IsTrue(third != first && third != second, $"a unit going home is not shown either ({third})");
+        foreach (var row in rows.Where(u => UnitCard.SimUnit(C, bridge.State, u) is int id && InfoPanelPresenter.MoveReach(bridge, id) != null).Select(u => u.Id).ToList())
+            SpendAll(row);
+        Assert.IsNull(AdvisorTargets.UnitToShow(bridge, rows), "no unit can move: none to show");
     }
 
     /// <summary>Skip at any step closes it; Next walks the seven steps and Done closes it; Escape skips; How to play's button
@@ -366,6 +406,7 @@ public class AdvisorOpeningParityTests
         game.Advisor.OpenChain();
         for (int i = 0; i < step; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         var turn = game.Bridge!.State.Turn;
+        foreach (var id in game.Bridge.NeedsOrders.ToList()) game.Bridge.Skip(id);
         UiTestKit.Press(Ui.Q<Button>("end-turn"));
         Assert.AreEqual(turn + 1, game.Bridge.State.Turn, "precondition: End turn ran the turn");
         Assert.IsFalse(game.Advisor.InChain, "the advisor closes when the turn advances");
@@ -448,7 +489,7 @@ public class AdvisorOpeningParityTests
         var move = Array.IndexOf(Steps, "opening.move");
         for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         Assert.AreEqual(move, advisor.ChainStep);
-        var id = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token));
+        var id = AdvisorTargets.UnitToShow(bridge, units.Tokens.Select(t => t.Token));
         Assert.IsNotNull(id, "precondition: a drawn unit can move");
         Assert.AreEqual(id, units.Selected, "the advisor's unit, with its ring");
         Assert.IsTrue(info.ShowsUnit, "its card in the info panel");
@@ -490,7 +531,7 @@ public class AdvisorOpeningParityTests
                     Assert.AreEqual(move, advisor.ChainStep, "precondition: the advisor is on its move step");
                     for (int frame = 0; frame < 5; frame++) yield return null;
 
-                    var id = AdvisorTargets.UnitToShow(bridge.Content, bridge.State, units.Tokens.Select(t => t.Token));
+                    var id = AdvisorTargets.UnitToShow(bridge, units.Tokens.Select(t => t.Token));
                     Assert.IsNotNull(id, "precondition: a drawn unit can move");
                     var token = units.Tokens.Single(t => t.Token.Unit.Id == id);
                     var simUnit = UnitCard.SimUnit(bridge.Content, bridge.State, token.Token);
@@ -531,6 +572,60 @@ public class AdvisorOpeningParityTests
                 }
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>Spec 7.3: End turn, while a unit needs orders, selects it and centres the camera on its hex.</summary>
+    [UnityTest]
+    public IEnumerator EndTurnFocusesTheNextUnitThatNeedsOrders()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        yield return null;
+        var bridge = game.Bridge!; var units = game.Units!;
+        // At the advisor's move-step framing, the map bounds permit the selected hex to be centred exactly.
+        Object.FindFirstObjectByType<CameraRig>().Distance = AdvisorTargets.MoveStepDistanceM;
+        var next = bridge.NeedsOrders[0];
+        UiTestKit.Press(Ui.Q<Button>("end-turn"));
+        yield return null;
+        var token = units.Tokens.Single(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token.Unit) == next);
+        Assert.AreEqual(token.Token.Unit.Id, units.Selected);
+        var hex = bridge.Content.HexAt(token.Q, token.R)!;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var rig = Object.FindFirstObjectByType<CameraRig>();
+        Assert.Less(Vector3.Distance(map.Frame.ToWorld(hex.Lon, hex.Lat, 0), rig.LookAt), 1f);
+    }
+
+    /// <summary>Spec 7.3: repeated blocked End turn presses move past the selected needing unit and wrap.</summary>
+    [UnityTest]
+    public IEnumerator BlockedEndTurnCyclesPastTheSelectionAndWraps()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        game.Begin(Inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        yield return null;
+        var bridge = game.Bridge!; var units = game.Units!;
+        var needs = bridge.NeedsOrders.ToList();
+        Assert.Greater(needs.Count, 1, "precondition: several units need orders");
+        var turn = bridge.TurnStart.Turn;
+        int? SelectedId() => units.Selected is string row
+            ? units.Tokens.Where(t => t.Token.Unit.Id == row)
+                .Select(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token.Unit)).FirstOrDefault()
+            : null;
+        // Begin from the first needing unit, then prove advance and a complete wrap without issuing an order.
+        UiTestKit.Press(Ui.Q<Button>("end-turn"));
+        yield return null;
+        Assert.AreEqual(needs[0], SelectedId());
+        for (var step = 1; step <= needs.Count; step++)
+        {
+            UiTestKit.Press(Ui.Q<Button>("end-turn"));
+            yield return null;
+            Assert.AreEqual(needs[step % needs.Count], SelectedId(),
+                "blocked End turn advances beyond the selected unit and wraps");
+        }
+        Assert.AreEqual(turn, bridge.TurnStart.Turn, "cycling never ends the turn");
     }
 
     // --- Each step with what it explains (owner's report on v0.1.4) ---------------------------------------------------

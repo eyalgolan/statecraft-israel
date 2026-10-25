@@ -72,7 +72,7 @@ namespace Statecraft.Sim
             var held = s.SoldiersHeld.Values.Sum();
             if (held == 0) return;
             var cost = held * r.HeldSoldierCostPerTurn!.Value;
-            if (cost > 0) EconomySystem.PayOrBorrow(c, s, cost, "for our soldiers held by the enemy", why);
+            if (cost > 0) EconomySystem.PayOrBorrow(c, s, cost, "for our soldiers held by the enemy", why, CauseKeys.Purpose.Prisoners);
         }
 
         /// <summary>R-POW-004, R-POW-005: <paramref name="front"/>'s exchange card was resolved. Its sides' prisoners go home and

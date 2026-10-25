@@ -50,6 +50,7 @@ namespace Statecraft.Game.UI
         readonly Label mediaLabel, mediaCredit, overlayCaption, overlayLabel, overlayCredit;
         readonly Button watch, overlayClose;
         readonly Action onWatch, onOverlayClose;
+        readonly EventCallback<ClickEvent> onPortraitClick;
         readonly EventCallback<GeometryChangedEvent> onMediaGeometry;
         string watchScreens = "";
         VisualElement? mediaOpener;
@@ -125,6 +126,14 @@ namespace Statecraft.Game.UI
             hudRoot.RegisterCallback(onMediaGeometry); mediaPicture.RegisterCallback(onMediaGeometry); overlayPicture.RegisterCallback(onMediaGeometry);
 
             portrait = popup.Q<VisualElement>("advisor-portrait");
+            onPortraitClick = e =>
+            {
+                if (e.target is VisualElement target && (target == watch || watch.Contains(target))) return; // the strip already ran onWatch
+                if (e.button != 0 || !portrait.enabledInHierarchy || !Watchable(Shown?.Media) || Shown?.ApprovedIn(hebrew) != true || HardMediaCover()) return;
+                watchStoppedOnPress = false;
+                onWatch(); e.StopPropagation();
+            };
+            portrait.RegisterCallback(onPortraitClick);
             name = popup.Q<Label>("advisor-name"); role = popup.Q<Label>("advisor-role");
             words = popup.Q<Label>("advisor-text"); count = popup.Q<Label>("advisor-count");
             quote = popup.Q<Label>("advisor-quote"); quoteSource = popup.Q<Label>("advisor-quote-source");
@@ -594,6 +603,8 @@ namespace Statecraft.Game.UI
             var label = inline ? mediaLabel : overlayLabel;
             var credit = inline ? mediaCredit : overlayCredit;
             label.text = text[row.Label]; credit.text = row.Credit == "" ? "" : text[row.Credit];
+            // Each clip's credit starts at its first line, wherever the last one was scrolled to.
+            if (credit.GetFirstAncestorOfType<ScrollView>() is ScrollView credits) credits.scrollOffset = Vector2.zero;
             popup.EnableInClassList(WatchingClass, inline && hasPicture);
             popup.EnableInClassList(NarratingClass, !hasPicture);
             if (inline && hasPicture) mediaHead.BringToFront();
@@ -727,6 +738,7 @@ namespace Statecraft.Game.UI
             disposed = true;
             StopWatching(); Media?.Dispose();
             watch.clicked -= onWatch; overlayClose.clicked -= onOverlayClose;
+            portrait.UnregisterCallback(onPortraitClick);
             hudRoot.UnregisterCallback(onMediaGeometry); mediaPicture.UnregisterCallback(onMediaGeometry); overlayPicture.UnregisterCallback(onMediaGeometry);
             hudRoot.UnregisterCallback(onMediaPointer, TrickleDown.TrickleDown); hudRoot.UnregisterCallback(onMediaSubmit, TrickleDown.TrickleDown);
             overlay.UnregisterCallback(onMediaCancel);

@@ -214,7 +214,7 @@ the slice adds a read-only helper (in Unity, never in the sim's hash).
 | Cabinet | Meyerson | R-MIN (`mvp.md:365-369`) | Exists: `SimBridge.Vacancies` (`:85`), already the Cabinet badge (`HudPresenter.cs:484`) |
 | Food | Meyerson | R-FOOD (`mvp.md:321-325`) | Exists: `Food`, `FoodNeed`, `FoodUnmet` (`GameState.cs:94-98`) |
 | National meters | Meyerson | R-NAT (`mvp.md:375-381`) | Exists: `Indicators` (`:33`), `ActiveSituations` (`:38`, set by `EffectsSystem.UpdateSituations`, `EffectsSystem.cs:139`) |
-| Units, movement, go-to | Dayan | R-MOVE (`mvp.md:195-213`) | The sim side exists: `Movement.NeedsOrders` (`sim/Statecraft.Sim/Movement.cs:182`), `GameSession.Committed` and `Now` (`GameSession.cs:22-26`). Needs: the Unity side, which still queues one Move per unit; the civ-movement slices (U1 to U4) add it, and the advisor reads their "Move picked" and "order committed" points |
+| Units, movement, go-to | Dayan | R-MOVE (`mvp.md:195-213`) | The sim side exists: `Movement.NeedsOrders` (`sim/Statecraft.Sim/Movement.cs:182`), `GameSession.Committed` and `Now` (`GameSession.cs:22-26`). The Unity side exists too: since #1527 (U1 to U5) a move, go-to or attack is committed at the click and End turn waits for the units that need orders; the advisor reads its "Move picked" and "order committed" points |
 | Standing orders, Send home | Dayan | R-ORDER (`mvp.md:219-223`), R-UNIT-005 (`:169`) | Exists: a unit's `Order` |
 | Combat | Dayan | R-COMBAT (`mvp.md:229-249`) | Exists: the turn's Why lines (`StepResult.Why`, `Commands.cs:172`; `PreviewResult.Why`, `:184`) |
 | Arms | Dayan | R-ARMS (`mvp.md:331-335`) | Exists: `GameState.Arms` (`:102`) |

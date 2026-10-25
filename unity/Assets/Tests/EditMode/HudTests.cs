@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game;
@@ -117,6 +118,40 @@ public class HudTests
     static SimBridge GddBridge() => new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
 
     [Test]
+    public void EndTurnWaitsWhileAUnitNeedsOrders()
+    {
+        using var ui = new UiTestKit();
+        var bridge = GddBridge();
+        var selected = new List<int>();
+        using var hud = new HudPresenter(ui.Root, bridge, Text, selectUnit: selected.Add);
+        var endTurn = ui.Q<Button>("end-turn");
+        var turn = bridge.TurnStart.Turn;
+        Assert.AreEqual(Text["hud.end_turn_needs_orders"], endTurn.text);
+        UiTestKit.Press(endTurn);
+        Assert.AreEqual(turn, bridge.TurnStart.Turn, "the turn did not end");
+        Assert.AreEqual(bridge.NeedsOrders[0], selected.Single());
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
+        Assert.AreEqual(Text["hud.end_turn"], endTurn.text);
+        UiTestKit.Press(endTurn);
+        Assert.AreEqual(turn + 1, bridge.TurnStart.Turn);
+    }
+
+    /// <summary>Review Focus 4: a unit with Send home queued is not selected.</summary>
+    [Test]
+    public void TheCycleSkipsUnitsGoingHome()
+    {
+        using var ui = new UiTestKit();
+        var bridge = GddBridge();
+        var selected = new List<int>();
+        using var hud = new HudPresenter(ui.Root, bridge, Text, selectUnit: selected.Add);
+        var first = bridge.NeedsOrders[0];
+        Assert.IsNull(bridge.Queue(new UnitOrder(first, Demobilization.SendHome)));
+        UiTestKit.Press(ui.Q<Button>("end-turn"));
+        Assert.AreNotEqual(first, selected.Single());
+        Assert.AreEqual(bridge.NeedsOrders[0], selected.Single());
+    }
+
+    [Test]
     public void TheLegacyLoopShowsNoScore()
     {
         // The legacy loop survives only as content without the loop switch (SimBridgeGddTests.Legacy) since the cutover.
@@ -209,6 +244,7 @@ public class HudTests
         using var ui = new UiTestKit();
         var bridge = NewBridge();
         new HudPresenter(ui.Root, bridge, Text);
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         ui.Press("end-turn");
         Assert.AreEqual(1, bridge.State.Turn);
         Assert.AreEqual("Turn 1", ui.Q<Label>("turn").text);
@@ -245,6 +281,7 @@ public class HudTests
         new ToastPresenter(ui.Root, bridge, text);
         Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("toast").style.display.value);
         bridge.Queue(new SetPolicy(C.At(bridge.State.Date).Policies[0].Id, 2));     // a policy in force now at an impossible level: the sim refuses it
+        foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
         ui.Press("end-turn");
         Assert.AreEqual("Not done: Policy level must be between 0 and 1", ui.Q<Label>("toast").text);
         Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("toast").style.display.value);
@@ -637,6 +674,7 @@ public class HudTests
                 }
                 var open = ScreenNav.Screens[turn % ScreenNav.Screens.Length];
                 ui.Press("nav-" + open);
+                foreach (var id in bridge.NeedsOrders.ToList()) bridge.Skip(id);
                 ui.Press("end-turn");
                 Assert.AreEqual(turn + 1, bridge.State.Turn, $"turn {turn}: End Turn did not run");
                 Assert.AreEqual(DisplayStyle.Flex, Shown(open), $"turn {turn}: End Turn closed {open}");
