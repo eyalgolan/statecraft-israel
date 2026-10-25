@@ -390,8 +390,9 @@ defence.section_leadership: "Leadership"
 defence.section_ladder: "Security level"
 defence.section_callup: "Reserve call-up"
 defence.section_budget: "Defence share of the budget"
-# The empty info panel's hint: the mouse, the keyboard's map stop (#41 B1b, #1116) and the right-drag pan (#998).
-info.hint: "Click the map, or Tab to it and press Enter, to inspect a hex; right-drag to move the map"
+# The empty info panel's hint: moving a unit (owner, 25 Oct 2026, "Civ: select, then click"), the mouse, the keyboard's
+# map stop (#41 B1b, #1116) and the right-drag pan (#998).
+info.hint: "Click a unit, then a hex, to move it. Click the map, or Tab and Enter, to inspect a hex; right-drag to move the map"
 info.off_map: "Off the map"
 info.hex: "{0} · elevation {1:N0} m"
 info.region: "{0}, {1} (Mandate sub-districts, 1947)"

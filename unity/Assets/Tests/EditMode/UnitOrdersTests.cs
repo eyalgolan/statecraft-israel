@@ -86,7 +86,8 @@ public class UnitOrdersTests
 
     /// <summary>Move lights exactly Movement.Reachable's hexes. A click on one commits Move(unit, q, r) through SimBridge and
     /// keeps the card; a click on an unreachable water hex commits nothing and shows that hex;
-    /// a second press of Move ends the pick. Each end of the pick clears the overlay.</summary>
+    /// a second press of Move keeps the pick (a unit that can move always has it open, owner 25 Oct 2026). Each end of the
+    /// pick clears the overlay.</summary>
     [Test]
     public void AClickOnALitHexCommitsTheMoveAndAnUnreachableClickEndsThePick()
     {
@@ -112,9 +113,9 @@ public class UnitOrdersTests
             CollectionAssert.AreEqual(reach, lit.Last(), "the overlay is Reachable's hexes, in its order");
             Assert.IsTrue(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
             Assert.IsTrue(ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"]), ui.Q<Label>("info-settlements").text);
-            UiTestKit.Press(move);   // a second press ends the pick
-            Assert.IsEmpty(lit.Last());
-            Assert.IsFalse(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
+            UiTestKit.Press(move);   // a second press keeps the pick: a unit that can move always has its reach lit
+            CollectionAssert.AreEqual(reach, lit.Last(), "a second press of Move keeps the reach lit");
+            Assert.IsTrue(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
             // Task12/spec8.1:248: unlit land with a route now gives go-to (tested below); water ends the pick.
             var water = C.Hexes.First(h => !h.Land);
             Assert.IsFalse(reach.Contains((water.Q, water.R)), "precondition: water has no move or go-to route");
@@ -178,7 +179,8 @@ public class UnitOrdersTests
 
     /// <summary>#1617: while a Move pick is open, a click on the unit card is the map's only where it falls on the card's
     /// text (not a button, not another panel) over a hex PickTarget takes: a lit hex, or an unlit hex with a go-to route
-    /// (#1398); an unlit hex with no route stays blocked. The hex is asked only then. With no pick open, never.</summary>
+    /// (#1398); an unlit hex with no route stays blocked. The hex is asked only then. With no pick open, never. Selecting
+    /// the unit opens its pick, with no press of Move (owner, 25 Oct 2026).</summary>
     [Test]
     public void OnlyAHexTheMovePickTakesUnderTheCardsTextTakesAClickThroughTheCard()
     {
@@ -202,8 +204,7 @@ public class UnitOrdersTests
         var title = ui.Q<Label>("info-title"); var move = ui.Q<Button>("info-move");
         var asked = 0;
         System.Func<(int q, int r)?> At((int q, int r)? hex) => () => { asked++; return hex; };
-        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
-        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "selecting the unit opened its pick");
         UiTestKit.Press(move);
         Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "the card's text over a lit hex");
         Assert.IsTrue(info.TakesClickThrough(ui.Q<VisualElement>("info-panel"), At(lit)), "the card's own background over a lit hex");
@@ -216,8 +217,12 @@ public class UnitOrdersTests
         Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("top-bar"), At(lit)), "another panel keeps its click");
         Assert.IsFalse(info.TakesClickThrough(null, At(lit)), "no UI: the map has the click anyway");
         Assert.AreEqual(0, asked, "the hex is asked only for the card's text");
-        UiTestKit.Press(move);   // a second press ends the pick
-        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "the pick has ended");
+        UiTestKit.Press(move);   // a second press keeps the pick
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "a second press of Move keeps the pick");
+        info.Clear();
+        asked = 0;
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
+        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
         info.Dispose();
     }
 

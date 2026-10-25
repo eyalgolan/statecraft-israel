@@ -34,12 +34,16 @@ namespace Statecraft.Game.Map
 
     /// <summary>Left click on the map (not on the UI) selects the hex under the pointer: a ray from the camera hits the
     /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker). On a touchscreen a tap (press and
-    /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.</summary>
+    /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.
+    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing: a moved right
+    /// button is CameraController's drag pan.</summary>
     public sealed class MapPointer : MonoBehaviour
     {
         public MapScene? Map;
         public Func<Vector2, bool>? IsOverUi;
         public event Action<int, int>? HexClicked;
+        /// <summary>A right click on a hex (owner, 25 Oct 2026, "Civ: select, then click": it moves the selected unit there).</summary>
+        public event Action<int, int>? HexOrdered;
         /// <summary>The hex a point goes to before the terrain is asked, or null: a city's name pill sends its click to the
         /// city's hex (#1063), wherever the land under the pill is.</summary>
         public Func<Vector2, (int q, int r)?>? PillHex;
@@ -50,7 +54,7 @@ namespace Statecraft.Game.Map
         readonly Queue<Vector2> presses = new Queue<Vector2>();
         InputAction? press;
 
-        TapPress tap;
+        TapPress tap, rightTap;
 
         void OnEnable()
         {
@@ -82,6 +86,8 @@ namespace Statecraft.Game.Map
         void Update()
         {
             ProcessPresses();
+            if (Mouse.current is { } mouse)
+                RightStep(mouse.rightButton.wasPressedThisFrame, mouse.rightButton.wasReleasedThisFrame, mouse.position.ReadValue());
             var ts = Touchscreen.current;
             if (ts == null) return;
             var t = ts.primaryTouch;
@@ -103,6 +109,24 @@ namespace Statecraft.Game.Map
             if (overUi || HexAt(pos, false, true) is not (int q, int r)) return false;   // the UI asked once per press (MapPressTests)
             Map!.Select(q, r);                                          // the map marks the hex the info panel describes
             HexClicked?.Invoke(q, r);
+            return true;
+        }
+
+        /// <summary>One frame of the right button: its pressed and released edges and where the pointer is. A release inside
+        /// TapPress.SlopPixels of the press is a right click there (HandleRightClick); a farther one was a drag pan.</summary>
+        internal void RightStep(bool pressed, bool released, Vector2 position)
+        {
+            if (rightTap.Step(pressed, released, position, false) is Vector2 at) HandleRightClick(at);
+        }
+
+        /// <summary>A right click at <paramref name="pos"/> (screen pixels): ignored over the UI, otherwise the hex under the
+        /// pointer is raised as HexOrdered (no outline: it selects nothing). Returns whether a hex was raised.</summary>
+        public bool HandleRightClick(Vector2 pos)
+        {
+            var overUi = IsOverUi != null && IsOverUi(pos);
+            Boot.DiagLog.NavLine(FormattableString.Invariant($"map right click at ({pos.x:0}, {pos.y:0}) overUi={overUi}"));
+            if (overUi || HexAt(pos, false, true) is not (int q, int r)) return false;
+            HexOrdered?.Invoke(q, r);
             return true;
         }
 

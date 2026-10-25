@@ -67,4 +67,30 @@ public class MapPressTests
         tap.Step(true, false, new Vector2(300, 300), false);
         Assert.AreEqual((Vector2?)new Vector2(300, 300), tap.Step(false, true, new Vector2(300, 300), false));
     }
+
+    /// <summary>Owner, 25 Oct 2026 ("Civ: select, then click"; right-drag still pans): a right press released inside the
+    /// slop is a right click, at where it was pressed; a right drag past the slop is the camera's pan and never a click,
+    /// even one that comes back. A right click is asked of the UI like a left one.</summary>
+    [Test]
+    public void AShortRightPressIsAClickAndARightDragIsNot()
+    {
+        var go = new GameObject("RightPointer");
+        try
+        {
+            var pointer = go.AddComponent<MapPointer>();
+            var asked = new List<Vector2>();
+            pointer.IsOverUi = p => { asked.Add(p); return true; };   // the UI answers, so no map is needed
+            pointer.RightStep(true, false, new Vector2(700, 400));
+            pointer.RightStep(false, true, new Vector2(704, 402));
+            CollectionAssert.AreEqual(new[] { new Vector2(700, 400) }, asked, "a short right press is a click where it was pressed");
+            asked.Clear();
+            pointer.RightStep(true, false, new Vector2(700, 400));
+            pointer.RightStep(false, false, new Vector2(900, 400));   // dragged: the camera pans
+            pointer.RightStep(false, true, new Vector2(701, 400));
+            Assert.IsEmpty(asked, "a right drag is never a click");
+            pointer.RightStep(true, true, new Vector2(300, 300));     // pressed and released in one slow frame
+            CollectionAssert.AreEqual(new[] { new Vector2(300, 300) }, asked);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
 }

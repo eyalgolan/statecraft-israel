@@ -257,7 +257,8 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Move's or Attack's button: starts its pick (the sim's hexes lit), or ends it when pressed again; a press
-        /// of the other ends the open pick and starts its own.</summary>
+        /// of the other ends the open pick and starts its own. A unit that can move never stays without a pick: RenderLines
+        /// opens Move's again at once (a second press of Move keeps its hexes lit; a second press of Attack goes back to Move).</summary>
         void TogglePick(bool attack)
         {
             var again = pick?.attack == attack;
@@ -373,10 +374,20 @@ namespace Statecraft.Game.UI
             for (var e = picked; e != panel; e = e.parent) if (e is Button) return false;
             if (!(hexUnder() is { } h)) return false;
             if (clickThrough is { } known && known.hex == h) return known.takes;
-            var takes = p.hexes.Contains(h) || RouteTo(p, h.q, h.r).Count > 0;   // RouteTo: PickTarget's go-to rule
+            var takes = Takes(p, h.q, h.r);
             clickThrough = (h, takes);
             return takes;
         }
+
+        /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
+        public bool MovePicking => pick is { attack: false };
+
+        /// <summary>True when a pick is open and PickTarget would give an order for (q, r): a lit hex, or, for Move, an unlit
+        /// hex with a go-to route. A right click (GameRoot.OnHexOrdered) gives one only then.</summary>
+        public bool PickTakes(int q, int r) => pick is { } p && Takes(p, q, r);
+
+        bool Takes((int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack, (int q, int r)? touchRoute) p,
+            int q, int r) => p.hexes.Contains((q, r)) || RouteTo(p, q, r).Count > 0;   // RouteTo: PickTarget's go-to rule
 
         /// <summary>A map click while the player picks a Move's or an Attack's hex (GameRoot.OnHexClicked asks first): a lit
         /// hex gives the Move or attack; an unlit hex with a route gives go-to. Touch previews that route on the first tap and
@@ -563,6 +574,16 @@ namespace Statecraft.Game.UI
                 && (open.session != bridge.Session || open.turn != s.Turn || unit == null || UnitCard.SimUnit(c, s, unit.Value.Token) != open.unit))
                 EndPick();
             var moves = MoveTargets();
+            if (pick is { attack: false } && moves == null) EndPick();   // no Move any more (Send home queued, no points, game over)
+            // Civ (owner, 25 Oct 2026: "the unit must move when you click on the fucking lit hex"; spec 2.1, "Selecting a unit
+            // lights its one-turn reach"): a shown unit that can move has its Move pick open, with no press of Move. Its
+            // button stays (keyboard, the guide); pressing it, or Attack again, comes back here and lights the reach again.
+            if (pick == null && moves is { } armed)
+            {
+                var hexes = armed.hexes.Keys.Select(h => (h.Q, h.R)).ToList();
+                pick = (armed.unit, new HashSet<(int q, int r)>(hexes), bridge.Session, s.Turn, false, null);
+                showReachable?.Invoke(hexes);
+            }
             moveButton.style.display = moves != null ? DisplayStyle.Flex : DisplayStyle.None;
             // Fortify and Hold (#754): each offered only where the sim's Orders.Check takes it; else the sim's reason, as given,
             // on Israel's units only (an enemy's card would only repeat the sim's English "That unit is not yours").

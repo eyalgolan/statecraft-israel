@@ -406,9 +406,11 @@ card.offices_separator: " · "
 # The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
 # Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
 card.selected: "מסומן"
-# The empty info panel's hint: a click, or Tab to the map's stop and Enter (#41 B1b, #1116), and the right-drag pan (#998).
-# "Tab" and "Enter" are the keys' printed names. For the native reviewer (#564).
-info.hint: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
+# The empty info panel's hint: moving a unit (owner, 25 Oct 2026, "Civ: select, then click"), a click, or Tab to the
+# map's stop and Enter (#41 B1b, #1116), and the right-drag pan (#998). "Tab" and "Enter" are the keys' printed names.
+# Agent-drafted Hebrew, native review pending (new wording) (#564): shortened to stay within two lines on a phone
+# (InfoPanelLayoutTests), in the nominal form of the drag clause.
+info.hint: "לחיצה על יחידה ואז על משושה מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משושה; גרירה בלחצן הימני מזיזה את המפה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"
 info.region: "{0}, {1} (נפות המנדט, 1947)"

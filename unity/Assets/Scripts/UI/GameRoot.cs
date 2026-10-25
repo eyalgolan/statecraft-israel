@@ -419,6 +419,8 @@ namespace Statecraft.Game.UI
                     advisor?.Notice(AdvisorSignals.CityShown);
             };
             pointer.HexClicked += onHex;
+            Action<int, int> onOrder = (q, r) => OnHexOrdered(map, info, q, r);
+            pointer.HexOrdered += onOrder;
             // #1063: a click on a city's name pill is a click on the city's hex (its settlement hex, where the city panel opens).
             Func<Vector2, (int q, int r)?> pillHex = p =>
             {
@@ -477,6 +479,7 @@ namespace Statecraft.Game.UI
                 bridge.Changed -= onChanged;
                 bridge.TurnEnded -= onTurn;
                 pointer.HexClicked -= onHex;
+                pointer.HexOrdered -= onOrder;
                 if (pointer.PillHex == pillHex) pointer.PillHex = null;
                 if (pointer.IsOverUi == pointerOverUi) pointer.IsOverUi = null;
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
@@ -626,7 +629,10 @@ namespace Statecraft.Game.UI
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
         /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a target click gives the
-        /// order and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
+        /// order and keeps the unit's card; any other click ends the pick first and then selects as usual. A selected unit
+        /// that can move has its Move pick open (InfoPanelPresenter.RenderLines; Civ, owner 25 Oct 2026), so a click on a lit
+        /// hex moves it; a click on another unit's hex selects that unit, as in Civ, lit or not (a right click moves there:
+        /// OnHexOrdered).</summary>
         internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
         {
             if (info.Covered)
@@ -636,11 +642,20 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
-            if (info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             var id = units.UnitToSelectAt(q, r);
+            if (!(id != null && info.MovePicking) && info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+        }
+
+        /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
+        /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
+        /// Otherwise nothing: no unit shown, a hex it cannot reach, or a screen over the panel (#210).</summary>
+        internal static void OnHexOrdered(MapScene map, InfoPanelPresenter info, int q, int r)
+        {
+            if (info.Covered || !info.ShowsUnit || !info.PickTakes(q, r)) return;
+            if (info.PickTarget(q, r)) map.ClearSelection();
         }
 
         /// <summary>Selects a drawn unit row, opens its card and centres the camera on its current hex.</summary>
