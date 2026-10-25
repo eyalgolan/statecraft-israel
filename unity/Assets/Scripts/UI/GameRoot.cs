@@ -405,7 +405,12 @@ namespace Statecraft.Game.UI
             cameraController.Ground = CameraController.GroundOf(terrain);
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
-            pointer.IsOverUi = overUi;
+            // #1617: the lit hexes of a Move or Attack pick show through the unit card, so the map pointer also takes a click
+            // on the card's text over one of them (InfoPanelPresenter.TakesClickThrough). The camera does not: no drag or wheel
+            // through the card.
+            Func<Vector2, bool> pointerOverUi = p => outcomes?.HoldsThePointer == true
+                || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
+            pointer.IsOverUi = pointerOverUi;
             Action<int, int> onHex = (q, r) =>
             {
                 OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
@@ -473,7 +478,7 @@ namespace Statecraft.Game.UI
                 bridge.TurnEnded -= onTurn;
                 pointer.HexClicked -= onHex;
                 if (pointer.PillHex == pillHex) pointer.PillHex = null;
-                if (pointer.IsOverUi == overUi) pointer.IsOverUi = null;
+                if (pointer.IsOverUi == pointerOverUi) pointer.IsOverUi = null;
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
                 if (pointer.Map == map) pointer.Map = null;
                 cameraController.Bounds = oldBounds;

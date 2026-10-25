@@ -42,6 +42,9 @@ namespace Statecraft.Game.UI
         /// load ends the pick, as the hexes change), and whether it is the attack's.</summary>
         (int unit, HashSet<(int q, int r)> hexes, GameSession session, int turn, bool attack, (int q, int r)? touchRoute)? pick;
         (int q, int r)? shownRoute;
+        /// <summary>TakesClickThrough's last answer, by hex: the pointer asks it every frame it hovers the card, and a go-to's
+        /// route is a whole-map search. Forgotten when the pick ends and on every render (an order or a new state).</summary>
+        ((int q, int r) hex, bool takes)? clickThrough;
         /// <summary>A sim unit's name on screen, for the attack's targets (GameRoot: its token's card title); null, or no
         /// name, gives the hex's coordinates.</summary>
         readonly System.Func<int, string?>? unitName;
@@ -299,6 +302,7 @@ namespace Statecraft.Game.UI
             if (pick == null) return;
             pick = null;
             shownRoute = null;
+            clickThrough = null;
             showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
             showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
         }
@@ -328,6 +332,22 @@ namespace Statecraft.Game.UI
             shownRoute = (q, r);
             var route = pick is { } p ? RouteTo(p, q, r) : System.Array.Empty<(int, int, int)>();
             showRoute?.Invoke(route);
+        }
+
+        /// <summary>#1617 (player report): the lit hexes of an open Move or Attack pick show through this card (its navy is
+        /// translucent), so a click on the card over one of them is meant for the map. True when a pick is open,
+        /// <paramref name="picked"/> (the UI element under the pointer) is this card or inside it but not inside one of its
+        /// buttons, and the hex under the pointer (<paramref name="hexUnder"/>, asked only then) is one PickTarget takes: lit,
+        /// or, for Move, an unlit hex with a route (go-to, #1398).</summary>
+        public bool TakesClickThrough(VisualElement? picked, System.Func<(int q, int r)?> hexUnder)
+        {
+            if (!(pick is { } p) || picked == null || (picked != panel && !panel.Contains(picked))) return false;
+            for (var e = picked; e != panel; e = e.parent) if (e is Button) return false;
+            if (!(hexUnder() is { } h)) return false;
+            if (clickThrough is { } known && known.hex == h) return known.takes;
+            var takes = p.hexes.Contains(h) || RouteTo(p, h.q, h.r).Count > 0;   // RouteTo: PickTarget's go-to rule
+            clickThrough = (h, takes);
+            return takes;
         }
 
         /// <summary>A map click while the player picks a Move's or an Attack's hex (GameRoot.OnHexClicked asks first): a lit
@@ -488,6 +508,7 @@ namespace Statecraft.Game.UI
 
         public void Render()
         {
+            clickThrough = null;
             RenderLines();
             panel.EnableInClassList(GddClass, gdd.style.display.value == DisplayStyle.Flex);
             // A fact row shows only when its line has something to say (an empty row would leave a lone sign).

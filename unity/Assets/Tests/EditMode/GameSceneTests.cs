@@ -325,6 +325,84 @@ public class GameSceneTests
         Assert.AreEqual(ground.z, b.center.z, 100f);
     }
 
+    /// <summary>#1617 (player report on v0.2.1, a Retina MacBook): after Move the lit hexes show through the unit card (its
+    /// navy is translucent), but a click on one there hit the card and nothing happened. While a Move pick is open, a click
+    /// on the card's text over a lit hex reaches the map and queues the Move. The card's buttons keep their clicks, the card
+    /// still holds the drag and the wheel, and with no pick open the card blocks the map as before.</summary>
+    [UnityTest]
+    public IEnumerator ALitHexSeenThroughTheUnitCardTakesTheClick()
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        var doc = Object.FindFirstObjectByType<UIDocument>();
+        var cam = Camera.main!;
+        var rt = new RenderTexture(1920, 1080, 0);
+        var camRt = new RenderTexture(1920, 1080, 24);   // the camera fills the panel, as in the game (MapLabelsPresenter)
+        var ps = Object.Instantiate(doc.panelSettings);
+        ps.targetTexture = rt;
+        try
+        {
+            doc.panelSettings = ps;
+            cam.targetTexture = camRt;
+            var map = Object.FindFirstObjectByType<MapScene>();
+            map.Build(Inputs.Map);
+            var root = Object.FindFirstObjectByType<GameRoot>();
+            root.Store = new SaveStore(saveDir);
+            root.Begin(Inputs, 0);
+            var ui = doc.rootVisualElement;
+            HideTheOpeningCard(ui);
+            var bridge = root.Bridge!; var c = bridge.Content;
+            var layer = root.Units!;
+            var golani = layer.Tokens.Single(p => p.Token.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(c, bridge.State, golani.Token.Unit)!.Value;
+            GameRoot.OnHexClicked(map, layer, root.Info!, golani.Q, golani.R);
+            Assert.IsTrue(root.Info!.ShowsUnit, "precondition: Golani's card");
+            var move = ui.Q<Button>("info-move");
+            UiTestKit.Press(move);
+            // The lit hex farthest from every unit (a token takes a click for its own hex) and every settlement (a city's
+            // name pill does), so the click can only be the land's.
+            int Room((int q, int r) h) => bridge.State.Units.Values.Select(u => MapActions.Distance(u.Q, u.R, h.q, h.r))
+                .Concat(c.SettlementHexes.Select(x => MapActions.Distance(x.Q, x.R, h.q, h.r))).Min();
+            var lit = Movement.Reachable(c, bridge.State, id).Keys.Select(k => (k.Q, k.R)).OrderByDescending(Room).First();
+            Assert.GreaterOrEqual(Room(lit), 1, "precondition: no unit or settlement on the lit hex");
+
+            // Lay the card over the lit hex: the probe is the card's title, over the hex's middle.
+            var card = ui.Q("info-panel");
+            var panel = ui.panel; float h = Screen.height;
+            var probe = AimAt(lit.Item1, lit.Item2);
+            var at = UiPointer.ToPanel(panel, probe, h);
+            card.style.left = at.x - 60f; card.style.top = at.y - 24f; card.style.bottom = StyleKeyword.Auto;
+            for (int i = 0; i < 30 && !card.worldBound.Contains(at); i++) yield return null;
+            yield return null;
+            probe = AimAt(lit.Item1, lit.Item2);
+            var picked = panel.Pick(at);
+            Assert.IsTrue(picked != null && (picked == card || card.Contains(picked)), $"precondition: the probe is on the card ({picked?.name})");
+            Assert.IsNull(picked!.GetFirstOfType<Button>(), $"precondition: the probe is on the card's text, not a button ({picked.name})");
+            var pointer = Object.FindFirstObjectByType<MapPointer>();
+            var camera = cam.GetComponent<CameraController>();
+
+            // The card's buttons keep their clicks while the pick is open, wherever the lit hexes are.
+            Vector2 o = UiPointer.ToPanel(panel, Vector2.zero, h), ex = UiPointer.ToPanel(panel, Vector2.right * 100, h) - o, ey = UiPointer.ToPanel(panel, Vector2.up * 100, h) - o;
+            Vector2 ScreenFor(Vector2 p) => new Vector2((p - o).x / ex.x * 100, (p - o).y / ey.y * 100);
+            Assert.IsTrue(pointer.IsOverUi!(ScreenFor(move.worldBound.center)), "the Move button keeps its click during the pick");
+
+            Assert.IsFalse(pointer.IsOverUi!(probe), "a lit hex seen through the card takes the click");
+            Assert.IsTrue(camera.IsOverUi!(probe), "the card still holds the drag and the wheel");
+            Assert.IsTrue(pointer.HandleClick(probe), "the click picks the lit hex");
+            Assert.AreEqual(lit, (bridge.State.Units[id].Q, bridge.State.Units[id].R), "the click moved Golani to the lit hex at once (#1398)");
+            Assert.IsTrue(root.Info.ShowsUnit, "Golani's card stays");
+            // A move with points left opens the pick again (#1398): end it, and the card blocks the map again.
+            if (ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"])) UiTestKit.Press(move);
+            Assert.IsTrue(pointer.IsOverUi!(probe), "with no pick open the card blocks the map again");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (ps != null) Object.DestroyImmediate(ps);
+            if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
+            if (camRt != null) { camRt.Release(); Object.DestroyImmediate(camRt); }
+        }
+    }
+
     /// <summary>Since the GDD cutover the game opens on its first card, One Army (idf_founding, window from 15 May 1948 per
     /// #567: the order it asks about was signed on 26 May, before the next monthly turn), and its photograph covers the map. A
     /// player hides it to use the map; so do these tests.</summary>
@@ -338,10 +416,15 @@ public class GameSceneTests
     /// <summary>Points the main camera straight down at Tel Aviv and returns Tel Aviv's screen position.</summary>
     static Vector2 AimAtTelAviv()
     {
+        var tlv = Inputs.Content.SettlementHexes.Single(s => s.Id == "tel_aviv");
+        return AimAt(tlv.Q, tlv.R);
+    }
+
+    /// <summary>Points the main camera straight down at the hex (q, r) and returns its screen position.</summary>
+    static Vector2 AimAt(int q, int r)
+    {
         var map = Object.FindFirstObjectByType<MapScene>();
-        var c = Inputs.Content;
-        var tlv = c.SettlementHexes.Single(s => s.Id == "tel_aviv");
-        var hex = c.HexAt(tlv.Q, tlv.R)!;
+        var hex = Inputs.Content.HexAt(q, r)!;
         var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
         var cam = Camera.main!;
         cam.transform.position = new Vector3(ground.x, 50_000f, ground.z);

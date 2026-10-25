@@ -44,7 +44,7 @@ namespace Statecraft.Game.UI
                 return text.Format("why.line." + cause.Key,
                     string.Join(", ", cause.Units.Take(attackers).Select(u => Of(u, c, rows, text, namesHe))),
                     string.Join(", ", cause.Units.Skip(attackers).Select(u => Of(u, c, rows, text, namesHe))),
-                    cause.Args[0], Number(cause.Args[1]), Number(cause.Args[2]), Number(cause.Args[3]));
+                    HexPlaces.Of(cause.Args[0], c, text, namesHe), Number(cause.Args[1]), Number(cause.Args[2]), Number(cause.Args[3]));
             }
 
             var args = cause.Args.ToArray();
@@ -53,8 +53,10 @@ namespace Statecraft.Game.UI
             else if (cause.Key == WhyKeys.Withdrew && args.Length > 0)
                 args[0] = ContentNames.Settlement(text, c, args[0], namesHe);
             var values = cause.Units.Select(u => (object)Of(u, c, rows, text, namesHe))
-                .Concat(args.Select(Number)).ToArray();
-            return text.Format("why.line." + cause.Key, values);
+                .Concat(args.Select(a => Number(HexPlaces.Of(a, c, text, namesHe)))).ToArray();
+            // A one-point move says "point" (why.line.unit_moved_one).
+            var one = cause.Key == WhyKeys.UnitMoved && args.Length > 1 && args[1] == "1" ? "_one" : "";
+            return text.Format("why.line." + cause.Key + one, values);
         }
 
         static object Number(string value) => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) ? n : value;

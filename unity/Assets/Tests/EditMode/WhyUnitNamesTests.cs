@@ -83,10 +83,11 @@ public class WhyUnitNamesTests
         {
             var english = UnitNames.Of(unit, C, rows, en);
             Assert.IsFalse(plurals.Any(p => english.StartsWith(p, System.StringComparison.Ordinal)), $"{unit.Type}: '{english}' is plural");
-            foreach (var key in WhyKeys.All)
+            // Every line, and a one-point move too (why.line.unit_moved_one, #1633).
+            foreach (var (key, args) in WhyKeys.All.Select(k => (k, Args(k))).Append((WhyKeys.UnitMoved, new[] { "5,5", "1" })))
             {
                 var units = key == WhyKeys.Engagement ? new[] { unit, enemy } : new[] { unit };
-                var cause = new Cause("map", "0", 0, "fallback", key: key, units: units, args: Args(key));
+                var cause = new Cause("map", "0", 0, "fallback", key: key, units: units, args: args);
                 foreach (var text in new[] { en, he })
                 {
                     var name = UnitNames.Of(unit, C, rows, text);

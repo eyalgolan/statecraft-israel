@@ -176,6 +176,51 @@ public class UnitOrdersTests
         info.Dispose();
     }
 
+    /// <summary>#1617: while a Move pick is open, a click on the unit card is the map's only where it falls on the card's
+    /// text (not a button, not another panel) over a hex PickTarget takes: a lit hex, or an unlit hex with a go-to route
+    /// (#1398); an unlit hex with no route stays blocked. The hex is asked only then. With no pick open, never.</summary>
+    [Test]
+    public void OnlyAHexTheMovePickTakesUnderTheCardsTextTakesAClickThroughTheCard()
+    {
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var bridge = new SimBridge(g, Text);
+        var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        PlacedToken? shown = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var info = new InfoPanelPresenter(ui.Root, bridge, Text, new Dictionary<string, string>(), selectedUnit: () => shown);
+        info.ShowUnit();
+        var reach = Movement.Reachable(C, g.State, UnitCard.SimUnit(C, g.State, golani.Unit)!.Value).Keys.ToList();
+        (int q, int r)? lit = (reach[0].Q, reach[0].R);
+        var id = UnitCard.SimUnit(C, g.State, golani.Unit)!.Value;
+        var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
+        (int q, int r)? routable = (tlv.Q, tlv.R);
+        Assert.IsFalse(reach.Contains((tlv.Q, tlv.R)), "precondition: Tel Aviv is out of Golani's reach this turn");
+        Assert.IsNotEmpty(Movement.Route(C, g.State, id, tlv.Q, tlv.R, bridge.Spent), "precondition: a go-to route reaches Tel Aviv");
+        var none = C.Hexes.First(h => !h.Land);   // the sea: no route goes there
+        Assert.IsEmpty(Movement.Route(C, g.State, id, none.Q, none.R, bridge.Spent), "precondition: no go-to route reaches the sea");
+        (int q, int r)? unroutable = (none.Q, none.R);
+        var title = ui.Q<Label>("info-title"); var move = ui.Q<Button>("info-move");
+        var asked = 0;
+        System.Func<(int q, int r)?> At((int q, int r)? hex) => () => { asked++; return hex; };
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
+        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
+        UiTestKit.Press(move);
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "the card's text over a lit hex");
+        Assert.IsTrue(info.TakesClickThrough(ui.Q<VisualElement>("info-panel"), At(lit)), "the card's own background over a lit hex");
+        Assert.IsTrue(info.TakesClickThrough(title, At(routable)), "the card's text over an unlit hex with a go-to route");
+        Assert.IsFalse(info.TakesClickThrough(title, At(unroutable)), "the card's text over an unlit hex with no route");
+        Assert.IsFalse(info.TakesClickThrough(title, At(null)), "the card's text off the map");
+        asked = 0;
+        Assert.IsFalse(info.TakesClickThrough(move, At(lit)), "a button keeps its click over a lit hex");
+        Assert.IsFalse(info.TakesClickThrough(move, At(routable)), "and over a hex with a go-to route");
+        Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("top-bar"), At(lit)), "another panel keeps its click");
+        Assert.IsFalse(info.TakesClickThrough(null, At(lit)), "no UI: the map has the click anyway");
+        Assert.AreEqual(0, asked, "the hex is asked only for the card's text");
+        UiTestKit.Press(move);   // a second press ends the pick
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "the pick has ended");
+        info.Dispose();
+    }
+
     /// <summary>Slice 2 (#754): for every unit with a sim unit, Israel's and the enemy's, the card shows Fortify and Hold each
     /// only where the sim's Orders.Check takes it, and where it does not, on Israel's units the sim's reason, whatever it is
     /// (so a refusal the sim adds later, such as artillery's hold, shows with no change here); an enemy's card gives no reason
@@ -559,7 +604,7 @@ public class UnitOrdersTests
         Assert.IsNull(bridge.Queue(new UnitOrder(0, Combat.Attack, syrian.Q, syrian.R)));
         Assert.AreEqual(arms - 1, bridge.State.Arms, "paid at once (arms_per_attack 1)");
         var line = ui.Q<Label>("toast").text;
-        StringAssert.StartsWith("The attack on hex", line);
+        StringAssert.StartsWith("The attack on Degania Alef (", line);   // the place, not the hex's coordinates
         StringAssert.DoesNotContain("unit 0", line);
         StringAssert.Contains(golani.Unit.Name, line);
         info.ShowUnit();

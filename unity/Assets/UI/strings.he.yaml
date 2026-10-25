@@ -312,6 +312,7 @@ why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
 # Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the name opens the
 # line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
 why.line.unit_moved: "{0}: תנועה למשושה {1} תמורת {2} נקודות תנועה"
+why.line.unit_moved_one: "{0}: תנועה למשושה {1} תמורת נקודת תנועה אחת"
 why.line.fortify_lost: "{0}: יציאה ממשושה {1}, והביצור שם אבד"
 why.line.fortifying: "{0}: התבצרות במשושה {1}; הביצור חל מסוף התור"
 why.line.holds: "{0}: החזקה במשושה {1}"
@@ -331,6 +332,18 @@ why.line.on_its_way: "{0} בדרך למשושה {1}"
 why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
 why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
 why.line.arrived: "{0}: הגעה למשושה {1}"
+# A hex in the unit lines (HexPlaces), after the lines' "משושה": a settlement's hex is its name alone ("משושה חיפה"); any
+# other hex is said from the nearest settlement, {0} the km (to the nearest 5), {1} the compass point, {2} the settlement,
+# with a maqaf after the prefix as in why.line.sent_home. Agent-drafted Hebrew; native review pending (#564).
+why.hex.away: "{0} ק״מ {1} ל־{2}"
+why.hex.north: "צפונית"
+why.hex.north_east: "צפון־מזרחית"
+why.hex.east: "מזרחית"
+why.hex.south_east: "דרום־מזרחית"
+why.hex.south: "דרומית"
+why.hex.south_west: "דרום־מערבית"
+why.hex.west: "מערבית"
+why.hex.north_west: "צפון־מערבית"
 # The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
