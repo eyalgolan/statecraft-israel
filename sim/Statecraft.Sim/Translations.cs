@@ -83,6 +83,9 @@ namespace Statecraft.Sim
         static readonly Regex Id = new Regex(@"^[a-z][a-z0-9_]*$", RegexOptions.CultureInvariant);
         static readonly Regex HeKey = new Regex(@"^(.+)_he(_f)?$", RegexOptions.CultureInvariant);
         static readonly Regex PlainKey = new Regex(@"^[A-Za-z0-9_.\-]+$", RegexOptions.CultureInvariant);
+        // YAML 1.1's booleans: text in the 1.2 core schema, but PyYAML's safe_load (and YamlDotNet's typed bool reads,
+        // tools/yaml12.py) still take them as true or false, so a key spelt so is quoted too.
+        static readonly Regex Yaml11Bool = new Regex(@"^(?:y|Y|yes|Yes|YES|n|N|no|No|NO|on|On|ON|off|Off|OFF)$", RegexOptions.CultureInvariant);
 
         /// <summary>Fields that stay on the English record when the Hebrew moves (#1618): the Hebrew's sources, the grammar
         /// and date-window facts about it, and the record's own review. A key never names one of these.</summary>
@@ -175,6 +178,10 @@ namespace Statecraft.Sim
             foreach (var kv in map.Children)
             {
                 var key = kv.Key is YamlScalarNode k ? k.Value ?? "" : throw new ContentException(file, "(key)", "a key must be text");
+                // A plain key YAML reads as null, a boolean or a number would come back from tools/yaml12.py typed, not as
+                // this text: it must be quoted (as the writer quotes it).
+                if (Core((YamlScalarNode)kv.Key) != "str")
+                    throw new ContentException(file, key, "a key YAML reads as null, a boolean or a number must be quoted");
                 if (!seen.Add(key)) throw new ContentException(file, key, "repeated");
                 yield return (key, kv.Value);
             }
@@ -284,7 +291,10 @@ namespace Statecraft.Sim
             return (ui.ToString(), events.ToString(), content.ToString());
         }
 
-        static string Key(string key) => PlainKey.IsMatch(key) ? key : Json(key);
+        /// <summary>A key, plain only when every YAML reader takes it as this text: letters, digits, '_', '.' and '-', and
+        /// not something the 1.2 core schema types (null, true, 1948, 1e3) or a YAML 1.1 boolean (on, yes).</summary>
+        static string Key(string key) =>
+            PlainKey.IsMatch(key) && Core(new YamlScalarNode(key) { Style = ScalarStyle.Plain }) == "str" && !Yaml11Bool.IsMatch(key) ? key : Json(key);
 
         /// <summary>A JSON string, as Python's json.dumps(ensure_ascii=False) writes it (a valid YAML double-quoted scalar).</summary>
         internal static string Json(string s)

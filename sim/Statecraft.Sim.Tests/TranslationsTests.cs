@@ -68,8 +68,61 @@ public class TranslationsTests
         Assert.Equal(once, Translations.Write(back));   // byte for byte, every key, value, flag and position
         Assert.Equal(Inline.Value.Ui, back.Ui);
         Assert.Equal(ByKey(Inline.Value.Content), ByKey(back.Content));
-        Assert.Equal(35, back.Events.Count);
-        Assert.True(back.Content.Count > 700, $"{back.Content.Count} content fields");
+    }
+
+    [Fact]
+    public void NoHebrewFieldIsMissedOrCountedTwice()
+    {
+        // A plain scan, independent of Fields(): every non-empty *_he / *_he_f text in content/*.yaml and
+        // content/map/*.yaml, and every event's title_he and options' text_he. The inventory must have exactly these.
+        var root = RealContentTests.ContentRoot();
+        static bool Text(YamlNode n) => n is YamlScalarNode s && !string.IsNullOrEmpty(s.Value)
+            && (s.Style != YamlDotNet.Core.ScalarStyle.Plain || !Regex.IsMatch(s.Value, "^(?:null|Null|NULL|~|true|True|TRUE|false|False|FALSE|[-+]?[0-9][0-9.eE+-]*)$"));
+        int Count(YamlNode n, Func<string, bool> key) => n switch
+        {
+            YamlMappingNode m => m.Children.Sum(kv => (kv.Key is YamlScalarNode k && key(k.Value!) && Text(kv.Value) ? 1 : 0) + Count(kv.Value, key)),
+            YamlSequenceNode q => q.Children.Sum(x => Count(x, key)),
+            _ => 0,
+        };
+        var files = Directory.GetFiles(root, "*.yaml").Concat(Directory.GetFiles(Path.Combine(root, "map"), "*.yaml"));
+        var scanned = files.Sum(f => Count(Yaml(Path.GetRelativePath(root, f)), k => Regex.IsMatch(k, "_he(_f)?$")));
+        Assert.Equal(scanned, Inline.Value.Content.Count);
+        Assert.Equal(Inline.Value.Content.Count, Inline.Value.Content.Select(t => t.Key).Distinct().Count());
+        var events = Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(f => Yaml(Path.GetRelativePath(root, f))).ToList();
+        Assert.Equal(events.Sum(e => Count(e, k => k == "title_he")), Inline.Value.Events.Count);
+        Assert.Equal(events.Sum(e => Count(e, k => k == "text_he")), Inline.Value.Events.Sum(e => 1 + e.Options.Count));
+        Assert.Equal(35, Inline.Value.Events.Count);
+    }
+
+    [Fact]
+    public void AKeyThatYamlWouldTypeIsQuotedAndReadsBackAsText()
+    {
+        // An id or key spelt like null, a boolean or a number must survive every YAML reader as that text.
+        var set = new TranslationSet { Lang = "he" };
+        foreach (var k in new[] { "1948", "1e3", "null", "true", "on", "yes", "plain_key" })
+            set.Ui.Add(new KeyValuePair<string, string>(k, "א"));
+        set.Events.Add(new EventTranslation { Id = "no", Title = "א", Text = "ב",
+            Options = { new KeyValuePair<string, string>("off", "ג"), new KeyValuePair<string, string>("y", "ד") } });
+        var (ui, events, _) = Translations.Write(set);
+        Assert.Contains("\"1948\": ", ui);
+        Assert.Contains("\"on\": ", ui);
+        Assert.Contains("\nplain_key: ", "\n" + ui);
+        Assert.Contains("\"no\":\n", events);
+        Assert.Contains("    \"off\": ", events);
+        var back = ParseBack(set);
+        Assert.Equal(set.Ui, back.Ui);
+        Assert.Equal(new[] { "off", "y" }, back.Events.Single().Options.Select(o => o.Key));
+    }
+
+    [Theory]
+    [InlineData("1948: \"א\"\n")]
+    [InlineData("true: \"א\"\n")]
+    [InlineData("null: \"א\"\n")]
+    public void APlainKeyYamlWouldTypeIsRefused(string ui)
+    {
+        var e = Assert.Throws<ContentException>(() => Translations.Parse("he", ui, null, null));
+        Assert.Contains("must be quoted", e.Message);
+        Assert.Equal("1948", Translations.Parse("he", "\"1948\": \"א\"\n", null, null).Ui.Single().Key);
     }
 
     [Fact]
