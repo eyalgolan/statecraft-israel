@@ -1,10 +1,12 @@
 # M3 release: the browser build
 
+**Historical record:** preserve dated rulings/release observations in context. [The GDD](GDD.md) and current feature owners supersede older gameplay definitions. This is evidence, not another active numerical catalogue.
+
 **Status:** M3 ships as the local browser build. The itch.io upload and the cross-upload save test are deferred to the
 start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below are kept, marked "Deferred to M4".
 
 ## What ships
-- **Folder and zip:** `unity/Builds/Web-gzip/` uses gzip compression with no decompression fallback (it was Brotli until the owner's decision on #879, 17 October 2026: "gzip for both"; `docs/RELEASING.md`, step 5, says why). It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
+- **Folder and zip:** `unity/Builds/Web-brotli/` uses Brotli compression with no decompression fallback. It is zipped as `unity/Builds/statecraft-m3-web.zip`, with `index.html` at the zip root. Both are build output and are not committed.
 - **File names:** the files under `Build/` are named by their content hash (issue #437), for example
   `Build/814d5f9032ce4b5847cf75e492700bbb.loader.js`, so a browser that cached an earlier build cannot mix its files into
   this one. The build's `index.html` names them; nothing else may assume a name. `index.html` keeps its fixed name and
@@ -13,11 +15,11 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
   files (`content/`, `map/`, `video/` and the start screen's recording) keep their names; the player adds the build's
   id to every URL it fetches them by (`?b=<Application.buildGUID>`,
   `GameInputs.WithBuildId`), so a browser cannot serve one build's cached content to another.
-- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression gzip -shareable -logFile "$PWD/unity-build-web-gz.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
+- **Built by:** `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -buildTarget WebGL -executeMethod Statecraft.Game.EditorTools.Build.Web -compression brotli -shareable -logFile "$PWD/unity-build-web-br.log"`, then `python3 tools/package_release.py` (it zips the folder, `index.html` at the root, and refuses while any sensitive event is not sensitivity-reviewed, and when the build's `event-photos.json` is missing, says the build was not `-shareable`, or lists an unreviewed sensitive event photograph). Never zip by hand.
 - **After building:** drop the build's rewrites of the settings with
   `git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset` (as in `dev-setup.md`), so no
   build-cache change gets committed.
-- **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-gzip --query "golden&smoke=5"` with the three
+- **Verified locally by:** `uv run tools/web_check.py unity/Builds/Web-brotli --query "golden&smoke=5"` with the three
   full `--expect` values pinned in `docs/determinism.md` (both goldens and the smoke line). This runs both golden hashes
   in the WebGL IL2CPP player, then plays five turns through the UI's own buttons (answering two events through the card:
   the IDF founding order on turn 2, the first truce on turn 4).
@@ -58,11 +60,11 @@ start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below
     real connection 4.3 MB less to fetch is worth far more (3.5 s at 10 Mbit/s).
   - **Goldens:** `uv run tools/web_check.py unity/Builds/Web-disabled --query "golden&smoke=5"` with the three `--expect`
     values from `docs/determinism.md`: PASS on both builds (the Brotli build too).
-- **Play it locally:** serve the folder with web_check's handler, which sends `Content-Encoding: gzip` for `*.gz` (and `br` for `*.br`). Plain `python3 -m http.server` does not, so a compressed build would not load. Then open http://localhost:8000/.
+- **Play it locally:** serve the folder with web_check's handler, which sends `Content-Encoding: br` for `*.br`. Plain `python3 -m http.server` does not, so the Brotli build would not load. Then open http://localhost:8000/.
   ```
-  uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-gzip')).serve_forever()"
+  uv run --python 3.12 python -c "import sys,functools,http.server; sys.path.insert(0,'tools'); import web_check as w; http.server.ThreadingHTTPServer(('127.0.0.1',8000), functools.partial(w.Handler, directory='unity/Builds/Web-brotli')).serve_forever()"
   ```
-  The uncompressed build also works with `python3 -m http.server 8000 --bind 127.0.0.1 --directory unity/Builds/Web-disabled`.
+  The uncompressed build also works with `python3 -m http.server 8000 --directory unity/Builds/Web-disabled`.
 - **Console lines a browser check can rely on:**
   - `GAME OK <date> turn <n> hash <state hash>` at start (a new game, or the autosave continued).
   - `TURN <n> <date> hash <state hash>` after every End Turn.
@@ -115,46 +117,6 @@ Each step below passed:
 
 Firefox is not installed on the development Mac. A Firefox result from a contributor, and the WebKit check, are in the
 next section.
-
-## Firefox cached-build return (#437), 19 October 2026
-
-**Local pass, with limits:** installed Firefox 158.0 on macOS 27.0.1 arm64, headless through
-[WebDriver BiDi](https://developer.mozilla.org/en-US/docs/Web/WebDriver/How_to/Create_BiDi_connection),
-1280x720 at DPR 1. This is Firefox itself, rather than Playwright's patched Firefox in the older report below.
-Both consecutive builds used upstream main `9e57134201f74412bf3d7513e26b600a9c760f5c`, Unity 6000.3.25f1,
-`Build.Web -compression disabled`, separate output directories, and no source or template change.
-
-The server sent `Cache-Control: public, max-age=3600`; `web_check.py`'s no-store server was not used for this
-cache test. One Firefox process, temporary profile, origin and URL were kept for A, a normal return to A, and a
-normal return after replacing the served directory with B. Navigation went through `about:blank`, without a hard
-reload or cache clearing. After the switch the server exposed B only, not A's removed files.
-
-| Observation | Fresh A | Normal return to A | Normal return to B |
-|---|---|---|---|
-| Navigation `transferSize` (bytes) | 4701 | 0 | 0 |
-| BiDi responses marked `fromCache` | 0 | 14 | 7 |
-| Inline document's original build names | A | A | A |
-| Runtime configuration and StreamingAssets build id | A | A | B |
-| Golden manifest values / UI smoke | 8/8 and 5 turns | 8/8 and 5 turns | 8/8 and 5 turns |
-
-A's data file was `20648dff2e2641ced75ed42ef260fd23.data`; B's was
-`ab61a67d11f2a3077b1cb2b5f4eec503.data`. The loader, framework and wasm names were unchanged between the
-builds. StreamingAssets' `b` value changed from `bcbd32b8194e467bb1906085e78bb3f2` to
-`020ffe9f466f45e7ad95f62deb9359d0`. On the B return, the cached document still contained A's original inline
-file names, while `useCurrentPage` selected B's data URL; B's data request returned 200, and no A-only build
-resource was requested from the B server. This exercises stale HTML, not just a fresh page load.
-
-All three visits matched every value in [the golden manifest](https://github.com/eyalgolan/statecraft-israel/blob/9e57134201f74412bf3d7513e26b600a9c760f5c/sim/Statecraft.Sim.Tests/golden/manifest.txt)
-and logged `SMOKE OK 5 turns 1948-10-15 3005405d64abc6e7418fa1f0d35c36ce5f64ed3af7c5a4c24a73d5dfdb16121f`.
-The harness exited 0; across 33 server requests there were no HTTP errors, no BiDi console error entries and no
-`GOLDEN FAIL`, `SMOKE FAIL`, `BOOT FAIL`, exception or recursion failure. Network traces, build-file SHA256
-manifests, console lines and 1280x720 captures were retained locally; the exact standalone harness and commands
-are included in the contribution's PR description. The B-return capture SHA256 is
-`daf943e3b3286c109e745648f086b3d5a475329a4f182b32a34dce7076723331`.
-
-This checks the existing #501 fix on a local, uncompressed EN build. It does not check Firefox on Windows,
-wheel or touch input, compressed hosting, save migration or two itch.io uploads. The itch.io check remains the
-owner's step in #43; #437 stays open for that step. No gameplay, source-review status or release gate changed.
 
 ## Other browsers (#43), 2026-10-14
 Build: main `04bf7cb`, WebGL, `-compression disabled`, served with web_check's handler on `http://localhost`. Mac: Apple
@@ -285,18 +247,12 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
   sensitive event photograph (`docs/event-images.md`). Use `-shareable` and the script for every build
   that leaves this machine, including the M4 private Draft once it is shared with anyone. Local dev builds (no flag)
   are not gated, because web_check and the golden checks need them.
-- **Alternate-timeline content (R-ALT-011, Q-ALT-9):** `Statecraft.Cli --release-gate`, and so
-  `tools/package_release.py` and `scripts/oss/release_gate.sh`, also refuse while any consequence card (`kind:
-  consequence`) or any event with `variants` has no `reviewed_by`, naming them on a `RELEASE GATE REFUSED` line
-  (`Statecraft.Sim.ReleaseGate.AlternateUnsigned`; the CLI also prints each as `unsigned alternate card: <id>`). The
-  sign-off is a person's `reviewed_by`, written only by that person. The Unity `-shareable` build flag checks the sensitive events only.
-- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the eight ids, and
+- **Pinned set:** `FinalWaveTests.TheSensitiveEventsArePinned` lists the seven ids, and
   `TheOwnerTableListsEverySensitiveEvent` fails if a sensitive event is missing from this table, so a new one cannot
   skip the review.
 
 | Event | Tags | What to review |
 |---|---|---|
-| `burma_road_complete` | `war-casualties` | Objective 3 completion card and selected Road of Valour photograph (#791). The owner approved the photograph (#1226) and the card's text as written on 21 October 2026 ([#791](https://github.com/eyalgolan/statecraft-israel/issues/791#issuecomment-6323448636)); it is `sensitivity-reviewed`. |
 | `altalena` | security, war-casualties | Jews killed by Jews: 16 Irgun and 3 IDF dead (in the YAML comment, not the card) |
 | `ten_days` | security, war-casualties | Lydda and Ramle are shown as a military operation only (Lydda airport, the Jerusalem road); leaving out the population's flight and expulsion is an editorial choice the notes flag for explicit approval |
 | `operation_yoav` | security, war-casualties | the Hebron-hills decision; military text only |
@@ -308,9 +264,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 **Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
 (`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner
 records the sign-off by moving each feature's `status` to `sensitivity-reviewed` (after `fact-checked`). The 1948
-sub-districts (D-B) are reviewed with them. On 23 October 2026 the owner signed off 11 of the 16 features (#196, #1444;
-the owner's review also stands as their fact check); `egypt_adl_gaza`, `egypt_mv1950_demarcation`, `egypt_mv1950_zone_lines`,
-`jordan_adl_a_latrun` and `syria_adl` were flagged and stay `draft`.
+sub-districts (D-B) are reviewed with them.
 
 | Line or zone | Front, from | What to review |
 |---|---|---|
@@ -328,7 +282,7 @@ Deferred to the start of M4, as a private Draft (owner ruling, 2026-10-10). The 
 owner's itch.io account and is never automated, and the build must pass the sensitivity gate above (`-shareable`).
 1. Sign in at https://itch.io. Go to Dashboard, then **Create new project**.
 2. Set the title to "Statecraft: Israel (M3 preview)", Kind of project to **HTML**, and Classification to Games.
-3. Under Uploads, upload the zip made by `bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-m3-web.zip` (it puts the licence and attribution files inside, then runs `tools/package_release.py`; see `docs/RELEASING.md`) and tick **This file will be played in the browser**.
+3. Under Uploads, upload the zip made by `bash scripts/oss/package_web.sh unity/Builds/Web-brotli unity/Builds/statecraft-m3-web.zip` (it puts the licence and attribution files inside, then runs `tools/package_release.py`; see `docs/RELEASING.md`) and tick **This file will be played in the browser**.
 4. Embed options:
    - Viewport **1280 × 720**. It fits a 1366×768 or 1440×900 laptop page without scrolling, and under the UI's
      ScaleWithScreenSize (reference 1920×1080) it lays out exactly like 1920×1080; `UiLayoutTests` covers 1280×720.
@@ -340,10 +294,7 @@ owner's itch.io account and is never automated, and the build must pass the sens
    - Then choose **Restricted** (password) or **Public**.
 6. Record the page URL below under "Published at".
 
-No server settings are needed. itch.io detects gzip from the bytes and sends it with `Content-Encoding: gzip`; it also
-detects `.br`, but its CDN decodes Brotli and re-encodes by content type, so a Brotli `.data` reached players
-uncompressed (checked with curl on two public Unity games, 17 October 2026). That is why the release build is gzip
-(#879); see https://itch.io/docs/creators/html5, "Compression".
+itch.io serves `.br` files with `Content-Encoding: br`, because it detects the extension, so no server settings are needed.
 
 Published at: (owner fills in)
 

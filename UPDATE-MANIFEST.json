@@ -1,0 +1,218 @@
+{
+  "design_version": "0.3",
+  "version_designated_date": "2026-10-25",
+  "decision_record_date": "2026-10-17",
+  "repository": "eyalgolan/statecraft-israel",
+  "base_commit": "e213d960188608f7edb590c8cb364f13e794b623",
+  "changed_file_count": 41,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "58aa3387d9d2b48ca62703a47ff93d6961ee097100e6d105adda7a9f53f84b7f",
+      "bytes": 8468
+    },
+    {
+      "path": "README.he.md",
+      "sha256": "579eb882b8d485281425d11fc319bb95fbab098556a87157af30a3e4f6a36e99",
+      "bytes": 22749
+    },
+    {
+      "path": "README.md",
+      "sha256": "8eb4bdd8423a420a4d0fd43899a0752bed1f5561ad119147244d18cb8cbb95f1",
+      "bytes": 15165
+    },
+    {
+      "path": "docs/GDD.md",
+      "sha256": "091e39ad0be29fe3124773184a74734c1c2919943c8c730683ab6f846f19dd4c",
+      "bytes": 11003
+    },
+    {
+      "path": "docs/WRITING_EVENTS.md",
+      "sha256": "9b410efcb5e0a49f38885ad174957bedba1acb04128ede3468c853a9e0ea4622",
+      "bytes": 18258
+    },
+    {
+      "path": "docs/determinism.md",
+      "sha256": "fce52cf97224b7a21a0868c6512e26a36532e4d117f290b8dbf7994178f1114e",
+      "bytes": 31480
+    },
+    {
+      "path": "docs/gdd/README.md",
+      "sha256": "a9d08fd411e11c7eff145241f2489c9fa81a2bdb1c8a91389fd3aee1c989fbfa",
+      "bytes": 3030
+    },
+    {
+      "path": "docs/gdd/balance.md",
+      "sha256": "9df5281e81d24d72300b4638349bfc2123c47f8fd18ccbe312fa7e2f274fd73c",
+      "bytes": 18159
+    },
+    {
+      "path": "docs/gdd/build-yishuv.md",
+      "sha256": "65f44d36e0bff33719ac59286eb8b84e0212b951c37c2efd98dff5a5846603b9",
+      "bytes": 4508
+    },
+    {
+      "path": "docs/gdd/cities.md",
+      "sha256": "9134755ef07e82df570f6fe0ce61a348b5baa621cc896610fb7b5e50d8dc7e02",
+      "bytes": 7033
+    },
+    {
+      "path": "docs/gdd/corridors.md",
+      "sha256": "8d6e0d81c40ea369f34e6af3fc06afc6308f0f51ac1fce849d169f30b922a714",
+      "bytes": 3592
+    },
+    {
+      "path": "docs/gdd/cutover-resource-layer.md",
+      "sha256": "2d043c9e47f5519c69fce0dddd293f3a613fe6bdc158c5e2e093cbe239d667a0",
+      "bytes": 7543
+    },
+    {
+      "path": "docs/gdd/example-turn-grid.md",
+      "sha256": "a363e4cbc41ceeaf1fb87efd5f0174078d2d048f50713fd92805ff15a4bd28d2",
+      "bytes": 1614
+    },
+    {
+      "path": "docs/gdd/loop-switch.md",
+      "sha256": "b0008a727dbce27db7a193bc8138699540880fce5e8a0571cb76361f91e0e504",
+      "bytes": 4826
+    },
+    {
+      "path": "docs/gdd/map-editor.md",
+      "sha256": "533bbf5f1daa56d32fa6f299fc52da807a48fc3630f19573061aca608bd330a9",
+      "bytes": 4719
+    },
+    {
+      "path": "docs/gdd/military-combat.md",
+      "sha256": "a2c57367072500fa1aa0eb69d479ac537d9f5eead97889625462cdd89212868e",
+      "bytes": 9887
+    },
+    {
+      "path": "docs/gdd/ministers-events-end.md",
+      "sha256": "ea8c55a38be43fd8cd532bf13933028d9bdebd18377501808ab38504184bb7dd",
+      "bytes": 3355
+    },
+    {
+      "path": "docs/gdd/monthly-turns.md",
+      "sha256": "cafb55f00876831c8560ab25e6e52c4e79c0c89b8a38ae3320724900a576aa17",
+      "bytes": 1775
+    },
+    {
+      "path": "docs/gdd/objective-card.md",
+      "sha256": "7860ac5be3af031e0076ba35c0aa52ed34e9405ac122a11f9446d5876fc1a3ff",
+      "bytes": 6435
+    },
+    {
+      "path": "docs/gdd/one-city.md",
+      "sha256": "160465ba16fc85ef4b229d8a36a9d2b233ea4395bfe4e6488d1d38c51287b6ba",
+      "bytes": 1500
+    },
+    {
+      "path": "docs/gdd/settlement-control.md",
+      "sha256": "66fb231cd7436afa2f0c821df25e46c6145b998eb13f201808e76bc12be19f18",
+      "bytes": 5249
+    },
+    {
+      "path": "docs/gdd/training.md",
+      "sha256": "20289ec92e1c9f0f09a5c201809416ab4722cb4a9692484348c5fcadcb6c4345",
+      "bytes": 7451
+    },
+    {
+      "path": "docs/gdd/veteran-pioneer.md",
+      "sha256": "989bca0087cf9435beff04c6c28b3ded45770ebbd1e5d0989a3ac5b4d0b2fc87",
+      "bytes": 1477
+    },
+    {
+      "path": "docs/locations.md",
+      "sha256": "f72ae463abbb2ed608d63985259674c7fc7f84898e60521595e890ee5cfc3565",
+      "bytes": 15992
+    },
+    {
+      "path": "docs/m0-m2-rulings.md",
+      "sha256": "ea75535ab936371413d5770cad7a69f2f9c3e72e60bf3ed1fa718d92125a4bcb",
+      "bytes": 6103
+    },
+    {
+      "path": "docs/m3-release.md",
+      "sha256": "7a49b66e8ea5209995a5e88b08736b75efe2cafa02b69c872e144abfb91c74cc",
+      "bytes": 34056
+    },
+    {
+      "path": "docs/m3-rulings.md",
+      "sha256": "8a9fe4fd0419a455f5f940f52d05376b581f137e778c3293be34897279c5a0c8",
+      "bytes": 19569
+    },
+    {
+      "path": "docs/oss/DECISIONS.md",
+      "sha256": "9a63b3a7e81d1d4a39baf1784bb15b64da331bc40e4e03b4f521c55a72a3ae0d",
+      "bytes": 32400
+    },
+    {
+      "path": "docs/routes.md",
+      "sha256": "04a0fa12ed40def7986e7e846b43d1d868490712124f62cd3757bca4d553a1be",
+      "bytes": 34875
+    },
+    {
+      "path": "docs/rules/README.md",
+      "sha256": "e9423a20a84423c1e4031f3f1fa1292d4db2d4f96ba0ff52fa4e71cdfcb1ac08",
+      "bytes": 1697
+    },
+    {
+      "path": "docs/rules/mvp.md",
+      "sha256": "d26901417b7b5e6e6b86ca4e0622d6e99f6baaf416e2886b6fe520eea0403c0a",
+      "bytes": 9329
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-12-gdd-phase-1.md",
+      "sha256": "412f70376da7dd7a156d0c6dde09d2b15f0edda6c189d8f4e817b03f04326ee8",
+      "bytes": 2141
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-14-gdd-phase-2.md",
+      "sha256": "3c4372fa1da44b1abd353fed4ba1e964ee641e7e1245632a29a3ddb76ceb9253",
+      "bytes": 2168
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-15-gdd-phase-3.md",
+      "sha256": "0efe005a069357562f731dbbcb926ec8c548bf6958a07955a6362b3b799de40d",
+      "bytes": 2241
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-15-gdd-phase-4.md",
+      "sha256": "d90af7440043e7fdd543ee13e3e243a0c291a258a4ebc78c07049342e5e5c0a5",
+      "bytes": 2509
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-15-gdd-phase-5.md",
+      "sha256": "1dec2b43c533f03580a084498521153cebb6f5b0e9a65cc48364e3bc4f85e4c6",
+      "bytes": 2579
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-15-gdd-phase-6.md",
+      "sha256": "77be68f30bfc6a1553a269f48a539625bf993b015f44fc8013f60229ae83984c",
+      "bytes": 2232
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-15-gdd-phase-7.md",
+      "sha256": "6ca5121ac2c757476b168751407b8a9cbbaddb79c5c8fea154cd2e76305cdc30",
+      "bytes": 2268
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md",
+      "sha256": "131ba70950f685db0ee00d6630976c60f14ec8d9d5f7625c50ce9a5ac0acef82",
+      "bytes": 3957
+    },
+    {
+      "path": "docs/units.md",
+      "sha256": "4bc4bc1d414f756a8b6171af65b55812cab735021a2e8deb1472ce303424a102",
+      "bytes": 46747
+    },
+    {
+      "path": "docs/visual-v1.md",
+      "sha256": "d7dee472b87b451df2ab3a662dd57c2aaecbccc61c4cff2a01eebba2a3b98f6e",
+      "bytes": 304607
+    }
+  ],
+  "version_only_update_from_reconstructed_bundle": true,
+  "balance_unchanged": true,
+  "patch_apply_check": "passed"
+}

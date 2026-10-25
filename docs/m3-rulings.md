@@ -1,5 +1,7 @@
 # M3 decisions log (rulings)
 
+**Historical record:** preserve dated rulings/release observations in context. [The GDD](GDD.md) and current feature owners supersede older gameplay definitions. This is evidence, not another active numerical catalogue.
+
 These are the decisions made while building M3 where the spec or plan was silent, wrong, or in conflict with itself. Each entry gives what was decided, why, and what it costs if the decision is wrong. The full ledger (`.superpowers/sdd/2026-10-10-statecraft-m3/progress.md`) was kept during the build. This digest keeps the ones that shape the game or the codebase and drops task bookkeeping. Hash prefixes quoted here are the values recorded in the ledger at the time. The code and the golden tests are authoritative.
 
 ## Simulation and determinism
@@ -62,7 +64,7 @@ These are the decisions made while building M3 where the spec or plan was silent
   - There is no silent id fallback.
 - **One formatting rule each for dates, money and scale.**
   - Dates read "15 May 1948" through one formatter.
-  - Money carries a unit (IL or $) from the content money list, with one sign style for values and changes. The style was "-IL 3.0m"; since 19 October 2026 (player feedback, #1107) the sign sits next to the number: "IL -3.0m".
+  - Money carries a unit (IL or $) from the content money list, with one sign style ("-IL 3.0m") for values and changes.
   - Indicators use one 0–100 display scale through one helper.
   - Vacant offices read "(vacant)".
   - Cause lines are sentence-case.
