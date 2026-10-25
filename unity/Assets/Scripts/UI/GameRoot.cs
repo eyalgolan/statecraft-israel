@@ -383,7 +383,7 @@ namespace Statecraft.Game.UI
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
                 unitDone: FocusNextUnit, showRoute: map.ShowRoute, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
-            report!.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
+            report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.

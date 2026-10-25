@@ -29,7 +29,7 @@ namespace Statecraft.Game.UI
         /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
         /// them); without a row a unit is named by its id (report.unit).</summary>
         public IReadOnlyList<UnitEntry>? Units { get; set; }
-        /// <summary>The map settlement name_he rows used by Why and the capture dialog.</summary>
+        /// <summary>Each settlement's Hebrew name (name_he), by id: the map's parse, the same rows Why and the toasts use.</summary>
         public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
 
         readonly VisualElement hudRoot, report; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;

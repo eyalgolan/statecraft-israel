@@ -18,7 +18,7 @@ namespace Statecraft.Game.UI
     public sealed class MeterTip : IDisposable
     {
         public const string TipName = "meter-tip";
-        /// <summary>The map settlement name_he rows, shared with Why and the capture dialog.</summary>
+        /// <summary>Each settlement's Hebrew name (name_he), by id: the map's parse, the same rows Why and the toasts use.</summary>
         public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
         /// <summary>The gap between the tip and the window's edge, and between the meter and the tip.</summary>
         const float Margin = 8f;
