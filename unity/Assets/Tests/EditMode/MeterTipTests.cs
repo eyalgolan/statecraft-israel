@@ -51,12 +51,13 @@ public class MeterTipTests
                         var meter = root.Q("meter-" + id);
                         Enter(meter);
                         for (int i = 0; i < 3; i++) yield return null;   // the tip is placed once its width is laid out
-                        var causes = HudModel.Causes(bridge.Session.Last, id);
+                        var causes = HudModel.Causes(bridge.Session.Last, id, w => CauseText.Line(w, bridge.Content, System.Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text));
                         if (!Shown(tip)) { problems.Add($"{at} {id}: hovering shows no tip"); continue; }
                         if (Words(root) != meter.tooltip + "\n" + text["hud.causes"]) problems.Add($"{at} {id}: the tip's words are '{Words(root)}', not its tooltip and the causes' heading");
                         if (CausesLine(root) != string.Join("\n", causes)) problems.Add($"{at} {id}: the tip's causes are '{CausesLine(root)}', not the sim's '{string.Join(" | ", causes)}'");
                         if (UiDirection.RightToLeft(Words(root)) != hebrew) problems.Add($"{at} {id}: the words are not in the UI's language");
-                        if (UiDirection.HasRightToLeft(CausesLine(root))) problems.Add($"{at} {id}: the sim's causes are expected in English (#55), in their own label");
+                        // B1: each of these meters has a keyed line on the opening turn, in the UI's language (#55: lines with no key stay English).
+                        if (UiDirection.HasRightToLeft(CausesLine(root)) != hebrew) problems.Add($"{at} {id}: the causes '{CausesLine(root)}' are not in the UI's language");
                         if (causes.Count == 0) problems.Add($"{at} {id}: precondition: the opening turn has causes for it");
                         Rect t = tip.worldBound, m = meter.worldBound, win = root.worldBound;
                         if (t.xMin < win.xMin - 0.5f || t.xMax > win.xMax + 0.5f || t.yMax > win.yMax + 0.5f) problems.Add($"{at} {id}: the tip {t} leaves the window {win}");

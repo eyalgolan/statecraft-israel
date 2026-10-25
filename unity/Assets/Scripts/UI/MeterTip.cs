@@ -8,12 +8,13 @@ namespace Statecraft.Game.UI
 {
     /// <summary>Each top-bar number explains itself (#1037): while the pointer is over a meter, or after a tap on it (a
     /// touchscreen has no hover), a tip under the bar gives the meter in words (its tooltip, HudModel.Spoken: the value
-    /// and this turn's change) and the turn's main causes, which are the sim's own messages (HudModel.Causes). A second
+    /// and this turn's change) and the turn's main causes, the sim's own causes worded by CauseText (HudModel.Causes). A second
     /// tap on the same meter closes it, a tap on another moves it, and a tap anywhere else or End Turn closes it; a mouse
     /// click pins nothing, as the mouse hovers (#1108). It shows only while the meter can take the pointer, so a report or
     /// an outcome clip over the bar hides it. The tip is centred under the meter and kept inside the window. Nothing is
     /// computed here; the tip takes no clicks. Its two labels are the meter's words in the UI's language and the causes,
-    /// which the sim gives in English (#55), so each takes its own direction.</summary>
+    /// which are in the UI's language where the line has a key (B1) and in the sim's English where it has none yet (#55),
+    /// so each takes its own direction.</summary>
     public sealed class MeterTip : IDisposable
     {
         public const string TipName = "meter-tip";
@@ -87,7 +88,8 @@ namespace Statecraft.Game.UI
         /// words, with the causes' heading when there are causes, and the causes ("" when none).</summary>
         public (string words, string causes) Lines(VisualElement meter)
         {
-            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length));
+            var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length),
+                w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text));   // no meter counts a unit line
             return causes.Count == 0 ? (meter.tooltip, "") : (meter.tooltip + "\n" + text["hud.causes"], string.Join("\n", causes));
         }
 

@@ -11,8 +11,8 @@ namespace Statecraft.Game.UI
 {
     /// <summary>The turn report (#1037; the first outside play-test, #1038: "I see the values changing, but I don't really
     /// understand what's happening"). When a turn has run, a short panel names each top-bar number that changed, with the
-    /// change the bar shows (HudModel.From) and its main causes, which are the sim's own cause messages
-    /// (StepResult.Why, through HudModel.Causes). "See all" opens the Why screen with every cause; Close, Esc or Cancel
+    /// change the bar shows (HudModel.From) and its main causes, the sim's own causes in the player's language
+    /// (StepResult.Why, through HudModel.Causes and CauseText, B1). "See all" opens the Why screen with every cause; Close, Esc or Cancel
     /// closes it. Nothing is computed or reworded here, so no rule lives in the UI.
     /// <para>While it shows, the root has <see cref="OpenClass"/>: ScreenNav.DisableCovered disables the top bar, the panels
     /// and the decision layer under it, as under an End Turn outcome clip, which is drawn over the report (Game.uxml order)
@@ -102,7 +102,8 @@ namespace Statecraft.Game.UI
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
-                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id)));
+                lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
+                    w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text))));
             }
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));

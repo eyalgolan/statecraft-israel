@@ -145,3 +145,20 @@ def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_word
         assert en[key] == template, key
         assert not re.search('[A-Za-z]', he[key]), key
     assert sorted(k for k in en if k.startswith('cabinet.reason.')) == sorted('cabinet.reason.' + k for k, _, _ in paths)
+
+
+def test_the_cause_line_names_are_contents_names_in_english_and_hebrew_without_latin():
+    """B1: CauseText names indicators, money, effects, situations and origin groups from why.name/effect/situation/region.
+    English must be content's own name (the line is the sim's Message word for word), every content row has one, and the
+    Hebrew has no Latin letters."""
+    en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
+    model = yaml12.load((ROOT / 'content/model.yaml').read_text(encoding='utf-8'))
+    aliyah = yaml12.load((ROOT / 'content/aliyah.yaml').read_text(encoding='utf-8'))
+    rows = {'why.name.': model['indicators'] + model['money'], 'why.effect.': model['effects'],
+            'why.situation.': model['situations'], 'why.region.': aliyah['regions']}
+    for prefix, items in rows.items():
+        assert {k[len(prefix):] for k in en if k.startswith(prefix)} == {r['id'] for r in items}, prefix
+        for r in items:
+            assert en[prefix + r['id']] == r['name'], prefix + r['id']
+            assert not re.search('[A-Za-z]', he[prefix + r['id']]), prefix + r['id']
+    assert all(not re.search('[A-Za-z]', re.sub(r'\{[^}]*\}', '', he[k])) for k in he if k.startswith('why.cause.'))   # {0:N0} aside

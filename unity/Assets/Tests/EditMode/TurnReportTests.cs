@@ -71,7 +71,7 @@ public class TurnReportTests
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
             var causes = k.Ui.Root.Q<Label>("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id);
+            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
             var lines = causes!.text.Split('\n');
             CollectionAssert.AreEqual(expected, lines, id);
@@ -235,8 +235,11 @@ public class TurnReportTests
         StringAssert.StartsWith(He["hud.caption.security"] + ":", heading);
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security"), k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n'),
-            "the causes are the sim's messages, as on the Why screen");
+        var causes = k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n');
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+            "the causes are the sim's, worded as on the Why screen");
+        // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
+        Assert.IsTrue(UiDirection.RightToLeft(k.Ui.Q<Label>("turn-report-causes-treasury").text.Split('\n')[0]), "the money line is in Hebrew");
     }
 
     /// <summary>The smoke run plays as a player does: it closes each turn's report before the next turn (GameRoot.Smoke).</summary>
