@@ -293,16 +293,17 @@ public class SelectThenClickMoveTests
         rig.Layer.Show(rig.Bridge.Content, rig.Bridge.State);
         var still = rig.Token("golani");
         Assert.AreEqual(rig.At(id), (still.Q, still.R), "precondition: the token stands where Golani moved");
+        var given = rig.Bridge.Session.Committed.Count;   // the moves above are committed at once
         var land = C.Hexes.First(h => h.Land && rig.Layer.At(h.Q, h.R) == null && !rig.Info.IsCity(h.Q, h.R) && (h.Q, h.R) != (still.Q, still.R));
         rig.Layer.Select(null);
         rig.Select(still);
         Assert.AreEqual("golani", rig.Layer.Selected, "precondition: Golani's card");
         Assert.IsFalse(rig.Info.MovePicking, "no reach: no pick");
         GameRoot.OnHexOrdered(rig.Map, rig.Info, land.Q, land.R);
-        Assert.IsEmpty(rig.Bridge.Session.Committed, "a right click orders nothing");
+        Assert.AreEqual(given, rig.Bridge.Session.Committed.Count, "a right click orders nothing");
         Assert.IsTrue(rig.Info.ShowsUnit, "and changes nothing");
         rig.Click(land.Q, land.R);
-        Assert.IsEmpty(rig.Bridge.Session.Committed);
+        Assert.AreEqual(given, rig.Bridge.Session.Committed.Count, "a left click orders nothing");
         Assert.AreEqual((land.Q, land.R), rig.Info.Selected, "a left click selects the hex");
     }
 
