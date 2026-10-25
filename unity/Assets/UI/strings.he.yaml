@@ -61,7 +61,8 @@ how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה 
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
 # Civ movement U4: agent-drafted Hebrew; native review: owner, 25 Oct 2026 (recommendations page, item 7).
 how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
-how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
+# The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
+how_to_play.why: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
@@ -214,7 +215,7 @@ capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
 # Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
 # attention, no_free_hex and not_awaiting: native review: owner, 25 Oct 2026 (recommendations page, item 6).
-capture.refusal.attention: "אין די תשומת לב בתור הזה: עלות: {1:0.0}; יתרה: {2:0.0}."
+capture.refusal.attention: "אין די תשומת לב בתור הזה. עלות: {1:0.0}; יתרה: {2:0.0}."
 capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
 capture.refusal.no_free_hex: "ליחידה ב{0} אין משושה פנוי סמוך שאפשר לסגת אליו."
 capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
@@ -357,7 +358,8 @@ why.hex.north_west: "מצפון־מערב"
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
 report.line: "{0}: שינוי של {1}"
-report.all: "הכול במסך למה?"
+# The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
+report.all: "הכול במסך ״למה?״"
 report.close: "סגירה"
 # The enemy's orders this turn (#1293), {0} the unit's name: agent-drafted Hebrew, not yet read by a native speaker. The
 # verbs are masculine, as every Arab force's name_he is (חיל, הלגיון, הצבא, צבא) and so is report.unit's כוח. For the
