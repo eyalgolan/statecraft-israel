@@ -157,6 +157,8 @@ start.continue: "המשך"
 start.new_game: "משחק חדש"
 boot.loading: "טוען את מפת 1948…"
 toast.refused: "לא בוצע: {0}"
+# Agent-drafted Hebrew; native review pending (#564).
+toast.unit_unseen_skipped: "יחידה שחיכתה להוראות לא הוצגה על המפה, ולכן היא מדלגת על התור הזה"
 event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
 # Approved: owner, 25 Oct 2026 (recommendations page, item 4).

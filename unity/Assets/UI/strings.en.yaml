@@ -137,6 +137,8 @@ start.continue: "Continue"
 start.new_game: "New game"
 boot.loading: "Loading the map of 1948…"
 toast.refused: "Not done: {0}"
+# End turn skipped a unit that needed orders but had no token on the map to select (GameRoot.FocusNextUnit; a last resort).
+toast.unit_unseen_skipped: "A unit that needed orders could not be shown on the map, so it skips this turn"
 event.office: "{0}: {1}"
 event.more: "{0} more decisions waiting"
 event.more_one: "{0} more decision waiting"

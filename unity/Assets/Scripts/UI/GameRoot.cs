@@ -76,6 +76,8 @@ namespace Statecraft.Game.UI
         FeedbackPresenter? feedback;
         SharePresenter? share;
         InfoPanelPresenter? info;
+        /// <summary>Shows the toast for a unit End turn skipped because it had no token to select (FocusNextUnit).</summary>
+        Action? unseenSkipped;
         /// <summary>Tests: the info panel of the last Begin.</summary>
         internal InfoPanelPresenter? Info => info;
         CameraRig? rig;
@@ -248,6 +250,7 @@ namespace Statecraft.Game.UI
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
+            unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
             Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
@@ -678,13 +681,21 @@ namespace Statecraft.Game.UI
             cameraController.Settle(); SyncMinimap(); labels?.Refresh();
         }
 
-        void SelectUnit(int simId)
+        /// <summary>Selects and focuses the drawn token of sim unit <paramref name="simId"/>; false when no token is drawn for it.</summary>
+        bool SelectUnit(int simId)
         {
-            if (units == null || Bridge == null) return;
+            if (units == null || Bridge == null) return false;
             var row = units.Tokens.FirstOrDefault(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token) == simId).Token?.Unit.Id;
-            if (row != null) FocusUnit(row);
+            if (row == null) return false;
+            FocusUnit(row);
+            return units.Selected == row;
         }
 
+        /// <summary>Selects the next unit that needs orders after the selected one (ascending id, wrapping; spec 2026-10-23
+        /// section 7.3). Never a dead end (owner, v0.3.0 RC: "the game is saying "a unit needs orders" but clicking on it does
+        /// nothing"): every unit is drawn (UnitPlacer.OnOwnHex), but should one still have no token to select, it is skipped
+        /// for this turn with a log line and a toast, and the next is tried, so End turn always gets on. Each unit is tried
+        /// once per call.</summary>
         void FocusNextUnit()
         {
             if (Bridge == null || units == null || Bridge.NeedsOrders.Count == 0) return;
@@ -694,10 +705,15 @@ namespace Statecraft.Game.UI
             int? current = units.Selected is string row
                 ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
                 : null;
-            var next = current is int id
-                ? Bridge.NeedsOrders.Where(n => n > id).Select(n => (int?)n).FirstOrDefault() ?? Bridge.NeedsOrders[0]
-                : Bridge.NeedsOrders[0];
-            SelectUnit(next);
+            var needs = Bridge.NeedsOrders;
+            var order = current is int id ? needs.Where(n => n > id).Concat(needs.Where(n => n <= id)).ToList() : needs.ToList();
+            foreach (var next in order)
+            {
+                if (SelectUnit(next)) return;
+                Debug.Log($"END TURN unit {next} needs orders but has no token to select; skipped this turn");
+                Bridge.Skip(next);
+                unseenSkipped?.Invoke();   // after Skip: the toast clears on every bridge change
+            }
         }
 
         /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click): the city under a
@@ -742,7 +758,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
