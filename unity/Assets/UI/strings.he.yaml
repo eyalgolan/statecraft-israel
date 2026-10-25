@@ -948,3 +948,8 @@ why.cause.event_city_from: "יישוב: {0}; {1}; שינוי {2} ({3})"
 why.cause.event_unlock_from: "אפשר כעת לבנות {0} ({1})"
 # C136: native review pending (#564).
 why.cause.event_policy_from: "{0}: נקבע ערך של {1} ({2})"
+
+# C166: agent-drafted Hebrew, native review pending (#564).
+why.cause.objective_completed: "היעד הושלם: {0}; ניקוד: {1}"
+why.cause.prisoners_returned: "חילופי שבויים: {0:N0} שבויים הוחזרו אל {1}"
+why.cause.soldiers_returned: "חילופי שבויים: {0:N0} מחיילינו חזרו הביתה מידי {1}"

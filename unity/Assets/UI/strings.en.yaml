@@ -856,3 +856,8 @@ why.cause.event_grant_many_from: "{0:0} {1} units at {2} ({3})"
 why.cause.event_city_from: "{0}: {1} {2} ({3})"
 why.cause.event_unlock_from: "{0} can now be built ({1})"
 why.cause.event_policy_from: "{0} set to {1} ({2})"
+
+# C166: event-group producers outside EventSystem.
+why.cause.objective_completed: "{0}: completed, {1} points"
+why.cause.prisoners_returned: "Prisoners exchanged: {0:N0} prisoners returned to {1}"
+why.cause.soldiers_returned: "Prisoners exchanged: {0:N0} of our soldiers came home from {1}"

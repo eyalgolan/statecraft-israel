@@ -199,6 +199,34 @@ public class CauseTextTests
         AssertHebrew(line, w.Key);
     }
 
+    [Test]
+    public void ObjectiveAndExchangeEventRowsKeepEnglishAndRenderHebrew()
+    {
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        var objective = C.Objectives.First(o => o.NameHe != "" && !s.Objectives.ContainsKey(o.Id));
+        var lines = new List<Cause>();
+        Assert.IsTrue(Objectives.Record(C, s, C.RulesAt(s.Date).Mvp!, objective.Id, s.Date, lines));
+        var objectiveLine = lines.Single();
+        Assert.AreEqual(CauseKeys.ObjectiveCompleted, objectiveLine.Key);
+        StringAssert.Contains(objective.NameHe, CauseText.Line(objectiveLine, C, NoRows, He));
+        foreach (var front in Prisoners.Fronts)
+        {
+            // Renderer fixtures use people counts, not population-unit Delta: preserve the producer's N0 display.
+            lines.Add(new Cause("events", "prisoners", 2,
+                $"Prisoners exchanged: 12,300 prisoners returned to {PlayerText.Capitalised(front)}",
+                key: CauseKeys.PrisonersReturned, args: new[] { "12300", front }));
+            lines.Add(new Cause("events", "prisoners", 3,
+                $"Prisoners exchanged: 45,600 of our soldiers came home from {PlayerText.Capitalised(front)}",
+                key: CauseKeys.SoldiersReturned, args: new[] { "45600", front }));
+        }
+        foreach (var row in lines)
+        {
+            CollectionAssert.Contains(CauseKeys.All, row.Key);
+            Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, En), row.Key);
+            AssertHebrew(CauseText.Line(row, C, NoRows, He), row.Key);
+        }
+    }
+
     static void AssertHebrew(string line, string key)
     {
         Assert.IsTrue(UiDirection.RightToLeft(line), $"{key}: '{line}' reads right to left");

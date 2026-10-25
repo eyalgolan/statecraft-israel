@@ -53,6 +53,11 @@ namespace Statecraft.Game.UI
                 case CauseKeys.CallUpRaised:
                 case CauseKeys.CallUpLowered:
                     return text.Format(key, PlayerText.Percent(Number(cause.Args[0])), cause.Args[1]);
+                case CauseKeys.ObjectiveCompleted:
+                    return PlayerText.Capitalised(text.Format(key, Local(cause.Args[0], cause.Args[1], text), (int)cause.Delta));
+                case CauseKeys.PrisonersReturned:
+                case CauseKeys.SoldiersReturned:
+                    return text.Format(key, Number(cause.Args[0]), text["map.front_" + cause.Args[1]]);
                 case CauseKeys.EventNew:
                     return text.Format(key, Local(cause.Args[0], cause.Args[1], text));
                 case CauseKeys.EventChosen:
