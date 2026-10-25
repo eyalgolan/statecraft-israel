@@ -259,4 +259,73 @@ public class SelectThenClickMoveTests
         Assert.IsTrue(rig.Info.MovePicking, "the new turn lights its reach");
         CollectionAssert.AreEquivalent(rig.Reach(id), rig.Lit.Last());
     }
+
+    /// <summary>Owner, 25 Oct 2026: "Clicking another unit or a city still selects it." With Golani's Move pick open, a
+    /// left click on a city's hex (Tel Aviv: out of reach this turn, with a go-to route) shows the city and orders nothing; a
+    /// right click there gives the go-to.</summary>
+    [Test]
+    public void ALeftClickOnACityShowsItAndARightClickSendsTheUnitThere()
+    {
+        using var rig = new Rig();
+        var golani = rig.Token("golani"); var id = rig.Id(golani);
+        var tlv = C.SettlementHexes.First(x => x.Id == "tel_aviv" && rig.Layer.UnitToSelectAt(x.Q, x.R) == null);
+        Assert.IsNotEmpty(Movement.Route(C, rig.Bridge.State, id, tlv.Q, tlv.R, rig.Bridge.Spent), "precondition: a go-to route reaches Tel Aviv");
+        rig.Select(golani);
+        Assert.IsTrue(rig.Info.MovePicking, "precondition: the Move pick is open");
+        rig.Click(tlv.Q, tlv.R);
+        Assert.IsEmpty(rig.Bridge.Session.Committed, "a left click on a city orders nothing");
+        Assert.IsFalse(rig.Info.ShowsUnit);
+        Assert.AreEqual((tlv.Q, tlv.R), rig.Info.Selected, "it shows the city's hex");
+        rig.Select(golani);
+        GameRoot.OnHexOrdered(rig.Map, rig.Info, tlv.Q, tlv.R);
+        Assert.AreEqual((Movement.GoTo, $"{tlv.Q},{tlv.R}"), (rig.Bridge.State.Units[id].Order, rig.Bridge.State.Units[id].OrderTarget), "a right click sends the unit there");
+    }
+
+    /// <summary>A unit of Israel's with no reach left (Golani, its points spent by moves this turn) opens no pick: a left
+    /// click on land selects that hex and a right click does nothing.</summary>
+    [Test]
+    public void AUnitWithNoReachOpensNoPick()
+    {
+        using var rig = new Rig();
+        var id = rig.Id(rig.Token("golani"));
+        for (var reach = rig.Reach(id); reach.Count > 0; reach = rig.Reach(id))
+            Assert.IsNull(rig.Bridge.Queue(new Move(id, reach.Last().q, reach.Last().r)), "precondition: the move is taken");
+        rig.Layer.Show(rig.Bridge.Content, rig.Bridge.State);
+        var still = rig.Token("golani");
+        Assert.AreEqual(rig.At(id), (still.Q, still.R), "precondition: the token stands where Golani moved");
+        var land = C.Hexes.First(h => h.Land && rig.Layer.At(h.Q, h.R) == null && !rig.Info.IsCity(h.Q, h.R) && (h.Q, h.R) != (still.Q, still.R));
+        rig.Layer.Select(null);
+        rig.Select(still);
+        Assert.AreEqual("golani", rig.Layer.Selected, "precondition: Golani's card");
+        Assert.IsFalse(rig.Info.MovePicking, "no reach: no pick");
+        GameRoot.OnHexOrdered(rig.Map, rig.Info, land.Q, land.R);
+        Assert.IsEmpty(rig.Bridge.Session.Committed, "a right click orders nothing");
+        Assert.IsTrue(rig.Info.ShowsUnit, "and changes nothing");
+        rig.Click(land.Q, land.R);
+        Assert.IsEmpty(rig.Bridge.Session.Committed);
+        Assert.AreEqual((land.Q, land.R), rig.Info.Selected, "a left click selects the hex");
+    }
+
+    /// <summary>The Attack pick is the button's, as before: pressing Attack lights the enemy, a right click on it gives the
+    /// attack (as a left click does), and pressing Attack again goes back to the Move pick.</summary>
+    [Test]
+    public void ARightClickOnAnAttackPicksTargetAttacksAndAttackAgainGoesBackToMove()
+    {
+        using var rig = new Rig();
+        var s = rig.Bridge.State;
+        var id = UnitOrdersTests.EnemyInGolanisReach(s);
+        rig.Layer.Show(rig.Bridge.Content, s);
+        var enemy = s.Units.Values.Where(u => u.Side != "" && u.Side != Movement.PlayerSide).Select(u => (u.Q, u.R))
+            .First(h => Combat.Check(C, s, id, h.Q, h.R) == null);
+        rig.Select(rig.Token("golani"));
+        var attack = rig.Ui.Q<Button>("info-attack");
+        UiTestKit.Press(attack);
+        UiTestKit.Press(attack);
+        Assert.IsTrue(rig.Info.MovePicking, "Attack pressed again goes back to the Move pick");
+        UiTestKit.Press(attack);
+        Assert.IsFalse(rig.Info.MovePicking, "precondition: the Attack pick is open");
+        GameRoot.OnHexOrdered(rig.Map, rig.Info, enemy.Q, enemy.R);
+        var given = rig.Bridge.Session.Committed.OfType<UnitOrder>().Single();
+        Assert.AreEqual((id, Combat.Attack), (given.Unit, given.Order), "the right click gave the attack");
+    }
 }

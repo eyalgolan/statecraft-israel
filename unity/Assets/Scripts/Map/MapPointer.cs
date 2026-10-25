@@ -18,6 +18,11 @@ namespace Statecraft.Game.Map
         Vector2 start;
         bool down, moved, pinched;
 
+        /// <summary>True while the press could still end as a tap: it is down, has stayed inside the slop and no second
+        /// finger came. The camera does not pan on such a press (CameraController.HoldsDrag), so a press is either a tap or a
+        /// pan, never both (#1654 review).</summary>
+        public bool TapCandidate => down && !moved && !pinched;
+
         /// <summary>One frame of the watched finger: its pressed and released edges, where it is, and whether any
         /// other finger is down. The tap's position on a release frame that still qualifies, otherwise null.</summary>
         public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown)
@@ -35,8 +40,9 @@ namespace Statecraft.Game.Map
     /// <summary>Left click on the map (not on the UI) selects the hex under the pointer: a ray from the camera hits the
     /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker). On a touchscreen a tap (press and
     /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.
-    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing: a moved right
-    /// button is CameraController's drag pan.</summary>
+    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing. One TapPress per
+    /// gesture decides both a click and the camera's pan (RightTapCandidate, TouchTapCandidate): the camera pans only once
+    /// the press has left the slop, so a press is a click or a pan, never both (#1654 review).</summary>
     public sealed class MapPointer : MonoBehaviour
     {
         public MapScene? Map;
@@ -52,21 +58,52 @@ namespace Statecraft.Game.Map
         // queued and evaluated in order in Update: several presses in one slow frame are each checked where they happened,
         // never all at the frame's last pointer position (playtest 2, P2-4).
         readonly Queue<Vector2> presses = new Queue<Vector2>();
-        InputAction? press;
+        // Right clicks, as presses are: the right button's press, every pointer move while it is held and its release are
+        // each stepped at their own event's position, so a drag out and back inside one slow frame is still a drag.
+        readonly Queue<Vector2> rightClicks = new Queue<Vector2>();
+        InputAction? press, rightPress, rightMove;
 
         TapPress tap, rightTap;
+
+        /// <summary>True while the right button's press could still end as a right click (TapPress.TapCandidate): the
+        /// camera holds its right-drag pan until it is false.</summary>
+        public bool RightTapCandidate => rightTap.TapCandidate;
+        /// <summary>True while the primary finger's press could still end as a tap: the camera holds its one-finger pan.</summary>
+        public bool TouchTapCandidate => tap.TapCandidate;
 
         void OnEnable()
         {
             press = new InputAction("map-press", InputActionType.Button, "<Mouse>/leftButton");
             press.performed += OnPressed;
             press.Enable();
+            rightPress = new InputAction("map-right-press", InputActionType.Button, "<Mouse>/rightButton");
+            rightPress.performed += OnRightPressed;
+            rightPress.canceled += OnRightReleased;
+            rightPress.Enable();
+            rightMove = new InputAction("map-right-move", InputActionType.PassThrough, "<Mouse>/position");
+            rightMove.performed += OnRightMoved;
+            rightMove.Enable();
         }
 
         void OnDisable()
         {
             if (press != null) { press.performed -= OnPressed; press.Dispose(); press = null; }
-            presses.Clear();
+            if (rightPress != null) { rightPress.performed -= OnRightPressed; rightPress.canceled -= OnRightReleased; rightPress.Dispose(); rightPress = null; }
+            if (rightMove != null) { rightMove.performed -= OnRightMoved; rightMove.Dispose(); rightMove = null; }
+            presses.Clear(); rightClicks.Clear();
+            rightTap = default;
+        }
+
+        void OnRightPressed(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Pointer p) RightStep(true, false, p.position.ReadValue());
+        }
+
+        void OnRightMoved(InputAction.CallbackContext ctx) => RightStep(false, false, ctx.ReadValue<Vector2>());
+
+        void OnRightReleased(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Pointer p) RightStep(false, true, p.position.ReadValue());
         }
 
         void OnPressed(InputAction.CallbackContext ctx)
@@ -81,13 +118,12 @@ namespace Statecraft.Game.Map
         internal void ProcessPresses()
         {
             while (presses.Count > 0) HandleClick(presses.Dequeue());
+            while (rightClicks.Count > 0) HandleRightClick(rightClicks.Dequeue());
         }
 
         void Update()
         {
             ProcessPresses();
-            if (Mouse.current is { } mouse)
-                RightStep(mouse.rightButton.wasPressedThisFrame, mouse.rightButton.wasReleasedThisFrame, mouse.position.ReadValue());
             var ts = Touchscreen.current;
             if (ts == null) return;
             var t = ts.primaryTouch;
@@ -112,11 +148,12 @@ namespace Statecraft.Game.Map
             return true;
         }
 
-        /// <summary>One frame of the right button: its pressed and released edges and where the pointer is. A release inside
-        /// TapPress.SlopPixels of the press is a right click there (HandleRightClick); a farther one was a drag pan.</summary>
+        /// <summary>One right-button event: its press, a pointer move or its release, at the event's own position. A release
+        /// with the press never past TapPress.SlopPixels queues a right click where it was pressed (handled in Update, as
+        /// presses are); a press that went farther was the camera's drag pan.</summary>
         internal void RightStep(bool pressed, bool released, Vector2 position)
         {
-            if (rightTap.Step(pressed, released, position, false) is Vector2 at) HandleRightClick(at);
+            if (rightTap.Step(pressed, released, position, false) is Vector2 at) rightClicks.Enqueue(at);
         }
 
         /// <summary>A right click at <paramref name="pos"/> (screen pixels): ignored over the UI, otherwise the hex under the

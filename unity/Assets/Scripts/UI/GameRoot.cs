@@ -411,6 +411,9 @@ namespace Statecraft.Game.UI
             Func<Vector2, bool> pointerOverUi = p => outcomes?.HoldsThePointer == true
                 || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
             pointer.IsOverUi = pointerOverUi;
+            // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
+            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
+            cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
             Action<int, int> onHex = (q, r) =>
             {
                 OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
@@ -483,6 +486,8 @@ namespace Statecraft.Game.UI
                 if (pointer.PillHex == pillHex) pointer.PillHex = null;
                 if (pointer.IsOverUi == pointerOverUi) pointer.IsOverUi = null;
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
+                if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
+                if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
                 if (pointer.Map == map) pointer.Map = null;
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
@@ -631,7 +636,8 @@ namespace Statecraft.Game.UI
         /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a target click gives the
         /// order and keeps the unit's card; any other click ends the pick first and then selects as usual. A selected unit
         /// that can move has its Move pick open (InfoPanelPresenter.RenderLines; Civ, owner 25 Oct 2026), so a click on a lit
-        /// hex moves it; a click on another unit's hex selects that unit, as in Civ, lit or not (a right click moves there:
+        /// hex moves it; a click on another unit's hex or on a city selects that unit or shows the city, as in Civ, lit or
+        /// not (owner, 25 Oct 2026: "Clicking another unit or a city still selects it"; a right click moves there:
         /// OnHexOrdered).</summary>
         internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
         {
@@ -643,7 +649,7 @@ namespace Statecraft.Game.UI
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
-            if (!(id != null && info.MovePicking) && info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
+            if (!(info.MovePicking && (id != null || info.IsCity(q, r))) && info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);

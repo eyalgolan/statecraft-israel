@@ -379,6 +379,10 @@ namespace Statecraft.Game.UI
             return takes;
         }
 
+        /// <summary>True when (q, r) is one of a city's settlement hexes (GameRoot.CityAt): a left click there shows the city
+        /// even while Move picks (owner, 25 Oct 2026: "Clicking another unit or a city still selects it").</summary>
+        public bool IsCity(int q, int r) => GameRoot.CityAt(bridge.Content, bridge.State, q, r) != null;
+
         /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
         public bool MovePicking => pick is { attack: false };
 
