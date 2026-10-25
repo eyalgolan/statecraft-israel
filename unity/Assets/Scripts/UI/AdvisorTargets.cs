@@ -78,14 +78,15 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The unit the opening chain shows on its move step: the first of <paramref name="units"/> (the drawn tokens' rows, in
-        /// units.yaml order) whose sim unit has a hex in Movement.Reachable now, so its card shows Move
-        /// (InfoPanelPresenter.MoveTargets' rule); its id, or null with none (the legacy loop, or no unit able to move).</summary>
-        public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitEntry> units) =>
-            units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Id;
+        /// units.yaml order) whose card shows Move now (InfoPanelPresenter.MoveReach, the card's own rule: the turn's spent points
+        /// count, as moves are instant since #1527, and a unit going home has none); its id, or null with none (the legacy loop,
+        /// or no unit able to move: the step shows its text without a target).</summary>
+        public static string? UnitToShow(SimBridge bridge, IEnumerable<UnitEntry> units) =>
+            units.FirstOrDefault(u => UnitCard.SimUnit(bridge.Content, bridge.State, u) is int id && InfoPanelPresenter.MoveReach(bridge, id) != null)?.Id;
 
         /// <summary>The drawn-token form used by the game. A raised token carries its sim id even without a starting row.</summary>
-        public static string? UnitToShow(Content c, GameState s, IEnumerable<UnitToken> units) =>
-            units.FirstOrDefault(u => UnitCard.SimUnit(c, s, u) is int id && Movement.Reachable(c, s, id).Count > 0)?.Unit.Id;
+        public static string? UnitToShow(SimBridge bridge, IEnumerable<UnitToken> units) =>
+            units.FirstOrDefault(u => UnitCard.SimUnit(bridge.Content, bridge.State, u) is int id && InfoPanelPresenter.MoveReach(bridge, id) != null)?.Unit.Id;
 
     }
 }
