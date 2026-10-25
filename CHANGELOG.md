@@ -235,6 +235,11 @@ checks this (see `CONTRIBUTING.md`).
   its clip, as Watch does; Escape closes the unit card or the hex panel; Star on GitHub, Report a bug and the share links
   open only when the press is released over the same button; at 1512x982 the top bar keeps "International support" on
   one line and the unit card keeps Move, Fortify and Hold together.
+- Selecting one of your units that can still move lights its reach at once, as in Civ: a click on a lit hex moves it
+  there now, a click on a farther hex gives a go-to, and a click on another unit selects that unit. A short right click
+  on a hex gives the same order (even onto another unit's hex); a right drag still pans the map. Before, only the Move
+  button lit the hexes, so a click on the map after selecting a unit dropped it (the owner's v0.3.0 playtest). The
+  empty panel's hint says so in English and draft Hebrew.
 
 ### Changed
 - A schema 2 save of the GDD game that has a player attack, or that no longer replays to its saved hash, is refused with
