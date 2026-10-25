@@ -18,6 +18,8 @@ namespace Statecraft.Game.UI
     public sealed class MeterTip : IDisposable
     {
         public const string TipName = "meter-tip";
+        /// <summary>Each settlement's Hebrew name (name_he), by id: the map's parse, the same rows Why and the toasts use.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
         /// <summary>The gap between the tip and the window's edge, and between the meter and the tip.</summary>
         const float Margin = 8f;
 
@@ -89,7 +91,7 @@ namespace Statecraft.Game.UI
         public (string words, IReadOnlyList<string> causes) Lines(VisualElement meter)
         {
             var causes = HudModel.Causes(bridge.Session.Last, meter.name.Substring("meter-".Length),
-                w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text));   // no meter counts a unit line
+                w => CauseText.Line(w, bridge.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), text, TownNamesHe));   // no meter counts a unit line
             return causes.Count == 0 ? (meter.tooltip, causes) : (meter.tooltip + "\n" + text["hud.causes"], causes);
         }
 
