@@ -887,7 +887,7 @@ public class UnitOrdersTests
         Assert.IsTrue(info.ShowsUnit, "the same Cancel does not also dismiss the underlying selection");
         Cancel(ui.Q<VisualElement>("info-panel"));
         Assert.IsFalse(info.ShowsUnit, "Escape dismisses the unit card without needing a new production API in this test");
-        info.Show(golani.Q, golani.R); Assert.IsNotNull(info.Selected);
+        info.Show(golani.StateUnit!.Q, golani.StateUnit!.R); Assert.IsNotNull(info.Selected);
         Cancel(ui.Q<VisualElement>("info-panel")); Assert.IsNull(info.Selected, "Escape dismisses the hex panel too");
         Assert.IsEmpty(bridge.Queued, "closing selection does not alter the turn's orders");
     }

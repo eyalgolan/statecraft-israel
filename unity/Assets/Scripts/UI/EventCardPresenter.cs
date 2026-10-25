@@ -166,14 +166,14 @@ namespace Statecraft.Game.UI
         /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
         public void Collapse() => Collapse(takeFocus: true);
         int collapsedAt = -1;
-        internal bool CollapsedThisFrame => collapsedAt == Time.frameCount;
+        internal bool CollapsedThisFrame => collapsedAt == UnityEngine.Time.frameCount;
 
         /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
         /// advisor opening chain hides the card while its popup has the focus).</summary>
         public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
-            collapsedFor = Shown.Id; collapsedAt = Time.frameCount;
+            collapsedFor = Shown.Id; collapsedAt = UnityEngine.Time.frameCount;
             Render();
             if (!takeFocus) return;
             if (hideByPointer) { hideByPointer = false; return; }
