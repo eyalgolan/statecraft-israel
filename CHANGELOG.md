@@ -240,6 +240,10 @@ checks this (see `CONTRIBUTING.md`).
   on a hex gives the same order (even onto another unit's hex); a right drag still pans the map. Before, only the Move
   button lit the hexes, so a click on the map after selecting a unit dropped it (the owner's v0.3.0 playtest). The
   empty panel's hint says so in English and draft Hebrew.
+- "A unit needs orders" always selects a unit again. A unit that moved next to its own units, where no clear spot was
+  left in the hex, was not drawn, so the button did nothing and the unit could not be found. Such a unit is now drawn
+  compact on its own hex, clicks on a hex with several units select each in turn, and as a last resort a unit that
+  still cannot be shown skips the turn with a message (English, draft Hebrew).
 
 ### Changed
 - A schema 2 save of the GDD game that has a player attack, or that no longer replays to its saved hash, is refused with
