@@ -26,4 +26,6 @@ sources:
   - { url: "https://www.nli.org.il/he/newspapers/hbkr/1949/09/14/01/article/70", checked: 2026-10-25 }
   - { url: "https://www.nli.org.il/he/newspapers/mar/1949/09/22/01/article/21", checked: 2026-10-25 }
   - { url: "https://web.archive.org/web/20140327112217/http://www.rail.co.il/HE/Fun/Museum/Documents/50Years.pdf", checked: 2026-10-24 }
-status: draft
+status: fact-checked
+reviewed_by: jeremydhoover-blip
+reviewed_on: 2026-10-25
