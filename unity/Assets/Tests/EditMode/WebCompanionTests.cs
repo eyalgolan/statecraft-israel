@@ -83,6 +83,9 @@ public sealed class WebCompanionTests
             button.Focus();
             for (int i = 0; i < 10 && root.focusController.focusedElement != button; i++) { yield return null; button.Focus(); }
             Assert.AreSame(button, root.focusController.focusedElement, "precondition: real runtime keyboard focus");
+            TestContext.WriteLine("PRE capture=" + JsonUtility.ToJson(mirror.Capture()) + "; focus=" + (root.focusController.focusedElement as VisualElement)?.name);
+            for (VisualElement at = button; at != null; at = at.parent)
+                TestContext.WriteLine(at.name + " " + at.GetType().Name + " display=" + at.style.display.value + "/" + at.resolvedStyle.display + " visibility=" + at.style.visibility.value + "/" + at.resolvedStyle.visibility);
             root.Q<Label>("toast").text = "New result";
             var until = EditorApplication.timeSinceStartup + 2;
             WebCompanion.Snapshot state;
@@ -91,6 +94,7 @@ public sealed class WebCompanionTests
                 yield return null;
                 state = JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
             } while ((state.focus != "First" || state.status != "New result") && EditorApplication.timeSinceStartup < until);
+            TestContext.WriteLine("POST snapshot=" + JsonUtility.ToJson(state) + "; captureNow=" + JsonUtility.ToJson(mirror.Capture()) + "; focusNow=" + (root.focusController.focusedElement as VisualElement)?.name + "; sends=" + sent.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
             Assert.AreEqual("First", state.focus);
             Assert.AreEqual("New result", state.status);
             mirror.Dispose();
