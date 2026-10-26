@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>One-way WebGL mirror of the presenter's words. It never receives game commands or changes focus.
-    /// Sampling after layout also catches toast writes, focus moves and controls rebuilt without a sim change.
+    /// Periodic sampling also catches toast writes, focus moves and controls rebuilt without a sim change.
     /// Owned by GameRoot: a restart/language switch disposes it and clears the page before creating the next mirror.</summary>
     public sealed class WebCompanion : IDisposable
     {
