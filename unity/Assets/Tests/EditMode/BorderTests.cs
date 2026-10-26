@@ -359,7 +359,7 @@ public class BorderTests
         var (inner, outer) = ProofEdge(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain");
         LookAtEdge(map, rig, inner);
         var walks = WalkEdge(map, cam, inner, outer, 9, 1920, 1080);
-        var pw = new List<float>(); var sw = new List<float>();
+        var pw = new List<float>(); var sw = new List<float>(); var far = new List<float>(); var mid = new List<float>();
         foreach (var w in walks)
         {
             var p = Read(w, -1, Blueness, 0.45f); var s = Read(w, +1, Redness);   // 0.45: the blue wash gains about 0.3
@@ -370,15 +370,22 @@ public class BorderTests
             Assert.Greater(RenderSample.Luma(s.Light), RenderSample.Luma(s.Land) + 0.03f, "a light cream stripe on the secondary side");
             Assert.Greater(s.Light.r, s.Light.b + 0.15f, "the secondary light stripe is cream, not white");
             pw.Add(p.WidthPx); sw.Add(s.WidthPx);
-            // 1.2 km or more from the edge (past the widest wash at this zoom) the borders change nothing.
+            // The wash fades inwards (Civ-like prototype #196; was: nothing changes 1.2 km or more in, deltaE < 2. The wash
+            // now reaches a quarter of the inradius, about 1.1 km, and the hex's other bordered edges' washes reach this
+            // walk's ends, so the far end is compared with 300-500 m in instead).
             for (int k = 0; k < w.On.Count; k++)
-                if (Mathf.Abs(w.SignedM[k]) >= 1200f) Assert.Less(RenderSample.DeltaE(w.On[k], w.Off[k]), 2f, $"{w.SignedM[k]} m from the edge");
+            {
+                float m = Mathf.Abs(w.SignedM[k]), d = RenderSample.DeltaE(w.On[k], w.Off[k]);
+                if (m >= 1200f) far.Add(d); else if (m >= 300f && m <= 500f) mid.Add(d);
+            }
         }
         float pm = Median(pw), sm = Median(sw);
         TestContext.WriteLine($"edge {inner}-{outer}: band widths (median px): primary {pm:0.0}, secondary {sm:0.0}");
         Assert.That(pm, Is.InRange(6f, 11f), "primary band width (promo about 8 px)");
         Assert.That(sm, Is.InRange(3.5f, 8f), "secondary band width (promo about 5 px)");
         Assert.Greater(pm, sm, "the primary band is the heavier");
+        TestContext.WriteLine($"wash deltaE (median): 300-500 m in {Median(mid):0.0}, 1.2 km and more {Median(far):0.0}");
+        Assert.Less(Median(far), Median(mid), "the wash fades inwards");
     }
 
     /// <summary>The proof's checker blocks with every block in one region, styled by <paramref name="style"/> from its
@@ -492,7 +499,8 @@ public class BorderTests
     }
 
     /// <summary>A hex in a region next to a hex in none (here the coast: the proof leaves the sea out) gets no band: the
-    /// middle of such an edge is unchanged.</summary>
+    /// middle of such an edge is unchanged but for the territory tint (Civ-like prototype #196): the land within 300 m of
+    /// the edge changes no more than the same hex 1-1.5 km in, and the sea not at all.</summary>
     [UnityTest]
     public IEnumerator NoBandRunsAgainstAHexInNoRegion()
     {
@@ -516,17 +524,26 @@ public class BorderTests
         }
         Assert.IsNotNull(land);
         var walks = WalkEdge(map, cam, land!.Value, (land.Value.q - 1, land.Value.r), 3, 960, 540);
-        int moved = 0, total = 0;
+        int moved = 0, total = 0; var near = new List<float>(); var deep = new List<float>();
         foreach (var w in walks)
-            for (int k = 0; k < w.On.Count; k++) { total++; if (RenderSample.DeltaE(w.On[k], w.Off[k]) >= 2f) moved++; }
-        TestContext.WriteLine($"coast edge at ({land.Value.q}, {land.Value.r}) region {layer.RegionOf(land.Value.q, land.Value.r)}: {moved}/{total} pixels moved");
-        Assert.AreEqual(0, moved);
+            for (int k = 0; k < w.On.Count; k++)
+            {
+                float d = RenderSample.DeltaE(w.On[k], w.Off[k]), m = w.SignedM[k];
+                if (m > 0f) { total++; if (d >= 2f) moved++; }   // the sea side
+                else if (m > -300f) near.Add(d);
+                else if (m < -1000f) deep.Add(d);
+            }
+        float nm = Median(near), dm = Median(deep);
+        TestContext.WriteLine($"coast edge at ({land.Value.q}, {land.Value.r}) region {layer.RegionOf(land.Value.q, land.Value.r)}: {moved}/{total} sea pixels moved; land deltaE near the edge {nm:0.0}, deep in {dm:0.0}");
+        Assert.AreEqual(0, moved, "the sea is untouched");
+        Assert.LessOrEqual(nm, dm + 2f, "no band along the coast: only the tint the whole hex has");
     }
 
-    /// <summary>At the farthest zoom (diorama02) the outlines stay visible but thin: they change some of the frame and never
-    /// wash it (promo 03's minimap shows thin region outlines at the overview).</summary>
+    /// <summary>At the farthest zoom (diorama02) the territory reads as tinted with a firm edge (Civ-like prototype #196,
+    /// re-pinned: main drew thin outlines only, 1-15% of the frame, with the light stripe turned into the colour): the
+    /// proof changes much of the land, but under a light tint, and its primary pixels read blue.</summary>
     [UnityTest]
-    public IEnumerator AtTheOverviewTheBandsAreThin()
+    public IEnumerator AtTheOverviewTerritoryReadsTintedWithAFirmEdge()
     {
         var (map, cam, rig) = Open();
         yield return null;
@@ -537,11 +554,12 @@ public class BorderTests
         VisualToggles.Set(MapBorders.ToggleName, true);
         BorderProof.Show(map);
         var on = RenderSample.Render(cam, 1920, 1080);
-        float share = Changed(on, off, 0.06f);
-        TestContext.WriteLine($"diorama02: {share:P2} of pixels changed by the proof's outlines");
-        Assert.That(share, Is.InRange(0.01f, 0.15f));
-        // A far band is a thin line of its colour, not a white one (the light stripe turns into the colour under about
-        // 4 px): of the pixels the primary (blue) bands change, few are near-white, and on average they gain in blueness.
+        float share = Changed(on, off, 0.06f), strong = Changed(on, off, 0.25f);
+        TestContext.WriteLine($"diorama02: {share:P2} of pixels changed by the proof (> 0.06), {strong:P2} strongly (> 0.25)");
+        Assert.That(share, Is.InRange(FarTintedShare, 0.60f), "the territory reads tinted");
+        Assert.Less(strong, FarStrongShare, "a light tint, not an opaque fill");
+        // Of the pixels the primary (blue) side changes, few are near-white (the light stripe is 1 px), and on average they
+        // gain in blueness.
         int changed = 0, white = 0; float gain = 0f;
         for (int i = 0; i < on.Pixels.Length; i++)
         {
@@ -555,6 +573,86 @@ public class BorderTests
         Assert.Less(whiteShare, FarWhiteShare, "far bands read as the region's colour, not white");
         Assert.Greater(meanGain, FarBluenessGain, "far primary bands read blue");
     }
+
+    /// <summary>Civ-like prototype (#196): far off a band holds its weight instead of fading to a hairline. At the overview's
+    /// distance (diorama02's) on the proof's coastal-plain edge by gameplay03, the Primary side still shows its light stripe
+    /// (the lightest pixel lifts over the land) and its band, wash and tint change several pixels within 1.5 km of the edge
+    /// (main faded the light stripe into the colour and dropped the wash under a 4.5 px band: about 2 px changed).</summary>
+    [UnityTest]
+    public IEnumerator AtTheOverviewABandKeepsItsLightStripeAndWash()
+    {
+        var (map, cam, rig) = Open();
+        yield return null;
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        var (inner, outer) = ProofEdge(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain");
+        LookAtEdge(map, rig, inner);
+        rig.Distance = PromoPose.Diorama02.Distance; rig.Apply();
+        var changed = new List<float>(); var lift = new List<float>();
+        foreach (var w in WalkEdge(map, cam, inner, outer, 9, 1920, 1080))
+        {
+            int n = 0; float l = float.MinValue;
+            for (int k = 0; k < w.On.Count; k++)
+            {
+                if (w.SignedM[k] >= 0f) continue;
+                if (RenderSample.DeltaE(w.On[k], w.Off[k]) >= 3f) n++;
+                l = Mathf.Max(l, RenderSample.Luma(w.On[k]) - RenderSample.Luma(w.Off[k]));
+            }
+            changed.Add(n); lift.Add(l);
+        }
+        float c = Median(changed), li = Median(lift);
+        TestContext.WriteLine($"overview distance, edge {inner}-{outer}: median {c:0} primary-side pixels changed within 1.5 km, light stripe lift {li:0.000}");
+        Assert.GreaterOrEqual(c, FarChangedPx, "far off, band, wash and tint keep their weight");
+        Assert.GreaterOrEqual(li, FarLightLift, "far off, the light stripe still shows");
+    }
+
+    /// <summary>Civ-like prototype (#196): both sides' territory is washed alike. At gameplay03, 500-900 m inside each side
+    /// of a primary-secondary proof edge (past main's washes, which ended about 440 m in), both sides change visibly and
+    /// neither by less than half the other (main: Secondary's wash 0.18 against Primary's 0.40, and nothing that far in).</summary>
+    [UnityTest]
+    public IEnumerator BothSidesWashTheirTerritoryAlike()
+    {
+        var (map, cam, rig) = Open();
+        yield return null;
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        var (inner, outer) = ProofEdge(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain");
+        LookAtEdge(map, rig, inner);
+        var p = new List<float>(); var s = new List<float>();
+        foreach (var w in WalkEdge(map, cam, inner, outer, 9, 1920, 1080))
+            for (int k = 0; k < w.On.Count; k++)
+            {
+                float m = Mathf.Abs(w.SignedM[k]);
+                if (m < 500f || m > 900f) continue;
+                (w.SignedM[k] < 0f ? p : s).Add(RenderSample.DeltaE(w.On[k], w.Off[k]));
+            }
+        float pm = Median(p), sm = Median(s);
+        TestContext.WriteLine($"gameplay03 500-900 m in: primary wash deltaE {pm:0.0} ({p.Count} px), secondary {sm:0.0} ({s.Count} px)");
+        Assert.GreaterOrEqual(Mathf.Min(pm, sm), WashSeenDeltaE, "both sides washed 500-900 m in");
+        Assert.GreaterOrEqual(Mathf.Min(pm, sm) / Mathf.Max(pm, sm), 0.5f, "neither side's wash is under half the other's");
+    }
+
+    /// <summary>Civ-like prototype (#196): the pixel floors (colour stripe 3 px, light stripe 1 px). At 150 km, where
+    /// the Primary band's 230 m is under 3 px, its colour and light stripes together still measure at least 3.5 px (main:
+    /// one 2 px floor for the whole band).</summary>
+    [UnityTest]
+    public IEnumerator AtMidZoomTheBandKeepsItsPixelFloors()
+    {
+        var (map, cam, rig) = Open();
+        yield return null;
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        var (inner, outer) = ProofEdge(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain");
+        LookAtEdge(map, rig, inner);
+        rig.Distance = 150000f; rig.Apply();
+        var widths = WalkEdge(map, cam, inner, outer, 9, 1920, 1080).Select(w => Read(w, -1, Blueness, 0.45f).WidthPx).ToList();
+        float pm = Median(widths);
+        TestContext.WriteLine($"150 km, edge {inner}-{outer}: primary band {pm:0.0} px (median)");
+        Assert.GreaterOrEqual(pm, 3.5f, "colour stripe >= 3 px plus light stripe >= 1 px");
+    }
+
+    /// <summary>Bounds for the far and wash tests above, set from their logs (head 2026-10-26; main measured below them).</summary>
+    const float FarChangedPx = 7f, FarLightLift = 0.05f, WashSeenDeltaE = 3f;
 
     /// <summary>The same layer and pose give the same pixels (no time, no randomness in the borders). The pattern is shown
     /// once and a warm-up frame is drawn first, with shaders compiled synchronously: showing it again re-created the
@@ -580,8 +678,9 @@ public class BorderTests
         finally { UnityEditor.ShaderUtil.allowAsyncCompilation = async; }
     }
 
-    /// <summary>Bounds for the overview's colour (AtTheOverviewTheBandsAreThin), set from its log.</summary>
-    const float FarWhiteShare = 0.08f, FarBluenessGain = 0.30f;
+    /// <summary>Bounds for the overview (AtTheOverviewTerritoryReadsTintedWithAFirmEdge) and the near tint, set from their
+    /// logs (Civ-like prototype #196, 2026-10-26).</summary>
+    const float FarWhiteShare = 0.08f, FarBluenessGain = 0.10f, FarTintedShare = 0.15f, FarStrongShare = 0.10f;
 
     static float Median(List<float> v) { var s = v.OrderBy(x => x).ToList(); return s[s.Count / 2]; }
 }

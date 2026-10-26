@@ -165,14 +165,17 @@ public class GradeTests
         {
             VisualToggles.Set("tiltshift", false);
             BorderProof.Show(map);
+            // Every variant of the Civ-like prototype (#196): C's blue is the colour-blind-safe proposal.
+            foreach (var variant in new[] { BorderVariant.A, BorderVariant.B, BorderVariant.C })
             foreach (var (biome, lon, lat) in new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) })
             {
+                MapBorders.Variant = variant;
                 var (inner, outer) = BorderTests.ProofEdge(map, lon, lat, biome);
                 BorderTests.LookAtEdge(map, rig, inner);
                 foreach (var w in BorderTests.WalkEdge(map, cam, inner, outer, 5, 1920, 1080))
                 {
                     var p = BorderTests.Read(w, -1, BorderTests.Blueness, 0.45f); var s = BorderTests.Read(w, +1, BorderTests.Redness);
-                    TestContext.WriteLine($"{biome} normal vision: secondary colour-land {RenderSample.DeltaE(s.Stripe, s.Land):0.0}, light-land {RenderSample.DeltaE(s.Light, s.Land):0.0}; primary colour-land {RenderSample.DeltaE(p.Stripe, p.Land):0.0}, light-land {RenderSample.DeltaE(p.Light, p.Land):0.0}");
+                    TestContext.WriteLine($"{variant} {biome} normal vision: secondary colour-land {RenderSample.DeltaE(s.Stripe, s.Land):0.0}, light-land {RenderSample.DeltaE(s.Light, s.Land):0.0}; primary colour-land {RenderSample.DeltaE(p.Stripe, p.Land):0.0}, light-land {RenderSample.DeltaE(p.Light, p.Land):0.0}");
                     foreach (var kind in new[] { RenderSample.Cvd.Deuteranopia, RenderSample.Cvd.Protanopia })
                     {
                         Color Sim(Color c) => RenderSample.SimulateCvd(c, kind);
@@ -180,8 +183,8 @@ public class GradeTests
                         float pColour = RenderSample.DeltaE(Sim(p.Stripe), Sim(p.Land)), pLight = RenderSample.DeltaE(Sim(p.Light), Sim(p.Land));
                         float sColour = RenderSample.DeltaE(Sim(s.Stripe), Sim(s.Land)), sLight = RenderSample.DeltaE(Sim(s.Light), Sim(s.Land));
                         float pPair = RenderSample.DeltaE(Sim(p.Stripe), Sim(p.Light)), sPair = RenderSample.DeltaE(Sim(s.Stripe), Sim(s.Light));
-                        TestContext.WriteLine($"{biome} {kind}: blue-orange {styles:0.0}; primary colour-land {pColour:0.0}, light-land {pLight:0.0}, colour-light {pPair:0.0}; secondary colour-land {sColour:0.0}, light-land {sLight:0.0}, colour-light {sPair:0.0}");
-                        string at = $"{biome} {kind}";
+                        TestContext.WriteLine($"{variant} {biome} {kind}: blue-orange {styles:0.0}; primary colour-land {pColour:0.0}, light-land {pLight:0.0}, colour-light {pPair:0.0}; secondary colour-land {sColour:0.0}, light-land {sLight:0.0}, colour-light {sPair:0.0}");
+                        string at = $"{variant} {biome} {kind}";
                         Assert.GreaterOrEqual(styles, 15f, $"{at}: the two styles");
                         Assert.GreaterOrEqual(Mathf.Max(pColour, pLight), 15f, $"{at}: the primary band on land");
                         Assert.GreaterOrEqual(Mathf.Max(sColour, sLight), 15f, $"{at}: the secondary band on land");
@@ -193,7 +196,7 @@ public class GradeTests
                 }
             }
         }
-        finally { MapShaderGlobals.PinWaterTime(null); }
+        finally { MapShaderGlobals.PinWaterTime(null); MapBorders.Variant = BorderVariant.A; }
     }
 
     /// <summary>Two-colour borders (owner ruling 2026-10-14): the grey Neutral band (contested, no-man's land, a demilitarized
@@ -216,8 +219,10 @@ public class GradeTests
             var edges = new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) }
                 .Select(e => (e.Item1, BorderTests.ProofEdge(map, e.Item2, e.Item3, e.Item1))).ToList();
             int gaps = 0, drawn = 0;
+            foreach (var variant in new[] { BorderVariant.A, BorderVariant.B, BorderVariant.C })
             foreach (var (biome, (inner, outer)) in edges)
             {
+                MapBorders.Variant = variant;
                 BorderTests.LookAtEdge(map, rig, inner);
                 // the proof's primary blocks (inner side) against neutral blocks, then neutral against secondary
                 MapBorders.Use(BorderTests.Blocks(map, primary => primary ? BorderStyle.Primary : BorderStyle.Neutral));
@@ -226,19 +231,19 @@ public class GradeTests
                 var b = BorderTests.WalkEdge(map, cam, inner, outer, 5, 1920, 1080);
                 for (int i = 0; i < a.Count; i++)
                 {
-                    var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, 0.02f);
+                    var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, 0.10f);   // 0.10 (was 0.02): above the grey wash and tint (#196 prototype)
                     var s = BorderTests.Read(b[i], +1, BorderTests.Redness);
                     if (n.WidthPx < 1f) { gaps++; continue; }   // a walk through a gap between the neutral band's dashes
                     drawn++;
-                    TestContext.WriteLine($"{biome}: neutral stripe {n.Stripe} light {n.Light} land {n.Land}");
+                    TestContext.WriteLine($"{variant} {biome}: neutral stripe {n.Stripe} light {n.Light} land {n.Land}");
                     foreach (var kind in new[] { RenderSample.Cvd.Deuteranopia, RenderSample.Cvd.Protanopia })
                     {
                         Color Sim(Color c) => RenderSample.SimulateCvd(c, kind);
                         float np = RenderSample.DeltaE(Sim(n.Stripe), Sim(p.Stripe)), ns = RenderSample.DeltaE(Sim(n.Stripe), Sim(s.Stripe));
                         float nColour = RenderSample.DeltaE(Sim(n.Stripe), Sim(n.Land)), nLight = RenderSample.DeltaE(Sim(n.Light), Sim(n.Land));
                         float nPair = RenderSample.DeltaE(Sim(n.Stripe), Sim(n.Light));
-                        TestContext.WriteLine($"{biome} {kind}: neutral-blue {np:0.0}, neutral-orange {ns:0.0}; neutral colour-land {nColour:0.0}, light-land {nLight:0.0}, colour-light {nPair:0.0}");
-                        string at = $"{biome} {kind}";
+                        TestContext.WriteLine($"{variant} {biome} {kind}: neutral-blue {np:0.0}, neutral-orange {ns:0.0}; neutral colour-land {nColour:0.0}, light-land {nLight:0.0}, colour-light {nPair:0.0}");
+                        string at = $"{variant} {biome} {kind}";
                         Assert.GreaterOrEqual(np, 15f, $"{at}: neutral against the Israeli side's blue");
                         Assert.GreaterOrEqual(ns, 15f, $"{at}: neutral against the other side's red-orange");
                         Assert.GreaterOrEqual(Mathf.Max(nColour, nLight), 15f, $"{at}: the neutral band on land");
@@ -248,9 +253,9 @@ public class GradeTests
             }
             TestContext.WriteLine($"neutral band: {drawn} walks on a dash, {gaps} in a gap");
             Assert.Greater(gaps, 0, "the neutral band is dashed (a cue that is not colour)");
-            Assert.GreaterOrEqual(drawn, 4, "enough walks on the dashes to measure them");
+            Assert.GreaterOrEqual(drawn, 12, "enough walks on the dashes to measure them (three variants)");
         }
-        finally { MapShaderGlobals.PinWaterTime(null); }
+        finally { MapShaderGlobals.PinWaterTime(null); MapBorders.Variant = BorderVariant.A; }
     }
 
     /// <summary>Review I9: with the Neutral tonemapper the sunlit desert does not clip: in the Negev (34.9 E, 30.8 N, 60 km)
