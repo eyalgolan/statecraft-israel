@@ -62,8 +62,8 @@ final `GameState.Hash()` is pinned:
 | Run | Ends | Hash |
 |---|---|---|
 | to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5bfeb26575f70ba6b9de28c18fb8c0b76b9fa84c378246ceb1f3d6449c36f4d8` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5bfeb26575f70ba6b9de28c18fb8c0b76b9fa84c378246ceb1f3d6449c36f4d8` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -443,3 +443,10 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-defeat | `d5bc68f9` | same as reckless; the defeat is unchanged (was `584a828a`) |
 | #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-occupy-cost | `9fcc7bae` | same as reckless; Nazareth's capture and Occupy are unchanged (was `a767bb66`) |
 | #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-annex-nazareth | `8fe6d129` | same as reckless; the annexation is unchanged (was `d37e6db4`) |
+| #939 Task 12: accepted slice-one follow-up cards | all manifest runs | unchanged | `jerusalem_demilitarisation_guard` and `rafah_force_pressure` fire only after their approved alternative roads. `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln -c Release` on 24 October 2026 passed 2,600 tests; no golden moved. The content hash changes, so earlier saves retain the content-mismatch warning. |
+| #1564: the `reparations_vote` card, the Knesset vote on talks with West Germany (fires 15 December 1951) | hash1952 | `6dfd2337` | the new hard card fires on turn 43 of the historical run, the reference player answers it historically (`negotiate`, morale -0.02), and the run's state and fired events change (was `6b374f69`) |
+| #1564: as above | mvp-end | `6dfd2337` | same run as hash1952 (was `6b374f69`) |
+| #1564: as above | scenario-mvp-defeat | `85c86120` | the scenario's run reaches December 1951, so the card fires in it too and, left unanswered, resolves to `negotiate` (morale -0.02; was `584a828a`) |
+| #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
+| #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
+| #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |

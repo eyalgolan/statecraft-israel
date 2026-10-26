@@ -22,7 +22,7 @@ namespace Statecraft.Sim
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951). The GDD game ends on
         /// 15 January 1952 (R-LOOP-004), the first turn on or after Until1952, so this is also the mvp-end run.</summary>
-        public const string Hash1952 = "5bfeb26575f70ba6b9de28c18fb8c0b76b9fa84c378246ceb1f3d6449c36f4d8";
+        public const string Hash1952 = "385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 

@@ -398,3 +398,17 @@ images:
     sensitive: true
     sensitivity_reviewed: true
     note: "The card is tagged war-casualties, so the owner signs the photograph off (#1565). Owner sign-off, 24 October 2026: the photograph ('Use, neutral alt text') and the card with this alt text ('approved'), #1568. NLI title 'הטנק הסורי שנעצר בכניסה לקיבוץ דגניה א' במהלך מלחמת העצמאות' (the Syrian tank stopped at the entrance to kibbutz Degania Alef during the War of Independence), catalogue-dated 20 May 1948 (the archive's own date, cited as the catalogue's): the in-window frame #1565 asks for. A colour slide; no people, nothing graphic. The vehicle is visibly a Universal Carrier, not the R35 that stands at Degania today (compare File:Degania Alef (997009322909005171.jpg and he.wiki 'הטנק בדגניה'), and Commons files it under 'Universal Carriers in Israeli service', while the NLI record and its sibling frame 997008872726305171 ('a Syrian armoured vehicle destroyed at the entrance', dated only 1948) call it Syrian. The alt text therefore names no side, and the identification is flagged here for the owner's review. VRTS ticket 2021092910005788. Licence, credit, date and SHA-1 read through the Commons API, 24 October 2026."
+  - event: reparations_vote
+    file: reparations_vote.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Jerusalem_(997008136934105171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/d/d1/Jerusalem_%28997008136934105171.jpg"
+    sha1: d2bab6a04eee727ab63becc62f14d3922e77f0fe
+    original_size: [1914, 1314]
+    licence: CC-BY-4.0
+    artist: "Benno Rothenberg"
+    credit: "Benno Rothenberg / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "Police set up barbed-wire barriers before a planned demonstration near the Knesset against the reparations talks, Jerusalem, January 1952."
+    crop: [0.5, 0.55, 1.0]
+    sensitive: true
+    sensitivity_reviewed: true
+    note: "The reparations vote card (#1564). Owner sign-off, 25 October 2026: the card text and options, the photograph as a sensitive image and the placeholder costs ('Approve all three'), #1575. NLI title 'המשטרה מניחה מחסומים ומתארגנת לקראת הפגנה מתוכננת ליד משכן הכנסת בעקבות הסכמי השילומים עם גרמניה' (the police set up barriers and organise before a planned demonstration near the Knesset over the reparations agreements with Germany), dated January 1952 (the day is not given, so the alt text gives the month); NLI archive ARC. 4* 2068 / 7264. Police in helmets and greatcoats at a coil of barbed wire across a street, with a crowd behind; no one is hurt, and no face dominates. Chosen from the Rothenberg series 997008136933705171 to 997008136934705171 by Jeremy Hoover on 24 October 2026. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-24; VRTS ticket 2021092910005788. Sensitive: the card is tagged holocaust and the photograph shows a violent day, so the owner signs it off."
