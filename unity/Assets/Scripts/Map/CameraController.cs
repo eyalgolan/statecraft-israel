@@ -100,7 +100,7 @@ namespace Statecraft.Game.Map
             mousePosition.performed += ctx => mouseDrag.Move(ctx.ReadValue<Vector2>());
             touchPress = new InputAction("camera-touch-press", InputActionType.Button, "<Touchscreen>/primaryTouch/press");
             touchPress.performed += ctx => touchDrag.Begin(((Touchscreen)ctx.control.device).primaryTouch.position.ReadValue(), IsOverUi);
-            touchPress.canceled += _ => touchDrag.End();
+            touchPress.canceled += _ => touchDrag.Lift();
             touchPosition = new InputAction("camera-touch-position", InputActionType.PassThrough, "<Touchscreen>/primaryTouch/position");
             touchPosition.performed += ctx => touchDrag.Move(ctx.ReadValue<Vector2>());
             mousePress.Enable(); mousePosition.Enable(); touchPress.Enable(); touchPosition.Enable();
@@ -145,6 +145,10 @@ namespace Statecraft.Game.Map
             {
                 switch (FingersDown(ts, out var a, out var b))
                 {
+                    // no finger down: a flick lifted inside one input update keeps its pan past the slop (PressDrag.Lift)
+                    case 0:
+                        if (HoldsTouchDrag != null) drag += touchDrag.Take(HoldsTouchDrag());
+                        break;
                     // one finger drags the map; its press observer latches the UI origin
                     case 1:
                         drag += HoldsTouchDrag != null ? touchDrag.Take(HoldsTouchDrag()) : a.delta.ReadValue();
@@ -168,19 +172,26 @@ namespace Statecraft.Game.Map
 
         /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between
         /// camera ticks. Event positions, rather than Mouse/delta, exclude pre-press movement and retain multiple
-        /// input updates. Released gestures are not replayed here (Ella owns ruling 3).</summary>
+        /// input updates. A lift keeps only the pan past the slop that no frame took yet (Lift).</summary>
         internal sealed class PressDrag
         {
             Vector2 origin, previous, pending;
-            bool down, panning;
+            bool down, panning, pinched;
             internal bool FromUi { get; private set; }
             internal void Begin(Vector2 at, Func<Vector2, bool>? overUi = null)
             {
                 origin = previous = at; pending = Vector2.zero;
-                down = true; panning = false; FromUi = overUi?.Invoke(at) == true;
+                down = true; panning = pinched = false; FromUi = overUi?.Invoke(at) == true;
             }
             internal void End() { down = panning = false; pending = Vector2.zero; }
-            internal void Discard() { pending = Vector2.zero; }
+            internal void Discard() { pending = Vector2.zero; pinched = true; }
+            /// <summary>The finger lifted: as End, but a pan past the slop that no camera frame has taken yet is kept for
+            /// the next one (#1661 ruling 3: a flick inside one input update pans). Not from over the UI, not a pinch.</summary>
+            internal void Lift()
+            {
+                var keep = panning && !FromUi && !pinched ? pending : Vector2.zero;
+                End(); pending = keep;
+            }
             internal void Move(Vector2 at)
             {
                 if (!down) return;
