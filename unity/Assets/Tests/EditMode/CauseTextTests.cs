@@ -63,13 +63,29 @@ public class CauseTextTests
     public void EveryKeyedLineIsHebrewInHebrew()
     {
         var he = He; var seen = new HashSet<string>();
+        // GameRoot passes the map's sourced Hebrew settlement names to every report renderer.
+        var names = Statecraft.Game.Map.SettlementPlacer.Parse(System.IO.File.ReadAllText(
+            System.IO.Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
         foreach (var turn in Turns())
             foreach (var w in turn.Why.Where(w => CauseKeys.All.Contains(w.Key)))
             {
-                AssertHebrew(CauseText.Line(w, C, NoRows, he), w.Key);
+                AssertHebrew(CauseText.Line(w, C, NoRows, he, names), w.Key);
                 seen.Add(w.Key);
             }
         Assert.GreaterOrEqual(seen.Count, 8, "precondition: the game reaches most keys: " + string.Join(", ", seen));
+    }
+
+    [Test]
+    public void MissingHebrewPlaceNamesKeepTheMarkedEnglishFallback()
+    {
+        var row = new Cause("city", "hadera", 0, "Hadera: jobs paid IL 0.0m", key: CauseKeys.WagesPaid);
+        var missing = new Dictionary<string, string>();
+        var line = CauseText.Line(row, C, NoRows, He);
+        Assert.AreEqual(line, CauseText.Line(row, C, NoRows, He, missing));
+        StringAssert.Contains(UiText.LeftToRightMark + "Hadera" + UiText.LeftToRightMark, line);
+        StringAssert.Contains("תשלום מעבודה", line);
+        var unmarked = Regex.Replace(line, UiText.LeftToRightMark + "[^" + UiText.LeftToRightMark + "]*" + UiText.LeftToRightMark, "");
+        Assert.IsFalse(Regex.IsMatch(unmarked, "[A-Za-z]"));
     }
 
     /// <summary>The keyed lines the seeded game does not reach: a call-up order, a situation that ends, civilian upkeep and
