@@ -1,5 +1,5 @@
-# UI strings (Hebrew, #12). GameRoot loads them in place of strings.en.yaml only when Hebrew is asked for by hand
-# ("?lang=he" on the web, "-lang he" on the desktop; UiLanguage, #193); there is no visible switch yet.
+# UI strings (Hebrew, #12). Choose Hebrew in Settings; the language choice is kept. At start, "?lang=he" / "?lang=en" (web)
+# and "-lang he" / "-lang en" (desktop) override the stored choice for that visit (UiLanguage, #193, #1036).
 # Keep logical Hebrew order, never reverse strings. Exact string.Format tokens match strings.en.yaml;
 # money, names, content and most dates still arrive from the current English content/PlayerText paths; the map's line
 # date, the top bar's date and the Budget, Why? and info panel dates come from the date.* strings (#687, #701).
@@ -224,6 +224,16 @@ capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, 
 capture.refusal.already_city: "{0} כבר עיר."
 capture.refusal.not_awaiting: "אין החלטה ממתינה עבור {0}."
 capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
+# SENSITIVE agent draft for #803: [NATIVE REVIEW REQUIRED] native and owner review pending.
+map.control.awaiting_choice: "החלטה ממתינה"
+map.control.occupied: "מוחזק"
+map.control.awaiting_end: "תקופת ההחזקה הסתיימה"
+map.control.depopulated: "מרוקן מתושביו"
+info.control.awaiting_choice: "{0}: נכבש, החלטה ממתינה"
+info.control.occupied: "{0}: מוחזק, תורות שנותרו: {1}"
+info.control.awaiting_end: "{0}: תקופת ההחזקה הסתיימה, החלטה ממתינה"
+info.control.depopulated: "{0}: התושבים נעקרו ממקומם, המקום מרוקן מתושביו"
+hud.standing_displaced_places: "מקומות שרוקנו מתושביהם בעקבות גירוש: {0}"
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
 start.loading: "טוען את ההקלטה…"
@@ -887,3 +897,74 @@ advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי 
 # Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
 city.workers_ordered: "בסיום התור: {0}"
 city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"
+
+# #1653 Hebrew drafts (#564), review state per key.
+# Agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 1).
+share.site_picture: "התמונה הועתקה: אפשר להדביק אותה בפוסט"
+# Agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation, C155 HE-V031.md row 2).
+share.site_text: "רק הטקסט הועתק. התמונה עדיין זמינה לשיתוף או להורדה."
+# Agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation, C155 HE-V031.md row 3).
+share.site_failed: "לא ניתן להעתיק את התמונה. התמונה עדיין זמינה לשיתוף או להורדה."
+# C149: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 4).
+share.site_downloaded: "אפשר לצרף לפוסט את התמונה שהורדה."
+
+# C136 B1 event/upkeep cause templates (#564), review state per key.
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation, C155 HE-V031.md row 5).
+why.cause.military_upkeep: "{0}: שינוי {1} (תחזוקה צבאית)"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 6).
+why.cause.event_new: "אירוע חדש: {0}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 7).
+why.cause.event_chosen: "נבחרה אפשרות: {0}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 8).
+why.cause.event_delegated: "ההכרעה הועברה אל {0}: {1}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 9).
+why.cause.event_delegated_partial: "ההכרעה הועברה אל {0}, עם ביצוע חלקי: {1}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 10).
+why.cause.cabinet: "הממשלה"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 11).
+why.cause.event_amount: "{0}: שינוי {1}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation, C155 HE-V031.md row 12).
+why.cause.event_stock: "יחידות {0}: {1}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 13).
+why.cause.event_grant_one: "יחידות: {0:0}; סוג: {1}; מיקום: {2}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 14).
+why.cause.event_grant_many: "יחידות: {0:0}; סוג: {1}; מיקום: {2}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 15).
+why.cause.event_city: "יישוב: {0}; {1}; שינוי {2}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 16).
+why.cause.event_unlock: "אפשר כעת לבנות {0}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 17).
+why.cause.event_policy: "{0}: נקבע ערך של {1}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 18).
+why.cause.event_set_rung: "נקבעה רמת ביטחון: {0:0}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 19).
+why.cause.event_rejoin: "חזרה למסלול ההיסטורי: {0}"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 20).
+why.name.rationing: "קיצוב"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 21).
+why.name.housing_construction: "בניית דיור"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 22).
+why.name.border_settlement: "התיישבות בגבול"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 23).
+why.name.maabarot: "מעברות"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 24).
+why.cause.event_amount_from: "{0}: שינוי {1} ({2})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved recommendation, C155 HE-V031.md row 25).
+why.cause.event_stock_from: "יחידות {0}: {1} ({2})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 26).
+why.cause.event_grant_one_from: "יחידות: {0:0}; סוג: {1}; מיקום: {2} ({3})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 27).
+why.cause.event_grant_many_from: "יחידות: {0:0}; סוג: {1}; מיקום: {2} ({3})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 28).
+why.cause.event_city_from: "יישוב: {0}; {1}; שינוי {2} ({3})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 29).
+why.cause.event_unlock_from: "אפשר כעת לבנות {0} ({1})"
+# C136: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 30).
+why.cause.event_policy_from: "{0}: נקבע ערך של {1} ({2})"
+
+# C166: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 31).
+why.cause.objective_completed: "היעד הושלם: {0}; ניקוד: {1}"
+# C166: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 32).
+why.cause.prisoners_returned: "חילופי שבויים: {0:N0} שבויים הוחזרו אל {1}"
+# C166: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 33).
+why.cause.soldiers_returned: "חילופי שבויים: {0:N0} מחיילינו חזרו הביתה מידי {1}"

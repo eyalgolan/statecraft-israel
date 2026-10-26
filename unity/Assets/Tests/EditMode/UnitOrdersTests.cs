@@ -214,6 +214,8 @@ public class UnitOrdersTests
         asked = 0;
         Assert.IsFalse(info.TakesClickThrough(move, At(lit)), "a button keeps its click over a lit hex");
         Assert.IsFalse(info.TakesClickThrough(move, At(routable)), "and over a hex with a go-to route");
+        Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("info-orders"), At(routable)), "the orders row beside its buttons keeps its click (#1728)");
+        Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("info-primary-orders"), At(lit)), "and so does its inner group");
         Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("top-bar"), At(lit)), "another panel keeps its click");
         Assert.IsFalse(info.TakesClickThrough(null, At(lit)), "no UI: the map has the click anyway");
         Assert.AreEqual(0, asked, "the hex is asked only for the card's text");

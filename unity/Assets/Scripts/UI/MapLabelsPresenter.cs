@@ -137,6 +137,13 @@ namespace Statecraft.Game.UI
         Matrix4x4 lastViewProjection; Rect lastCameraRect; Vector2 lastPanelSize, lastOrigin; float lastZoom = float.NaN;
         bool lastKitsShown;
         int lastOccluderMask = -1; float lastLabelSizes = float.NaN; bool sizesKnown, geometryDirty = true;
+#if UNITY_EDITOR
+        // C130: observe real projection work without a clock. No callbacks, allocations or player-build instrumentation.
+        internal long ProjectedMarkersForTests { get; private set; }
+        internal long PlacementVisitsForTests { get; private set; }
+        // ProjectBoxes is static. Tests sample this only around a synchronous main-thread Refresh, with no yield.
+        internal static long ProjectedCornersForTests { get; private set; }
+#endif
         Action? removeToggle;   // the labels switch's removal token (VisualToggles.Register): a disposed presenter never removes a newer one
 
         /// <summary>The game settlements' pills, in settlements_1948.yaml order.</summary>
@@ -498,6 +505,9 @@ namespace Statecraft.Game.UI
             {
                 var it = items[i];
                 if (it.IsLocality && !localities) { it.TopVisible = it.KitInFront = false; continue; }
+#if UNITY_EDITOR
+                ProjectedMarkersForTests++;
+#endif
                 var t = camera.WorldToViewportPoint(it.MarkerTop);
                 it.TopPanel = ToPanel(t, cameraRect, screen, origin);
                 it.TopVisible = t.z > 0f && t.x >= 0f && t.x <= 1f && t.y >= 0f && t.y <= 1f && !UnderAPanel(it.TopPanel);   // a marker under a panel is no one's neighbour
@@ -514,6 +524,9 @@ namespace Statecraft.Game.UI
             placed.Clear();
             for (int i = 0; i < items.Count; i++)
             {
+#if UNITY_EDITOR
+                PlacementVisitsForTests++;
+#endif
                 var it = items[i];
                 if (it.IsLocality && !localities)
                 {
@@ -732,6 +745,9 @@ namespace Statecraft.Game.UI
                 var min = boxes[k].min; var max = boxes[k].max;
                 for (int c = 0; c < 8; c++)
                 {
+#if UNITY_EDITOR
+                    ProjectedCornersForTests++;
+#endif
                     float x = (c & 1) == 0 ? min.x : max.x, y = (c & 2) == 0 ? min.y : max.y, z = (c & 4) == 0 ? min.z : max.z;
                     float w = vp.m30 * x + vp.m31 * y + vp.m32 * z + vp.m33;
                     if (w <= 0f) { rect = default; return false; }

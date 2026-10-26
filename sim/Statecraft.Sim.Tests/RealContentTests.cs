@@ -49,13 +49,13 @@ public class RealContentTests
         }
     }
 
-    /// <summary>R-ALT-004 on the real content: every one of the 30 alternatives carries its record.</summary>
+    /// <summary>R-ALT-004 on the real content: every one of the 33 alternatives carries its record.</summary>
     [Fact]
     public void EveryAlternativeInContentSaysWhoProposedIt()
     {
         var c = ContentLoader.Load(ContentRoot());
         var alternatives = c.Events.Where(e => e.Options.Any(o => o.Historical)).SelectMany(e => e.Options.Where(o => !o.Historical)).ToList();
-        Assert.Equal(30, alternatives.Count);
+        Assert.Equal(33, alternatives.Count);
         Assert.All(alternatives, o => Assert.NotNull(o.Alternative));
     }
 
@@ -172,14 +172,20 @@ public class RealContentTests
         foreach (var g in C.Governments) { Assert.Equal("fact-checked", g.Status); Assert.NotEmpty(g.Sources); }
         foreach (var a in C.Aliyah) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
         foreach (var a in C.PopulationAnchors) { Assert.Equal("fact-checked", a.Status); Assert.NotEmpty(a.Sources); }
-        // #791's cards remain drafts until the human source/sensitivity reviews. Other records keep the gate.
+        // #791's remaining cards and #939's accepted alternate drafts still await human source review.
+        // #939's cards also need the separate AlternateUnsigned sign-off before a shareable build.
+        // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
-        var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
-        Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
-        Assert.Empty(ReleaseGate.SensitiveUnreviewed(C));
+        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure", "railway_complete" };
+        Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
+        // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
+        // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).
+        var awaitingSensitivityReview = Array.Empty<string>();
+        Assert.Equal(awaitingSensitivityReview, ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {
-            Assert.Equal(objectiveDrafts.Contains(e.Id) ? "draft"
+            Assert.Equal(draftEvents.Contains(e.Id) ? "draft"
+                : awaitingSensitivityReview.Contains(e.Id) ? "fact-checked"
                 : ReleaseGate.SensitiveEvents(C).Contains(e.Id) ? ReleaseGate.ReviewedStatus : "fact-checked", e.Status);
             Assert.NotEmpty(e.Sources);
         }
