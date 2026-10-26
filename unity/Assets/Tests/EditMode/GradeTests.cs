@@ -166,7 +166,7 @@ public class GradeTests
             VisualToggles.Set("tiltshift", false);
             BorderProof.Show(map);
             // Every variant of the Civ-like prototype (#196): C's blue is the colour-blind-safe proposal.
-            foreach (var variant in new[] { BorderVariant.A, BorderVariant.B, BorderVariant.C })
+            foreach (var variant in System.Enum.GetValues(typeof(BorderVariant)).Cast<BorderVariant>())
             foreach (var (biome, lon, lat) in new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) })
             {
                 MapBorders.Variant = variant;
@@ -219,7 +219,7 @@ public class GradeTests
             var edges = new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) }
                 .Select(e => (e.Item1, BorderTests.ProofEdge(map, e.Item2, e.Item3, e.Item1))).ToList();
             int gaps = 0, drawn = 0;
-            foreach (var variant in new[] { BorderVariant.A, BorderVariant.B, BorderVariant.C })
+            foreach (var variant in System.Enum.GetValues(typeof(BorderVariant)).Cast<BorderVariant>())
             foreach (var (biome, (inner, outer)) in edges)
             {
                 MapBorders.Variant = variant;
@@ -253,7 +253,7 @@ public class GradeTests
             }
             TestContext.WriteLine($"neutral band: {drawn} walks on a dash, {gaps} in a gap");
             Assert.Greater(gaps, 0, "the neutral band is dashed (a cue that is not colour)");
-            Assert.GreaterOrEqual(drawn, 12, "enough walks on the dashes to measure them (three variants)");
+            Assert.GreaterOrEqual(drawn, 24, "enough walks on the dashes to measure them (six variants)");
         }
         finally { MapShaderGlobals.PinWaterTime(null); MapBorders.Variant = BorderVariant.A; }
     }

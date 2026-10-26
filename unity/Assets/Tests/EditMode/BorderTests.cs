@@ -362,7 +362,7 @@ public class BorderTests
         var pw = new List<float>(); var sw = new List<float>(); var far = new List<float>(); var mid = new List<float>();
         foreach (var w in walks)
         {
-            var p = Read(w, -1, Blueness, 0.45f); var s = Read(w, +1, Redness);   // 0.45: the blue wash gains about 0.3
+            var p = Read(w, -1, Blueness, 0.45f); var s = Read(w, +1, Redness, 0.2f);   // 0.45: the blue wash gains about 0.3; 0.2 (was 0.1): the red-orange wash at 0.40 (#196 prototype) gains about 0.12
             TestContext.WriteLine($"primary stripe {p.Stripe} light {p.Light} land {p.Land} width {p.WidthPx:0.0} px | secondary stripe {s.Stripe} light {s.Light} land {s.Land} width {s.WidthPx:0.0} px");
             Assert.Greater(Blueness(p.Stripe) - Blueness(p.Land), 0.15f, "a blue stripe on the primary side");
             Assert.Greater(Mathf.Min(p.Light.r, Mathf.Min(p.Light.g, p.Light.b)), 0.80f, "a near-white stripe on the primary side");

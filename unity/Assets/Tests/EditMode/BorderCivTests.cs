@@ -51,6 +51,13 @@ public class BorderCivTests
                 }
                 else Assert.AreEqual(0f, wash, $"{at}: the wash goes before the stripes shrink");
             }
+        // The stronger tier's colour floor (A2, B2, C2): 6 px wherever the cap leaves room.
+        foreach (var mpp in MetresPerPx)
+        {
+            var (_, colour, _, _) = MapBorders.BandWidths(MapBorders.Primary, mpp, Inradius, rim: false, MapBorders.StrongMinColourPx);
+            if (MapBorders.StrongMinColourPx + MapBorders.MinLightPx <= MapBorders.MaxShareOfInradius * Inradius / mpp)
+                Assert.GreaterOrEqual(colour, MapBorders.StrongMinColourPx - 1e-4f, $"A2 at {mpp} m/px");
+        }
         var close = MapBorders.BandWidths(MapBorders.Primary, 2f, Inradius, rim: false);
         Assert.AreEqual(230f * 0.5f / 2f, close.colour, 1e-3f, "up close the world width rules");
         Assert.AreEqual(MapBorders.WashReachShare * Inradius / 2f, close.colour + close.light + close.wash, 1e-2f, "the wash reaches a quarter of the inradius");
@@ -85,6 +92,8 @@ public class BorderCivTests
         Assert.AreEqual(0.25f, MapBorders.TintAlpha(40f), 1e-6f);
         Assert.AreEqual(0.25f, MapBorders.TintAlpha(8f), 1e-6f);
         for (float px = 8f; px < 400f; px += 1f) Assert.LessOrEqual(MapBorders.TintAlpha(px + 1f), MapBorders.TintAlpha(px));
+        Assert.AreEqual(0.12f, MapBorders.TintAlpha(400f, MapBorders.StrongTintNear), 1e-6f, "the stronger tier up close");
+        Assert.AreEqual(0.25f, MapBorders.TintAlpha(40f, MapBorders.StrongTintNear), 1e-6f);
     }
 
     /// <summary>The neutral dashes stay at least 8 px on screen: their period doubles from 2 km as the camera pulls out
@@ -112,6 +121,8 @@ public class BorderCivTests
         Assert.AreEqual(BorderVariant.C, MapBorders.VariantRequested("https://x.invalid/?bordervariant=C#x", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.A, MapBorders.VariantRequested("https://x.invalid/?bordervariant=bx", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.B, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "b" }, webgl: false));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/?bordervariant=a2", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.C2, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "C2" }, webgl: false));
         BorderTests.Open();
         Vector4 Rim() => Shader.GetGlobalVector("_ScBorderRim");
         Vector4 Blue() => Shader.GetGlobalVector("_ScBorderColour1");
@@ -125,6 +136,48 @@ public class BorderCivTests
         Assert.AreEqual(0f, Rim().z);
         var c = MapBorders.PrimaryStrongBlue.Colour.linear;
         Assert.AreEqual(new Vector4(c.r, c.g, c.b, 1f), Blue());
+        Assert.AreEqual(MapBorders.MinColourPx, Shader.GetGlobalVector("_ScBorders").x);
+        // The stronger tier: its floor, wash, hold and tint; B2 its rim, C2 its blue.
+        MapBorders.Variant = BorderVariant.A2;
+        Assert.AreEqual(MapBorders.StrongMinColourPx, Shader.GetGlobalVector("_ScBorders").x);
+        Assert.AreEqual(MapBorders.StrongWashStrength, Shader.GetGlobalVector("_ScBorderShape1").w);
+        Assert.AreEqual(MapBorders.StrongWashStrength, Shader.GetGlobalVector("_ScBorderShape2").w);
+        Assert.AreEqual(1f, Shader.GetGlobalVector("_ScBorderMin").z);
+        Assert.AreEqual(MapBorders.StrongTintNear, Shader.GetGlobalVector("_ScBorderTint").x);
+        Assert.AreEqual(a, Blue()); Assert.AreEqual(0f, Rim().z);
+        MapBorders.Variant = BorderVariant.B2;
+        Assert.AreEqual(MapBorders.RimOpacity, Rim().z);
+        MapBorders.Variant = BorderVariant.C2;
+        Assert.AreEqual(new Vector4(c.r, c.g, c.b, 1f), Blue());
+        MapBorders.Variant = BorderVariant.A;
+        Assert.AreEqual(0f, Shader.GetGlobalVector("_ScBorderMin").z);
+    }
+
+    /// <summary>The stronger tier at gameplay03 (the view players live in): A2's Primary band is wider than A's (the 6 px
+    /// colour floor) and its wash reads farther in (700-1000 m: the held wash and the 0.12 tint).</summary>
+    [UnityTest]
+    public IEnumerator TheStrongerTierReadsHeavierAtGameplay03()
+    {
+        var (map, cam, rig) = BorderTests.Open();
+        yield return null;
+        RenderSample.TiltShift(false);
+        BorderProof.Show(map);
+        var (inner, outer) = BorderTests.ProofEdge(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat, "coastal_plain");
+        BorderTests.LookAtEdge(map, rig, inner);
+        (float band, float wash) Measure()
+        {
+            var walks = BorderTests.WalkEdge(map, cam, inner, outer, 9, 1920, 1080);
+            var band = walks.Select(w => BorderTests.Read(w, -1, BorderTests.Blueness, 0.45f).WidthPx).OrderBy(x => x).ElementAt(4);
+            var wash = walks.SelectMany(w => Enumerable.Range(0, w.On.Count).Where(k => w.SignedM[k] <= -700f && w.SignedM[k] >= -1000f)
+                .Select(k => RenderSample.DeltaE(w.On[k], w.Off[k]))).OrderBy(x => x).ToList();
+            return (band, wash[wash.Count / 2]);
+        }
+        var a = Measure();
+        MapBorders.Variant = BorderVariant.A2;
+        var a2 = Measure();
+        TestContext.WriteLine($"gameplay03: primary band A {a.band:0.0} px, A2 {a2.band:0.0} px; wash deltaE 700-1000 m in: A {a.wash:0.0}, A2 {a2.wash:0.0}");
+        Assert.GreaterOrEqual(a2.band, a.band + 1f, "A2's band is wider");
+        Assert.Greater(a2.wash, a.wash * 1.3f, "A2's wash reads farther in");
     }
 
     /// <summary>Variant B: a dark rim on the edge. Close up (20 km), the darkest Primary pixel within 60 m of a primary-secondary

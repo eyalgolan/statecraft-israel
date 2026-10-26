@@ -14,7 +14,7 @@ TEXTURE2D(_ScRegionTex);  // one texel per hex, linear RGBA8: r + 256 g the regi
 float4 _ScRegionInfo;     // x q of texel column 0, y r of texel row 0, z width, w height (texels)
 float4 _ScBorders;        // x least colour stripe (px), y widest band (+ wash) as a share of the hex's inradius,
                           // z 1 = no early-out (tests prove the early-out exact), w 1 = on
-float4 _ScBorderMin;      // x least light stripe (px), y least wash (px)
+float4 _ScBorderMin;      // x least light stripe (px), y least wash (px), z the wash's hold: 0 a smoothstep fall, 1 a 1 - x^2 one
 float4 _ScBorderDash;     // the neutral style's dashes (a cue that is not colour, for colour-blind players: review S9 of #555):
                           // x metres a period, y the drawn share of it, z the least drawn dash (px)
 float4 _ScBorderTint;     // x the territory tint near, y far; z the hex inradius (px) where it starts rising, w where it is full
@@ -163,8 +163,10 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
                 float rimA = cRim * _ScBorderRim.z;
                 bandA = cBand - cRim + rimA;
                 stripe = bandA > 0.0 ? (colour.rgb * (cColour - cRim) + light.rgb * (cBand - cColour) + colour.rgb * _ScBorderRim.w * rimA) / bandA : colour.rgb;
-                // max(): a style with no wash must not make smoothstep divide by zero (review M3).
-                washA = shape.w * (1.0 - smoothstep(bandEnd, bandEnd + max(w.w, 1e-3), bestPx));
+                // How far through the wash (0 at the band, 1 at its reach); max(): a style with no wash must not divide by zero
+                // (review M3). It falls as a smoothstep, or (the stronger tier) as x^2, holding its strength farther in.
+                float x = saturate((bestPx - bandEnd) / max(w.w, 1e-3));
+                washA = shape.w * (1.0 - lerp(x * x * (3.0 - 2.0 * x), x * x, _ScBorderMin.z));
                 if (neutral)
                 {
                     // box-filtered dash: the share of this pixel's footprint along the edge that falls on a drawn dash. The

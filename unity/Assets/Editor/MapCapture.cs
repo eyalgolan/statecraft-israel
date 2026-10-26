@@ -210,7 +210,7 @@ public static class MapCapture
     /// <summary>The Civ-like border prototype's evidence (#196): the map as a new game starts (the side-coloured control
     /// layer of 15 May 1948, as GameRoot.Begin draws it; kits and trees on, the water's clock pinned), on the WebGL tier,
     /// at 1920x1080, from three views: gameplay03, a close view (20 km over the Israeli/Arab boundary hex nearest
-    /// gameplay03) and the overview (diorama02); then the synthetic proof at gameplay03. One set per variant (A, B, C) into
+    /// gameplay03) and the overview (diorama02); then the synthetic proof at gameplay03. One set per variant (A-C2) into
     /// &lt;-captureDir&gt; (default captures/borders) as &lt;variant&gt;-&lt;view&gt;.png.</summary>
     public static void BorderVariants()
     {
@@ -239,7 +239,7 @@ public static class MapCapture
             QualitySettings.SetQualityLevel(0, true);   // Mobile: the WebGL tier
             void Shoot(string prefix, IEnumerable<PromoPose> poses)
             {
-                foreach (var variant in new[] { BorderVariant.A, BorderVariant.B, BorderVariant.C })
+                foreach (var variant in (BorderVariant[])System.Enum.GetValues(typeof(BorderVariant)))
                 {
                     MapBorders.Variant = variant;
                     foreach (var pose in poses)

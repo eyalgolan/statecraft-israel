@@ -18,8 +18,10 @@ namespace Statecraft.Game.Map
     /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). A: bands that hold their weight at every
     /// zoom, an equal wash on both sides reaching a quarter of the hex, pixel floors and a territory tint that grows as the
     /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
-    /// colour-blind-safe blue (#0072B2).</summary>
-    public enum BorderVariant : byte { A = 0, B = 1, C = 2 }
+    /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
+    /// (coordinator, 2026-10-26: A read almost like main there): a 6 px colour stripe floor, a 0.45 wash that holds most
+    /// of its strength until near its reach, and a 0.12 tint up close (MapBorders.Strong*).</summary>
+    public enum BorderVariant : byte { A = 0, B = 1, C = 2, A2 = 3, B2 = 4, C2 = 5 }
 
     /// <summary>Which region each hex belongs to, and how each region is outlined: what the border renderer draws. A hex not
     /// listed belongs to no region, and no band is drawn against it (the coast, the edge of the data). Region ids run from 1
@@ -98,6 +100,13 @@ namespace Statecraft.Game.Map
         /// <summary>Both sides' wash strength, equal so neither side's territory reads as the junior one (prototype #196;
         /// the Secondary was 0.18 against the Primary's 0.40).</summary>
         public const float SideWashStrength = 0.40f;
+        /// <summary>The stronger tier (A2, B2, C2): the colour stripe's floor, both sides' wash strength, the tint up close,
+        /// and a wash that holds (falls as 1 - x squared over its reach instead of a smoothstep), so it reads well into the
+        /// hex at gameplay03.</summary>
+        public const float StrongMinColourPx = 6f, StrongWashStrength = 0.45f, StrongTintNear = 0.12f;
+        public static bool Strong(BorderVariant v) => v >= BorderVariant.A2;
+        public static bool HasRim(BorderVariant v) => v == BorderVariant.B || v == BorderVariant.B2;
+        public static bool StrongBlue(BorderVariant v) => v == BorderVariant.C || v == BorderVariant.C2;
 
         /// <summary>The promo's blue line (6 + 6 px of blue and white with a 10 px wash at 2752 px; white 251,251,248), the
         /// heavier of the two, in the deeper blue of the owner's ruling (2026-10-14): about 89,119,156 on screen after the
@@ -133,10 +142,11 @@ namespace Statecraft.Game.Map
 
         /// <summary>A band's on-screen widths (px) at <paramref name="metresPerPx"/> across its edge: the mirror of
         /// StatecraftBorders.hlsl's ScBandWidths, for the tests. The wash runs to WashReach of the inradius from the edge.</summary>
-        public static (float rim, float colour, float light, float wash) BandWidths(Style s, float metresPerPx, float inradiusM, bool rim)
+        public static (float rim, float colour, float light, float wash) BandWidths(Style s, float metresPerPx, float inradiusM, bool rim,
+            float minColourPx = MinColourPx)
         {
             float rimPx = rim ? Mathf.Max(RimM / metresPerPx, RimMinPx) : 0f;
-            float colour = Mathf.Max(s.BandM * s.ColourShare / metresPerPx, MinColourPx);
+            float colour = Mathf.Max(s.BandM * s.ColourShare / metresPerPx, minColourPx);
             float light = Mathf.Max(s.BandM * (1f - s.ColourShare) / metresPerPx, MinLightPx);
             float wash = Mathf.Max(s.WashReach * inradiusM / metresPerPx - colour - light, MinWashPx);
             float widest = MaxShareOfInradius * inradiusM / metresPerPx;
@@ -146,14 +156,14 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The territory tint's opacity when a hex's inradius is <paramref name="inradiusPx"/> on screen.</summary>
-        public static float TintAlpha(float inradiusPx) =>
-            Mathf.Lerp(TintNear, TintFar, Mathf.Clamp01((TintNearInradiusPx - inradiusPx) / (TintNearInradiusPx - TintFarInradiusPx)));
+        public static float TintAlpha(float inradiusPx, float near = TintNear) =>
+            Mathf.Lerp(near, TintFar, Mathf.Clamp01((TintNearInradiusPx - inradiusPx) / (TintNearInradiusPx - TintFarInradiusPx)));
 
         /// <summary>The neutral dashes' period (m) at <paramref name="metresPerPx"/>: the mirror of the shader's.</summary>
         public static float NeutralDashPeriodM(float metresPerPx) =>
             NeutralDashM * Mathf.Pow(2f, Mathf.Max(0f, Mathf.Ceil(Mathf.Log(NeutralDashMinPx / NeutralDashOn * metresPerPx / NeutralDashM, 2f))));
 
-        /// <summary>The variant drawn (default A, or the "bordervariant=a|b|c" URL parameter / -bordervariant a|b|c on
+        /// <summary>The variant drawn (default A, or the "bordervariant=a|b|c|a2|b2|c2" URL parameter / -bordervariant ... on
         /// desktop and in the editor). Setting it redraws at once; it outlives map builds.</summary>
         public static BorderVariant Variant
         {
@@ -167,7 +177,7 @@ namespace Statecraft.Game.Map
             string? v = null;
             if (webgl)
             {
-                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=([abcABC])(?=[&#]|$)");
+                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=([abcABC]2?)(?=[&#]|$)");
                 if (m.Success) v = m.Groups[1].Value;
             }
             else
@@ -175,7 +185,11 @@ namespace Statecraft.Game.Map
                 int at = Array.IndexOf(args, "-bordervariant");
                 if (at >= 0 && at + 1 < args.Length) v = args[at + 1];
             }
-            return v?.ToLowerInvariant() switch { "b" => BorderVariant.B, "c" => BorderVariant.C, _ => BorderVariant.A };
+            return v?.ToLowerInvariant() switch
+            {
+                "b" => BorderVariant.B, "c" => BorderVariant.C, "a2" => BorderVariant.A2, "b2" => BorderVariant.B2, "c2" => BorderVariant.C2,
+                _ => BorderVariant.A,
+            };
         }
 
         static Texture2D? texture;
@@ -269,13 +283,14 @@ namespace Statecraft.Game.Map
 
         static void SetStyles()
         {
-            var v = Variant;
-            SetStyle(Colour1, Light1, Shape1, v == BorderVariant.C ? PrimaryStrongBlue : Primary);
-            SetStyle(Colour2, Light2, Shape2, Secondary);
+            var v = Variant; bool strong = Strong(v);
+            Style Side(Style s) => strong ? new Style(s.Colour, s.Light, s.BandM, s.ColourShare, s.WashReach, StrongWashStrength) : s;
+            SetStyle(Colour1, Light1, Shape1, Side(StrongBlue(v) ? PrimaryStrongBlue : Primary));
+            SetStyle(Colour2, Light2, Shape2, Side(Secondary));
             SetStyle(Colour3, Light3, Shape3, Neutral);
-            Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, 0f, 0f));
-            Shader.SetGlobalVector(Tint, new Vector4(TintNear, TintFar, TintNearInradiusPx, TintFarInradiusPx));
-            Shader.SetGlobalVector(Rim, new Vector4(RimM, RimMinPx, v == BorderVariant.B ? RimOpacity : 0f, RimValue));
+            Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, strong ? 1f : 0f, 0f));
+            Shader.SetGlobalVector(Tint, new Vector4(strong ? StrongTintNear : TintNear, TintFar, TintNearInradiusPx, TintFarInradiusPx));
+            Shader.SetGlobalVector(Rim, new Vector4(RimM, RimMinPx, HasRim(v) ? RimOpacity : 0f, RimValue));
             Shader.SetGlobalVector(Dash, new Vector4(NeutralDashM, NeutralDashOn, NeutralDashMinPx, 0f));
         }
 
@@ -290,7 +305,7 @@ namespace Statecraft.Game.Map
         static void Push()
         {
             bool drawn = toggleOn && hasLayer && texture != null;
-            Shader.SetGlobalVector(Borders, new Vector4(MinColourPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
+            Shader.SetGlobalVector(Borders, new Vector4(Strong(Variant) ? StrongMinColourPx : MinColourPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
             if (banner != null) banner.SetActive(drawn);
         }
 
