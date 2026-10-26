@@ -17,6 +17,8 @@ namespace Statecraft.Game.Boot
         public string OverridesYaml = "";
         /// <summary>content/map/subdistrict_hexes_1948.yaml: the 1948 sub-districts the map outlines (display only).</summary>
         public string RegionsYaml = "";
+        /// <summary>Sourced Hebrew region/armistice display names (C242); absent in older bundles.</summary>
+        public string RegionNamesYaml = "";
         /// <summary>The baked runtime forms of the region files the map reads at boot (tools/regions_bake.py; issue #321;
         /// "" when absent: the YAML is read, with a warning).</summary>
         public string RegionsTsv = "", ArmisticeTsv = "", ControlTsv = "";
@@ -61,6 +63,7 @@ namespace Statecraft.Game.Boot
             SettlementsYaml = File.ReadAllText(Path.Combine(contentDir, "map", SettlementPlacer.DefaultFileName)),
             OverridesYaml = ReadIfExists(Path.Combine(contentDir, MapOverrides.FileName)),
             RegionsYaml = File.ReadAllText(Path.Combine(contentDir, "map", Subdistricts1948.FileName)),
+            RegionNamesYaml = ReadIfExists(Path.Combine(contentDir, "map", MapRegionNames.FileName)),
             RoutesYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName)),
             RoutesTsv = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Routes.RoutePaths.RuntimeFileName)),
             UnitsYaml = ReadIfExists(Path.Combine(contentDir, "map", Statecraft.Game.Map.Units.UnitData.DefaultFileName)),
@@ -103,6 +106,7 @@ namespace Statecraft.Game.Boot
                     HexesJson = texts["map/hexes.json"], SettlementsYaml = texts["map/" + SettlementPlacer.DefaultFileName],
                     OverridesYaml = texts.TryGetValue(MapOverrides.FileName, out var overrides) ? overrides : "",
                     RegionsYaml = texts["map/" + Subdistricts1948.FileName],
+                    RegionNamesYaml = texts.TryGetValue("map/" + MapRegionNames.FileName, out var regionNames) ? regionNames : "",
                     RoutesYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.DefaultFileName, out var routes) ? routes : "",
                     RoutesTsv = texts.TryGetValue("map/" + Statecraft.Game.Map.Routes.RoutePaths.RuntimeFileName, out var routesTsv) ? routesTsv : "",
                     UnitsYaml = texts.TryGetValue("map/" + Statecraft.Game.Map.Units.UnitData.DefaultFileName, out var unitsYaml) ? unitsYaml : "",

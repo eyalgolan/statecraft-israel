@@ -28,16 +28,30 @@ namespace Statecraft.Game.Map
 
         public readonly Subdistricts1948 Subdistricts;
         public readonly Armistice1949? Armistice;
+        public readonly MapRegionNames Names;
         /// <summary>Who held which areas (null: the older drawing, sub-districts with the armistice zones over them).</summary>
         public readonly Control1948? Control;
         readonly Dictionary<string, RegionLayer> composed = new Dictionary<string, RegionLayer>();
         RegionLayer? neutralSubdistricts;
 
-        public MapRegions(Subdistricts1948 subdistricts, Armistice1949? armistice, Control1948? control = null)
+        public MapRegions(Subdistricts1948 subdistricts, Armistice1949? armistice, Control1948? control = null, MapRegionNames? names = null)
         {
             Subdistricts = subdistricts ?? throw new ArgumentNullException(nameof(subdistricts));
             Armistice = armistice;
             Control = control;
+            Names = names ?? MapRegionNames.Parse("");
+            var keys = new List<string> { "subdistrict.label", "armistice.label" };
+            foreach (var r in subdistricts.Regions)
+                foreach (var field in new[] { "name", "district" }) keys.Add("subdistrict." + r.Key + "." + field);
+            if (armistice != null)
+            {
+                foreach (var f in armistice.Fronts) keys.Add("front." + f.Key + ".name");
+                foreach (var i in armistice.Zones)
+                    foreach (var field in new[] { "name", "agreement", "label_note" }) keys.Add("zone." + i.Key + "." + field);
+                foreach (var i in armistice.Lines)
+                    foreach (var field in new[] { "name", "agreement", "label_note" }) keys.Add("line." + i.Key + "." + field);
+            }
+            Names.Validate(keys);
             if (control != null)
             {
                 var layer = subdistricts.Layer;
@@ -139,19 +153,22 @@ namespace Statecraft.Game.Map
         /// label, {1} armistice label, {2} front names); map.layer_front_no_data ({0} a front's name, appended for each front
         /// without data); map.layer_front_low ({0} a low-accuracy front's name: Jordan, from a low-resolution scan);
         /// map.layer_front_note ({0} a front's name and {1} the notes of its items shown: the 1950 modus vivendi).</summary>
-        public string Label(DateTime date, Func<string, object[], string> format)
+        public string Label(DateTime date, Func<string, object[], string> format, bool hebrew = false)
         {
             var (on, none) = FrontsOn(date);
-            if (on.Count == 0 || Armistice == null) return Subdistricts.Label;
+            string N(string key, string english) => Names.Pick(key, english, hebrew);
+            var subLabel = N("subdistrict.label", Subdistricts.Label);
+            if (on.Count == 0 || Armistice == null) return subLabel;
             string Name(Armistice1949.Front f)
             {
-                var n = f.LowAccuracy ? format("map.layer_front_low", new object[] { f.Name }) : f.Name;
+                var name = N("front." + f.Key + ".name", f.Name);
+                var n = f.LowAccuracy ? format("map.layer_front_low", new object[] { name }) : name;
                 var notes = Armistice.Zones.Concat(Armistice.Lines).Where(x => x.Front == f && InForce(x, date) && x.LabelNote != "")
-                    .Select(x => x.LabelNote).Distinct().ToList();
+                    .Select(x => N((Armistice.Zones.Contains(x) ? "zone." : "line.") + x.Key + ".label_note", x.LabelNote)).Distinct().ToList();
                 return notes.Count == 0 ? n : format("map.layer_front_note", new object[] { n, string.Join(", ", notes) });
             }
-            var text = format("map.layer_with_armistice", new object[] { Subdistricts.Label, Armistice.Label, string.Join(", ", on.Select(Name)) });
-            foreach (var f in none) text += format("map.layer_front_no_data", new object[] { f.Name });
+            var text = format("map.layer_with_armistice", new object[] { subLabel, N("armistice.label", Armistice.Label), string.Join(", ", on.Select(Name)) });
+            foreach (var f in none) text += format("map.layer_front_no_data", new object[] { N("front." + f.Key + ".name", f.Name) });
             return text;
         }
 

@@ -22,7 +22,8 @@ public class C242RedTests
     {
         var c=Paths.Content;
         var m=new MapRegions(Subdistricts1948.Parse(File.ReadAllText(Path.Combine(c,"map",Subdistricts1948.FileName))),
-            Armistice1949.Parse(File.ReadAllText(Path.Combine(c,"map",Armistice1949.FileName))));
+            Armistice1949.Parse(File.ReadAllText(Path.Combine(c,"map",Armistice1949.FileName))),
+            names: MapRegionNames.Parse(File.ReadAllText(Path.Combine(c,"map",MapRegionNames.FileName))));
         var r=m.Subdistricts.Regions.Single(r=>r.Key==id);
         var hex=m.Subdistricts.Layer.Hexes.First(h=>m.Subdistricts.Layer.RegionOf(h.q,h.r)==r.Id);
         var t=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he?UiPaths.StringsHebrew:UiPaths.Strings).text);

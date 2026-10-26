@@ -1,0 +1,389 @@
+# Presentation only: sourced Hebrew display fields, separate from generated geometry/runtime TSVs.
+# All supplied values await native review. Only a human reviewer removes name_he_review after review.
+# Unsourced fields retain their original English; see docs/map-region-names.md (NEEDS-RESEARCH).
+names:
+  - key: subdistrict.acre.name
+    name_he: "נפת עכו"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.acre.district
+    name_he: "מחוז הגליל"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.beisan.name
+    name_he: "נפת בית־שאן"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.beisan.district
+    name_he: "מחוז הגליל"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.nazareth.name
+    name_he: "נפת נצרת"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=123"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 494 (ISA segment scan p. 123), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.nazareth.district
+    name_he: "מחוז הגליל"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.safad.name
+    name_he: "נפת צפת"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=123"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 494 (ISA segment scan p. 123), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.safad.district
+    name_he: "מחוז הגליל"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.tiberias.name
+    name_he: "נפת טבריה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.tiberias.district
+    name_he: "מחוז הגליל"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 493 (ISA segment scan p. 122), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.haifa.name
+    name_he: "נפת חיפה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.haifa.district
+    name_he: "מחוז חיפה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jenin.name
+    name_he: "נפת ג'נין"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jenin.district
+    name_he: "מחוז שומרון"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.nablus.name
+    name_he: "נפת שכם"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=125"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 496 (ISA segment scan p. 125), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.nablus.district
+    name_he: "מחוז שומרון"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.tulkarm.name
+    name_he: "נפת טול כרם"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=125"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 496 (ISA segment scan p. 125), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.tulkarm.district
+    name_he: "מחוז שומרון"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=124"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 495 (ISA segment scan p. 124), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.hebron.name
+    name_he: "נפת חברון"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=126"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 497 (ISA segment scan p. 126), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.hebron.district
+    name_he: "מחוז ירושלים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=126"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 497 (ISA segment scan p. 126), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jerusalem.name
+    name_he: "נפת ירושלים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=126"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 497 (ISA segment scan p. 126), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jerusalem.district
+    name_he: "מחוז ירושלים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=126"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 497 (ISA segment scan p. 126), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.ramallah.name
+    name_he: "נפת ראם־אללה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=127"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 498 (ISA segment scan p. 127), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.ramallah.district
+    name_he: "מחוז ירושלים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=126"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 497 (ISA segment scan p. 126), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jaffa.name
+    name_he: "נפת יפו"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=127"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 498 (ISA segment scan p. 127), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.jaffa.district
+    name_he: "מחוז לוד"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=127"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 498 (ISA segment scan p. 127), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.ramle.name
+    name_he: "נפת רמלה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=128"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 499 (ISA segment scan p. 128), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.ramle.district
+    name_he: "מחוז לוד"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=127"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 498 (ISA segment scan p. 127), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.gaza.name
+    name_he: "נפת עזה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=128"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 499 (ISA segment scan p. 128), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.gaza.district
+    name_he: "מחוז עזה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=128"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 499 (ISA segment scan p. 128), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.beersheba.name
+    name_he: "נפת באר־שבע"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=128"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 499 (ISA segment scan p. 128), schedule subdistrict heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.beersheba.district
+    name_he: "מחוז עזה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=128"
+        checked: 2026-10-26
+        cite: "The Palestine Gazette, Hebrew edition, No. 1415, Supplement 2, 7 June 1945, printed p. 499 (ISA segment scan p. 128), schedule district heading. Fresh visual check of the scan; historical spelling preserved."
+  - key: subdistrict.label
+    name_he: "הגלילות האדמיניסטרטיביים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122"
+        checked: 2026-10-26
+        cite: "Gazette No. 1415, Supplement 2, 7 June 1945, printed p. 493 / scan p. 122, proclamation title and paragraphs 1-2. Short caption uses its administrative-divisions phrase; this is not a new date or boundary claim."
+  - key: armistice.label
+    name_he: "קווי שביתת הנשק, 1949"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://content.ecf.org.il/files/M00204_TheArmisticeAgreementBetweenJordanandIsrael-HebrewText_0.pdf"
+        checked: 2026-10-26
+        cite: "Hebrew Israel-Jordan agreement, PDF p. 3, Article IV heading: kavei shvitat haneshek; p. 1 gives 3 April 1949. Caption joins the printed heading to the agreement year, not a historical quotation."
+  - key: front.egypt.name
+    name_he: "מצרים"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 1, country column (treaty 1, volume 1). Fresh visual check; not the search snippet."
+  - key: front.lebanon.name
+    name_he: "לבנון"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 2, country column (treaty 2, volume 1). Fresh visual check; not the search snippet."
+  - key: front.jordan.name
+    name_he: "ירדן"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, country column (treaty 3, volume 1). Fresh visual check; not the search snippet."
+  - key: front.syria.name
+    name_he: "סוריה"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 4, country column (treaty 4, volume 1). Fresh visual check; not the search snippet."
+  - key: zone.syria_dmz_north.agreement
+    name_he: "הסכם ישראל-סוריה על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 4, full Hebrew title column; treaty 4, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: zone.syria_dmz_central.agreement
+    name_he: "הסכם ישראל-סוריה על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 4, full Hebrew title column; treaty 4, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: zone.syria_dmz_south.agreement
+    name_he: "הסכם ישראל-סוריה על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 4, full Hebrew title column; treaty 4, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: zone.egypt_el_auja_dmz.agreement
+    name_he: "הסכם מצרים-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 1, full Hebrew title column; treaty 1, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.lebanon_adl.agreement
+    name_he: "הסכם לבנון-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 2, full Hebrew title column; treaty 2, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.syria_adl.agreement
+    name_he: "הסכם ישראל-סוריה על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 4, full Hebrew title column; treaty 4, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.egypt_adl_gaza.agreement
+    name_he: "הסכם מצרים-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 1, full Hebrew title column; treaty 1, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_iraqi_c_east.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_iraqi_b_wadi_ara.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_iraqi_a_triangle.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_iraqi_c_south.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_a_latrun.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_bc_south.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: line.jordan_adl_d_arava.agreement
+    name_he: "הסכם ממלכת הירדן ההאשמית-ישראל על שביתת נשק כללית"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
+        checked: 2026-10-26
+        cite: "Government of Israel international-treaties index, PDF p. 1, treaty row 3, full Hebrew title column; treaty 3, volume 1. The title is shared by these items, not evidence for their individual geometry or sector names."
+  - key: zone.egypt_el_auja_dmz.name
+    name_he: "שטח הכפר אל־עוג'ה וסביבתו"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db16/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%9E%D7%A6%D7%A8%D7%99%D7%9D-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-10-26
+        cite: "Hebrew Egypt-Israel agreement, printed/PDF p. 9, Article VIII.1, first sentence; Article VIII.2 calls it the demilitarized area. Exact geographic noun phrase; not a translated compound name."
+  - key: line.lebanon_adl.name
+    name_he: "קו שביתת הנשק: הגבול הבין־לאומי"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db21/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%9C%D7%91%D7%A0%D7%95%D7%9F-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-10-26
+        cite: "Hebrew Lebanon-Israel agreement, printed p. 25 / PDF p. 5, Article V.1, first sentence. Two source noun phrases joined by a colon as a display caption; country identity remains in the adjacent agreement title."
+  - key: line.syria_adl.name
+    name_he: "קו שביתת הנשק"
+    name_he_review: native-review-pending
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-10-26
+        cite: "Hebrew Israel-Syria agreement, printed p. 51 / PDF p. 5, Article V.3, first sentence. Exact line name; country identity remains in the adjacent agreement title."
