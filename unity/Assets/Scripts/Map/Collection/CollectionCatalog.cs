@@ -129,6 +129,14 @@ namespace Statecraft.Game.Map.Collection
             }),
         };
 
+        /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
+        /// armies' after the people's (owner ruling, 26 October 2026, #1763: "After the people"), so the opening civilians and
+        /// the 1948 soldier come as fast as before the 22 MB of Syrian and Iraqi infantry (CollectionStream.Run).</summary>
+        public static readonly IReadOnlyDictionary<string, string> After = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [ArabArmies] = People,
+        };
+
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
         /// a walk; #507 has him stand still) and #336's soldier (no rig), the sheep and the draught horse.</summary>
         public static readonly IReadOnlyCollection<string> Animated = new HashSet<string>(StringComparer.Ordinal)

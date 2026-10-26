@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Statecraft.Game.Boot;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -92,7 +93,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 while (pending.Count > 0)
                 {
-                    var (id, detail, done) = pending.Dequeue();
+                    var (id, detail, done) = Next();
                     var bundle = CollectionCatalog.BundleOf(id)!;
                     if (!bundles.TryGetValue(bundle, out var state))
                     {
@@ -118,6 +119,22 @@ namespace Statecraft.Game.Map.Collection
                 }
                 yield return null;
             }
+        }
+
+        /// <summary>The next queued request to serve, in order, except that a request for a bundle that comes
+        /// <see cref="CollectionCatalog.After"/> another waits behind a queued request for that other bundle until it has
+        /// settled. It never waits for a bundle nobody has asked for, and a failed bundle counts as settled (fail open).</summary>
+        (string Id, CollectionDetail Detail, Action<GameObject?> Done) Next()
+        {
+            for (int n = pending.Count; n > 0; n--)
+            {
+                var next = pending.Dequeue();
+                if (!CollectionCatalog.After.TryGetValue(CollectionCatalog.BundleOf(next.Id)!, out var first) || bundles.ContainsKey(first)
+                    || !pending.Any(p => CollectionCatalog.BundleOf(p.Id) == first))
+                    return next;
+                pending.Enqueue(next);
+            }
+            return pending.Dequeue();
         }
 
         /// <summary>Hands <paramref name="prefab"/> to the caller; a callback that throws logs one warning per id and never

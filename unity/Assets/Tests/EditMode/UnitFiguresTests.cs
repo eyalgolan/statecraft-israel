@@ -511,7 +511,9 @@ public class UnitFiguresTests
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
-                foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles, CollectionCatalog.ArabArmies })
+                // In the order the stream opens them: the Arab armies' figures are asked for first (UnitLayer prefetches them),
+                // but their bundle waits for the people's (#1763), then comes before the vehicles' asked for after it.
+                foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies, CollectionCatalog.Vehicles })
                     LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
                 var figures = Pieces(map, "Rifleman");
