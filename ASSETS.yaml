@@ -1348,7 +1348,7 @@ rules:
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Eleven byte-identical provider-original GLBs retained as editor-only source records; per-model provenance.json records source hashes. No geometry or texture modification."
     status: verified
     note: "Original source archive only; does not cover adjacent prefabs, materials, metadata or code. Known roof/rear defects 01/03/05 retained; all campaign activation held for streaming and art/sensitivity sign-off. Older licences unchanged."
-  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*-far.*"
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -1356,7 +1356,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "The 23 single-building models of PR #507, brought over on their own in issue #659 (step 1). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issue #659): 'they are ok to use'."
-  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*-near.*"
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2072,7 +2072,7 @@ rules:
     adapted: "graded and cropped"
     commons: "CC BY 4.0; Cc-by-4.0, Meitar Collection/license credit line2, National Library of Israel/Meitar Collection; Items with VRTS permission confirmed"
     note: "Opening cutscene panel yemen (#530), a draft candidate. Original 1305x1281, SHA-1 661307d44f6144e97b1925a366053a636f52afff (https://upload.wikimedia.org/wikipedia/commons/c/cc/Aden_%28997008136749905171%29.jpg); made with tools/event_images.py grade() and encode() (crop [0.47, 0.6, 0.94]). Commons VRTS permission ticket 2021092910005788. SENSITIVE: waits for the owner's sensitivity review and a person's check of the licence and the NLI record (opening.yaml)."
-  - glob: "unity/Assets/Art/Collection/*-far.*"
+  - glob: "unity/Assets/Art/Collection/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2080,7 +2080,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Issue #664 (umbrella #663). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issues #659 and #663): 'they are ok to use'. The whole-town models: owner ruling 2026-10-17 on #663, 'The nine whole-town models ship (this reverses the 15 Oct 'layout references only' ruling)'; their author offered them under CC0 in #507 itself (its ASSETS.yaml rule for Settlements/Prototype/Models/*). Owner ruling 2026-10-15 on repository size: plain git, slimmed first, no masters and no Git LFS. The prefabs, controllers and materials beside the models are under the code row of LICENSING.md. Except figure-syrian-infantry-1948-v1/ and figure-iraqi-infantry-1948-v1/, whose models and colour maps are CC BY-NC-ND 4.0 under their own rows above."
-  - glob: "unity/Assets/Art/Collection/*-near.*"
+  - glob: "unity/Assets/Art/Collection/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2088,7 +2088,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Issue #664 (umbrella #663). Tripo Terms of User Agreement (last updated 11 July 2025), s. 5.2.2: paid users have all rights in their Outputs, including to distribute and license them; s. 3.2 allows commercial and non-commercial use. CC0 / no rights claimed, as for the other AI-only assets (D1). Decided (owner, 2026-10-15, issues #659 and #663): 'they are ok to use'. The whole-town models: owner ruling 2026-10-17 on #663, 'The nine whole-town models ship (this reverses the 15 Oct 'layout references only' ruling)'; their author offered them under CC0 in #507 itself (its ASSETS.yaml rule for Settlements/Prototype/Models/*). Owner ruling 2026-10-15 on repository size: plain git, slimmed first, no masters and no Git LFS. The prefabs, controllers and materials beside the models are under the code row of LICENSING.md. Except figure-syrian-infantry-1948-v1/ and figure-iraqi-infantry-1948-v1/, whose models and colour maps are CC BY-NC-ND 4.0 under their own rows above."
-  - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2096,7 +2096,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-arab-villager-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2104,7 +2104,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-builder-1950-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-builder-1950-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2112,7 +2112,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-builder-1950-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-builder-1950-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2120,7 +2120,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-elder-immigrant-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-elder-immigrant-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2128,7 +2128,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-elder-immigrant-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-elder-immigrant-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2136,7 +2136,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-immigrant-child-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-immigrant-child-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2144,7 +2144,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-immigrant-child-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-immigrant-child-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2152,7 +2152,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-immigrant-woman-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-immigrant-woman-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2160,7 +2160,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-immigrant-woman-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-immigrant-woman-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2168,7 +2168,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2176,7 +2176,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-kibbutz-woman-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2184,7 +2184,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2192,7 +2192,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-soldier-1948-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2200,7 +2200,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2208,7 +2208,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-yemenite-immigrant-v1/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2216,7 +2216,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 18 October 2026, on #708 (issuecomment-6254698105): 'the 8 figures in #708 can be merged without his license line'. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/*-far.*"
+  - glob: "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2224,7 +2224,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 19 October 2026, on #708 (issuecomment-6255540504): 'Yes, both': the pioneer farmer and the Jerusalem 3denhance variant come in on the same terms as #708's eight figures. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/*-near.*"
+  - glob: "unity/Assets/Art/Collection/figure-pioneer-farmer-v1-tpose/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2232,7 +2232,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 19 October 2026, on #708 (issuecomment-6255540504): 'Yes, both': the pioneer farmer and the Jerusalem 3denhance variant come in on the same terms as #708's eight figures. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/*-far.*"
+  - glob: "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/*-far.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true
@@ -2240,7 +2240,7 @@ rules:
     status: verified
     artist: "Tal Heuberger"
     note: "Owner decision, 19 October 2026, on #708 (issuecomment-6255540504): 'Yes, both': the pioneer farmer and the Jerusalem 3denhance variant come in on the same terms as #708's eight figures. #336 offers its models under LicenseRef-Statecraft-Models (selling them as standalone assets needs their creator's permission), and no CC0 1.0 or CC BY 4.0 line from the author was given. On the owner's decision they are marked CC0 / no rights claimed, as the collection's other Tripo outputs (D1; Tripo Terms of User Agreement, last updated 11 July 2025, s. 5.2.2 and s. 3.2). Credit: owner decision of 18 October 2026, issue #1078: 'Tal Heuberger'."
-  - glob: "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/*-near.*"
+  - glob: "unity/Assets/Art/Collection/jerusalem-stone-city-v1-3denhance/*-near.fbx"
     allow_empty: true
     licence: CC0-1.0
     ai_generated: true

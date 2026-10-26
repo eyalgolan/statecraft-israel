@@ -1,5 +1,6 @@
 """The current originals' effective licence agrees with their exact asset rows."""
 import copy
+import fnmatch
 import json
 from pathlib import Path
 import re
@@ -25,6 +26,12 @@ def verify(manifest, assets):
     generated = [x for x in manifest['files'] if x['source'] == 'generated (ours)']
     assert len(generated) == 311, 'generated entries remain explicitly ours'
     assert all(x.get('licence', manifest['header']['generated_licence']) == 'PolyForm-Noncommercial-1.0.0' for x in generated)
+
+
+def asset_rules_over_generated(manifest, assets):
+    """(glob, path) pairs where an ASSETS.yaml rule covers a generated file; scripts/oss/check_repo.py uses fnmatch too."""
+    generated = [x['path'] for x in manifest['files'] if x['source'] not in ('507', '336')]
+    return [(a['glob'], p) for a in assets['rules'] for p in generated if fnmatch.fnmatch(p, a['glob'])]
 
 
 class OriginalModelsManifestTests(unittest.TestCase):
@@ -53,3 +60,12 @@ class OriginalModelsManifestTests(unittest.TestCase):
         changed['rules'].remove(next(x for x in changed['rules'] if ORIGINAL_ROW.match(x.get('source', ''))))
         with self.assertRaisesRegex(AssertionError, 'equal the #507/#336'):
             verify(self.manifest, changed)
+
+    def test_no_asset_rule_covers_a_generated_file(self):
+        # Generated prefabs, controllers, materials and import metadata are under the code row of LICENSING.md.
+        self.assertEqual([], asset_rules_over_generated(self.manifest, self.assets))
+
+    def test_a_wide_historical_glob_over_a_generated_file_fails(self):
+        changed = copy.deepcopy(self.assets)
+        changed['rules'].append({'glob': 'unity/Assets/Art/Collection/*-near.*', 'licence': 'CC0-1.0'})
+        self.assertTrue(asset_rules_over_generated(self.manifest, changed))
