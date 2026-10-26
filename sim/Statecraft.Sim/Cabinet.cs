@@ -145,7 +145,7 @@ namespace Statecraft.Sim
         public static IReadOnlyList<Office> Vacancies(Content c, GameState s, IEnumerable<Command> pending)
         {
             var queued = pending.ToList();
-            if (s.GameOver != null || AttentionSystem.Cost(c, s, "appoint") > AttentionSystem.Left(c, s, queued) + 1e-9)
+            if (s.GameOver != null || (c.UsesAttention && AttentionSystem.Cost(c, s, "appoint") > AttentionSystem.Left(c, s, queued) + 1e-9))
                 return new Office[0];
             var filled = queued.OfType<Appoint>().Select(a => a.Office).ToList();
             return Lineup(c, s)

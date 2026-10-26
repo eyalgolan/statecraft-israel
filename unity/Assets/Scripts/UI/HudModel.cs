@@ -120,7 +120,7 @@ namespace Statecraft.Game.UI
                 Year = s.Date.Year.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 Turn = t.Format("hud.turn", s.Turn),
                 Date = t.Format("hud.date", Statecraft.Game.Map.Control1948.DateText(s.Date, k => t[k])),   // the UI's language (#687)
-                Attention = t.Format("hud.attention", b.AttentionLeft, c.RulesAt(s.Date).AttentionPerTurn),
+                Attention = c.UsesAttention ? t.Format("hud.attention", b.AttentionLeft!.Value, c.RulesAt(s.Date).AttentionPerTurn) : "",
                 SecurityLevel = t.Format("hud.level", s.Rung),
                 Score = c.IsGdd ? t.Format("hud.score", s.Score) : "",   // the GDD loop only (#380); PR 6 moves it
                 Treasury = Money("treasury", s.Treasury - s.Debt, prev == null ? (double?)null : prev.Treasury - prev.Debt),

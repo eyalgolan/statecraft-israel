@@ -111,6 +111,23 @@ def test_every_row_has_a_shipped_file_and_a_crop():
 
 
 
+@pytest.mark.parametrize("only", [["typo"], ["altalena", "typo", "other_typo"]])
+def test_an_unknown_only_is_refused_before_any_original_is_looked_at(tmp_path, capsys, as_isolated, only):
+    # #1465: an --only that matches no row used to build nothing and exit 0. The originals folder does not even exist,
+    # so a refusal that names only the unknown values proves no source was looked at.
+    assert "altalena" in {r["event"] for r in ei.load_rows()}
+    out = tmp_path / "out"
+    out.mkdir()
+    args = ["--originals", str(tmp_path / "no-originals"), "--out", str(out)]
+    for o in only:
+        args += ["--only", o]
+    assert ei.main(args) == 2
+    printed = capsys.readouterr().out
+    unknown = [o for o in only if o != "altalena"]
+    assert printed.splitlines() == [f"UNKNOWN --only {', '.join(unknown)} (not an event in {ei.MAPPING.name})"]
+    assert list(out.iterdir()) == []
+
+
 ISOLATED_IMPORT = ("import importlib.util, sys; s = importlib.util.spec_from_file_location('m', sys.argv[1]); "
                    "s.loader.exec_module(importlib.util.module_from_spec(s))")
 

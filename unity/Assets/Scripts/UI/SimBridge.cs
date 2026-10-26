@@ -88,14 +88,14 @@ namespace Statecraft.Game.UI
             _ => c.Kind,
         };
 
-        /// <summary>The order's Attention price at this turn's prices: what <see cref="Queue"/> charges and the card shows.</summary>
-        public double Price(Command c) => AttentionSystem.Price(Content, TurnStart, c);
+        /// <summary>The order's Attention price, or null when the ruleset has no Attention: what <see cref="Queue"/> charges and the card shows.</summary>
+        public double? Price(Command c) => Content.UsesAttention ? AttentionSystem.Price(Content, TurnStart, c) : null;
 
         /// <summary>Whether the Attention left pays for the order (a queued order with its key is refunded first): the one
         /// check <see cref="Queue"/> refuses on, so the event card (#1034) and a refusal can never disagree.</summary>
-        public bool CanPay(Command c) => Price(c) <= LeftFor(c) + 1e-9;
+        public bool CanPay(Command c) => !Content.UsesAttention || Price(c)!.Value <= LeftFor(c) + 1e-9;
 
-        double LeftFor(Command c) { var old = QueuedLike(c); return AttentionLeft + (old != null ? Price(old) : 0); }
+        double LeftFor(Command c) { var old = QueuedLike(c); return AttentionLeft!.Value + (old != null ? Price(old)!.Value : 0); }
 
         /// <summary>Who End Turn hands the event to with the orders queued now (Simulation.DelegatedTo), or null for the
         /// cabinet: an appointment queued this turn is in office by then (#1034).</summary>
@@ -109,8 +109,8 @@ namespace Statecraft.Game.UI
         /// (EconomySystem.Unsubmitted): the side menu's Budget badge (#1109).</summary>
         public bool BudgetUnsubmitted(IReadOnlyDictionary<string, double> draft) => EconomySystem.Unsubmitted(Content, TurnStart, draft, deferred);
 
-        /// <summary>Attention left after paying for the queued orders at this turn's prices.</summary>
-        public double AttentionLeft => AttentionSystem.Left(Content, TurnStart, All);
+        /// <summary>Attention left after queued orders, or null when the ruleset has no Attention.</summary>
+        public double? AttentionLeft => Content.UsesAttention ? AttentionSystem.Left(Content, TurnStart, All) : null;
 
         /// <summary>The queued order with this key, or null.</summary>
         public Command? QueuedLike(Command c) => deferred.FirstOrDefault(q => Key(q) == Key(c));
@@ -248,10 +248,10 @@ namespace Statecraft.Game.UI
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
-            if (!CanPay(c))
+            if (Content.UsesAttention && !CanPay(c))
             {
                 Notify(RefusedForAttention);                            // presentation only: a failing listener never changes the refusal
-                return Refuse(text.Format("order.no_attention", Price(c), LeftFor(c)));
+                return Refuse(text.Format("order.no_attention", Price(c)!.Value, LeftFor(c)));
             }
             // Send home takes the unit's place in the queue: an order queued for it earlier (a reinforcement) is withdrawn, and
             // its Attention refunded, so End turn never acts on a unit it sends home in the same turn. Withdrawing only refunds,

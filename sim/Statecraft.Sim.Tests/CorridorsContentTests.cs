@@ -72,6 +72,24 @@ public class CorridorsContentTests
         Assert.DoesNotMatch(@"(?m)^[^#\n]*\b\w*(turns|cost)\w*\s*:", text);
     }
 
+    /// <summary>A person's sign-off beside a corridor's status (#375, #1244): reviewed_by and reviewed_on, both or neither, as on
+    /// every other status row. Content metadata only: the sim never reads it.</summary>
+    [Fact]
+    public void ACorridorTakesAPersonsSignOff()
+    {
+        var signed = Load(new Dictionary<string, string> { ["corridors.yaml"] = ReplaceFirst(Fixture.GddCorridors, "    status: draft\n",
+            "    status: fact-checked\n    reviewed_by: eyalgolan\n    reviewed_on: 2026-10-15\n") });
+        Assert.Equal(("fact-checked", "eyalgolan", "2026-10-15"), (signed.Corridors[0].Status, signed.Corridors[0].ReviewedBy, signed.Corridors[0].ReviewedOn));
+        Assert.Equal(("", ""), (signed.Corridors[1].ReviewedBy, signed.Corridors[1].ReviewedOn));
+    }
+
+    static string ReplaceFirst(string s, string replace, string with)
+    {
+        int i = s.IndexOf(replace, StringComparison.Ordinal);
+        Assert.True(i >= 0, replace);
+        return s.Substring(0, i) + with + s.Substring(i + replace.Length);
+    }
+
     static string Cor(string replace, string with) => Fixture.GddCorridors.Replace(replace, with);
     static string Rules(string mvp) => Fixture.Files["rules.yaml"].Replace("map_action: 1 }", Fixture.GddCosts) + mvp;
 
@@ -90,6 +108,10 @@ public class CorridorsContentTests
         new object[] { "corridors.yaml", Cor("hexes: [[3, 0], [4, 0]]", "hexes: [[1, 1]]"), "corridors[road_a].segments[2].hexes", "hex q=1 r=1 is not next to q=3 r=0" },
         new object[] { "corridors.yaml", Cor("    status: draft\n", "    status: done\n"), "corridors[road_a].status", "unknown status 'done'" },
         new object[] { "corridors.yaml", Cor(", checked: 2026-10-15", ""), "corridors[road_a].sources[0]", "url and checked date" },
+        new object[] { "corridors.yaml", Cor("    status: draft\n", "    status: draft\n    reviewed_by: eyalgolan\n"), "corridors[road_a].reviewed_on", "required with reviewed_by" },
+        new object[] { "corridors.yaml", Cor("    status: draft\n", "    status: draft\n    reviewed_on: 2026-10-15\n"), "corridors[road_a].reviewed_by", "required with reviewed_on" },
+        new object[] { "corridors.yaml", Cor("    status: draft\n", "    status: draft\n    reviewed_by: '@eyalgolan'\n    reviewed_on: 2026-10-15\n"), "corridors[road_a].reviewed_by", "GitHub handle" },
+        new object[] { "corridors.yaml", Cor("    status: draft\n", "    status: draft\n    reviewed_by: eyalgolan\n    reviewed_on: 15 October 2026\n"), "corridors[road_a].reviewed_on", "YYYY-MM-DD" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("road_segment_turns: 3", "road_segment_turns: 0")), "mvp.road_segment_turns", "must be >= 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("rail_segment_turns: 2", "rail_segment_turns: 0")), "mvp.rail_segment_turns", "must be >= 1" },
         new object[] { "rules.yaml", Rules(Fixture.GddRules.Replace("road_segment_cost: 1.5", "road_segment_cost: -1")), "mvp.road_segment_cost", "must be a finite number >= 0" },

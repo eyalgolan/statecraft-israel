@@ -100,3 +100,27 @@ Before finalizing a draft, ask:
 - Is it concise and legible in the game UI?
 - Does it avoid invented quotes or inflated language?
 - Is `status` still `draft` until a person has checked every claim against its source?
+
+## 9. Place names
+
+The Arabic place names of 1948 in English text follow *Village Statistics, 1945*, as the map labels already do
+(`content/map/localities_1948.yaml`, `name_basis: vs1945`): **Beit**, not "Bayt"; **Deir**, not "Dayr". Owner's ruling,
+25 October 2026 (#1586).
+
+Six things the rule does not reach:
+
+- **A quoted source form keeps the spelling its source prints** ("keep quotes as printed", same ruling). That covers
+  `listed_as` values, the armistice line names in `content/map/armistice_hexes_1949.yaml`, and any wording inside
+  quotation marks. `docs/routes.md` quoting the Burma Road's start as "just east of Dayr Muhaysin" is the pattern: the
+  phrase is the English Wikipedia article's, so it keeps that article's spelling even though our own prose says Deir.
+- **Kafr and Kfar stay distinct.** Kafr is the Arabic word and Kfar the Hebrew one; they are two words, not two
+  spellings of one, and `name_basis` already records which is which.
+- **A URL is never respelled.** A Wikipedia article title belongs to the article, so a waypoint spelled "Beit Jiz" may
+  still cite `.../wiki/Bayt_Jiz`.
+- **A record id is not display text.** `bayt_mahsir` keeps its id while its `name` reads "Beit Mahsir"; renaming ids
+  moves every reference and the content hash for no player-visible gain.
+- **Today's name of a living place is not a 1945 form.** It is the present-day official name with its own source, so
+  `today.name` reads "Bayt Jann" beside `name` "Beit Jann".
+- **Hebrew-term transliteration is still open.** ma'abarot, yishuv, halutz and the rest have no scheme yet; see
+  `docs/UX_GLOSSARY.md`, "transliteration".
+

@@ -233,7 +233,7 @@ namespace Statecraft.Game.UI
             // does. When the turn's Attention left cannot pay, every option would be refused (#1034, #1043): the options are
             // greyed out with their price, the card says End Turn hands it to its minister, and End Turn is highlighted.
             var answer = Shown == null ? null : new ChooseEventOption(Shown.Id, "");
-            var price = answer == null ? 0 : bridge.Price(answer);
+            var price = answer == null ? null : bridge.Price(answer);
             var unpaid = answer != null && !bridge.CanPay(answer);
             endTurn?.EnableInClassList(EndTurnWaitingClass, !hiddenInCapture && unpaid);
             if (Shown == null || Collapsed) video?.Stop();
@@ -281,7 +281,7 @@ namespace Statecraft.Game.UI
             {
                 var option = o;
                 var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
-                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price > 0 ? text.Format("event.option_cost", label, price) : label };
+                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price is double cost && cost > 0 ? text.Format("event.option_cost", label, cost) : label };
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid);
                 options.Add(b);

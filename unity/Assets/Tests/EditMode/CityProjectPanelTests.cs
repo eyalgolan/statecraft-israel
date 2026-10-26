@@ -263,7 +263,7 @@ public class CityProjectPanelTests
         Assert.IsFalse(bridge.CanPay(order), "precondition: no Attention left");
         ui.Press("city-project-housing");
         Assert.IsEmpty(bridge.Queued);
-        Assert.AreEqual(new[] { En.Format("order.no_attention", bridge.Price(order), 0.0) }, refusals);
+        Assert.AreEqual(new[] { En.Format("order.no_attention", bridge.Price(order)!.Value, 0.0) }, refusals);
     }
 
     [Test]

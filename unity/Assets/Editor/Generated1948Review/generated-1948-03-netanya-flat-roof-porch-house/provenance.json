@@ -1,0 +1,47 @@
+{
+  "number": 3,
+  "id": "generated-1948-03-netanya-flat-roof-porch-house",
+  "source_staging_relative": "asset-staging/tripo-local/2026-10-24-pr1379-regen/models/03/pr1379-03-textured-4k-v2.glb",
+  "tripo_model_id": "2b577ca1-feaa-421e-9de2-ae956573a922",
+  "tripo_settings": "Smart Mesh P2.0, Quad, polycount 5000, Private, 1 generation; texture regenerated in Studio, exported GLB at 4k",
+  "reference_image": "03-ref-v1_0c1ad229.jpeg (GPT Image 2.5 in Tripo Studio, from the original concept)",
+  "regenerated": "2026-10-24",
+  "source_glb_sha256": "61f58310cfca42ff10050e905cee676ec521382ac498903d8b947fec9fa38f8c",
+  "source_glb_bytes": 5636696,
+  "source_triangles": 9261,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "65f6b78ae3f1ecaf1d80460539f0fd472ae4e939a50f80637a34c97fc4bbc48c",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Regenerated 24 October 2026 at the owner's request on #1379; four closed walls replace the provider original with a broad rear opening.",
+  "fbx_sha256": "27c837e0c8a884860799e6af6c78c4ed0312cecca1791ca200329c3525b2d753",
+  "compatibility_export_triangles": 9261,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 1.0803341865539551e-07,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 1.0,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house.glb"
+}

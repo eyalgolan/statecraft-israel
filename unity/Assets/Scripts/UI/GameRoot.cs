@@ -251,7 +251,7 @@ namespace Statecraft.Game.UI
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
             unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
-            Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
+            var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
@@ -383,6 +383,7 @@ namespace Statecraft.Game.UI
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
                 unitDone: FocusNextUnit, showRoute: map.ShowRoute, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
+            report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -947,7 +948,9 @@ namespace Statecraft.Game.UI
                 for (int guard = 0; card.Shown != null; guard++)
                 {
                     var shown = card.Shown;
-                    if (bridge.AttentionLeft + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
+                    // Rulesets with Attention keep the smoke's own pool check unchanged; gdd-0.3 has no pool to run out of (#1688).
+                    if (bridge.Content.UsesAttention
+                        && bridge.AttentionLeft!.Value + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
                     var option = root.Q<VisualElement>("event-options")?.Q<Button>();
                     if (option == null || guard >= 50) { log(FormattableString.Invariant($"SMOKE FAIL event {shown.Id} has no option to press")); yield break; }
                     if (!Press(option, log)) yield break;

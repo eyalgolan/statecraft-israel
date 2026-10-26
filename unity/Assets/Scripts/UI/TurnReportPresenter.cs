@@ -29,6 +29,8 @@ namespace Statecraft.Game.UI
         /// <summary>The units_1948.yaml rows, which name the enemy's units in that row (GameRoot sets them once the map has read
         /// them); without a row a unit is named by its id (report.unit).</summary>
         public IReadOnlyList<UnitEntry>? Units { get; set; }
+        /// <summary>Each settlement's Hebrew name (name_he), by id: the map's parse, the same rows Why and the toasts use.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe { get; set; }
 
         readonly VisualElement hudRoot, report; readonly ScrollView rows; readonly SimBridge bridge; readonly UiText text;
         readonly ScreenNav nav; readonly Button close, all;
@@ -94,7 +96,8 @@ namespace Statecraft.Game.UI
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
         /// the bar's order (the meters have different units, so no order by size is given without a rule); then, under
         /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
-        public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null)
+        public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null,
+            IReadOnlyDictionary<string, string>? townNamesHe = null)
         {
             var m = HudModel.From(bridge, text); var lines = new List<Line>();
             foreach (var id in HudModel.MeterIds)
@@ -103,7 +106,7 @@ namespace Statecraft.Game.UI
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
                 lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
-                    w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text))));
+                    w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
             }
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
@@ -134,7 +137,7 @@ namespace Statecraft.Game.UI
         void Show()
         {
             rows.Clear();
-            foreach (var line in Lines(bridge, text, Units))
+            foreach (var line in Lines(bridge, text, Units, TownNamesHe))
             {
                 var row = new VisualElement { name = "turn-report-" + line.Meter };
                 row.AddToClassList("turn-report-row");

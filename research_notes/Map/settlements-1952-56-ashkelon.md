@@ -91,6 +91,26 @@ gives the same day.
   for. One turned up by chance: Hebrew Wikipedia's "מעברת חרובית" (Harubit transit camp, near Kfar Menahem, 1955 to
   1959, `oldid=44051899`), with a second camp, Masua. Not given rows. **[GAP]**
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 for the owner's "Research part open" comment on #27 (24 Oct). Everything below was run or
+opened on that day, and nothing above is changed. The JTA site search is `https://www.jta.org/?s=<query>`: results
+are in relevance order, 10 per page, and the item's date is printed in the listing. Archive items are the
+`/archive/` ones; I read their listed dates and titles only unless a line says I opened one. No exact founding day
+was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Kiryat Gat, row 13.** JTA search `Kiryat Gat` (1,386 results) and `Kiriat Gat` (2,381): pages 1 to 4
+  each, one archive item dated 1952-57 in both, 1957-04-25 ("1,408 Jewish Immigrants Arrive in Israel in One
+  Day; 500 More Due"). I opened it on jta.org (26 Oct): it names the town ("Forty newcomers are already settled in Kiryat
+  Gat, urban center of the development region, Mr. Sieff said." and "Kiryat Gat now has a population of about
+  4, 000", as printed) but gives no founding day. The day stays **[GAP]**.
+- (26 Oct) **Nehora (row 24), Even Shmuel (row 30), Kfar HaRif (row 31).** Searched again and not found: a
+  founding group or day. Read: JTA search `Nehora` (1,243 results; pages 1 to 4; nine of the ten 1952-57 items listed are
+  about Nehru by title and one, 1952-11-12, is a cabinet minister's arrival in New York; none opened), `Even Shmuel` (6,293; pages 1 to 4; no archive item dated 1952-57) and `Kfar
+  Harif` (129; pages 1 to 4; none dated 1952-57). Founders and days stay **[GAP]**.
+- (26 Oct) **Israel Government Year-Book 5719 [1958]** (archive.org item `israelgovernment0000vari`): its metadata
+  says `access-restricted-item: true` and the plain-text download returned HTTP 302 (not followed). Not read.
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.

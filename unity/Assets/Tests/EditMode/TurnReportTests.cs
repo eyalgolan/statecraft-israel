@@ -53,6 +53,47 @@ public class TurnReportTests
     static List<string> Causes(UiTestKit ui, string meter) =>
         ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
 
+    /// <summary>The main B1 occupation/deport borrowing keys use the real map names in report and meter paths too.
+    /// This is only a formatter fixture: it does not enable or execute the disabled Deport command.</summary>
+    [TestCase(CauseKeys.Purpose.Occupation)]
+    [TestCase(CauseKeys.Purpose.Deport)]
+    public void ReportAndMeterCausesUseSourcedHebrewPlacesAndKeepEnglishFallback(string purpose)
+    {
+        const string city = "tel_aviv";
+        var namesHe = Statecraft.Game.Map.SettlementPlacer.Parse(
+            File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml")))
+            .ToDictionary(s => s.Id, s => s.NameHe);
+        Assert.IsTrue(namesHe.ContainsKey(city) && namesHe[city] != "", "sourced map name required");
+        using var k = new Kit(He);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        var why = new List<Cause>();
+        var placeName = PlayerText.Settlement(C, city);
+        var englishPurpose = purpose == CauseKeys.Purpose.Deport ? $"for the Deport of {placeName}" : $"for the occupation of {placeName}";
+        EconomySystem.PayOrBorrow(C, last.State, last.State.Treasury + 3, englishPurpose, why, purpose, city);
+        var cause = why.Single();
+        Assert.AreEqual(CauseKeys.Borrowed, cause.Key);
+        // Existing TurnReportTests uses this setter for a precise report fixture; no simulation input or content is changed.
+        typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+            new StepResult(last.State, why, last.Rejected));
+        var reportLines = TurnReportPresenter.Lines(k.Bridge, He, null, namesHe)
+            .Single(row => row.Meter == "treasury").Causes;
+        using var tip = new MeterTip(k.Ui.Root, k.Bridge, He, System.Array.Empty<VisualElement>()) { TownNamesHe = namesHe };
+        var meterLines = tip.Lines(k.Q("meter-treasury")).causes;
+        foreach (var lines in new[] { reportLines, meterLines })
+        {
+            Assert.IsNotEmpty(lines);
+            var line = string.Join("\n", lines);
+            StringAssert.Contains(namesHe[city], line);
+            StringAssert.DoesNotContain(placeName, line);
+            Assert.IsTrue(UiDirection.RightToLeft(line));
+        }
+        Assert.AreEqual(cause.Message, CauseText.Line(cause, C, System.Array.Empty<UnitEntry>(), En, namesHe));
+        var missingNames = new Dictionary<string, string>();
+        StringAssert.Contains(placeName, CauseText.Line(cause, C, System.Array.Empty<UnitEntry>(), He, missingNames),
+            "missing name_he retains main's English fallback, never an invented translation");
+    }
+
     [Test]
     public void TheFixedTurnReportsEachChangedNumberWithTheSimsOwnCauses()
     {
