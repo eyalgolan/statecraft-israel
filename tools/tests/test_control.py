@@ -502,7 +502,9 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
     checked = 0
     for s in SETTLEMENTS["settlements"]:
         qr = hg.settlement_hex(s["lon"], s["lat"], HEXES)
-        if qr in pinned or qr in greyed or abs(s["lon"] - 35.2256) < 0.1:
+        # Jerusalem only: a longitude band on its own also skips Nazareth, Nahalal and Hanita, and Hanita is one of
+        # the three places this rule is for (review of #1765).
+        if qr in pinned or qr in greyed or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
             continue
         for i, p in enumerate(drawn):
             ovs = [overlays[o] for o in p["overlays"] if o in overlays]
