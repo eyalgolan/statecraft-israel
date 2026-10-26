@@ -1,0 +1,1 @@
+- Add the separate GDD 0.3 balance catalogue with explicit agreed/default/deferred provenance and refuse a guessed starting army; existing game rules stay unchanged.

@@ -1223,6 +1223,8 @@ namespace Statecraft.Sim
 
     public sealed class Content
     {
+        /// <summary>Optional design catalogue for future gdd-0.3 systems; never consumed by either existing loop.</summary>
+        public Gdd03BalanceCatalogue? Gdd03Balance { get; set; }
         public List<Office> Offices = new List<Office>();
         public List<Party> Parties = new List<Party>();
         public List<Person> People = new List<Person>();

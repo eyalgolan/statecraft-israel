@@ -323,6 +323,9 @@ namespace Statecraft.Sim
             string rulesText = "";
             c.Rules = Read<Rules>(p => { var t = readFile(p); rulesText = t ?? ""; return t; }, "rules.yaml");
             c.EraRules = ReadEraRules(rulesText, readFile, c.Eras);
+            // Catalogue-only: old content sets need no file; an authored file is strictly validated and hashed.
+            c.Gdd03Balance = ReadOptional<Gdd03BalanceCatalogue>(readFile, Gdd03BalanceCatalogue.FileName);
+            c.Gdd03Balance?.Validate();
             var aliyah = Read<AliyahFile>(readFile, "aliyah.yaml");
             c.Aliyah = aliyah.Series; c.Regions = aliyah.Regions;
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
