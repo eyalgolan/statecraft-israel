@@ -11,7 +11,7 @@ namespace Statecraft.Sim
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
-            var s = new GameState { Date = c.Rules.Start, RngState = seed, Mode = mode };
+            var s = new GameState(c) { Date = c.Rules.Start, RngState = seed, Mode = mode };
             var why = new List<Cause>();
             EffectsSystem.Init(c, s);
             EconomySystem.Init(c, s);
@@ -20,7 +20,7 @@ namespace Statecraft.Sim
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
-            AttentionSystem.Refill(c, s);
+            if (c.UsesAttention) AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);
             return s;
         }
@@ -76,7 +76,7 @@ namespace Statecraft.Sim
             }
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
-            AttentionSystem.Refill(c, s);
+            if (c.UsesAttention) AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
             return new StepResult(s, why, rejected);
         }
@@ -143,9 +143,15 @@ namespace Statecraft.Sim
                 // The call-up and the security order are retired in the GDD loop (R-WAR-002): refused the same way,
                 // before charging, so the state and the Attention are unchanged.
                 if (c.IsGdd && (cmd is SetMobilization || cmd is SecurityOrder)) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
-                var before = s.Attention;
-                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
-                if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
+                string? error;
+                if (c.UsesAttention)
+                {
+                    var before = s.Attention;
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
+                    if (error != null) s.Attention = before;
+                }
+                else error = Execute(c, s, cmd, spent, attacked, why);
+                if (error != null) rejected.Add(new Rejection(cmd, error));
                 if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
         }

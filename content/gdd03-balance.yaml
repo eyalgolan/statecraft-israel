@@ -1,0 +1,831 @@
+# R-LOOP-005: gdd-0.3 catalogue only; no legacy/gdd-0.1 runtime consumer.
+# Source #1668 docs/gdd/balance.md at 605277df. Retained/derived bases explained per entry.
+# Numeric start.army is forbidden until a separate owner decision (#1717).
+"ruleset": "gdd-0.3"
+"values":
+  "campaign.play_minutes":
+    "basis": "Default"
+    "note": "Campaign and indicators: minutes per campaign target; Default. Source: #1668 balance.md at 605277df."
+    "values": [120]
+  "money.il_millions":
+    "basis": "Default"
+    "note": "Campaign and indicators: IL million per Money; Default; existing Treasury display scale. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "indicator.display_max":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: points, displayed maximum; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [100]
+  "indicator.storage_max":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: unitless, stored maximum; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "indicator.low_on":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: points, low-indicator hysteresis; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [30]
+  "indicator.low_off":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: points, low-indicator hysteresis; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [45]
+  "start.cohesion":
+    "basis": "Default"
+    "note": "Campaign and indicators: displayed points; Default. Source: #1668 balance.md at 605277df."
+    "values": [65]
+  "start.support":
+    "basis": "Default"
+    "note": "Campaign and indicators: displayed points; Default. Source: #1668 balance.md at 605277df."
+    "values": [60]
+  "event.max_gap_peace":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: months between historical-run cards; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [6]
+  "event.max_gap_war":
+    "basis": "Agreed"
+    "note": "Campaign and indicators: months between historical-run cards; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "population.people_per_unit":
+    "basis": "Agreed"
+    "note": "Population and starting state: people nominally represented by a population unit; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [10000]
+  "start.population":
+    "basis": "Agreed"
+    "note": "Population and starting state: total player population units, all statuses included; Accepted through later start-state correction. Source: #1668 balance.md at 605277df."
+    "values": [65]
+  "start.money":
+    "basis": "Agreed"
+    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [25]
+  "start.food":
+    "basis": "Agreed"
+    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [10]
+  "start.spare_arms":
+    "basis": "Agreed"
+    "note": "Population and starting state: Money / Food / unequipped Arms; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "start.army":
+    "basis": "Deferred"
+    "note": "Population and starting state: military population units; explicitly deferred; Deferred, not a chosen number. Source: #1668 balance.md at 605277df."
+    "expression": "A"
+  "start.farmers":
+    "basis": "Agreed"
+    "note": "Population and starting state: novice / trained / veteran units; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5, 10, 5]
+  "start.prepared_fields":
+    "basis": "Agreed"
+    "note": "Population and starting state: staffed farming slots, across multiple friendly regions; Derived from agreed farmers. Source: #1668 balance.md at 605277df."
+    "values": [20]
+  "start.trained_pioneers":
+    "basis": "Default"
+    "note": "Population and starting state: units, excluding the teacher; Default. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "start.apprentices":
+    "basis": "Default"
+    "note": "Population and starting state: craftsman units, initially in Industry jobs; Default. Source: #1668 balance.md at 605277df."
+    "values": [6]
+  "start.experts":
+    "basis": "Default"
+    "note": "Population and starting state: craftsman units, initially in Industry jobs; Default. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "start.pioneer_teachers":
+    "basis": "Agreed"
+    "note": "Population and starting state: veteran pioneer unit, included in population total; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "start.military_camps":
+    "basis": "Agreed"
+    "note": "Population and starting state: operating camps at the already approved locations; Retained owner ruling, historical `Q-CAMP-2`. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "start.reception_camps":
+    "basis": "Default"
+    "note": "Population and starting state: operating parent camp for initial centre; historical host binding deferred; Default count, not a claim about a named camp's opening date. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "start.training_centres":
+    "basis": "Agreed"
+    "note": "Population and starting state: operating centre, with that teacher; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "start.free_civilians":
+    "basis": "Deferred"
+    "note": "Population and starting state: otherwise unassigned units; Derived, not extra population. Source: #1668 balance.md at 605277df."
+    "expression": "34 - A"
+  "start.industry_slots":
+    "basis": "Default"
+    "note": "Population and starting state: staffed job slots; Default. Source: #1668 balance.md at 605277df."
+    "values": [8]
+  "start.permanent_housing_projects":
+    "basis": "Default"
+    "note": "Population and starting state: existing completed housing projects; Default. Source: #1668 balance.md at 605277df."
+    "values": [24]
+  "start.housing_capacity":
+    "basis": "Default"
+    "note": "Population and starting state: ordinary resident places, pooled by region; Derived. Source: #1668 balance.md at 605277df."
+    "values": [72]
+  "start.housing_condition":
+    "basis": "Default"
+    "note": "Population and starting state: condition percentage points in each starting region; Default. Source: #1668 balance.md at 605277df."
+    "values": [70]
+  "start.food_production":
+    "basis": "Agreed"
+    "note": "Population and starting state: Food per turn, initially breaking even; Derived from agreed farmer mix and population. Source: #1668 balance.md at 605277df."
+    "values": [65]
+  "start.food_consumption":
+    "basis": "Agreed"
+    "note": "Population and starting state: Food per turn, initially breaking even; Derived from agreed farmer mix and population. Source: #1668 balance.md at 605277df."
+    "values": [65]
+  "population.food_per_turn":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Food per own population unit, every status; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "industry.income":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money per staffed turn: ordinary or novice / apprentice / expert; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1, 2, 3]
+  "farmer.output":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Food per staffed turn: novice / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [2, 3, 5]
+  "profession.farmer_tools":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money once on entering matching profession; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "profession.pioneer_tools":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money once on entering matching profession; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "profession.course_turns":
+    "basis": "Agreed"
+    "note": "Work, professions and training: turns for farmer or pioneer formal course; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "profession.trainees_per_teacher":
+    "basis": "Agreed"
+    "note": "Work, professions and training: trainee at a time per centre and matching veteran teacher; Agreed; replaces the briefly proposed larger class. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "profession.work_to_veteran":
+    "basis": "Agreed"
+    "note": "Work, professions and training: actual working turns for novice or trained farmer/pioneer; Agreed threshold; consistent trained-tier application. Source: #1668 balance.md at 605277df."
+    "values": [9]
+  "pioneer.work_rate":
+    "basis": "Agreed"
+    "note": "Work, professions and training: trained-equivalent work units per turn: novice / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0.75, 1, 1.5]
+  "craft.course_cost":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money / turns; initial Industry apprenticeship course; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "craft.course_turns":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money / turns; initial Industry apprenticeship course; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [6]
+  "craft.course_income":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money per staffed course turn; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "craft.expert_work_turns":
+    "basis": "Agreed"
+    "note": "Work, professions and training: actual apprentice working turns to expert; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [36]
+  "builder.slots_per_project":
+    "basis": "Agreed"
+    "note": "Work, professions and training: simultaneous builders; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "builder.work_rate":
+    "basis": "Agreed"
+    "note": "Work, professions and training: work units per turn: ordinary or novice / apprentice / expert; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1, 1.5, 3]
+  "construction.starts_per_turn":
+    "basis": "Agreed"
+    "note": "Work, professions and training: new city/region project nationwide per turn; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "field.slots":
+    "basis": "Agreed"
+    "note": "Work, professions and training: farmer per prepared field; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "field.cost":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "field.work":
+    "basis": "Agreed"
+    "note": "Work, professions and training: Money / trained-equivalent pioneer work units; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [9]
+  "field.nominal_turns":
+    "basis": "Agreed"
+    "note": "Work, professions and training: turns at constant novice / trained / veteran tier; Derived; promotion can shorten remaining work. Source: #1668 balance.md at 605277df."
+    "values": [12, 9, 6]
+  "reception.capacity":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: refugee or course-trainee beds per camp; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "reception.turns":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: actual reception turns before free-civilian status; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [6]
+  "reception.basic_credit":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: reception turns credited by completed basic military training; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "housing.condition_max":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: unitless fraction; display as percent; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "housing.money_threshold":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
+    "values": [0.50]
+  "housing.money_slope":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition fraction / Money per resident per fraction below threshold; Agreed linear rule. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "housing.cohesion_threshold":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition fraction below which cohesion declines; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0.25]
+  "housing.max_cohesion_loss":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: national displayed points per turn at maximal weighted severity; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "housing.overflow_deterioration":
+    "basis": "Default"
+    "note": "Reception, housing and shortages: condition pp per turn multiplied by ordinary resident overflow share; Default rate; retained overcrowding principle. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "housing.max_deterioration":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: condition pp per turn with all housing upkeep unpaid; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [10]
+  "transit.cost":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: Money per civilian population unit ending turn in transit; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0.50]
+  "reception.queue_cohesion_loss":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: national displayed point per turn with any port reception queue; Agreed amount; cadence and non-stacking Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+    "parts":
+      "cadence_turns":
+        "basis": "Default"
+        "values": [1]
+        "note": "Per-turn, non-stacking cadence Default; amount Agreed."
+  "food.shortage_cohesion_max":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: national points per turn multiplied by unmet share; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [10]
+  "food.shortage_combat_slope":
+    "basis": "Agreed"
+    "note": "Reception, housing and shortages: next-turn own strength reduction multiplied by unmet share; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "import.arms_price":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: Money per Arms; IL millions at the display scale; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [10]
+  "import.food_per_money":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: Food per Money; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "import.delivery_turns":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: turns after purchase, by ship; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "immigration.ship_interval":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: turns / population units, average; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "immigration.units_per_ship":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: turns / population units, average; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "immigration.mix":
+    "basis": "Default"
+    "note": "Imports, immigration and Arms production: percent refugee / free civilian / craftsman / trained soldier; Default. Source: #1668 balance.md at 605277df."
+    "values": [75, 10, 10, 5]
+  "workshop.staffed_turns":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: staffed turns per Arms at every worker tier; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "workshop.cost":
+    "basis": "Agreed"
+    "note": "Imports, immigration and Arms production: Money per Arms: novice or ordinary / apprentice / expert; Agreed latest correction. Source: #1668 balance.md at 605277df."
+    "values": [5, 4, 3]
+  "military.camp_capacity":
+    "basis": "Agreed"
+    "note": "Military and control: simultaneous trainees per camp; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "military.basic_turns":
+    "basis": "Agreed"
+    "note": "Military and control: training turns; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "military.issue_arms":
+    "basis": "Agreed"
+    "note": "Military and control: Arms issued once to an unequipped unit; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.draft_money":
+    "basis": "Agreed"
+    "note": "Military and control: Money / waiting turns for immediate draft; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.draft_wait":
+    "basis": "Agreed"
+    "note": "Military and control: Money / waiting turns for immediate draft; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.demobilise_money":
+    "basis": "Agreed"
+    "note": "Military and control: Money / waiting turns for demobilisation at a camp; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.demobilise_wait":
+    "basis": "Agreed"
+    "note": "Military and control: Money / waiting turns for demobilisation at a camp; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.demobilise_return":
+    "basis": "Agreed"
+    "note": "Military and control: issued Arms returned once on valid demobilisation; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.repeat_issue":
+    "basis": "Agreed"
+    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.combat_arms":
+    "basis": "Agreed"
+    "note": "Military and control: additional Arms for equipped unit / Arms per attack or artillery firing; Agreed. Source: #1668 balance.md at 605277df. owner ruling, 25 Oct 2026, on #1668; no Arms per attack/artillery fire (#1706 implementation separate)."
+    "values": [0]
+  "military.training_money":
+    "basis": "Agreed"
+    "note": "Military and control: Money per basic course; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "military.active_money":
+    "basis": "Agreed"
+    "note": "Military and control: Money per active army unit per turn, excluding basic trainees; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.strength":
+    "basis": "Agreed"
+    "note": "Military and control: strength units: untrained / trained / veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1, 2, 3]
+  "military.combat_xp_gain":
+    "basis": "Agreed"
+    "note": "Military and control: XP ticks per survived engagement / ticks to veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.combat_xp_full":
+    "basis": "Agreed"
+    "note": "Military and control: XP ticks per survived engagement / ticks to veteran; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "military.refugee_multiplier":
+    "basis": "Agreed"
+    "note": "Military and control: unitless strength multiplier until reception complete; Agreed. Source: #1668 balance.md at 605277df."
+    "values": [0.75]
+  "military.fort_bonus":
+    "basis": "Default"
+    "note": "Military and control: percent defence, whichever army occupies permanent fort; Default. Source: #1668 balance.md at 605277df."
+    "values": [50]
+  "military.fortify_turns":
+    "basis": "Agreed"
+    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.fortify_bonus":
+    "basis": "Default"
+    "note": "Military and control: turns / percent defence for Fortify order; Retained turn; bonus Default. Source: #1668 balance.md at 605277df."
+    "values": [25]
+  "military.stack_limit":
+    "basis": "Default"
+    "note": "Military and control: units of a side per hex; Default. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "military.move_infantry":
+    "basis": "Default"
+    "note": "Military and control: movement points per turn; Default. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "military.move_armoured":
+    "basis": "Default"
+    "note": "Military and control: movement points per turn; Default. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "military.move_road":
+    "basis": "Default"
+    "note": "Military and control: movement points per built corridor hex, capped at biome cost; Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.move_rail":
+    "basis": "Default"
+    "note": "Military and control: movement points per built corridor hex, capped at biome cost; Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "military.armistice_quiet_turns":
+    "basis": "Default"
+    "note": "Military and control: consecutive quiet turns before eligible early armistice offer; Default. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "occupation.garrison":
+    "basis": "Default"
+    "note": "Military and control: military unit / turns before regime choice; Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "occupation.turns":
+    "basis": "Default"
+    "note": "Military and control: military unit / turns before regime choice; Default. Source: #1668 balance.md at 605277df."
+    "values": [3]
+  "annex.tax_town":
+    "basis": "Default"
+    "note": "Military and control: Money per controlled settlement per turn; Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "annex.tax_city":
+    "basis": "Default"
+    "note": "Military and control: Money per controlled settlement per turn; Default. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "puppet.tax_fraction":
+    "basis": "Default"
+    "note": "Military and control: unitless fraction of annexed taxes; Default. Source: #1668 balance.md at 605277df."
+    "values": [0.50]
+  "annex.support_cost":
+    "basis": "Default"
+    "note": "Military and control: displayed International Support points once per regime establishment; Default; agreed much larger annexation cost. Source: #1668 balance.md at 605277df. Relative larger annexation cost agreed; numeric 10 remains Default."
+    "values": [10]
+  "puppet.support_cost":
+    "basis": "Default"
+    "note": "Military and control: displayed International Support points once per regime establishment; Default; agreed much larger annexation cost. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "occupation.tax":
+    "basis": "Default"
+    "note": "Military and control: Money per occupied settlement per turn before regime; Default. Source: #1668 balance.md at 605277df."
+    "values": [0]
+  "prisoner.food":
+    "basis": "Default"
+    "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "prisoner.return_points":
+    "basis": "Default"
+    "note": "Military and control: Food per held enemy combatant cohort per turn / points per returned cohort; Default; return-only scoring retained. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "combat.draw_count":
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: RNG draw per engagement, integer band `0..99`; Retained single draw; band Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+    "parts":
+      "ratio_thresholds":
+        "basis": "Default"
+        "values": [0.5, 1, 2]
+        "note": "Ascending adjusted attacker/defender ratios; four outcome bands separated by these three boundaries. #1668 balance.md at 605277df."
+      "draw_band":
+        "basis": "Default"
+        "values": [0, 99]
+        "note": "Inclusive RNG band. #1668 balance.md at 605277df."
+      "below_0_5":
+        "basis": "Default"
+        "values": [0, 59, 60, 89, 90, 99]
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats; no defender loss in this row. #1668 balance.md at 605277df."
+      "from_0_5_below_1":
+        "basis": "Default"
+        "values": [0, 29, 30, 69, 70, 94, 95, 99]
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats, defender loss. #1668 balance.md at 605277df."
+      "from_1_below_2":
+        "basis": "Default"
+        "values": [0, 9, 10, 39, 40, 84, 85, 99]
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats, defender loss. #1668 balance.md at 605277df."
+      "at_least_2":
+        "basis": "Default"
+        "values": [0, 9, 10, 69, 70, 99]
+        "note": "Inclusive pairs, in order: both hold, defender retreats, defender loss; no attacker loss in this row. #1668 balance.md at 605277df."
+  "combat.enemy_attack_ratio":
+    "basis": "Default"
+    "note": "Movement and engagement defaults: unitless minimum ratio for goal-driven enemy attack; Default. Source: #1668 balance.md at 605277df."
+    "values": [1.50]
+  "combat.retreat_hexes":
+    "basis": "Agreed"
+    "note": "Movement and engagement defaults: hex after retreat result; Retained baseline. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "combat.armoured_factor":
+    "basis": "Default"
+    "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
+    "values": [1.50]
+  "combat.artillery_range":
+    "basis": "Default"
+    "note": "Movement and engagement defaults: hex support range; cannot attack alone or hold ground; Default range; retained role. Source: #1668 balance.md at 605277df."
+    "values": [2]
+  "combat.artillery_factor":
+    "basis": "Default"
+    "note": "Movement and engagement defaults: unitless role multiplier; Default. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "combat.loss_cohorts":
+    "basis": "Default"
+    "note": "Movement and engagement defaults: combatant population cohort removed on loss result; Default abstract loss granularity. Source: #1668 balance.md at 605277df."
+    "values": [1]
+  "objective.base_points":
+    "basis": "Agreed"
+    "note": "Objectives: points per completed core objective group; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "values": [100]
+  "objective.early_per_month":
+    "basis": "Agreed"
+    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "values": [5]
+  "objective.early_cap":
+    "basis": "Agreed"
+    "note": "Objectives: points per calendar month early / maximum per dated group or part; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "values": [60]
+  "absorption.population_target":
+    "basis": "Agreed"
+    "note": "Objectives: people represented; threshold must be exceeded; Retained approved baseline. Source: #1668 balance.md at 605277df."
+    "values": [1000000]
+  "absorption.max_overflow":
+    "basis": "Agreed"
+    "note": "Objectives: percent ordinary-housing overflow / eligible civilian employment; Retained approved baseline, regional application. Source: #1668 balance.md at 605277df."
+    "values": [10]
+  "absorption.min_employment":
+    "basis": "Agreed"
+    "note": "Objectives: percent ordinary-housing overflow / eligible civilian employment; Retained approved baseline, regional application. Source: #1668 balance.md at 605277df."
+    "values": [40]
+  "maabara":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [5]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [1]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [0.10]
+      "housing":
+        "basis": "Agreed"
+        "values": [1]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+      "condition_pp":
+        "basis": "Agreed"
+        "values": [-10]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+    "note": "ordinary housing `+1` place; condition `-10` pp. Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+  "permanent_housing":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [15]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [0.25]
+      "housing":
+        "basis": "Agreed"
+        "values": [3]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+      "condition_pp":
+        "basis": "Agreed"
+        "values": [10]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+    "note": "ordinary housing `+3` places; condition `+10` pp. Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+  "industry":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [10]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [0.25]
+      "job_slots":
+        "basis": "Agreed"
+        "values": [1]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+    "note": "`+1` Industry job slot. Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+  "reception_camp":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [10]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [0.25]
+      "standalone_application":
+        "basis": "Default"
+        "expression": "same cost/work"
+        "note": "Standalone application Default; city baseline Agreed."
+    "note": "dedicated reception beds per reception capacity key. Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+  "training_centre":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [10]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+        "values": [0.50]
+      "standalone_application":
+        "basis": "Default"
+        "expression": "same cost/work"
+        "note": "Standalone application Default; city baseline Agreed."
+    "note": "matching-teacher course slot and separate teacher housing. Agreed city baseline; standalone application Default. Source: #1668 balance.md at 605277df."
+  "arms_workshop":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [15]
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [0.50]
+      "worker_slots":
+        "basis": "Agreed"
+        "values": [1]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+    "note": "`+1` workshop worker slot. Agreed; upkeep Default. Source: #1668 balance.md at 605277df."
+  "military_camp":
+    "basis": "Default"
+    "parts":
+      "cost":
+        "basis": "Default"
+        "note": "Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [12]
+      "work":
+        "basis": "Default"
+        "note": "Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [3]
+      "upkeep":
+        "basis": "Default"
+        "note": "Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+        "values": [0.50]
+    "note": "trainee capacity per military key. Construction Default; upkeep Default. Source: #1668 balance.md at 605277df."
+  "housing_repair":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Agreed. Source: #1668 balance.md at 605277df."
+        "expression": "2 * current regional housing upkeep"
+      "work":
+        "basis": "Agreed"
+        "note": "Agreed. Source: #1668 balance.md at 605277df."
+        "values": [1]
+      "upkeep":
+        "basis": "Agreed"
+        "note": "Agreed. Source: #1668 balance.md at 605277df."
+        "values": [0]
+      "condition_pp":
+        "basis": "Agreed"
+        "values": [10]
+        "note": "Completion effect in #1668 balance.md at 605277df."
+    "note": "condition `+10` pp; no additional capacity or upkeep. Agreed. Source: #1668 balance.md at 605277df."
+  "designated_yishuv":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [2]
+      "work":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [6]
+      "upkeep":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [0]
+    "note": "authored site built; no automatic city/population grant. Retained approved baseline. Source: #1668 balance.md at 605277df."
+  "hula_drainage":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Retained approved baseline, adapted to staffed fields. Source: #1668 balance.md at 605277df."
+        "values": [4]
+      "work":
+        "basis": "Agreed"
+        "note": "Retained approved baseline, adapted to staffed fields. Source: #1668 balance.md at 605277df."
+        "values": [12]
+      "upkeep":
+        "basis": "Agreed"
+        "note": "Retained approved baseline, adapted to staffed fields. Source: #1668 balance.md at 605277df."
+        "values": [0]
+    "note": "unlock field-preparation site; no unstaffed Food yield. Retained approved baseline, adapted to staffed fields. Source: #1668 balance.md at 605277df."
+  "road_segment":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [2]
+      "work":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [6]
+      "upkeep":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [0]
+    "note": "built corridor segment. Retained approved baseline. Source: #1668 balance.md at 605277df."
+  "rail_segment":
+    "basis": "Agreed"
+    "parts":
+      "cost":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [4]
+      "work":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [6]
+      "upkeep":
+        "basis": "Agreed"
+        "note": "Retained approved baseline. Source: #1668 balance.md at 605277df."
+        "values": [0]
+    "note": "built corridor segment. Retained approved baseline. Source: #1668 balance.md at 605277df."
+  "coastal_plain":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [1, 1]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [0]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "lowland":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [1, 1]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [0]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "valley":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [1, 1]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [0]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "hills":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [2, 2]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [25]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "mountains":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [2, 3]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [50]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "desert":
+    "basis": "Default"
+    "parts":
+      "movement":
+        "basis": "Default"
+        "values": [2, 2]
+        "note": "infantry / armoured points per hex"
+      "defence_percent":
+        "basis": "Default"
+        "values": [0]
+        "note": "percent"
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
+  "lake":
+    "basis": "Agreed"
+    "expression": "impassable"
+    "note": "Retained baseline; defence not applicable. #1668 balance.md at 605277df."
+  "sea":
+    "basis": "Agreed"
+    "expression": "impassable"
+    "note": "Retained baseline; defence not applicable. #1668 balance.md at 605277df."

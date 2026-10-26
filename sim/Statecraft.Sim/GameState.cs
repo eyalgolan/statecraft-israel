@@ -26,6 +26,11 @@ namespace Statecraft.Sim
     /// <summary>All mutable game data. Systems never share references between states: Step works on Clone().</summary>
     public sealed class GameState
     {
+        /// <summary>Immutable replay identity. Old manually constructed states retain their historical hash layout.</summary>
+        public string Ruleset { get; } = SaveGame.LegacyRuleset;
+        readonly bool usesAttention = true;
+        public GameState() { }
+        internal GameState(Content c) { Ruleset = c.Ruleset; usesAttention = c.UsesAttention; }
         public DateTime Date;
         public ulong RngState;
         public Mode Mode;
@@ -162,6 +167,7 @@ namespace Statecraft.Sim
             // Hash text: one line, ';'-separated, closing brackets. Readable text: a section label per line, each entry
             // on its own indented line, no closing brackets. Both are written by the calls below, in the same order.
             var sb = new StringBuilder();
+            if (!usesAttention) sb.Append("ruleset=").Append(Ruleset).Append(';');
             void Nl() { if (readable) sb.Append('\n'); }
             void Entry() { if (readable) sb.Append("\n  "); }
             void Close(char c) { if (!readable) sb.Append(c); }
@@ -192,7 +198,7 @@ namespace Statecraft.Sim
             List("sit", ActiveSituations);
             Num("treasury", Treasury); Num("debt", Debt); Num("fx", FxReserves);
             Nl(); sb.Append("rung=").Append(Rung).Append(";cf=").Append(CeasefireWeeksLeft).Append(';');
-            Num("mob", Mobilization); Num("stab", CoalitionStability); Num("att", Attention);
+            Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
             Nl(); sb.Append("chosen{");

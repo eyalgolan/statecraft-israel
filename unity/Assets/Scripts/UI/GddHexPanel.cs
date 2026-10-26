@@ -120,7 +120,9 @@ namespace Statecraft.Game.UI
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
             // The Assign order's Attention price (the queue's, at this turn's start) and when it applies (playtest B7): the
             // Jobs line stays the sim's actual count until End turn. Changing a queued target does not buy another order.
-            Line(host, "city-workers-cost", text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))));
+            Line(host, "city-workers-cost", bridge.Content.UsesAttention
+                ? text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))!.Value)
+                : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
             // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's

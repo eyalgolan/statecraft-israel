@@ -346,8 +346,8 @@ next to the anchor on that side. The token stands at the clear spot nearest that
   Anata side, which Jordan held. It is in town, with a clearing. In every round the placer also tries rings round a
   `toward` point, every 500 m out to 2.5 km, so a spot can sit between a town's roads near the sourced place.
 - The 7th Brigade is anchored at Hulda, its headquarters for the Latrun attacks (Battles of Latrun), not at Latrun.
-  The Arab Legion held Latrun and the Yalu–Bayt Nuba ridge. The ground between was contested until the Bayt Jiz and
-  Bayt Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
+  The Arab Legion held Latrun and the Yalu–Beit Nuba ridge. The ground between was contested until the Beit Jiz and
+  Beit Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
 - Harel stands by Saris on the corridor road, hex (-2,23), taken on 16–17 April 1948. It no longer stands by Sar'a and
   Artuf.
 

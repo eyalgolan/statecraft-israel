@@ -9,7 +9,7 @@ using YamlDotNet.RepresentationModel;
 /// <summary>Every balance number of the GDD loop lives in content/ as a labelled design value (Q-CUT-1, owner, 15 October
 /// 2026: "Labelled design values"): tagged on its own line, and listed here, so a new number cannot slip in untagged and
 /// the owner reviews one list. R-LOOP-005.</summary>
-public class DesignValuesTests
+public partial class DesignValuesTests
 {
     public const string Tag = "# DESIGN VALUE: owner-set balance, not a historical figure";
 

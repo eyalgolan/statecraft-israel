@@ -124,7 +124,7 @@ namespace Statecraft.Sim
             var list = pending.ToList();
             var queued = list.OfType<AllocateBudget>().LastOrDefault();
             if (s.GameOver != null || Same(draft, queued?.Shares ?? s.Budget)) return false;
-            return Same(draft, s.Budget)
+            return Same(draft, s.Budget) || !c.UsesAttention
                 || AttentionSystem.Cost(c, s, "allocate_budget") <= AttentionSystem.Left(c, s, list.Where(x => !(x is AllocateBudget))) + 1e-9;
         }
 
