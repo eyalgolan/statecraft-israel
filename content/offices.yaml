@@ -38,7 +38,10 @@ offices:
   - { id: police_minister, title: Minister of Police, title_he: "שר המשטרה", title_he_sources: [*he_gov1], title_he_f: "שרת המשטרה", title_he_f_review: agent-checked, title_he_f_sources: [{ url: "https://he.wikipedia.org/wiki/ג'ודית_קולינס", checked: 2026-10-17 }], from: 1948-05-14 }
   # title_he_f: no woman held this office and no page gives "שרת המיעוטים"; the source shows the same construction (שרת + the
   # ministry: Golda Meir's "שרת העבודה", "שרת החוץ"), not this title. The same holds for development_minister.
-  - { id: minority_affairs_minister, title: Minister of Minority Affairs, title_he: "שר המיעוטים", title_he_sources: [&he_gov0 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }], title_he_f: "שרת המיעוטים", title_he_f_review: agent-checked, title_he_f_sources: [*he_f_golda], from: 1948-05-14 }
+  # until 13 June 1949: the ministry was dissolved that day - he.wiki "משרד המיעוטים", citing the Ma'ariv item of 13 June
+  # 1949 ("משרד המיעוטים פורק היום רשמית"); owner ruling, 24 Oct 2026 (#1534: the working ministry, not the cabinet roster).
+  # Sheetrit holds it to that day (people.yaml), so no vacancy shows in between or after.
+  - { id: minority_affairs_minister, title: Minister of Minority Affairs, title_he: "שר המיעוטים", title_he_sources: [&he_gov0 { url: "https://knesset.gov.il/Odata/ParliamentInfo.svc/KNS_PersonToPosition?$filter=GovernmentNum%20eq%200", checked: 2026-10-14 }], title_he_f: "שרת המיעוטים", title_he_f_review: agent-checked, title_he_f_sources: [*he_f_golda], until: 1949-06-13, from: 1948-05-14 }
   # title_he_f: the source gives the exact form only in a cited headline ("שרת הדתות הבאה"); no woman held this office.
   - { id: religions_minister, title: Minister of Religions, title_he: "שר הדתות", title_he_sources: [*he_gov1], title_he_f: "שרת הדתות", title_he_f_review: agent-checked, title_he_f_sources: [{ url: "https://he.wikipedia.org/wiki/בתיה_כהנא_דרור", checked: 2026-10-17 }], from: 1948-05-14 }
   # title_he_f: construction source ("השרה ל" + another ministry: Yehudit Naot's "השרה לאיכות הסביבה"), not this title.

@@ -13,8 +13,13 @@ namespace Statecraft.Game.UI
     public sealed class BudgetPresenter : IDisposable
     {
         public const double Step = 0.05;
+        /// <summary>The unsubmitted badge changed, after its UI state was updated.</summary>
+        public event Action<bool>? UnsubmittedChanged;
+        bool lastUnsubmitted;
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text;
         readonly Button reset, submit;
+        /// <summary>The side menu's Budget disc, whose badge (#1109) this screen lights: only it knows the draft.</summary>
+        readonly Button nav;
         Dictionary<string, double> draft = new Dictionary<string, double>();
         GameSession session;
 
@@ -22,6 +27,7 @@ namespace Statecraft.Game.UI
         {
             screen = root.Q<VisualElement>("screen-budget"); this.bridge = bridge; this.text = text;
             reset = screen.Q<Button>("budget-reset"); submit = screen.Q<Button>("budget-submit");
+            nav = root.Q<Button>("nav-budget");
             screen.Q<Label>("budget-screen-title").text = text["budget.title"];
             reset.text = text["budget.reset"]; submit.text = text["budget.submit"];
             reset.clicked += Reset; submit.clicked += Submit;
@@ -160,6 +166,15 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("budget-status").text = queuedShares != null ? (Same(draft, queuedShares) ? text["budget.queued"] : text["budget.unsaved"])
                 : Dirty ? text["budget.unsaved"] : "";
             submit.SetEnabled(Dirty || queuedShares != null);
+            // #1109: an edited draft End turn would not apply, and Submit could, lights the Budget disc's badge; its tip says why.
+            bool unsubmitted = bridge.BudgetUnsubmitted(draft);
+            nav.EnableInClassList(HudPresenter.ActionClass, unsubmitted);
+            nav.tooltip = unsubmitted ? text["hud.nav.budget_unsubmitted"] : nav.text;
+            if (unsubmitted != lastUnsubmitted)
+            {
+                lastUnsubmitted = unsubmitted;
+                UnsubmittedChanged?.Invoke(unsubmitted);
+            }
         }
     }
 }

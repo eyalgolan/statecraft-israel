@@ -77,7 +77,7 @@ namespace Statecraft.Sim
 
         /// <summary>The nearest of the cities by hex distance to its settlement hex; a tie takes the city's id in ordinal
         /// order (agent default - the ruling sets no tie break).</summary>
-        static string Nearest(Content c, int q, int r) => c.Cities
+        internal static string Nearest(Content c, int q, int r) => c.Cities
             .OrderBy(x => { var h = c.SettlementHexes.First(h => h.Id == x.Id); return MapActions.Distance(q, r, h.Q, h.R); })
             .ThenBy(x => x.Id, StringComparer.Ordinal)
             .First().Id;

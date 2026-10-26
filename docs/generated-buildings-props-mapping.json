@@ -1,0 +1,93 @@
+{
+  "status": "Prepared mapping only; no runtime loader/catalog references. Await #1273 or maintainer-owned own-stream bundle interface, then matched screenshots and Eyal sign-off.",
+  "models": [
+    {
+      "number": 1,
+      "id": "generated-1948-01-netanya-tiled-house-original",
+      "prepared_role": "Netanya tiled-house variation",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": true
+    },
+    {
+      "number": 2,
+      "id": "generated-1948-02-netanya-two-storey-balcony-house",
+      "prepared_role": "Netanya two-storey variation",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 3,
+      "id": "generated-1948-03-netanya-flat-roof-porch-house",
+      "prepared_role": "Netanya porch-house variation",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": true
+    },
+    {
+      "number": 4,
+      "id": "generated-1948-04-dark-basalt-house",
+      "prepared_role": "Tiberias stone-house variation",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 5,
+      "id": "generated-1948-05-plastered-courtyard-house-original",
+      "prepared_role": "Generic existing Village/ArabTown courtyard variation (including existing Jerusalem Village-style plots)",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": true
+    },
+    {
+      "number": 6,
+      "id": "generated-1948-06-bedouin-b-enclosed-striped-tent",
+      "prepared_role": "Existing Bedouin encampment tent plots",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 8,
+      "id": "generated-1948-08-khaki-canvas-tent",
+      "prepared_role": "Existing non-white transit-camp ridge tents",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 9,
+      "id": "generated-1948-09-stone-village-well",
+      "prepared_role": "Editor review only; no sourced map role",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 10,
+      "id": "generated-1948-10-low-sandbag-position",
+      "prepared_role": "Editor review only; no sourced map role",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 11,
+      "id": "generated-1948-11-supply-crate-stack",
+      "prepared_role": "Editor review only; no sourced map role",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    },
+    {
+      "number": 12,
+      "id": "generated-1948-12-low-stone-wall-module",
+      "prepared_role": "Editor review only; no sourced map role",
+      "active_in_campaign": false,
+      "source_visual_ready": false,
+      "known_source_defect": false
+    }
+  ]
+}

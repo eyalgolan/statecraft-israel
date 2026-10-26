@@ -396,7 +396,7 @@ public class LeftColumnTests
             var disc = cabinet.Q(className: "nav-disc").worldBound; var dot = badge.worldBound;
             Assert.IsTrue(dot.width > 0 && dot.center.x > disc.center.x && dot.center.y < disc.center.y && disc.Overlaps(dot),
                 $"the badge sits on the disc's upper right ({dot} on {disc})");
-            foreach (var other in ScreenNav.Screens.Where(x => x != "cabinet"))
+            foreach (var other in ScreenNav.Screens.Where(x => x != "cabinet" && x != "budget"))   // Budget's: the next test
                 Assert.IsNull(ui.Q<Button>("nav-" + other).Q(className: HudPresenter.BadgeClass), other + ": no badge");
 
             foreach (var office in Cabinet.Vacancies(C, g.State, new Command[0]))
@@ -405,6 +405,54 @@ public class LeftColumnTests
             Assert.IsFalse(cabinet.ClassListContains(HudPresenter.ActionClass), "every vacant seat has a queued appointment");
             Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "the badge goes");
             Assert.AreEqual(text["hud.nav.cabinet"], cabinet.tooltip, "the tip is the name again");
+        }
+    }
+
+    /// <summary>#1109: the Budget disc wears the same badge, and its tip says why, while the Budget screen's draft differs from
+    /// what End turn will apply and Submit can apply it (EconomySystem.Unsubmitted through SimBridge.BudgetUnsubmitted): an
+    /// edit lights it, Submit takes it off, an edit after Submit lights it again, and with no Attention left for an
+    /// allocation it goes off, since Submit would be refused.</summary>
+    [UnityTest]
+    public IEnumerator TheBudgetDiscShowsABadgeWhileAnEditedBudgetIsNotSubmitted()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var ui = new UiTestKit();
+            ui.Root.Q("root").RemoveFromClassList("loading");
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            g.State.Attention = 4;   // the opening rung 5 prices an allocation at 2 x (1 + 4 x 0.25) = 4: just affordable
+            var bridge = new SimBridge(g, text);
+            using var hud = new HudPresenter(ui.Root, bridge, text);
+            using var screen = new BudgetPresenter(ui.Root, bridge, text);
+            var nav = ui.Q<Button>("nav-budget");
+            var badge = nav.Q(className: HudPresenter.BadgeClass);
+            Assert.IsNotNull(badge, "the Budget disc carries a badge element");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "untouched: nothing to submit");
+            Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "untouched: the badge is hidden");
+            Assert.AreEqual(text["hud.nav.budget"], nav.tooltip, "untouched: the tip is the disc's name");
+
+            UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsTrue(nav.ClassListContains(HudPresenter.ActionClass), "edited: not submitted");
+            Assert.AreEqual(DisplayStyle.Flex, badge.resolvedStyle.display, "edited: the badge shows");
+            Assert.AreEqual(text["hud.nav.budget_unsubmitted"], nav.tooltip, "edited: the tip says why");
+            Assert.AreEqual(text["hud.nav.budget"], nav.text, "the name stays the text (the event log records it)");
+            var disc = nav.Q(className: "nav-disc").worldBound; var dot = badge.worldBound;
+            Assert.IsTrue(dot.width > 0 && dot.center.x > disc.center.x && dot.center.y < disc.center.y && disc.Overlaps(dot),
+                $"the badge sits on the disc's upper right ({dot} on {disc})");
+
+            ui.Press("budget-submit");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "submitted: the badge goes");
+            Assert.AreEqual(text["hud.nav.budget"], nav.tooltip, "submitted: the tip is the name again");
+
+            UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
+            Assert.IsTrue(nav.ClassListContains(HudPresenter.ActionClass), "edited after Submit: not submitted again (the queued budget's 4 is refunded first)");
+            g.State.Attention = 0;
+            screen.Render();
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "no Attention left: Submit could not apply it");
         }
     }
 }

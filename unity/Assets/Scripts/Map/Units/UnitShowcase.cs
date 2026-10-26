@@ -141,10 +141,8 @@ namespace Statecraft.Game.Map.Units
             var offsets = FigureOffsets(looks.Length);
             float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(offsets, DrawSpread * hex));
             var rim = assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
-            var flagWhite = assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
-            var flagBlue = assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
-            flagBlue.renderQueue = flagWhite.renderQueue + 1;   // the blue over the white
-            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => UnitPlinth.Upload(assets.Own(m)), (_, build) => Built(build()), paint, rim, flagWhite, flagBlue);
+            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => UnitPlinth.Upload(assets.Own(m)), (_, build) => Built(build()), paint, rim,
+                side => UnitFlags.ClothMaterials(side, ringTemplate, assets.Own));
             var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter) };
             for (int i = 0; i < looks.Length; i++)
             {

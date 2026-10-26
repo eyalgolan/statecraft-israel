@@ -61,3 +61,15 @@ def test_stray_backtick_and_shorter_fence_run_do_not_hide_real_links(make_repo):
 def test_an_inline_span_does_not_cross_a_blank_line(make_repo):
     root = make_repo({'README.md': 'a ` b\n\n[one](gone1.md)\n\nc ` d\n'})
     assert m.dead_links(root) == [('README.md', 'gone1.md')]
+
+
+def test_balanced_parentheses_are_part_of_the_target(make_repo, capsys):
+    # #1464: the target used to stop at the first ")", so a file with parentheses in its name was reported as dead
+    root = make_repo({
+        'README.md': '[guide](docs/setup_(mac).md) [gone](docs/missing_(x).md) [t](docs/setup_(mac).md "title")\n'
+                     '[angle](<docs/setup_(mac).md>) [hash](docs/setup_(mac).md#x)\n',
+        'docs/setup_(mac).md': 'x\n',
+    })
+    assert m.dead_links(root) == [('README.md', 'docs/missing_(x).md')]
+    assert m.main(['--root', str(root)]) == 1
+    assert capsys.readouterr().out == 'README.md: docs/missing_(x).md\n'

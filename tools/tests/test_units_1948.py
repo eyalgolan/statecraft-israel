@@ -89,17 +89,18 @@ def test_hidden_brigades_and_headgear():
 
 
 def test_a_vehicle_is_a_known_type_from_a_sourced_day_on_an_army_unit():
-    # Issue #665: the 65 mm gun and the jeep stand on a token only where a source puts them with the unit, from that day.
+    # Issue #665 (and #1536 for the armoured car): the 65 mm gun, the jeep and the sandwich armoured car stand on a token only where a source puts them with the unit, from that day.
     placed = {}
     for u in UNITS:
         for v in u.get('vehicles') or []:
             assert u['service'] == 'army' and u['side'] == 'israel', u['id']
-            assert v['type'] in ('gun_65mm', 'jeep'), (u['id'], v)
+            assert v['type'] in ('gun_65mm', 'jeep', 'armoured_car'), (u['id'], v)
             assert day(v['from']) >= GAME_START and v['note'].strip() and v['sources'], (u['id'], v)
             placed.setdefault(v['type'], set()).add(u['id'])
         types = [v['type'] for v in u.get('vehicles') or []]
         assert len(types) == len(set(types)), u['id']
-    assert placed == {'gun_65mm': {'carmeli', 'givati', 'harel', 'yiftach', 'negev'}, 'jeep': {'harel', 'negev'}}
+    assert placed == {'gun_65mm': {'carmeli', 'givati', 'harel', 'yiftach', 'negev'}, 'jeep': {'harel', 'negev'},
+                      'armoured_car': {'givati'}}
 
 
 def test_a_toward_point_is_sourced_and_says_why():

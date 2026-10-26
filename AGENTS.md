@@ -32,6 +32,7 @@ Before writing or editing content, review:
 - Use office placeholders like `{prime_minister}` rather than hard-coded names in dynamic event text.
 - Keep wording concrete and credible. Prefer clear historical description over melodrama.
 - Show dates as `15 May 1948` style, not shorthand or invented formatting.
+- New player-facing UI strings follow `docs/UX_GLOSSARY.md`, `docs/WRITING_UI.md` and `docs/WRITING_UI_HE.md`, binding for new strings from 22 October 2026 (#622). Existing strings that don't match change one PR at a time, never in a sweep.
 - Prefer short, grounded event text over rhetorical filler.
 - Treat AI-generated prose as a draft, not a source of truth. A human must verify factual claims.
 

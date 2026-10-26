@@ -45,6 +45,10 @@ namespace Statecraft.Sim
             return d >= 1 && d <= TypeOf(c, u)!.Range!.Value;   // the loader requires a range on an artillery type
         }
 
+        /// <summary>R-COMBAT-004, R-COMBAT-007: whether the player's attacks and artillery fire spend Arms. True for legacy and
+        /// gdd-0.1, false under gdd-0.3 (#1706). The Arms stock and every other Arms cost stay; enemy units never pay.</summary>
+        public static bool SpendsArms(Content c) => c.Ruleset != SaveGame.Gdd03Ruleset;
+
         /// <summary>The Arms the player's unit spends when it joins an engagement: its type's arms_per_fire for artillery
         /// (R-COMBAT-007), else mvp.arms_per_attack (R-COMBAT-004).</summary>
         static int Need(Content c, MvpRules mvp, Unit u) => Guns(c, u) ? TypeOf(c, u)!.ArmsPerFire!.Value : mvp.ArmsPerAttack!.Value;
@@ -66,8 +70,13 @@ namespace Statecraft.Sim
         /// <summary>R-COMBAT-009: whether a truce the player accepted is in force on <see cref="GameState.Date"/> (the
         /// turn's first day, the date the HUD shows): until the turn that covers the window's end, so a complying
         /// player attacks again from the 15 October 1948 turn (owner ruling 1, 22 October 2026, #750).</summary>
-        internal static bool TruceInForce(GameState s) =>
-            PlayerTruces.Any(t => s.Date < t.Until && s.ChosenOptions.TryGetValue(t.Event, out var o) && o == t.Option);
+        internal static bool TruceInForce(GameState s) => TruceUntil(s) != null;
+
+        /// <summary>R-COMBAT-009: the end of the window of the truce in force (<see cref="TruceInForce"/>), else null. The
+        /// Defence screen's truce line reads it (#755), so the UI holds no truce rule.</summary>
+        public static DateTime? TruceUntil(GameState s) =>
+            PlayerTruces.Where(t => s.Date < t.Until && s.ChosenOptions.TryGetValue(t.Event, out var o) && o == t.Option)
+                .Select(t => (DateTime?)t.Until).FirstOrDefault();
 
         /// <summary>The enemy military units on (q, r), seen from <paramref name="attacker"/>'s team, in id order.</summary>
         static List<Unit> Defenders(GameState s, Unit attacker, int q, int r) =>
@@ -93,9 +102,10 @@ namespace Statecraft.Sim
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
             if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
                 return "That unit has no movement points left this turn";
+            if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            return !enemy && s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
+            return s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
         }
 
         /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing
@@ -106,13 +116,13 @@ namespace Statecraft.Sim
             var refused = Check(c, s, unitId, q, r, enemy);
             if (refused != null) return refused;
             var u = s.Units[unitId]; var target = Hex(q!.Value, r!.Value);
-            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity);
+            s.Units[unitId] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, Attack, target, u.HomeCity, u.Full);
             why.Add(UnitLines.Line(WhyKeys.AttackOrdered, $"Unit {unitId} will attack hex {target}", new[] { u }, target));
             return null;
         }
 
         /// <summary>R-COMBAT-001 (owner, 23 October 2026, "Instant, like Civ"): the player's unit attacks (q, r) at once:
-        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004), loses its
+        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004; not under gdd-0.3), loses its
         /// order and the rest of its movement points, and fights one engagement alone (OQ-1), drawing once.</summary>
         internal static string? Strike(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent,
                                        Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
@@ -121,8 +131,8 @@ namespace Statecraft.Sim
             if (refused != null) return refused;
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
-            s.Arms -= Need(c, mvp, u);
-            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            if (SpendsArms(c)) s.Arms -= Need(c, mvp, u);
+            var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
@@ -243,7 +253,7 @@ namespace Statecraft.Sim
 
         static void End(GameState s, Unit u, string key, string line, List<Cause> why, params string[] args)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             why.Add(UnitLines.Line(key, line, new[] { u }, args));
         }
 
@@ -281,7 +291,7 @@ namespace Statecraft.Sim
                 if (!s.Units.TryGetValue(d.Id, out var u)) continue;
                 if (Retreat(c, s, mvp, u) is (int, int) to)
                 {
-                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    s.Units[u.Id] = new Unit(u.Id, u.Type, to.Item1, to.Item2, u.Service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                     var hex = Hex(to.Item1, to.Item2);
                     why.Add(UnitLines.Line(WhyKeys.Retreated, $"Unit {u.Id} retreated to hex {hex}", new[] { u }, hex));
                 }
@@ -315,10 +325,16 @@ namespace Statecraft.Sim
                     if (s.Units.TryGetValue(id, out var x) && (top == null || x.Strength > top.Strength)) top = x;
                 if (top == null) break;
                 if (top.Strength <= 1) { s.Units.Remove(top.Id); removed.Add(top); }
-                else s.Units[top.Id] = new Unit(top.Id, top.Type, top.Q, top.R, top.Service, top.Side, top.Strength - 1, top.Order, top.OrderTarget, top.HomeCity);
+                else s.Units[top.Id] = Lose(top);
             }
             return taken;
         }
+
+        /// <summary>R-COMBAT-003 with R-TRAIN-004: the unit one population unit weaker. A player's unit's first loss stores the
+        /// strength it had as its Full, the most replacements refill it to; no rule reads an enemy's, so it stores none.</summary>
+        internal static Unit Lose(Unit u) =>
+            new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength - 1, u.Order, u.OrderTarget, u.HomeCity,
+                u.Full == 0 && u.Side == Movement.PlayerSide ? u.Strength : u.Full);
 
         /// <summary>R-COMBAT-003: the first neighbour of the unit's hex, in the fixed order (R-MOVE-002), that is land, holds no
         /// unit of the other team, has room under mvp.stack_limit for the unit's side (R-MOVE-003) and, for the player's unit,

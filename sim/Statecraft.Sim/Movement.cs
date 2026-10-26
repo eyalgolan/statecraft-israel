@@ -106,7 +106,7 @@ namespace Statecraft.Sim
 
         static void Stop(GameState s, Unit u, string key, string line, string hex, List<Cause> why)
         {
-            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity);
+            s.Units[u.Id] = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             why.Add(UnitLines.Line(key, line, new[] { u }, hex));
         }
 
@@ -125,7 +125,7 @@ namespace Statecraft.Sim
             if (Closed(c, s, false).Contains((q.Value, r.Value))) return "Units may not enter an enemy-held locality before its capture is possible";
             if (Route(c, s, unitId, q.Value, r.Value, spent).Count == 0) return "No route reaches that hex";
             var target = HexText(q.Value, r.Value);
-            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity);
+            var given = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, GoTo, target, u.HomeCity, u.Full);
             s.Units[unitId] = given;
             why.Add(UnitLines.Line(WhyKeys.OnItsWay, $"Unit {unitId} is on its way to hex {target}", new[] { given }, target));
             if (u.Order == "fortify")
@@ -207,7 +207,7 @@ namespace Statecraft.Sim
             // is given, with the hex it names), so a unit that goes out and comes back the same turn is not fortified; hold moves with
             // the unit. The order step at the end of the turn only sees the final hex.
             var fortified = u.Order == "fortify" || u.Order == "fortifying";
-            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity);
+            s.Units[unitId] = new Unit(u.Id, u.Type, q, r, u.Service, u.Side, u.Strength, fortified ? "" : u.Order, fortified ? "" : u.OrderTarget, u.HomeCity, u.Full);
             spent[unitId] = used + cost;
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), cost,
                 FormattableString.Invariant($"Unit {unitId} moved to hex {q},{r} for {cost} movement points"), enemy ? Kind : "",
@@ -231,20 +231,24 @@ namespace Statecraft.Sim
         /// other locality's hex, so no enemy move ends on a player's locality while enemy capture (Q-TGT-2 (c)) is unbuilt.</summary>
         internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
-            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
+            // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.
+            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
+                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
             var held = new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
             return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
         }
 
         /// <summary>R-MOVE-005 in Phase 6 (#1304): the hexes a move and its path may not enter. For the player, those of
         /// mvp.enemy_held_localities that are not curated targets (settlement_targets.yaml), so a target can be captured in play
-        /// (the owner's #793 ruling) while the rest, Gaza today, stay closed; for the enemy, <see cref="NoEntry"/>'s mirror
-        /// unchanged. Raid's withdrawal and combat retreat still read <see cref="NoEntry"/>, so neither ends on an enemy-held
-        /// place.</summary>
+        /// (the owner's #793 ruling) while the rest, Gaza today, stay closed, and so does a depopulated target (R-CTRL-020);
+        /// for the enemy, <see cref="NoEntry"/>'s mirror unchanged. Raid's withdrawal and combat retreat still read
+        /// <see cref="NoEntry"/>, so neither ends on an enemy-held place.</summary>
         static HashSet<(int Q, int R)> Closed(Content c, GameState s, bool enemy)
         {
             if (enemy) return NoEntry(c, s, true);
-            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities.Except(c.SettlementTargets.Select(t => t.Id));
+            // A depopulated target (R-CTRL-020) stays closed: Deport leaves nothing to capture there again.
+            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities.Except(c.SettlementTargets.Select(t => t.Id)
+                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.Depopulated)));
             return new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
         }
 

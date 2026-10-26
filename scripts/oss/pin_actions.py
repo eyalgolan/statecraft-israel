@@ -3,7 +3,8 @@
 # dependencies = []
 # ///
 """Pin every `uses: owner/repo@ref` in .github/workflows/*.yml to the ref's full commit SHA, keeping the ref as a
-trailing comment. Resolves with a read-only `gh api` GET. A tag can be moved by its owner; a SHA cannot (no_human
+trailing comment. Anything already after the ref on the line, such as a note of why that action is used, is kept
+after the ref. Resolves with a read-only `gh api` GET. A tag can be moved by its owner; a SHA cannot (no_human
 5f99b7af3: unpinned third-party downloads in the release build).
 
 Usage: uv run scripts/oss/pin_actions.py"""
@@ -34,7 +35,9 @@ def pin_text(text: str, resolve: Callable[[str, str], str]) -> str:
         m = USES.match(line.rstrip("\n"))
         if m and not re.fullmatch(r"[0-9a-f]{40}", m["ref"]):
             sha = resolve(m["action"], m["ref"])
-            line = f"{m['lead']}{m['action']}@{sha} # {m['ref']}\n"
+            # Whatever already followed the ref is kept after it, so a note on the line survives the pin (#1463).
+            kept = m["rest"].strip()
+            line = f"{m['lead']}{m['action']}@{sha} # {m['ref']}{' ' + kept if kept else ''}\n"
         lines.append(line)
     return "".join(lines)
 

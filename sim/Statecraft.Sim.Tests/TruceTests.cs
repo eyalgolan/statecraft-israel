@@ -73,6 +73,19 @@ public class TruceTests
         Assert.Empty(Step(c, s, new UnitOrder(1, Orders.Fortify)).Rejected);
     }
 
+    // R-COMBAT-009: the Defence screen's truce line (#755) reads the end of the truce in force from the sim, the same
+    // window the attack check uses, so Unity holds no truce rule.
+    [Theory]
+    [InlineData("1948-06-15", "first_truce", "accept", "1948-07-08")]
+    [InlineData("1948-09-15", "second_truce", "comply", "1948-10-15")]
+    [InlineData("1948-07-15", "first_truce", "accept", null)]     // over
+    [InlineData("1948-06-15", "first_truce", "refuse", null)]     // a refused card binds nothing
+    public void TruceUntilNamesTheEndOfTheTruceInForce(string date, string ev, string option, string? until)
+    {
+        var s = State(Load(), DateTime.Parse(date), (ev, option));
+        Assert.Equal(until == null ? (DateTime?)null : DateTime.Parse(until), Combat.TruceUntil(s));
+    }
+
     /// <summary>R-COMBAT-009: the player's accepted truce binds the player's orders only - an enemy attack order on
     /// the same turn is untouched (R-ENEMY-006's own date-driven guard is the enemy side's).</summary>
     [Fact]

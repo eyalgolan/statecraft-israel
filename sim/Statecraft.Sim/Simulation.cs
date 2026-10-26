@@ -11,7 +11,7 @@ namespace Statecraft.Sim
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
             if (mode == Mode.Open) throw new NotSupportedException("Open mode arrives with milestone M4.");
-            var s = new GameState { Date = c.Rules.Start, RngState = seed, Mode = mode };
+            var s = new GameState(c) { Date = c.Rules.Start, RngState = seed, Mode = mode };
             var why = new List<Cause>();
             EffectsSystem.Init(c, s);
             EconomySystem.Init(c, s);
@@ -20,7 +20,7 @@ namespace Statecraft.Sim
             Pools.Init(c, s);
             StartingForces.Init(c, s);   // R-UNIT-006: before any event can grant a unit, so the forces take ids 0 to n-1
             SecuritySystem.Init(c, s, why);
-            AttentionSystem.Refill(c, s);
+            if (c.UsesAttention) AttentionSystem.Refill(c, s);
             EventSystem.Trigger(c, s, why);
             return s;
         }
@@ -52,8 +52,8 @@ namespace Statecraft.Sim
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
             // boundary: the turn that reaches it ends on it, with that turn's real days (spec 4.1, 4.5).
             var end = c.End;
-            var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { end }).Min();
-            var next = SimTime.AdvanceTo(s.Date, len, boundary);
+            var next = TurnEnd(c, s);
+            if (c.IsGdd) SettlementControl.Stamp(s, next);   // R-CTRL-004: dates for captures made during the orders
             var adjusted = next != SimTime.Advance(s.Date, len);
             var days = (next - s.Date).Days;
             var yf = adjusted ? days / 365.0 : SimTime.YearFraction(len);
@@ -76,9 +76,19 @@ namespace Statecraft.Sim
             }
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
-            AttentionSystem.Refill(c, s);
+            if (c.UsesAttention) AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
             return new StepResult(s, why, rejected);
+        }
+
+        /// <summary>The date the turn starting on <paramref name="s"/>'s date ends on: its turn length from the war state,
+        /// cut at the next era's start or the game's end when it comes first (spec 4.1, 4.5). Step's own rule; the advisors'
+        /// city warning (Threats) reads it too.</summary>
+        public static DateTime TurnEnd(Content c, GameState s)
+        {
+            var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
+            var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { c.End }).Min();
+            return SimTime.AdvanceTo(s.Date, len, boundary);
         }
 
         /// <summary>Who End Turn would hand the event to (EventSystem.Delegate) if the turn ended with these orders: runs
@@ -123,6 +133,7 @@ namespace Statecraft.Sim
                               Dictionary<int, (int Q, int R)> attacked, List<Cause> why, List<Rejection> rejected)
         {
             if (c.IsGdd) Movement.ContinueRoutes(c, s, spent, why);   // R-MOVE-009: the route step, before the turn's orders
+            if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
             foreach (var cmd in commands)
             {
@@ -132,9 +143,16 @@ namespace Statecraft.Sim
                 // The call-up and the security order are retired in the GDD loop (R-WAR-002): refused the same way,
                 // before charging, so the state and the Attention are unchanged.
                 if (c.IsGdd && (cmd is SetMobilization || cmd is SecurityOrder)) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
-                var before = s.Attention;
-                var error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
-                if (error != null) { s.Attention = before; rejected.Add(new Rejection(cmd, error)); }
+                string? error;
+                if (c.UsesAttention)
+                {
+                    var before = s.Attention;
+                    error = AttentionSystem.TrySpend(c, s, cmd.Kind, priceRung) ?? Execute(c, s, cmd, spent, attacked, why);
+                    if (error != null) s.Attention = before;
+                }
+                else error = Execute(c, s, cmd, spent, attacked, why);
+                if (error != null) rejected.Add(new Rejection(cmd, error));
+                if (c.IsGdd) SettlementControl.CaptureHeld(c, s, why);   // R-CTRL-004: only where an order ends
             }
         }
 
@@ -197,6 +215,14 @@ namespace Statecraft.Sim
                     return Training.Start(c, s, t.City, t.Track, t.Count, why);
                 case CancelTraining t:
                     return Training.Cancel(c, s, t.Cohort, why);
+                case ReturnCraftsmen r:
+                    return Qualification.ReturnCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignCraftsmen r:
+                    return Qualification.ReassignCraftsmen(c, s, r.City, r.Count, why);
+                case ReassignPioneers r:
+                    return Qualification.ReassignPioneers(c, s, r.City, r.Track, r.Count, why);
+                case Reinforce r:
+                    return Training.Reinforce(c, s, r.Unit, r.City, r.Count, why);
                 case PioneerWork p:
                     return Projects.Start(c, s, p.Unit, p.Action, p.Site, why);
                 case StopWork w:
@@ -205,6 +231,7 @@ namespace Statecraft.Sim
                     if (o.Order == Movement.GoTo) return Movement.GiveGoTo(c, s, o.Unit, o.Q, o.R, spent, why);
                     if (o.Order == Combat.Attack) return Combat.Strike(c, s, o.Unit, o.Q, o.R, spent, attacked, why);
                     if (o.Q != null || o.R != null) return "That order names no hex";
+                    if (o.Order == Qualification.ReturnOrder) return Qualification.Return(c, s, o.Unit, why);
                     return o.Order == Demobilization.SendHome
                         ? Demobilization.Give(c, s, o.Unit, attacked, why)
                         : Orders.Give(c, s, o.Unit, o.Order, why);
@@ -218,6 +245,8 @@ namespace Statecraft.Sim
                     return Pools.BuyArms(c, s, a.Count, why);
                 case ResolveCapture x:
                     return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
+                case EndOccupation x:
+                    return SettlementControl.End(c, s, x.Settlement, x.Outcome, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

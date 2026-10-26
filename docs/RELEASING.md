@@ -15,9 +15,9 @@ macOS IL2CPP parity check is not an MVP release gate.
 3. **Merge** the pull request (squash).
 4. **Run the release gate** on the merged `main` (it refuses to run elsewhere): `bash scripts/oss/release_gate.sh`. It must print
    `RELEASE GATE OK`. It refuses while an owner decision is open (including D10, history acknowledgement, and D11, the
-   sensitivity review), while an asset row is `owner-verify`, while the sim's sensitivity gate refuses `content/`
+   sensitivity review), while an asset row is `owner-verify` or has `licence: unknown` (`scripts/oss/check_repo.py --release`), while the sim's sensitivity gate refuses `content/`
    (including a `content/settlement_targets.yaml` row that is not `sensitivity-reviewed`, Q-TGT-3 (b)), or while the
-   history scan shows an open secret-shape row.
+   history scan (`scripts/oss/scan_history.py`) shows an open secret-shape row.
 5. **Build and package** on the owner's machine, from the merged `main`:
 
    Build both web zips from the merged release commit, never from a pre-merge candidate. The .NET SDK includes the
@@ -79,8 +79,10 @@ macOS IL2CPP parity check is not an MVP release gate.
    `package_web.sh` copies the licence and attribution files into the build folder, then runs
    `tools/package_release.py`, M3's sensitivity gate, which zips the folder and prints `PACKAGED …` or
    `PACKAGE REFUSED …`. It refuses a build that was not made with `-shareable` (the build's `event-photos.json` says
-   so) or that carries an unreviewed sensitive event photograph. It then lists the zip, and prints the SHA-256 and `OK: notices inside …`. If it prints anything
-   else, stop. This one zip is the file for GitHub Releases and for the M4 itch.io upload (`docs/m3-release.md`); never
+   so) or that carries an unreviewed sensitive event photograph. It then checks the zip's file list (without printing it)
+   for the notices and `index.html`, and prints `MISSING in zip: …` and deletes the zip if one is absent. A good run
+   prints the content gate's `RELEASE GATE OK` line, `PACKAGED …`, the SHA-256 line and `OK: notices inside …`, and
+   exits 0. If it prints `PACKAGE REFUSED`, `MISSING in zip` or exits non-zero, stop. This one zip is the file for GitHub Releases and for the M4 itch.io upload (`docs/m3-release.md`); never
    zip a build by hand.
 
    The files under `Build/` are named by their content hash (`webGLNameFilesAsHashes: 1`, set by `ProjectSetup.Apply`;
@@ -105,7 +107,7 @@ macOS IL2CPP parity check is not an MVP release gate.
 
    Before building anything it refuses: a dirty tree; a branch other than `main`, or a `HEAD` that your last
    `git fetch origin` did not show on `origin/main` (the script never fetches); a tag that is not `v` plus `bundleVersion`
-   (a `-suffix` is allowed; it is the default) or does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
+   (`--tag` defaults to `v<bundleVersion>`; an optional `-suffix` is allowed) or does not point at `HEAD`; an editor whose version is not the one in `ProjectVersion.txt`; an
    `--out` inside any checkout or worktree of the repository (ignored folders too: a build empties
    `StreamingAssets/content`), or one that is not empty. It also stops if Unity Hub lacks a module the platforms need: Mac
    Build Support (IL2CPP), Linux Build Support (Mono) or Windows Build Support (Mono); the message names them and gives the
@@ -129,12 +131,15 @@ macOS IL2CPP parity check is not an MVP release gate.
    ```bash
    git tag -a vX.Y.Z -m "Statecraft: Israel vX.Y.Z"   # skip if "Desktop builds" already made it
    git push origin vX.Y.Z
-   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file <notes from CHANGELOG.md> \
+   notes="$(mktemp)"
+   awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > "$notes"
+   (cd unity/Builds && shasum -a 256 statecraft-israel-vX.Y.Z-web.zip statecraft-israel-vX.Y.Z-web-pages.zip) >> "$notes"
+   gh release create vX.Y.Z --prerelease --title "vX.Y.Z" --notes-file "$notes" \
      unity/Builds/statecraft-israel-vX.Y.Z-web.zip unity/Builds/statecraft-israel-vX.Y.Z-web-pages.zip
    ```
 
-   The notes are the version's CHANGELOG section
-   (`awk '/^## \[X.Y.Z\]/{f=1;next} /^## \[/{f=0} f' CHANGELOG.md`) and the SHA-256 from step 5.
+   The notes are the version's CHANGELOG section and the SHA-256 of each zip, the same hashes step 5 printed. Read
+   `"$notes"` before publishing.
 
    After the MVP, a release with desktop players appends all three archives from the `<out>` folder that
    `tools/release_build.py` printed. Its notes also say "unchecked" until the player checks below pass:
@@ -158,7 +163,7 @@ macOS IL2CPP parity check is not an MVP release gate.
      as soon as it is published, so do not announce it before then. Then remove "unchecked" from the notes.
    - **Uploading or replacing an archive later** (`gh release upload`, with or without `--clobber`) starts no run. After
      any such upload, run `gh workflow run player-golden.yml -f tag=vX.Y.Z` and wait for it to pass
-     (`gh run watch`). A run that started before the replacement fails on the digest; run it again.
+     (`gh run watch <run-id> --exit-status`, with the run id from `gh run list --workflow player-golden.yml`). A run that started before the replacement fails on the digest; run it again.
 7. **Check every published artefact:** download each uploaded archive (GitHub Releases, and itch.io once used) into an
    empty folder, then list it and look for the notices: for a `.zip` (the web zip, the macOS and Windows players),
    `unzip -Z1 <zip> | grep -E '^(LICENSE|NOTICE|THIRD-PARTY-NOTICES.md|OFL-EBGaramond.txt|OFL-FrankRuhlLibre.txt)$'`;
@@ -172,7 +177,10 @@ The README's screenshots are claims about the current build. Re-take them whenev
 **always in the pull request that merges a visual change** (visual-v1 included), never as a follow-up:
 
 1. Build the web player (`docs/dev-setup.md`) and serve it. After visual-v1 has merged, capture with its
-   `uv run tools/web_check.py <build> --shots …` under its machine lock, so the capture does not disturb profiling.
+   `uv run tools/machine_lock.py --shared -- uv run tools/web_check.py <build> --query "golden&shot" --expect "SHOT done" --shots <dir>`
+   (the form `tools/art_checkpoint.sh` uses), so the capture does not disturb profiling. The player only sends shots
+   when the URL has `shot`; it saves one PNG per map pose in `PromoPose`, and views those poses do not cover are still
+   captured by hand.
    Before that, capture by hand at 1640×920 in Chrome.
 2. Replace `docs/images/build-m3-map.jpg`, `build-m3-start.jpg`, `build-m3-city.jpg`, `build-m3-cabinet.jpg` and `build-m3-why.jpg` (or add `build-<milestone>-*`
    and update the README to the new names). Each must show a non-sensitive moment: no unreviewed sensitive event card.
@@ -211,7 +219,7 @@ first (`python3 tools/build_sim_for_unity.py`), run Unity with graphics (not `-n
 
 ```sh
 "$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity \
-  -executeMethod MapCapture.Trailer -captureDir "$PWD/captures/<name>" [-seed 1948] -logFile "$PWD/unity-trailer.log"
+  -executeMethod MapCapture.Trailer -captureDir "$PWD/captures/<name>" -seed 1948 -logFile "$PWD/unity-trailer.log"
 ffmpeg -framerate 60 -i captures/<name>/frame-%05d.png -vf scale=out_color_matrix=bt709 \
   -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 \
   -movflags +faststart captures/<name>/trailer-map.mp4
@@ -226,7 +234,8 @@ deletes any `frame-*.png` already in it first, so an older, longer run cannot le
   Jaffa-Tel Aviv-Lydda ground of promo 03 (6 s), and back up to the whole country (6 s). 840 frames, 14 s, each move
   eased in and out. That order is a placeholder; the shots are the owner's call. Change the list to change it.
 - **Settings:** 1920 x 1080 on the desktop (PC) tier, 60 fps, the water's clock pinned to each frame's time, the 1948
-  sub-districts and the units of turn 1 of a new historical game started with `-seed` (default the golden seed, 1948;
+  sub-districts and the units of turn 1 of a new historical game started with `-seed` (default the golden seed, 1948,
+  so the command above may leave it out;
   turn 1's units do not depend on the seed today, it is recorded so a later moment can be repeated). The frames are
   `frame-00000.png` onwards, one sequence across the shots. `trailer.txt` beside them records the commit, Unity
   version, seed, size, fps, tier and each shot's frame range.
@@ -268,7 +277,8 @@ ships no build; the gates still apply to the first build uploaded to Steam.
   actual UI when useful; do not pass off `promo/final/03-gameplay-1936.png` or the AI likenesses in promo/final/04 and
   08 as gameplay. Review each screenshot's age-suitability flag individually; never mark a sensitive scene suitable for
   all ages just to gain placement. If at least four genuinely qualify, mark them suitable for all ages; with fewer
-  flagged, the game may not appear in some placements.
+  flagged, the game may not appear in some placements. Check the set's count and sizes with
+  `uv run tools/store_screenshots.py <shot1> … <shotN>` (it must print `DIMENSIONS OK`).
 - [ ] Prepare a trailer from the real build, not the M2 recruiting flythrough or concept-art target. Capture the map
   footage with "Capturing trailer footage" above (1920 x 1080, 60 fps, deterministic); the draft cut is still pending
   (#45), so this checklist does not provide a finished trailer. Keep the capture's `trailer.txt` (build commit, seed and

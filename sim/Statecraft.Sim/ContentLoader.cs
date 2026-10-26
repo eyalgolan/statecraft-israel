@@ -59,6 +59,8 @@ namespace Statecraft.Sim
         public const string SettlementsFileName = "map/settlements_1948.yaml";
         public const string MapLocationsFileName = "map/locations_1948.yaml";
         public const string SettlementTargetsFileName = "settlement_targets.yaml";
+        /// <summary>The two values of a target row's <c>residents</c> (R-CTRL-016).</summary>
+        public const string Fled = "fled", Stayed = "stayed";
         /// <summary>The settlements_1948.yaml row type a settlement target must have (Q-TGT-1 (a)).</summary>
         public const string ArabTown = "arab_town";
 
@@ -321,6 +323,9 @@ namespace Statecraft.Sim
             string rulesText = "";
             c.Rules = Read<Rules>(p => { var t = readFile(p); rulesText = t ?? ""; return t; }, "rules.yaml");
             c.EraRules = ReadEraRules(rulesText, readFile, c.Eras);
+            // Catalogue-only: old content sets need no file; an authored file is strictly validated and hashed.
+            c.Gdd03Balance = ReadOptional<Gdd03BalanceCatalogue>(readFile, Gdd03BalanceCatalogue.FileName);
+            c.Gdd03Balance?.Validate();
             var aliyah = Read<AliyahFile>(readFile, "aliyah.yaml");
             c.Aliyah = aliyah.Series; c.Regions = aliyah.Regions;
             c.PopulationAnchors = Read<PopulationFile>(readFile, "population.yaml").Anchors;
@@ -366,6 +371,8 @@ namespace Statecraft.Sim
             // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
             Validate(c, settlementIds);
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && c.Gdd03Balance == null)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "(file)", "required for the gdd-0.3 ruleset");
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
             {
@@ -513,15 +520,18 @@ namespace Statecraft.Sim
         static void ValidateRules(Content c, Rules r, string file, HashSet<string> indicators, HashSet<string> offices, HashSet<string> historicalOffices)
         {
             if (r.Start == default) throw new ContentException(file, "start", "required");
-            if (!(r.AttentionPerTurn >= 0 && !double.IsInfinity(r.AttentionPerTurn))) throw new ContentException(file, "attention_per_turn", "must be a finite non-negative number");
-            if (!(r.RungAttentionStep >= 0 && !double.IsInfinity(r.RungAttentionStep))) throw new ContentException(file, "rung_attention_step", "must be a finite non-negative number");
-            foreach (var kv in r.AttentionCost)
-                if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
-            foreach (var k in r.AttentionCost.Keys)
-                if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
-            foreach (var k in AttentionSystem.CommandKinds)
-                if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
-                    throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+            if (c.UsesAttention)
+            {
+                if (!(r.AttentionPerTurn >= 0 && !double.IsInfinity(r.AttentionPerTurn))) throw new ContentException(file, "attention_per_turn", "must be a finite non-negative number");
+                if (!(r.RungAttentionStep >= 0 && !double.IsInfinity(r.RungAttentionStep))) throw new ContentException(file, "rung_attention_step", "must be a finite non-negative number");
+                foreach (var kv in r.AttentionCost)
+                    if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
+                foreach (var k in r.AttentionCost.Keys)
+                    if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
+                foreach (var k in AttentionSystem.CommandKinds)
+                    if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
+                        throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+            }
             if (r.RungMinMobilization.Count != 5) throw new ContentException(file, "rung_min_mobilization", "needs exactly 5 values (rungs 1-5)");
             for (int i = 0; i < 5; i++)
             {
@@ -998,6 +1008,14 @@ namespace Statecraft.Sim
                     throw new ContentException("eras.yaml", at + ".systems.loop", "must be legacy or gdd");
                 if (e.Systems.Loop != c.Eras[0].Systems.Loop)
                     throw new ContentException("eras.yaml", at + ".systems.loop", "every era runs the same loop (a save names one ruleset)");
+                var identity = e.Systems.RulesetGiven ? e.Systems.Ruleset
+                    : e.Systems.Loop == EraSystems.Gdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+                if (identity != SaveGame.LegacyRuleset && identity != SaveGame.GddRuleset && identity != SaveGame.Gdd03Ruleset)
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "must be legacy, gdd-0.1 or gdd-0.3");
+                if ((identity == SaveGame.LegacyRuleset) != (e.Systems.Loop == EraSystems.Legacy))
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "legacy requires the legacy loop; gdd-0.1 and gdd-0.3 require the gdd loop");
+                if (identity != c.Ruleset)
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "every era names the same ruleset (explicit or inferred)");
                 if (i == 0)
                 {
                     if (c.Rules.Start != default && e.From != c.Rules.Start)   // a missing start is rules.yaml's own error
@@ -1109,7 +1127,8 @@ namespace Statecraft.Sim
                 if (x.Class == Combat.ArtilleryClass)
                 {
                     if (!(x.Range >= 1)) throw new ContentException(uf, at + ".range", "required for an artillery type, at least 1");
-                    if (!(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
+                    // R-COMBAT-007: under gdd-0.3 artillery fire spends no Arms (#1706), so arms_per_fire is not required; range stays required.
+                    if (Combat.SpendsArms(c) && !(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
                 }
                 else
                 {
@@ -1252,8 +1271,9 @@ namespace Statecraft.Sim
                 if (m.StackLimit < 1) throw new ContentException(file, "mvp.stack_limit", "must be >= 1");
                 // R-COMBAT-002 to R-COMBAT-004 (Q-COMBAT-1 to Q-COMBAT-4): required, so a missing key is never read as a free
                 // attack, a defender with no strength or an engagement with no outcome.
-                if (m.ArmsPerAttack == null) throw new ContentException(file, "mvp.arms_per_attack", "required when eras.yaml systems.loop is gdd");
-                if (m.ArmsPerAttack < 0) throw new ContentException(file, "mvp.arms_per_attack", "must be >= 0");
+                // R-COMBAT-004: under gdd-0.3 an attack spends no Arms (#1706), so arms_per_attack is not required or checked there.
+                if (Combat.SpendsArms(c) && m.ArmsPerAttack == null) throw new ContentException(file, "mvp.arms_per_attack", "required when eras.yaml systems.loop is gdd");
+                if (Combat.SpendsArms(c) && m.ArmsPerAttack < 0) throw new ContentException(file, "mvp.arms_per_attack", "must be >= 0");
                 foreach (var b in c.Hexes.Where(h => h.Land).Select(h => h.Biome).Distinct().OrderBy(b => b, StringComparer.Ordinal))
                     if (!m.CombatTerrainPercent.ContainsKey(b)) throw new ContentException(file, "mvp.combat_terrain_percent", $"no percent for land biome '{b}' ({HexesFile})");
                 foreach (var kv in m.CombatTerrainPercent)
@@ -1294,7 +1314,15 @@ namespace Statecraft.Sim
                     if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
                     if (v < 0) throw new ContentException(file, "mvp." + key, "must be >= 0");
                 }
-                foreach (var (key, v) in new[] { ("prisoner_shortfall_cohesion", m.PrisonerShortfallCohesion), ("held_soldier_cost_per_turn", m.HeldSoldierCostPerTurn) })
+                // R-CTRL-011, R-CTRL-012 (Q-OCC-1 (a), Q-OCC-3 (a)): required, so a missing key is never read as an occupation
+                // that never ends or costs nothing.
+                if (m.OccupationTurns == null) throw new ContentException(file, "mvp.occupation_turns", "required when eras.yaml systems.loop is gdd");
+                if (m.OccupationTurns < 1) throw new ContentException(file, "mvp.occupation_turns", "must be >= 1");
+                foreach (var (key, v) in new[] { ("prisoner_shortfall_cohesion", m.PrisonerShortfallCohesion), ("held_soldier_cost_per_turn", m.HeldSoldierCostPerTurn), ("occupation_upkeep_per_turn", m.OccupationUpkeepPerTurn),
+                    // R-CTRL-018 (Q-DEP-5 (c)): required, so a missing key is never read as a Deport that costs nothing
+                    ("deport_cohesion_cost", m.DeportCohesionCost), ("deport_support_cost", m.DeportSupportCost),
+                    ("deport_support_drag_per_turn", m.DeportSupportDragPerTurn), ("deport_support_ceiling_drop", m.DeportSupportCeilingDrop),
+                    ("deport_money_cost", m.DeportMoneyCost) })
                 {
                     if (v == null) throw new ContentException(file, "mvp." + key, "required when eras.yaml systems.loop is gdd");
                     if (!(v >= 0 && IsFinite(v.Value))) throw new ContentException(file, "mvp." + key, "must be a finite number >= 0");
@@ -1418,6 +1446,7 @@ namespace Statecraft.Sim
                     if (x.Sources[i] == null || string.IsNullOrWhiteSpace(x.Sources[i].Url) || x.Sources[i].Checked == default)
                         throw new ContentException(cf, FormattableString.Invariant($"{at}.sources[{i}]"), "needs a url and checked date");
                 Status(cf, at + ".status", x.Status);
+                Review(cf, at, x.ReviewedBy, x.ReviewedByGiven, x.ReviewedOn, x.ReviewedOnGiven);
             }
         }
 
@@ -1654,8 +1683,37 @@ namespace Statecraft.Sim
                     if (!Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || source.Checked == default)
                         throw new ContentException(SettlementTargetsFileName, at + $".sources[{i}]", "needs an https url and a checked date");
                 }
+                ValidateResidents(x, at);
                 Status(SettlementTargetsFileName, at + ".status", x.Status);
             }
+        }
+
+        /// <summary>R-CTRL-016 (Q-ANNEX-1; OWNER QUESTION 1 (a) on #799): a target's residents are fled or stayed, with at least
+        /// one source; only a stayed row has an annexation block, whose people are a sourced whole number and whose employed
+        /// share is from 0 to 1, each checked as a cities.yaml value.</summary>
+        static void ValidateResidents(SettlementTarget x, string at)
+        {
+            const string f = SettlementTargetsFileName;
+            if (x.Residents != Fled && x.Residents != Stayed)
+                throw new ContentException(f, at + ".residents", $"must be {Fled} or {Stayed}, not '{x.Residents}'");
+            if (x.ResidentsSources.Count == 0) throw new ContentException(f, at + ".residents_sources", "needs at least one source");
+            for (int i = 0; i < x.ResidentsSources.Count; i++)
+            {
+                var source = x.ResidentsSources[i];
+                if (source == null || !Uri.TryCreate(source.Url, UriKind.Absolute, out var uri) || uri.Scheme != "https" || source.Checked == default)
+                    throw new ContentException(f, at + $".residents_sources[{i}]", "needs an https url and a checked date");
+            }
+            if (x.Residents == Fled)
+            {
+                if (x.Annexation != null) throw new ContentException(f, at + ".annexation", "a fled place adds nothing on annexation, so it has no annexation block");
+                return;
+            }
+            if (x.Annexation == null) throw new ContentException(f, at + ".annexation", "required for a stayed place");
+            var people = CityValueOf(f, at + ".annexation.people", x.Annexation.People);
+            Whole(f, at + ".annexation.people", people);
+            if (people.Status != "sourced") throw new ContentException(f, at + ".annexation.people.status", "must be sourced: a resident count is a fact the owner approves");
+            var share = CityValueOf(f, at + ".annexation.employed_share", x.Annexation.EmployedShare);
+            if (share.Value < 0 || share.Value > 1) throw new ContentException(f, at + ".annexation.employed_share.value", "must be a number from 0 to 1");
         }
     }
 }

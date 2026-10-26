@@ -22,7 +22,7 @@ As a player of the MVP, I want to send Tel Aviv's civilians without work to basi
 - `unit_types.yaml` (`recruit`, `halutz`: `facility`, `training_turns`, `training_cost`), `cities.yaml` (`facilities`), `rules.yaml` `attention_cost.train`, `cancel_training`, `mvp.build_camp_turns` and `mvp.build_camp_cost`: labelled design values in `content/` since the cutover (Q-CUT-1, R-LOOP-005), the overlay's placeholders before it (ruling 2 [S3]).
 - `GameState`: `Cohorts` (hashed as `train[...]` when there are some), a city's `Recruits` (in its hash record when not 0), `Units`, `NextId`, `Treasury`, and a built camp's `Sites` record, which is where `Training.HasFacility` reads a built camp from.
 - `content/sites.yaml`: the `camp_80` and `tzrifin` rows, each with a `city`.
-- Save files: the `train CITY TRACK N` and `untrain COHORT` lines. Scenarios: `train` and `cancel_training`.
+- Save files: the `train CITY TRACK N` and `untrain COHORT` lines (and `retcraft`, `regcraft`, `regpioneer`, `order UNIT return_civilian`, R-QUAL-007). Scenarios: `train` and `cancel_training` (and `return_craftsmen`, `reassign_craftsmen`, `reassign_pioneers`).
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` did not. Phase 4 PR 3 moves `hash1950`, `hash1952` and `mvp-end`: the reference player builds the two camps once the yishuv sites are taken (docs/determinism.md).
 
 ## Done when

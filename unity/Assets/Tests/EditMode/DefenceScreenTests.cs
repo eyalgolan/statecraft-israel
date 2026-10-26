@@ -161,6 +161,113 @@ public class DefenceScreenTests
         }
     }
 
+    /// <summary>#755 (plan PR 16): every rung plays a month in the GDD loop (R-TURN-001), so the per-rung turn-length
+    /// legend says nothing there and is hidden. The legacy loop, whose rungs set the turn length, keeps it.</summary>
+    [Test]
+    public void TheGddLoopDropsTheTurnLengthLegend()
+    {
+        var (ui, _, _) = Open();
+        using (ui)
+            for (int rung = 1; rung <= 5; rung++)
+                Assert.AreEqual(DisplayStyle.None, ui.Q<Label>($"rung-{rung}-turn").style.display.value, $"rung {rung}");
+        var (legacy, _, _) = OpenLegacy();
+        using (legacy)
+            for (int rung = 1; rung <= 5; rung++)
+                Assert.AreEqual(DisplayStyle.Flex, legacy.Q<Label>($"rung-{rung}-turn").style.display.value, $"rung {rung}");
+    }
+
+    /// <summary>#755, Q-WAR-1: in the GDD loop the level is the war state the events set (R-WAR-002), and a line says so
+    /// with today's level. The legacy loop, where the player orders the level, has no such line.</summary>
+    [Test]
+    public void TheWarStateLineNamesTheLevelTheEventsSet()
+    {
+        var (ui, bridge, defence) = Open();
+        using (ui)
+        {
+            Assert.AreEqual("War state: level 5, set by the events of the war", ui.Q<Label>("war-state").text);
+            bridge.State.Rung = 3;
+            defence.Render();
+            Assert.AreEqual("War state: level 3, set by the events of the war", ui.Q<Label>("war-state").text);
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q<Label>("war-state").style.display.value);
+        }
+        var (legacy, _, _) = OpenLegacy();
+        using (legacy) Assert.AreEqual(DisplayStyle.None, legacy.Q<Label>("war-state").style.display.value);
+    }
+
+    /// <summary>#218's case (11 June to 8 July 1948) under Q-WAR-2 as decided: the GDD loop has no UN ceasefire clock
+    /// (R-WAR-003), so the screen no longer promises a ceasefire "in 49 weeks" during the First Truce; while the truce the
+    /// player accepted is in force (R-COMBAT-009, read from the sim) a line says so and until when. It goes once the
+    /// window ends, and a refused card shows none.</summary>
+    [Test]
+    public void TheFirstTruceShowsTheTruceLineAndNoCeasefireClock()
+    {
+        var (ui, bridge, defence) = Open();
+        using (ui)
+        {
+            var truce = ui.Q<Label>("truce");
+            Assert.AreEqual(DisplayStyle.None, truce.style.display.value, "no truce at the start");
+            bridge.State.Date = new System.DateTime(1948, 6, 15);
+            bridge.State.ChosenOptions["first_truce"] = "accept";
+            defence.Render();
+            Assert.AreEqual(DisplayStyle.Flex, truce.style.display.value);
+            Assert.AreEqual("A truce is in force: our units cannot attack until 8 July 1948", truce.text);
+            Assert.AreEqual(DisplayStyle.None, ui.Q<Label>("ceasefire").style.display.value, "no ceasefire clock (R-WAR-003)");
+            bridge.State.Date = new System.DateTime(1948, 7, 15);
+            defence.Render();
+            Assert.AreEqual(DisplayStyle.None, truce.style.display.value, "the window has ended");
+            bridge.State.Date = new System.DateTime(1948, 6, 15);
+            bridge.State.ChosenOptions["first_truce"] = "refuse";
+            defence.Render();
+            Assert.AreEqual(DisplayStyle.None, truce.style.display.value, "a refused card binds nothing");
+        }
+        var (legacy, legacyBridge, legacyDefence) = OpenLegacy();
+        using (legacy)
+        {
+            legacyBridge.State.Date = new System.DateTime(1948, 6, 15);
+            legacyBridge.State.ChosenOptions["first_truce"] = "accept";
+            legacyDefence.Render();
+            Assert.AreEqual(DisplayStyle.None, legacy.Q<Label>("truce").style.display.value, "the legacy loop has no truce line");
+        }
+    }
+
+    /// <summary>#218's case in Hebrew: the truce line names its end date in the Hebrew calendar words.</summary>
+    [Test]
+    public void InHebrewTheTruceLineNamesItsEnd()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var ui = new UiTestKit();
+        ui.Q<VisualElement>("screen-defence").style.display = DisplayStyle.Flex;
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), he);
+        bridge.State.Date = new System.DateTime(1948, 6, 15);
+        bridge.State.ChosenOptions["first_truce"] = "accept";
+        using var defence = new DefencePresenter(ui.Root, bridge, he);
+        Assert.AreEqual("הפוגה בתוקף: היחידות שלנו אינן יכולות לתקוף עד 8 ביולי 1948", ui.Q<Label>("truce").text);
+    }
+
+    /// <summary>#755, Q-POW-4: the prisoner lines read GameState's counts (R-POW-001, R-POW-004, R-POW-005), summed over
+    /// the sides, in people (people_per_unit, 1,000). Plain counts: nothing celebrates a capture (impact plan section 4.3
+    /// item 4). The legacy loop takes no prisoners, so the panel is hidden there.</summary>
+    [Test]
+    public void ThePrisonerLinesReadTheirState()
+    {
+        var (ui, bridge, defence) = Open();
+        using (ui)
+        {
+            Assert.AreEqual(DisplayStyle.Flex, ui.Q<VisualElement>("defence-prisoners").style.display.value);
+            Assert.AreEqual("Enemy prisoners held: 0", ui.Q<Label>("prisoners-held").text);
+            var s = bridge.State;
+            s.PrisonersHeld["egypt"] = 2; s.PrisonersHeld["jordan"] = 1;
+            s.PrisonersReturned["lebanon"] = 4;
+            s.SoldiersHeld["egypt"] = 1;
+            defence.Render();
+            Assert.AreEqual("Enemy prisoners held: 3,000", ui.Q<Label>("prisoners-held").text);
+            Assert.AreEqual("Prisoners returned: 4,000", ui.Q<Label>("prisoners-returned").text);
+            Assert.AreEqual("Our soldiers held by the enemy: 1,000", ui.Q<Label>("soldiers-held").text);
+        }
+        var (legacy, _, _) = OpenLegacy();
+        using (legacy) Assert.AreEqual(DisplayStyle.None, legacy.Q<VisualElement>("defence-prisoners").style.display.value);
+    }
+
     [Test]
     public void ADisposedScreenHearsNothing()
     {

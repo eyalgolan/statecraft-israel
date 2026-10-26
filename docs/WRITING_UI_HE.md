@@ -1,9 +1,9 @@
-# Hebrew localisation guide for Statecraft: Israel (draft v0.5)
+# Hebrew localisation guide for Statecraft: Israel (v0.5)
 
-Status: DRAFT for discussion. Not approved by the maintainer. **New Hebrew recommendations need native review. Existing maintainer decisions, including gershayim in #630, remain adopted unless explicitly overruled.** Hebrew in this draft has been reviewed by a non-native reader and not finalised.
+Status: binding for new strings from 22 October 2026 (#622). Existing strings that don't match change one PR at a time. **Recommendations that still need native review (#564) stay marked that way. Existing maintainer decisions, including gershayim in #630, remain adopted unless explicitly overruled.** Hebrew in this guide has been reviewed by a non-native reader and not finalised.
 Date: 17 October 2026. Evidence: upstream/main 46abd99c, 271 keys in each language. Cited strings were reconciled with the snapshot; new city, training, pioneer and other added strings have not received a full native-language review.
 
-Publication update, 18 October 2026: the examples below were audited at 46abd99c. Since that snapshot, #928 adopted a verb-free info.built date label after native review, and #930 recorded native reads of government, legislature and office names. Those accepted changes stand; the guide does not reopen their approval. This draft is based on db4350f8 and is not a full review of subsequent Hebrew changes.
+Publication update, 18 October 2026: the examples below were audited at 46abd99c. Since that snapshot, #928 adopted a verb-free info.built date label after native review, and #930 recorded native reads of government, legislature and office names. Those accepted changes stand; the guide does not reopen their approval. This guide is based on db4350f8 and is not a full review of subsequent Hebrew changes.
 
 Revision 19 October 2026: targeted implementation and terminology checks at upstream/main 9e571342 address the #970 review. The original snapshot count is dated, not a claim about every subsequent string or its native review.
 
@@ -98,6 +98,8 @@ For the native reviewer: record any overrule of the adopted ״ convention, and c
 ### HE-07 Maqaf
 Status: proposed, native. Reason: the Academy's punctuation rules use a maqaf when a prefix meets a numeral or Latin letters, for example "ה־12" and "ב־DNA". r12a says the maqaf is the proper character for a hyphen between compounds, that keyboards often lack it so a hyphen-minus is substituted, and that lines should not break next to it.
 - Today: "יישובים ב-1948: {0}" (`info.localities`) uses a hyphen-minus. "מ־{0} עד {1}" (`why.turn`) uses a maqaf. The date pattern joins the prefix to the month name with no hyphen ("{0} ב{1} {2}", `date.day_month_year`), which is ordinary Hebrew for a prefix before a word.
+- Code: a placeholder written straight after a prefix ("ב{0}") is joined to a Hebrew value ("בתל אביב"), and UiText.Format adds the maqaf when the value starts with a digit or a Latin letter ("ב־Haifa", for a name with no Hebrew form yet). Write "ב־{0}" only where the value is always a numeral or a date.
+- Native review: owner, 25 Oct 2026 (recommendations page), #1636: direct joining before Hebrew names, the maqaf only before a numeral or Latin letters, and "10 ק״מ מדרום־מערב לחיפה" for `why.hex.away`.
 - Candidate: "יישובים ב־1948: {0}".
 - A second place: the map legend joins two colour words with a hyphen-minus, "כתום-אדום" (`map.legend_held`, also `map.legend_armistice`). r12a's note on the hyphen between compounds points to the maqaf there too. Candidate: "כתום־אדום".
 For the native reviewer: confirm the maqaf for prefixes before numerals and Latin letters, for the colour compound, and the numeral range style in `why.turn`.
@@ -142,6 +144,7 @@ Status: proposed review process. New Hebrew recommendations need native review; 
 
 ### HE-15 Agreement with a placeholder
 Status: #1136 applied Beri's native review from #564 to the budget strings after the interim neutral wording in #1081. A changing placeholder must not receive a fixed verb or pronoun that fits only one possible name. The current strings are "{0} מצביעה על התקציב, אך ההצבעה אינה מחייבת: לקואליציה יש {1} מתוך {2} {3}" (`budget.vote_advisory`), "{0} אינה מצביעה על התקציב" (`budget.no_vote`) and "מתייעצת עם {0} · {1} חברים · ההצבעות אינן מחייבות" (`cabinet.legislature_advisory`). Beri's note explains why the budget's feminine forms work: all three current legislature names are feminine. A masculine-named body would need new wording. Keep the native-reviewed wording for the current bodies; it is not a universal solution for every future name. ContentNames.Of reads legislature body_he (#861). A new grammatical-gender field remains a separate design decision.
+The unit Why lines (`why.line.*`) name any unit, the Arab forces' masculine names, Israel's feminine ones and a raised unit's (`unit.name.*`), so since the follow-up to #1527 none of them has a verb or pronoun that agrees with the name: the name opens the line as its label ("{0}: נסיגה למשושה {1}"), or sits in a noun phrase ("ההתקפה של {0}"). WhyUnitNamesTests checks every unit through every line.
 For the native reviewer: review any new body name against these sentences and mark any other string whose verb or pronoun assumes the gender of a changing placeholder.
 
 ## Candidate fixes for the Hebrew file (all unapproved)

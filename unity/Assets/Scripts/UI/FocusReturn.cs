@@ -17,6 +17,44 @@ namespace Statecraft.Game.UI
             target.Focus();
             target.schedule.Execute(() => { if (target.panel != null && target.focusController?.focusedElement == null) target.Focus(); });
         }
+
+        /// <summary>Whether an element can actually take the keyboard focus now: a control that is disabled or not drawn
+        /// cannot, and asking it to leaves the focus nowhere. Public so the one rule has one home: ScreenNav asks it
+        /// which control to hand an opened screen (#41).
+        ///
+        /// "Not drawn" has to mean every ancestor up to the panel, not the element alone (#41, found reviewing #1489).
+        /// `display: none` on a parent takes its children out of the layout, but each child keeps its own
+        /// `resolvedStyle.display`, so a button inside a closed screen still reads `Flex` and used to pass this test.
+        /// `Focus()` then did nothing and the focus was left nowhere, which is the one thing this predicate exists to
+        /// rule out. A closed screen is the plain case: `screen-budget` is `none` while its `screen-close-budget` is
+        /// `Flex` and enabled.</summary>
+        public static bool CanTakeFocus(VisualElement? e)
+        {
+            if (e?.panel == null || !e.focusable || !e.enabledInHierarchy) return false;
+            for (var v = e; v != null; v = v.parent)
+                if (v.resolvedStyle.display == DisplayStyle.None) return false;
+            return true;
+        }
+
+        /// <summary>Focuses <paramref name="target"/>; failing that the first control that can take the focus in each of
+        /// <paramref name="scopes"/> in turn; and last of all <paramref name="last"/> (accessibility audit, #41, the
+        /// keyboard-only turn's "Still open" list). The K2 fix hands the focus to the rebuilt button of the same name, but
+        /// a press can leave its whole part with nothing focusable: Build on a site or a corridor segment disables every
+        /// Build in the part once one group is ordered, and Stop and a project's Cancel leave a state line and a disabled
+        /// button. Without a last stop outside the part the focus is left nowhere and the next Tab starts again at the
+        /// first screen, which is the symptom K2 was meant to end. Nearest first, so the next Tab stays where the player
+        /// was working.</summary>
+        public static void ToOrWithin(VisualElement? target, VisualElement? last, params VisualElement?[] scopes)
+        {
+            if (CanTakeFocus(target)) { To(target); return; }
+            foreach (var scope in scopes)
+            {
+                if (scope?.panel == null) continue;
+                foreach (var e in scope.Query<VisualElement>().Build())
+                    if (e != scope && CanTakeFocus(e)) { To(e); return; }
+            }
+            if (CanTakeFocus(last)) To(last);
+        }
     }
 
     /// <summary>Whether the last press inside an element came from the keyboard (Enter or Space: NavigationSubmitEvent) or

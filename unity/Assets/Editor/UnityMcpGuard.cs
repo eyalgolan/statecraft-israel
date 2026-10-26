@@ -50,6 +50,25 @@ namespace Statecraft.Game.EditorTools
         public static Type? LoadedPluginEditorType() =>
             AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == PluginEditorAssembly)?.GetType(PluginEditorType);
 
+        /// <summary>The warm-up launch before batch tests (CONTRIBUTING.md). The plugin compiles only when its gate defines
+        /// (UNITY_MCP_READY) are in ProjectSettings when Unity starts. Its resolver fetches the DLLs and adds the defines on
+        /// the first editor update, after -executeMethod, so a -quit launch would exit before it ran, and a test run that
+        /// adds them starts its tests without a reload. This waits one editor update (the resolver's runs first: it
+        /// subscribed at load), saves the defines and exits, 1 when they are still missing. No -quit:
+        /// Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -projectPath unity -executeMethod Statecraft.Game.EditorTools.UnityMcpGuard.WarmUp</summary>
+        public static void WarmUp()
+        {
+            EditorApplication.update += Exit;
+            static void Exit()
+            {
+                EditorApplication.update -= Exit;
+                AssetDatabase.SaveAssets();
+                var ready = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.Standalone).Split(';').Contains("UNITY_MCP_READY");
+                Debug.Log("UnityMcpGuard warm-up: gate defines " + (ready ? "in place" : "missing"));
+                EditorApplication.Exit(ready ? 0 : 1);
+            }
+        }
+
         /// <summary>Where the guard reads command-line arguments from: "plugin ArgsUtils" (the plugin's own parser and key
         /// comparer, so an argument counts for the guard exactly when it counts for the plugin) or "fallback parser".</summary>
         public static string ArgSource = "not read";

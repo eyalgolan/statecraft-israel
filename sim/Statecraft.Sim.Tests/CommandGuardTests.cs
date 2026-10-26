@@ -21,6 +21,10 @@ public class CommandGuardTests
         [typeof(AssignWorkers)] = new AssignWorkers("tel_aviv", "job", 1),
         [typeof(Train)] = new Train("tel_aviv", "halutz", 1),
         [typeof(CancelTraining)] = new CancelTraining(1),
+        [typeof(ReturnCraftsmen)] = new ReturnCraftsmen("town_a", 1),   // refused (the fixture has no craftsmen), like BuyArms(0)
+        [typeof(ReassignCraftsmen)] = new ReassignCraftsmen("town_a", 1),   // refused (no qualified craftsmen)
+        [typeof(ReassignPioneers)] = new ReassignPioneers("town_a", "halutz", 1),   // refused (no qualified halutzim)
+        [typeof(Reinforce)] = new Reinforce(1, "tel_aviv", 1),
         [typeof(PioneerWork)] = new PioneerWork(1, "build_yishuv", "mefalsim"),
         [typeof(StopWork)] = new StopWork(1),
         [typeof(UnitOrder)] = new UnitOrder(1, "fortify"),
@@ -29,6 +33,7 @@ public class CommandGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),   // refused (nothing awaits a decision), like BuyArms(0)
+        [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),   // refused (nothing awaits the end of an occupation)
     };
 
     static IEnumerable<Type> CommandTypes() =>

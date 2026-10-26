@@ -50,12 +50,14 @@ namespace Statecraft.Sim
             if ((def.Kind == Rail) != wantRail) return wantRail ? $"{def.Name} is not a railway" : $"{def.Name} is not a road";
             var index = n - 1;
             var name = SegmentName(def, index);
+            if (def.Segments[index].Hexes.Any(h => SettlementControl.DepopulatedAt(c, s, h[0], h[1])))   // R-CTRL-020 (Q-DEP-7 (c))
+                return $"{name} crosses a depopulated place, where nothing can be built";
             s.Corridors.TryGetValue(def.Id, out var work);
             if (work?.Segments[index] is SegmentWork seg)
                 return seg.BuiltOn == null ? $"{name} is already being built" : $"{name} is already built";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             var (cost, _) = Projects.Terms(r, action);
-            EconomySystem.PayOrBorrow(c, s, cost, "to build a corridor segment", why);
+            EconomySystem.PayOrBorrow(c, s, cost, "to build a corridor segment", why, CauseKeys.Purpose.Corridor);
             // As for sites (R-SITE-001): the turn of the order is the first build turn. The segment starts at 0, step 5 of this
             // turn's resolve gives it its first turn of progress, and with 6 turns an order on turn T is built at the end of T+5.
             var started = new SegmentWork(unit, 0, null);
@@ -112,7 +114,7 @@ namespace Statecraft.Sim
                     if (u.Type != "halutz") continue;
                     var service = u.Service + 1;
                     var promoted = service >= r.VeteranHalutzService!.Value;
-                    s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                     if (promoted) why.Add(new Cause("map", w.Id, 1, "A group of halutzim became veteran pioneers"));
                 }
                 s.Corridors[w.Id] = cur;

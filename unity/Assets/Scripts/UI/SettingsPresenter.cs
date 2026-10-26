@@ -35,6 +35,8 @@ namespace Statecraft.Game.UI
         readonly (Button button, GraphicsQuality.Choice choice, Action pick)[] quality;
         readonly (Button button, string language, Action pick)[] languages;
         readonly (Button button, string level, Action pick)[] sound;
+        readonly AdvisorSettings? advisors;
+        readonly (Button button, string level, Action pick)[] helpLevels;
         readonly GameAudio? audio;
         string soundLevel;
         readonly Action<string>? switchLanguage;
@@ -46,10 +48,11 @@ namespace Statecraft.Game.UI
         /// <param name="switchLanguage">Puts the UI in the language pressed (GameRoot builds the screens again); null changes
         /// nothing but the stored choice, read at the next start.</param>
         /// <param name="panel">The UI's panel, which the UI scale scales; null leaves the scale alone.</param>
+        /// <param name="advisors">The live advisor settings; null hides its row.</param>
         /// <param name="audio">The sound effects the volume applies to; null keeps only the choice.</param>
-        public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null)
+        public SettingsPresenter(VisualElement root, UiText text, SettingsStore? store, Action<string>? switchLanguage = null, PanelSettings? panel = null, GameAudio? audio = null, AdvisorSettings? advisors = null)
         {
-            this.store = store; this.text = text; this.switchLanguage = switchLanguage; this.root = root; this.audio = audio;
+            this.store = store; this.text = text; this.switchLanguage = switchLanguage; this.root = root; this.audio = audio; this.advisors = advisors;
             screen = root.Q<VisualElement>("screen-settings");
             screen.Q<Label>("settings-screen-title").text = text["settings.title"];
             screen.Q<Label>("settings-tiltshift-label").text = text["settings.tiltshift"];
@@ -96,6 +99,18 @@ namespace Statecraft.Game.UI
                 b.clicked += pick;
                 return (b, l.level, pick);
             });
+            // The help level is presentation-only and read live by the advisor queue (spec6).
+            var helpLabel = screen.Q<Label>("settings-advisors-label");
+            helpLabel.text = text["settings.advisors"];
+            if (advisors == null) helpLabel.parent.style.display = DisplayStyle.None;
+            helpLevels = Array.ConvertAll(AdvisorSettings.Levels, level =>
+            {
+                var b = screen.Q<Button>("settings-advisors-" + level);
+                b.text = text["settings.advisors." + level];
+                Action pick = () => { advisors?.SetLevel(level); Show(); };
+                b.clicked += pick;
+                return (b, level, pick);
+            });
             // UI scale (#40): the panel scales with the screen from its 1920x1080 reference (ScaleWithScreenSize); dividing the
             // reference by the choice multiplies that scale by it, whatever the window. The whole UI is one panel. Dispose
             // puts the reference back: in the editor the panel is a project asset, and a choice must not stay in it.
@@ -133,6 +148,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, _, pick) in languages) b.clicked -= pick;
             foreach (var (b, _, pick) in sound) b.clicked -= pick;
             foreach (var (b, _, pick) in scales) b.clicked -= pick;
+            foreach (var (b, _, pick) in helpLevels) b.clicked -= pick;
             unbindStar();
             root.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
             if (panel != null) panel.referenceResolution = reference;
@@ -237,6 +253,7 @@ namespace Statecraft.Game.UI
             foreach (var (b, c, _) in quality) b.EnableInClassList(SelectedClass, c == GraphicsQuality.Current);
             foreach (var (b, l, _) in languages) b.EnableInClassList(SelectedClass, l == text["ui.lang"]);
             foreach (var (b, l, _) in sound) b.EnableInClassList(SelectedClass, l == soundLevel);
+            foreach (var (b, level, _) in helpLevels) b.EnableInClassList(SelectedClass, level == advisors?.Level);
             foreach (var (b, p, _) in scales)
             {
                 b.EnableInClassList(SelectedClass, p == uiScale);

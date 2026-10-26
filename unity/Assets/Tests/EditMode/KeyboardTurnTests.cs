@@ -105,6 +105,22 @@ public class KeyboardTurnTests
         for (int i = 0; i < n; i++) { yield return Tab(back); into.Add(FocusedName); }
     }
 
+    // Give each still-needing unit Skip through the keyboard, before requesting the actual turn end.
+    IEnumerator SkipTheRemainingUnits()
+    {
+        for (var guard = 0; Bridge.NeedsOrders.Count > 0; guard++)
+        {
+            Assert.Less(guard, 200, "keyboard Skip must make progress");
+            yield return TabTo("end-turn");
+            yield return Enter();
+            yield return Frames(2);
+            yield return TabTo("info-skip");
+            yield return Enter();
+            yield return Frames(2);
+        }
+        yield return TabTo("end-turn");
+    }
+
     /// <summary>The side menu, New Game, End Turn: the HUD's own controls, in the order Game.uxml gives them.</summary>
     static readonly string[] Menu = { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" };
 
@@ -153,6 +169,7 @@ public class KeyboardTurnTests
         yield return TabTo("end-turn");
 
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "Enter on End Turn ends the turn");
@@ -202,10 +219,12 @@ public class KeyboardTurnTests
         yield return TabTo(v => ui.Q("cabinet-candidates").Contains(v), "a candidate");
         yield return Enter();
         Assert.IsTrue(Bridge.Queued.OfType<Appoint>().Any(), "the appointment is ordered");
-        // The candidate list's and the seat list's own scroll bars take Tab after their last row: no error, and Tab goes on.
+        // The lists' own scroll bars used to take Tab after their last row (K1). They are out of the order now
+        // (#41, "Still open" item 1), so the Tab after the last seat leaves the screen for the HUD's Cabinet button,
+        // the next control in the order, instead of stopping on a bar that cannot be used from the keyboard.
         yield return TabTo(v => v.name == "seat-chief_of_staff", "the last seat, past every candidate", 120);
         yield return Tab();
-        Assert.IsTrue(At is Scroller || At.GetFirstAncestorOfType<Scroller>() != null, $"the Tab after the last seat lands on a scroll bar (K1), not {FocusedName}");
+        Assert.AreEqual("nav-cabinet", FocusedName, "the Tab after the last seat goes on to the HUD, not to a scroll bar");
         yield return TabTo("nav-cabinet");
         yield return Escape();
         Assert.IsNull(ScreenOpen(), "Escape closes the Cabinet");
@@ -225,6 +244,7 @@ public class KeyboardTurnTests
         // End the turn.
         yield return TabTo("end-turn");
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "the turn ends");

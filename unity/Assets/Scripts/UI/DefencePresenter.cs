@@ -35,6 +35,7 @@ namespace Statecraft.Game.UI
             escalate.clicked += onEscalate; deEscalate.clicked += onDeEscalate; mobUp.clicked += onMobUp; mobDown.clicked += onMobDown;
             foreach (var (name, key) in Sections) screen.Q<Label>(name).text = text[key].ToUpperInvariant();   // the promo's capitals; a caseless script is unchanged
             screen.Q<Label>("defence-screen-title").text = text["defence.title"];
+            screen.Q<Label>("defence-title-prisoners").text = text["defence.section_prisoners"].ToUpperInvariant();   // #755, as Sections
             deEscalate.text = text["defence.lower"]; escalate.text = text["defence.raise"];
             bridge.Changed += OnChanged;
             ScreenNav.OnOpened(screen, () => { if (dirty) Render(); });
@@ -140,6 +141,7 @@ namespace Statecraft.Game.UI
                 screen.Q<Label>($"rung-{rung}-name").text = text[$"defence.rung{rung}"];
                 // The content's turn_lengths (R-TURN-001): every rung reads "month" in the GDD game.
                 screen.Q<Label>($"rung-{rung}-turn").text = text[TurnKey(SecuritySystem.TurnLengthFor(c, s.Date, rung))];
+                screen.Q<Label>($"rung-{rung}-turn").style.display = c.IsGdd ? DisplayStyle.None : DisplayStyle.Flex;   // a legend with one value says nothing (#755)
                 var row = screen.Q<VisualElement>($"rung-{rung}");
                 row.EnableInClassList("rung-current", rung == s.Rung);
                 row.EnableInClassList("rung-target", rung == target && target != s.Rung);   // the level an order will move to
@@ -174,6 +176,23 @@ namespace Statecraft.Game.UI
             var lever = c.IsGdd ? DisplayStyle.None : DisplayStyle.Flex;
             escalate.style.display = lever; deEscalate.style.display = lever; mobUp.style.display = lever; mobDown.style.display = lever;
             screen.Q<Label>("order-pending").text = delta == 0 ? "" : text.Format("defence.order", s.Rung, target);
+            // #755: the GDD loop's war state (the rung the events set, R-WAR-002), the truce the player accepted while it is in
+            // force (the sim's R-COMBAT-009 window), and the prisoner counts in people (R-POW-001, R-POW-004, R-POW-005).
+            var warState = screen.Q<Label>("war-state");
+            warState.text = c.IsGdd ? text.Format("defence.war_state", s.Rung) : "";
+            warState.style.display = c.IsGdd ? DisplayStyle.Flex : DisplayStyle.None;
+            var truce = screen.Q<Label>("truce");
+            var until = c.IsGdd ? Combat.TruceUntil(s) : null;
+            truce.text = until is DateTime end ? text.Format("defence.truce", Statecraft.Game.Map.Control1948.DateText(end, k => text[k])) : "";
+            truce.style.display = truce.text == "" ? DisplayStyle.None : DisplayStyle.Flex;
+            screen.Q<VisualElement>("defence-prisoners").style.display = c.IsGdd ? DisplayStyle.Flex : DisplayStyle.None;
+            if (c.IsGdd)
+            {
+                var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+                screen.Q<Label>("prisoners-held").text = text.Format("defence.prisoners_held", s.PrisonersHeld.Values.Sum() * ppu);
+                screen.Q<Label>("prisoners-returned").text = text.Format("defence.prisoners_returned", s.PrisonersReturned.Values.Sum() * ppu);
+                screen.Q<Label>("soldiers-held").text = text.Format("defence.soldiers_held", s.SoldiersHeld.Values.Sum() * ppu);
+            }
             var floor = SecuritySystem.MinMobilization(c, s.Date, target);
             var proposed = EffectiveAt(ProposedMobilization);   // what the call-up will be: the sim raises a lower order to the minimum
             screen.Q<Label>("mob-level").text = text.Format("defence.mob", PlayerText.Percent(proposed), target, PlayerText.Percent(floor));

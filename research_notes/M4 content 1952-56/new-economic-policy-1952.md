@@ -1,6 +1,6 @@
 # M4 content research: the New Economic Policy (13 to 20 February 1952)
 
-Researched 2026-10-11. All URLs were checked on that date. Draft for issue #5: one note per event.
+Researched 2026-10-11. All URLs were checked on that date. Follow-up pass 2026-10-24 (issue #24, research part): see section 7; the two [GAP] items there stay open. Pages cited in section 7 were opened by an agent on 2026-10-24, and a person's check is pending. Draft for issue #5: one note per event.
 
 **Purpose.** The M4 plan lists the New Economic Policy (NEP) as an anchor event that feeds the economy calibration (#24 and the dated rules for 1952). This note gives the exact dates, what the government decided and who presented it, the options that were actually on the table, and the numbers a calibration would need.
 
@@ -32,7 +32,7 @@ Researched 2026-10-11. All URLs were checked on that date. Draft for issue #5: o
 | 9 Jun 1952 | New notes become legal tender at noon; banks do only exchange for a 48-hour bank holiday | [V] same JTA item |
 | 10-11 Jun 1952 | Kaplan makes his statement to the Knesset on 10 Jun (JTA of 10 Jun: "tomorrow"); the debate opens that night. On 11 Jun the Knesset gives the government a vote of confidence on the currency exchange and loan, 56 to 37 with 4 abstentions. Speeches in the debate were not recorded in this note | [V] JTA bulletin dated 12 Jun 1952, item datelined "Jerusalem, June 11" (scan: http://pdfs.jta.org/1952/1952-06-12_114.pdf ; web text: https://www.jta.org/archive/knesset-backs-govt-on-compulsory-loan-currency-exchange ) |
 | 4 or 5 Nov 1952 | Finance Minister Eshkol introduces a bill for a compulsory loan on property (6 percent on property up to 10,000 pounds, rising to 12 percent at 30,000 pounds and over; personal property exempt) | [V] JTA bulletin of 5 Nov 1952: https://www.jta.org/archive/knesset-gets-bill-calling-for-compulsory-loan-on-property . Dateline not checked, so 4 or 5 Nov |
-| 24 Mar 1953 (night) | The Knesset passes the 45 million pound compulsory loan on real property after a ten-hour debate spread over two days. Mapam and Herut amendments are rejected, the opposition parties vote against, and owners may lend up to ten percent of the value of the property for 15 years at 2.5 percent, or pay half of that loan as a capital levy. The vote count is [GAP] | [V] JTA bulletin dated 26 Mar 1953, item datelined "Jerusalem, March 25" and saying "last night" (scan: http://pdfs.jta.org/1953/1953-03-26_059.pdf ; web text: https://www.jta.org/archive/knesset-passes-bill-on-compulsory-property-loan-to-state ) |
+| 24 Mar 1953 (night) | The Knesset passes the 45 million pound compulsory loan on real property after a ten-hour debate spread over two days. Mapam and Herut amendments are rejected, the opposition parties vote against, and owners may lend up to ten percent of the value of the property for 15 years at 2.5 percent, or pay half of that loan as a capital levy. The vote count is [GAP] (rechecked 2026-10-24, section 7) | [V] JTA bulletin dated 26 Mar 1953, item datelined "Jerusalem, March 25" and saying "last night" (scan: http://pdfs.jta.org/1953/1953-03-26_059.pdf ; web text: https://www.jta.org/archive/knesset-passes-bill-on-compulsory-property-loan-to-state ) |
 
 ## 2. What was decided
 
@@ -63,7 +63,7 @@ The Hebrew Wikipedia article (https://he.wikipedia.org/wiki/המדיניות_ה�
 - **Opposition** [S]: a Springer chapter (snippet only) says the opposition parties attacked the government's controls and advocated abolishing exchange and price controls and a floating rate. A Maki pamphlet (https://www.marxists.org/archive/vilenska/1952/new-economic-plan.pdf, snippet) opposes the policy from the left. The JTA report of 20 Feb gives only the vote counts and Ben-Gurion's reply.
 - **Ben-Gurion's reply on 20 Feb** [V, JTA, paraphrased]: he denied that Israel was nearer to economic independence three years earlier, said the country was richer than at any time since statehood, and said capital does not follow penniless immigration.
 
-Which parties moved or voted for the no-confidence motion is [GAP]; the JTA report does not say.
+Which parties moved or voted for the no-confidence motion is [GAP]; the JTA report does not say. Rechecked 2026-10-24: still open, see section 7.
 
 ## 4. Numbers for calibration (#24, N11)
 
@@ -91,3 +91,14 @@ Hebrew Wikipedia gives the same 60 percent for prices in 1952, a rise of about 3
 4. The vote count on the 1953 property-loan law and the date of Eshkol's bill (4 or 5 Nov 1952); both are in Divrei HaKnesset.
 5. Official statistics for 1952: prices, trade, unemployment (CBS and Bank of Israel).
 6. Ask the maintainer whether Ben-Gurion's published speech counts as the primary text, or whether the Divrei HaKnesset record must be cited.
+
+## 7. Follow-up on two open items (issue #24, agent read 2026-10-24; a person's check pending)
+
+**March 1953 compulsory loan on property: vote count. Still [GAP].**
+- The JTA item (https://www.jta.org/archive/knesset-passes-bill-on-compulsory-property-loan-to-state , web text re-opened 2026-10-24) gives no count. It says the debate lasted ten hours over two days, that amendments by Mapam and Herut were rejected, and that "the opposition parties voted against the law" [V]. It does not say how the coalition parties voted.
+- The Knesset's plenary protocols (`fs.knesset.gov.il`) answer "The site is temporarily inaccessible from your location" from the AWS box where this was done, so the Divrei HaKnesset record could not be read. The Internet Archive holds only a sample of the Second Knesset protocols (54 listed in its index for that path). The sitting headers of 28 of them could be read (sittings from the 16th, autumn 1951, to August 1955, including 5, 6 and 13 February 1952); the other 26 did not download. None of the 28 is the sitting of 20 February 1952 or of 24 March 1953. A person with Israeli access should open both protocols.
+
+**No-confidence motion of 20 February 1952: which parties moved or voted for it. Still [GAP].**
+- The JTA report of the vote (https://www.jta.org/archive/israel-parliament-approves-governments-new-economic-policy , web text re-opened 2026-10-24) gives only the totals, 59 to 44 against the motion and 55 to 44 for the policy, and Ben-Gurion's closing reply [V]. It names no party.
+- What does exist is party reaction to the package before the debate, in a JTA bulletin dated 15 February 1952 (https://www.jta.org/archive/israels-new-economic-policy-clarified-by-finance-minister): General Zionist leader Peretz Bernstein, in the item's words, "while critical of the program, said many parts of it were 'constructive'"; Mapam's Moshe Sneh (spelled "Sash" in the item) said "there is no hope that this new plan will heal the national economy"; Herut's newspaper called the measures "too little and too late" [V]. These are reactions, not votes, and the item does not mention a no-confidence motion. Do not use them as the vote record.
+- Trap: JTA's "Knesset faces warm debate today on Israel's new economic policy" (https://jta.org/archive/knesset-faces-warm-debate-today-on-israels-new-economic-policy) is dated 15 May 1962 and says Herut and the Liberal Party were to table no-confidence motions. That is the 1962 policy after the February 1962 devaluation, not the 1952 one.

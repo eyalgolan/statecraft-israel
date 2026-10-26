@@ -25,6 +25,7 @@
 - [ ] A new `changelog.d/<branch-or-issue>.md` fragment (or a line under `## [Unreleased]` in `CHANGELOG.md`) if this changes `sim/`, `content/` or `unity/`.
 - [ ] Every fact added or changed in `content/` has `sources:` with a checked date (`docs/CONTENT_POLICY.md`).
 - [ ] No quote is attributed to a real person unless it is sourced verbatim.
+- [ ] New UI strings follow the glossary and the UI guides (`docs/WRITING_UI.md`, `docs/WRITING_UI_HE.md`), binding since 22 October 2026 (#622).
 - [ ] Every new image, video, font, audio or map-data file has an `ASSETS.yaml` row.
 - [ ] If this finishes a Phase 1 PR or a phase of #374, the Roadmap table is updated in `README.md` and `README.he.md` (`CONTRIBUTING.md`, rule 9).
 - [ ] If `unity/` changed: Unity edit-mode tests ran locally, and their result is pasted above (CI does not run them).
