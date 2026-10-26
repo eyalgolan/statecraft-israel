@@ -6,7 +6,7 @@ public class Gdd03EventRulesTests
 {
     const string Manifest = "gdd03-events.yaml";
     const string Empty = "ruleset: gdd-0.3\nexclusions: []\n";
-    static readonly string[] Excluded = { "austerity_1949", "clothing_rationing_1950", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy", "reparations_claim" };
+    static readonly string[] Excluded = { "austerity_1949", "clothing_rationing_1950", "forex_crisis_1951", "iraqi_exodus", "israel_bonds", "maabarot_policy", "reparations_claim", "reparations_vote" };
     static string Card(string id = "probe", string option = "") =>
         $"id: {id}\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n  - id: ok\n    text: Accept\n    historical: true\n" + option;
     static Dictionary<string, string> Files(bool modern = true)
@@ -143,10 +143,10 @@ public class Gdd03EventRulesTests
         }, Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
     }
     [Fact]
-    public void RealCatalogueExcludesExactlySevenWholeCardsAndKeepsOrder()
+    public void RealCatalogueExcludesExactlyEightWholeCardsAndKeepsOrder()
     {
         var old = Real(false); var modern = Real(true);
-        Assert.Equal(35, old.Events.Count); Assert.Equal(28, modern.Events.Count);
+        Assert.Equal(39, old.Events.Count); Assert.Equal(31, modern.Events.Count);
         Assert.Equal(Excluded, old.Events.Select(e => e.Id).Except(modern.Events.Select(e => e.Id)).OrderBy(x => x, StringComparer.Ordinal));
         Assert.Equal(old.Events.Where(e => !Excluded.Contains(e.Id)).Select(e => e.Id), modern.Events.Select(e => e.Id));
         Assert.NotEqual(old.Hash, modern.Hash);
@@ -257,6 +257,7 @@ public class Gdd03EventRulesTests
     }
 
     // Inventory from the approved C244 plan, pinned to ef35703; includes valid sibling fields.
+    // reparations_vote (#1575) joined after the main merge, excluded for the same reason as reparations_claim.
     static readonly string[] Inventory =
     {
         "austerity_1949/impose/set_policy.rationing=1",
@@ -290,9 +291,12 @@ public class Gdd03EventRulesTests
         "reparations_claim/claim/effects.treasury=-1",
         "reparations_claim/refuse/effects.intl_standing=0",
         "reparations_claim/refuse/effects.fx_reserves=-4",
+        "reparations_vote/negotiate/effects.morale=-0.02",
+        "reparations_vote/reject/effects.fx_reserves=-4",
+        "reparations_vote/referendum/effects.treasury=-1",
     };
     [Fact]
-    public void AllThirtyOneAffectedAssignmentsRetainTheirLegacyValues()
+    public void AllThirtyFourAffectedAssignmentsRetainTheirLegacyValues()
     {
         var rows = Real(false).Events.Where(e => Excluded.Contains(e.Id)).SelectMany(e =>
             e.Options.SelectMany(o => o.SetPolicy.Select(kv => $"{e.Id}/{o.Id}/set_policy.{kv.Key}=" + kv.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture))
@@ -313,6 +317,7 @@ public class Gdd03EventRulesTests
         "bernadotte_assassination:9263942438c459aad95b51c2569d1aa89cb2255f7278655e244121044e5755c4",
         "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
         "clothing_rationing_1950:2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
+        "degania_defence:47233f988033e4a7499e1e3df52a542fe252d2a32a5f1ac8d358887f676d4e23",
         "education_registration_1951:cce6e7f6ca42058ed265da888258cce7fc40407710bba98e028ad7801a351e11",
         "elections_1949:959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
         "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
@@ -324,6 +329,7 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:62c43ba683f4981951829a72c0cae97b1ac8f11663472cccf73b46cefc1c60f5",
         "israel_bonds:b8f95f2ab683a4b88ca36b8a375d168a4bf5921ccb864e5504c45d66821bea08",
         "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
+        "jerusalem_demilitarisation_guard:97cc99fc9054ded329be4550248b7cc8d46826581e14f8d1b4554fbd3af4cece",
         "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
         "latrun_proposal:f7612a99e1e6f378e6b9a91f36bb4c31e16de465e8bccb2785fea70bfe4e6932",
         "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
@@ -332,15 +338,17 @@ public class Gdd03EventRulesTests
         "operation_hiram:77657ee082201710acf8d1ab25979ddb5571261452e3a8c9ccc5d33e783177b7",
         "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
         "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
+        "rafah_force_pressure:ab01fc670aadbb410928c22eccc23f66e785be775dea26a3644c1317b1edb82b",
         "railway_complete:fb2c0b0edb93217a703a2e9437177943275546c177f5b0751936e3705bca1513",
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
+        "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
         "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",
         "second_truce:56c2259ad9af32b4d6d43d22044908611e6b43f2836211350beb125e864b1611",
         "sinai_withdrawal:29854edb31218257e99417f86f23a6dde91c07a9e66230fa1a1b4a0248b15ac5",
         "ten_days:805500e569a78c2debd27df872614a153730bdba2360ff94b2edb74ea76c56cb",
     };
     [Fact]
-    public void AllThirtyFiveSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
+    public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {
         var root = Path.Combine(RealContentTests.ContentRoot(), "events");
         var files = Directory.GetFiles(root, "*.yaml").OrderBy(x => x, StringComparer.Ordinal).ToArray();

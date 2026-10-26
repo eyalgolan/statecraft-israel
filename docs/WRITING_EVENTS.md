@@ -518,8 +518,9 @@ rejoin options or objective cards to excluded ids are content errors. Every sour
 the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
 
 The approved first slice excludes exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
-`iraqi_exodus`, `israel_bonds`, `maabarot_policy` and `reparations_claim`, including all their options.
-Five of these are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
+`iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
+options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
+Six of these are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
 sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
 with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
 There is no automatic review promotion, and all existing release gates still apply.

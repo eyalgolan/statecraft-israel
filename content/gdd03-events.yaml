@@ -17,3 +17,5 @@ exclusions:
     reason: Maabarot policy and national housing effects need approved facility and population accounting.
   - id: reparations_claim
     reason: Coupled foreign-currency refusal cost has no approved gdd-0.3 ledger mapping.
+  - id: reparations_vote
+    reason: Coupled foreign-currency refusal cost has no approved gdd-0.3 ledger mapping.
