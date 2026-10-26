@@ -533,10 +533,13 @@ namespace Statecraft.Game.UI
                 camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
                 FocusUnit(id);
             };
-            // When it closes, the advisor puts back the selection it found (a hex, a unit, or none), unless the player has
-            // picked something else meanwhile (the HUD stays usable under it).
+            // When it closes, the advisor puts back the selection it found (a hex, a unit, a pioneer group's card, or none),
+            // unless the player has picked something else meanwhile (the HUD stays usable under it).
             Func<Action> keepSelection = () =>
             {
+                // A pioneer card has no token (ShowPioneer clears it), so it is a selection of its own, kept with its game
+                // (review C288 S1 of #1788): a language switch keeps the session, a load or new game does not.
+                var pioneer = info.Pioneer; var pioneerSession = bridge.Session;
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
@@ -548,6 +551,11 @@ namespace Statecraft.Game.UI
                     if (this.info is not { } nowInfo || this.units is not { } nowUnits) return;
                     // Under a screen, or the player picked another than the advisor's city or unit: kept.
                     if (nowInfo.Covered || (nowInfo.ShowsUnit ? nowUnits.Selected != shownUnit : nowInfo.Selected != city)) return;
+                    if (pioneer is int pioneerId && Bridge?.Session == pioneerSession)
+                    {
+                        nowInfo.ShowPioneer(pioneerId);   // clears the token and the hex outline, as a click on its link does
+                        if (nowInfo.Pioneer == pioneerId) return;
+                    }
                     nowUnits.Select(unit);
                     if (nowUnits.Selected != null) { map.ClearSelection(); nowInfo.ShowUnit(); }
                     else if (hex is (int q, int r)) { map.Select(q, r); nowInfo.Show(q, r); }
