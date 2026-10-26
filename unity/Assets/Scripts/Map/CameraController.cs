@@ -149,15 +149,15 @@ namespace Statecraft.Game.Map
             var drag = mouseGated ? mouseDrag.Take(HoldsMouseDrag!()) : dragPan.ReadValue<Vector2>();
             var fromUi = down && mouseDrag.FromUi;
             var zoomRaw = WheelOr(zoom.ReadValue<float>());
+            // Lifted flicks (PressDrag.Lift; #1661 ruling 3): their own UI origin was checked on the lift, so the current
+            // press's UI latch must not drop them. A null callback pans the finger's delta at once instead.
+            var lifted = touchDrag.TakeLifted();
+            if (HoldsTouchDrag == null) lifted = Vector2.zero;
             var ts = Touchscreen.current;
             if (ts != null)
             {
                 switch (FingersDown(ts, out var a, out var b))
                 {
-                    // no finger down: a flick lifted inside one input update keeps its pan past the slop (PressDrag.Lift)
-                    case 0:
-                        if (HoldsTouchDrag != null) drag += touchDrag.Take(HoldsTouchDrag());
-                        break;
                     // one finger drags the map; its press observer latches the UI origin
                     case 1:
                         drag += HoldsTouchDrag != null ? touchDrag.Take(HoldsTouchDrag()) : a.delta.ReadValue();
@@ -176,6 +176,11 @@ namespace Statecraft.Game.Map
             var modifier = ModifierHeld(Keyboard.current);
             var input = Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier);
             if (down) input.DragFromUi = fromUi; // latched at the actual press, even between camera frames
+            if (lifted != Vector2.zero)
+            {
+                input.DragPan = (input.DragFromUi ? Vector2.zero : input.DragPan) + lifted;
+                input.DragFromUi = false;
+            }
             Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop);
         }
 
@@ -220,12 +225,12 @@ namespace Statecraft.Game.Map
             }
             internal Vector2 Take(bool held)
             {
-                // Lifted flicks pan once, whatever the current press is.
-                var result = lifted; lifted = Vector2.zero;
-                // A current click candidate always wins over any prior panning state of its own press.
-                if (held) { pending = Vector2.zero; panning = false; return result; }
-                result += pending; pending = Vector2.zero; return result;
+                // A current click candidate always wins over any prior panning state.
+                if (held) { pending = Vector2.zero; panning = false; return Vector2.zero; }
+                var result = pending; pending = Vector2.zero; return result;
             }
+            /// <summary>The lifted flicks' pan, once, whatever the current press is.</summary>
+            internal Vector2 TakeLifted() { var result = lifted; lifted = Vector2.zero; return result; }
         }
 
         /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>
