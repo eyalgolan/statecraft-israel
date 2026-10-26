@@ -22,7 +22,7 @@ GENERATED_PEOPLE = [
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
@@ -30,10 +30,12 @@ def catalog_bundles() -> dict[str, list[str]]:
 def test_the_original_50_slim_inputs_and_generated_infantry_partition_the_catalog():
     bundles = catalog_bundles()
     assert bundles == {
-        "People": slim.PEOPLE + GENERATED_PEOPLE,
+        "People": slim.PEOPLE,
         "Vehicles": slim.VEHICLES,
         "Animals": slim.ANIMALS,
         "Towns": slim.TOWNS,
+        # The generated infantry stream from a bundle of their own (owner ruling, 26 October 2026, #1763).
+        "ArabArmies": GENERATED_PEOPLE,
     }
     assert len(slim.IDS) == len(set(slim.IDS)) == 50
     assert not set(GENERATED_PEOPLE) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
