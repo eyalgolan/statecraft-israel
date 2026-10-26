@@ -2,6 +2,14 @@
 id: reparations_vote
 title: Talks with Germany
 text: '{prime_minister} asks the Knesset to let the government negotiate directly with West Germany over reparations for the Holocaust, on Israel''s claim of 1.5 billion dollars. Herut, the General Zionists and Mapam oppose any dealings with Bonn, and Herut asks for a referendum first. The debate opens on 7 January 1952.'
+# For the native reviewer (#564), Hebrew drafted 26 October 2026 at the owner's request ("Write HE, I check", #1575),
+# the owner's check pending. The party names are content/parties.yaml's (תנועת החרות, הציונים הכלליים, מפ״ם);
+# גרמניה המערבית, השילומים and משא ומתן ישיר follow he.wiki "הסכם השילומים" (https://he.wikipedia.org/wiki/הסכם_השילומים);
+# משאל עם is Begin's word in sitting 38 ("ערוך משאל עם"). "בקשת {prime_minister} ... היא" keeps the office-holder ungendered,
+# as reparations_claim's "הצעת {foreign_minister} היא" does.
+title_he: משא ומתן עם גרמניה
+text_he: 'בקשת {prime_minister} מהכנסת היא להתיר לממשלה לנהל משא ומתן ישיר עם גרמניה המערבית על השילומים בגין השואה, על סמך תביעתה של ישראל בסך 1.5 מיליארד דולר. תנועת החרות, הציונים הכלליים ומפ״ם מתנגדים לכל מגע עם בון, ותנועת החרות דורשת לערוך משאל עם תחילה. הדיון נפתח ב־7 בינואר 1952.'
+text_he_review: agent-checked
 anchor: hard
 tags: [holocaust]
 office: prime_minister
@@ -27,6 +35,7 @@ to: 1952-01-10
 options:
   - id: negotiate
     text: Ask the Knesset to authorise direct talks with Germany
+    text_he: לבקש מהכנסת לאשר משא ומתן ישיר עם גרמניה
     historical: true
     recommended: true
     effects:
@@ -35,6 +44,7 @@ options:
       - { target: morale, delta: -0.02 }
   - id: reject
     text: Rule out any negotiation with Germany
+    text_he: לשלול כל משא ומתן עם גרמניה
     alternative:
       basis: debated
       by: the opposition in the Knesset (Herut, the General Zionists and Mapam)
@@ -48,6 +58,7 @@ options:
       - { target: fx_reserves, delta: -4 }
   - id: referendum
     text: Put the question to the people in a referendum first
+    text_he: להביא את השאלה תחילה להכרעת העם במשאל עם
     alternative:
       basis: debated
       by: Herut in the Knesset

@@ -91,7 +91,7 @@ public class TranslationsTests
         var events = Directory.GetFiles(Path.Combine(root, "events"), "*.yaml").Select(f => Yaml(Path.GetRelativePath(root, f))).ToList();
         Assert.Equal(events.Sum(e => Count(e, k => k == "title_he")), Inline.Value.Events.Count);
         Assert.Equal(events.Sum(e => Count(e, k => k == "text_he")), Inline.Value.Events.Sum(e => 1 + e.Options.Count));
-        Assert.Equal(35, Inline.Value.Events.Count);
+        Assert.Equal(36, Inline.Value.Events.Count);
     }
 
     [Fact]
