@@ -1,0 +1,1 @@
+Touch and keyboard destination selection now offers a confirmation to send the previously selected unit onto a friendly unit or city. Map drags keep the 30 px threshold and pan only the crossing segment beyond it, without catching up the held travel. Hebrew confirmation wording is native-review-pending. Refs #1661 (owner rulings 1 and 2).

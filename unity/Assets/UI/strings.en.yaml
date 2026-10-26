@@ -872,3 +872,5 @@ why.cause.event_policy_from: "{0} set to {1} ({2})"
 why.cause.objective_completed: "{0}: completed, {1} points"
 why.cause.prisoners_returned: "Prisoners exchanged: {0:N0} prisoners returned to {1}"
 why.cause.soldiers_returned: "Prisoners exchanged: {0:N0} of our soldiers came home from {1}"
+
+unit.confirm_move: "Send {0} to {1}"
