@@ -210,4 +210,49 @@ public class C241ReviewTests
             }
         }
     }
+
+    // REV2 S1: Withdraw disables itself once the order is gone. Pressed from the keyboard, the focus must move to an
+    // enabled purchase control, not be left nowhere, so Tab and Shift+Tab carry on from the purchase panel.
+    [UnityTest]
+    public IEnumerator KeyboardWithdrawKeepsTheFocusInThePurchasePanel()
+    {
+        foreach(bool he in new[]{false,true})
+            yield return Panel(1280,720,he,Check);
+        IEnumerator Check(VisualElement root,RenderTexture rt)
+        {
+            bool he=root.Q("root").ClassListContains(UiLanguage.HebrewClass);
+            var b=Bridge(he); var t=Text(he);
+            using var hud=new HudPresenter(root,b,t); using var nav=new ScreenNav(root); using var defence=new DefencePresenter(root,b,t);
+            nav.Open("defence"); yield return Frames();
+            var fc=root.panel.focusController; var arms=root.Q("defence-arms");
+            var count=root.Q<IntegerField>("arms-count"); var buy=root.Q<Button>("buy-arms"); var withdraw=root.Q<Button>("withdraw-arms");
+            count.value=2; UiTestKit.Press(buy); Assert.AreEqual(2,((BuyArms)b.Queued.Single()).Count, "precondition: one order queued");
+            yield return null; Assert.IsTrue(withdraw.enabledSelf, "precondition: Withdraw is enabled while an order is queued");
+            withdraw.Focus(); yield return null; Assert.AreEqual(withdraw,fc.focusedElement, "precondition: Withdraw has the focus");
+            using (var k=KeyDownEvent.GetPooled('\n',KeyCode.Return,EventModifiers.None)) { k.target=withdraw; withdraw.SendEvent(k); }
+            using (var s=NavigationSubmitEvent.GetPooled()) { s.target=withdraw; withdraw.SendEvent(s); }
+            yield return Frames(3);
+            Assert.IsEmpty(b.Queued); Assert.IsFalse(withdraw.enabledSelf, "Withdraw disables itself with nothing queued");
+            var at=fc.focusedElement as VisualElement;
+            Assert.IsNotNull(at, "the keyboard focus must not be dropped");
+            Assert.AreEqual(buy,at, "the focus moves to Buy, the enabled control beside Withdraw");
+            Assert.IsTrue(at!.enabledInHierarchy && arms.Contains(at));
+            using (var e=NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Previous)) { e.target=at; at.SendEvent(e); }
+            yield return null;
+            var back=fc.focusedElement as VisualElement;
+            Assert.IsTrue(back!=null && (back==count || count.Contains(back)), "Shift+Tab from Buy goes back to the amount: " + back?.name);
+            using (var e=NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target=back; back!.SendEvent(e); }
+            yield return null;
+            Assert.AreEqual(buy,fc.focusedElement, "Tab from the amount comes back to Buy");
+            using (var e=NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target=buy; buy.SendEvent(e); }
+            yield return null;
+            var next=fc.focusedElement as VisualElement;
+            Assert.IsTrue(next!=null && next!=withdraw && next.enabledInHierarchy, "Tab from Buy skips the disabled Withdraw: " + next?.name);
+            // A pointer press moves no focus (PressSource / PointerBlur policy), so a mouse Withdraw hands none out.
+            UiTestKit.Press(buy); Assert.IsNotEmpty(b.Queued); yield return null;
+            DecisionCardTests.PressWithPointer(withdraw); yield return Frames(3);
+            Assert.IsEmpty(b.Queued); Assert.AreNotEqual(buy, fc.focusedElement, "a pointer Withdraw hands Buy no focus");
+            nav.Open(null); yield return Frames(3);
+        }
+    }
 }

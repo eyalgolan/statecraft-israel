@@ -15,6 +15,7 @@ namespace Statecraft.Game.UI
         readonly Button buy, withdraw;
         readonly Action onBuy, onWithdraw;
         readonly EventCallback<ChangeEvent<int>> onCount;
+        readonly PressSource presses;
 
         public ArmsPurchasePresenter(VisualElement root, SimBridge bridge, UiText text)
         {
@@ -30,10 +31,15 @@ namespace Statecraft.Game.UI
                 Render();
                 panel.Q<Label>("arms-refusal").text = reason ?? "";
             };
+            presses = new PressSource(panel);
             onWithdraw = () =>
             {
                 var queued = bridge.QueuedLike(new BuyArms(1));
-                if (queued != null) bridge.Withdraw(queued);
+                if (queued == null) return;
+                var keyboard = presses.ByKeyboard;
+                bridge.Withdraw(queued);
+                // Render has just disabled Withdraw, which had the focus. Keep the keyboard in the panel: Buy, else the amount.
+                if (keyboard) FocusReturn.ToOrWithin(buy, null, panel);
             };
             onCount = _ => Render();
             buy.clicked += onBuy; withdraw.clicked += onWithdraw; count.RegisterValueChangedCallback(onCount);
@@ -68,7 +74,7 @@ namespace Statecraft.Game.UI
 
         public void Dispose()
         {
-            bridge.Changed -= Render;
+            bridge.Changed -= Render; presses.Dispose();
             buy.clicked -= onBuy; withdraw.clicked -= onWithdraw; count.UnregisterValueChangedCallback(onCount);
         }
     }
