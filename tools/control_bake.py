@@ -50,6 +50,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP = ROOT / "content" / "map"
 SOURCE = MAP / "control_1948_49.geojson"
 SUBDISTRICTS = MAP / "subdistrict_hexes_1948.yaml"
+SETTLEMENTS = MAP / "settlements_1948.yaml"
 OUT = MAP / "control_hexes_1948_49.yaml"
 HOLDER_CODE = {"israel": "I", "egypt": "E", "jordan": "J", "syria": "S", "ala": "V", "mixed": "M",
                "unspecified": "A"}
@@ -116,10 +117,30 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
     pins = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("pinned_towns", [])]
     greys = [(hexgrid.settlement_hex(p["lon"], p["lat"], hexes), p) for p in source["statecraft"].get("contested_places", [])]
     land = mandate_hexes()
+    # A mapped settlement's hex takes the code at the settlement's own point, not at the hex's centre (#1659; owner's
+    # ruling of 25 October 2026, option (a)). These centres can sit the other side of the traced line, and a shore town
+    # such as Tiberias is placed on a substitute hex whose own hex is lake, so its centre says nothing about the town.
+    # The contested, pin and Jerusalem rules below still apply on top of the result.
+    towns: dict = {}
+    for s in yaml12.load_path(SETTLEMENTS)["settlements"]:
+        towns.setdefault(hexgrid.settlement_hex(s["lon"], s["lat"], hexes), []).append(s)
     b = hexes["bounds"]
     km_lon = KM_PER_DEG_LON_EQ * math.cos(math.radians((b["lat0"] + b["lat1"]) / 2))
     size = hexes["hex_size_km"]
     drawn = [p for p in periods if p["snapshot"]]
+    # Two settlements in one hex must not have one of them silently win: the hex has a single colour, so their points
+    # have to agree about it. Fail closed instead of picking (review of #1659).
+    for qr, ss in sorted(towns.items()):
+        if len(ss) < 2:
+            continue
+        seen: dict = {}
+        for s in ss:
+            key = tuple(code_at(s["lon"], s["lat"], snaps[p["snapshot"]],
+                                [overlays[o] for o in p["overlays"] if o in overlays]) for p in drawn)
+            seen.setdefault(key, []).append(s["id"])
+        if len(seen) > 1:
+            parts = "; ".join(f"{', '.join(ids)}: {''.join(c or '-' for c in k)}" for k, ids in sorted(seen.items()))
+            raise SystemExit(f"settlements in hex {qr} disagree about its control ({parts})")
     cells = {}
     applied = set()
     for h in hexes["hexes"]:
@@ -132,6 +153,8 @@ def bake(source: dict, hexes: dict, water: np.ndarray, meta: dict) -> tuple[list
             near = bb.nearest_land(lon, lat, water, meta, km_lon, size)
             if near is not None:
                 probe = near
+        if qr in towns:   # the settlement's own point (#1659), checked above to be the only answer for this hex
+            probe = (towns[qr][0]["lon"], towns[qr][0]["lat"])
         jer = math.hypot((lon - JERUSALEM[0]) * km_lon, (lat - JERUSALEM[1]) * KM_PER_DEG_LAT) <= JERUSALEM_KM
         codes = []
         for p in drawn:
