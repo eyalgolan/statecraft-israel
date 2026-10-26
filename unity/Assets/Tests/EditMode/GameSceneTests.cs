@@ -1055,4 +1055,30 @@ public class GameSceneTests
             if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
         }
     }
+    [Test]
+    public void AProjectLinkOpensAPioneerCardThroughTheRealRoot()
+    {
+        var game = Boot(); HideTheOpeningCard(Ui);
+        var b = game.Bridge!; var site = b.Content.Sites.First(x => Projects.IsYishuvSite(x));
+        var home = b.Content.SettlementHexes.First(x => x.Id == "tel_aviv");
+        var id = PioneerCardTests.Add(b.State, home.Q, home.R);
+        b.State.Sites[site.Id] = new SiteWork(site.Id, id, 3, null);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        // Pick a military unit first: the project link must clear its ring and reach overlay.
+        game.FocusUnit("golani");
+        // A city/name pill is not needed to open a designated project hex.
+        var infoField = typeof(GameRoot).GetField("info", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var info = (InfoPanelPresenter)infoField!.GetValue(game)!;
+        info.Show(site.Q, site.R);
+        var link = Ui.Q<Button>("pioneer-project-" + id.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Assert.IsNotNull(link); UiTestKit.Press(link);
+        Assert.IsTrue(info.ShowsUnit); Assert.IsFalse(info.MovePicking);
+        Assert.AreEqual(GddHexPanel.Group(Text, b.State, id), Ui.Q<Label>("info-title").text);
+        Assert.IsFalse(Ui.Q<Button>("info-pioneer-return").enabledSelf);
+        Assert.IsFalse(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
+        var unitsField = typeof(GameRoot).GetField("units", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var units = (Statecraft.Game.Map.Units.UnitLayer)unitsField!.GetValue(game)!;
+        Assert.IsNull(units.Selected);
+    }
+
 }

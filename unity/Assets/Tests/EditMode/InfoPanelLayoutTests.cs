@@ -582,4 +582,146 @@ public class InfoPanelLayoutTests
         }, text: text, hebrew: hebrew, unit: () => selected);
     }
 
+    [UnityTest]
+    public IEnumerator PioneerListsAndCardsFitTheRequiredWindowsInBothLanguages()
+    {
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1024, 768), (1366, 768) })
+                foreach (var mode in new[] { "list", "idle", "busy" })
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    var site = C.Sites.Where(x => Projects.IsYishuvSite(x)).OrderByDescending(x => x.Name.Length + x.NameHe.Length).First();
+                    var hex = C.Hexes.First(x => x.Land && !C.SettlementHexes.Any(y => y.Q == x.Q && y.R == x.R)
+                        && !C.Sites.Any(y => y.Q == x.Q && y.R == x.R)
+                        && !C.Corridors.Any(d => d.Segments.Any(seg => seg.Hexes.Any(hh => hh[0] == x.Q && hh[1] == x.R)))
+                        && Projects.CitiesFor(C, g.State, x.Q, x.R).Count == 0);
+                    var id = PioneerCardTests.Add(g.State, hex.Q, hex.R, Projects.VeteranType);
+                    for (int i = 0; i < 24; i++) PioneerCardTests.Add(g.State, hex.Q, hex.R);
+                    if (mode == "busy") g.State.Sites[site.Id] = new SiteWork(site.Id, id, 3, null);
+                    var t = PioneerCardTests.Text(hebrew);
+                    yield return Rendered(w, h, g, (root, info) =>
+                    {
+                        info.Show(hex.Q, hex.R);
+                        var link = PioneerCardTests.Link(root, id); Assert.IsNotNull(link);
+                        if (mode != "list") UiTestKit.Press(link);
+                    }, root =>
+                    {
+                        var panel = root.Q("info-panel"); Assert.IsTrue(Inside(panel.worldBound, root.worldBound));
+                        if (mode == "list")
+                        {
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            Assert.IsTrue(Inside(list.worldBound, panel.worldBound));
+                            Assert.AreEqual(25, list.Query<Button>().ToList().Count);
+                            var last = list.Query<Button>().ToList().Last();
+                            Assert.IsTrue(Inside(last.worldBound, list.contentViewport.worldBound), "last entry is reachable after scrolling");
+                            Assert.IsTrue(TextFits(last), last.text);
+                        }
+                        else
+                        {
+                            var back = root.Q<Button>("info-pioneer-return");
+                            Assert.AreEqual(mode == "idle", back.enabledSelf);
+                            foreach (var line in panel.Query<TextElement>().ToList().Where(x => Shown(x) && !string.IsNullOrEmpty(x.text)))
+                            {
+                                Assert.IsTrue(Inside(line.worldBound, panel.worldBound), line.name);
+                                Assert.IsTrue(TextFits(line), line.text);
+                            }
+                        }
+                    }, t, hebrew, root =>
+                    {
+                        if (mode != "list") return;
+                        var list = root.Q<ScrollView>("info-pioneers");
+                        list.ScrollTo(list.Query<Button>().ToList().Last());
+                    });
+                }
+    }
+
+    [UnityTest]
+    public IEnumerator PioneerLinksCoexistWithCityAndLongNamedProjects()
+    {
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1024, 768), (1366, 768) })
+                foreach (var mode in new[] { "city", "site-idle", "site-busy", "corridor-idle", "corridor-busy" })
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    // Isolate the three candidate links; retain the rest of the real scenario and UI.
+                    foreach (var id in g.State.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).ToList())
+                        g.State.Units.Remove(id);
+                    g.State.Sites.Clear(); g.State.Corridors.Clear();
+                    var city = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+                    var site = C.Sites.Where(x => Projects.IsYishuvSite(x))
+                        .OrderByDescending(x => (hebrew ? x.NameHe : x.Name).Length).First();
+                    // Pick a longest-name corridor with a non-city hex in its first segment.
+                    var d = C.Corridors.Where(x => x.Segments[0].Hexes.Any(hh => !C.SettlementHexes.Any(c => c.Q == hh[0] && c.R == hh[1])))
+                        .OrderByDescending(x => (hebrew ? x.NameHe : x.Name).Length).First();
+                    var segmentHex = d.Segments[0].Hexes.First(hh => !C.SettlementHexes.Any(c => c.Q == hh[0] && c.R == hh[1]));
+                    var q = mode == "city" ? city.Q : mode.StartsWith("site", System.StringComparison.Ordinal) ? site.Q : segmentHex[0];
+                    var r = mode == "city" ? city.R : mode.StartsWith("site", System.StringComparison.Ordinal) ? site.R : segmentHex[1];
+                    var ids = Enumerable.Range(0, 3).Select(_ => PioneerCardTests.Add(g.State, city.Q, city.R)).ToArray();
+                    if (mode == "city")
+                    {
+                        var x = g.State.Cities[city.Id];
+                        g.State.Cities[city.Id] = x.WithCraftsmen(2).WithQualified(new Qualified(1, 1, new[] { 3, 5 }));
+                        g.State.Policies[MapActions.MaabarotPolicy] = 1;
+                    }
+                    if (mode == "site-busy") g.State.Sites[site.Id] = new SiteWork(site.Id, ids[0], 3, null);
+                    if (mode == "corridor-busy") g.State.Corridors[d.Id] = new CorridorWork(d.Id,
+                        d.Segments.Select((_, i) => i == 0 ? new SegmentWork(ids[0], 0, null) : null).ToArray());
+                    var t = PioneerCardTests.Text(hebrew);
+                    yield return Rendered(w, h, g, (root, info) => info.Show(q, r), root =>
+                    {
+                        var panel = root.Q("info-panel"); var host = root.Q(GddHexPanel.HostName);
+                        Assert.IsTrue(Inside(panel.worldBound, root.worldBound), mode);
+                        Assert.IsTrue(Shown(host), mode);
+                        Assert.AreEqual(DisplayStyle.None, root.Q<Button>("info-pioneer-return").resolvedStyle.display,
+                            "measure project links before opening any card");
+                        if (mode == "city")
+                        {
+                            Assert.IsNotNull(host.Q<Button>("city-reassign-halutz"));
+                            Assert.IsNotNull(host.Q<Button>("city-workers-more"));
+                            var projects = root.Q(GddHexPanel.ProjectsHostName);
+                            Assert.IsTrue(Shown(projects));
+                            Assert.IsNotNull(projects.Q<Button>("city-project-" + C.ProjectKinds[0].Id));
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            Assert.IsTrue(Inside(list.worldBound, panel.worldBound));
+                            var links = list.Query<Button>().ToList(); Assert.AreEqual(3, links.Count);
+                            Assert.Greater(list.contentContainer.worldBound.height, list.contentViewport.worldBound.height,
+                                "crowded city list needs scrolling");
+                            Assert.IsTrue(Inside(links.Last().worldBound, list.contentViewport.worldBound), "last city link reachable after scrolling");
+                            foreach (var link in links) Assert.IsTrue(TextFits(link), link.text);
+                        }
+                        else
+                        {
+                            var part = mode.StartsWith("site", System.StringComparison.Ordinal)
+                                ? host.Q("site-part-" + site.Id) : host.Q("corridor-part-" + d.Id + "-1");
+                            Assert.IsNotNull(part);
+                            var links = part.Query<Button>().ToList().Where(b => b.name.StartsWith("pioneer-project-", System.StringComparison.Ordinal)).ToList();
+                            var busy = mode.EndsWith("busy", System.StringComparison.Ordinal);
+                            Assert.AreEqual(busy ? 1 : 3, links.Count, "worker link or several candidate links remain visible");
+                            var action = part.Q<Button>(busy ? (mode.StartsWith("site", System.StringComparison.Ordinal) ? "site-stop" : "corridor-stop")
+                                : (mode.StartsWith("site", System.StringComparison.Ordinal) ? "site-build-" : "corridor-build-") + ids[0].ToString(System.Globalization.CultureInfo.InvariantCulture));
+                            Assert.IsNotNull(action); Assert.IsTrue(action.enabledInHierarchy); Assert.IsTrue(Shown(action));
+                            Assert.IsTrue(Inside(action.worldBound, panel.worldBound), "existing Build/Stop remains reachable");
+                            foreach (var link in links)
+                            {
+                                Assert.IsTrue(link.enabledInHierarchy && Shown(link));
+                                Assert.IsTrue(Inside(link.worldBound, panel.worldBound)); Assert.IsTrue(TextFits(link), link.text);
+                            }
+                        }
+                        foreach (var line in panel.Query<TextElement>().ToList().Where(x => Shown(x) && !string.IsNullOrEmpty(x.text)
+                            && !root.Q<ScrollView>("info-pioneers").Contains(x)))
+                        {
+                            Assert.IsTrue(Inside(line.worldBound, panel.worldBound), mode + ": " + line.name);
+                            Assert.IsTrue(TextFits(line), mode + ": " + line.text);
+                        }
+                    }, t, hebrew, root =>
+                    {
+                        if (mode == "city")
+                        {
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            list.ScrollTo(list.Query<Button>().ToList().Last());
+                        }
+                    });
+                }
+    }
+
 }
