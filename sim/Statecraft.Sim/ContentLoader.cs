@@ -1127,7 +1127,8 @@ namespace Statecraft.Sim
                 if (x.Class == Combat.ArtilleryClass)
                 {
                     if (!(x.Range >= 1)) throw new ContentException(uf, at + ".range", "required for an artillery type, at least 1");
-                    if (!(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
+                    // R-COMBAT-007: under gdd-0.3 artillery fire spends no Arms (#1706), so arms_per_fire is not required; range stays required.
+                    if (Combat.SpendsArms(c) && !(x.ArmsPerFire >= 1)) throw new ContentException(uf, at + ".arms_per_fire", "required for an artillery type, at least 1");
                 }
                 else
                 {
@@ -1270,8 +1271,9 @@ namespace Statecraft.Sim
                 if (m.StackLimit < 1) throw new ContentException(file, "mvp.stack_limit", "must be >= 1");
                 // R-COMBAT-002 to R-COMBAT-004 (Q-COMBAT-1 to Q-COMBAT-4): required, so a missing key is never read as a free
                 // attack, a defender with no strength or an engagement with no outcome.
-                if (m.ArmsPerAttack == null) throw new ContentException(file, "mvp.arms_per_attack", "required when eras.yaml systems.loop is gdd");
-                if (m.ArmsPerAttack < 0) throw new ContentException(file, "mvp.arms_per_attack", "must be >= 0");
+                // R-COMBAT-004: under gdd-0.3 an attack spends no Arms (#1706), so arms_per_attack is not required or checked there.
+                if (Combat.SpendsArms(c) && m.ArmsPerAttack == null) throw new ContentException(file, "mvp.arms_per_attack", "required when eras.yaml systems.loop is gdd");
+                if (Combat.SpendsArms(c) && m.ArmsPerAttack < 0) throw new ContentException(file, "mvp.arms_per_attack", "must be >= 0");
                 foreach (var b in c.Hexes.Where(h => h.Land).Select(h => h.Biome).Distinct().OrderBy(b => b, StringComparer.Ordinal))
                     if (!m.CombatTerrainPercent.ContainsKey(b)) throw new ContentException(file, "mvp.combat_terrain_percent", $"no percent for land biome '{b}' ({HexesFile})");
                 foreach (var kv in m.CombatTerrainPercent)
