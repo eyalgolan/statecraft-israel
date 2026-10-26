@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-egyptian-infantry-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "ccf072b8a5f07fd9b46fab176e0090e3774faf8d4a8a74aa70688985343aca74",
+  "uncompressed_bytes": 51976573,
+  "compressed_sha256": "046a5a2cf03e34efc0b1d2f35a2298dfa6f8aa9972cbcb025cfe4fc5523d745e",
+  "compressed_bytes": 4231743,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

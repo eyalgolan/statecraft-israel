@@ -1,0 +1,232 @@
+{
+  "number": "21",
+  "id": "figure-lebanese-regular-1948-v1",
+  "kind": "Full-source GLB-to-FBX compatibility export; FBX was not delivered by provider",
+  "licence": "CC-BY-NC-ND-4.0, owner-adopted; no licence change or new grant",
+  "blender": "5.2.2 LTS",
+  "source": {
+    "number": "21",
+    "id": "figure-lebanese-regular-1948-v1",
+    "glb_bytes": 4069460,
+    "glb_sha256": "b84b4e45e954fdf9bcdd568caf761bb763f7a5b4945957fe54ec9bde8bde8748",
+    "source_animation_count": 0,
+    "source_vertices": 4825,
+    "source_triangles": 6948,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 3753565,
+        "sha256": "b629a5dabcf0959265e335b8192c4b4499758d26744de486c9294b4aa07254e4",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-21-retargeted.blend",
+    "blend_bytes": 16921015,
+    "blend_sha256": "a389762608ae629b65e37c767a28659eb2d2b90da91c16c33683134d856caae1",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  "source_animation_count": 0,
+  "local_target_clip_count": 2,
+  "unrelated_donor_actions_excluded": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "original_source_and_blend_unchanged": true,
+  "provider_glb_archive_byte_identical": true,
+  "embedded_jpeg_extracted_byte_identical": true,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "no_geometry_reduction": true,
+  "source_vertices": 4825,
+  "fbx_reimport_vertices": 4825,
+  "triangles": 6948,
+  "bones": 67,
+  "bone_names_and_hierarchy_exact": true,
+  "source_blend_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 1.7136335372924805e-06,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 4.76837158203125e-07
+  },
+  "fbx_roundtrip_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 1.7136335372924805e-06,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 7.003545761108398e-07
+  },
+  "rest_world_bounds_metres": [
+    [
+      -0.35473641753196716,
+      -6.745247560502321e-07,
+      -0.11157197505235672
+    ],
+    [
+      0.35473623871803284,
+      0.9995116591453552,
+      0.11157248169183731
+    ]
+  ],
+  "weights_sum_range": [
+    0.9999999031424522,
+    1.0000000521540642
+  ],
+  "max_influences": 4,
+  "animations": {
+    "idle": {
+      "fbx_reimport_action_name": "figure-lebanese-regular-1948-v1-rig|figure-lebanese-regular-1948-v1-rig|idle",
+      "source_frame_range": [
+        1.0,
+        423.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        423.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 423,
+      "half_frame_sample_count": 422,
+      "skin_operator_integer_frame_max_abs": 1.7881393432617188e-05,
+      "skin_operator_half_frame_max_abs": 0.0026577413082122803,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        423
+      ],
+      "total_keys": 287217,
+      "strict_continuous_curve_identity": false
+    },
+    "walk": {
+      "fbx_reimport_action_name": "figure-lebanese-regular-1948-v1-rig|figure-lebanese-regular-1948-v1-rig|walk",
+      "source_frame_range": [
+        1.0,
+        57.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        57.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 57,
+      "half_frame_sample_count": 56,
+      "skin_operator_integer_frame_max_abs": 1.169741153717041e-05,
+      "skin_operator_half_frame_max_abs": 0.03555917739868164,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        57
+      ],
+      "total_keys": 38703,
+      "strict_continuous_curve_identity": false
+    }
+  },
+  "animation_note": "Every existing target action retained, sampled every frame with simplify0. Integer-frame transforms validated numerically; continuous quaternion/Bezier-to-Euler FBX curve identity is not claimed. Exact target F-curve data is separately preserved in local-actions.json; original blend remains unchanged.",
+  "fbx_unit_scale_factors": [
+    100.0
+  ],
+  "all_fbx_local_scales_identity": true,
+  "fbx_animation_stacks": [
+    "figure-lebanese-regular-1948-v1-rig|idle\u0000\u0001AnimStack",
+    "figure-lebanese-regular-1948-v1-rig|walk\u0000\u0001AnimStack"
+  ],
+  "texture_references": [
+    {
+      "field": "FileName",
+      "value": "__________________________________________________________________________________________________________________________________________________________________________________________________/figure-lebanese-regular-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-lebanese-regular-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "Filename",
+      "value": "__________________________________________________________________________________________________________________________________________________________________________________________________/figure-lebanese-regular-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-lebanese-regular-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-lebanese-regular-1948-v1-rig|idle.tak"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-lebanese-regular-1948-v1-rig|walk.tak"
+    }
+  ],
+  "author_path_string_runs_neutralized": 4,
+  "export_options": {
+    "use_selection": true,
+    "object_types": [
+      "ARMATURE",
+      "MESH"
+    ],
+    "global_scale": 1.0,
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "use_space_transform": true,
+    "bake_space_transform": false,
+    "use_mesh_modifiers": false,
+    "mesh_smooth_type": "OFF",
+    "use_tspace": false,
+    "use_custom_props": false,
+    "add_leaf_bones": false,
+    "use_armature_deform_only": false,
+    "path_mode": "STRIP",
+    "embed_textures": false,
+    "bake_anim": true,
+    "bake_anim_use_all_bones": true,
+    "bake_anim_use_all_actions": true,
+    "bake_anim_use_nla_strips": false,
+    "bake_anim_step": 1.0,
+    "bake_anim_simplify_factor": 0.0,
+    "bake_anim_force_startend_keying": true
+  },
+  "files": {
+    "figure-lebanese-regular-1948-v1-provider-original.glb": {
+      "bytes": 4069460,
+      "sha256": "b84b4e45e954fdf9bcdd568caf761bb763f7a5b4945957fe54ec9bde8bde8748"
+    },
+    "figure-lebanese-regular-1948-v1_basecolor.jpg": {
+      "bytes": 3753565,
+      "sha256": "b629a5dabcf0959265e335b8192c4b4499758d26744de486c9294b4aa07254e4"
+    },
+    "figure-lebanese-regular-1948-v1.fbx": {
+      "bytes": 3236556,
+      "sha256": "53472487650c6a7009a9f399ea0dad0a294a611224d8492895cc850ffbf54ce5"
+    },
+    "figure-lebanese-regular-1948-v1-local-actions.json": {
+      "bytes": 52754722,
+      "sha256": "80952c0fed8c00e2ee990b3eb3cfac7f8cc43c9f47ff0e658958b8afc4fe3a7d"
+    }
+  }
+}
