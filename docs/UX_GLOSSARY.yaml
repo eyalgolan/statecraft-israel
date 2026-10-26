@@ -1,8 +1,8 @@
-# Statecraft: Israel glossary, draft for discussion
-# Draft document. Adopted decisions are identified; other recommendations remain proposals.
+# Statecraft: Israel glossary, binding for new strings from 22 October 2026 (#622)
+# Adopted decisions are identified; recommendations that still await maintainer or native review remain proposals.
 # Cited forms were checked where snapshot evidence was available; unresolved evidence remains identified. Snapshot date 2026-10-17.
 schema: '0.1'
-status: DRAFT, unapproved
+status: binding for new strings from 2026-10-22 (#622)
 snapshot_date: '2026-10-17'
 version: '0.5'
 snapshot_commit: 46abd99c

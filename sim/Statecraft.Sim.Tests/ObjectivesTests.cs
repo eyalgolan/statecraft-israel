@@ -332,7 +332,8 @@ eras:
         Assert.Equal("absorb_immigrants", Real.Events.Single(e => e.Id == o.Card).Objective);
     }
 
-    // R-OBJ-005, R-OBJ-006 in the golden run: the reference player builds the last required yishuv on 15 July 1951, so
+    // R-OBJ-005, R-OBJ-006 in the golden run: the reference player builds the last required yishuv on 15 September 1951
+    // (15 July before #1565's turn-1 card took the first turn's training; the owner accepted the shift, 24 Oct 2026, #1568), so
     // the yishuvim part records and its card fires. Neither corridor finishes in the run, so the objective's base points
     // have not yet been paid.
     [Fact]
@@ -341,7 +342,7 @@ eras:
         var s = GoldenRun.Play(Real, GoldenRun.Until1952);
         var built = Real.Objectives.Single(x => x.Id == "yishuvim").CompletesWhen!.SitesBuilt
             .Max(id => s.Sites[id].BuiltOn!.Value);
-        Assert.Equal(new DateTime(1951, 7, 15), built);
+        Assert.Equal(new DateTime(1951, 9, 15), built);
         Assert.Equal(built, s.Objectives["yishuvim"]);
         Assert.Equal(0, s.Score);
         Assert.Equal("continue", s.ChosenOptions["first_new_yishuv"]);

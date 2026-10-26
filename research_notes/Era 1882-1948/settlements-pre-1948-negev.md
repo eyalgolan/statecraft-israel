@@ -5,6 +5,13 @@ Refs #97, its Negev region. The dated settlements file and `tools/settlement_hex
 #61, and rows with a rename or an abandonment date need the owner's sensitivity review before they
 enter the game; none is proposed here.
 
+Update 2026-10-25: the [GAP] rows were worked again by an agent (Claude Code) for #97 (owner's 24 Oct
+"Research part open" comment). Anything opened that day is marked "(25 Oct)". A person's check is
+still pending. Facts only: dates, coordinates and quotes, nothing proposed about the game. Four
+Daily News Bulletins of the Jewish Telegraphic Agency were opened as page images and their datelines
+read; the rows they bear on carry `[V, agent read 2026-10-25; a person's check pending]`. Every
+other addition is [S, Wikipedia], [C] or [GAP].
+
 ## How it was done
 
 - Every page was fetched on 23 October 2026 with the User-Agent
@@ -35,6 +42,23 @@ enter the game; none is proposed here.
 - Hebrew dates were converted with the `convertdate` library. The Hebrew date is kept and the
   civil date is marked **computed here**. The method was checked against the four dates the
   articles convert themselves (Nir Am, Sa'ad, Gvim, Be'erot Yitzhak); all four reproduce exactly.
+
+- (25 Oct) **JTA Daily News Bulletin**, the original PDFs on http://pdfs.jta.org (https resets from
+  this box), opened 2026-10-25: `1947/1947-07-01_154.pdf` (p. 6), `1948/1948-09-28_224.pdf` (p. 2),
+  `1948/1948-10-22_243.pdf` (p. 1) and `1948/1948-11-23_269.pdf` (p. 3). The scans have no text layer,
+  so the pages were rendered (Ghostscript `-sDEVICE=pnggray`, 200 dpi) and read by eye; quotes below
+  are the printed text, and where the scan is blurred that is said. The jta.org web item of each
+  (found with the site's own search, queries in part 7) was used only to locate the bulletin, because
+  its text is machine-read and differs from the print in places. The bulletin date is the printed
+  one; the event date is taken from the dateline of the item.
+- (25 Oct) **he.wiki `בתי הביטחון בנגב הצפוני`**, oldid 42567087
+  (https://he.wikipedia.org/w/index.php?oldid=42567087), read again for the per-settlement rows of its
+  table, which the first pass used only for one coordinate error. Its `נ"צ` column gives a point for
+  each security house, which is the old site for the places that moved. Distances between those
+  points and the CBS points are **computed here** (haversine, mean Earth radius 6371.0088 km).
+  **en.wiki** was read as the wikitext of the current revision through the MediaWiki API, by
+  `oldid` (https://en.wikipedia.org/w/index.php?oldid=N): `Beit Eshel` 1375110914, `Gvulot`
+  1375588946, `Be'eri` 1375586035, `Nevatim` 1375580732, `Mivtahim` 1375608140.
 
 **Tags**, as in `settlements-1949-51.md`:
 - **[V] verified**: two or more independent sources agree, or one authoritative primary source.
@@ -89,6 +113,15 @@ Revivim articles both say "משלושת המצפים".
   the one to use; the article does not reconcile the two itself.
 - Relocation: "לאחר מלחמת העצמאות הועתק היישוב למקומו הנוכחי, כקילומטר צפונית מזרחית למצפה". [S, Wikipedia]
   No day given. [GAP]
+- (25 Oct) en.wiki `Gvulot`, oldid **1375588946**: "After the war, in 1949, all the residents moved to
+  Gvulot's present location, about 1.5 km south of the base." [S, Wikipedia] The year of the move is
+  therefore 1949 there, where he.wiki gave "after the war". The direction differs from the first
+  pass's he.wiki line ("כקילומטר צפונית מזרחית למצפה"), and the he.wiki security-house table says
+  "לאחר מלחמת העצמאות עבר הקיבוץ לאתר צפוני מהמצפה"; "the base" in the en.wiki sentence is the
+  "nearby military base" of that article, not stated to be the mitzpe, so whether the two directions
+  differ is open. Day [GAP].
+  The table prints the same point (31.204928, 34.455571) for its Gvulot and Gvim rows, so it is not
+  used for either.
 - Departure base for Urim and Nirim in October 1946. [S, Wikipedia]
 
 ### Revivim
@@ -127,6 +160,27 @@ Revivim articles both say "משלושת המצפים".
   is used as the abandonment date here.
 - Unlike the other two mitzpim, its people wanted a moshav: "בניגוד לקיבוצים רביבים וגבולות, תושבי
   בית אשל שאפו להקים במקום מושב עובדים". [S, Wikipedia]
+- (25 Oct) **Contemporaneous reports of the autumn of 1948.** JTA bulletin of Tuesday 28 September
+  1948, p. 2, dateline "TEL AVIV, Sept. 27. (JTA)": "One was the shelling of the settlement of Bethel
+  Eshel, near Beersheba", and "The Israeli Government statement declared that the U.N. has done
+  nothing as yet about the attack on Beth Eshel." [V, agent read 2026-10-25; a person's check
+  pending] for the report on 27 September 1948, in an Israeli complaint about truce violations, that the settlement was shelled; the item
+  gives no day for the shelling itself. JTA bulletin of Friday 22 October 1948, p. 1, dateline
+  "TEL AVIV, Oct. 21. (JTA)": Beersheba "fell to Israeli forces early this morning", and the
+  communique "also revealed that the nearby Jewish settlements of Beth Eshal and Nevatim, which were
+  blockaded by the Arabs in an attempt to starve out the colonists, were freed during the
+  operation" (the scan is blurred on the spelling of both names; the jta.org web text reads "Beth
+  Eshel and Nevatin"). [V, agent read 2026-10-25; a person's check pending] So the settlement was
+  held and was reported freed on **21 October 1948** (dateline); no bulletin read gives a date for
+  the settlers' leaving, so the abandonment day stays [GAP] and is not earlier than 21 October 1948.
+- (25 Oct) en.wiki `Beit Eshel`, oldid **1375110914**: "In October 1948, with the IDF capture of the
+  city of Beersheba, Beit Eshel was liberated. However, the settlers of Beit Eshel couldn't cope with
+  the large scale destruction, decided to abandon the settlement and to establish a new moshav named
+  HaYogev in the Jezreel Valley." [S, Wikipedia] The wikitext marks both sentences "citation needed"
+  (January 2024) and gives no day. The same article's coordinate template reads 31 14 06 N, 34 48
+  46.48 E, which is **31.235000, 34.812911** (computed here); the he.wiki point in this section,
+  31.233472, 34.813272, is 0.17 km from it (computed here). Two Wikipedia points, neither from a
+  survey; [S, Wikipedia] for both.
 
 ## 2. The six kibbutzim of 1941 to 1944
 
@@ -143,6 +197,13 @@ of Negev settlement. Be'erot Yitzhak has its own section below.
   ("היישוב ננטש ונבזז על ידי בדווים תושבי הסביבה"), in 1929, and a third time in the 1936 to 1939
   disturbances
   ("נעזבה רוחמה בשלישית; בתיה נהרסו ומטעיה נעקרו"). [S, Wikipedia] No day for any of the three. [GAP]
+- (25 Oct) Searched again and not found: a year or day for the three abandonments. Read: the JTA
+  search (https://www.jta.org/?s=Ruhama and https://www.jta.org/?s=Ruhama+colony+Negev) "Ruhama" (run 2026-10-25; re-run 2026-10-26: the site gives "10000 results", sorted by relevance, and page 1 of 10 had 0 archive items; only page 1 was read); "Ruhama colony Negev" (10 results in all, all on page 1) had 2 archive items, dated
+  1947-12-19 and 1948-10-17. The web text of the first has no "Ruhama"; that of the second
+  (https://www.jta.org/archive/battle-develops-in-negev-jewish-convoys-attacked-israeli-planes-go-into-action)
+  names "the Dorot-Ruhama area" once, in a sentence on supply convoys under attack, with nothing on
+  an abandonment. The PDFs were not read.
+  [GAP]
 - **[C] on the founding of the present kibbutz.** The article gives both: "ב-1 בדצמבר 1943 עלו חברי
   השומר הצעיר, חידשו את הבאר והחלו להקים גדר ואת מבני הקיבוץ, טקס העלייה הרשמית לקרקע התבצע במרץ
   1944 ומהווה את ראשיתו של היישוב הנוכחי". [S, Wikipedia] So 1 December 1943 is the arrival and March 1944 the
@@ -253,6 +314,15 @@ explicitly it is recorded below; otherwise the original position is [GAP].
     agree: Nir Yitzhak and Sufa are about 1.5 km apart (1.48 km, computed here from the two CBS
     points). CBS Nir Yitzhak is code **402**, `שנת ייסוד` 1949, **31.23768, 34.35765**; CBS Sufa is
     code **1238**, **31.23732, 34.34215**. [V] for the area; the exact 1946 coordinate is [GAP].
+  - (25 Oct) he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row `נירים`: the members of the
+    first core "התיישבו במקומו הראשון של הקיבוץ (ליד קיבוץ סופה של היום), שנקרא דנגור", the
+    security house was built there in 1947, and "ב-1949, לאחר המלחמה, עבר הקיבוץ למקום מושבו
+    הנוכחי". [S, Wikipedia] The row's point for the Dangur security house is `31.242778, 34.335`,
+    0.91 km from CBS Sufa and 2.23 km from CBS Nir Yitzhak (computed here). **[C] between two
+    he.wiki articles**: this table calls Dangur the first site, where the `נירים` article quoted
+    above says the first site was a different point and Dangur came months later. The October 1946
+    coordinate stays [GAP]; this is a point for the 1947 security house at Dangur, not for the first
+    site.
 - **Tkuma.** CBS **1949**, Gvati **30.5.49**, he.wiki **the night of 5 to 6 October 1946**. [C], and
   he.wiki `תקומה`, oldid **42996459**, explains the mechanism: founded as a kibbutz at Sumra,
   "בשדות חוות יזרעם, מול קיבוץ בארי" [S, Wikipedia], then
@@ -265,6 +335,10 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   - The 1949 move is onto the land of an Arab village whose residents the article says were expelled. That is
     recorded here as the source states it and nothing is proposed about it; it is the owner's
     sensitivity review.
+  - (25 Oct) he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row `תקומה`: the security house
+    at Sumra ("בית הביטחון בסומרה") at `31.37907617144653, 34.534706270430426`, the old site.
+    [S, Wikipedia] It is 9.04 km from the CBS point (31.45092, 34.57933), bearing 28 degrees from
+    the old site (computed here).
 - **Kedma.** CBS `שנת ייסוד` is **blank**, and the CBS row is the present youth village, not the
   kibbutz. Gvati's appendix has **no row**; his narrative mentions "קדמה, גלאון, דברת שעלו בשנת
   1946". [S] he.wiki `קדמה`, oldid **43293211**: "קֶדְמָה התקיימה כקיבוץ בין השנים 1946–1962", and
@@ -290,6 +364,15 @@ explicitly it is recorded below; otherwise the original position is [GAP].
 - **Be'eri.** he.wiki `בארי (קיבוץ)`, oldid **44086869**: "בארי הוקם במוצאי יום כיפור ה'תש"ז, 1946,
   במסגרת 11 הנקודות". [S, Wikipedia] Year only in the article; Gvati gives 6.10.46. Relocation: "לאחר קום
   המדינה הועתק הקיבוץ שלושה קילומטר דרום־מזרחה". [S, Wikipedia] No day. [GAP]
+  - (25 Oct) he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row `בארי`: "ב-1948, לאחר קום
+    המדינה, הועתק הקיבוץ 3 קילומטר דרום מזרחה", with the security house of the old site at
+    `31.430988, 34.466085`. [S, Wikipedia] That point is 2.48 km from the CBS point
+    (31.42385, 34.49086), bearing 109 degrees from the old site (computed here), so the table's
+    "3 km" and the computed distance differ by 0.5 km; both are given. en.wiki `Be'eri`, oldid
+    **1375586035**, quotes the Jewish National Fund: "the settlers held their ground until the
+    liberation of the Negev in October 1948", and says the kibbutz "moved three kilometres southeast
+    to its present location" after independence. [S, Wikipedia] The year 1948 is given by he.wiki
+    for the move; the day stays [GAP].
 - **Gal-On.** he.wiki `גלאון`, oldid **43897874**: "במוצאי יום הכיפורים ה'תש"ז, 5-6 באוקטובר 1946,
   עלה על הקרקע ליד קיבוץ גת, במסגרת 11 הנקודות בנגב". [S, Wikipedia] This is the one article that prints the
   two-day form. Gvati puts it in **Lachish**, not the Negev. Not evacuated: it repelled an Egyptian
@@ -299,10 +382,25 @@ explicitly it is recorded below; otherwise the original position is [GAP].
 - **Mishmar HaNegev.** he.wiki `משמר הנגב`, oldid **44065142**: "שהוקם כחלק ממבצע י"א הנקודות
   במוצאי יום כיפור תש"ז, 6 באוקטובר 1946", and "לאחר שנה הועתק הקיבוץ למקומו הנוכחי על גבעה שכנה
   כ-500 מטר צפונה", the first site now called "הגבעה הראשונה". [S, Wikipedia]
+  - (25 Oct) he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row `משמר הנגב`: "ב-1947 עבר הקיבוץ
+    ל'גבעה השנייה' שם הוקם בקיץ אותה שנה בית הביטחון", at `31.362778, 34.717778`, 0.11 km from the
+    CBS point (computed here). [S, Wikipedia] The year of the move is 1947 there, against "לאחר
+    שנה" (about October 1947, computed here from the 6 October 1946 founding) in the article above. No day.
 - **Nevatim.** he.wiki `נבטים (מושב)`, oldid **44032217**: "מושב נבטים נוסד ב-6 באוקטובר 1946,
   במוצאי יום כיפור, במבצע 11 הנקודות על ידי עולים יוצאי עיראק". [S, Wikipedia] Moved "כ-2 קילומטר" to its
   permanent site; no date for the move. [GAP] Note the bare title `נבטים` is the article on the
   Nabataeans, not the locality.
+  - (25 Oct) he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row `נבטים הישנה`: "במרץ-אפריל 1947
+    התפורר הגרעין המקורי ובמקומו התיישב במקום גרעין של עולים מרומניה שאף הוא התפרק תוך זמן קצר.
+    באוגוסט 1947 הגיע למקום גרעין שלישי שנשאר במקום עד אחרי מלחמת העצמאות", and after the war a
+    core "מיוצאי הונגריה" founded the settlement "כ-2 ק"מ" from the old one. [S, Wikipedia] The old
+    site's security house is at `31.213563, 34.901462`, 2.17 km from the CBS point (31.22316,
+    34.88160), which lies west-northwest of it (bearing 299.5 degrees, computed here), so the two
+    agree on the 2 km. The first core is "עולים יוצאי עיראק" in that row and in `נבטים (מושב)`;
+    en.wiki `Nevatim`, oldid **1375580732**, says the village was "originally established in 1946
+    by Jewish olim from Hungary". [C] on the origin of the first core, Iraq (he.wiki, twice) against
+    Hungary (en.wiki), both [S, Wikipedia]. JTA of 22 October 1948 (under Beit Eshel above) reports
+    Nevatim blockaded and freed during the Beersheba operation (dateline 21 October 1948, bulletin of 22 October). The day of the move stays [GAP].
 - **Shoval.** he.wiki `שובל (קיבוץ)`, oldid **44069091**: "נוסד ב-6 באוקטובר 1946", and "עלה לקרקע
   באדמות קרן קיימת לישראל ב'ביר זבאלה' במוצאי יום כיפור, 6 באוקטובר 1946". [S, Wikipedia] Gvati gives the
   same day, so the date is [V]. **Intended name:**
@@ -336,6 +434,23 @@ explicitly it is recorded below; otherwise the original position is [GAP].
 - **Rename:** "השם שנבחר לקיבוץ על ידי מייסדיו היה 'עלומים', אולם בהחלטת המוסדות המיישבים שונה השם
   ל'סעד'". [S, Wikipedia]
 - Relocation after the war: "העבירו חברי הקיבוץ את יישובם כקילומטר מזרחה". [S, Wikipedia] No day. [GAP]
+- (25 Oct) **Contemporaneous report of the founding.** JTA bulletin of Tuesday 1 July 1947, p. 6,
+  under "Two New Colonies Established in Negev, Making 16 Jewish Settlements in Desert", dateline
+  "JERUSALEM, June 30. (JTA)": "The colony of Saad, which means buttress, was established today in
+  the Negev, making it the 15th Jewish settlement in the area in the past year. It is situated north
+  of the Gaza-Beersheba highway and located on 1,300 dunams (325 acres) of Jewish National Fund
+  land." [V, agent read 2026-10-25; a person's check pending] The founding day is **30 June 1947**
+  (dateline), in agreement with Gvati and he.wiki. The next paragraph reads "Shortly afterwards, it
+  was announced that a 16th colony, Alumim, established by the Poale Mizrachi, had been set up today
+  in less than 24 hours." The bulletin does not say whether this Alumim is the same place as Saad
+  under the founders' proposed name, as he.wiki has it, or a second place; see "Alumim at Hazla"
+  below.
+- (25 Oct) **Coordinate of the old site.** he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087, row
+  `סעד`: the security house (`מעוז מול עזה`) at `31.477896, 34.532014`, and "לאחר המלחמה העבירו חברי
+  הקיבוץ את יישובם כקילומטר מזרחה". [S, Wikipedia] The point is 0.83 km from the CBS point
+  (31.47068, 34.53445), bearing 164 degrees from the old site (computed here), so the table's
+  "about a kilometre" and the computed distance agree to 0.2 km; the direction (south-southeast
+  against "east") differs. [C] on direction only; no day.
 
 ### Tze'elim
 - CBS: code **413**, `שנת ייסוד` **1947**, **31.20370, 34.53417**, Be'er Sheva. [V]
@@ -377,6 +492,24 @@ explicitly it is recorded below; otherwise the original position is [GAP].
   Gvati and he.wiki agreeing; the detail that the settlers came from Kurdistan is
   [S, Wikipedia]. Only the 1947 kibbutz is in
   this note's window.
+- (25 Oct) **Evacuation not before late November 1948.** JTA bulletin of Tuesday 23 November 1948, p.
+  3, dateline "TEL AVIV, Nov. 22. (JTA)": "Shelling of a police station at the settlement of Imara and
+  various sectors of the Mivtahim settlement, both in the Negev and east of Rafa, continued through
+  last night and this morning, an official Israeli communique stated." [V, agent read 2026-10-25; a
+  person's check pending] That puts the kibbutz still under shelling on the night of 21 to 22
+  November 1948 and the morning of 22 November (computed here from the dateline). The day of the
+  evacuation stays [GAP]; it is after that. The same line names a police station at the
+  settlement of Imara, which is where the first pass has Urim's third site (section 3); the
+  bulletin does not name Urim.
+- (25 Oct) **[C] on the founding month.** en.wiki `Mivtahim`, oldid **1375608140**, infobox: "7
+  January 1947 (kibbutz)"; he.wiki `מבטחים (מושב)`, the Haganah heritage page and the he.wiki
+  security-house table give 7 February 1947. [S, Wikipedia] for the January reading. The en.wiki body cites "Place Names in Israel" (Jerusalem, 1962, p. 105)
+  for 7 January 1947; that book was not opened, and no source read gives a reason for the difference.
+- (25 Oct) **Coordinate of the old kibbutz.** he.wiki `בתי הביטחון בנגב הצפוני`, oldid 42567087,
+  row `מבטחים`: `31.2226235884501, 34.38533295561993` for the security house, which that row says is
+  all that remains of the old kibbutz. [S, Wikipedia] It is 2.92 km from the CBS moshav point
+  (31.24040, 34.40787), bearing 47 degrees from the old site (computed here). The row says the
+  members left "לאחר תום מלחמת העצמאות" and founded the new Nitzanim.
 
 ### Brur Hayil
 - CBS: code **428**, `שנת ייסוד` **1948**, **31.55787, 34.64673**, Ashkelon. [V]
@@ -403,6 +536,10 @@ Beit Eshel. [V, checked]
   (https://www.lib.cet.ac.il/pages/item.asp?item=13006&source=647, checked 2026-10-23). Two sources
   agree it was abandoned, so that is [V]; the March 1949 month is [S].
 - Location: "ממזרח לצאלים", east of Tze'elim, per CET. Coordinate: [GAP].
+- (25 Oct) Searched again and not found: a coordinate, and the day in March 1949. Read: the JTA
+  search (https://www.jta.org/?s=Ramat+Hanegev+kibbutz and https://www.jta.org/?s=Ramat+Hanegev) for "Ramat Hanegev kibbutz" (27 results by relevance; only page 1 of 10 read) had 7 archive items dated 1955-02-21 to 1993-11-25. The
+  search for "Ramat Hanegev" gave 1 item dated 2006-06-09 when run 2026-10-25; re-run 2026-10-26 it gives 275 results and page 1 has no archive item (dates 2010-08-02 to 2026-10-25), so the 2006 result was not reproduced (the ranking has changed). All items seen are after
+  March 1949 and none was opened. [GAP]
 
 ### Halutza
 Not in the CBS file under this name and no Gvati appendix row. [V, checked] It moved east in 1949
@@ -436,6 +573,19 @@ a separate point, not Sa'ad under another name.
   third February 1947 point called Alumim existed. The `צאלים` and `סעד` articles are describing
   the *group's* name, which is a different thing from this point. The 1966 kibbutz Alumim is a
   third, later use of the name.
+- (25 Oct) The JTA bulletin of 1 July 1947 (under Sa'ad, section 4) names an "Alumim" set up by "the
+  Poale Mizrachi" on 30 June 1947, four months after the February point. The item does not mention
+  Hazla, the February group or a failed attempt, and does not place its Alumim. [S] on the
+  existence of the name that day; whether it is Sa'ad under the founders' name or a place of its own
+  is open and is not decided here. The day Alumim at Hazla was given up stays [GAP]: JTA search
+  "Alumim Negev" (https://www.jta.org/?s=Alumim+Negev, run 2026-10-25; 71 results by relevance, only page 1 of 10 read) had 5 archive items, dated 1947-06-16, 1947-07-01, 1957-10-28,
+  1960-10-19 and 1961-02-16. The 1947-07-01 bulletin was read in print. The web text of the
+  1947-06-16 item (https://www.jta.org/archive/u-n-probers-will-hold-first-meeting-in-jerusalem-today-no-hearings-this-week)
+  reads: "The Jewish settlement of Alumim, in the Negev, was attacked last night by Arabs, who were
+  driven off by the colony's guards. There were no casualties, but the village's water pipes were
+  punctured." [S] (web text only; its PDF `1947/1947-06-16_141.pdf` was not opened). So the name
+  is in JTA two weeks before the 30 June "set up today" item; nothing is concluded from that. The
+  other three items were not opened.
 
 ## 5. Be'erot Yitzhak, the original Negev site
 
@@ -503,6 +653,22 @@ separately here.
   a point.
 - The day within March 1949 that Ramat HaNegev disbanded, and the day Alumim at Hazla was given up.
   [GAP]
+- (25 Oct) **What the second pass narrowed.** Beit Eshel: held until 21 October 1948 (JTA), day of
+  leaving [GAP]. Mivtahim: still shelled on 21 to 22 November 1948 (JTA), day of evacuation [GAP].
+  Sa'ad: 30 June 1947 by dateline. Old-site points from the he.wiki security-house table for Be'eri,
+  Nevatim, Sa'ad, Mivtahim, Tkuma, Nirim (Dangur) and Mishmar HaNegev's second hill, each in its row,
+  [S, Wikipedia]. Year only for the moves of Gvulot (1949, en.wiki), Be'eri (1948), Nirim (1949) and
+  Mishmar HaNegev (1947); no day for any.
+- (25 Oct) **Still [GAP] after a second search.** The October 1946 positions of Be'eri, Hatzerim,
+  Shoval, Mishmar HaNegev and Nevatim, and of Nirim's first site; a day for the moves of Gvulot,
+  Be'eri, Nevatim and Sa'ad; Beit Eshel's founding day in August 1943: JTA search, archive items on page 1
+  (10 per page, by relevance; only page 1 read unless said): "Beth Eshel Negev" (10 results in all; 6 archive
+  items, 1947-12-15 to 2005-04-13), "Beth Eshel" (283 results; 5 archive items, 1947-12-15 to 1951-02-13), "Negev
+  experimental stations 1943" (20 results; 6 archive items, 1955-08-10 to 2008-08-22) and "Negev outposts Beersheba 1943
+  Jewish" (3 results in all; 1 archive item, 2007-01-30), all run 2026-10-25 at `https://www.jta.org/?s=<query with + for
+  spaces>`, totals read 2026-10-26. For 1943, "Beth Eshel" was also sorted Oldest (`&sort_by=oldest`, 2026-10-26): pages 1-3
+  run from 27 April 1926 to 28 September 1948, and the only 1943 item is "Rabbi Hirsch Manichewitz, 52, Dies Suddenly in
+  New York" (11 October 1943), whose text has no "Eshel" or "Negev"; no item about Beit Eshel is dated 1943. Ramat HaNegev's coordinate and its March 1949 day: above.
 - Coordinates were taken from CBS, from Amudanan, and from coordinates written into the articles
   themselves. None was measured off a map, and no hex was computed here, since
   `tools/settlement_hexes.py` stays with #61.

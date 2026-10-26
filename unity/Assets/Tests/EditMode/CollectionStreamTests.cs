@@ -451,4 +451,69 @@ public class CollectionStreamTests
             Directory.Delete(folder, true);
         }
     }
+
+    // ---- the Arab armies' bundle after the people's (owner ruling, 26 October 2026, #1763: "After the people") ----
+
+    const string Syrian = "figure-syrian-infantry-1948-v1", Villager = "figure-arab-villager-v1";
+
+    /// <summary>Records the order bundles are opened in; the bundles in <see cref="Failing"/> fail to open.</summary>
+    sealed class OrderSource : CollectionStream.ISource
+    {
+        public readonly List<string> Opened = new List<string>();
+        public readonly HashSet<string> Failing = new HashSet<string>();
+        public GameObject? Prefab;
+        public IEnumerator Open(string bundle, Action<string?> done) { Opened.Add(bundle); yield return null; done(Failing.Contains(bundle) ? "test: no file" : null); }
+        public IEnumerator Load(string bundle, string path, Action<GameObject?> done) { yield return null; done(Prefab); }
+    }
+
+    /// <summary>The opening map asks for the Syrian figure (UnitLayer prefetches every foreign force's figure) before its
+    /// civilians: the people's bundle is still opened first, so the opening civilians and the 1948 soldier do not wait for
+    /// the Arab armies' 22 MB (#1763).</summary>
+    [Test]
+    public void TheArabArmiesBundleWaitsForThePeoplesBundle()
+    {
+        var go = new GameObject("prefab");
+        try
+        {
+            var source = new OrderSource { Prefab = go };
+            var stream = new CollectionStream(source);
+            var answered = new List<string>();
+            stream.Enqueue(Syrian, CollectionDetail.Far, _ => answered.Add(Syrian));
+            stream.Enqueue(Villager, CollectionDetail.Far, _ => answered.Add(Villager));
+            Step(stream.Run(), 20);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies }, source.Opened);
+            CollectionAssert.AreEqual(new[] { Villager, Syrian }, answered, "both are answered, the people first");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
+    /// <summary>Fail open: the people's bundle failing to load does not hold back the Arab armies' bundle, and with no
+    /// request for the people's bundle there is nothing to wait for (no deadlock).</summary>
+    [Test]
+    public void TheArabArmiesBundleStillLoadsWhenThePeoplesFailsOrIsNotAskedFor()
+    {
+        var go = new GameObject("prefab");
+        try
+        {
+            var failing = new OrderSource { Prefab = go };
+            failing.Failing.Add(CollectionCatalog.People);
+            var stream = new CollectionStream(failing);
+            var answered = new List<string>();
+            stream.Enqueue(Syrian, CollectionDetail.Far, _ => answered.Add(Syrian));
+            stream.Enqueue(Villager, CollectionDetail.Far, _ => answered.Add(Villager));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + CollectionCatalog.People + " did not load \\(test: no file\\)"));
+            Step(stream.Run(), 20);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies }, failing.Opened);
+            CollectionAssert.AreEquivalent(new[] { Villager, Syrian }, answered, "a failed people's bundle still lets the Arab armies' load");
+
+            var alone = new OrderSource { Prefab = go };
+            var only = new CollectionStream(alone);
+            bool served = false;
+            only.Enqueue(Syrian, CollectionDetail.Far, _ => served = true);
+            Step(only.Run(), 20);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.ArabArmies }, alone.Opened, "nothing asked of the people's bundle: no wait");
+            Assert.IsTrue(served);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
 }

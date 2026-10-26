@@ -52,3 +52,19 @@ def test_alias_counts_once_and_plain_url_lists_are_read(tmp_path):
     rows = m.collect(tmp_path, TODAY)
     assert sorted((r['url'], r['age']) for r in rows) == [('https://l.example/1', 2), ('https://l.example/2', 2),
                                                           ('https://p.example', 12)]
+
+
+def test_root_without_content_is_an_error(tmp_path, capsys):
+    # #1460: a mistyped --root must not look like a repository with no sources
+    for root in (tmp_path, tmp_path / 'missing'):
+        assert m.main(['--root', str(root), '--today', '2026-10-13']) != 0
+        cap = capsys.readouterr()
+        assert str(root / 'content') in cap.err and 'sources' not in cap.out
+        assert not (root / 'content').exists()
+    assert not (tmp_path / 'missing').exists()
+
+
+def test_empty_content_is_still_a_report(tmp_path, capsys):
+    (tmp_path / 'content').mkdir()
+    assert m.main(['--root', str(tmp_path), '--today', '2026-10-13']) == 0
+    assert capsys.readouterr().out.splitlines() == ['0 sources']

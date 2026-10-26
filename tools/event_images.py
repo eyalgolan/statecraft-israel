@@ -114,7 +114,12 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     if not isolated():
         print("run with python -I: the originals are untrusted downloads (see the module docstring)"); return 2
-    rows = [r for r in load_rows() if not a.only or r["event"] in a.only]
+    all_rows = load_rows()
+    known = {r["event"] for r in all_rows}
+    unknown = [o for o in dict.fromkeys(a.only) if o not in known]
+    if unknown:   # before any original is looked at, so a typo cannot pass for "nothing to build"
+        print(f"UNKNOWN --only {', '.join(unknown)} (not an event in {MAPPING.name})"); return 2
+    rows = [r for r in all_rows if not a.only or r["event"] in a.only]
     for r in rows:   # check every download before reading or writing anything, so a bad row writes nothing
         src = a.originals / f"{r['event']}.jpg"
         if not src.is_file():

@@ -1,0 +1,32 @@
+{
+  "asset": "figure-syrian-infantry-1948-v1",
+  "source_number": 18,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Mixamo Compatible (65 bones)",
+  "rig_credits": 20,
+  "source_sha256": "014f00a2bc50b1dbe9915af46e5caada48637b71aa4986b8a9d14d34055c1f89",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "existing faction formation, art/sensitivity sign-off pending #756",
+  "files": {
+    "figure-syrian-infantry-1948-v1.fbx": "563378e81dc268a5ce1f48eca168fda4811f7128bdaa374d031a47375f94e343",
+    "figure-syrian-infantry-1948-v1_basecolor.jpg": "41d39e1ad895fc80a7894bde8ad2daf8f987a154c6b587e8c293a6b86987dfb1"
+  },
+  "provider_model_id": "68adee8c-a678-4960-944b-639240e8038e",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7616,
+  "bones": 65,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-syrian-infantry-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-syrian-infantry-1948-v1/validation.json"
+}

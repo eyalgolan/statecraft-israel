@@ -16,7 +16,7 @@ public class FinalWaveTests
 
     /// <summary>The events with a sensitive tag (spec 5.5): pinned, so a new one cannot miss the owner's review table.</summary>
     static readonly string[] SensitiveEvents =
-        { "altalena", "bernadotte_assassination", "burma_road_complete", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
+        { "altalena", "bernadotte_assassination", "burma_road_complete", "degania_defence", "operation_hiram", "operation_horev", "operation_yoav", "reparations_claim", "reparations_vote", "ten_days" };
 
     /// <summary>The resources a sensitive option may not raise (EventRules.NoGainTargets, internal to the sim).</summary>
     static readonly string[] Resources = { "treasury", "fx_reserves", "food_supply", "morale", "intl_standing" };
@@ -82,7 +82,7 @@ public class FinalWaveTests
     [Fact]
     public void AShareableBuildNeedsEveryAlternateCardSignedOff()
     {
-        Assert.Empty(ReleaseGate.AlternateUnsigned(Real));
+        Assert.Equal(new[] { "jerusalem_demilitarisation_guard", "rafah_force_pressure" }, ReleaseGate.AlternateUnsigned(Real));
         var c = AlternateTimelineTests.Load(("parent.yaml", AlternateTimelineTests.Parent), ("after_road.yaml", AlternateTimelineTests.Consequence), ("outside.yaml", AlternateTimelineTests.Outside));
         Assert.Equal(new[] { "after_road", "outside" }, ReleaseGate.AlternateUnsigned(c));
         var signed = AlternateTimelineTests.Consequence + "status: fact-checked\nreviewed_by: a-reviewer\nreviewed_on: 2026-10-20\n";

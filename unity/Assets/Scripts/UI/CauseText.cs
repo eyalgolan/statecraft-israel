@@ -27,6 +27,7 @@ namespace Statecraft.Game.UI
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta),
                         Money(c, cause.Target, cause.Args[0]), Money(c, cause.Target, cause.Args[1]), Money(c, cause.Target, cause.Args[2]));
                 case CauseKeys.CivilianUpkeep:
+                case CauseKeys.MilitaryUpkeep:
                 case CauseKeys.FxCrisisFood:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta));
                 case CauseKeys.Borrowed:
@@ -52,9 +53,83 @@ namespace Statecraft.Game.UI
                 case CauseKeys.CallUpRaised:
                 case CauseKeys.CallUpLowered:
                     return text.Format(key, PlayerText.Percent(Number(cause.Args[0])), cause.Args[1]);
+                case CauseKeys.ObjectiveCompleted:
+                    return PlayerText.Capitalised(text.Format(key, Local(cause.Args[0], cause.Args[1], text), (int)cause.Delta));
+                case CauseKeys.PrisonersReturned:
+                case CauseKeys.SoldiersReturned:
+                    return text.Format(key, Number(cause.Args[0]), text["map.front_" + cause.Args[1]]);
+                case CauseKeys.EventNew:
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text));
+                case CauseKeys.EventChosen:
+                    return text.Format(key, Local(cause.Args[0], cause.Args[1], text));
+                case CauseKeys.EventDelegated:
+                case CauseKeys.EventDelegatedPartial:
+                    return text.Format(key, cause.Args[2] == "" ? text["why.cause.cabinet"] : Local(cause.Args[2], cause.Args[3], text),
+                        Local(cause.Args[0], cause.Args[1], text));
+                case CauseKeys.EventAmount:
+                case CauseKeys.EventStock:
+                case CauseKeys.EventGrant:
+                case CauseKeys.EventCity:
+                case CauseKeys.EventUnlock:
+                case CauseKeys.EventPolicy:
+                case CauseKeys.EventSetRung:
+                case CauseKeys.EventRejoin:
+                    return Event(cause, c, text, namesHe);
                 default:
                     return UnitNames.Line(cause, c, rows, text, namesHe);
             }
+        }
+
+        static string Local(string english, string hebrew, UiText text) =>
+            text["ui.lang"] == UiLanguage.Hebrew && hebrew != "" ? hebrew : english;
+
+        /// <summary>C136: event changes and previews share keys; only an applied change has a title context. The sim
+        /// already supplied its applied Delta and historical text snapshots; this formats no game rule or outcome.</summary>
+        static string Event(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
+        {
+            var key = "why.cause." + cause.Key;
+            object[] values;
+            switch (cause.Key)
+            {
+                case CauseKeys.EventAmount:
+                    values = new object[] { Name(text, cause.Target), Change(c, cause.Target, cause.Delta) };
+                    break;
+                case CauseKeys.EventStock:
+                    values = new object[] { text[cause.Target == Pools.FoodTarget ? "event.effect.food" : "event.effect.arms"], PlayerText.UnitsChangeNumber(cause.Delta) };
+                    break;
+                case CauseKeys.EventGrant:
+                    var role = text["ui.lang"] != UiLanguage.Hebrew ? cause.Target
+                        : text.Has("unit.name." + cause.Target) ? text["unit.name." + cause.Target] : text["event.effect.units"];
+                    key += cause.Delta == 1 ? "_one" : "_many";
+                    values = new object[] { cause.Delta, role, ContentNames.Settlement(text, c, cause.Args[2], namesHe) };
+                    break;
+                case CauseKeys.EventCity:
+                    var field = cause.Args[3];
+                    values = new object[] { ContentNames.Settlement(text, c, cause.Args[2], namesHe),
+                        text["event.effect." + field], field == EventSystem.ConditionField
+                            ? PlayerText.PercentChange(cause.Delta) : PlayerText.UnitsChangeNumber(cause.Delta) };
+                    break;
+                case CauseKeys.EventUnlock:
+                    values = new object[] { PlayerText.Capitalised(ContentNames.Of(text, c.ProjectKinds.First(k => k.Id == cause.Target))) };
+                    break;
+                case CauseKeys.EventPolicy:
+                    values = new object[] { Name(text, cause.Target), PlayerText.Percent(cause.Delta) };
+                    break;
+                case CauseKeys.EventSetRung:
+                    values = new object[] { cause.Delta };
+                    break;
+                case CauseKeys.EventRejoin:
+                    values = new object[] { Local(cause.Args[2], cause.Args[3], text) };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(cause));
+            }
+            if (cause.Args[0] != "")
+            {
+                key += "_from";
+                values = values.Concat(new object[] { Local(cause.Args[0], cause.Args[1], text) }).ToArray();
+            }
+            return PlayerText.Capitalised(text.Format(key, values));
         }
 
         /// <summary>A borrowing line, by its purpose (CauseKeys.Purpose): why.cause.borrowed.&lt;purpose&gt;, with what the

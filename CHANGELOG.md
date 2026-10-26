@@ -8,6 +8,81 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+- Add the two owner-approved follow-up cards for the Jerusalem demilitarisation and Rafah roads, in English and Hebrew; both remain drafts pending human review (Refs #939).
+## [0.3.1] - 2026-10-26
+
+### Added
+- Corridors in `content/corridors.yaml` can now carry a person's sign-off, `reviewed_by` and `reviewed_on`, like
+  every other status row; the loader checks both or neither, the handle and the day.
+- The translation contract for `translations/<lang>/` (#1618, step 1): the sim can read, write and resolve the three
+  files (`Translations`), and put a Hebrew set on its typed records (`HebrewOverlay`). Nothing moves yet: the game still
+  reads the inline Hebrew, and tests prove every Hebrew value comes back unchanged through the contract
+  (`docs/translations.md`).
+- Add the separate GDD 0.3 balance catalogue with explicit agreed/default/deferred provenance and refuse a guessed starting army; existing game rules stay unchanged.
+- Add an opt-in GDD 0.3 ruleset identity with era/loop compatibility checks and a required balance catalogue. Shipping content continues to use GDD 0.1; Attention behavior is unchanged.
+- Omit Attention from the HUD, order costs, capture previews and CLI under gdd-0.3, while preserving older rulesets and other order requirements.
+- The `absorb_immigrants` ("One million") card gains an Illustration loop, and its `continue` order an End Turn outcome
+  clip: K04b, the demo 3 v8 take of a child on a man's shoulders at a ship's rail, seen from behind, pointing at a
+  harbour town (owner, 24 October 2026: "Add v8, 6 s"). `burma_road_complete` gets no clip: A02's trucks show
+  headlights in every frame, and no source was found for lit convoys on the Burma Road track (docs/event-videos.md).
+- Add full-quality Syrian and Iraqi infantry to existing streamed formations; retain original C09 on ALA tokens, preserve original maps and both local animation clips, and keep the other five new characters in an editor-only review scene.
+- Preserve the three generated vehicle candidates as original-source, losslessly imported editor-only review art; remove reduced LODs and all player/Resources review hooks. Record Tal Heuberger’s CC BY-NC-ND 4.0 credit for these new models and their colour maps.
+- A shareable build now waits for the owner's sensitivity review of every settlement-control line, in English and
+  Hebrew: the capture dialog and the proposed map-state, panel and International Support words (R-GATE-002, #803).
+  Development builds are not gated.
+- Preserve eleven generated buildings/tents/props as original-source editor review art with exact 4K maps, lossless import settings and Tal Heuberger credit. Hold new campaign activation for the maintainer's streaming interface and art/sensitivity sign-off; retain existing catalogs, placements and LODs unchanged. Replace the three defective provider originals (01 and 05 roof gaps, 03 rear opening) with Tal's 24 October 2026 Tripo regenerations, at the owner's request on #1379; previous local repairs stay out.
+
+### Changed
+- The Burma Road and 1949 Yarkon rail link map notes now cite a source for every claim: tractor help on 10 June
+  and fully motorised traffic from 11 June 1948 (Isseroff), the 7 km west along the Yarkon (he.wiki), and the rename to
+  Bnei Brak from November 1954.
+- One spelling rule for Arabic place names is written down (owner, 25 October 2026, #1586): the 1948 names follow
+  *Village Statistics, 1945* (Beit and Deir), and a quoted source form keeps the spelling its source prints.
+  `docs/WRITING_GUIDE.md` gains a "Place names" section, and the glossary gains a `place-names` convention
+  (`docs/UX_GLOSSARY.yaml` and its Markdown view), with the Hebrew-term transliteration left open as it was.
+- The content that broke the rule now follows it: the four `burma_road` waypoints of `content/map/routes_1948.yaml`, the
+  three `burma_road` segment ends of `content/corridors.yaml`, the prose that names them there and in
+  `content/map/units_1948.yaml`, and the same names in `docs/units.md` and `docs/visual-v1.md`.
+  Quoted forms, Wikipedia URLs, record ids and the present-day `today.name` of Beit Jann are unchanged, as is the dated
+  decision record in `docs/superpowers/plans/2026-10-15-gdd-phase-4.md` and the English Wikipedia phrase quoted in
+  `docs/routes.md`. The baked
+  `content/map/route_paths_1948.tsv` is byte-identical: it carries coordinates, not names.
+- `MapPointer` gains an internal `Tick` test seam, as `CameraController` has had since #890, so an EditMode test can
+  drive the real `Update` path instead of the handlers beneath it (#1661 item 6). No behaviour change.
+- Saves know a third ruleset, `gdd-0.3`, written as save schema 4, for the GDD 0.3 game built beside the live one.
+  A gdd-0.3 game refuses older-rules saves before replaying them; today's games and their schema 3 saves are unchanged.
+- Remove Attention accounting, pricing requirements and state-hash fields only from the opt-in GDD 0.3 simulation. Old rulesets retain their behavior and saves; presentation cutover is a separate step.
+- Opt-in GDD 0.3 attacks and artillery fire no longer require or spend Arms. Existing timing, combat outcomes, equipment costs and older rulesets stay unchanged.
+- The English share post opens with "I'm playing Israel in 1948" instead of "I'm running Israel in 1948" (owner, 26 October
+  2026). The Hebrew post is unchanged.
+
+### Fixed
+- Arrival messages no longer cover the turn report's heading when a decision card waits under the report: they take
+  their corner place until the report closes.
+- Share sends the picture with the post text again (#1653). The X, Facebook, WhatsApp, Telegram and LinkedIn buttons
+  copy the picture before opening the site; where the browser blocks copying, the picture downloads first and the
+  panel says to attach it to the post.
+- Clicking an occupied city's name pill shows the city; clicking the unit's badge still selects the unit (#1661).
+- A one-finger pan lifted just after it crossed the slop is no longer lost (#1661 item 5). `MapPointer` now declares
+  `[DefaultExecutionOrder(-100)]`, so its frame runs before `CameraController`'s and sets the press's `moved` before the
+  camera asks whether the press may still be a tap. With no order declared, Unity was free to tick the camera first,
+  which read that answer from the frame before, kept the drag in `HoldDrag` and then dropped it as a click's.
+- A press on the unit card's orders row that just misses a button (beside Skip, or between the row's lines) no longer
+  sends the selected unit on a go-to to the hex behind the card. One pixel above Skip in Hebrew, it moved Golani into
+  Nazareth and opened that capture's decision over the card, so Skip could not be pressed and the turn did not end
+  (#1728).
+- The turn report and the Why screen show event effects, option previews, objective completions, prisoner exchanges
+  and military upkeep in the chosen language. The English is unchanged; the new Hebrew awaits native review.
+- Hebrew turn-report and meter explanations use the same sourced settlement names as Why; untranslated names keep the existing English fallback.
+- When End turn waits for a unit's orders and a screen covers the unit card, it closes that screen, so the player sees
+  the unit it selected and can order it.
+- The `Assets/Editor/Generated1948Review` folder (#1754) had the same GUID as `Generated1948VehicleReview` (#1378), so Unity reported a GUID conflict and rewrote the `.meta` on every import. It now has its own GUID. Nothing refers to the old one, and players see no change.
+- The map-label camera-sweep test counts the projection and placement work instead of timing it, so a busy machine
+  no longer fails it. Label placement is unchanged.
+- The whole-slice smoke tests check each turn's progress and replay work instead of a one-minute time limit, so a
+  busy machine no longer fails them; a five-minute hang guard remains.
+- The unit-placement log no longer says a unit is "not drawn" when the compact fallback still draws it.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added
