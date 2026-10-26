@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=./schema/gdd03-events.schema.json
+# R-EFX-001/002/005/007, #1718: availability only; shared reviewed event records stay byte-identical.
+# No replacement amounts, effects, review statuses or sign-offs are authored here.
+ruleset: gdd-0.3
+exclusions:
+  - id: austerity_1949
+    reason: Rationing policy, Food supply readout and foreign-currency effects need approved contracts.
+  - id: clothing_rationing_1950
+    reason: Foreign-currency import spending has no approved gdd-0.3 ledger mapping.
+  - id: forex_crisis_1951
+    reason: Foreign-currency debit and aid, with Food supply effects, need authored ledger and stock contracts.
+  - id: iraqi_exodus
+    reason: National housing effects need regional population and facility accounting.
+  - id: israel_bonds
+    reason: Foreign-currency bond grants need an approved ledger mapping and authored debt terms.
+  - id: maabarot_policy
+    reason: Maabarot policy and national housing effects need approved facility and population accounting.
+  - id: reparations_claim
+    reason: Coupled foreign-currency refusal cost has no approved gdd-0.3 ledger mapping.
+  - id: reparations_vote
+    reason: Coupled foreign-currency refusal cost has no approved gdd-0.3 ledger mapping.

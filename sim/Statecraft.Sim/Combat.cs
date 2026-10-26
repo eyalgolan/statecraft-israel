@@ -164,6 +164,7 @@ namespace Statecraft.Sim
         /// mvp.people_per_unit, as the engagement's report counts them) and whether the defenders retreat.</summary>
         public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row)
         {
+            PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var t = mvp.CombatTable[row];
             var bands = new List<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)>();
@@ -205,6 +206,7 @@ namespace Statecraft.Sim
         /// Afterwards every attack whose hex is now empty ends.</summary>
         public static void Resolve(Content c, GameState s, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var done = new HashSet<int>();
             foreach (var id in s.Units.Keys.ToList())   // Units is a SortedList: ascending id
