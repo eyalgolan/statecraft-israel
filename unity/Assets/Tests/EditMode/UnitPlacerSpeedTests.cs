@@ -68,7 +68,7 @@ public class UnitPlacerSpeedTests
                         if (best != null) break;
                         if (sea) break;   // a ship's sea hex is all its test; rounds 2 and 3 add nothing
                     }
-                    if (best == null) { skipped?.Invoke($"UNITS no clear spot within one hex of {a.Place} for {u.Id}; not drawn"); continue; }
+                    if (best == null) { skipped?.Invoke($"UNITS no clear spot within one hex of {a.Place} for {u.Id}"); continue; }
                     held.Add((best.Value.Q, best.Value.R, from, to));
                     result[a] = best.Value;
                 }

@@ -56,7 +56,8 @@ namespace Statecraft.Game.Map
     {
         public MapScene? Map;
         public Func<Vector2, bool>? IsOverUi;
-        public event Action<int, int>? HexClicked;
+        /// <summary>A picked hex and whether its pointer hit was a city's name pill. Keyboard picks always pass false.</summary>
+        public event Action<int, int, bool>? HexClicked;
         /// <summary>A right click on a hex (owner, 25 Oct 2026, "Civ: select, then click": it moves the selected unit there).</summary>
         public event Action<int, int>? HexOrdered;
         /// <summary>The hex a point goes to before the terrain is asked, or null: a city's name pill sends its click to the
@@ -156,9 +157,9 @@ namespace Statecraft.Game.Map
         {
             var overUi = IsOverUi != null && IsOverUi(pos);
             Boot.DiagLog.NavLine(FormattableString.Invariant($"map click at ({pos.x:0}, {pos.y:0}) overUi={overUi}"));
-            if (overUi || HexAt(pos, false, true) is not (int q, int r)) return false;   // the UI asked once per press (MapPressTests)
+            if (overUi || HexAt(pos, false, true, out var cityPill) is not (int q, int r)) return false;   // the UI asked once per press (MapPressTests)
             Map!.Select(q, r);                                          // the map marks the hex the info panel describes
-            HexClicked?.Invoke(q, r);
+            HexClicked?.Invoke(q, r, cityPill);
             return true;
         }
 
@@ -190,7 +191,7 @@ namespace Statecraft.Game.Map
             // terrain only: the stop's centre ring marks the land, not a city's name pill
             if (HexAt(pos, false, false) is not (int q, int r)) return false;
             Map!.Select(q, r);                                          // the map marks the hex the info panel describes
-            HexClicked?.Invoke(q, r);
+            HexClicked?.Invoke(q, r, false);
             return true;
         }
 
@@ -203,11 +204,14 @@ namespace Statecraft.Game.Map
         /// GameRoot asks it for a click on the unit card over a lit hex (#1617).</summary>
         public (int q, int r)? HexUnder(Vector2 pos) => HexAt(pos, false, true);
 
-        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills)
+        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills) => HexAt(pos, overUi, pills, out _);
+
+        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills, out bool cityPill)
         {
+            cityPill = false;
             if (overUi) return null;                                    // the UI is asked first, whatever else is missing
             if (Map == null || Map.Terrain == null) return null;
-            if (pills && PillHex?.Invoke(pos) is (int, int) pill) return pill;
+            if (pills && PillHex?.Invoke(pos) is (int, int) pill) { cityPill = true; return pill; }
             var cam = Camera.main;
             // A unit's badge and figures stand above the ground: a click on them is a click on the unit's hex, not on the
             // terrain behind them (owner's report on v0.2.0). Not for the keyboard's look-at point (pills false).

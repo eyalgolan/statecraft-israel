@@ -124,7 +124,7 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>The message for an anchor PlaceAll found no clear spot for.</summary>
-        public static string SkipMessage(UnitEntry u, UnitAnchor a) => $"UNITS no clear spot within one hex of {a.Place} for {u.Id}; not drawn";
+        public static string SkipMessage(UnitEntry u, UnitAnchor a) => $"UNITS no clear spot within one hex of {a.Place} for {u.Id}";
 
         /// <summary>PlaceAll's skip messages for a placement it made of <paramref name="units"/>: one for every anchor of a
         /// drawn unit with no spot, in its order (issue #321: the units layer reports the map's skips when it takes its spots).</summary>

@@ -57,19 +57,22 @@ public class ReferencePlayerTests
         Assert.Equal((247, 106, true), (city.Civilians, city.Employed, city.JobsDefault));   // min(106 jobs, 247 civilians)
     }
 
-    /// <summary>The real start: the 15 May card (idf_founding) is answered first, at full war's price. The cities start with
-    /// every job filled (Q-START-1: job slots equal the start employed), so no AssignWorkers takes Attention, and the halutz
-    /// group fits the rest of that turn's 4 Attention (Q-CUT-5): the player trains on the first turn, 15 May 1948 (before
-    /// GDD Phase 3 PR 1 it filled Tel Aviv's jobs first and trained from 15 August 1948). Every order it sends is taken.</summary>
+    /// <summary>The real start: the 15 May cards (degania_defence and idf_founding) are answered first, at full war's price.
+    /// The cities start with every job filled (Q-START-1: job slots equal the start employed), so no AssignWorkers takes
+    /// Attention. Answering both cards uses that turn's 4 Attention (Q-CUT-5), so the halutz group is not trained on the
+    /// first turn; the player first trains on 15 August 1948. Before #1565 added degania_defence it trained on 15 May 1948;
+    /// the owner accepted the shift on 24 October 2026 ("Accept the shift", #1568). Every order it sends is taken.</summary>
     [Fact]
     public void OnTheRealStartItAnswersTheCardFirstAndTrainsWhenAttentionAllows()
     {
         var s = Simulation.NewGame(Mvp, GoldenRun.Seed, Mode.Historical);
         Assert.Contains("idf_founding", s.PendingEvents);
+        Assert.Contains("degania_defence", s.PendingEvents);
         var first = ReferencePlayer.Commands(Mvp, s);
         Assert.IsType<ChooseEventOption>(first[0]);
+        Assert.Equal(new[] { "degania_defence", "idf_founding" }, first.OfType<ChooseEventOption>().Select(x => x.EventId).OrderBy(id => id, StringComparer.Ordinal));
         Assert.DoesNotContain(first, x => x is AssignWorkers);
-        Assert.Contains(first, x => x is Train);
+        Assert.DoesNotContain(first, x => x is Train);
         DateTime? trained = null;
         while (trained == null && s.GameOver == null && s.Turn < 1000)
         {
@@ -79,7 +82,7 @@ public class ReferencePlayerTests
             if (orders.Any(x => x is Train)) trained = s.Date;
             s = r.State;
         }
-        Assert.Equal(new DateTime(1948, 5, 15), trained);
+        Assert.Equal(new DateTime(1948, 8, 15), trained);
     }
 
     // R-TRAIN-001: the stated policy trains a halutz group only when there is none, none in training, a civilian without

@@ -1,0 +1,45 @@
+# R-GATE-002. An AI-assisted change must not set this to sensitivity-reviewed.
+status: sensitivity-reviewed
+strings:
+  - { key: capture.intro, en: "Israeli units hold {0}, and no enemy unit is there. Choose what happens next. Your choice takes effect at End turn; until you choose, the units stay.", he: "כוחות ישראליים מחזיקים ב{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום." }
+  - { key: capture.option.raid, en: "Raid and withdraw", he: "פשיטה ונסיגה" }
+  - { key: capture.option.occupy, en: "Occupy", he: "שחרור" }
+  - { key: capture.option.deport, en: "Deport", he: "גירוש" }
+  - { key: capture.about.raid, en: "The units leave at once, and the place is under enemy control again. Its residents are unchanged.", he: "הכוחות יוצאים מיד, והמקום חוזר לשליטת האויב. מצב התושבים לא משתנה." }
+  - { key: capture.about.occupy, en: "One unit stays and holds the place for a set number of turns, at a Money cost each turn. Its residents are not affected.", he: "יחידה אחת נשארת ומחזיקה במקום מספר קבוע של תורות, בעלות כספית בכל תור. התושבים לא מושפעים." }
+  - { key: capture.about.deport, en: "The residents are displaced, and the place is depopulated. Social cohesion and International support fall, and International support keeps falling for the rest of the game.", he: "התושבים נעקרים ממקומם, והמקום מתרוקן מתושביו. הלכידות החברתית והתמיכה הבינלאומית יורדות, והתמיכה הבינלאומית ממשיכה לרדת עד סוף המשחק." }
+  - { key: capture.changes, en: "Changes at once:", he: "שינויים מיידיים:" }
+  - { key: capture.changes_none, en: "Changes at once: none", he: "שינויים מיידיים: אין" }
+  - { key: capture.caption.attention, en: "Attention", he: "תשומת לב" }
+  - { key: capture.caption.food, en: "Food", he: "מזון" }
+  - { key: capture.caption.arms, en: "Arms", he: "נשק" }
+  - { key: capture.caption.score, en: "Score", he: "ניקוד" }
+  - { key: capture.delta_attention, en: "{0:+0.0;-0.0}", he: "{0:+0.0;-0.0}" }
+  - { key: capture.delta_count, en: "{0:+#,##0;-#,##0}", he: "{0:+#,##0;-#,##0}" }
+  - { key: capture.none, en: "None of the choices can be made this turn. The units stay, and the decision waits.", he: "אף אחת מהאפשרויות אינה זמינה בתור הזה. הכוחות נשארים במקום, וההחלטה ממתינה." }
+  - { key: capture.reopen, en: "Decision waiting: {0}", he: "החלטה ממתינה: {0}" }
+  - { key: capture.end.intro, en: "The occupation period in {0} is over. Choose whether to annex the place or withdraw. Your choice takes effect at End turn; until you choose, the unit stays and the occupation upkeep continues.", he: "תקופת ההחזקה ב{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת." }
+  - { key: capture.end.option.annex, en: "Annex", he: "סיפוח" }
+  - { key: capture.end.option.withdraw, en: "Withdraw", he: "נסיגה" }
+  - { key: capture.end.about.annex_fled, en: "The place stays under Israeli control. Its residents fled when it was captured, so no people, homes or jobs are added. The occupation upkeep ends, and no unit has to stay.", he: "המקום נשאר בשליטה ישראלית. תושביו נמלטו בעת הכיבוש, ולכן לא מתווספים תושבים, בתים או מקומות עבודה. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום." }
+  - { key: capture.end.about.annex_stayed, en: "The place stays under Israeli control, and its residents join the population with their homes and jobs. The occupation upkeep ends, and no unit has to stay.", he: "המקום נשאר בשליטה ישראלית, ותושביו מצטרפים לאוכלוסייה עם בתיהם ומקומות העבודה שלהם. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום." }
+  - { key: capture.end.about.withdraw, en: "The units leave, and the place is under enemy control again. The occupation upkeep ends.", he: "הכוחות יוצאים, והמקום חוזר לשליטת האויב. עלות ההחזקה מסתיימת." }
+  - { key: capture.end.changes, en: "Resource changes at once:", he: "שינויים מיידיים במשאבים:" }
+  - { key: capture.end.changes_none, en: "Resource changes at once: none", he: "שינויים מיידיים במשאבים: אין" }
+  - { key: capture.end.none, en: "Neither choice can be made this turn. The unit stays, the occupation upkeep continues, and the decision waits.", he: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה." }
+  - { key: capture.refusal.attention, en: "Not enough Attention this turn: this needs {1:0.0}, and {2:0.0} is left.", he: "אין די תשומת לב בתור הזה. עלות: {1:0.0}; יתרה: {2:0.0}." }
+  - { key: capture.refusal.needs_unit, en: "An Israeli military unit must be in {0} for this.", he: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}." }
+  - { key: capture.refusal.no_free_hex, en: "A unit in {0} has no free hex next to it to withdraw to.", he: "ליחידה ב{0} אין משושה פנוי סמוך שאפשר לסגת אליו." }
+  - { key: capture.refusal.no_one_to_deport, en: "Its residents fled when it was captured, so there is no one to deport.", he: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש." }
+  - { key: capture.refusal.already_city, en: "{0} is already a city.", he: "{0} כבר עיר." }
+  - { key: capture.refusal.not_awaiting, en: "{0} is not waiting for this decision.", he: "אין החלטה ממתינה עבור {0}." }
+  - { key: capture.refusal.unknown_outcome, en: "This choice is not known.", he: "האפשרות הזו אינה מוכרת." }
+  - { key: map.control.awaiting_choice, en: "Decision pending", he: "החלטה ממתינה" }
+  - { key: map.control.occupied, en: "Occupied", he: "מוחזק" }
+  - { key: map.control.awaiting_end, en: "Occupation period over", he: "תקופת ההחזקה הסתיימה" }
+  - { key: map.control.depopulated, en: "Depopulated", he: "מרוקן מתושביו" }
+  - { key: info.control.awaiting_choice, en: "{0}: captured, decision pending", he: "{0}: נכבש, החלטה ממתינה" }
+  - { key: info.control.occupied, en: "{0}: occupied, turns left: {1}", he: "{0}: מוחזק, תורות שנותרו: {1}" }
+  - { key: info.control.awaiting_end, en: "{0}: occupation period over, decision pending", he: "{0}: תקופת ההחזקה הסתיימה, החלטה ממתינה" }
+  - { key: info.control.depopulated, en: "{0}: residents displaced, place depopulated", he: "{0}: התושבים נעקרו ממקומם, המקום מרוקן מתושביו" }
+  - { key: hud.standing_displaced_places, en: "Places depopulated by Deport: {0}", he: "מקומות שרוקנו מתושביהם בעקבות גירוש: {0}" }

@@ -123,10 +123,11 @@ public class TurnReportTests
             Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
             foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
-        // The fixed turn's own causes: Security moved by One Army, then by the border villages' effect, the larger first.
+        // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
+        // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
+        // (the second line before #1565) is left out.
         var security = Causes(k.Ui, "security");
-        Assert.AreEqual("Security +1.5% (One Army)", security[0]);
-        StringAssert.EndsWith("(Border villages)", security[1]);
+        CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
         StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
@@ -304,6 +305,73 @@ public class TurnReportTests
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 3 turns", log[log.Count - 1], string.Join("\n", log));
         Assert.IsFalse(k.Report.IsOpen);
+    }
+
+    /// <summary>C148: four arrivals stay visible without covering the report's heading or first causes, even while
+    /// the next decision card waits underneath. Closing the report restores the card's own toast placement.</summary>
+    [UnityTest]
+    public IEnumerator FourArrivalsClearTheReportWhileTheNextCardWaits()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var rt = new RenderTexture(1920, 1080, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("ArrivalToastReportLayout"); go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var hud = root.Q("root"); hud.RemoveFromClassList("loading");
+            if (hebrew) hud.AddToClassList(UiLanguage.HebrewClass);
+            var text = hebrew ? He : En;
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+            var owned = new List<System.IDisposable>();
+            owned.Add(new HudPresenter(root, bridge, text));
+            var nav = new ScreenNav(root); owned.Add(nav);
+            var card = new EventCardPresenter(root, bridge, text, null); owned.Add(card);
+            var report = new TurnReportPresenter(root, bridge, text, nav); owned.Add(report);
+            var toast = new ToastPresenter(root, bridge, text); owned.Add(toast);
+            // Layout inputs only: the real presenter must retain all four lines, in either direction.
+            var arrivals = hebrew
+                ? new[] { "כרמלי הגיעה ליעד", "גבעתי הגיעה ליעד", "עציוני הגיעה ליעד", "הנגב הגיעה ליעד" }
+                : new[] { "Carmeli arrived at its destination", "Givati arrived at its destination",
+                    "Etzioni arrived at its destination", "Negev arrived at its destination" };
+            try
+            {
+                bridge.EndTurn();
+                toast.Show(arrivals);
+                for (int i = 0; i < 30 && !(root.Q("turn-report-panel").layout.width > 0); i++) yield return null;
+                for (int i = 0; i < 3; i++) yield return null;
+                string at = hebrew ? "he" : "en";
+                Assert.IsTrue(report.IsOpen, at);
+                Assert.IsNotNull(card.Shown, at + ": a decision waits under the report");
+                Assert.IsTrue(hud.ClassListContains(EventCardPresenter.OpenClass), at);
+                Assert.IsFalse(root.Q("event-layer").enabledSelf, at + ": the card is covered");
+                Assert.IsTrue(root.Q("turn-report").enabledSelf, at + ": the report stays usable");
+                var label = root.Q<Label>("toast"); var bounds = label.worldBound;
+                CollectionAssert.AreEqual(arrivals, label.text.Split('\n'), at + ": no arrival is discarded");
+                Assert.AreEqual(DisplayStyle.Flex, label.resolvedStyle.display, at);
+                Assert.Greater(bounds.width, 0, at); Assert.Greater(bounds.height, 0, at);
+                Assert.IsTrue(root.worldBound.Contains(bounds.min) && root.worldBound.Contains(bounds.max), at + ": toast stays in the window");
+                foreach (var name in new[] { "turn-report-title", "turn-report-intro", "turn-report-heading-security" })
+                    Assert.IsFalse(bounds.Overlaps(root.Q(name).worldBound), at + ": " + name + " is readable");
+                var firstCause = root.Q("turn-report-panel").Query<Label>(className: "turn-report-cause").ToList().First();
+                Assert.IsFalse(bounds.Overlaps(firstCause.worldBound), at + ": first cause is readable");
+                Assert.IsFalse(hud.ClassListContains(EventCardPresenter.ModalClass), at + ": a covered card cannot center the toast");
+                Assert.IsFalse(root.Q("map-focus").enabledSelf, at + ": removing modal does not uncover the map");
+                report.Close();
+                for (int i = 0; i < 3; i++) yield return null;
+                Assert.IsTrue(root.Q("event-layer").enabledSelf, at + ": card is usable again");
+                Assert.IsTrue(hud.ClassListContains(EventCardPresenter.ModalClass), at + ": card placement restored");
+                CollectionAssert.AreEqual(arrivals, label.text.Split('\n'), at + ": closing keeps every arrival");
+            }
+            finally
+            {
+                for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
     }
 
     /// <summary>At a laptop's 1280x720 and a phone's 390x844, in English and Hebrew: the report lies in the window, every

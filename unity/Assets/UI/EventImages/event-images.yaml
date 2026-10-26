@@ -384,3 +384,17 @@ images:
     sensitive: false
     sensitivity_reviewed: false
     note: "The objective card absorb_immigrants (#739; the owner's ruling of 19 October 2026: a generic arrival photograph). NLI title 'עולים מטרנסילבניה רומניה מגיעים באוניה לנמל חיפה' (immigrants from Transylvania, Romania, arrive by ship at Haifa port), description 'עולים חדשים יורדים מכבש הספינה' (new immigrants come down the ship's gangway), taken 25 June 1951; NLI archive ARC. 4* 2068 / 6027. A generic arrival, not the card's own date (the card is December 1949). Unnamed adults on the gangway and men in uniform caps at its foot; no child, nothing graphic. Licence, artist, credit and SHA-1 read through the Commons API on 2026-10-21. Owner sign-off, 21 October 2026 (coordinator session): approved for the objective 2 card (#1268). Not a sensitive picture, so sensitivity_reviewed stays false (docs/event-images.md: only the sensitive pictures need that flag)."
+  - event: degania_defence
+    file: degania_defence.jpg
+    commons: "https://commons.wikimedia.org/wiki/File:Degania_Alef_(997008872726705171.jpg"
+    original: "https://upload.wikimedia.org/wikipedia/commons/e/e4/Degania_Alef_%28997008872726705171.jpg"
+    sha1: 308a21f73e2eb2a4ed360d33848c128e6b96c43a
+    original_size: [1950, 1187]
+    licence: CC-BY-4.0
+    artist: "Moshe Marlin Levin"
+    credit: "Moshe Marlin Levin / Meitar Collection / National Library of Israel / The Pritzker Family National Photography Collection · CC BY 4.0 · graded and cropped"
+    alt: "A stopped tracked armoured carrier under the eucalyptus trees at Degania Alef; the archive's catalogue dates the slide to 20 May 1948."
+    crop: [0.5, 0.5, 1.0]
+    sensitive: true
+    sensitivity_reviewed: true
+    note: "The card is tagged war-casualties, so the owner signs the photograph off (#1565). Owner sign-off, 24 October 2026: the photograph ('Use, neutral alt text') and the card with this alt text ('approved'), #1568. NLI title 'הטנק הסורי שנעצר בכניסה לקיבוץ דגניה א' במהלך מלחמת העצמאות' (the Syrian tank stopped at the entrance to kibbutz Degania Alef during the War of Independence), catalogue-dated 20 May 1948 (the archive's own date, cited as the catalogue's): the in-window frame #1565 asks for. A colour slide; no people, nothing graphic. The vehicle is visibly a Universal Carrier, not the R35 that stands at Degania today (compare File:Degania Alef (997009322909005171.jpg and he.wiki 'הטנק בדגניה'), and Commons files it under 'Universal Carriers in Israeli service', while the NLI record and its sibling frame 997008872726305171 ('a Syrian armoured vehicle destroyed at the entrance', dated only 1948) call it Syrian. The alt text therefore names no side, and the identification is flagged here for the owner's review. VRTS ticket 2021092910005788. Licence, credit, date and SHA-1 read through the Commons API, 24 October 2026."

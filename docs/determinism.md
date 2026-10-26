@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `f3ec68b734a3beb24df9a873e0400f0253aed48f3cde2ea12415f1890dcaa5b0` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `5bfeb26575f70ba6b9de28c18fb8c0b76b9fa84c378246ceb1f3d6449c36f4d8` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `5bfeb26575f70ba6b9de28c18fb8c0b76b9fa84c378246ceb1f3d6449c36f4d8` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 bc2ab42b43bab8f19eb9b25368a3d4da5f2d3fdfed092b480c8d2738b035a298`.
+ministers): `SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 bc2ab42b43bab8f19eb9b25368a3d4da5f2d3fdfed092b480c8d2738b035a298"
+  --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -91,14 +91,14 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
 10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
 place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
-`SMOKE ORDERS OK 1948-06-15 9f224bd44792f73f393a8ec8f552f20d3bc3c05ab26d08d1b58762b2bf075114`.
+`SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
 attack slices can add their orders to it. Check a WebGL build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
-  --expect "SMOKE ORDERS OK 1948-06-15 9f224bd44792f73f393a8ec8f552f20d3bc3c05ab26d08d1b58762b2bf075114"
+  --expect "SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -432,3 +432,14 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
 | #798: the `mvp-occupy-cost` golden (the plan's PR 6 scenario; owner, 23 Oct 2026, now that a capture is reachable in play, #1304) | scenario-mvp-occupy-cost | `a767bb66` | new: Golani's unit moves to Nazareth on 15 May 1948, the scenario answers the capture with Occupy on 15 June, and the run ends on 15 December 1948 with Nazareth awaiting `EndOccupation` (`since=1948-06-15`). No existing golden moves |
 | #799: the `mvp-annex-nazareth` golden (the plan's Task 6, #1520) | scenario-mvp-annex-nazareth | `d37e6db4` | new: `mvp-occupy-cost`'s two steps, then `end_occupation nazareth annex` on 15 December 1948, run to 15 January 1949. Nazareth ends `owner=israel,state=annexed,since=1948-06-15` and is a city of 17 units, 7 employed (16,994 people, the census-day count the owner approved on #799, times the national share 0.439), housing 17. It pins the approved count. The fled field and EndOccupation move no existing golden: `mvp-occupy-cost` captures Nazareth (stayed) and keeps `a767bb66` |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | 1950 | `8578966e` | the reference player answers the new 15 May 1948 card with its historical `jordan_valley` option (security +0.015); answering two cards takes that turn's Attention, so the first halutz group is trained on 15 August 1948 instead of 15 May. Security, morale and stability rise a little and debt is IL 2.0m lower at 1950 (was `f3ec68b7`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | 1952 | `5bfeb265` | the same card and later first training; by 1952 debt is back to the old run's value, while security, morale and stability stay a little higher. The last required yishuv (Re'im) is built on 15 September 1951, not 15 July, so `first_new_yishuv` fires two months later (was `6b374f69`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | mvp-end | `5bfeb265` | same as 1952 (was `6b374f69`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | smoke5 | `7bdf646a` | the first option of the new card over the five smoke turns; no snapshot is kept for this run (was `bc2ab42b`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | smoke-orders | `bf0b41cc` | same over its one turn; no snapshot is kept for this run (was `9f224bd4`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-reckless | `a2ca9626` | the scenario's player answers the card `jordan_valley`: security +0.015, with morale and stability following (was `cb1c96d5`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-cautious | `c06d89f0` | same as reckless (was `f672a0f3`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-absorb-first | `9c98ae51` | same as reckless (was `6aa49f62`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-defeat | `d5bc68f9` | same as reckless; the defeat is unchanged (was `584a828a`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-occupy-cost | `9fcc7bae` | same as reckless; Nazareth's capture and Occupy are unchanged (was `a767bb66`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-annex-nazareth | `8fe6d129` | same as reckless; the annexation is unchanged (was `d37e6db4`) |

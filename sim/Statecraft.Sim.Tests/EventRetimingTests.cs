@@ -25,7 +25,7 @@ public class EventRetimingTests
     /// (a card raised at the new game comes on 15 May 1948), or null.</summary>
     static DateTime? CardDate(string id) => Run.FirstOrDefault(s => s.FiredEvents.Contains(id))?.Date;
 
-    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 35 ordinary events
+    /// <summary>#567's historical monthly run, now including objective 3's three cards (#791): all 36 ordinary events
     /// except the four conditional cards below fire. Consequence cards belong only to alternate roads.</summary>
     [Fact]
     public void EveryEventFiresInTheHistoricalMonthlyRun()
@@ -39,7 +39,7 @@ public class EventRetimingTests
         // remain unfinished (R-OBJ-005), so neither of their completion cards is expected.
         var missing = record.Select(e => e.Id).Where(id => CardDate(id) == null).ToList();
         Assert.True(missing.SequenceEqual(new[] { "absorb_immigrants", "burma_road_complete", "hula_drainage", "railway_complete" }), "never fired: " + string.Join(", ", missing));
-        Assert.Equal(35, record.Count);
+        Assert.Equal(36, record.Count);
     }
 
     /// <summary>The card date of every event, from #567's tables (the "Proposed" column in the war period, "Monthly" after
@@ -49,6 +49,7 @@ public class EventRetimingTests
     // R-TURN-002
     [Theory]
     [InlineData("idf_founding", "1948-05-15")]                     // edit 1: the game's first day (was 15 June)
+    [InlineData("degania_defence", "1948-05-15")]                 // #1565: the decision of 19 May, so the window opens at the game's start (R-TURN-002)
     [InlineData("first_truce", "1948-06-15")]                      // late by design, +5 days (owner, Q-CUT-3)
     [InlineData("altalena", "1948-06-15")]                         // edit 2 (owner, Q-CUT-7; was 15 July)
     [InlineData("ten_days", "1948-07-15")]                         // rewritten in PR 1a (#577)
@@ -69,7 +70,7 @@ public class EventRetimingTests
     [InlineData("austerity_1949", "1949-05-15")]
     [InlineData("armistice_syria", "1949-08-15")]
     [InlineData("frumkin_commission", "1950-01-15")]
-    [InlineData("first_new_yishuv", "1951-07-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791)
+    [InlineData("first_new_yishuv", "1951-09-15")]                 // R-OBJ-005: the turn the reference player builds Re'im, the last of all six required sites (#791); 15 July before #1565's turn-1 card (owner: "Accept the shift", #1568)
     [InlineData("maabarot_policy", "1950-04-15")]
     [InlineData("law_of_return", "1950-07-15")]
     [InlineData("clothing_rationing_1950", "1950-07-15")]
