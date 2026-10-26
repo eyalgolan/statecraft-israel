@@ -78,6 +78,13 @@ namespace Statecraft.Sim
         public const string Hebrew = "he";
         public const string UiFile = "ui.yaml", EventsFile = "events.yaml", ContentFile = "content.yaml";
 
+        /// <summary>The key by which a UI file says which language it is. Not a label: the player reads it to decide
+        /// what it is showing — the Hebrew face on the UI root, and the branches in EventCardPresenter and
+        /// SharePresenter — so a file that says the wrong thing here shows the wrong language's text direction and
+        /// wording rather than failing. Every shipped UI file declares it (strings.en.yaml, strings.he.yaml,
+        /// translations/ro/ui.yaml).</summary>
+        public const string LangKey = "ui.lang";
+
         static readonly Regex LangCode = new Regex(@"^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$", RegexOptions.CultureInvariant);
         static readonly Regex UiKey = new Regex(@"^[A-Za-z0-9_]+(\.[A-Za-z0-9_\-]+)*$", RegexOptions.CultureInvariant);
         static readonly Regex Id = new Regex(@"^[a-z][a-z0-9_]*$", RegexOptions.CultureInvariant);
@@ -96,6 +103,22 @@ namespace Statecraft.Sim
         };
 
         public static bool IsLanguage(string code) => code != null && LangCode.IsMatch(code);
+
+        /// <summary>Refuses a language whose UI file does not name itself in <see cref="LangKey"/>, or names another
+        /// language (#1606). Call it before offering a language to the player: <see cref="Parse"/> checks each file's
+        /// shape, which a copied-and-forgotten file passes, and the player then reads <see cref="LangKey"/> and trusts
+        /// it. A file carrying another language's code is the case worth the check — nothing else notices, and the
+        /// result is one language's words laid out as another's.</summary>
+        public static void CheckDeclaredLanguage(TranslationSet set)
+        {
+            if (set == null) throw new ArgumentNullException(nameof(set));
+            var where = $"translations/{set.Lang}/{UiFile}";
+            var declared = set.Ui.Where(p => p.Key == LangKey).Select(p => p.Value).FirstOrDefault();
+            if (declared == null)
+                throw new ContentException(where, LangKey, $"a UI language must name itself: add {LangKey}: \"{set.Lang}\"");
+            if (declared != set.Lang)
+                throw new ContentException(where, LangKey, $"says '{declared}' but the file is {set.Lang}'s");
+        }
 
         // ---- parsing ----
 
