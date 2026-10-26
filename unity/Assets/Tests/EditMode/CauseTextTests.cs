@@ -288,11 +288,17 @@ public class CauseTextTests
         var s = Simulation.NewGame(c, GoldenRun.Seed, Mode.Historical);
         s.Units.Clear(); s.Units.Add(100, new Unit(100, "veteran_soldier", -3, 21, side: Movement.PlayerSide, strength: 3));
         s.Settlements["lod"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingChoice, s.Date, fled: fled);
-        var why = new List<Cause>();
-        Assert.IsNull(SettlementControl.Resolve(c, s, "lod", SettlementControl.Occupy, why));
+        // Preview shares RunOrders with Step and invokes the real producers, without unrelated monthly effects.
+        var occupied = Simulation.Preview(c, s, new Command[] { new ResolveCapture("lod", SettlementControl.Occupy) });
+        Assert.IsEmpty(occupied.Rejected);
+        var why = new List<Cause> { occupied.Why.Single(x => x.Key == "occupation_started") };
+        s = occupied.State;
         s.Settlements["lod"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, s.Date, fled: fled);
         s.Cities.Remove("lod");
-        Assert.IsNull(SettlementControl.End(c, s, "lod", SettlementControl.Annex, why));
+        var annexed = Simulation.Preview(c, s, new Command[] { new EndOccupation("lod", SettlementControl.Annex) });
+        Assert.IsEmpty(annexed.Rejected);
+        why.Add(annexed.Why.Single(x => x.Key == "place_annexed"));
+        annexed.State.Settlements.Clear();
         Assert.AreEqual(2, why.Count);
         CollectionAssert.AreEqual(new[] { "occupation_started", "place_annexed" }, why.Select(x => x.Key));
         s.Settlements.Clear();
