@@ -9,10 +9,10 @@ namespace Statecraft.Game.UI
     /// <summary>"Share" (#1170): the button in the Settings screen's Community row and the one on the turn report capture the
     /// frame, then open a small panel over everything with a preview of the picture, the post (ShareShot.Text), one Share
     /// button, Copy and the site buttons (#1237). The capture runs before the panel shows, so the panel is never in the picture.
-    /// Where the browser can share files, Share opens its share sheet with the picture, the post and the itch URL; elsewhere
+    /// Where the browser can share files, Share opens its share sheet with the picture and the post (which contains both links); elsewhere
     /// the same button downloads the picture, and the panel then says to attach it to a post, which a link cannot carry.
     /// Copy (#1238) puts the picture on the clipboard, or the post text where the browser refuses the picture, and says which.
-    /// X, Facebook, WhatsApp, Telegram and LinkedIn open their share links; Instagram has none, so its button does what Share does
+    /// X, Facebook, WhatsApp, Telegram and LinkedIn copy the picture (or download it if copying is blocked), then open their share links; Instagram has none, so its button does what Share does
     /// and, where the picture downloaded, says to post it from the Instagram app.
     /// <para>While it shows, the root has <see cref="OpenClass"/> and every other part of the UI is disabled, so Tab stays in
     /// the panel; Close, Esc or Cancel give each part its own state back and the focus back to the button that opened it.
@@ -119,7 +119,7 @@ namespace Statecraft.Game.UI
                 ShowPreview(png);
                 foreach (var unbind in unbindSites) unbind();
                 unbindSites.Clear();
-                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, postText)));
+                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, postText), postText, () => PollCopy(site: true)));
                 opener = from;
                 // Each part's own state comes back on Close. The panel takes every press meanwhile, so no screen opens or
                 // closes under it; a resize may still run ScreenNav.DisableCovered, and Close then puts back the states from before.
@@ -140,7 +140,7 @@ namespace Statecraft.Game.UI
         void Send(VisualElement note)
         {
             if (!IsOpen) return;
-            ShareShot.Share(postText, ShareShot.Itch);
+            ShareShot.Share(postText);
             if (!canShareFiles) { note.style.display = DisplayStyle.Flex; return; }
             // The share sheet can still be refused on the release (ShareShot.jslib); then the picture downloads and the
             // note shows, as where files cannot be shared. A refusal comes at once; a few seconds is enough to wait.
@@ -176,18 +176,29 @@ namespace Statecraft.Game.UI
         void Copy()
         {
             if (!IsOpen) return;
+            ShareShot.Copy(postText);
+            PollCopy(site: false);
+        }
+
+        void PollCopy(bool site)
+        {
             copyPoll?.Pause();
             copied.style.display = DisplayStyle.None;
-            ShareShot.Copy(postText);
             // A press whose release never reached the browser (shorter than a frame, or another press first) copies
             // nothing and stays Pending: after a few seconds the panel says so rather than staying silent.
             var giveUpAt = UnityEngine.Time.realtimeSinceStartup + 4.5f;
             copyPoll = copy.schedule.Execute(() =>
             {
                 var result = ShareShot.Copied();
-                if (result == ShareShot.CopyResult.Pending && UnityEngine.Time.realtimeSinceStartup >= giveUpAt) result = ShareShot.CopyResult.Failed;
+                if (!site && result == ShareShot.CopyResult.Pending && UnityEngine.Time.realtimeSinceStartup >= giveUpAt) result = ShareShot.CopyResult.Failed;
                 if (!IsOpen || result == ShareShot.CopyResult.Pending) return;
-                copied.text = text[result switch
+                copied.text = text[site ? result switch
+                {
+                    ShareShot.CopyResult.Picture => "share.site_picture",
+                    ShareShot.CopyResult.Text => "share.site_text",
+                    ShareShot.CopyResult.Downloaded => "share.site_downloaded",
+                    _ => "share.site_failed",
+                } : result switch
                 {
                     ShareShot.CopyResult.Picture => "share.copied_picture",
                     ShareShot.CopyResult.Text => "share.copied_text",
@@ -195,12 +206,18 @@ namespace Statecraft.Game.UI
                 }];
                 copied.style.display = DisplayStyle.Flex;
                 copyPoll?.Pause();
-            }).Every(250).ForDuration(5000);
+            }).Every(250);
+            // A site can take focus for much longer than five seconds. Read its eventual result on return;
+            // cancelled arms stay silent; cap polling at five minutes as well as stopping on Close/new action/Dispose.
+            copyPoll.ForDuration(site ? 300000 : 5000);
         }
 
         public void Close()
         {
             if (!IsOpen) return;
+            copyPoll?.Pause();
+            foreach (var unbind in unbindSites) unbind();
+            unbindSites.Clear();
             closedAt = UnityEngine.Time.frameCount;
             hudRoot.RemoveFromClassList(OpenClass);
             foreach (var (part, enabled) in covered) part.SetEnabled(enabled);

@@ -407,7 +407,7 @@ public class MapActionUiTests
             var pointer = new GameObject("Pointer").AddComponent<MapPointer>();
             pointer.Map = map;
             var picked = new System.Collections.Generic.List<(int, int)>();
-            pointer.HexClicked += (q, r) => picked.Add((q, r));
+            pointer.HexClicked += (q, r, cityPill) => picked.Add((q, r));
             var centre = new Vector2(cam.pixelWidth / 2f, cam.pixelHeight / 2f);
 
             pointer.IsOverUi = _ => false;

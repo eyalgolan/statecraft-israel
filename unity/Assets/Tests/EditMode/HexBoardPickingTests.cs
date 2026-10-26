@@ -41,7 +41,7 @@ public class HexBoardPickingTests
         pointer = map.gameObject.AddComponent<MapPointer>();
         pointer.Map = map;
         pointer.IsOverUi = _ => false;
-        pointer.HexClicked += (q, r) => clicked.Add((q, r));
+        pointer.HexClicked += (q, r, cityPill) => clicked.Add((q, r));
         Physics.SyncTransforms();
     }
 

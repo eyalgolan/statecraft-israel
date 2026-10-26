@@ -418,9 +418,9 @@ namespace Statecraft.Game.UI
             // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
             Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
-            Action<int, int> onHex = (q, r) =>
+            Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
-                OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
+                OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen, cityPill);
                 if (info.ShowsUnit) advisor?.Notice(AdvisorSignals.UnitShown);
                 else if (info.Selected is (int sq, int sr) && bridge.Content.SettlementHexes.Any(h => h.Q == sq && h.R == sr && bridge.State.Cities.ContainsKey(h.Id)))
                     advisor?.Notice(AdvisorSignals.CityShown);
@@ -595,7 +595,7 @@ namespace Statecraft.Game.UI
                 StartCoroutine(FirstCardCheck(root, card!, Debug.Log));
             if (smoke > 0)
             {
-                if (Application.isPlaying) StartCoroutine(smokeOrders ? SmokeOrders(root, bridge, unitLayer, onHex, Debug.Log) : Smoke(root, bridge, card!, smoke, Debug.Log));
+                if (Application.isPlaying) StartCoroutine(smokeOrders ? SmokeOrders(root, bridge, unitLayer, (q, r) => onHex(q, r, false), Debug.Log) : Smoke(root, bridge, card!, smoke, Debug.Log));
                 else Debug.LogWarning("SMOKE FAIL the smoke run needs play mode or a player");
             }
             if (Application.isPlaying && PixelErrorProfile.Requested()) StartCoroutine(PixelErrorProfile.Run(map.Terrain));
@@ -643,13 +643,21 @@ namespace Statecraft.Game.UI
         /// hex moves it; a click on another unit's hex or on a city selects that unit or shows the city, as in Civ, lit or
         /// not (owner, 25 Oct 2026: "Clicking another unit or a city still selects it"; a right click moves there:
         /// OnHexOrdered).</summary>
-        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
+        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false, bool cityPill = false)
         {
             if (info.Covered)
             {
                 // A screen covers the panel: the click moves neither the ring nor the card (#210), and MapPointer's outline
                 // goes back to the hex the panel shows (or away, while it shows a unit).
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
+                return;
+            }
+            // #1661: a name pill means the city even when another unit stands there. A badge/terrain or keyboard
+            // pick keeps the existing unit-first routing; the event carries intent, not a mutable "last hit" flag.
+            if (cityPill && info.IsCity(q, r))
+            {
+                units.Select(null);
+                info.Show(q, r);
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
@@ -703,6 +711,9 @@ namespace Statecraft.Game.UI
             // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
+            // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
+            // bypassing Covered: End turn must show the unit whose orders it asks for (C137).
+            if (info?.Covered == true) nav?.Open(null);
             int? current = units.Selected is string row
                 ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
                 : null;

@@ -164,6 +164,69 @@ public class CauseTextTests
             Assert.AreEqual(UnitNames.Line(w, C, NoRows, He), CauseText.Line(w, C, NoRows, He));
     }
 
+    /// <summary>C136: a positive producer set prevents missing keys from being silently skipped by the existing tests.</summary>
+    [Test]
+    public void EveryEventAndUpkeepLineUsesATemplateAndKeepsItsEnglish()
+    {
+        var en = En; var he = He;
+        var lines = Turns().SelectMany(t => t.Why).Where(w => w.System == "events" || w.Key == CauseKeys.MilitaryUpkeep).ToList();
+        Assert.IsNotEmpty(lines);
+        Assert.IsTrue(lines.Any(w => w.Key == CauseKeys.MilitaryUpkeep));
+        foreach (var w in lines)
+        {
+            CollectionAssert.Contains(CauseKeys.All, w.Key, w.Message);
+            Assert.AreEqual(w.Message, CauseText.Line(w, C, NoRows, en), w.Key);
+            AssertHebrew(CauseText.Line(w, C, NoRows, he), w.Key);
+        }
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        foreach (var row in C.Events.SelectMany(e => e.Options).SelectMany(o => EventSystem.OptionEffects(C, s, o)))
+        {
+            CollectionAssert.Contains(CauseKeys.All, row.Key);
+            Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, en), row.Key);
+            AssertHebrew(CauseText.Line(row, C, NoRows, he), row.Key);
+        }
+    }
+
+    [Test]
+    public void AResolvedEventUsesItsHistoricalContentSnapshots()
+    {
+        var w = new Cause("events", "example", 0, "Delegated to Previous name: Previous choice",
+            key: CauseKeys.EventDelegated, args: new[] { "Previous choice", "הבחירה הקודמת", "Previous name", "השם הקודם" });
+        Assert.AreEqual(w.Message, CauseText.Line(w, C, NoRows, En));
+        var line = CauseText.Line(w, C, NoRows, He);
+        StringAssert.Contains("השם הקודם", line);
+        StringAssert.Contains("הבחירה הקודמת", line);
+        AssertHebrew(line, w.Key);
+    }
+
+    [Test]
+    public void ObjectiveAndExchangeEventRowsKeepEnglishAndRenderHebrew()
+    {
+        var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+        var objective = C.Objectives.First(o => o.NameHe != "" && !s.Objectives.ContainsKey(o.Id));
+        var lines = new List<Cause>();
+        Assert.IsTrue(Objectives.Record(C, s, C.RulesAt(s.Date).Mvp!, objective.Id, s.Date, lines));
+        var objectiveLine = lines.Single();
+        Assert.AreEqual(CauseKeys.ObjectiveCompleted, objectiveLine.Key);
+        StringAssert.Contains(objective.NameHe, CauseText.Line(objectiveLine, C, NoRows, He));
+        foreach (var front in Prisoners.Fronts)
+        {
+            // Renderer fixtures use people counts, not population-unit Delta: preserve the producer's N0 display.
+            lines.Add(new Cause("events", "prisoners", 2,
+                $"Prisoners exchanged: 12,300 prisoners returned to {PlayerText.Capitalised(front)}",
+                key: CauseKeys.PrisonersReturned, args: new[] { "12300", front }));
+            lines.Add(new Cause("events", "prisoners", 3,
+                $"Prisoners exchanged: 45,600 of our soldiers came home from {PlayerText.Capitalised(front)}",
+                key: CauseKeys.SoldiersReturned, args: new[] { "45600", front }));
+        }
+        foreach (var row in lines)
+        {
+            CollectionAssert.Contains(CauseKeys.All, row.Key);
+            Assert.AreEqual(row.Message, CauseText.Line(row, C, NoRows, En), row.Key);
+            AssertHebrew(CauseText.Line(row, C, NoRows, He), row.Key);
+        }
+    }
+
     static void AssertHebrew(string line, string key)
     {
         Assert.IsTrue(UiDirection.RightToLeft(line), $"{key}: '{line}' reads right to left");

@@ -29,6 +29,8 @@ namespace Statecraft.Game.UI
         readonly List<(VisualElement row, Label line)> rows = new List<(VisualElement, Label)>();
 
         readonly VisualElement panel; readonly SimBridge bridge; readonly UiText text;
+        /// <summary>The card's orders row (info-orders): a press on it that misses a button stays the card's (#1728).</summary>
+        readonly VisualElement? orders;
         readonly Button campButton, housingButton, defenceButton, moveButton, fortifyButton, holdButton, attackButton, sendHomeButton, skipButton, reinforceButton;
         /// <summary>The Reinforce order the card offers now (#1510), or null: what its button queues.</summary>
         Reinforce? reinforce;
@@ -96,6 +98,7 @@ namespace Statecraft.Game.UI
             System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
+            orders = panel.Q<VisualElement>("info-orders");
             this.clearSelection = clearSelection;
             onCancel = e => { if (!e.isPropagationStopped && Escape()) e.StopPropagation(); };
             panel.RegisterCallback(onCancel);
@@ -367,11 +370,13 @@ namespace Statecraft.Game.UI
         /// translucent), so a click on the card over one of them is meant for the map. True when a pick is open,
         /// <paramref name="picked"/> (the UI element under the pointer) is this card or inside it but not inside one of its
         /// buttons, and the hex under the pointer (<paramref name="hexUnder"/>, asked only then) is one PickTarget takes: lit,
-        /// or, for Move, an unlit hex with a route (go-to, #1398).</summary>
+        /// or, for Move, an unlit hex with a route (go-to, #1398). The orders row is not text (#1728): it wraps, so it has gaps
+        /// beside and between its buttons, and a press there is a missed button, not a map order. One pixel above Skip, it
+        /// ordered a go-to that ended its first leg in Nazareth and opened that capture's decision over the card.</summary>
         public bool TakesClickThrough(VisualElement? picked, System.Func<(int q, int r)?> hexUnder)
         {
             if (!(pick is { } p) || picked == null || (picked != panel && !panel.Contains(picked))) return false;
-            for (var e = picked; e != panel; e = e.parent) if (e is Button) return false;
+            for (var e = picked; e != panel; e = e.parent) if (e is Button || e == orders) return false;
             if (!(hexUnder() is { } h)) return false;
             if (clickThrough is { } known && known.hex == h) return known.takes;
             var takes = Takes(p, h.q, h.r);
