@@ -2,16 +2,20 @@
 import copy
 import json
 from pathlib import Path
+import re
 import unittest
 
 import yaml12
 
 ROOT = Path(__file__).resolve().parents[2]
+ORIGINAL_ROW = re.compile(r'Tal Heuberger original offered in PR #(507|336) at [0-9a-f]{40}, ')
 
 
 def verify(manifest, assets):
     originals = [x for x in manifest['files'] if x['source'] in ('507', '336')]
-    assert len(originals) == 146, '146 original FBX/JPEG entries'
+    assert originals, 'the manifest lists original FBX/JPEG entries'
+    listed = {a['glob'] for a in assets['rules'] if ORIGINAL_ROW.match(a.get('source', ''))}
+    assert {x['path'] for x in originals} == listed, 'manifest originals equal the #507/#336 source files in ASSETS.yaml'
     assert manifest['header'].get('licence') == 'CC-BY-NC-ND-4.0', 'original header licence'
     assert manifest['header'].get('generated_licence') == 'PolyForm-Noncommercial-1.0.0', 'generated code row in LICENSING.md'
     for row in originals:
@@ -36,4 +40,16 @@ class OriginalModelsManifestTests(unittest.TestCase):
         path = next(x['path'] for x in self.manifest['files'] if x['source'] in ('507', '336'))
         next(x for x in changed['rules'] if x['glob'] == path)['licence'] = 'CC0-1.0'
         with self.assertRaisesRegex(AssertionError, path):
+            verify(self.manifest, changed)
+
+    def test_a_dropped_manifest_original_fails(self):
+        changed = copy.deepcopy(self.manifest)
+        changed['files'].remove(next(x for x in changed['files'] if x['source'] in ('507', '336')))
+        with self.assertRaisesRegex(AssertionError, 'equal the #507/#336'):
+            verify(changed, self.assets)
+
+    def test_a_dropped_asset_row_fails(self):
+        changed = copy.deepcopy(self.assets)
+        changed['rules'].remove(next(x for x in changed['rules'] if ORIGINAL_ROW.match(x.get('source', ''))))
+        with self.assertRaisesRegex(AssertionError, 'equal the #507/#336'):
             verify(self.manifest, changed)
