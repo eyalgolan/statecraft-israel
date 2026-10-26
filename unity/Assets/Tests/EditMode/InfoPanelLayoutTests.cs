@@ -259,6 +259,69 @@ public class InfoPanelLayoutTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>#1728: a press on the unit card's orders row that misses its buttons (the row wraps, so there are gaps beside
+    /// and between its lines of buttons) stays the card's. Before the fix it was #1617's click-through: with the Move pick open
+    /// from the selection, the card's text over a hex with a go-to route takes the click, and the row counted as text. A press
+    /// one pixel above Skip then ordered Golani's go-to to the hex under it, and the go-to's first leg ended in Nazareth, so
+    /// its capture decision opened over the card (the Hebrew run, whose Skip press fell in the row's gap; the English press
+    /// landed on the button). At 1920x1080, English and Hebrew, with Skip shown: the point just above Skip's centre picks
+    /// the row, and no point of the row that picks something other than a button takes a click through to a hex the pick
+    /// takes, while the card's title over the same hex still does.</summary>
+    [UnityTest]
+    public IEnumerator APressOnTheOrdersRowBesideItsButtonsStaysTheCards()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var units = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+        {
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            var token = Statecraft.Game.Map.Units.UnitRoster.FromState(units, C, g.State, null, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+            var id = UnitCard.SimUnit(C, g.State, token.Unit)!.Value;
+            var tlv = C.SettlementHexes.Single(t => t.Id == "tel_aviv");
+            Assert.IsNotEmpty(Movement.Route(C, g.State, id, tlv.Q, tlv.R, new Dictionary<int, int>()), "precondition: a go-to route reaches Tel Aviv");
+            (int q, int r)? routable = (tlv.Q, tlv.R);
+            Statecraft.Game.Map.Units.PlacedToken? golani = new Statecraft.Game.Map.Units.PlacedToken(token, new Statecraft.Game.Map.Units.AnchorSpot(0, 0, 0, 0, false));
+            InfoPanelPresenter? shown = null;
+            var lang = hebrew ? "he" : "en";
+            yield return Rendered(1920, 1080, g, (root, info) => { info.ShowUnit(); shown = info; }, root =>
+            {
+                var info = shown!;
+                var skip = root.Q<Button>("info-skip");
+                if (!Shown(skip)) { problems.Add($"{lang}: precondition: Skip shows (Golani needs orders)"); return; }
+                if (!info.TakesClickThrough(root.Q<Label>("info-title"), () => routable)) { problems.Add($"{lang}: precondition: the Move pick is open from the selection"); return; }
+                var row = root.Q("info-orders");
+                if (skip.parent != row) { problems.Add($"{lang}: precondition: Skip sits in the orders row"); return; }
+                var panel = root.panel;
+                var above = new Vector2(skip.worldBound.center.x, skip.worldBound.yMin - 1);
+                if (panel.Pick(above) != row) problems.Add($"{lang}: precondition: the point just above Skip {above} picks the orders row, not {panel.Pick(above)?.name}");
+                int gaps = 0;
+                var box = row.worldBound;
+                for (var y = Mathf.Ceil(box.yMin); y < box.yMax; y += 1)
+                    for (var x = Mathf.Ceil(box.xMin); x < box.xMax; x += 2)
+                    {
+                        var picked = panel.Pick(new Vector2(x, y));
+                        if (picked == null || !row.Contains(picked) && picked != row) continue;
+                        var inButton = false;
+                        for (var e = picked; e != null && e != row; e = e.parent) if (e is Button) inButton = true;
+                        if (inButton) continue;
+                        gaps++;
+                        if (info.TakesClickThrough(picked, () => routable))
+                        {
+                            problems.Add($"{lang}: a press at ({x}, {y}) on {picked.name}/{string.Join(".", picked.GetClasses())} beside the buttons orders a go-to through the card");
+                            return;
+                        }
+                    }
+                if (gaps == 0) problems.Add($"{lang}: precondition: the orders row has points beside its buttons");
+            }, hebrew ? he : Text, hebrew, root =>
+            {
+                var hide = root.Q<Button>("event-hide");
+                if (hide != null && Shown(hide)) UiTestKit.Press(hide);   // the turn's decision card disables the panel under it
+            }, () => golani);
+        }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
     /// <summary>Owner ruling on #1150 (21 Oct 2026): on a stacked bar (1024x1024) the city's own hex shows "City projects (N)", N
     /// the kinds listed, and the list behind it; a tap opens it and another closes it. A hex only one city reaches keeps the full
     /// list there, and the city's own hex keeps it on a tall one-row window (1920x1080). English and Hebrew.</summary>
