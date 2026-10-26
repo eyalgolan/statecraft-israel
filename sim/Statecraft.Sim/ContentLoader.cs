@@ -53,6 +53,17 @@ namespace Statecraft.Sim
         sealed class ProjectsFile { public List<ProjectKind> Projects { get; set; } = new List<ProjectKind>(); }
         sealed class CorridorsFile { public List<CorridorDef> Corridors { get; set; } = new List<CorridorDef>(); }
         sealed class ObjectivesFile { public List<Objective> Objectives { get; set; } = new List<Objective>(); }
+        sealed class Gdd03EventsFile
+        {
+            public string Ruleset { get; set; } = "";
+            public List<EventExclusion>? Exclusions { get; set; }
+        }
+        sealed class EventExclusion
+        {
+            public string Id { get; set; } = "";
+            public string Reason { get; set; } = "";
+        }
+
 
         public const string HexesFile = "map/hexes.json";
         public const string SettlementHexesFileName = "map/settlement_hexes.yaml";
@@ -370,6 +381,12 @@ namespace Statecraft.Sim
             // set without objectives has no file.
             // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
+            // Leave malformed legacy era records to the original validation path (Ruleset needs Systems).
+            if (c.Eras.Count > 0 && c.Eras[0].Systems != null && c.Ruleset == SaveGame.Gdd03Ruleset)
+            {
+                ValidateEras(c);   // establish the game-wide identity before consulting its availability manifest
+                ApplyGdd03EventExclusions(readFile, c);
+            }
             Validate(c, settlementIds);
             if (c.Ruleset == SaveGame.Gdd03Ruleset && c.Gdd03Balance == null)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "(file)", "required for the gdd-0.3 ruleset");
@@ -393,6 +410,52 @@ namespace Statecraft.Sim
             c.BuildWindows();
             c.Hash = HashOf(read);
             return c;
+        }
+
+        // R-EFX-001: this file is deliberately never read by legacy/gdd-0.1, including for hashing.
+        // Parse all event sources first: exclusion is availability, not permission to hide malformed YAML.
+        static void ApplyGdd03EventExclusions(Func<string, string?> readFile, Content c)
+        {
+            const string file = "gdd03-events.yaml";
+            var manifest = Read<Gdd03EventsFile>(readFile, file);
+            if (manifest.Ruleset != SaveGame.Gdd03Ruleset)
+                throw new ContentException(file, "ruleset", "must be gdd-0.3");
+            if (manifest.Exclusions == null)
+                throw new ContentException(file, "exclusions", "required: an explicit list (possibly empty)");
+            var sources = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var e in c.Events)
+            {
+                if (!Offices.OfficeId.IsMatch(e.Id)) throw new ContentException(e.File, $"events[{e.Id}].id", IdRule);
+                if (!sources.Add(e.Id)) throw new ContentException(e.File, $"events[{e.Id}].id", "duplicate event id");
+            }
+            var excluded = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < manifest.Exclusions.Count; i++)
+            {
+                var row = manifest.Exclusions[i];
+                var at = FormattableString.Invariant($"exclusions[{i}]");
+                if (row == null || string.IsNullOrWhiteSpace(row.Id) || !sources.Contains(row.Id))
+                    throw new ContentException(file, at + ".id", "must name an existing event");
+                if (!excluded.Add(row.Id)) throw new ContentException(file, at + ".id", "duplicate exclusion");
+                if (string.IsNullOrWhiteSpace(row.Reason)) throw new ContentException(file, at + ".reason", "required");
+            }
+            // Fail explicitly rather than leaving a mandatory edge pointing into a filtered catalogue.
+            foreach (var e in c.Events.Where(e => !excluded.Contains(e.Id)))
+            {
+                void Reference(string field, string id)
+                {
+                    if (excluded.Contains(id)) throw new ContentException(e.File, $"events[{e.Id}].{field}", $"event '{id}' is excluded under gdd-0.3");
+                }
+                for (int i = 0; i < e.Requires.Count; i++)
+                    Reference(FormattableString.Invariant($"requires[{i}].event"), e.Requires[i].Event);
+                for (int i = 0; i < e.Variants.Count; i++)
+                    for (int j = 0; j < e.Variants[i].When.Count; j++)
+                        Reference(FormattableString.Invariant($"variants[{i}].when[{j}].event"), e.Variants[i].When[j].Event);
+                foreach (var o in e.Options) Reference($"options[{o.Id}].rejoin", o.Rejoin);
+            }
+            foreach (var o in c.Objectives)
+                if (excluded.Contains(o.Card)) throw new ContentException(ObjectivesFileName, $"objectives[{o.Id}].card", $"event '{o.Card}' is excluded under gdd-0.3");
+            // Stable removal retains the loader's original ordinal source order. Shared YAML stays available to review tools.
+            c.Events.RemoveAll(e => excluded.Contains(e.Id));
         }
 
         /// <summary>The map editor's overrides (#1009), applied last, once the generated map inputs have been read and
