@@ -7,6 +7,7 @@ using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 /// <summary>The GDD orders through the UI's queue (#380): AssignWorkers, Train and CancelTraining queue in the slice
 /// (the real content, the GDD game since the cutover), an id the content or state does not have is refused before End Turn, an order replaces an earlier one
@@ -96,14 +97,14 @@ public class SimBridgeGddTests
     {
         var bridge = new SimBridge(GameSession.New(Slice, GoldenRun.Seed, Mode.Historical), Text);
         var unit = bridge.NeedsOrders[0]; var other = bridge.NeedsOrders[1];
-        var start = bridge.AttentionLeft;
+        var start = bridge.AttentionLeft!.Value;
         var kept = new Reinforce(other, "tel_aviv", 1);
         Assert.IsNull(bridge.Queue(new Reinforce(unit, "tel_aviv", 1)));
         Assert.IsNull(bridge.Queue(kept));
         var home = new UnitOrder(unit, Demobilization.SendHome);
         Assert.IsNull(bridge.Queue(home));
         CollectionAssert.AreEqual(new Command[] { kept, home }, bridge.Queued.ToList(), "the other unit's order stays");
-        Assert.AreEqual(start - bridge.Price(kept) - bridge.Price(home), bridge.AttentionLeft, 1e-9, "the withdrawn order is refunded");
+        Assert.AreEqual(start - bridge.Price(kept)!.Value - bridge.Price(home)!.Value, bridge.AttentionLeft!.Value, 1e-9, "the withdrawn order is refunded");
     }
 
     [Test]
@@ -211,5 +212,171 @@ public class SimBridgeGddTests
         Assert.AreEqual(t.Format("order.unknown", "city"), b.Queue(new Train("tel_aviv", "halutz", 1)));
         Assert.AreEqual(t.Format("order.unknown", "cohort"), b.Queue(new CancelTraining(1)));
         Assert.AreEqual(0, b.Queued.Count);
+    }
+}
+
+/// <summary>#1688: absence of Attention in gdd-0.3, with the old accounting retained in older rulesets.</summary>
+public class NoAttentionPresentationTests
+{
+    static Content Load(bool modern)
+    {
+        var dir = Paths.Content;
+        return ContentLoader.Load(rel =>
+        {
+            var path = System.IO.Path.Combine(dir, rel);
+            if (!System.IO.File.Exists(path)) return null;
+            var value = System.IO.File.ReadAllText(path);
+            return modern && rel == "eras.yaml" ? value.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : value;
+        }, System.IO.Directory.GetFiles(System.IO.Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + System.IO.Path.GetFileName(f)));
+    }
+    static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    static SimBridge Bridge(bool modern, bool he = false)
+    {
+        var c = Load(modern);
+        var b = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), Text(he));
+        if (modern)
+        {
+            // Any accidental obsolete price read must fail, rather than silently reading a plausible zero.
+            foreach (var r in c.EraRules.Values.Append(c.Rules))
+            { r.AttentionCost.Clear(); r.AttentionPerTurn = double.NaN; r.RungAttentionStep = double.NaN; }
+            b.State.Attention = double.NaN;
+        }
+        return b;
+    }
+
+    [Test]
+    public void BridgeHasNoPoolOrPriceAndStillReplacesAndWithdrawsOrders()
+    {
+        var b = Bridge(true);
+        var first = new SetPolicy("rationing", .5);
+        var next = new SetPolicy("rationing", .7);
+        Assert.IsNull(b.AttentionLeft);
+        Assert.IsNull(b.Price(first));
+        Assert.IsTrue(b.CanPay(first));
+        Assert.IsNull(b.Queue(first)); Assert.IsNull(b.Queue(next));
+        Assert.AreEqual(1, b.Queued.Count);
+        Assert.AreEqual(next, b.Queued[0]);
+        b.Withdraw(next); Assert.IsEmpty(b.Queued);
+        Assert.IsNotNull(b.Queue(new SetPolicy("not-a-policy", .5)), "real validity checks remain");
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void HudHasNoAttentionTextOrHitTarget(bool he)
+    {
+        var b = Bridge(true, he);
+        Assert.AreEqual("", HudModel.From(b, Text(he)).Attention);
+        using var ui = new UiTestKit();
+        using var hud = new HudPresenter(ui.Root, b, Text(he));
+        var line = ui.Q<UnityEngine.UIElements.Label>("attention");
+        Assert.AreEqual("", line.text);
+        Assert.AreEqual(UnityEngine.UIElements.DisplayStyle.None, line.style.display.value);
+        Assert.AreEqual(UnityEngine.UIElements.PickingMode.Ignore, line.pickingMode);
+        Assert.IsFalse(line.focusable);
+        Assert.IsTrue(string.IsNullOrEmpty(line.tooltip));
+        foreach (var label in ui.Q<VisualElement>("top-bar").Query<Label>().ToList())
+        {
+            bool visible = true;
+            for (VisualElement? e = label; e != null; e = e.parent)
+                if (e.style.display.value == DisplayStyle.None) visible = false;
+            if (!visible) continue;
+            StringAssert.DoesNotContain(Text(he)["capture.caption.attention"], label.text ?? "");
+            StringAssert.DoesNotContain(Text(he)["capture.caption.attention"], label.tooltip ?? "");
+        }
+        StringAssert.DoesNotContain("NaN", ui.Q<UnityEngine.UIElements.Button>("end-turn").text);
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void NullCapturePreviewOmitsOnlyAttention(bool he)
+    {
+        var b = Bridge(true, he); var t = Text(he);
+        var preview = new CapturePreview(null, 3, 0, 2, 4, 0, 0, 0);
+        var line = CaptureDialogPresenter.PreviewText(b.Content, b.State, preview, t);
+        StringAssert.DoesNotContain(t["capture.caption.attention"], line);
+        StringAssert.Contains(t["hud.caption.treasury"], line);
+        StringAssert.Contains(t["capture.caption.food"], line);
+        StringAssert.Contains(t["capture.caption.arms"], line);
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void EventsRemainAnswerableWithoutAttentionOrDelegationWarning(bool he)
+    {
+        var b = Bridge(true, he); var t = Text(he);
+        b.Content.Events.Add(new GameEvent { Id = "no-attention-card", Title = "A decision", Text = "Decide", Options = new List<EventOption> { new EventOption { Id = "yes", Text = "Continue" } } });
+        b.State.PendingEvents.Clear(); b.State.PendingEvents.Add("no-attention-card");
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, b, t, null);
+        var option = ui.Q<UnityEngine.UIElements.Button>("option-yes");
+        Assert.AreEqual("Continue", option.text); Assert.IsTrue(option.enabledSelf);
+        Assert.IsFalse(ui.Q<UnityEngine.UIElements.Button>("end-turn").ClassListContains(EventCardPresenter.EndTurnWaitingClass));
+        Assert.IsNull(b.Queue(new ChooseEventOption("no-attention-card", "yes")));
+        Assert.IsNull(card.Shown, "the answer is queued, so the card closes before End turn");
+        Assert.IsNotNull(b.QueuedLike(new ChooseEventOption("no-attention-card", "")));
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void WorkersKeepTheirEndTurnTimingWithoutAnAttentionCost(bool he)
+    {
+        var b = Bridge(true, he); var t = Text(he);
+        var spot = b.Content.SettlementHexes.First(x => b.State.Cities.ContainsKey(x.Id));
+        var host = new UnityEngine.UIElements.VisualElement();
+        GddHexPanel.Render(host, new UnityEngine.UIElements.VisualElement(), b, t, spot.Q, spot.R, id => id);
+        var line = host.Q<UnityEngine.UIElements.Label>("city-workers-cost");
+        Assert.IsNotNull(line);
+        StringAssert.DoesNotContain(t["capture.caption.attention"], line.text);
+        StringAssert.StartsWith(t["city.workers_ordered"].Split('{')[0], line.text);
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void SmokeAnswersAnEventWithoutReadingTheObsoletePool(bool he)
+    {
+        var b = Bridge(true, he); var t = Text(he);
+        b.Content.Events.Add(new GameEvent { Id = "smoke-no-attention", Title = "Decision", Text = "Decide", Options = new List<EventOption> { new EventOption { Id = "yes", Text = "Continue" } } });
+        b.State.PendingEvents.Clear(); b.State.PendingEvents.Add("smoke-no-attention");
+        using var ui = new UiTestKit();
+        using var card = new EventCardPresenter(ui.Root, b, t, null);
+        var logs = new List<string>();
+        var smoke = GameRoot.Smoke(ui.Root, b, card, 1, logs.Add);
+        try
+        {
+            Assert.IsTrue(smoke.MoveNext());
+            Assert.IsTrue(smoke.MoveNext());
+            Assert.IsNull(card.Shown);
+            Assert.IsEmpty(logs.Where(x => x.StartsWith("SMOKE FAIL")));
+        }
+        finally { (smoke as System.IDisposable)?.Dispose(); }
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void DefenceAndCabinetStillRenderTheirActualRequirements(bool he)
+    {
+        var b = Bridge(true, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        using var cabinet = new CabinetPresenter(ui.Root, b, t, null);
+        var proposed = defence.ProposedMobilization;
+        Assert.AreEqual(t.Format("defence.mob_cost", PlayerText.Money(b.Content, "treasury", EconomySystem.MobilizationCost(b.Content, b.State.Date, proposed))), ui.Q<Label>("mob-cost").text);
+        var refusedAttention = 0; b.RefusedForAttention += () => refusedAttention++;
+        var shares = new Dictionary<string, double>(b.State.Budget);
+        Assert.IsNull(b.Queue(new AllocateBudget(shares)));
+        var key = shares.Keys.First(); var original = shares[key]; shares[key] = original + .1;
+        var retained = (AllocateBudget)b.QueuedLike(new AllocateBudget(shares))!;
+        Assert.AreEqual(original, retained.Shares[key], "budget remains a snapshot");
+        b.Withdraw(retained);
+        Assert.AreEqual(0, refusedAttention);
+        b.State.GameOver = "finished";
+        Assert.AreEqual(t["order.game_over"], b.Queue(new SetPolicy("rationing", .5)));
+    }
+
+    [Test]
+    public void OldRulesetsKeepTheirAttentionPriceAndCaptureLine()
+    {
+        foreach (var c in new[] { Load(false), SimBridgeGddTests.LoadLegacy() })
+        {
+            var t = Text(false); var b = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), t);
+            Assert.IsTrue(c.UsesAttention);
+            Assert.Greater(b.Price(new SetPolicy("rationing", .5)), 0);
+            Assert.IsNotEmpty(HudModel.From(b, t).Attention);
+            StringAssert.Contains(t["capture.caption.attention"], CaptureDialogPresenter.PreviewText(c, b.State, new CapturePreview(-1, 0, 0, 0, 0, 0, 0, 0), t));
+        }
     }
 }

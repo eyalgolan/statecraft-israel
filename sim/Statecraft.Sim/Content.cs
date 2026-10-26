@@ -168,6 +168,12 @@ namespace Statecraft.Sim
         /// (spec 2026-10-12 section 2.1). One value for the whole game: the loader refuses eras that differ, because a save
         /// names one ruleset (section 2.4). R-LOOP-001.</summary>
         public string Loop { get; set; } = Legacy;
+        /// <summary>Optional game-wide save identity. Absent preserves the loop's inferred identity. R-SAVE-001.</summary>
+        public string Ruleset { get => ruleset ?? ""; set => ruleset = value ?? ""; }
+        /// <summary>Distinguishes an absent selector from an explicitly empty/null one, which the loader refuses.</summary>
+        [YamlIgnore] public bool RulesetGiven => ruleset != null;
+        string? ruleset;
+
     }
 
     public sealed class Party
@@ -771,6 +777,19 @@ namespace Statecraft.Sim
         public List<SegmentDef> Segments { get; set; } = new List<SegmentDef>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        string? reviewedOn;
     }
 
     /// <summary>One segment of a corridor: the hexes its stretch of the traced line crosses, in order, ending at the route
@@ -1210,6 +1229,8 @@ namespace Statecraft.Sim
 
     public sealed class Content
     {
+        /// <summary>Optional design catalogue for future gdd-0.3 systems; never consumed by either existing loop.</summary>
+        public Gdd03BalanceCatalogue? Gdd03Balance { get; set; }
         public List<Office> Offices = new List<Office>();
         public List<Party> Parties = new List<Party>();
         public List<Person> People = new List<Person>();
@@ -1225,8 +1246,12 @@ namespace Statecraft.Sim
         public string Loop => Eras.Count == 0 ? EraSystems.Legacy : Eras[0].Systems.Loop;
         /// <summary>True when the GDD v0.1 loop runs.</summary>
         public bool IsGdd => Loop == EraSystems.Gdd;
-        /// <summary>The ruleset a save names (SaveGame.Ruleset): "legacy" or "gdd-0.1".</summary>
-        public string Ruleset => IsGdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+        /// <summary>The game-wide save identity; an absent selector preserves the loop's original inference.</summary>
+        public string Ruleset => Eras.Count > 0 && Eras[0].Systems.RulesetGiven
+            ? Eras[0].Systems.Ruleset : IsGdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+        /// <summary>Identity predicate: legacy and gdd-0.1 have Attention, gdd-0.3 omits it. The sim reads it to leave
+        /// Attention out of gdd-0.3 (R-LOOP-001, R-GOV-002, #1688).</summary>
+        public bool UsesAttention => Ruleset != SaveGame.Gdd03Ruleset;
         /// <summary>The day play ends, a boundary the last turn reaches (Simulation.Step): rules.yaml mvp.end in the GDD loop
         /// (R-LOOP-004), otherwise the last era's end.</summary>
         public DateTime End => IsGdd && Rules.Mvp?.End is DateTime e ? e : Eras[Eras.Count - 1].To;

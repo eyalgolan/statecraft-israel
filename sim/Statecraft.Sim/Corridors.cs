@@ -57,7 +57,7 @@ namespace Statecraft.Sim
                 return seg.BuiltOn == null ? $"{name} is already being built" : $"{name} is already built";
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             var (cost, _) = Projects.Terms(r, action);
-            EconomySystem.PayOrBorrow(c, s, cost, "to build a corridor segment", why);
+            EconomySystem.PayOrBorrow(c, s, cost, "to build a corridor segment", why, CauseKeys.Purpose.Corridor);
             // As for sites (R-SITE-001): the turn of the order is the first build turn. The segment starts at 0, step 5 of this
             // turn's resolve gives it its first turn of progress, and with 6 turns an order on turn T is built at the end of T+5.
             var started = new SegmentWork(unit, 0, null);

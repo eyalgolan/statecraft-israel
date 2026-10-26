@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -20,22 +21,30 @@ namespace Statecraft.Sim
 
         public static bool IsGddKind(string kind) => GddKinds.Contains(kind);
 
-        public static void Refill(Content c, GameState s) => s.Attention = c.RulesAt(s.Date).AttentionPerTurn;
+        static void RequireAttention(Content c)
+        {
+            if (!c.UsesAttention) throw new InvalidOperationException("Attention is absent in this ruleset; do not query or account for it.");
+        }
+        public static void Refill(Content c, GameState s)
+        { RequireAttention(c); s.Attention = c.RulesAt(s.Date).AttentionPerTurn; }
 
         /// <summary>Cost at <paramref name="rung"/> if given, else at the state's current rung.</summary>
         public static double Cost(Content c, GameState s, string kind, int? rung = null)
         {
+            RequireAttention(c);
             var r = c.RulesAt(s.Date);   // the era the turn starts in (docs/determinism.md, "Rules per era")
             return r.AttentionCost[kind] * (1 + r.RungAttentionStep * ((rung ?? s.Rung) - 1));
         }
 
         /// <summary>The order's Attention price at this turn's prices (0 for a kind Attention does not price): what the UI's
         /// queue charges for it.</summary>
-        public static double Price(Content c, GameState s, Command cmd) => IsCommandKind(cmd.Kind) ? Cost(c, s, cmd.Kind) : 0;
+        public static double Price(Content c, GameState s, Command cmd)
+        { RequireAttention(c); return IsCommandKind(cmd.Kind) ? Cost(c, s, cmd.Kind) : 0; }
 
         /// <summary>Attention left after paying for <paramref name="pending"/> (this turn's queue) at this turn's prices: what
         /// the UI's queue still has to spend (#1110: the Cabinet badge and SimBridge.Queue read the same number).</summary>
-        public static double Left(Content c, GameState s, IEnumerable<Command> pending) => s.Attention - pending.Sum(x => Price(c, s, x));
+        public static double Left(Content c, GameState s, IEnumerable<Command> pending)
+        { RequireAttention(c); return s.Attention - pending.Sum(x => Price(c, s, x)); }
 
         /// <summary>Returns null and deducts on success, or the reason it could not be afforded.
         /// <paramref name="rung"/> prices the command at that security level (the turn's starting rung).</summary>

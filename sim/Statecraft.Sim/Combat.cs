@@ -45,6 +45,10 @@ namespace Statecraft.Sim
             return d >= 1 && d <= TypeOf(c, u)!.Range!.Value;   // the loader requires a range on an artillery type
         }
 
+        /// <summary>R-COMBAT-004, R-COMBAT-007: whether the player's attacks and artillery fire spend Arms. True for legacy and
+        /// gdd-0.1, false under gdd-0.3 (#1706). The Arms stock and every other Arms cost stay; enemy units never pay.</summary>
+        public static bool SpendsArms(Content c) => c.Ruleset != SaveGame.Gdd03Ruleset;
+
         /// <summary>The Arms the player's unit spends when it joins an engagement: its type's arms_per_fire for artillery
         /// (R-COMBAT-007), else mvp.arms_per_attack (R-COMBAT-004).</summary>
         static int Need(Content c, MvpRules mvp, Unit u) => Guns(c, u) ? TypeOf(c, u)!.ArmsPerFire!.Value : mvp.ArmsPerAttack!.Value;
@@ -98,9 +102,10 @@ namespace Statecraft.Sim
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
             if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
                 return "That unit has no movement points left this turn";
+            if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            return !enemy && s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
+            return s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
         }
 
         /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing
@@ -117,7 +122,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-COMBAT-001 (owner, 23 October 2026, "Instant, like Civ"): the player's unit attacks (q, r) at once:
-        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004), loses its
+        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004; not under gdd-0.3), loses its
         /// order and the rest of its movement points, and fights one engagement alone (OQ-1), drawing once.</summary>
         internal static string? Strike(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent,
                                        Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
@@ -126,7 +131,7 @@ namespace Statecraft.Sim
             if (refused != null) return refused;
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
-            s.Arms -= Need(c, mvp, u);
+            if (SpendsArms(c)) s.Arms -= Need(c, mvp, u);
             var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)

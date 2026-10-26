@@ -86,13 +86,8 @@ namespace Statecraft.Sim
         public static GameSession Load(Content c, string saveText, out IReadOnlyList<string> warnings)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
-            var saved = SaveGame.Parse(saveText);
-            // R-SAVE-001: a save replays only under the rules it was played with (spec 2026-10-12 section 2.4, decision D-E4).
-            // The refusal carries a code the UI translates; its own message tells the player a new game started (N4).
-            if (saved.Ruleset != c.Ruleset)
-                throw saved.Ruleset == SaveGame.LegacyRuleset
-                    ? new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules)
-                    : new SaveException(0, "This save was made with a newer version of the game's rules.", SaveException.NewerVersion);
+            // R-SAVE-001/002: the parser enforces the content's ruleset before any replay.
+            var saved = SaveGame.Parse(saveText, c.Ruleset);
             // R-SAVE-004: schema 2 stored player attacks as standing orders, which the current rules no longer replay alike.
             if (saved.Version < 3 && saved.Ruleset == SaveGame.GddRuleset
                 && saved.Turns.Any(t => t.Any(x => x is UnitOrder o && o.Order == Combat.Attack)))

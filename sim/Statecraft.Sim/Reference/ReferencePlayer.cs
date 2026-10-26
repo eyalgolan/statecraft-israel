@@ -21,6 +21,7 @@ namespace Statecraft.Sim.Reference
 
         public static IReadOnlyList<Command> Commands(Content c, GameState s)
         {
+            if (!c.UsesAttention) throw new NotSupportedException("The reference policy is not defined for gdd-0.3.");
             var list = new List<Command>(HistoricalAI.Commands(c, s));
             var left = s.Attention - list.Sum(x => AttentionSystem.Cost(c, s, x.Kind));
             Attack(c, s, list, ref left);

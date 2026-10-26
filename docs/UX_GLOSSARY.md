@@ -2,7 +2,7 @@
 
 Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
 
-Entries: 6 contested, 8 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (50 concepts, 6 conventions).
+Entries: 6 contested, 8 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (50 concepts, 7 conventions).
 
 Revision 19 October 2026: targeted terminology and implementation checks against upstream/main 9e571342 address the #970 review. The original snapshot date remains above; this is not a full review of every new string.
 
@@ -79,9 +79,17 @@ Decision owner: Eyal: where the rule is documented and the dictionary; the rule 
 
 ### transliteration (decision-needed)
 
-Hebrew terms in English text are transliterated in several ways: ma'abarot (README), Halutz and Hakhshara (GDD), yishuv and yishuvim (GDD), Knesset. No scheme is written down.
+Hebrew terms in English text are transliterated in several ways: ma'abarot (README), Halutz and Hakhshara (GDD), yishuv and yishuvim (GDD), Knesset. No scheme is written down. Arabic place names are settled separately (see place-names); this entry is only about the Hebrew terms.
 
 Recommendation (see status): Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling beside it in the glossary.
+
+Decision owner: Eyal
+
+### place-names (preferred)
+
+The Arabic place names of 1948 in English text follow *Village Statistics, 1945* (Beit, not 'Bayt'; Deir, not 'Dayr'), as the map labels already do (`localities_1948.yaml`, `name_basis: vs1945`). A quoted source form keeps the spelling its source prints, so `listed_as` values and the armistice line names are unchanged. Kafr (Arabic) and Kfar (Hebrew) stay distinct. URLs, record ids and a living place's `today.name` are outside the rule. Owner, 25 October 2026, #1586.
+
+Recommendation (see status): Keep it as the rule, written in `docs/WRITING_GUIDE.md` section 9. New place names follow it.
 
 Decision owner: Eyal
 
