@@ -99,10 +99,19 @@ namespace Statecraft.Game.Map
             mousePosition = new InputAction("camera-drag-position", InputActionType.PassThrough, "<Mouse>/position");
             mousePosition.performed += ctx => mouseDrag.Move(ctx.ReadValue<Vector2>());
             touchPress = new InputAction("camera-touch-press", InputActionType.Button, "<Touchscreen>/primaryTouch/press");
-            touchPress.performed += ctx => touchDrag.Begin(((Touchscreen)ctx.control.device).primaryTouch.position.ReadValue(), IsOverUi);
+            touchPress.performed += ctx =>
+            {
+                var ts = (Touchscreen)ctx.control.device;
+                touchDrag.Begin(ts.primaryTouch.position.ReadValue(), IsOverUi);
+                if (FingersDown(ts, out _, out _) > 1) touchDrag.Discard();   // a pinch, latched at the event
+            };
             touchPress.canceled += _ => touchDrag.Lift();
             touchPosition = new InputAction("camera-touch-position", InputActionType.PassThrough, "<Touchscreen>/primaryTouch/position");
-            touchPosition.performed += ctx => touchDrag.Move(ctx.ReadValue<Vector2>());
+            touchPosition.performed += ctx =>
+            {
+                touchDrag.Move(ctx.ReadValue<Vector2>());
+                if (FingersDown((Touchscreen)ctx.control.device, out _, out _) > 1) touchDrag.Discard();
+            };
             mousePress.Enable(); mousePosition.Enable(); touchPress.Enable(); touchPosition.Enable();
             DrainWheel();   // events from while the camera was off (a menu) are not a zoom
 
@@ -172,10 +181,11 @@ namespace Statecraft.Game.Map
 
         /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between
         /// camera ticks. Event positions, rather than Mouse/delta, exclude pre-press movement and retain multiple
-        /// input updates. A lift keeps only the pan past the slop that no frame took yet (Lift).</summary>
+        /// input updates. A lift keeps only the pan past the slop that no frame took yet (Lift), apart from the next
+        /// press's own state, so a new press before the camera frame cannot erase it.</summary>
         internal sealed class PressDrag
         {
-            Vector2 origin, previous, pending;
+            Vector2 origin, previous, pending, lifted;
             bool down, panning, pinched;
             internal bool FromUi { get; private set; }
             internal void Begin(Vector2 at, Func<Vector2, bool>? overUi = null)
@@ -183,14 +193,15 @@ namespace Statecraft.Game.Map
                 origin = previous = at; pending = Vector2.zero;
                 down = true; panning = pinched = false; FromUi = overUi?.Invoke(at) == true;
             }
-            internal void End() { down = panning = false; pending = Vector2.zero; }
+            internal void End() { down = panning = false; pending = lifted = Vector2.zero; }
+            /// <summary>A second finger is (or was) down: this press is a pinch, and what it moved does not pan.</summary>
             internal void Discard() { pending = Vector2.zero; pinched = true; }
             /// <summary>The finger lifted: as End, but a pan past the slop that no camera frame has taken yet is kept for
             /// the next one (#1661 ruling 3: a flick inside one input update pans). Not from over the UI, not a pinch.</summary>
             internal void Lift()
             {
-                var keep = panning && !FromUi && !pinched ? pending : Vector2.zero;
-                End(); pending = keep;
+                if (panning && !FromUi && !pinched) lifted += pending;
+                down = panning = false; pending = Vector2.zero;
             }
             internal void Move(Vector2 at)
             {
@@ -209,9 +220,11 @@ namespace Statecraft.Game.Map
             }
             internal Vector2 Take(bool held)
             {
-                // A current click candidate always wins over any prior panning state.
-                if (held) { pending = Vector2.zero; panning = false; return Vector2.zero; }
-                var result = pending; pending = Vector2.zero; return result;
+                // Lifted flicks pan once, whatever the current press is.
+                var result = lifted; lifted = Vector2.zero;
+                // A current click candidate always wins over any prior panning state of its own press.
+                if (held) { pending = Vector2.zero; panning = false; return result; }
+                result += pending; pending = Vector2.zero; return result;
             }
         }
 
