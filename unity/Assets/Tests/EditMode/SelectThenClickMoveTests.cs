@@ -1,5 +1,4 @@
 #nullable enable
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,7 +13,6 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
-using UnityEngine.TestTools;
 
 /// <summary>The owner, playing on 25 October 2026: "i still can't move a fucking unit", "the unit must move when you click on
 /// the fucking lit hex" and "not wait for the end of the fucking turn"; asked how, "Civ: select, then click (Recommended)".
@@ -498,15 +496,10 @@ public class SelectThenClickMoveTests
         Assert.AreEqual(committed, rig.Bridge.Session.Committed.Count);
     }
 
-}
-
-// Separate input fixture: preserve the existing routing fixture's device lifecycle and Ella's Tick tests.
-public class FriendlyDestinationInputTests : InputTestFixture
-{
     [Test]
     public void EmptyFarTerrainStillRequiresTwoTouchPicksAndOffersNoFriendlyConfirmation()
     {
-        using var rig = new SelectThenClickMoveTests.Rig();
+        using var rig = new Rig();
         var c = rig.Bridge.Content;
         var mover = rig.Token("golani"); var id = rig.Id(mover);
         var reach = rig.Reach(id).ToHashSet();
@@ -532,7 +525,7 @@ public class FriendlyDestinationInputTests : InputTestFixture
     [TestCase("covered")]
     public void RefusedDestinationsOfferNoConfirmationAndPreserveOrdinarySelection(string reason)
     {
-        using var rig = new SelectThenClickMoveTests.Rig();
+        using var rig = new Rig();
         var c = rig.Bridge.Content; var s = rig.Bridge.State;
         var mover = rig.Token("golani"); var id = rig.Id(mover);
         var city = c.SettlementHexes.First(x => x.Id == "tel_aviv" && rig.Layer.UnitToSelectAt(x.Q, x.R) == null);
@@ -604,19 +597,24 @@ public class FriendlyDestinationInputTests : InputTestFixture
             if (expectedSelection == null) Assert.AreEqual(target, rig.Info.Selected, "ordinary hex selection stays");
         }
     }
+}
 
+
+/// <summary>#1661 ruling 1 by touch: a virtual touchscreen through MapPointer's real frame, so an InputTestFixture.</summary>
+public class TouchConfirmTests : InputTestFixture
+{
     /// <summary>Touch: a still tap through MapPointer's real frame (a virtual touchscreen) picks the destination, for a
     /// friend's token, a city a friend stands on and an empty city beyond reach; the offer then moves the retained unit once.
     /// Keyboard Tab/Enter/Space and the UI hit test on the offer run in the real game in
     /// KeyboardOrdersTests.AFriendlyDestinationIsConfirmedWithTheKeyboardAlone.</summary>
-    [UnityTest]
-    public IEnumerator TouchSelectsAndActivatesTheConfirmation()
+    [Test]
+    public void TouchSelectsAndActivatesTheConfirmation()
     {
         foreach (var kind in new[] { "friendly", "occupied-city", "far-city" })
-            yield return TouchOffersAConfirmationForTheRetainedMover(kind);
+            TouchOffersAConfirmationForTheRetainedMover(kind);
     }
 
-    IEnumerator TouchOffersAConfirmationForTheRetainedMover(string kind)
+    void TouchOffersAConfirmationForTheRetainedMover(string kind)
     {
         using var rig = new SelectThenClickMoveTests.Rig();
         var c = rig.Bridge.Content;
@@ -656,7 +654,6 @@ public class FriendlyDestinationInputTests : InputTestFixture
         pointer.Map = rig.Map; pointer.IsOverUi = _ => false;
         try
         {
-            yield return null; // a frame for the panel layout
             pointer.HexClicked += (q, r, pill) => GameRoot.OnHexClicked(rig.Map, rig.Layer, rig.Info, q, r, true, pill);
             rig.Select(mover);
             var expectedUnit = rig.Layer.UnitToSelectAt(target.Q, target.R);   // before the pick moves the selection
@@ -677,7 +674,6 @@ public class FriendlyDestinationInputTests : InputTestFixture
             // The button is taken as the UI takes any button press (Button.clicked); that a finger on it lands on the
             // button and not the map is KeyboardOrdersTests' hit test in the real game.
             UiTestKit.Press(send);
-            yield return null;
             Assert.AreEqual(baseline + 1, rig.Bridge.Session.Committed.Count);
             Assert.AreNotEqual(before, rig.At(id), "the original mover moves immediately");
             Assert.Greater(rig.Bridge.Spent[id], 0);
