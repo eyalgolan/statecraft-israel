@@ -129,6 +129,7 @@ namespace Statecraft.Sim
         /// (R-UNIT-009).</summary>
         public static void Init(Content c, GameState s)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var f in c.StartingForces)
             {
                 var id = s.NextId++;
@@ -142,6 +143,7 @@ namespace Statecraft.Sim
         /// limit and what else stands on the hex.</summary>
         public static void Arrive(Content c, GameState s, DateTime next)
         {
+            PopulationLedger.RefuseAggregate(s);
             for (int i = 0; i < c.StartingForces.Count; i++)
             {
                 var f = c.StartingForces[i];
