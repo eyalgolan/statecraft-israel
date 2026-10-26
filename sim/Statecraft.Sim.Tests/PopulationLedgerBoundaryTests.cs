@@ -8,13 +8,14 @@ public class PopulationLedgerBoundaryTests
     [InlineData("pools.init")] [InlineData("pools.consume")] [InlineData("pools.harvest")]
     [InlineData("pools.buy")] [InlineData("pools.term")]
     [InlineData("cities.init")] [InlineData("cities.assign")] [InlineData("cities.produce")]
-    [InlineData("cities.house")] [InlineData("cities.condition")] [InlineData("cities.arrive")]
+    [InlineData("cities.house")] [InlineData("cities.condition")] [InlineData("cities.arrive")] [InlineData("cities.upkeep")]
     [InlineData("starting.init")] [InlineData("starting.arrive")]
     [InlineData("training.start")] [InlineData("training.cancel")] [InlineData("training.progress")] [InlineData("training.reinforce")]
     [InlineData("military.serve")] [InlineData("military.upkeep")]
-    [InlineData("qualification.return")] [InlineData("qualification.craftsmen")] [InlineData("qualification.pioneers")]
+    [InlineData("qualification.return")] [InlineData("qualification.craftsmen")] [InlineData("qualification.pioneers")] [InlineData("qualification.unit")]
+    [InlineData("demobilization.give")]
     [InlineData("combat.resolve")] [InlineData("combat.outcomes")]
-    [InlineData("prisoners.upkeep")] [InlineData("prisoners.return")]
+    [InlineData("prisoners.upkeep")] [InlineData("prisoners.return")] [InlineData("prisoners.take")]
     [InlineData("events.trigger")] [InlineData("events.choose")] [InlineData("events.delegate")] [InlineData("turn.resolve")]
     public void DirectAggregateCallsRefuseBeforeAnyStateResourceOrCauseMutation(string call)
     {
@@ -41,6 +42,7 @@ public class PopulationLedgerBoundaryTests
                 case "cities.house": Cities.House(c,s,rules,why); break;
                 case "cities.condition": Cities.UpdateCondition(c,s,rules,why); break;
                 case "cities.arrive": Cities.Arrive(c,s,rules,s.Date.AddMonths(1),why); break;
+                case "cities.upkeep": Cities.AnnualUpkeep(c,s,rules); break;
                 case "starting.init": StartingForces.Init(c,s); break;
                 case "starting.arrive": StartingForces.Arrive(c,s,s.Date.AddMonths(1)); break;
                 case "training.start": Training.Start(c,s,"missing","missing",1,why); break;
@@ -52,10 +54,13 @@ public class PopulationLedgerBoundaryTests
                 case "qualification.return": Qualification.ReturnCraftsmen(c,s,"missing",1,why); break;
                 case "qualification.craftsmen": Qualification.ReassignCraftsmen(c,s,"missing",1,why); break;
                 case "qualification.pioneers": Qualification.ReassignPioneers(c,s,"missing","missing",1,why); break;
+                case "qualification.unit": Qualification.Return(c,s,0,why); break;
+                case "demobilization.give": Demobilization.Give(c,s,0,null,why); break;
                 case "combat.resolve": Combat.Resolve(c,s,why); break;
                 case "combat.outcomes": Combat.Outcomes(c,s,0); break;
                 case "prisoners.upkeep": Prisoners.Upkeep(c,s,rules,why); break;
                 case "prisoners.return": Prisoners.Return(c,s,"missing",why); break;
+                case "prisoners.take": Prisoners.Take(s,new Unit(1,"missing",0,0,side:"missing",strength:1),new Unit(2,"missing",0,0,side:Movement.PlayerSide)); break;
                 case "events.trigger": EventSystem.Trigger(c,s,why); break;
                 case "events.choose": EventSystem.Choose(c,s,"missing","missing",why); break;
                 case "events.delegate": EventSystem.Delegate(c,s,why); break;
