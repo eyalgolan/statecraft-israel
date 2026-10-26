@@ -261,7 +261,7 @@ public class HebrewUiTests
             game.Bridge!.EndTurn();
             // #1682 localizes the actual causes. Keep mixed-direction coverage through the supported unkeyed fallback.
             Ui.Q<ScrollView>("why-rows").contentContainer.Add(new Label(CauseText.Line(
-                new Cause("fixture", "fixture", 0, "Legacy fallback"), game.Bridge.Content,
+                new Statecraft.Sim.Cause("fixture", "fixture", 0, "Legacy fallback"), game.Bridge.Content,
                 Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He)));
             var built = Ui.Q<ScrollView>("why-rows").contentContainer.Query<TextElement>().ToList();
             Assert.IsTrue(built.All(t => t.languageDirection == LanguageDirection.Inherit), "the new rows have no direction before the next frame");
