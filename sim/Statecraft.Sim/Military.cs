@@ -10,6 +10,7 @@ namespace Statecraft.Sim
         /// never counts as service. Promotion preserves the formation and its standing order; combat adds no service.</summary>
         public static void Serve(GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var u in s.Units.Values.ToList())
             {
                 if (u.Type != "recruit" || u.Side != "israel") continue;
@@ -25,6 +26,7 @@ namespace Statecraft.Sim
         /// Treasury borrows a shortfall (R-MONEY-003); upkeep never consumes Arms (Q-UNIT-3).</summary>
         public static void PayUpkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var count = s.Units.Values.Count(u => u.Side == "israel" && c.UnitTypes.Any(t => t.Id == u.Type && t.Side == "israel"));
             var cost = count * r.MilitaryUpkeepPerTurn!.Value;
             if (cost == 0) return;

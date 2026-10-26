@@ -27,6 +27,7 @@ namespace Statecraft.Sim
         /// <summary>R-FOOD-001: the stock starts at cover_months of the start's need, so food_supply starts at its level.</summary>
         public static void Init(Content c, GameState s)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;
             s.FoodNeed = Need(s, r);
@@ -40,6 +41,7 @@ namespace Statecraft.Sim
         /// stock that would pass a whole number's range. Step has already refused it in the legacy loop.</summary>
         public static string? BuyArms(Content c, GameState s, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (count < 1) return "Buy at least 1 Arms";
             if ((long)s.Arms + count > int.MaxValue) return "That is more Arms than the stock can hold";
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
@@ -57,6 +59,7 @@ namespace Statecraft.Sim
         /// nation eats in step 7, so in a turn with imports the import only tops the stock up by less.</summary>
         public static void Harvest(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var yield = r.FieldFoodPerTurn!.Value;   // the loader requires it in the GDD loop
             if (yield == 0) return;
             foreach (var f in c.Sites.Where(x => x.Kinds.Contains(Projects.FieldKind)).OrderBy(x => x.Id, StringComparer.Ordinal))
@@ -72,6 +75,7 @@ namespace Statecraft.Sim
         /// currency is exhausted (the fx_crisis situation at the turn's start), when no Food is imported.</summary>
         public static void Consume(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var need = Need(s, r);
             var eaten = Math.Min(need, s.Food);
             s.Food -= eaten;
@@ -93,6 +97,7 @@ namespace Statecraft.Sim
         /// share lowers it further; food_supply's clamp to 0..1 bounds it. 0 in the legacy loop and with no need.</summary>
         public static double FoodTerm(Content c, GameState s)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd || s.FoodNeed == 0) return 0.0;
             var r = c.RulesAt(s.Date).Mvp!;
             var full = (long)r.CoverMonths!.Value * s.FoodNeed;

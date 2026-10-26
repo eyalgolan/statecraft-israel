@@ -50,6 +50,7 @@ namespace Statecraft.Sim
         /// <summary>Fills the state's cities from cities.yaml, with no refugees yet and the start housing condition (R-HOUSE-001). Does nothing in the legacy loop.</summary>
         public static void Init(Content c, GameState s)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;
             foreach (var x in c.Cities) s.Cities[x.Id] = new City(x.Id, x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, 0, 0, r.HousingStartCondition!.Value);
@@ -62,6 +63,7 @@ namespace Statecraft.Sim
         /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
         public static string? Assign(Content c, GameState s, string city, string role, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             // Craftsmen fill ordinary job slots (Q-CRAFT-2, R-CRAFT-002), so "job" stays the only role.
             if (role != "job") return "There is no such role";
@@ -79,6 +81,7 @@ namespace Statecraft.Sim
         /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.</summary>
         public static void Produce(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var x in s.Cities.Values)
             {
                 if (x.Employed == 0) continue;
@@ -93,6 +96,7 @@ namespace Statecraft.Sim
         /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP.</summary>
         public static double AnnualUpkeep(Content c, GameState s, MvpRules r)
         {
+            PopulationLedger.RefuseAggregate(s);
             var total = s.Cities.Count * r.CityUpkeepPerYear!.Value;
             foreach (var p in s.CityProjects.Values)
             {
@@ -120,6 +124,7 @@ namespace Statecraft.Sim
         /// default is on fills its free job slots from its people without a job, at no Attention cost.</summary>
         public static void House(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the Immigration minister's multiplier scales how many of the
             // city's refugees are housed this turn; the count is floored (whole groups only) and the rest wait as
             // refugees. At a neutral multiplier every refugee is housed, as R-CITY-004 says.
@@ -192,6 +197,7 @@ namespace Statecraft.Sim
         /// counts (R-HOUSE-001: the condition is per city).</summary>
         public static void UpdateCondition(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var x in s.Cities.Values.ToList())
             {
                 var over = Overflow(s, x);
@@ -221,6 +227,7 @@ namespace Statecraft.Sim
         /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).</summary>
         public static void Arrive(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var units = ArrivedUnits(c, s.Date, next, r.PeoplePerUnit);
             if (units == 0) return;
             var before = UnitsBy(c, s.Date, r.PeoplePerUnit);

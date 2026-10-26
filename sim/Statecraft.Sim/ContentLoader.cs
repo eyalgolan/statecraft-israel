@@ -373,6 +373,8 @@ namespace Statecraft.Sim
             Validate(c, settlementIds);
             if (c.Ruleset == SaveGame.Gdd03Ruleset && c.Gdd03Balance == null)
                 throw new ContentException(Gdd03BalanceCatalogue.FileName, "(file)", "required for the gdd-0.3 ruleset");
+            // R-POP-001: validate the identity-specific scale without altering old content reads/hash inputs.
+            if (c.UsesPopulationLedger) _ = c.PopulationPeoplePerUnit;
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
             {
