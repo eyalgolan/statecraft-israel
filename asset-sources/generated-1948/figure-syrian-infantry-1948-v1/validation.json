@@ -1,0 +1,232 @@
+{
+  "number": "18",
+  "id": "figure-syrian-infantry-1948-v1",
+  "kind": "Full-source GLB-to-FBX compatibility export; FBX was not delivered by provider",
+  "licence": "CC-BY-NC-ND-4.0, owner-adopted; no licence change or new grant",
+  "blender": "5.2.2 LTS",
+  "source": {
+    "number": "18",
+    "id": "figure-syrian-infantry-1948-v1",
+    "glb_bytes": 5593764,
+    "glb_sha256": "014f00a2bc50b1dbe9915af46e5caada48637b71aa4986b8a9d14d34055c1f89",
+    "source_animation_count": 0,
+    "source_vertices": 8701,
+    "source_triangles": 7616,
+    "source_bones": 65,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 5072679,
+        "sha256": "41d39e1ad895fc80a7894bde8ad2daf8f987a154c6b587e8c293a6b86987dfb1",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-18-retargeted.blend",
+    "blend_bytes": 18286958,
+    "blend_sha256": "06160267e077516b82803ba423b2b45cf1a904448f2fb9789a0477affeab1c3a",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  "source_animation_count": 0,
+  "local_target_clip_count": 2,
+  "unrelated_donor_actions_excluded": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "original_source_and_blend_unchanged": true,
+  "provider_glb_archive_byte_identical": true,
+  "embedded_jpeg_extracted_byte_identical": true,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "no_geometry_reduction": true,
+  "source_vertices": 8701,
+  "fbx_reimport_vertices": 8701,
+  "triangles": 7616,
+  "bones": 65,
+  "bone_names_and_hierarchy_exact": true,
+  "source_blend_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 5.066394805908203e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 5.066394805908203e-07
+  },
+  "fbx_roundtrip_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 4.6193599700927734e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 8.046627044677734e-07
+  },
+  "rest_world_bounds_metres": [
+    [
+      -0.38305678963661194,
+      -3.829336492344737e-08,
+      -0.11206058412790298
+    ],
+    [
+      0.3830567002296448,
+      0.9995116591453552,
+      0.11206060647964478
+    ]
+  ],
+  "weights_sum_range": [
+    0.9999999031424522,
+    1.0000000521540642
+  ],
+  "max_influences": 4,
+  "animations": {
+    "idle": {
+      "fbx_reimport_action_name": "figure-syrian-infantry-1948-v1-rig|figure-syrian-infantry-1948-v1-rig|idle",
+      "source_frame_range": [
+        1.0,
+        423.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        423.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 423,
+      "half_frame_sample_count": 422,
+      "skin_operator_integer_frame_max_abs": 2.6881694793701172e-05,
+      "skin_operator_half_frame_max_abs": 0.0026035048067569733,
+      "reimport_fcurve_count": 659,
+      "keys_per_curve_unique_counts": [
+        423
+      ],
+      "total_keys": 278757,
+      "strict_continuous_curve_identity": false
+    },
+    "walk": {
+      "fbx_reimport_action_name": "figure-syrian-infantry-1948-v1-rig|figure-syrian-infantry-1948-v1-rig|walk",
+      "source_frame_range": [
+        1.0,
+        57.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        57.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 57,
+      "half_frame_sample_count": 56,
+      "skin_operator_integer_frame_max_abs": 1.8537044525146484e-05,
+      "skin_operator_half_frame_max_abs": 0.035476237535476685,
+      "reimport_fcurve_count": 659,
+      "keys_per_curve_unique_counts": [
+        57
+      ],
+      "total_keys": 37563,
+      "strict_continuous_curve_identity": false
+    }
+  },
+  "animation_note": "Every existing target action retained, sampled every frame with simplify0. Integer-frame transforms validated numerically; continuous quaternion/Bezier-to-Euler FBX curve identity is not claimed. Exact target F-curve data is separately preserved in local-actions.json; original blend remains unchanged.",
+  "fbx_unit_scale_factors": [
+    100.0
+  ],
+  "all_fbx_local_scales_identity": true,
+  "fbx_animation_stacks": [
+    "figure-syrian-infantry-1948-v1-rig|idle\u0000\u0001AnimStack",
+    "figure-syrian-infantry-1948-v1-rig|walk\u0000\u0001AnimStack"
+  ],
+  "texture_references": [
+    {
+      "field": "FileName",
+      "value": "_________________________________________________________________________________________________________________________________________________________________________________________________/figure-syrian-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-syrian-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "Filename",
+      "value": "_________________________________________________________________________________________________________________________________________________________________________________________________/figure-syrian-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-syrian-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-syrian-infantry-1948-v1-rig|idle.tak"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-syrian-infantry-1948-v1-rig|walk.tak"
+    }
+  ],
+  "author_path_string_runs_neutralized": 4,
+  "export_options": {
+    "use_selection": true,
+    "object_types": [
+      "ARMATURE",
+      "MESH"
+    ],
+    "global_scale": 1.0,
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "use_space_transform": true,
+    "bake_space_transform": false,
+    "use_mesh_modifiers": false,
+    "mesh_smooth_type": "OFF",
+    "use_tspace": false,
+    "use_custom_props": false,
+    "add_leaf_bones": false,
+    "use_armature_deform_only": false,
+    "path_mode": "STRIP",
+    "embed_textures": false,
+    "bake_anim": true,
+    "bake_anim_use_all_bones": true,
+    "bake_anim_use_all_actions": true,
+    "bake_anim_use_nla_strips": false,
+    "bake_anim_step": 1.0,
+    "bake_anim_simplify_factor": 0.0,
+    "bake_anim_force_startend_keying": true
+  },
+  "files": {
+    "figure-syrian-infantry-1948-v1-provider-original.glb": {
+      "bytes": 5593764,
+      "sha256": "014f00a2bc50b1dbe9915af46e5caada48637b71aa4986b8a9d14d34055c1f89"
+    },
+    "figure-syrian-infantry-1948-v1_basecolor.jpg": {
+      "bytes": 5072679,
+      "sha256": "41d39e1ad895fc80a7894bde8ad2daf8f987a154c6b587e8c293a6b86987dfb1"
+    },
+    "figure-syrian-infantry-1948-v1.fbx": {
+      "bytes": 3279004,
+      "sha256": "563378e81dc268a5ce1f48eca168fda4811f7128bdaa374d031a47375f94e343"
+    },
+    "figure-syrian-infantry-1948-v1-local-actions.json": {
+      "bytes": 51965431,
+      "sha256": "5c399d3e13cea0216315ba66a221d433e1745e521716df9d8f0115adad4117a2"
+    }
+  }
+}

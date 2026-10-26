@@ -1,0 +1,1 @@
+- Add full-quality Syrian and Iraqi infantry to existing streamed formations; retain original C09 on ALA tokens, preserve original maps and both local animation clips, and keep the other five new characters in an editor-only review scene.

@@ -83,7 +83,12 @@ pre-1967 lines, and for each: founding date (and what the date marks), coordinat
   my assumption.
 - **The CBS list itself was not found.** The CBS publication of April 2018 that the Center cites as its list was not
   reached: a web search for it returned only the Center's paper, and no CBS page naming the list was found.
-  **[GAP]**: the CBS list is known only through the Center's reading of it.
+  **[GAP]**: the CBS list is known only through the Center's reading of it. (26 Oct) Searched again and not found.
+  Tool: built-in WebSearch (no Tavily key on this box), two queries run 26 October 2026: "הלמ"ס רשימת יישובי פיתוח אפריל
+  2018 ערי פיתוח" and `cbs.gov.il "ערי פיתוח" רשימה "יישובי פיתוח" 2018 למ"ס אקסל`. Each returned 10 results; none was a
+  CBS page naming the list (the results included a CBS "Local authorities in Israel 2018" print PDF, a CBS media
+  release "יישובים בישראל 2018" and government decisions on priority areas, which I did not open and did not read as the
+  list). Search results are pointers only.
 - **The 1988 law** (חוק ערי ואזורי פיתוח, התשמ"ח-1988) was not read; its text is known only as the Center describes it
   above. Hebrew Wikipedia (revision 42009547) says it was repealed in 2009 and never applied; I did not check that.
 
@@ -261,7 +266,10 @@ reread today, not copied.
   - The English sentence about the ceremony does not print its year; I take 1962 from Hebrew Wikipedia's "21 בנובמבר
     1962" and from the English "Arad was founded in November 1962".
   - The two Wikipedias are not independent of each other, and the 21 November day rests on them alone. **[S]**
-- **Names.** None needed.
+- **Names.** None needed. **(26 Oct)** [V, agent read 2026-10-26; a person's check pending] The same Yalkut 971 (12 November 1962), page 191, prints "ערד" with
+  "169.073. עיר־פיתוח בחבל ערד, על פרשת המים בין נחל יעלים ובין נחל צאלים. נפת באר־שבע." and "השם — מקראי." (source as
+  in row 4). It marks the fixing of the name by 29 September 1962 and its publication on 12 November 1962, nine days
+  before the 21 November ceremony Wikipedia gives; it does not date the founding.
 - **Later steps.** English Wikipedia: "since its inception in 1962, been under the governance of a regional council and local council,
   before being designated as a city council in 1995" **[S, Wikipedia]**;
   CBS gives status city.
@@ -272,7 +280,8 @@ reread today, not copied.
 - **Sources.** CBS; Knesset Center 2010 paper, Table 1, page 5; https://he.wikipedia.org/w/index.php?oldid=44000994 ;
   https://en.wikipedia.org/w/index.php?oldid=1381331386 ; https://he.wikipedia.org/w/index.php?oldid=42009547 . All
   opened 2026-10-25. **[GAP]** no primary record of 21 November 1962 (cabinet decision of 15 November 1960; Maariv and
-  Krausz not opened).
+  Krausz not opened). (26 Oct) Searched again and not found for the day. No new web or JTA search was run for the day; read: Yalkut HaPirsumim 971, 12 November 1962,
+  p. 191 (name only, above). Not reachable: JTA 22-25 November 1962 (not indexed, see S3).
 
 ## 4. Karmiel (כרמיאל)
 
@@ -293,7 +302,16 @@ reread today, not copied.
     only. Note the numbers differ: 16 families (English Wikipedia) and 60 residents (catalogue); they may count
     different things, and I did not resolve it.
 - **Earlier steps. [S, Wikipedia]** Hebrew Wikipedia: the name of the town was published in Yalkut HaPirsumim 971,
-  page 191, 12 November 1962 (not read: the Nevo copy returns a captcha page). English Wikipedia: land of the area
+  page 191, 12 November 1962. **(26 Oct) Read.** [V, agent read 2026-10-26; a person's check pending] Yalkut HaPirsumim no. 971, 12 November 1962 (printed "ט״ו בחשון
+  תשכ״ג"), page 191, in the Internet Archive copy of the Nevo PDF (https://web.archive.org/web/20160303193849id_/http://www.nevo.co.il/Law_word/law10/yalkut-0971.pdf, 4 pages; the text layer is garbled, so I read
+  the page image rendered at 200 dpi). Page 189 is the notice "רשימת שמות ישובים שנקבעו על־ידי ועדת השמות הממשלתית": the
+  list covers names fixed by the government names committee up to 1 Tishrei 5723 (29 September 1962), signed by the
+  committee chairman on 14 Tishrei 5723 (12 October 1962), and continues the list of Yalkut 829 (5721), p. 955. The
+  entry on page 191 prints "כרמיאל" with "178.257. עיירת פיתוח בגליל התחתון, בדרומה של בקעת בית־כרם. נפת עכו." and "השם
+  — בעקבות השם ההיסטורי בקעת בית־כרם הנזכר במשנה, בתוספתא, בתלמוד ירושלמי ובתלמוד בבלי." Our reading: it marks the
+  fixing of the name by 29 September 1962 and its publication on 12 November 1962, not the founding; the grid is the
+  Yalkut's own six-digit reference, which the notice says (p. 190) is read as the left three digits for the
+  north-south line and the right three for the west-east line. English Wikipedia: land of the area
   expropriated in 1961; a tender for the main roads in 1963.
 - **Site note. [S, Wikipedia]** Hebrew Wikipedia: built "על אדמות שבחלקן הולאמו מהכפרים בסביבה" (on land part of which
   was nationalised from the villages around; our translation), naming four villages; English Wikipedia gives 1956 and
@@ -305,7 +323,9 @@ reread today, not copied.
 - **Sources.** CBS; Knesset Center 2010 paper, Table 1, page 5; http://www.romgalil.org.il/cds/290/ ;
   https://jfc.org.il/news_journal/60479-2/94684-2/ ; https://he.wikipedia.org/w/index.php?oldid=43763653 ;
   https://en.wikipedia.org/w/index.php?oldid=1380245437 . All opened 2026-10-25. **[GAP]** the day (29 October 1964)
-  rests on one Hebrew Wikipedia sentence without a source; no contemporaneous written report was found.
+  rests on one Hebrew Wikipedia sentence without a source; no contemporaneous written report was found. (26 Oct)
+  Searched again and not found for the day. No new web or JTA search was run for the day; read: Yalkut HaPirsumim 971, 12 November 1962, p. 191 (name notice,
+  above), which does not carry the inauguration day.
 
 ## Not on either list
 
@@ -346,7 +366,9 @@ to look for pages (no Tavily key on this box); no fact rests on a search snippet
 - **Knesset Center PDFs on `fs.knesset.gov.il`**: bot check page ("Unavailable"); read through the Internet Archive
   copies named above.
 - **The CBS April 2018 list of development localities**: not found (see "Which list").
-- **Nevo (Yalkut HaPirsumim 971)**: captcha page; the Internet Archive copy of it is also a captcha page.
+- **Nevo (Yalkut HaPirsumim 971)**: captcha page on 25 October; the Internet Archive snapshot of 3 March 2016
+  (`20160303193849`) is a PDF and was read on 26 October (rows 3 and 4). The later snapshot of 6 October 2023 is a
+  2,630-byte HTML page (CDX mimetype text/html), not opened.
 - **National Library of Israel newspapers (Davar, Haaretz, Lamerhav, Maariv)** at `nli.org.il`: HTTP 403. **State
   Archives** at `archives.gov.il`: HTTP 403. Municipal sites (`arad.muni.il`, `maltar.org.il`,
   `nof-hagalil.muni.il`): HTTP 403 or timeout. I did not try to get around these blocks.
