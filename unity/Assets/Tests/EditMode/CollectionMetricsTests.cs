@@ -87,7 +87,7 @@ public class CollectionMetricsTests
             layer.PrepareCamera(camera); Assert.AreEqual(2, answers.Count);
             answers[0](prefab); layer.PrepareCamera(camera); Assert.IsFalse(kit.forceRenderingOff); Assert.IsFalse(layer.ReadyForTown("a", camera));
             answers[1](prefab); layer.PrepareCamera(camera); Assert.IsTrue(layer.ReadyForTown("a", camera));
-            layer.AdvanceCameraFrame(Time.frameCount + TownModelLayer.CameraGraceFrames + 1); layer.RetireReleasedModels();
+            layer.AdvanceCameraFrame(Time.frameCount + ProductionResidency.Approved().Towns.Grace + 1); layer.RetireReleasedModels();
             Assert.AreEqual(2, released); Assert.IsFalse(layer.ReadyForTown("a", camera)); Assert.IsFalse(kit.forceRenderingOff);
             Assert.AreEqual(0, layer.ResidencySnapshot().ownedLeases);
         }

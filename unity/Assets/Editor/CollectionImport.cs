@@ -9,9 +9,10 @@ using UnityEngine;
 
 namespace Statecraft.Game.EditorTools
 {
-    /// <summary>Imports Tal Heuberger's 73 unmodified original models (#1273; docs/original-models.json pins the files) without
-    /// mesh or animation compression, keyframe reduction, Crunch, texture downscaling or generated LODs, keeping every source
-    /// take. Makes one prefab per model and one integrity-checked streaming bundle per model. OriginalModelsStreamingTests
+    /// <summary>Imports Tal Heuberger's original models, with only the approved same-length author-path blanking (#1273).
+    /// docs/original-models.json pins all 73. Uses no mesh or animation compression, keyframe reduction, Crunch, texture
+    /// downscaling or generated LODs, keeping every source take. Makes one prefab per model and one integrity-checked
+    /// streaming bundle per model. OriginalModelsStreamingTests
     /// pins the import settings. Idempotent.
     /// Run headless: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.Run</summary>
     public static class CollectionImport

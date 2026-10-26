@@ -5,6 +5,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Statecraft.Game.Map.Kits;
+using Statecraft.Game.Map.Collection;
 
 /// <summary>C89/C91: original artwork near the camera focus, with fallback elsewhere. Reflection keeps the test-only
 /// revision compilable on the pre-change tree so the requested deferred red run can fail on behavior/API assertions.</summary>
@@ -22,17 +23,23 @@ public class TownModelResidencyTests
     static string[] Focus(IReadOnlyList<(string id, Bounds bounds)> places, Vector3 point, string? previous = null, Func<IReadOnlyList<string>, string, bool>? allowance = null) =>
         (string[])Call(null, "FocusedTowns", places, point, previous, allowance, 1000f, 2000f, 1000f, 2)!;
 
-    [TestCase("FocusEnterM", 1000f)]
-    [TestCase("FocusExitM", 2000f)]
-    [TestCase("EdgeM", 1000f)]
-    [TestCase("MaxEdgeTowns", 2f)]
-    [TestCase("CameraGraceFrames", 2f)]
+    [TestCase("FocusEnterM", 0f)]
+    [TestCase("FocusExitM", 0f)]
+    [TestCase("EdgeM", 0f)]
+    [TestCase("MaxEdgeTowns", 0f)]
+    [TestCase("CameraGraceFrames", 1f)]
     public void SpatialNumbersAreNamedAndTunable(string name, float expected)
     {
-        var field = typeof(TownModelLayer).GetField(name, Flags);
-        Assert.IsNotNull(field, name);
-        Assert.IsTrue(field!.IsLiteral, name + " must be a named constant");
-        Assert.AreEqual(expected, Convert.ToSingle(field.GetRawConstantValue()));
+        Assert.IsNull(typeof(TownModelLayer).GetField(name, Flags), name + ": no provisional alternative to the approved policy");
+        var policy = ProductionResidency.Approved().Towns;
+        float actual = name switch {
+            "FocusEnterM" => policy.Enter, "FocusExitM" => policy.Exit, "EdgeM" => policy.Edge,
+            "MaxEdgeTowns" => policy.MaxEdges, "CameraGraceFrames" => policy.Grace,
+            _ => throw new ArgumentException(name)
+        };
+        Assert.AreEqual(expected, actual);
+        Assert.AreEqual(120000f, policy.ViewEnter);
+        Assert.AreEqual(160000f, policy.ViewExit);
     }
 
     [Test]
@@ -158,7 +165,12 @@ public class TownModelResidencyTests
             var items = new[] {
                 new SettlementKits.ModelInstance("a", TownModel.B01WhiteCity, Matrix4x4.identity, Vector2.zero, 0, 100, 100, 0, 100),
                 new SettlementKits.ModelInstance("b", TownModel.B03aArches, Matrix4x4.identity, new Vector2(otherX, 0), 0, 100, 100, 0, 100) };
-            if (configurePolicy) Call(layer, "ConfigureResidency", 1000f, 2000f, 1000f, 2, "test fixture only; not measured");
+            if (configurePolicy)
+            {
+                Call(layer, "ConfigureResidency", 1000f, 2000f, 1000f, 2, "test fixture only; not measured");
+                // Private-field reflection makes ONLY this fixture's historical grace2 explicit; leave its view path unchanged.
+                typeof(TownModelLayer).GetField("cameraGraceFrames", Flags)!.SetValue(layer, 2);
+            }
             Call(layer, "InitStreaming", items, new List<(Renderer kit, Renderer? close)> { (a, null), (b, null) });
         }
         public GameObject Original => prefab;

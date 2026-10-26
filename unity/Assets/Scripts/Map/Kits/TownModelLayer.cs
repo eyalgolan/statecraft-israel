@@ -32,11 +32,7 @@ namespace Statecraft.Game.Map.Kits
         readonly HashSet<string> suppressed = new HashSet<string>(System.StringComparer.Ordinal);
         TownModelSet? set;
         bool streaming;
-        // PROVISIONAL measurement candidates only. They do not enable shipping admission: ConfigureResidency must
-        // install diagnostic/owner-accepted values and evidence before READY; KitLayer deliberately does not call it yet.
-        public const float FocusEnterM = 1000f, FocusExitM = 2000f, EdgeM = 1000f;
-        public const int MaxEdgeTowns = 2;
-        public const int CameraGraceFrames = 2;
+        // KitLayer installs the approved production admission policy before the first request.
         // Null is deliberately fail-closed: no edge originals until the diagnostic establishes an allowance.
         internal System.Func<IReadOnlyList<string>, string, bool>? EdgeAllowance = null;
         internal bool SpatialPolicyConfigured { get; private set; }
@@ -85,7 +81,7 @@ namespace Statecraft.Game.Map.Kits
         int pendingRetirementLeases, lifetimeGeneration;
         readonly List<(string id, Collection.CollectionDetail detail)> retiringKeys = new List<(string, Collection.CollectionDetail)>();
         internal int PendingRetirementLeases => retiring.Count + pendingRetirementLeases;
-        int cameraGraceFrames = CameraGraceFrames;
+        int cameraGraceFrames = Collection.ProductionResidency.Approved().Towns.Grace;
         float? productionViewEnter, productionViewExit;
         internal void ConfigureProduction(Collection.ProductionResidency.TownPolicy policy)
         {
