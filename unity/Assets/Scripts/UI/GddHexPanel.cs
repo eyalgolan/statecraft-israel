@@ -393,12 +393,19 @@ namespace Statecraft.Game.UI
             {
                 case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
                 case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
-                case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), reason.Values[1],
+                case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
                 case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
                 default: return reason.Text;
             }
         }
+
+        /// <summary>A resource's name in the UI's language (#1781), by its id. A resource is a record nested inside a
+        /// city, so it cannot carry its own name_he: the translation contract binds a &lt;file&gt;#&lt;list&gt;.&lt;id&gt;.&lt;field&gt;
+        /// key only (HebrewOverlay.Bindings), and a nested record has no such key. The name is a UI string instead, and
+        /// without one the id stands, which is what the line showed before.</summary>
+        static string ResourceName(UiText text, string id) =>
+            text.Has("city.resource." + id) ? text["city.resource." + id] : id;
 
         /// <summary>"1 group" or "n groups" (population groups, D-A1), in the UI's language.</summary>
         public static string Groups(UiText t, int n) => n == 1 ? t["city.groups_one"] : t.Format("city.groups", n);
