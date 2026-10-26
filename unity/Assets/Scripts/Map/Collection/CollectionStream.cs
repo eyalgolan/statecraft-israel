@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Statecraft.Game.Boot;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -130,11 +129,18 @@ namespace Statecraft.Game.Map.Collection
             {
                 var next = pending.Dequeue();
                 if (!CollectionCatalog.After.TryGetValue(CollectionCatalog.BundleOf(next.Id)!, out var first) || bundles.ContainsKey(first)
-                    || !pending.Any(p => CollectionCatalog.BundleOf(p.Id) == first))
+                    || !Queued(first))
                     return next;
                 pending.Enqueue(next);
             }
             return pending.Dequeue();
+        }
+
+        bool Queued(string bundle)
+        {
+            foreach (var p in pending)
+                if (CollectionCatalog.BundleOf(p.Id) == bundle) return true;
+            return false;
         }
 
         /// <summary>Hands <paramref name="prefab"/> to the caller; a callback that throws logs one warning per id and never
