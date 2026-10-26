@@ -269,7 +269,7 @@ void ScBorderApply(float2 mapM, float water, inout float3 baseColor, inout float
     float2 px = ddx(p), py = ddy(p);
     [branch] if (_ScBorders.w > 0.5)
     {
-        float size = _ScMapOrigin.w, inradius = 0.8660254 * size;
+        float size = max(_ScMapOrigin.w, 1.0), inradius = 0.8660254 * size;   // max(): never a zero hex (5 km here)
         float2 v;
         float2 qr = ScHexAxial(p, size, v);
         bool legacy = _ScBorderMin.w > 0.5;

@@ -13,8 +13,13 @@ using UnityEngine.TestTools;
 /// <summary>Plan Task 4: the grade, the tonemapper, the vignette, and what they do to readability.</summary>
 public class GradeTests
 {
+    /// <summary>The border checks here pin main's look (the Legacy variant, the default; BorderCivTests runs them on the
+    /// Civ-like prototype's variants, #196).</summary>
+    [SetUp]
+    public void Legacy() => MapBorders.Variant = BorderVariant.Legacy;
+
     [TearDown]
-    public void Reset() { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+    public void Reset() { MapBorders.Variant = BorderVariant.Legacy; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
 
     static (MapScene map, CameraRig rig, VolumeProfile profile) Open()
     {

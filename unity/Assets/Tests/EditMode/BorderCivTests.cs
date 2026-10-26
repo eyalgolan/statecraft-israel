@@ -189,7 +189,7 @@ public class BorderCivTests
                 var walks = BorderTests.WalkEdge(map, cam, inner, outer, 9, 1920, 1080);
                 // metres per pixel along each walk, from its first and last distinct pixel
                 float mpp = Median(walks.Select(w => (w.SignedM[w.SignedM.Count - 1] - w.SignedM[0]) / Vector2.Distance(w.Px[w.Px.Count - 1], w.Px[0])));
-                var want = MapBorders.BandWidths(style, mpp, Inradius, rim: false, minColour);
+                var want = MapBorders.BandWidths(style, mpp, Inradius, MapBorders.HasRim(v), minColour);
                 float gain = MapBorders.StrongBlue(v) ? 0.6f : 0.45f;   // above each blue's wash
                 float got = Median(walks.Select(w => BorderTests.Read(w, -1, BorderTests.Blueness, gain).WidthPx));
                 TestContext.WriteLine($"{v} at {distance / 1000f:0} km ({mpp:0.0} m/px): band {got:0.0} px, mirror {want.colour + want.light:0.0} px (colour {want.colour:0.0}, light {want.light:0.0})");

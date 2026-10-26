@@ -254,9 +254,12 @@ public static class MapCapture
             Shoot("", new[] { PromoPose.Gameplay03, closePose, PromoPose.Diorama02 });
             BorderProof.Show(map);
             Shoot("proof-", new[] { PromoPose.Gameplay03 });
-            MapBorders.Use(null);   // the synthetic proof goes with the capture
         }
-        finally { QualitySettings.SetQualityLevel(saved, true); MapBorders.Variant = previous; MapShaderGlobals.PinWaterTime(null); }
+        finally
+        {
+            QualitySettings.SetQualityLevel(saved, true); MapBorders.Variant = previous; MapShaderGlobals.PinWaterTime(null);
+            if (MapBorders.Current != null) MapBorders.Use(null);   // the layer and the synthetic proof go with the capture
+        }
     }
 
     /// <summary>The scripted trailer capture (issue #45): flies the camera through TrailerShot.Default and renders every frame

@@ -12,9 +12,15 @@ using UnityEngine.TestTools;
 /// synthetic BorderProof pattern; the real 1948 sub-districts, which play draws (GameRoot), are SubdistrictTests'.</summary>
 public class BorderTests
 {
+    /// <summary>These tests pin main's look (the Legacy variant, the default; BorderCivTests covers the Civ-like
+    /// prototype's variants, #196), so no earlier test's variant leaks in.</summary>
+    [SetUp]
+    public void Legacy() => MapBorders.Variant = BorderVariant.Legacy;
+
     [TearDown]
     public void Reset()
     {
+        MapBorders.Variant = BorderVariant.Legacy;
         MapShaderGlobals.PinWaterTime(null);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear();
     }
