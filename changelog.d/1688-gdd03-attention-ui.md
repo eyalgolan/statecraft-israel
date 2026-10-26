@@ -1,1 +1,0 @@
-- Omit Attention from the HUD, order costs, capture previews and CLI under gdd-0.3, while preserving older rulesets and other order requirements.

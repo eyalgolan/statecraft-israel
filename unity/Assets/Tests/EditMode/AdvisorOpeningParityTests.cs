@@ -633,6 +633,10 @@ public class AdvisorOpeningParityTests
     /// <summary>The first card's first option, pressed as a click would.</summary>
     static void AnswerTheCard() => UiTestKit.Press(Ui.Q("event-options").Query<Button>().First());
 
+    /// <summary>The opening turn's two cards answered, One Army then the defence of Degania (R-EVT-006; owner, 24 October
+    /// 2026, #1568: "One Army first").</summary>
+    static void AnswerTheOpeningCards() { AnswerTheCard(); AnswerTheCard(); }
+
     /// <summary>The owner's report on v0.1.4 ("they open for a split second after the user closes the screen they were
     /// supposed to explain"), path A: the player answers the card while the event step explains it. The card closes, so the
     /// advisor goes on to the next step at once, with Next focused, instead of explaining a card that is gone.</summary>
@@ -647,7 +651,10 @@ public class AdvisorOpeningParityTests
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); Assert.IsFalse(advisor.IsOpen);
         card.Collapse(); Assert.AreEqual(5, advisor.ChainStep); Assert.IsTrue(advisor.IsOpen);
         UiTestKit.Press(Ui.Q<Button>("advisor-show-me")); AnswerTheCard();
-        Assert.IsNull(card.Shown); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
+        Assert.AreEqual("degania_defence", card.Shown?.Id, "One Army answered, the turn's second card opens (R-EVT-006)");
+        Assert.IsFalse(advisor.IsOpen, "the advisor steps aside while the second card is open, its event step kept");
+        AnswerTheCard();
+        Assert.IsNull(card.Shown, "the opening turn's two cards answered"); Assert.IsTrue(advisor.InChain); Assert.AreEqual(6, advisor.ChainStep);
         Assert.AreEqual(En.Format("advisor.step", 7, 7), Ui.Q<Label>("advisor-count").text, "the count the player was shown stays");
         Assert.AreEqual(En["advisor.opening.objectives.text"], Ui.Q<Label>("advisor-text").text, "on to Objectives");
         for (int i = 0; i < 3; i++) yield return null;                   // the popup was hidden under the card: styles resolve
@@ -665,7 +672,7 @@ public class AdvisorOpeningParityTests
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var advisor = game.Advisor!; var card = game.Card!;
         advisor.CloseChain();
-        AnswerTheCard();
+        AnswerTheOpeningCards();
         Assert.IsNull(card.Shown, "precondition: no card left this turn");
         UiTestKit.Press(Ui.Q<Button>("nav-how-to-play")); UiTestKit.Press(Ui.Q<Button>("how-to-play-guide"));
         Assert.IsTrue(advisor.InChain);
@@ -690,7 +697,7 @@ public class AdvisorOpeningParityTests
         Begin(game, Inputs, 0, startScreen: true);
         UiTestKit.Press(Ui.Q<Button>("start-new-game"));
         var advisor = game.Advisor!; var info = game.Info!; var units = game.Units!;
-        if (cardAnswered) { advisor.CloseChain(); AnswerTheCard(); advisor.OpenChain(); }
+        if (cardAnswered) { advisor.CloseChain(); AnswerTheOpeningCards(); advisor.OpenChain(); }
         var move = Array.IndexOf(Steps, "opening.move");
         for (int i = 0; i < move; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         Assert.IsTrue(info.ShowsUnit && units.Selected != null, "precondition: the move step shows a unit's card");
@@ -712,7 +719,7 @@ public class AdvisorOpeningParityTests
         var advisor = game.Advisor!;
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
         UiTestKit.Press(Ui.Q<Button>("advisor-close"));
-        AnswerTheCard();
+        AnswerTheOpeningCards();
         Assert.IsFalse(advisor.InChain, "closed, it stays closed");
         Assert.AreEqual(-1, advisor.ChainStep);
         Assert.IsFalse(Ui.Q("root").ClassListContains(AdvisorPresenter.OpenClass));
@@ -724,8 +731,9 @@ public class AdvisorOpeningParityTests
         rig.Advisor.OpenChain();                                               // another advisor open on the same HUD (the root's class)
         for (int i = 0; i < AdvisorPresenter.EventStep; i++) rig.Advisor.NextStep();
         rig.Card.Reopen();                                                     // the chain's event step waits for the card
-        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
-        Assert.IsNull(rig.Card.Shown, "precondition: the card answered");
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // One Army
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // then Degania (R-EVT-006)
+        Assert.IsNull(rig.Card.Shown, "precondition: the opening turn's two cards answered");
         Assert.AreEqual(-1, lone.ChainStep, "the disposed advisor was not called");
     }
 

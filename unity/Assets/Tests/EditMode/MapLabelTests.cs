@@ -1253,45 +1253,74 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
-    /// <summary>Review I3: placing every pill while the camera turns and zooms is cheap. The figure is the median refresh of
-    /// the quickest of 5 sweeps of 240 refreshes (each with a new view): the median ignores the refreshes the scheduler
-    /// interrupts, and the quickest sweep the stretches when another job holds the cores. The limit is set from measurements
-    /// (#322): quiet runs give about 115-130 us, the worst loaded full runs averaged 193-216 us, and a refresh made 3x
-    /// slower gives about 350 us or more.</summary>
+    /// <summary>C130 / #322: moving the camera projects each active marker once and transforms each box corner at most
+    /// once, plus one marker-box fallback. Count real work instead of scheduler-dependent microseconds; the existing
+    /// profiler tests above still enforce zero allocations. This is an operation bound, not an absolute timing claim.</summary>
     [UnityTest]
     public IEnumerator RefreshWhileTheCameraMovesIsCheap()
     {
         const int Sweeps = 5, Steps = 240;
-        const double LimitUs = 300.0;   // editor Mono
         var hd = new HdPanel(cam);
         var labels = new MapLabelsPresenter(hd.Root, map, cam);
         try
         {
             yield return Settle(labels);
+            // This fixture has no site/location/route additions or keep-clear tokens. Localities are below 40 km only;
+            // SweepStep starts at 60 km, so only the game settlements' markers are projected throughout the sweep.
+            Assert.Greater(labels.Slots.Count, 0);
+            Assert.AreEqual(map.Settlements.Count, labels.Slots.Count);
+            Assert.IsEmpty(labels.LocationSlots);
+            Assert.IsEmpty(map.ShownRoute);
+            Assert.IsTrue(labels.Labels.All(l => l.resolvedStyle.width > 0f && l.resolvedStyle.height > 0f),
+                "precondition: real label geometry has settled before testing the unchanged-view cache");
+            long kitCornerLimit = 0;
+            foreach (var place in map.Settlements)
+                kitCornerLimit += 8L * (MapLabelsPresenter.KitBounds(map, place, MapLabelsPresenter.MarkerTop(map, place)).Length + 1);
+            long markerCornerLimit = 8L * labels.Slots.Count;
             var tlv = labels.Slots.Single(s => s.name == "slot-tel_aviv");
-            var times = new double[Steps];
-            var medians = new double[Sweeps];
-            var watch = new System.Diagnostics.Stopwatch();
             int moved = 0; var last = tlv.style.translate.value;
-            for (int s = 0; s < Sweeps; s++)
-            {
+            for (int sweep = 0; sweep < Sweeps; sweep++)
                 for (int i = 0; i < Steps; i++)
                 {
                     SweepStep(i);
-                    watch.Restart(); labels.Refresh(); watch.Stop();
-                    times[i] = watch.Elapsed.TotalMilliseconds * 1000.0;
+                    Assert.Greater(rig.Distance, MapLabelsPresenter.LocalityDistanceM, "localities are outside this fixture's projection work");
+                    long markerBefore = labels.ProjectedMarkersForTests;
+                    long placementBefore = labels.PlacementVisitsForTests;
+                    long cornerBefore = MapLabelsPresenter.ProjectedCornersForTests;
+                    labels.Refresh();   // no yield: snapshots surround only this synchronous main-thread call
+                    long markers = labels.ProjectedMarkersForTests - markerBefore;
+                    long corners = MapLabelsPresenter.ProjectedCornersForTests - cornerBefore;
+                    long cornerLimit = map.KitsShown ? kitCornerLimit : markerCornerLimit;
+                    string at = $"sweep {sweep}, step {i}";
+                    Assert.AreEqual((long)labels.Slots.Count, markers, at + ": one marker projection per changed view, no duplicate pass");
+                    Assert.AreEqual((long)labels.Slots.Count + labels.LocalitySlots.Count, labels.PlacementVisitsForTests - placementBefore,
+                        at + ": one placement visit per slot, including hidden localities, no duplicate pass");
+                    Assert.Greater(corners, 0L, at + ": actual corner transforms ran, not only the marker/cache check");
+                    Assert.LessOrEqual(corners, cornerLimit, at + ": each kit corner plus at most one marker fallback");
                     var now = tlv.style.translate.value;
                     if (now.x != last.x || now.y != last.y) moved++;
                     last = now;
+                    markerBefore = labels.ProjectedMarkersForTests;
+                    placementBefore = labels.PlacementVisitsForTests;
+                    cornerBefore = MapLabelsPresenter.ProjectedCornersForTests;
+                    labels.Refresh();
+                    Assert.AreEqual(markerBefore, labels.ProjectedMarkersForTests, at + ": unchanged view reuses marker projections");
+                    Assert.AreEqual(cornerBefore, MapLabelsPresenter.ProjectedCornersForTests, at + ": unchanged view reuses box projections");
+                    Assert.AreEqual(placementBefore, labels.PlacementVisitsForTests, at + ": unchanged view reuses placement");
                 }
-                System.Array.Sort(times);
-                medians[s] = (times[Steps / 2 - 1] + times[Steps / 2]) / 2.0;
-            }
-            double best = medians.Min();
-            TestContext.WriteLine(System.FormattableString.Invariant(
-                $"LABELS refresh moving median_us={best:0} sweeps_us={string.Join(",", medians.Select(m => m.ToString("0", System.Globalization.CultureInfo.InvariantCulture)))} moved={moved}"));
             Assert.Greater(moved, Sweeps * Steps / 2, "the refreshes did work: Tel Aviv's pill moved");
-            Assert.Less(best, LimitUs, $"median refresh of the quickest sweep under {LimitUs} us (editor Mono)");
+            // Isolate a fully front-facing box as well: a 24-corner loop produces the SAME hull, but must fail this count.
+            // Reflection keeps the existing projection primitive private; no new public/test replacement implementation.
+            var project = typeof(MapLabelsPresenter).GetMethod("ProjectBoxes",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(project, "the real box-projection primitive is present");
+            var args = new object[] { new[] { new Bounds(Vector3.zero, Vector3.one) }, Matrix4x4.identity,
+                new Rect(0, 0, 1, 1), new Vector2(100, 100), Vector2.zero, default(Rect) };
+            long beforeBox = MapLabelsPresenter.ProjectedCornersForTests;
+            Assert.AreEqual(true, project!.Invoke(null, args), "the box is entirely in front of the identity projection");
+            Assert.AreEqual(new Rect(25, 25, 50, 50), (Rect)args[5], "all eight corners produce the expected hull");
+            Assert.AreEqual(8L, MapLabelsPresenter.ProjectedCornersForTests - beforeBox,
+                "one box requires eight transforms; repeating the same corners 3x does not get a free pass");
         }
         finally { labels.Dispose(); hd.Dispose(); }
     }
@@ -1299,7 +1328,7 @@ public class MapLabelTests
     /// <summary>Keeping clear of the unit tokens (#197) costs little next to placing the pills: one presenter, whose
     /// keep-clear list is switched between the units in play and none, runs interleaved sweeps (off, on, off, on, ...) of
     /// 240 refreshes along the same camera path; the median refresh with the units is at most 1.25 times the median without,
-    /// both taken from the same run, so the machine's load cancels out (the absolute bound stays on the test above).</summary>
+    /// both taken from the same run. This separate relative timing check is unchanged by C130; the test above bounds work, not time.</summary>
     [UnityTest]
     public IEnumerator KeepingClearOfTheUnitsIsCheap()
     {

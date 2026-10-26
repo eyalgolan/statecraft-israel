@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Refs #939, Task 12: exactly the two-card draft accepted by the owner.
+# Approved draft: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6369861430
+# Owner acceptance: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388
+# Historical source passages re-opened by an AI agent on 24 October 2026, not human fact-checking.
+# No person review or native Hebrew approval is asserted; shareable builds remain gated by R-ALT-011.
+id: rafah_force_pressure
+kind: consequence
+anchor: soft
+office: prime_minister
+tags: [security]
+# DESIGN VALUE: owner-set scheduling, not dates on which this counterfactual dilemma happened (#939).
+from: 1949-01-17
+to: 1949-03-17
+requires: [{ event: sinai_withdrawal, option: hold_el_arish }]
+title: >-
+  The force west of Rafah
+title_he: >-
+  הכוח שממערב לרפיח
+text: >-
+  In the record, Israel's Prime Minister told the US representative on 1 January 1949 that Britain had threatened action under its 1936 treaty with Egypt. On 5 January, the US Acting Secretary of State linked American pressure over the incursion into Egypt to the danger of a wider conflict outside Palestine. On this branch, {prime_minister} must decide whether to keep the force west of Rafah or complete its pullback.
+text_he: >-
+  בתיעוד ההיסטורי, ראש ממשלת ישראל מסר לנציג ארצות הברית ב־1 בינואר 1949 שבריטניה איימה לפעול מכוח ההסכם שלה עם מצרים משנת 1936. ב־5 בינואר קשר ממלא מקום מזכיר המדינה האמריקני את הלחץ האמריקני בעניין החדירה למצרים לסכנה של עימות רחב יותר מחוץ לארץ ישראל. במסלול הזה, {prime_minister} צריך להחליט אם להשאיר את הכוח ממערב לרפיח או להשלים את נסיגתו.
+text_he_review: agent-checked
+options:
+  - id: keep_rafah_force
+    text: "Keep the force west of Rafah"
+    text_he: "להשאיר את הכוח ממערב לרפיח"
+    alternative: { basis: design }
+    # DESIGN VALUE: owner-set, not a historical figure and not a moral judgement (#939, https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388).
+    # Empty immediate effect budget as accepted; the parent's effects are not refunded.
+    effects: []
+  - id: complete_pullback
+    text: "Complete the pullback to the international border"
+    text_he: "להשלים את הנסיגה אל הגבול הבינלאומי"
+    alternative: { basis: design }
+    # DESIGN VALUE: owner-set, not a historical figure and not a moral judgement (#939, https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388).
+    # Empty immediate effect budget as accepted; the parent's effects are not refunded.
+    effects: []
+    rejoin: sinai_withdrawal
+# Source checks below are AI-agent reads, not human approval.
+sources:
+  - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d341", checked: 2026-10-24 }
+  - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d354", checked: 2026-10-24 }
+  - { url: "https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf", checked: 2026-10-24 }
+status: draft

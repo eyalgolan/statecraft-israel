@@ -3,8 +3,8 @@ ind{
   food_supply=0.5700000000000001 [3FE23D70A3D70A3E]
   housing=0.38982590078831036 [3FD8F2E855C1400A]
   intl_standing=0.55 [3FE199999999999A]
-  morale=0.5145186479281915 [3FE076EFCFC1143D]
-  security=0.4523487165069581 [3FDCF34807F23CCB]
+  morale=0.5160179155063165 [3FE0833800E7FDB6]
+  security=0.46734871650695814 [3FDDE90A974E65C1]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
@@ -17,14 +17,14 @@ eff{
   homes_lift_morale=0.06141436009563127 [3FAF71B3F83B234E]
   rationing_feeds=0.17 [3FC5C28F5C28F5C3]
   rationing_grates=-0.15 [BFC3333333333333]
-  safety_lifts_morale=0.04519983509826662 [3FA7246ECB10342D]
+  safety_lifts_morale=0.046699102676391616 [3FA7E8F1DD7ECBBA]
   work_lifts_cohesion=0.03792398398429362 [3FA36AC5BDE4A4AD]
 shift{
   food_supply=0 [0000000000000000]
   housing=0 [0000000000000000]
   intl_standing=0.050000000000000044 [3FA99999999999A0]
   morale=-0.07000000000000006 [BFB1EB851EB851F0]
-  security=0.1200000000000001 [3FBEB851EB851EC0]
+  security=0.13500000000000012 [3FC147AE147AE14C]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -47,7 +47,7 @@ debt=40.587931893724964 [40444B415A2FE97B]
 fx=90.22947100954694 [40568EAFA72C5897]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.5744408218619746 [3FE261D1B7EC4E2D]
+stab=0.5772740521838946 [3FE279076EDEB1F8]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -55,6 +55,7 @@ fired[
   armistice_jordan
   armistice_lebanon
   bernadotte_assassination
+  degania_defence
   elections_1949
   first_truce
   idf_founding
@@ -74,6 +75,7 @@ chosen{
   altalena=enforce
   armistice_egypt=sign
   bernadotte_assassination=outlaw
+  degania_defence=jordan_valley
   elections_1949=hold
   first_truce=refuse
   idf_founding=one_army

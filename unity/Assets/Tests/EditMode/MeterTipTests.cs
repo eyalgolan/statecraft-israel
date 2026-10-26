@@ -58,8 +58,10 @@ public class MeterTipTests
                         if (Words(root) != meter.tooltip + "\n" + text["hud.causes"]) problems.Add($"{at} {id}: the tip's words are '{Words(root)}', not its tooltip and the causes' heading");
                         if (CausesLine(root) != string.Join("\n", causes)) problems.Add($"{at} {id}: the tip's causes are '{CausesLine(root)}', not the sim's '{string.Join(" | ", causes)}'");
                         if (UiDirection.RightToLeft(Words(root)) != hebrew) problems.Add($"{at} {id}: the words are not in the UI's language");
-                        // B1: each of these meters has a keyed line on the opening turn, in the UI's language (#55: lines with no key stay English).
-                        if (UiDirection.HasRightToLeft(CausesLine(root)) != hebrew) problems.Add($"{at} {id}: the causes '{CausesLine(root)}' are not in the UI's language");
+                        // B1: a keyed line is in the UI's language (#55: lines with no key stay English). Since #1565 Security's
+                        // opening causes are One Army and Degania, two event lines with no key, so its causes stay English.
+                        var keyed = HudModel.Causes(bridge.Session.Last, id, w => w.Key).Any(k => k != "");
+                        if (UiDirection.HasRightToLeft(CausesLine(root)) != (hebrew && keyed)) problems.Add($"{at} {id}: the causes '{CausesLine(root)}' are not in the UI's language");
                         if (causes.Count == 0) problems.Add($"{at} {id}: precondition: the opening turn has causes for it");
                         Rect t = tip.worldBound, m = meter.worldBound, win = root.worldBound;
                         if (t.xMin < win.xMin - 0.5f || t.xMax > win.xMax + 0.5f || t.yMax > win.yMax + 0.5f) problems.Add($"{at} {id}: the tip {t} leaves the window {win}");

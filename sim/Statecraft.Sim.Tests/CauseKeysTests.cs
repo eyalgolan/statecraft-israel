@@ -160,6 +160,91 @@ public class CauseKeysTests
         Assert.Equal(new[] { CauseKeys.Purpose.Project, "housing" }, line.Args);
     }
 
+    [Fact]
+    public void ObjectiveCompletionInTheEventsGroupHasAKeyAndHistoricalNames()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var objective = Real.Objectives.First(o => !s.Objectives.ContainsKey(o.Id));
+        var why = new List<Cause>();
+        Assert.True(Objectives.Record(Real, s, Real.RulesAt(s.Date).Mvp!, objective.Id, s.Date, why));
+        var row = Assert.Single(why);
+        Assert.Equal(("events", objective.Id, CauseKeys.ObjectiveCompleted), (row.System, row.Target, row.Key));
+        Assert.Contains(row.Key, CauseKeys.All);
+        Assert.Equal(new[] { objective.Name, objective.NameHe }, row.Args);
+        Assert.Equal(string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", objective.Name, (int)row.Delta), row.Message);
+        Assert.False(Objectives.Record(Real, s, Real.RulesAt(s.Date).Mvp!, objective.Id, s.Date, why));
+        Assert.Single(why);   // metadata must not cause the score/completion to be recorded twice
+    }
+
+    [Theory]
+    [InlineData("egypt", "egypt")]
+    [InlineData("jordan", "iraq")]
+    public void BothPrisonerExchangeProducerLinesHaveKeys(string front, string side)
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        s.PrisonersHeld[side] = 2; s.SoldiersHeld[side] = 3;
+        var why = new List<Cause>();
+        Prisoners.Return(Real, s, front, why);
+        Assert.Equal(2, why.Count);
+        var returned = Assert.Single(why, w => w.Key == CauseKeys.PrisonersReturned);
+        var home = Assert.Single(why, w => w.Key == CauseKeys.SoldiersReturned);
+        int people = Real.RulesAt(s.Date).Mvp!.PeoplePerUnit;
+        Assert.Equal(new[] { (2 * people).ToString(CultureInfo.InvariantCulture), front }, returned.Args);
+        Assert.Equal(new[] { (3 * people).ToString(CultureInfo.InvariantCulture), front }, home.Args);
+        Assert.Equal(FormattableString.Invariant($"Prisoners exchanged: {2 * people:N0} prisoners returned to {PlayerText.Capitalised(front)}"), returned.Message);
+        Assert.Equal(FormattableString.Invariant($"Prisoners exchanged: {3 * people:N0} of our soldiers came home from {PlayerText.Capitalised(front)}"), home.Message);
+        Assert.All(why, w => { Assert.Equal("events", w.System); Assert.Contains(w.Key, CauseKeys.All); });
+    }
+
+    /// <summary>C136: check the producers on every state of a full reference game, not only a renderer's filtered set.</summary>
+    [Fact]
+    public void EveryEventAndMilitaryUpkeepProducerLineHasAKey()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        int eventRows = 0, upkeepRows = 0;
+        for (int t = 0; t < 1000 && s.GameOver == null; t++)
+        {
+            var eventLines = new List<Cause>();
+            var triggered = s.Clone();
+            EventSystem.Trigger(Real, triggered, eventLines, s.Date.AddMonths(-1));
+            EventSystem.Delegate(Real, triggered, eventLines);
+            foreach (var id in s.PendingEvents)
+                foreach (var option in Real.Events.Single(e => e.Id == id).Options)
+                {
+                    var chosen = s.Clone();
+                    Assert.Null(EventSystem.Choose(Real, chosen, id, option.Id, eventLines));
+                    foreach (var row in EventSystem.OptionEffects(Real, s, option))
+                    {
+                        Assert.Contains(row.Key, CauseKeys.All);
+                        eventRows++;
+                    }
+                }
+            foreach (var row in eventLines.Where(w => w.System == "events"))
+            {
+                Assert.Contains(row.Key, CauseKeys.All);
+                eventRows++;
+            }
+            var upkeep = new List<Cause>();
+            Military.PayUpkeep(Real, s.Clone(), Real.RulesAt(s.Date).Mvp!, upkeep);
+            foreach (var row in upkeep) Assert.Contains(row.Key, CauseKeys.All);
+            upkeepRows += upkeep.Count(w => w.Key == CauseKeys.MilitaryUpkeep);
+            s = Simulation.Step(Real, s, GoldenRun.Orders(Real, s)).State;
+        }
+        Assert.True(eventRows > 0, "precondition: actual event producer rows were checked");
+        Assert.True(upkeepRows > 0, "precondition: upkeep was paid");
+        foreach (var row in Run(Real, 1000).Where(w => w.System == "events"))
+            Assert.Contains(row.Key, CauseKeys.All);
+    }
+
+    [Fact]
+    public void EveryOptionPreviewHasAKeyIncludingEffectsNotReachedByTheReferencePlayer()
+    {
+        var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
+        var rows = Real.Events.SelectMany(e => e.Options).SelectMany(o => EventSystem.OptionEffects(Real, s, o)).ToList();
+        Assert.NotEmpty(rows);
+        foreach (var row in rows) Assert.Contains(row.Key, CauseKeys.All);
+    }
+
     static string Money(Cause w, int i) => PlayerText.Money(Real, "treasury", Number(w, i));
     static double Number(Cause w, int i) => double.Parse(w.Args[i], NumberStyles.Float, CultureInfo.InvariantCulture);
 
