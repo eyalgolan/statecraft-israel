@@ -874,6 +874,6 @@ why.cause.prisoners_returned: "Prisoners exchanged: {0:N0} prisoners returned to
 why.cause.soldiers_returned: "Prisoners exchanged: {0:N0} of our soldiers came home from {1}"
 
 # #1708 artillery action status. Hebrew: native review pending (#564).
-unit.artillery_move_missing: "Artillery cannot move: its gdd-0.3 movement allowance is not specified."
+unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
 unit.fire_ready: "Fire available"
 unit.fire_spent: "Fired this turn"

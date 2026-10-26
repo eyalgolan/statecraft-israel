@@ -22,7 +22,7 @@ namespace Statecraft.Sim
         {
             if (value.Values == null || value.Values.Count != count || value.Parts == null || value.Parts.Count != 0
                 || !string.IsNullOrEmpty(value.Expression) || (value.Basis != "Agreed" && value.Basis != "Default"))
-                throw Invalid(key, "requires an Agreed/Default integer list of length " + count);
+                throw Invalid(key, FormattableString.Invariant($"requires an Agreed/Default integer list of length {count}"));
             var n = value.Values[index];
             // Bound percent additions and movement/path arithmetic as well as the decimal-to-int conversion.
             if (n != decimal.Truncate(n) || n < (positive ? 1 : 0) || n > int.MaxValue - 100)

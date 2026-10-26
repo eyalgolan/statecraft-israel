@@ -329,6 +329,7 @@ namespace Statecraft.Sim
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };
             var prev = new Dictionary<(int Q, int R), (int Q, int R)>();
             var frontier = new SortedSet<(int Cost, int Q, int R)> { (0, u.Q, u.R) };
+            var role = c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class ?? "";
             while (frontier.Count > 0)
             {
                 var (cost, q, r) = frontier.Min;
@@ -337,7 +338,6 @@ namespace Statecraft.Sim
                 {
                     var next = (q + dq, r + dr);
                     if (!(c.HexAt(next.Item1, next.Item2) is MapHex hex) || !hex.Land || blocked.Contains(next)) continue;
-                    var role = c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class ?? "";
                     var step = Gdd03Military.Applies(c) && role != "" ? Gdd03Military.Terrain(c, hex.Biome, role) : costs[hex.Biome];
                     foreach (var (hexes, kindCost) in built)
                         if (kindCost < step && hexes.Contains((q, r)) && hexes.Contains(next)) step = kindCost;

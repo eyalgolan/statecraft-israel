@@ -39,7 +39,8 @@ public class InfoPanelLayoutTests
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
-                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null)
+                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null,
+                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -57,7 +58,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
         try
         {
             act(root, info);
@@ -635,9 +636,18 @@ public class InfoPanelLayoutTests
         var allowance=Movement.Allowance(g.Content,bridge.State.Units[f.id]);
         var reach=InfoPanelPresenter.MoveReach(bridge,f.id)!;
         CollectionAssert.AreEquivalent(Movement.Reachable(g.Content,bridge.State,f.id,bridge.Spent).Keys,reach.Keys);
+        Assert.AreEqual((1, 1), (bridge.State.Units[f.id].Q, bridge.State.Units[f.id].R), "the committed Move put the unit on (1,1)");
+        // The lit hexes the card hands the map, pinned by hand on the all-plain 8x3 board: one point left (infantry, 2 of 2
+        // spent 1) reaches the six neighbours of (1,1); two points left (armour, 3 less 1) reach every hex within two steps.
+        var expected = role == "infantry"
+            ? new[] { (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1) }
+            : new[] { (0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1) };
+        var lit = new List<IReadOnlyCollection<(int q, int r)>>();
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
             StringAssert.Contains(text.Format("unit.points",allowance-1,allowance),root.Q<Label>("info-settlements").text);
-        },text:text,hebrew:hebrew,unit:()=>f.token);
+            Assert.IsNotEmpty(lit, "the card lit the unit's reach on the map");
+            CollectionAssert.AreEquivalent(expected, lit[lit.Count - 1].Select(h => (h.q, h.r)), "the highlighted hexes are the remaining-points reach");
+        },text:text,hebrew:hebrew,unit:()=>f.token,showReachable:hexes=>lit.Add(hexes.ToList()));
     }
 
     // R-MOVE-008/009: standing route ETA is computed on the post-commit state and same effective points.
@@ -676,13 +686,27 @@ public class InfoPanelLayoutTests
         var bridge=new SimBridge(g,text);CollectionAssert.Contains(bridge.NeedsOrders,f.id);
         Assert.Greater(Movement.ActionsLeft(c,bridge.State,f.id,bridge.Spent),0);
         Assert.AreEqual(text["unit.artillery_move_missing"],bridge.Queue(new Move(f.id,1,1)));
+        var odds = Combat.Preview(c, bridge.State, f.id, 2, 1)!.Value.RatioPercent;
+        InfoPanelPresenter? shown = null;
+        // The card's own Fire control: shown and pressed, its pick shows the sim's odds while the movement refusal stays on
+        // the card, and the lit target fires through the same pick a map click uses.
+        yield return Rendered(1512,982,g,(root,info)=>{ info.ShowUnit(); shown = info; },root=> {
+            var card = root.Q<Label>("info-settlements").text;
+            Assert.IsTrue(Shown(root.Q<Button>("info-attack")), "the gun's attack control stays visible while movement is blocked");
+            Assert.IsFalse(Shown(root.Q<Button>("info-move")), "no Move is offered for the gun");
+            StringAssert.Contains(text["unit.fire_ready"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            StringAssert.Contains(text.Format("unit.attack_odds", "2,1", odds), card);
+            Assert.IsTrue(shown!.PickTarget(2, 1), "the lit enemy hex takes the shot");
+        },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
+        var after = new SimBridge(g, text);
+        CollectionAssert.DoesNotContain(after.NeedsOrders,f.id);
+        Assert.AreEqual(0,Movement.ActionsLeft(c,after.State,f.id,after.Spent));Assert.AreEqual(0,after.State.Arms);
         yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
-            StringAssert.Contains(text["unit.fire_ready"],root.Q<Label>("info-settlements").text);
-        },text:text,hebrew:hebrew,unit:()=>f.token);
-        Assert.IsNull(bridge.Queue(new UnitOrder(f.id,Combat.Attack,2,1)));CollectionAssert.DoesNotContain(bridge.NeedsOrders,f.id);
-        Assert.AreEqual(0,Movement.ActionsLeft(c,bridge.State,f.id,bridge.Spent));Assert.AreEqual(0,bridge.State.Arms);
-        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
-            StringAssert.Contains(text["unit.fire_spent"],root.Q<Label>("info-settlements").text);
+            var card = root.Q<Label>("info-settlements").text;
+            StringAssert.Contains(text["unit.fire_spent"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            Assert.IsFalse(Shown(root.Q<Button>("info-attack")), "no second shot is offered");
         },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
