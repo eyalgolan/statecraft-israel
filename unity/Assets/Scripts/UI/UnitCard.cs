@@ -9,7 +9,7 @@ using Statecraft.Sim;
 namespace Statecraft.Game.UI
 {
     /// <summary>The info panel's text for a selected unit (its orders so far, Move, Fortify, Hold and Attack, are the panel's: InfoPanelPresenter; the panel also links to the Defence screen):
-    /// its name, number and service; where it stands, and since when only from a sourced start (the anchor's `since`,
+    /// its name, number (Hebrew where the row has a sourced one, #1219) and service; where it stands, and since when only from a sourced start (the anchor's `since`,
     /// never the game's first day: review I1); its formation and first commander where sourced; the sector in the
     /// source's words; on Israel's units, the national values its token reflects (legacy loop: the reserve call-up sets an
     /// army token's figures, the security level whether the aircraft fly; GDD loop: the unit's strength sets the figures,
@@ -99,7 +99,7 @@ namespace Statecraft.Game.UI
             {
                 // A raised unit has no name or number: its type is the title, the service the subtitle (#1396).
                 Title = raisedType ?? (hebrew && !string.IsNullOrEmpty(u.NameHe) ? u.NameHe : u.Name),
-                Subtitle = raisedType == null ? text.Format("unit.subtitle", u.Number, text["unit.service." + u.Service])
+                Subtitle = raisedType == null ? text.Format("unit.subtitle", Local(u.Number, u.NumberHe), text["unit.service." + u.Service])
                     : text["unit.service." + u.Service],
                 Body = string.Join("\n", lines),
                 Footer = t.Raised ? "" : (national == "" ? "" : national + "\n")

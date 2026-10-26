@@ -34,6 +34,8 @@ namespace Statecraft.Sim
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (commands == null) throw new ArgumentNullException(nameof(commands));
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            // R-POP-002: fixture ledger producers/consumers are not integrated with the aggregate loop.
+            PopulationLedger.RefuseAggregate(state);
             CommandText.Validate(commands);
 
             var s = state.Clone();
@@ -99,6 +101,8 @@ namespace Statecraft.Sim
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (commands == null) throw new ArgumentNullException(nameof(commands));
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            // R-POP-002: fixture ledger producers/consumers are not integrated with the aggregate loop.
+            PopulationLedger.RefuseAggregate(state);
             CommandText.Validate(commands);
             var s = state.Clone();
             if (s.GameOver == null) RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), new List<Cause>(), new List<Rejection>());
@@ -113,6 +117,8 @@ namespace Statecraft.Sim
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (commands == null) throw new ArgumentNullException(nameof(commands));
             if (commands.Any(x => x == null)) throw new ArgumentException("Commands cannot contain null.", nameof(commands));
+            // R-POP-002: fixture ledger producers/consumers are not integrated with the aggregate loop.
+            PopulationLedger.RefuseAggregate(state);
             CommandText.Validate(commands);
             var s = state.Clone();
             var why = new List<Cause>(); var rejected = new List<Rejection>(); var spent = new Dictionary<int, int>();

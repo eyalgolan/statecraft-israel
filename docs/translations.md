@@ -82,6 +82,19 @@ non-empty string, `review` only `agent-checked`, and `sources` as a list of `{ u
 text itself (an event is all or none, placeholders as in the English, no stray `{` or `}`, Hebrew letters, no direction
 marks, the UI's approved wording) are the content rules. They run on the text where it is used, as they do today.
 
+## A UI language names itself
+
+`ui.yaml` carries `ui.lang`, and its value is the language's own code — `ui.lang: "ro"` in `translations/ro/`. It is
+not a label. The player reads this key to decide which language it is showing: the Hebrew face on the UI root, and the
+branches in `EventCardPresenter` and `SharePresenter`. So a file that says the wrong thing here does not fail, it
+shows one language's words laid out as another's.
+
+A language offered to the player must therefore pass `Translations.CheckDeclaredLanguage`, which refuses a `ui.yaml`
+with no `ui.lang` and one whose `ui.lang` names a different language from its directory. The second is the case worth
+the check: a `ui.yaml` copied from another language with its code left behind passes every shape check in `Parse`.
+`Parse` itself does not require the key, because it is also used to read a file's shape in isolation — the check is a
+separate call, made where a language is adopted.
+
 ## The implementations and their tests
 
 - `sim/Statecraft.Sim/Translations.cs`: keys, parsing, writing, `Resolve` and `InlineHebrew`.

@@ -77,13 +77,13 @@ This is a draft claim inventory, including assertions in YAML comments. Rows may
 | M02 | text | Levi Eshkol belongs to the Jewish Agency Settlement Department and proposes transit camps. | S19 archived CZA body; S20 proposal section. | Office/agency role is a factual claim, not a game rating. |  |
 | M03 | text; maabarot option | Camps near towns/work permit residents to earn their living rather than depend on Agency support. | S19 body; S20 proposal/work sections. | Intended self-support must not imply that work was consistently available; sources describe hardship. |  |
 | M04 | comments | Executive meeting 27 March 1950, proposal about two weeks later. | S20 section on the temporary solution, notes 4/5. | English WikipediaS 16 instead saysMarch; underlying archival record is not opened here. |  |
-| M05 | comments | First occurrence of maabarot in 21 April 1950 letter, CZA S15/4175. | S17 article referencing the letter. | Original letter not retrieved/read; citation remains secondary support. |  |
+| M05 | comments | First occurrence of ma'abarot in 21 April 1950 letter, CZA S15/4175. | S17 article referencing the letter. | Original letter not retrieved/read; citation remains secondary support. |  |
 | M06 | comments | First campKesalon in May 1950; Davar report 23 May 1950. | S20 camp-establishment section reportingDavar; S19 only year/region. | Original newspaper item not opened; secondary quotation is not fresh primary verification. |  |
 | M07 | window | Window opens 1 April 1950 and ends 1 June 1950 (exclusive). | Pinned YAML. | Monthly game boundary is not an exact proposal date. |  |
 | M08 | text; office | PrimeMinister is the decision office; historical-reference holder resolves within window. | Pinned people.yaml and Offices.Holder. | Player appointments can change actual runtime text. |  |
 | M09 | keep_camps option | Keeping free-board camps is a playable alternative. | Pinned YAML `alternative: { basis: design }`; accepted road 21. | Design assumption; no historical advocate, date or nested source is asserted. Do not invent one. |  |
 | M10 | sources comment | CET bibliography publication year versus YAML source note. | S20 Bibliography field 1986; YAML comment 1987. | Unresolved bibliographic mismatch; no source/comment correction included. |  |
-| M11 | effects/set_policy | Housing/cohesion/money changes and maabarot policy 1.0. | Pinned YAML/model. | Design values, not historical quantities. |  |
+| M11 | effects/set_policy | Housing/cohesion/money changes and the `maabarot` policy 1.0. | Pinned YAML/model. | Design values, not historical quantities. |  |
 
 ## Known gaps and contradictions
 

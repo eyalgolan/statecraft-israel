@@ -24,6 +24,7 @@ HEXES = json.loads((MAP / "hexes.json").read_text())
 META = SOURCE["statecraft"]
 PERIODS = [p["id"] for p in BAKED["periods"]]
 CODES = {(q, r): c for q, r, c in BAKED["hexes"]}
+SETTLEMENTS = yaml12.load((MAP / "settlements_1948.yaml").read_text(encoding="utf-8"))
 
 
 def code(lon: float, lat: float, period: str) -> str:
@@ -297,10 +298,13 @@ def test_a_hex_takes_the_code_at_its_centre():
     drawn = [p for p in periods if p["snapshot"]]
     land = set(cb.mandate_hexes())
     pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
+    # A mapped settlement's hex is the one exception: it takes the code at the settlement's own point (#1659), which
+    # test_a_settlement_hex_takes_the_code_at_its_own_point covers instead.
+    towns = {hg.settlement_hex(s["lon"], s["lat"], HEXES) for s in SETTLEMENTS["settlements"]}
     checked = 0
     for h in HEXES["hexes"]:
         qr = (h["q"], h["r"])
-        if qr not in land or qr in pinned or abs(h["lon"] - 35.2256) < 0.1:
+        if qr not in land or qr in pinned or qr in towns or abs(h["lon"] - 35.2256) < 0.1:
             continue
         p = drawn[PERIODS.index("truce2")]
         got = cb.code_at(h["lon"], h["lat"], snaps[p["snapshot"]], [overlays[o] for o in p["overlays"]])
@@ -483,3 +487,44 @@ def test_a_contested_place_that_greys_no_hex_fails_the_bake():
         src["statecraft"]["contested_places"] = [bad]
         with pytest.raises(SystemExit, match=bad["place"]):
             cb.bake(src, HEXES, water, meta)
+
+
+def test_a_settlement_hex_takes_the_code_at_its_own_point():
+    """#1659, owner's ruling of 25 October 2026 (a). A hex's centre can sit the other side of the traced line from the
+    settlement placed in it, and a shore town such as Tiberias is placed on a substitute hex whose own hex is lake, so
+    its centre says nothing about the town. Before this rule Tiberias and Safed read "Held by Arab forces" at the start
+    and Hanita, held throughout, read Arab then ALA until July. The deliberate overrides still win: the contested
+    places, the pins and the Jerusalem area are excluded here and covered by their own tests."""
+    snaps, overlays, periods = cb.load(SOURCE)
+    drawn = [p for p in periods if p["snapshot"]]
+    pinned = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META["pinned_towns"]}
+    greyed = {hg.settlement_hex(p["lon"], p["lat"], HEXES) for p in META.get("contested_places", [])}
+    checked = 0
+    for s in SETTLEMENTS["settlements"]:
+        qr = hg.settlement_hex(s["lon"], s["lat"], HEXES)
+        # Jerusalem only: a longitude band on its own also skips Nazareth, Nahalal and Hanita, and Hanita is one of
+        # the three places this rule is for (review of #1765).
+        if qr in pinned or qr in greyed or (abs(s["lon"] - 35.2256) < 0.1 and abs(s["lat"] - 31.7789) < 0.1):
+            continue
+        for i, p in enumerate(drawn):
+            ovs = [overlays[o] for o in p["overlays"] if o in overlays]
+            got = cb.code_at(s["lon"], s["lat"], snaps[p["snapshot"]], ovs)
+            if got is None:
+                continue
+            assert CODES[qr][i] == got, (s["id"], qr, p["id"])
+            checked += 1
+    assert checked > 200, checked
+
+
+def test_the_three_places_of_1659_are_held_by_israel_from_the_start():
+    """The player-visible claim of #1659, pinned by name so a bake change cannot quietly undo it: the map and the city
+    panel's "Held by" line. Tiberias was taken on 18 April 1948 and Safed on 10-11 May, both before the game's start on
+    15 May, and Hanita was held throughout the war."""
+    for sid in ("tiberias", "hanita"):
+        s = next(x for x in SETTLEMENTS["settlements"] if x["id"] == sid)
+        codes = CODES[hg.settlement_hex(s["lon"], s["lat"], HEXES)]
+        assert set(codes) == {"I"}, (sid, codes)
+    safed = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "safed")
+    codes = CODES[hg.settlement_hex(safed["lon"], safed["lat"], HEXES)]
+    assert "A" not in codes and "V" not in codes, codes
+    assert codes[PERIODS.index("truce1")] == "I", codes
