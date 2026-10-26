@@ -882,3 +882,13 @@ why.cause.soldiers_returned: "Prisoners exchanged: {0:N0} of our soldiers came h
 unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
 unit.fire_ready: "Fire available"
 unit.fire_spent: "Fired this turn"
+
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "Game companion"
+companion.help: "Read-only. Play with the game's keyboard controls."
+companion.focus: "Game focus"
+companion.status: "Status"
+companion.choices: "Choices"
+companion.empty: "No decision waiting"
+companion.unavailable: "Unavailable"
+companion.map: "Map"

@@ -981,3 +981,13 @@ why.cause.soldiers_returned: "חילופי שבויים: {0:N0} מחיילינו
 unit.artillery_move_missing: "לא ניתן להזיז ארטילריה עדיין: נקודות התנועה שלה טרם נקבעו"
 unit.fire_ready: "ניתן לירות"
 unit.fire_spent: "הירי בוצע בתור הזה"
+
+# Read-only WebGL companion (#1119); Hebrew additions await native review.
+companion.title: "מלווה למשחק"
+companion.help: "תצוגה לקריאה בלבד. המשחק מתנהל באמצעות מקשי המקלדת של המשחק."
+companion.focus: "המיקוד במשחק"
+companion.status: "מצב"
+companion.choices: "אפשרויות"
+companion.empty: "אין החלטה ממתינה"
+companion.unavailable: "לא זמין"
+companion.map: "מפה"

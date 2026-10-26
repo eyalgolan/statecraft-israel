@@ -1,0 +1,1 @@
+- Add a read-only WebGL companion beside the game for the current event, choices, game focus and status. Keyboard play stays in the game; real screen-reader validation remains pending.

@@ -56,6 +56,10 @@ namespace Statecraft.Game.UI
         EventCardPresenter? card;
         /// <summary>Tests: the decision card of the last Begin.</summary>
         internal EventCardPresenter? Card => card;
+        WebCompanion? companion;
+        // Outbound test transport only; the shipping bridge remains one-way.
+        internal Action<string>? CompanionSend { get; set; }
+        internal WebCompanion? Companion => companion;
         CaptureDialogPresenter? capture;
         /// <summary>Tests: the capture dialog of the last Begin.</summary>
         internal CaptureDialogPresenter? Capture => capture;
@@ -584,6 +588,8 @@ namespace Statecraft.Game.UI
             if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
+            if (Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null)
+                companion = Own(new WebCompanion(root, text, () => card?.Shown != null, CompanionSend));
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
@@ -770,7 +776,7 @@ namespace Statecraft.Game.UI
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            companion = null; minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
