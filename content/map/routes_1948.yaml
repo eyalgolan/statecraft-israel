@@ -266,19 +266,19 @@ routes:
   opened: 1948
   from: '1948-06-14'
   status: draft
-  note: The makeshift bypass of Latrun built in May-June 1948, from just east of Dayr Muhaysin by Bayt Jiz and Bayt
-    Susin, up to Bayt Mahsir and Saris, joining the old Jerusalem road. The first jeep attempt failed on the night of
+  note: The makeshift bypass of Latrun built in May-June 1948, from just east of Deir Muhaysin by Beit Jiz and Beit
+    Susin, up to Beit Mahsir and Saris, joining the old Jerusalem road. The first jeep attempt failed on the night of
     30-31 May and a second got through the next night (31 May - 1 June); the steepest section opened to vehicles, with
     tractor help, on 10 June (Burma Road (Israel)); fully motorised traffic from 11 June (Isseroff, Burma Road); and the
     road was completed on 14 June 1948 (Burma Road (Israel)), the date the map shows it from.
   to_verify:
   - Built after the 1946 map, so the trace follows the tracks the map shows between the places the source names; the
-    1948 line differs where the builders cut new road (the steep ascent above Bayt Susin).
+    1948 line differs where the builders cut new road (the steep ascent above Beit Susin).
   via:
-  - {name: Dayr Muhaysin, lon: 34.93444, lat: 31.82833, url: 'https://en.wikipedia.org/wiki/Dayr_Muhaysin'}
-  - {name: Bayt Jiz, lon: 34.95417, lat: 31.81278, url: 'https://en.wikipedia.org/wiki/Bayt_Jiz'}
-  - {name: Bayt Susin, lon: 34.98361, lat: 31.80611, url: 'https://en.wikipedia.org/wiki/Bayt_Susin'}
-  - {name: Bayt Mahsir, lon: 35.03472, lat: 31.79444, url: 'https://en.wikipedia.org/wiki/Bayt_Mahsir'}
+  - {name: Deir Muhaysin, lon: 34.93444, lat: 31.82833, url: 'https://en.wikipedia.org/wiki/Dayr_Muhaysin'}
+  - {name: Beit Jiz, lon: 34.95417, lat: 31.81278, url: 'https://en.wikipedia.org/wiki/Bayt_Jiz'}
+  - {name: Beit Susin, lon: 34.98361, lat: 31.80611, url: 'https://en.wikipedia.org/wiki/Bayt_Susin'}
+  - {name: Beit Mahsir, lon: 35.03472, lat: 31.79444, url: 'https://en.wikipedia.org/wiki/Bayt_Mahsir'}
   - {name: Saris, lon: 35.07389, lat: 31.79806, url: 'https://en.wikipedia.org/wiki/Saris,_Jerusalem'}
   sources:
   - url: https://en.wikipedia.org/wiki/Burma_Road_(Israel)

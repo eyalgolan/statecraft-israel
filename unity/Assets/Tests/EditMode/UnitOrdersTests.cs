@@ -86,7 +86,8 @@ public class UnitOrdersTests
 
     /// <summary>Move lights exactly Movement.Reachable's hexes. A click on one commits Move(unit, q, r) through SimBridge and
     /// keeps the card; a click on an unreachable water hex commits nothing and shows that hex;
-    /// a second press of Move ends the pick. Each end of the pick clears the overlay.</summary>
+    /// a second press of Move keeps the pick (a unit that can move always has it open, owner 25 Oct 2026). Each end of the
+    /// pick clears the overlay.</summary>
     [Test]
     public void AClickOnALitHexCommitsTheMoveAndAnUnreachableClickEndsThePick()
     {
@@ -112,9 +113,9 @@ public class UnitOrdersTests
             CollectionAssert.AreEqual(reach, lit.Last(), "the overlay is Reachable's hexes, in its order");
             Assert.IsTrue(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
             Assert.IsTrue(ui.Q<Label>("info-settlements").text.Contains(Text["unit.move_pick"]), ui.Q<Label>("info-settlements").text);
-            UiTestKit.Press(move);   // a second press ends the pick
-            Assert.IsEmpty(lit.Last());
-            Assert.IsFalse(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
+            UiTestKit.Press(move);   // a second press keeps the pick: a unit that can move always has its reach lit
+            CollectionAssert.AreEqual(reach, lit.Last(), "a second press of Move keeps the reach lit");
+            Assert.IsTrue(map.Terrain.transform.Find(MapScene.ReachableName).GetComponent<MeshRenderer>().enabled);
             // Task12/spec8.1:248: unlit land with a route now gives go-to (tested below); water ends the pick.
             var water = C.Hexes.First(h => !h.Land);
             Assert.IsFalse(reach.Contains((water.Q, water.R)), "precondition: water has no move or go-to route");
@@ -178,7 +179,8 @@ public class UnitOrdersTests
 
     /// <summary>#1617: while a Move pick is open, a click on the unit card is the map's only where it falls on the card's
     /// text (not a button, not another panel) over a hex PickTarget takes: a lit hex, or an unlit hex with a go-to route
-    /// (#1398); an unlit hex with no route stays blocked. The hex is asked only then. With no pick open, never.</summary>
+    /// (#1398); an unlit hex with no route stays blocked. The hex is asked only then. With no pick open, never. Selecting
+    /// the unit opens its pick, with no press of Move (owner, 25 Oct 2026).</summary>
     [Test]
     public void OnlyAHexTheMovePickTakesUnderTheCardsTextTakesAClickThroughTheCard()
     {
@@ -202,8 +204,7 @@ public class UnitOrdersTests
         var title = ui.Q<Label>("info-title"); var move = ui.Q<Button>("info-move");
         var asked = 0;
         System.Func<(int q, int r)?> At((int q, int r)? hex) => () => { asked++; return hex; };
-        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
-        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "selecting the unit opened its pick");
         UiTestKit.Press(move);
         Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "the card's text over a lit hex");
         Assert.IsTrue(info.TakesClickThrough(ui.Q<VisualElement>("info-panel"), At(lit)), "the card's own background over a lit hex");
@@ -216,8 +217,12 @@ public class UnitOrdersTests
         Assert.IsFalse(info.TakesClickThrough(ui.Q<VisualElement>("top-bar"), At(lit)), "another panel keeps its click");
         Assert.IsFalse(info.TakesClickThrough(null, At(lit)), "no UI: the map has the click anyway");
         Assert.AreEqual(0, asked, "the hex is asked only for the card's text");
-        UiTestKit.Press(move);   // a second press ends the pick
-        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "the pick has ended");
+        UiTestKit.Press(move);   // a second press keeps the pick
+        Assert.IsTrue(info.TakesClickThrough(title, At(lit)), "a second press of Move keeps the pick");
+        info.Clear();
+        asked = 0;
+        Assert.IsFalse(info.TakesClickThrough(title, At(lit)), "no pick open");
+        Assert.AreEqual(0, asked, "the hex is not asked with no pick open");
         info.Dispose();
     }
 
@@ -867,4 +872,33 @@ public class UnitOrdersTests
         Assert.IsTrue(GameRoot.SmokeOrdersRequested(null, new[] { "Statecraft", "-smoke-orders" }, false));
         Assert.IsFalse(GameRoot.SmokeOrdersRequested("http://localhost/?smoke-orders", new[] { "Statecraft" }, false), "desktop reads only the command line");
     }
+    [TestCase(false)] [TestCase(true)]
+    public void EscapeClearsTheUnitOrHexWithoutGivingAnOrder(bool hebrew)
+    {
+        var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+        using var ui = new UiTestKit();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical); var bridge = new SimBridge(g, text);
+        var golani = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        PlacedToken? selected = new PlacedToken(golani, new AnchorSpot(0, 0, 0, 0, false));
+        var towns = SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", SettlementPlacer.DefaultFileName))).ToDictionary(t => t.Id, t => t.Name);
+        using var info = new InfoPanelPresenter(ui.Root, bridge, text, towns, selectedUnit: () => selected);
+        using var nav = new ScreenNav(ui.Root);
+        static void Cancel(VisualElement target)
+        {
+            using var e = NavigationCancelEvent.GetPooled(); e.target = target; target.SendEvent(e);
+        }
+        info.ShowUnit(); Assert.IsTrue(info.ShowsUnit);
+        nav.Open("settings"); Cancel(ui.Root);
+        Assert.IsNull(nav.Current, "first Escape closes the covering screen");
+        Assert.IsTrue(info.ShowsUnit, "the same Cancel does not also dismiss the underlying selection");
+        var move = ui.Q<Button>("info-move");
+        move.Focus(); Assert.AreSame(move, move.focusController?.focusedElement, "precondition: the focus is on Move");
+        Cancel(move);
+        Assert.IsFalse(info.ShowsUnit, "Escape from a card control dismisses the unit card");
+        Assert.AreSame(ui.Q<VisualElement>("map-focus"), move.focusController?.focusedElement, "the focus goes to the map stop, not lost with the hidden Move");
+        info.Show(golani.StateUnit!.Q, golani.StateUnit!.R); Assert.IsNotNull(info.Selected);
+        Cancel(ui.Q<VisualElement>("info-panel")); Assert.IsNull(info.Selected, "Escape dismisses the hex panel too");
+        Assert.IsEmpty(bridge.Queued, "closing selection does not alter the turn's orders");
+    }
+
 }

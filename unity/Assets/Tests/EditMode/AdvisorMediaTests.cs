@@ -562,4 +562,34 @@ public class AdvisorMediaTests
 
     static bool Inside(Rect inner, Rect outer) =>
         inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
+    [Test]
+    public void ClickingThePortraitUsesTheSameWatchAction()
+    {
+        using var rig = new AdvisorPopupTests.Rig(catalog: TeachWith("{ picture: x.mp4, narration: { en: t.en.wav }, cues: { en: [0, 2.5] }, label: advisor.media_label }"), text: Text);
+        var output = new FakeOutput();
+        rig.Advisor.Media = new AdvisorMedia(Text, new FakePicture { Ready = true }, new FakePicture(), Immediate, output);
+        rig.Advisor.ForceInline = true; rig.Advisor.NewGame();
+        var portrait = rig.Ui.Root.Q("advisor-portrait");
+        using (var click = ClickEvent.GetPooled())
+        {
+            click.target = portrait;
+            typeof(ClickEvent).GetProperty("button")!.SetValue(click, 0);
+            portrait.SendEvent(click);
+        }
+        rig.Advisor.Media.Tick();
+        Assert.IsTrue(rig.Advisor.Media.Playing && output.Played, "the picture itself starts Watch");
+        UiTestKit.Press(rig.Ui.Root.Q<Button>("advisor-watch"));
+        Assert.IsFalse(rig.Advisor.Media.Playing, "the nested Watch strip still toggles exactly once");
+        using (var bubble = ClickEvent.GetPooled())
+        {
+            bubble.target = rig.Ui.Root.Q<Button>("advisor-watch");
+            typeof(ClickEvent).GetProperty("button")!.SetValue(bubble, 0); rig.Ui.Root.Q<Button>("advisor-watch").SendEvent(bubble);
+        }
+        Assert.IsFalse(rig.Advisor.Media.Playing, "a strip click bubbling through the portrait does not start it again");
+        rig.Advisor.Dispose();
+        using var after = ClickEvent.GetPooled(); after.target = portrait;
+        typeof(ClickEvent).GetProperty("button")!.SetValue(after, 0); portrait.SendEvent(after);
+        Assert.IsFalse(rig.Advisor.Media.Playing, "disposed portrait is unwired");
+    }
+
 }

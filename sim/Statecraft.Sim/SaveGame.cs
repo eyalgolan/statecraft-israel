@@ -30,10 +30,10 @@ namespace Statecraft.Sim
     /// <summary>
     /// A save is seed + command log + content hash + schema version (spec section 3); loading replays it. Text format,
     /// one item per line:
-    ///   statecraft-save 3          schema version (a schema 1 save has no ruleset line and is legacy)
+    ///   statecraft-save 4          gdd-0.3; existing rulesets still write schema 3 (a schema 1 save has no ruleset line and is legacy)
     ///   content &lt;hex&gt;             Content.Hash of the content it was played with
     ///   seed &lt;ulong&gt;  /  mode Historical
-    ///   ruleset legacy|gdd-0.1     the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001),
+    ///   ruleset legacy|gdd-0.1|gdd-0.3  the rules it was played under (Content.Ruleset); another ruleset refuses it (R-SAVE-001),
     ///                              and one this build does not know was made by a newer version (R-SAVE-002)
     ///   turn                       starts the next turn's command list (one per Simulation.Step)
     ///   &lt;command&gt; ...              policy ID LEVEL | budget OFFICE=SHARE,... | event ID OPTION | mobilize LEVEL |
@@ -47,11 +47,18 @@ namespace Statecraft.Sim
     /// </summary>
     public sealed class SaveGame
     {
-        public const int SchemaVersion = 3;
+        /// <summary>Newest understood schema, reserved for the separate GDD v0.3 ruleset (#1687).</summary>
+        public const int SchemaVersion = 4;
+        const int PreviousSchemaVersion = 3;
         /// <summary>The ruleset of the legacy loop (Content.Ruleset).</summary>
         public const string LegacyRuleset = "legacy";
         /// <summary>The ruleset of the GDD v0.1 loop (eras.yaml systems.loop: gdd).</summary>
         public const string GddRuleset = "gdd-0.1";
+        /// <summary>GDD v0.3 save identity only; this does not switch the live simulation/content.</summary>
+        public const string Gdd03Ruleset = "gdd-0.3";
+
+        static bool KnownRuleset(string ruleset) => ruleset == LegacyRuleset || ruleset == GddRuleset || ruleset == Gdd03Ruleset;
+        static int WritingSchema(string ruleset) => ruleset == Gdd03Ruleset ? SchemaVersion : PreviousSchemaVersion;
         /// <summary>Turns are at least a week long, so 2000 turns is 38 years, far past any content; a save with more is hostile or damaged.</summary>
         public const int MaxTurns = 2000;
         const string Magic = "statecraft-save";
@@ -61,12 +68,12 @@ namespace Statecraft.Sim
         readonly List<List<string>> turns = new List<List<string>>();
         readonly List<string> open = new List<string>();
 
-        /// <summary>The schema version parsed from this save; a new save uses <see cref="SchemaVersion"/>.</summary>
+        /// <summary>The schema version parsed from this save; a new save uses its ruleset's writing schema (4 for gdd-0.3, otherwise 3).</summary>
         public int Version { get; private set; }
         public string ContentHash { get; }
         public ulong Seed { get; }
         public Mode Mode { get; }
-        /// <summary>The ruleset the game was played under: <see cref="LegacyRuleset"/> or <see cref="GddRuleset"/> (R-SAVE-001).</summary>
+        /// <summary>The ruleset the game was played under: <see cref="LegacyRuleset"/>, <see cref="GddRuleset"/> or <see cref="Gdd03Ruleset"/> (R-SAVE-001).</summary>
         public string Ruleset { get; }
         /// <summary>The recorded turns as new command objects each time it is read (changing them changes nothing in the save).</summary>
         public IReadOnlyList<IReadOnlyList<Command>> Turns =>
@@ -79,8 +86,8 @@ namespace Statecraft.Sim
         public SaveGame(string contentHash, ulong seed, Mode mode, string ruleset, string initialHash)
         {
             ContentHash = contentHash ?? throw new ArgumentNullException(nameof(contentHash));
-            if (ruleset != LegacyRuleset && ruleset != GddRuleset) throw new ArgumentException($"unknown ruleset '{ruleset}'", nameof(ruleset));
-            Version = SchemaVersion; Seed = seed; Mode = mode; Ruleset = ruleset;
+            if (!KnownRuleset(ruleset)) throw new ArgumentException($"unknown ruleset '{ruleset}'", nameof(ruleset));
+            Version = WritingSchema(ruleset); Seed = seed; Mode = mode; Ruleset = ruleset;
             FinalHash = initialHash ?? throw new ArgumentNullException(nameof(initialHash));
         }
 
@@ -107,7 +114,7 @@ namespace Statecraft.Sim
         public string Write()
         {
             var sb = new StringBuilder();
-            sb.Append(Magic).Append(' ').Append(SchemaVersion.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            sb.Append(Magic).Append(' ').Append(WritingSchema(Ruleset).ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("content ").Append(ContentHash).Append('\n');
             sb.Append("seed ").Append(Seed.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("mode ").Append(Mode.ToString()).Append('\n');
@@ -159,10 +166,12 @@ namespace Statecraft.Sim
             _ => throw new ArgumentException($"Cannot save command kind '{cmd.Kind}'", nameof(cmd)),
         };
 
-        /// <summary>Parses save text; any malformed line throws SaveException naming the line.</summary>
-        public static SaveGame Parse(string text)
+        /// <summary>Parses save text; any malformed line throws SaveException naming the line. When supplied, expectedRuleset enforces R-SAVE-001 before any replay.</summary>
+        public static SaveGame Parse(string text, string? expectedRuleset = null)
         {
             if (text == null) throw new ArgumentNullException(nameof(text));
+            if (expectedRuleset != null && !KnownRuleset(expectedRuleset))
+                throw new ArgumentException($"unknown ruleset '{expectedRuleset}'", nameof(expectedRuleset));
             if (text.Length > 0 && text[0] == '\uFEFF') text = text.Substring(1);   // a byte-order mark is not part of the save
             var lines = text.Replace("\r\n", "\n").Split('\n');
             int n = lines.Length;
@@ -194,10 +203,21 @@ namespace Statecraft.Sim
                 if (n < 6) throw new SaveException(0, "Not a Statecraft save (too short)");
                 ruleset = Head(4, "ruleset", 2)[1];
                 // R-SAVE-002 (N2): a ruleset this build does not know comes from a newer version, like a newer schema.
-                if (ruleset != LegacyRuleset && ruleset != GddRuleset)
+                if (!KnownRuleset(ruleset))
                     throw new SaveException(5, $"This save was made with a newer version of the game (ruleset '{ruleset}').", SaveException.NewerVersion);
                 first = 5;
             }
+            // #1687, R-SAVE-001/002: schema 4 belongs only to the isolated gdd-0.3 envelope.
+            // No build writes gdd-0.3 under an earlier schema, so such a save was edited: damage, not older or newer rules.
+            if (ruleset == Gdd03Ruleset && version < SchemaVersion)
+                throw new SaveException(1, FormattableString.Invariant($"a gdd-0.3 save is schema {SchemaVersion}, not {version}"));
+            if (version > PreviousSchemaVersion && ruleset != Gdd03Ruleset)
+                throw new SaveException(1, FormattableString.Invariant($"save schema version {version} is newer than this game ({PreviousSchemaVersion})"), SaveException.NewerVersion);
+            // Check compatibility before replay, including gdd-0.1 -> gdd-0.3 as earlier rules.
+            if (expectedRuleset != null && ruleset != expectedRuleset)
+                throw ruleset == LegacyRuleset || (ruleset == GddRuleset && expectedRuleset == Gdd03Ruleset)
+                    ? new SaveException(0, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules)
+                    : new SaveException(0, "This save was made with a newer version of the game's rules.", SaveException.NewerVersion);
             var end = Head(n - 1, "end", 2)[1];
             if (!IsHash(end)) throw new SaveException(n, "bad end hash");
             var save = new SaveGame(content, seed, mode, ruleset, end);

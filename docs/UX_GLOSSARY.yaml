@@ -22,9 +22,18 @@ conventions:
 - id: transliteration
   status: decision-needed
   summary: 'Hebrew terms in English text are transliterated in several ways: ma''abarot (README), Halutz and Hakhshara (GDD),
-    yishuv and yishuvim (GDD), Knesset. No scheme is written down.'
+    yishuv and yishuvim (GDD), Knesset. No scheme is written down. Arabic place names are settled separately (see place-names);
+    this entry is only about the Hebrew terms.'
   recommendation: Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling
     beside it in the glossary.
+  decision_owner: Eyal
+- id: place-names
+  status: preferred
+  summary: 'The Arabic place names of 1948 in English text follow Village Statistics, 1945 (Beit, not ''Bayt''; Deir, not
+    ''Dayr''), as the map labels already do (localities_1948.yaml, name_basis: vs1945). A quoted source form keeps the spelling
+    its source prints, so listed_as values and the armistice line names are unchanged. Kafr (Arabic) and Kfar (Hebrew) stay
+    distinct. URLs, record ids and a living place''s today.name are outside the rule. Owner, 25 October 2026, #1586.'
+  recommendation: Keep it as the rule, written in docs/WRITING_GUIDE.md section 9. New place names follow it.
   decision_owner: Eyal
 - id: button-names
   status: preferred

@@ -35,6 +35,8 @@ namespace Statecraft.Game.UI
         /// (promo 03's 6.5%) holds seven values and their changes side by side with the icons.</summary>
         public const float NarrowBelowPx = 1860f;
         public const string NarrowClass = "hud-narrow";
+        /// <summary>The noncompact stacked tier has room for natural-width resource captions (laptop playtest).</summary>
+        public const string CaptionLineClass = "top-bar--caption-line";
         /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): a square window does not
         /// have the room for them on the stacked bar.</summary>
         public const float CompactBelowPx = 1640f;
@@ -120,6 +122,12 @@ namespace Statecraft.Game.UI
         readonly HoverTip? railTips, barTips;
         /// <summary>The meters' explanations under the bar (#1037): their words and the turn's causes.</summary>
         readonly MeterTip? meterTip;
+        /// <summary>Pass the same map names used by Why to the meter causes.</summary>
+        public IReadOnlyDictionary<string, string>? TownNamesHe
+        {
+            get => meterTip?.TownNamesHe;
+            set { if (meterTip != null) meterTip.TownNamesHe = value; }
+        }
 
         /// <summary>The panels under the bar (Statecraft.uss: top 456 px under the three-row bar), which PlaceUnderBar moves
         /// by what the three-row bar grows past, or shrinks under, its 440 px (#1089).</summary>
@@ -207,6 +215,7 @@ namespace Statecraft.Game.UI
             dateRow?.parent?.UnregisterCallback<GeometryChangedEvent>(OnPlateGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
+            bar.RemoveFromClassList(CaptionLineClass);
             bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass); hudRoot.RemoveFromClassList(ThreeRowClass);
             ScreenNav.DisableCovered(hudRoot);
         }
@@ -444,6 +453,7 @@ namespace Statecraft.Game.UI
             var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
             bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
             hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || raised && smallTextSize > OneRowSmallMaxPx);
+            bar.EnableInClassList(CaptionLineClass, hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass));
             captionFitWrap = raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
             hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx || captionFitWrap);
             hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
