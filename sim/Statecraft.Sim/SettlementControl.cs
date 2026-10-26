@@ -83,7 +83,7 @@ namespace Statecraft.Sim
             {
                 var after = s.Clone();
                 var refusal = Spend(c, after, ResolveKind) ?? Resolved(c, after, id, outcome, new List<Cause>());
-                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(s, after) : null));
+                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(c, s, after) : null));
             }
             return options;
         }
@@ -92,11 +92,12 @@ namespace Statecraft.Sim
         /// what it needs and what is left.</summary>
         static CaptureRefusal? Spend(Content c, GameState s, string kind)
         {
+            if (!c.UsesAttention) return null;
             var need = AttentionSystem.Cost(c, s, kind); var have = s.Attention;
             return AttentionSystem.TrySpend(c, s, kind) is string no ? new CaptureRefusal(CaptureRefusal.Attention, no, need, have) : null;
         }
 
-        static CapturePreview Preview(GameState s, GameState after) => new CapturePreview(after.Attention - s.Attention,
+        static CapturePreview Preview(Content c, GameState s, GameState after) => new CapturePreview(c.UsesAttention ? after.Attention - s.Attention : (double?)null,
             after.Treasury - s.Treasury, after.Debt - s.Debt, after.Food - s.Food, after.Arms - s.Arms,
             Indicator(after, "morale") - Indicator(s, "morale"), Indicator(after, "intl_standing") - Indicator(s, "intl_standing"), after.Score - s.Score);
 
@@ -152,7 +153,7 @@ namespace Statecraft.Sim
             {
                 var after = s.Clone();
                 var refusal = Spend(c, after, EndKind) ?? Ended(c, after, id, outcome, new List<Cause>());
-                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(s, after) : null));
+                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(c, s, after) : null));
             }
             return options;
         }
@@ -453,11 +454,12 @@ namespace Statecraft.Sim
     /// section 4.1's sober cost preview).</summary>
     public sealed class CapturePreview
     {
-        public double Attention { get; } public double Money { get; } public double Debt { get; }
+        /// <summary>Delta for legacy accounting; null when this ruleset has no Attention resource.</summary>
+        public double? Attention { get; } public double Money { get; } public double Debt { get; }
         public int Food { get; } public int Arms { get; }
         public double SocialCohesion { get; } public double InternationalSupport { get; }
         public int Score { get; }
-        public CapturePreview(double attention, double money, double debt, int food, int arms, double socialCohesion, double internationalSupport, int score)
+        public CapturePreview(double? attention, double money, double debt, int food, int arms, double socialCohesion, double internationalSupport, int score)
         {
             Attention = attention; Money = money; Debt = debt; Food = food; Arms = arms;
             SocialCohesion = socialCohesion; InternationalSupport = internationalSupport; Score = score;

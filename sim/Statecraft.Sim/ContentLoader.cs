@@ -520,15 +520,18 @@ namespace Statecraft.Sim
         static void ValidateRules(Content c, Rules r, string file, HashSet<string> indicators, HashSet<string> offices, HashSet<string> historicalOffices)
         {
             if (r.Start == default) throw new ContentException(file, "start", "required");
-            if (!(r.AttentionPerTurn >= 0 && !double.IsInfinity(r.AttentionPerTurn))) throw new ContentException(file, "attention_per_turn", "must be a finite non-negative number");
-            if (!(r.RungAttentionStep >= 0 && !double.IsInfinity(r.RungAttentionStep))) throw new ContentException(file, "rung_attention_step", "must be a finite non-negative number");
-            foreach (var kv in r.AttentionCost)
-                if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
-            foreach (var k in r.AttentionCost.Keys)
-                if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
-            foreach (var k in AttentionSystem.CommandKinds)
-                if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
-                    throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+            if (c.UsesAttention)
+            {
+                if (!(r.AttentionPerTurn >= 0 && !double.IsInfinity(r.AttentionPerTurn))) throw new ContentException(file, "attention_per_turn", "must be a finite non-negative number");
+                if (!(r.RungAttentionStep >= 0 && !double.IsInfinity(r.RungAttentionStep))) throw new ContentException(file, "rung_attention_step", "must be a finite non-negative number");
+                foreach (var kv in r.AttentionCost)
+                    if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
+                foreach (var k in r.AttentionCost.Keys)
+                    if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
+                foreach (var k in AttentionSystem.CommandKinds)
+                    if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
+                        throw new ContentException(file, $"attention_cost.{k}", "missing cost");
+            }
             if (r.RungMinMobilization.Count != 5) throw new ContentException(file, "rung_min_mobilization", "needs exactly 5 values (rungs 1-5)");
             for (int i = 0; i < 5; i++)
             {
