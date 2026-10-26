@@ -354,4 +354,61 @@ public class TranslationsTests
         var e = Assert.Throws<ContentException>(() => HebrewOverlay.Apply(c, Translations.Parse("he", null, events, content)));
         Assert.Contains(message, e.Message);
     }
+
+    // ---- a UI language naming itself (#1606) ----
+
+    [Fact]
+    public void AUiFileThatDoesNotNameItsLanguageIsRefused()
+    {
+        // Parse checks each file's shape, and a copied file passes that; the player then reads ui.lang and trusts it.
+        var set = Translations.Parse("fr", "hud.turn: \"Tour {0}\"\n", null, null);
+        var e = Assert.Throws<ContentException>(() => Translations.CheckDeclaredLanguage(set));
+        Assert.Contains(Translations.LangKey, e.Message);
+        Assert.Contains("must name itself", e.Message);
+        Assert.Equal($"translations/fr/{Translations.UiFile}", e.File);
+    }
+
+    [Fact]
+    public void AUiFileCarryingAnotherLanguagesCodeIsRefused()
+    {
+        // The case worth the check: ui.yaml copied from another language and its code left behind. Nothing else
+        // notices, and the player lays one language's words out as another's.
+        var set = Translations.Parse("fr", Translations.LangKey + ": \"he\"\nhud.turn: \"Tour {0}\"\n", null, null);
+        var e = Assert.Throws<ContentException>(() => Translations.CheckDeclaredLanguage(set));
+        Assert.Contains("says 'he'", e.Message);
+        Assert.Contains("fr", e.Message);
+    }
+
+    [Fact]
+    public void AUiFileThatNamesItsOwnLanguageIsAccepted()
+    {
+        var set = Translations.Parse("fr", Translations.LangKey + ": \"fr\"\nhud.turn: \"Tour {0}\"\n", null, null);
+        Translations.CheckDeclaredLanguage(set);
+        Assert.Equal("fr", set.Ui.Single(kv => kv.Key == Translations.LangKey).Value);
+    }
+
+    [Theory]
+    [InlineData("en")]
+    [InlineData("he")]
+    public void TheShippedUiFilesNameTheirOwnLanguage(string lang)
+    {
+        // The two files the player reads today (GameRoot's two TextAsset slots) must pass the check that a third
+        // language will be held to.
+        var set = Translations.Parse(lang, File.ReadAllText(Ui(lang)), null, null);
+        Translations.CheckDeclaredLanguage(set);
+    }
+
+    [Fact]
+    public void EveryLanguageUnderTranslationsNamesItsOwnLanguage()
+    {
+        var root = Path.Combine(Repo, "translations");
+        var dirs = Directory.GetDirectories(root).OrderBy(d => d, StringComparer.Ordinal).ToList();
+        Assert.NotEmpty(dirs);   // a vacuous pass here would hide every miswritten file
+        foreach (var dir in dirs)
+        {
+            var ui = Path.Combine(dir, Translations.UiFile);
+            if (!File.Exists(ui)) continue;
+            Translations.CheckDeclaredLanguage(Translations.Parse(Path.GetFileName(dir), File.ReadAllText(ui), null, null));
+        }
+    }
 }
