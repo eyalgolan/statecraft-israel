@@ -632,9 +632,10 @@ public class TownLandmarksTests
     }
 
     /// <summary>The still-applicable part of the owner's 18 October 2026 ruling ("no procedural houses in a mapped town at any
-    /// zoom", the deleted AMappedTownDrawsNoProceduralHousesAtAnyZoom) under focused residency (#1273): once the town the
-    /// camera is on has its original, its kit houses never draw, at the deleted test's four zooms (120 km, the 60 km gameplay
-    /// view, just inside the close views and the closest zoom). Towns the camera is not on keep their fallback until admitted.</summary>
+    /// zoom", the deleted AMappedTownDrawsNoProceduralHousesAtAnyZoom) under focused residency (#1273), across both
+    /// hysteresis bands, inward and outward: the town view band (in at 120 km, out at 160 km) and the close band (buildings in
+    /// below 40 km, out above 45 km). Once the town the camera is on has its original, its kit houses never draw; outside the
+    /// view band (125 km on the way in, 165 km on the way out) the procedural fallback draws again.</summary>
     [Test]
     public void TheFocusedMappedTownDrawsNoProceduralHousesAtAnyZoom()
     {
@@ -643,18 +644,28 @@ public class TownLandmarksTests
             var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
             var kit = identity.Where(p => p.Value == f.focus.Key).Select(p => p.Key).ToList();
             Assert.IsNotEmpty(kit, f.focus.Key + " has kit houses to hide");
-            bool arrived = false;
-            foreach (var d in new[] { 119000f, 60000f, TownModelLayer.CloseEnterM - 1000f, CameraController.MinDistance })
+            var root = f.map.transform.Find(KitLayer.RootName);
+            var closeR = root.Find(f.focus.Key + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            int arrived = 0;
+            var steps = new (float d, bool original, string why)[]
+            {
+                (125000f, false, "in: outside the 120 km view band, fallback"), (119000f, true, "in: inside the view band"),
+                (60000f, true, "in: the gameplay view"), (44000f, true, "in: above the 40 km close threshold, whole town"),
+                (39000f, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, "in: the closest zoom"),
+                (44000f, true, "out: below the 45 km close exit, still buildings"), (46000f, true, "out: above 45 km, whole town again"),
+                (150000f, true, "out: inside the 160 km view exit"), (165000f, false, "out: beyond 160 km, fallback restored"),
+            };
+            foreach (var (d, original, why) in steps)
             {
                 float h = d / Mathf.Sqrt(2f);   // the view ray at 45 degrees: distance d to the ground
                 f.camera.transform.position = new Vector3(f.focus.At.x, h, f.focus.At.y - h);
                 f.camera.transform.LookAt(new Vector3(f.focus.At.x, 0, f.focus.At.y));
                 f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
-                if (!arrived && f.acquired.Count > 0) { f.Arrive(); arrived = true; }   // the whole-town original streams in
-                f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
-                foreach (var r in kit) Assert.IsTrue(r.forceRenderingOff, $"{f.focus.Key}'s kit houses at {d / 1000f} km");
+                if (f.acquired.Count > arrived) { f.Arrive(); arrived = f.acquired.Count; f.towns.Choose(default, f.camera); }
+                foreach (var r in kit) Assert.AreEqual(original, r.forceRenderingOff, $"{f.focus.Key}'s kit houses at {d / 1000f} km ({why})");
+                if (closeR != null) Assert.AreEqual(!original, closeR.forceRenderingOff, $"{f.focus.Key}'s close mesh at {d / 1000f} km ({why})");
             }
-            Assert.IsTrue(arrived, "the whole-town original was admitted and arrived");
+            Assert.Greater(arrived, 0, "the whole-town original was admitted and arrived");
         }
     }
 
