@@ -1,6 +1,9 @@
 """Event timeline (#324): sorting, era lookup, open windows, status filter and the real content."""
 import importlib.util
+import json
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
 SPEC = importlib.util.spec_from_file_location('event_timeline', ROOT / 'scripts/event_timeline.py')
@@ -48,3 +51,19 @@ def test_defaults_match_the_sim():
 def test_real_content_every_event_lands_in_an_era():
     rows = m.load(ROOT)
     assert rows and all(r['era'] != '-' for r in rows)
+
+
+def test_misspelled_status_is_rejected(tmp_path, capsys):
+    # #1461: a typo must not look like an empty review queue
+    with pytest.raises(SystemExit) as e:
+        m.main(['--root', str(repo(tmp_path)), '--status', 'drfat'])
+    assert e.value.code != 0
+    err = capsys.readouterr().err
+    assert 'drfat' in err
+    for s in ('draft', 'fact-checked', 'historian-reviewed', 'sensitivity-reviewed'):
+        assert s in err
+
+
+def test_statuses_match_the_schema():
+    schema = json.loads((ROOT / 'content/schema/event.schema.json').read_text())
+    assert list(m.STATUSES) == schema['properties']['status']['enum']

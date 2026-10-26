@@ -350,11 +350,14 @@ Each row: what the sources say about the founding, in the order CBS, Gvati, Hebr
    September 1977. English WP: 1977, a kvutza trained at Ginosar. Agree.
 
 49. Shilat (moshav, CBS 1977) [C]. Flag: whether the site was in Israeli-held land before June 1967 is [GAP] (no map
-   source read). Gvati: appendix 1977; its narrative puts it in 1976. Hebrew WP: founded 1977 where the Arab village
+   source read; (26 Oct) searched again and not found, see S5). Gvati: appendix 1977; its narrative puts it in 1976. Hebrew WP: founded 1977 where the Arab village
    Shilta stood until 1948; the Ministerial Committee on Settlement under Israel Galili decided, after the UN General
    Assembly's December 1975 resolution, to thicken settlements on the Green Line; the first 25 families went up on 16
    August 1977. English WP: "July 1977", 25 families; its lead describes the place as partly in Israel and partly in
-   the Latrun salient of the Green Line (my paraphrase). 16 August against July; 1976 against 1977.
+   the Latrun salient of the Green Line (my paraphrase). 16 August against July; 1976 against 1977. Globes, 2 July 2003, a report on a Supreme Court ruling (case ע.א 1257/01),
+   opened 2026-10-26: "מושב שילת נוסד בשנת 1977, והוקצו לו 60 יחידות של מלאכה ותעשייה ו-40 יחידות של חקלאות." (Moshav
+   Shilat was founded in 1977, and 60 units of crafts and industry and 40 units of agriculture were allocated to it.) [S]
+   It gives the year only; it names no day and does not touch the 1976 reading of Gvati's narrative.
 
 ## Rows whose site may be outside the pre-1967 lines
 
@@ -376,7 +379,7 @@ held before June 1967. They stay in the table, flagged, and the owner decides.
 - **Sufa (1975).** The CBS year follows an outpost in the Rafah Approaches (Gvati, Hebrew Wikipedia); English
   Wikipedia calls the old Sufa "an Israeli settlement in Sinai" and dates the present place to 1982. [C]
 - **Shilat (1977).** Hebrew Wikipedia says the settlement was meant to thicken the Green Line; I read no map source
-  that says which side of the 1949 line the site was on. **[GAP]** Gvati lists it among the settlements built within
+  that says which side of the 1949 line the site was on. **[GAP]** (26 Oct) Searched again and not found: see S5. Gvati lists it among the settlements built within
   the Green Line (quoted under Kefar Rut above). [S]
 
 ## Rows left out of this note
@@ -403,12 +406,12 @@ held before June 1967. They stay in the table, flagged, and the owner decides.
 
 ## What was not done
 
-- **No contemporaneous source for any founding day.** I did not search or read the Jewish Telegraphic Agency archive
+- **No contemporaneous source for any founding day.** (26 Oct) The JTA archive was searched by title for Shilat, Kefar Rut and Yahel (S6), and only the Yahel web text above was read; no bulletin PDF was opened. In the first pass I did not search or read the Jewish Telegraphic Agency archive
   for any row, nor Davar, Maariv, Hamashkif, the Official Gazette or Jewish Agency records. The only look at the JTA
   archive was a listing of its item titles for 15 to 19 August 1977 (65 items, via `https://www.jta.org/wp-
   json/wp/v2/archive?after=1977-08-15T00:00:00&before=1977-08-20T00:00:00&per_page=100`, run 2026-10-25): no title
   names Shilat or a new moshav; that is titles only, no bulletin text, and records nothing about the content.
-  **[GAP]**
+  **[GAP]** (26 Oct) Searched again and not found; see S6 for the JTA queries run on 2026-10-26 and what they returned.
 - **The day of going onto the land versus other steps** (a decision, a cornerstone, a Nahal outpost, a civilian
   settling) is stated only where a Wikipedia article or Gvati says so. Where neither does, the row says the date's
   meaning is not given. **[GAP]**
@@ -420,7 +423,7 @@ held before June 1967. They stay in the table, flagged, and the owner decides.
 
 ## Searches (every negative record)
 
-All run 2026-10-25.
+S1 to S4 run 2026-10-25; S5 to S7 run 2026-10-26.
 
 | Row | Query / method | Where | Result |
 |---|---|---|---|
@@ -428,6 +431,9 @@ All run 2026-10-25.
 | S2 | Page text of the same chapter, nikud stripped, patterns: עמיעוז, צופר, עין חצבה, עין-חצבה | Gvati page | "עמיעוז": 1 hit (narrative, 5717 list); "צופר": 1 hit (narrative, 1968 Nahal outpost, inside the word "בארצופר"); "עין חצבה" and the hyphenated form: 0 hits, but this search was defective (stripping vowel signs also stripped the maqaf); a rerun keeping the maqaf ("עין־חצבה", U+05BE) found 2 hits in the narrative: the 1970 line (see its row) and a mention of Idan. |
 | S3 | `titles=<Hebrew name>` with `redirects=1` for each row, then by hand `titles=` with a disambiguator where the first page was wrong | he.wikipedia.org MediaWiki API | First fetch needed a hand-chosen title for 10 rows (a missing page, a page on another topic or an unclear one: Zimrat, Moran, Sufa, En Hazeva, Zofar, Zarit, Hazon, Kishor, Giv'at Shappira, Alumim) and a disambiguation page for Adderet; each was refetched under the title in the last table. No row is left without a Hebrew article; Kefar Rozenwald is covered by the article "זרעית". |
 | S4 | Same, `langlinks` to English | en.wikipedia.org | 49 of 49 rows have an English article: 48 via the Hebrew language link (Kishor under the title Kishorit, which also describes the later community), Adderet by title (Aderet, Israel). |
+| S5 | WebSearch (built-in; no Tavily key on this box), 2026-10-26, three queries: Hebrew "ילקוט הפרסומים שילת מושב שם היישוב הכרזה 1977 חורון ב"; "nevo.co.il ילקוט הפרסומים שילת מושב מועצה אזורית גזר שמות יישובים הודעה"; English "Shilta Ramallah district depopulated village 1948 Khalidi All That Remains Latrun salient Jordan armistice" | Search snippets and result lists | Shilat, which side of the 1949 line: no armistice map or Yalkut HaPirsumim notice found. The Hebrew queries returned 9 and 8 result links, none a nevo.co.il or Reshumot page; I opened none of them. The English query returned Wikipedia pages and a PalQuest page, which I did not open; a snippet is not a source, so nothing from them is used. Row stays [GAP]. |
+| S6 | JTA archive REST endpoint `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&after=<date>&before=<date>&per_page=50`, run 2026-10-26, titles only (no bulletin PDF opened) | jta.org | The search matches loosely (Shilat returned synagogue items). Shilat, 1977-08-01 to 1977-09-30: 5 results, none of the 5 titles names a moshav founding. 1977-01-01 to 1977-12-31: Shilta 6 results; Horon 17 (first 12 titles read); Latrun 90 (first 50 listed, first 12 titles read); Ayalon Valley 4; Kfar Rut 131 (first 12 titles read); Kfar Ruth 18 (first 12 titles read); Yahel 0 (1977 only, which misses the 18 Nov 1976 date at line 130). Re-run 26 Oct for Yahel, 1976-11-01 to 1976-12-31: 3 results (X-WP-Total 3); the web text of two names Yahel: JTA bulletin of 17 Nov 1976, "Kibbutz Yahel in the Arava district, the first Reform kibbutz in Israel, will receive its first settlers this week" (https://www.jta.org/archive/kibbutz-yahel-in-the-arava-district-the-first), and of 23 Nov 1976, the Premier "praised the Reform Movement for establishing its first kibbutz, Yahel in the Arava region" (https://www.jta.org/archive/rabin-appeals-to-sadat-for-talks) [S, web text; datelines not read]. They fit the 18 Nov 1976 date ("this week") without fixing the day. None of the other titles read names Shilat or Kefar Rut founding. |
+| S7 | Globes article (https://www.globes.co.il/news/article.aspx?did=702225), opened via WebFetch 2026-10-26, asked for every sentence on Shilat's founding | globes.co.il | One founding sentence (quoted in the Shilat row), year 1977; no Green Line or Latrun mention, no day. Used as [S] for the year only. |
 
 ## Sources and revisions
 

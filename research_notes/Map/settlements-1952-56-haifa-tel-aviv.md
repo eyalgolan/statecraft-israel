@@ -110,6 +110,42 @@ gives the same day.
   the only district-5 row founded after 1948), Beit Hananya, Kfar Hasidim B, Nir Etzion, Ofer and Amikam; 1951, Or
   Akiva and Oranim; 1957, Rekhasim (code 922). Sde Yitzhak (row 2) is in the window by the CBS year but not by Gvati's.
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 as the second part of the pass that started in the Negev, Ashkelon and northern notes
+(#27, owner comment of 24 Oct). Everything below was run or opened on that day, and nothing above is changed. The JTA
+archive was searched through the WordPress REST endpoint the site itself serves,
+`https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<from>T00:00:00&before=<to>T00:00:00&per_page=100&page=<n>`
+(the same index as the site search at `https://www.jta.org/?s=<query>`, but with a date window and the full item text).
+It stems words ("Yearim" also returns items about "years"), so the item TEXT of every result was searched by a script
+for the place name, and only the items it printed were read; the other results were not read by eye. The Gvati text
+below is the Ben-Yehuda edition of his vol. 2 chapters (https://benyehuda.org/read/14684), the same URL the note
+already uses for the appendix; the chapter text was opened on 26 Oct and searched for each name. No exact founding
+day was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Sde Yitzhak (row 2).** Day still [GAP]. New: Gvati's chapter text counts it in the 1952-54 wave: "נוסדו
+  בשנים – תשי״ג – תשי״ד 42 ישובים אחרים" and "בשומרון נוסדו 4 מושבים: גבעת־נילי מיסודה של תנועת חירות,
+  שדה־יצחק". Hebrew years 5713-5714 run from autumn 1952 to autumn 1954, so this supports the 1952-54 range and
+  makes the appendix's "22.10.62" a likely typo of "22.10.52" (our reading; no source says so). No day from the text. [V, agent read 26 Oct 2026; a person's check pending]
+  JTA, query `Sde Yitzhak`, 1951-01-01 to 1957-12-31: 55 results, 1 page; the item text was searched for the
+  spellings Sde, Sdeh and Sde-Yitzhak/Itzhak, 0 items.
+- (26 Oct) **Yemin Orde (row 11).** The founding day is still [GAP], but a contemporaneous primary item now exists for
+  the naming. JTA bulletin dated 1953-04-16, "Children's Village Named in Israel in Memory of Gen. Wingate"
+  (https://www.jta.org/archive/childrens-village-named-in-israel-in-memory-of-gen-wingate): "A children's village on the slopes of Mt.
+  Carmel named Yemin Orde in memory of the late British General Orde Wingate was dedicated yesterday at ceremonies
+  attended by Premier David Ben Gurion". The bulletin date is 16 April 1953; the event date should be read from the
+  dateline in the original PDF, and `http://pdfs.jta.org/` answered every request with a redirect (HTTP 302) to
+  `archive.jta.org`, so the dateline was not read and "yesterday" is not resolved (probably 15 April, our reading). Re-tried 26 Oct: pdfs.jta.org now serves other bulletins (e.g. 1952-05-28_104), but no file answered for 15, 16 or 17 April 1953 at numbers 055 to 095, so the original is still not found.
+  It is a dedication, not the day the village was founded. [V, agent read 26 Oct 2026; a person's check pending]
+  JTA, query `Yemin Orde`, 1951-01-01 to 1957-12-31: 18 results, 1 page, 2 items whose text contains "Yemin" (this one
+  and a 1955-06-24 item about Neve Yemin, unrelated).
+- (26 Oct) **HaHotrim, Neuhardthof coordinates (row 10).** Coordinates still [GAP]. New: Gvati's chapter text, in the
+  passage on the summer of the War of Independence (the year is from the passage, our reading), says "קיבוץ החותרים
+  (הקיבוץ המאוחד) עלה בראשית יוני והשתכן במחנה צבאי בריטי נטוש על חוף הים, דרומה מחיפה" (the kibbutz went up in early
+  June and settled in an abandoned British army camp on the seashore, south of Haifa). That differs from Hebrew
+  Wikipedia's "the houses of the abandoned German colony Neuhardthof" quoted above; the two are not reconciled here,
+  and the camp is not named, so no coordinates follow. [V, agent read 26 Oct 2026; a person's check pending]
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site (Yemin Orde: Wikidata). "Founded" is the best-supported date; see the
