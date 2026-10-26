@@ -74,7 +74,10 @@ namespace Statecraft.Game.Map.Collection
         }
 
         public const string People = "collection-people", Vehicles = "collection-vehicles", Animals = "collection-animals",
-            Towns = "collection-towns", Buildings = "collection-special-buildings";
+            Towns = "collection-towns", Buildings = "collection-special-buildings",
+            // The Syrian and Iraqi infantry (#1377), full-quality rigs with exact 4096 px maps, in a bundle of their own (owner
+            // ruling, 26 October 2026, #1763: "Own bundle"), so the opening civilians and soldier do not wait for them.
+            ArabArmies = "collection-people-1948-arab";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles = new (string, string[])[]
@@ -89,9 +92,6 @@ namespace Statecraft.Game.Map.Collection
                 "figure-arab-villager-v1", "figure-builder-1950-v1", "figure-elder-immigrant-v1", "figure-immigrant-child-v1",
                 "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
                 "figure-pioneer-farmer-v1-tpose",
-                // Full-quality generated infantry for Syria and Iraq; review-only ALA is editor-only.
-                "figure-syrian-infantry-1948-v1",
-                "figure-iraqi-infantry-1948-v1",
             }),
             (Vehicles, new[]
             {
@@ -120,6 +120,12 @@ namespace Statecraft.Game.Map.Collection
             {
                 "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b18-military-barracks-v2",
                 "b21-artisan-workshop-v2", "b22-industrial-factory-v2",
+            }),
+            (ArabArmies, new[]
+            {
+                // Full-quality generated infantry for Syria and Iraq; review-only ALA is editor-only.
+                "figure-syrian-infantry-1948-v1",
+                "figure-iraqi-infantry-1948-v1",
             }),
         };
 

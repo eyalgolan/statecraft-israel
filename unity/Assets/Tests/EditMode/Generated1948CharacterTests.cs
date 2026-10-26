@@ -184,7 +184,7 @@ public class Generated1948CharacterTests
     [TestCase("figure-iraqi-infantry-1948-v1")]
     public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id)
     {
-        Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.BundleOf(id));
+        Assert.AreEqual(CollectionCatalog.ArabArmies, CollectionCatalog.BundleOf(id), "its own bundle, not the opening people's (#1763)");
         CollectionAssert.Contains(CollectionCatalog.Animated, id);
         string dir = $"{CollectionCatalog.Folder}/{id}", source = $"{dir}/{id}.fbx";
         var importer = AssetImporter.GetAtPath(source) as ModelImporter;

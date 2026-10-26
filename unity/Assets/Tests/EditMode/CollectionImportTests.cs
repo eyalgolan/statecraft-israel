@@ -65,14 +65,14 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void TheCatalogKeepsTheOriginalModelsAndAddsThreeInfantryInFiveBundles()
+    public void TheCatalogKeepsTheOriginalModelsAndPutsTheGeneratedInfantryInTheirOwnBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
         Assert.AreEqual(57, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        CollectionAssert.AreEqual(new[] { 23, 13, 6, 10, 5 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12, #336's 9 and two generated infantry), vehicles, animals, towns, special buildings");
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12 and #336's 9), vehicles, animals, towns, special buildings, and the two generated infantry in their own bundle (owner, 26 October 2026, #1763)");
         Assert.AreEqual(23, CollectionCatalog.Animated.Count);
-        CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids.Skip(21));
+        CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -141,7 +141,7 @@ public class CollectionImportTests
             "figure-pioneer-farmer-v1-tpose",
         };
         var people = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids;
-        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray(), "the original people retain their order before the new infantry");
+        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray(), "the original people keep their order");
         CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
         foreach (var id in nine)
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
