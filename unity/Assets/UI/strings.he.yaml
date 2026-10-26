@@ -63,6 +63,14 @@ how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את �
 how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
 # The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
 how_to_play.why: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו."
+
+# GDD 0.3 help (#1688): old-mode help above stays unchanged.
+# Hebrew drafts: agent-checked; native review pending (#564).
+how_to_play.gdd03.events: "כרטיס אירוע מבקש מכם החלטה. הבחירה שלכם נכנסת לתוקף בסיום התור."
+# Hebrew drafts: agent-checked; native review pending (#564).
+how_to_play.gdd03.top_bar: "הסרגל העליון מציג את התאריך, את הכסף ואת המדדים העיקריים של המדינה."
+# Hebrew drafts: agent-checked; native review pending (#564).
+how_to_play.gdd03.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו עובר לשר האחראי, והוא מחליט במקומכם."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"

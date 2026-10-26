@@ -287,7 +287,7 @@ namespace Statecraft.Game.UI
             var budget = Own(new BudgetPresenter(root, bridge, text));
             var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
-            Own(new HowToPlayPresenter(root, text));
+            Own(new HowToPlayPresenter(root, text, bridge.Content.Ruleset));
             Own(new ObjectivesPresenter(root, bridge, text));
             // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
             // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
