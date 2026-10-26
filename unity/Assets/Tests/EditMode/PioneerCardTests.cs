@@ -225,7 +225,9 @@ public class PioneerCardTests
         }
         else b.State.Sites[site.Id] = new SiteWork(site.Id, id, 3, null);
         Assert.IsNotNull(Qualification.CheckReturn(b.State, id), "the sim, not the card, refuses committed work");
+        var refused = 0; b.Refused += _ => refused++;
         UiTestKit.Press(back); Assert.IsEmpty(b.Session.Committed); Assert.IsTrue(b.State.Units.ContainsKey(id));
+        Assert.AreEqual(0, refused, "the shared guard asks CheckReturn first: the order never reaches the sim to be refused");
     }
 
     [TestCase(false)] [TestCase(true)]
