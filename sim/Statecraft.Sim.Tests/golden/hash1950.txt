@@ -3,8 +3,8 @@ ind{
   food_supply=0.8886718750000001 [3FEC700000000001]
   housing=0.106156810303452 [3FBB2D17BC8041AE]
   intl_standing=0.8100000000000003 [3FE9EB851EB851EE]
-  morale=0.5049571214041069 [3FE0289BD64A039C]
-  security=0.5042220244102726 [3FE022963A187B2A]
+  morale=0.5064571194331031 [3FE034E58F995454]
+  security=0.5192220244102725 [3FE09D7781C68FA4]
 pol{
   border_settlement=0.2 [3FC999999999999A]
   housing_construction=0.3 [3FD3333333333333]
@@ -17,14 +17,14 @@ eff{
   homes_lift_morale=0.02793111941413326 [3F9C99F9B1B28ED8]
   rationing_feeds=0.33867187500000007 [3FD5ACCCCCCCCCCE]
   rationing_grates=-0.15 [BFC3333333333333]
-  safety_lifts_morale=0.050367774522404846 [3FA9C9CE10B12AF4]
-  work_lifts_cohesion=0.028912171864541484 [3F9D9B2702754931]
+  safety_lifts_morale=0.05186777309189337 [3FAA8E69AA4AC48D]
+  work_lifts_cohesion=0.02891217132404919 [3F9D9B26F92C2CF8]
 shift{
   food_supply=0.15000000000000002 [3FC3333333333334]
   housing=0 [0000000000000000]
   intl_standing=0.3100000000000003 [3FD3D70A3D70A3DC]
   morale=-0.09000000000000008 [BFB70A3D70A3D710]
-  security=0.16500000000000015 [3FC51EB851EB8524]
+  security=0.18000000000000016 [3FC70A3D70A3D710]
 bud{
   agriculture_minister=0.07 [3FB1EB851EB851EC]
   defense_minister=0.45 [3FDCCCCCCCCCCCCD]
@@ -44,11 +44,11 @@ pop{
 sit[
   housing_crisis
 treasury=0 [0000000000000000]
-debt=89.95032828298672 [40567CD22DB7F913]
+debt=87.95032828298672 [4055FCD22DB7F913]
 fx=94.52989672613671 [4057A1E9D3F540F0]
 rung=2;cf=0;
 mob=0.05 [3FA999999999999A]
-stab=0.5039736980546528 [3FE0208D72E60B92]
+stab=0.5071823544071647 [3FE03AD67D292F8C]
 att=4 [4010000000000000]
 fired[
   altalena
@@ -58,6 +58,7 @@ fired[
   armistice_syria
   austerity_1949
   bernadotte_assassination
+  degania_defence
   elections_1949
   first_truce
   frumkin_commission
@@ -82,6 +83,7 @@ chosen{
   armistice_syria=sign
   austerity_1949=impose
   bernadotte_assassination=outlaw
+  degania_defence=jordan_valley
   elections_1949=hold
   first_truce=accept
   idf_founding=one_army
@@ -129,9 +131,8 @@ units[
   13:veteran_soldier@-4,23|side=israel|strength=2
   15:veteran_halutz@-3,19/6
 site{
-  beit_kama=done,1949-06-15
-  beit_shemesh=done,1949-11-15
-  gilat=b,15,4,3FE4DD2F1A9FBE78
+  beit_kama=done,1949-08-15
+  beit_shemesh=done,1950-01-15
 cproj[
   16:housing@tel_aviv,-4,20/done,1949-10-15
   17:housing@tel_aviv,-3,19/4,3FDB851EB851EB88

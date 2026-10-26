@@ -1,0 +1,32 @@
+{
+  "asset": "figure-iraqi-infantry-1948-v1",
+  "source_number": 20,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "existing faction formation, art/sensitivity sign-off pending #756",
+  "files": {
+    "figure-iraqi-infantry-1948-v1.fbx": "078442d96388388059a490f8a708e0600f18673859bfc8c1dbddaabb00877b90",
+    "figure-iraqi-infantry-1948-v1_basecolor.jpg": "cb3a62455a0764e66aac0c7fa14117ae69797239ff2577dae1bca6ee2fe4a1a1"
+  },
+  "provider_model_id": "14f2a010-b22a-43a5-9029-0385dd7cec2d",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7569,
+  "bones": 67,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-iraqi-infantry-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-iraqi-infantry-1948-v1/validation.json"
+}

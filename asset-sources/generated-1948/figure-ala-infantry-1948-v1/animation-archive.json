@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-ala-infantry-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "82f07be1fbe1969106666a93bb1063bdb145051f5a121bc426de96dd52140d34",
+  "uncompressed_bytes": 51962945,
+  "compressed_sha256": "f48202fcdf940811a5ad2bffddcb12026e320cf3be9797029359cb9f0bade292",
+  "compressed_bytes": 4238136,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

@@ -137,7 +137,9 @@ public class AdvisorOpeningTests
     [Test]
     public void WithNoCardTheEventStepIsLeftOut()
     {
-        using var rig = new Rig(En, Store()); UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        using var rig = new Rig(En, Store());
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // One Army
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());   // then Degania (R-EVT-006)
         Assert.IsNull(rig.Card.Shown); rig.Advisor.OpenChain(); var seen = new List<string>();
         while (rig.Advisor.InChain) { seen.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(seen.Count, 6); rig.Advisor.NextStep(); }
         CollectionAssert.AreEqual(new[] { "opening.greeting", "opening.attention", "opening.city", "opening.training", "opening.move", "opening.objectives" }, seen);
@@ -154,6 +156,9 @@ public class AdvisorOpeningTests
         rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed); Assert.IsFalse(rig.Advisor.IsOpen);
         rig.Card.Collapse(); Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual(5, rig.Advisor.ChainStep);
         rig.Ui.Press("advisor-show-me"); UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        Assert.AreEqual("degania_defence", rig.Card.Shown?.Id, "One Army answered, the turn's second card opens (R-EVT-006)");
+        Assert.IsFalse(rig.Advisor.IsOpen); Assert.AreEqual(5, rig.Session.Chain.Step, "the advisor waits aside on its event step");
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
         Assert.IsNull(rig.Card.Shown); Assert.AreEqual("opening.objectives", rig.Advisor.Shown!.Id); Assert.IsTrue(rig.Advisor.IsOpen);
     }
 

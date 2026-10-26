@@ -21,8 +21,10 @@ namespace Statecraft.Game.UI
         public static void Open(string url) => Opener(url);
 
         /// <summary>Pointer-down only arms WebGL. Native/editor and test recorders open on clicked, after Clickable has
-        /// accepted the release. Keyboard Submit arms its own Enter/Space key-up on WebGL. Dispose cancels a pending arm.</summary>
-        public static Action Bind(Button button, string url)
+        /// accepted the release. Keyboard Submit arms its own Enter/Space key-up on WebGL. Dispose cancels a pending arm.
+        /// With copyPost (#1653), starts the kept-picture copy before opening, inside the same browser release; activated
+        /// starts the panel's result poll, not the privileged browser operations.</summary>
+        public static Action Bind(Button button, string url, string? copyPost = null, Action? activated = null)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             int ticket = 0;
@@ -42,7 +44,8 @@ namespace Statecraft.Game.UI
                 if (!(frame.width > 0f && frame.height > 0f)) return;
                 var r = button.worldBound;
                 ticket = StatecraftOpenOnRelease(url, (r.xMin - frame.xMin) / frame.width, (r.yMin - frame.yMin) / frame.height,
-                    (r.xMax - frame.xMin) / frame.width, (r.yMax - frame.yMin) / frame.height, keyboard ? 1 : 0);
+                    (r.xMax - frame.xMin) / frame.width, (r.yMax - frame.yMin) / frame.height, keyboard ? 1 : 0, copyPost ?? "");
+                if (ticket != 0) activated?.Invoke();
 #endif
             }
             EventCallback<PointerDownEvent> onPointer = e => { if (e.button == 0) Arm(false); };
@@ -56,7 +59,9 @@ namespace Statecraft.Game.UI
 #if UNITY_WEBGL && !UNITY_EDITOR
                 if (Opener == (Action<string>)Default) return;   // the real browser release already handled this activation
 #endif
+                if (copyPost != null) ShareShot.Copy(copyPost);
                 Open(url);
+                activated?.Invoke();
             };
             button.RegisterCallback(onPointer, TrickleDown.TrickleDown);
             button.RegisterCallback(onSubmit, TrickleDown.TrickleDown);
@@ -73,10 +78,10 @@ namespace Statecraft.Game.UI
         }
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftOpenOnRelease(string url, float left, float top, float right, float bottom, int keyboard);
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftOpenOnRelease(string url, float left, float top, float right, float bottom, int keyboard, string copyPost);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftCancelExternalLink(int ticket);
         // A caller without a button can only request a keyboard activation, never the next unrelated pointer release.
-        public static void Default(string url) { StatecraftOpenOnRelease(url, 0f, 0f, 1f, 1f, 1); }
+        public static void Default(string url) { StatecraftOpenOnRelease(url, 0f, 0f, 1f, 1f, 1, ""); }
 #else
         public static void Default(string url) => Application.OpenURL(url);
 #endif

@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-lebanese-regular-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "80952c0fed8c00e2ee990b3eb3cfac7f8cc43c9f47ff0e658958b8afc4fe3a7d",
+  "uncompressed_bytes": 52754722,
+  "compressed_sha256": "0930922ede3cd57a970181f5c43efa25298e71ccaa354385c0e6f9879796a269",
+  "compressed_bytes": 4295733,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

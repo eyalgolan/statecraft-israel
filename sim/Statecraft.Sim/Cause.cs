@@ -67,6 +67,21 @@ namespace Statecraft.Sim
         public const string CallUpRaised = "call_up_raised", CallUpLowered = "call_up_lowered";
         public const string Ceasefire = "ceasefire";
 
+        /// <summary>Objective completed in the events group. Delta: points; Args: historical English/Hebrew name.</summary>
+        public const string ObjectiveCompleted = "objective_completed";
+        /// <summary>Prisoner exchange rows. Args: the displayed people count (invariant), then the front id.</summary>
+        public const string PrisonersReturned = "prisoners_returned", SoldiersReturned = "soldiers_returned";
+
+        // C136: event context Args begin with the shown English and sourced Hebrew title (empty for a preview).
+        public const string EventNew = "event_new", EventChosen = "event_chosen", EventDelegated = "event_delegated",
+            EventDelegatedPartial = "event_delegated_partial";
+        // Chosen/delegated Args: filled English option, filled Hebrew option, English minister, Hebrew minister (empty: cabinet).
+        public const string EventAmount = "event_amount", EventStock = "event_stock", EventGrant = "event_grant",
+            EventCity = "event_city", EventUnlock = "event_unlock", EventPolicy = "event_policy",
+            EventSetRung = "event_set_rung", EventRejoin = "event_rejoin";
+        // Grant: context then city id. City: context then city id, field. Rejoin: context then EN/HE title.
+        public const string MilitaryUpkeep = "military_upkeep";
+
         /// <summary>What a <see cref="Borrowed"/> line borrowed for (EconomySystem.PayOrBorrow's callers, and the deficit).</summary>
         public static class Purpose
         {
@@ -89,6 +104,9 @@ namespace Statecraft.Sim
         {
             MoneyFlows, FxFlows, Borrowed, CivilianUpkeep, FxCrisisBegan, FxCrisisEased, FxCrisisFood, Arrived, EffectChange,
             SituationBegan, SituationEnded, RungChanged, CallUpSet, CallUpRaised, CallUpLowered, Ceasefire,
+            EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
+            EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep,
+            ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
         };
 
         /// <summary>A number as an Arg: invariant and round-trip, so the UI rounds exactly the value Message rounded.</summary>

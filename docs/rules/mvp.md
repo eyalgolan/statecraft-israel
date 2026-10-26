@@ -440,6 +440,8 @@ R-EFX-005: An option of an event carrying any sensitive tag (`holocaust`, `terro
 
 R-GATE-001: An event tagged `displacement` must have `status: sensitivity-reviewed` before a shareable build. The release gate lists every such event whose status is not reviewed and refuses the build (Q-GATE-1(c), owner ruling of 18 October 2026).
 
+R-GATE-002: A shareable build is refused unless every settlement-control string (the capture and end-of-occupation dialogs, the map-state labels, the info-panel state lines and the International Support count line), in English and Hebrew, matches `settlement-control-strings-review.yaml` and that file's status is `sensitivity-reviewed` (Q-GATE-1 (c), owner, 18 October 2026).
+
 R-EFX-006: The structured effects apply after the numeric effects, grants first, then city effects, then project unlocks, each in the option's list order. A target that does not exist on the date (an unbuilt site, a city not yet in the game) is refused at load with file and field, never skipped at run time; so is an unknown type, city, field or project kind. Every `cities.yaml` city is in the game from the first turn. A site has no window and starts unbuilt, so a site id as `at` is refused until sites carry a date. The legacy loop, which has no cities or units, refuses them. The preview (R-EVT-005) lists them in the same order.
 
 R-EFX-008: A `projects.yaml` kind may say `locked: true` (default false). `StartProject` refuses a locked kind, like the other R-PROJ-001 refusals, until an option whose `unlock_projects` lists it has applied; from then on it is an ordinary kind for the rest of the game. The unlocked kinds are game state, hashed as `unlocked[...]` only when one is unlocked (R-LOOP-002). The loader refuses an `unlock_projects` entry that names an unknown kind or one that is not locked, since it would do nothing.
@@ -457,6 +459,8 @@ R-EVT-003: An event the player leaves unanswered at End Turn is delegated to its
 R-EVT-004: An option's effects apply when it is chosen or delegated, on that turn, and never later; an option has no delayed form, and the loader refuses an unknown key such as `delay` (Q-EVT-3).
 
 R-EVT-005: One sim helper, `EventSystem.OptionEffects`, lists every effect of an option in the order choosing it applies them: the numeric effects, the unit grants, city effects and project unlocks (R-EFX-006), the policies it sets (by id), then the security level, then the way back to the record (`rejoin`, R-ALT-009), each with the option's own amount (Q-EVT-4). The event card will show this list (GDD Phase 7 PR 8), so no number will be computed in Unity.
+
+R-EVT-006: Among the events eligible on a turn with the same `from` (and, for objective cards, the same place in `objectives.yaml`, R-OBJ-007), an event's `order` (default 0) decides before the id (ordinal): a lower order fires first, takes a soft slot first and is shown first. With every `order` 0 the order is R-EVT-002's. `degania_defence` has `order: 1`, so One Army (`idf_founding`) opens the game and the defence of Degania comes second on the same turn (owner, 24 October 2026, #1568: "One Army first").
 
 ## Alternate timelines
 

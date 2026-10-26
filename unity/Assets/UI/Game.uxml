@@ -145,7 +145,8 @@
                 <ui:VisualElement class="info-row"><Statecraft.Game.UI.UiIcon glyph="house" class="info-row-sign" /><ui:Label name="info-settlements" class="wrap info-row-text" /></ui:VisualElement>
                 <ui:VisualElement class="info-row"><Statecraft.Game.UI.UiIcon glyph="village" class="info-row-sign" /><ui:Label name="info-localities" class="muted wrap info-row-text" /></ui:VisualElement>
                 <ui:VisualElement class="info-row"><Statecraft.Game.UI.UiIcon glyph="flag" class="info-row-sign" /><ui:Label name="info-placement" class="muted wrap info-row-text" /></ui:VisualElement>
-                <ui:VisualElement class="row">
+                <!-- The card's orders: a press here that misses a button stays the card's, never a map order (#1728). -->
+                <ui:VisualElement name="info-orders" class="row">
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />

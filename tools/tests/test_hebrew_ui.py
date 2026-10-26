@@ -148,13 +148,14 @@ def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_word
 
 
 def test_the_cause_line_names_are_contents_names_in_english_and_hebrew_without_latin():
-    """B1: CauseText names indicators, money, effects, situations and origin groups from why.name/effect/situation/region.
+    """B1: CauseText names indicators, policies, money, effects, situations and origin groups from
+    why.name/effect/situation/region (policies since C136's event_policy line, as PlayerText.Target names them).
     English must be content's own name (the line is the sim's Message word for word), every content row has one, and the
     Hebrew has no Latin letters."""
     en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
     model = yaml12.load((ROOT / 'content/model.yaml').read_text(encoding='utf-8'))
     aliyah = yaml12.load((ROOT / 'content/aliyah.yaml').read_text(encoding='utf-8'))
-    rows = {'why.name.': model['indicators'] + model['money'], 'why.effect.': model['effects'],
+    rows = {'why.name.': model['indicators'] + model['policies'] + model['money'], 'why.effect.': model['effects'],
             'why.situation.': model['situations'], 'why.region.': aliyah['regions']}
     for prefix, items in rows.items():
         assert {k[len(prefix):] for k in en if k.startswith(prefix)} == {r['id'] for r in items}, prefix
