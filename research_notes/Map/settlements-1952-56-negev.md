@@ -79,6 +79,35 @@ gives the same day.
 - **Localities founded 1952-56 that no longer exist** are not in the CBS file and not in Gvati. They were not searched
   for. **[GAP]**
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 for the owner's "Research part open" comment on #27 (24 Oct). Everything below was run or
+opened on that day, and nothing above is changed. The JTA site search is `https://www.jta.org/?s=<query>`: results
+are in relevance order, 10 per page, and the item's date is printed in the listing. Archive items are the
+`/archive/` ones; I read their listed dates and titles only unless a line says I opened one. No exact founding day
+was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Netivot, row 24.** Searched again and not found: a founding day. Read: JTA search `Netivot` (305
+  results; pages 1 to 3 read, 30 items, 13 of them archive items, dated 1974-01-28 to 2008-12-30, none from
+  1952-56). A web search (WebSearch tool, Hebrew query on the founding of the "Azata" ma'abara in 1956, 9 results
+  listed) gave only year-level statements in its summary; no page was opened from it. The day stays **[GAP]**.
+- (26 Oct) **Eshel HaNasi, row 5.** Searched again and not found: a founding group. Read: JTA search `Eshel Hanassi`
+  (16 results, pages 1 and 2 read; 6 archive items, dated 1934-11-04 to 1983-10-17, none from 1952-56) and `Eshel
+  Hanasi` (17 results, pages 1 and 2 read, no archive item dated 1952-57). Founders stay **[GAP]**.
+- (26 Oct) **Nir Oz, row 22.** JTA search `Nir Oz` (232 results, pages 1 to 4 read, 40 items) listed one item from
+  1952-57, dated 1956-04-11. I opened its bulletin PDF (http://pdfs.jta.org/1956/1956-04-11_070.pdf, p. 2, page
+  image read) and the item is datelined "TEL AVIV, April 10. (JTA)", so the event is of the night of 9 to 10 April
+  1956 (my reading of "during the night"). Printed: "The fedayeen dynamited the water installations in the
+  settlements of Gvulot, Tkuma, Tzur Maon, Magen and Nir-Oz, all near the Gaza strip, during the night." **[V, agent
+  read 2026-10-26; a person's check pending]** that Nir-Oz was a settlement by 10 April 1956. It does not narrow
+  the 22 to 29 September 1955 span of row 22; the day stays **[GAP]**.
+- (26 Oct) **Kerem Shalom (row 23), Sde Boker (2), Dimona (21), Ofakim (20).** For the 1956 outpost's position and
+  for any founding passage the notes lacked, I searched JTA for `Kerem Shalom` (226 results), `Sde Boker` (4,027),
+  `Dimona` (6,986) and `Ofakim` (465): pages 1 to 4 each (40 items), no archive item dated 1952-57 on those pages.
+  Nothing opened; the Kerem Shalom 1956 position stays **[GAP]**.
+- (26 Oct) **Israel Government Year-Book 5719 [1958]** (archive.org item `israelgovernment0000vari`): its metadata
+  says `access-restricted-item: true` and the plain-text download returned HTTP 302 (not followed). Not read.
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.
