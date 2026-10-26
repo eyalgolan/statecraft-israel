@@ -66,6 +66,11 @@ how_to_play.events: "An event card asks for a decision. Answering it costs Atten
 how_to_play.top_bar: "The top bar shows the date, your Attention, Money and the country's main indicators."
 how_to_play.end_turn: "End turn moves to the next month. While one of your units still needs orders, the button selects it instead: move it, fortify it, hold or skip it. A card you leave unanswered, or have no Attention left to answer, goes to the responsible minister, who decides it for you."
 how_to_play.why: "After a turn, open Why? to see each change and its cause."
+
+# GDD 0.3 help (#1688): old-mode help above stays unchanged.
+how_to_play.gdd03.events: "An event card asks for a decision. Your choice takes effect when you end the turn."
+how_to_play.gdd03.top_bar: "The top bar shows the date, Money and the country's main indicators."
+how_to_play.gdd03.end_turn: "End turn moves to the next month. While one of your units still needs orders, the button selects it instead: move it, fortify it, hold or skip it. A card you leave unanswered goes to the responsible minister, who decides it for you."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
 # {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
@@ -672,6 +677,15 @@ city.reassign_halutz: "Reassign halutzim: 1 of {0}"
 city.reassign_veteran_halutz: "Reassign veteran pioneers: 1 of {0}"
 # A pioneer group's Return (R-QUAL-003); {0}: its name, site.group.
 pioneer.return: "Return {0} to civilian life"
+
+# Pioneer card (#1549).
+pioneer.card.open: "Open {0}"
+pioneer.card.location: "Hex: {0}"
+pioneer.card.track: "Track: {0}"
+pioneer.card.idle: "Idle"
+pioneer.card.working: "Working at {0}"
+pioneer.card.stop_first: "Stop the work on its project row before returning to civilian life."
+pioneer.card.work_ordered: "Build or Stop is ordered for this group. Remove that order before returning to civilian life."
 # City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
 # turns from content), the order, and a project under way or finished. Refusals the map actions share use their
 # info.map_action_reason.* strings; these are the city projects' own.
@@ -872,3 +886,8 @@ why.cause.event_policy_from: "{0} set to {1} ({2})"
 why.cause.objective_completed: "{0}: completed, {1} points"
 why.cause.prisoners_returned: "Prisoners exchanged: {0:N0} prisoners returned to {1}"
 why.cause.soldiers_returned: "Prisoners exchanged: {0:N0} of our soldiers came home from {1}"
+
+# #1708 artillery action status. Hebrew: native review pending (#564).
+unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
+unit.fire_ready: "Fire available"
+unit.fire_spent: "Fired this turn"

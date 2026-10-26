@@ -252,10 +252,10 @@ public class NoShotArmsTests
         }
         var before = s.Hash();
         var cmds = invalid == "spent"
-            ? new Command[] { new Move(1, 2, 2), new Move(1, 2, 1), new Move(1, 2, 2), cmd }
+            ? new Command[] { new Move(1, 2, 2), new Move(1, 2, 1), cmd }
             : new Command[] { cmd };
         var r = Simulation.Preview(c, s, cmds);
-        Assert.Single(r.Rejected);
+        Assert.Same(cmd, Assert.Single(r.Rejected).Command);
         Assert.Equal(0, r.State.Arms);
         Assert.Equal(s.RngState, r.State.RngState);
         if (invalid != "spent") Assert.Equal(before, r.State.Hash());

@@ -420,6 +420,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .info-row-sign { width: 22px; height: 22px; flex-shrink: 0; margin: 3px 10px 0 0; }
 .info-row-text { flex-grow: 1; flex-shrink: 1; min-width: 0; }
 .info-unit .info-row-sign { display: none; }
+/* Token-free selection stays scrollable on crowded hexes; project links use the same wrapping copy. */
+.pioneer-list { max-height: 64px; flex-shrink: 1; }
+.pioneer-link { white-space: normal; font-size: 16px; flex-shrink: 0; margin: 1px 0; }
+#info-pioneer-return { white-space: normal; flex-shrink: 1; }
 /* The border layer's label, beside the minimap's lower left: what the outlines are (MapRegions.Label). Out of the column's
    flex flow (absolute), so it takes no height from the event card at any HUD tier (armistice review I-4). */
 .map-layer { display: none; position: absolute; right: 230px; bottom: 0; max-width: 250px; padding: 5px 8px; font-size: 15px; white-space: normal; -unity-text-align: middle-center; color: var(--ink); background-color: rgba(9, 14, 26, 0.9); border-radius: 3px; }

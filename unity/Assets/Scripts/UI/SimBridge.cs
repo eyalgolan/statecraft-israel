@@ -210,7 +210,7 @@ namespace Statecraft.Game.UI
             }
         }
 
-        string? Refuse(string reason) { Refused?.Invoke(reason); return reason; }
+        string? Refuse(string reason) { if (reason == Movement.MissingArtilleryMovement) reason = text["unit.artillery_move_missing"]; Refused?.Invoke(reason); return reason; }
 
         static void Notify(Action? handlers)
         {
