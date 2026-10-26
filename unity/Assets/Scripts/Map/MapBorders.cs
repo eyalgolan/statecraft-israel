@@ -15,13 +15,14 @@ namespace Statecraft.Game.Map
     public enum BorderStyle : byte { None = 0, Primary = 1, Secondary = 2, Neutral = 3 }
 
     /// <summary>The Civ-like border prototype's variants for the owner to choose from (#196, owner 2026-10-26: "make the border
-    /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). A: bands that hold their weight at every
+    /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). Legacy, the default: main's borders exactly,
+    /// so nothing changes until the owner picks one (review C320). A: bands that hold their weight at every
     /// zoom, an equal wash on both sides reaching a quarter of the hex, pixel floors and a territory tint that grows as the
     /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
     /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
     /// (coordinator, 2026-10-26: A read almost like main there): a 6 px colour stripe floor, a 0.45 wash that holds most
     /// of its strength until near its reach, and a 0.12 tint up close (MapBorders.Strong*).</summary>
-    public enum BorderVariant : byte { A = 0, B = 1, C = 2, A2 = 3, B2 = 4, C2 = 5 }
+    public enum BorderVariant : byte { Legacy = 0, A = 1, B = 2, C = 3, A2 = 4, B2 = 5, C2 = 6 }
 
     /// <summary>Which region each hex belongs to, and how each region is outlined: what the border renderer draws. A hex not
     /// listed belongs to no region, and no band is drawn against it (the coast, the edge of the data). Region ids run from 1
@@ -105,6 +106,12 @@ namespace Statecraft.Game.Map
         /// hex at gameplay03.</summary>
         public const float StrongMinColourPx = 6f, StrongWashStrength = 0.45f, StrongTintNear = 0.12f;
         public static bool Strong(BorderVariant v) => v >= BorderVariant.A2;
+
+        /// <summary>Legacy: main's styles, exactly (shape: band m, colour share, wash width times the band, wash strength),
+        /// with main's 2 px floor for the whole band and its far fade (StatecraftBorders.hlsl, ScBorderLegacy).</summary>
+        static readonly Vector4 LegacyShape1 = new Vector4(230f, 0.5f, 0.9f, 0.40f), LegacyShape2 = new Vector4(200f, 0.6f, 1.0f, 0.18f),
+            LegacyShape3 = new Vector4(200f, 0.6f, 0.8f, 0.14f);
+        public const float LegacyMinBandPx = 2f;
         public static bool HasRim(BorderVariant v) => v == BorderVariant.B || v == BorderVariant.B2;
         public static bool StrongBlue(BorderVariant v) => v == BorderVariant.C || v == BorderVariant.C2;
 
@@ -145,13 +152,14 @@ namespace Statecraft.Game.Map
         public static (float rim, float colour, float light, float wash) BandWidths(Style s, float metresPerPx, float inradiusM, bool rim,
             float minColourPx = MinColourPx)
         {
-            float rimPx = rim ? Mathf.Max(RimM / metresPerPx, RimMinPx) : 0f;
+            float widest = MaxShareOfInradius * inradiusM / metresPerPx;
+            float rimPx = rim ? Mathf.Min(Mathf.Max(RimM / metresPerPx, RimMinPx), widest) : 0f;
+            float room = widest - rimPx;
             float colour = Mathf.Max(s.BandM * s.ColourShare / metresPerPx, minColourPx);
             float light = Mathf.Max(s.BandM * (1f - s.ColourShare) / metresPerPx, MinLightPx);
             float wash = Mathf.Max(s.WashReach * inradiusM / metresPerPx - colour - light, MinWashPx);
-            float widest = MaxShareOfInradius * inradiusM / metresPerPx;
-            wash = Mathf.Min(wash, Mathf.Max(widest - colour - light, 0f));
-            float k = Mathf.Min(1f, widest / (colour + light));
+            wash = Mathf.Min(wash, Mathf.Max(room - colour - light, 0f));
+            float k = Mathf.Min(1f, room / Mathf.Max(colour + light, 1e-4f));
             return (rimPx, colour * k, light * k, wash);
         }
 
@@ -163,8 +171,9 @@ namespace Statecraft.Game.Map
         public static float NeutralDashPeriodM(float metresPerPx) =>
             NeutralDashM * Mathf.Pow(2f, Mathf.Max(0f, Mathf.Ceil(Mathf.Log(NeutralDashMinPx / NeutralDashOn * metresPerPx / NeutralDashM, 2f))));
 
-        /// <summary>The variant drawn (default A, or the "bordervariant=a|b|c|a2|b2|c2" URL parameter / -bordervariant ... on
-        /// desktop and in the editor). Setting it redraws at once; it outlives map builds.</summary>
+        /// <summary>The variant drawn: Legacy (main's look) unless the "bordervariant=a|b|c|a2|b2|c2" URL parameter (WebGL) or
+        /// -bordervariant ... (desktop, editor) names one; anything else is Legacy. Setting it redraws at once; it outlives
+        /// map builds.</summary>
         public static BorderVariant Variant
         {
             get => variant ??= VariantRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
@@ -188,7 +197,7 @@ namespace Statecraft.Game.Map
             return v?.ToLowerInvariant() switch
             {
                 "b" => BorderVariant.B, "c" => BorderVariant.C, "a2" => BorderVariant.A2, "b2" => BorderVariant.B2, "c2" => BorderVariant.C2,
-                _ => BorderVariant.A,
+                "a" => BorderVariant.A, _ => BorderVariant.Legacy,
             };
         }
 
@@ -284,11 +293,20 @@ namespace Statecraft.Game.Map
         static void SetStyles()
         {
             var v = Variant; bool strong = Strong(v);
+            if (v == BorderVariant.Legacy)
+            {
+                SetStyle(Colour1, Light1, Shape1, Primary); Shader.SetGlobalVector(Shape1, LegacyShape1);
+                SetStyle(Colour2, Light2, Shape2, Secondary); Shader.SetGlobalVector(Shape2, LegacyShape2);
+                SetStyle(Colour3, Light3, Shape3, Neutral); Shader.SetGlobalVector(Shape3, LegacyShape3);
+                Shader.SetGlobalVector(Min, new Vector4(0f, 0f, 0f, 1f));   // w 1: main's drawing (ScBorderLegacy)
+                Shader.SetGlobalVector(Rim, Vector4.zero);
+                return;
+            }
             Style Side(Style s) => strong ? new Style(s.Colour, s.Light, s.BandM, s.ColourShare, s.WashReach, StrongWashStrength) : s;
             SetStyle(Colour1, Light1, Shape1, Side(StrongBlue(v) ? PrimaryStrongBlue : Primary));
             SetStyle(Colour2, Light2, Shape2, Side(Secondary));
             SetStyle(Colour3, Light3, Shape3, Neutral);
-            Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, strong ? 1f : 0f, 0f));
+            Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, strong ? 1f : 0f, 0f));   // w 0: the prototype's drawing
             Shader.SetGlobalVector(Tint, new Vector4(strong ? StrongTintNear : TintNear, TintFar, TintNearInradiusPx, TintFarInradiusPx));
             Shader.SetGlobalVector(Rim, new Vector4(RimM, RimMinPx, HasRim(v) ? RimOpacity : 0f, RimValue));
             Shader.SetGlobalVector(Dash, new Vector4(NeutralDashM, NeutralDashOn, NeutralDashMinPx, 0f));
@@ -305,7 +323,7 @@ namespace Statecraft.Game.Map
         static void Push()
         {
             bool drawn = toggleOn && hasLayer && texture != null;
-            Shader.SetGlobalVector(Borders, new Vector4(Strong(Variant) ? StrongMinColourPx : MinColourPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
+            Shader.SetGlobalVector(Borders, new Vector4(Variant == BorderVariant.Legacy ? LegacyMinBandPx : Strong(Variant) ? StrongMinColourPx : MinColourPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
             if (banner != null) banner.SetActive(drawn);
         }
 

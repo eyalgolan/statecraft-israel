@@ -184,12 +184,9 @@ public class SubdistrictTests
         VisualToggles.Set(MapBorders.ToggleName, false);
         var off = RenderSample.Render(cam, 480, 270);
         var share = BorderTests.Changed(on, off, 0.02f);
-        // The Civ-like prototype (#196) tints the territory lightly (0.08 at this zoom), so "not fills" is read above the
-        // tint's step: few pixels change by more than 0.10 (the bands and their wash).
-        var strong = BorderTests.Changed(on, off, 0.10f);
-        Debug.Log($"SUBDISTRICTS gameplay03: {share:P2} of pixels changed by the 1948 borders, {strong:P2} by more than 0.10");
+        Debug.Log($"SUBDISTRICTS gameplay03: {share:P2} of pixels changed by the 1948 borders");
         Assert.Greater(share, 0.002f, "the 1948 sub-district borders are drawn");
-        Assert.Less(strong, 0.15f, "outlines and a light tint, not fills");
+        Assert.Less(share, 0.15f, "outlines, not fills");
         VisualToggles.Set(MapBorders.ToggleName, true);
         Assert.AreEqual(0f, BorderTests.Changed(RenderSample.RenderSteady(cam, 480, 270), on, 0f), "renders repeat exactly");
     }
