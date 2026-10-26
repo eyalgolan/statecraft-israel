@@ -962,6 +962,30 @@ public class PressOriginCameraInputTests : InputTestFixture
         Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 120).Within(0.1f), "and only once");
     }
 
+    /// <summary>The same, with the new press B landing over the UI and held across the frame: B's UI latch stops only
+    /// B, never A's completed flick, which still pans its 170 px once. (C289b re-check R1.)</summary>
+    [Test]
+    public void ALiftedFlickStillPansWhenTheNextPressStartsOverTheUi()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Camera.IsOverUi = p => p.x > 650;
+        rig.Frame();
+        var a = new Vector2(400, 400);
+        BeginTouch(1, a, queueEventOnly: true);
+        MoveTouch(1, a + new Vector2(200, 0), queueEventOnly: true);
+        EndTouch(1, a + new Vector2(200, 0), queueEventOnly: true);
+        var b = new Vector2(700, 300);
+        BeginTouch(1, b, queueEventOnly: true);
+        MoveTouch(1, b + new Vector2(10, 0));
+        rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 120).Within(0.1f), "A's flick pans its 170 px; B from the UI adds none");
+        rig.Frame();
+        EndTouch(1, b + new Vector2(10, 0));
+        rig.Frame(); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 120).Within(0.1f), "and only once");
+    }
+
     [Test]
     public void TwoFlicksBeforeOneCameraFrameEachPanTheirTravelPastTheSlop()
     {
