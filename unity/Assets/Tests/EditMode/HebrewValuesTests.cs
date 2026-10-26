@@ -374,6 +374,69 @@ public class HebrewValuesTests
         Assert.IsTrue(dateMarked, "marked, \"15 May 1948\" is drawn as one run, as it is on its own");
     }
 
+    const string Rli = "⁧", Pdi = "⁩";
+
+    /// <summary>The isolate marks (#1414; WRITING_UI_HE.md, HE-09): the Hebrew face through the advanced generator draws
+    /// nothing for RLI (U+2067) and PDI (U+2069), no glyph, no box and no advance. A Hebrew line with a value wrapped in
+    /// them has the same pixels as the line without; so has a pair of letters with the marks between them. A full stop
+    /// between the letters shows that the pixel check sees a glyph as narrow as a mark's box would be.</summary>
+    [UnityTest]
+    public IEnumerator TheHebrewFaceDrawsNothingForTheIsolateMarks()
+    {
+        var font = AssetDatabase.LoadAssetAtPath<Font>(UiPaths.FontHebrew);
+        Debug.Log($"#1414 probe: Frank Ruhl Libre HasCharacter(U+2067) = {font.HasCharacter('⁧')}, HasCharacter(U+2069) = {font.HasCharacter('⁩')}");
+        using var r = new Rendered(
+            "נחתם " + Rli + "24 בפברואר 1949" + Pdi,                                // 0: the value isolated
+            "נחתם 24 בפברואר 1949",                                                 // 1: the control
+            "אב",                                                                   // 2
+            "א" + Rli + "ב" + Pdi,                                                  // 3: the marks between two letters
+            "א.ב");                                                                 // 4: a full stop between them
+        yield return r.Draw();
+        Assert.AreEqual("Advanced", r.Labels[0].resolvedStyle.unityTextGenerator.ToString());
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[0].languageDirection, r.Labels[0].text);
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[3].languageDirection, "the first-letter rule passes over the marks");
+        float value = MaxDiff(r.Row(0), r.Row(1)), between = MaxDiff(r.Row(2), r.Row(3)), stop = MaxDiff(r.Row(2), r.Row(4));
+        float Width(int i) => r.Labels[i].MeasureTextSize(r.Labels[i].text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+        Debug.Log($"#1414 probe: max pixel diff with/without the isolate marks: around a value {value:0.000}, between letters {between:0.000}, " +
+                  $"a full stop between letters {stop:0.000}; widths {Width(1):0.00} / {Width(0):0.00}, {Width(2):0.00} / {Width(3):0.00} / {Width(4):0.00}");
+        Assert.Greater(stop, 0.5f, "control: a full stop between the letters shows in the pixels (the check can fail)");
+        Assert.Less(value, 0.02f, "isolate marks around a value in a Hebrew line draw nothing and take no room");
+        Assert.Less(between, 0.02f, "isolate marks between two Hebrew letters draw nothing and take no room");
+        Assert.AreEqual(Width(1), Width(0), 0.01f, "the marks around a value have no advance");
+        Assert.AreEqual(Width(2), Width(3), 0.01f, "the marks between two letters have no advance");
+    }
+
+    /// <summary>A region line as InfoPanelPresenter.RegionText writes it in Hebrew (info.armistice_zone: an English zone
+    /// name and agreement, then the Hebrew date in RLI ... PDI). The line's first letter is Latin, so its paragraph runs
+    /// left to right; the isolated date still draws as it does on its own Hebrew line: its year, month and day as one run
+    /// in that order left to right, read right to left. Without the marks the day leaves the run (the #558 regression),
+    /// and the same date drawn in a left-to-right paragraph is not found, so the check sees the order.</summary>
+    [UnityTest]
+    public IEnumerator InARegionLineTheIsolatedHebrewDateIsOneRunInOrder()
+    {
+        var he = He;
+        var date = Statecraft.Game.Map.Control1948.DateText(new DateTime(1949, 2, 24), k => he[k]);
+        Assert.AreEqual("24 בפברואר 1949", date);
+        using var r = new Rendered(
+            he.Format("info.armistice_zone", "El Auja", "Egypt-Israel General Armistice Agreement", Rli + date + Pdi), // 0: as RegionText
+            he.Format("info.armistice_zone", "El Auja", "Egypt-Israel General Armistice Agreement", date),             // 1: the control
+            date,                                                                                                     // 2: the date alone
+            date);                                                                                                    // 3: in a left-to-right paragraph
+        r.Labels[3].languageDirection = LanguageDirection.LTR;
+        yield return r.Draw();
+        Assert.AreEqual(LanguageDirection.LTR, r.Labels[0].languageDirection, r.Labels[0].text);
+        Assert.AreEqual(LanguageDirection.RTL, r.Labels[2].languageDirection, r.Labels[2].text);
+        List<(int Start, int End)> alone = Words(r.Row(2)), wrong = Words(r.Row(3));
+        bool isolated = Found(r.Row(0), r.Row(2)), control = Found(r.Row(1), r.Row(2)), ltr = Found(r.Row(0), r.Row(3));
+        Debug.Log($"#1414 probe: words of the date alone {Show(alone)}, in a left-to-right paragraph {Show(wrong)}, " +
+                  $"of the isolated line {Show(Words(r.Row(0)))}, of the control {Show(Words(r.Row(1)))}; found isolated {isolated}, control {control}, ltr order {ltr}");
+        Assert.AreEqual(3, alone.Count, "the date is three words: day, month and year");
+        Assert.AreNotEqual(alone[0].End - alone[0].Start, wrong[0].End - wrong[0].Start, "control: the left-to-right paragraph draws the date in another order");
+        Assert.IsFalse(ltr, "control: the isolated line does not draw the date in the left-to-right order (the check sees the order)");
+        Assert.IsFalse(control, "control: unmarked, the day leaves its month and year (the check can fail)");
+        Assert.IsTrue(isolated, "isolated, the date is drawn as one run, in the order it has on its own Hebrew line");
+    }
+
     /// <summary>The lines the game shows (#543's "done when"; sign style from #1107): Hebrew budget.money with negative
     /// foreign currency draws "$-4.2m" as one left-to-right run - the dollar leads, the minus sits next to the number -
     /// and Hebrew why.turn draws "15 May 1948" as one run.</summary>

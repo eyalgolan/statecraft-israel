@@ -88,6 +88,7 @@ namespace Statecraft.Sim
         /// its strength and the replacements already training for it.</summary>
         public static string? Reinforce(Content c, GameState s, int unit, string city, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Units.TryGetValue(unit, out var u)) return "There is no such unit";
             if (u.Side == "") return "Only a military unit takes that order";
             if (u.Side != Movement.PlayerSide) return "That unit is not yours";
@@ -111,6 +112,7 @@ namespace Statecraft.Sim
 
         static string? Start(Content c, GameState s, string city, string track, int count, List<Cause> why, int? unit)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             var type = c.UnitTypes.FirstOrDefault(t => t.Id == track && t.Facility != "");
             if (type == null) return "There is no such training";
@@ -154,6 +156,7 @@ namespace Statecraft.Sim
         /// the legacy loop.</summary>
         public static string? Cancel(Content c, GameState s, int cohort, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cohorts.TryGetValue(cohort, out var k)) return "There is no such training group";
             var x = s.Cities[k.City];
             s.Cities[k.City] = x.WithCounts(x.Civilians + k.Count, x.Employed, x.Refugees);
@@ -175,6 +178,7 @@ namespace Statecraft.Sim
         /// of its type with its count as strength (R-UNIT-003, R-UNIT-008), craftsmen join the city's count, and halutzim become one unit per group at its hex.</summary>
         public static void Progress(Content c, GameState s, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var k in s.Cohorts.Values.ToList())
             {
                 // R-TRAIN-004 (owner, 23 October 2026, "Default"): replacements whose unit is gone (destroyed, captured, sent

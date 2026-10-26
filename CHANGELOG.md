@@ -8,6 +8,7 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+- Add the two owner-approved follow-up cards for the Jerusalem demilitarisation and Rafah roads, in English and Hebrew; both remain drafts pending human review (Refs #939).
 ## [0.3.1] - 2026-10-26
 
 ### Added

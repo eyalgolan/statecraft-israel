@@ -22,6 +22,7 @@ namespace Statecraft.Sim
         /// (<see cref="FillDate"/>).</summary>
         public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null)
         {
+            PopulationLedger.RefuseAggregate(s);
             var start = turnStart ?? s.Date;
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
@@ -40,8 +41,10 @@ namespace Statecraft.Sim
                 // R-ALT-008: a road the player took is not crowded out of its window. With no consequence card eligible the first
                 // key is the same for every event, and (From, id) is a total order (ids are unique), so the order is as before.
                 // R-OBJ-007 (Q-CARD-2): objective cards of the same From come after that From's other events, in objectives.yaml's order.
+                // R-EVT-006: then an event's `order` (default 0), then the id, so with every order 0 the order is as before.
                 .OrderBy(e => e.Kind == EventKinds.Consequence ? 0 : 1).ThenBy(e => e.From)
-                .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Id, StringComparer.Ordinal)
+                .ThenBy(e => e.Objective == "" ? -1 : c.Objectives.FindIndex(o => o.Id == e.Objective)).ThenBy(e => e.Order)
+                .ThenBy(e => e.Id, StringComparer.Ordinal)
                 .ToList();
             var hardCount = eligible.Count(e => e.Anchor == "hard");
             var chosen = new HashSet<string>(eligible.Where(e => e.Anchor == "hard")
@@ -61,6 +64,7 @@ namespace Statecraft.Sim
         /// <summary>Returns null on success, or the reason the choice was rejected.</summary>
         public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
@@ -304,6 +308,7 @@ namespace Statecraft.Sim
         /// decision he was left to make, competence which decision he makes; anchors and objective cards stay whole.</summary>
         public static void Delegate(Content c, GameState s, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var rng = new Rng(s.RngState);
             var mvp = c.IsGdd ? c.RulesAt(s.Date).Mvp : null;   // the legacy loop has no floor, so its goldens hold
             foreach (var id in s.PendingEvents.ToList())

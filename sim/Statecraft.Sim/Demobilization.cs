@@ -60,6 +60,7 @@ namespace Statecraft.Sim
         internal static string? Give(Content c, GameState s, int unitId,
                                      IReadOnlyDictionary<int, (int Q, int R)>? attacked, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var refused = Check(c, s, unitId, attacked);
             if (refused != null) return refused;
             var u = s.Units[unitId];
