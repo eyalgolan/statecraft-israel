@@ -9,13 +9,20 @@ mergeInto(LibraryManager.library, {
   StatecraftCancelExternalLink: function (ticket) {
     if (typeof window !== "undefined" && window.statecraftOpenOnRelease && window.statecraftOpenOnRelease.id === ticket) window.statecraftOpenOnRelease.cancel();
   },
-  StatecraftOpenOnRelease: function (urlPtr, left, top, right, bottom, keyboard) {
+  StatecraftOpenOnRelease__deps: ["$StatecraftCopySharePicture"],
+  StatecraftOpenOnRelease: function (urlPtr, left, top, right, bottom, keyboard, copyPostPtr) {
     if (typeof window === "undefined") return 0;
     var url = UTF8ToString(urlPtr);
+    var copyPost = copyPostPtr ? UTF8ToString(copyPostPtr) : "";
+    var copySerial = 0;
     if (window.statecraftOpenOnRelease) window.statecraftOpenOnRelease.cancel();
     var canvas = document.querySelector("#unity-canvas");
     if (!canvas) return 0;
     var id = window.statecraftExternalLinkSerial = (window.statecraftExternalLinkSerial || 0) + 1;
+    if (copyPost) {
+      copySerial = window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
+      window.statecraftShareCopied = 0;
+    }
     var timer;
     var disarm = function () {
       clearTimeout(timer);
@@ -42,7 +49,15 @@ mergeInto(LibraryManager.library, {
         valid = r.width > 0 && r.height > 0 && x >= left && x < right && y >= top && y < bottom;
       }
       disarm();
-      if (valid) window.open(url, "_blank", "noopener");
+      if (valid) {
+        // Start the write synchronously before opening: no await/microtask boundary can consume this gesture.
+        // Opening is independent of clipboard permission and of the eventual promise result.
+        if (copyPost) {
+          try { StatecraftCopySharePicture(copyPost, copySerial, true); }
+          catch (error) { if (copySerial === window.statecraftShareCopySerial) window.statecraftShareCopied = 3; }
+        }
+        window.open(url, "_blank", "noopener");
+      }
     };
     window.statecraftOpenOnRelease = { cancel: disarm, id: id };
     canvas.addEventListener("pointerup", release);

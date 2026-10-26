@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../schema/event.schema.json
+# Refs #939, Task 12: exactly the two-card draft accepted by the owner.
+# Approved draft: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6369861430
+# Owner acceptance: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388
+# Historical source passages re-opened by an AI agent on 24 October 2026, not human fact-checking.
+# No person review or native Hebrew approval is asserted; shareable builds remain gated by R-ALT-011.
+id: jerusalem_demilitarisation_guard
+kind: consequence
+anchor: soft
+office: prime_minister
+tags: [security]
+# DESIGN VALUE: owner-set scheduling, not dates on which this counterfactual dilemma happened (#939).
+from: 1948-08-04
+to: 1948-10-04
+requires: [{ event: jerusalem_military_government, option: accept_demilitarisation }]
+title: >-
+  A guard for Jerusalem
+title_he: >-
+  כוח שישמור על ירושלים
+text: >-
+  In the record, a US State Department memorandum of 1 July 1948 assumed that proposed demilitarisation would involve the withdrawal of regular and irregular forces from both sides, with a proposed UN armed guard in their place. In its recorded reply of 28 July, the Provisional Government linked its rejection to the Mediator's proposal to place Jerusalem ultimately under Arab rule. On this branch, {prime_minister} must decide whether to continue demilitarisation or return to Israeli military government.
+text_he: >-
+  בתיעוד ההיסטורי, תזכיר של מחלקת המדינה האמריקנית מ־1 ביולי 1948 העריך שפירוז מוצע יכלול יציאה של כוחות סדירים ובלתי סדירים משני הצדדים, וכוח משמר חמוש מוצע של האו״ם במקומם. בתשובתה המתועדת מ־28 ביולי קשרה הממשלה הזמנית את התנגדותה להצעת המתווך להעביר לבסוף את ירושלים לשלטון ערבי. במסלול הזה, {prime_minister} צריך להחליט אם להמשיך בפירוז או לחזור לממשל צבאי ישראלי.
+text_he_review: agent-checked
+options:
+  - id: continue_demilitarisation
+    text: "Continue demilitarisation with the proposed UN guard"
+    text_he: "להמשיך בפירוז עם כוח המשמר המוצע של האו״ם"
+    alternative: { basis: design }
+    # DESIGN VALUE: owner-set, not a historical figure and not a moral judgement (#939, https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388).
+    # Empty immediate effect budget as accepted; the parent's effects are not refunded.
+    effects: []
+  - id: return_military_government
+    text: "Return to Israeli military government"
+    text_he: "לחזור לממשל צבאי ישראלי"
+    alternative: { basis: design }
+    # DESIGN VALUE: owner-set, not a historical figure and not a moral judgement (#939, https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388).
+    # Empty immediate effect budget as accepted; the parent's effects are not refunded.
+    effects: []
+    rejoin: jerusalem_military_government
+# Source checks below are AI-agent reads, not human approval.
+sources:
+  - { url: "https://history.state.gov/historicaldocuments/frus1948v05p2/d428", checked: 2026-10-24 }
+  - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-24 }
+status: draft

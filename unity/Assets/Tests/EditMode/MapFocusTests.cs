@@ -143,7 +143,7 @@ public class MapFocusTests
         yield return Boot();
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         var picked = new List<(int, int)>();
-        Action<int, int> onPick = (q, r) => picked.Add((q, r));
+        Action<int, int, bool> onPick = (q, r, cityPill) => { Assert.IsFalse(cityPill, "keyboard map picks are not city-pill presses"); picked.Add((q, r)); };
         pointer.HexClicked += onPick;
         try
         {
@@ -187,7 +187,7 @@ public class MapFocusTests
         yield return Boot();
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         var picked = new List<(int, int)>();
-        Action<int, int> onPick = (q, r) => picked.Add((q, r));
+        Action<int, int, bool> onPick = (q, r, cityPill) => { Assert.IsFalse(cityPill, "keyboard map picks are not city-pill presses"); picked.Add((q, r)); };
         pointer.HexClicked += onPick;
         try
         {
@@ -222,7 +222,7 @@ public class MapFocusTests
         Assert.IsNull(ui.panel.Pick(Mark.worldBound.center), "neither the stop nor its ring takes the pointer");
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         var picked = new List<(int, int)>();
-        Action<int, int> onPick = (q, r) => picked.Add((q, r));
+        Action<int, int, bool> onPick = (q, r, cityPill) => { Assert.IsFalse(cityPill, "keyboard map picks are not city-pill presses"); picked.Add((q, r)); };
         pointer.HexClicked += onPick;
         try
         {
@@ -243,7 +243,7 @@ public class MapFocusTests
         yield return Boot();
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         var picked = 0;
-        Action<int, int> onPick = (q, r) => picked++;
+        Action<int, int, bool> onPick = (q, r, cityPill) => { Assert.IsFalse(cityPill, "keyboard map picks are not city-pill presses"); picked++; };
         pointer.HexClicked += onPick;
         try
         {
@@ -303,7 +303,7 @@ public class MapFocusTests
 
         var pointer = Object.FindFirstObjectByType<MapPointer>();
         var picked = 0;
-        Action<int, int> onPick = (q, r) => picked++;
+        Action<int, int, bool> onPick = (q, r, cityPill) => { Assert.IsFalse(cityPill, "keyboard map picks are not city-pill presses"); picked++; };
         pointer.HexClicked += onPick;
         try
         {

@@ -26,7 +26,7 @@ public class DecisionCardTests
         public readonly VisualElement Root; public readonly SimBridge Bridge; public readonly ScreenNav Nav; public readonly EventCardPresenter Card;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<System.IDisposable> owned = new List<System.IDisposable>();
 
-        public Rig(int w, int h, string eventId, bool photos = false, UiText? text = null)
+        public Rig(int w, int h, string eventId, bool photos = false, UiText? text = null, string? second = null)
         {
             var t = text ?? Text;
             rt = new RenderTexture(w, h, 0);
@@ -41,7 +41,7 @@ public class DecisionCardTests
             Root = doc.rootVisualElement;
             Root.Q("root").RemoveFromClassList("loading");
             Root.Q("root").EnableInClassList(UiLanguage.HebrewClass, t["ui.lang"] == UiLanguage.Hebrew);   // as GameRoot
-            Bridge = new SimBridge(Pending(eventId), t);
+            Bridge = new SimBridge(Pending(eventId, second), t);
             owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
             owned.Add(new InfoPanelPresenter(Root, Bridge, t, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)));
@@ -64,12 +64,14 @@ public class DecisionCardTests
         public bool Shows(string name) => Root.Q(name).resolvedStyle.display == DisplayStyle.Flex;
     }
 
-    /// <summary>A new game in the event's own time with only that event pending.</summary>
-    static GameSession Pending(string eventId)
+    /// <summary>A new game in the event's own time with only that event pending, or with <paramref name="second"/>
+    /// queued behind it (#1728: the repro answers two cards, and the state between them is the interesting one).</summary>
+    static GameSession Pending(string eventId, string? second = null)
     {
         var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         g.State.Date = C.Events.First(e => e.Id == eventId).From;
         g.State.PendingEvents.Clear(); g.State.PendingEvents.Add(eventId);
+        if (second != null) g.State.PendingEvents.Add(second);
         return g;
     }
 
@@ -110,6 +112,71 @@ public class DecisionCardTests
         Assert.AreEqual(before - 48f, photo.layout.width, 1.5f, "the header follows the new content width (panel pixel rounding)");
         Assert.AreEqual(photo.layout.width / EventCardPresenter.MediaAspect, photo.layout.height, 2.5f,
             $"header {photo.layout.width}x{photo.layout.height}, card {card.layout}, original {outer}");
+    }
+
+    /// <summary>#1728, red first: in Hebrew, once the pending event is answered the backdrop must stop taking pointer
+    /// events over the info panel, where the unit panel's "Skip this turn" sits. The report says a click there reaches
+    /// `event-scrim` and nothing happens, while the same step in English reaches `info-skip`.
+    /// <para>The existing coverage next door takes the card away with Hide, which collapses it, and runs in English.
+    /// This answers the card instead, which is what a player does, and in Hebrew. If the backdrop clears here, the
+    /// fault is not in the answer path and the search moves to what the rig does not model.</para></summary>
+    [UnityTest]
+    public IEnumerator AnsweringInHebrewLeavesTheInfoPanelClickable()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        foreach (var (w, h) in new[] { (1920, 1080), (960, 1080) })
+        {
+            using var r = new Rig(w, h, "law_of_return", text: he);
+            yield return Frames(4);
+            var where = $"{w}x{h} he";
+            Assert.IsTrue(r.Hud.ClassListContains(UiLanguage.HebrewClass), $"{where}: precondition, the UI is Hebrew");
+            Assert.IsTrue(r.Shows("event-scrim"), $"{where}: precondition, the backdrop shows while the card is open");
+
+            Press(r.FirstOption);          // answer it, as a player does
+            yield return Frames(4);
+
+            Assert.IsFalse(r.Shows("event-card"), $"{where}: the answered card is gone");
+            Assert.IsFalse(r.Shows("event-scrim"), $"{where}: and so is the backdrop");
+            Assert.IsFalse(r.Hud.ClassListContains(EventCardPresenter.OpenClass), $"{where}: the root no longer says event-open");
+
+            // The point a player aims at for Skip: the info panel's own area. Whatever takes it, it must not be the backdrop.
+            var panel = r.Root.Q("info-panel").worldBound;
+            var at = new Vector2(panel.center.x, panel.yMin + 8f);
+            var hit = r.Root.panel.Pick(at);
+            Assert.AreNotSame(r.Root.Q("event-scrim"), hit, $"{where}: the backdrop must not take the pointer at {at}; it was {hit?.name}");
+            Assert.AreNotSame(r.Root.Q("event-scrim-top"), hit, $"{where}: nor its band under the bar; it was {hit?.name}");
+        }
+    }
+
+    /// <summary>#1728, the repro's own sequence: two cards, answered one after the other, in Hebrew. The one-card test
+    /// above showed the backdrop clears on an answer, so this is the next candidate — the state between the two answers,
+    /// where `event-open` legitimately stays on for the second card. If the class survives the last answer, that is the
+    /// bug; if it clears, the fault is outside the card path and the turn report is the remaining lead.</summary>
+    [UnityTest]
+    public IEnumerator AnsweringTwoCardsInHebrewLeavesTheInfoPanelClickable()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        using var r = new Rig(1920, 1080, "law_of_return", text: he, second: "first_truce");
+        yield return Frames(4);
+        Assert.IsTrue(r.Shows("event-scrim"), "precondition: the first card's backdrop shows");
+        Assert.AreEqual(2, r.Bridge.State.PendingEvents.Count, "precondition: two cards are pending");
+
+        Press(r.FirstOption);                 // the first answer: the second card should take its place
+        yield return Frames(4);
+        Assert.IsTrue(r.Shows("event-card"), "the second card is open");
+        Assert.IsTrue(r.Shows("event-scrim"), "and its backdrop, correctly, still shows");
+
+        Press(r.FirstOption);                 // the second answer: now nothing is pending
+        yield return Frames(4);
+        Assert.IsFalse(r.Shows("event-card"), "both answered: no card");
+        Assert.IsFalse(r.Shows("event-scrim"), "both answered: no backdrop");
+        Assert.IsFalse(r.Hud.ClassListContains(EventCardPresenter.OpenClass), "both answered: event-open is off the root");
+
+        var panel = r.Root.Q("info-panel").worldBound;
+        var at = new Vector2(panel.center.x, panel.yMin + 8f);
+        var hit = r.Root.panel.Pick(at);
+        Assert.AreNotSame(r.Root.Q("event-scrim"), hit, $"the backdrop must not take the pointer at {at}; it was {hit?.name}");
+        Assert.AreNotSame(r.Root.Q("event-scrim-top"), hit, $"nor its band; it was {hit?.name}");
     }
 
     /// <summary>#380: the taller two- and three-row bars raise the centred card (the event layer keeps room at its bottom), and

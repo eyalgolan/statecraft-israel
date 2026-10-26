@@ -28,7 +28,7 @@ public class ShareShotTests
     public void ThePostNamesTheGameTheDateTheTurnTheItchPageAndTheRepository()
     {
         Assert.AreEqual("https://github.com/eyalgolan/statecraft-israel", ShareShot.Repo);
-        Assert.AreEqual("I'm running Israel in 1948 in Statecraft: Israel, a free strategy game. 15 May 1948, turn 0. "
+        Assert.AreEqual("I'm playing Israel in 1948 in Statecraft: Israel, a free strategy game. 15 May 1948, turn 0. "
             + "Play: https://eyalgolan.itch.io/statecraft-israel · Code: https://github.com/eyalgolan/statecraft-israel",
             ShareShot.Text(En, "15 May 1948", 0));
         var he = ShareShot.Text(He, "15 במאי 1948", 3);
@@ -145,7 +145,7 @@ public class ShareShotTests
     }
 
     /// <summary>The Settings Share button: the frame is captured before the panel shows, then kept for the browser; where it
-    /// can share files the panel offers Share (the share sheet gets the post text and the itch URL), elsewhere the same
+    /// can share files the panel offers Share (the share sheet gets the picture and post text, which carries both links), elsewhere the same
     /// button downloads the picture and the "attach" note shows. The site buttons show either way. Esc closes it.</summary>
     [Test]
     public void SharingCapturesFirstAndOffersTheSheetOrTheFallback([Values(false, true)] bool canShareFiles, [Values(false, true)] bool hebrew)
@@ -153,10 +153,11 @@ public class ShareShotTests
         var text = hebrew ? He : En;
         var opened = new List<string>(); var kept = new List<string>(); var shared = new List<string>();
         bool shownAtCapture = true;
+        ShareShot.Copy = _ => { };
         ExternalLink.Opener = opened.Add;
         ShareShot.Keep = (png, name) => kept.Add(name);
         ShareShot.CanShareFiles = () => canShareFiles;
-        ShareShot.Share = (post, url) => shared.Add(post + " | " + url);
+        ShareShot.Share = post => shared.Add(post);
         try
         {
             using var ui = new UiTestKit();
@@ -182,7 +183,7 @@ public class ShareShotTests
                 Assert.AreNotEqual(DisplayStyle.None, e.style.display.value, $"the site buttons show from the start ({e.name})");
             Assert.AreEqual(canShareFiles ? text["share.native"] : text["share.download"], ui.Q<Button>("share-go").text);
             SettingsScreenTests.PressWithPointer(ui.Q<Button>("share-go"));
-            CollectionAssert.AreEqual(new[] { post + " | " + ShareShot.Itch }, shared, "the press asks the browser once");
+            CollectionAssert.AreEqual(new[] { post }, shared, "the press asks the browser once");
             StringAssert.Contains(ShareShot.Repo, post, "the share sheet's text carries the repository too");
             Assert.AreEqual(canShareFiles ? DisplayStyle.None : DisplayStyle.Flex, fallback.style.display.value,
                 "the attach note only where files cannot be shared");
@@ -197,7 +198,7 @@ public class ShareShotTests
         }
         finally
         {
-            ExternalLink.Opener = ExternalLink.Default;
+            ExternalLink.Opener = ExternalLink.Default; ShareShot.Copy = ShareShot.DefaultCopy;
             ShareShot.Keep = ShareShot.DefaultKeep; ShareShot.CanShareFiles = ShareShot.DefaultCanShareFiles; ShareShot.Share = ShareShot.DefaultShare;
         }
     }
@@ -214,7 +215,7 @@ public class ShareShotTests
         ExternalLink.Opener = opened.Add;
         ShareShot.Keep = (png, name) => { };
         ShareShot.CanShareFiles = () => canShareFiles;
-        ShareShot.Share = (post, url) => shared.Add(post + " | " + url);
+        ShareShot.Share = post => shared.Add(post);
         try
         {
             using var ui = new UiTestKit();
@@ -228,7 +229,7 @@ public class ShareShotTests
             CollectionAssert.IsEmpty(shared, "nothing is shared before the press");
             if (keyboard) UiTestKit.Press(button); else SettingsScreenTests.PressWithPointer(button);
             var post = ShareShot.Text(text, HudModel.From(bridge, text).Date, bridge.State.Turn);
-            CollectionAssert.AreEqual(new[] { post + " | " + ShareShot.Itch }, shared, "the share sheet, or the download, once");
+            CollectionAssert.AreEqual(new[] { post }, shared, "the share sheet, or the download, once");
             CollectionAssert.IsEmpty(opened, "no web page: Instagram has no share link");
             Assert.AreEqual(canShareFiles ? DisplayStyle.None : DisplayStyle.Flex, note.style.display.value,
                 "the note only where the picture downloaded");
@@ -312,7 +313,7 @@ public class ShareShotTests
     public System.Collections.IEnumerator ARefusedShareSheetShowsTheShareLinks()
     {
         bool failed = false, broken = true;
-        ShareShot.Keep = (png, name) => { }; ShareShot.CanShareFiles = () => true; ShareShot.Share = (a, b) => { };
+        ShareShot.Keep = (png, name) => { }; ShareShot.CanShareFiles = () => true; ShareShot.Share = _ => { };
         ShareShot.Failed = () => failed;
         var ui = new UiTestKit();
         try
@@ -354,7 +355,7 @@ public class ShareShotTests
         var text = hebrew ? He : En;
         var copies = new List<string>();
         var copied = ShareShot.CopyResult.Pending;
-        ShareShot.Keep = (png, name) => { }; ShareShot.Share = (a, b) => { };
+        ShareShot.Keep = (png, name) => { }; ShareShot.Share = _ => { };
         ShareShot.Copy = copies.Add; ShareShot.Copied = () => copied;
         var ui = new UiTestKit();
         try
@@ -441,4 +442,74 @@ public class ShareShotTests
         }
         finally { ShareShot.Keep = ShareShot.DefaultKeep; }
     }
+    // #1653: the native/editor seam verifies ordering and honest notes; real browser activation stays a separate gate.
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator SitesCopyBeforeOpeningAndReportTheActualResult(
+        [Values("x", "facebook", "whatsapp", "telegram", "linkedin")] string site,
+        [Values(false, true)] bool hebrew,
+        [Values(false, true)] bool canShareFiles,
+        [Values(false, true)] bool keyboard,
+        [Values(ShareShot.CopyResult.Picture, ShareShot.CopyResult.Text, ShareShot.CopyResult.Failed, ShareShot.CopyResult.Downloaded)] ShareShot.CopyResult result)
+    {
+        var text = hebrew ? He : En;
+        var calls = new List<string>();
+        var answer = ShareShot.CopyResult.Pending;
+        ShareShot.Keep = (_, __) => { };
+        ShareShot.Copy = post => calls.Add((result == ShareShot.CopyResult.Downloaded ? "download:" : "copy:") + post);
+        ShareShot.Copied = () => answer;
+        ShareShot.CanShareFiles = () => canShareFiles;
+        ExternalLink.Opener = url => calls.Add("open:" + url);
+        var ui = new UiTestKit();
+        try
+        {
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+            using var share = new SharePresenter(ui.Root, bridge, text, done => done(new byte[] { 1 }));
+            UiTestKit.Press(ui.Q<Button>("settings-share"));
+            var button = ui.Q<Button>("share-" + site);
+            var post = ShareShot.Text(text, HudModel.From(bridge, text).Date, bridge.State.Turn);
+            Assert.AreEqual(ShareShot.Shown(post, hebrew), ui.Q<Label>("share-post").text,
+                "only the display label carries Hebrew URL joiners");
+            StringAssert.DoesNotContain(ShareShot.WordJoiner.ToString(), post, "outgoing text has no display-only joiner");
+            Assert.AreEqual(text[canShareFiles ? "share.native" : "share.download"], ui.Q<Button>("share-go").text);
+            if (keyboard) UiTestKit.Press(button); else SettingsScreenTests.PressWithPointer(button);
+            CollectionAssert.AreEqual(new[] { (result == ShareShot.CopyResult.Downloaded ? "download:" : "copy:") + post, "open:" + ShareShot.IntentUrl(site, post) }, calls,
+                "copy or blocked-clipboard download starts before opening; native seam, not browser activation proof");
+            var note = ui.Q<Label>("share-copied");
+            Assert.AreEqual(DisplayStyle.None, note.style.display.value, "do not claim that a pending copy succeeded");
+            if (site == "x" && !hebrew && !canShareFiles && keyboard && result == ShareShot.CopyResult.Picture)
+            {
+                var wait = Time.realtimeSinceStartup + 5.6f;   // the site may hold focus longer than the old polling window
+                while (Time.realtimeSinceStartup < wait) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+                Assert.AreEqual(DisplayStyle.None, note.style.display.value, "a pending site copy is not a false success or failure");
+            }
+            answer = result;
+            var until = Time.realtimeSinceStartup + 4f;
+            while (note.style.display.value != DisplayStyle.Flex && Time.realtimeSinceStartup < until)
+            { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
+            var key = result == ShareShot.CopyResult.Picture ? "share.site_picture" :
+                result == ShareShot.CopyResult.Text ? "share.site_text" :
+                result == ShareShot.CopyResult.Downloaded ? "share.site_downloaded" : "share.site_failed";
+            Assert.AreEqual(text[key], note.text);
+            if (result == ShareShot.CopyResult.Downloaded)
+            {
+                StringAssert.Contains(hebrew ? "התמונה שהורדה" : "downloaded picture", note.text);
+                StringAssert.DoesNotContain(text["share.site_picture"], note.text, "download must not claim clipboard success");
+            }
+            else if (result != ShareShot.CopyResult.Picture)
+                StringAssert.Contains(hebrew ? "התמונה עדיין זמינה לשיתוף או להורדה" :
+                    "Share or download the picture with the button above", note.text,
+                    "the note must fit both Share and Download, including a refused share sheet");
+            Assert.AreEqual(DisplayStyle.Flex, note.style.display.value);
+            share.Close();
+            UiTestKit.Press(button);
+            Assert.AreEqual(2, calls.Count, "closing unbinds site actions");
+        }
+        finally
+        {
+            ui.Dispose(); ExternalLink.Opener = ExternalLink.Default;
+            ShareShot.Keep = ShareShot.DefaultKeep; ShareShot.Copy = ShareShot.DefaultCopy; ShareShot.Copied = ShareShot.DefaultCopied;
+            ShareShot.CanShareFiles = ShareShot.DefaultCanShareFiles;
+        }
+    }
+
 }

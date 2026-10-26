@@ -29,7 +29,9 @@ public class Generated1948AssetTests
     [Test] public void OriginalDeliveriesAndExactMapsMatchReceiptsWithLosslessImport()
     {
         var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder })
-            .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal)).ToArray();
+            .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
+            // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
+            .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal)).ToArray();
         Assert.AreEqual(11, files.Length);
         foreach (string fbx in files)
         {

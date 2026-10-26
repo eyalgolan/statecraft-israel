@@ -4,6 +4,14 @@ using Statecraft.Sim;
 
 public class ReleaseGateTests
 {
+    /// <summary>R-GATE-002: the Unity build gate (BuildGateTests) accepts the settlement-control strings review only with
+    /// the sim's one canonical owner-review status, so the manifest's word must not drift from it.</summary>
+    [Fact]
+    public void SettlementControlStringsUseTheCanonicalSensitivityReviewStatus()
+    {
+        Assert.Equal("sensitivity-reviewed", ReleaseGate.ReviewedStatus);
+    }
+
     /// <summary>R-GATE-001: an event tagged displacement must be sensitivity-reviewed before a shareable build.</summary>
     [Fact]
     public void AnUnreviewedDisplacementEventIsRefused()

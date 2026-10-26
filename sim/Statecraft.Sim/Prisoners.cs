@@ -93,10 +93,12 @@ namespace Statecraft.Sim
             {
                 s.Score += returned * points;
                 s.ScorePrisonerPoints += returned * points;   // R-SCORE-001
-                why.Add(new Cause("events", "prisoners", returned, FormattableString.Invariant($"Prisoners exchanged: {returned * ppu:N0} prisoners returned to {Name(front)}")));
+                why.Add(new Cause("events", "prisoners", returned, FormattableString.Invariant($"Prisoners exchanged: {returned * ppu:N0} prisoners returned to {Name(front)}"),
+                    key: CauseKeys.PrisonersReturned, args: new[] { CauseKeys.Number(returned * ppu), front }));
             }
             if (home > 0)
-                why.Add(new Cause("events", "prisoners", home, FormattableString.Invariant($"Prisoners exchanged: {home * ppu:N0} of our soldiers came home from {Name(front)}")));
+                why.Add(new Cause("events", "prisoners", home, FormattableString.Invariant($"Prisoners exchanged: {home * ppu:N0} of our soldiers came home from {Name(front)}"),
+                    key: CauseKeys.SoldiersReturned, args: new[] { CauseKeys.Number(home * ppu), front }));
         }
     }
 }

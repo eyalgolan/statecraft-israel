@@ -23,6 +23,9 @@ public class SliceSmokeTests
 {
     static readonly Content Real = ContentLoader.Load(RealContentTests.ContentRoot());
 
+    // Generous elapsed hang guard, not a performance budget: busy-machine timing belongs outside this smoke gate.
+    static readonly TimeSpan HangGuard = TimeSpan.FromMinutes(5);
+
     /// <summary>docs/determinism.md: the WebGL smoke (?smoke=5) ends here; its policy is FirstOption.</summary>
     static string WebSmoke5 => "SMOKE OK 5 turns 1948-10-15 " + GoldenManifest.Expected("smoke5");
 
@@ -143,10 +146,30 @@ public class SliceSmokeTests
         for (int turn = 0; turn < maxTurns && g.State.Date < GoldenRun.Until1952 && g.State.GameOver == null; turn++)
         {
             var queueRefused = new List<string>();
-            var cmds = Queue(c, g.State, policy(c, g.State, turn), queueRefused);
+            var wanted = policy(c, g.State, turn);
+            // Bound policy work before Queue can discard duplicate/extra proposals for lack of attention.
+            // These three policies can answer each event/capture once, try at most an attack and pioneer work
+            // per unit, and add at most three global orders (appointment/budget/build or housing/train/call-up).
+            int proposalLimit = g.State.PendingEvents.Count + g.State.Settlements.Count + 2 * g.State.Units.Count + 3;
+            Assert.InRange(wanted.Count, 0, proposalLimit);
+            var answers = wanted.OfType<ChooseEventOption>().Select(x => x.EventId).ToList();
+            Assert.Equal(answers.Count, answers.Distinct(StringComparer.Ordinal).Count());
+            Assert.All(answers, id => Assert.Contains(id, g.State.PendingEvents));
+            var cmds = Queue(c, g.State, wanted, queueRefused);
             o.QueueRefusals.AddRange(queueRefused.Select(r => $"turn {turn + 1} ({PlayerText.Date(g.State.Date)}): {r}"));
             o.Orders += cmds.Count;
+            var beforeDate = g.State.Date;
+            int beforeTurn = g.State.Turn;
             var r = g.Step(cmds);
+            // A smoke step must make actual forward progress, once: a stalled or duplicated Step fails here,
+            // rather than burning the 1000-turn safety cap or depending on the host's load.
+            Assert.True(g.State.Date > beforeDate, $"turn {turn + 1}: the simulation did not advance its date");
+            Assert.Equal(beforeTurn + 1, g.State.Turn);
+            // The next reload replays this history: exactly one batch per turn and exactly the queued commands.
+            // Accumulating old batches/commands again would multiply replay work even on an otherwise valid state.
+            var recorded = g.Save.Turns;   // this property parses fresh command objects; read it only once
+            Assert.Equal(turn + 1, recorded.Count);
+            Assert.Equal(o.Orders, recorded.Sum(batch => batch.Count));
             foreach (var cmd in cmds.Where(x => r.Rejected.All(j => j.Command != x))) o.Carried.Add(cmd.Kind);
             foreach (var x in r.Rejected)
                 o.Failures.Add($"turn {turn + 1}: refused {Describe(x.Command)}: {x.Reason}");
@@ -208,6 +231,11 @@ public class SliceSmokeTests
         Assert.True(run.Failures.Count == 0, $"{name}: {run.Failures.Count} invariant failures:\n" + string.Join("\n", run.Failures.Take(60)));
         Assert.True(run.Final.Date >= GoldenRun.Until1952, $"{name}: the run stopped on {PlayerText.Date(run.Final.Date)} (game over: {run.Final.GameOver})");
         Assert.True(run.Final.GameOver == null || run.Final.GameOver == GameOverCodes.MvpEnded, $"{name}: game over: {run.Final.GameOver}");   // only the game's own end (R-LOOP-004)
+        // Every real step advances at least a day; work through this fixed slice is calendar-bounded.
+        // Keep the per-step checks in Play too: reaching the end alone could hide a duplicated step.
+        Assert.InRange(run.Turns, 1, (GoldenRun.Until1952 - Real.Rules.Start).Days);
+        Assert.Equal(straight.Turns, run.Turns);
+        Assert.Equal(straight.Orders, run.Orders);
         Assert.Equal(straight.Hashes, run.Hashes);                      // reloading every turn changes nothing
     }
 
@@ -227,7 +255,7 @@ public class SliceSmokeTests
         Assert.Equal(expected, FormattableString.Invariant($"SMOKE OK 5 turns {five.Date:yyyy-MM-dd} {five.Hash()}"));
         // The library's run (Unity's golden check, #394) ends on the same state as the session run above.
         Assert.Equal(five.Hash(), GoldenRun.PlaySmoke(Real, 5).Hash());
-        Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
+        Assert.True(clock.Elapsed < HangGuard, $"hang guard, not a performance budget: took {clock.Elapsed} (limit {HangGuard})");
     }
 
     /// <summary>The smoke-orders golden (GDD Phase 5 PR 15, #754): one turn whose only order is one Move, the one the WebGL
@@ -258,7 +286,7 @@ public class SliceSmokeTests
         AssertClean("historical", run, Play(Real, Historical, reload: false, guard: null));
         Assert.True(run.QueueRefusals.Count == 0, "the reference player sent an order the UI would refuse:\n" + string.Join("\n", run.QueueRefusals));
         Assert.Equal(GoldenRun.Hash1952, run.Final.Hash());
-        Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
+        Assert.True(clock.Elapsed < HangGuard, $"hang guard, not a performance budget: took {clock.Elapsed} (limit {HangGuard})");
     }
 
     [Fact]
@@ -276,6 +304,6 @@ public class SliceSmokeTests
         // so the reference player never queues them.
         var uiKinds = new[] { "choose_event_option", "appoint", "allocate_budget" };
         Assert.Empty(uiKinds.Except(run.Carried));                     // every order a UI screen can queue was carried out
-        Assert.True(clock.Elapsed < TimeSpan.FromMinutes(1), $"took {clock.Elapsed}");
+        Assert.True(clock.Elapsed < HangGuard, $"hang guard, not a performance budget: took {clock.Elapsed} (limit {HangGuard})");
     }
 }

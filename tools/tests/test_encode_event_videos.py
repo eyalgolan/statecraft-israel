@@ -114,6 +114,24 @@ def test_only_selects_a_loop_or_an_outcome_by_its_file(monkeypatch, tmp_path, ca
     assert "y.mp4" in capsys.readouterr().out, "only the outcome row is looked at"
 
 
+@pytest.mark.parametrize("only", [["typo"], ["e", "typo", "e-outcome", "other_typo"]])
+def test_an_unknown_only_is_refused_before_any_source_is_looked_at(monkeypatch, tmp_path, capsys, only):
+    # #1465: an --only that matches no row used to build nothing and exit 0. The checkout has no promo/ at all, so a
+    # refusal that names only the unknown values proves no source was looked at; ffmpeg is not needed either.
+    rows = [{"event": "e", "file": "e.mp4", "source": "promo/x.mp4", "source_sha256": "0" * 64},
+            {"event": "e", "option": "o", "file": "e-outcome.mp4", "source": "promo/y.mp4", "source_sha256": "0" * 64}]
+    monkeypatch.setattr(ev, "load_rows", lambda mapping=ev.MAPPING: rows)
+    monkeypatch.setattr(ev.shutil, "which", lambda name: None)
+    args = ["--root", str(tmp_path), "--out", str(tmp_path / "out")]
+    for o in only:
+        args += ["--only", o]
+    assert ev.main(args) == 2
+    unknown = [o for o in only if o not in ("e", "e-outcome")]
+    assert capsys.readouterr().out.splitlines() == [
+        f"UNKNOWN --only {', '.join(unknown)} (not a clip's file stem in {ev.MAPPING.name})"]
+    assert not (tmp_path / "out").exists()
+
+
 def test_a_source_with_the_wrong_sha256_is_refused(tmp_path, capsys, monkeypatch):
     row = dict(ev.load_rows()[0])
     (tmp_path / "promo").mkdir()
