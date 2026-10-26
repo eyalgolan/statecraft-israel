@@ -203,7 +203,7 @@ public class Gdd03EventRulesTests
     {
         foreach (var target in new[] { "treasury", "food", "arms", "morale", "intl_standing" })
         {
-            string Record(int delta) => Card(option: $"    effects: [{{ target: {target}, delta: {delta} }}]\n") + $"tags: [{tag}]\n";
+            string Record(int delta) => Card(option: FormattableString.Invariant($"    effects: [{{ target: {target}, delta: {delta} }}]\n")) + $"tags: [{tag}]\n";
             var ex = Assert.Throws<ContentException>(() => Load(Files(), Record(1)));
             Assert.Equal("events[probe].options[ok].effects." + target, ex.Field);
             Assert.Contains("sensitive", ex.Message);
