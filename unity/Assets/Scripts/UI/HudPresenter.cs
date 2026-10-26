@@ -11,6 +11,8 @@ namespace Statecraft.Game.UI
         readonly VisualElement root; readonly SimBridge bridge; readonly UiText text;
         readonly Button endTurn; readonly System.Action onEndTurn;
         readonly VisualElement bar, hudRoot, nav;
+        /// <summary>The info panel, for the one-row hint chip's cap (HintChipCap).</summary>
+        readonly VisualElement? infoPanel;
         readonly System.Collections.Generic.List<VisualElement> meters;
         /// <summary>Each meter's element and its caption in the UI's language, for the words in its tooltip (#398).</summary>
         readonly System.Collections.Generic.Dictionary<string, (VisualElement element, string caption)> said =
@@ -152,6 +154,8 @@ namespace Statecraft.Game.UI
             bar = root.Q<VisualElement>("top-bar");
             hudRoot = root.Q<VisualElement>("root");
             bar.RegisterCallback<GeometryChangedEvent>(OnBarGeometry);
+            infoPanel = root.Q<VisualElement>("info-panel");
+            infoPanel?.RegisterCallback<GeometryChangedEvent>(OnInfoGeometry);   // the hint shown or replaced, or its text changed
             meters = root.Q<VisualElement>("meters").Children().ToList();
             nav = root.Q<VisualElement>("nav");
             foreach (var m in meters) m.RegisterCallback<GeometryChangedEvent>(OnMeterGeometry);
@@ -212,6 +216,8 @@ namespace Statecraft.Game.UI
             if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
+            infoPanel?.UnregisterCallback<GeometryChangedEvent>(OnInfoGeometry);
+            if (infoPanel != null) infoPanel.style.maxWidth = StyleKeyword.Null;
             dateRow?.parent?.UnregisterCallback<GeometryChangedEvent>(OnPlateGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
@@ -235,6 +241,7 @@ namespace Statecraft.Game.UI
 
         // The rows' height does not depend on the bar's (RowsHeight), so this settles in one pass.
         void OnRowGeometry(GeometryChangedEvent e) => PlaceUnderBar();
+        void OnInfoGeometry(GeometryChangedEvent e) => CapHintChip();
 
         /// <summary>Roomy only on the one-row bar with icons; see RoomyClass.</summary>
         void UpdateRoomy()
@@ -460,7 +467,30 @@ namespace Statecraft.Game.UI
             StyleSmallText(raised);
             PlaceUnderBar();
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
+            CapHintChip();   // the window's width and the bar's rows set the cap
         }
+
+        /// <summary>The hint chip on the one-row bar (info-empty) hugs its text, and a long hint reached under the right column:
+        /// the Hebrew hint at 1280x1024 ran 16 px under the border layer's label (ControlTests). Capped, it wraps instead
+        /// (Statecraft.uss .info-empty #info-title), ending HintRightClearPx from the window's right edge, as the two-row
+        /// rule's right does. A chip that already fits keeps its width; the two- and three-row chips and a chosen hex's panel
+        /// keep their stylesheet places. The cap depends on the window, the panel's left and its classes, never on the panel's
+        /// own size, so a re-fit after its own geometry changes sets the same value and settles at once.</summary>
+        void CapHintChip()
+        {
+            if (infoPanel == null) return;
+            var cap = HintChipCap();
+            if (infoPanel.style.maxWidth != cap) infoPanel.style.maxWidth = cap;
+        }
+        StyleLength HintChipCap()
+        {
+            var window = hudRoot.worldBound.width;
+            if (hudRoot.ClassListContains(TwoRowClass) || hudRoot.ClassListContains(ThreeRowClass) || !infoPanel!.ClassListContains("info-empty")
+                || !(window > 0f) || float.IsNaN(infoPanel.resolvedStyle.left)) return new StyleLength(StyleKeyword.Null);
+            return UnityEngine.Mathf.Max(0f, window - HintRightClearPx - infoPanel.resolvedStyle.left);
+        }
+        /// <summary>Statecraft.uss .hud-two-row .info-panel.info-empty right: the right column's 16 px and 480 px and a 12 px gap.</summary>
+        const float HintRightClearPx = 508f;
 
         /// <summary>End Turn's hourglass, in the button's left padding (Statecraft.uss .end-turn), painted into the button so it
         /// stays a leaf sized by its text (UiIcon.Paint).</summary>
