@@ -503,7 +503,7 @@ public class UnitFiguresTests
             try
             {
                 if (damaged)
-                    foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles })
+                    foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles, CollectionCatalog.ArabArmies })
                         File.WriteAllBytes(Path.Combine(folder, b), System.Text.Encoding.ASCII.GetBytes("not-a-bundle"));
                 UnitFigures.Forget();
                 var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
@@ -511,7 +511,7 @@ public class UnitFiguresTests
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
-                foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles })
+                foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles, CollectionCatalog.ArabArmies })
                     LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
                 var figures = Pieces(map, "Rifleman");
