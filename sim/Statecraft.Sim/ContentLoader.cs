@@ -371,6 +371,8 @@ namespace Statecraft.Sim
             // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
             Validate(c, settlementIds);
+            if (c.Ruleset == SaveGame.Gdd03Ruleset && c.Gdd03Balance == null)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "(file)", "required for the gdd-0.3 ruleset");
             ApplyMapOverrides(readFile, c, settlementIds);   // after the map's own checks, before the GDD records that read it
             if (c.IsGdd)
             {
@@ -1003,6 +1005,14 @@ namespace Statecraft.Sim
                     throw new ContentException("eras.yaml", at + ".systems.loop", "must be legacy or gdd");
                 if (e.Systems.Loop != c.Eras[0].Systems.Loop)
                     throw new ContentException("eras.yaml", at + ".systems.loop", "every era runs the same loop (a save names one ruleset)");
+                var identity = e.Systems.RulesetGiven ? e.Systems.Ruleset
+                    : e.Systems.Loop == EraSystems.Gdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+                if (identity != SaveGame.LegacyRuleset && identity != SaveGame.GddRuleset && identity != SaveGame.Gdd03Ruleset)
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "must be legacy, gdd-0.1 or gdd-0.3");
+                if ((identity == SaveGame.LegacyRuleset) != (e.Systems.Loop == EraSystems.Legacy))
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "legacy requires the legacy loop; gdd-0.1 and gdd-0.3 require the gdd loop");
+                if (identity != c.Ruleset)
+                    throw new ContentException("eras.yaml", at + ".systems.ruleset", "every era names the same ruleset (explicit or inferred)");
                 if (i == 0)
                 {
                     if (c.Rules.Start != default && e.From != c.Rules.Start)   // a missing start is rules.yaml's own error
