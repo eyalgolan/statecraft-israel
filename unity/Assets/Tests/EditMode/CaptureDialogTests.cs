@@ -367,9 +367,9 @@ public class CaptureDialogTests
             var shown = r.Root.Q<Label>("capture-preview-" + o.Outcome).text;
             Assert.AreEqual(CaptureDialogPresenter.PreviewText(r.Bridge.Content, r.Bridge.State, o.Preview!, En), shown, $"{o.Outcome}: the helper's preview");
             Assert.Less(o.Preview!.Attention, 0, "precondition: the sim charges Attention for the order");
-            StringAssert.Contains(En.Format("report.line", En["capture.caption.attention"], En.Format("capture.delta_attention", o.Preview.Attention)), shown,
+            StringAssert.Contains(En.Format("report.line", En["capture.caption.attention"], En.Format("capture.delta_attention", o.Preview.Attention!.Value)), shown,
                 $"{o.Outcome}: the sim's own Attention change");
-            Assert.AreEqual(-r.Bridge.Price(new ResolveCapture("lod", o.Outcome)), o.Preview.Attention, 1e-9, "the order's price at this turn's prices");
+            Assert.AreEqual(-r.Bridge.Price(new ResolveCapture("lod", o.Outcome))!.Value, o.Preview.Attention!.Value, 1e-9, "the order's price at this turn's prices");
         }
         using var free = new Rig(Awaiting(C, "lod"));
         yield return Frames(3);
@@ -657,8 +657,8 @@ public class CaptureDialogTests
             var shown = r.Root.Q<Label>("capture-preview-" + o.Outcome).text;
             Assert.AreEqual(CaptureDialogPresenter.PreviewText(r.Bridge.Content, r.Bridge.State, o.Preview!, En, ending: true), shown);
             StringAssert.StartsWith(En["capture.end.changes"], shown);
-            StringAssert.Contains(En.Format("report.line", En["capture.caption.attention"], En.Format("capture.delta_attention", o.Preview!.Attention)), shown);
-            Assert.AreEqual(-r.Bridge.Price(new EndOccupation("lod", o.Outcome)), o.Preview.Attention, 1e-9);
+            StringAssert.Contains(En.Format("report.line", En["capture.caption.attention"], En.Format("capture.delta_attention", o.Preview!.Attention!.Value)), shown);
+            Assert.AreEqual(-r.Bridge.Price(new EndOccupation("lod", o.Outcome))!.Value, o.Preview.Attention!.Value, 1e-9);
         }
         using var free = new Rig(Ending(C, true, false, "lod"));
         yield return Frames(3);

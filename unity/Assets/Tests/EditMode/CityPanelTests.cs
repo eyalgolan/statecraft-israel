@@ -1179,17 +1179,17 @@ public class CityPanelTests
         var city = bridge.State.Cities["tel_aviv"]; int before = city.Employed;
         Assert.Greater(before, 0, "precondition: there is a worker to remove");
         Assert.IsNotNull(ui.Q<Label>("city-workers-cost"), "the order price and timing are visible, not only in a tooltip");
-        Assert.AreEqual(text.Format("city.workers_cost", bridge.Price(new AssignWorkers("tel_aviv", "job", before))), ui.Q<Label>("city-workers-cost").text);
+        Assert.AreEqual(text.Format("city.workers_cost", bridge.Price(new AssignWorkers("tel_aviv", "job", before))!.Value), ui.Q<Label>("city-workers-cost").text);
         UiTestKit.Press(ui.Q<Button>("city-workers-less"));
         Assert.AreEqual(before, city.Employed, "queued work does not pretend the simulation already ran");
         Assert.AreEqual(text.Format("city.workers_ordered", GddHexPanel.Groups(text, before - 1)), ui.Q<Label>("city-workers").text);
         Assert.AreEqual(text.Format("city.jobs", before, city.JobSlots), ui.Q<Label>("city-jobs").text);
         StringAssert.Contains("0.6", ui.Q<Label>("city-workers-cost").text, "the price as the HUD and the cards show Attention (one decimal)");
-        double left = bridge.AttentionLeft;
+        double left = bridge.AttentionLeft!.Value;
         if (before > 1)
         {
             UiTestKit.Press(ui.Q<Button>("city-workers-less"));
-            Assert.AreEqual(left, bridge.AttentionLeft, 1e-9, "adjusting one queued assignment does not buy another order");
+            Assert.AreEqual(left, bridge.AttentionLeft!.Value, 1e-9, "adjusting one queued assignment does not buy another order");
             UiTestKit.Press(ui.Q<Button>("city-workers-more"));
         }
         UiTestKit.Press(ui.Q<Button>("city-workers-more"));

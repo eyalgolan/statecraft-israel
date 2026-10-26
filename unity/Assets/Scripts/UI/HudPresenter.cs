@@ -300,7 +300,7 @@ namespace Statecraft.Game.UI
         const float TurnBoxPx = 150f, CaptionMaxPx = 120f, PlateWidthPx = 230f;
         // The button keeps its stylesheet font; only the attention line grows with the text floor.
         float TurnBoxWidth => UnityEngine.Mathf.Max(bridge.NeedsOrders.Count > 0 ? 230f : TurnBoxPx,
-            TurnBoxPx * smallTextSize / SmallTextPx);
+            bridge.Content.UsesAttention ? TurnBoxPx * smallTextSize / SmallTextPx : TurnBoxPx);
         /// <summary>The widest date line's width per px of font size, with a little to spare: the Hebrew 31 October 1956 is
         /// about 7.8 times its size (196 px at 25 px), the English "30 September 1956" 7.2 (TopBarScoreLayoutTests.WorstDate).</summary>
         const float DateLinePerPx = 8f;
@@ -452,7 +452,7 @@ namespace Statecraft.Game.UI
             var raised = FloorRaises(width);
             var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
             bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
-            hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || raised && smallTextSize > OneRowSmallMaxPx);
+            hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || bridge.Content.UsesAttention && raised && smallTextSize > OneRowSmallMaxPx);
             bar.EnableInClassList(CaptionLineClass, hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass));
             captionFitWrap = raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
             hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx || captionFitWrap);
@@ -488,6 +488,11 @@ namespace Statecraft.Game.UI
         public void Render()
         {
             var m = HudModel.From(bridge, text);
+            var attention = root.Q<Label>("attention");
+            attention.style.display = bridge.Content.UsesAttention ? DisplayStyle.Flex : DisplayStyle.None;
+            attention.pickingMode = bridge.Content.UsesAttention ? PickingMode.Position : PickingMode.Ignore;
+            attention.focusable = false;
+            attention.tooltip = "";
             Set("year", m.Year); Set("turn", m.Turn); Set("date", m.Date); Set("attention", m.Attention);
             Set("security-level", m.SecurityLevel);
             var score = root.Q<Label>("score");   // the GDD loop only (#380): hidden when HudModel gives none

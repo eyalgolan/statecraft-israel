@@ -507,7 +507,7 @@ public class EventCardTests
         var card = new EventCardPresenter(ui.Root, bridge, Text, null);
         var appoint = new Appoint("defense_minister", "zisling");
         Assert.IsNull(bridge.Queue(appoint));
-        g.State.Attention = bridge.Price(appoint);   // the rest of the turn's Attention is spent
+        g.State.Attention = bridge.Price(appoint)!.Value;   // the rest of the turn's Attention is spent
         card.Render();
         Assert.AreEqual("You don't have enough Attention left to answer this turn. End the turn and the decision goes to Aharon Zisling.", ui.Q<Label>("event-delegate").text);
         var turn = bridge.EndTurn();

@@ -948,7 +948,7 @@ namespace Statecraft.Game.UI
                 for (int guard = 0; card.Shown != null; guard++)
                 {
                     var shown = card.Shown;
-                    if (bridge.AttentionLeft + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
+                    if (!bridge.CanPay(new ChooseEventOption(shown.Id, ""))) break;
                     var option = root.Q<VisualElement>("event-options")?.Q<Button>();
                     if (option == null || guard >= 50) { log(FormattableString.Invariant($"SMOKE FAIL event {shown.Id} has no option to press")); yield break; }
                     if (!Press(option, log)) yield break;

@@ -138,7 +138,8 @@ return 0;
 static void Briefing(Content c, GameState s)
 {
     var gov = Offices.Government(c, s.Date);
-    Console.WriteLine($"== {s.Date:yyyy-MM-dd} | turn {s.Turn} | {gov?.Name} | security level {s.Rung} | attention {s.Attention:0.0}");
+    var attention = c.UsesAttention ? $" | attention {s.Attention:0.0}" : "";
+    Console.WriteLine($"== {s.Date:yyyy-MM-dd} | turn {s.Turn} | {gov?.Name} | security level {s.Rung}{attention}");
     foreach (var id in s.PendingEvents)
     {
         var e = c.Events.First(x => x.Id == id);
