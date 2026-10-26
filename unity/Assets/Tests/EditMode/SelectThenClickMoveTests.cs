@@ -61,6 +61,26 @@ public class SelectThenClickMoveTests
         public void Click(int q, int r, bool touch = false) => GameRoot.OnHexClicked(Map, Layer, Info, q, r, touch);
         public void Select(PlacedToken t) => Click(t.Q, t.R);
 
+        /// <summary>#1661: another Israeli unit moved onto a city hex Golani has a route to (no game start has one there).
+        /// Hands back Golani's token and the city hex; the friend's Move is committed. The friend's token is drawn near the
+        /// city, where UnitPlacer finds it a spot, not necessarily on it.</summary>
+        public (PlacedToken mover, (int q, int r) city) FriendOnACity()
+        {
+            var golani = Id(Token("golani"));
+            foreach (var t in Layer.Tokens.Where(t => t.Token.Unit.Side == UnitData.Israel && t.Token.Unit.Id != "golani").ToList())
+            {
+                if (UnitCard.SimUnit(C, Bridge.State, t.Token.Unit) is not int x) continue;
+                var city = Reach(x).Cast<(int q, int r)?>().FirstOrDefault(h => Info.IsCity(h!.Value.q, h.Value.r)
+                    && Layer.UnitToSelectAt(h.Value.q, h.Value.r) == null
+                    && Movement.Route(C, Bridge.State, golani, h.Value.q, h.Value.r, Bridge.Spent).Count > 0);
+                if (city is not (int q, int r)) continue;
+                Assert.IsNull(Bridge.Queue(new Move(x, q, r)), "precondition: the friend moves onto the city");
+                Layer.Show(C, Bridge.State);
+                return (Token("golani"), (q, r));
+            }
+            throw new AssertionException("no Israeli unit can reach a city Golani has a route to");
+        }
+
         public void Dispose()
         {
             Info.Dispose();
@@ -332,7 +352,7 @@ public class SelectThenClickMoveTests
         var given = rig.Bridge.Session.Committed.OfType<UnitOrder>().Single();
         Assert.AreEqual((id, Combat.Attack), (given.Unit, given.Order), "the right click gave the attack");
     }
-    // #1661 owner rulings 1/2. Drafted before the production edits; runtime red/green is pending.
+    // #1661 owner rulings 1 and 2 (the confirm step). Red on main: no offer exists there.
     [TestCase(false)]
     [TestCase(true)]
     public void AFriendlyDestinationOffersTheOriginalMoverExactlyOnce(bool touch)
@@ -346,7 +366,8 @@ public class SelectThenClickMoveTests
                         && rig.Reach(rig.Id(a)).Contains((b.Q, b.R))
                     select (a, b)).First();
         var id = rig.Id(pair.a); var other = rig.Id(pair.b);
-        var from = rig.At(id); var target = rig.At(other);
+        // The tapped hex is where B's token is drawn (its anchor), which can differ from B's sim hex.
+        var from = rig.At(id); (int q, int r) target = (pair.b.Q, pair.b.R); var otherAt = rig.At(other);
         rig.Select(pair.a);
         rig.Click(target.q, target.r, touch);
         Assert.IsEmpty(rig.Bridge.Session.Committed, "selection itself gives no order");
@@ -359,7 +380,7 @@ public class SelectThenClickMoveTests
             "{0},{1}", target.q, target.r), C, Text, null), send.text);
         UiTestKit.Press(send);
         Assert.AreEqual(target, rig.At(id), "the retained mover A moves, not selected B");
-        Assert.AreEqual(target, rig.At(other));
+        Assert.AreEqual(otherAt, rig.At(other), "B stays where it was");
         Assert.AreEqual(1, rig.Bridge.Session.Committed.Count);
         Assert.Greater(rig.Bridge.Spent[id], 0);
         UiTestKit.Press(send);
@@ -394,24 +415,24 @@ public class SelectThenClickMoveTests
     public void AnOccupiedCityPillStillShowsTheCityAndOffersTheOriginalMover(bool pill)
     {
         using var rig = new Rig();
-        var own = rig.Layer.Tokens.Where(t => t.Token.Unit.Side == UnitData.Israel
-            && UnitCard.SimUnit(C, rig.Bridge.State, t.Token.Unit) != null).ToList();
-        var pair = (from a in own from b in own
-                    where a.Token.Unit.Id != b.Token.Unit.Id && rig.Info.IsCity(b.Q, b.R)
-                        && rig.Layer.UnitToSelectAt(b.Q, b.R) == b.Token.Unit.Id
-                        && rig.Reach(rig.Id(a)).Contains((b.Q, b.R))
-                    select (a, b)).First();
-        var id = rig.Id(pair.a);
-        rig.Select(pair.a);
-        GameRoot.OnHexClicked(rig.Map, rig.Layer, rig.Info, pair.b.Q, pair.b.R, true, pill);
-        Assert.IsEmpty(rig.Bridge.Session.Committed);
-        Assert.AreEqual(!pill, rig.Info.ShowsUnit, "pill means city; badge/keyboard means unit");
+        var (mover, city) = rig.FriendOnACity();
+        var baseline = rig.Bridge.Session.Committed.Count;
+        var id = rig.Id(mover);
+        var near = rig.Reach(id).Contains(city);
+        rig.Select(mover);
+        var unitFirst = rig.Layer.UnitToSelectAt(city.q, city.r);
+        GameRoot.OnHexClicked(rig.Map, rig.Layer, rig.Info, city.q, city.r, true, pill);
+        Assert.AreEqual(baseline, rig.Bridge.Session.Committed.Count, "the pick itself gives no order");
+        if (pill) Assert.AreEqual(((int, int)?)city, rig.Info.Selected, "a pill means the city");
+        else Assert.AreEqual(unitFirst, rig.Layer.Selected, "a badge/terrain or keyboard pick keeps unit-first routing");
         var send = rig.Ui.Root.Q<Button>("info-confirm-move");
         Assert.IsNotNull(send);
-        Assert.AreEqual(DisplayStyle.Flex, send.style.display.value);
+        Assert.AreEqual(DisplayStyle.Flex, send.style.display.value, "a city a friend holds offers the retained mover");
         UiTestKit.Press(send);
-        Assert.AreEqual((pair.b.Q, pair.b.R), rig.At(id));
-        Assert.AreEqual(1, rig.Bridge.Session.Committed.Count);
+        if (near) Assert.AreEqual(city, rig.At(id), "a city in reach: the Move");
+        else Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", city.q, city.r),
+            rig.Bridge.State.Units[id].OrderTarget, "a city beyond reach: the go-to");
+        Assert.AreEqual(baseline + 1, rig.Bridge.Session.Committed.Count);
     }
 
     [TestCase("en-US", "en")]
@@ -563,8 +584,9 @@ public class FriendlyDestinationInputTests : InputTestFixture
         var expectedSelection = rig.Layer.UnitToSelectAt(target.q, target.r);
         if (reason == "covered")
         {
-            var root = rig.Ui.Root.Q("root");
-            root.AddToClassList(TurnReportPresenter.OpenClass); ScreenNav.DisableCovered(rig.Ui.Root);
+            // A wide screen over the panel (InfoPanelPresenter.Covered, #210), as UnderACoveringScreenNoClickMovesTheUnit.
+            rig.Ui.Q<VisualElement>("info-panel").parent.AddToClassList(ScreenNav.WideOpenClass);
+            ScreenNav.DisableCovered(rig.Ui.Root);
         }
         rig.Click(target.q, target.r, touch: true);
         var send = rig.Ui.Root.Q<Button>("info-confirm-move");
@@ -583,37 +605,44 @@ public class FriendlyDestinationInputTests : InputTestFixture
         }
     }
 
-    [UnityTest] public IEnumerator TouchSelectsAndActivatesTheConfirmation() => ConfirmAllTargets(KeyCode.None);
-    [UnityTest] public IEnumerator EnterReachesAndActivatesTheConfirmation() => ConfirmAllTargets(KeyCode.Return);
-    [UnityTest] public IEnumerator SpaceReachesAndActivatesTheConfirmation() => ConfirmAllTargets(KeyCode.Space);
-
-    IEnumerator ConfirmAllTargets(KeyCode key)
+    /// <summary>Touch: a still tap through MapPointer's real frame (a virtual touchscreen) picks the destination, for a
+    /// friend's token, a city a friend stands on and an empty city beyond reach; the offer then moves the retained unit once.
+    /// Keyboard Tab/Enter/Space and the UI hit test on the offer run in the real game in
+    /// KeyboardOrdersTests.AFriendlyDestinationIsConfirmedWithTheKeyboardAlone.</summary>
+    [UnityTest]
+    public IEnumerator TouchSelectsAndActivatesTheConfirmation()
     {
         foreach (var kind in new[] { "friendly", "occupied-city", "far-city" })
-            yield return RealMapInputOffersAConfirmationForTheRetainedMover(key, kind);
+            yield return TouchOffersAConfirmationForTheRetainedMover(kind);
     }
 
-    IEnumerator RealMapInputOffersAConfirmationForTheRetainedMover(KeyCode key, string kind)
+    IEnumerator TouchOffersAConfirmationForTheRetainedMover(string kind)
     {
         using var rig = new SelectThenClickMoveTests.Rig();
         var c = rig.Bridge.Content;
         var mover = rig.Token("golani");
         var city = c.SettlementHexes.First(x => x.Id == "tel_aviv" && rig.Layer.UnitToSelectAt(x.Q, x.R) == null);
         (int Q, int R) target = (city.Q, city.R);
-        if (kind != "far-city")
+        if (kind == "occupied-city")
+        {
+            var (friendMover, friendCity) = rig.FriendOnACity();
+            mover = friendMover; target = (friendCity.q, friendCity.r);
+        }
+        if (kind == "friendly")
         {
             var own = rig.Layer.Tokens.Where(t => t.Token.Unit.Side == UnitData.Israel
                 && UnitCard.SimUnit(c, rig.Bridge.State, t.Token.Unit) != null).ToList();
             var pair = (from a in own from b in own
                         where a.Token.Unit.Id != b.Token.Unit.Id && (a.Q, a.R) != (b.Q, b.R)
                             && rig.Layer.UnitToSelectAt(b.Q, b.R) == b.Token.Unit.Id
-                            && (kind != "occupied-city" || rig.Info.IsCity(b.Q, b.R))
                             && rig.Reach(rig.Id(a)).Contains((b.Q, b.R))
                         select (a, b)).First();
             mover = pair.a; target = (pair.b.Q, pair.b.R);
         }
         var id = rig.Id(mover);
         var before = rig.At(id);
+        var baseline = rig.Bridge.Session.Committed.Count;
+        var near = rig.Reach(id).Contains((target.Q, target.R));
         var others = rig.Bridge.State.Units.Values.Where(u => u.Id != id).ToDictionary(u => u.Id, u => (u.Q, u.R));
         Assert.IsNotEmpty(Movement.Route(c, rig.Bridge.State, id, target.Q, target.R, rig.Bridge.Spent));
         var cam = Camera.main;
@@ -627,78 +656,33 @@ public class FriendlyDestinationInputTests : InputTestFixture
         pointer.Map = rig.Map; pointer.IsOverUi = _ => false;
         try
         {
-            yield return null; // panel layout/focus is driven by the editor's player loop in this drafted UnityTest
-            pointer.HexClicked += (q, r, pill) => GameRoot.OnHexClicked(rig.Map, rig.Layer, rig.Info, q, r, key == KeyCode.None, pill);
+            yield return null; // a frame for the panel layout
+            pointer.HexClicked += (q, r, pill) => GameRoot.OnHexClicked(rig.Map, rig.Layer, rig.Info, q, r, true, pill);
             rig.Select(mover);
-            if (key == KeyCode.None)
-            {
-                InputSystem.AddDevice<Touchscreen>();
-                pointer.Tick(); // warm frame APIs, as Ella documents; this is a still tap across updates
-                var screen = cam.WorldToScreenPoint(at);
-                var position = new Vector2(screen.x, screen.y);
-                BeginTouch(1, position); pointer.Tick();
-                Assert.IsEmpty(rig.Bridge.Session.Committed);
-                EndTouch(1, position); pointer.Tick();
-                pointer.Tick(); // tap is enqueued after the release frame's drain
-            }
-            else
-            {
-                using var focus = new MapFocusPresenter(rig.Ui.Root, cam, view, p => pointer.PickAt(p));
-                var stop = rig.Ui.Root.Q("map-focus");
-                stop.Focus();
-                if (key == KeyCode.Return)
-                {
-                    using var submit = NavigationSubmitEvent.GetPooled(); submit.target = stop; stop.SendEvent(submit);
-                }
-                else
-                {
-                    using var space = KeyDownEvent.GetPooled(' ', KeyCode.Space, EventModifiers.None);
-                    space.target = stop; stop.SendEvent(space);
-                }
-            }
-            if (kind == "far-city") Assert.AreEqual((target.Q, target.R), rig.Info.Selected);
-            else Assert.AreEqual(rig.Layer.UnitToSelectAt(target.Q, target.R), rig.Layer.Selected, "ordinary unit selection");
-            Assert.IsEmpty(rig.Bridge.Session.Committed);
+            var expectedUnit = rig.Layer.UnitToSelectAt(target.Q, target.R);   // before the pick moves the selection
+            InputSystem.AddDevice<Touchscreen>();
+            pointer.Tick(); // warm frame APIs, as Ella documents; this is a still tap across updates
+            var screen = cam.WorldToScreenPoint(at);
+            var position = new Vector2(screen.x, screen.y);
+            BeginTouch(1, position); pointer.Tick();
+            Assert.AreEqual(baseline, rig.Bridge.Session.Committed.Count);
+            EndTouch(1, position); pointer.Tick();
+            pointer.Tick(); // tap is enqueued after the release frame's drain
+            if (expectedUnit == null) Assert.AreEqual(((int, int)?)(target.Q, target.R), rig.Info.Selected, "ordinary hex selection");
+            else Assert.AreEqual(expectedUnit, rig.Layer.Selected, "ordinary unit selection");
+            Assert.AreEqual(baseline, rig.Bridge.Session.Committed.Count, "the tap itself gives no order");
             var send = rig.Ui.Root.Q<Button>("info-confirm-move");
             Assert.IsNotNull(send);
             Assert.AreEqual(DisplayStyle.Flex, send.style.display.value);
-            // Wait for real panel layout before touch hit testing or traversal; no direct Focus(send).
-            for (int i = 0; i < 30 && send.worldBound.width <= 0; i++) yield return null;
+            // The button is taken as the UI takes any button press (Button.clicked); that a finger on it lands on the
+            // button and not the map is KeyboardOrdersTests' hit test in the real game.
+            UiTestKit.Press(send);
             yield return null;
-            if (key == KeyCode.None)
-            {
-                var atButton = send.worldBound.center;
-                Assert.AreSame(send, rig.Ui.Root.panel.Pick(atButton), "the visible confirmation is hit-testable");
-                using (var down = PointerDownEvent.GetPooled(new UnityEngine.Touch
-                    { fingerId = 0, phase = UnityEngine.TouchPhase.Began, position = atButton }))
-                { Assert.AreEqual(PointerType.touch, down.pointerType); down.target = send; send.SendEvent(down); }
-                using (var up = PointerUpEvent.GetPooled(new UnityEngine.Touch
-                    { fingerId = 0, phase = UnityEngine.TouchPhase.Ended, position = atButton }))
-                { up.target = send; send.SendEvent(up); }
-                yield return null;
-            }
-            else
-            {
-                for (int i = 0; i < 80 && rig.Ui.Root.panel.focusController.focusedElement != send; i++)
-                {
-                    var focused = rig.Ui.Root.panel.focusController.focusedElement as VisualElement;
-                    Assert.IsNotNull(focused, "focus stays on a reachable control");
-                    using (var tab = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next))
-                    { tab.target = focused; focused.SendEvent(tab); }
-                    yield return null;
-                }
-                Assert.AreSame(send, rig.Ui.Root.panel.focusController.focusedElement, "Tab reaches the confirmation");
-                using (var press = KeyDownEvent.GetPooled(key == KeyCode.Space ? ' ' : '\n', key, EventModifiers.None))
-                { press.target = send; send.SendEvent(press); }
-                if (key == KeyCode.Return)
-                    using (var enter = NavigationSubmitEvent.GetPooled()) { enter.target = send; send.SendEvent(enter); }
-                yield return null;
-            }
-            Assert.AreEqual(1, rig.Bridge.Session.Committed.Count);
+            Assert.AreEqual(baseline + 1, rig.Bridge.Session.Committed.Count);
             Assert.AreNotEqual(before, rig.At(id), "the original mover moves immediately");
             Assert.Greater(rig.Bridge.Spent[id], 0);
             foreach (var other in others) Assert.AreEqual(other.Value, rig.At(other.Key), "other units stay put");
-            if (kind == "far-city")
+            if (!near)
             {
                 Assert.AreEqual(Movement.GoTo, rig.Bridge.State.Units[id].Order);
                 Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", target.Q, target.R),
@@ -706,7 +690,7 @@ public class FriendlyDestinationInputTests : InputTestFixture
             }
             else Assert.AreEqual((target.Q, target.R), rig.At(id));
             UiTestKit.Press(send);
-            Assert.AreEqual(1, rig.Bridge.Session.Committed.Count, "confirmation consumed exactly once");
+            Assert.AreEqual(baseline + 1, rig.Bridge.Session.Committed.Count, "confirmation consumed exactly once");
         }
         finally { Object.DestroyImmediate(pointer); }
     }

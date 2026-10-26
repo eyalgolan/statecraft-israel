@@ -706,6 +706,6 @@ go-to command immediately; the confirmation itself also confirms a far route on 
 (including a turn or loaded session), or screen opening discards the proposal. Right-click ordering stays immediate.
 The English and Hebrew confirmation share the same placeholders; the Hebrew is native-review-pending.
 
-Map drags retain the 30 device-pixel threshold. Each press captures its own origin from input events. On the first crossing, only the part of that movement segment
-outside the threshold pans; subsequent motion pans normally, with no replay of held travel. The tap rule and complete
-between-frame touch swipes are separate work owned by Ella (ruling 3).
+Map drags retain the 30 device-pixel threshold. Each press captures its own origin from input events. On the first
+crossing, only the part of that movement segment outside the threshold pans; subsequent motion pans normally, with no
+replay of held travel. The tap rule and complete between-frame touch swipes are ruling 3 (#1777).

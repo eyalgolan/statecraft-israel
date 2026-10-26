@@ -414,8 +414,10 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>Captures the original mover before ordinary selection changes the card. The returned action
-        /// offers its confirmation after that selection. No command is queued until the button is activated.</summary>
-        internal System.Action? PrepareFriendlyMove(int q, int r)
+        /// offers its confirmation after that selection. No command is queued until the button is activated.
+        /// <paramref name="friendDrawn"/>: another friendly unit's token is drawn on (q, r) (GameRoot asks the unit layer);
+        /// a token stands at its anchor, which need not be its sim hex.</summary>
+        internal System.Action? PrepareFriendlyMove(int q, int r, bool friendDrawn = false)
         {
             DiscardMove();
             var c = bridge.Content; var s = bridge.State;
@@ -428,7 +430,7 @@ namespace Statecraft.Game.UI
             if (s.Units.Values.Count(u => u.Id != p.unit && u.Side == moving.Side && u.Q == q && u.R == r) >= limit) return null;
             var occupants = s.Units.Values.Where(u => u.Q == q && u.R == r).ToList();
             if (occupants.Any(u => u.Side != "" && u.Side != Movement.PlayerSide)
-                || (!IsCity(q, r) && !occupants.Any(u => u.Id != p.unit))) return null;
+                || (!IsCity(q, r) && !friendDrawn && !occupants.Any(u => u.Id != p.unit))) return null;
             var token = selectedUnit();
             if (token == null) return null;
             var mover = UnitCard.For(token.Value, s, text, c.IsGdd, c, townNamesHe).Title;
@@ -445,7 +447,7 @@ namespace Statecraft.Game.UI
 
         void OnConfirmKey(KeyDownEvent e)
         {
-            if (e.keyCode != KeyCode.Space) return;
+            if (e.keyCode != UnityEngine.KeyCode.Space) return;
             // Enter arrives as NavigationSubmit; Space needs the same explicit path as the map stop.
             using var submit = NavigationSubmitEvent.GetPooled();
             submit.target = confirmMove; confirmMove.SendEvent(submit);
