@@ -6,17 +6,6 @@ using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>One top-bar indicator: its value and the change since the last turn (empty when there is none), and the
-    /// two again in words (HudModel.Spoken): SayValue, and SayChange without its sign (empty when there is no change).</summary>
-    public readonly struct Meter
-    {
-        public readonly string Value, Delta, SayValue, SayChange;
-        /// <summary>+1 up, -1 down, 0 unchanged or unknown.</summary>
-        public readonly int Sign;
-        public Meter(string value, string delta, int sign, string sayValue, string sayChange)
-        { Value = value; Delta = delta; Sign = sign; SayValue = sayValue; SayChange = sayChange; }
-    }
-
     /// <summary>What the top bar shows, computed from simulation state only (no UI types), so it is testable on its own.
     /// Indicators (0..1) show as 0-100; Treasury is the net position (cash minus debt, IL millions); Immigration is the
     /// number of immigrants who arrived during the last turn.</summary>
@@ -24,6 +13,8 @@ namespace Statecraft.Game.UI
     {
         public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "", Score = "";
         public Meter Treasury, Immigration, Security, Support, Standing, Fx;
+        public Meter Food = new Meter("", "", 0, "", ""), Arms = new Meter("", "", 0, "", "");
+        public bool ShowsPools;
         /// <summary>Social cohesion (the morale indicator, R-NAT-001) on the 0-100 scale, shown only in the GDD loop
         /// (ShowsCohesion; the owner's ruling of 15 October 2026, #380). Empty in the legacy loop.</summary>
         public Meter Cohesion = new Meter("", "", 0, "", "");
@@ -39,7 +30,7 @@ namespace Statecraft.Game.UI
             : t.Format(m.Sign > 0 ? "hud.say_up" : "hud.say_down", name, m.SayValue, m.SayChange);
 
         /// <summary>The top bar's meters, in its order (Game.uxml's "meters"), by the ids their elements are named after.</summary>
-        public static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
+        public static readonly string[] MeterIds = { "treasury", "food", "arms", "immigration", "security", "support", "cohesion", "standing", "fx" };
 
         /// <summary>How many causes a meter's explanation names (#1037): the turn report and the bar's tip.</summary>
         public const int MaxCauses = 2;
@@ -48,7 +39,7 @@ namespace Statecraft.Game.UI
         public Meter For(string id) => id switch
         {
             "treasury" => Treasury, "immigration" => Immigration, "security" => Security, "support" => Support,
-            "cohesion" => Cohesion, "standing" => Standing, "fx" => Fx,
+            "food" => Food, "arms" => Arms, "cohesion" => Cohesion, "standing" => Standing, "fx" => Fx,
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, "not a top-bar meter"),
         };
 
@@ -71,6 +62,8 @@ namespace Statecraft.Game.UI
                 "cohesion" => w => w.Target == "morale",
                 "standing" => w => w.Target == "intl_standing",
                 "fx" => w => w.Target == "fx_reserves",
+                "food" => w => w.Target == Pools.FoodTarget,
+                "arms" => w => w.Target == Pools.ArmsTarget,
                 _ => w => false,
             };
             return turn.Why.Select((w, i) => (w, i)).Where(x => match(x.w) && x.w.Delta != 0)
@@ -129,6 +122,9 @@ namespace Statecraft.Game.UI
                 Support = Points(EffectsSystem.Approval(c, s), prev == null ? (double?)null : EffectsSystem.Approval(c, prev)),
                 Standing = Points(s.Indicators["intl_standing"], prev?.Indicators["intl_standing"]),
                 Fx = Money("fx_reserves", s.FxReserves, prev?.FxReserves),
+                ShowsPools = c.IsGdd,
+                Food = c.IsGdd ? StockMeter.From(s.Food, prev?.Food, (key, n) => t.Format(key, n)) : new Meter("", "", 0, "", ""),
+                Arms = c.IsGdd ? StockMeter.From(s.Arms, prev?.Arms, (key, n) => t.Format(key, n)) : new Meter("", "", 0, "", ""),
                 ShowsCohesion = c.IsGdd,
                 Cohesion = c.IsGdd ? Points(s.Indicators["morale"], prev?.Indicators["morale"]) : new Meter("", "", 0, "", ""),
             };

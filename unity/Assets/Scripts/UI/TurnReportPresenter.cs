@@ -103,6 +103,7 @@ namespace Statecraft.Game.UI
             foreach (var id in HudModel.MeterIds)
             {
                 if (id == "cohesion" && !m.ShowsCohesion) continue;
+                if ((id == "food" || id == "arms") && !m.ShowsPools) continue;
                 var meter = m.For(id);
                 if (meter.Delta.Length == 0) continue;
                 lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,

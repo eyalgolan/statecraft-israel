@@ -818,7 +818,7 @@ public class HudTests
         Assert.AreEqual(1, m.Security.Sign);
     }
 
-    static readonly string[] MeterIds = { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" };
+    static readonly string[] MeterIds = { "treasury", "food", "arms", "immigration", "security", "support", "cohesion", "standing", "fx" };
     static string Inv(System.FormattableString f) => System.FormattableString.Invariant(f);
     static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings.Replace("strings.en.yaml", "strings.he.yaml")).text, "strings.he.yaml");
 

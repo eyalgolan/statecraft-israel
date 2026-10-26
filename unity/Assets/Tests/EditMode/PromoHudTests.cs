@@ -166,13 +166,13 @@ public class PromoHudTests
         // moved, each to the tier the seven meters' measured widths need (HudPresenter's notes): 1280x720 and 1366x768 (the
         // floor raises their captions to 18 and 17 px), 1920x1200 and 1440x900 (16:10) take the stacked bar with its icons;
         // 1280x1024 (5:4) drops them; 1024x1024 (square) takes two rows. Every fit assert below is unchanged.
-        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, true, false, false),
-                                                              (1366, 768, true, true, false, false), (1760, 1000, true, false, false, false),
+        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, true, false, false), (1280, 720, true, true, false, false),
+                                                              (1366, 768, true, true, false, false), (1760, 1000, true, true, false, false),
                                                               (2560, 1080, true, false, false, false),
-                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
+                                                              (1920, 1200, false, true, false, false), (1440, 900, false, true, false, false),
                                                               (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
                                                               (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
-                                                              (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
+                                                              (800, 1000, false, true, true, true), (390, 844, false, true, true, true) })
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -203,9 +203,9 @@ public class PromoHudTests
                     var centres = root.Q("meters").Children().Where(m => m.resolvedStyle.display != DisplayStyle.None)
                         .Select(m => m.worldBound.center.y).OrderBy(y => y).ToList();
                     var lines = 1 + centres.Zip(centres.Skip(1), (a, b) => b - a).Count(d => d > 3f);
-                    Assert.AreEqual(2, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
+                    Assert.AreEqual(3, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
                 }
-                if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
+                if ((w, h) == (2560, 1080))
                 {
                     // Review P1: with typical (turn-1) values at 16:9, and at 21:9 (#398), the bar has room for the promo's sizes.
                     var at = $"{w}x{h}";
@@ -220,11 +220,11 @@ public class PromoHudTests
                 }
                 // The widest realistic changes, formatted as HudModel formats them, and the widest date line.
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", Text.Format("hud.delta_people", 12345.0)),
-                                                      ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
+                                                      ("food", "-12,345"), ("arms", "+1,234"), ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
                     root.Q<Label>(name + "-delta").text = delta;
                 // ... and the widest late-game values (review N7).
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", Text.Format("hud.people", 123456.0)),
-                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
+                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("food", "123,456"), ("arms", "12,345"), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = Text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = Text.Format("hud.turn", 120);

@@ -34,7 +34,11 @@ namespace Statecraft.Game.UI
         /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, the 70 px one-row bar
         /// (promo 03's 6.5%) holds seven values and their changes side by side with the icons.</summary>
         public const float NarrowBelowPx = 1860f;
-        public const string NarrowClass = "hud-narrow";
+        // #731: two more stocks need space. Older loops retain their six-meter tiers.
+        // These nine-meter thresholds require runtime EN/HE visual verification before merge.
+        public const float PoolNarrowBelowPx = 2100f, PoolCompactBelowPx = 2100f,
+            PoolTwoRowBelowPx = 1520f, PoolThreeRowBelowPx = 1300f;
+        public const string NarrowClass = "hud-narrow", PoolsClass = "hud-pools";
         /// <summary>The noncompact stacked tier has room for natural-width resource captions (laptop playtest).</summary>
         public const string CaptionLineClass = "top-bar--caption-line";
         /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): a square window does not
@@ -151,6 +155,7 @@ namespace Statecraft.Game.UI
             endTurn.generateVisualContent += PaintHourglass;
             bar = root.Q<VisualElement>("top-bar");
             hudRoot = root.Q<VisualElement>("root");
+            hudRoot.EnableInClassList(PoolsClass, bridge.Content.IsGdd);
             bar.RegisterCallback<GeometryChangedEvent>(OnBarGeometry);
             meters = root.Q<VisualElement>("meters").Children().ToList();
             nav = root.Q<VisualElement>("nav");
@@ -215,6 +220,7 @@ namespace Statecraft.Game.UI
             dateRow?.parent?.UnregisterCallback<GeometryChangedEvent>(OnPlateGeometry);
             foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
+            hudRoot.RemoveFromClassList(PoolsClass);
             bar.RemoveFromClassList(CaptionLineClass);
             bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass); hudRoot.RemoveFromClassList(ThreeRowClass);
             ScreenNav.DisableCovered(hudRoot);
@@ -289,6 +295,8 @@ namespace Statecraft.Game.UI
             foreach (var l in smallText)
             {
                 if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
+                // Food/Arms did not exist in the legacy bar. Keep its original hidden-cohesion term (#731).
+                if (!bridge.Content.IsGdd && (said["food"].element.Contains(l) || said["arms"].element.Contains(l))) continue;
                 var current = l.resolvedStyle.fontSize;
                 if (!(current > 0f)) continue;
                 var oneLine = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
@@ -451,12 +459,15 @@ namespace Statecraft.Game.UI
             if (!(width > 0)) return;   // NaN before layout: wait for it
             var raised = FloorRaises(width);
             var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
-            bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
-            hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || bridge.Content.UsesAttention && raised && smallTextSize > OneRowSmallMaxPx);
-            bar.EnableInClassList(CaptionLineClass, hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass));
-            captionFitWrap = raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
-            hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx || captionFitWrap);
-            hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
+            bar.EnableInClassList(CompactClass, tierWidth < (bridge.Content.IsGdd ? PoolCompactBelowPx : CompactBelowPx));
+            hudRoot.EnableInClassList(NarrowClass, tierWidth < (bridge.Content.IsGdd ? PoolNarrowBelowPx : NarrowBelowPx) || bridge.Content.UsesAttention && raised && smallTextSize > OneRowSmallMaxPx);
+            captionFitWrap = (raised || bridge.Content.IsGdd) && width >= (bridge.Content.IsGdd ? PoolTwoRowBelowPx : TwoRowBelowPx) && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
+            hudRoot.EnableInClassList(TwoRowClass, width < (bridge.Content.IsGdd ? PoolTwoRowBelowPx : TwoRowBelowPx) || captionFitWrap);
+            // Nine natural-width meters get a full row when their measured caption budget needs it.
+            // The existing height measurement then keeps the bar tight, including on phones.
+            hudRoot.EnableInClassList(ThreeRowClass, bridge.Content.IsGdd ? hudRoot.ClassListContains(TwoRowClass) : width < ThreeRowBelowPx);
+            bar.EnableInClassList(CaptionLineClass, hudRoot.ClassListContains(NarrowClass) &&
+                (bridge.Content.IsGdd ? !hudRoot.ClassListContains(TwoRowClass) : !bar.ClassListContains(CompactClass)));
             StyleSmallText(raised);
             PlaceUnderBar();
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
@@ -501,6 +512,9 @@ namespace Statecraft.Game.UI
             Set("treasury", m.Treasury); Set("immigration", m.Immigration); Set("security", m.Security);
             Set("support", m.Support); Set("standing", m.Standing); Set("fx", m.Fx);
             // Social cohesion: the GDD loop only (#380), as the score; a hidden meter takes no room in the bar.
+            Set("food", m.Food); Set("arms", m.Arms);
+            said["food"].element.style.display = m.ShowsPools ? DisplayStyle.Flex : DisplayStyle.None;
+            said["arms"].element.style.display = m.ShowsPools ? DisplayStyle.Flex : DisplayStyle.None;
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);

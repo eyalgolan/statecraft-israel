@@ -46,6 +46,20 @@
                         <ui:VisualElement class="meter-row"><ui:Label name="treasury-value" class="meter-value" /><ui:Label name="treasury-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
+                <ui:VisualElement name="meter-food" class="meter">
+                    <Statecraft.Game.UI.UiIcon glyph="people" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Food" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="food-value" class="meter-value" /><ui:Label name="food-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="meter-arms" class="meter">
+                    <Statecraft.Game.UI.UiIcon glyph="shield" class="meter-icon" />
+                    <ui:VisualElement class="meter-body">
+                        <ui:Label text="Arms" class="meter-name" />
+                        <ui:VisualElement class="meter-row"><ui:Label name="arms-value" class="meter-value" /><ui:Label name="arms-delta" class="meter-delta" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
                 <ui:VisualElement name="meter-immigration" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="people" class="meter-icon" />
                     <ui:VisualElement class="meter-body">
@@ -356,6 +370,20 @@
                     <ui:Label name="defence-title-budget" class="section-title budget-title" />
                     <Statecraft.Game.UI.UiBar name="defence-budget-bar" class="ui-bar--budget big-bar grow" />
                     <ui:Label name="defence-budget-share" class="budget-share" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
+                </ui:VisualElement>
+                <ui:VisualElement name="defence-arms" class="defence-panel">
+                    <ui:Label name="arms-title" class="section-title" />
+                    <ui:Label name="arms-stock" class="wrap" />
+                    <ui:IntegerField name="arms-count" value="1" />
+                    <ui:Label name="arms-money" class="wrap" />
+                    <ui:Label name="arms-attention" class="wrap" />
+                    <ui:VisualElement class="row arms-actions">
+                        <ui:Button name="buy-arms" />
+                        <ui:Button name="withdraw-arms" />
+                    </ui:VisualElement>
+                    <ui:Label name="arms-queued" class="wrap" />
+                    <ui:Label name="arms-refusal" class="wrap" />
                     <Statecraft.Game.UI.UiFrame shadow="false" />
                 </ui:VisualElement>
                 <!-- #755: the prisoners held and returned and our soldiers held (R-POW-001, R-POW-004, R-POW-005), GDD loop only. -->
