@@ -152,6 +152,19 @@ public class RemainingCauseKeysTests
         }
     }
 
+    [Theory]
+    [InlineData("new Cause(\"m\", \"t\", 0, $\"{1:\\\\'}\", key: K);")]
+    [InlineData("new Cause(\"m\", \"t\", 0, $$\"\"\"{{1:\\'}}\"\"\", key: K);")]
+    [InlineData("new Cause(\"m\", \"t\", 0, $\"{1:\\\\\\\"}\", key: K);")]
+    [InlineData("new Cause(\"m\", \"t\", 0, $$\"\"\"{{1:\\\"}}\"\"\", key: K);")]
+    [InlineData("new Cause(\"m\", \"t\", 0, $@\"{1:'\"\"}\", key: K);")]
+    [InlineData("new Cause(\"m\", \"t\", 0, $\"{(true ? 1 : 2):\\\\'}\", key: K);")]
+    public void InventoryKeepsRealKeysAfterInterpolationFormatClauses(string source)
+    {
+        Assert.Equal(new[] { true }, SourceCauseKeys(source).ToArray());
+        Assert.Equal(new[] { false }, SourceCauseKeys(source.Replace(", key: K", "")).ToArray());
+    }
+
     static IEnumerable<bool> SourceCauseKeys(string source)
     {
         // Keep offsets, but erase whole literals (including interpolation holes) and comments.
@@ -231,7 +244,7 @@ public class RemainingCauseKeysTests
                     if (end - i >= dollars)
                     {
                         i = end;
-                        SkipInterpolation(source, ref i, dollars);
+                        SkipInterpolation(source, ref i, dollars, raw: true);
                         continue;
                     }
                     i = end;
@@ -267,18 +280,31 @@ public class RemainingCauseKeysTests
             if (interpolated && ch == '{')
             {
                 if (i < source.Length && source[i] == '{') { i++; continue; }
-                SkipInterpolation(source, ref i);
+                SkipInterpolation(source, ref i, verbatim: verbatim);
             }
         }
         return true;
     }
 
-    static void SkipInterpolation(string source, ref int i, int braceWidth = 1)
+    static void SkipInterpolation(string source, ref int i, int braceWidth = 1, bool verbatim = false, bool raw = false)
     {
-        var depth = 0;
+        var depth = 0; var parens = 0; var brackets = 0;
         while (i < source.Length)
         {
             if (SkipLiteralOrComment(source, ref i)) continue;
+            // A format component is literal text, not another C# expression. In particular,
+            // an apostrophe there must not start a character literal that swallows the real key.
+            if (source[i] == ':' && depth == 0 && parens == 0 && brackets == 0)
+            {
+                if (i + 1 < source.Length && source[i + 1] == ':') { i += 2; continue; }
+                i++;
+                SkipFormat(source, ref i, braceWidth, verbatim, raw);
+                return;
+            }
+            if (source[i] == '(') parens++;
+            if (source[i] == ')') parens--;
+            if (source[i] == '[') brackets++;
+            if (source[i] == ']') brackets--;
             if (source[i] == '{') depth++;
             if (source[i] == '}')
             {
@@ -288,6 +314,24 @@ public class RemainingCauseKeysTests
                 if (end - i >= braceWidth) { i += braceWidth; return; }
                 i = end;
                 continue;
+            }
+            i++;
+        }
+    }
+
+    static void SkipFormat(string source, ref int i, int braceWidth, bool verbatim, bool raw)
+    {
+        while (i < source.Length)
+        {
+            if (!raw && !verbatim && source[i] == '\\') { i += Math.Min(2, source.Length - i); continue; }
+            if (!raw && verbatim && source[i] == '"' && i + 1 < source.Length && source[i + 1] == '"')
+            { i += 2; continue; }
+            if (source[i] == '}')
+            {
+                var end = i;
+                while (end < source.Length && source[end] == '}') end++;
+                if (end - i >= braceWidth) { i += braceWidth; return; }
+                i = end; continue;
             }
             i++;
         }
