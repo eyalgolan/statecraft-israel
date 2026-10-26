@@ -37,7 +37,8 @@ public class RulesetSelectorTests
     public void RefusesUnknownOrLoopIncompatibleIdentity(string loop, string selector)
     {
         var error = Assert.Throws<ContentException>(() => Load(loop, selector));
-        Assert.Contains("systems.ruleset", error.Message);
+        Assert.Equal("eras.yaml", error.File);
+        Assert.Equal("eras[founding].systems.ruleset", error.Field);
     }
 
     [Theory]
@@ -51,9 +52,11 @@ public class RulesetSelectorTests
         files["eras.yaml"] = files["eras.yaml"].Replace("to: 1957-01-01", "to: 1950-01-01") +
             "  - id: later\n    name: Later\n    from: 1950-01-01\n    to: 1957-01-01\n" +
             "    systems: { loop: gdd" + (second == null ? "" : $", ruleset: {second}") + " }\n";
-        if (valid) Assert.Equal(first, ContentLoader.Load(Fixture.Write(files)).Ruleset);
-        else Assert.Contains("same ruleset", Assert.Throws<ContentException>(() =>
-            ContentLoader.Load(Fixture.Write(files))).Message);
+        if (valid) { Assert.Equal(first, ContentLoader.Load(Fixture.Write(files)).Ruleset); return; }
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files)));
+        Assert.Equal("eras.yaml", error.File);
+        Assert.Equal("eras[later].systems.ruleset", error.Field);
+        Assert.Contains("same ruleset", error.Message);
     }
 
     // R-LOOP-005: the first selectable 0.3 path cannot silently lose its catalogue.
@@ -65,7 +68,8 @@ public class RulesetSelectorTests
         var files = Files(EraSystems.Gdd, SaveGame.Gdd03Ruleset, false);
         if (text != null) files[Gdd03BalanceCatalogue.FileName] = text;
         var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files)));
-        Assert.Contains(Gdd03BalanceCatalogue.FileName, error.Message);
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("(file)", error.Field);
         Assert.Contains(text == null ? "required" : "empty file", error.Message);
     }
 
