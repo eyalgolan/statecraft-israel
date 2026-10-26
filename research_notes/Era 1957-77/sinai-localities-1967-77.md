@@ -402,7 +402,7 @@ Other negative searches, all on 2026-10-25:
 - **The Gaza Strip proper**, which Gvati treats in the same section: Nahal outposts Kfar Darom (1970), Netzarim and Morag
   (1972), and the moshavim Netzer Hazani and Katif of the Katif area. Not in this note.
 - **Where the line between this note and the Gaza Strip note falls (same line as in `gaza-localities-1967-77.md`,
-  the Gaza Strip note of #130, branch laneIK-130).** A locality is in the Gaza Strip note if the sources put it inside the Strip, the area Egypt
+  the Gaza Strip note of #130, `gaza-localities-1967-77.md`).** A locality is in the Gaza Strip note if the sources put it inside the Strip, the area Egypt
   held between 1949 and June 1967 north and west of the Egyptian frontier that the armistice line of 24 February 1949
   (Art. VI.1, "continuing thus to the Egyptian frontier"; `armistice-lines-1949.md`) stops at. It is in this note if
   the sources put it in the Rafah approaches (Hebrew Pithat Rafiah), which Gvati describes as "פיתחת רפיח, המשתרעת בין
