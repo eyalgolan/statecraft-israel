@@ -234,7 +234,7 @@ MonoBehaviour:
       The Pritzker Family National Photography Collection · CC BY 4.0 · graded
       and cropped"
     sensitive: 1
-    sensitivityReviewed: 0
+    sensitivityReviewed: 1
   - eventId: second_truce
     image: {fileID: 2800000, guid: eeb2c6a1420f649d6b259c164df97e0a, type: 3}
     alt: Count Folke Bernadotte, the UN mediator, interviewed by a radio reporter

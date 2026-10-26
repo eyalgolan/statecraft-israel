@@ -67,9 +67,9 @@ public class FinalWaveTests
     {
         // The owner signed off all seven on 2026-10-10 (docs/oss/DECISIONS.md D11), and re-reviewed altalena,
         // bernadotte_assassination, operation_hiram and ten_days after #577 changed them on 2026-10-15 ("Approve all 4", #600).
-        // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564) waits for the
-        // owner's review, so the gate blocks a shareable build until the maintainer sets sensitivity-reviewed.
-        Assert.Equal(new[] { "reparations_vote" }, ReleaseGate.SensitiveUnreviewed(Real));
+        // burma_road_complete (#791): the owner reviewed its text on 21 Oct 2026. reparations_vote (#1564): the owner
+        // approved its card, photograph and costs on 25 Oct 2026 ("Approve all three", #1575).
+        Assert.Empty(ReleaseGate.SensitiveUnreviewed(Real));
         var reviewed = Fixture.Write(events: new Dictionary<string, string>
         {
             ["a.yaml"] = "id: a\ntitle: A\ntext: x\nfrom: 1948-06-01\ntags: [terror]\noptions:\n  - id: o\n    text: O\nstatus: sensitivity-reviewed\n",

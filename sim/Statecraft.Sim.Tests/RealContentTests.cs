@@ -176,9 +176,9 @@ public class RealContentTests
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
         var objectiveDrafts = new[] { "first_new_yishuv", "railway_complete" };
         Assert.Equal(objectiveDrafts, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
-        // reparations_vote (#1564) is submitted fact-checked and waits for the owner's sensitivity review; the maintainer
-        // sets sensitivity-reviewed and empties this list.
-        var awaitingSensitivityReview = new[] { "reparations_vote" };
+        // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
+        // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).
+        var awaitingSensitivityReview = Array.Empty<string>();
         Assert.Equal(awaitingSensitivityReview, ReleaseGate.SensitiveUnreviewed(C));
         foreach (var e in C.Events)   // a sensitive event passes the owner's sensitivity review on top of fact-checking (D11)
         {

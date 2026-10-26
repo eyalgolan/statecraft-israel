@@ -90,8 +90,8 @@ cover this. The decision layer under the top bar bounds the card's height.
 
 - **Sensitivity review.** Eight pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
   `operation_hiram`, `operation_horev`, `bernadotte_assassination`, `burma_road_complete` and `reparations_vote`. The
-  sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791).
-  `reparations_vote` (#1564) waits for the owner's sensitivity review.
+  sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791);
+  the owner approved `reparations_vote` and its photograph on 25 October 2026 (#1575, #1564).
   - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads

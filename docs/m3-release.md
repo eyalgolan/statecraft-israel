@@ -304,7 +304,7 @@ war-casualties). The owner's sign-off for all seven events below is recorded in 
 | `operation_horev` | security, war-casualties | military text only |
 | `bernadotte_assassination` | security, terror | the `terror` tag follows the Israeli government's own Prevention of Terrorism Ordinance |
 | `reparations_claim` | holocaust | the claim's framing (the cost of absorbing survivors: 500,000 at $3,000 each); the "refuse" option |
-| `reparations_vote` | holocaust | the Knesset vote of 9 January 1952 on direct talks with West Germany (#1564); the opposition named by party, not by leader; the riot of 7 January kept to the YAML comment; the three design costs |
+| `reparations_vote` | holocaust | the Knesset vote of 9 January 1952 on direct talks with West Germany (#1564); the opposition named by party, not by leader; the riot of 7 January kept to the YAML comment; the three design costs. The owner approved the card text and options, the Benno Rothenberg photograph as a sensitive image and the three costs on 25 October 2026 ("Approve all three", [#1575](https://github.com/eyalgolan/statecraft-israel/pull/1575#issuecomment-6394241026)); it is `sensitivity-reviewed`. |
 
 **Map lines (display only; not gated by the release gate).** The 1949 armistice lines and zones
 (`content/map/armistice_lines_1949.geojson`, decision D-A) need the same review before a shared build shows them. The owner
