@@ -194,6 +194,9 @@ namespace Statecraft.Game.UI
         /// <summary>True while the panel shows a unit's card.</summary>
         public bool ShowsUnit => pioneer != null || (unitMode && selectedUnit() != null);
 
+        /// <summary>The pioneer group whose card the panel shows, or null (the advisor puts it back, GameRoot's keepSelection).</summary>
+        public int? Pioneer => pioneer;
+
         /// <summary>True while a screen covers the panel (a wide screen, or any screen in the two-row HUD): a map click
         /// then changes neither the hex nor the unit shown (#210; units-in-play merge note).</summary>
         public bool Covered
