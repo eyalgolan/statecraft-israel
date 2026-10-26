@@ -1,14 +1,17 @@
 # Event-card photographs
 
 The event card's header picture, as in the promo (`promo/final/03-gameplay-1936.png`, `05-event-transit-camps.png`), is a
-real archival photograph of the event, never an AI image. 27 of the 35 events in `content/events/` have one. Seven
+real archival photograph of the event, never an AI image. 29 of the 39 events in `content/events/` have one. Seven
 others show the responsible minister's portrait in the card's head, as before: `rhodes_talks`, `armistice_lebanon`,
 `armistice_syria`, `sinai_withdrawal`, `education_registration_1951`, `reparations_claim` and `forex_crisis_1951`. No
 free photograph that fits them was found (for `sinai_withdrawal`, see the decisions below). The objective card
 `absorb_immigrants` shows a generic arrival photograph, new immigrants from Romania coming down a ship's gangway at
 Haifa port (Benno Rothenberg, June 1951, CC BY 4.0; the owner's ruling of 19 October 2026, #739), as no photograph of
-the card's own event was found (Q-ABS-3, #1039). The new `railway_complete` card has no photograph wired yet. The GDD objective card
-`first_new_yishuv` shows Mefalsim's first days (Boris Carmi, June 1949, CC BY 4.0; #380).
+the card's own event was found (Q-ABS-3, #1039). The GDD objective card `first_new_yishuv` shows Mefalsim's first days
+(Boris Carmi, June 1949, CC BY 4.0; #380).
+
+The `railway_complete` card and #939's alternate follow-up cards, `jerusalem_demilitarisation_guard` and
+`rafah_force_pressure`, have no photograph wired yet.
 
 Owner ruling 2026-10-11 (summarised; recorded in `docs/CONTENT_POLICY.md` section 4):
 - Images of real people stay public domain or CC0, with one narrow exception: archival event photographs (not
@@ -88,9 +91,11 @@ cover this. The decision layer under the top bar bounds the card's height.
 
 ## Owner steps
 
-- **Sensitivity review.** Seven pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
-  `operation_hiram`, `operation_horev`, `bernadotte_assassination` and `burma_road_complete`. The sign-offs below cover
-  the original six; the owner approved `burma_road_complete` on 21 October 2026 (#1226, #791).
+- **Sensitivity review.** Nine pictures are marked `sensitive: true`: `altalena`, `ten_days`, `operation_yoav`,
+  `operation_hiram`, `operation_horev`, `bernadotte_assassination`, `burma_road_complete`, `degania_defence` and
+  `reparations_vote`. The sign-offs below cover the original six; the owner approved `burma_road_complete` on 21 October
+  2026 (#1226, #791); the owner approved `degania_defence` on 24 October 2026 (#1568, #1565); the owner approved
+  `reparations_vote` and its photograph on 25 October 2026 (#1575, #1564).
   - A `-shareable` build (`Build.Web`/`Build.Mac`, the release flow in `docs/RELEASING.md`) refuses until each one is
     `sensitivity_reviewed: true` and `EventImageImport.Run` has rebuilt the catalog.
   - The gate fails closed: a catalog that exists but does not load is a refusal, and the gate also reads
