@@ -19,8 +19,13 @@ public class Gdd03SaveTests
     [Theory]
     [InlineData(2)]
     [InlineData(3)]
-    public void Gdd03CannotMasqueradeAsAnEarlierSchema(int schema) =>
-        Assert.Equal(SaveException.OlderRules, Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, "gdd-0.3"))).Code);
+    public void Gdd03UnderAnEarlierSchemaIsDamage(int schema)
+    {
+        // No build writes it, so neither the live game nor gdd-0.3 may call it older or newer rules.
+        Assert.Null(Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, "gdd-0.3"))).Code);
+        Assert.Null(Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, "gdd-0.3"), SaveGame.Gdd03Ruleset)).Code);
+        Assert.Null(Assert.Throws<SaveException>(() => SaveGame.Parse(Text(schema, "gdd-0.3"), SaveGame.GddRuleset)).Code);
+    }
 
     [Theory]
     [InlineData(4, "gdd-future")]
@@ -39,6 +44,7 @@ public class Gdd03SaveTests
         Assert.Equal(3, save.Version);
         Assert.StartsWith("statecraft-save 3\n", save.Write());
     }
+
     // R-SAVE-001/002: future gdd-0.3 callers must not replay the live rules' saves.
     [Theory]
     [InlineData(2, "legacy")]

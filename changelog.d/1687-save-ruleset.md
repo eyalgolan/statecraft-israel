@@ -1,4 +1,4 @@
 ### Changed
 
-- Reserve a separate gdd-0.3 save identity and schema 4 with explicit earlier/newer rules refusals;
-  keep live legacy/gdd-0.1 saves and simulation behaviour unchanged.
+- Saves know a third ruleset, `gdd-0.3`, written as save schema 4, for the GDD 0.3 game built beside the live one.
+  A gdd-0.3 game refuses older-rules saves before replaying them; today's games and their schema 3 saves are unchanged.

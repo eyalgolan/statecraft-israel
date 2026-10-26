@@ -208,8 +208,9 @@ namespace Statecraft.Sim
                 first = 5;
             }
             // #1687, R-SAVE-001/002: schema 4 belongs only to the isolated gdd-0.3 envelope.
+            // No build writes gdd-0.3 under an earlier schema, so such a save was edited: damage, not older or newer rules.
             if (ruleset == Gdd03Ruleset && version < SchemaVersion)
-                throw new SaveException(1, "This save was made with an earlier version of the game's rules.", SaveException.OlderRules);
+                throw new SaveException(1, FormattableString.Invariant($"a gdd-0.3 save is schema {SchemaVersion}, not {version}"));
             if (version > PreviousSchemaVersion && ruleset != Gdd03Ruleset)
                 throw new SaveException(1, FormattableString.Invariant($"save schema version {version} is newer than this game ({PreviousSchemaVersion})"), SaveException.NewerVersion);
             // Check compatibility before replay, including gdd-0.1 -> gdd-0.3 as earlier rules.
