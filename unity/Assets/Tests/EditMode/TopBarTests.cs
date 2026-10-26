@@ -258,8 +258,7 @@ public class TopBarTests
         return true;
     }
 
-    /// <summary>Promo 03 and T29: the one-row bar is about 6.5% of the frame's height (T54: main's was 8.8%), and the date
-    /// plate hangs below it, as promo 03's "1936 / Turn 1 / January 1936" plate does (about 8.6% of the height).</summary>
+    /// <summary>Nine meters use the bounded stacked tier at Full HD, including the raised-font windows.</summary>
     [UnityTest]
     public IEnumerator NineMetersUseTheStackedBarAtFullHd()
     {
