@@ -18,7 +18,11 @@ def validate(paths):
     errors, unique = [], set()
     for path in paths:
         p = Path(path)
-        resolved = p.resolve()
+        try:
+            resolved = p.resolve()
+        except RuntimeError as exc:   # a symlink loop on Python 3.11 and 3.12 (3.13+ leave it to Image.open's OSError)
+            errors.append(f'{p}: cannot read image ({exc})')
+            continue
         if resolved in unique:
             errors.append(f'{p}: duplicate path (does not count as another screenshot)')
             continue
@@ -27,7 +31,8 @@ def validate(paths):
             with Image.open(p) as image:
                 width, height = image.size
                 image.verify()
-        except (OSError, ValueError, UnidentifiedImageError) as exc:
+        # DecompressionBombError: over twice Pillow's pixel limit, which stays on; refused like any unreadable file
+        except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
             errors.append(f'{p}: cannot read image ({exc})')
             continue
         if width < 1920 or height < 1080:
