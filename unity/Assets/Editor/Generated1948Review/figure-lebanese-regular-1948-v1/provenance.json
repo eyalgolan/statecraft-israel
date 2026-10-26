@@ -1,0 +1,32 @@
+{
+  "asset": "figure-lebanese-regular-1948-v1",
+  "source_number": 21,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "b84b4e45e954fdf9bcdd568caf761bb763f7a5b4945957fe54ec9bde8bde8748",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "files": {
+    "figure-lebanese-regular-1948-v1.fbx": "53472487650c6a7009a9f399ea0dad0a294a611224d8492895cc850ffbf54ce5",
+    "figure-lebanese-regular-1948-v1_basecolor.jpg": "b629a5dabcf0959265e335b8192c4b4499758d26744de486c9294b4aa07254e4"
+  },
+  "provider_model_id": "6f415898-3172-4e42-9824-133a31c66a04",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 6948,
+  "bones": 67,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-lebanese-regular-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-lebanese-regular-1948-v1/validation.json"
+}

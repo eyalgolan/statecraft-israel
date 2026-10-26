@@ -1,0 +1,289 @@
+[
+  {
+    "number": "17",
+    "id": "figure-egyptian-infantry-1948-v1",
+    "glb_bytes": 4800332,
+    "glb_sha256": "7470a17c90b62af78ad225aaa2073c05686748f39819d46089d57ac831b66ab5",
+    "source_animation_count": 0,
+    "source_vertices": 8984,
+    "source_triangles": 7282,
+    "source_bones": 65,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 4266167,
+        "sha256": "94d2e98fbccad98a7fee34fa4aefe3abfcc8a6f2f68dfb5dbd53fabc153e7b60",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-17-retargeted.blend",
+    "blend_bytes": 17473855,
+    "blend_sha256": "aca8d34cba31c46f0d297aeeeb5569a38df265ba40c13a713844e287f71de858",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "18",
+    "id": "figure-syrian-infantry-1948-v1",
+    "glb_bytes": 5593764,
+    "glb_sha256": "014f00a2bc50b1dbe9915af46e5caada48637b71aa4986b8a9d14d34055c1f89",
+    "source_animation_count": 0,
+    "source_vertices": 8701,
+    "source_triangles": 7616,
+    "source_bones": 65,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 5072679,
+        "sha256": "41d39e1ad895fc80a7894bde8ad2daf8f987a154c6b587e8c293a6b86987dfb1",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-18-retargeted.blend",
+    "blend_bytes": 18286958,
+    "blend_sha256": "06160267e077516b82803ba423b2b45cf1a904448f2fb9789a0477affeab1c3a",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "19",
+    "id": "figure-ala-infantry-1948-v1",
+    "glb_bytes": 5845852,
+    "glb_sha256": "ae1132515c83100e1af3d0bef52d72a031f4b8ea6defa32d6046ec2dbd148f20",
+    "source_animation_count": 0,
+    "source_vertices": 9239,
+    "source_triangles": 7480,
+    "source_bones": 65,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 5297419,
+        "sha256": "6e30145f5479c83e46684de51785ae1ec100508c787b520a60822d7c65fd1f72",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-19-retargeted.blend",
+    "blend_bytes": 18518446,
+    "blend_sha256": "60dbf43e221d816171de567fe07c64ae3701ee6f09628832e17fc91fe56d1226",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "20",
+    "id": "figure-iraqi-infantry-1948-v1",
+    "glb_bytes": 3947336,
+    "glb_sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8",
+    "source_animation_count": 0,
+    "source_vertices": 4859,
+    "source_triangles": 7569,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 3625933,
+        "sha256": "cb3a62455a0764e66aac0c7fa14117ae69797239ff2577dae1bca6ee2fe4a1a1",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-20-retargeted.blend",
+    "blend_bytes": 16815972,
+    "blend_sha256": "7d28e00626e94cf34315e535a9a352b6e37b8ac110a3f455a917d6d26c568560",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "21",
+    "id": "figure-lebanese-regular-1948-v1",
+    "glb_bytes": 4069460,
+    "glb_sha256": "b84b4e45e954fdf9bcdd568caf761bb763f7a5b4945957fe54ec9bde8bde8748",
+    "source_animation_count": 0,
+    "source_vertices": 4825,
+    "source_triangles": 6948,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 3753565,
+        "sha256": "b629a5dabcf0959265e335b8192c4b4499758d26744de486c9294b4aa07254e4",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-21-retargeted.blend",
+    "blend_bytes": 16921015,
+    "blend_sha256": "a389762608ae629b65e37c767a28659eb2d2b90da91c16c33683134d856caae1",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "22",
+    "id": "figure-bedouin-civilian-1948-v1",
+    "glb_bytes": 5392004,
+    "glb_sha256": "941d0f7e435b238ee8098abc4be665dec62e34a9b4cd3d824c5fb45385f01c88",
+    "source_animation_count": 0,
+    "source_vertices": 8395,
+    "source_triangles": 7306,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 4888497,
+        "sha256": "03652a0eb90e4ca4253cf47959c5234d716abafb621f5ce4edd0322c1de98548",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "figure-bedouin-civilian-1948-v1-retargeted.blend",
+    "blend_bytes": 18137740,
+    "blend_sha256": "23a50c5fb2056afa8d49538000d927ef7bbec63bf4c8fa7e3b74bb547874e03d",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  {
+    "number": "24",
+    "id": "figure-local-arab-irregular-1948-v1",
+    "glb_bytes": 5363936,
+    "glb_sha256": "9cc53176b1c00a41ea7d9afc7712aa3aecc0de11247a1abe1f7bdab1e9a387d7",
+    "source_animation_count": 0,
+    "source_vertices": 4997,
+    "source_triangles": 7508,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 5035661,
+        "sha256": "98312219d48113d69303e7f37112736ca277114da4dfb2f957e2b98835bb2841",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "figure-local-arab-irregular-1948-v1-retargeted.blend",
+    "blend_bytes": 18224391,
+    "blend_sha256": "ba65b9fa3aa81c1d381786f1e8f9efa867b49aca7cad424490c80a161689a2d1",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  }
+]
