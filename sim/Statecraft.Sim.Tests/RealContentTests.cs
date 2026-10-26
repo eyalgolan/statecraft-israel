@@ -176,7 +176,8 @@ public class RealContentTests
         // #939's cards also need the separate AlternateUnsigned sign-off before a shareable build.
         // Other records keep the gate.
         // burma_road_complete left them with the owner's sensitivity review of its text, 21 Oct 2026 (#791).
-        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure", "railway_complete" };
+        // railway_complete left them after a person's read of its two newspaper pages and the booklet, 25 Oct 2026 (#1410).
+        var draftEvents = new[] { "first_new_yishuv", "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
         Assert.Equal(draftEvents, C.Events.Where(e => e.Status == "draft").Select(e => e.Id).OrderBy(id => id));
         // A sensitive event submitted fact-checked waits here for the owner's sensitivity review; the maintainer sets
         // sensitivity-reviewed and empties this list. reparations_vote (#1564) left it on 25 Oct 2026 ("Approve all three", #1575).

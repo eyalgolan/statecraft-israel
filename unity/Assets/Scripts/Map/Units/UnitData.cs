@@ -132,6 +132,13 @@ namespace Statecraft.Game.Map.Units
         [YamlIgnore] public bool NameHeReviewGiven { get; private set; }
         string? nameHeReview;
         public string Number { get; set; } = "";
+        /// <summary>The number in Hebrew (#1219 item 2), shown only in the Hebrew card's subtitle; the English
+        /// <see cref="Number"/> where absent. Sourced and agent-checked until the native read (#564), as the other
+        /// Hebrew card texts (#558, #1292).</summary>
+        [YamlIgnore] public UnitHebrewText NumberHebrew { get; } = new UnitHebrewText();
+        public string? NumberHe { get => NumberHebrew.Text; set => NumberHebrew.Text = value; }
+        public List<UnitSource>? NumberHeSources { get => NumberHebrew.Sources; set => NumberHebrew.Sources = value; }
+        public string? NumberHeReview { get => NumberHebrew.Review; set => NumberHebrew.Review = value; }
         public string Service { get; set; } = "";
         /// <summary>Whose formation it is (<see cref="UnitData.Sides"/>): the token flies that side's flag where one is
         /// sourced (<see cref="UnitFlags"/>).</summary>
@@ -190,10 +197,11 @@ namespace Statecraft.Game.Map.Units
             foreach (var s in FactSources()) yield return s;
         }
 
-        /// <summary>The row's Hebrew card texts: its anchors' places and since dates, its formed date (#1292), its first
-        /// commander and its sector (#558).</summary>
+        /// <summary>The row's Hebrew card texts: its number (#1219), its anchors' places and since dates, its formed
+        /// date (#1292), its first commander and its sector (#558).</summary>
         IEnumerable<UnitHebrewText> HebrewTexts()
         {
+            yield return NumberHebrew;
             foreach (var a in Anchors) { yield return a.PlaceHebrew; yield return a.SinceHebrew; }
             yield return FormedHebrew;
             yield return FirstCommanderHebrew;
@@ -306,6 +314,7 @@ namespace Statecraft.Game.Map.Units
                 ValidateHebrewText(u.FormedHebrew, "formed", u.Formed, at);
                 ValidateHebrewText(u.FirstCommanderHebrew, "first_commander", u.FirstCommander, at);
                 ValidateHebrewText(u.SectorHebrew, "sector", u.Sector, at);
+                ValidateHebrewText(u.NumberHebrew, "number", u.Number, at);
                 if (u.Echelon != null && !((IList<string>)Echelons).Contains(u.Echelon)) throw new InvalidDataException($"{at} has unknown echelon '{u.Echelon}' ({string.Join(", ", Echelons)})");
                 if (u.Side != Israel && (u.Echelon == null || u.Strength == null)) throw new InvalidDataException($"{at} is a row of {u.Side}, so it needs an echelon and a strength (#570)");
                 if (u.Strength != null)

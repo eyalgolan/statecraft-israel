@@ -38,6 +38,12 @@ namespace Statecraft.Game.UI
         readonly System.Func<PlacedToken?> selectedUnit;
         readonly System.Action? unitDone;
         bool unitMode;
+        int? pioneer;
+        GameSession? pioneerSession;
+        readonly VisualElement pioneerList;
+        readonly Button pioneerReturn;
+        readonly System.Action onPioneerReturn;
+        readonly System.Action<int>? selectPioneer;
         /// <summary>Lights the hexes the Move or Attack pick offers on the map (none: clears them); null: nothing is drawn.</summary>
         readonly System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable;
         /// <summary>Draws a multi-turn go-to route and its arrival-turn numbers; null keeps picking functional without it.</summary>
@@ -95,10 +101,15 @@ namespace Statecraft.Game.UI
             System.Func<string, (int q, int r)>? townHex = null, IReadOnlyDictionary<string, string>? townNamesHe = null,
             System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null, System.Func<int, string?>? unitName = null,
             System.Action? unitDone = null,
-            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null)
+            System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null, System.Action<int>? selectPioneer = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
             orders = panel.Q<VisualElement>("info-orders");
+            this.selectPioneer = selectPioneer;
+            pioneerList = panel.Q<VisualElement>("info-pioneers");
+            pioneerReturn = panel.Q<Button>("info-pioneer-return");
+            onPioneerReturn = ReturnPioneer;
+            pioneerReturn.clicked += onPioneerReturn;
             this.clearSelection = clearSelection;
             onCancel = e => { if (!e.isPropagationStopped && Escape()) e.StopPropagation(); };
             panel.RegisterCallback(onCancel);
@@ -156,7 +167,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
+        public void Dispose() { pioneerReturn.clicked -= onPioneerReturn; pioneerList.Clear(); panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -181,7 +192,10 @@ namespace Statecraft.Game.UI
         public (int q, int r)? Selected { get; private set; }
 
         /// <summary>True while the panel shows a unit's card.</summary>
-        public bool ShowsUnit => unitMode && selectedUnit() != null;
+        public bool ShowsUnit => pioneer != null || (unitMode && selectedUnit() != null);
+
+        /// <summary>The pioneer group whose card the panel shows, or null (the advisor puts it back, GameRoot's keepSelection).</summary>
+        public int? Pioneer => pioneer;
 
         /// <summary>True while a screen covers the panel (a wide screen, or any screen in the two-row HUD): a map click
         /// then changes neither the hex nor the unit shown (#210; units-in-play merge note).</summary>
@@ -202,7 +216,7 @@ namespace Statecraft.Game.UI
             if (Covered) return;   // covered (#210)
             if (unitMode || Selected != (q, r)) projects.RemoveFromClassList(GddHexPanel.OpenClass);   // a newly chosen hex starts with its city projects folded
             EndPick();
-            unitMode = false; Selected = (q, r);
+            pioneer = null; pioneerSession = null; unitMode = false; Selected = (q, r);
             Render();
         }
 
@@ -211,7 +225,7 @@ namespace Statecraft.Game.UI
         {
             if (Covered) return;
             EndPick();
-            unitMode = true; Selected = null; Render();
+            pioneer = null; pioneerSession = null; unitMode = true; Selected = null; Render();
         }
 
         /// <summary>Shows nothing selected (the hint), as before the first click; ignored while covered.</summary>
@@ -219,7 +233,54 @@ namespace Statecraft.Game.UI
         {
             if (Covered) return;
             EndPick();
-            unitMode = false; Selected = null; Render();
+            pioneer = null; pioneerSession = null; unitMode = false; Selected = null; Render();
+        }
+
+        void RequestPioneer(int id)
+        {
+            if (Covered || !panel.enabledInHierarchy) return;
+            if (selectPioneer != null) selectPioneer(id); else ShowPioneer(id);
+        }
+
+        public void ShowPioneer(int id)
+        {
+            if (Covered || !panel.enabledInHierarchy || !bridge.State.Units.TryGetValue(id, out var u) || !Projects.IsPioneer(u.Type)) return;
+            EndPick();
+            showReachable?.Invoke(System.Array.Empty<(int q, int r)>());
+            showRoute?.Invoke(System.Array.Empty<(int q, int r, int turn)>());
+            clearSelection?.Invoke();
+            unitMode = false; pioneer = id; pioneerSession = bridge.Session; Selected = (u.Q, u.R);
+            projects.RemoveFromClassList(GddHexPanel.OpenClass);
+            Render();
+            if (presses.ByKeyboard) FocusReturn.ToOrWithin(pioneerReturn, mapFocus);
+        }
+
+        bool PioneerWorkOrdered(int id) => GddHexPanel.PioneerReturnOrder(bridge, id).WorkOrdered;
+
+        /// <summary>The card's own checks (the card opened in this session, the game not over, the panel neither disabled
+        /// nor covered) around the rows' guarded Return.</summary>
+        bool CardCanAct => pioneerSession != null && pioneerSession == bridge.Session && bridge.State.GameOver == null
+            && panel.enabledInHierarchy && !Covered;
+
+        bool CanReturnPioneer(int id) => CardCanAct && GddHexPanel.PioneerReturnOrder(bridge, id) is (true, false);
+
+        void ReturnPioneer()
+        {
+            if (pioneer is int id && CardCanAct) GddHexPanel.PioneerReturnOrder(bridge, id, submit: true);
+        }
+
+        void RenderPioneerList(int q, int r)
+        {
+            var groups = bridge.State.Units.Values.Where(u => Projects.IsPioneer(u.Type) && u.Q == q && u.R == r).OrderBy(u => u.Id).ToList();
+            if (groups.Count == 0) return;
+            pioneerList.style.display = DisplayStyle.Flex;
+            foreach (var u in groups)
+            {
+                var id = u.Id;
+                var b = new Button(() => RequestPioneer(id)) { name = "pioneer-select-" + id.ToString(CultureInfo.InvariantCulture),
+                    text = text.Format("pioneer.card.open", GddHexPanel.Group(text, bridge.State, id)) };
+                b.AddToClassList("pioneer-link"); pioneerList.Add(b);
+            }
         }
 
         /// <summary>The shown unit's sim id and the hexes its Move can go to (Movement.Reachable: the sim's answer, spec section
@@ -556,8 +617,13 @@ namespace Statecraft.Game.UI
 
         public void Render()
         {
+            var focused = presses.ByKeyboard ? panel.focusController?.focusedElement as VisualElement : null;
+            var keepPioneerFocus = focused != null && (pioneerList.Contains(focused) || focused == pioneerReturn);
+            var focusName = keepPioneerFocus ? focused!.name : null;
             clickThrough = null;
             RenderLines();
+            if (keepPioneerFocus)
+                FocusReturn.ToOrWithin(panel.Q(focusName), mapFocus, pioneerList);
             panel.EnableInClassList(GddClass, gdd.style.display.value == DisplayStyle.Flex);
             // A fact row shows only when its line has something to say (an empty row would leave a lone sign).
             foreach (var (row, line) in rows)
@@ -567,6 +633,13 @@ namespace Statecraft.Game.UI
         void RenderLines()
         {
             var c = bridge.Content; var s = bridge.State;
+            pioneerList.Clear(); pioneerList.style.display = DisplayStyle.None;
+            pioneerReturn.style.display = DisplayStyle.None;
+            if (pioneer is int selected && (pioneerSession != bridge.Session || !s.Units.TryGetValue(selected, out var live) || !Projects.IsPioneer(live.Type)))
+            {
+                if (pioneerSession != bridge.Session) Selected = null;
+                pioneer = null; pioneerSession = null;
+            }
             var camp = campButton; var housing = housingButton;
             var unit = unitMode ? selectedUnit() : null;
             // A unit that has left the state (destroyed or surrendered in its own attack) closes its card; a row with no
@@ -629,7 +702,24 @@ namespace Statecraft.Game.UI
             }
             reinforceButton.style.display = reinforce != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (reinforce is Reinforce offer) reinforceButton.text = text.Format("unit.order.reinforce", offer.Count);
-            panel.EnableInClassList(UnitClass, unit != null);
+            panel.EnableInClassList(UnitClass, unit != null || pioneer != null);
+            if (pioneer is int pid)
+            {
+                var card = PioneerCard.For(c, s, text, pid, TownName);
+                Selected = (s.Units[pid].Q, s.Units[pid].R);
+                panel.EnableInClassList("info-empty", false);
+                title.text = card.Title; subtitle.text = card.Track;
+                settlements.text = card.Location + "\n" + card.Status;
+                if (Projects.IsBusy(s, pid)) settlements.text += "\n" + text["pioneer.card.stop_first"];
+                region.text = placement.text = "";
+                reason.text = PioneerWorkOrdered(pid) ? text["pioneer.card.work_ordered"] : s.GameOver != null ? text["order.game_over"] : "";
+                ShowLocalities(""); ShowThumb(null);
+                camp.style.display = housing.style.display = DisplayStyle.None;
+                pioneerReturn.text = text.Format("pioneer.return", card.Title);
+                pioneerReturn.style.display = DisplayStyle.Flex; pioneerReturn.SetEnabled(CanReturnPioneer(pid));
+                GddHexPanel.Hide(gdd); GddHexPanel.Hide(projects);
+                return;
+            }
             if (unit != null)
             {
                 var card = UnitCard.For(unit.Value, s, text, c.IsGdd, c, townNamesHe);
@@ -690,7 +780,8 @@ namespace Statecraft.Game.UI
             while (part != null && !(part.name is { } pn && (pn.StartsWith("site-part-", System.StringComparison.Ordinal) || pn.StartsWith("corridor-part-", System.StringComparison.Ordinal))))
                 part = part.parent;
             var partName = part?.name;
-            var siteName = GddHexPanel.Render(gdd, projects, bridge, text, q, r, TownName);
+            var siteName = GddHexPanel.Render(gdd, projects, bridge, text, q, r, TownName, RequestPioneer);
+            RenderPioneerList(q, r);
             if (!string.IsNullOrEmpty(keep))
             {
                 // The rebuilt button of the same name; failing that the nearest control that can take the focus, the
