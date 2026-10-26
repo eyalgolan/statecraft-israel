@@ -1,0 +1,47 @@
+{
+  "number": 1,
+  "id": "generated-1948-01-netanya-tiled-house-original",
+  "source_staging_relative": "asset-staging/tripo-local/2026-10-24-pr1379-regen/models/01/pr1379-01-textured-4k-v2.glb",
+  "tripo_model_id": "082e4e66-9cbc-47c6-9bd2-176c730ad7c4",
+  "tripo_settings": "Smart Mesh P2.0, Quad, polycount 5000, Private, 1 generation; texture regenerated in Studio, exported GLB at 4k",
+  "reference_image": "01-ref-v1_b95d5b92.jpeg (GPT Image 2.5 in Tripo Studio, from the original concept)",
+  "regenerated": "2026-10-24",
+  "source_glb_sha256": "badfa774b120f0eecaeff05af3ae3a1e9222da582bce7c5de5e949d7e1920bfb",
+  "source_glb_bytes": 5127816,
+  "source_triangles": 9324,
+  "source_clips": [],
+  "skins": 0,
+  "embedded_image_sha256": "6629955da6740b2138ca0fd975dd33c9db681bbe266d218c8c86ffc0fc6da2b2",
+  "embedded_dimensions": [
+    4096,
+    4096
+  ],
+  "map_extraction": "Exact embedded image bytes; no resize/recompression/atlas",
+  "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
+  "decimation": false,
+  "local_geometry_repairs": false,
+  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "source_caveats": "Regenerated 24 October 2026 at the owner's request on #1379; one closed hipped roof replaces the provider original with roof openings.",
+  "fbx_sha256": "e51a8a4e0c65ea6fe7f752dbc81376622242697d2f5ea509690c7b71c6b2c355",
+  "compatibility_export_triangles": 9324,
+  "triangle_corner_positions_preserved": true,
+  "max_vertex_error": 1.3328003944934608e-07,
+  "max_uv_error": 0.0,
+  "raw_fbx_corner_normal_error": 0.0,
+  "blender_reimport_corner_normal_error": 0.00025145480685750954,
+  "source_clips_preserved": true,
+  "export_unit_metadata": "FBX_SCALE_UNITS, apply_unit_scale=True, no vertex transform/centering/decimation/repair",
+  "source_material": {
+    "metallic": 0,
+    "roughness": 0.8999999761581421,
+    "base_colour_factor": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "double_sided": true
+  },
+  "unity_material_scalar_mapping": "Metallic=source metallic; Smoothness=1-source roughness; white base factor; exact embedded colour map; Cull=Both only when source doubleSided is true",
+  "source_archive_path": "asset-sources/generated-1948/generated-1948-01-netanya-tiled-house-original/generated-1948-01-netanya-tiled-house-original.glb"
+}

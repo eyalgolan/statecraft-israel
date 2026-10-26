@@ -102,6 +102,42 @@ gives the same day.
   Ga'ash, Harutzim, Kfar Aviv, Neve Yarak, Nitzanei Oz, Pedaya, Petahya, Savyon, Sha'alvim and Shoshanat HaAmakim;
   1958, Bnei Ayish, Ganei Hadar, Givat Shapira and Kerem Ben Shemen.
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 as the second part of the pass that started in the Negev, Ashkelon and northern notes
+(#27, owner comment of 24 Oct). Everything below was run or opened on that day, and nothing above is changed. The JTA
+archive was searched through the WordPress REST endpoint the site itself serves,
+`https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<from>T00:00:00&before=<to>T00:00:00&per_page=100&page=<n>`
+(the same index as the site search at `https://www.jta.org/?s=<query>`, but with a date window and the full item text).
+It stems words ("Yearim" also returns items about "years"), so the item TEXT of every result was searched by a script
+for the place name, and only the items it printed were read; the other results were not read by eye. The Gvati text
+below is the Ben-Yehuda edition of his vol. 2 chapters (https://benyehuda.org/read/14684), the same URL the note
+already uses for the appendix; the chapter text was opened on 26 Oct and searched for each name. No exact founding
+day was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Aseret (row 20).** Day still [GAP]. New: Gvati's chapter text records the land step before the village:
+  "ב־1950 מסרה הקק״ל לחברת ״רסקו״ שטח של 12000 דונם מאדמת הכפר הערבי בשיט. חברת ״רסקו״ הקימה במקום זה את המפעל
+  ההתיישבותי האזורי גדרות" and says 5 villages were settled by immigrants from England, Poland, Egypt and other
+  countries. It does not name Aseret or the rural centre, so it does not date the 1954 founding. [V, agent read 26 Oct 2026; a person's check pending]
+  JTA, query `Aseret`, 1951-01-01 to 1957-12-31: 2,029 results, 21 pages read, 0 items whose text contains
+  "Aseret"; query `Gederot`, same window: 325 results, 4 pages, 0 items containing "Gederot". A WebSearch (Hebrew
+  query on the founding day of Aseret, 26 Oct) returned only Wikipedia, a Knesset committee PDF and local pages, none
+  opened here, so no day.
+- (26 Oct) **Givat Haim (Ihud) (row 2).** Day still [GAP]. Gvati's chapter text on the Meuhad split does not
+  name Givat Haim. It does date the movement's founding conference: "בשמחת-תורה תשי״ב (21.10.1951), נתכנסה בעמק
+  הירדן ועידת הייסוד של איחוד הקבוצות והקיבוצים" (the date "21.10.1951" as printed; [C]: Simchat Torah 5712 fell on 22 Oct 1951 in Israel, 21 Oct being Hoshana Raba, our computation), and says that in 5 large settlements with no clear majority "חולקו"
+  (were divided) and the minority built a new settlement beside the old one. That is context for 1952, not a
+  date for this kibbutz. [V, agent read 26 Oct 2026; a person's check pending]
+  JTA, query `Givat Haim`, 1951-01-01 to 1957-12-31: 9 results, 1 page, 4 items whose text names the place. The
+  relevant one is the bulletin dated 1952-05-28 (no. 104, http://pdfs.jta.org/1952/1952-05-28_104.pdf, p. 3, dateline on the page image "TEL AVIV, May 27. (JTA)", Ben Gurion "today expressed": 27 May 1952, derived; [S], agent read 26 Oct 2026), "Ben Gurion Deplores Split in Kibbutzim, Talks of Hardships"
+  (https://www.jta.org/archive/ben-gurion-deplores-split-in-kibbutzim-talks-of-hardships): he was "speaking at the dedication of a new
+  kibbutz whose members are Mapai Party followers who left Kfar Szold and Givat Haim, where Mapam settlers were in the
+  majority". It does not name the new kibbutz, so that it is this one is our reading, which fits the founders
+  quoted above from Hebrew Wikipedia. The event date is not resolved (the original PDF was not opened; the bulletin
+  date is 28 May 1952), so the day stays [GAP]. [V, agent read 26 Oct 2026; a person's check pending] The other three items are
+  not about the founding: 1953-02-25 (an obituary, died at Givat Haim), 1953-08-19 (a municipal jurisdiction dispute)
+  and 1957-01-21 (a conference held there).
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.

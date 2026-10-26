@@ -84,6 +84,22 @@ gives the same day.
 - **Localities founded 1952-56 that no longer exist, or that the CBS file does not list**, were not searched for
   systematically. **[GAP]** One turned up in the Wikipedia categories and is noted below (Hemdat Yamim).
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 for the owner's "Research part open" comment on #27 (24 Oct). Everything below was run or
+opened on that day, and nothing above is changed. The JTA site search is `https://www.jta.org/?s=<query>`: results
+are in relevance order, 10 per page, and the item's date is printed in the listing. Archive items are the
+`/archive/` ones; I read their listed dates and titles only unless a line says I opened one. No exact founding day
+was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Migdal HaEmek (row 7) and Hazor HaGelilit (row 13).** Searched again and not found: a founding day.
+  Read: JTA search `Migdal Haemek` (555 results) and `Migdal Ha'emek` (106): pages 1 to 4 each, no archive item
+  dated 1952-57. `Hazor Galilee` (43 results, pages 1 to 4): three items dated 1955-08-03, 1955-10-10 and
+  1957-10-16, by title about the archaeological excavation, the explorers' convention and Sinai, none opened and
+  none a source for the ma'abarot. Days stay **[GAP]**.
+- (26 Oct) **Israel Government Year-Book 5719 [1958]** (archive.org item `israelgovernment0000vari`): its metadata
+  says `access-restricted-item: true` and the plain-text download returned HTTP 302 (not followed). Not read.
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.

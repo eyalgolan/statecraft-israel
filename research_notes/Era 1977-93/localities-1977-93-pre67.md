@@ -32,6 +32,11 @@ lines, and for each: the founding date (and what the date marks), coordinates fr
   from a contemporaneous or official record**, except where the row's text says otherwise.
 - **Flagged, not removed:** rows whose site or history touches the Latrun area, the Green Line, Sinai or an earlier
   settlement (section "Flags"). The note does not decide whether they belong.
+- **Second pass (26 Oct 2026).** Section "Second pass on the [GAP] rows" below. Three Official Gazette (Yalkut
+  HaPirsumim) name lists were opened; two of them (issues 2633 and 3165) carry a printed name entry for 20 of the 112 rows.
+  An entry dates a naming window, never a founding day, so no founding day is closed. The Gazette's regional council list
+  places Kefar Rut and Shilat in the Mateh Binyamin Regional Council (a fact about the list; the position against the
+  1949 line stays open). The "Mitzpeh" near Mi'ilya of July 1979 is still not identified.
 
 ## Conventions and tags
 
@@ -234,7 +239,7 @@ bulletin; "dateline" is what the item itself prints. JTA is press, so [S]. None 
 
 Other items that name a locality of the table in 1977-1993 and say nothing about its founding (read as web text of the item page; not opened as PDF): Avtalyon (22 Jan 1986: "a new settlement, Avtalyon, is to be completely surrounded by greenery", JNF tree planting; compare Hebrew Wikipedia "הממשלה החליטה על הקמת היישוב בדצמבר 1983"), Elifaz (21 Jul 1986, a fish farm "began in 1984 to breed the sea bream"), Telalim and Retamim (27 Feb 1984, swimming pools "in kibbutzim Telalim and Retamim"), Newe Shalom (26 Dec 1984, a Ford Foundation grant; 7 Apr 1987), Lotan (10 Aug 1989, an infiltration "of Kibbutz Lotan"). These show a place existed on the date; they are not founding records.
 
-Context only, not tied to a row: the JTA items of 16 Oct 1980 and 14 May 1980 describe the lookout (mitzpim) programme in general ("small settlements (mitzpim –lookout posts housing 15 to 25 families) ... were quickly established throughout the Galilee", 16 Oct 1980). Items of 11 and 17 July 1979 report a road to "a new lookout post settlement called Mitzpeh" near the village of Mailia; the item does not say which locality it is and I do not identify it. **[GAP]**
+Context only, not tied to a row: the JTA items of 16 Oct 1980 and 14 May 1980 describe the lookout (mitzpim) programme in general ("small settlements (mitzpim –lookout posts housing 15 to 25 families) ... were quickly established throughout the Galilee", 16 Oct 1980). Items of 11 and 17 July 1979 report a road to "a new lookout post settlement called Mitzpeh" near the village of Mailia; the item does not say which locality it is and I do not identify it. **[GAP]** (26 Oct) Searched again and not found. See "Second pass on the [GAP] rows", item 3.
 
 
 ## Day and month statements in Wikipedia
@@ -377,7 +382,7 @@ Recorded factually, for the owner's sensitivity review. No judgement is made her
   same part of the Jerusalem sub-district in the CBS file; Hebrew Wikipedia (oldid 44104284), section "סטטוס טריטוריאלי": "נווה שלום ממוקם ב"שטח הפקר", שהיה אזור מפורז שלא בשליטתן של מדינת ישראל או ירדן טרם 1967. ישראל מעולם לא סיפחה רשמית שטח זה."
   (Newe Shalom is located in "no-man's-land", a demilitarised area not under the control of Israel or Jordan before 1967;
   Israel never formally annexed it). These are claims in Wikipedia text, not a map check, so the position of each site against
-  the 1949 line stays open. **[GAP]**
+  the 1949 line stays open. **[GAP]** (26 Oct) Narrowed, not closed: see "Second pass on the [GAP] rows", item 1.
 - **Shani.** Hebrew Wikipedia: "בהחלטת ממשלה מאפריל 1984 נקבע כי היישוב יקבל שירותים ממועצה אזורית הר חברון, למרות שרק
   כ־100 דונם מתוך 430 עליהם הוא משתרע נמצאים מעבר לקו הירוק" (by a government decision of April 1984 the locality gets
   its services from the Mount Hebron regional council, although only about 100 of the 430 dunams on which it extends
@@ -385,7 +390,7 @@ Recorded factually, for the owner's sensitivity review. No judgement is made her
 - **Mahane Yattir.** Hebrew Wikipedia ties its history to a Gush Emunim settlement core of August 1979 for the Mount
   Hebron area ("גרעיני הר חברון"); the CBS file lists the camp in the Beer Sheva subdistrict. [S]
 - **Modi'in-Maccabim-Re'ut.** Its CBS row (Ramla subdistrict, municipality) merges localities (CBS intro, section 12).
-  English Wikipedia (oldid 1381718361): "A small part of the city (the Maccabim neighborhood) is not recognized by the European Union (EU) as being in Israel, as it lies in what the 1949 Armistice Agreement with Jordan left as a no man's land". [S] I did not check where Maccabim and Re'ut lie against the Green Line on a map. **[GAP]**
+  English Wikipedia (oldid 1381718361): "A small part of the city (the Maccabim neighborhood) is not recognized by the European Union (EU) as being in Israel, as it lies in what the 1949 Armistice Agreement with Jordan left as a no man's land". [S] I did not check where Maccabim and Re'ut lie against the Green Line on a map. **[GAP]** (26 Oct) Not searched again in this pass; no new source was opened for this row.
 - **Sinai origin (CBS year may follow a re-settling inside the lines).** Holit (JTA J3 and J7; Gvati row "נחל חולית",
   region "פיתחת רפיח"); Netiv HaAsara (Hebrew: set up "כהתיישבות בחבל ימית" and rebuilt in 1982 at its present place);
   Talme Yosef (English: "established in 1982 by former residents of Talmei Yosef, an Israeli settlement in Sinai");
@@ -410,7 +415,7 @@ Recorded factually, for the owner's sensitivity review. No judgement is made her
   The file has no Gaza Strip or Sinai rows.
 - **Localities with an empty CBS year of founding** (398 rows). Among them are Hura, Kuseife, Laqye, Ar'ara and Rahat
   (all code 250 to 270 in the file) and Tel Sheva. Whether any of them was founded between 1977 and 1993 is not
-  stated by the file, so none is in the table and I make no claim about any of them. **[GAP]**
+  stated by the file, so none is in the table and I make no claim about any of them. **[GAP]** (26 Oct) Not searched again in this pass; no new source was opened for these localities.
 - **Caravan sites and lookout outposts that never became a locality of the file** are outside the topic.
 
 ## What was not done
@@ -420,20 +425,125 @@ Recorded factually, for the owner's sensitivity review. No judgement is made her
   Gazette (Reshumot), Davar, Maariv, Hamashkif, the Jewish Agency and Settlement Division records and the minutes of
   the ministers' settlement committee were not searched or not reached: the Knesset site has no search by locality
   and I did not browse its 1977-93 plenum minutes, and the National Library, State Archives, gov.il and mfa.gov.il
-  returned HTTP 403 to `curl` from this box on 2026-10-25. **[GAP]**
+  returned HTTP 403 to `curl` from this box on 2026-10-25. **[GAP]** (26 Oct) Partly searched: the Official Gazette name lists of issues 2633 and 3165 were read (see "Second pass on the [GAP] rows"); no Knesset record, ministers' committee minutes, Davar or Maariv page was opened. No founding day is closed.
 - **The day of going onto the land versus other steps** is stated only where a Wikipedia article says so (see "Day and
   month statements"). Where it says nothing, the row's date has no stated meaning. **[GAP]**
 - **Wikipedia citations unopened.** The Hebrew articles cite Davar, Maariv, Nahal publications and Gush Emunim
   histories; none was opened.
 - **Coordinates are not checked against a second official source** (Survey of Israel or GeoNames). The English
-  Wikipedia cross-check is a consistency test of my reading of the CBS field, not a second source. **[GAP]**
+  Wikipedia cross-check is a consistency test of my reading of the CBS field, not a second source. **[GAP]** (26 Oct) Narrowed for 20 rows: the Gazette prints a grid reference for each ("Second pass on the [GAP] rows", item 5). That comparison is also a consistency test, not an independent source.
 - **Membership rests on the CBS year.** A locality whose CBS year is outside 1977-1993 but whose first outpost falls
   inside the window (or the reverse) is not in the table, except where a row's sources named one. Examples in the
   table: Holit, Nizzane Sinay, Eshhar (Hebrew: a Nahal outpost of 30 April 1979 at the site of today's Eshbal).
-  **[GAP]**
+  **[GAP]** (26 Oct) Not searched again in this pass; no new source was opened for this.
 - **Town-level history (Harish, Shoham, Metar, Lehavim, Kefar Weradim, Kokhav Ya'ir, Qesaryya, Modi'in-Maccabim-Re'ut)**
-  was read only as far as the Wikipedia statements above; no municipal, CBS-history or Knesset record was opened. **[GAP]**
+  was read only as far as the Wikipedia statements above; no municipal, CBS-history or Knesset record was opened. **[GAP]** (26 Oct) Not searched again in this pass; no new source was opened for these towns.
 
+
+## Second pass on the [GAP] rows (26 October 2026)
+
+Second pass on the [GAP] statements of this note, run on **26 October 2026** (UTC) from the statecraft box. Tools: Python
+`urllib`, `curl`, `pdftotext`, Ghostscript and Tesseract (English only) for the local reading, the built-in WebSearch (no
+Tavily key on this box) for one query. Every Hebrew and English quote below was read from a page image (Ghostscript
+`pnggray`, 200 dpi, cropped and enlarged), not from a text layer. Tag for what a printed page says: **[V, agent read 2026-10-26; a person's check pending]**
+(it says nothing about whether the printed value is right). JTA items are press and stay [S].
+
+**Sources opened (Internet Archive copies of nevo.co.il files; `urllib` with the repository User-Agent):**
+
+- **Y1** = Yalkut HaPirsumim 2633, 10 June 1980 (26 Sivan 5740),
+  https://web.archive.org/web/20131224094153id_/http://www.nevo.co.il/Law_word/law10/yalkut-2633.pdf (704,197 bytes, SHA-256 prefix `e3bcd6b7`).
+  Printed page 1818 (PDF page 2): "בהתאם להודעה בדבר מינוי ועדת השמות הממשלתית, מתפרסמת בזה רשימת השמות שנקבעו על ידי הועדה האמורה בפרק הזמן בין י״א בטבת תשכ״ט (1 בינואר 1969) ובין א׳ בתמוז תשל״ט (26 ביוני 1979)" (in accordance with the notice on the appointment of the Government Names Committee, the list of names fixed by the said committee in the period between 11 Tevet 5729, 1 January 1969, and 1 Tammuz 5739, 26 June 1979, is published here). [V, agent read 2026-10-26; a person's check pending] Signed "י״א בטבת תש״ם (31 בדצמבר 1979)", the committee chair.
+- **Y2** = Yalkut HaPirsumim 3165, 24 February 1985 (3 Adar 5745),
+  https://web.archive.org/web/20131005000648id_/http://www.nevo.co.il/Law_word/law10/yalkut-3165.pdf (566,094 bytes, `f40db934`).
+  Printed page 1490 (PDF page 2): "בפרק הזמן שבין א׳ בתמוז התשל״ט (26 ביוני 1979) ובין כ״ב בסיון התשמ״ד (22 ביוני 1984)" (in the period between 26 June 1979 and 22 June 1984). [V, agent read 2026-10-26; a person's check pending]
+- The two files have the same sizes and hash prefixes as the copies recorded in the sibling notes of #165 (`gush-etzion-har-hevron-localities-1978-93.md`, PR #1670). Y1 and Y2 are the same Names Committee lists those notes read; this note reads the entries of its own rows. The third issue those notes use (4012, 4 June 1992) was searched in its text layer only (see S9) and **no entry of it was read**.
+- **What an entry dates.** The Gazette prints each name with its grid reference, the movement or type of the site and the earlier temporary name. It does not print a day for an entry (one exception, item 2, Abbirim). The list dates the naming to the committee's period, not the going onto the land. Where the entry names a site type, the word is the Gazette's.
+
+### 1. Latrun area: Kefar Rut and Shilat (flag [GAP], narrowed)
+
+Y1 printed page 1819 (PDF page 3), entry "מ״א מטה בנימין" (Mateh Binyamin Regional Council): "מועצה המאוגדת בתוכה את היישובים: עפרה, בית אל, הלמיש, גבעון, בית חורון, מבוא חורון, מתתיהו, כפר רות ושילת." (a council that unites within it the localities: Ofra, Beth El, Halamish, Givon, Beth Horon, Mevo Horon, Matityahu, Kefar Rut and Shilat). [V, agent read 2026-10-26; a person's check pending]
+
+The entries of the two rows in the same list (printed pages 1823 and 1827, quoted in the table of item 2) each say "במ״א מטה בנימין" and each give an earlier temporary name of the series "Horon" (Kefar Rut "חורון ג׳", Shilat "חורון ב׳"). The CBS file 2024 lists both in the Ramla subdistrict (table above). The Gazette entries describe council membership and a grid reference; they do not say which side of the 1949 line a site lies on. **No map of the 1949 line was opened, so the position of each site against it stays [GAP].** Tried: the three Gazette issues above and the sources already listed; not opened: any armistice map, Survey of Israel sheet or UN document.
+
+### 2. Name entries for 20 rows (the founding-day [GAP], narrowed to a naming window)
+
+The 20 rows are those whose Hebrew name has an entry in Y1 or Y2 that I read as a page image and identified by name, grid and site type. Entries of other rows may exist in Y1 and Y2 (S9 counts name strings, not entries) and were not read. For each row the entry fixes the name by the end of the period named above: Y1 by 26 June 1979, Y2 between 26 June 1979 and 22 June 1984. It does not say when the site was settled. CBS year and the translations are as in the summary table; translations of the entries are mine. "Printed page" is the number printed at the foot of the page.
+
+| Row | CBS year | Gazette, printed page | Printed entry (excerpt, verbatim) | Gloss (mine) |
+|---|---|---|---|---|
+| Kefar Rut | 1977 | Y1 p. 1823 | נ״צ 1537.1465, מושב של תנועת המושבים, בשפלה הגבוהה (כינוי ארעי קודם: חורון ג׳), במ״א מטה בנימין; על יסוד השם כפר רותה או כפריתא המופיע במפת מידבא, והמזוהה עם ח׳ כפר לוט הסמוכה. | moshav of the Moshavim Movement, in the high Shephelah, earlier temporary name Horon C, in Mateh Binyamin Regional Council; named after Kefar Rutha or Kefarita on the Madaba map, identified with Khirbet Kefar Lut nearby |
+| Shilat | 1977 | Y1 p. 1827 | נ״צ 1525.1473, מושב של תנועת העובד הציוני, בשפלה הגבוהה (כינוי ארעי קודם: חורון ב׳), במ״א מטה בנימין; צליל עברי לשם עתיק. | moshav of the Labour Zionist movement, in the high Shephelah, earlier temporary name Horon B, in Mateh Binyamin Regional Council; a Hebrew sound for an ancient name |
+| Moran | 1977 | Y1 p. 1823 | נ״צ 1872.2583, קיבוץ של תנועת הקיבוץ המאוחד, בגליל (כינוי ארעי קודם: גבעת רמה) | kibbutz of the United Kibbutz movement, in the Galilee, earlier temporary name Giv'at Rama |
+| Lotem | 1978 | Y1 p. 1823 | נ״צ 1836.2540, קיבוץ של תנועת הקיבוץ המאוחד, בגליל (כינוי ארעי קודם: חלזון) | kibbutz of the United Kibbutz movement, in the Galilee, earlier temporary name Halazon |
+| Lappidot | 1978 | Y1 p. 1823 | נ״צ 1770.2665, מושב של תנועת המושבים בגליל (כינוי ארעי קודם: תפן ו׳) | moshav of the Moshavim Movement in the Galilee, earlier temporary name Tefen F |
+| Shekhanya | 1980 | Y1 p. 1827 | נ״צ 1735.2505, מושב של תנועת האיחוד החקלאי, בגליל (כינוי ארעי קודם: שגב ב׳) | moshav of the Agricultural Union movement, in the Galilee, earlier temporary name Segev B |
+| Tuval | 1980 | Y1 p. 1827 | נ״צ 1733.2594, קיבוץ של תנועת איחוד הקבוצות והקיבוצים, בגליל (כינוי ארעי קודם: תפן ב׳) | kibbutz of the Union of Kvutzot and Kibbutzim, in the Galilee, earlier temporary name Tefen B |
+| Moreshet | 1981 | Y1 p. 1823 | נ״צ 1725.2475, מושב של תנועת האיחוד החקלאי, בגליל (כינוי ארעי קודם: שגב ד׳, אשחר) | moshav of the Agricultural Union movement, in the Galilee, earlier temporary names Segev D, Eshhar |
+| Raqqefet | 1981 | Y1 p. 1827 | נ״צ 1751.2511, כפר תעשייתי בגליל (כינוי ארעי קודם: עגב ו׳) | industrial village in the Galilee, earlier temporary name Agav F |
+| Livnim | 1982 | Y1 p. 1823 | נ״צ 1960.2525, מושב של תנועת המושבים, בגליל (כינוי ארעי קודם: רמות לבנים) | moshav of the Moshavim Movement, in the Galilee, earlier temporary name Ramot Livnim |
+| Lotan | 1983 | Y1 p. 1823 | נ״צ 1570.9350, ישוב מתוכנן בערבה (כינוי ארעי קודם: יהל ב׳) | a planned locality in the Arava, earlier temporary name Yahel B |
+| Retamim | 1983 | Y1 p. 1827 | נ״צ 1208.0508, מושב, של תנועת המושבים (כינוי ארעי קודם: אשלים ג׳), במ״א רמת הנגב | moshav of the Moshavim Movement, earlier temporary name Eshlim C, in Ramat HaNegev Regional Council |
+| Kefar Hananya | 1990 | Y1 p. 1823 | נ״צ 1901.2573, מושב של תנועת המושבים של הפועל המזרחי, בגליל; השם היסטורי, מוזכר במשנה שביעית פרק ט׳, ב׳. | moshav of the Moshavim Movement of Hapoel HaMizrachi, in the Galilee; a historical name, mentioned in the Mishnah, Shevi'it chapter 9, 2 |
+| Abbirim | 1980 | Y2 p. 1490 | נ״צ 177.271, השם הזמני – אבירים, כפר, בגליל: ע״ש החרבה שבסמוך. החלטת הועדה מיום 22.6.1979 בדבר השם ״אדר״, אשר פורסמה בילקוט הפרסומים 2633, התש״ם, עמ׳ 1819 – בטלה. | the temporary name Abirim, a village in the Galilee, after the nearby ruin; the committee's decision of 22.6.1979 on the name "Adar", published in Yalkut HaPirsumim 2633, p. 1819, is annulled |
+| Karkom | 1988 | Y2 p. 1494 | נ״צ 2049.2605, השם הזמני – חרבת עלי, מושב של העובד הציוני, בגליל | temporary name Harvat Ali, moshav of the Labour Zionist movement, in the Galilee |
+| Lavon | 1980 | Y2 p. 1494 | נ״צ 178.261, השם הזמני – תפן ד׳ | temporary name Tefen D |
+| Merav | 1987 | Y2 p. 1494 | נ״צ 1895.2065, השם הקודם – מלכישוע, קיבוץ של הקיבוץ הדתי, בגלבוע | earlier name Malkishua, kibbutz of the religious kibbutz movement, in the Gilboa |
+| Metar | 1984 | Y2 p. 1494 | נ״צ 1445.0825, השם הזמני – עומר ב׳, יישוב קהילתי, בדרום הר חברון | temporary name Omer B, a community settlement in the south of the Hebron hills (printed as "מיתר", Meitar) |
+| Mikhmannim | 1980 | Y2 p. 1494 | נ״צ 181.257, השם הזמני – כמון מערב, מושבה, התאחדות האיכרים, בגליל | temporary name Kamon West, a moshava of the Farmers' Federation, in the Galilee |
+| Massad | 1983 | Y2 p. 1494 | נ״צ 190.250, השם הזמני – הר הקוץ, מושב של תנועת המושבים, בגליל | temporary name Har HaKotz, moshav of the Moshavim Movement, in the Galilee |
+
+[V, agent read 2026-10-26; a person's check pending] for every printed entry above. Notes, facts only:
+
+- **Abbirim** is the one entry with a printed decision date: the committee's decision of 22 June 1979 on the name "Adar" was published in Y1 (printed page 1819, entry "אדר": "נ״צ 177.271, מצפור בגליל (כינוי ארעי קודם: אדירים)", a lookout in the Galilee, earlier temporary name Adirim) and is annulled in Y2. The date marks a name decision for the site with grid 177.271, not a founding.
+- **Lotan.** Y1 calls it "ישוב מתוכנן" (a planned locality); the CBS year is 1983.
+- **Kefar Hananya.** The CBS year is 1990 and Wikipedia's text says 1977 (row [C] above). The Y1 entry shows that the name had been fixed by 26 June 1979; it does not settle the [C] and does not say when the moshav was settled. The row stays [C].
+- **Retamim.** J5 (22 Feb 1979) reports Retamim as scheduled "before the end of the year". The Y1 entry (name fixed by 26 June 1979) calls it a moshav; the CBS year is 1983. The entry does not say whether anyone lived there.
+- **Lappidot.** The entry is consistent with the Hebrew Wikipedia statements already in this note (temporary site July 1978, permanent site 1981); it says nothing about which site its grid marks (see the distance in item 5).
+- **No row is closed.** Every row keeps its [GAP] for a founding day from a record of the day. The entries narrow the question for 20 rows to a printed naming window; for the other 92 rows nothing changed.
+
+### 3. "Mitzpeh" near Mi'ilya, July 1979 (context [GAP], still open)
+
+Two JTA bulletins read as scanned pages (opened 2026-10-26; datelines read on the page images):
+
+| # | Bulletin | Dateline and item | What it says | Tag |
+|---|---|---|---|---|
+| J10 | 11 Jul 1979, no. 132, http://pdfs.jta.org/1979/1979-07-11_132.pdf, page 3 | "TEL AVIV, July 10 (JTA)", item "10 INJURED IN GALILEE CLASH" | "Work continued without incident today on an access road to a new settlement in Galilee after clashes with local Arab villagers yesterday in which 10 people were injured and 38 arrested for questioning and possible arraignment ...". The village is "Mailia", the settlement "Mitzpeh (lookout)". "Five so-called lookout settlements are scheduled to be built in that hilly region of Galilee in the near future." The clashes were on 9 July 1979 (derived: "yesterday" against the dateline 10 July). | [S] |
+| J11 | 17 Jul 1979, no. 136, http://pdfs.jta.org/1979/1979-07-17_136.pdf, page 2 | "NEW YORK, July 16 (JTA)", item "JNF PRESIDENT VOWS WORK WILL GO ON IN THE GALILEE" | "The incident occurred near the Arab village of Mailia where the JNF was building an access road to a new lookout post settlement called Mitzpeh." Berkowitz (president of the JNF of America) "said the new settlement is one of 30 such lookout posts for protection against possible terrorist attack now being built throughout Galilee on Israeli-owned land." | [S] |
+
+Neither item names the locality that "Mitzpeh" became, gives a grid reference or a founding day. I do not identify it. **[GAP]** (26 Oct) Searched again and not found. Read: J10 and J11 (full text as PDF page images); queries S10 to S13 below.
+
+### 4. Rows of the [GAP] list not worked in this pass
+
+The Modi'in-Maccabim-Re'ut flag (Maccabim and Re'ut against the Green Line), the localities with an empty CBS year, the first outpost versus CBS year membership, and the town-level history (Harish, Shoham, Metar, Lehavim, Kefar Weradim, Kokhav Ya'ir, Qesaryya, Modi'in-Maccabim-Re'ut) were not searched again in this pass and keep their [GAP]. No new source was opened for them.
+
+### 5. Gazette grid references against the CBS coordinates (derived)
+
+Y1 and Y2 print a grid reference ("נ״צ", the Old Israel Grid, four digits each way = 100 m, three digits = 1 km). **Derived:** I translated each by adding 50,000 to the easting and 500,000 to the northing (a northing printed above 800 is read as 1,000 km too high and 1,000,000 is subtracted: Lotan 935,000 - 1,000,000 + 500,000 = 435,000) to compare with the ITM point in the CBS field of the same row. I did not check the accuracy of this translation; it is an approximation and the comparison is a consistency test, not an independent coordinate source. Distance = square root of (dE squared + dN squared).
+
+| Row | Gazette grid (printed) | Translated (E, N) | CBS field (E, N) | Distance (m) |
+|---|---|---|---|---|
+| Kefar Hananya | 1901.2573 | 240100, 757300 | 239929, 757810 | 538 |
+| Kefar Rut | 1537.1465 | 203700, 646500 | 203023, 646340 | 696 |
+| Livnim | 1960.2525 | 246000, 752500 | 246611, 752147 | 706 |
+| Lotan | 1570.9350 | 207000, 435000 | 208139, 433229 | 2106 |
+| Lotem | 1836.2540 | 233600, 754000 | 233764, 754252 | 301 |
+| Lappidot | 1770.2665 | 227000, 766500 | 224822, 762657 | 4417 |
+| Moran | 1872.2583 | 237200, 758300 | 237161, 758538 | 241 |
+| Moreshet | 1725.2475 | 222500, 747500 | 222119, 747919 | 566 |
+| Shilat | 1525.1473 | 202500, 647300 | 201908, 647333 | 593 |
+| Shekhanya | 1735.2505 | 223500, 750500 | 223424, 750461 | 85 |
+| Tuval | 1733.2594 | 223300, 759400 | 223224, 759334 | 101 |
+| Raqqefet | 1751.2511 | 225100, 751100 | 225112, 751129 | 31 |
+| Retamim | 1208.0508 | 170800, 550800 | 170283, 551490 | 862 |
+| Karkom | 2049.2605 | 254900, 760500 | 257195, 759499 | 2504 |
+| Lavon | 178.261 | 228000, 761000 | 227158, 760856 | 854 |
+| Merav | 1895.2065 | 239500, 706500 | 239924, 706555 | 428 |
+| Metar | 1445.0825 | 194500, 582500 | 193429, 581812 | 1273 |
+| Mikhmannim | 181.257 | 231000, 757000 | 230864, 756880 | 181 |
+| Massad | 190.250 | 240000, 750000 | 239927, 749921 | 108 |
+| Abbirim | 177.271 | 227000, 771000 | 227156, 771492 | 516 |
+
+Sixteen of the 20 rows are within 1 km: Kefar Hananya, Kefar Rut, Livnim, Lotem, Moran, Moreshet, Shilat, Shekhanya, Tuval, Raqqefet, Retamim, Lavon, Merav, Mikhmannim, Massad and Abbirim (the Lavon, Mikhmannim, Massad and Abbirim grids are printed at 1 km resolution). Four are farther: Metar 1,273 m, Lotan 2,106 m, Karkom 2,504 m and Lappidot 4,417 m. This note gives no reason for any distance. Which of the two points marks which site stays **[GAP]** for those four.
 
 ## Searches (every negative record)
 
@@ -449,6 +559,11 @@ All run 2026-10-25 UTC.
 | S6 | Concept queries, first two results pages each: "Yamit evacuees new moshavim Negev", "Galilee lookout settlement first families moved", "Nahal settlement turned over to civilians", "new kibbutz established Negev Nahal", "Neve Shalom Arab Jewish village Latrun", "new settlement dedicated Galilee Misgav", "Harish new town Wadi Ara", "Caesarea new settlement", "new community settlement established Galilee mitzpe", "Misgav regional council new settlements" | JTA archive search, same URL form | Results dated 1977 to 1993: 0, 2, 3, 0, 0, 4, 6, 2, 0, 7. Read for the table: the 16 Jan 1978 Holit item (J3) and the 25 Sep 1986 Kahal item (J9). The rest were not about a locality of the table or named it without a founding. |
 | S7 | Reachability from this box with `curl` | fs.knesset.gov.il, knesset.gov.il, archive.org | HTTP 200; no locality search used. |
 | S8 | Reachability from this box with `curl` | gov.il, mfa.gov.il, nli.org.il, jpress.org.il, misgav.org.il | HTTP 403 for each. |
+| S9 | (26 Oct) Each of the 112 Hebrew names (CBS spelling, text in brackets removed, names under three letters skipped) as a substring of the `pdftotext` text layer of Y1, Y2 and the 4012 issue | the three Yalkut PDFs above | Name strings found: 44 (2633), 48 (3165), 29 (4012) of 112. These are substring counts: many are ordinary words; only the entries listed in item 2 of the second pass were read. |
+| S10 | (26 Oct) wp-json `search=Mitzpeh+Mailia`, `after=1979-06-01T00:00:00`, `before=1979-09-01T00:00:00`, `per_page=50` | https://www.jta.org/wp-json/wp/v2/archive?search=Mitzpeh+Mailia&after=1979-06-01T00%3A00%3A00&before=1979-09-01T00%3A00%3A00&per_page=50 | 2 results (11 and 17 Jul 1979), both read (J10, J11). |
+| S11 | (26 Oct) wp-json `search=Mitzpeh`, 1979-01-01 to 1981-12-31, `per_page=50` | same endpoint | 50 results returned on the page (the cap I set; X-WP-Total 53, checked by a second agent; dates 6 Apr 1979 to 10 Nov 1981); the only two read were the two Galilee items of S10, which are among them. The other 48 were not opened. |
+| S12 | (26 Oct) wp-json `search=Mailia`, 1979-01-01 to 1981-12-31, `per_page=50` | same endpoint | 50 results returned on the page (the cap; X-WP-Total 51, checked by a second agent; dates 9 Jan 1979 to 19 Nov 1981); the two read are those of S10; the other 48 were not opened. |
+| S13 | (26 Oct) wp-json `search=Meilya`, 1979-01-01 to 1981-12-31, `per_page=50`; and built-in WebSearch (not Tavily) with a Hebrew query about the 1979 Mi'ilya clashes, a JNF road and Mitzpe Hila | same endpoint; WebSearch | wp-json: 23 results (1 Feb 1979 to 27 Jul 1981), the two read are those of S10, the other 21 not opened. WebSearch: 10 links returned, none about the event, none opened. |
 
 S5 per row (query 1 / query 2: results returned, of which dated 1977-1993, of which containing the name). Search URL form: `https://www.jta.org/?s=<query with + for spaces>&post_type=archive`.
 
