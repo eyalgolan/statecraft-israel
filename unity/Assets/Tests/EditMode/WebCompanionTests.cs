@@ -91,6 +91,8 @@ public sealed class WebCompanionTests
             WebCompanion.Snapshot state;
             do
             {
+                // EditMode yields alone do not pump a UIDocument's runtime timer scheduler.
+                EditorApplication.QueuePlayerLoopUpdate();
                 yield return null;
                 state = JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
             } while ((state.focus != "First" || state.status != "New result") && EditorApplication.timeSinceStartup < until);
@@ -101,7 +103,7 @@ public sealed class WebCompanionTests
             var count = sent.Count;
             root.Q<Label>("toast").text = "After disposal";
             until = EditorApplication.timeSinceStartup + 0.3;
-            while (EditorApplication.timeSinceStartup < until) yield return null;
+            while (EditorApplication.timeSinceStartup < until) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
             Assert.AreEqual(count, sent.Count, "the disposed schedule sends no stale state");
         }
         finally
