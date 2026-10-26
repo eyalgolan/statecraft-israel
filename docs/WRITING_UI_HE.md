@@ -121,7 +121,7 @@ Status: proposed, native, test in Unity. Reason: Hebrew runs right to left and e
 - To test: "ספיטפייר LF Mk IXe" (`unit.aircraft.spitfire`).
 - To test: in the game, the lines that receive an English date or amount, to confirm the marks do what the rendered test describes (HE-08).
 For the native reviewer: say how each of these should read.
-For the maintainer: the #543 check found that the Hebrew face honours U+200E and draws nothing for it. Whether it honours the isolate characters is not tested.
+For the maintainer: the #543 check found that the Hebrew face honours U+200E and draws nothing for it. Since #1414 it is tested for the isolates too: the face draws nothing for RLI and PDI (U+2067, U+2069), with no glyph, box or advance, and a Hebrew date isolated in an English-first region line draws as one run in its own order (`HebrewValuesTests.TheHebrewFaceDrawsNothingForTheIsolateMarks`, `InARegionLineTheIsolatedHebrewDateIsOneRunInOrder`).
 
 ### HE-10 Latin names and terms inside Hebrew
 Status: proposed, native. The product name appears in Latin inside a Hebrew sentence ("Statecraft" in `boot.failed`, which is not a static text), and aircraft and place names mix scripts. Since #558 the recording credit uses a transliterated name. Decide per category whether a name is transliterated or kept in Latin, and record it in the glossary.
@@ -182,7 +182,7 @@ Run in order. A "no" is a finding, cited by rule ID.
 
 For the maintainer:
 - Review any remaining English date callers and decide the localized money format (HE-08). The main date surfaces listed above are already localized.
-- Whether isolates are honoured by the text generator, and where the test lives (HE-09). Per-text direction is already tested.
+- Where else to isolate a value (HE-09). The text generator honours the isolates (#1414, `HebrewValuesTests`), and per-text direction is already tested.
 - Hebrew for content, and its review (HE-12, #55).
 - A player setting for the form of address (HE-03).
 - Whether the two-key plural is enough, or a general mechanism is wanted (HE-04).
