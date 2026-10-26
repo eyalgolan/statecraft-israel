@@ -29,8 +29,14 @@ namespace Statecraft.Sim
         /// <summary>Immutable replay identity. Old manually constructed states retain their historical hash layout.</summary>
         public string Ruleset { get; } = SaveGame.LegacyRuleset;
         readonly bool usesAttention = true;
+        public bool UsesPopulationLedger => Ruleset == SaveGame.Gdd03Ruleset;
+        public PopulationLedger PopulationLedger { get; private set; } = new PopulationLedger(false);
         public GameState() { }
-        internal GameState(Content c) { Ruleset = c.Ruleset; usesAttention = c.UsesAttention; }
+        internal GameState(Content c)
+        {
+            Ruleset = c.Ruleset; usesAttention = c.UsesAttention;
+            PopulationLedger = new PopulationLedger(UsesPopulationLedger);
+        }
         public DateTime Date;
         public ulong RngState;
         public Mode Mode;
@@ -116,7 +122,8 @@ namespace Statecraft.Sim
         /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
         public int DisplacedByPlayer;
 
-        public double TotalPopulation => Population.Values.Sum();
+        public double TotalPopulation => PopulationLedger.IsInitialized
+            ? PopulationLedger.TotalPeople : Population.Values.Sum();
 
         public GameState Clone()
         {
@@ -128,6 +135,7 @@ namespace Statecraft.Sim
             c.ActiveSituations = new SortedSet<string>(ActiveSituations, StringComparer.Ordinal);
             c.Budget = new Dictionary<string, double>(Budget);
             c.Population = new Dictionary<string, double>(Population);
+            c.PopulationLedger = PopulationLedger.Clone();
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
@@ -261,6 +269,7 @@ namespace Statecraft.Sim
             if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
             if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
+            if (UsesPopulationLedger) Section("population-ledger", '{', '}', PopulationLedger.Canonical());
             return sb.ToString();
         }
     }

@@ -72,6 +72,7 @@ namespace Statecraft.Sim
         /// untouched, for an unknown city, a count below 1 or more than the city's craftsmen.</summary>
         public static string? ReturnCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             if (count < 1) return "Return at least one group";
             var name = PlayerText.Settlement(c, city);
@@ -87,6 +88,7 @@ namespace Statecraft.Sim
         /// the civilians without work (<see cref="Training.Idle"/>).</summary>
         public static string? ReassignCraftsmen(Content c, GameState s, string city, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             if (count < 1) return "Reassign at least one group";
             var name = PlayerText.Settlement(c, city);
@@ -112,6 +114,7 @@ namespace Statecraft.Sim
 
         internal static string? Return(Content c, GameState s, int unitId, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var refused = CheckReturn(s, unitId);
             if (refused != null) return refused;
             var u = s.Units[unitId];
@@ -131,6 +134,7 @@ namespace Statecraft.Sim
         /// than its civilians without work.</summary>
         public static string? ReassignPioneers(Content c, GameState s, string city, string track, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             var veteran = track == Projects.VeteranType;
             if (!veteran && track != "halutz") return "There is no such qualification";

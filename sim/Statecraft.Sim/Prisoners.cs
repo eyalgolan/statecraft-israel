@@ -34,6 +34,7 @@ namespace Statecraft.Sim
         /// Combat's surrender, the one way a unit is captured.</summary>
         internal static string Take(GameState s, Unit u, Unit captor)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (u.Side == Movement.PlayerSide)
             {
                 Add(s.SoldiersHeld, captor.Side, u.Strength);
@@ -56,6 +57,7 @@ namespace Statecraft.Sim
         /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003).</summary>
         public static void Upkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var need = (long)s.PrisonersHeld.Values.Sum() * r.FoodPerPrisonerUnit!.Value;
             if (need > 0)
             {
@@ -80,6 +82,7 @@ namespace Statecraft.Sim
         /// score (Q-POW-4).</summary>
         internal static void Return(Content c, GameState s, string front, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             // Only GDD combat creates prisoners and the card waits for them, so this runs only in the GDD loop, which has Mvp.
             var points = c.RulesAt(s.Date).Mvp!.PointsPerPrisonerUnitReturned!.Value;
             var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;

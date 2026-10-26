@@ -204,7 +204,7 @@ public class NoShotArmsTests
 
         var normalized = y.State.Clone();
         normalized.Arms = x.State.Arms;
-        static string Core(string text) => Regex.Replace(text.Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
+        static string Core(string text) => Regex.Replace(Regex.Replace(text, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
         Assert.Equal(Core(x.State.Describe()), Core(normalized.Describe()));
         Assert.Equal(x.Why.Select(w => w.Message), y.Why.Select(w => w.Message));
     }

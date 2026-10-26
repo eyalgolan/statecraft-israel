@@ -22,6 +22,7 @@ namespace Statecraft.Sim
         /// (<see cref="FillDate"/>).</summary>
         public static void Trigger(Content c, GameState s, List<Cause> why, DateTime? turnStart = null)
         {
+            PopulationLedger.RefuseAggregate(s);
             var start = turnStart ?? s.Date;
             var eligible = c.Events
                 .Where(e => !s.FiredEvents.Contains(e.Id) && e.From <= s.Date && (e.To == null || start < e.To.Value))
@@ -63,6 +64,7 @@ namespace Statecraft.Sim
         /// <summary>Returns null on success, or the reason the choice was rejected.</summary>
         public static string? Choose(Content c, GameState s, string eventId, string optionId, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.PendingEvents.Contains(eventId)) return "That event is not waiting for a decision";
             var option = Get(c, eventId).Options.FirstOrDefault(o => o.Id == optionId);
             if (option == null) return "That event has no such option";
@@ -306,6 +308,7 @@ namespace Statecraft.Sim
         /// decision he was left to make, competence which decision he makes; anchors and objective cards stay whole.</summary>
         public static void Delegate(Content c, GameState s, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var rng = new Rng(s.RngState);
             var mvp = c.IsGdd ? c.RulesAt(s.Date).Mvp : null;   // the legacy loop has no floor, so its goldens hold
             foreach (var id in s.PendingEvents.ToList())

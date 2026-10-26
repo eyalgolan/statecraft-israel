@@ -1255,6 +1255,23 @@ namespace Statecraft.Sim
         /// <summary>Identity predicate: legacy and gdd-0.1 have Attention, gdd-0.3 omits it. The sim reads it to leave
         /// Attention out of gdd-0.3 (R-LOOP-001, R-GOV-002, #1688).</summary>
         public bool UsesAttention => Ruleset != SaveGame.Gdd03Ruleset;
+        /// <summary>Exact population capability, independent of loop and Attention (R-POP-001).</summary>
+        public bool UsesPopulationLedger => Ruleset == SaveGame.Gdd03Ruleset;
+        /// <summary>The new identity reads its own catalogue; old callers retain the common rules value.</summary>
+        public int PopulationPeoplePerUnit => UsesPopulationLedger
+            ? RequirePopulationInteger("population.people_per_unit")
+            : (Rules.Mvp ?? throw new InvalidOperationException("Population scale needs mvp rules.")).PeoplePerUnit;
+        internal int RequirePopulationInteger(string key)
+        {
+            if (!UsesPopulationLedger) throw new InvalidOperationException("Population catalogue access requires gdd-0.3.");
+            if (Gdd03Balance == null || Gdd03Balance.Values == null || Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset
+                || !Gdd03Balance.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
+                || row.Values == null || row.Values.Count != 1 || row.Parts == null || row.Parts.Count != 0
+                || !string.IsNullOrEmpty(row.Expression) || row.Values[0] <= 0 || row.Values[0] > int.MaxValue
+                || decimal.Truncate(row.Values[0]) != row.Values[0])
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values." + key, "requires one positive Agreed integer; no Deferred or old-rules fallback");
+            return (int)row.Values[0];
+        }
         /// <summary>The day play ends, a boundary the last turn reaches (Simulation.Step): rules.yaml mvp.end in the GDD loop
         /// (R-LOOP-004), otherwise the last era's end.</summary>
         public DateTime End => IsGdd && Rules.Mvp?.End is DateTime e ? e : Eras[Eras.Count - 1].To;
