@@ -908,4 +908,49 @@ public class CaptureDialogTests
             }
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
+
+    // ---- the open transition (#1728) ----
+
+    /// <summary>ScreenNav's motion as the test run found it (off in edit mode), put back after every test.</summary>
+    static readonly System.Func<bool> PlayModeMotion = ScreenNav.Moves;
+    [TearDown] public void StillWindows() => ScreenNav.Moves = PlayModeMotion;
+
+    /// <summary>Yields until <paramref name="done"/> holds, at most 3 s: an edit-mode panel resolves its styles and
+    /// layout only now and then, not on every yield (as HudTests does for the same reason).</summary>
+    static IEnumerator Until(System.Func<bool> done)
+    {
+        var t0 = Time.realtimeSinceStartup;
+        while (!done() && Time.realtimeSinceStartup - t0 < 3f) yield return null;
+    }
+
+    /// <summary>The dialog must not stay in its invisible start state (#1728). With the motion on, ScreenNav.Show opens
+    /// it in <c>window-opening</c>, which pins <c>opacity: 0</c> and <c>scale: 0.8</c> (Statecraft.uss,
+    /// ".event-card.window-opening"; capture-card carries event-card). That class is taken off in one place only —
+    /// EndOpening, on a GeometryChangedEvent — so a dialog whose geometry event never arrives stays in the layout and
+    /// takes every press while being invisible: the player is blocked by a modal they cannot see, which is what #1728
+    /// looked like in the browser. HudTests covers the screens and the decision card this way; the capture dialog was
+    /// not covered, and in edit mode ScreenNav.Moves is off, so no test entered this path at all.
+    /// <para>The assertions are the class and the resolved transition, not an animated opacity: a value sampled while
+    /// the fade runs would make this a load-sensitive test, which is the fault #1681 is open about.</para></summary>
+    [UnityTest]
+    public IEnumerator TheDialogGrowsInAndDoesNotStayInItsInvisibleStartState()
+    {
+        ScreenNav.Moves = () => true;   // play mode's motion; StillWindows puts it back
+        using var r = new Rig(Awaiting(C, "lod"));
+        yield return Frames(4);
+        var card = r.Element;
+        Assert.AreEqual("lod", r.Dialog.Shown, "precondition: the dialog is open");
+        Assert.AreEqual(DisplayStyle.Flex, card.style.display.value, "precondition: it is in the layout");
+        Assert.IsTrue(r.Hud.ClassListContains(CaptureDialogPresenter.OpenClass),
+            "precondition: the root says the dialog is open, so the backdrop is displayed over the panels");
+        yield return Until(() => !card.ClassListContains(ScreenNav.OpeningClass));
+        Assert.IsFalse(card.ClassListContains(ScreenNav.OpeningClass),
+            "the start state lasts one layout: left in window-opening the dialog is invisible (opacity 0, scale 0.8) "
+            + "and still takes every press, so the player is blocked by a modal they cannot see (#1728)");
+        yield return Until(() => card.resolvedStyle.transitionDuration.First().value > 0.4f);
+        Assert.AreEqual(0.5f, card.resolvedStyle.transitionDuration.First().value, 1e-4,
+            "it grows and fades in over 0.5 s, like the decision card");
+        CollectionAssert.AreEquivalent(new[] { "scale", "opacity" },
+            card.resolvedStyle.transitionProperty.Select(x => x.ToString()), "a scale-up and a fade-in");
+    }
 }

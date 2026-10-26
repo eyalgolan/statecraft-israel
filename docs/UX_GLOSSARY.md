@@ -77,11 +77,11 @@ Recommendation (see status): Move the rule from the offices.yaml comment into do
 
 Decision owner: Eyal: where the rule is documented and the dictionary; the rule itself is already his
 
-### transliteration (decision-needed)
+### transliteration (preferred)
 
-Hebrew terms in English text are transliterated in several ways: ma'abarot (README), Halutz and Hakhshara (GDD), yishuv and yishuvim (GDD), Knesset. No scheme is written down. Arabic place names are settled separately (see place-names); this entry is only about the Hebrew terms.
+Hebrew terms in English text: ma'abara and ma'abarot take a straight apostrophe (owner's ruling, 26 October 2026, #1760). Halutz, Hakhshara (with kh), yishuv, yishuvim, aliyah and Knesset keep the spelling already in use, observed in the game rather than ruled; the owner has ruled on ma'abara / ma'abarot only. An identifier is not display text, so ids, YAML keys, filenames and C# names keep their apostrophe-free spelling (content/model.yaml: id maabarot beside name "Transit camps (ma'abarot)"); a quoted source form and a URL keep what they print. The rule is docs/WRITING_GUIDE.md section 10. Arabic place names are settled separately (see place-names).
 
-Recommendation (see status): Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling beside it in the glossary.
+Recommendation (see status): Written down in docs/WRITING_GUIDE.md section 10; each term is listed once here, glossed at first use in prose, with the Hebrew beside it.
 
 Decision owner: Eyal
 
@@ -600,7 +600,6 @@ Category: place. Scope: ui, docs, marketing.
 | In use | Where |
 |---|---|
 | Place a transit camp ({0}) | strings.en.yaml info.build_camp |
-| the ma'abarot transit camps | README.md, site press page |
 
 **Hebrew.** Preferred: מעברה.
 
@@ -609,9 +608,9 @@ Category: place. Scope: ui, docs, marketing.
 | הקמת מעברה ({0}) | strings.he.yaml info.build_camp |
 
 **Recommendation (see status).**
-- English: UI says 'transit camp'. Prose says 'the ma'abarot (transit camps)' the first time, then either word. Decide the transliteration once (conventions: transliteration).
+- English: UI says 'transit camp'. Prose says 'the ma'abarot (transit camps)' the first time, then either word. The spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).
 - Hebrew: No change proposed.
-- Reasons: (1) That is what the README already does.
+- Reasons: (1) That is what the GDD already does; the README carried this example until #1200 rewrote it.
 
 **Decision owner.** Eyal.
 

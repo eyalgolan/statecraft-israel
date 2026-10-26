@@ -25,6 +25,7 @@ namespace Statecraft.Sim
 
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
+            PopulationLedger.RefuseAggregate(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             return new TreasuryFlows(r.TaxPerCapitaPerYear * pop * yearFraction, r.SpendingPerCapitaPerYear * pop * yearFraction,
                 MobilizationCost(c, s.Date, s.Mobilization, yearFraction));
@@ -60,6 +61,7 @@ namespace Statecraft.Sim
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             var flows = Flows(c, s, yearFraction);
             var revenue = flows.Tax; var spending = flows.Spending; var mobilization = flows.Mobilization;

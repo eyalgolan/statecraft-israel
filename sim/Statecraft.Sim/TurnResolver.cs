@@ -13,6 +13,7 @@ namespace Statecraft.Sim
         /// of a year long).</summary>
         public static void Resolve(Content c, GameState s, DateTime next, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             EnemyAI.Order(c, s, why, next);               // 1. enemy orders, in ascending unit id (R-ENEMY-001)

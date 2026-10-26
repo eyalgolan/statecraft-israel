@@ -506,3 +506,32 @@ The first owner starts on the first day of the era (no gap). Each `from` is insi
 owner's office must exist from its `from` to the next `from` (or the end of the era), and one office may own only one line on
 any day. The loader refuses anything else. `Offices.BudgetOwner(content, line, date)` and `Offices.BudgetLineOf(content,
 office, date)` are the only readers. Lines that change across an era boundary are the carry rules' job (#59).
+
+
+## GDD 0.3 first-slice availability (#1718)
+
+Legacy and gdd-0.1 continue to load every shared event file, with their existing content identity and effects.
+Only the `gdd-0.3` identity reads and hashes `content/gdd03-events.yaml`. It must contain `ruleset: gdd-0.3`
+and an explicit `exclusions` list of `{ id, reason }` entries. Its schema is `content/schema/gdd03-events.schema.json`.
+Missing/null manifests, unknown/duplicate ids, blank reasons, and references from active requirements, variants,
+rejoin options or objective cards to excluded ids are content errors. Every source file still parses strictly;
+the remaining catalogue receives the usual cross-reference, effect and sensitivity validation.
+
+The approved first slice excludes exactly `austerity_1949`, `clothing_rationing_1950`, `forex_crisis_1951`,
+`iraqi_exodus`, `israel_bonds`, `maabarot_policy`, `reparations_claim` and `reparations_vote`, including all their
+options (`reparations_vote` joined with #1575, for the same reason as `reparations_claim`).
+Six of these are hard anchors: they are unavailable in 0.3. Shared records, Hebrew, tags, status and human
+sign-offs remain unchanged and available to review tools. Removing an exclusion requires a reviewed follow-up
+with approved accounting and authored values; it does not itself approve a replacement or transfer a sign-off.
+There is no automatic review promotion, and all existing release gates still apply.
+
+R-EFX-001 rejects 0.3 writes to `food_supply`, `housing`, `fx_reserves`; `rationing`/`maabarot` policy assignments;
+and Attention, passive budgets, automatic Food refills and defeat commands even if authored as compatibility
+indicators. Reserved target spellings are `attention`/`attention_*`, `budget`/`budget_*`,
+`passive_budget`/`passive_budget_*`, `food_refill`, `automatic_food_refill`, `defeat`, `city_loss_defeat`,
+and `any_city_loss`. Other unknown targets remain errors. No new alias or conversion is provided.
+`grant_units`, `city_effects` and `unlock_projects` await an approved 0.3 accounting contract and are rejected.
+Explicit `food`, `arms`, `treasury` and approved indicator effects retain the existing application and no-gain
+checks (R-EFX-002/005/007). Treasury costs still borrow (R-MONEY-003): the owner's 26 October 2026 ruling
+on #1718 supersedes the proposal's prohibition. Do not invent FX-to-Money rates, debt principal, arrivals,
+Food quantities, facilities or replacement values. Missing replacements remain Deferred in the #1742 workflow.

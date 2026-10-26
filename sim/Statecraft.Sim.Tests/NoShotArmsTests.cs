@@ -204,7 +204,7 @@ public class NoShotArmsTests
 
         var normalized = y.State.Clone();
         normalized.Arms = x.State.Arms;
-        static string Core(string text) => Regex.Replace(text.Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
+        static string Core(string text) => Regex.Replace(Regex.Replace(text, @"\npopulation-ledger\{(?:\n  [^\n]*)*", "").Replace("ruleset=gdd-0.3;", ""), @"\natt=[^\n]*", "");
         Assert.Equal(Core(x.State.Describe()), Core(normalized.Describe()));
         Assert.Equal(x.Why.Select(w => w.Message), y.Why.Select(w => w.Message));
     }
@@ -252,10 +252,10 @@ public class NoShotArmsTests
         }
         var before = s.Hash();
         var cmds = invalid == "spent"
-            ? new Command[] { new Move(1, 2, 2), new Move(1, 2, 1), new Move(1, 2, 2), cmd }
+            ? new Command[] { new Move(1, 2, 2), new Move(1, 2, 1), cmd }
             : new Command[] { cmd };
         var r = Simulation.Preview(c, s, cmds);
-        Assert.Single(r.Rejected);
+        Assert.Same(cmd, Assert.Single(r.Rejected).Command);
         Assert.Equal(0, r.State.Arms);
         Assert.Equal(s.RngState, r.State.RngState);
         if (invalid != "spent") Assert.Equal(before, r.State.Hash());

@@ -142,6 +142,7 @@ public class SchemaTests
 
     public static IEnumerable<object[]> RealFiles()
     {
+        yield return new object[] { "gdd03-events.yaml", "gdd03-events.schema.json" };
         yield return new object[] { "people.yaml", "people.schema.json" };
         yield return new object[] { "offices.yaml", "offices.schema.json" };
         yield return new object[] { "parties.yaml", "parties.schema.json" };
@@ -195,6 +196,8 @@ public class SchemaTests
         yield return new object[] { "map-overrides.schema.json", "/properties/terrain/items", typeof(TerrainOverride) };
         yield return new object[] { "map-overrides.schema.json", "/properties/control/items", typeof(ControlOverride) };
         yield return new object[] { "map-overrides.schema.json", "/properties/locations/items", typeof(LocationOverride) };
+        yield return new object[] { "gdd03-events.schema.json", "", typeof(ContentLoader).GetNestedType("Gdd03EventsFile", BindingFlags.NonPublic)! };
+        yield return new object[] { "gdd03-events.schema.json", "/properties/exclusions/items", typeof(ContentLoader).GetNestedType("EventExclusion", BindingFlags.NonPublic)! };
         yield return new object[] { "event.schema.json", "", typeof(GameEvent) };
         yield return new object[] { "event.schema.json", "/properties/conditions/items", typeof(EventCondition) };
         yield return new object[] { "event.schema.json", "/definitions/requirement", typeof(EventRequirement) };
@@ -251,6 +254,17 @@ people:
     offices:
       - { office: prime_minister, from: 1948-05-14, sources: [{ url: ""https://example.org"", checked: 2026-10-09 }] }
 ";
+
+    [Fact]
+    public void AvailabilitySchemaRejectsWrongIdentityMissingReasonAndUnknownFields()
+    {
+        const string good = "ruleset: gdd-0.3\nexclusions: [{ id: probe, reason: Fixture }]\n";
+        Assert.Empty(Errors("gdd03-events.schema.json", good));
+        Assert.NotEmpty(Errors("gdd03-events.schema.json", good.Replace("gdd-0.3", "legacy")));
+        Assert.NotEmpty(Errors("gdd03-events.schema.json", good.Replace(", reason: Fixture", "")));
+        Assert.NotEmpty(Errors("gdd03-events.schema.json", good.Replace("Fixture", "' '")));
+        Assert.NotEmpty(Errors("gdd03-events.schema.json", good + "unknown: true\n"));
+    }
 
     [Fact]
     public void AGoodPersonPasses() => Assert.Empty(Errors("people.schema.json", GoodPerson));

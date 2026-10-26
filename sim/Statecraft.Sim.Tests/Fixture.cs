@@ -228,6 +228,8 @@ series:
     {
         var o = new Dictionary<string, string>
         {
+            // Empty availability list for synthetic content. Old modes never read or hash this file.
+            ["gdd03-events.yaml"] = "ruleset: gdd-0.3\nexclusions: []\n",
             ["eras.yaml"] = Files["eras.yaml"] + "    systems: { loop: gdd }\n",
             ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", GddCosts) + GddRules,
             ["cities.yaml"] = GddCities,
