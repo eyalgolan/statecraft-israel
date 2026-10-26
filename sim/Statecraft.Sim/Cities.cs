@@ -73,7 +73,7 @@ namespace Statecraft.Sim
                     ? FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.JobSlots} jobs")
                     : FormattableString.Invariant($"{PlayerText.Settlement(c, city)} has {x.Civilians + x.Craftsmen} civilians and craftsmen");
             s.Cities[city] = x.WithCounts(x.Civilians, count, x.Refugees).WithJobsDefault(false);
-            why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work")));
+            why.Add(new Cause("city", city, count - x.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, city)}: {count} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(count) }));
             return null;
         }
 
@@ -88,7 +88,7 @@ namespace Statecraft.Sim
                 var craftsmen = Math.Min(x.Craftsmen, x.Employed);
                 var paid = ((x.Employed - craftsmen) + craftsmen * r.CraftsmanIncomeMultiple) * r.IncomePerJobPerYear * yearFraction;
                 s.Treasury += paid;
-                why.Add(new Cause("city", x.Id, paid, $"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, "treasury", paid)}"));
+                why.Add(new Cause("city", x.Id, paid, $"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, "treasury", paid)}", key: CauseKeys.WagesPaid));
             }
         }
 
@@ -134,11 +134,11 @@ namespace Statecraft.Sim
                 var absorbed = x.Refugees == 0 ? 0 : Math.Min(x.Refugees, (int)Math.Floor(x.Refugees * m));
                 var housed = absorbed == 0 ? x : x.WithCounts(x.Civilians + absorbed, x.Employed, x.Refugees - absorbed);
                 if (absorbed != 0)
-                    why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed")));
+                    why.Add(new Cause("city", x.Id, absorbed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed"), key: CauseKeys.ImmigrantsHoused, args: new[] { CauseKeys.Number(absorbed) }));
                 var work = MaxWorkers(housed);
                 if (housed.JobsDefault && work != housed.Employed)
                 {
-                    why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {work} groups in work")));
+                    why.Add(new Cause("city", x.Id, work - housed.Employed, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {work} groups in work"), key: CauseKeys.WorkersAssigned, args: new[] { CauseKeys.Number(work) }));
                     housed = housed.WithCounts(housed.Civilians, work, housed.Refugees);
                 }
                 s.Cities[x.Id] = housed;
@@ -204,7 +204,7 @@ namespace Statecraft.Sim
                 if (over == 0) continue;
                 if (x.Condition is double now)
                     s.Cities[x.Id] = x.WithCondition(Math.Max(0.0, now - r.OverflowConditionLoss!.Value * over / Housed(s, x)));
-                why.Add(new Cause("city", x.Id, over, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {over} groups more than its homes hold")));
+                why.Add(new Cause("city", x.Id, over, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {over} groups more than its homes hold"), key: CauseKeys.HousingShortage, args: new[] { CauseKeys.Number(over) }));
             }
         }
 
@@ -238,7 +238,7 @@ namespace Statecraft.Sim
                 if (added == 0) continue;
                 var x = s.Cities[kv.Key];
                 s.Cities[x.Id] = x.WithCounts(x.Civilians, x.Employed, x.Refugees + added);
-                why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {added} groups of immigrants arrived and wait for homes")));
+                why.Add(new Cause("city", x.Id, added, FormattableString.Invariant($"{PlayerText.Settlement(c, x.Id)}: {added} groups of immigrants arrived and wait for homes"), key: CauseKeys.ImmigrantsWaiting, args: new[] { CauseKeys.Number(added) }));
             }
         }
 

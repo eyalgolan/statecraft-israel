@@ -30,7 +30,7 @@ namespace Statecraft.Sim
                 var fled = t.Residents == ContentLoader.Fled;
                 s.Settlements[t.Id] = new SettlementControl(Movement.PlayerSide, AwaitingChoice, fled: fled);
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is captured: Israeli units hold it and no enemy unit is there. "
-                    + (fled ? "Its residents fled. " : "") + "It awaits a decision"));
+                    + (fled ? "Its residents fled. " : "") + "It awaits a decision", key: CauseKeys.PlaceCaptured, args: new[] { fled ? "1" : "0" }));
             }
         }
 
@@ -58,7 +58,7 @@ namespace Statecraft.Sim
                 if (Holder(s, t.Q, t.R) != Enemy || !s.Settlements.TryGetValue(t.Id, out var record) || record.State != AwaitingChoice) continue;
                 Release(s, t.Id);
                 why.Add(new Cause("map", t.Id, 0, $"{c.SettlementNames[t.Id]} is under enemy control again: enemy units hold it and no Israeli unit is there"
-                    + (record.Fled ? ". " + FledLine : "")));
+                    + (record.Fled ? ". " + FledLine : ""), key: CauseKeys.EnemyRegained, args: new[] { record.Fled ? "1" : "0" }));
             }
         }
 
@@ -198,7 +198,7 @@ namespace Statecraft.Sim
             s.Settlements[id] = new SettlementControl(Movement.PlayerSide, Annexed, x.Since, x.Depopulated, x.Combatants, x.Buildings, 0, x.Fled);
             why.Add(new Cause("map", id, 0, x.Fled
                 ? $"{name} is annexed. Its residents fled when it was captured, so no people, homes or jobs are added"
-                : $"{name} is annexed. Its residents join the population"));
+                : $"{name} is annexed. Its residents join the population", key: CauseKeys.PlaceAnnexed, args: new[] { x.Fled ? "1" : "0" }));
             return null;
         }
 
@@ -218,12 +218,13 @@ namespace Statecraft.Sim
             var name = c.SettlementNames[id];
             var moved = new List<(Unit From, Unit To)>();
             if (MoveOut(c, s, t, name, atTheEnd, moved) is CaptureRefusal no) return no;
+            var residentsFled = s.Settlements[id].Fled; // snapshot before Release removes the record
             var residents = Residents(s.Settlements[id]);
             Release(s, id);
             Withdrew(id, name, moved, why);
             why.Add(new Cause("map", id, 0, moved.Count > 0
                 ? $"{name}: Israeli units withdrew and it is under enemy control again. {residents}"
-                : $"{name} is under enemy control again. {residents}"));
+                : $"{name} is under enemy control again. {residents}", key: CauseKeys.PlaceWithdrawn, args: new[] { moved.Count > 0 ? "1" : "0", residentsFled ? "1" : "0" }));
             return null;
         }
 
@@ -288,15 +289,15 @@ namespace Statecraft.Sim
             s.Settlements[id] = new SettlementControl(since: s.Settlements[id].Since, depopulated: true);
             s.DisplacedByPlayer++;
             Withdrew(id, name, moved, why);
-            why.Add(new Cause("map", id, 0, $"{name}: Deport. Its residents are displaced and the place is depopulated"));
+            why.Add(new Cause("map", id, 0, $"{name}: Deport. Its residents are displaced and the place is depopulated", key: CauseKeys.PlaceDeported));
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires both costs in the GDD loop
             foreach (var (indicator, cost) in new[] { ("morale", r.DeportCohesionCost!.Value), (SupportIndicator, r.DeportSupportCost!.Value) })
             {
                 var change = EffectsSystem.Shift(c, s, indicator, -cost);
-                why.Add(new Cause("map", indicator, change, $"{PlayerText.Change(c, indicator, change)} (Deport of {name})"));
+                why.Add(new Cause("map", indicator, change, $"{PlayerText.Change(c, indicator, change)} (Deport of {name})", key: CauseKeys.DeportEffect, args: new[] { id }));
             }
             // Deport never pays (owner, 22 October 2026, #1327): its Money stays at or below Occupy's and Raid's.
-            why.Add(new Cause("economy", "treasury", -r.DeportMoneyCost!.Value, $"{PlayerText.Change(c, "treasury", -r.DeportMoneyCost.Value)} (Deport of {name})"));
+            why.Add(new Cause("economy", "treasury", -r.DeportMoneyCost!.Value, $"{PlayerText.Change(c, "treasury", -r.DeportMoneyCost.Value)} (Deport of {name})", key: CauseKeys.DeportCost, args: new[] { id }));
             EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why, CauseKeys.Purpose.Deport, id);
             return null;
         }
@@ -316,7 +317,7 @@ namespace Statecraft.Sim
             var x = s.Settlements[id];
             var turns = c.RulesAt(s.Date).Mvp!.OccupationTurns!.Value;
             s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns, x.Fled);
-            why.Add(new Cause("map", id, turns, FormattableString.Invariant($"{name} is occupied for {turns} turns: an Israeli unit stays there. ") + Residents(x)));
+            why.Add(new Cause("map", id, turns, FormattableString.Invariant($"{name} is occupied for {turns} turns: an Israeli unit stays there. ") + Residents(x), key: CauseKeys.OccupationStarted, args: new[] { x.Fled ? "1" : "0" }));
             return null;
         }
 
@@ -337,7 +338,7 @@ namespace Statecraft.Sim
         {
             foreach (var id in s.Settlements.Where(kv => kv.Value.State == AwaitingChoice).Select(kv => kv.Key).ToList())   // ordinal
             {
-                why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]}: no decision was made before the end, so it counts as a raid"));
+                why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]}: no decision was made before the end, so it counts as a raid", key: CauseKeys.PendingBecameRaid));
                 Withdraw(c, s, id, why, true);   // at the end it never refuses
             }
         }
@@ -357,7 +358,7 @@ namespace Statecraft.Sim
                 if (!Garrisoned(s, c.SettlementTargets.First(t => t.Id == id)))
                 {
                     Release(s, id);
-                    why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}"));
+                    why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}", key: CauseKeys.OccupationLostUnit, args: new[] { x.Fled ? "1" : "0" }));
                     continue;
                 }
                 EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why, CauseKeys.Purpose.Occupation, id);
@@ -366,7 +367,7 @@ namespace Statecraft.Sim
                 s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left, x.Fled);
                 why.Add(new Cause("map", id, left, left == 0
                     ? $"{name}: the occupation period has ended. It awaits a decision"
-                    : FormattableString.Invariant($"{name}: {left} turns of occupation left")));
+                    : FormattableString.Invariant($"{name}: {left} turns of occupation left"), key: CauseKeys.OccupationCountdown));
             }
         }
 
@@ -377,7 +378,7 @@ namespace Statecraft.Sim
         {
             if (s.DisplacedByPlayer == 0) return;
             var change = EffectsSystem.Shift(c, s, SupportIndicator, -r.DeportSupportDragPerTurn!.Value * s.DisplacedByPlayer);
-            if (change != 0) why.Add(new Cause("map", SupportIndicator, change, $"{PlayerText.Change(c, SupportIndicator, change)} (the places depopulated by Deport)"));
+            if (change != 0) why.Add(new Cause("map", SupportIndicator, change, $"{PlayerText.Change(c, SupportIndicator, change)} (the places depopulated by Deport)", key: CauseKeys.DepopulationSupport));
         }
 
         /// <summary>R-CTRL-020 (Q-DEP-7 (c), Q-SENS-2 (c)): whether (q, r) is the hex of a place the player has depopulated,

@@ -162,8 +162,8 @@ namespace Statecraft.Sim
             // (ProjectsTests.AnOrderOnTurnTWithSixTurnsIsBuiltAtTheEndOfTurnTPlusFive).
             s.Sites[site] = new SiteWork(site, unit, turns, null);
             why.Add(plow || drain
-                ? new Cause("map", site, 1, $"{place.Name}: a group of halutzim began {(plow ? "plowing" : "draining the swamp")}, cost {PlayerText.Money(c, "treasury", cost)}")
-                : new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building {(camp ? "a training camp" : "a yishuv")}, cost {PlayerText.Money(c, "treasury", cost)}"));
+                ? new Cause("map", site, 1, $"{place.Name}: a group of halutzim began {(plow ? "plowing" : "draining the swamp")}, cost {PlayerText.Money(c, "treasury", cost)}", key: CauseKeys.LandWorkStarted, args: new[] { plow ? "plow" : "drain", CauseKeys.Number(cost) })
+                : new Cause("map", site, 1, $"{place.Name}: a group of halutzim began building {(camp ? "a training camp" : "a yishuv")}, cost {PlayerText.Money(c, "treasury", cost)}", key: CauseKeys.SiteStarted, args: new[] { camp ? "camp" : "yishuv", CauseKeys.Number(cost) }));
             return null;
         }
 
@@ -201,7 +201,7 @@ namespace Statecraft.Sim
             var work = s.Sites.Values.FirstOrDefault(w => w.BuiltOn == null && w.Unit == unit);
             if (work == null) return Corridors.Stop(c, s, unit, why) ? null : "That group of halutzim is not building anything";
             s.Sites.Remove(work.Site);
-            why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned"));
+            why.Add(new Cause("map", work.Site, -1, $"{PlayerText.Site(c, work.Site)}: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.SiteCancelled));
             return null;
         }
 
@@ -229,14 +229,14 @@ namespace Statecraft.Sim
                 else
                 {
                     s.Sites[w.Site] = SiteWork.Built(w.Site, next);
-                    why.Add(new Cause("map", w.Site, 1, $"{place.Name} {(IsCamp(place) ? "built" : place.Kinds.Contains(FieldKind) ? "plowed" : place.Kinds.Contains(SwampKind) ? "drained" : "founded")}"));
+                    why.Add(new Cause("map", w.Site, 1, $"{place.Name} {(IsCamp(place) ? "built" : place.Kinds.Contains(FieldKind) ? "plowed" : place.Kinds.Contains(SwampKind) ? "drained" : "founded")}", key: CauseKeys.SiteCompleted, args: new[] { IsCamp(place) ? "built" : place.Kinds.Contains(FieldKind) ? "plowed" : place.Kinds.Contains(SwampKind) ? "drained" : "founded" }));
                 }
                 // R-VET-001: the project progressed this turn, so a halutz serves a turn; a veteran counts no further.
                 if (u.Type != "halutz") continue;
                 var service = u.Service + 1;
                 var promoted = service >= r.VeteranHalutzService!.Value;
                 s.Units[u.Id] = new Unit(u.Id, promoted ? VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
-                if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers"));
+                if (promoted) why.Add(new Cause("map", w.Site, 1, "A group of halutzim became veteran pioneers", key: CauseKeys.PioneersVeteran));
             }
             Corridors.Advance(c, s, next, why);   // R-COR-002: after the sites (Phase 4 PR 2)
         }
@@ -322,7 +322,7 @@ namespace Statecraft.Sim
             EconomySystem.PayOrBorrow(c, s, k.Cost, "to build " + k.Name, why, CauseKeys.Purpose.Project, k.Id);
             var id = s.NextId++;
             s.CityProjects.Add(id, new CityProject(id, kind, city, q, r, k.Turns));
-            why.Add(new Cause("city", city, 1, $"{name}: {k.Name} began, cost {PlayerText.Money(c, "treasury", k.Cost)}"));
+            why.Add(new Cause("city", city, 1, $"{name}: {k.Name} began, cost {PlayerText.Money(c, "treasury", k.Cost)}", key: CauseKeys.ProjectStarted, args: new[] { kind, CauseKeys.Number(k.Cost) }));
             return null;
         }
 
@@ -335,7 +335,7 @@ namespace Statecraft.Sim
             var k = c.ProjectKinds.First(x => x.Id == p.Kind);
             if (p.BuiltOn != null) return $"{PlayerText.Capitalised(k.Name)} is already built";
             s.CityProjects.Remove(project);
-            why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was cancelled; the Money spent is not returned"));
+            why.Add(new Cause("city", p.City, -1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was cancelled; the Money spent is not returned", key: CauseKeys.ProjectCancelled, args: new[] { k.Id }));
             return null;
         }
 
@@ -359,7 +359,7 @@ namespace Statecraft.Sim
                 var x = s.Cities[p.City];
                 var condition = x.Condition is double now ? Math.Min(1.0, Math.Max(0.0, now + k.Condition)) : (double?)null;
                 s.Cities[p.City] = new City(x.Id, x.HousingCapacity + k.Capacity, x.JobSlots + k.JobSlots, x.Civilians, x.Employed, x.Refugees, x.Recruits, condition, x.Craftsmen, x.JobsDefault, x.Qualified);
-                why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished"));
+                why.Add(new Cause("city", p.City, 1, $"{PlayerText.Settlement(c, p.City)}: {k.Name} was finished", key: CauseKeys.ProjectCompleted, args: new[] { k.Id }));
             }
         }
     }
