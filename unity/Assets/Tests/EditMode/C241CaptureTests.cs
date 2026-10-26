@@ -24,7 +24,7 @@ public class C241CaptureTests
         foreach(var size in new[]{(1920,1080),(1280,720),(375,667)})
         {
             var rt=new RenderTexture(size.Item1,size.Item2,0); rt.Create();
-            var ps=Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture=rt;
+            var ps=Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture=rt; ps.clearColor = true; ps.colorClearValue = Color.black;
             var go=new GameObject("C241MatchedCapture"); go.SetActive(false);
             var doc=go.AddComponent<UIDocument>(); doc.panelSettings=ps; doc.visualTreeAsset=AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
             try

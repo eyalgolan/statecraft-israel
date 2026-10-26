@@ -88,7 +88,7 @@ public class C241ReviewTests
     static IEnumerator Panel(int width, int height, bool he, Func<VisualElement, RenderTexture, IEnumerator> check)
     {
         var rt = new RenderTexture(width, height, 0); rt.Create();
-        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture = rt;
+        var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.black;
         var go = new GameObject("C241Review"); go.SetActive(false);
         var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
