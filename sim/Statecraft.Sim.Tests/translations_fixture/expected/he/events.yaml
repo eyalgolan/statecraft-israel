@@ -1,0 +1,18 @@
+alpha:
+  title: "אלפא"
+  text: "ראשון ביום: \\ ולא שני."
+  options:
+    continue: "להמשיך"
+  review: "agent-checked"
+vote:
+  title: "ההצבעה"
+  text: "{prime_minister} מבקש מהממשלה להצביע על \"התוכנית\"."
+  options:
+    yes_vote: "להצביע"
+    wait: "לחכות לצה\"ל"
+  review: "agent-checked"
+late:
+  title: "מאוחר"
+  text: "מאוחר יותר."
+  options:
+    continue: "להמשיך"
