@@ -47,16 +47,17 @@ public class RegionNamesTests
     }
 
     // Fixture is synthetic, not a historical translation or sign-off. Tests the human-removal workflow separately.
-    const string Fixture = "names:\n  - key: subdistrict.acre.name\n    name_he: בדיקה\n    name_he_sources:\n      - url: https://example.org/primary\n        checked: 2026-10-26\n        cite: page 1\n";
+    const string Fixture = "names:\n  - key: subdistrict.acre.name\n    name: Test\n    name_he: בדיקה\n    name_he_sources:\n      - url: https://example.org/primary\n        checked: 2026-10-26\n        cite: page 1\n";
     [Test]
     public void AbsentReviewMarkerIsAcceptedAfterHumanReview() =>
         Assert.AreEqual("בדיקה", MapRegionNames.Parse(Fixture).Pick("subdistrict.acre.name", "Acre", true));
+    [Test]
+    public void ExistingEditorPendingReviewMarkerIsAccepted() => Assert.DoesNotThrow(() => MapRegionNames.Parse(Fixture + "    name_he_review: agent-checked\n"));
     [Test]
     public void PendingReviewMarkerIsAccepted() => Assert.DoesNotThrow(() => MapRegionNames.Parse(Fixture + "    name_he_review: native-review-pending\n"));
     [TestCase("")]
     [TestCase("null")]
     [TestCase("reviewed")]
-    [TestCase("agent-checked")]
     public void ExplicitBlankNullOrOtherReviewStateIsRejected(string state) =>
         Assert.Throws<InvalidDataException>(() => MapRegionNames.Parse(Fixture + "    name_he_review: " + state + "\n"));
     [TestCase("https://example.org/primary", "")]
@@ -68,8 +69,18 @@ public class RegionNamesTests
     [Test]
     public void MissingSourceIsRefusedWithFieldIdentity()
     {
-        var yaml = "names:\n  - key: subdistrict.acre.name\n    name_he: בדיקה\n    name_he_review: native-review-pending\n";
+        var yaml = "names:\n  - key: subdistrict.acre.name\n    name: Test\n    name_he: בדיקה\n    name_he_review: native-review-pending\n";
         StringAssert.Contains("subdistrict.acre.name", Assert.Throws<InvalidDataException>(() => MapRegionNames.Parse(yaml))!.Message);
+    }
+    [Test]
+    public void RemovingARealCatalogSourceIsRefused()
+    {
+        var yaml=Inputs.RegionNamesYaml;
+        var start=yaml.IndexOf("    name_he_sources:",StringComparison.Ordinal);
+        var end=yaml.IndexOf("  - key:",start,StringComparison.Ordinal);
+        Assert.Greater(end,start);
+        var mutated=yaml.Remove(start,end-start);
+        StringAssert.Contains("subdistrict.acre.name",Assert.Throws<InvalidDataException>(()=>MapRegionNames.Parse(mutated))!.Message);
     }
     [Test]
     public void DuplicateAndUnknownTargetsAreRejected()
@@ -83,12 +94,13 @@ public class RegionNamesTests
 
     static readonly string[] Gaps = {
         "zone.syria_dmz_north.name", "zone.syria_dmz_central.name", "zone.syria_dmz_south.name", "line.egypt_adl_gaza.name",
-        "line.egypt_mv1950_demarcation.name", "line.egypt_mv1950_demarcation.agreement", "line.egypt_mv1950_demarcation.label_note",
-        "line.egypt_mv1950_zone_lines.name", "line.egypt_mv1950_zone_lines.agreement", "line.egypt_mv1950_zone_lines.label_note",
+        "line.egypt_mv1950_demarcation.name",
+        "line.egypt_mv1950_zone_lines.name",
         "line.jordan_adl_iraqi_c_east.name", "line.jordan_adl_iraqi_b_wadi_ara.name", "line.jordan_adl_iraqi_a_triangle.name",
         "line.jordan_adl_iraqi_c_south.name", "line.jordan_adl_a_latrun.name", "line.jordan_adl_bc_south.name", "line.jordan_adl_d_arava.name"
     };
     static readonly Dictionary<string, string> ArmisticeIdentities = new Dictionary<string, string> {
+        {"line.egypt_mv1950_demarcation.label_note", "פשרת שעה, 1950"}, {"line.egypt_mv1950_zone_lines.label_note", "פשרת שעה, 1950"},
         {"subdistrict.label", "הגלילות האדמיניסטרטיביים"}, {"armistice.label", "קווי שביתת הנשק, 1949"},
         {"front.egypt.name", "מצרים"}, {"front.lebanon.name", "לבנון"}, {"front.jordan.name", "ירדן"}, {"front.syria.name", "סוריה"},
         {"zone.egypt_el_auja_dmz.name", "שטח הכפר אל־עוג'ה וסביבתו"},
@@ -113,7 +125,7 @@ public class RegionNamesTests
                 var prefix = kind + "." + i.Key + ".";
                 all.Add(prefix + "name", i.Name); all.Add(prefix + "agreement", i.Agreement);
                 if (i.LabelNote != "") all.Add(prefix + "label_note", i.LabelNote);
-                if (!Gaps.Contains(prefix + "agreement")) expected.Add(prefix + "agreement", Agreement(i.Front.Key));
+                if (!Gaps.Contains(prefix + "agreement")) expected.Add(prefix + "agreement", i.Key.StartsWith("egypt_mv1950_",StringComparison.Ordinal) ? "פשרת שעה להסכם שביתת הנשק בין ישראל ומצרים" : Agreement(i.Front.Key));
             }
         CollectionAssert.AreEquivalent(all.Keys, expected.Keys.Concat(Gaps), "Every displayed field must be independently supplied or explicitly tracked; not a non-English inequality oracle.");
         foreach (var (key, value) in expected) Assert.AreEqual(value, m.Names.Pick(key, all[key], true), key);
@@ -125,7 +137,7 @@ public class RegionNamesTests
         }
         StringAssert.Contains("NEEDS-RESEARCH", followup);
         // All newly supplied rows remain pending; parser support for removal is not a human sign-off.
-        Assert.AreEqual(55, Inputs.RegionNamesYaml.Split(new[] {"    name_he_review: native-review-pending"}, StringSplitOptions.None).Length - 1);
+        Assert.AreEqual(59, Inputs.RegionNamesYaml.Split(new[] {"    name_he_review: native-review-pending"}, StringSplitOptions.None).Length - 1);
     }
 
     [Test]
@@ -168,13 +180,18 @@ public class RegionNamesTests
         StringAssert.Contains(replacements["subdistrict.label"],label); StringAssert.Contains(replacements["armistice.label"],label);
         StringAssert.Contains(he.Format("map.layer_front_low",replacements["front.jordan.name"]),label);
         StringAssert.Contains(replacements["line.egypt_mv1950_demarcation.label_note"],label);
-        // Real unsourced 1950 note remains visible, rather than a false translation or silently disappearing.
-        StringAssert.Contains("1950 modus vivendi",m.Label(date,he.Format,true));
+        // The sourced 1950 instrument note remains visible; its geometry and date are unchanged.
+        StringAssert.Contains("פשרת שעה, 1950",m.Label(date,he.Format,true));
+        StringAssert.DoesNotContain("1950 modus vivendi",m.Label(date,he.Format,true));
         StringAssert.Contains(he.Format("map.layer_front_low","ירדן"),m.Label(date,he.Format,true));
         foreach(var line in m.Armistice.Lines)
         {
-            var hex=m.Armistice.HexesOf(line).First();
-            StringAssert.DoesNotContain(line.Agreement,InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom.AddDays(-1)));
+            var hex=m.Armistice.LineHexes.First(kv=>kv.Value.Contains(line)).Key;
+            var name=ArmisticeIdentities.TryGetValue("line."+line.Key+".name",out var supplied)?supplied:line.Name;
+            var agreement=line.Key.StartsWith("egypt_mv1950_",StringComparison.Ordinal)?"פשרת שעה להסכם שביתת הנשק בין ישראל ומצרים":Agreement(line.Front.Key);
+            var expected=he.Format(line.LowAccuracy?"info.armistice_line_low":"info.armistice_line",name,agreement,Date(line.Signed));
+            StringAssert.DoesNotContain(expected,InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom.AddDays(-1)));
+            StringAssert.Contains(expected,InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom));
         }
     }
     [Test]
@@ -188,6 +205,6 @@ public class RegionNamesTests
         texts.Remove("map/"+MapRegionNames.FileName);
         var old=GameInputs.FromTexts(texts,files.Where(f=>f!="map/"+MapRegionNames.FileName),m.HeightmapJson,m.HeightmapR16z);
         Assert.IsEmpty(old.Map.RegionNamesYaml);
-        Assert.AreEqual(with.Content.ContentHash,old.Content.ContentHash,"map-only presentation must not affect deterministic simulation hash");
+        Assert.AreEqual(with.Content.Hash,old.Content.Hash,"map-only presentation must not affect deterministic simulation hash");
     }
 }
