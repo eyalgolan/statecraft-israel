@@ -631,6 +631,33 @@ public class TownLandmarksTests
         }
     }
 
+    /// <summary>The still-applicable part of the owner's 18 October 2026 ruling ("no procedural houses in a mapped town at any
+    /// zoom", the deleted AMappedTownDrawsNoProceduralHousesAtAnyZoom) under focused residency (#1273): once the town the
+    /// camera is on has its original, its kit houses never draw, at the deleted test's four zooms (120 km, the 60 km gameplay
+    /// view, just inside the close views and the closest zoom). Towns the camera is not on keep their fallback until admitted.</summary>
+    [Test]
+    public void TheFocusedMappedTownDrawsNoProceduralHousesAtAnyZoom()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var kit = identity.Where(p => p.Value == f.focus.Key).Select(p => p.Key).ToList();
+            Assert.IsNotEmpty(kit, f.focus.Key + " has kit houses to hide");
+            bool arrived = false;
+            foreach (var d in new[] { 119000f, 60000f, TownModelLayer.CloseEnterM - 1000f, CameraController.MinDistance })
+            {
+                float h = d / Mathf.Sqrt(2f);   // the view ray at 45 degrees: distance d to the ground
+                f.camera.transform.position = new Vector3(f.focus.At.x, h, f.focus.At.y - h);
+                f.camera.transform.LookAt(new Vector3(f.focus.At.x, 0, f.focus.At.y));
+                f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
+                if (!arrived && f.acquired.Count > 0) { f.Arrive(); arrived = true; }   // the whole-town original streams in
+                f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
+                foreach (var r in kit) Assert.IsTrue(r.forceRenderingOff, $"{f.focus.Key}'s kit houses at {d / 1000f} km");
+            }
+            Assert.IsTrue(arrived, "the whole-town original was admitted and arrived");
+        }
+    }
+
     [Test]
     public void FocusedOverviewAcquiresOnlyItsWholeTownAndLoadingKeepsFallback()
     {
