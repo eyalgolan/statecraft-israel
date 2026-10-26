@@ -17,6 +17,7 @@ public class PopulationLedgerBoundaryTests
     [InlineData("combat.resolve")] [InlineData("combat.outcomes")]
     [InlineData("prisoners.upkeep")] [InlineData("prisoners.return")] [InlineData("prisoners.take")]
     [InlineData("events.trigger")] [InlineData("events.choose")] [InlineData("events.delegate")] [InlineData("turn.resolve")]
+    [InlineData("economy.flows")] [InlineData("economy.apply")] [InlineData("objectives.complete")]
     public void DirectAggregateCallsRefuseBeforeAnyStateResourceOrCauseMutation(string call)
     {
         var c = PopulationLedgerTests.Content();
@@ -65,6 +66,9 @@ public class PopulationLedgerBoundaryTests
                 case "events.choose": EventSystem.Choose(c,s,"missing","missing",why); break;
                 case "events.delegate": EventSystem.Delegate(c,s,why); break;
                 case "turn.resolve": TurnResolver.Resolve(c,s,s.Date.AddMonths(1),.1,why); break;
+                case "economy.flows": EconomySystem.Flows(c,s,.1); break;
+                case "economy.apply": EconomySystem.Apply(c,s,.1,why); break;
+                case "objectives.complete": Objectives.Complete(c,s,rules,s.Date.AddMonths(1),why); break;
                 default: throw new Exception("Unknown boundary fixture");
             }
         }

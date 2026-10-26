@@ -42,6 +42,7 @@ namespace Statecraft.Sim
         /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
         public static void Complete(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var o in c.Objectives)   // in objectives.yaml's order (the loader; R-OBJ-007)
                 if (Holds(c, s, o)) Record(c, s, r, o.Id, next, why);
         }
