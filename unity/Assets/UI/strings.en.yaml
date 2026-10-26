@@ -66,6 +66,11 @@ how_to_play.events: "An event card asks for a decision. Answering it costs Atten
 how_to_play.top_bar: "The top bar shows the date, your Attention, Money and the country's main indicators."
 how_to_play.end_turn: "End turn moves to the next month. While one of your units still needs orders, the button selects it instead: move it, fortify it, hold or skip it. A card you leave unanswered, or have no Attention left to answer, goes to the responsible minister, who decides it for you."
 how_to_play.why: "After a turn, open Why? to see each change and its cause."
+
+# GDD 0.3 help (#1688): old-mode help above stays unchanged.
+how_to_play.gdd03.events: "An event card asks for a decision. Your choice takes effect when you end the turn."
+how_to_play.gdd03.top_bar: "The top bar shows the date, Money and the country's main indicators."
+how_to_play.gdd03.end_turn: "End turn moves to the next month. While one of your units still needs orders, the button selects it instead: move it, fortify it, hold or skip it. A card you leave unanswered goes to the responsible minister, who decides it for you."
 # The Objectives screen (#1189): every objective in objectives.yaml, done or not, the player's date beside the historical
 # one, and no score (owner, 20 October 2026). The objective card's wording (#380). {0} the player's date,
 # {1} the historical date (objectives.open: {0}). The names are objectives.yaml's (#1208).
