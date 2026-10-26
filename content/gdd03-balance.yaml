@@ -1,5 +1,5 @@
 # R-LOOP-005: gdd-0.3 catalogue only; no legacy/gdd-0.1 runtime consumer.
-# Source #1668 docs/gdd/balance.md at605277df. Retained/derived bases explained per entry.
+# Source #1668 docs/gdd/balance.md at 605277df. Retained/derived bases explained per entry.
 # Numeric start.army is forbidden until a separate owner decision (#1717).
 "ruleset": "gdd-0.3"
 "values":
@@ -426,7 +426,7 @@
     "values": [0.50]
   "annex.support_cost":
     "basis": "Default"
-    "note": "Military and control: displayed International Support points once per regime establishment; Default; agreed much larger annexation cost. Source: #1668 balance.md at 605277df. Relative larger annexation cost agreed; numeric10 remains Default."
+    "note": "Military and control: displayed International Support points once per regime establishment; Default; agreed much larger annexation cost. Source: #1668 balance.md at 605277df. Relative larger annexation cost agreed; numeric 10 remains Default."
     "values": [10]
   "puppet.support_cost":
     "basis": "Default"
@@ -452,27 +452,27 @@
       "ratio_thresholds":
         "basis": "Default"
         "values": [0.5, 1, 2]
-        "note": "Ascending adjusted attacker/defender ratios; four outcome bands separated by these three boundaries. #1668 balance.md at605277df."
+        "note": "Ascending adjusted attacker/defender ratios; four outcome bands separated by these three boundaries. #1668 balance.md at 605277df."
       "draw_band":
         "basis": "Default"
         "values": [0, 99]
-        "note": "Inclusive RNG band. #1668 balance.md at605277df."
+        "note": "Inclusive RNG band. #1668 balance.md at 605277df."
       "below_0_5":
         "basis": "Default"
         "values": [0, 59, 60, 89, 90, 99]
-        "note": "Inclusive pairs: attacker loss, both hold, defender retreat, defender loss; unavailable result omitted. #1668 balance.md at605277df."
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats; no defender loss in this row. #1668 balance.md at 605277df."
       "from_0_5_below_1":
         "basis": "Default"
         "values": [0, 29, 30, 69, 70, 94, 95, 99]
-        "note": "Inclusive pairs: attacker loss, both hold, defender retreat, defender loss; unavailable result omitted. #1668 balance.md at605277df."
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats, defender loss. #1668 balance.md at 605277df."
       "from_1_below_2":
         "basis": "Default"
         "values": [0, 9, 10, 39, 40, 84, 85, 99]
-        "note": "Inclusive pairs: attacker loss, both hold, defender retreat, defender loss; unavailable result omitted. #1668 balance.md at605277df."
+        "note": "Inclusive pairs, in order: attacker loss, both hold, defender retreats, defender loss. #1668 balance.md at 605277df."
       "at_least_2":
         "basis": "Default"
         "values": [0, 9, 10, 69, 70, 99]
-        "note": "Inclusive pairs: attacker loss, both hold, defender retreat, defender loss; unavailable result omitted. #1668 balance.md at605277df."
+        "note": "Inclusive pairs, in order: both hold, defender retreats, defender loss; no attacker loss in this row. #1668 balance.md at 605277df."
   "combat.enemy_attack_ratio":
     "basis": "Default"
     "note": "Movement and engagement defaults: unitless minimum ratio for goal-driven enemy attack; Default. Source: #1668 balance.md at 605277df."
@@ -760,7 +760,7 @@
         "basis": "Default"
         "values": [0]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "lowland":
     "basis": "Default"
     "parts":
@@ -772,7 +772,7 @@
         "basis": "Default"
         "values": [0]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "valley":
     "basis": "Default"
     "parts":
@@ -784,7 +784,7 @@
         "basis": "Default"
         "values": [0]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "hills":
     "basis": "Default"
     "parts":
@@ -796,7 +796,7 @@
         "basis": "Default"
         "values": [25]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "mountains":
     "basis": "Default"
     "parts":
@@ -808,7 +808,7 @@
         "basis": "Default"
         "values": [50]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "desert":
     "basis": "Default"
     "parts":
@@ -820,12 +820,12 @@
         "basis": "Default"
         "values": [0]
         "note": "percent"
-    "note": "Existing biome row, #1668 balance.md at605277df; no terrain taxonomy added."
+    "note": "Existing biome row, #1668 balance.md at 605277df; no terrain taxonomy added."
   "lake":
     "basis": "Agreed"
     "expression": "impassable"
-    "note": "Retained baseline; defence not applicable. #1668 balance.md at605277df."
+    "note": "Retained baseline; defence not applicable. #1668 balance.md at 605277df."
   "sea":
     "basis": "Agreed"
     "expression": "impassable"
-    "note": "Retained baseline; defence not applicable. #1668 balance.md at605277df."
+    "note": "Retained baseline; defence not applicable. #1668 balance.md at 605277df."

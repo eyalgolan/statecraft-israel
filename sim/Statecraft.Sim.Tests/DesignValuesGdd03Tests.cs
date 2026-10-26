@@ -5,7 +5,7 @@ using YamlDotNet.Serialization;
 public partial class DesignValuesTests
 {
     const string CatalogueFile = "gdd03-balance.yaml";
-    // R-LOOP-005: exact key inventory of #1668 balance.md at605277df, including project and biome rows.
+    // R-LOOP-005: exact key inventory of #1668 balance.md at 605277df, including project and biome rows.
     static readonly string[] Gdd03Keys = {
         "campaign.play_minutes",
         "money.il_millions",
