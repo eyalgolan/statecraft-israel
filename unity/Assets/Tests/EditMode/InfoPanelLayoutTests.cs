@@ -39,7 +39,8 @@ public class InfoPanelLayoutTests
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
-                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null)
+                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null,
+                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -57,7 +58,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
         try
         {
             act(root, info);
@@ -731,6 +732,133 @@ public class InfoPanelLayoutTests
                     });
                 }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    // R-MOVE-001 (#1708): both locales display the same effective allowance used by sim reachability.
+    [UnityTest]
+    public IEnumerator Gdd03UnitCardUsesEffectivePointsDenominator([Values(false, true)] bool hebrew)
+    {
+        var c = ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(Paths.Content, rel);
+            if (!File.Exists(path)) return null;
+            var source = File.ReadAllText(path);
+            return rel == "eras.yaml" ? source.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : source;
+        }, Directory.GetFiles(Path.Combine(Paths.Content, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        var data = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var token = Statecraft.Game.Map.Units.UnitRoster.FromState(data, c, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(c, g.State, token.Unit)!.Value;
+        Assert.AreEqual(2, Movement.Allowance(c, g.State.Units[id]));
+        Statecraft.Game.Map.Units.PlacedToken? selected = new Statecraft.Game.Map.Units.PlacedToken(token, new Statecraft.Game.Map.Units.AnchorSpot(0, 0, 0, 0, false));
+        yield return Rendered(1512, 982, g, (root, info) => info.ShowUnit(), root =>
+        {
+            StringAssert.Contains(text.Format("unit.points", 2, 2), root.Q<Label>("info-settlements").text);
+        }, text: text, hebrew: hebrew, unit: () => selected);
+    }
+
+    static (GameSession session, Statecraft.Game.Map.Units.PlacedToken token, int id) MilitaryFixture(string role)
+    {
+        var c = ContentLoader.Load(rel => {
+            var path=Path.Combine(Paths.Content,rel); if(!File.Exists(path)) return null;
+            var source=File.ReadAllText(path);
+            return rel=="eras.yaml" ? source.Replace("loop: gdd","loop: gdd, ruleset: gdd-0.3") : source;
+        },Directory.GetFiles(Path.Combine(Paths.Content,"events"),"*.yaml").Select(p=>"events/"+Path.GetFileName(p)));
+        var g=GameSession.New(c,GoldenRun.Seed,Mode.Historical);
+        var data=Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var token=Statecraft.Game.Map.Units.UnitRoster.FromState(data,c,g.State,_=>true,(row,a,q,r)=>a).Single(t=>t.Unit.Id=="golani");
+        var id=UnitCard.SimUnit(c,g.State,token.Unit)!.Value;
+        var type=c.UnitTypes.First(t=>t.Side==Movement.PlayerSide && t.Class==role).Id;
+        c.Hexes=Enumerable.Range(0,8).SelectMany(q=>Enumerable.Range(0,3).Select(r=>new MapHex { Q=q,R=r,Biome="coastal_plain",Land=true })).ToList();
+        c.Corridors.Clear();c.MapLocations.Clear();
+        g.State.Units.Clear();g.State.PendingEvents.Clear();
+        g.State.Units[id]=new Unit(id,type,0,1,side:Movement.PlayerSide,strength:6);
+        g.State.Arms=0;g.State.GameOver=null;
+        return (g,new Statecraft.Game.Map.Units.PlacedToken(token,new Statecraft.Game.Map.Units.AnchorSpot(0,0,0,0,false)),id);
+    }
+
+    // R-MOVE-001/002: actual committed movement, both role denominators and UI reachability in both locales.
+    [UnityTest]
+    public IEnumerator Gdd03AfterMoveUsesRemainingRolePointsAndReach([Values(false,true)] bool hebrew,[Values("infantry","armour")] string role)
+    {
+        var f=MilitaryFixture(role);var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new Move(f.id,1,1)));
+        var allowance=Movement.Allowance(g.Content,bridge.State.Units[f.id]);
+        var reach=InfoPanelPresenter.MoveReach(bridge,f.id)!;
+        CollectionAssert.AreEquivalent(Movement.Reachable(g.Content,bridge.State,f.id,bridge.Spent).Keys,reach.Keys);
+        Assert.AreEqual((1, 1), (bridge.State.Units[f.id].Q, bridge.State.Units[f.id].R), "the committed Move put the unit on (1,1)");
+        // The lit hexes the card hands the map, pinned by hand on the all-plain 8x3 board: one point left (infantry, 2 of 2
+        // spent 1) reaches the six neighbours of (1,1); two points left (armour, 3 less 1) reach every hex within two steps.
+        var expected = role == "infantry"
+            ? new[] { (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1) }
+            : new[] { (0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1) };
+        var lit = new List<IReadOnlyCollection<(int q, int r)>>();
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.points",allowance-1,allowance),root.Q<Label>("info-settlements").text);
+            Assert.IsNotEmpty(lit, "the card lit the unit's reach on the map");
+            CollectionAssert.AreEquivalent(expected, lit[lit.Count - 1].Select(h => (h.q, h.r)), "the highlighted hexes are the remaining-points reach");
+        },text:text,hebrew:hebrew,unit:()=>f.token,showReachable:hexes=>lit.Add(hexes.ToList()));
+    }
+
+    // R-MOVE-008/009: standing route ETA is computed on the post-commit state and same effective points.
+    [UnityTest]
+    public IEnumerator Gdd03RouteEtaUsesCommittedRemainder([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new UnitOrder(f.id,Movement.GoTo,6,1)));
+        var route=Movement.Route(g.Content,bridge.State,f.id,6,1,bridge.Spent);Assert.IsNotEmpty(route);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.go_to_given",System.Math.Max(0,route[route.Count-1].Turn-1)),root.Q<Label>("info-settlements").text);
+        },text:text,hebrew:hebrew,unit:()=>f.token);
+    }
+
+    // R-COMBAT-010/002: attack pick renders the sim's additive permanent+settled Fortify odds.
+    [UnityTest]
+    public IEnumerator Gdd03FortifiedDefenderOddsComeFromTheSim([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,1,1,side:"egypt",strength:6,order:Orders.Fortify,orderTarget:"1,1");
+        c.MapLocations.Add(new MapLocation { Id="fixture_fort",Kind="fort",Q=1,R=1 });
+        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var expected=Combat.Preview(c,g.State,f.id,1,1)!.Value.RatioPercent;Assert.AreEqual(57,expected);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.attack_odds","1,1",expected),root.Q<Label>("info-settlements").text);
+        },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
+    }
+
+    // R-MOVE-010/#1749: a gun retains its action prompt/fire, but move explicitly refuses without a guessed allowance.
+    [UnityTest]
+    public IEnumerator Gdd03GunPromptsBeforeFireAndStopsAfterShot([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture(Combat.ArtilleryClass);var g=f.session;var c=g.Content;
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
+        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);CollectionAssert.Contains(bridge.NeedsOrders,f.id);
+        Assert.Greater(Movement.ActionsLeft(c,bridge.State,f.id,bridge.Spent),0);
+        Assert.AreEqual(text["unit.artillery_move_missing"],bridge.Queue(new Move(f.id,1,1)));
+        var odds = Combat.Preview(c, bridge.State, f.id, 2, 1)!.Value.RatioPercent;
+        InfoPanelPresenter? shown = null;
+        // The card's own Fire control: shown and pressed, its pick shows the sim's odds while the movement refusal stays on
+        // the card, and the lit target fires through the same pick a map click uses.
+        yield return Rendered(1512,982,g,(root,info)=>{ info.ShowUnit(); shown = info; },root=> {
+            var card = root.Q<Label>("info-settlements").text;
+            Assert.IsTrue(Shown(root.Q<Button>("info-attack")), "the gun's attack control stays visible while movement is blocked");
+            Assert.IsFalse(Shown(root.Q<Button>("info-move")), "no Move is offered for the gun");
+            StringAssert.Contains(text["unit.fire_ready"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            StringAssert.Contains(text.Format("unit.attack_odds", "2,1", odds), card);
+            Assert.IsTrue(shown!.PickTarget(2, 1), "the lit enemy hex takes the shot");
+        },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
+        var after = new SimBridge(g, text);
+        CollectionAssert.DoesNotContain(after.NeedsOrders,f.id);
+        Assert.AreEqual(0,Movement.ActionsLeft(c,after.State,f.id,after.Spent));Assert.AreEqual(0,after.State.Arms);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            var card = root.Q<Label>("info-settlements").text;
+            StringAssert.Contains(text["unit.fire_spent"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            Assert.IsFalse(Shown(root.Q<Button>("info-attack")), "no second shot is offered");
+        },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
 }

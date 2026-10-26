@@ -80,6 +80,8 @@ namespace Statecraft.Sim
                         throw new ContentException(e.File, F($"options[{o.Id}].alternative"), "an option that did not happen says who proposed it, or basis: design");
                     foreach (var kv in o.SetPolicy)
                     {
+                        if (c.Ruleset == SaveGame.Gdd03Ruleset && (kv.Key == "rationing" || kv.Key == "maabarot"))
+                            throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "retired policy write under gdd-0.3 (R-EFX-001)");
                         if (c.Policies.All(p => p.Id != kv.Key)) throw new ContentException(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), "unknown policy");
                         ContentLoader.Unit(e.File, F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Value);
                         Active(F($"options[{o.Id}].set_policy.{kv.Key}"), kv.Key);
@@ -87,6 +89,9 @@ namespace Statecraft.Sim
                     if (o.SetRung.HasValue && (o.SetRung < 1 || o.SetRung > 5)) throw new ContentException(e.File, F($"options[{o.Id}].set_rung"), "must be 1-5");
                     foreach (var fx in o.Effects)
                     {
+                        // Check before general indicator acceptance: compatibility ids cannot enable commands or readout writes.
+                        if (c.Ruleset == SaveGame.Gdd03Ruleset && RetiredGdd03Target(fx.Target))
+                            throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unsupported event target under gdd-0.3 (R-EFX-001)");
                         if (!indicators.Contains(fx.Target) && !SpecialTargets.Contains(fx.Target))
                             throw new ContentException(e.File, F($"options[{o.Id}].effects.{fx.Target}"), "unknown target");
                         Active(F($"options[{o.Id}].effects.{fx.Target}"), fx.Target);
@@ -103,6 +108,14 @@ namespace Statecraft.Sim
             CheckObjectives(c);
         }
 
+        static bool RetiredGdd03Target(string target) =>
+            target == "food_supply" || target == "housing" || target == "fx_reserves" ||
+            target == "attention" || target.StartsWith("attention_", StringComparison.Ordinal) ||
+            target == "budget" || target.StartsWith("budget_", StringComparison.Ordinal) ||
+            target == "passive_budget" || target.StartsWith("passive_budget_", StringComparison.Ordinal) ||
+            target == "food_refill" || target == "automatic_food_refill" ||
+            target == "defeat" || target == "city_loss_defeat" || target == "any_city_loss";
+
         /// <summary>The options' structured effects (D-H2): R-EFX-006 refuses a target that does not exist at load, so Resolve
         /// never skips one; R-EFX-005 refuses any gain from them on a sensitive event, as R-EFX-002 does for the resources.
         /// Called once the GDD files (cities, unit types, sites) are read, so after <see cref="Validate"/>.</summary>
@@ -116,6 +129,9 @@ namespace Statecraft.Sim
         static void CheckStructured(Content c, GameEvent e, EventOption o, bool sensitive, Func<string, string> F)
         {
             if (o.GrantUnits.Count + o.CityEffects.Count + o.UnlockProjects.Count == 0) return;
+            // No approved population/facility accounting adapter exists yet. Do not use the raw legacy mutations.
+            if (c.Ruleset == SaveGame.Gdd03Ruleset)
+                throw new ContentException(e.File, F($"options[{o.Id}].{(o.GrantUnits.Count > 0 ? "grant_units" : o.CityEffects.Count > 0 ? "city_effects" : "unlock_projects")}"), "requires an approved gdd-0.3 accounting contract (R-EFX-001/005)");
             // They act on the GDD records (cities.yaml, unit_types.yaml, sites.yaml, projects.yaml), which the legacy loop does not load.
             if (!c.IsGdd)
                 throw new ContentException(e.File, F($"options[{o.Id}].{(o.GrantUnits.Count > 0 ? "grant_units" : o.CityEffects.Count > 0 ? "city_effects" : "unlock_projects")}"), "needs the GDD loop (eras.yaml systems.loop: gdd)");

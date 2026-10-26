@@ -1352,6 +1352,9 @@ namespace Statecraft.Sim
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
         /// <summary>Named GDD map locations. Presentation metadata only; gameplay roles remain in their owning systems.</summary>
         public List<MapLocation> MapLocations = new List<MapLocation>();
+        /// <summary>R-COMBAT-010: immutable, effective location placement; duplicate markers grant one bonus.</summary>
+        public bool HasPermanentFort(int q, int r) => Ruleset == SaveGame.Gdd03Ruleset
+            && MapLocations.Any(l => l.Kind == "fort" && l.Q == q && l.R == r);
         /// <summary>The curated settlement-control targets, in file order (R-CTRL-001).</summary>
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>

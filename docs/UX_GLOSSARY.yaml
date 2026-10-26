@@ -20,12 +20,15 @@ conventions:
     developer documentation style guide and the GOV.UK style guide.
   decision_owner: 'Eyal: where the rule is documented and the dictionary; the rule itself is already his'
 - id: transliteration
-  status: decision-needed
-  summary: 'Hebrew terms in English text are transliterated in several ways: ma''abarot (README), Halutz and Hakhshara (GDD),
-    yishuv and yishuvim (GDD), Knesset. No scheme is written down. Arabic place names are settled separately (see place-names);
-    this entry is only about the Hebrew terms.'
-  recommendation: Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling
-    beside it in the glossary.
+  status: preferred
+  summary: 'Hebrew terms in English text: ma''abara and ma''abarot take a straight apostrophe (owner''s ruling, 26 October
+    2026, #1760). Halutz, Hakhshara (with kh), yishuv, yishuvim, aliyah and Knesset keep the spelling already in use,
+    observed in the game rather than ruled; the owner has ruled on ma''abara / ma''abarot only. An identifier is not display text, so ids, YAML keys, filenames and C# names keep their
+    apostrophe-free spelling (content/model.yaml: id maabarot beside name "Transit camps (ma''abarot)"); a quoted source
+    form and a URL keep what they print. The rule is docs/WRITING_GUIDE.md section 10. Arabic place names are settled
+    separately (see place-names).'
+  recommendation: Written down in docs/WRITING_GUIDE.md section 10; each term is listed once here, glossed at first use in
+    prose, with the Hebrew beside it.
   decision_owner: Eyal
 - id: place-names
   status: preferred
@@ -651,8 +654,6 @@ concepts:
     in_use:
     - form: Place a transit camp ({0})
       where: strings.en.yaml info.build_camp
-    - form: the ma'abarot transit camps
-      where: README.md, site press page
   he:
     preferred: מעברה
     avoid: []
@@ -660,11 +661,11 @@ concepts:
     - form: הקמת מעברה ({0})
       where: strings.he.yaml info.build_camp
   recommendation:
-    en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. Decide
-      the transliteration once (conventions: transliteration).'
+    en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. The
+      spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).'
     he: No change proposed.
     reasons:
-    - That is what the README already does.
+    - That is what the GDD already does; the README carried this example until #1200 rewrote it.
   decision_owner: Eyal
 - id: settlement
   status: contested

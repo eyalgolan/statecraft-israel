@@ -23,7 +23,7 @@ Use short, concrete sentences when possible. Favor verbs that tell the player wh
 Good examples:
 
 - “The cabinet divided over the truce terms.”
-- “The budget tightened as the ma’abarot swelled.”
+- “The budget tightened as the ma'abarot swelled.”
 - “The government faced a fresh wave of security pressure.”
 
 ## 3. Tone guidelines
@@ -121,6 +121,35 @@ Six things the rule does not reach:
   moves every reference and the content hash for no player-visible gain.
 - **Today's name of a living place is not a 1945 form.** It is the present-day official name with its own source, so
   `today.name` reads "Bayt Jann" beside `name` "Beit Jann".
-- **Hebrew-term transliteration is still open.** ma'abarot, yishuv, halutz and the rest have no scheme yet; see
-  `docs/UX_GLOSSARY.md`, "transliteration".
+- **Hebrew terms follow section 10, not this rule.** ma'abarot, yishuv and halutz are Hebrew, not Arabic place names;
+  their spelling is section 10 below.
+
+## 10. Hebrew terms in English text
+
+**ma'abara**, **ma'abarot** — with a straight apostrophe, never "maabara" or "maabarot". Owner's ruling, 26 October
+2026 (#1760), for docs, content and the UI alike. Give the English at the first mention, as the glossary's
+*transit camp* entry sets out: "the ma'abarot (transit camps)", then either word.
+
+The owner has ruled on ma'abara and ma'abarot only. The spellings below are **observed in the game, not ruled**:
+they are what the text already uses, recorded here so a reader has one place to look, and a straggler is not a second
+scheme. **yishuv** and **yishuvim**, with no variant spelling at all; **halutz** and **halutzim**, against 5 "haluz";
+**aliyah**, against 5 "aliya"; **hakhshara** with *kh*, against 10 "hachshara", two of them in `content/sites.yaml`;
+and **Knesset**, against 6 "Knesseth".
+
+The straggler counts are from main on 26 October 2026, over `docs/`, `research_notes/`, `content/`, `README.md`,
+`README.he.md`, `CONTRIBUTING.md` and `unity/Assets/UI/strings.en.yaml`, matching `.md`, `.yaml`, `.yml`, `.tsv`,
+`.json` and `.txt` only, case-insensitively, with a word boundary either side so that "aliya" does not count the
+"aliyah" that contains it. They are the counts that matter to the rule, and they reproduce exactly.
+
+Three things the rule does not reach, for the same reasons as section 9:
+
+- **An identifier is not display text.** An apostrophe cannot go in an id, a YAML key, a filename or a C# name, so
+  the event `maabarot_policy`, the policy key `maabarot`, `content/events/maabarot_policy.yaml` and
+  `MaabaraCamp.cs` keep their spelling. `content/model.yaml` is the pattern: `id: maabarot` beside
+  `name: Transit camps (ma'abarot)`. Renaming them would move every reference and the content hash for no
+  player-visible gain: the event id `maabarot_policy` is named by three goldens, and the policy key `maabarot` has a
+  line in all nine.
+- **A quoted source form keeps the spelling its source prints**, as in section 9. `research_notes/GDD phase 3/locked-project-kinds.md`
+  quoting "The first maabara opened in Ksalon" keeps the source's spelling.
+- **A URL is never respelled.**
 
