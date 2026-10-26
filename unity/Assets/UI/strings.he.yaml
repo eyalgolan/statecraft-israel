@@ -887,3 +887,8 @@ advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי 
 # Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
 city.workers_ordered: "בסיום התור: {0}"
 city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"
+
+# #1708 artillery action status. Hebrew: native review pending (#564).
+unit.artillery_move_missing: "לא ניתן להזיז ארטילריה: מכסת התנועה שלה בכללי gdd-0.3 עדיין לא נקבעה."
+unit.fire_ready: "ניתן לירות"
+unit.fire_spent: "הירי בוצע בתור הזה"

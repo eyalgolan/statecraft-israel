@@ -823,3 +823,8 @@ advisor.dayan.arms_out.cue.2: "Buying Arms with Money before the stock runs shor
 # Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
 city.workers_ordered: "At End turn: {0}"
 city.workers_cost: "At End turn · Order cost: {0:0.0} Attention"
+
+# #1708 artillery action status. Hebrew: native review pending (#564).
+unit.artillery_move_missing: "Artillery cannot move: its gdd-0.3 movement allowance is not specified."
+unit.fire_ready: "Fire available"
+unit.fire_spent: "Fired this turn"
