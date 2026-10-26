@@ -5,6 +5,13 @@
 id: burma_road_complete
 title: The Road of Valour opens
 text: 'The Road of Valour opened on 7 December 1948 as the permanent road that replaced the Burma Road track to Jerusalem. Its opening ceremony also commemorated those killed in the convoys.'
+# For the native reviewer (#564): the Hebrew below (#1541) is an AI translation of the English, read and approved by
+# Beri (the author) on #1544, 24 Oct 2026; a second native read is still needed (#564). כביש הגבורה is he.wiki "כביש
+# הגבורה" [43319595], as cited in research_notes/gdd-phase-4-sourcing.md:338; דרך בורמה is content/corridors.yaml's
+# name_he for the corridor. The card is sensitive (the convoys' dead).
+title_he: נפתח כביש הגבורה
+text_he: 'כביש הגבורה נפתח ב־7 בדצמבר 1948, ככביש הקבע שהחליף את דרך בורמה לירושלים. בטקס הפתיחה הונצחו גם הנופלים בשיירות.'
+text_he_review: agent-checked
 anchor: soft
 objective: burma_road
 from: 1948-05-15
@@ -12,6 +19,7 @@ to: 1957-01-01
 options:
   - id: continue
     text: Continue
+    text_he: להמשיך
     historical: true
 tags: [war-casualties]
 sources:

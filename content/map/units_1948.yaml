@@ -42,7 +42,8 @@
 # headgear: the riflemen's headgear, only where a source ties it to the unit (otherwise the uniform default: bush hat,
 #   steel helmet, bush hat; docs/units.md).
 # vehicles: equipment a source puts with an army unit from a day, drawn on its token beside the figures (issue #665):
-#   gun_65mm, the 65 mm mountain gun (the "Napoleonchik"), or jeep. Each gives type, from ('YYYY-MM-DD', the first day a
+#   gun_65mm, the 65 mm mountain gun (the "Napoleonchik"), jeep, or armoured_car (the improvised "sandwich" armoured
+#   truck, drawn with model H01; issue #1536). Each gives type, from ('YYYY-MM-DD', the first day a
 #   source puts it with the unit; it stays for the rest of the unit's windows), a note quoting the source, and sources.
 # side: whose formation it is: israel, or egypt, jordan, syria, iraq, lebanon, ala (the Arab Liberation Army) or
 #   local_arab_forces (Q-START-4, owner, 15 October 2026: "Armies + ALA + local forces"; #226). The token flies that side's
@@ -354,6 +355,12 @@ units:
     # Secondary, superseded by the diary (#1240): en.wiki, 1948 Arab-Israeli War, the brigade table: Givati 5,000, undated. The size column cites Ben-Gurion, War Diaries 1947-1949, Arabic edition, trans. Samir Jabbour (Institute of Palestine Studies, Beirut, 1994), p. 303 (the research note, section 1, #906).
     - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-13'}
   vehicles:
+  - type: armoured_car
+    from: '1948-06-12'
+    note: "A Government Press Office photograph by Zoltan Kluger, dated 12 June 1948 on Wikimedia Commons, is titled \"The War of Independence. In the photo, a jeep leading an armoured unit of the 'Givati' brigade\"; it shows the jeep leading a column of armoured box trucks, and Commons files it under Improvised armored vehicles of Israel. The caption says 'armoured unit', not 'sandwich'; the type is read from the picture."
+    sources:
+    # Wikimedia Commons, File:Givati force .jpeg (agent read 2026-10-24; Beri checked the Commons page himself on 2026-10-24: the date, 12 June 1948, and that the caption names the Givati Brigade): description "a force of the Givati Brigade in the 1948 War of Independence" (Hebrew), image title "THE WAR OF INDEPENDENCE. IN THE PHOTO, A JEEP LEADING AN ARMOURED UNIT OF THE "GIVATI" BRIGADE.", date 12 June 1948, Zoltan Kluger, Government Press Office, National Photo Collection L14372-4A. A source for the fact only: the photograph is not shown in the game (CONTENT_POLICY section 2 refuses GPO photographs as art).
+    - {url: 'https://commons.wikimedia.org/wiki/File:Givati_force_.jpeg', checked: '2026-10-24'}
   - type: gun_65mm
     from: '1948-07-11'
     note: "Ben-Gurion's diary for 11 July 1948 lists 3+3+4 of the 65 mm guns with Givati."

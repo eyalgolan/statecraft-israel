@@ -52,8 +52,7 @@ namespace Statecraft.Sim
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
             // boundary: the turn that reaches it ends on it, with that turn's real days (spec 4.1, 4.5).
             var end = c.End;
-            var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { end }).Min();
-            var next = SimTime.AdvanceTo(s.Date, len, boundary);
+            var next = TurnEnd(c, s);
             if (c.IsGdd) SettlementControl.Stamp(s, next);   // R-CTRL-004: dates for captures made during the orders
             var adjusted = next != SimTime.Advance(s.Date, len);
             var days = (next - s.Date).Days;
@@ -80,6 +79,16 @@ namespace Statecraft.Sim
             AttentionSystem.Refill(c, s);
             if (s.GameOver == null) EventSystem.Trigger(c, s, why, turnStart);   // a game that just ended raises no new events
             return new StepResult(s, why, rejected);
+        }
+
+        /// <summary>The date the turn starting on <paramref name="s"/>'s date ends on: its turn length from the war state,
+        /// cut at the next era's start or the game's end when it comes first (spec 4.1, 4.5). Step's own rule; the advisors'
+        /// city warning (Threats) reads it too.</summary>
+        public static DateTime TurnEnd(Content c, GameState s)
+        {
+            var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
+            var boundary = c.Eras.Select(e => e.From).Where(f => f > s.Date).Concat(new[] { c.End }).Min();
+            return SimTime.AdvanceTo(s.Date, len, boundary);
         }
 
         /// <summary>Who End Turn would hand the event to (EventSystem.Delegate) if the turn ended with these orders: runs
@@ -230,6 +239,8 @@ namespace Statecraft.Sim
                     return Pools.BuyArms(c, s, a.Count, why);
                 case ResolveCapture x:
                     return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
+                case EndOccupation x:
+                    return SettlementControl.End(c, s, x.Settlement, x.Outcome, why);
                 case SecurityOrder o:
                     // long arithmetic: an extreme delta clamps to the ladder's end instead of wrapping around.
                     SecuritySystem.SetRung(c, s, (int)Math.Max(1L, Math.Min(5L, (long)s.Rung + o.Delta)), why);

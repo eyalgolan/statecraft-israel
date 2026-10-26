@@ -1,0 +1,10 @@
+offices:
+  - id: prime_minister
+    title: Prime Minister
+    title_he: ראש הממשלה
+    title_he_sources: [{ url: "https://example.org/pm", checked: 2026-10-24 }]
+    title_he_f: ראש הממשלה
+    title_he_f_review: agent-checked
+    title_he_from: 1948-05-14
+  - id: foreign_minister
+    title: Foreign Minister

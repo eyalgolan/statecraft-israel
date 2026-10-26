@@ -127,7 +127,7 @@ public class ReviewRecordTests
         var signed = c.People.Select(p => (p.ReviewedBy, p.ReviewedOn)).Concat(c.Legislatures.Select(l => (l.ReviewedBy, l.ReviewedOn)))
             .Concat(c.Governments.Select(g => (g.ReviewedBy, g.ReviewedOn))).Concat(c.Aliyah.Select(a => (a.ReviewedBy, a.ReviewedOn)))
             .Concat(c.PopulationAnchors.Select(a => (a.ReviewedBy, a.ReviewedOn))).Concat(c.Events.Select(e => (e.ReviewedBy, e.ReviewedOn)))
-            .Concat(c.Sites.Select(s => (s.ReviewedBy, s.ReviewedOn))).Where(x => x.ReviewedBy != "").ToList();
+            .Concat(c.Sites.Select(s => (s.ReviewedBy, s.ReviewedOn))).Concat(c.Corridors.Select(x => (x.ReviewedBy, x.ReviewedOn))).Where(x => x.ReviewedBy != "").ToList();
         Assert.All(signed, x => { Assert.True(ReviewRecord.IsHandle(x.ReviewedBy)); Assert.True(ReviewRecord.IsDay(x.ReviewedOn)); Assert.True(DateTime.ParseExact(x.ReviewedOn, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) <= DateTime.UtcNow.Date); });
     }
 }

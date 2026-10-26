@@ -141,7 +141,7 @@ public class KeyboardOrdersTests
             "Enter on Move lights the reachable hexes");
         var (q, r) = reach.Last();
         yield return EnterOnTheMapAt(q, r);
-        var queued = Bridge.Queued.OfType<Move>().Single();
+        var queued = Bridge.Session.Committed.OfType<Move>().Single();
         Assert.AreEqual((id, q, r), (queued.Unit, queued.Q, queued.R), "Enter on a lit hex queues the Move");
         Assert.AreEqual("golani", Object.FindFirstObjectByType<UnitLayer>().Selected, "Golani stays selected");
     }
@@ -165,7 +165,10 @@ public class KeyboardOrdersTests
             "Enter on Attack lights the hexes it can name");
         var (q, r) = targets[0];
         yield return EnterOnTheMapAt(q, r);
-        var queued = Bridge.Queued.OfType<UnitOrder>().Single();
-        Assert.AreEqual((id, Combat.Attack, (int?)q, (int?)r), (queued.Unit, queued.Order, queued.Q, queued.R), "Enter on a lit hex queues the attack");
+        // Plan Task 11; spec 4.1 lines131–136: the key press fights the attack now, not at End turn.
+        var committed = Bridge.Session.Committed.OfType<UnitOrder>().Single();
+        Assert.AreEqual((id, Combat.Attack, (int?)q, (int?)r), (committed.Unit, committed.Order, committed.Q, committed.R), "Enter on a lit hex commits the attack");
+        // Event answers correctly stay deferred (spec3.2:89); only the attack must be absent.
+        Assert.IsEmpty(Bridge.Queued.OfType<UnitOrder>().Where(o => o.Order == Combat.Attack), "the attack does not wait for End turn");
     }
 }

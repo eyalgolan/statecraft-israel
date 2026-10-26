@@ -771,6 +771,19 @@ namespace Statecraft.Sim
         public List<SegmentDef> Segments { get; set; } = new List<SegmentDef>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        string? reviewedOn;
     }
 
     /// <summary>One segment of a corridor: the hexes its stretch of the traced line crosses, in order, ending at the route
@@ -1188,8 +1201,24 @@ namespace Statecraft.Sim
         public int R { get; set; }
         public string Operation { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
+        /// <summary>The residents' outcome at capture, fled or stayed (Q-ANNEX-1, owner, 18 October 2026, #783; per place on
+        /// #793). Required; empty means the key was missing and is rejected by the loader.</summary>
+        public string Residents { get; set; } = "";
+        /// <summary>The sources for <see cref="Residents"/>, at least one (the per-place sourcing the ruling asks for).</summary>
+        [YamlMember(Alias = "residents_sources")] public List<Source> ResidentsSources { get; set; } = new List<Source>();
+        /// <summary>What joins the player's population when a stayed place is annexed (OWNER QUESTION 1 (a) on #799, the
+        /// starting-city rule); required for stayed, refused for fled.</summary>
+        public TargetAnnexation? Annexation { get; set; }
         /// <summary>Required on every row; empty means the key was missing and is rejected by the loader.</summary>
         public string Status { get; set; } = "";
+    }
+
+    /// <summary>A stayed target's annexation values (R-CTRL-016): the residents and their share in work, each a cities.yaml
+    /// value (R-CITY-006). Housing, jobs and condition follow the starting-city rule (Q-START-1), so they are not stored.</summary>
+    public sealed class TargetAnnexation
+    {
+        public CityValue? People { get; set; }
+        [YamlMember(Alias = "employed_share")] public CityValue? EmployedShare { get; set; }
     }
 
     public sealed class Content

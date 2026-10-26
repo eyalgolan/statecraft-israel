@@ -32,6 +32,7 @@ import { imageRules } from './people-in-images.mjs';
 const dist = path.resolve(process.argv[2] ?? 'dist');
 const problems = [];
 const fail = (file, msg) => problems.push(`${path.relative(dist, file)}: ${msg}`);
+const reEscape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
@@ -210,7 +211,7 @@ for (const z of [shotsZip, artZip]) {
   }
   for (const lang of ['en', 'he']) {
     const page = path.join(dist, lang, 'press', 'index.html');
-    if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${z.zip.replace(/\./g, '\\.')}"`).test(fs.readFileSync(page, 'utf8'))) {
+    if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${reEscape(z.zip)}"`).test(fs.readFileSync(page, 'utf8'))) {
       problems.push(`${lang}/press/index.html: no link to downloads/${z.zip}`);
     }
   }
@@ -222,7 +223,7 @@ if (!fs.existsSync(logoBuilt) || !fs.readFileSync(logoBuilt).equals(fs.readFileS
 }
 for (const lang of ['en', 'he']) {
   const page = path.join(dist, lang, 'press', 'index.html');
-  if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${LOGO.name.replace(/\./g, '\\.')}"`).test(fs.readFileSync(page, 'utf8'))) {
+  if (!fs.existsSync(page) || !new RegExp(`href="[^"]*/downloads/${reEscape(LOGO.name)}"`).test(fs.readFileSync(page, 'utf8'))) {
     problems.push(`${lang}/press/index.html: no link to downloads/${LOGO.name}`);
   }
 }

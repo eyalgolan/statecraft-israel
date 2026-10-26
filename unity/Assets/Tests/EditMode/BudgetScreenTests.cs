@@ -14,6 +14,21 @@ public class BudgetScreenTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
 
     [Test]
+    public void UnsubmittedChangedFiresOnlyWhenTheBadgeChanges()
+    {
+        using var ui = new UiTestKit();
+        var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), Text);
+        using var budget = new BudgetPresenter(ui.Root, bridge, Text);
+        var changed = new List<bool>();
+        budget.UnsubmittedChanged += on => changed.Add(on);
+        ui.Press("budget-education_minister-up");
+        budget.Render();
+        CollectionAssert.AreEqual(new[] { true }, changed, "re-rendering the same badge emits nothing");
+        ui.Press("budget-submit");
+        CollectionAssert.AreEqual(new[] { true, false }, changed, "Submit clears the unsubmitted badge");
+    }
+
+    [Test]
     public void AdjustKeepsTheTotalAtExactlyOne()
     {
         var shares = new Dictionary<string, double> { ["a"] = 0.45, ["b"] = 0.35, ["c"] = 0.2 };

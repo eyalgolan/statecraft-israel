@@ -2,7 +2,7 @@
 
 Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
 
-Entries: 6 contested, 7 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (49 concepts, 6 conventions).
+Entries: 6 contested, 8 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (50 concepts, 6 conventions).
 
 Revision 19 October 2026: targeted terminology and implementation checks against upstream/main 9e571342 address the #970 review. The original snapshot date remains above; this is not a full review of every new string.
 
@@ -19,6 +19,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | security-level | contested | security level | open | Eyal and the native reviewer |
 | attention | decision-needed | Attention at the start of a label, attention inside a sentence (sentence case, as in the strings) | open | Eyal |
 | turn | preferred | turn | תור | Eyal |
+| movement-points | decision-needed | movement points | נקודות תנועה | Eyal and the native reviewer |
 | end-turn | preferred | End turn (the button), 'end the turn' (the action) | סיום התור (the button); 'לסיים את התור' in sentences | Eyal |
 | decision | preferred | decision | החלטה | Eyal, for the plural form |
 | event | preferred | event (data and history), 'event card' (the card the player sees) | open | Eyal |
@@ -211,15 +212,40 @@ Category: game-system. Scope: ui, docs, marketing, code.
 | In use | Where |
 |---|---|
 | תור {0} | strings.he.yaml hud.turn |
-| תורים של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
+| תורות של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
 | {0} תורות | strings.he.yaml city.turns (#869) |
 
 **Recommendation (see status).**
 - English: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy strings.
-- Hebrew: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether the variants need alignment.
+- Hebrew: The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").
 - Reasons: (1) The current rules set all five turn lengths to month.
 
 **Decision owner.** Eyal.
+
+### movement-points (decision-needed)
+
+Category: game-system. Scope: ui, docs, code.
+
+**Definition.** The number of points a military unit can spend entering hexes during one turn.
+
+**English.** Preferred: movement points.
+
+| In use | Where |
+|---|---|
+| Movement points: {0} of {1} | strings.en.yaml unit.points |
+
+**Hebrew.** Preferred: נקודות תנועה.
+
+| In use | Where |
+|---|---|
+| נקודות תנועה: {0} מתוך {1} | strings.he.yaml unit.points |
+
+**Recommendation (see status).**
+- English: Use movement points in the card and rules.
+- Hebrew: The candidate נקודות תנועה needs a native review.
+- Reasons: (1) The term is new on screen with Civ-style movement.
+
+**Decision owner.** Eyal and the native reviewer.
 
 ### end-turn (preferred)
 

@@ -197,18 +197,43 @@ concepts:
     in_use:
     - form: תור {0}
       where: strings.he.yaml hud.turn
-    - form: תורים של רבעון / חודש / שבוע
+    - form: תורות של רבעון / חודש / שבוע
       where: strings.he.yaml defence.turn_*
     - form: '{0} תורות'
       where: strings.he.yaml city.turns (#869)
   recommendation:
     en: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy
       strings.
-    he: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether
-      the variants need alignment.
+    he: 'The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").'
     reasons:
     - The current rules set all five turn lengths to month.
   decision_owner: Eyal
+- id: movement-points
+  status: decision-needed
+  category: game-system
+  definition: The number of points a military unit can spend entering hexes during one turn.
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: movement points
+    avoid: []
+    in_use:
+    - form: 'Movement points: {0} of {1}'
+      where: strings.en.yaml unit.points
+  he:
+    preferred: נקודות תנועה
+    avoid: []
+    in_use:
+    - form: 'נקודות תנועה: {0} מתוך {1}'
+      where: strings.he.yaml unit.points
+  recommendation:
+    en: Use movement points in the card and rules.
+    he: The candidate נקודות תנועה needs a native review.
+    reasons:
+    - The term is new on screen with Civ-style movement.
+  decision_owner: Eyal and the native reviewer
 - id: end-turn
   status: preferred
   category: game-system

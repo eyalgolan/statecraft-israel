@@ -147,12 +147,12 @@ def test_each_area_cites_the_source_it_comes_from_with_that_sources_accuracy():
             continue    # tested in test_the_south_is_uncoloured_in_the_opening_period_but_its_settlements
         if (p.get("snapshot") or "").startswith("arm_") or p.get("neutral_kind") in ("dmz", "not_sourced"):
             assert "armistice_lines_1949.geojson" in p["sources"], p["id"]
-            assert any("treaties.un.org" in s for s in p["sources"]), p["id"]
+            assert any(host(s) == "treaties.un.org" for s in p["sources"]), p["id"]
             assert "ISA 6158/1: a 1:250,000" not in p["accuracy"], p["id"]
         else:
             assert p["sources"][0] == isa and "1-2 km" in p["accuracy"], p["id"]
         if p.get("neutral_kind") == "contested":
-            assert any("wikipedia.org" in s for s in p["sources"]), p["id"]
+            assert any(host(s) == "wikipedia.org" or host(s).endswith(".wikipedia.org") for s in p["sources"]), p["id"]
     arm = [f["properties"] for f in SOURCE["features"] if (f["properties"].get("snapshot") or "").startswith("arm_")]
     for p in arm:   # D-A ruling 2: low accuracy only where the Jordan line bounds the area
         jordan_in = p["snapshot"] >= "arm_1949-04-03"

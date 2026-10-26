@@ -105,6 +105,22 @@ public class KeyboardTurnTests
         for (int i = 0; i < n; i++) { yield return Tab(back); into.Add(FocusedName); }
     }
 
+    // Give each still-needing unit Skip through the keyboard, before requesting the actual turn end.
+    IEnumerator SkipTheRemainingUnits()
+    {
+        for (var guard = 0; Bridge.NeedsOrders.Count > 0; guard++)
+        {
+            Assert.Less(guard, 200, "keyboard Skip must make progress");
+            yield return TabTo("end-turn");
+            yield return Enter();
+            yield return Frames(2);
+            yield return TabTo("info-skip");
+            yield return Enter();
+            yield return Frames(2);
+        }
+        yield return TabTo("end-turn");
+    }
+
     /// <summary>The side menu, New Game, End Turn: the HUD's own controls, in the order Game.uxml gives them.</summary>
     static readonly string[] Menu = { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" };
 
@@ -153,6 +169,7 @@ public class KeyboardTurnTests
         yield return TabTo("end-turn");
 
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "Enter on End Turn ends the turn");
@@ -227,6 +244,7 @@ public class KeyboardTurnTests
         // End the turn.
         yield return TabTo("end-turn");
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "the turn ends");

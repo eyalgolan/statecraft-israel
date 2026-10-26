@@ -30,12 +30,13 @@ public class UnitFiguresTests
     static readonly DateTime May20 = new DateTime(1948, 5, 20), July12 = new DateTime(1948, 7, 12), LastArmistice = new DateTime(1949, 7, 20);
 
     /// <summary>The nine unit models of #665, and #336's 1948 soldier (#708; owner, 21 October 2026: "a third figure on some
-    /// brigade unit tokens, next to C06 and C07").</summary>
+    /// brigade unit tokens, next to C06 and C07"), and H01, the sandwich armoured car on Givati's token (#1536).</summary>
     static readonly string[] Nine =
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2", "figure-c09-irregular-v2",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
+        "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",
     };
 
@@ -153,11 +154,15 @@ public class UnitFiguresTests
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 6, 1)), "the Burma Road jeeps");
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep, UnitFigures.Napoleonchik }, UnitFigures.VehiclesAt(units["harel"], July12));
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["negev"], new DateTime(1948, 6, 2)), "the Negev Beasts' jeeps");
-        foreach (var id in new[] { "carmeli", "givati", "yiftach" })
+        foreach (var id in new[] { "carmeli", "yiftach" })
         {
             CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units[id], new DateTime(1948, 7, 10)), id);
             CollectionAssert.AreEqual(new[] { UnitFigures.Napoleonchik }, UnitFigures.VehiclesAt(units[id], new DateTime(1948, 7, 11)), $"{id}: the 11 July distribution");
         }
+        // Givati's armoured trucks: the sandwich model from the day of the GPO photograph (12 June 1948), not before; the gun joins on 11 July.
+        CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["givati"], new DateTime(1948, 6, 11)), "givati: no armoured truck before the photograph's day");
+        CollectionAssert.AreEqual(new[] { UnitFigures.SandwichArmouredCar }, UnitFigures.VehiclesAt(units["givati"], new DateTime(1948, 6, 12)), "givati: the armoured unit of 12 June");
+        CollectionAssert.AreEqual(new[] { UnitFigures.SandwichArmouredCar, UnitFigures.Napoleonchik }, UnitFigures.VehiclesAt(units["givati"], new DateTime(1948, 7, 11)), "givati: armoured trucks and the 11 July gun");
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["golani"], July12), "no source puts either with Golani");
         // A token's vehicles change the roster on their day, so the tokens are rebuilt with them.
         var before = UnitRoster.Build(Units, C.Rules, new DateTime(1948, 5, 31), 5, 0.8);
@@ -201,8 +206,8 @@ public class UnitFiguresTests
             var figures = Pieces(map, "Rifleman");
             var vehicles = Pieces(map, "Vehicle");
             Assert.Greater(figures.Count, 10, "the riflemen of 12 July 1948 (not a vacuous pass)");
-            CollectionAssert.AreEquivalent(new[] { "carmeli", "givati", "harel", "harel", "yiftach", "negev", "negev" }, vehicles.Select(v => v.parent.name),
-                "the guns of the 11 July distribution and the Harel and Negev jeeps");
+            CollectionAssert.AreEquivalent(new[] { "carmeli", "givati", "givati", "harel", "harel", "yiftach", "negev", "negev" }, vehicles.Select(v => v.parent.name),
+                "the guns of the 11 July distribution, Givati's armoured trucks and the Harel and Negev jeeps");
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the strategic-zoom mesh");
             CollectionAssert.AreEquivalent(Nine, asked.Select(a => a.id), "each model once: the eight on the tokens, and the two forces' figures asked for ahead");
             Assert.IsTrue(figures.All(f => !UnitFigures.Dressed(f) && f.GetComponent<MeshRenderer>().enabled), "the code-built figures until the models arrive");

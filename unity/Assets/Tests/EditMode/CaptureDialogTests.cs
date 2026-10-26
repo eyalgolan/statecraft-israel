@@ -12,10 +12,12 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
-/// <summary>The capture dialog (GDD Phase 6 PR 10, #802; plan 2026-10-15-gdd-phase-6.md, PR 10): when a settlement's record
-/// awaits the player's choice, the dialog names the place and lists exactly the options SettlementControl.CaptureOptions
-/// offers, in its order, each with the sim's preview; nothing is pre-selected; a choice queues ResolveCapture through
-/// SimBridge; Escape hides it without choosing; it plays no sound and shows no video; a decision card goes first. The
+/// <summary>The capture and end-of-occupation dialog (GDD Phase 6 PR 10, #802; plan 2026-10-15-gdd-phase-6.md, PR 10): when a
+/// settlement's record awaits the player's choice, or the end of its occupation, the dialog names the place and lists exactly
+/// the options SettlementControl.CaptureOptions or EndOptions lists, in its order, each with the sim's preview or, refused,
+/// disabled with its reason in the UI's language; nothing is pre-selected; a choice queues ResolveCapture or EndOccupation
+/// through SimBridge; the places go in one ordinal pass (owner, 24 October 2026, "By settlement order"); Escape hides it
+/// without choosing; it plays no sound and shows no video; a decision card goes first. The
 /// target rows here are test fixtures on the real content (Lydda and Ramle, which share a hex), with a made-up operation
 /// line (the content requires one; the dialog does not show it): the real target list ships empty until its research and
 /// review are done.</summary>
@@ -24,12 +26,13 @@ public class CaptureDialogTests
     const string Operation = "Fixture operation (a test value, not a source)";
 
     /// <summary>The real content with Lydda and Ramle as targets; <paramref name="price"/> sets attention_cost.resolve_capture
-    /// (0 in the content), so the sim's Attention preview has a number to show.</summary>
-    static Content Targets(double price = 0)
+    /// and <paramref name="endPrice"/> attention_cost.end_occupation (0 in the content), so the sim's Attention preview has a
+    /// number to show.</summary>
+    static Content Targets(double price = 0, double endPrice = 0)
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
-        string Row(string id) => $"  - {{ id: {id}, q: -3, r: 21, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], status: draft }}\n";
+        string Row(string id) => $"  - {{ id: {id}, q: -3, r: 21, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
         return ContentLoader.Load(rel =>
         {
             var path = Path.Combine(dir, rel);
@@ -40,6 +43,11 @@ public class CaptureDialogTests
             {
                 Assert.IsTrue(text.Contains("  resolve_capture: 0 "), "rules.yaml prices resolve_capture at 0");
                 text = text.Replace("  resolve_capture: 0 ", "  resolve_capture: " + price.ToString(System.Globalization.CultureInfo.InvariantCulture) + " ");
+            }
+            if (rel == "rules.yaml" && endPrice != 0)
+            {
+                Assert.IsTrue(text.Contains("  end_occupation: 0 "), "rules.yaml prices end_occupation at 0");
+                text = text.Replace("  end_occupation: 0 ", "  end_occupation: " + endPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) + " ");
             }
             return text;
         }, events);
@@ -58,6 +66,17 @@ public class CaptureDialogTests
         return g;
     }
 
+    /// <summary>A new game with no event pending and each of <paramref name="places"/> awaiting the end of its occupation
+    /// (R-CTRL-012), <paramref name="fled"/> its record's flag; with <paramref name="garrison"/>, an Israeli soldier on Lydda
+    /// and Ramle's hex, the unit Annex and Withdraw need (R-CTRL-014).</summary>
+    static GameSession Ending(Content c, bool garrison, bool fled, params string[] places)
+    {
+        var g = Awaiting(c);
+        foreach (var id in places) g.State.Settlements[id] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, g.State.Date, fled: fled);
+        if (garrison) { var u = g.State.NextId++; g.State.Units.Add(u, new Unit(u, "veteran_soldier", -3, 21, side: Movement.PlayerSide, strength: 3)); }
+        return g;
+    }
+
     /// <summary>The settlements' Hebrew names as GameRoot hands them over (the map's parse of settlements_1948.yaml).</summary>
     static IReadOnlyDictionary<string, string> NamesHe() =>
         Statecraft.Game.Map.SettlementPlacer.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml"))).ToDictionary(s => s.Id, s => s.NameHe);
@@ -69,7 +88,8 @@ public class CaptureDialogTests
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<System.IDisposable> owned = new List<System.IDisposable>();
 
         public Rig(GameSession g, UiText? text = null, int w = 1920, int h = 1080,
-            System.Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? options = null)
+            System.Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? options = null,
+            System.Func<Content, GameState, string, IReadOnlyList<CaptureOption>>? endOptions = null)
         {
             Text = text ?? En;
             rt = new RenderTexture(w, h, 0);
@@ -89,7 +109,7 @@ public class CaptureDialogTests
             Nav = new ScreenNav(Root); owned.Add(Nav);
             owned.Add(new InfoPanelPresenter(Root, Bridge, Text, g.Content.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)));
             Card = new EventCardPresenter(Root, Bridge, Text, null); owned.Add(Card);   // as GameRoot: the card first
-            Dialog = new CaptureDialogPresenter(Root, Bridge, Text, Card, NamesHe(), helper: options); owned.Add(Dialog);
+            Dialog = new CaptureDialogPresenter(Root, Bridge, Text, Card, NamesHe(), helper: options, endHelper: endOptions); owned.Add(Dialog);
         }
 
         public void Dispose()
@@ -124,12 +144,18 @@ public class CaptureDialogTests
         using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = from; from.SendEvent(e); }
     }
 
-    /// <summary>A stand-in for the options helper that offers every outcome with a preview, in <paramref name="order"/>, and
-    /// refuses <paramref name="refused"/>: the dialog must render whatever the helper returns (Occupy, #798, and Deport, #800,
-    /// are refused by the real helper today).</summary>
+    /// <summary>A stand-in for an options helper that offers every outcome with a preview, in <paramref name="order"/>, and
+    /// refuses <paramref name="refused"/> as needs_unit: the dialog must render whatever the helper returns.</summary>
     static System.Func<Content, GameState, string, IReadOnlyList<CaptureOption>> Helper(string[] order, params string[] refused) =>
-        (c, s, id) => order.Select(o => refused.Contains(o) ? new CaptureOption(o, "refused in this test", null)
+        Refusing(order, CaptureRefusal.NeedsUnit, refused);
+
+    /// <summary>As <see cref="Helper"/>, refusing <paramref name="refused"/> with the refusal <paramref name="id"/> and
+    /// <paramref name="args"/>.</summary>
+    static System.Func<Content, GameState, string, IReadOnlyList<CaptureOption>> Refusing(string[] order, string id, string[] refused, params object[] args) =>
+        (c, s, place) => order.Select(o => refused.Contains(o) ? new CaptureOption(o, new CaptureRefusal(id, "refused in this test", args), null)
             : new CaptureOption(o, null, Full)).ToList();
+
+    static readonly string[] EndOrder = { SettlementControl.Annex, SettlementControl.WithdrawOutcome };
 
     /// <summary>A preview that changes every quantity (seven lines): the most a preview can show.</summary>
     static readonly CapturePreview Full = new CapturePreview(-1, -2, 0.5, -3, -4, -0.05, -0.1, -5);
@@ -199,27 +225,34 @@ public class CaptureDialogTests
 
     // ---- The options: exactly the helper's, in its order ----
 
-    /// <summary>Plan PR 10, CaptureDialogTests.TheOrderIsTheSims: the buttons are the options the real helper offers, in its
-    /// order (today Raid alone: Occupy and Deport are refused as not built), named in the GDD's words.</summary>
+    /// <summary>Plan PR 10, CaptureDialogTests.TheOrderIsTheSims: the buttons are the options the real helper lists, in its
+    /// order, named in the GDD's words, those it refuses disabled; Deport, out of play (mvp.deport_in_play off, R-CTRL-007),
+    /// is left out until the owner's review. With no unit on Lydda, Occupy is refused (R-CTRL-011).</summary>
     [UnityTest]
     public IEnumerator TheOrderIsTheSims()
     {
         using var r = new Rig(Awaiting(C, "lod"));
         yield return Frames(4);
-        var offered = SettlementControl.CaptureOptions(r.Bridge.Content, r.Bridge.State, "lod").Where(o => o.Refusal == null).Select(o => o.Outcome).ToList();
-        Assert.IsNotEmpty(offered, "precondition: the sim offers an option here");
-        CollectionAssert.AreEqual(offered, r.Dialog.Offered.Select(o => o.Outcome).ToList(), "the dialog's options are the helper's offered ones");
-        CollectionAssert.AreEqual(offered.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList(), "one button each, in the helper's order");
-        CollectionAssert.AreEqual(offered.Select(o => En["capture.option." + o]).ToList(), r.Options.Select(b => b.text).ToList());
-        foreach (var o in offered)
+        var helper = SettlementControl.CaptureOptions(r.Bridge.Content, r.Bridge.State, "lod");
+        Assert.AreEqual(CaptureRefusal.NotInPlay, helper.Single(o => o.Outcome == SettlementControl.Deport).Refused?.Id, "precondition: Deport is out of play");
+        var listed = helper.Where(o => o.Refused?.Id != CaptureRefusal.NotInPlay).Select(o => o.Outcome).ToList();
+        CollectionAssert.AreEqual(new[] { SettlementControl.Raid, SettlementControl.Occupy }, listed, "precondition: Raid and Occupy");
+        CollectionAssert.AreEqual(listed, r.Dialog.Listed.Select(o => o.Outcome).ToList(), "the dialog's options are the helper's, less the one out of play");
+        CollectionAssert.AreEqual(listed.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList(), "one button each, in the helper's order");
+        CollectionAssert.AreEqual(listed.Select(o => En["capture.option." + o]).ToList(), r.Options.Select(b => b.text).ToList());
+        foreach (var o in listed)
             Assert.AreEqual(En["capture.about." + o], r.Root.Q<Label>("capture-about-" + o).text, $"{o}: its plain description");
+        CollectionAssert.AreEqual(helper.Where(o => listed.Contains(o.Outcome)).Select(o => o.Refused == null).ToList(), r.Options.Select(b => b.enabledSelf).ToList(),
+            "an option the helper refuses is disabled");
+        Assert.IsNull(r.Root.Q("capture-option-deport"), "Deport out of play is not shown");
         Assert.IsFalse(r.Shows("capture-none"));
     }
 
-    /// <summary>The dialog renders whatever the helper returns: every offered outcome, in the helper's order whatever it is,
-    /// and none it refuses. So Occupy and Deport appear by themselves once the sim builds them, and never before.</summary>
+    /// <summary>The dialog renders whatever the helper returns, in the helper's order whatever it is: an offered outcome as a
+    /// button with its preview, a refused one as a disabled button with its reason in the UI's language and no preview
+    /// (owner, 24 October 2026 on #799, "button explains"), never one refused as out of play.</summary>
     [UnityTest]
-    public IEnumerator ItShowsWhateverTheHelperOffersInItsOrder()
+    public IEnumerator ItShowsWhateverTheHelperListsInItsOrder()
     {
         foreach (var (order, refused) in new[]
         {
@@ -231,20 +264,62 @@ public class CaptureDialogTests
         {
             using var r = new Rig(Awaiting(C, "lod"), options: Helper(order, refused));
             yield return Frames(3);
-            var want = order.Where(o => !refused.Contains(o)).ToList();
             var where = $"[{string.Join(",", order)}] refusing [{string.Join(",", refused)}]";
-            CollectionAssert.AreEqual(want.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList(), where);
-            foreach (var o in refused) Assert.IsNull(r.Root.Q("capture-option-" + o), $"{where}: a refused option is not shown");
+            CollectionAssert.AreEqual(order.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList(), where);
+            foreach (var o in order)
+            {
+                var b = r.Root.Q<Button>("capture-option-" + o);
+                Assert.AreEqual(!refused.Contains(o), b.enabledSelf, $"{where}: {o} is enabled only when offered");
+                Assert.AreEqual(refused.Contains(o), r.Root.Q("capture-refusal-" + o) != null, $"{where}: {o} explains a refusal");
+                Assert.AreEqual(!refused.Contains(o), r.Root.Q("capture-preview-" + o) != null, $"{where}: {o} has the sim's preview only when offered");
+                if (refused.Contains(o)) Assert.AreEqual(En.Format("capture.refusal.needs_unit", "Lydda"), r.Root.Q<Label>("capture-refusal-" + o).text);
+            }
+            foreach (var o in refused) Press(r.Root.Q<Button>("capture-option-" + o));
+            yield return Frames(2);
+            Assert.IsEmpty(r.Bridge.Queued, $"{where}: a refused option cannot be chosen");
+        }
+        using (var r = new Rig(Awaiting(C, "lod"), options: Refusing(new[] { "raid", "occupy", "deport" }, CaptureRefusal.NotInPlay, new[] { "deport" })))
+        {
+            yield return Frames(3);
+            CollectionAssert.AreEqual(new[] { "capture-option-raid", "capture-option-occupy" }, r.Options.Select(b => b.name).ToList(), "an option out of play is not shown");
         }
     }
 
-    /// <summary>No option the sim offers can be chosen (a Raid with no free hex): the dialog says so, the capture waits.</summary>
+    /// <summary>R-CTRL-018 (owner, 24 October 2026 on #799, "Hide it, button explains"): for a town whose residents fled at
+    /// capture, Deport stays third, disabled, and says why in the UI's language; the other refusals likewise, with the
+    /// sim's values (Attention: what it needs, what is left).</summary>
+    [UnityTest]
+    public IEnumerator ARefusedOptionSaysWhyInTheUisLanguage()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            var name = text["ui.lang"] == UiLanguage.Hebrew ? "לוד" : "Lydda";
+            using (var r = new Rig(Awaiting(C, "lod"), text, options: Refusing(new[] { "raid", "occupy", "deport" }, CaptureRefusal.NoOneToDeport, new[] { "deport" })))
+            {
+                yield return Frames(3);
+                CollectionAssert.AreEqual(new[] { "capture-option-raid", "capture-option-occupy", "capture-option-deport" }, r.Options.Select(b => b.name).ToList());
+                Assert.IsFalse(r.Root.Q<Button>("capture-option-deport").enabledSelf);
+                Assert.AreEqual(text.Format("capture.refusal.no_one_to_deport", name), r.Root.Q<Label>("capture-refusal-deport").text);
+            }
+            using (var r = new Rig(Awaiting(C, "lod"), text, options: Refusing(new[] { "raid", "occupy", "deport" }, CaptureRefusal.Attention, new[] { "raid", "occupy", "deport" }, 2.0, 0.5)))
+            {
+                yield return Frames(3);
+                Assert.AreEqual(text.Format("capture.refusal.attention", name, 2.0, 0.5), r.Root.Q<Label>("capture-refusal-raid").text);
+                StringAssert.Contains("2.0", r.Root.Q<Label>("capture-refusal-raid").text, "the sim's numbers");
+                StringAssert.Contains("0.5", r.Root.Q<Label>("capture-refusal-raid").text);
+            }
+        }
+    }
+
+    /// <summary>No option the sim offers can be chosen (a Raid with no free hex): every option is disabled, the dialog says
+    /// the decision waits, and Hide is still there.</summary>
     [UnityTest]
     public IEnumerator WithNothingOfferedTheDialogSaysTheDecisionWaits()
     {
         using var r = new Rig(Awaiting(C, "lod"), options: Helper(new[] { "raid", "occupy", "deport" }, "raid", "occupy", "deport"));
         yield return Frames(3);
-        Assert.IsEmpty(r.Options);
+        Assert.AreEqual(3, r.Options.Count);
+        Assert.IsTrue(r.Options.All(b => !b.enabledSelf), "every option refused");
         Assert.IsTrue(r.Shows("capture-none"));
         Assert.AreEqual(En["capture.none"], r.Root.Q<Label>("capture-none").text);
         Assert.IsTrue(r.Shows("capture-hide"), "Hide is still there");
@@ -507,6 +582,281 @@ public class CaptureDialogTests
             Assert.AreEqual(LanguageDirection.RTL, r.Root.Q<TextElement>(name).languageDirection, $"{name} reads right to left");
     }
 
+    // ---- The end of an occupation (R-CTRL-014, R-CTRL-015) ----
+
+    /// <summary>A record awaiting the end of its occupation opens the dialog for it: its own intro, Annex then Withdraw in
+    /// the GDD's words, a stayed or fled place's Annex description, the reopen line shared with the capture.</summary>
+    [UnityTest]
+    public IEnumerator TheDialogOpensForAnOccupationAwaitingItsEnd()
+    {
+        foreach (var fled in new[] { false, true })
+        {
+            using var r = new Rig(Ending(C, true, fled, "lod"), endOptions: Helper(EndOrder));
+            yield return Frames(4);
+            Assert.AreEqual("lod", r.Dialog.Shown);
+            Assert.IsTrue(r.Dialog.Ending, "the end of the occupation, not a capture");
+            Assert.IsTrue(r.Shows("capture-card"));
+            Assert.AreEqual("Lydda", r.Root.Q<Label>("capture-title").text);
+            Assert.AreEqual(En.Format("capture.end.intro", "Lydda"), r.Root.Q<Label>("capture-intro").text);
+            CollectionAssert.AreEqual(new[] { En["capture.end.option.annex"], En["capture.end.option.withdraw"] }, r.Options.Select(b => b.text).ToList());
+            Assert.AreEqual(En[fled ? "capture.end.about.annex_fled" : "capture.end.about.annex_stayed"], r.Root.Q<Label>("capture-about-annex").text,
+                "Annex says what it adds: nothing for a fled place (R-CTRL-016)");
+            Assert.AreEqual(En["capture.end.about.withdraw"], r.Root.Q<Label>("capture-about-withdraw").text);
+            Cancel(r.Element);
+            yield return Frames(2);
+            Assert.AreEqual(En.Format("capture.reopen", "Lydda"), r.Waiting.text);
+        }
+    }
+
+    /// <summary>Plan PR 10, TheEndOrderIsTheSims (R-CTRL-015): the buttons are the real EndOptions, Annex then Withdraw, no
+    /// puppet regime and nothing the UI made up; enabled with the garrison there.</summary>
+    [UnityTest]
+    public IEnumerator TheEndOrderIsTheSims()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod"));
+        yield return Frames(4);
+        var helper = SettlementControl.EndOptions(r.Bridge.Content, r.Bridge.State, "lod");
+        CollectionAssert.AreEqual(EndOrder, helper.Select(o => o.Outcome).ToList(), "precondition: the sim's order");
+        Assert.IsTrue(helper.All(o => o.Refused == null), "precondition: the garrison is there: " + string.Join("; ", helper.Select(o => o.Refusal)));
+        CollectionAssert.AreEqual(EndOrder.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList());
+        Assert.IsTrue(r.Options.All(b => b.enabledSelf));
+    }
+
+    /// <summary>Plan PR 10, EndNothingIsPreselected: the dialog itself has the focus, the options look alike, Tab reaches
+    /// Annex, Withdraw, then Hide.</summary>
+    [UnityTest]
+    public IEnumerator EndNothingIsPreselected()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod"), endOptions: Helper(EndOrder));
+        yield return Frames(4);
+        Assert.AreSame(r.Element, r.Focused, "the dialog itself has the focus, not an option");
+        Assert.AreEqual(1, r.Options.Select(b => string.Join(" ", b.GetClasses().OrderBy(x => x))).Distinct().Count(), "no default style");
+        VisualElement at = r.Element;
+        foreach (var expected in r.Options.Cast<VisualElement>().Append(r.Hide))
+        {
+            Tab(at);
+            yield return Frames(1);
+            Assert.AreSame(expected, r.Focused, $"Tab from {at.name} reaches {expected.name}");
+            at = expected;
+        }
+        Assert.IsEmpty(r.Bridge.Queued);
+    }
+
+    /// <summary>Plan PR 10, TheEndPreviewIsTheSims: under each option, EndOptions' own preview, headed as the resources only
+    /// (the people, homes and jobs Annex adds are in its description, not in numbers the UI makes); priced at 1, the sim's
+    /// Attention change shows.</summary>
+    [UnityTest]
+    public IEnumerator TheEndPreviewIsTheSims()
+    {
+        var c = Targets(endPrice: 1);
+        using var r = new Rig(Ending(c, true, false, "lod"));
+        yield return Frames(4);
+        foreach (var o in SettlementControl.EndOptions(r.Bridge.Content, r.Bridge.State, "lod"))
+        {
+            Assert.IsNull(o.Refused, "precondition: " + o.Refusal);
+            var shown = r.Root.Q<Label>("capture-preview-" + o.Outcome).text;
+            Assert.AreEqual(CaptureDialogPresenter.PreviewText(r.Bridge.Content, r.Bridge.State, o.Preview!, En, ending: true), shown);
+            StringAssert.StartsWith(En["capture.end.changes"], shown);
+            StringAssert.Contains(En.Format("report.line", En["capture.caption.attention"], En.Format("capture.delta_attention", o.Preview!.Attention)), shown);
+            Assert.AreEqual(-r.Bridge.Price(new EndOccupation("lod", o.Outcome)), o.Preview.Attention, 1e-9);
+        }
+        using var free = new Rig(Ending(C, true, false, "lod"));
+        yield return Frames(3);
+        Assert.AreEqual(En["capture.end.changes_none"], free.Root.Q<Label>("capture-preview-annex").text);
+    }
+
+    /// <summary>Plan PR 10, ChoosingIssuesEndOccupation (R-CTRL-014): a choice queues EndOccupation(place, outcome), changes
+    /// nothing until End turn, goes on to the next place; End turn carries it out.</summary>
+    [UnityTest]
+    public IEnumerator ChoosingIssuesEndOccupation()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod", "ramla"));
+        yield return Frames(4);
+        Assert.AreEqual("lod", r.Dialog.Shown);
+        Press(r.Root.Q<Button>("capture-option-annex"));
+        yield return Frames(3);
+        var queued = r.Bridge.Queued.OfType<EndOccupation>().Single();
+        Assert.AreEqual(("lod", SettlementControl.Annex), (queued.Settlement, queued.Outcome));
+        Assert.AreEqual(SettlementControl.AwaitingEnd, r.Bridge.State.Settlements["lod"].State, "nothing happens before End turn");
+        Assert.AreEqual("ramla", r.Dialog.Shown, "the next place");
+        Assert.IsTrue(r.Dialog.Ending);
+        Press(r.Root.Q<Button>("capture-option-withdraw"));
+        yield return Frames(3);
+        Assert.IsNull(r.Dialog.Shown);
+        Assert.AreSame(r.Root.Q<Button>("end-turn"), r.Focused, "answered from the keyboard, the focus goes to End turn");
+        var result = r.Bridge.EndTurn();
+        Assert.IsEmpty(result.Rejected.Where(x => x.Command is EndOccupation), string.Join("; ", result.Rejected.Select(x => x.Reason)));
+        Assert.AreEqual(SettlementControl.Annexed, r.Bridge.State.Settlements["lod"].State, "End turn annexed Lydda (R-CTRL-016)");
+        Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("ramla"), "and withdrew from Ramle (R-CTRL-010)");
+    }
+
+    /// <summary>Plan PR 10, AQueuedEndDecisionIsNotShownAgain: a place with an EndOccupation queued has had its choice; a new
+    /// answer replaces it in the one slot (SimBridge.Key).</summary>
+    [UnityTest]
+    public IEnumerator AQueuedEndDecisionIsNotShownAgain()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod"));
+        yield return Frames(3);
+        Assert.IsNull(r.Bridge.Queue(new EndOccupation("lod", SettlementControl.Annex)));
+        yield return Frames(3);
+        Assert.IsNull(r.Dialog.Shown, "answered");
+        Assert.IsNull(r.Bridge.Queue(new EndOccupation("lod", SettlementControl.WithdrawOutcome)));
+        Assert.AreEqual(SettlementControl.WithdrawOutcome, r.Bridge.Queued.OfType<EndOccupation>().Single().Outcome, "one slot, the later answer");
+    }
+
+    /// <summary>Plan PR 10, EndEscapeHidesAndDoesNotChoose: Escape hides the end dialog, queues nothing, and Decision waiting
+    /// brings it back with the focus on it; the occupation keeps waiting (R-CTRL-014).</summary>
+    [UnityTest]
+    public IEnumerator EndEscapeHidesAndDoesNotChoose()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod"), endOptions: Helper(EndOrder));
+        yield return Frames(4);
+        Cancel(r.Element);
+        yield return Frames(3);
+        Assert.IsTrue(r.Dialog.Collapsed);
+        Assert.IsEmpty(r.Bridge.Queued);
+        Assert.AreSame(r.Waiting, r.Focused);
+        Press(r.Waiting);
+        yield return Frames(3);
+        Assert.IsFalse(r.Dialog.Collapsed);
+        Assert.AreSame(r.Element, r.Focused);
+        Assert.AreEqual(SettlementControl.AwaitingEnd, r.Bridge.State.Settlements["lod"].State);
+    }
+
+    /// <summary>The decision card goes before the end dialog as before the capture dialog.</summary>
+    [UnityTest]
+    public IEnumerator TheDecisionCardGoesBeforeTheEndDialog()
+    {
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        Assert.IsNotEmpty(g.State.PendingEvents, "precondition: an event is pending");
+        g.State.Settlements["lod"] = new SettlementControl(Movement.PlayerSide, SettlementControl.AwaitingEnd, g.State.Date);
+        using var r = new Rig(g, endOptions: Helper(EndOrder));
+        yield return Frames(4);
+        Assert.AreEqual("lod", r.Dialog.Shown);
+        Assert.IsFalse(r.Shows("capture-card") || r.Shows("capture-reopen"), "waits behind the card");
+        r.Card.Collapse();
+        yield return Frames(3);
+        Assert.IsTrue(r.Shows("capture-card"));
+        Assert.IsTrue(r.Dialog.Ending);
+    }
+
+    /// <summary>Owner, 24 October 2026 on #802, "By settlement order": captures and ends of occupation go in one ordinal pass
+    /// over the places, each showing the decision it has, whichever kind comes first.</summary>
+    [UnityTest]
+    public IEnumerator CaptureAndEndGoBySettlementOrder()
+    {
+        foreach (var lodEnds in new[] { true, false })
+        {
+            var g = Ending(C, true, false);
+            g.State.Settlements["lod"] = new SettlementControl(Movement.PlayerSide, lodEnds ? SettlementControl.AwaitingEnd : SettlementControl.AwaitingChoice, g.State.Date);
+            g.State.Settlements["ramla"] = new SettlementControl(Movement.PlayerSide, lodEnds ? SettlementControl.AwaitingChoice : SettlementControl.AwaitingEnd, g.State.Date);
+            using var r = new Rig(g, options: Helper(new[] { "raid", "occupy" }), endOptions: Helper(EndOrder));
+            yield return Frames(4);
+            Assert.AreEqual(("lod", lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "Lydda first (ordinal), with its own decision");
+            Assert.AreEqual(En.Format("event.more", 1), r.Root.Q<Label>("capture-count").text, "both kinds count");
+            Press(r.Options[0]);
+            yield return Frames(3);
+            Assert.AreEqual(("ramla", !lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "then Ramle, with its own");
+            Assert.AreEqual(1, lodEnds ? r.Bridge.Queued.OfType<EndOccupation>().Count() : r.Bridge.Queued.OfType<ResolveCapture>().Count());
+        }
+    }
+
+    /// <summary>Plan PR 10, RefusedOptionsStayInOrderAndExplainWhy and NoneEnabledStillWaits (R-CTRL-014): with no Israeli
+    /// unit on the place, the real EndOptions refuses both; both stay, disabled, in order, each saying why in the UI's
+    /// language, with no preview; the dialog says the decision waits; nothing can be queued.</summary>
+    [UnityTest]
+    public IEnumerator WithNoGarrisonTheEndWaitsAndSaysWhy()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            using var r = new Rig(Ending(C, false, false, "lod"), text);
+            yield return Frames(4);
+            Assert.IsTrue(SettlementControl.EndOptions(r.Bridge.Content, r.Bridge.State, "lod").All(o => o.Refused?.Id == CaptureRefusal.NeedsUnit), "precondition");
+            CollectionAssert.AreEqual(EndOrder.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList());
+            var name = text["ui.lang"] == UiLanguage.Hebrew ? "לוד" : "Lydda";
+            foreach (var o in EndOrder)
+            {
+                Assert.IsFalse(r.Root.Q<Button>("capture-option-" + o).enabledSelf);
+                Assert.AreEqual(text.Format("capture.refusal.needs_unit", name), r.Root.Q<Label>("capture-refusal-" + o).text);
+                Assert.IsNull(r.Root.Q("capture-preview-" + o));
+                Press(r.Root.Q<Button>("capture-option-" + o));
+            }
+            yield return Frames(2);
+            Assert.IsEmpty(r.Bridge.Queued);
+            Assert.IsTrue(r.Shows("capture-none"));
+            Assert.AreEqual(text["capture.end.none"], r.Root.Q<Label>("capture-none").text);
+            Assert.IsTrue(r.Shows("capture-hide"));
+        }
+    }
+
+    /// <summary>Plan PR 10, EndNoSoundAndNoVideo: opening the end dialog and choosing play nothing.</summary>
+    [UnityTest]
+    public IEnumerator EndNoSoundAndNoVideo()
+    {
+        var made = new List<AudioClip>();
+        var speaker = new Speaker();
+        using var r = new Rig(Ending(C, true, false, "lod"), endOptions: Helper(EndOrder));
+        var audio = new GameAudio(r.Bridge, r.Card, path => { var a = AudioClip.Create(path, 441, 1, 44100, false); made.Add(a); return a; }, speaker);
+        try
+        {
+            r.Dialog.Reopen();
+            yield return Frames(4);
+            Assert.IsTrue(r.Shows("capture-card") && r.Dialog.Ending);
+            Press(r.Root.Q<Button>("capture-option-annex"));
+            yield return Frames(3);
+            Assert.IsNotEmpty(r.Bridge.Queued);
+            Assert.IsEmpty(speaker.Played);
+        }
+        finally
+        {
+            audio.Dispose();
+            foreach (var a in made) Object.DestroyImmediate(a);
+        }
+    }
+
+    /// <summary>Plan PR 10, EveryEndOutcomeHasReviewedStringsInBothLanguages: every end outcome's name and description, the end
+    /// dialog's lines, and a line for every refusal id the dialog can show (all but not_in_play, which it never shows), in
+    /// English and Hebrew; the Hebrew ones are Hebrew. Occupy stays שחרור and the held state מוחזק / תקופת ההחזקה (owner,
+    /// #1317 and #803): the end dialog never calls the state שחרור.</summary>
+    [Test]
+    public void EveryEndOutcomeAndRefusalHasItsStringsInBothLanguages()
+    {
+        var g = Ending(C, true, false, "lod");
+        CollectionAssert.AreEqual(EndOrder, SettlementControl.EndOptions(C, g.State, "lod").Select(o => o.Outcome).ToList(), "precondition: Annex then Withdraw");
+        var keys = new[] { "capture.end.intro", "capture.end.option.annex", "capture.end.option.withdraw", "capture.end.about.annex_fled",
+                "capture.end.about.annex_stayed", "capture.end.about.withdraw", "capture.end.changes", "capture.end.changes_none", "capture.end.none" }
+            .Concat(CaptureRefusal.Ids.Where(id => id != CaptureRefusal.NotInPlay).Select(id => "capture.refusal." + id)).ToList();
+        foreach (var key in keys)
+        {
+            Assert.IsTrue(En.Has(key), $"strings.en.yaml: {key}");
+            Assert.IsTrue(He.Has(key), $"strings.he.yaml: {key}");
+            Assert.IsTrue(UiDirection.HasRightToLeft(He[key]), $"strings.he.yaml: {key} is Hebrew: {He[key]}");
+            StringAssert.DoesNotContain("שחרור", He[key], $"{key}: שחרור is Occupy's name only");
+        }
+        Assert.IsFalse(En.Has("capture.refusal.not_in_play") || He.Has("capture.refusal.not_in_play"), "an option out of play is never shown, so it has no line");
+        Assert.AreEqual("שחרור", He["capture.option.occupy"], "Occupy's name (owner, #1317)");
+        StringAssert.Contains("תקופת ההחזקה", He["capture.end.intro"], "the held state's words (owner, #803)");
+        Assert.AreEqual(En["capture.refusal.no_one_to_deport"].TrimEnd('.'), "Its residents fled when it was captured, so there is no one to deport",
+            "the owner's words for the fled town (R-CTRL-018)");
+    }
+
+    /// <summary>Plan PR 10, EndInHebrewIsHebrew: in Hebrew the end dialog names the place by its name_he, shows the Hebrew
+    /// strings, and reads right to left.</summary>
+    [UnityTest]
+    public IEnumerator EndInHebrewIsHebrew()
+    {
+        using var r = new Rig(Ending(C, true, false, "lod"), He);
+        using var direction = new UiDirection(r.Root, r.Bridge);
+        yield return Frames(4);
+        Assert.AreEqual("לוד", r.Root.Q<Label>("capture-title").text);
+        Assert.AreEqual(He.Format("capture.end.intro", "לוד"), r.Root.Q<Label>("capture-intro").text);
+        Assert.AreEqual(He["capture.end.option.annex"], r.Root.Q<Button>("capture-option-annex").text);
+        Assert.AreEqual(He["capture.end.about.annex_stayed"], r.Root.Q<Label>("capture-about-annex").text);
+        Assert.AreEqual(He["capture.end.changes_none"], r.Root.Q<Label>("capture-preview-annex").text);
+        foreach (var name in new[] { "capture-title", "capture-intro", "capture-option-annex", "capture-about-annex", "capture-preview-annex", "capture-option-withdraw" })
+            Assert.AreEqual(LanguageDirection.RTL, r.Root.Q<TextElement>(name).languageDirection, $"{name} reads right to left");
+    }
+
     // ---- The layout ----
 
     static bool Inside(Rect inner, Rect outer, float slack = 1f) =>
@@ -519,21 +869,24 @@ public class CaptureDialogTests
         (1024, 1024), (960, 1080), (800, 1000), (390, 844), (960, 600), (1531, 784), (1568, 752), (2560, 1080), (1920, 900), (1366, 657),
     };
 
-    /// <summary>At every window shape the decision card is checked at, in English and Hebrew, with all three options: the
-    /// dialog lies in the decision layer below the top bar, Hide inside it, every option and line no wider than the dialog,
-    /// each option's text inside its button. With previews of the size the rules give (Plausible), a window logically at
-    /// least EventCardPresenter.ScrollFallbackHeight tall shows everything without scrolling; with every quantity changed
-    /// for every option (Full, seven lines each) the text and options scroll and Hide stays in view.</summary>
+    /// <summary>At every window shape the decision card is checked at, in English and Hebrew, with all three options, and
+    /// for the end dialog with a refused Withdraw: the dialog lies in the decision layer below the top bar, Hide inside it,
+    /// every option and line no wider than the dialog, each option's text inside its button. With previews of the size the
+    /// rules give (Plausible), a window logically at least EventCardPresenter.ScrollFallbackHeight tall shows everything
+    /// without scrolling; with every quantity changed for every offered option (Full, seven lines each) and a refused one's
+    /// reason, the text and options scroll and Hide stays in view.</summary>
     [UnityTest]
     public IEnumerator ItFitsEveryWindowInBothLanguages()
     {
         var problems = new List<string>();
         foreach (var text in new[] { En, He })
             foreach (var (w, h) in Windows)
-            foreach (var full in new[] { false, true })
+            foreach (var (full, ending) in new[] { (false, false), (true, false), (true, true) })
             {
-                var at = $"{text["ui.lang"]} {w}x{h}{(full ? " full previews" : "")}";
-                using var r = new Rig(Awaiting(C, "lod"), text, w, h, full ? Helper(new[] { "raid", "occupy", "deport" }) : Plausible);
+                var at = $"{text["ui.lang"]} {w}x{h}{(full ? " full previews" : "")}{(ending ? " end, Withdraw refused" : "")}";
+                using var r = ending
+                    ? new Rig(Ending(C, true, true, "lod"), text, w, h, endOptions: Helper(EndOrder, SettlementControl.WithdrawOutcome))
+                    : new Rig(Awaiting(C, "lod"), text, w, h, full ? Helper(new[] { "raid", "occupy", "deport" }, "deport") : Plausible);
                 yield return Frames(4);
                 var card = r.Element.worldBound; var layer = r.Root.Q("event-layer").worldBound; var bar = r.Root.Q("top-bar").worldBound;
                 if (!(card.width > 0 && card.height > 0)) { problems.Add($"{at}: the dialog is not shown"); continue; }

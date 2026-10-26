@@ -48,7 +48,7 @@ def test_licence_texts_are_the_real_ones():
 def test_licensing_table_covers_every_top_level_area():
     text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
     for d in ("sim/", "tools/", "scripts/", ".github/", "unity/Assets/", "content/", "docs/", "reports/",
-              "research_notes/", "promo/", "spikes/", "ASSETS.yaml", "unity/Assets/Settings/", "unity/Packages/"):
+              "research_notes/", "promo/", "spikes/", "translations/", "ASSETS.yaml", "unity/Assets/Settings/", "unity/Packages/"):
         assert f"`{d}" in text, d
 
 

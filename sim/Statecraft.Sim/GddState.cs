@@ -19,10 +19,13 @@ namespace Statecraft.Sim
         /// <summary>The occupation's turns left (R-CTRL-012): X when Occupy is given, counted down in resolver step 10; 0 when
         /// the place is not occupied or its timer has ended.</summary>
         public int Turns { get; }
+        /// <summary>The residents fled when the place was captured (R-CTRL-003, R-CTRL-005; OWNER QUESTION 2 (b) on #799). Set
+        /// at capture from the target row and never cleared, so it outlasts every return to enemy control.</summary>
+        public bool Fled { get; }
 
-        public SettlementControl(string owner = "", string state = "", DateTime since = default, bool depopulated = false, int combatants = 0, string buildings = "", int turns = 0)
+        public SettlementControl(string owner = "", string state = "", DateTime since = default, bool depopulated = false, int combatants = 0, string buildings = "", int turns = 0, bool fled = false)
         {
-            Owner = owner; State = state; Since = since; Depopulated = depopulated; Combatants = combatants; Buildings = buildings; Turns = turns;
+            Owner = owner; State = state; Since = since; Depopulated = depopulated; Combatants = combatants; Buildings = buildings; Turns = turns; Fled = fled;
         }
 
         public string Canonical()
@@ -35,6 +38,7 @@ namespace Statecraft.Sim
             if (Combatants != 0) fields.Add("combatants=" + Combatants.ToString(CultureInfo.InvariantCulture));
             if (Buildings != "") fields.Add("buildings=" + Buildings);
             if (Turns != 0) fields.Add("turns=" + Turns.ToString(CultureInfo.InvariantCulture));
+            if (Fled) fields.Add("fled=1");
             return string.Join(",", fields);
         }
     }

@@ -243,7 +243,7 @@ series:
     }
 
     /// <summary>The fixture's attention_cost line with the GDD command kinds added (replaces "map_action: 1 }").</summary>
-    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, reinforce: 1, return_craftsmen: 0.5, reassign_craftsmen: 0.5, reassign_pioneers: 0, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1, move: 0, unit_order: 0, resolve_capture: 0 }";
+    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, reinforce: 1, return_craftsmen: 0.5, reassign_craftsmen: 0.5, reassign_pioneers: 0, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1, move: 0, unit_order: 0, resolve_capture: 0, end_occupation: 0 }";
 
     public const string GddRules = @"
 mvp:

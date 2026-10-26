@@ -231,7 +231,9 @@ namespace Statecraft.Sim
         /// other locality's hex, so no enemy move ends on a player's locality while enemy capture (Q-TGT-2 (c)) is unbuilt.</summary>
         internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
-            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities;
+            // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.
+            var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
+                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
             var held = new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
             return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
         }

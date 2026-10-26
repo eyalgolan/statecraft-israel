@@ -21,7 +21,7 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
 - **Settlement control:** the player capture check runs after the route step and each order, then again in resolver
   step 3 after enemy combat. Each check visits targets in ordinal id order and reads only unit positions, with no RNG
   draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder`, `NoRngDraw` and `TheInstantCheckDrawsNothing`).
-  The shipped list has six targets (#793), and only `mvp-occupy-cost` captures a place (Nazareth): player units may
+  The shipped list has six targets (#793), and only `mvp-occupy-cost` and `mvp-annex-nazareth` capture a place (Nazareth, whose residents stayed, so no golden records a flight, `fled=1`, #799): player units may
   enter the five enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
   Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa is not enemy-held at the start. The smoke-orders
   move skips the lit hexes of enemy-held places on purpose (`GoldenRun.SmokeMove`), so it stays a plain move.
@@ -33,7 +33,7 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
   `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
   Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
-  same run on fixture content. No other golden occupies a place, so none moves.
+  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`). No other golden occupies a place, so none moves.
 - **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
   per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
   with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
@@ -431,3 +431,4 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-cautious | `f672a0f3` | rationing can no longer be set on 15 May 1948, so the scenario sets it (0.4) on the first turn the office exists (15 March 1949) and runs to 15 April 1949 (was 15 January 1949) so it acts; the snapshot moves with the three extra turns (was `95982cf8`) |
 | #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
 | #798: the `mvp-occupy-cost` golden (the plan's PR 6 scenario; owner, 23 Oct 2026, now that a capture is reachable in play, #1304) | scenario-mvp-occupy-cost | `a767bb66` | new: Golani's unit moves to Nazareth on 15 May 1948, the scenario answers the capture with Occupy on 15 June, and the run ends on 15 December 1948 with Nazareth awaiting `EndOccupation` (`since=1948-06-15`). No existing golden moves |
+| #799: the `mvp-annex-nazareth` golden (the plan's Task 6, #1520) | scenario-mvp-annex-nazareth | `d37e6db4` | new: `mvp-occupy-cost`'s two steps, then `end_occupation nazareth annex` on 15 December 1948, run to 15 January 1949. Nazareth ends `owner=israel,state=annexed,since=1948-06-15` and is a city of 17 units, 7 employed (16,994 people, the census-day count the owner approved on #799, times the national share 0.439), housing 17. It pins the approved count. The fled field and EndOccupation move no existing golden: `mvp-occupy-cost` captures Nazareth (stayed) and keeps `a767bb66` |
