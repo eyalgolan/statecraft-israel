@@ -233,7 +233,7 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<SeaAirCollection>(); layer.map = map;
             }
-            if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Craft, null);
+            // Not under residency (owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km"): Show asks once in view.
             layer.content = content;
             layer.Show(Wants(date, content), placements.Select(p => (p.Q, p.R)).ToList(), date);
             return layer;

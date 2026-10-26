@@ -6,7 +6,9 @@ namespace Statecraft.Game.Map.Collection
     internal sealed class ProductionResidency
     {
         internal const string Evidence = "owner ruling, 26 Oct 2026, #1273: Yes, build it";
-        internal readonly CollectionResidencyPolicy People, Rural, Craft, Special, Units, SharedRoad;
+        // No craft policy: owner ruling, 26 Oct 2026, #1273, "Craft visible at 60 km (Recommended)". The sea/air craft are
+        // asked once a camera is in view, as before residency (SeaAirCollection), and are not unloaded on leave.
+        internal readonly CollectionResidencyPolicy People, Rural, Special, Units, SharedRoad;
         internal readonly TownPolicy Towns;
         internal bool Diagnostics { get; }
         internal const int Version = 1;
@@ -27,18 +29,18 @@ namespace Statecraft.Game.Map.Collection
             }
         }
         internal ProductionResidency(CollectionResidencyPolicy people, CollectionResidencyPolicy rural,
-            CollectionResidencyPolicy craft, CollectionResidencyPolicy special, CollectionResidencyPolicy units,
+            CollectionResidencyPolicy special, CollectionResidencyPolicy units,
             CollectionResidencyPolicy sharedRoad, TownPolicy towns, bool diagnostics = false)
         {
             People = people ?? throw new ArgumentNullException(nameof(people)); Rural = rural ?? throw new ArgumentNullException(nameof(rural));
-            Craft = craft ?? throw new ArgumentNullException(nameof(craft)); Special = special ?? throw new ArgumentNullException(nameof(special));
+            Special = special ?? throw new ArgumentNullException(nameof(special));
             Units = units ?? throw new ArgumentNullException(nameof(units)); SharedRoad = sharedRoad ?? throw new ArgumentNullException(nameof(sharedRoad));
             Towns = towns ?? throw new ArgumentNullException(nameof(towns)); Diagnostics = diagnostics;
         }
         internal static ProductionResidency Approved()
         {
             CollectionResidencyPolicy Category() => new CollectionResidencyPolicy(6000, 8000, 30000, 40000, 1, Evidence);
-            return new ProductionResidency(Category(), Category(), Category(), Category(), Category(), Category(),
+            return new ProductionResidency(Category(), Category(), Category(), Category(), Category(),
                 new TownPolicy(true, 0, 0, 0, 0, 1, 120000, 160000, Evidence));
         }
     }

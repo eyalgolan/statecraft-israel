@@ -37,7 +37,7 @@ public class ProductionResidencyTests
     public void EveryApprovedCategoryAndTownUsesTheExactOwnerValues()
     {
         var p = ProductionResidency.Approved();
-        foreach (var c in new[] { p.People, p.Rural, p.Craft, p.Special, p.Units, p.SharedRoad })
+        foreach (var c in new[] { p.People, p.Rural, p.Special, p.Units, p.SharedRoad })
         {
             Assert.AreEqual(6000, c.EnterM); Assert.AreEqual(8000, c.ExitM);
             Assert.AreEqual(30000, c.ViewEnterM); Assert.AreEqual(40000, c.ViewExitM);
@@ -46,8 +46,33 @@ public class ProductionResidencyTests
         Assert.IsTrue(p.Towns.Enabled); Assert.AreEqual(0, p.Towns.Enter); Assert.AreEqual(0, p.Towns.Exit);
         Assert.AreEqual(0, p.Towns.Edge); Assert.AreEqual(0, p.Towns.MaxEdges); Assert.AreEqual(1, p.Towns.Grace);
         Assert.AreEqual(120000, p.Towns.ViewEnter); Assert.AreEqual(160000, p.Towns.ViewExit);
-        Assert.Throws<ArgumentNullException>(() => new ProductionResidency(null!, p.Rural, p.Craft, p.Special, p.Units, p.SharedRoad, p.Towns));
+        Assert.Throws<ArgumentNullException>(() => new ProductionResidency(null!, p.Rural, p.Special, p.Units, p.SharedRoad, p.Towns));
         Assert.Throws<ArgumentException>(() => new ProductionResidency.TownPolicy(true, 0, 0, 0, 0, 1, float.NaN, 1, "bad"));
+    }
+    /// <summary>Owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km (Recommended)". The sea/air craft are not under
+    /// residency: the approved policy has no craft category, and the map's craft layer installs none, so it asks for its
+    /// models once in view (as before residency) and they show at the 60 km gameplay view.</summary>
+    [Test]
+    public void TheSeaAirCraftAreNotUnderResidencyByOwnerRuling()
+    {
+        Assert.IsNull(typeof(ProductionResidency).GetField("Craft", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public),
+            "no craft residency policy (owner ruling, 26 Oct 2026, #1273: Craft visible at 60 km)");
+        var saved = SeaAirCollection.Request;
+        SeaAirCollection.Request = (_, __, done) => done(null);
+        try
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/Map.unity", UnityEditor.SceneManagement.OpenSceneMode.Single);
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = SeaAirCollection.ShowAt(map, new DateTime(1948, 6, 15), Array.Empty<Statecraft.Sim.Placement>(),
+                Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.IsNull(typeof(SeaAirCollection).GetField("residencyView", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(layer),
+                "the map's craft layer installs no residency (owner ruling, 26 Oct 2026, #1273)");
+        }
+        finally
+        {
+            SeaAirCollection.Request = saved;
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+        }
     }
     [Test]
     public void NewSessionHasAnIndependentPolicyAndDiagnosticsResetCannotUninstallIt()

@@ -4,8 +4,10 @@ Each `MapScene` owns `ProductionResidency.Approved()` and passes its immutable p
 
 | Category | Enter / exit (m) | View enter / exit (m) | Grace |
 |---|---:|---:|---:|
-| People, rural, craft, special buildings, unit figures | 6000 / 8000 | 30000 / 40000 | 1 frame |
+| People, rural, special buildings, unit figures | 6000 / 8000 | 30000 / 40000 | 1 frame |
 | Town buildings and whole towns | In footprint: 0 / 0; edge 0, extra edges 0 | 120000 / 160000 | 1 frame |
+
+The sea/air craft are not under residency (**owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km (Recommended)"**): as before, they are asked once a camera is in view, show at the 60 km gameplay view and are not unloaded on leave.
 
 The shared-road policy records the same approved category values, but the **sandwich convoy stays pinned** in this first slice, an explicitly approved alternative. Road bus, citrus truck and canvas lorry Near pins, train locomotive Far, wildlife ibex/hyena Near and hex-board lifetime ownership remain. Unit leases are independent. Near and Far share the same original bundle; another live owner or pin blocks unload.
 

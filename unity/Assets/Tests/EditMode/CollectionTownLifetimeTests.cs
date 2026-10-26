@@ -56,7 +56,7 @@ public class CollectionTownLifetimeTests
     [Test] public void TownAdmissionMustBeExplicitInProductionInput()
     {
         var policy = ProductionResidency.Approved();
-        Assert.Throws<ArgumentNullException>(() => new ProductionResidency(policy.People, policy.Rural, policy.Craft,
+        Assert.Throws<ArgumentNullException>(() => new ProductionResidency(policy.People, policy.Rural,
             policy.Special, policy.Units, policy.SharedRoad, null!));
     }
 }
