@@ -351,6 +351,7 @@ namespace Statecraft.HexTiles
     {
         [SerializeField, HideInInspector] List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
+        internal IReadOnlyList<Object> PendingRetirementObjects => owned;
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
         /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>
         public void Release(Object? o) { if (o != null && owned.Remove(o)) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); } }

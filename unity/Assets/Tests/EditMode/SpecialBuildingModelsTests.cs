@@ -118,12 +118,12 @@ namespace Statecraft.Game.Tests
             var savedPeople = CivilianPeople.Request;
             CivilianPeople.Request = (id, detail, done) => { };
             CivilianPeople people;
-            try { people = CivilianPeople.ShowAt(map, After, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content))!; }
+            try { people = CollectionGeometryFixture.People(map, After, Array.Empty<Statecraft.Sim.Placement>(), Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content))!; }
             finally { CivilianPeople.Request = savedPeople; }
             Assert.Greater(people.Wanted.Count, 0);
             var props = people.Wanted.Select(w => (new Vector2(w.At.x, w.At.z), CivilianPeople.FigureClearanceM))
                 .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM))).ToList();
-            var layer = SpecialBuildingModels.ShowAt(map, After)!;
+            var layer = CollectionGeometryFixture.Special(map, After)!;
             CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun },
                 asked.Select(a => a.id), "one request per placed model");
             AnswerAll();
@@ -189,7 +189,7 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(204f, loco, 1f, "the locomotive's car");
             Assert.AreEqual(24f, SpecialBuildingModels.WorldScale, 0.01f, "the #700 buildings' world scale");
             var map = OpenMap();
-            var layer = SpecialBuildingModels.ShowAt(map, After)!;
+            var layer = CollectionGeometryFixture.Special(map, After)!;
             AnswerAll();
             var bands = new Dictionary<string, (float lo, float hi)>
             {
@@ -215,16 +215,17 @@ namespace Statecraft.Game.Tests
         public void TheModelsFollowTheGameDateAndDoNotRebuildOnEveryRefresh()
         {
             var map = OpenMap();
-            var layer = SpecialBuildingModels.ShowAt(map, new DateTime(1948, 5, 15))!;
+            var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 15))!;
             AnswerAll();
             CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key));
             var fort = layer.transform.Find("latrun_tegart")!.gameObject;
-            SpecialBuildingModels.ShowAt(map, new DateTime(1948, 5, 15));
+            CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 15));
             Assert.IsTrue(fort != null && fort.transform.parent == layer.transform, "the same date keeps the same models");
-            SpecialBuildingModels.ShowAt(map, After);
+            CollectionGeometryFixture.Special(map, After);
             AnswerAll();
             Assert.AreEqual(5, layer.Placed.Count);
-            SpecialBuildingModels.ShowAt(map, new DateTime(1948, 5, 16));
+            CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 16));
+            AnswerAll(); // Earlier-date retirement reacquires its still-needed original through the fake source.
             CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");
             Assert.AreEqual(1, layer.transform.childCount);
         }
@@ -233,7 +234,7 @@ namespace Statecraft.Game.Tests
         public void ABundleThatDoesNotStreamLeavesTheMapRunning()
         {
             var map = OpenMap();
-            var layer = SpecialBuildingModels.ShowAt(map, After)!;
+            var layer = CollectionGeometryFixture.Special(map, After)!;
             int n = asked.Count;
             Assert.Greater(n, 0);
             for (int i = 0; i < n; i++) LogAssert.Expect(LogType.Warning, new Regex("^BUILDINGS: .* did not stream"));
@@ -241,7 +242,7 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(0, layer.Placed.Count);
             Assert.AreEqual(0, layer.transform.childCount);
             Assert.IsTrue(layer.FailedOpen);
-            Assert.DoesNotThrow(() => SpecialBuildingModels.ShowAt(map, new DateTime(1951, 1, 1)));
+            Assert.DoesNotThrow(() => CollectionGeometryFixture.Special(map, new DateTime(1951, 1, 1)));
             Assert.AreEqual(0, asked.Count, "a failed model is not asked for again");
             Assert.IsNotNull(map.Terrain);
         }

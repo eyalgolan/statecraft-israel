@@ -121,7 +121,17 @@ namespace Statecraft.HexTiles
 
         internal static bool CollectionAlias(string id, out string figure, out CollectionDetail detail)
         {
-            if (figureOf.TryGetValue(id, out var alias))
+            if (DrawTownModels)
+            {
+                var town = townOf.TryGetValue(id, out var mapped) ? mapped : id;
+                if (town.StartsWith(TownPrefix, StringComparison.Ordinal))
+                {
+                    figure = town.Substring(TownPrefix.Length).Replace(MidSuffix, "");
+                    detail = CollectionDetail.Near;
+                    return Array.IndexOf(TownModels.Ids, figure) >= 0;
+                }
+            }
+            if (DrawCollectionFigures && figureOf.TryGetValue(id, out var alias))
             {
                 figure = alias.figure; detail = alias.level == "far" ? CollectionDetail.Far : CollectionDetail.Near; return true;
             }
@@ -140,7 +150,7 @@ namespace Statecraft.HexTiles
         }
 
         /// <summary>A Collection figure's prefab path at a level ("near" or "far").</summary>
-        public static string FigurePath(string figure, string level) => $"{CollectionFolder}/{figure}/{figure}-{level}.prefab";
+        public static string FigurePath(string figure, string level) => CollectionCatalog.PrefabPath(figure, level == "far" ? CollectionDetail.Far : CollectionDetail.Near);
 
         static readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         static readonly Dictionary<string, string[]> variants = new Dictionary<string, string[]>(StringComparer.Ordinal);
