@@ -31,11 +31,11 @@ public class OutcomeClipTests
     public void EveryOutcomeIsAHistoricalOrderWithItsClipAndNoDeport()
     {
         var rows = EventVideoMapping.ParseOutcomes(Yaml);
-        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev", "altalena", "first_new_yishuv", "iraqi_exodus", "austerity_1949" },
-            rows.Select(r => r.Event), "the three of 2026-10-14 and the four the owner approved on 2026-10-20 (#1102)");
+        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev", "altalena", "first_new_yishuv", "iraqi_exodus", "austerity_1949", "absorb_immigrants" },
+            rows.Select(r => r.Event), "the three of 2026-10-14, the four the owner approved on 2026-10-20 (#1102) and absorb_immigrants (owner, 2026-10-24: \"Add v8, 6 s\")");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
-        Assert.AreEqual(7, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
+        Assert.AreEqual(8, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
     [Test]

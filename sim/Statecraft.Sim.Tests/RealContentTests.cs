@@ -60,7 +60,9 @@ public class RealContentTests
     }
 
     // R-CTRL-001: the six rows the owner approved on 19 October 2026 and filled on 21 October 2026 (#793), Gaza excluded.
-    // The owner sensitivity-reviewed them (Q-TGT-3 (b); #793, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840), so the release gate passes them.
+    // The owner sensitivity-reviewed them (Q-TGT-3 (b); #793, https://github.com/eyalgolan/statecraft-israel/issues/793#issuecomment-6338280840);
+    // #799 added the residents fields, and the owner sensitivity-reviewed them on 24 October 2026
+    // (https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6382486627), so the release gate passes them.
     [Fact]
     public void SettlementTargetsAreTheSixApprovedReviewedRows()
     {
@@ -68,6 +70,19 @@ public class RealContentTests
             C.SettlementTargets.Select(t => t.Id).OrderBy(x => x, StringComparer.Ordinal));
         Assert.All(C.SettlementTargets, target => Assert.Equal(ReleaseGate.ReviewedStatus, target.Status));
         Assert.Empty(ReleaseGate.SettlementTargetsUnchecked(C));
+    }
+
+    // R-CTRL-016: the owner's per-place outcomes (#793): stayed only where the ruling says so, and only a stayed row has the
+    // census-day count that joins the player's population (OWNER QUESTION 1 (a) on #799; CBS Statistical Abstract No. 3).
+    [Fact]
+    public void SettlementTargetResidentOutcomesAreTheOwnersRulings()
+    {
+        Assert.Equal(new[] { ("acre", "stayed"), ("beersheba", "fled"), ("jaffa", "fled"),
+                             ("lod", "fled"), ("nazareth", "stayed"), ("ramla", "fled") },
+            C.SettlementTargets.OrderBy(x => x.Id, StringComparer.Ordinal).Select(x => (x.Id, x.Residents)).ToArray());
+        Assert.Equal(new[] { ("acre", 4016m), ("nazareth", 16994m) },
+            C.SettlementTargets.Where(x => x.Annexation != null).OrderBy(x => x.Id, StringComparer.Ordinal)
+                .Select(x => (x.Id, x.Annexation!.People!.Value)).ToArray());
     }
 
     // R-CTRL-001 with #796: capture applies only to a target on mvp.enemy_held_localities. The five Arab-held targets are

@@ -15,7 +15,7 @@ namespace Statecraft.Game.UI
 {
     /// <summary>Starts the game once GameBoot has loaded the inputs and built the map (GameBoot.Ready): continues the
     /// autosave or starts a new game (GameStart.Begin, with its notes in the toast), creates every screen, autosaves each
-    /// turn, and wires the camera and the map pointer to the game panel (UiPointer.IsOverUi), map clicks to the info panel,
+    /// committed order and turn, and wires the camera and the map pointer to the game panel (UiPointer.IsOverUi), map clicks to the info panel,
     /// the minimap to the camera, and State.Placements with the built city projects to the placement layer. Disabling it disposes all of that.
     /// With "smoke" in the page URL (WebGL, e.g. ?smoke=5) or -smoke N (desktop) it starts a fresh game with the golden
     /// seed (the player's autosave is neither read nor written), plays N turns through the UI's own buttons and logs
@@ -67,12 +67,17 @@ namespace Statecraft.Game.UI
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
-        FirstTurnGuidePresenter? guide;
-        /// <summary>Tests: the first-turn guide of the last Begin.</summary>
-        internal FirstTurnGuidePresenter? Guide => guide;
+        AdvisorPresenter? advisor;
+        /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
+        internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
+        /// <summary>Tests: the advisors' popup of the last Begin, and their session (kept across a language switch).</summary>
+        internal AdvisorPresenter? Advisor => advisor;
+        internal AdvisorSession? AdvisorSession { get; private set; }
         FeedbackPresenter? feedback;
         SharePresenter? share;
         InfoPanelPresenter? info;
+        /// <summary>Shows the toast for a unit End turn skipped because it had no token to select (FocusNextUnit).</summary>
+        Action? unseenSkipped;
         /// <summary>Tests: the info panel of the last Begin.</summary>
         internal InfoPanelPresenter? Info => info;
         CameraRig? rig;
@@ -229,6 +234,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
+            if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
             {
                 Statecraft.HexTiles.HexTilesLook.Apply(map, true);
@@ -244,10 +250,12 @@ namespace Statecraft.Game.UI
 
             // The toast first: the autosave (below) must report a failed write after the toast has shown the turn's refusals.
             var toast = Own(new ToastPresenter(root, bridge, text));
-            Own(new HudPresenter(root, bridge, text));
+            unseenSkipped = () => toast.Show(text["toast.unit_unseen_skipped"]);
+            var hudPresenter = Own(new HudPresenter(root, bridge, text, selectUnit: _ => FocusNextUnit()));
             nav = Own(new ScreenNav(root));                                      // every screen starts hidden (USS); ScreenNav opens one at a time
             Own(new PointerBlur(root));                                    // a mouse click leaves no focus fill behind (keyboard keeps it)
             Own(new FocusScroll(root));                                    // keyboard focus scrolls its ScrollView to it (a11y H1)
+            FocusScroll.NoScrollBarIsATabStop(root);                       // no scroll bar takes a Tab stop (#41 K3, widened from the Cabinet's two)
             Own(new NavigationGuard(root));                                // the camera keys (WASD, arrows) never move UI focus (B6)
             if (DiagLog.Nav) Own(new NavEventLog(root));                   // ?navlog: every UI pointer/submit event (playtest 2, P2-4)
             // The Illustration switch's silent loops (event-videos.yaml, Resources): none in the automated runs (CardVideo.ForcedOff).
@@ -276,15 +284,24 @@ namespace Statecraft.Game.UI
             outcomes = video == null ? null : Own(new OutcomePresenter(root, bridge, text, Own(new CardVideo()), mapping.outcomes,
                 () => card?.Render(), () => nav?.Close()));
             Own(new DefencePresenter(root, bridge, text, portraits));
-            Own(new BudgetPresenter(root, bridge, text));
-            Own(new WhyPresenter(root, bridge, text));
+            var budget = Own(new BudgetPresenter(root, bridge, text));
+            var why = Own(new WhyPresenter(root, bridge, text));
             Own(new TimelinePresenter(root, bridge, text));
             Own(new HowToPlayPresenter(root, text));
             Own(new ObjectivesPresenter(root, bridge, text));
+            // The advisors (spec 4.2): their session survives a rebuild over the same game (a language switch keeps the
+            // queue, the history and the opening chain's place) and is new for any other Begin. They show by themselves only
+            // on the first new game: the start screen shows and a settings file remembers what was seen. Made before
+            // Settings, whose help-level row (spec 6) reads and sets the session's level.
+            if (keep == null || AdvisorSession == null)
+            {
+                bool autoShow = showsStart && !FirstCardCheckRequested() && SettingsFile() != null;
+                AdvisorSession = new AdvisorSession(AdvisorCatalogForTests ?? AdvisorCatalog.Load(), new AdvisorSettings(autoShow ? SettingsFile() : null), autoShow);
+            }
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio));
+            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -296,7 +313,7 @@ namespace Statecraft.Game.UI
             // Star, Report and Share as round icons at the map screen's bottom left (#1236): the same actions as Settings' buttons.
             Own(new CommunityIconsPresenter(root, text, feedbackPanel, sharePanel));
             // Both panels in one hook: the same Escape never closes the screen under the panel too.
-            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape();
+            nav!.TakesEscape = () => feedbackPanel.Escape() || sharePanel.Escape() || advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true || advisor?.Escape() == true || this.info?.Escape() == true;   // the field: the panel is made below
             var names = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.Name);   // the map's parse (issue #321)
             // The capture dialog (GDD Phase 6 PR 10, #802): in the decision layer, after the card, which goes first; the
             // places' Hebrew names from the same parse.
@@ -330,6 +347,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens wired");   // issue #321: the splits of the units layer
             // The map's own parse of the unit file when it read this text (issue #321: it was parsed twice at boot).
             var unitData = map.UnitEntriesFor(inputs.Map.UnitsYaml, Debug.LogWarning);
+            why.Units = unitData;
             report.Units = unitData;   // the turn report names the enemy's units by these rows (#1293)
             DiagLog.BootPhase("units layer data read");
             var unitLayer = units = Statecraft.Game.Map.Units.UnitLayer.Create(map,
@@ -341,7 +359,14 @@ namespace Statecraft.Game.UI
             if (Statecraft.Game.Map.Units.UnitLayer.HiddenInCaptures(Application.absoluteURL, Environment.GetCommandLineArgs(),
                     Application.platform == RuntimePlatform.WebGLPlayer))
                 VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, false);
-            Action showUnits = () => unitLayer.Show(bridge.Content, bridge.State);
+            Action showUnits = () =>
+            {
+                unitLayer.Show(bridge.Content, bridge.State);
+                unitLayer.Dim(unitLayer.Tokens.Where(t => t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel)
+                    .Where(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) is int id
+                        && Movement.PointsLeft(bridge.Content, bridge.State, id, bridge.Spent) == 0)
+                    .Select(t => t.Token.Unit.Id).ToList());
+            };
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
@@ -355,7 +380,10 @@ namespace Statecraft.Game.UI
                 townNamesHe: townNamesHe,
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
-                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault()));
+                    .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+            toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
+            report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
             // Leaving New Game out is safer than handing it a throwaway store: no file is ever deleted, no path has to be
             // right on every platform, and the scripted run never presses it.
@@ -381,9 +409,25 @@ namespace Statecraft.Game.UI
             cameraController.Ground = CameraController.GroundOf(terrain);
             cameraController.GroundTop = CameraController.GroundTopOf(terrain);
             pointer.Map = map;
-            pointer.IsOverUi = overUi;
-            Action<int, int> onHex = (q, r) => OnHexClicked(map, unitLayer, info, q, r);
+            // #1617: the lit hexes of a Move or Attack pick show through the unit card, so the map pointer also takes a click
+            // on the card's text over one of them (InfoPanelPresenter.TakesClickThrough). The camera does not: no drag or wheel
+            // through the card.
+            Func<Vector2, bool> pointerOverUi = p => outcomes?.HoldsThePointer == true
+                || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
+            pointer.IsOverUi = pointerOverUi;
+            // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
+            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
+            cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
+            Action<int, int> onHex = (q, r) =>
+            {
+                OnHexClicked(map, unitLayer, info, q, r, UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Touchscreen);
+                if (info.ShowsUnit) advisor?.Notice(AdvisorSignals.UnitShown);
+                else if (info.Selected is (int sq, int sr) && bridge.Content.SettlementHexes.Any(h => h.Q == sq && h.R == sr && bridge.State.Cities.ContainsKey(h.Id)))
+                    advisor?.Notice(AdvisorSignals.CityShown);
+            };
             pointer.HexClicked += onHex;
+            Action<int, int> onOrder = (q, r) => OnHexOrdered(map, info, q, r);
+            pointer.HexOrdered += onOrder;
             // #1063: a click on a city's name pill is a click on the city's hex (its settlement hex, where the city panel opens).
             Func<Vector2, (int q, int r)?> pillHex = p =>
             {
@@ -442,9 +486,12 @@ namespace Statecraft.Game.UI
                 bridge.Changed -= onChanged;
                 bridge.TurnEnded -= onTurn;
                 pointer.HexClicked -= onHex;
+                pointer.HexOrdered -= onOrder;
                 if (pointer.PillHex == pillHex) pointer.PillHex = null;
-                if (pointer.IsOverUi == overUi) pointer.IsOverUi = null;
+                if (pointer.IsOverUi == pointerOverUi) pointer.IsOverUi = null;
                 if (cameraController.IsOverUi == overUi) cameraController.IsOverUi = null;
+                if (cameraController.HoldsMouseDrag == holdsMouseDrag) cameraController.HoldsMouseDrag = null;
+                if (cameraController.HoldsTouchDrag == holdsTouchDrag) cameraController.HoldsTouchDrag = null;
                 if (pointer.Map == map) pointer.Map = null;
                 cameraController.Bounds = oldBounds;
                 cameraController.Ground = oldGround; cameraController.GroundTop = oldTop;
@@ -452,9 +499,6 @@ namespace Statecraft.Game.UI
             drawn = null; drawnSites = null;
             RenderPlacementsIfChanged();
             SyncMinimap();
-            // The first-turn guide (#42) opens when the start screen closes on a new game (not on Continue). It is made after
-            // the screen, so Shutdown disposes it first and the screen's closing then opens nothing.
-            FirstTurnGuidePresenter? firstTurn = null;
             // The start screen goes up in the same frame the loading state ends, so the HUD never flashes before it. While it
             // shows, the camera keys are off (keyboard pan would otherwise move the hidden map; plan amendment A4).
             if (showsStart)                                                // newGame is made above whenever smoke == 0
@@ -464,7 +508,7 @@ namespace Statecraft.Game.UI
                 start = Own(new StartScreenPresenter(root, newGame!, resumed, shown =>
                 {
                     if (cam != null) cam.enabled = !shown;
-                    if (!shown && start?.Resumed == false) firstTurn?.NewGame();
+                    if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
                 }, recording, text));
                 start.Show();
             }
@@ -474,44 +518,70 @@ namespace Statecraft.Game.UI
             // that can move, its ring and its card, as a click on it would (OnHexClicked), and centres the camera on its hex.
             Action showCity = () =>
             {
-                if (FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
+                if (AdvisorTargets.CityHex(bridge.Content, bridge.State) is not (int q, int r)) return;
                 unitLayer.Select(null); map.Select(q, r); info.Show(q, r);
-            };
-            Action showUnit = () =>
-            {
-                if (FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
-                unitLayer.Select(id);
-                if (unitLayer.Selected != null)
+                var cityHex = bridge.Content.HexAt(q, r);
+                if (cityHex != null)
                 {
-                    map.ClearSelection(); info.ShowUnit();
-                    var token = unitLayer.Tokens.First(t => t.Token.Unit.Id == id);
-                    var hex = bridge.Content.HexAt(token.Q, token.R)!;
-                    camRig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
-                    camRig.Distance = Mathf.Min(camRig.Distance, FirstTurnGuidePresenter.MoveStepDistanceM);
+                    camRig.LookAt = map.Frame.ToWorld(cityHex.Lon, cityHex.Lat, 0);
                     cameraController.Settle(); SyncMinimap(); labels?.Refresh();
                 }
             };
-            // When it closes, the guide puts back the selection it found (a hex, a unit, or none), unless the player has
+            Action showUnit = () =>
+            {
+                if (AdvisorTargets.UnitToShow(bridge, unitLayer.Tokens.Select(t => t.Token)) is not string id) return;
+                camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
+                FocusUnit(id);
+            };
+            // When it closes, the advisor puts back the selection it found (a hex, a unit, or none), unless the player has
             // picked something else meanwhile (the HUD stays usable under it).
             Func<Action> keepSelection = () =>
             {
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
-                var city = FirstTurnGuidePresenter.CityHex(bridge.Content, bridge.State);
-                var guideUnit = FirstTurnGuidePresenter.UnitToShow(bridge.Content, bridge.State, unitLayer.Tokens.Select(t => t.Token));
+                var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
+                var shownUnit = AdvisorTargets.UnitToShow(bridge, unitLayer.Tokens.Select(t => t.Token));
+                // It reads the UI of the Begin it runs in, so after a language switch rebuilt the UI it still puts back what
+                // the advisor found before (AdvisorSession.ChainState.PutBack).
                 return () =>
                 {
-                    // Under a screen, or the player picked another than the guide's city or unit: kept.
-                    if (info.Covered || (info.ShowsUnit ? unitLayer.Selected != guideUnit : info.Selected != city)) return;
-                    unitLayer.Select(unit);
-                    if (unitLayer.Selected != null) { map.ClearSelection(); info.ShowUnit(); }
-                    else if (hex is (int q, int r)) { map.Select(q, r); info.Show(q, r); }
-                    else { map.ClearSelection(); info.Clear(); }
+                    if (this.info is not { } nowInfo || this.units is not { } nowUnits) return;
+                    // Under a screen, or the player picked another than the advisor's city or unit: kept.
+                    if (nowInfo.Covered || (nowInfo.ShowsUnit ? nowUnits.Selected != shownUnit : nowInfo.Selected != city)) return;
+                    nowUnits.Select(unit);
+                    if (nowUnits.Selected != null) { map.ClearSelection(); nowInfo.ShowUnit(); }
+                    else if (hex is (int q, int r)) { map.Select(q, r); nowInfo.Show(q, r); }
+                    else { map.ClearSelection(); nowInfo.Clear(); }
                 };
             };
-            guide = firstTurn = Own(new FirstTurnGuidePresenter(root, text, showsStart && !FirstCardCheckRequested() ? SettingsFile() : null,
-                card, showCity, () => nav?.Close(), bridge, keepSelection, showUnit));
-            if (newGame != null) newGame.Started += firstTurn.NewGame;      // New Game in the top bar too; both die with this Begin
+            // The advisors' popup, over the session made before Settings (above).
+            advisor = Own(new AdvisorPresenter(root, bridge, text, AdvisorSession, portraits,
+                new AdvisorHooks
+                {
+                    Card = card, OpenScreen = s => nav?.Open(s), CloseScreens = () => nav?.Close(), ShowCity = showCity, ShowUnit = showUnit, KeepSelection = keepSelection,
+                    MapTarget = () =>
+                    {
+                        (int q, int r)? selected = info.Selected;
+                        if (info.ShowsUnit)
+                        {
+                            var token = unitLayer.Tokens.FirstOrDefault(t => t.Token.Unit.Id == unitLayer.Selected);
+                            selected = token.Token != null ? (token.Q, token.R) : ((int, int)?)null;
+                        }
+                        if (selected is not (int q, int r) || root.panel == null || bridge.Content.HexAt(q, r) is not { } hex) return null;
+                        var ground = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+                        ground.y = map.Terrain.SampleHeight(ground) + map.Terrain.transform.position.y;
+                        var camera = Camera.main;
+                        if (camera == null) return null;
+                        var viewport = camera.WorldToViewportPoint(ground);
+                        if (viewport.z <= 0) return null;
+                        var at = MapLabelsPresenter.ToPanel(viewport, camera.rect, root.panel.visualTree.layout.size, Vector2.zero);
+                        return new Rect(at, Vector2.one);
+                    },
+                }));
+            budget.UnsubmittedChanged += advisor.BudgetUnsubmitted;
+            if (video != null)
+                advisor.Media = new AdvisorMedia(text, new ClipPicture(video), new StillPicture(), DeclarationRecording.WebFetch, new DeclarationRecording.SourceOutput());
+            if (newGame != null) newGame.Started += advisor.NewGame;
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             DiagLog.BootPhase("screens ready");
@@ -567,9 +637,13 @@ namespace Statecraft.Game.UI
 
         /// <summary>A map click: on a unit's hex it selects the unit (the ring and its card; the hex outline is cleared, so
         /// the unit has the promo's one highlight); a second click on it, or a click anywhere else, shows the hex (so a token
-        /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a click on a lit hex queues
-        /// the order and keeps the unit's card; any other click ends the pick first and then selects as usual.</summary>
-        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r)
+        /// never hides the hex's map actions). While the card's Move or Attack pick is open (#754), a target click gives the
+        /// order and keeps the unit's card; any other click ends the pick first and then selects as usual. A selected unit
+        /// that can move has its Move pick open (InfoPanelPresenter.RenderLines; Civ, owner 25 Oct 2026), so a click on a lit
+        /// hex moves it; a click on another unit's hex or on a city selects that unit or shows the city, as in Civ, lit or
+        /// not (owner, 25 Oct 2026: "Clicking another unit or a city still selects it"; a right click moves there:
+        /// OnHexOrdered).</summary>
+        internal static void OnHexClicked(MapScene map, Statecraft.Game.Map.Units.UnitLayer units, InfoPanelPresenter info, int q, int r, bool touch = false)
         {
             if (info.Covered)
             {
@@ -578,11 +652,69 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
-            if (info.PickTarget(q, r)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             var id = units.UnitToSelectAt(q, r);
+            if (!(info.MovePicking && (id != null || info.IsCity(q, r))) && info.PickTarget(q, r, touch)) { map.ClearSelection(); return; }   // the unit keeps its ring, the one highlight
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+        }
+
+        /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
+        /// shown unit's pick takes (q, r), the order a left click there gives (PickTarget), even on another unit's hex.
+        /// Otherwise nothing: no unit shown, a hex it cannot reach, or a screen over the panel (#210).</summary>
+        internal static void OnHexOrdered(MapScene map, InfoPanelPresenter info, int q, int r)
+        {
+            if (info.Covered || !info.ShowsUnit || !info.PickTakes(q, r)) return;
+            if (info.PickTarget(q, r)) map.ClearSelection();
+        }
+
+        /// <summary>Selects a drawn unit row, opens its card and centres the camera on its current hex.</summary>
+        internal void FocusUnit(string rowId)
+        {
+            if (units == null || Bridge == null || info == null || rig == null) return;
+            units.Select(rowId);
+            if (units.Selected == null) return;
+            map.ClearSelection(); info.ShowUnit();
+            var token = units.Tokens.First(t => t.Token.Unit.Id == rowId);
+            var hex = Bridge.Content.HexAt(token.Q, token.R);
+            if (hex == null) return;
+            rig.LookAt = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
+            cameraController.Settle(); SyncMinimap(); labels?.Refresh();
+        }
+
+        /// <summary>Selects and focuses the drawn token of sim unit <paramref name="simId"/>; false when no token is drawn for it.</summary>
+        bool SelectUnit(int simId)
+        {
+            if (units == null || Bridge == null) return false;
+            var row = units.Tokens.FirstOrDefault(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token) == simId).Token?.Unit.Id;
+            if (row == null) return false;
+            FocusUnit(row);
+            return units.Selected == row;
+        }
+
+        /// <summary>Selects the next unit that needs orders after the selected one (ascending id, wrapping; spec 2026-10-23
+        /// section 7.3). Never a dead end (owner, v0.3.0 RC: "the game is saying "a unit needs orders" but clicking on it does
+        /// nothing"): every unit is drawn (UnitPlacer.OnOwnHex), but should one still have no token to select, it is skipped
+        /// for this turn with a log line and a toast, and the next is tried, so End turn always gets on. Each unit is tried
+        /// once per call.</summary>
+        void FocusNextUnit()
+        {
+            if (Bridge == null || units == null || Bridge.NeedsOrders.Count == 0) return;
+            // An open event card is modal and disables the unit card (ScreenNav.DisableCovered), so the unit End turn selects
+            // could take no order: the card waits behind "Decision waiting", as its Hide button does.
+            card?.Collapse(takeFocus: false);
+            int? current = units.Selected is string row
+                ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
+                : null;
+            var needs = Bridge.NeedsOrders;
+            var order = current is int id ? needs.Where(n => n > id).Concat(needs.Where(n => n <= id)).ToList() : needs.ToList();
+            foreach (var next in order)
+            {
+                if (SelectUnit(next)) return;
+                Debug.Log($"END TURN unit {next} needs orders but has no token to select; skipped this turn");
+                Bridge.Skip(next);
+                unseenSkipped?.Invoke();   // after Skip: the toast clears on every bridge change
+            }
         }
 
         /// <summary>#1063 (player report: a city is hard to tell from the land round it and hard to click): the city under a
@@ -620,11 +752,14 @@ namespace Statecraft.Game.UI
             // The card first: disposing the start screen uncovers the decision layer, and a card still waiting for it would
             // then render and load the photo catalog for a game that is going away (#592; since the GDD cutover a new game's
             // card waits under the screen, so New Game's Begin would load it).
+            // The advisors before the card: a card going away is a layer closing, which must not make a popup that is itself
+            // going away draw its step again and show its city or unit on a camera being destroyed.
+            if (advisor != null) { owned.Remove(advisor); advisor.Dispose(); }
             if (card != null) { owned.Remove(card); card.Dispose(); }
             for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
             owned.Clear();
             if (hoveredCity != null) { hoveredCity = null; HandCursor(false); }   // the next Begin's pills start unlit
-            minimap = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; guide = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
+            minimap = null; unseenSkipped = null; labels = null; nav = null; start = null; card = null; outcomes = null; report = null; end = null; advisor = null; feedback = null; share = null; info = null; rig = null; drawn = null; drawnSites = null; units = null; Regions = null; logCamera = false;
             // A ?profile run cut short (a stopped coroutine never reaches its restore line) must not leave the terrain at the
             // profile's pixel error (Task 24 review M1). Nothing else changes it, so restoring is always right.
             if (map != null && map.Terrain != null) map.Terrain.heightmapPixelError = MapBuilder.TerrainPixelError;
@@ -753,6 +888,8 @@ namespace Statecraft.Game.UI
             var hover = MapLabelsPresenter.HoverPosition(UnityEngine.InputSystem.Pointer.current);
             labels.Hover(hover);
             HoverCity(hover);
+            if (hover is Vector2 at && pointer.HexAt(at) is (int q, int r)) info?.ShowRouteTo(q, r);
+            else if (UnityEngine.InputSystem.Pointer.current is UnityEngine.InputSystem.Mouse) info?.HideRoute();
             var touch = UnityEngine.InputSystem.Touchscreen.current;
             if (touch != null && touch.primaryTouch.press.wasPressedThisFrame) labels.Tap(touch.primaryTouch.position.ReadValue());
         }
@@ -762,12 +899,26 @@ namespace Statecraft.Game.UI
             // Escape closes the open screen even when no element has the keyboard focus (ScreenNav also takes the UI
             // Cancel event from a focused element; closing twice is harmless). On the start screen it withdraws an open New
             // Game request (StartScreenPresenter.Escape; idempotent too).
-            // With no screen to close, Escape skips the first-turn guide (FirstTurnGuidePresenter.Escape).
+            // The advisor handles Escape only while focus is inside its popup.
             // With nothing else to close, Escape on the open decision card is Hide (EventCardPresenter.Escape; the card itself
             // takes the Cancel event when it has the focus), and so on the open capture dialog (CaptureDialogPresenter.Escape),
             // which shows only while the card does not.
             // The report panel (#1169) and the share panel (#1170) are over everything: their Escape goes no further.
-            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true && feedback?.Escape() != true && share?.Escape() != true) { bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true; if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true; if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true; done |= start?.Escape() == true; done |= nav?.Close() == true; if (!done) done = guide?.Escape() == true; if (!done && document.rootVisualElement.focusController?.focusedElement == null && capture?.Escape() != true) card?.Escape(); }
+            // Nor does the advisors' popup's, with the focus inside it (AdvisorPresenter.Escape, also in the frame its Cancel closed it).
+            if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true
+                && feedback?.Escape() != true && share?.Escape() != true && advisor?.Escape() != true)
+            {
+                bool done = outcomes?.SkipAll() == true || outcomes?.ClosedThisFrame == true;
+                if (!done) done = advisor?.CloseOverlay() == true || advisor?.OverlayClosedThisFrame == true;
+                if (!done) done = end?.Close() == true || end?.ClosedThisFrame == true;
+                if (!done) done = report?.Close() == true || report?.ClosedThisFrame == true;
+                done |= start?.Escape() == true;
+                done |= nav?.Close() == true;
+                // A screen/card that consumed this Cancel must not also dismiss the map selection in this frame.
+                if (!done && nav?.ClosedThisFrame != true && document.rootVisualElement.focusController?.focusedElement == null
+                    && capture?.Escape() != true && card?.Escape() != true && card?.CollapsedThisFrame != true)
+                    info?.Escape();
+            }
             // PageUp, PageDown, Home and End, with no modifier, scroll the open screen or the open card's text, with or without
             // focus (KeyScroll; accessibility audit H3), but not under an End Turn outcome clip, which covers them. The arrows
             // stay with the camera (NavigationGuard, B6).
@@ -797,7 +948,9 @@ namespace Statecraft.Game.UI
                 for (int guard = 0; card.Shown != null; guard++)
                 {
                     var shown = card.Shown;
-                    if (bridge.AttentionLeft + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
+                    // Rulesets with Attention keep the smoke's own pool check unchanged; gdd-0.3 has no pool to run out of (#1688).
+                    if (bridge.Content.UsesAttention
+                        && bridge.AttentionLeft!.Value + 1e-9 < AttentionSystem.Cost(bridge.Content, bridge.State, new ChooseEventOption(shown.Id, "").Kind)) break;
                     var option = root.Q<VisualElement>("event-options")?.Q<Button>();
                     if (option == null || guard >= 50) { log(FormattableString.Invariant($"SMOKE FAIL event {shown.Id} has no option to press")); yield break; }
                     if (!Press(option, log)) yield break;
@@ -805,6 +958,13 @@ namespace Statecraft.Game.UI
                     yield return null;
                 }
                 var turn = bridge.State.Turn;
+                for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
+                {
+                    if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
+                    if (!Press(root.Q<Button>("end-turn"), log)) yield break;
+                    if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                    yield return null;
+                }
                 int refused = 0;
                 Action<IReadOnlyList<Rejection>> count = r => refused = r.Count;
                 bridge.TurnEnded += count;
@@ -823,7 +983,7 @@ namespace Statecraft.Game.UI
                 var s = bridge.State;
                 log(FormattableString.Invariant($"SMOKE turn {s.Turn} {s.Date:yyyy-MM-dd} refused {refused}"));
             }
-            log(FormattableString.Invariant($"SMOKE OK {turns} turns {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
+            log(FormattableString.Invariant($"SMOKE OK {turns} turns {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
         /// <summary>The smoke-orders golden (#754, docs/determinism.md): turn 1 with one unit order given as a player gives it.
@@ -852,10 +1012,17 @@ namespace Statecraft.Game.UI
             if (units.Selected != t.Token.Unit.Id) { log(FormattableString.Invariant($"SMOKE FAIL the click on {t.Q},{t.R} did not select unit {move.Unit}")); yield break; }
             if (!Press(root.Q<Button>("info-move"), log)) yield break;
             clickHex(move.Q, move.R);
-            if (!bridge.Queued.OfType<Move>().Any(m => m.Unit == move.Unit && m.Q == move.Q && m.R == move.R))
-            { log(FormattableString.Invariant($"SMOKE FAIL the click on {move.Q},{move.R} queued no Move for unit {move.Unit}")); yield break; }
+            if (!bridge.Session.Committed.OfType<Move>().Any(m => m.Unit == move.Unit && m.Q == move.Q && m.R == move.R))
+            { log(FormattableString.Invariant($"SMOKE FAIL the click on {move.Q},{move.R} committed no Move for unit {move.Unit}")); yield break; }
             yield return null;
             var turn = bridge.State.Turn;
+            for (int guard = 0; bridge.NeedsOrders.Count > 0; guard++)
+            {
+                if (guard >= 200) { log("SMOKE FAIL unit skip loop reached 200"); yield break; }
+                if (!Press(root.Q<Button>("end-turn"), log)) yield break;
+                if (!Press(root.Q<Button>("info-skip"), log)) yield break;
+                yield return null;
+            }
             if (!Press(root.Q<Button>("end-turn"), log)) yield break;
             if (bridge.State.Turn != turn + 1) { log(FormattableString.Invariant($"SMOKE FAIL End Turn did not end turn {turn}")); yield break; }
             if (hud.ClassListContains(TurnReportPresenter.OpenClass))
@@ -863,7 +1030,7 @@ namespace Statecraft.Game.UI
                 if (!Press(root.Q<Button>("turn-report-close"), log)) yield break;
                 if (hud.ClassListContains(TurnReportPresenter.OpenClass)) { log(FormattableString.Invariant($"SMOKE FAIL the turn report after turn {turn} did not close")); yield break; }
             }
-            log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.State.Date:yyyy-MM-dd} {bridge.State.Hash()}"));
+            log(FormattableString.Invariant($"SMOKE ORDERS OK {bridge.TurnStart.Date:yyyy-MM-dd} {bridge.TurnStart.Hash()}"));
         }
 
         static bool Press(Button? b, Action<string> log)

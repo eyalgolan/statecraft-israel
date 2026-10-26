@@ -375,8 +375,10 @@ public class UnitsInPlayTests
     // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
     // #588: Carmeli stands at Haifa from 15 May to 9 July 1948 (was 0612f518... and db15a031...; with its "carmeli@Haifa"
     // entries taken out, the logged rosters hash to those again).
-    const string RosterGolden1950 = "e11d180e619f602009b652679e1967f0faa18c674bcdee440125cf15d2de1036";
-    const string WeeklyGolden = "b459d9a4b8af7547b64a5f82f00dc877d707afabd1e065202ae361972e169ac0";
+    // #1536: Givati's token carries the armoured car from 12 June 1948 (was e11d180e... and b459d9a4...; only Givati's
+    // lines from the week of 12 June on gain "+figure-vehicle-sandwich-convoy-1948-v2").
+    const string RosterGolden1950 = "2cdb0f00eac9b4ae63f69a9e8067a28ce91dfecddb369b029ba605d727c443a6";
+    const string WeeklyGolden = "10926451645267fe6dbbf146b0e75d6cac84a21f098cf0eb8e2189a84eb7a46f";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 

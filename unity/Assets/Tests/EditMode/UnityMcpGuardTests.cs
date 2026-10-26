@@ -27,8 +27,13 @@ namespace Statecraft.Tests.EditMode
         static string[] Filter(params string[] assemblies) =>
             (string[])Guard().GetMethod("Filter", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, new object[] { assemblies })!;
 
-        static Type? PluginEditor() =>
-            (Type?)Guard().GetMethod("LoadedPluginEditorType", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null);
+        static Type PluginEditor()
+        {
+            var editor = (Type?)Guard().GetMethod("LoadedPluginEditorType", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null);
+            Assert.IsNotNull(editor,
+                "com.ivanmurzak.unity.mcp is a direct dependency in Packages/manifest.json; its editor assembly must be loaded for UnityMcpGuard integration tests");
+            return editor!;
+        }
 
         static string Status() => (string)Guard().GetField("Status", Any)!.GetValue(null)!;
 
@@ -72,7 +77,7 @@ namespace Statecraft.Tests.EditMode
         [Test]
         public void TheGuardReadsArgumentsThroughThePluginsOwnParser()
         {
-            if (PluginEditor() == null) { Assert.AreEqual("plugin not loaded", Status()); return; }
+            PluginEditor();
             // Same dictionary as the plugin (its key comparer included), so -unity_mcp_auth_option or -AUTH match exactly
             // when, and only when, they match for the plugin.
             Assert.AreEqual("plugin ArgsUtils", Guard().GetField("ArgSource", Any)!.GetValue(null));
@@ -103,7 +108,7 @@ namespace Statecraft.Tests.EditMode
         [Test]
         public void PlayerBuildsDropEveryRealPluginAssemblyAndDll()
         {
-            if (PluginEditor() == null) { Assert.AreEqual("plugin not loaded", Status()); return; }
+            PluginEditor();
             // Every player assembly compiled from the plugin's packages, and every managed plugin DLL a WebGL build would
             // take that is not ours, must be dropped by the filter (by its real output name and asset path).
             var fromPackages = CompilationPipeline.GetAssemblies(AssembliesType.PlayerWithoutTestAssemblies)
@@ -133,13 +138,6 @@ namespace Statecraft.Tests.EditMode
         public void ThePluginIsHeldToLocalCustomModeWithTokenAuth()
         {
             var editor = PluginEditor();
-#if UNITY_MCP_READY
-            // The gate defines are in place, so the plugin compiled and must be loaded; a renamed type or assembly would
-            // otherwise turn every check below into a silent pass.
-            Assert.IsNotNull(editor, "UNITY_MCP_READY is defined but the plugin editor type is not loaded");
-#endif
-            // On a fresh clone's first run the plugin compiles after its resolver, so the tests run before a reload loads it.
-            if (editor == null) { Assert.AreEqual("plugin not loaded", Status()); return; }
             Assert.AreEqual(Application.isBatchMode ? "held offline" : "held local", Status());
             var instance = editor.GetProperty("Instance", Any)!.GetValue(null);
             var config = editor.GetField("unityConnectionConfig", Any)!.GetValue(instance)!;
@@ -164,7 +162,7 @@ namespace Statecraft.Tests.EditMode
         public void InBatchModeThePluginOpensNoWindowStartsNoServerAndSkipsItsUpdateCheck()
         {
             var editor = PluginEditor();
-            if (!Application.isBatchMode || editor == null) { CollectionAssert.Contains(new[] { "held local", "plugin not loaded" }, Status()); return; }
+            if (!Application.isBatchMode) { Assert.AreEqual("held local", Status()); return; }
             // The first-run window opened on screen in a batch test run (2026-10-10) and its server panel started the
             // local server; the update popup is the same kind of window.
             var windows = Resources.FindObjectsOfTypeAll<EditorWindow>().Where(w => w.GetType().Assembly == editor.Assembly);
@@ -180,7 +178,7 @@ namespace Statecraft.Tests.EditMode
         public void ABatchHoldStillAppliesWhenTheCustomOrTokenOverrideFails()
         {
             var editor = PluginEditor();
-            if (!Application.isBatchMode || editor == null) { CollectionAssert.Contains(new[] { "held local", "plugin not loaded" }, Status()); return; }
+            if (!Application.isBatchMode) { Assert.AreEqual("held local", Status()); return; }
             var instance = editor.GetProperty("Instance", Any)!.GetValue(null);
             var config = editor.GetField("unityConnectionConfig", Any)!.GetValue(instance)!;
             var keep = config.GetType().GetProperty("KeepConnected")!;
@@ -208,7 +206,7 @@ namespace Statecraft.Tests.EditMode
         public void EveryBatchProtectionStillAppliesWhenAnEarlierStepThrows()
         {
             var editor = PluginEditor();
-            if (!Application.isBatchMode || editor == null) { CollectionAssert.Contains(new[] { "held local", "plugin not loaded" }, Status()); return; }
+            if (!Application.isBatchMode) { Assert.AreEqual("held local", Status()); return; }
             var instance = editor.GetProperty("Instance", Any)!.GetValue(null);
             var config = editor.GetField("unityConnectionConfig", Any)!.GetValue(instance)!;
             var keep = config.GetType().GetProperty("KeepConnected")!;
@@ -245,7 +243,6 @@ namespace Statecraft.Tests.EditMode
         public void SavingTheConfigNeverWritesTheOverrides()
         {
             var editor = PluginEditor();
-            if (editor == null) { Assert.AreEqual("plugin not loaded", Status()); return; }
             var instance = editor.GetProperty("Instance", Any)!.GetValue(null)!;
             var config = editor.GetField("unityConnectionConfig", Any)!.GetValue(instance)!;
             var record = editor.GetProperty("RuntimeOverrides", Any)!.GetValue(instance)!;
@@ -281,7 +278,6 @@ namespace Statecraft.Tests.EditMode
         public void TheTeamKillSwitchForTheUpdatePopupIsOn()
         {
             var editor = PluginEditor();
-            if (editor == null) { Assert.AreEqual("plugin not loaded", Status()); return; }
             var checker = editor.Assembly.GetType("com.IvanMurzak.Unity.MCP.Editor.Utils.UpdateChecker")!;
             Assert.IsTrue((bool)checker.GetProperty("IsDisabledForProject")!.GetValue(null)!,
                 "ProjectSettings/AI-Game-Developer-UpdateSettings.asset turns the update popup off for the team");

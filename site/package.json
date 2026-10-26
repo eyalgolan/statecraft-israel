@@ -13,7 +13,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "7.3.5",
+    "astro": "7.3.8",
     "sharp": "0.35.5",
     "yaml": "2.9.1"
   }

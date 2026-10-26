@@ -139,6 +139,8 @@ def test_an_outcome_row_cuts_its_recorded_window_and_decimates_a_dreamina_shot()
 # light text, made the box 14 to 95 levels darker and its gradient 1.1 to 21 times the strip's; main's captioned files
 # fail both tests below. A deliberate re-encode updates these from tools/encode_event_videos.py's output.
 CAPTION_FREE = {
+    "absorb_immigrants-outcome.mp4": ("8c2c560b9c348420eada2a599be9c6213fb2a07f1fa9bb6e7f10cfc96a765cc2", -3.0, 1.08),
+    "absorb_immigrants.mp4": ("2df9e9c6d30782de43957b0117fc471c0f01b26aaa89fdf524d8043d9c2955cb", -1.3, 1.09),
     "altalena-outcome.mp4": ("3290235920ee9d1dc2359b85effe168ab272140a3c15551323686098aec804a0", -6.4, 0.79),
     "altalena.mp4": ("37d2e740653c056c3eb5e682911ee9bb591c0eb94519fbda894ed232c50a2909", -7.1, 0.83),
     "austerity_1949-outcome.mp4": ("a67fe90992ccedb57f1d217d881635f9906068076033aa2da2419b485d6b2b67", -3.1, 0.92),

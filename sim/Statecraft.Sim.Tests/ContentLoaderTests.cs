@@ -12,6 +12,11 @@ targets:
     r: 0
     operation: fixture_operation
     sources: [{ url: ""https://example.org/operation"", checked: 2026-10-18 }]
+    residents: stayed
+    residents_sources: [{ url: ""https://example.org/residents"", checked: 2026-10-18 }]
+    annexation:
+      people: { value: 60, status: sourced, date: 1948-11-08, sources: [{ url: ""https://example.org/people"", checked: 2026-10-18 }] }
+      employed_share: { value: 0.5, status: design }
     status: sensitivity-reviewed
 ";
 
@@ -44,6 +49,39 @@ targets:
     [InlineData("    status: sensitivity-reviewed\n", "", ".status", "unknown status")]
     public void SettlementTargetsNeedAnArabTownLandHexOperationSourcesAndStatus(string before, string after, string field, string message)
     {
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(WithTargets(Target.Replace(before, after)))));
+        Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
+        Assert.Contains(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-CTRL-016 (Q-ANNEX-1; OWNER QUESTION 1 (a) on #799): a stayed row loads with its annexation values.
+    [Fact]
+    public void AStayedTargetLoadsWithItsAnnexationValues()
+    {
+        var target = Assert.Single(ContentLoader.Load(Fixture.Write(WithTargets(Target))).SettlementTargets);
+        Assert.Equal("stayed", target.Residents);
+        Assert.Equal("https://example.org/residents", Assert.Single(target.ResidentsSources).Url);
+        Assert.Equal((60m, "sourced", 0.5m), (target.Annexation!.People!.Value, target.Annexation.People.Status, target.Annexation.EmployedShare!.Value));
+    }
+
+    const string Annexation = "    annexation:\n      people: { value: 60, status: sourced, date: 1948-11-08, sources: [{ url: \"https://example.org/people\", checked: 2026-10-18 }] }\n      employed_share: { value: 0.5, status: design }\n";
+
+    // R-CTRL-016: residents are fled or stayed, sourced; only a stayed row has an annexation block, with a sourced count.
+    [Theory]
+    [InlineData("    residents: stayed\n", "", ".residents", "must be fled or stayed")]
+    [InlineData("    residents: stayed\n", "    residents: puppet\n", ".residents", "must be fled or stayed")]
+    [InlineData("    residents: stayed\n", "    residents: unknown\n", ".residents", "must be fled or stayed")]
+    [InlineData("    residents_sources: [{ url: \"https://example.org/residents\", checked: 2026-10-18 }]\n", "", ".residents_sources", "needs at least one source")]
+    [InlineData("\"https://example.org/residents\", checked: 2026-10-18", "\"http://example.org/residents\", checked: 2026-10-18", ".residents_sources[0]", "needs an https url")]
+    [InlineData("    residents: stayed\n", "    residents: fled\n", ".annexation", "has no annexation block")]
+    [InlineData(Annexation, "", ".annexation", "required for a stayed place")]
+    [InlineData("value: 60, status: sourced", "value: 60, status: design", ".annexation.people.status", "must be sourced")]
+    [InlineData("value: 60, status: sourced", "value: 60.5, status: sourced", ".annexation.people.value", "whole number")]
+    [InlineData("value: 0.5, status: design", "value: 1.5, status: design", ".annexation.employed_share.value", "from 0 to 1")]
+    public void SettlementTargetResidentsAreFledOrStayedAndSourced(string before, string after, string field, string message)
+    {
+        Assert.Contains(before, Target);
         var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(WithTargets(Target.Replace(before, after)))));
         Assert.Equal(ContentLoader.SettlementTargetsFileName, ex.File);
         Assert.Contains(field, ex.Field);

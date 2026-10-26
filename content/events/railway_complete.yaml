@@ -4,6 +4,13 @@
 id: railway_complete
 title: Haifa–Tel Aviv rail service restored
 text: 'Regular passenger service between Haifa and Tel Aviv North began on 20 September 1949. Trains ran through Binyamina, Hadera East and Rosh HaAyin, using the new link from the Petah Tikva branch to Tel Aviv North.'
+# For the native reviewer (#564): the Hebrew below (#1541) is an AI translation of the English, read and approved by
+# Beri (the author) on #1544, 24 Oct 2026; a second native read is still needed (#564). Names: תל אביב צפון and ראש העין
+# as he.wiki "מסילת הירקון" [42711895] writes them; חדרה מזרח as he.wiki "תחנת הרכבת חדרה מזרח" [43875718]; בנימינה as
+# content/map/localities_1948.yaml. The en dash in חיפה–תל אביב follows content/corridors.yaml.
+title_he: שירות הרכבת חיפה–תל אביב חודש
+text_he: 'שירות סדיר של נוסעים בין חיפה לתל אביב צפון החל ב־20 בספטמבר 1949. הרכבות עברו דרך בנימינה, חדרה מזרח וראש העין, בקישור החדש מקו פתח תקווה אל תל אביב צפון.'
+text_he_review: agent-checked
 anchor: soft
 objective: railway
 from: 1948-05-15
@@ -11,6 +18,7 @@ to: 1957-01-01
 options:
   - id: continue
     text: Continue
+    text_he: להמשיך
     historical: true
 tags: []
 sources:

@@ -316,6 +316,18 @@ rules:
   status: verified
   commons: CC0; CC-zero, Cc-zero
   artist: Willem van de Poll
+- glob: promo/ref/people/Moshe_Dayan_CCBY_1948.jpg
+  licence: CC-BY-4.0
+  source: https://commons.wikimedia.org/wiki/File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg
+  status: verified
+  commons: CC BY 4.0; Cc-by-4.0, Cc-by-layout
+  artist: Benno Rothenberg
+- glob: unity/Assets/UI/Portraits/dayan.jpg
+  licence: CC-BY-4.0
+  source: https://commons.wikimedia.org/wiki/File:Moshe_and_Ruth_Dayan_(997008137270105171).jpg
+  status: verified
+  commons: CC BY 4.0; Cc-by-4.0, Cc-by-layout
+  artist: Benno Rothenberg
 - glob: promo/ref/people/Yosef_Efrati_CCBYSA_Knesset.jpg
   licence: CC-BY-SA-4.0
   source: https://commons.wikimedia.org/wiki/File:Joseph_Ephrati_(00330292).jpg

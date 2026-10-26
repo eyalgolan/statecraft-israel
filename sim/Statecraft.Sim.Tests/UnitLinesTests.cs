@@ -178,4 +178,15 @@ public class UnitLinesTests
         var fire = held.Single(w => w.Key == WhyKeys.HoldsFire);
         Assert.Equal((5, "2,0"), (fire.Units.Single().Id, fire.Args[0]));
     }
+
+    [Fact]
+    public void AWithdrawalNamesTheUnit()
+    {
+        var c = CaptureTests.Load(CaptureTests.AllTargets);
+        var s = CombatTests.With(c, CaptureTests.Soldier(1, 1, 0));
+        s = Simulation.Step(c, s, new Command[0]).State;   // captured at the turn's end
+        var raid = Simulation.Step(c, s, new Command[] { new ResolveCapture("town_a", SettlementControl.Raid) });
+        var line = raid.Why.Single(w => w.Key == WhyKeys.Withdrew);
+        Assert.Equal((1, "town_a"), (line.Units.Single().Id, line.Args[0]));
+    }
 }

@@ -48,9 +48,10 @@ public class SettlementStateTests
     public void ResidentsAreNotCombatants()
     {
         var properties = typeof(SettlementControl).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        // Q-CAP-2 (b): the residents are one yes/no state, not a count; the only count on the record is the combatants.
+        // Q-CAP-2 (b): the residents are one yes/no state, not a count; the only count of people on the record is the
+        // combatants. Turns is the occupation timer (R-CTRL-012), a count of turns.
         Assert.Equal(typeof(bool), properties.Single(x => x.Name == nameof(SettlementControl.Depopulated)).PropertyType);
-        Assert.Equal(new[] { nameof(SettlementControl.Combatants) },
+        Assert.Equal(new[] { nameof(SettlementControl.Combatants), nameof(SettlementControl.Turns) },
             properties.Where(x => x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType == typeof(double)).Select(x => x.Name).ToArray());
         Assert.DoesNotContain(properties, x => x.Name.Contains("Resident", StringComparison.Ordinal) || x.Name.Contains("Population", StringComparison.Ordinal));
     }

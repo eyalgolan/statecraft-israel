@@ -74,10 +74,11 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
-        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys.</summary>
+        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys, the armoured car H01, the "sandwich"
+        /// armoured truck (the owner's Q-ART-2 choice, #756; #1536).</summary>
         public static readonly IReadOnlyDictionary<string, string> ByVehicle = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep,
+            [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep, [UnitData.ArmouredCar] = SandwichArmouredCar,
         };
 
         /// <summary>The figure of an Arab force's side, or null (that side's rows stay off the map).</summary>
@@ -255,7 +256,7 @@ namespace Statecraft.Game.Map.Units
             return box;
         }
 
-        static bool ByVehicleId(string id) => id == Napoleonchik || id == WillysJeep;
+        static bool ByVehicleId(string id) => id == Napoleonchik || id == WillysJeep || id == SandwichArmouredCar;
 
         /// <summary>True when <paramref name="piece"/> shows its Collection model (and not a code-built mesh).</summary>
         public static bool Dressed(Transform piece)

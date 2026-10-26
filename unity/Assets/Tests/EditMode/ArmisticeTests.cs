@@ -306,6 +306,8 @@ public class ArmisticeTests
             var bridge = new SimBridge(GameSession.New(c, GoldenRun.Seed, Mode.Historical), t);
             var hud = new HudPresenter(root, bridge, t);
             var card = new EventCardPresenter(root, bridge, t, null, null);
+            // The info panel as the game draws it before a hex is chosen: the hint chip (its presenter, not the bare UXML).
+            var info = new InfoPanelPresenter(root, bridge, t, new System.Collections.Generic.Dictionary<string, string>());
             try
             {
                 var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
@@ -329,7 +331,7 @@ public class ArmisticeTests
                 Assert.LessOrEqual(size.y, lb.height + 1f, $"{w}x{h}: the label's text is cut off");
                 Assert.LessOrEqual(size.y, 4 * label.resolvedStyle.fontSize * 1.4f, $"{w}x{h}: the label takes more than four lines ({size.y} px)");
             }
-            finally { card.Dispose(); hud.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+            finally { info.Dispose(); card.Dispose(); hud.Dispose(); Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
         }
     }
 

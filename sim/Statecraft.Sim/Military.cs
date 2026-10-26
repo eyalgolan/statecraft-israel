@@ -16,7 +16,7 @@ namespace Statecraft.Sim
                 var service = u.Service + 1;
                 var veteran = service >= r.VeteranSoldierService!.Value;
                 s.Units[u.Id] = new Unit(u.Id, veteran ? "veteran_soldier" : u.Type, u.Q, u.R, service,
-                    u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity);
+                    u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
                 if (veteran) why.Add(new Cause("city", "units", u.Strength, "Recruits became veteran soldiers"));
             }
         }
@@ -29,7 +29,7 @@ namespace Statecraft.Sim
             var cost = count * r.MilitaryUpkeepPerTurn!.Value;
             if (cost == 0) return;
             why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (military upkeep)"));
-            EconomySystem.PayOrBorrow(c, s, cost, "for military upkeep", why);
+            EconomySystem.PayOrBorrow(c, s, cost, "for military upkeep", why, CauseKeys.Purpose.MilitaryUpkeep);
         }
     }
 }

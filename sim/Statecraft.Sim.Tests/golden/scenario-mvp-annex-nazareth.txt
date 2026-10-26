@@ -1,0 +1,119 @@
+1949-01-15;4354685564936847302;Historical;8;
+ind{
+  food_supply=0.4 [3FD999999999999A]
+  housing=0.4192222056096913 [3FDAD4895FB6706D]
+  intl_standing=0.5 [3FE0000000000000]
+  morale=0.6701455495192676 [3FE571D51457D8B4]
+  security=0.5086917724609377 [3FE04733F7CED918]
+pol{
+  border_settlement=0.2 [3FC999999999999A]
+  housing_construction=0.3 [3FD3333333333333]
+  maabarot=0 [0000000000000000]
+eff{
+  border_villages_secure=0.033691772460937505 [3FA1400C49BA5E36]
+  building_houses=0.0722834300994873 [3FB2812AB851EB85]
+  food_lifts_cohesion=0.03984375000000001 [3FA4666666666668]
+  homes_lift_morale=0.06197826633453369 [3FAFBB9D85F06F69]
+  safety_lifts_morale=0.04761640136718752 [3FA8612D4D4024B6]
+  work_lifts_cohesion=0.04070713181754645 [3FA4D790AFBD9AFB]
+shift{
+  food_supply=0 [0000000000000000]
+  housing=0 [0000000000000000]
+  intl_standing=0 [0000000000000000]
+  morale=-0.07000000000000006 [BFB1EB851EB851F0]
+  security=0.17500000000000016 [3FC666666666666C]
+bud{
+  agriculture_minister=0.07 [3FB1EB851EB851EC]
+  defense_minister=0.45 [3FDCCCCCCCCCCCCD]
+  education_minister=0.06 [3FAEB851EB851EB8]
+  finance_minister=0.05 [3FA999999999999A]
+  health_minister=0.07 [3FB1EB851EB851EC]
+  interior_minister=0.05 [3FA999999999999A]
+  labour_minister=0.1 [3FB999999999999A]
+  prime_minister=0.15 [3FC3333333333333]
+pop{
+  africa=9739.110001692712 [40C3058E1489145A]
+  america_oceania=535.0499244151753 [4080B8663EC59399]
+  asia=7512.155402122331 [40BD5827C86EF924]
+  europe=81633.61444656934 [40F3EE19D4C5ED07]
+  unknown=12145.947428858311 [40C7B8F945594CDE]
+  veterans=656752.739703733 [41240AE17ABA729C]
+sit[
+treasury=0 [0000000000000000]
+debt=24.3555919260477 [40385B08128D18B6]
+fx=80.85238326859616 [4054368D728D91CC]
+rung=5;cf=0;
+mob=0.8 [3FE999999999999A]
+stab=0.6370784604804298 [3FE462F25E17FBB2]
+att=4 [4010000000000000]
+fired[
+  altalena
+  bernadotte_assassination
+  elections_1949
+  first_truce
+  idf_founding
+  jerusalem_ceasefire
+  jerusalem_military_government
+  latrun_proposal
+  operation_hiram
+  operation_horev
+  operation_yoav
+  rhodes_talks
+  second_truce
+  sinai_withdrawal
+  ten_days
+pending[
+  sinai_withdrawal
+  rhodes_talks
+  elections_1949
+chosen{
+  altalena=enforce
+  bernadotte_assassination=outlaw
+  first_truce=accept
+  idf_founding=one_army
+  jerusalem_ceasefire=keep
+  jerusalem_military_government=military_government
+  latrun_proposal=accept_vote
+  operation_hiram=stop_at_ceasefire
+  operation_horev=launch
+  operation_yoav=stop_at_ceasefire
+  second_truce=comply
+  ten_days=central_front
+appt{
+under=;
+map[
+mapturn=0001-01-01:0;
+over=
+city{
+  hadera=12,5,12,5,1,c0.35 [3FD6666666666666]
+  haifa=99,42,101,42,4,c0.347029702970297 [3FD635BC123FDF8E]
+  jerusalem=84,29,86,29,4,c0.3465116279069767 [3FD62D3F1B62D3F1]
+  nazareth=17,7,17,7,0,c0.35 [3FD6666666666666]
+  netanya=12,5,12,5,1,c0.35 [3FD6666666666666]
+  petah_tikva=22,10,22,10,1,c0.35 [3FD6666666666666]
+  rehovot=13,5,13,5,1,c0.35 [3FD6666666666666]
+  rishon_lezion=10,5,10,5,1,c0.35 [3FD6666666666666]
+  rosh_pinna=1,0,1,0,0,c0.35 [3FD6666666666666]
+  safed=2,1,2,1,0,c0.35 [3FD6666666666666]
+  tel_aviv=248,106,255,106,9,c0.3458823529411765 [3FD622EFBC895623]
+  tiberias=6,2,6,2,0,c0.35 [3FD6666666666666]
+  zikhron_yaakov=2,1,2,1,0,c0.35 [3FD6666666666666]
+units[
+  0:veteran_soldier@7,10|side=israel|strength=4
+  1:veteran_soldier@5,8|side=israel|strength=2
+  2:veteran_soldier@0,15|side=israel|strength=4
+  3:veteran_soldier@-3,19|side=israel|strength=3
+  4:veteran_soldier@-5,23|side=israel|strength=3
+  5:veteran_soldier@0,23|side=israel|strength=3
+  7:veteran_soldier@-9,27|side=israel|strength=1
+  8:egyptian_army@-8,25|side=egypt|strength=10|order=fortify|target=-8,25
+  9:arab_legion@-2,22|side=jordan|strength=4|order=fortify|target=-2,22
+  10:syrian_army@13,6|side=syria|strength=3|order=fortify|target=13,6
+  11:iraqi_army@6,13|side=iraq|strength=3|order=fortify|target=6,13
+  12:arab_liberation_army@12,4|side=ala|strength=4|order=fortify|target=12,4
+  13:veteran_soldier@-4,23|side=israel|strength=2
+next=14
+ctrl{
+  nazareth=owner=israel,state=annexed,since=1948-06-15
+food=2253,751,0
+arms=12

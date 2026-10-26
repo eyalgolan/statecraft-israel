@@ -75,6 +75,42 @@ public class UiLayoutTests
     }
 
     static readonly Content C = ContentLoader.Load(Paths.Content);
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    /// <summary>Review Focus 3: the longer blocked End turn label, including its hourglass padding, fits at phone width in
+    /// English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator TheBlockedEndTurnLabelFitsAtPhoneWidth()
+    {
+        foreach (var (language, text) in new[] { (UiLanguage.English, Text), (UiLanguage.Hebrew, He) })
+        {
+            var rt = new RenderTexture(390, 844, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("BlockedEndTurnLayoutTest");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            try
+            {
+                var root = doc.rootVisualElement;
+                root.Q("root").EnableInClassList(UiLanguage.HebrewClass, language == UiLanguage.Hebrew);
+                var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+                using var hud = new HudPresenter(root, bridge, text);
+                var button = root.Q<Button>("end-turn");
+                for (int i = 0; i < 20 && !(button.resolvedStyle.width > 0); i++) yield return null;
+                for (int i = 0; i < 4; i++) yield return null;
+                Assert.AreEqual(text["hud.end_turn_needs_orders"], button.text);
+                var preferred = button.MeasureTextSize(button.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
+                var padding = button.resolvedStyle.paddingLeft + button.resolvedStyle.paddingRight;
+                Assert.GreaterOrEqual(button.resolvedStyle.width + 0.5f, preferred + padding,
+                    $"{language}: blocked End turn text and hourglass padding fit at 390x844");
+            }
+            finally { Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt); }
+        }
+    }
 
     /// <summary>Review I3: a wide screen (Cabinet, Defence) covers the info panel, so while it is open the panel is hidden:
     /// it is drawn under the screen, takes no keyboard focus (its build buttons cannot be reached with Tab), and a map
@@ -548,7 +584,8 @@ public class UiLayoutTests
         if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
             problems.Add($"{where}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px) while the photograph shows");
         var band = root.Q("event-photo");
-        if (band.resolvedStyle.display == DisplayStyle.Flex && c.height < l.height - 1f)
+        // The layer's padding is reserved space, so only its content rectangle can leave room for a full header.
+        if (band.resolvedStyle.display == DisplayStyle.Flex && card.layout.height < layer.contentRect.height - 1f)
         {
             var want = band.layout.width / EventCardPresenter.MediaAspect;
             if (Mathf.Abs(band.layout.height - want) > 2.5f) problems.Add($"{where}: the media header is {band.layout.width:0}x{band.layout.height:0}, not 16:9 ({want:0} px tall), with room to spare; {LayoutState(root)}");

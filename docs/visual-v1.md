@@ -2597,7 +2597,7 @@ hills read as evenly spaced dice, nearly every one with a dome.
 | WebGL `KITS` line: buildings, vertices, triangles, draws | 1,972, 103,537, 70,572, 64 | 3,632, 167,329, 89,178, 64 |
 | grid readable at gameplay03 (floor 75%) | 79% (70 of 89) | 83% (74 of 89) |
 
-- The villages under six houses outside the game towns are Yibna, Taibe, Bayt Dajan, al-Bireh (beside Ramallah),
+- The villages under six houses outside the game towns are Yibna, Taibe, Beit Dajan, al-Bireh (beside Ramallah),
   al-Jura, az-Zeeb, Wadi Hunayn, Tantura, Nazla and al-Jiyya (10 of about 200). The routes, the coast and bigger
   neighbours take their ground. The test holds the count at 5% or fewer.
 - The core cover counts houses only (review of #647). Counted with the mosque, main's domed mosque alone covers 35.8% of
