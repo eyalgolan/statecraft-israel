@@ -381,7 +381,7 @@ namespace Statecraft.Game.UI
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
-                unitDone: FocusNextUnit, showRoute: map.ShowRoute, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
@@ -674,6 +674,12 @@ namespace Statecraft.Game.UI
         {
             if (info.Covered || !info.ShowsUnit || !info.PickTakes(q, r)) return;
             if (info.PickTarget(q, r)) map.ClearSelection();
+        }
+
+        void FocusPioneer(int id)
+        {
+            // ShowPioneer ends military picks/routes and invokes the same map/token cleanup as Escape.
+            info?.ShowPioneer(id);
         }
 
         /// <summary>Selects a drawn unit row, opens its card and centres the camera on its current hex.</summary>

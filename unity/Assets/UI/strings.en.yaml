@@ -672,6 +672,15 @@ city.reassign_halutz: "Reassign halutzim: 1 of {0}"
 city.reassign_veteran_halutz: "Reassign veteran pioneers: 1 of {0}"
 # A pioneer group's Return (R-QUAL-003); {0}: its name, site.group.
 pioneer.return: "Return {0} to civilian life"
+
+# Pioneer card (#1549).
+pioneer.card.open: "Open {0}"
+pioneer.card.location: "Hex: {0}"
+pioneer.card.track: "Track: {0}"
+pioneer.card.idle: "Idle"
+pioneer.card.working: "Working at {0}"
+pioneer.card.stop_first: "Stop the work on its project row before returning to civilian life."
+pioneer.card.work_ordered: "Build or Stop is ordered for this group. Remove that order before returning to civilian life."
 # City projects on the chosen hex (#1122): the city that builds it, Build for each content kind (its name, then cost and
 # turns from content), the order, and a project under way or finished. Refusals the map actions share use their
 # info.map_action_reason.* strings; these are the city projects' own.

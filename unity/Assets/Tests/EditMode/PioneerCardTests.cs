@@ -189,6 +189,7 @@ public class PioneerCardTests
     {
         var t = Text(false); var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         var site = C.Sites.First(x => Projects.IsYishuvSite(x)); var id = Add(g.State, site.Q, site.R);
+        g.State.Sites[site.Id] = new SiteWork(site.Id, id, 3, null);   // the worker's row is the one that links to its card
         using var ui = new UiTestKit();
         var b = new SimBridge(g, t);
         var host = ui.Q<VisualElement>(GddHexPanel.HostName);

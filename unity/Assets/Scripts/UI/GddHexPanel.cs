@@ -40,7 +40,7 @@ namespace Statecraft.Game.UI
         /// <summary>Builds the hex's GDD part into <paramref name="host"/> and its city projects into <paramref name="projects"/>
         /// (each hidden when there is none) and returns the designated site's name in the UI's language when the hex holds one,
         /// else null. <paramref name="townName"/> names a city in the UI's language (InfoPanelPresenter's town names).</summary>
-        public static string? Render(VisualElement host, VisualElement projects, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
+        public static string? Render(VisualElement host, VisualElement projects, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName, Action<int>? selectPioneer = null)
         {
             host.Clear(); projects.Clear();
             var c = bridge.Content; var s = bridge.State;
@@ -65,7 +65,7 @@ namespace Statecraft.Game.UI
                     title ??= Name(text, site);
                     var part = new VisualElement { name = "site-part-" + site.Id };
                     host.Add(part);
-                    Site(part, bridge, text, site, Work(site)!.Value);
+                    Site(part, bridge, text, site, Work(site)!.Value, selectPioneer);
                 }
                 // #792: each corridor segment through the hex (corridors.yaml; a hex where two segments meet is in both). Not on a
                 // city's own hex, whose column is full (InfoPanelLayoutTests): every segment has another hex.
@@ -76,7 +76,7 @@ namespace Statecraft.Game.UI
                             {
                                 var part = new VisualElement { name = $"corridor-part-{d.Id}-{i + 1}" };
                                 host.Add(part);
-                                Segment(part, bridge, text, d, i);
+                                Segment(part, bridge, text, d, i, selectPioneer);
                             }
                 CityProjects(projects, bridge, text, q, r, townName, cityHere);
             }
@@ -182,16 +182,27 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
-        /// Qualification.CheckReturn takes the group (not one at work). Pioneer groups have no map token and so no unit card:
-        /// this sits beside the places that list them. A unit order, it takes effect at once (R-TURN-004): the group leaves
-        /// the lists, and its Build buttons with it.</summary>
+        /// Qualification.CheckReturn takes the group (not one at work). It sits beside the places that list the group; the
+        /// pioneer card (#1549) offers the same order through <see cref="PioneerReturnOrder"/>. A unit order, it takes
+        /// effect at once (R-TURN-004): the group leaves the lists, and its Build buttons with it.</summary>
         static void PioneerReturn(VisualElement host, SimBridge bridge, UiText text, int unit)
         {
-            if (Qualification.CheckReturn(bridge.State, unit) != null) return;
-            // A Build or Stop queued for the group waits for End turn, which the group would no longer be there for.
-            var working = bridge.Queued.Any(x => (x is PioneerWork w && w.Unit == unit) || (x is StopWork sw && sw.Unit == unit));
+            var offer = PioneerReturnOrder(bridge, unit);
+            if (!offer.Eligible) return;
             Button(host, $"pioneer-return-{unit}", text.Format("pioneer.return", Group(text, bridge.State, unit)),
-                () => bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder))).SetEnabled(!working);
+                () => PioneerReturnOrder(bridge, unit, submit: true)).SetEnabled(!offer.WorkOrdered);
+        }
+
+        /// <summary>The one guarded Return for both the rows and the pioneer card (#1549): Eligible when
+        /// Qualification.CheckReturn takes the group, WorkOrdered while a Build or Stop is queued for it (that waits for End
+        /// turn, which the group would no longer be there for). With <paramref name="submit"/> it queues the order only when
+        /// both allow it, so a stale button cannot strand a queued Build or Stop.</summary>
+        public static (bool Eligible, bool WorkOrdered) PioneerReturnOrder(SimBridge bridge, int unit, bool submit = false)
+        {
+            var eligible = Qualification.CheckReturn(bridge.State, unit) == null;
+            var working = bridge.Queued.Any(x => (x is PioneerWork w && w.Unit == unit) || (x is StopWork sw && sw.Unit == unit));
+            if (submit && eligible && !working) bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder));
+            return (eligible, working);
         }
 
         static void Workers(SimBridge bridge, string city, int current, int count)
@@ -213,7 +224,7 @@ namespace Statecraft.Game.UI
         static string Name(UiText text, Statecraft.Sim.Site site) =>
             text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
 
-        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind)
+        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind, Action<int>? selectPioneer)
         {
             var c = bridge.Content; var s = bridge.State;
             var (action, key) = kind;
@@ -247,6 +258,7 @@ namespace Statecraft.Game.UI
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
+                GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "site-state", text.Format("site.building" + key, Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
@@ -258,7 +270,7 @@ namespace Statecraft.Game.UI
         /// kind) with each idle pioneer group, with the kind's cost and the unit's own turns (Projects.Terms,
         /// Corridors.TurnsToBuild); or its turns left and Stop while it is built; or the day it was built. The order is
         /// PioneerWork(unit, action, "corridor:N"), SimBridge's corridor key.</summary>
-        static void Segment(VisualElement host, SimBridge bridge, UiText text, CorridorDef d, int index)
+        static void Segment(VisualElement host, SimBridge bridge, UiText text, CorridorDef d, int index, Action<int>? selectPioneer)
         {
             var c = bridge.Content; var s = bridge.State;
             var action = d.Kind == Corridors.Rail ? Corridors.BuildRail : Corridors.BuildRoad;
@@ -287,6 +299,7 @@ namespace Statecraft.Game.UI
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a segment being built names its unit (SegmentWork)
+                GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "corridor-state", text.Format("site.building", Group(text, s, unit), Turns(text, Corridors.TurnsToBuild(c, s, unit, terms.Turns - work.Progress, work.Carry))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "corridor-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
@@ -399,6 +412,17 @@ namespace Statecraft.Game.UI
 
         /// <summary>A date in the UI's language, as the event card writes it (EventCardPresenter.ObjectiveLine).</summary>
         static string Date(UiText t, DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
+
+        /// <summary>The worker's link to its pioneer card (#1549) on a site or segment under way; none without a callback, so
+        /// existing callers render as before. Idle candidates get none: they open from their own hex's list, and a link per
+        /// candidate per segment ran a three-segment hex off a 1024x768 window (InfoPanelLayoutTests).</summary>
+        static void GroupLink(VisualElement host, SimBridge bridge, UiText text, int id, Action<int>? select)
+        {
+            if (select == null) return;
+            var b = Button(host, "pioneer-project-" + id.ToString(CultureInfo.InvariantCulture),
+                text.Format("pioneer.card.open", Group(text, bridge.State, id)), () => select(id));
+            b.AddToClassList("pioneer-link");
+        }
 
         static Label Line(VisualElement parent, string name, string value)
         {
