@@ -1249,8 +1249,8 @@ namespace Statecraft.Sim
         /// <summary>The game-wide save identity; an absent selector preserves the loop's original inference.</summary>
         public string Ruleset => Eras.Count > 0 && Eras[0].Systems.RulesetGiven
             ? Eras[0].Systems.Ruleset : IsGdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
-        /// <summary>Identity predicate only: legacy and gdd-0.1 have Attention, gdd-0.3 omits it. No rule reads it yet;
-        /// its callers are wired in #1688 (R-LOOP-001).</summary>
+        /// <summary>Identity predicate: legacy and gdd-0.1 have Attention, gdd-0.3 omits it. The sim reads it to leave
+        /// Attention out of gdd-0.3 (R-LOOP-001, R-GOV-002, #1688).</summary>
         public bool UsesAttention => Ruleset != SaveGame.Gdd03Ruleset;
         /// <summary>The day play ends, a boundary the last turn reaches (Simulation.Step): rules.yaml mvp.end in the GDD loop
         /// (R-LOOP-004), otherwise the last era's end.</summary>
