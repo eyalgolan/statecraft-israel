@@ -44,7 +44,7 @@ public class TopBarTests
     /// flags changed), and 1813x1080 (1865 logical, one row) and 1794x1080 (1855, stacked) hold the new edge.</summary>
     static readonly (int w, int h, bool oneRow)[] Boundary =
         { (1315, 1024, false), (1317, 1024, false), (1389, 1024, false), (1280, 1024, false), (1600, 1200, false), (1024, 768, false),
-          (1360, 1024, false), (1350, 1024, false), (1024, 1024, false), (1813, 1080, false), (1794, 1080, false), (2560, 1080, true) };
+          (1360, 1024, false), (1350, 1024, false), (1024, 1024, false), (1813, 1080, false), (1794, 1080, false), (2560, 1080, false), (3840, 1080, true) };
 
     /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the plain mean of the two
     /// ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.) With seven meters (#380; the owner's
@@ -123,8 +123,9 @@ public class TopBarTests
                 if (afterRender != null)
                 {
                     Assert.IsNotNull(captionRow, "the real Game.uxml has its Security caption row");
-                    if (!hebrew) Assert.AreEqual(Wrap.Wrap, beforeDispose.value,
-                        "precondition: inline wrapping is still active immediately before HUD Dispose");
+                    if (!hebrew) Assert.AreEqual(Wrap.NoWrap, beforeDispose.value,
+                        "precondition: explicit column NoWrap is still active immediately before HUD Dispose");
+                    Assert.AreEqual(StyleKeyword.Undefined, beforeDispose.keyword, "the override must actually be owned inline");
                     Assert.AreEqual(StyleKeyword.Null, captionRow!.style.flexWrap.keyword,
                         "HUD Dispose clears its inline Security caption-row wrapping");
                 }
@@ -191,6 +192,8 @@ public class TopBarTests
                 Assert.AreEqual(startingBar, bar.worldBound, "removing the inset restores original bar bounds");
             }
             string at = $"{(he ? "he" : "en")} widest={widest} {phase.name}";
+            var securityRow = root.Q(className: "meter-caption-row");
+            TestContext.WriteLine(System.FormattableString.Invariant($"C241 HEADER {at}: root={string.Join(",",inner.GetClasses())} direction={securityRow.resolvedStyle.flexDirection} wrap={securityRow.resolvedStyle.flexWrap} row={securityRow.worldBound} body={securityRow.parent.worldBound}"));
             var labels = root.Q("top-bar").Query<Label>(className: "meter-name").ToList()
                 .Where(l => Shown(l) && !string.IsNullOrEmpty(l.text)).ToList();
             Assert.AreEqual(10, labels.Count, "nine captions and Security level must be exercised");
@@ -231,8 +234,8 @@ public class TopBarTests
         css = (47f, 0f);
         for (int i = 0; i < 40; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
         if (!he)
-            Assert.AreEqual(Wrap.Wrap, root.Q(className: "meter-caption-row").style.flexWrap.value,
-                "precondition: real scheduled left inset activated inline caption-row wrapping before Dispose");
+            Assert.AreEqual(Wrap.NoWrap, root.Q(className: "meter-caption-row").style.flexWrap.value,
+                "precondition: real scheduled inset keeps explicit column NoWrap before Dispose");
     }
 
     /// <summary>A label's text fits its box: on one line, or wrapped within its height (InfoPanelLayoutTests).</summary>

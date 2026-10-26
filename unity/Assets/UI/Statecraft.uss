@@ -1084,16 +1084,21 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* Playtest B6: the city's name over its block on a hex that holds two cities (GddHexPanel.CityNameClass). */
 .city-part-name { -unity-font-style: bold; color: var(--gold-light); margin-top: 6px; }
 
-/* #731: the purchase stays in Defence's scroll view on narrow screens. */
+/* #731: purchase controls remain inside Defence's scroll view; entered numbers must stay visible. */
 .arms-actions { flex-wrap: wrap; }
 #arms-count { min-width: 0; flex-shrink: 1; }
 .lang-he #arms-count { flex-direction: row-reverse; }
-
-/* #731: keep full stock values and caption ink; tier selection measures the extra room. Legacy is unchanged. */
+#arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
+#arms-count:focus .unity-base-field__input { border-color: var(--gold); }
+/* Nine-meter geometry is scoped to the GDD bar; legacy keeps the inherited stylesheet. */
 .hud-pools .meter { flex-shrink: 0; }
-.hud-pools .meter-caption-row { flex-wrap: wrap; }
-/* Natural widths pack nine meters into two phone lines, without the empty ninth quarter-cell row. */
-.hud-pools.hud-three-row .meter { flex-basis: auto; flex-grow: 0; min-width: 0; }
+.lang-he.hud-pools .meter-caption-row { flex-direction: row-reverse; }
+.hud-pools.hud-narrow .meter-caption-row { flex-direction: column; align-items: flex-start; flex-shrink: 0; }
+.lang-he.hud-pools.hud-narrow .meter-caption-row { align-items: flex-end; }
+.hud-pools.hud-narrow .meter-caption-row > Label { flex-shrink: 0; }
+.hud-pools.hud-narrow #security-level { margin-left: 0; margin-right: 0; }
+/* Natural widths keep two phone meter lines; minimums are measured from words and values, with the existing 5% spare. */
+.hud-pools.hud-three-row .meters { padding-right: 5%; }
+.lang-he.hud-pools.hud-three-row .meters { padding-right: 0; padding-left: 5%; }
+.hud-pools.hud-three-row .meter { flex-basis: auto; flex-grow: 0; min-width: 0; padding-left: 10px; padding-right: 10px; }
 .hud-pools.hud-three-row .meter-body { flex-shrink: 0; }
-#arms-count .unity-text-input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
-#arms-count:focus .unity-text-input { border-color: var(--gold); }

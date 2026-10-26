@@ -206,7 +206,12 @@ public class FoodArmsHudTests
                 var visible = root.Q("meters").Children().Where(x => x.resolvedStyle.display != DisplayStyle.None).ToList();
                 for (int i = 0; i < visible.Count; i++)
                 for (int j = i + 1; j < visible.Count; j++)
-                    Assert.IsFalse(visible[i].worldBound.Overlaps(visible[j].worldBound), "meters must not overlap");
+                {
+                    // As TopBarTests: shared snapped edges may differ by a subpixel, ink must stay disjoint.
+                    static Rect In(Rect r) => new Rect(r.x + .5f, r.y + .5f, r.width - 1, r.height - 1);
+                    Assert.IsFalse(In(visible[i].worldBound).Overlaps(In(visible[j].worldBound)),
+                        FormattableString.Invariant($"{size.x}x{size.y} he={he}: {visible[i].name} {visible[i].worldBound} overlaps {visible[j].name} {visible[j].worldBound}"));
+                }
             }
             finally
             {

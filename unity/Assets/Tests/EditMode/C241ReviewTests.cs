@@ -174,7 +174,7 @@ public class C241ReviewTests
                 Assert.IsTrue(ScreenNav.IsOpen(root.Q("screen-defence")));
                 var scroll=root.Q<ScrollView>("defence-body"); var count=root.Q<IntegerField>("arms-count");
                 var buy=root.Q<Button>("buy-arms"); var withdraw=root.Q<Button>("withdraw-arms");
-                var input = count.Q(className: "unity-text-input");
+                var input = count.Q(className: "unity-base-field__input");
                 Assert.IsNotNull(input);
                 var ink = input.resolvedStyle.color; var paper = input.resolvedStyle.backgroundColor;
                 Assert.Greater(Mathf.Abs(ink.grayscale - paper.grayscale), .5f, "amount text must contrast with its input background");
