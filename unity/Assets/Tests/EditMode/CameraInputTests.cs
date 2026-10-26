@@ -894,4 +894,48 @@ public class PressOriginCameraInputTests : InputTestFixture
         }
         Assert.That(rig.View.LookAt.x, Is.EqualTo(498800).Within(0.1f), "ungated source pans all ten pixels");
     }
+
+    /// <summary>#1661 ruling 3, the camera's half ("no selection, and the map pans"): a one-finger flick whose press,
+    /// travel and lift all land inside one input update. The camera's own press observer sees the travel, but by the
+    /// camera frame the finger is up, so FingersDown finds none and the pan used to be dropped. The lift now keeps the
+    /// pan the press made past the slop, and the next camera frame applies it once: 200 px of travel pans 170 px, as the
+    /// same swipe spread over frames does (ruling 2: only the travel beyond 30 px pans). The no-selection half is
+    /// TapPress's (#1777).</summary>
+    [TestCase(200)]
+    [TestCase(20)]
+    public void AFlickInsideOneInputUpdatePansByItsTravelBeyondTheSlop(int travel)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame(); // warms press.wasPressedThisFrame (MapPointerTickTests explains why)
+        var from = new Vector2(400, 400);
+        BeginTouch(1, from, queueEventOnly: true);
+        MoveTouch(1, from + new Vector2(travel, 0), queueEventOnly: true);
+        EndTouch(1, from + new Vector2(travel, 0));
+        rig.Frame();
+        rig.Frame();
+        var beyond = Mathf.Max(0, travel - TapPress.SlopPixels);
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - beyond * 120).Within(0.1f),
+            "the flick pans by its travel beyond the slop, once");
+        Assert.AreEqual(500000f, rig.View.LookAt.z);
+        rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - beyond * 120).Within(0.1f), "and only once");
+    }
+
+    /// <summary>The same one-update flick from over the UI pans nothing: the press latched its UI origin.</summary>
+    [Test]
+    public void AFlickInsideOneInputUpdateFromTheUiPansNothing()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Camera.IsOverUi = p => p.x < 500;
+        rig.Frame();
+        var from = new Vector2(400, 400);
+        BeginTouch(1, from, queueEventOnly: true);
+        MoveTouch(1, from + new Vector2(200, 0), queueEventOnly: true);
+        EndTouch(1, from + new Vector2(200, 0));
+        rig.Frame();
+        rig.Frame();
+        Assert.AreEqual(new Vector3(500000, 0, 500000), rig.View.LookAt);
+    }
 }
