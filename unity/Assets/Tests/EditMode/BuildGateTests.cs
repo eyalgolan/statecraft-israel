@@ -92,7 +92,8 @@ public class BuildGateTests
     public void TheShippedReviewManifestCoversTheWholeSettlementControlSurface() // R-GATE-002
     {
         var review = ParseSettlementReview(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
-        Assert.AreEqual("pending", SettlementReview.GetProperty("Status")!.GetValue(review), "an AI-assisted draft is never reviewed");
+        Assert.AreEqual("sensitivity-reviewed", SettlementReview.GetProperty("Status")!.GetValue(review),
+            "the owner signed off all 42 strings themselves (dbc70439, 26 October 2026); an AI-assisted change never sets this");
         var rows = ((System.Collections.IEnumerable)SettlementReview.GetProperty("Strings")!.GetValue(review)!).Cast<object>();
         var rowType = SettlementReview.GetNestedType("Row")!;
         var keys = rows.Select(x => (string)rowType.GetProperty("Key")!.GetValue(x)!).ToArray();
