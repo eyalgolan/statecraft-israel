@@ -938,4 +938,62 @@ public class PressOriginCameraInputTests : InputTestFixture
         rig.Frame();
         Assert.AreEqual(new Vector3(500000, 0, 500000), rig.View.LookAt);
     }
+
+    /// <summary>A lifted flick's pan survives a new press that lands before the camera frame, and only once: the new
+    /// press starts clean (no inherited latch or slop) and adds nothing inside its own 30 px. Two completed flicks before
+    /// one frame each pan their own travel past the slop. (C289 review F1.)</summary>
+    [Test]
+    public void ALiftedFlickStillPansWhenANewPressLandsBeforeTheCameraFrame()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame();
+        var a = new Vector2(400, 400);
+        BeginTouch(1, a, queueEventOnly: true);
+        MoveTouch(1, a + new Vector2(200, 0), queueEventOnly: true);
+        EndTouch(1, a + new Vector2(200, 0), queueEventOnly: true);
+        var b = new Vector2(700, 300);
+        BeginTouch(1, b, queueEventOnly: true);
+        MoveTouch(1, b + new Vector2(10, 0));
+        rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 120).Within(0.1f), "A's flick pans its 170 px; B inside its slop adds none");
+        EndTouch(1, b + new Vector2(10, 0));
+        rig.Frame(); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 120).Within(0.1f), "and only once");
+    }
+
+    [Test]
+    public void TwoFlicksBeforeOneCameraFrameEachPanTheirTravelPastTheSlop()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame();
+        foreach (var from in new[] { new Vector2(300, 400), new Vector2(300, 200) })
+        {
+            BeginTouch(1, from, queueEventOnly: true);
+            MoveTouch(1, from + new Vector2(200, 0), queueEventOnly: true);
+            EndTouch(1, from + new Vector2(200, 0), queueEventOnly: true);
+        }
+        InputSystem.Update();
+        rig.Frame(); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 2 * 170 * 120).Within(0.1f), "170 px each, once");
+    }
+
+    /// <summary>A two-finger gesture that ends between camera frames is a pinch, not a one-finger flick: the primary
+    /// finger's travel while a second finger was down never pans on the lift. (C289 review F2.)</summary>
+    [Test]
+    public void APinchEndedBetweenCameraFramesPansNothing()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame();
+        var a = new Vector2(400, 400); var c = new Vector2(400, 200);
+        BeginTouch(1, a, queueEventOnly: true);
+        BeginTouch(2, c, queueEventOnly: true);
+        MoveTouch(1, a + new Vector2(200, 0), queueEventOnly: true);
+        EndTouch(2, c, queueEventOnly: true);
+        EndTouch(1, a + new Vector2(200, 0));
+        rig.Frame(); rig.Frame();
+        Assert.AreEqual(new Vector3(500000, 0, 500000), rig.View.LookAt);
+    }
 }
