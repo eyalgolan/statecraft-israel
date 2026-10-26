@@ -14,6 +14,7 @@ mergeInto(LibraryManager.library, {
         "        border-left: 1px solid #c4a05c; font: 16px/1.5 Georgia, serif; overflow-wrap: anywhere; }\n" +
         "      #companion p, #companion li { white-space: pre-wrap; }\n" +
         "      #companion h2, #companion h3 { font-size: 1.15rem; }\n" +
+        "      #companion ol { padding-inline: 0; list-style-position: inside; }\n" +
         "      @media (max-width: 900px) {\n" +
         "        body.has-companion #unity-canvas { width: 100%; height: 65%; }\n" +
         "        #companion { top: 65%; width: 100%; border-left: 0; border-top: 1px solid #c4a05c; }\n" +
@@ -136,6 +137,9 @@ mergeInto(LibraryManager.library, {
           return;
         }
         if (panel.lang !== snapshot.lang) panel.lang = snapshot.lang;
+        // Containers need the UI direction; leaf paragraphs/choices still resolve mixed-script text independently.
+        var direction = snapshot.lang === "he" ? "rtl" : "ltr";
+        if (panel.dir !== direction) panel.dir = direction;
         // Each paragraph/choice has auto direction: Hebrew UI may have individual English fallback fields.
         words("heading", snapshot.heading);
         words("help", snapshot.help);

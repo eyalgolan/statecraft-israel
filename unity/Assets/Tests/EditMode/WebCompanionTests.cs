@@ -66,30 +66,44 @@ public sealed class WebCompanionTests
     [UnityTest]
     public IEnumerator ScheduledMirrorFollowsActualPanelFocusAndToastChanges()
     {
-        using var ui = new UiTestKit();
-        ui.Root.Clear();
-        var root = Tree(); ui.Root.Add(root);
-        var sent = new List<string>();
-        using var mirror = new WebCompanion(root, Text, () => true, sent.Add);
-        yield return null;
-        yield return null;
-        root.Q<Button>().Focus();
-        root.Q<Label>("toast").text = "New result";
-        var until = EditorApplication.timeSinceStartup + 2;
-        WebCompanion.Snapshot state;
-        do
+        var ui = new UiTestKit();
+        var settings = Object.Instantiate(ui.Doc.panelSettings);
+        var texture = new RenderTexture(640, 480, 0);
+        settings.targetTexture = texture;
+        try
         {
+            ui.Doc.panelSettings = settings; // a rendered runtime panel, as KeyboardFocusTests uses
+            ui.Root.Clear();
+            var root = Tree(); ui.Root.Add(root);
+            var sent = new List<string>();
+            using var mirror = new WebCompanion(root, Text, () => true, sent.Add);
             yield return null;
-            state = JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
-        } while ((state.focus != "First" || state.status != "New result") && EditorApplication.timeSinceStartup < until);
-        Assert.AreEqual("First", state.focus);
-        Assert.AreEqual("New result", state.status);
-        mirror.Dispose();
-        var count = sent.Count;
-        root.Q<Label>("toast").text = "After disposal";
-        until = EditorApplication.timeSinceStartup + 0.3;
-        while (EditorApplication.timeSinceStartup < until) yield return null;
-        Assert.AreEqual(count, sent.Count, "the disposed schedule sends no stale state");
+            yield return null;
+            var button = root.Q<Button>();
+            button.Focus();
+            for (int i = 0; i < 10 && root.focusController.focusedElement != button; i++) { yield return null; button.Focus(); }
+            Assert.AreSame(button, root.focusController.focusedElement, "precondition: real runtime keyboard focus");
+            root.Q<Label>("toast").text = "New result";
+            var until = EditorApplication.timeSinceStartup + 2;
+            WebCompanion.Snapshot state;
+            do
+            {
+                yield return null;
+                state = JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
+            } while ((state.focus != "First" || state.status != "New result") && EditorApplication.timeSinceStartup < until);
+            Assert.AreEqual("First", state.focus);
+            Assert.AreEqual("New result", state.status);
+            mirror.Dispose();
+            var count = sent.Count;
+            root.Q<Label>("toast").text = "After disposal";
+            until = EditorApplication.timeSinceStartup + 0.3;
+            while (EditorApplication.timeSinceStartup < until) yield return null;
+            Assert.AreEqual(count, sent.Count, "the disposed schedule sends no stale state");
+        }
+        finally
+        {
+            ui.Dispose(); Object.DestroyImmediate(settings); texture.Release(); Object.DestroyImmediate(texture);
+        }
     }
 
     [Test]
@@ -181,13 +195,15 @@ public sealed class WebCompanionTests
             Assert.IsNotEmpty(sent, "Begin must invoke the production hookup");
             var old = game.Companion!;
             Assert.AreEqual("en", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
-            var session = game.Bridge;
+            var session = game.Bridge!.Session;
+            var state = game.Bridge.State;
             game.Card!.Collapse();
             var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
             UiTestKit.Press(ui.Q<Button>("nav-settings"));
             UiTestKit.Press(ui.Q<Button>("settings-language-he"));
             Assert.AreEqual("he", game.Language);
-            Assert.AreSame(session, game.Bridge);
+            Assert.AreSame(session, game.Bridge!.Session);
+            Assert.AreSame(state, game.Bridge.State);
             Assert.Contains("null", sent, "the old mirror is cleared before publishing its replacement");
             Assert.AreEqual("he", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
             var count = sent.Count; old.Refresh(); Assert.AreEqual(count, sent.Count);
