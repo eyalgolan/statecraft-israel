@@ -3,7 +3,8 @@
 
 `uv run scripts/oss/md_links.py [--root DIR]`. Ignores code (inline spans, and fences of three or more backticks or tildes), absolute URLs (any `scheme:`),
 `#anchor` and `mailto:` links, and targets with brackets (reference-style leftovers). Anchors after `#` are not checked, only the file.
-Handles a link title (`[a](b "t")`), `<angle>` targets, `%20` escapes and the outer link of a badge (`[![x](img)](page)`).
+Handles a link title (`[a](b "t")`), `<angle>` targets, `%20` escapes, balanced parentheses in a target
+(`[a](setup_(mac).md)`) and the outer link of a badge (`[![x](img)](page)`).
 A target must match a tracked file or directory exactly, so a wrong letter case fails on macOS too (CI's Linux would).
 One line per dead link (file: link); exit 1 if any."""
 import argparse
@@ -15,7 +16,9 @@ from urllib.parse import unquote
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-LINK = re.compile(r"\]\(<?([^)\s>]+)>?(?:\s+(?:\"[^\"]*\"|'[^']*'))?\)")
+# A target is a run of characters with no space, ")" or ">", and may hold balanced parentheses one level deep
+# (`docs/setup_(mac).md`, #1464); the first unbalanced ")" ends the link.
+LINK = re.compile(r"\]\(<?((?:[^()\s>]|\([^()\s>]*\))+)>?(?:\s+(?:\"[^\"]*\"|'[^']*'))?\)")
 # A fence opens with 3+ backticks or tildes and closes with the same run; an inline span is a backtick run closed by an
 # equal run and may not cross a blank line, so one stray backtick cannot swallow the rest of the file.
 FENCE = re.compile(r"(`{3,}|~{3,}).*?\1", re.S)

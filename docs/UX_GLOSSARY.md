@@ -1,6 +1,6 @@
-# Glossary (draft v0.5)
+# Glossary (v0.5)
 
-Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
+Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. Status: binding for new strings from 22 October 2026 (#622). Adopted decisions are identified individually; recommendations that still await maintainer or native Hebrew review stay marked that way. Snapshot date 2026-10-17.
 
 Entries: 6 contested, 8 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (50 concepts, 7 conventions).
 
