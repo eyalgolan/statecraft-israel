@@ -23,7 +23,10 @@
       "generated": 311
     },
     "offsets": "zero-based half-open; every unequal byte only",
-    "provenance_note": "Generated prefabs, controllers, materials, import metadata and TownModels.asset are ours; not represented as Tal original bytes."
+    "provenance_note": "Generated prefabs, controllers, materials, import metadata and TownModels.asset are ours; not represented as Tal original bytes.",
+    "licence": "CC-BY-NC-ND-4.0",
+    "generated_licence": "PolyForm-Noncommercial-1.0.0",
+    "generated_licence_basis": "LICENSING.md code row; generated Collection prefabs/controllers/materials and import metadata are ours, not original source bytes"
   },
   "files": [
     {
