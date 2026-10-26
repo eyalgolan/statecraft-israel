@@ -22,9 +22,9 @@ corridors:
     name_he: דרך בורמה
     route: burma_road
     segments:
-      - { to: Bayt Jiz, hexes: [[-3, 22], [-3, 23]] }
-      - { to: Bayt Susin, hexes: [[-3, 23]] }
-      - { to: Bayt Mahsir, hexes: [[-3, 23], [-2, 22], [-3, 23], [-2, 23]] }
+      - { to: Beit Jiz, hexes: [[-3, 22], [-3, 23]] }
+      - { to: Beit Susin, hexes: [[-3, 23]] }
+      - { to: Beit Mahsir, hexes: [[-3, 23], [-2, 22], [-3, 23], [-2, 23]] }
       - { to: Saris, hexes: [[-2, 23]] }
     sources:
       # The route's line and its completion on 14 June 1948 (routes_1948.yaml burma_road, with that file's checked date).

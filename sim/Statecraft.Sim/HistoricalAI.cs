@@ -27,6 +27,7 @@ namespace Statecraft.Sim
                     wanted.Add(new ResolveCapture(kv.Key, SettlementControl.Raid));
             var floor = SecuritySystem.MinMobilization(c, s.Date, s.Rung);
             if (!c.IsGdd && s.Mobilization > floor) wanted.Add(new SetMobilization(floor));   // retired in the GDD loop (R-WAR-002)
+            if (!c.UsesAttention) return wanted;
             var list = new List<Command>();
             var left = s.Attention;
             foreach (var cmd in wanted)

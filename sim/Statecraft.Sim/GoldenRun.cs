@@ -30,6 +30,7 @@ namespace Statecraft.Sim
         public static GameState Play(Content c, DateTime until)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             for (int turn = 0; turn < 1000 && s.Date < until && s.GameOver == null; turn++)
                 s = Simulation.Step(c, s, Orders(c, s)).State;
@@ -51,6 +52,7 @@ namespace Statecraft.Sim
         public static GameState PlayEra(Content c, string eraId, DateTime until, ulong seed = Seed)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var era = c.Eras.FirstOrDefault(e => e.Id == eraId) ?? throw new ArgumentException($"no era '{eraId}' (known: {string.Join(", ", c.Eras.Select(e => e.Id))})");
             if (era.From != c.Rules.Start)
                 throw new NotSupportedException($"era '{eraId}' starts {era.From:yyyy-MM-dd}, but a new game starts {c.Rules.Start:yyyy-MM-dd}: a fresh start of a later era needs that era's start values, which are not read yet (chapters design section 6).");
@@ -71,6 +73,7 @@ namespace Statecraft.Sim
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var answers = new List<Command>();
             var left = s.Attention;
             foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
@@ -88,6 +91,7 @@ namespace Statecraft.Sim
         public static GameState PlaySmoke(Content c, int turns)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             for (int turn = 0; turn < turns && s.Date < Until1952 && s.GameOver == null; turn++)
                 s = Simulation.Step(c, s, SmokeOrders(c, s)).State;
@@ -102,6 +106,7 @@ namespace Statecraft.Sim
         public static Move SmokeMove(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var places = Movement.NoEntry(c, s);
             foreach (var id in s.Units.Keys)   // a SortedList: in id order
                 foreach (var (q, r) in Movement.Reachable(c, s, id).Keys)
@@ -114,6 +119,7 @@ namespace Statecraft.Sim
         public static GameState PlaySmokeOrders(Content c)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             return Simulation.Step(c, s, new Command[] { SmokeMove(c, s) }).State;
         }

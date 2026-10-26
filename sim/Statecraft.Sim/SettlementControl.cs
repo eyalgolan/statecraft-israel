@@ -83,7 +83,7 @@ namespace Statecraft.Sim
             {
                 var after = s.Clone();
                 var refusal = Spend(c, after, ResolveKind) ?? Resolved(c, after, id, outcome, new List<Cause>());
-                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(s, after) : null));
+                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(c, s, after) : null));
             }
             return options;
         }
@@ -92,11 +92,12 @@ namespace Statecraft.Sim
         /// what it needs and what is left.</summary>
         static CaptureRefusal? Spend(Content c, GameState s, string kind)
         {
+            if (!c.UsesAttention) return null;
             var need = AttentionSystem.Cost(c, s, kind); var have = s.Attention;
             return AttentionSystem.TrySpend(c, s, kind) is string no ? new CaptureRefusal(CaptureRefusal.Attention, no, need, have) : null;
         }
 
-        static CapturePreview Preview(GameState s, GameState after) => new CapturePreview(after.Attention - s.Attention,
+        static CapturePreview Preview(Content c, GameState s, GameState after) => new CapturePreview(c.UsesAttention ? after.Attention - s.Attention : (double?)null,
             after.Treasury - s.Treasury, after.Debt - s.Debt, after.Food - s.Food, after.Arms - s.Arms,
             Indicator(after, "morale") - Indicator(s, "morale"), Indicator(after, "intl_standing") - Indicator(s, "intl_standing"), after.Score - s.Score);
 
@@ -152,7 +153,7 @@ namespace Statecraft.Sim
             {
                 var after = s.Clone();
                 var refusal = Spend(c, after, EndKind) ?? Ended(c, after, id, outcome, new List<Cause>());
-                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(s, after) : null));
+                options.Add(new CaptureOption(outcome, refusal, refusal == null ? Preview(c, s, after) : null));
             }
             return options;
         }
@@ -296,7 +297,7 @@ namespace Statecraft.Sim
             }
             // Deport never pays (owner, 22 October 2026, #1327): its Money stays at or below Occupy's and Raid's.
             why.Add(new Cause("economy", "treasury", -r.DeportMoneyCost!.Value, $"{PlayerText.Change(c, "treasury", -r.DeportMoneyCost.Value)} (Deport of {name})"));
-            EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why);
+            EconomySystem.PayOrBorrow(c, s, r.DeportMoneyCost.Value, $"for the Deport of {name}", why, CauseKeys.Purpose.Deport, id);
             return null;
         }
 
@@ -359,7 +360,7 @@ namespace Statecraft.Sim
                     why.Add(new Cause("map", id, 0, $"{name}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {Residents(x)}"));
                     continue;
                 }
-                EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why);
+                EconomySystem.PayOrBorrow(c, s, r.OccupationUpkeepPerTurn!.Value, $"for the occupation of {name}", why, CauseKeys.Purpose.Occupation, id);
                 if (x.State == AwaitingEnd) continue;
                 var left = x.Turns - 1;
                 s.Settlements[id] = new SettlementControl(x.Owner, left == 0 ? AwaitingEnd : Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, left, x.Fled);
@@ -453,11 +454,12 @@ namespace Statecraft.Sim
     /// section 4.1's sober cost preview).</summary>
     public sealed class CapturePreview
     {
-        public double Attention { get; } public double Money { get; } public double Debt { get; }
+        /// <summary>Delta for legacy accounting; null when this ruleset has no Attention resource.</summary>
+        public double? Attention { get; } public double Money { get; } public double Debt { get; }
         public int Food { get; } public int Arms { get; }
         public double SocialCohesion { get; } public double InternationalSupport { get; }
         public int Score { get; }
-        public CapturePreview(double attention, double money, double debt, int food, int arms, double socialCohesion, double internationalSupport, int score)
+        public CapturePreview(double? attention, double money, double debt, int food, int arms, double socialCohesion, double internationalSupport, int score)
         {
             Attention = attention; Money = money; Debt = debt; Food = food; Arms = arms;
             SocialCohesion = socialCohesion; InternationalSupport = internationalSupport; Score = score;

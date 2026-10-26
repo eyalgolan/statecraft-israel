@@ -497,7 +497,7 @@ units:
     to: '1948-06-01'
     end_basis: source
     end_note: "Operation Bin Nun Alef (24-25 May) and Bin Nun Bet (30-31 May; IDF, Mishpat VeTzava 20, the row's source); he.wiki: in June 1948 the brigade moved north."
-    note: "The brigade attacked Latrun from the Israeli headquarters at Hulda (Battles of Latrun); Shlomo Shamir led both attacks. Anchored at Hulda, not Latrun: the Arab Legion held Latrun and the ridge behind it (Yalu, Bayt Nuba), and the ground between was contested until the area of Bayt Jiz and Bayt Susin was cleared on 28 May; Sar'a was taken only on 13-14 July."
+    note: "The brigade attacked Latrun from the Israeli headquarters at Hulda (Battles of Latrun); Shlomo Shamir led both attacks. Anchored at Hulda, not Latrun: the Arab Legion held Latrun and the ridge behind it (Yalu, Beit Nuba), and the ground between was contested until the area of Beit Jiz and Beit Susin was cleared on 28 May; Sar'a was taken only on 13-14 July."
     sources:
     - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-11'}
     - {url: 'https://en.wikipedia.org/wiki/Hulda,_Israel', checked: '2026-10-12'}
@@ -951,7 +951,7 @@ units:
   service: army
   side: egypt
   echelon: force
-  sector: "The Egyptian Army's force in Palestine. The coastal brigade group crossed at Rafah on 15 May 1948 and entered Gaza that evening; the inland column crossed at al-Auja. At the first truce its forward base was at Isdud and its rear base, its headquarters from 24 May, at Majdal, with the force along the road from Gaza and a link east through Faluja to Bayt Jibrin."
+  sector: "The Egyptian Army's force in Palestine. The coastal brigade group crossed at Rafah on 15 May 1948 and entered Gaza that evening; the inland column crossed at al-Auja. At the first truce its forward base was at Isdud and its rear base, its headquarters from 24 May, at Majdal, with the force along the road from Gaza and a link east through Faluja to Beit Jibrin."
   sector_he: "הכוח של צבא מצרים בארץ ישראל. החטיבה המתוגברת של החוף חצתה ברפיח ב-15 במאי 1948 ונכנסה לעזה באותו ערב; הטור הפנימי חצה בעוג'ה אל-חפיר. בהפוגה הראשונה היה בסיסו הקדמי באיסדוד ובסיסו העורפי, מפקדתו מ-24 במאי, במג'דל, והכוח נפרס לאורך הכביש מעזה, עם קישור מזרחה דרך אל-פאלוג'ה לבית ג'יברין."
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%9E%D7%A6%D7%A8%D7%99%D7%9D', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A8%D7%A4%D7%99%D7%97', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A2%D7%96%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A2%D7%95%D7%92%27%D7%94_%D7%90%D7%9C-%D7%97%D7%A4%D7%99%D7%A8', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%90%D7%99%D7%A1%D7%93%D7%95%D7%93', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%90%D7%9C-%D7%9E%D7%92%27%D7%93%D7%9C_%28%D7%90%D7%A9%D7%A7%D7%9C%D7%95%D7%9F%29', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%90%D7%9C-%D7%A4%D7%90%D7%9C%D7%95%D7%92%27%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%91%D7%99%D7%AA_%D7%92%27%D7%99%D7%91%D7%A8%D7%99%D7%9F', checked: '2026-10-22'}]

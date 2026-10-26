@@ -77,6 +77,12 @@ namespace Statecraft.Game.Map
         /// <summary>The highest the ground (and the frame round the map, which stays below it) reaches in world y: with it,
         /// ViewFootprint bounds the near side of the view tightly. ShadowFit.GroundY (the default) means flat ground.</summary>
         public float GroundTop = ShadowFit.GroundY;
+        /// <summary>True while the right button's press could still be a right click (MapPointer.RightTapCandidate): its drag
+        /// is held, not panned, until the press leaves the click's slop, and then applied at once. A press is a right click
+        /// (an order, #1654) or a pan, never both. Null: the drag pans at once.</summary>
+        public Func<bool>? HoldsMouseDrag;
+        /// <summary>The same for a one-finger drag and a tap (MapPointer.TouchTapCandidate).</summary>
+        public Func<bool>? HoldsTouchDrag;
 
         CameraRig rig = null!;
         InputAction? pan, dragPan, zoom, zoomKeys, orbit;
@@ -97,6 +103,7 @@ namespace Statecraft.Game.Map
         void OnDisable() => InputSystem.actions?.FindActionMap("Camera")?.Disable();
 
         bool dragFromUi, dragWasDown;
+        Vector2 heldDrag;   // the drag of a press that may still be a click (HoldsMouseDrag, HoldsTouchDrag)
 
         void Update() => Tick(Time.unscaledDeltaTime);
 
@@ -108,6 +115,7 @@ namespace Statecraft.Game.Map
             if (pan == null || dragPan == null || zoom == null || zoomKeys == null || orbit == null) return;
             Vector2? pointer = Pointer.current != null ? Pointer.current.position.ReadValue() : (Vector2?)null;
             var down = Mouse.current != null && Mouse.current.rightButton.isPressed;
+            var held = down && HoldsMouseDrag?.Invoke() == true;
             var drag = dragPan.ReadValue<Vector2>();
             var zoomRaw = WheelOr(zoom.ReadValue<float>());
             var ts = Touchscreen.current;
@@ -119,6 +127,7 @@ namespace Statecraft.Game.Map
                     case 1:
                         drag += a.delta.ReadValue();
                         down = true;
+                        held |= HoldsTouchDrag?.Invoke() == true;
                         pointer = a.position.ReadValue();
                         break;
                     // a pinch zooms by how far the fingers move; the UI check follows the first finger
@@ -128,9 +137,21 @@ namespace Statecraft.Game.Map
                         break;
                 }
             }
+            drag = HoldDrag(drag, down, held);
             var modifier = ModifierHeld(Keyboard.current);
             Step(rig, Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier),
                 ClampDt(dt), Bounds, Ground, GroundTop);
+        }
+
+        /// <summary>This frame's drag, given whether a drag press is <paramref name="down"/> and still <paramref name="held"/>
+        /// (it may yet be a click): nothing while held (kept), the kept drag and this frame's once it is not, and the kept
+        /// drag dropped when the press ends while still held (it was a click).</summary>
+        internal Vector2 HoldDrag(Vector2 drag, bool down, bool held)
+        {
+            if (!down) { heldDrag = Vector2.zero; return drag; }
+            if (held) { heldDrag += drag; return Vector2.zero; }
+            drag += heldDrag; heldDrag = Vector2.zero;
+            return drag;
         }
 
         /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>

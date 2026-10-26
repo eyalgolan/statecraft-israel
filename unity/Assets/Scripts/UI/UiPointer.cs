@@ -12,7 +12,11 @@ namespace Statecraft.Game.UI
         public static Vector2 ToPanel(IPanel panel, Vector2 screenYUp, float screenHeight) =>
             RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screenYUp.x, screenHeight - screenYUp.y));
 
+        /// <summary>The UI element under a screen point (y-up), or null where the map shows through.</summary>
+        public static VisualElement? PickAt(IPanel? panel, Vector2 screenYUp, float screenHeight) =>
+            panel?.Pick(ToPanel(panel, screenYUp, screenHeight));
+
         public static bool IsOverUi(IPanel? panel, Vector2 screenYUp, float screenHeight) =>
-            panel != null && panel.Pick(ToPanel(panel, screenYUp, screenHeight)) != null;
+            PickAt(panel, screenYUp, screenHeight) != null;
     }
 }

@@ -34,6 +34,17 @@ namespace Statecraft.Game.UI
         public static int? SimUnit(Content c, GameState s, UnitToken token) =>
             token.SimId is int id ? s.Units.ContainsKey(id) ? id : (int?)null : SimUnit(c, s, token.Unit);
 
+        /// <summary>A raised unit's type on screen (#1396), or null for a type no raised unit has: the card's title. The Why
+        /// lines name the unit as one formation instead (unit.name.&lt;type&gt;, UnitNames).</summary>
+        public static string? RaisedType(string type, UiText text) => type switch
+        {
+            "recruit" => text["city.track_recruit"],
+            StartingForces.IsraeliBrigadeType => text["unit.type.veteran_soldier"],
+            "artillery" => text["city.track_artillery"],
+            "armoured_car" => text["city.track_armoured_car"],
+            _ => null,
+        };
+
         public static UnitCard For(PlacedToken placed, GameState state, UiText text, bool gddLoop = false, Content? content = null,
             IReadOnlyDictionary<string, string>? settlementNamesHe = null)
         {
@@ -53,14 +64,7 @@ namespace Statecraft.Game.UI
                     ? text.Format("date.month_year", text["date.month_" + m.Month], m.Year) : english;
             }
             var lines = new List<string>();
-            string? raisedType = t.Raised && t.StateUnit != null ? t.StateUnit.Type switch
-            {
-                "recruit" => text["city.track_recruit"],
-                StartingForces.IsraeliBrigadeType => text["unit.type.veteran_soldier"],
-                "artillery" => text["city.track_artillery"],
-                "armoured_car" => text["city.track_armoured_car"],
-                _ => null,
-            } : null;
+            string? raisedType = t.Raised && t.StateUnit != null ? RaisedType(t.StateUnit.Type, text) : null;
             string home = t.StateUnit != null && t.StateUnit.HomeCity != "" && content != null
                 && content.SettlementNames.TryGetValue(t.StateUnit.HomeCity, out var city) ? city : "";
             if (hebrew && t.StateUnit != null && settlementNamesHe != null

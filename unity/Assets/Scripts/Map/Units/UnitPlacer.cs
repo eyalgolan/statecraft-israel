@@ -166,6 +166,48 @@ namespace Statecraft.Game.Map.Units
                 }
         }
 
+        /// <summary>The spot for a sim unit's anchor that <see cref="PlaceAll"/> found no clear spot for. Every unit the sim has
+        /// must be drawn: End turn selects the units that need orders, and a unit with no token could be neither seen nor
+        /// selected, so the turn could not end (owner, v0.3.0 RC, 25 October 2026: "the game is saying "a unit needs orders"
+        /// but clicking on it does nothing and i cant find any unit that needs orders"). The spot is compact, on the unit's own
+        /// sim hex (q, r): of the hex's centre and the points inside it (the outer ring first, so a crowded hex spreads out),
+        /// the first whose distance to every spot in <paramref name="used"/> is at least <paramref name="gapM"/> and that is
+        /// <paramref name="clear"/>; else the first at least <paramref name="gapM"/> from them; else the one farthest from
+        /// them. Deterministic: the same inputs give the same spot.</summary>
+        /// <param name="centre">The hex centre on the ground plane (metres).</param>
+        /// <param name="used">The centres of the spots drawn tokens stand on now.</param>
+        /// <param name="gapM">The least distance between two tokens' centres (UnitLayer: one and a half compact ring radii, so
+        /// the rings may touch but the trios and badges stand apart; the hex's centre and its outer ring hold seven).</param>
+        /// <param name="clear">(x, z): true when a compact token may stand there (off towns, roads and water).</param>
+        public static AnchorSpot OnOwnHex(int q, int r, (double x, double z) centre, double hexSizeM, IReadOnlyCollection<(double x, double z)> used,
+            double gapM, Func<double, double, bool> clear)
+        {
+            if (used == null) throw new ArgumentNullException(nameof(used));
+            if (clear == null) throw new ArgumentNullException(nameof(clear));
+            var points = new List<(double x, double z)> { centre };
+            for (int ring = InsideOffsets.Length - 1; ring >= 0; ring--)
+                for (int k = 0; k < 6; k++) points.Add(Inside(centre, ring * 6 + k, hexSizeM));
+            double Room((double x, double z) p)
+            {
+                double d = double.MaxValue;
+                foreach (var u in used) d = Math.Min(d, Math.Sqrt((u.x - p.x) * (u.x - p.x) + (u.z - p.z) * (u.z - p.z)));
+                return d;
+            }
+            (double x, double z)? apart = null, roomiest = null; double most = -1;
+            foreach (var p in points)
+            {
+                double room = Room(p);
+                if (room >= gapM)
+                {
+                    if (clear(p.x, p.z)) return new AnchorSpot(q, r, p.x, p.z, compact: true);
+                    if (apart == null) apart = p;
+                }
+                if (room > most) { most = room; roomiest = p; }
+            }
+            var best = apart ?? roomiest!.Value;
+            return new AnchorSpot(q, r, best.x, best.z, compact: true);
+        }
+
         /// <summary>The tokens on their anchors' spots; a token whose anchor has no spot is left out.</summary>
         public static List<PlacedToken> Place(IReadOnlyList<UnitToken> tokens, IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots)
         {

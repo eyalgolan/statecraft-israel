@@ -42,6 +42,8 @@ hud.nav.objectives: "יעדים"
 hud.nav.settings: "הגדרות"
 hud.new_game: "משחק חדש"
 hud.end_turn: "סיום התור"
+# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+hud.end_turn_needs_orders: "יחידה ממתינה להוראות"
 budget.title: "תקציב"
 budget.reset: "איפוס"
 budget.submit: "הגשת התקציב"
@@ -57,8 +59,10 @@ how_to_play.city: "בחרו עיר במפה כדי לראות את הדיור ו
 how_to_play.training: "בעיר שיש בה מחנה צבאי או מחנה הכשרה אפשר לאמן אזרחים ללא עבודה כמגויסים או להכשיר אותם כחלוצים. הכפתור מראה כמה עולה האימון וכמה תורות הוא נמשך."
 how_to_play.events: "כרטיס אירוע מבקש מכם החלטה. מענה עליו עולה תשומת לב, והבחירה שלכם נכנסת לתוקף בסיום התור."
 how_to_play.top_bar: "הסרגל העליון מציג את התאריך, את תשומת הלב שלכם, את הכסף ואת המדדים העיקריים של המדינה."
-how_to_play.end_turn: "סיום התור מבצע את ההוראות שלכם ומעביר לחודש הבא. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
-how_to_play.why: "אחרי תור, פתחו את המסך למה? כדי לראות כל שינוי ואת הסיבה לו."
+# Civ movement U4: agent-drafted Hebrew; native review: owner, 25 Oct 2026 (recommendations page, item 7).
+how_to_play.end_turn: "סיום התור מעביר לחודש הבא. כל עוד אחת היחידות שלכם ממתינה להוראות, הכפתור בוחר בה במקום זאת: יש להזיז אותה, לתת לה פקודת ביצור או החזקה, או לדלג עליה בתור הזה. כרטיס שלא עניתם עליו, או שלא נשארה לכם תשומת לב לענות עליו, עובר לשר האחראי, והוא מחליט במקומכם."
+# The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
+how_to_play.why: "אחרי תור, פתחו את המסך ״למה?״ כדי לראות כל שינוי ואת הסיבה לו."
 # The Objectives screen (#1189). For the native reviewer (#564).
 objectives.title: "יעדים"
 objectives.done: "הושלם ב־{0}; בהיסטוריה ב־{1}"
@@ -74,8 +78,9 @@ advisor.dayan.name: "משה דיין"
 advisor.ben_gurion.role: "יועץ"
 advisor.meyerson.role: "יועצת"
 advisor.dayan.role: "יועץ"
-advisor.show_me: "הראו לי"
-advisor.more: "ספרו לי עוד"
+# advisor.show_me and advisor.more: native review: owner, 25 Oct 2026 (recommendations page, item 8).
+advisor.show_me: "הצגה"
+advisor.more: "מידע נוסף"
 advisor.not_now: "לא עכשיו"
 advisor.got_it: "הבנתי"
 advisor.close: "X"
@@ -152,8 +157,12 @@ start.continue: "המשך"
 start.new_game: "משחק חדש"
 boot.loading: "טוען את מפת 1948…"
 toast.refused: "לא בוצע: {0}"
+# Agent-drafted Hebrew; native review pending (#564).
+toast.unit_unseen_skipped: "יחידה שחיכתה להוראות לא הוצגה על המפה, ולכן היא מדלגת על התור הזה"
 event.office: "{0}: {1}"
 event.more: "החלטות ממתינות נוספות: {0}"
+# Approved: owner, 25 Oct 2026 (recommendations page, item 4).
+event.more_one: "החלטה ממתינה נוספת: {0}"
 event.hide: "הסתר"
 event.reopen: "החלטה ממתינה"
 event.illustration: "איור"
@@ -178,7 +187,7 @@ event.rejoin: "חוזר למסלול ההיסטורי."
 # Agent-drafted, for the native reviewer (#564). Q-UI-1 (b): direct Hebrew equivalents of the GDD's words, except the
 # owner's own (22 October 2026, #1317): Occupy is "שחרור", and the Deport line is the owner's "displaced" wording.
 # Gender-neutral phrasing ("יש לבחור").
-capture.intro: "כוחות ישראליים מחזיקים ב־{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
+capture.intro: "כוחות ישראליים מחזיקים ב{0}, ואין שם כוחות אויב. יש לבחור מה יקרה עכשיו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, הכוחות נשארים במקום."
 capture.option.raid: "פשיטה ונסיגה"
 capture.option.occupy: "שחרור"
 capture.option.deport: "גירוש"
@@ -197,7 +206,7 @@ capture.none: "אף אחת מהאפשרויות אינה זמינה בתור ה�
 capture.reopen: "החלטה ממתינה: {0}"
 # The end of an occupation (#802). SENSITIVE, agent-drafted, for the native reviewer (#564). The state is "held" (מוחזק,
 # תקופת ההחזקה; owner, #803), never שחרור, which is Occupy's name only (owner, #1317). Direct option names: סיפוח, נסיגה.
-capture.end.intro: "תקופת ההחזקה ב־{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
+capture.end.intro: "תקופת ההחזקה ב{0} הסתיימה. יש לבחור אם לספח את המקום או לסגת ממנו. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
 capture.end.option.annex: "סיפוח"
 capture.end.option.withdraw: "נסיגה"
 capture.end.about.annex_fled: "המקום נשאר בשליטה ישראלית. תושביו נמלטו בעת הכיבוש, ולכן לא מתווספים תושבים, בתים או מקומות עבודה. עלות ההחזקה מסתיימת, ואין צורך להשאיר יחידה במקום."
@@ -207,12 +216,13 @@ capture.end.changes: "שינויים מיידיים במשאבים:"
 capture.end.changes_none: "שינויים מיידיים במשאבים: אין"
 capture.end.none: "אף אחת מהאפשרויות אינה זמינה בתור הזה. היחידה נשארת במקום, עלות ההחזקה נמשכת, וההחלטה ממתינה."
 # Why an option cannot be chosen (#802), by the sim's refusal id. SENSITIVE, agent-drafted, for the native reviewer (#564).
-capture.refusal.attention: "אין די תשומת לב בתור הזה: נדרש {1:0.0}, ונותר {2:0.0}."
-capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב־{0}."
-capture.refusal.no_free_hex: "ליחידה ב־{0} אין משבצת פנויה סמוכה לסגת אליה."
+# attention, no_free_hex and not_awaiting: native review: owner, 25 Oct 2026 (recommendations page, item 6).
+capture.refusal.attention: "אין די תשומת לב בתור הזה. עלות: {1:0.0}; יתרה: {2:0.0}."
+capture.refusal.needs_unit: "לשם כך נדרשת יחידה צבאית ישראלית ב{0}."
+capture.refusal.no_free_hex: "ליחידה ב{0} אין משושה פנוי סמוך שאפשר לסגת אליו."
 capture.refusal.no_one_to_deport: "תושביו נמלטו בעת הכיבוש, ולכן אין את מי לגרש."
 capture.refusal.already_city: "{0} כבר עיר."
-capture.refusal.not_awaiting: "{0} אינו ממתין להחלטה הזו."
+capture.refusal.not_awaiting: "אין החלטה ממתינה עבור {0}."
 capture.refusal.unknown_outcome: "האפשרות הזו אינה מוכרת."
 start.listen: "השמעת ההקלטה"
 start.stop: "עצירת ההקלטה"
@@ -221,6 +231,8 @@ start.recording_failed: "לא ניתן היה להשמיע את ההקלטה."
 outcome.order: "הפקודה שלך: {0}"
 outcome.skip: "לחיצה, Enter או רווח לדילוג · Esc מדלג על הכול"
 order.game_over: "המשחק הסתיים"
+# Hebrew draft for #1398; native review pending (#564).
+order.going_home: "היחידה חוזרת הביתה בסיום התור"
 order.no_attention: "אין מספיק תשומת לב (נדרש {0:0.0}, יש {1:0.0})"
 order.unknown: "לא ניתן לזהות {0}"
 # The kind of thing a refused order names in order.unknown (SimBridge.Validate; #595), one key per kind. order.unknown puts
@@ -303,11 +315,114 @@ why.effects: "השפעות מתמשכות"
 why.situations: "מצבים"
 why.other: "אחר"
 why.nothing: "לא קרה דבר ראוי לציון בתור הזה."
+# Hebrew drafts for the structured unit Why lines (#1399); native review pending (#564), except #1631's 16 lines and
+# attack_ended_truce: native review: owner, 25 Oct 2026 (recommendations page, items 1 and 11). HE-15: {0} is any
+# unit's name, the Arab forces' masculine, Israel's feminine and a raised unit's, so no verb or pronoun agrees with it: the
+# name opens the line as its label ("{0}: ..."), or sits in a noun phrase (Codex's review of #1527).
+why.line.unit_moved: "{0}: תנועה למשושה {1} תמורת {2} נקודות תנועה"
+why.line.unit_moved_one: "{0}: תנועה למשושה {1} תמורת נקודת תנועה אחת"
+why.line.fortify_lost: "{0}: יציאה ממשושה {1}, והביצור שם אבד"
+why.line.fortifying: "{0}: התבצרות במשושה {1}; הביצור חל מסוף התור"
+why.line.holds: "{0}: החזקה במשושה {1}"
+why.line.attack_ended_truce: "ההתקפה של {0} על משושה {1} מסתיימת: הפוגה בתוקף"
+why.line.attack_ordered: "{0}: פקודת התקפה על משושה {1}"
+why.line.attack_ended: "ההתקפה של {0} על משושה {1} מסתיימת: אין שם יחידת אויב"
+why.line.holds_fire: "{0}: ללא ירי, כי אין התקפה על משושה {1} לתמוך בה"
+why.line.attack_called_off: "ההתקפה של {0} על משושה {1} מבוטלת: נדרשים {2} כלי נשק ובמלאי יש {3}"
+why.line.engagement: "ההתקפה על משושה {2} ({0} נגד {1}, יחס כוחות {3}%): התוקפים איבדו {4:N0} איש והמגינים איבדו {5:N0} איש"
+why.line.destroyed: "{0}: היחידה הושמדה"
+why.line.retreated: "{0}: נסיגה למשושה {1}"
+why.line.surrendered_prisoners: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים כשבויים"
+why.line.surrendered_held: "{0}: כניעה עם {1:N0} איש, כי לא היה משושה לסגת אליו. הם מוחזקים בידי האויב"
+why.line.sent_home: "{0}: שחרור הביתה; {1:N0} איש הם כעת אזרחים ב{2}"
+why.line.withdrew: "{0}: נסיגה מ{1} למשושה {2}"
+why.line.on_its_way: "{0} בדרך למשושה {1}"
+why.line.stopped_no_route: "{0}: עצירה, כי אין מסלול שמגיע למשושה {1}"
+why.line.stopped_full: "{0}: עצירה, כי משושה {1} מלא"
+why.line.arrived: "{0}: הגעה למשושה {1}"
+# B1: the economy, population, effect and security Why lines (CauseKeys, CauseText). A change reads "{0}: שינוי {1}", as
+# event.effect.amount does, so the pattern has Hebrew and UiText marks the amount (#543). Counts as "Label: N" (HE-04);
+# no verb agrees with a placeholder (HE-15). Native review: owner, 25 Oct 2026 (recommendations page), for every
+# why.cause, why.name, why.effect, why.situation and why.region key below (#1642).
+why.cause.money_flows: "{0}: שינוי {1} (מסים {2}, הוצאות {3}, גיוס מילואים {4})"
+why.cause.fx_flows: "{0}: שינוי {1} (יצוא {2}, תרומות והלוואות {3}, יבוא {4})"
+why.cause.civilian_upkeep: "{0}: שינוי {1} (תחזוקה אזרחית)"
+why.cause.borrowed.deficit: "הלוואה של {0} לכיסוי הגירעון"
+why.cause.borrowed.civilian_upkeep: "הלוואה של {0} לתחזוקה אזרחית"
+why.cause.borrowed.military_upkeep: "הלוואה של {0} לתחזוקה צבאית"
+why.cause.borrowed.corridor: "הלוואה של {0} לבניית קטע של כביש או מסילה"
+why.cause.borrowed.arms: "הלוואה של {0} לרכישת נשק"
+why.cause.borrowed.training: "הלוואה של {0} לאימון ולהכשרה"
+why.cause.borrowed.prisoners: "הלוואה של {0} עבור חיילינו המוחזקים בידי האויב"
+why.cause.borrowed.training_camp: "הלוואה של {0} להקמת מחנה אימונים"
+why.cause.borrowed.plow: "הלוואה של {0} לחריש שדות"
+why.cause.borrowed.drain: "הלוואה של {0} לייבוש ביצה"
+why.cause.borrowed.yishuv: "הלוואה של {0} להקמת יישוב"
+why.cause.borrowed.project: "הלוואה של {0} לבניית {1}"
+why.cause.borrowed.deport: "הלוואה של {0} לגירוש ({1})"
+why.cause.borrowed.occupation: "הלוואה של {0} לעלות ההחזקה ({1})"
+why.cause.borrowed.event: "הלוואה של {0} עבור {1}"
+why.cause.fx_crisis_began: "יתרות מטבע החוץ אזלו"
+why.cause.fx_crisis_eased: "הקלה במשבר מטבע החוץ"
+why.cause.fx_crisis_food: "{0}: שינוי {1} (משבר מטבע חוץ: קיצוץ ביבוא המזון)"
+why.cause.immigrants_arrived: "עולים שהגיעו ({1}): {0:N0}"
+why.cause.effect_change: "{0}: שינוי {1}"
+why.cause.effect_change_from: "{0}: שינוי {1} ({2})"
+why.cause.situation_began: "תחילת {0} ({1}: {2})"
+why.cause.situation_ended: "סיום {0} ({1}: {2})"
+why.cause.rung_changed: "רמת הביטחון: מ־{0} ל־{1}"
+why.cause.call_up_set: "גיוס המילואים נקבע ל־{0}"
+why.cause.call_up_raised: "גיוס המילואים הועלה ל־{0}, המינימום לרמת ביטחון {1}"
+why.cause.call_up_lowered: "אנשי מילואים חוזרים הביתה: גיוס המילואים הורד ל־{0}, המינימום לרמת ביטחון {1}"
+why.cause.ceasefire: "הפסקת אש בכפיית האו״ם: סיום המלחמה במלוא עוצמתה"
+# The names those lines give. כסף, מטבע חוץ, לכידות חברתית and תמיכה בינלאומית are the adopted resource words (HE-02).
+why.name.treasury: "כסף"
+why.name.debt: "חוב"
+why.name.fx_reserves: "מטבע חוץ"
+why.name.morale: "לכידות חברתית"
+why.name.food_supply: "אספקת מזון"
+why.name.housing: "דיור"
+why.name.security: "ביטחון"
+why.name.intl_standing: "תמיכה בינלאומית"
+why.effect.rationing_feeds: "הקיצוב מחלק את המזון"
+why.effect.rationing_grates: "הקיצוב שוחק את הלכידות"
+why.effect.building_houses: "דיור חדש"
+why.effect.homes_lift_morale: "בתים מחזקים את הלכידות"
+why.effect.border_villages_secure: "יישובי ספר"
+why.effect.safety_lifts_morale: "ביטחון אישי מחזק את הלכידות"
+why.effect.work_lifts_cohesion: "תעסוקה מחזקת את הלכידות"
+why.effect.food_lifts_cohesion: "מזון מחזק את הלכידות"
+why.situation.food_crisis: "משבר מזון"
+why.situation.housing_crisis: "משבר דיור"
+why.situation.low_cohesion: "לכידות חברתית נמוכה"
+why.situation.low_intl_support: "תמיכה בינלאומית נמוכה"
+why.region.asia: "אסיה"
+why.region.africa: "אפריקה"
+why.region.europe: "אירופה"
+why.region.america_oceania: "אמריקה ואוקיאניה"
+why.region.unknown: "ארץ המוצא לא נרשמה"
+# A hex in the unit lines (HexPlaces), after the lines' "משושה": a settlement's hex is its name alone ("משושה חיפה"); any
+# other hex is said from the nearest settlement, {0} the km (to the nearest 5), {1} the compass point, {2} the settlement,
+# joined to its prefix ("לחיפה"). Native review: owner, 25 Oct 2026 (recommendations page), #1636: why.hex.away, the
+# eight why.hex.<point> words, and a one-letter prefix joined straight to a name placeholder ("ל{2}", "ב{0}", "מ{1}") in
+# why.line.sent_home, why.line.withdrew, capture.intro, capture.end.intro, capture.refusal.needs_unit,
+# capture.refusal.no_free_hex, cabinet.reason.not_career_officer and city.project_reason.no_resource. UiText.Format adds
+# the maqaf before a digit or a Latin letter (HE-07).
+why.hex.away: "{0} ק״מ {1} ל{2}"
+why.hex.north: "מצפון"
+why.hex.north_east: "מצפון־מזרח"
+why.hex.east: "ממזרח"
+why.hex.south_east: "מדרום־מזרח"
+why.hex.south: "מדרום"
+why.hex.south_west: "מדרום־מערב"
+why.hex.west: "ממערב"
+why.hex.north_west: "מצפון־מערב"
 # The turn report (#1037, TurnReportPresenter): a line is a top-bar caption and the change the bar shows.
 report.title: "מה קרה בתור הזה"
 report.intro: "מה השתנה בסרגל העליון, ומה הסיבות העיקריות:"
 report.line: "{0}: שינוי של {1}"
-report.all: "הכול במסך למה?"
+# The Why screen named in a sentence goes in gershayim: owner, 25 Oct 2026.
+report.all: "הכול במסך ״למה?״"
 report.close: "סגירה"
 # The enemy's orders this turn (#1293), {0} the unit's name: agent-drafted Hebrew, not yet read by a native speaker. The
 # verbs are masculine, as every Arab force's name_he is (חיל, הלגיון, הצבא, צבא) and so is report.unit's כוח. For the
@@ -356,9 +471,11 @@ card.offices_separator: " · "
 # The tag on the selected Cabinet seat's card (PersonCard; #41 M6). Not "נבחר": on a minister's card in a game about the
 # Knesset it reads as "elected". "מסומן" agrees with the card (כרטיס), masculine. For the native reviewer (#564).
 card.selected: "מסומן"
-# The empty info panel's hint: a click, or Tab to the map's stop and Enter (#41 B1b, #1116), and the right-drag pan (#998).
-# "Tab" and "Enter" are the keys' printed names. For the native reviewer (#564).
-info.hint: "יש ללחוץ על המפה, או לעבור אליה ב־Tab וללחוץ Enter, כדי לבדוק משושה; גרירה בלחצן הימני מזיזה את המפה"
+# The empty info panel's hint: moving a unit (owner, 25 Oct 2026, "Civ: select, then click"), a click, or Tab to the
+# map's stop and Enter (#41 B1b, #1116), and the right-drag pan (#998). "Tab" and "Enter" are the keys' printed names.
+# Agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 ("Approve as written"). Shortened to stay within
+# two lines on a phone (InfoPanelLayoutTests), in the nominal form of the drag clause.
+info.hint: "לחיצה על יחידה ואז על משושה מזיזה אותה; לחיצה על המפה, או Tab ו־Enter, בודקת משושה; גרירה בלחצן הימני מזיזה את המפה"
 info.off_map: "מחוץ למפה"
 info.hex: "{0} · גובה {1:N0} מ׳"
 info.region: "{0}, {1} (נפות המנדט, 1947)"
@@ -464,7 +581,7 @@ cabinet.reason.is_president: "{0} כבר בתפקיד הנשיא"
 cabinet.reason.is_chief_of_staff: "{0} כבר בתפקיד הרמטכ״ל"
 cabinet.reason.already_holds: "{0} כבר בתפקיד {1}"
 cabinet.reason.no_government: "אין ממשלה מכהנת"
-cabinet.reason.not_career_officer: "ל־{0} אין שירות קבע בצה״ל"
+cabinet.reason.not_career_officer: "ל{0} אין שירות קבע בצה״ל"
 cabinet.reason.party_not_coalition: "{0} ממפלגת {1}, שאינה בקואליציה"
 info.biome.sea: "ים"
 info.biome.lake: "אגם"
@@ -497,19 +614,33 @@ unit.sources: "מקורות: {0}"
 unit.draft_wikipedia: "טיוטה: מוויקיפדיה בלבד, טרם נבדק מול מחקר שפורסם"
 unit.draft: "טיוטה: טרם נבדק בידי היסטוריון"
 unit.defence: "פתיחת מסך הביטחון"
+# Hebrew draft for a raised unit's type and home city (#1399); native review pending (#564).
+unit.raised_name: "{0}, {1}"
+# A unit raised in play, named as one formation in the Why lines and toasts (Codex's review of #1527): agent-drafted Hebrew,
+# native review: owner, 25 Oct 2026 (recommendations page, item 1). יחידת as the UI's "היחידה"; קבוצת חלוצים as site.group.
+unit.name.recruit: "יחידת מגויסים"
+unit.name.veteran_soldier: "יחידת חיילים ותיקים"
+unit.name.artillery: "יחידת ארטילריה"
+unit.name.armoured_car: "יחידת שריוניות"
+unit.name.halutz: "קבוצת חלוצים"
+unit.name.veteran_halutz: "קבוצת חלוצים ותיקים"
 # The unit card's Move order (#754): the order's name is Q-UI-2's, approved by the owner (#375).
 unit.order.move: "תנועה"
-# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
-unit.move_pick: "בחרו משושה מואר שאליו היחידה תנוע"
-# Approved by Beri, a native speaker, on #1265 (21 Oct 2026). For the native reviewer (#564)
-unit.move_queued: "ניתנה פקודת תנועה: היחידה תנוע בסיום התור"
+# Hebrew route draft for #1398; native review pending (#564).
+unit.move_pick: "בחרו משושה מואר כדי לנוע אליו עכשיו, או משושה אחר כדי לשלוח אליו את היחידה במשך כמה תורות"
+# Hebrew draft for #1398; native review pending (#564).
+unit.points: "נקודות תנועה: {0} מתוך {1}"
+# Hebrew route draft for #1398; native review pending (#564).
+unit.go_to_given: "בדרך למשושה שנבחר. תורות עד ההגעה: {0}"
 # Fortify and Hold (#754): the names are Q-UI-2's, approved by the owner (#375).
 unit.order.fortify: "ביצור"
 unit.order.hold: "החזקה"
+# Civ movement U4: agent-drafted Hebrew; native review pending (#564).
+unit.order.skip: "דילוג על התור"
 # Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
 unit.fortify_queued: "ניתנה פקודת ביצור: היחידה תהיה מבוצרת מסוף התור"
-# Approved by Beri, a native speaker, on #1269 (21 Oct 2026). For the native reviewer (#564)
-unit.hold_queued: "ניתנה פקודת החזקה: היחידה תחזיק במשושה שלה בסיום התור"
+# Hebrew draft for #1398; native review pending (#564).
+unit.hold_queued: "מחזיקה במשושה שלה"
 # Attack (#754): the name is Q-UI-2's, approved by the owner (#375).
 unit.order.attack: "התקפה"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
@@ -522,7 +653,6 @@ unit.attack_band: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מ�
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
 unit.attack_band_retreat: "{0} מתוך {1}: אתם מאבדים {2:N0} איש, הם מאבדים {3:N0} ונסוגים"
 # Approved by Beri, a native speaker, on #1277 (21 Oct 2026). For the native reviewer (#564)
-unit.attack_queued: "ניתנה פקודת התקפה: היחידה תתקוף בסיום התור"
 # The unit card's Send home order and its queued line (R-UNIT-005, #1309), in unit.order.*'s and unit.*_queued's form.
 # Hebrew drafts: agent-checked; native review pending (#564).
 unit.order.send_home: "שליחה הביתה"
@@ -597,7 +727,7 @@ city.project_start: "הקמת {0}: {1}, {2}"
 city.project_ordered: "הוזמנה הקמת {0}"
 city.project_building: "{0} עבור {1}: עוד {2}"
 city.project_built: "{0} עבור {1}: הבנייה הושלמה ב־{2}"
-city.project_reason.no_resource: "ב־{0} אין {1} עבור {2}"
+city.project_reason.no_resource: "ב{0} אין {1} עבור {2}"
 # turn_cap: approved by Beri, a native speaker, on #1267 (21 Oct 2026).
 city.project_reason.turn_cap: "אי אפשר להתחיל יותר מ־{0} מיזמים עירוניים בתור אחד"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150), {0} the
@@ -671,12 +801,13 @@ event.effect.job_slots: "מקומות עבודה"
 event.effect.condition: "מצב הדיור"
 
 # The opening chain (#1484). Agent-drafted; approved by the owner, a native speaker, in chat on 24 October 2026 (about
-# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4).
+# 11:42 IDT): "Approved" (he_review: approved in advisor-messages.yaml, spec OQ-4). opening.move's בתורות הבאות:
+# native review: owner, 25 Oct 2026 (recommendations page, item 3).
 advisor.opening.greeting.text: "למדינה צרכים דחופים ואמצעים מוגבלים. ההחלטות בידיכם, והיועצים יסבירו מה כל בחירה משנה."
 advisor.opening.attention.text: "תשומת לב היא היכולת לקבל החלטות בחודש הזה. היא מתמלאת מחדש בחודש הבא, ומה שנשאר עכשיו אינו עובר הלאה."
 advisor.opening.city.text: "בעיר מוצגים הדיור, מצב הדיור, המשרות והאנשים. תעסוקה מכניסה כסף, ואילו צפיפות יתר עלולה להחליש את הלכידות החברתית."
 advisor.opening.training.text: "אימון והכשרה דורשים אזרחים ללא עבודה, כסף וזמן. הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח; אימון צבאי דורש גם נשק."
-advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.move.text: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה. יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.text: "כרטיס אירוע מציג החלטה ואת השפעותיה. כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.text: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 advisor.next: "הבא"
@@ -692,7 +823,8 @@ settings.advisors.off: "כבוי"
 
 # S4 Task16 warnings (spec6). Approved by the owner, a native speaker (24 October 2026; advisor-messages.yaml records the
 # rulings); any change needs a new approval. end.outcome.defeat_war is approved too (24 October 2026, "approved both").
-advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
+# dayan.city_at_risk and dayan.arms_out reworded: native review: owner, 25 Oct 2026 (recommendations page, items 10 and 9).
+advisor.dayan.city_at_risk.text: "התקפת אויב מכוונת לאחת מערי המדינה. יש לבדוק את מגיני העיר ואת תחזית הקרב לפני ביצוע שלב האויב."
 advisor.meyerson.exhausted.text: "הכסף והמזון אזלו יחד. החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.text: "החוב הגיע לתקרה. אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
 advisor.meyerson.food_short.text: "בתור הזה המדינה נזקקה ליותר מזון ממה שהיה לה. מחסור במזון גם מוריד את הלכידות החברתית."
@@ -701,7 +833,7 @@ advisor.dayan.defeat_war.text: "יחידה צבאית של האויב מחזיק
 advisor.ben_gurion.defeat_economy.text: "שלוש תורות ברציפות הסתיימו כשהחוב שלנו בתקרה או מעליה ומלאי המזון ריק, וזה מסיים את המשחק."
 end.outcome.defeat_war: "האויב מחזיק בעיר."
 advisor.meyerson.budget_unsubmitted.text: "בתקציב יש שינויים שלא הוגשו. הם לא ייכנסו לתוקף בסיום התור עד שתגישו את התקציב."
-advisor.dayan.arms_out.text: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
+advisor.dayan.arms_out.text: "אימון צבאי דורש נשק, ונשק נצרך בהתקפות. קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
 
 # Spec3.3 verified Q1, attributed to the Declaration, never a person. The Hebrew source label is approved by the owner,
 # 24 October 2026 ("approved both").
@@ -734,19 +866,24 @@ advisor.opening.training.cue.1: "אימון והכשרה דורשים אזרחי
 advisor.opening.training.cue.2: "הכשרת חלוצים ובעלי מלאכה תומכת בפיתוח;"
 advisor.opening.training.cue.3: "אימון צבאי דורש גם נשק."
 advisor.opening.move.cue.1: "יחידה נעה מיד, והשטח קובע את העלות של כל משושה."
-advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאים."
+advisor.opening.move.cue.2: "יעד רחוק יותר יוצר מסלול שממשיך בתורות הבאות."
 advisor.opening.event.cue.1: "כרטיס אירוע מציג החלטה ואת השפעותיה."
 advisor.opening.event.cue.2: "כרטיס שלא נענה בסיום החודש עובר לשר האחראי."
 advisor.opening.objectives.cue.1: "היעדים מגדירים את מטרות המערכה ומשווים כל תאריך השלמה לתאריך ההיסטורי שלו. השלמה מעניקה נקודות ופותחת את כרטיס האירוע של היעד."
 
 # The S4 warning and teaching lines with an English clip: each text cut at its sentence end, as above.
 advisor.dayan.city_at_risk.cue.1: "התקפת אויב מכוונת לאחת מערי המדינה."
-advisor.dayan.city_at_risk.cue.2: "בדקו את מגיני העיר ואת תחזית הקרב לפני ששלב האויב מוכרע."
+advisor.dayan.city_at_risk.cue.2: "יש לבדוק את מגיני העיר ואת תחזית הקרב לפני ביצוע שלב האויב."
 advisor.meyerson.exhausted.cue.1: "הכסף והמזון אזלו יחד."
 advisor.meyerson.exhausted.cue.2: "החזירו אחד מהם לפני שמונה ההפסד יגיע לגבולו."
 advisor.meyerson.debt_ceiling.cue.1: "החוב הגיע לתקרה."
 advisor.meyerson.debt_ceiling.cue.2: "אם גם מלאי המזון ריק בסוף התור, מונה ההפסד מתחיל או ממשיך לרוץ."
 advisor.dayan.defeat_war.cue.1: "יחידה צבאית של האויב מחזיקה באחת מערי המדינה בסוף התור."
 advisor.dayan.defeat_war.cue.2: "המערכה הסתיימה בתבוסה."
-advisor.dayan.arms_out.cue.1: "הנשק מצייד את האימון הצבאי ומתכלה בהתקפות."
+advisor.dayan.arms_out.cue.1: "אימון צבאי דורש נשק, ונשק נצרך בהתקפות."
 advisor.dayan.arms_out.cue.2: "קניית נשק בכסף לפני שהמלאי אוזל שומרת את האפשרויות האלה פתוחות."
+
+# Playtest B7: the jobs stepper's queued count and the Assign order's price and timing.
+# Approved: owner, 25 Oct 2026 (recommendations page, item 5); the price in one decimal, as the HUD and the cards show Attention.
+city.workers_ordered: "בסיום התור: {0}"
+city.workers_cost: "בסיום התור · עלות ההוראה: {0:0.0} תשומת לב"

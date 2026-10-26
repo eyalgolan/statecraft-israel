@@ -161,7 +161,7 @@ public class CityPanelTests
         var order = bridge.QueuedLike(new AssignWorkers(City, "job", 0)) as AssignWorkers;
         Assert.IsNotNull(order, "the stepper queues an AssignWorkers order");
         Assert.AreEqual(employed - 1, order!.Count);
-        Assert.AreEqual(En.Format("city.workers", En.Format("city.groups", employed - 1)), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count");
+        Assert.AreEqual(En.Format("city.workers_ordered", En.Format("city.groups", employed - 1)), ui.Q<Label>("city-workers").text, "the stepper shows the ordered count, at End turn (playtest B7)");
         UiTestKit.Press(ui.Q<Button>("city-workers-more"));
         Assert.IsNull(bridge.QueuedLike(new AssignWorkers(City, "job", 0)), "back at the current count: no order is left queued");
     }
@@ -1071,9 +1071,9 @@ public class CityPanelTests
     }
 
     [Test]
-    public void AGroupWithAReturnOrderedCannotBeSentToBuildToo()
+    public void AReturnedGroupLeavesTheSiteListAtOnce()
     {
-        // Return runs first at End turn, so the unit has left when Build runs and the sim refuses it (Projects.cs, "no such unit").
+        // R-TURN-004: Return is a unit order, so it takes effect at once; the group is a civilian again and offers no Build.
         using var ui = new UiTestKit();
         int idle = 0;
         var bridge = Bridge(En, s => idle = AddHalutz(s));
@@ -1081,11 +1081,13 @@ public class CityPanelTests
         panel.Show(SiteDef.Q, SiteDef.R);
         Assert.IsTrue(ui.Q<Button>($"site-build-{idle}").enabledSelf, "precondition: an idle group can build");
         UiTestKit.Press(ui.Q<Button>($"pioneer-return-{idle}"));
-        Assert.IsFalse(ui.Q<Button>($"site-build-{idle}").enabledSelf);
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(ui.Root.Q<Button>($"site-build-{idle}"));
+        Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"));
     }
 
     [Test]
-    public void ACorridorGroupWithAReturnOrderedCannotBeSentToBuildToo()
+    public void AReturnedCorridorGroupLeavesTheSegmentAtOnce()
     {
         using var ui = new UiTestKit();
         int idle = 0;
@@ -1096,7 +1098,8 @@ public class CityPanelTests
         var box = SegmentBox(ui, "burma_road", 1);
         Assert.IsTrue(box.Q<Button>($"corridor-build-{idle}").enabledSelf, "precondition: an idle group can build");
         UiTestKit.Press(box.Q<Button>($"pioneer-return-{idle}"));
-        Assert.IsFalse(SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{idle}").enabledSelf);
+        Assert.IsFalse(bridge.State.Units.ContainsKey(idle));
+        Assert.IsNull(SegmentBox(ui, "burma_road", 1).Q<Button>($"corridor-build-{idle}"));
     }
 
     [Test]
@@ -1129,10 +1132,11 @@ public class CityPanelTests
             var button = ui.Q<Button>($"pioneer-return-{idle}");
             Assert.AreEqual(t.Format("pioneer.return", GddHexPanel.Group(t, bridge.State, idle)), button.text);
             UiTestKit.Press(button);
-            var order = bridge.QueuedLike(new UnitOrder(idle, Qualification.ReturnOrder)) as UnitOrder;
-            Assert.IsNotNull(order); Assert.AreEqual((idle, Qualification.ReturnOrder), (order!.Unit, order.Order));
-            Assert.AreEqual(t["site.ordered"], ui.Q<Button>($"pioneer-return-{idle}").text);
-            Assert.IsFalse(ui.Q<Button>($"pioneer-return-{idle}").enabledSelf);
+            // R-TURN-004: a unit order is committed at once, not queued.
+            var order = bridge.Session.Committed.OfType<UnitOrder>().Single();
+            Assert.AreEqual((idle, Qualification.ReturnOrder), (order.Unit, order.Order));
+            Assert.IsEmpty(bridge.Queued);
+            Assert.IsNull(ui.Root.Q<Button>($"pioneer-return-{idle}"), "the group has returned");
         }
     }
 
@@ -1147,4 +1151,50 @@ public class CityPanelTests
         Assert.IsNotNull(ui.Root.Q<Button>($"site-build-{idle}"), "precondition: the group is offered Build");
         Assert.IsNotNull(ui.Root.Q<Button>($"pioneer-return-{idle}"));
     }
+    [TestCase(false)] [TestCase(true)]
+    public void EverySettlementBlockNamesItsOwnCity(bool hebrew)
+    {
+        var text = hebrew ? He : En; var bridge = Bridge(text);
+        var pair = C.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() > 1);
+        var host = new VisualElement(); var projects = new VisualElement();
+        GddHexPanel.Render(host, projects, bridge, text, pair.Key.Q, pair.Key.R, id => "name:" + id);
+        foreach (var h in pair)
+        {
+            var part = host.Q("city-part-" + h.Id);
+            Assert.IsNotNull(part, "each settlement owns a distinct block: " + h.Id);
+            Assert.AreEqual("name:" + h.Id, part!.Q<Label>("city-name").text);
+            Assert.IsNotNull(part!.Q<Button>("city-workers-less"), "the name belongs to its own jobs stepper");
+        }
+        var single = C.SettlementHexes.Where(h => bridge.State.Cities.ContainsKey(h.Id)).GroupBy(h => (h.Q, h.R)).First(g => g.Count() == 1);
+        GddHexPanel.Render(host, projects, bridge, text, single.Key.Q, single.Key.R, id => "name:" + id);
+        Assert.IsNull(host.Q<Label>("city-name"), "one city's block is not named again under the panel's title");
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void WorkerChangesNameTheirTimingAndActualAttentionPrice(bool hebrew)
+    {
+        var text = hebrew ? He : En; var bridge = Bridge(text, s => s.Rung = 2);   // a fractional price (0.625)
+        using var ui = new UiTestKit(); using var panel = Panel(ui, bridge, text);
+        panel.Show(CityHex.q, CityHex.r);
+        var city = bridge.State.Cities["tel_aviv"]; int before = city.Employed;
+        Assert.Greater(before, 0, "precondition: there is a worker to remove");
+        Assert.IsNotNull(ui.Q<Label>("city-workers-cost"), "the order price and timing are visible, not only in a tooltip");
+        Assert.AreEqual(text.Format("city.workers_cost", bridge.Price(new AssignWorkers("tel_aviv", "job", before))!.Value), ui.Q<Label>("city-workers-cost").text);
+        UiTestKit.Press(ui.Q<Button>("city-workers-less"));
+        Assert.AreEqual(before, city.Employed, "queued work does not pretend the simulation already ran");
+        Assert.AreEqual(text.Format("city.workers_ordered", GddHexPanel.Groups(text, before - 1)), ui.Q<Label>("city-workers").text);
+        Assert.AreEqual(text.Format("city.jobs", before, city.JobSlots), ui.Q<Label>("city-jobs").text);
+        StringAssert.Contains("0.6", ui.Q<Label>("city-workers-cost").text, "the price as the HUD and the cards show Attention (one decimal)");
+        double left = bridge.AttentionLeft!.Value;
+        if (before > 1)
+        {
+            UiTestKit.Press(ui.Q<Button>("city-workers-less"));
+            Assert.AreEqual(left, bridge.AttentionLeft!.Value, 1e-9, "adjusting one queued assignment does not buy another order");
+            UiTestKit.Press(ui.Q<Button>("city-workers-more"));
+        }
+        UiTestKit.Press(ui.Q<Button>("city-workers-more"));
+        Assert.IsNull(bridge.QueuedLike(new AssignWorkers("tel_aviv", "job", 0)), "return to current count cancels the queued order");
+        Assert.AreEqual(text.Format("city.workers", GddHexPanel.Groups(text, before)), ui.Q<Label>("city-workers").text);
+    }
+
 }

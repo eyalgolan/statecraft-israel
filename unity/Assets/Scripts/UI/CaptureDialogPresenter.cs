@@ -188,7 +188,7 @@ namespace Statecraft.Game.UI
             var stem = ending ? EndStem : CaptureStem;
             var lines = new List<string>();
             void Line(string caption, string change) => lines.Add(t.Format("report.line", t[caption], change));
-            if (p.Attention != 0) Line("capture.caption.attention", t.Format("capture.delta_attention", p.Attention));
+            if (p.Attention is double attention && attention != 0) Line("capture.caption.attention", t.Format("capture.delta_attention", attention));
             var money = Math.Round(p.Money - p.Debt, 1, MidpointRounding.AwayFromZero);
             if (money != 0) Line("hud.caption.treasury", PlayerText.MoneyChange(c, "treasury", money));
             if (p.Food != 0) Line("capture.caption.food", t.Format("capture.delta_count", p.Food));
