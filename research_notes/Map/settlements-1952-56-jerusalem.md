@@ -98,6 +98,34 @@ gives the same day.
   (row 5 below, kept as a conflict); 1958, Aviezer, Givat Yeshayahu, Neve Michael and Tzafririm (Gvati gives 1958 for
   Aviezer, Givat Yeshayahu and Tzafririm too).
 
+## Second pass on the [GAP] rows (26 Oct 2026)
+
+Opened on 26 October 2026 as the second part of the pass that started in the Negev, Ashkelon and northern notes
+(#27, owner comment of 24 Oct). Everything below was run or opened on that day, and nothing above is changed. The JTA
+archive was searched through the WordPress REST endpoint the site itself serves,
+`https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<from>T00:00:00&before=<to>T00:00:00&per_page=100&page=<n>`
+(the same index as the site search at `https://www.jta.org/?s=<query>`, but with a date window and the full item text).
+It stems words ("Yearim" also returns items about "years"), so the item TEXT of every result was searched by a script
+for the place name, and only the items it printed were read; the other results were not read by eye. The Gvati text
+below is the Ben-Yehuda edition of his vol. 2 chapters (https://benyehuda.org/read/14684), the same URL the note
+already uses for the appendix; the chapter text was opened on 26 Oct and searched for each name. No exact founding
+day was found for any row below, so every day stays [GAP].
+
+- (26 Oct) **Tirosh (row 10).** Day still [GAP]. New: Gvati's chapter text lists Tirosh among the moshavim of the
+  Lachish region: "12 מושבים נמנו במסגרת החבל: איתן, לכיש, נוגה, נועם, עוצם, שדה־דוד, שחר, תירוש" and says of the
+  region "הוקמו בחבל לכיש 16 ישובים כפריים" in "1954– 1955" (as printed). That fits the CBS year 1955 (our reading) and puts
+  Tirosh in Gvati's Lachish region in the text, where the appendix row prints "שפלת יהודה" (both from Gvati; he
+  does not say why). No day. [V, agent read 26 Oct 2026; a person's check pending] JTA, query `Tirosh`, 1951-01-01 to 1957-12-31: 159 results, 2 pages
+  read, 0 items whose text contains "Tirosh". The "67.55" in the appendix row is still not resolved.
+- (26 Oct) **Kiryat Ye'arim Youth Village (row 3).** Day and founding group still [GAP]. JTA, query `Kiryat Yearim`,
+  1951-01-01 to 1957-12-31: 1 result, a bulletin dated 1957-12-27 (url
+  `https://www.jta.org/archive/soviet-ambassador-in-israel-discusses-issues-with-progressive-party`) that says "Yesterday, Mr.
+  Abramov visited a Youth Aliyah village at Kiryat Yearim". That shows a Youth Aliyah village there by December
+  1957 (event day not resolved: the original PDF was not opened) and says nothing of the
+  founding. Gvati's chapter text has no mention of the youth village.
+- (26 Oct) **Eitanim hospital (row 1, founders).** JTA, query `Eitanim`, 1951-01-01 to 1957-12-31: 15 results, 1 page
+  read, 0 items whose text contains "Eitanim" or "Etanim". Founders stay [GAP].
+
 ## Summary table
 
 Coordinates: CBS 2024, lat N, lon E, today's site. "Founded" is the best-supported date; see the row for the sources.

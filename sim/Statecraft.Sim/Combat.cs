@@ -45,6 +45,10 @@ namespace Statecraft.Sim
             return d >= 1 && d <= TypeOf(c, u)!.Range!.Value;   // the loader requires a range on an artillery type
         }
 
+        /// <summary>R-COMBAT-004, R-COMBAT-007: whether the player's attacks and artillery fire spend Arms. True for legacy and
+        /// gdd-0.1, false under gdd-0.3 (#1706). The Arms stock and every other Arms cost stay; enemy units never pay.</summary>
+        public static bool SpendsArms(Content c) => c.Ruleset != SaveGame.Gdd03Ruleset;
+
         /// <summary>The Arms the player's unit spends when it joins an engagement: its type's arms_per_fire for artillery
         /// (R-COMBAT-007), else mvp.arms_per_attack (R-COMBAT-004).</summary>
         static int Need(Content c, MvpRules mvp, Unit u) => Guns(c, u) ? TypeOf(c, u)!.ArmsPerFire!.Value : mvp.ArmsPerAttack!.Value;
@@ -96,11 +100,14 @@ namespace Statecraft.Sim
             if (enemy && u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
             if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? "That hex is beyond the unit's range" : "That hex is not next to the unit";
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
-            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
+            if (!enemy && spent != null && (Gdd03Military.Applies(c) && Guns(c, u)
+                ? Movement.AttackPoints(c, u) <= (spent.TryGetValue(unitId, out var used) ? used : 0)
+                : Movement.PointsLeft(c, s, unitId, spent) == 0))
                 return "That unit has no movement points left this turn";
+            if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            return !enemy && s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
+            return s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
         }
 
         /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing
@@ -117,7 +124,7 @@ namespace Statecraft.Sim
         }
 
         /// <summary>R-COMBAT-001 (owner, 23 October 2026, "Instant, like Civ"): the player's unit attacks (q, r) at once:
-        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004), loses its
+        /// refused, the state untouched, with <see cref="Check"/>'s reason; else it pays its Arms (R-COMBAT-004; not under gdd-0.3), loses its
         /// order and the rest of its movement points, and fights one engagement alone (OQ-1), drawing once.</summary>
         internal static string? Strike(Content c, GameState s, int unitId, int? q, int? r, Dictionary<int, int> spent,
                                        Dictionary<int, (int Q, int R)> attacked, List<Cause> why)
@@ -126,13 +133,13 @@ namespace Statecraft.Sim
             if (refused != null) return refused;
             var mvp = c.RulesAt(s.Date).Mvp!;
             var u = s.Units[unitId];
-            s.Arms -= Need(c, mvp, u);
+            if (SpendsArms(c)) s.Arms -= Need(c, mvp, u);
             var attacker = new Unit(u.Id, u.Type, u.Q, u.R, u.Service, u.Side, u.Strength, "", "", u.HomeCity, u.Full);
             s.Units[unitId] = attacker;
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
                     $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
-            spent[unitId] = Movement.Points(c, attacker);
+            spent[unitId] = Movement.AttackPoints(c, attacker);
             attacked[unitId] = (q!.Value, r!.Value);
             Engage(c, s, mvp, new List<Unit> { attacker }, Defenders(s, attacker, q.Value, r.Value), q.Value, r.Value, why);
             return null;
@@ -159,6 +166,7 @@ namespace Statecraft.Sim
         /// mvp.people_per_unit, as the engagement's report counts them) and whether the defenders retreat.</summary>
         public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row)
         {
+            PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var t = mvp.CombatTable[row];
             var bands = new List<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)>();
@@ -179,6 +187,15 @@ namespace Statecraft.Sim
         static int Ratio(Content c, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r)
         {
             long attack = attackers.Sum(x => x.Strength * Factor(c, x));   // in 1/100 of a strength unit
+            if (Gdd03Military.Applies(c))
+            {
+                var biomeBonus = Gdd03Military.Defence(c, c.HexAt(q, r)!.Biome);
+                var fortBonus = c.HasPermanentFort(q, r) ? Gdd03Military.Scalar(c, "military.fort_bonus", false) : 0;
+                long total = defenders.Sum(x => (long)x.Strength * Factor(c, x) *
+                    (100L + biomeBonus + fortBonus + (x.Order == Orders.Fortify && x.OrderTarget == Hex(x.Q, x.R)
+                        ? Gdd03Military.Scalar(c, "military.fortify_bonus", false) : 0)));
+                return total == 0 ? int.MaxValue : (int)Math.Min(int.MaxValue, attack * 10_000 / total);
+            }
             var terrain = mvp.CombatTerrainPercent[c.HexAt(q, r)!.Biome];   // a unit stands on land, and the loader requires every land biome
             long defence = defenders.Sum(x => x.Strength * Factor(c, x) * Orders.DefencePercent(mvp, x) * terrain);   // in 1/1,000,000 of a strength unit
             return defence == 0 ? int.MaxValue : (int)Math.Min(int.MaxValue, attack * 1_000_000 / defence);   // 0: no real unit has no strength
@@ -200,6 +217,7 @@ namespace Statecraft.Sim
         /// Afterwards every attack whose hex is now empty ends.</summary>
         public static void Resolve(Content c, GameState s, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var done = new HashSet<int>();
             foreach (var id in s.Units.Keys.ToList())   // Units is a SortedList: ascending id
@@ -342,7 +360,7 @@ namespace Statecraft.Sim
                 int q = u.Q + dq, r = u.R + dr;
                 if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land || noEntry.Contains((q, r))) continue;
                 var here = s.Units.Values.Where(x => x.Q == q && x.R == r).ToList();
-                if (here.Any(x => Player(x) != Player(u)) || here.Count(x => x.Side == u.Side) >= mvp.StackLimit!.Value) continue;
+                if (here.Any(x => Player(x) != Player(u)) || here.Count(x => x.Side == u.Side) >= Movement.StackLimit(c, s)) continue;
                 return (q, r);
             }
             return null;

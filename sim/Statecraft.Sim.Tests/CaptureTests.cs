@@ -22,8 +22,14 @@ public class CaptureTests
         ("town_d", "arab_town", 1, 2), ("town_e", "arab_town", 4, 2),
     };
 
-    static string Target(string id, int q, int r) => FormattableString.Invariant(
-        $"  - {{ id: {id}, q: {q}, r: {r}, operation: fixture_operation, sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-18 }}], status: sensitivity-reviewed }}\n");
+    /// <summary>A target row. Stayed by default, so every Raid, Occupy and Deport test keeps its behaviour (#799 plan, Task 1);
+    /// the annexation values are fixture values (people 60, employed_share 0.5), not history.</summary>
+    static string Target(string id, int q, int r, bool fled = false) => FormattableString.Invariant(
+        $"  - {{ id: {id}, q: {q}, r: {r}, operation: fixture_operation, sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-18 }}], ")
+        + (fled ? "residents: fled, " : "residents: stayed, ")
+        + FormattableString.Invariant($"residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-18 }}], ")
+        + (fled ? "" : FormattableString.Invariant($"annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-18 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, "))
+        + "status: sensitivity-reviewed }\n";
 
     /// <summary>MovementTests' 6 x 3 coastal plain with the four places; <paramref name="targets"/> lists the targets in
     /// file order.</summary>
@@ -31,7 +37,13 @@ public class CaptureTests
 
     /// <summary>As <see cref="Load(string[])"/>, with <paramref name="edit"/> run on the files before they load (DeportTests
     /// turns Deport on with it, Q-TECH-3).</summary>
-    internal static Content Load(Action<Dictionary<string, string>>? edit, params string[] targets)
+    internal static Content Load(Action<Dictionary<string, string>>? edit, params string[] targets) => Load(edit, Array.Empty<string>(), targets);
+
+    /// <summary>As <see cref="Load(string[])"/>, with the rows in <paramref name="fled"/> written as <c>residents: fled</c>
+    /// and no annexation block (Q-ANNEX-1; OWNER QUESTION 2 (b) on #799).</summary>
+    internal static Content LoadFled(string[] fled, params string[] targets) => Load(null, fled, targets);
+
+    internal static Content Load(Action<Dictionary<string, string>>? edit, string[] fled, string[] targets)
     {
         var files = Fixture.Gdd(new Dictionary<string, string>
         {
@@ -39,7 +51,7 @@ public class CaptureTests
             ["map/settlement_hexes.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant($"  - {{ id: {p.Id}, q: {p.Q}, r: {p.R} }}\n"))),
             ["map/settlements_1948.yaml"] = "settlements:\n" + string.Concat(Places.Select(p => FormattableString.Invariant(
                 $"  - {{ id: {p.Id}, name: {p.Id.Replace("town_", "Town ").ToUpperInvariant()}, lon: 34.29, lat: 33.35, type: {p.Type}, founded: 1900, pre_modern: false }}\n"))),
-            ["settlement_targets.yaml"] = targets.Length == 0 ? "targets: []\n" : "targets:\n" + string.Concat(targets.Select(id => { var p = Places.Single(x => x.Id == id); return Target(p.Id, p.Q, p.R); })),
+            ["settlement_targets.yaml"] = targets.Length == 0 ? "targets: []\n" : "targets:\n" + string.Concat(targets.Select(id => { var p = Places.Single(x => x.Id == id); return Target(p.Id, p.Q, p.R, fled.Contains(p.Id)); })),
         });
         files["rules.yaml"] = files["rules.yaml"].Replace("enemy_held_localities: []", "enemy_held_localities: [town_a, town_c, town_e]");
         edit?.Invoke(files);

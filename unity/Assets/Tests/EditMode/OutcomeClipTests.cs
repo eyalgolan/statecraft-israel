@@ -31,11 +31,11 @@ public class OutcomeClipTests
     public void EveryOutcomeIsAHistoricalOrderWithItsClipAndNoDeport()
     {
         var rows = EventVideoMapping.ParseOutcomes(Yaml);
-        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev", "altalena", "first_new_yishuv", "iraqi_exodus", "austerity_1949" },
-            rows.Select(r => r.Event), "the three of 2026-10-14 and the four the owner approved on 2026-10-20 (#1102)");
+        CollectionAssert.AreEquivalent(new[] { "maabarot_policy", "hula_drainage", "operation_horev", "altalena", "first_new_yishuv", "iraqi_exodus", "austerity_1949", "absorb_immigrants" },
+            rows.Select(r => r.Event), "the three of 2026-10-14, the four the owner approved on 2026-10-20 (#1102) and absorb_immigrants (owner, 2026-10-24: \"Add v8, 6 s\")");
         var problems = EventVideoMapping.OutcomeProblems(rows, C, f => File.Exists(Path.Combine(EventVideoMapping.ClipFolder, f)));
         Assert.IsEmpty(problems, string.Join("\n", problems));
-        Assert.AreEqual(7, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
+        Assert.AreEqual(8, EventVideoMapping.LoadOutcomes().Count, "the game finds them in Resources");
     }
 
     [Test]
@@ -297,13 +297,13 @@ public class OutcomeClipTests
         Assert.IsTrue(gated.Single(r => r.File == "altalena-outcome.mp4").SensitivityReviewed, "the owner's review of 2026-10-20 (#1102)");
         // Isolate the clip gate from the other content gates (the starting forces' rows); never change the shipped content or shared C.
         StringAssert.DoesNotContain("illustration clips", (string?)gate.Invoke(null,
-            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated }) ?? "");
+            new object?[] { new[] { "Unity", "-shareable" }, C, null, false, null, gated, BuildGateTests.ReviewedSettlementControlStrings() }) ?? "");
         var reviewedContent = BuildGateTests.Checked();
         foreach (var e in reviewedContent.Events)
             if (ReleaseGate.SensitiveEvents(reviewedContent).Contains(e.Id)) e.Status = ReleaseGate.ReviewedStatus;
-        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated }), "reviewed: the clips may ship");
+        Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, gated, BuildGateTests.ReviewedSettlementControlStrings() }), "reviewed: the clips may ship");
         var unreviewed = gated.Select(r => { r.SensitivityReviewed = false; return r; }).ToList();
-        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed });
+        var refusal = (string?)gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, reviewedContent, null, false, null, unreviewed, BuildGateTests.ReviewedSettlementControlStrings() });
         StringAssert.Contains("illustration clips: altalena, operation_horev, operation_yoav, ten_days", refusal ?? "");
     }
 }

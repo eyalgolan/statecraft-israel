@@ -105,6 +105,22 @@ public class KeyboardTurnTests
         for (int i = 0; i < n; i++) { yield return Tab(back); into.Add(FocusedName); }
     }
 
+    // Give each still-needing unit Skip through the keyboard, before requesting the actual turn end.
+    IEnumerator SkipTheRemainingUnits()
+    {
+        for (var guard = 0; Bridge.NeedsOrders.Count > 0; guard++)
+        {
+            Assert.Less(guard, 200, "keyboard Skip must make progress");
+            yield return TabTo("end-turn");
+            yield return Enter();
+            yield return Frames(2);
+            yield return TabTo("info-skip");
+            yield return Enter();
+            yield return Frames(2);
+        }
+        yield return TabTo("end-turn");
+    }
+
     /// <summary>The side menu, New Game, End Turn: the HUD's own controls, in the order Game.uxml gives them.</summary>
     static readonly string[] Menu = { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" };
 
@@ -130,7 +146,7 @@ public class KeyboardTurnTests
         CollectionAssert.AreEqual(expected, back, "Shift+Tab from the card: " + string.Join(" > ", back));
     }
 
-    /// <summary>With no card open (the opening one answered from the keyboard, which hands the focus to End Turn), End Turn
+    /// <summary>With no card open (the opening turn's two answered from the keyboard, the last handing the focus to End Turn), End Turn
     /// comes after the side menu and New Game; Tab from it goes to the map stop, the minimap's buttons, Star, Report and
     /// Share, and round to the side menu; Shift+Tab from it goes back to New Game. Enter on it ends the turn: the turn report
     /// takes the focus, and closing it with Enter hands the focus on (to the next card if one opens, else End Turn), so
@@ -139,6 +155,9 @@ public class KeyboardTurnTests
     public IEnumerator EndTurnsPlaceInTheOrderAndWhereTheFocusGoesAfterIt()
     {
         yield return Boot();
+        yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
+        yield return Enter();
+        Assert.AreEqual("event-card", FocusedName, "One Army answered hands the focus to the turn's second card (Degania, R-EVT-006)");
         yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
         yield return Enter();
         Assert.AreEqual("end-turn", FocusedName, "the last card answered from the keyboard hands the focus to End Turn");
@@ -153,6 +172,7 @@ public class KeyboardTurnTests
         yield return TabTo("end-turn");
 
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "Enter on End Turn ends the turn");
@@ -164,7 +184,7 @@ public class KeyboardTurnTests
         Assert.AreEqual(next, FocusedName, "closing the report hands the focus on");
     }
 
-    /// <summary>The done-when's turn, keys only: answer the opening card; open Budget, raise a line with its + and submit;
+    /// <summary>The done-when's turn, keys only: answer the opening turn's two cards; open Budget, raise a line with its + and submit;
     /// open the Cabinet, select a seat, appoint a candidate; close it with Escape; Tab to the map stop over Tel Aviv, Enter
     /// to pick it, Tab to Train halutzim in its city panel and press it; Tab to End Turn and end the turn. Each order is
     /// queued, and a press that rebuilds what it is part of keeps the focus there. The opening turn's attention (4) pays for
@@ -175,10 +195,14 @@ public class KeyboardTurnTests
         yield return Boot();
         Bridge.State.Attention = 100;
 
-        // The event card.
+        // The event cards: One Army, then the defence of Degania (R-EVT-006).
         yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
         yield return Enter();
         Assert.IsTrue(Bridge.Queued.OfType<ChooseEventOption>().Any(), "the card is answered");
+        Assert.AreEqual("event-card", FocusedName, "the turn's second card takes the focus");
+        yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
+        yield return Enter();
+        Assert.AreEqual(2, Bridge.Queued.OfType<ChooseEventOption>().Count(), "both cards are answered");
         Assert.AreEqual("end-turn", FocusedName);
 
         // A budget line.
@@ -227,6 +251,7 @@ public class KeyboardTurnTests
         // End the turn.
         yield return TabTo("end-turn");
         var turn = Bridge.State.Turn;
+        yield return SkipTheRemainingUnits();
         yield return Enter();
         yield return Frames(5);
         Assert.AreEqual(turn + 1, Bridge.State.Turn, "the turn ends");

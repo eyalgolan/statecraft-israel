@@ -60,9 +60,11 @@ namespace Statecraft.Game.EditorTools
         /// target row sensitivity-reviewed (ReleaseGate.SettlementTargetsUnchecked; Q-TGT-3 (b)), and so does every
         /// sensitive event photograph the build would carry (EventImageCatalog; docs/event-images.md), and every sensitive
         /// illustration clip (<paramref name="clips"/>, event-videos.yaml; docs/event-videos.md). See
-        /// <see cref="EventImageRefusal"/> for <paramref name="catalogFileExists"/> and <paramref name="mapping"/>.</summary>
+        /// <see cref="EventImageRefusal"/> for <paramref name="catalogFileExists"/> and <paramref name="mapping"/>. R-GATE-002's
+        /// exact bilingual snapshot contributes <paramref name="settlementControlStringsRefusal"/>.</summary>
         public static string? ShareableRefusal(Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
-            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null)
+            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null,
+            string? settlementControlStringsRefusal = null)
         {
             var open = Statecraft.Sim.ReleaseGate.SensitiveUnreviewed(c);
             var reasons = new List<string>();
@@ -80,6 +82,7 @@ namespace Statecraft.Game.EditorTools
             if (clips != null && EventVideoMapping.SensitiveUnreviewed(clips) is { Count: > 0 } openClips)
                 reasons.Add("a shareable build needs the owner's sensitivity review of the illustration clips: " + string.Join(", ", openClips)
                     + " (set sensitivity_reviewed: true in " + EventVideoMapping.Path + "; see docs/event-videos.md)");
+            if (settlementControlStringsRefusal != null) reasons.Add(settlementControlStringsRefusal);
             return reasons.Count == 0 ? null : string.Join("; ", reasons);
         }
 
@@ -125,8 +128,10 @@ namespace Statecraft.Game.EditorTools
         /// <summary>The gate for a build made with these command-line args: a -shareable build (Web or Mac) is refused
         /// until the reviews are done; a dev build is never gated (web_check and the golden checks need them).</summary>
         public static string? GateRefusal(string[] args, Statecraft.Sim.Content c, EventImageCatalog? photos, bool catalogFileExists = false,
-            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null) =>
-            Array.IndexOf(args, "-shareable") >= 0 ? ShareableRefusal(c, photos, catalogFileExists, mapping, clips) : null;
+            IReadOnlyList<EventImageMapping.Row>? mapping = null, IReadOnlyList<EventVideoMapping.Row>? clips = null,
+            string? settlementControlStringsRefusal = null) =>
+            Array.IndexOf(args, "-shareable") >= 0
+                ? ShareableRefusal(c, photos, catalogFileExists, mapping, clips, settlementControlStringsRefusal) : null;
 
         /// <summary>The clips a shareable build is gated on, from the mapping's text: the card loops and the End Turn outcome
         /// clips.</summary>
@@ -146,11 +151,17 @@ namespace Statecraft.Game.EditorTools
                 var mapping = EventImageMapping.Parse(File.ReadAllText(EventImageMapping.Path));
                 var videos = File.ReadAllText(EventVideoMapping.Path);   // fails closed: a missing file is a refusal
                 var clips = GatedClips(videos);
-                refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos, File.Exists(EventImageImport.CatalogPath), mapping, clips);
+                var en = UiText.Parse(File.ReadAllText(UiPaths.Strings), "strings.en.yaml");
+                var he = UiText.Parse(File.ReadAllText(UiPaths.StringsHebrew), "strings.he.yaml");
+                var review = SettlementControlStringReview.Parse(File.ReadAllText(UiPaths.SettlementControlStringsReview), UiPaths.SettlementControlStringsReview);
+                var stringRefusal = SettlementControlStringReview.Refusal(review, en, he);
+                refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos,
+                    File.Exists(EventImageImport.CatalogPath), mapping, clips, stringRefusal);
             }
             catch (Exception e) when (e is IOException || e is InvalidOperationException || e is UnauthorizedAccessException)
             {
-                refusal = "cannot read the event photograph or clip mapping (" + EventImageMapping.Path + ", " + EventVideoMapping.Path + "): " + e.Message;
+                refusal = "cannot read a shareable-build review file (" + EventImageMapping.Path + ", " + EventVideoMapping.Path
+                    + ", " + UiPaths.SettlementControlStringsReview + "): " + e.Message;
             }
             if (refusal == null) return false;
             Debug.LogError("BUILD REFUSED " + refusal);

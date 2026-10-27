@@ -29,11 +29,26 @@ public class SaveGameTests
             new Command[] { new SetPolicy("odd id with spaces%", 0.5), new MapAction("transit_camp", 4, 0) },
             new Command[] { new AssignWorkers("town_a", "job", 1), new UnitOrder(1, "hold") },   // GDD orders: the legacy fixture refuses them
             new Command[] { new Train("town_a", "halutz", 1), new CancelTraining(1), new ReturnCraftsmen("town_a", 1), new ReassignCraftsmen("town_a", 1), new ReassignPioneers("town_a", "halutz", 1), new Reinforce(1, "town_a", 1) },   // GDD orders too
-            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3), new ResolveCapture("town_a", "raid") },
+            new Command[] { new PioneerWork(1, "build_yishuv", "site_a"), new StopWork(1), new StartProject("housing", "town_a", 1, 1), new CancelProject(1), new BuyArms(2), new Move(1, -2, 3), new ResolveCapture("town_a", "raid"), new EndOccupation("town_a", "annex") },
             new Command[] { new SecurityOrder(1) }, new Command[0],
         };
         foreach (var o in orders) g.Step(o);
         return g;
+    }
+
+    // R-CTRL-014: EndOccupation is saved as `endocc <settlement> <outcome>` and built from a scenario step.
+    [Fact]
+    public void EndOccupationRoundTripsThroughTheSaveAndTheScenario()
+    {
+        var save = new SaveGame(new string('a', 64), 1, Mode.Historical, SaveGame.GddRuleset, new string('b', 64));
+        save.Record(new Command[] { new EndOccupation("town a", "annex") }, new GameState());
+        var text = save.Write();
+        Assert.Contains("endocc town%20a annex", text);
+        var back = Assert.IsType<EndOccupation>(SaveGame.Parse(text).Turns.Single().Single());
+        Assert.Equal(("town a", "annex"), (back.Settlement, back.Outcome));
+        var built = Assert.IsType<EndOccupation>(Scenario.Build(new Dictionary<string, object>
+            { ["kind"] = "end_occupation", ["settlement"] = "town_a", ["outcome"] = "annex" }));
+        Assert.Equal(("town_a", "annex"), (built.Settlement, built.Outcome));
     }
 
     // R-SAVE-003: the open turn's committed orders are written after the turns and read back in order.

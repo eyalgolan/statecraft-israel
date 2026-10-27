@@ -5,6 +5,7 @@ import json
 import math
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 import numpy as np
 import pytest
@@ -124,7 +125,8 @@ def test_the_jordan_georeference_is_measured_not_assumed():
 
 def test_the_commons_copy_without_provenance_is_never_a_source():
     for f in SOURCE["features"]:
-        assert not any("commons.wikimedia.org" in s and "Green_Line" in s for s in f["properties"]["sources"])
+        assert not any(urlparse(s).hostname == "commons.wikimedia.org" and "Green_Line" in s
+                       for s in f["properties"]["sources"])
     assert "not used" in " ".join(ad.JORDAN_SEARCH)
 
 

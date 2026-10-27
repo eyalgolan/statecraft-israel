@@ -1,0 +1,232 @@
+{
+  "number": "20",
+  "id": "figure-iraqi-infantry-1948-v1",
+  "kind": "Full-source GLB-to-FBX compatibility export; FBX was not delivered by provider",
+  "licence": "CC-BY-NC-ND-4.0, owner-adopted; no licence change or new grant",
+  "blender": "5.2.2 LTS",
+  "source": {
+    "number": "20",
+    "id": "figure-iraqi-infantry-1948-v1",
+    "glb_bytes": 3947336,
+    "glb_sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8",
+    "source_animation_count": 0,
+    "source_vertices": 4859,
+    "source_triangles": 7569,
+    "source_bones": 67,
+    "images": [
+      {
+        "mime": "image/jpeg",
+        "bytes": 3625933,
+        "sha256": "cb3a62455a0764e66aac0c7fa14117ae69797239ff2577dae1bca6ee2fe4a1a1",
+        "first_bytes": "ffd8ffe0"
+      }
+    ],
+    "blend_file": "character-20-retargeted.blend",
+    "blend_bytes": 16815972,
+    "blend_sha256": "7d28e00626e94cf34315e535a9a352b6e37b8ac110a3f455a917d6d26c568560",
+    "local_retarget_clips": {
+      "idle": {
+        "source_action": "Armature|Armature|idle",
+        "frame_range": [
+          1,
+          423
+        ],
+        "baked_frames": 212,
+        "source_fps": 24
+      },
+      "walk": {
+        "source_action": "Armature|Armature|walk",
+        "frame_range": [
+          1,
+          57
+        ],
+        "baked_frames": 29,
+        "source_fps": 24
+      }
+    }
+  },
+  "source_animation_count": 0,
+  "local_target_clip_count": 2,
+  "unrelated_donor_actions_excluded": [
+    "Armature|Armature|box_01",
+    "Armature|Armature|defeat_02",
+    "Armature|Armature|defeat_03",
+    "Armature|Armature|fire",
+    "Armature|Armature|hit_to_body_01",
+    "Armature|Armature|idle",
+    "Armature|Armature|run",
+    "Armature|Armature|shoot",
+    "Armature|Armature|walk"
+  ],
+  "original_source_and_blend_unchanged": true,
+  "provider_glb_archive_byte_identical": true,
+  "embedded_jpeg_extracted_byte_identical": true,
+  "texture_dimensions": [
+    4096,
+    4096
+  ],
+  "no_geometry_reduction": true,
+  "source_vertices": 4859,
+  "fbx_reimport_vertices": 4859,
+  "triangles": 7569,
+  "bones": 67,
+  "bone_names_and_hierarchy_exact": true,
+  "source_blend_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 5.21540641784668e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 6.556510925292969e-07
+  },
+  "fbx_roundtrip_vs_provider_rest": {
+    "triangle_corner_position_max_abs_m": 5.066394805908203e-07,
+    "triangle_corner_weight_max_abs": 0.0,
+    "triangle_corner_uv_max_abs": 0.0,
+    "joint_head_position_max_abs_m": 9.667128324508667e-07
+  },
+  "rest_world_bounds_metres": [
+    [
+      -0.3825681209564209,
+      2.0099570896547903e-09,
+      -0.1364748626947403
+    ],
+    [
+      0.3825685977935791,
+      0.9995120167732239,
+      0.1364744007587433
+    ]
+  ],
+  "weights_sum_range": [
+    0.9999999068677425,
+    1.0000000521540642
+  ],
+  "max_influences": 4,
+  "animations": {
+    "idle": {
+      "fbx_reimport_action_name": "figure-iraqi-infantry-1948-v1-rig|figure-iraqi-infantry-1948-v1-rig|idle",
+      "source_frame_range": [
+        1.0,
+        423.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        423.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 423,
+      "half_frame_sample_count": 422,
+      "skin_operator_integer_frame_max_abs": 2.682209014892578e-05,
+      "skin_operator_half_frame_max_abs": 0.002697005867958069,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        423
+      ],
+      "total_keys": 287217,
+      "strict_continuous_curve_identity": false
+    },
+    "walk": {
+      "fbx_reimport_action_name": "figure-iraqi-infantry-1948-v1-rig|figure-iraqi-infantry-1948-v1-rig|walk",
+      "source_frame_range": [
+        1.0,
+        57.0
+      ],
+      "reimport_frame_range": [
+        1.0,
+        57.0
+      ],
+      "fps": 24,
+      "integer_frame_sample_count": 57,
+      "half_frame_sample_count": 56,
+      "skin_operator_integer_frame_max_abs": 2.0623207092285156e-05,
+      "skin_operator_half_frame_max_abs": 0.035608261823654175,
+      "reimport_fcurve_count": 679,
+      "keys_per_curve_unique_counts": [
+        57
+      ],
+      "total_keys": 38703,
+      "strict_continuous_curve_identity": false
+    }
+  },
+  "animation_note": "Every existing target action retained, sampled every frame with simplify0. Integer-frame transforms validated numerically; continuous quaternion/Bezier-to-Euler FBX curve identity is not claimed. Exact target F-curve data is separately preserved in local-actions.json; original blend remains unchanged.",
+  "fbx_unit_scale_factors": [
+    100.0
+  ],
+  "all_fbx_local_scales_identity": true,
+  "fbx_animation_stacks": [
+    "figure-iraqi-infantry-1948-v1-rig|idle\u0000\u0001AnimStack",
+    "figure-iraqi-infantry-1948-v1-rig|walk\u0000\u0001AnimStack"
+  ],
+  "texture_references": [
+    {
+      "field": "FileName",
+      "value": "________________________________________________________________________________________________________________________________________________________________________________________________/figure-iraqi-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-iraqi-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "Filename",
+      "value": "________________________________________________________________________________________________________________________________________________________________________________________________/figure-iraqi-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "RelativeFilename",
+      "value": "figure-iraqi-infantry-1948-v1_basecolor.jpg"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-iraqi-infantry-1948-v1-rig|idle.tak"
+    },
+    {
+      "field": "FileName",
+      "value": "figure-iraqi-infantry-1948-v1-rig|walk.tak"
+    }
+  ],
+  "author_path_string_runs_neutralized": 4,
+  "export_options": {
+    "use_selection": true,
+    "object_types": [
+      "ARMATURE",
+      "MESH"
+    ],
+    "global_scale": 1.0,
+    "apply_unit_scale": true,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "use_space_transform": true,
+    "bake_space_transform": false,
+    "use_mesh_modifiers": false,
+    "mesh_smooth_type": "OFF",
+    "use_tspace": false,
+    "use_custom_props": false,
+    "add_leaf_bones": false,
+    "use_armature_deform_only": false,
+    "path_mode": "STRIP",
+    "embed_textures": false,
+    "bake_anim": true,
+    "bake_anim_use_all_bones": true,
+    "bake_anim_use_all_actions": true,
+    "bake_anim_use_nla_strips": false,
+    "bake_anim_step": 1.0,
+    "bake_anim_simplify_factor": 0.0,
+    "bake_anim_force_startend_keying": true
+  },
+  "files": {
+    "figure-iraqi-infantry-1948-v1-provider-original.glb": {
+      "bytes": 3947336,
+      "sha256": "f32b3ea2b331d3e997b785fab9009628cc5ee3325470ca54ad50a1e3f54fb6d8"
+    },
+    "figure-iraqi-infantry-1948-v1_basecolor.jpg": {
+      "bytes": 3625933,
+      "sha256": "cb3a62455a0764e66aac0c7fa14117ae69797239ff2577dae1bca6ee2fe4a1a1"
+    },
+    "figure-iraqi-infantry-1948-v1.fbx": {
+      "bytes": 3252236,
+      "sha256": "078442d96388388059a490f8a708e0600f18673859bfc8c1dbddaabb00877b90"
+    },
+    "figure-iraqi-infantry-1948-v1-local-actions.json": {
+      "bytes": 52793729,
+      "sha256": "1780a1a35923074505cb4dd430104716fb73b0a3b41900fccf21d41030049c70"
+    }
+  }
+}

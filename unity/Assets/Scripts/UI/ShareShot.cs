@@ -11,7 +11,7 @@ namespace Statecraft.Game.UI
     /// the sites' share links. Nothing is uploaded by the game and nothing is counted: the picture stays in the page until the
     /// player shares or downloads it. On the web ShareShot.jslib keeps the PNG as a File; the Share press arms a one-shot
     /// release listener (as ExternalLink does, #1168), and inside that real gesture the browser's share sheet gets the file,
-    /// the text and the itch URL (navigator.share), or, where it cannot share files (Firefox on the desktop, some others),
+    /// the text, already containing both links, without a separate URL (navigator.share), or, where it cannot share files (Firefox on the desktop, some others),
     /// the picture downloads instead and the panel offers the share links, which cannot carry an image.
     /// <para><see cref="Keep"/>, <see cref="CanShareFiles"/> and <see cref="Share"/> are what the panel calls; tests put
     /// recorders there (and put the defaults back), so nothing is saved or shared.</para></summary>
@@ -19,6 +19,8 @@ namespace Statecraft.Game.UI
     {
         /// <summary>The game's itch page, the link the post carries (owner's decision, 20 Oct 2026).</summary>
         public const string Itch = "https://eyalgolan.itch.io/statecraft-israel";
+        /// <summary>The game's GitHub repository, the post's second link (owner, 24 Oct 2026).</summary>
+        public const string Repo = ExternalLink.Repository;
         /// <summary>The picture's long side at most: a DPR-3 phone frame encoded at full size can exhaust the WebGL heap.</summary>
         public const int MaxSide = 1920;
         /// <summary>The site buttons, in the panel's order: the owner's list (#1237; LinkedIn kept, at the end, owner 21 Oct
@@ -27,20 +29,38 @@ namespace Statecraft.Game.UI
 
         public static Action<byte[], string> Keep = DefaultKeep;
         public static Func<bool> CanShareFiles = DefaultCanShareFiles;
-        public static Action<string, string> Share = DefaultShare;
+        public static Action<string> Share = DefaultShare;
         /// <summary>True when the browser refused the share sheet (not a cancel) and the picture downloaded instead.</summary>
         public static Func<bool> Failed = DefaultFailed;
         /// <summary>What Copy (#1238) put on the clipboard: Pending until the browser has answered.</summary>
-        public enum CopyResult { Pending, Picture, Text, Failed }
+        public enum CopyResult { Pending, Picture, Text, Failed, Downloaded }
         /// <summary>Copies the kept picture on the player's release, or the post text if the browser refuses the picture.</summary>
         public static Action<string> Copy = DefaultCopy;
         public static Func<CopyResult> Copied = DefaultCopied;
 
-        /// <summary>The post, in the UI's language, with the in-game date and turn and the itch URL.</summary>
-        public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch);
+        /// <summary>The post, in the UI's language, with the in-game date and turn, the itch URL and the repository's.</summary>
+        public static string Text(UiText text, string date, int turn) => text.Format("share.post", date, turn, Itch, Repo);
 
-        /// <summary>A site's share link. X and WhatsApp take the text, which ends with the URL; Telegram takes the URL and the
-        /// text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only the URL.</summary>
+        /// <summary>The post as the panel shows it (playtest, 25 Oct 2026). In the right-to-left Hebrew paragraph a URL broke
+        /// across lines, "https://" ending one line and the rest starting the next, so in Hebrew each URL is kept whole: a word
+        /// joiner (U+2060) after each '/', ':', '.' and '-' takes away the line breaks the text generator allows there.
+        /// UiText.Format's marks already keep the URL a left-to-right run. (Rich text's nobr and a U+2066 isolate were tried
+        /// and changed nothing under the advanced text generator.) English shows the post as it is. Only the label takes
+        /// this: the text shared, posted and copied stays <see cref="Text"/>'s.</summary>
+        public static string Shown(string post, bool hebrew) =>
+            hebrew ? post.Replace(Itch, OneLine(Itch)).Replace(Repo, OneLine(Repo)) : post;
+
+        public const char WordJoiner = (char)0x2060;
+
+        static string OneLine(string url)
+        {
+            var line = new System.Text.StringBuilder(url.Length * 2);
+            foreach (var c in url) { line.Append(c); if (c == '/' || c == ':' || c == '.' || c == '-') line.Append(WordJoiner); }
+            return line.ToString();
+        }
+
+        /// <summary>A site's share link. X and WhatsApp take the text, which carries both URLs; Telegram takes the itch URL and
+        /// the text, both encoded (core.telegram.org/widgets/share); Facebook and LinkedIn take only a URL, the itch one.</summary>
         public static string IntentUrl(string site, string text) => site switch
         {
             "x" => "https://x.com/intent/post?text=" + Uri.EscapeDataString(text),
@@ -104,10 +124,10 @@ namespace Statecraft.Game.UI
 #if UNITY_WEBGL && !UNITY_EDITOR
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareKeep(byte[] png, int length, string name);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareCanShareFiles();
-        [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareOnRelease(string text, string url);
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareOnRelease(string text);
         public static void DefaultKeep(byte[] png, string name) => StatecraftShareKeep(png, png.Length, name);
         public static bool DefaultCanShareFiles() => StatecraftShareCanShareFiles() == 1;
-        public static void DefaultShare(string text, string url) => StatecraftShareOnRelease(text, url);
+        public static void DefaultShare(string text) => StatecraftShareOnRelease(text);
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern int StatecraftShareFailed();
         public static bool DefaultFailed() => StatecraftShareFailed() == 1;
         [System.Runtime.InteropServices.DllImport("__Internal")] static extern void StatecraftShareCopyOnRelease(string text);
@@ -121,7 +141,7 @@ namespace Statecraft.Game.UI
         public static bool DefaultCanShareFiles() => false;
         public static bool DefaultFailed() => false;
         /// <summary>The download, outside the browser: the picture goes into the temporary cache, and the log says where.</summary>
-        public static void DefaultShare(string text, string url)
+        public static void DefaultShare(string text)
         {
             if (kept == null) return;
             var path = Path.Combine(Application.temporaryCachePath, keptName);

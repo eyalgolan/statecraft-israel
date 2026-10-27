@@ -49,6 +49,51 @@ public class TurnReportTests
         }
     }
 
+    /// <summary>A row's causes, one label each, in order.</summary>
+    static List<string> Causes(UiTestKit ui, string meter) =>
+        ui.Q<VisualElement>("turn-report-causes-" + meter).Query<Label>(className: "turn-report-cause").ToList().Select(l => l.text).ToList();
+
+    /// <summary>The main B1 occupation/deport borrowing keys use the real map names in report and meter paths too.
+    /// This is only a formatter fixture: it does not enable or execute the disabled Deport command.</summary>
+    [TestCase(CauseKeys.Purpose.Occupation)]
+    [TestCase(CauseKeys.Purpose.Deport)]
+    public void ReportAndMeterCausesUseSourcedHebrewPlacesAndKeepEnglishFallback(string purpose)
+    {
+        const string city = "tel_aviv";
+        var namesHe = Statecraft.Game.Map.SettlementPlacer.Parse(
+            File.ReadAllText(Path.Combine(Paths.Content, "map", "settlements_1948.yaml")))
+            .ToDictionary(s => s.Id, s => s.NameHe);
+        Assert.IsTrue(namesHe.ContainsKey(city) && namesHe[city] != "", "sourced map name required");
+        using var k = new Kit(He);
+        k.Bridge.EndTurn();
+        var last = k.Bridge.Session.Last!;
+        var why = new List<Cause>();
+        var placeName = PlayerText.Settlement(C, city);
+        var englishPurpose = purpose == CauseKeys.Purpose.Deport ? $"for the Deport of {placeName}" : $"for the occupation of {placeName}";
+        EconomySystem.PayOrBorrow(C, last.State, last.State.Treasury + 3, englishPurpose, why, purpose, city);
+        var cause = why.Single();
+        Assert.AreEqual(CauseKeys.Borrowed, cause.Key);
+        // Existing TurnReportTests uses this setter for a precise report fixture; no simulation input or content is changed.
+        typeof(GameSession).GetProperty(nameof(GameSession.Last))!.SetValue(k.Bridge.Session,
+            new StepResult(last.State, why, last.Rejected));
+        var reportLines = TurnReportPresenter.Lines(k.Bridge, He, null, namesHe)
+            .Single(row => row.Meter == "treasury").Causes;
+        using var tip = new MeterTip(k.Ui.Root, k.Bridge, He, System.Array.Empty<VisualElement>()) { TownNamesHe = namesHe };
+        var meterLines = tip.Lines(k.Q("meter-treasury")).causes;
+        foreach (var lines in new[] { reportLines, meterLines })
+        {
+            Assert.IsNotEmpty(lines);
+            var line = string.Join("\n", lines);
+            StringAssert.Contains(namesHe[city], line);
+            StringAssert.DoesNotContain(placeName, line);
+            Assert.IsTrue(UiDirection.RightToLeft(line));
+        }
+        Assert.AreEqual(cause.Message, CauseText.Line(cause, C, System.Array.Empty<UnitEntry>(), En, namesHe));
+        var missingNames = new Dictionary<string, string>();
+        StringAssert.Contains(placeName, CauseText.Line(cause, C, System.Array.Empty<UnitEntry>(), He, missingNames),
+            "missing name_he retains main's English fallback, never an invented translation");
+    }
+
     [Test]
     public void TheFixedTurnReportsEachChangedNumberWithTheSimsOwnCauses()
     {
@@ -70,19 +115,20 @@ public class TurnReportTests
             // The heading is the bar's caption and the very change the bar shows next to the number.
             var heading = k.Ui.Q<Label>("turn-report-heading-" + id).text;
             Assert.AreEqual(En.Format("report.line", En["hud.caption." + id], k.Ui.Q<Label>(id + "-delta").text), heading, id);
-            var causes = k.Ui.Root.Q<Label>("turn-report-causes-" + id);
-            var expected = HudModel.Causes(turn, id);
+            var causes = k.Ui.Root.Q("turn-report-causes-" + id);
+            var expected = HudModel.Causes(turn, id, w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), En));
             if (expected.Count == 0) { Assert.IsNull(causes, id + ": no cause line without a cause"); continue; }
-            var lines = causes!.text.Split('\n');
+            var lines = Causes(k.Ui, id);
             CollectionAssert.AreEqual(expected, lines, id);
-            Assert.LessOrEqual(lines.Length, HudModel.MaxCauses, id);
+            Assert.LessOrEqual(lines.Count, HudModel.MaxCauses, id);
             foreach (var line in lines) Assert.IsTrue(messages.Contains(line), $"{id}: '{line}' is a cause of StepResult.Why, word for word");
         }
-        // The fixed turn's own causes: Security moved by One Army, then by the border villages' effect, the larger first.
-        var security = k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n');
-        Assert.AreEqual("Security +1.5% (One Army)", security[0]);
-        StringAssert.EndsWith("(Border villages)", security[1]);
-        StringAssert.StartsWith("Money ", k.Ui.Q<Label>("turn-report-causes-treasury").text, "Money's main cause is the economy's line");
+        // The fixed turn's own causes, the larger first and at most MaxCauses (2): Security moved by One Army and the
+        // defence of Degania, the same size, in the order the cards came (R-EVT-006); the border villages' smaller effect
+        // (the second line before #1565) is left out.
+        var security = Causes(k.Ui, "security");
+        CollectionAssert.AreEqual(new[] { "Security +1.5% (One Army)", "Security +1.5% (The Defence of Degania)" }, security);
+        StringAssert.StartsWith("Money ", Causes(k.Ui, "treasury")[0], "Money's main cause is the economy's line");
         Assert.IsNull(k.Ui.Root.Q("turn-report-causes-support"), "no cause names Public support (an average of the indicators)");
     }
 
@@ -107,7 +153,7 @@ public class TurnReportTests
                 return text.Format("report.enemy_" + w.EnemyOrder, hebrew ? row.NameHe : row.Name);
             }).ToList();
             Assert.AreEqual(text["report.enemy"], k.Ui.Q<Label>("turn-report-heading-" + TurnReportPresenter.EnemyRow).text);
-            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
             CollectionAssert.AreEqual(expected, lines);
             CollectionAssert.Contains(lines, hebrew ? "הלגיון הערבי עבר לעמדה חדשה" : "Arab Legion moved to a new position", "the Legion's march on Latrun");
         }
@@ -132,7 +178,7 @@ public class TurnReportTests
             var turn = k.Bridge.EndTurn();
             Assert.IsFalse(turn.Why.Any(w => w.Message.StartsWith($"Unit {ala} will attack")), "the attack stands: no order this turn");
             Assert.IsTrue(turn.Why.Any(w => w.Message.StartsWith($"The attack on hex {a.Q},{a.R - 1}")), "and it engages");
-            var lines = k.Ui.Q<Label>("turn-report-causes-" + TurnReportPresenter.EnemyRow).text.Split('\n');
+            var lines = Causes(k.Ui, TurnReportPresenter.EnemyRow);
             CollectionAssert.Contains(lines, hebrew ? "צבא ההצלה פתח בהתקפה על אחת היחידות שלכם" : "Arab Liberation Army launched an attack on one of your units");
         }
     }
@@ -235,8 +281,14 @@ public class TurnReportTests
         StringAssert.StartsWith(He["hud.caption.security"] + ":", heading);
         // In a right-to-left line the change keeps its sign in front ("+2%", not "2%+"): UiText.Format marks it (#543).
         StringAssert.Contains(UiText.LeftToRightMark + k.Ui.Q<Label>("security-delta").text + UiText.LeftToRightMark, heading);
-        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security"), k.Ui.Q<Label>("turn-report-causes-security").text.Split('\n'),
-            "the causes are the sim's messages, as on the Why screen");
+        var causes = Causes(k.Ui, "security");
+        CollectionAssert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => CauseText.Line(w, C, System.Array.Empty<UnitEntry>(), He)), causes,
+            "the causes are the sim's, worded as on the Why screen");
+        // B1: the treasury's tax-and-spending line is Hebrew (a line with no key yet, such as an event's, stays English).
+        Assert.IsTrue(UiDirection.RightToLeft(Causes(k.Ui, "treasury")[0]), "the money line is in Hebrew");
+        // B1: one label a cause, so a Hebrew line and a line still in English each take their own direction.
+        Assert.AreEqual(HudModel.Causes(k.Bridge.Session.Last, "security", w => w.Message).Count,
+            k.Q("turn-report-causes-security").Query<Label>(className: "turn-report-cause").ToList().Count);
     }
 
     /// <summary>The smoke run plays as a player does: it closes each turn's report before the next turn (GameRoot.Smoke).</summary>
@@ -244,11 +296,82 @@ public class TurnReportTests
     public void TheSmokeRunClosesTheReportEachTurn()
     {
         using var k = new Kit(En);
+        // This report-only fixture has no map/card. Supply its unit skips at each turn start.
+        void SkipUnits() { foreach (var id in k.Bridge.NeedsOrders.ToList()) k.Bridge.Skip(id); }
+        SkipUnits();
+        k.Bridge.TurnEnded += _ => SkipUnits();
         var log = new List<string>();
         var run = GameRoot.Smoke(k.Ui.Root, k.Bridge, k.Card, 3, log.Add);
         while (run.MoveNext()) { }
         StringAssert.StartsWith("SMOKE OK 3 turns", log[log.Count - 1], string.Join("\n", log));
         Assert.IsFalse(k.Report.IsOpen);
+    }
+
+    /// <summary>C148: four arrivals stay visible without covering the report's heading or first causes, even while
+    /// the next decision card waits underneath. Closing the report restores the card's own toast placement.</summary>
+    [UnityTest]
+    public IEnumerator FourArrivalsClearTheReportWhileTheNextCardWaits()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var rt = new RenderTexture(1920, 1080, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("ArrivalToastReportLayout"); go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var hud = root.Q("root"); hud.RemoveFromClassList("loading");
+            if (hebrew) hud.AddToClassList(UiLanguage.HebrewClass);
+            var text = hebrew ? He : En;
+            var bridge = new SimBridge(GameSession.New(C, GoldenRun.Seed, Mode.Historical), text);
+            var owned = new List<System.IDisposable>();
+            owned.Add(new HudPresenter(root, bridge, text));
+            var nav = new ScreenNav(root); owned.Add(nav);
+            var card = new EventCardPresenter(root, bridge, text, null); owned.Add(card);
+            var report = new TurnReportPresenter(root, bridge, text, nav); owned.Add(report);
+            var toast = new ToastPresenter(root, bridge, text); owned.Add(toast);
+            // Layout inputs only: the real presenter must retain all four lines, in either direction.
+            var arrivals = hebrew
+                ? new[] { "כרמלי הגיעה ליעד", "גבעתי הגיעה ליעד", "עציוני הגיעה ליעד", "הנגב הגיעה ליעד" }
+                : new[] { "Carmeli arrived at its destination", "Givati arrived at its destination",
+                    "Etzioni arrived at its destination", "Negev arrived at its destination" };
+            try
+            {
+                bridge.EndTurn();
+                toast.Show(arrivals);
+                for (int i = 0; i < 30 && !(root.Q("turn-report-panel").layout.width > 0); i++) yield return null;
+                for (int i = 0; i < 3; i++) yield return null;
+                string at = hebrew ? "he" : "en";
+                Assert.IsTrue(report.IsOpen, at);
+                Assert.IsNotNull(card.Shown, at + ": a decision waits under the report");
+                Assert.IsTrue(hud.ClassListContains(EventCardPresenter.OpenClass), at);
+                Assert.IsFalse(root.Q("event-layer").enabledSelf, at + ": the card is covered");
+                Assert.IsTrue(root.Q("turn-report").enabledSelf, at + ": the report stays usable");
+                var label = root.Q<Label>("toast"); var bounds = label.worldBound;
+                CollectionAssert.AreEqual(arrivals, label.text.Split('\n'), at + ": no arrival is discarded");
+                Assert.AreEqual(DisplayStyle.Flex, label.resolvedStyle.display, at);
+                Assert.Greater(bounds.width, 0, at); Assert.Greater(bounds.height, 0, at);
+                Assert.IsTrue(root.worldBound.Contains(bounds.min) && root.worldBound.Contains(bounds.max), at + ": toast stays in the window");
+                foreach (var name in new[] { "turn-report-title", "turn-report-intro", "turn-report-heading-security" })
+                    Assert.IsFalse(bounds.Overlaps(root.Q(name).worldBound), at + ": " + name + " is readable");
+                var firstCause = root.Q("turn-report-panel").Query<Label>(className: "turn-report-cause").ToList().First();
+                Assert.IsFalse(bounds.Overlaps(firstCause.worldBound), at + ": first cause is readable");
+                Assert.IsFalse(hud.ClassListContains(EventCardPresenter.ModalClass), at + ": a covered card cannot center the toast");
+                Assert.IsFalse(root.Q("map-focus").enabledSelf, at + ": removing modal does not uncover the map");
+                report.Close();
+                for (int i = 0; i < 3; i++) yield return null;
+                Assert.IsTrue(root.Q("event-layer").enabledSelf, at + ": card is usable again");
+                Assert.IsTrue(hud.ClassListContains(EventCardPresenter.ModalClass), at + ": card placement restored");
+                CollectionAssert.AreEqual(arrivals, label.text.Split('\n'), at + ": closing keeps every arrival");
+            }
+            finally
+            {
+                for (int i = owned.Count - 1; i >= 0; i--) owned[i].Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
     }
 
     /// <summary>At a laptop's 1280x720 and a phone's 390x844, in English and Hebrew: the report lies in the window, every

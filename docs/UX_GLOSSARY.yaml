@@ -1,8 +1,8 @@
-# Statecraft: Israel glossary, draft for discussion
-# Draft document. Adopted decisions are identified; other recommendations remain proposals.
+# Statecraft: Israel glossary, binding for new strings from 22 October 2026 (#622)
+# Adopted decisions are identified; recommendations that still await maintainer or native review remain proposals.
 # Cited forms were checked where snapshot evidence was available; unresolved evidence remains identified. Snapshot date 2026-10-17.
 schema: '0.1'
-status: DRAFT, unapproved
+status: binding for new strings from 2026-10-22 (#622)
 snapshot_date: '2026-10-17'
 version: '0.5'
 snapshot_commit: 46abd99c
@@ -20,11 +20,23 @@ conventions:
     developer documentation style guide and the GOV.UK style guide.
   decision_owner: 'Eyal: where the rule is documented and the dictionary; the rule itself is already his'
 - id: transliteration
-  status: decision-needed
-  summary: 'Hebrew terms in English text are transliterated in several ways: ma''abarot (README), Halutz and Hakhshara (GDD),
-    yishuv and yishuvim (GDD), Knesset. No scheme is written down.'
-  recommendation: Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling
-    beside it in the glossary.
+  status: preferred
+  summary: 'Hebrew terms in English text: ma''abara and ma''abarot take a straight apostrophe (owner''s ruling, 26 October
+    2026, #1760). Halutz, Hakhshara (with kh), yishuv, yishuvim, aliyah and Knesset keep the spelling already in use,
+    observed in the game rather than ruled; the owner has ruled on ma''abara / ma''abarot only. An identifier is not display text, so ids, YAML keys, filenames and C# names keep their
+    apostrophe-free spelling (content/model.yaml: id maabarot beside name "Transit camps (ma''abarot)"); a quoted source
+    form and a URL keep what they print. The rule is docs/WRITING_GUIDE.md section 10. Arabic place names are settled
+    separately (see place-names).'
+  recommendation: Written down in docs/WRITING_GUIDE.md section 10; each term is listed once here, glossed at first use in
+    prose, with the Hebrew beside it.
+  decision_owner: Eyal
+- id: place-names
+  status: preferred
+  summary: 'The Arabic place names of 1948 in English text follow Village Statistics, 1945 (Beit, not ''Bayt''; Deir, not
+    ''Dayr''), as the map labels already do (localities_1948.yaml, name_basis: vs1945). A quoted source form keeps the spelling
+    its source prints, so listed_as values and the armistice line names are unchanged. Kafr (Arabic) and Kfar (Hebrew) stay
+    distinct. URLs, record ids and a living place''s today.name are outside the rule. Owner, 25 October 2026, #1586.'
+  recommendation: Keep it as the rule, written in docs/WRITING_GUIDE.md section 9. New place names follow it.
   decision_owner: Eyal
 - id: button-names
   status: preferred
@@ -197,18 +209,43 @@ concepts:
     in_use:
     - form: תור {0}
       where: strings.he.yaml hud.turn
-    - form: תורים של רבעון / חודש / שבוע
+    - form: תורות של רבעון / חודש / שבוע
       where: strings.he.yaml defence.turn_*
     - form: '{0} תורות'
       where: strings.he.yaml city.turns (#869)
   recommendation:
     en: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy
       strings.
-    he: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether
-      the variants need alignment.
+    he: 'The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").'
     reasons:
     - The current rules set all five turn lengths to month.
   decision_owner: Eyal
+- id: movement-points
+  status: decision-needed
+  category: game-system
+  definition: The number of points a military unit can spend entering hexes during one turn.
+  scope:
+  - ui
+  - docs
+  - code
+  en:
+    preferred: movement points
+    avoid: []
+    in_use:
+    - form: 'Movement points: {0} of {1}'
+      where: strings.en.yaml unit.points
+  he:
+    preferred: נקודות תנועה
+    avoid: []
+    in_use:
+    - form: 'נקודות תנועה: {0} מתוך {1}'
+      where: strings.he.yaml unit.points
+  recommendation:
+    en: Use movement points in the card and rules.
+    he: The candidate נקודות תנועה needs a native review.
+    reasons:
+    - The term is new on screen with Civ-style movement.
+  decision_owner: Eyal and the native reviewer
 - id: end-turn
   status: preferred
   category: game-system
@@ -617,8 +654,6 @@ concepts:
     in_use:
     - form: Place a transit camp ({0})
       where: strings.en.yaml info.build_camp
-    - form: the ma'abarot transit camps
-      where: README.md, site press page
   he:
     preferred: מעברה
     avoid: []
@@ -626,11 +661,11 @@ concepts:
     - form: הקמת מעברה ({0})
       where: strings.he.yaml info.build_camp
   recommendation:
-    en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. Decide
-      the transliteration once (conventions: transliteration).'
+    en: 'UI says ''transit camp''. Prose says ''the ma''abarot (transit camps)'' the first time, then either word. The
+      spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).'
     he: No change proposed.
     reasons:
-    - That is what the README already does.
+    - That is what the GDD already does; the README carried this example until #1200 rewrote it.
   decision_owner: Eyal
 - id: settlement
   status: contested

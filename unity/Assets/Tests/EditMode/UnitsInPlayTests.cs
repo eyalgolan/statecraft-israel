@@ -166,6 +166,38 @@ public class UnitsInPlayTests
         }
     }
 
+    /// <summary>#1219 item 2: every sourced Hebrew unit number has dated https sources and stays agent-checked pending
+    /// the native-speaker review in #564; a row without one keeps the English number in the Hebrew card.</summary>
+    [Test]
+    public void HebrewUnitNumbersAreSourcedAndAgentChecked()
+    {
+        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        {
+            StringAssert.IsMatch("[א-ת]", u.NumberHe, u.Id);
+            Assert.AreEqual("agent-checked", u.NumberHeReview, u.Id);
+            Assert.IsNotEmpty(u.NumberHeSources, u.Id);
+            Assert.That(u.NumberHeSources.All(s => s.Url.StartsWith("https://", StringComparison.Ordinal) && !string.IsNullOrEmpty(s.Checked)), u.Id);
+        }
+    }
+
+    /// <summary>#1219 item 2: the Hebrew card's subtitle carries the sourced Hebrew number with no Latin letters left
+    /// (digits stand, HE-08); the English card keeps the English number.</summary>
+    [Test]
+    public void TheHebrewUnitCardSubtitleShowsTheSourcedNumberAndEnglishKeepsItsNumber()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        {
+            var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
+            var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
+            var subtitleHe = UnitCard.For(placed, state, he).Subtitle;
+            StringAssert.Contains(u.NumberHe, subtitleHe, u.Id + ": Hebrew subtitle");
+            Assert.IsFalse(subtitleHe.Any(ch => ch is >= 'A' and <= 'Z' or >= 'a' and <= 'z'), u.Id + ": no Latin letters in the Hebrew subtitle");
+            StringAssert.Contains(u.Number, UnitCard.For(placed, state, Text).Subtitle, u.Id + ": English subtitle");
+        }
+    }
+
     const string Anchor = "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}";
     const string Unit = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [";
 
@@ -243,10 +275,8 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." Tal Heuberger's figures have landed for two forces (issue #665; owner, 17 October 2026, #756: Tal Heuberger's
-    /// unit models count as reviewed and approved): the Arab Legion and the Arab Liberation Army. Every other side's rows
-    /// stay data only, on every day of the war, and the placer gives them no spot (so the kits clear no ground for them).
-    /// The two forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
+    /// no placeholder art." Each deployed force has its own figure; Egypt awaits a map representation, Lebanon's hidden row and local forces without a row
+    /// stay off the map. The forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
     /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
     public void OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived()
@@ -254,7 +284,7 @@ public class UnitsInPlayTests
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
-        var drawn = new[] { "arab_legion", "arab_liberation_army" };
+        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force" };
         CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
@@ -277,7 +307,7 @@ public class UnitsInPlayTests
             var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
             Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
-        CollectionAssert.AreEquivalent(drawn, seen, "both forces stand on the map on their sourced days");
+        CollectionAssert.AreEquivalent(drawn, seen, "the four forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
         var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();
@@ -375,8 +405,10 @@ public class UnitsInPlayTests
     // (was 573f3099... and 323cbe04...; every line is otherwise the same, checked against main's logged rosters).
     // #588: Carmeli stands at Haifa from 15 May to 9 July 1948 (was 0612f518... and db15a031...; with its "carmeli@Haifa"
     // entries taken out, the logged rosters hash to those again).
-    const string RosterGolden1950 = "e11d180e619f602009b652679e1967f0faa18c674bcdee440125cf15d2de1036";
-    const string WeeklyGolden = "b459d9a4b8af7547b64a5f82f00dc877d707afabd1e065202ae361972e169ac0";
+    // #1536: Givati's token carries the armoured car from 12 June 1948 (was e11d180e... and b459d9a4...; only Givati's
+    // lines from the week of 12 June on gain "+figure-vehicle-sandwich-convoy-1948-v2").
+    const string RosterGolden1950 = "2cdb0f00eac9b4ae63f69a9e8067a28ce91dfecddb369b029ba605d727c443a6";
+    const string WeeklyGolden = "10926451645267fe6dbbf146b0e75d6cac84a21f098cf0eb8e2189a84eb7a46f";
 
     // ---- Placement, the layer and the card (a built map) ---------------------------------------------------------
 
@@ -1012,8 +1044,12 @@ public class UnitsInPlayTests
     [TestCase(ProseRow + FormedHe + "anchors: []}", "formed_he is set without formed")]
     [TestCase(ProseRow + ProseAnchor + "since_he_review: agent-checked}]}", "since_he_review is set without since_he")]
     [TestCase(ProseRow + ProseAnchor + "since_he: סוף 1947, since_he_sources: " + HeSource + "}]}", "since_he is set without since")]
-    // Only the five meanings: other Hebrew keys are unknown, and a key twice is refused.
-    [TestCase(ProseRow + "number_he: 'חטיבה 1', anchors: []}", "Property 'number_he' not found")]
+    // number_he (#1219 item 2) follows the same rules: blank, orphaned sources or review, a wrong review value.
+    [TestCase(ProseRow + "number_he: '', anchors: []}", "number_he is blank")]
+    [TestCase(ProseRow + "number_he_sources: " + HeSource + ", anchors: []}", "number_he_sources is set without number_he")]
+    [TestCase(ProseRow + "number_he_review: agent-checked, anchors: []}", "number_he_review is set without number_he")]
+    [TestCase(ProseRow + "number_he: 'חטיבה 1', number_he_sources: " + HeSource + ", number_he_review: reviewed, anchors: []}", "number_he_review must be agent-checked")]
+    // Only the known meanings: other Hebrew keys are unknown, and a key twice is refused.
     [TestCase(ProseRow + "sector_he: גזרה, sector_he: גזרה, anchors: []}", "duplicate key sector_he")]
     public void BadHebrewProseNamesTheProblem(string yaml, string expected)
     {

@@ -16,13 +16,13 @@ namespace Statecraft.Sim
         /// <summary>Final hash of Play(content, Until1950). Changing it is a deliberate rules or content change: the value
         /// is pinned in sim/Statecraft.Sim.Tests/golden/manifest.txt, and STATECRAFT_UPDATE_GOLDEN=1 dotnet test rewrites
         /// both (docs/determinism.md). Say why in the commit message.</summary>
-        public const string Hash1950 = "f3ec68b734a3beb24df9a873e0400f0253aed48f3cde2ea12415f1890dcaa5b0";
+        public const string Hash1950 = "8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61";
 
         public static readonly DateTime Until1950 = new DateTime(1950, 1, 1);
 
         /// <summary>Final hash of Play(content, Until1952): the M3 content range (to 31 December 1951). The GDD game ends on
         /// 15 January 1952 (R-LOOP-004), the first turn on or after Until1952, so this is also the mvp-end run.</summary>
-        public const string Hash1952 = "6b374f69a0ed276eeea69737e2a8b0e72d26feb930dab35e8f7c50113c4e9c0b";
+        public const string Hash1952 = "385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83";
 
         public static readonly DateTime Until1952 = new DateTime(1952, 1, 1);
 
@@ -30,6 +30,7 @@ namespace Statecraft.Sim
         public static GameState Play(Content c, DateTime until)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             for (int turn = 0; turn < 1000 && s.Date < until && s.GameOver == null; turn++)
                 s = Simulation.Step(c, s, Orders(c, s)).State;
@@ -51,6 +52,7 @@ namespace Statecraft.Sim
         public static GameState PlayEra(Content c, string eraId, DateTime until, ulong seed = Seed)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var era = c.Eras.FirstOrDefault(e => e.Id == eraId) ?? throw new ArgumentException($"no era '{eraId}' (known: {string.Join(", ", c.Eras.Select(e => e.Id))})");
             if (era.From != c.Rules.Start)
                 throw new NotSupportedException($"era '{eraId}' starts {era.From:yyyy-MM-dd}, but a new game starts {c.Rules.Start:yyyy-MM-dd}: a fresh start of a later era needs that era's start values, which are not read yet (chapters design section 6).");
@@ -71,6 +73,7 @@ namespace Statecraft.Sim
         public static List<Command> SmokeOrders(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var answers = new List<Command>();
             var left = s.Attention;
             foreach (var e in s.PendingEvents.Select(id => c.Events.First(x => x.Id == id)))
@@ -88,6 +91,7 @@ namespace Statecraft.Sim
         public static GameState PlaySmoke(Content c, int turns)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             for (int turn = 0; turn < turns && s.Date < Until1952 && s.GameOver == null; turn++)
                 s = Simulation.Step(c, s, SmokeOrders(c, s)).State;
@@ -102,6 +106,7 @@ namespace Statecraft.Sim
         public static Move SmokeMove(Content c, GameState s)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var places = Movement.NoEntry(c, s);
             foreach (var id in s.Units.Keys)   // a SortedList: in id order
                 foreach (var (q, r) in Movement.Reachable(c, s, id).Keys)
@@ -114,6 +119,7 @@ namespace Statecraft.Sim
         public static GameState PlaySmokeOrders(Content c)
         {
             if (c == null) throw new ArgumentNullException(nameof(c));
+            if (!c.UsesAttention) throw new NotSupportedException("Golden policies are not defined for gdd-0.3.");
             var s = Simulation.NewGame(c, Seed, Mode.Historical);
             return Simulation.Step(c, s, new Command[] { SmokeMove(c, s) }).State;
         }

@@ -44,7 +44,8 @@ public class KeyboardOrdersTests
     }
 
     /// <summary>Map.unity on a 1280x720 panel, a new GDD game begun as GameBoot.Ready does with no start screen, and the
-    /// opening event card answered from the keyboard (which hands the focus to End Turn).</summary>
+    /// opening turn's two event cards (One Army, then the defence of Degania, R-EVT-006) answered from the keyboard (the
+    /// first hands the focus to the second, the second to End Turn).</summary>
     IEnumerator Boot()
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
@@ -64,7 +65,10 @@ public class KeyboardOrdersTests
         Assert.AreEqual("event-card", FocusedName, "precondition: the open card has the focus");
         yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
         yield return Enter();
-        Assert.AreEqual("end-turn", FocusedName, "the answered card hands the focus to End Turn");
+        Assert.AreEqual("event-card", FocusedName, "One Army answered hands the focus to the turn's second card (Degania)");
+        yield return TabTo(v => v.ClassListContains(EventCardPresenter.OptionClass), "an option");
+        yield return Enter();
+        Assert.AreEqual("end-turn", FocusedName, "the last answered card hands the focus to End Turn");
     }
 
     SimBridge Bridge => root.Bridge!;
@@ -141,7 +145,7 @@ public class KeyboardOrdersTests
             "Enter on Move lights the reachable hexes");
         var (q, r) = reach.Last();
         yield return EnterOnTheMapAt(q, r);
-        var queued = Bridge.Queued.OfType<Move>().Single();
+        var queued = Bridge.Session.Committed.OfType<Move>().Single();
         Assert.AreEqual((id, q, r), (queued.Unit, queued.Q, queued.R), "Enter on a lit hex queues the Move");
         Assert.AreEqual("golani", Object.FindFirstObjectByType<UnitLayer>().Selected, "Golani stays selected");
     }
@@ -165,7 +169,10 @@ public class KeyboardOrdersTests
             "Enter on Attack lights the hexes it can name");
         var (q, r) = targets[0];
         yield return EnterOnTheMapAt(q, r);
-        var queued = Bridge.Queued.OfType<UnitOrder>().Single();
-        Assert.AreEqual((id, Combat.Attack, (int?)q, (int?)r), (queued.Unit, queued.Order, queued.Q, queued.R), "Enter on a lit hex queues the attack");
+        // Plan Task 11; spec 4.1 lines131–136: the key press fights the attack now, not at End turn.
+        var committed = Bridge.Session.Committed.OfType<UnitOrder>().Single();
+        Assert.AreEqual((id, Combat.Attack, (int?)q, (int?)r), (committed.Unit, committed.Order, committed.Q, committed.R), "Enter on a lit hex commits the attack");
+        // Event answers correctly stay deferred (spec3.2:89); only the attack must be absent.
+        Assert.IsEmpty(Bridge.Queued.OfType<UnitOrder>().Where(o => o.Order == Combat.Attack), "the attack does not wait for End turn");
     }
 }

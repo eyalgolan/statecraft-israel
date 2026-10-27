@@ -433,13 +433,13 @@ talk, not about a side: they apply in the same way to every poster.
 What each rule rests on:
 
 - Rule 3 is the project's existing correction route: [CONTENT_POLICY.md](../CONTENT_POLICY.md) section 3, "How to
-  dispute a fact" (CONTENT_POLICY.md:57-70), through the **Historical accuracy** issue form
-  (`.github/ISSUE_TEMPLATE/historical_accuracy.yml`). A social-media post is not a source there (CONTENT_POLICY.md:63-64),
-  and re-opening a closed dispute without a new source is off-topic (CONTENT_POLICY.md:69-70).
+  dispute a fact" (CONTENT_POLICY.md:62-75), through the **Historical accuracy** issue form
+  (`.github/ISSUE_TEMPLATE/historical_accuracy.yml`). A social-media post is not a source there (CONTENT_POLICY.md:68-69),
+  and re-opening a closed dispute without a new source is off-topic (CONTENT_POLICY.md:74-75).
 - Rule 4 is the open perspective statement, CONTENT_POLICY.md section 1 (CONTENT_POLICY.md:7-17): facts are open to
-  correction, the framing is not (CONTENT_POLICY.md:59), and asking is "not a judgement on the person asking"
+  correction, the framing is not (CONTENT_POLICY.md:64), and asking is "not a judgement on the person asking"
   (CONTENT_POLICY.md:16).
-- Rule 2 matches CONTENT_POLICY.md:101 (no hate speech, slurs or dehumanising language about any group).
+- Rule 2 matches CONTENT_POLICY.md:119 (no hate speech, slurs or dehumanising language about any group).
 - The owner moderates, or names who does. One pinned thread only; nothing else is pinned.
 
 ### Reply templates

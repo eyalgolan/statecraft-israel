@@ -8,6 +8,11 @@ abandonment date need the owner's sensitivity review before they enter the game;
 here. Method, sources and tags are those of the Galilee note (#1429), the Haifa and Carmel note
 (#1435) and the Negev note (#1403).
 
+Second pass, 2026-10-24 (Refs #97, "Research part open" comment of 24 October): the [GAP] rows were
+searched again. Every row that changed carries the day, the new sources are listed in part 4 under
+"Second pass", and rows that stay open say what was read. Tags added in this pass follow CONTENT_POLICY
+section 2 item 6: a [V] an agent added is written `[V, agent read 2026-10-24; a person's check pending]`.
+
 ## How it was done
 
 - Every page was fetched on 23 October 2026 with the User-Agent
@@ -38,8 +43,9 @@ here. Method, sources and tags are those of the Galilee note (#1429), the Haifa 
   runs, so no figure is read from those pages. Figures are given only where all three population
   columns (Arabs, Jews, Total) survive on one line. Land unit names are quoted as the text layer
   prints them, with [sic] where it plainly misreads the scan.
-- **Census of Palestine 1931**: not used. #1429 found that the archive.org scan has no usable text
-  layer. [GAP]
+- **Census of Palestine 1931**: opened on 2026-10-24 for a presence check of names only, see part 4
+  "Second pass". The first pass (#1429) found no usable text layer; the file does have a partial one,
+  but its columns come out as separate runs and several names are garbled, so no figure is read.
 - **Hebrew Wikipedia** was read through the MediaWiki API as the wikitext of the current revision,
   cited by `oldid`. It is a lead and a cross-check, not an authority; a fact resting on it alone is
   marked **[S, Wikipedia]**. Quotes keep the source's wording with link and bold markup and niqqud removed;
@@ -256,8 +262,14 @@ by sub-district, in the order of part 1.
 - he.wiki `אביחיל`, oldid **43881676**: "המושב הוקם בשנת 1932 וב-1946 אוחד עם המושב הסמוך 'עין
   העובד'". [S, Wikipedia] Village Statistics 1945 (Tulkarm) still names "Avihayil" and "‘Ein ha
   ‘Oved" as separate units.
-- **Merger** with Ein HaOved in **1946** [S, Wikipedia]. Ein HaOved's founding date is a [GAP]; no
-  Gvati or CBS row of that name.
+- **Merger** with Ein HaOved in **1946** [S, Wikipedia]. Encyclopaedia Judaica, entry Avihayil
+  (https://www.encyclopedia.com/religion/encyclopedias-almanacs-transcripts-and-maps/avihayil, opened
+  2026-10-24): "In 1946 Avi?ayil merged with the neighboring moshav, Ein ha-Oved" (the site prints
+  the diacritic as "?"). Two secondary sources agree on 1946 [S].
+- Ein HaOved's founding date stays a [GAP]. (24 Oct) Searched again and not found. Read: no Gvati row
+  (the Gvati page was re-fetched 2026-10-24 and searched for `עין העובד`, 0 matches); no CBS row of that
+  name in the 2024 file read on 23 October; Village Statistics 1945 text layer names "‘Ein ha ‘Oved"
+  in the Tulkarm Table I names run, with no founding date.
 
 #### Givat Haim Ihud and Givat Haim Meuhad (CBS 2018 and 173)
 - CBS **1932** for both; Gvati `14.7.32` for both, `האיחוד` and `הקיבוץ המאוחד`.
@@ -273,7 +285,24 @@ by sub-district, in the order of part 1.
 - he.wiki `כפר יעבץ`, oldid **42335605**: "תושבי המקום התימנים פונו מכפר יעבץ עם פרוץ הקרבות"; "ב-29
   ביוני 1948 עלה ליישב את כפר יעבץ גרעין 'מכורה' של הקיבוץ הדתי". [S, Wikipedia]
 - **Evacuated** in the 1948 war; the day is not given in the passage [GAP]. Resettled by another
-  group on 29 June 1948, after this era. A row for the owner's sensitivity review. The evacuees'
+  group on 29 June 1948, after this era.
+- Second pass, 2026-10-24. Encyclopaedia Judaica, entry Kefar Jawitz (encyclopedia.com, `kefar-jawitz`):
+  "Kefar Jawitz was in the line of battle" in 1948, and "That year, it was taken over by kibbutz"
+  Netser Yissakhar; a moshav of Yemenite immigrants was set up in **1953**. [S, Encyclopaedia Judaica]
+  en.wikipedia `Kfar Yavetz`, oldid 1374532921: "the inhabitants were evacuated for their safety"
+  and the village "was rebuilt as a moshav in 1951" [S, Wikipedia]. **[C]** 1951 (en.wiki) against 1953
+  (EJ) for the new moshav, after this era. JTA, bulletin of Friday 20 February 1948
+  (https://www.jta.org/archive/british-ships-intercept-blockade-runner-with-700-jews-aboard-trail-second-vessel,
+  PDF http://pdfs.jta.org/1948/1948-02-20_043.pdf, OCR read by me): under the dateline "JERUSALEM,
+  Feb. 19. (JTA)", so the event day is **19 February 1948**, "Another band was beaten off when it
+  attempted to overwhelm the Jewish settlement of Kfar Yavetz" [S, JTA]. The settlement was therefore
+  still held on 19 February 1948; the evacuation day stays a [GAP]. (24 Oct) Searched again and not
+  found. Query 1: built-in WebSearch (no Tavily key on this box), `Kfar Yavetz Yemenite settlers
+  evacuated 1948 Sharon JTA`, domains jta.org and pdfs.jta.org, no date filter, run 2026-10-24: 10
+  results, I opened the four jta.org items about Kfar Yavetz or Etzion (bulletins of 26 July 1938, 29
+  December 1947, 20 February 1948 and 28 September 1967): none gives an evacuation day. Query 2: `"Kfar
+  Yavetz" evacuated women children Haganah April 1948 Tulkarm`, extended mode, run 2026-10-24: 9
+  results, only the en.wikipedia `Kfar Yavetz` page above was opened. A row for the owner's sensitivity review. The evacuees'
   new village is Geulei Teiman, below.
 
 #### Hagla (CBS 205)
@@ -296,7 +325,13 @@ by sub-district, in the order of part 1.
 - CBS **1935**; Gvati `4.35`. [V]
 - he.wiki `חבצלת השרון (מושב)`, oldid **42335555**: "היישוב הוקם על ידי עולים מפולין בשנת 1935";
   "בתחילה נקרא המושב 'נחלת יהושע' על שם יהושע סופרסקי". [S, Wikipedia]
-- **Rename** Nahalat Yehoshua to Havatzelet HaSharon; year not given. [GAP]
+- **Rename** Nahalat Yehoshua to Havatzelet HaSharon; year not given. [GAP] (24 Oct) Searched again
+  and not found. Read: en.wikipedia `Havatzelet HaSharon`, oldid 1374531549 (names Lillian Freiman, no
+  old name and no year); Gvati row `חבצלת-השרון`, `עמק חפר`, `4.35`, name origin "שמו של פרח הנפוץ
+  באזור", no old name; Village Statistics 1945 text layer, no unit named `Havatzelet` or
+  `Nahalat Yehoshua`; the Encyclopaedia Judaica slug `havazzelet-ha-sharon` on encyclopedia.com does
+  not exist (HTTP 404). Query: built-in WebSearch, `חבצלת השרון נחלת יהושע שונה שם המושב חבצלת השרון
+  שנת`, no date filter, run 2026-10-24: 9 results, none opened.
 
 #### Shefayim (CBS 232)
 - CBS **1935**; Gvati `1.3.36`.
@@ -312,7 +347,15 @@ by sub-district, in the order of part 1.
 - CBS **1936**; Gvati `11.2.36`. [V]
 - he.wiki `רשפון`, oldid **43624312**: "המושב הוקם בשנת 1936"; "ועדת השמות קראה ליישוב תחילה
   'רשפונה'". [S, Wikipedia]
-- **Rename** Rishpona to Rishpon; year not given. [GAP]
+- **Rename** Rishpona to Rishpon; year not given. [GAP] Second pass, 2026-10-24: Village Statistics
+  1945, Jaffa Sub-District, Table I continued, lists "Rishpon" [V, agent read 2026-10-24; a person's check pending] so the name Rishpon is no later
+  than that table. en.wikipedia `Rishpon`, oldid 1374536355: "Its original proposed name by the name
+  committee, Rishpona"; and, in a separate sentence, "The current name was chosen by its residents"
+  [S, Wikipedia]; Encyclopaedia
+  Judaica, entry Rishpon: the name "appears in the form 'Rishponah' in an inscription of Tiglath
+  Pileser iii" [S, Encyclopaedia Judaica]. Neither gives a year. Query: built-in WebSearch, `Rishpona
+  renamed Rishpon moshav 1936 Names Committee year name changed`, no date filter, run 2026-10-24: 9
+  results, only the en.wikipedia page was opened.
 
 #### Kfar Avoda (CBS 875)
 - CBS **1942**. Not in Gvati's appendix (an institution). [checked 2026-10-23: no row]
@@ -395,6 +438,15 @@ by sub-district, in the order of part 1.
 - **Our reading:** 1922 is the re-founding. The place was first founded in **1912** as Ein Hai,
   **renamed** Kfar Malal in **1914**, **abandoned** in May 1918 and on 3 May 1921, and reoccupied from
   October 1921. All [S, Wikipedia] except the 1922 year. Rows for the owner's sensitivity review.
+- Second pass, 2026-10-24. Encyclopaedia Judaica, entry Kefar Malal (encyclopedia.com, `kefar-malal`):
+  "first founded on privately owned land in 1911 and named Ein ?ai. It was destroyed in the battles of
+  World War i. Renewed by a laborers' group after the war, it was again destroyed in the 1921 Arab
+  riots, but was rebuilt as a moshav in 1922" [S, Encyclopaedia Judaica]. **[C]** 1911 (EJ) against 1912
+  (he.wiki) for the first founding; EJ gives no rename year and dates the first destruction to the war,
+  not to May 1918. The Census of Palestine 1931 (PDF page 24) still prints "'Ein Hai" in its run of
+  names, and no name "Kefar Malal" occurs in the 12,080 lines of its partial text layer (a search for
+  `Malal` finds only "Malalha", another place); the layer is incomplete, so this proves neither that
+  the place was still called Ein Hai in 1931 nor that it was not Kfar Malal. [V, agent read 2026-10-24; a person's check pending] for the printed "'Ein Hai" only.
 
 #### Hod HaSharon (CBS 9700)
 - CBS **1924**; Gvati `1924`, in the section with no affiliation column. [V]
@@ -417,7 +469,12 @@ by sub-district, in the order of part 1.
 - CBS **1926**; Gvati `2.7.26`. [V]
 - he.wiki `גת רימון`, oldid **42332876**: "היישוב הוקם בשנת 1926 כמושב פועלים"; "בתחילה נקרא היישוב
   'התחייה' ומאוחר יותר הוחלף שמו לשם התנ"כי 'גת-רימון'". [S, Wikipedia]
-- **Rename** HaTehiya to Gat Rimon; year not given. [GAP]
+- **Rename** HaTehiya to Gat Rimon; year not given. [GAP] Second pass, 2026-10-24: the Census of
+  Palestine 1931 (taken at midnight on 18 November 1931, archive.org file `PalestineCensus1931.pdf`,
+  PDF page 24, the run of names Benei Beraq, 'Ein Gannim, 'Ein Hai, Fajja, Farrukhya, Gat Rimon, Hadar)
+  prints "Gat Rimon" [V, agent read 2026-10-24; a person's check pending] so the rename is no later than 18 November 1931; the founding was 1926.
+  The year itself is not in anything read. The Hamichlol pages that a Hebrew WebSearch returned
+  (`גת רימון מושב "התחייה" שונה שם גת רימון שנת השם`, 9 results, run 2026-10-24) were not opened.
 
 #### Yarkona, first named Irgun Jidru (CBS 183)
 - CBS **1932**; Gvati `1932`. [V]
@@ -455,8 +512,17 @@ by sub-district, in the order of part 1.
 - he.wiki `פתח תקווה`, oldid **44024409**: "נוסדה כמושבה ב-1878 והוכרזה כעיר בשנת 1937". Its reading
   list includes a chapter titled "חידוש היישוב היהודי בפתח־תקווה על ידי עולי ביאליסטוק, 1883" (not
   opened here). [S, Wikipedia]
-- **Our reading:** a renewal in 1883 implies the place was left before that; when, and for how
-  long, is not in the passages read. [GAP] A row for the owner's sensitivity review.
+- **Our reading:** a renewal in 1883 implies the place was left before that. Second pass, 2026-10-24:
+  Encyclopaedia Judaica, entry Petah Tikvah (encyclopedia.com, `petah-tikvah`): "In 1882 Peta? Tikvah
+  numbered 10 houses and 66 inhabitants. As health conditions became unbearable, the settlers had to
+  transfer to the neighborhood of the Arab village Yehud further south. In 1883 Bilu immigrants
+  renewed settlement on the site of Peta? Tikvah itself." [S, Encyclopaedia Judaica] **[C]** Jewish
+  Virtual Library, timeline (https://jewishvirtuallibrary.org/jsource/History/modtimeline.html, opened
+  2026-10-24): "it was abandoned in 1881 after Arab attacks, it was reestablished in 1883", [S] against
+  EJ, which has the place counted in 1882 and left after that; the causes also differ (JVL "Arab
+  attacks", EJ malaria, quarrels and "health conditions"). **Our reading:** JVL gives 1881 for the
+  leaving; EJ puts the move after the 1882 count and before the 1883 renewal, with no year; both
+  sources agree on the renewal in 1883 and neither gives a day. The exact date stays a [GAP]. A row for the owner's sensitivity review.
 
 ### Tel Aviv district
 
@@ -466,6 +532,15 @@ by sub-district, in the order of part 1.
   בפברואר 1870)"; "בעת מלחמת העולם הראשונה ננטש בית הספר". [S, Wikipedia]
 - **[S]** year 1870, CBS, with he.wiki agreeing; day 15 February 1870 [S, Wikipedia]. Older than 1882;
   kept under the rule above. **Abandoned** during the First World War; no date given. [GAP]
+- Second pass, 2026-10-24. Encyclopaedia Judaica, entry Mikveh Israel (encyclopedia.com,
+  `mikveh-israel`): says nothing of the war years except that Eliyahu Krause directed the school "from
+  1914 to 1955". en.wikipedia `1917 Jaffa deportation`, oldid 1381412055: the deportation of April 1917
+  left out "the teachers and students of the Mikveh Israel school and the Latrun estate" [S, Wikipedia].
+  The two passages do not conflict: he.wiki says the school was abandoned during the war, en.wiki
+  that its teachers and students were left out of the April 1917 deportation. Neither gives a day,
+  and the 1917 passage does not close the gap. The date stays a [GAP]. Query: built-in
+  WebSearch, `Mikve Israel agricultural school abandoned First World War 1917 Turks Jaffa evacuation
+  Jewish settlements`, no date filter, run 2026-10-24: 9 results, I opened the two above only.
 
 #### Tel Aviv-Yafo (CBS 5000)
 - CBS **1909**, `דת יישוב` = 4. Not in Gvati's appendix (a city). [checked 2026-10-23: no row]
@@ -489,7 +564,11 @@ by sub-district, in the order of part 1.
 - he.wiki `גבעתיים`, oldid **44022991**: "נוסדה ב-1922 והוכרזה כעיר בשנת 1959"; "השכונה נוסדה בשנת
   1922, ביוזמתו של דוד שניידרמן, איש העלייה השנייה, ונקראת על שמו של דב בורוכוב". [S, Wikipedia]
 - **[S]** year 1922, CBS, with he.wiki agreeing. **Our reading:** the 1922 place is the Borochov
-  neighbourhood; when the name Givatayim was adopted is not in the passages read. [GAP]
+  neighbourhood. Second pass, 2026-10-24: Encyclopaedia Judaica, entry Givatayim: "founded in 1922 as
+  a workers' suburb named Shekhunat Borochov"; "In 1942 this quarter was united with four others in the
+  vicinity to form the municipal unit of Givatayim" [S, Encyclopaedia Judaica]. The municipal unit
+  named Givatayim dates from **1942**; EJ does not say when the name was first used, so the first use
+  stays open. Village Statistics 1945 (Jaffa) prints "Giv'atayim" [V, agent read 2026-10-24; a person's check pending].
 
 #### Bnei Brak (CBS 6100)
 - CBS **1924**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -506,6 +585,13 @@ by sub-district, in the order of part 1.
   the passage) and **resettled May 1932**. **Rename** Bayit VaGan to Bat Yam, decided **May 1937** [S,
   Wikipedia].
   Rows for the owner's sensitivity review.
+- Second pass, 2026-10-24. Encyclopaedia Judaica, entry Bat Yam (encyclopedia.com, `bat-yam`): "In the
+  1929 Arab riots, this isolated group found refuge in Tel Aviv, returning to their homes in 1931";
+  "In 1937 the quarter received the status of a local council and changed its name to Bat Yam" [S,
+  Encyclopaedia Judaica]. **[C]** return in 1931 (EJ) against May 1932 (he.wiki); keep both. The
+  rename year 1937 is given by both [S]. The day of leaving in 1929 stays a [GAP]. Query: built-in
+  WebSearch, `Bayit Vegan Bat Yam 1929 riots Jewish colony south of Jaffa evacuated residents`, domains
+  jta.org, archive.org and pdfs.jta.org, run 2026-10-24: 6 results, none about Bat Yam, none opened.
 
 #### Kiryat Ono (CBS 2620)
 - CBS **1939**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -567,7 +653,12 @@ by sub-district, in the order of part 1.
   Wikipedia]
 - **[C]** CBS and he.wiki 1883 against Gvati 1880, with 18 June 1882 (the title deed) as a third
   date. **Our reading:** use 1883, the first dwelling, which two sources give; record 1880 and 1882.
-  **Rename** Nahalat Reuven and Wadi Hanin to Ness Ziona; year not given. [GAP] Village Statistics
+  **Rename** Nahalat Reuven and Wadi Hanin to Ness Ziona; year not given. Second pass, 2026-10-24: the
+  Jewish Virtual Library text of the Encyclopaedia Judaica entry (https://jewishvirtuallibrary.org/nes-x1e92-iyyonah):
+  "The moshavah was given its present name in the 1890s when, for the first time in the country, the
+  blue and white Jewish flag was raised at its anniversary celebration." [S, Encyclopaedia Judaica]
+  The Census of Palestine 1931 (PDF page 33) prints "Nes TsiyOna" [V, agent read 2026-10-24; a person's check pending]. The rename is in the **1890s**; no
+  single year is given. Village Statistics
   1945 (Ramle) prints "Wadi Hunein (Nes Tsiyona)".
 
 #### Ayanot (CBS 156)
@@ -581,7 +672,12 @@ by sub-district, in the order of part 1.
 - CBS **1932**; Gvati `15.7.32`. [V]
 - he.wiki `נטעים`, oldid **42990654**: "המושב נוסד ב־י"א בתמוז ה'תרצ"ב, ה־15 ביולי 1932"; "ונקרא
   בתחילה כפר ותיקים". [S, Wikipedia]
-- **Rename** Kfar Vatikim to Netaim; year not given. [GAP]
+- **Rename** Kfar Vatikim to Netaim; year not given. [GAP] (24 Oct) Searched again and not found.
+  Read: Encyclopaedia Judaica, entry Neta'im (no old name, no year); en.wikipedia `Neta'im`, oldid
+  1374534988: "Initially called Kfar HaVatikim ... it was later renamed Neta'im" [S, Wikipedia], no
+  year; Gvati row `נטעים` (no old name in what was read); no unit of either name in the Village
+  Statistics 1945 text layer, which proves nothing for a land-unit list. Query: built-in WebSearch,
+  `נטעים מושב "כפר ותיקים" שונה שמו נטעים שנה`, no date filter, run 2026-10-24: 9 results, none opened.
 
 #### Kvutzat Yavne (CBS 334)
 - CBS **1941**; Gvati `29.10.41`. [V]
@@ -589,7 +685,8 @@ by sub-district, in the order of part 1.
   'קבוצת רודגס' בכפר אברהם שליד פתח תקווה"; of the winter of 1940 to 1941, "עברה הקבוצה למקומה
   הנוכחי, המקום שיועד להקמת היישוב ביבנה". [S, Wikipedia]
 - **Move:** the group's first point, Kvutzat Rodges (1931, near Petah Tikva), moved to Yavne in the
-  winter of 1940 to 1941; the first point's coordinate is a [GAP].
+  winter of 1940 to 1941; the first point's coordinate is a [GAP]. (24 Oct) Searched again and not
+  found: no source read in the second pass names a coordinate or a map sheet for Kvutzat Rodges.
 
 #### Beit Raban (CBS 848)
 - CBS **1946**. Not in Gvati's appendix (a youth village). [checked 2026-10-23: no row]
@@ -659,13 +756,24 @@ where a later CBS row of the same name is noted. Coordinates: [GAP] for all of t
   הראשון של עולי תימן". Village Statistics 1945 (Ramle) names "Kefar Marmorek". [S, Wikipedia]
 - None is in Gvati. [checked 2026-10-23: no row] Tirat Shalom joined Ness Ziona in **1959** [S,
   Wikipedia]; the year Kfar Aharon and Kfar Marmorek joined their towns is not in the passages read.
-  [GAP]
+  [GAP] (24 Oct) Searched again and not found. Read: the Census of Palestine 1931 prints "KefAr
+  AharOn" (PDF page 31) [V, agent read 2026-10-24; a person's check pending], so that place existed by 18 November 1931. The Encyclopaedia Judaica slugs
+  `kefar-aharon`, `kefar-marmorek` and `tirat-shalom` on encyclopedia.com do not exist (HTTP 404).
 
 ### Kfar Brandeis (merged into Hadera)
 - he.wiki `ברנדייס (שכונה)`, oldid **41706076**: "שכונה בעיר חדרה שהוקמה ככפר ברנדייס בשנת 1927
   וצורפה לעיר חדרה לאחר קום המדינה". Village Statistics 1945 (Haifa) names "Kefar Brandeis". Not
   in Gvati. [checked 2026-10-23: no row] [S, Wikipedia]
-- Founded **1927**, joined Hadera after 1948 (no year in the passage). [GAP]
+- Founded **1927**. The first pass quoted the lead only; the body of the same revision, re-read
+  2026-10-24, says of the annexation: "והוא סופח באופן רשמי ב-1951" ("and it was officially annexed in
+  1951"), the passage cites a CBS file of changes since 1948 and a book by Meir Tzan (1978), neither opened.
+  **Annexed 1951** [S, Wikipedia]. The same revision: "במהלך מאורעות תרפ"ט נקראו המתיישבים להתפנות
+  למרכז המושבה חדרה, אבל הגברים חזרו לשמור על המשקים" (in the 1929 riots the settlers were called to
+  evacuate to Hadera, the men returned to guard the farms) [S, Wikipedia]. The CBS file the article cites
+  (http://www.cbs.gov.il/ishuvim/ishuv2013/changes1948_2013.xls) did not open on 2026-10-24: the server
+  answered HTTP 200 with a 2,056-byte CBS error page ("Oops, Something is wrong"), and the same for the
+  six file-name variants under `https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/`.
+  Gvati: no row (re-searched 2026-10-24 for `ברנדי`: one hit, the origin of the name of Ein HaShofet).
 
 ### Ben Shemen moshav (CBS 2013, founded 1952)
 - Gvati `בֶּן-שֶמֶן`, `שפלת לוד`, `11.9.22`, `תנועת המושבים`. CBS has a row `בן שמן (מושב)`, code
@@ -683,19 +791,42 @@ where a later CBS row of the same name is noted. Coordinates: [GAP] for all of t
 - **Our reading:** the 1945 unit is land, not shown to be inhabited; this is not a pre-1948 place on
   the sources read, and is listed only so a later reader does not count it twice.
 
+### Qiryat Shaul (found in the second pass, not a CBS locality)
+- he.wiki `קריית שאול`, oldid **43200207**: its first residents were "בני 14 משפחות של סוחרים יוצאי
+  סלוניקי" who bought about 260 dunams and "עברו להתגורר במקום ב-1922"; the quarter lies on the border
+  of Tel Aviv and Ramat HaSharon. [S, Wikipedia] Village Statistics 1945 (Jaffa, Table I continued)
+  names "Qiryat Shaul" [V, agent read 2026-10-24; a person's check pending] Not in Gvati (searched 2026-10-24 for `קרית שאול` and `קריית שאול`, 0
+  matches). Founded **1922** [S, Wikipedia]; whether the 1945 unit is the whole quarter is not shown.
+
 ## 4. Gaps and what was not done
 
 - [GAP] **Completeness of part 3.** Part 3 lists the abandoned and merged places found from the CBS
-  rows' own histories and the 1945 land units. It is not shown to be complete. Village Statistics
-  1945 also names "Qiryat Shaul" (Jaffa), and "Tel Tsur" and "Benei Binyamin" (Tulkarm); none was
-  checked further. The five neighbourhoods that formed Holon (part 2) have no rows of their own.
-- [GAP] **Census of Palestine 1931**: not used (no usable text layer, see #1429).
-- [GAP] **Coordinates of abandoned, moved and merged places**: none has one here.
-- [GAP] **Rename years** for Nahalat Yehoshua, Rishpona, HaTehiya, Kfar Vatikim, Nahalat Reuven
-  and the Borochov neighbourhood are not in the passages read.
-- [GAP] **Abandonment dates** for Petah Tikva before 1883, Mikve Israel in the First World War, Bat
-  Yam in 1929, Holon's Moledet neighbourhood in 1936 and Kfar Yavetz in 1948 are not given to the day
-  in the passages read.
+  rows' own histories and the 1945 land units. It is not shown to be complete. Second pass,
+  2026-10-24: "Qiryat Shaul" (Jaffa) is now a part 3 row. "Tel Tsur" (Tulkarm, Table I continued) and
+  "Benei Binyamin" (Tulkarm, Table I names run) stay open. Searched: he.wikipedia API `list=search`,
+  `תל צור מושב שרון`, run 2026-10-24, 4 titles (צור נתן, תל מונד, אבן יהודה, עזריאל (מושב)), none named
+  Tel Tsur; `בני בנימין מושב טול כרם 1945`, 4 titles (רמת גן, בנימין זאב הרצל, בנימין ברלוי, יוסף
+  דוידסקו), none a place of that name; none of these was opened. The five neighbourhoods that formed
+  Holon (part 2) have no rows of their own.
+- [GAP] **Census of Palestine 1931**: used on 2026-10-24 for name presence only (see "Second pass"
+  below). The text layer is partial, so no population figure is read and no absence is claimed.
+- [GAP] **Coordinates of abandoned, moved and merged places**: none has one here. (24 Oct) Searched
+  again and not found. Read: the wikitext of the 12 he.wiki revisions cited in part 3 (all but Ben Shemen
+  and Giv'at Shapira) and of Kfar Brandeis (scanned for coordinate and `lat`/`coord` fields: none holds a value; the Kfar Brandeis
+  infobox field `קואורדינטות` is empty), and the 1945 Village Statistics, which carries no coordinates.
+  GovMap and the Survey of Palestine maps were not opened (no map reading was made), so no "Our
+  reading" coordinate is given.
+- [GAP] **Rename years** after the second pass: Borochov neighbourhood to Givatayim: the municipal unit of that name from 1942
+  [S], first use of the name open and Bayit VaGan to Bat Yam at 1937 [S]; Nahalat Reuven and Wadi Hanin to Ness Ziona narrowed to
+  the 1890s [S]; Rishpona to Rishpon (no later than the 1945 table), HaTehiya to Gat Rimon (no later
+  than 18 November 1931), Nahalat Yehoshua to Havatzelet HaSharon and Kfar Vatikim to Netaim still
+  have no year.
+- [GAP] **Abandonment dates** after the second pass: Petah Tikva left in 1881 (JVL) against after the 1882 count and before the 1883 renewal (EJ) [C] (no day),
+  Bat Yam left in the 1929 riots and returned in 1931 or May 1932 [C] (no day), Kfar Brandeis
+  in the 1929 riots the settlers were called to evacuate to Hadera and the men returned to guard the farms (no day), annexed 1951 [S]; Mikve Israel in the First World War,
+  Holon's Moledet neighbourhood in 1936 and Kfar Yavetz in 1948 have no date. For Moledet (24 Oct)
+  searched again and not found: the Encyclopaedia Judaica slug `holon` on encyclopedia.com is the
+  biblical Holon only; the he.wiki `חולון` revision is the only source for 1936.
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources. Seventeen
   of the 116 rows (Tel Aviv-Yafo, Ramat Gan, Givatayim, Bnei Brak, Bat Yam, Kiryat Ono, Holon, Givat
@@ -704,3 +835,47 @@ where a later CBS row of the same name is noted. Coordinates: [GAP] for all of t
   beside it.
 - **Not done:** no hex, no game date, no rule for which of two dates the game should use. Those
   belong to #61 and to the owner's sensitivity review.
+
+### Second pass, 2026-10-24: what was opened
+
+All opened on 2026-10-24 with the same User-Agent, unless noted. A source listed here as "not
+opened" or "did not open" gave no fact to this note.
+- Census of Palestine 1931, archive.org item `CensusOfPalestine1931.PopulationOfVillagesTownsAndAdministrativeAreas`,
+  file `PalestineCensus1931.pdf` (124 PDF pages, text layer read with PyMuPDF, 12,080 lines). The
+  introduction says the census was "taken at midnight on the 18th of November 1931". Names read:
+  PDF page 24 (Benei Beraq, 'Ein Gannim, 'Ein Hai, Fajja, Farrukhya, Gat Rimon, Hadar, Hertseliya,
+  Jaffa), PDF page 25 (Kefar Gannim, Kefar Sava, Magdiel, Nahhlat Gannim, Nahhlat Yits-haq, Pktah
+  Tiqva), PDF page 31 (KefAr AharOn), PDF page 33 (Nes TsiyOna). The sub-district headings are not in
+  the text layer; **our reading** is that pages 24 and 25 are the Jaffa sub-district, from the neighbours
+  Jaffa, Jaffa Suburbs and Hertseliya.
+- Village Statistics 1945 text layer (as in "How it was done"), re-fetched: Jaffa Table I continued
+  ("Qiryat Shaul", "Rishpon", "Ramatayim"), Tulkarm Table I continued ("Tel Tsur") and Tulkarm Table I
+  names run ("Benei Binyamin", "‘Ein ha ‘Oved").
+- Gvati appendix (https://benyehuda.org/read/14684), re-fetched and searched for the rows of the
+  renamed places; no row gives an old name or a rename year.
+- Encyclopaedia Judaica on encyclopedia.com (entries Petah Tikvah, Mikveh Israel, Bat Yam, Avihayil,
+  Kefar Malal, Kefar Jawitz, Netaim, Rishpon, Givatayim), and its text on jewishvirtuallibrary.org
+  (Ness Ziona). Entries that returned HTTP 404 or were a different subject: `gat-rimon`,
+  `havazzelet-ha-sharon`, `kefar-yavetz`, `hadera`, `ein-ha-oved`, `kefar-aharon`, `kefar-marmorek`,
+  `tirat-shalom`, `kefar-brandeis`; `holon` is the biblical Holon; `nes-ziyyonah` is a Zionist society.
+- en.wikipedia (current revisions, ids above) for Rishpon, Havatzelet HaSharon, Neta'im, Kfar Yavetz
+  and `1917 Jaffa deportation`; he.wikipedia `ברנדייס (שכונה)` oldid 41706076 and `קריית שאול` oldid
+  43200207; Jewish Virtual Library timeline of 1700 to 1917 (Petah Tikvah, 1881 and 1883).
+- JTA items of 26 July 1938, 29 December 1947, 20 February 1948 and 28 September 1967 (the last
+  has no mention of Kfar Yavetz) (the Kfar Yavetz row). For 20
+  February 1948 the bulletin PDF has no text layer; I read it with OCR, and the dateline "JERUSALEM,
+  Feb. 19. (JTA)" heads the story. The other three items were read on the jta.org page only and are not
+  used for a date: "35 Arabs Killed in Haifa Bombing, 7 Jews Slain" (26 July 1938,
+  https://www.jta.org/archive/35-arabs-killed-in-haifa-bombing-7-jews-slain); "Killed As Haganah Seeks
+  to Uncover Headquarters of Band Terrorizing Old City" (29 December 1947,
+  https://www.jta.org/archive/killed-as-haganah-seeks-to-uncover-headquarters-of-band-terrorizing-old-city);
+  "Vanguard of Young Settlers Arrives at Etzion for Settlement" (28 September 1967,
+  https://www.jta.org/archive/vanguard-of-young-settlers-arrives-at-etzion-for-settlement). Titles and
+  URLs found through jta.org/wp-json/wp/v2/archive by date, each URL returned HTTP 200 on 2026-10-24.
+- Did not open: the CBS file of changes since 1948 (dead link, see Kfar Brandeis); Davar and the NLI
+  press archive (HTTP 403 from this box); `pdfs.jta.org` index. Queries for the CBS file: built-in
+  WebSearch, `הלשכה המרכזית לסטטיסטיקה שינויים ביישובים מאז 1948 איחוד יישובים קובץ changes`, domain
+  cbs.gov.il, run 2026-10-24: 10 results, I opened the locality-file introduction (`intro.pdf`, 14
+  pages, no link to the changes file) and the CBS publications page (rendered by script, no links in
+  the static HTML); and `cbs.gov.il ishuvim xlsx "שינויים ברשימת היישובים" מאז 1948 קובץ הוספה צירוף
+  יישובים`, no domain filter, 9 results, none opened.

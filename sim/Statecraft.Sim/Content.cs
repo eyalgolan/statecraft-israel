@@ -168,6 +168,12 @@ namespace Statecraft.Sim
         /// (spec 2026-10-12 section 2.1). One value for the whole game: the loader refuses eras that differ, because a save
         /// names one ruleset (section 2.4). R-LOOP-001.</summary>
         public string Loop { get; set; } = Legacy;
+        /// <summary>Optional game-wide save identity. Absent preserves the loop's inferred identity. R-SAVE-001.</summary>
+        public string Ruleset { get => ruleset ?? ""; set => ruleset = value ?? ""; }
+        /// <summary>Distinguishes an absent selector from an explicitly empty/null one, which the loader refuses.</summary>
+        [YamlIgnore] public bool RulesetGiven => ruleset != null;
+        string? ruleset;
+
     }
 
     public sealed class Party
@@ -771,6 +777,19 @@ namespace Statecraft.Sim
         public List<SegmentDef> Segments { get; set; } = new List<SegmentDef>();
         public List<Source> Sources { get; set; } = new List<Source>();
         public string Status { get; set; } = "";
+        /// <summary>The person who signed this row off: a GitHub handle, written only by that person (owner, 15 October 2026,
+        /// #375: "Yes, humans only"; scripts/oss/reviewed_by_guard.py). Empty when no one has; with <see cref="ReviewedOn"/>.</summary>
+        public string ReviewedBy { get => reviewedBy ?? ""; set => reviewedBy = value ?? ""; }
+        /// <summary>True when the file has the key at all, even blank: a blank sign-off is an error.</summary>
+        [YamlIgnore] public bool ReviewedByGiven => reviewedBy != null;
+        string? reviewedBy;
+        /// <summary>The day of the sign-off, YYYY-MM-DD, as the file writes it (read as text, so the loader checks the same
+        /// shape as tools/review_record.py and the map's readers; YamlDotNet's own date parsing would take "15 October 2026");
+        /// set exactly when <see cref="ReviewedBy"/> is.</summary>
+        public string ReviewedOn { get => reviewedOn ?? ""; set { reviewedOn = value ?? ""; ReviewedOnGiven = true; } }
+        /// <summary>True when the file has the key at all, even blank.</summary>
+        [YamlIgnore] public bool ReviewedOnGiven { get; private set; }
+        string? reviewedOn;
     }
 
     /// <summary>One segment of a corridor: the hexes its stretch of the traced line crosses, in order, ending at the route
@@ -1096,6 +1115,9 @@ namespace Statecraft.Sim
         /// while that front holds prisoners or the player's soldiers, has exactly one option and resolves without a draw.
         /// Empty for every other event.</summary>
         public string Prisoners { get; set; } = "";
+        /// <summary>The place among the same turn's cards of the same `from` (R-EVT-006): a lower order comes first, before
+        /// the id decides. Default 0; degania_defence has 1, so One Army opens the game (owner, 24 October 2026, #1568).</summary>
+        public int Order { get; set; }
         /// <summary>Path relative to the content root, set by the loader (not read from YAML).</summary>
         [YamlIgnore] public string File { get; set; } = "";
     }
@@ -1188,12 +1210,30 @@ namespace Statecraft.Sim
         public int R { get; set; }
         public string Operation { get; set; } = "";
         public List<Source> Sources { get; set; } = new List<Source>();
+        /// <summary>The residents' outcome at capture, fled or stayed (Q-ANNEX-1, owner, 18 October 2026, #783; per place on
+        /// #793). Required; empty means the key was missing and is rejected by the loader.</summary>
+        public string Residents { get; set; } = "";
+        /// <summary>The sources for <see cref="Residents"/>, at least one (the per-place sourcing the ruling asks for).</summary>
+        [YamlMember(Alias = "residents_sources")] public List<Source> ResidentsSources { get; set; } = new List<Source>();
+        /// <summary>What joins the player's population when a stayed place is annexed (OWNER QUESTION 1 (a) on #799, the
+        /// starting-city rule); required for stayed, refused for fled.</summary>
+        public TargetAnnexation? Annexation { get; set; }
         /// <summary>Required on every row; empty means the key was missing and is rejected by the loader.</summary>
         public string Status { get; set; } = "";
     }
 
+    /// <summary>A stayed target's annexation values (R-CTRL-016): the residents and their share in work, each a cities.yaml
+    /// value (R-CITY-006). Housing, jobs and condition follow the starting-city rule (Q-START-1), so they are not stored.</summary>
+    public sealed class TargetAnnexation
+    {
+        public CityValue? People { get; set; }
+        [YamlMember(Alias = "employed_share")] public CityValue? EmployedShare { get; set; }
+    }
+
     public sealed class Content
     {
+        /// <summary>Optional design catalogue for future gdd-0.3 systems; never consumed by either existing loop.</summary>
+        public Gdd03BalanceCatalogue? Gdd03Balance { get; set; }
         public List<Office> Offices = new List<Office>();
         public List<Party> Parties = new List<Party>();
         public List<Person> People = new List<Person>();
@@ -1209,8 +1249,29 @@ namespace Statecraft.Sim
         public string Loop => Eras.Count == 0 ? EraSystems.Legacy : Eras[0].Systems.Loop;
         /// <summary>True when the GDD v0.1 loop runs.</summary>
         public bool IsGdd => Loop == EraSystems.Gdd;
-        /// <summary>The ruleset a save names (SaveGame.Ruleset): "legacy" or "gdd-0.1".</summary>
-        public string Ruleset => IsGdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+        /// <summary>The game-wide save identity; an absent selector preserves the loop's original inference.</summary>
+        public string Ruleset => Eras.Count > 0 && Eras[0].Systems.RulesetGiven
+            ? Eras[0].Systems.Ruleset : IsGdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset;
+        /// <summary>Identity predicate: legacy and gdd-0.1 have Attention, gdd-0.3 omits it. The sim reads it to leave
+        /// Attention out of gdd-0.3 (R-LOOP-001, R-GOV-002, #1688).</summary>
+        public bool UsesAttention => Ruleset != SaveGame.Gdd03Ruleset;
+        /// <summary>Exact population capability, independent of loop and Attention (R-POP-001).</summary>
+        public bool UsesPopulationLedger => Ruleset == SaveGame.Gdd03Ruleset;
+        /// <summary>The new identity reads its own catalogue; old callers retain the common rules value.</summary>
+        public int PopulationPeoplePerUnit => UsesPopulationLedger
+            ? RequirePopulationInteger("population.people_per_unit")
+            : (Rules.Mvp ?? throw new InvalidOperationException("Population scale needs mvp rules.")).PeoplePerUnit;
+        internal int RequirePopulationInteger(string key)
+        {
+            if (!UsesPopulationLedger) throw new InvalidOperationException("Population catalogue access requires gdd-0.3.");
+            if (Gdd03Balance == null || Gdd03Balance.Values == null || Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset
+                || !Gdd03Balance.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
+                || row.Values == null || row.Values.Count != 1 || row.Parts == null || row.Parts.Count != 0
+                || !string.IsNullOrEmpty(row.Expression) || row.Values[0] <= 0 || row.Values[0] > int.MaxValue
+                || decimal.Truncate(row.Values[0]) != row.Values[0])
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values." + key, "requires one positive Agreed integer; no Deferred or old-rules fallback");
+            return (int)row.Values[0];
+        }
         /// <summary>The day play ends, a boundary the last turn reaches (Simulation.Step): rules.yaml mvp.end in the GDD loop
         /// (R-LOOP-004), otherwise the last era's end.</summary>
         public DateTime End => IsGdd && Rules.Mvp?.End is DateTime e ? e : Eras[Eras.Count - 1].To;
@@ -1291,6 +1352,9 @@ namespace Statecraft.Sim
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
         /// <summary>Named GDD map locations. Presentation metadata only; gameplay roles remain in their owning systems.</summary>
         public List<MapLocation> MapLocations = new List<MapLocation>();
+        /// <summary>R-COMBAT-010: immutable, effective location placement; duplicate markers grant one bonus.</summary>
+        public bool HasPermanentFort(int q, int r) => Ruleset == SaveGame.Gdd03Ruleset
+            && MapLocations.Any(l => l.Kind == "fort" && l.Q == q && l.R == r);
         /// <summary>The curated settlement-control targets, in file order (R-CTRL-001).</summary>
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>

@@ -9,7 +9,7 @@ using YamlDotNet.RepresentationModel;
 /// <summary>Every balance number of the GDD loop lives in content/ as a labelled design value (Q-CUT-1, owner, 15 October
 /// 2026: "Labelled design values"): tagged on its own line, and listed here, so a new number cannot slip in untagged and
 /// the owner reviews one list. R-LOOP-005.</summary>
-public class DesignValuesTests
+public partial class DesignValuesTests
 {
     public const string Tag = "# DESIGN VALUE: owner-set balance, not a historical figure";
 
@@ -185,6 +185,7 @@ public class DesignValuesTests
         // The national Arms pool (Phase 2 PR 3b; #781, owner 18 October 2026: "Approve as drafted").
         ("rules.yaml", "attention_cost.buy_arms"),
         ("rules.yaml", "attention_cost.resolve_capture"),   // #797 (Q-TECH-3): proposed, for owner override
+        ("rules.yaml", "attention_cost.end_occupation"),   // #799 (R-CTRL-014): proposed, for owner override
         ("rules.yaml", "mvp.arms_start"),
         ("rules.yaml", "mvp.arms_price"),
         ("rules.yaml", "mvp.arms_per_recruit_group"),

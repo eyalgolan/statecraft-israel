@@ -16,9 +16,14 @@ namespace Statecraft.Game.Map
         /// <summary>The art spike's procedural settlement kits and trees (Kit.mat, Tree.mat: Statecraft/Kit). Optional: without
         /// them the map keeps the placeholder marker boxes.</summary>
         [SerializeField] Material kitMaterial, treeMaterial;
-        /// <summary>Tal Heuberger's building models the towns draw up close (issue #659; Kits.TownModels.SetPath): they load with the
-        /// map, never from a Resources folder. Without them (or with one missing) the towns keep their kits at every zoom.</summary>
+        /// <summary>Tal Heuberger's building models the towns draw up close (issue #659; Kits.TownModels.SetPath). The map scene
+        /// leaves it empty (#1273): in a player the 18 originals stream after the first frame (TownModelLayer), so they are not
+        /// in the first download. In edit mode, where the stream never runs, the editor reads the list from the AssetDatabase
+        /// (<see cref="TownModelsForBuild"/>). With one missing the towns keep their kits at every zoom.</summary>
         [SerializeField] Kits.TownModelSet townModels;
+#if UNITY_EDITOR
+        bool townModelsConfigured;
+#endif
         /// <summary>The terrain water's mesh, baked (MapTexturePaths.WaterMesh, issue #195). Optional: without it, or when it
         /// is for other heights, the map derives the mesh at load (about 90 ms at the boot budget's CPU throttling).</summary>
         [SerializeField] TextAsset terrainWaterMesh;
@@ -154,8 +159,12 @@ namespace Statecraft.Game.Map
 
         /// <summary>The hexes a unit's Move can go to, outlined while the player picks one (#754): a child of the terrain.</summary>
         public const string ReachableName = "ReachableHexes";
+        /// <summary>The multi-turn route preview's mesh, beside <see cref="ReachableName"/> under the terrain.</summary>
+        public const string RouteName = "UnitRoute";
         /// <summary>The reachable hexes' band, half the selection's, so the lit hexes read as choices and not as the selection.</summary>
         public const float ReachableWidth = SelectionWidth / 2;
+        /// <summary>The route last passed to <see cref="ShowRoute"/>, for the turn-number labels.</summary>
+        public IReadOnlyList<(int q, int r, int turn)> ShownRoute { get; private set; } = Array.Empty<(int, int, int)>();
 
         /// <summary>Outlines every hex in <paramref name="hexes"/> (Movement.Reachable's, from InfoPanelPresenter) with a thin
         /// band in one mesh, drawn and draped as <see cref="Select"/>'s outline and with its material; nothing to light (none,
@@ -211,6 +220,58 @@ namespace Statecraft.Game.Map
             go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
         }
 
+        /// <summary>Shows the sim's multi-turn route as thin hex bands. Each item carries its arrival turn;
+        /// <see cref="Statecraft.Game.UI.MapLabelsPresenter"/> labels the last hex of each turn. Empty hides the preview.</summary>
+        public void ShowRoute(IReadOnlyList<(int q, int r, int turn)> route)
+        {
+            ShownRoute = route?.ToList() ?? new List<(int, int, int)>();
+            if (Terrain == null || Hexes == null) return;
+            var found = Terrain.transform.Find(RouteName);
+            var go = found != null ? found.gameObject : null;
+            if (go == null)
+            {
+                go = new GameObject(RouteName);
+                go.transform.SetParent(Terrain.transform, false);
+                var mesh = Terrain.GetComponent<MapRuntimeAssets>().Own(new Mesh { name = RouteName });
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = selectionMaterial;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var byHex = new Dictionary<(int, int), HexJson>();
+            foreach (var h in Hexes.hexes) byHex[(h.q, h.r)] = h;
+            float size = Hexes.hex_size_km * 1000f;
+            int n = MapBuilder.RingVertices;
+            var verts = new List<Vector3>(); var tris = new List<int>();
+            var ring = new List<Vector3>(2 * n); var middle = new List<Vector3>(n);
+            foreach (var at in ShownRoute)
+            {
+                if (!byHex.TryGetValue((at.q, at.r), out var hex)) continue;
+                var c = Frame.ToWorld(hex.lon, hex.lat, 0);
+                var centre = new Vector2(c.x, c.z);
+                ring.Clear(); middle.Clear();
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size, SelectionClearanceM, ring);
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - ReachableWidth), SelectionClearanceM, ring);
+                MapBuilder.DrapedRing(Frame, Terrain.terrainData, centre, size * (1f - ReachableWidth / 2), SelectionClearanceM, middle);
+                int b0 = verts.Count;
+                for (int j = 0; j < n; j++)
+                {
+                    float y = Mathf.Max(ring[j].y, Mathf.Max(ring[n + j].y, middle[j].y));
+                    ring[j] = new Vector3(ring[j].x, y, ring[j].z);
+                    ring[n + j] = new Vector3(ring[n + j].x, y, ring[n + j].z);
+                }
+                verts.AddRange(ring);
+                for (int j = 0; j < n; j++)
+                {
+                    int a = b0 + j, b = b0 + (j + 1) % n, ai = b0 + n + j, bi = b0 + n + (j + 1) % n;
+                    tris.AddRange(new[] { a, ai, b, b, ai, bi });
+                }
+            }
+            var m = go.GetComponent<MeshFilter>().sharedMesh;
+            m.Clear(); m.SetVertices(verts); m.SetTriangles(tris, 0); m.RecalculateBounds();
+            go.GetComponent<MeshRenderer>().enabled = verts.Count > 0;
+        }
+
         public void Configure(Material terrain, Material marker, Material selection, Material sea, Material frame)
         {
             terrainMaterial = terrain; markerMaterial = marker; selectionMaterial = selection;
@@ -220,7 +281,26 @@ namespace Statecraft.Game.Map
         /// <summary>The settlement kits' and trees' materials (null, null: placeholder markers only).</summary>
         public void ConfigureKits(Material kit, Material tree) { kitMaterial = kit; treeMaterial = tree; }
         /// <summary>Sets the town models (issue #659): the editor bake saves them in the scene; tests set a broken list.</summary>
-        public void ConfigureTownModels(Kits.TownModelSet set) => townModels = set;
+        public void ConfigureTownModels(Kits.TownModelSet set)
+        {
+            townModels = set;
+#if UNITY_EDITOR
+            townModelsConfigured = true;
+#endif
+        }
+
+        /// <summary>The list KitLayer gets: the configured one; else, in edit mode only (tests, MapCapture), the editor's list
+        /// at Kits.TownModels.SetPath; else null, which in play mode streams the originals (#1273). A missing asset reference
+        /// is Unity's fake null: this returns a real null.</summary>
+        Kits.TownModelSet TownModelsForBuild()
+        {
+            if (townModels != null) return townModels;
+#if UNITY_EDITOR
+            if (!townModelsConfigured && !Application.isPlaying)
+                return UnityEditor.AssetDatabase.LoadAssetAtPath<Kits.TownModelSet>(Kits.TownModels.SetPath);
+#endif
+            return null;
+        }
 
         /// <summary>Each settlement's footprint on the ground plane (centre x, z; radius m): the kits' discs
         /// (SettlementKits.FootprintRadiusM) of the game settlements and, with the kits, of the 1948 localities, so the units
@@ -322,6 +402,8 @@ namespace Statecraft.Game.Map
 
         /// <summary>Builds from the repository files with System.IO (editor and desktop only).</summary>
         public void Build() => Build(GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap));
+
+        internal Collection.ProductionResidency Residency { get; } = Collection.ProductionResidency.Approved();
 
         public void Build(MapInputs inputs)
         {
@@ -489,10 +571,10 @@ namespace Statecraft.Game.Map
                 // The units' clearings go in as corridors (village houses and tents keep off them too); the tokens outside
                 // the towns are kept off by the Bedouin camps, the one kit placed where no footprint is (review I5).
                 var kits = Kits.KitLayer.Build(list, localitySettlements, localities.Encampments, Terrain, Frame, Hexes, meta.elev_min_m, kitMaterial, treeMaterial,
-                    townModels != null ? townModels : null,   // a missing asset reference is Unity's fake null: pass a real null
+                    TownModelsForBuild(),
                     terrainGo.GetComponent<MapRuntimeAssets>(), markers, out var stats,
                     KitRouteCorridors.Concat(UnitClearings.Select(c => (new List<Vector2> { c.centre, c.centre + Vector2.right }, c.radius))).ToList(), kitColumns,
-                    unitRings);
+                    unitRings, Residency);
                 kits.transform.SetParent(transform, true);
                 kitProbe = kits.GetComponentInChildren<MeshRenderer>(true);
                 KitStats = stats;

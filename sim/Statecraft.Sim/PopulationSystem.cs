@@ -7,7 +7,11 @@ namespace Statecraft.Sim
     /// <summary>Jewish population by origin group. Historical mode takes arrivals from the sourced aliyah series.</summary>
     public static class PopulationSystem
     {
-        public static void Init(Content c, GameState s) => s.Population = new Dictionary<string, double>(c.Rules.InitialPopulation);
+        public static void Init(Content c, GameState s)
+        {
+            PopulationLedger.RefuseAggregate(s);
+            s.Population = new Dictionary<string, double>(c.Rules.InitialPopulation);
+        }
 
         /// <summary>Arrivals in [from, to). Each series period is inclusive of both dates and spread evenly by day.</summary>
         public static Dictionary<string, double> Arrivals(Content c, DateTime from, DateTime to)
@@ -29,12 +33,13 @@ namespace Statecraft.Sim
 
         public static void Apply(Content c, GameState s, DateTime to, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var rate = c.RulesAt(s.Date).NaturalIncreasePerYear * yearFraction;
             foreach (var k in s.Population.Keys.ToList()) s.Population[k] *= 1 + rate;
             foreach (var kv in Arrivals(c, s.Date, to).OrderBy(k => k.Key, StringComparer.Ordinal))
             {
                 s.Population[kv.Key] = (s.Population.TryGetValue(kv.Key, out var v) ? v : 0) + kv.Value;
-                if (kv.Value > 0) why.Add(new Cause("population", kv.Key, kv.Value, FormattableString.Invariant($"{kv.Value:N0} immigrants arrived ({PlayerText.Region(c, kv.Key)})")));
+                if (kv.Value > 0) why.Add(new Cause("population", kv.Key, kv.Value, FormattableString.Invariant($"{kv.Value:N0} immigrants arrived ({PlayerText.Region(c, kv.Key)})"), key: CauseKeys.Arrived));
             }
         }
     }

@@ -1,0 +1,19 @@
+# Annexing a stayed town (#799): mvp-occupy-cost's two steps, then the answer to the end of the occupation. Golani's unit
+# (id 0) moves onto Nazareth's hex on the first turn and captures it (R-CTRL-004); the scenario answers with Occupy on
+# 15 June 1948 (R-CTRL-011), the timer runs out after six turn resolutions (R-CTRL-012), and on 15 December 1948 the
+# scenario annexes Nazareth (R-CTRL-016). Nazareth's residents stayed (#793), so it becomes one city by the starting-city
+# rule from its census-day count (OWNER QUESTION 1 (a) on #799; the owner approved the count on 24 October 2026), the
+# upkeep stops and the unit may leave (OWNER QUESTION 3 (a)). It plays the real content, so it moves whenever a rule or
+# value it reaches changes, Nazareth's approved count included.
+name: mvp-annex-nazareth
+until: 1949-01-15
+steps:
+  - on: 1948-05-15
+    commands:
+      - { kind: move, unit: 0, q: 7, r: 10 }
+  - on: 1948-06-15
+    commands:
+      - { kind: resolve_capture, settlement: nazareth, outcome: occupy }
+  - on: 1948-12-15
+    commands:
+      - { kind: end_occupation, settlement: nazareth, outcome: annex }

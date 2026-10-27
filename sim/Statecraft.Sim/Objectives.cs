@@ -42,6 +42,7 @@ namespace Statecraft.Sim
         /// the date the turn starts from (docs/determinism.md, "Rules per era").</summary>
         public static void Complete(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var o in c.Objectives)   // in objectives.yaml's order (the loader; R-OBJ-007)
                 if (Holds(c, s, o)) Record(c, s, r, o.Id, next, why);
         }
@@ -94,7 +95,8 @@ namespace Statecraft.Sim
             s.ScoreObjectivePoints += basePoints;   // R-SCORE-001: the parts as scored, not rebuilt later
             s.ScoreTimingBonuses += bonus;
             // In the Why list's "events" group: the card that follows is an event (Unity's WhyPresenter groups by system).
-            why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points)));
+            why.Add(new Cause("events", id, points, string.Format(CultureInfo.InvariantCulture, "{0}: completed, {1} points", o.Name, points),
+                key: CauseKeys.ObjectiveCompleted, args: new[] { o.Name, o.NameHe }));
             return true;
         }
     }

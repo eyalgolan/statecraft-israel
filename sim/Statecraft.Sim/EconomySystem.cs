@@ -25,6 +25,7 @@ namespace Statecraft.Sim
 
         public static TreasuryFlows Flows(Content c, GameState s, double yearFraction)
         {
+            PopulationLedger.RefuseAggregate(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             return new TreasuryFlows(r.TaxPerCapitaPerYear * pop * yearFraction, r.SpendingPerCapitaPerYear * pop * yearFraction,
                 MobilizationCost(c, s.Date, s.Mobilization, yearFraction));
@@ -36,13 +37,16 @@ namespace Statecraft.Sim
 
         /// <summary>Pays <paramref name="cost"/> from the Treasury, borrowing what it lacks: the shortfall goes to Debt and the
         /// Treasury stops at 0, as for map actions and the deficit. <paramref name="purpose"/> ends the cause ("for training").
-        /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).</summary>
-        public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why)
+        /// The GDD orders pay through it (owner decision "Allow borrowing", 2026-10-15; R-TRAIN-001, R-SITE-001).
+        /// <paramref name="purposeKey"/> (a CauseKeys.Purpose) and <paramref name="purposeArgs"/> say the same purpose for the
+        /// UI (CauseKeys.Borrowed, B1); <paramref name="purpose"/> stays the English Message.</summary>
+        public static void PayOrBorrow(Content c, GameState s, double cost, string purpose, List<Cause> why, string purposeKey, params string[] purposeArgs)
         {
             s.Treasury -= cost;
             if (s.Treasury >= 0) return;
             s.Debt += -s.Treasury;
-            why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} {purpose}"));
+            why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} {purpose}",
+                key: CauseKeys.Borrowed, args: new[] { purposeKey }.Concat(purposeArgs).ToList()));
             s.Treasury = 0;
         }
 
@@ -51,22 +55,25 @@ namespace Statecraft.Sim
         {
             var cost = Cities.AnnualUpkeep(c, s, r) * yearFraction;
             if (cost == 0) return;
-            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)"));
-            PayOrBorrow(c, s, cost, "for civilian upkeep", why);
+            why.Add(new Cause("economy", "treasury", -cost, $"{PlayerText.Change(c, "treasury", -cost)} (civilian upkeep)", key: CauseKeys.CivilianUpkeep));
+            PayOrBorrow(c, s, cost, "for civilian upkeep", why, CauseKeys.Purpose.CivilianUpkeep);
         }
 
         public static void Apply(Content c, GameState s, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var r = c.RulesAt(s.Date); var pop = s.TotalPopulation;
             var flows = Flows(c, s, yearFraction);
             var revenue = flows.Tax; var spending = flows.Spending; var mobilization = flows.Mobilization;
             s.Treasury += revenue - spending - mobilization;
             why.Add(new Cause("economy", "treasury", revenue - spending - mobilization,
-                $"{PlayerText.Change(c, "treasury", revenue - spending - mobilization)} (tax {PlayerText.Money(c, "treasury", revenue)}, spending {PlayerText.Money(c, "treasury", spending)}, reserve call-up {PlayerText.Money(c, "treasury", mobilization)})"));
+                $"{PlayerText.Change(c, "treasury", revenue - spending - mobilization)} (tax {PlayerText.Money(c, "treasury", revenue)}, spending {PlayerText.Money(c, "treasury", spending)}, reserve call-up {PlayerText.Money(c, "treasury", mobilization)})",
+                key: CauseKeys.MoneyFlows, args: new[] { CauseKeys.Number(revenue), CauseKeys.Number(spending), CauseKeys.Number(mobilization) }));
             if (s.Treasury < 0)
             {
                 s.Debt += -s.Treasury;
-                why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} to cover the deficit"));
+                why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} to cover the deficit",
+                    key: CauseKeys.Borrowed, args: new[] { CauseKeys.Purpose.Deficit }));
                 s.Treasury = 0;
             }
 
@@ -75,11 +82,12 @@ namespace Statecraft.Sim
             var imports = r.ImportsPerCapitaPerYear * pop * yearFraction;
             var net = exports + inflow - imports;
             s.FxReserves += net;
-            why.Add(new Cause("economy", "fx_reserves", net, $"{PlayerText.Change(c, "fx_reserves", net)} (exports {PlayerText.Money(c, "fx_reserves", exports)}, donations and loans {PlayerText.Money(c, "fx_reserves", inflow)}, imports {PlayerText.Money(c, "fx_reserves", imports)})"));
+            why.Add(new Cause("economy", "fx_reserves", net, $"{PlayerText.Change(c, "fx_reserves", net)} (exports {PlayerText.Money(c, "fx_reserves", exports)}, donations and loans {PlayerText.Money(c, "fx_reserves", inflow)}, imports {PlayerText.Money(c, "fx_reserves", imports)})",
+                key: CauseKeys.FxFlows, args: new[] { CauseKeys.Number(exports), CauseKeys.Number(inflow), CauseKeys.Number(imports) }));
 
             bool on = s.ActiveSituations.Contains(FxCrisis);
-            if (!on && s.FxReserves < 0) { s.ActiveSituations.Add(FxCrisis); why.Add(new Cause("economy", FxCrisis, 1, "Foreign currency reserves are exhausted")); }
-            else if (on && s.FxReserves > 0.25 * r.FxStart) { s.ActiveSituations.Remove(FxCrisis); why.Add(new Cause("economy", FxCrisis, -1, "Foreign currency crisis eased")); }
+            if (!on && s.FxReserves < 0) { s.ActiveSituations.Add(FxCrisis); why.Add(new Cause("economy", FxCrisis, 1, "Foreign currency reserves are exhausted", key: CauseKeys.FxCrisisBegan)); }
+            else if (on && s.FxReserves > 0.25 * r.FxStart) { s.ActiveSituations.Remove(FxCrisis); why.Add(new Cause("economy", FxCrisis, -1, "Foreign currency crisis eased", key: CauseKeys.FxCrisisEased)); }
 
             // The consequence: with no currency to pay for them, food imports are cut while the crisis lasts. In the GDD loop
             // the cut falls on the Food stock's imports instead (R-FOOD-002, Q-POOL-4), and food_supply follows the stock.
@@ -87,7 +95,7 @@ namespace Statecraft.Sim
             {
                 var change = EffectsSystem.Shift(c, s, "food_supply", r.FxCrisisFoodPerYear * yearFraction);
                 if (change != 0)
-                    why.Add(new Cause("economy", "food_supply", change, $"{PlayerText.Change(c, "food_supply", change)} (foreign currency crisis: food imports cut)"));
+                    why.Add(new Cause("economy", "food_supply", change, $"{PlayerText.Change(c, "food_supply", change)} (foreign currency crisis: food imports cut)", key: CauseKeys.FxCrisisFood));
             }
         }
 
@@ -118,7 +126,7 @@ namespace Statecraft.Sim
             var list = pending.ToList();
             var queued = list.OfType<AllocateBudget>().LastOrDefault();
             if (s.GameOver != null || Same(draft, queued?.Shares ?? s.Budget)) return false;
-            return Same(draft, s.Budget)
+            return Same(draft, s.Budget) || !c.UsesAttention
                 || AttentionSystem.Cost(c, s, "allocate_budget") <= AttentionSystem.Left(c, s, list.Where(x => !(x is AllocateBudget))) + 1e-9;
         }
 

@@ -19,16 +19,16 @@ namespace Statecraft.Game.Map.Collection
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
     /// that core, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).
-    /// Up close, where #700's building models draw the same town (TownModelLayer.CloseAt, with its hysteresis), the
-    /// whole-town model hides (<see cref="Choose"/>). The town's procedural houses never draw, at any zoom: its kit mesh gives
-    /// way to its close mesh (the kit without its buildings; its mosques, churches, walls and port stay, as #700 keeps them)
-    /// for good (TownModelLayer.Suppress). A placement's landmark (the ma'abara, the shikun) still stands beside its camp or
-    /// housing project, on free ground (<see cref="Spot"/>), <see cref="SizeM"/> across, and hides up close too.
-    /// Each model is the strategic zoom's mesh (CollectionDetail.Far, at most 4,500 triangles), asked of
-    /// <see cref="CollectionStream"/> when the first landmark needs it, so it is never fetched before the first frame. It fails
-    /// open: a model that does not stream logs one warning, its landmarks are not drawn and its towns keep their kit houses
-    /// far off (they are not suppressed); without #700's building models (TownModelLayer.HasModels false) the whole-town
-    /// models draw at every zoom, so no mapped town is ever left without buildings.</summary>
+    /// C89/C93 bounds that representation by each camera's admitted focus. Overview cameras acquire whole-town originals;
+    /// close cameras acquire individual building originals where available, with no duplicate ownership. Only a complete,
+    /// admitted representation hides that camera's procedural houses. Loading, failure and outside-focus views keep code-built
+    /// fallback. Within an admitted layer, absence of an individual-building representation leaves the whole town eligible
+    /// up close; a failed/null streamed Near reply instead keeps the code-built kit, without a second whole-town bundle.
+    /// Without a layer/configured spatial policy, no whole-town original is admitted.
+    /// A placement's landmark (ma'abara or shikun) stands beside its camp/housing project on free ground (Spot).
+    /// CollectionDetail.Far now names the same original file, not a generated 4,500-triangle mesh. Requests stream after
+    /// the first frame, are shared by acquired lease and retire when the last camera leaves. A failed model warns once;
+    /// a stale reply never revives an evicted town. No source mesh, texture or animation is rewritten.</summary>
     [ExecuteAlways]
     public sealed class TownLandmarks : MonoBehaviour
     {
@@ -88,7 +88,9 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>How the landmarks ask for a model: the game's stream. A test seam (internal; the tests see it through
         /// InternalsVisibleTo).</summary>
-        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = CollectionStream.Request;
+        static readonly Action<string, CollectionDetail, Action<GameObject?>> DefaultRequest = CollectionStream.Request;
+        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
+        internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
 
         /// <summary>The model for settlement <paramref name="s"/>, or null for none.</summary>
         public static string? ModelFor(Settlement s) =>
@@ -289,8 +291,18 @@ namespace Statecraft.Game.Map.Collection
         MapScene? map;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
-        /// <summary>Each camera's last choice (by instance id): TownModelLayer.CloseAt's hysteresis.</summary>
-        readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
+        readonly Dictionary<string, IDisposable?> leases = new Dictionary<string, IDisposable?>(StringComparer.Ordinal);
+        readonly Dictionary<string, int> versions = new Dictionary<string, int>(StringComparer.Ordinal);
+        readonly List<IDisposable> retiring = new List<IDisposable>();
+        readonly List<UnityEngine.Object> retiredInstances = new List<UnityEngine.Object>();
+        readonly Dictionary<Renderer, string> rendererTowns = new Dictionary<Renderer, string>();
+        readonly List<(Renderer renderer, bool off)> previous = new List<(Renderer, bool)>();
+        readonly HashSet<string> admittedKeys = new HashSet<string>(StringComparer.Ordinal);
+        int requestVersion;
+        bool? focusPolicy;
+        bool retirementScheduled;
+        int pendingRetirementLeases;
+        readonly List<(string id, CollectionDetail detail)> retiringKeys = new List<(string, CollectionDetail)>();
         readonly List<Renderer> renderers = new List<Renderer>();
         List<Want> wants = new List<Want>();
         DateTime date;
@@ -324,15 +336,111 @@ namespace Statecraft.Game.Map.Collection
             return t;
         }
 
+        internal CollectionResidencyMetrics.Category ResidencySnapshot()
+        {
+            var row = CollectionResidencyMetrics.Row("whole_towns", isActiveAndEnabled ? admittedKeys.Count : 0, transform.childCount,
+                asked.Concat(prefabs.Keys), leases.Values.Count(l => l != null), asked.Count(k => !prefabs.ContainsKey(k)),
+                prefabs.Values.Count(p => p != null), renderers.Count(r => r != null), 0, prefabs.Values.Count(p => p == null),
+                asked.Select(id => id + "|Far"));
+            row.retiringLeases = retiring.Count; row.pendingDestroy = retiredInstances.Count(o => o != null && o is GameObject); return row;
+        }
+        bool Allowed(Want want) => map != null
+            ? map!.Residency.Towns.Enabled && Layer()?.WantsWholeTownAny(want.Key) == true
+            : !want.OnTown || Layer()?.WantsWholeTownAny(want.Key) == true;
+        bool WholeReady(string id, Camera camera) =>
+            Layer()?.WantsWholeTown(id, camera) == true && Seats.ContainsKey(id);
+
         void Show(List<Want> next, DateTime at)
         {
             date = at;
-            if (next.SequenceEqual(wants)) return;
-            wants = next;
-            foreach (var w in wants)
-                if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
-            dirty = true;
-            Rebuild();
+            bool focused = Layer()?.UsesFocusedOriginals == true;
+            if (next.SequenceEqual(wants) && focusPolicy == focused) return;
+            focusPolicy = focused; wants = next;
+            var layer = Layer();
+            if (layer != null)
+            {
+                layer.ConfigureWholeTowns(wants.Where(w => w.OnTown || map != null).Select(w =>
+                    (w.Key, new Bounds(new Vector3(w.At.x, 0, w.At.y), new Vector3(w.Radius * 2, 0, w.Radius * 2)))).ToList());
+                layer.WholeTownReady = WholeReady;
+            }
+            dirty = true; RefreshWanted();
+        }
+
+        void RefreshWanted()
+        {
+            var keep = new HashSet<string>(StringComparer.Ordinal);
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var want in wants) if (Allowed(want)) { keep.Add(want.Model); keys.Add(want.Key); }
+            bool townsChanged = !admittedKeys.SetEquals(keys);
+            admittedKeys.Clear(); admittedKeys.UnionWith(keys);
+            var old = new List<string>();
+            foreach (var model in asked) if (!keep.Contains(model)) old.Add(model);
+            foreach (string model in old)
+            {
+                asked.Remove(model); prefabs.Remove(model); versions.Remove(model);
+                if (leases.TryGetValue(model, out var lease) && lease != null) { retiring.Add(lease); retiringKeys.Add((model, CollectionDetail.Far)); }
+                leases.Remove(model);
+            }
+            bool membershipChanged = !keep.SetEquals(asked);
+            if (townsChanged || old.Count > 0 || membershipChanged) { dirty = true; CollectionResidencyMetrics.MarkDirty(); }
+            // Retire the old generation before rebuilding or acquiring the next batch.
+            if (old.Count > 0 && retiring.Count > 0)
+            {
+                ClearInstances(); dirty = true;
+                if (Application.isPlaying && !retirementScheduled) { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
+                else if (!Application.isPlaying) RetireLeases();
+                return;
+            }
+            if (pendingRetirementLeases > 0) return;
+            Rebuild(); // stop old instances before retiring their asset ownership
+            if (retiring.Count > 0 && !retirementScheduled && Application.isPlaying)
+            { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
+            else if (!Application.isPlaying) RetireLeases();
+            if (pendingRetirementLeases == 0 && retiring.Count == 0 && keep.Count > 0 && membershipChanged)
+            {
+                // Admission already validated this camera's production policy. The stream itself waits for GameReady.
+                RequestWanted();
+            }
+        }
+
+        void RequestWanted()
+        {
+            if (this == null || !isActiveAndEnabled || pendingRetirementLeases != 0 || retiring.Count != 0) return;
+            foreach (var want in wants)
+            {
+                if (!isActiveAndEnabled) break;
+                if (!Allowed(want) || !asked.Add(want.Model)) continue;
+                string model = want.Model; int version = ++requestVersion;
+                versions[model] = version; leases[model] = null;
+                Action<GameObject?> answer = prefab =>
+                {
+                    if (this == null || !isActiveAndEnabled || !versions.TryGetValue(model, out int current) || current != version) return;
+                    OnModel(model, prefab);
+                };
+                if (Request == DefaultRequest)
+                {
+                    var lease = Acquire(model, CollectionDetail.Far, answer);
+                    if (this != null && isActiveAndEnabled && versions.TryGetValue(model, out int live) && live == version) leases[model] = lease;
+                    else { retiring.Add(lease); retiringKeys.Add((model, CollectionDetail.Far)); RetireLeases(); }
+                }
+                else Request(model, CollectionDetail.Far, answer); // existing editor/fake-source seam owns its assets
+            }
+        }
+        System.Collections.IEnumerator RetireAfterFrame()
+        {
+            yield return null; retirementScheduled = false; RetireLeases();
+        }
+        internal void RetireLeases()
+        {
+            if (retiring.Count == 0) { retiredInstances.RemoveAll(instance => instance == null); return; }
+            var batch = retiring.ToArray(); var instances = retiredInstances.ToArray(); var keys = retiringKeys.ToArray();
+            retiring.Clear(); retiredInstances.Clear(); retiringKeys.Clear(); pendingRetirementLeases += batch.Length;
+            CollectionResidencyMetrics.AfterDestroyed("whole_towns", instances, batch, () =>
+            {
+                pendingRetirementLeases -= batch.Length;
+                if (this != null && isActiveAndEnabled) RefreshWanted();
+                CollectionResidencyMetrics.MarkDirty();
+            }, Application.isPlaying && Acquire == CollectionStream.Acquire ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys);
         }
 
         void OnModel(string model, GameObject? prefab)
@@ -342,6 +450,7 @@ namespace Statecraft.Game.Map.Collection
             if (prefab == null)
                 Debug.LogWarning($"LANDMARKS: the town model {model} did not stream; its landmarks are not drawn, and the map plays on without them.");
             dirty = true;
+            CollectionResidencyMetrics.MarkDirty();
             Rebuild();
         }
 
@@ -350,15 +459,10 @@ namespace Statecraft.Game.Map.Collection
         {
             if (!dirty || map == null || map.Terrain == null) return;
             dirty = false;
-            for (int i = transform.childCount - 1; i >= 0; i--)
+            ClearInstances();
+            if (!wants.Any(w => Allowed(w) && prefabs.TryGetValue(w.Model, out var p) && p != null))
             {
-                var old = transform.GetChild(i).gameObject;
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
-            }
-            renderers.Clear(); Placed.Clear(); Missing.Clear(); Seats.Clear();
-            if (!wants.Any(w => prefabs.TryGetValue(w.Model, out var p) && p != null))
-            {
-                Missing.AddRange(wants.Where(w => prefabs.ContainsKey(w.Model)).Select(w => w.Key));
+                Missing.AddRange(wants.Where(w => Allowed(w) && prefabs.ContainsKey(w.Model)).Select(w => w.Key));
                 Layer()?.Suppress(Array.Empty<string>());
                 return;
             }
@@ -385,6 +489,7 @@ namespace Statecraft.Game.Map.Collection
             var townCentres = map.KitFootprints.Where(f => gameIds.Contains(f.id)).Select(f => (c: f.centre, id: f.id)).ToList();
             foreach (var w in wants)
             {
+                if (!Allowed(w)) continue; // only towns admitted by an active camera acquire a whole original
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
                 if (prefab == null) { Missing.Add(w.Key); continue; }
                 Vector2 at; float edge, baseY; Vector3 normal = Vector3.up;
@@ -407,6 +512,9 @@ namespace Statecraft.Game.Map.Collection
                 }
                 var go = Instantiate(prefab, transform, false);
                 go.name = w.Key;
+                // This owned instance obeys the map's approved town view band and per-camera fallback swap.
+                // The prefab's older strategic cap must not override that policy or hide a ready original early.
+                foreach (var cap in go.GetComponentsInChildren<OriginalModelDistance>(true)) cap.enabled = false;
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X; bakeAxisConversion is off), and setting the yaw alone laid each model on its
                 // side (owner, 18 October 2026: the models "seem to be on their side on the map"; #979).
@@ -425,14 +533,14 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var rr in go.GetComponentsInChildren<Renderer>(true))
                 {
                     rr.shadowCastingMode = ShadowCastingMode.On;
-                    rr.forceRenderingOff = LastHidden;
+                    rr.forceRenderingOff = w.OnTown; // a camera enables only its admitted whole-town representation
                     renderers.Add(rr);
+                    if (w.OnTown) rendererTowns[rr] = w.Key;
                 }
                 if (w.OnTown) Seats[w.Key] = new Seat(at, edge, normal, baseY);
                 Placed.Add((w.Key, w.Model, pos));
             }
-            // The towns that have their whole-town model never draw their kit houses (owner, 18 October 2026: no procedural
-            // houses in those towns at any zoom); a town whose model did not stream keeps them.
+            // Record seats; only WholeReady for the current camera may hide a town's fallback.
             if (layer != null) layer.Suppress(Seats.Keys);
             Debug.Log($"LANDMARKS: {Placed.Count} town landmarks placed, {Missing.Count} not drawn");
         }
@@ -453,22 +561,75 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>#700's building layer of this map (null without kits).</summary>
         Kits.TownModelLayer? Layer() => map == null ? null : map.GetComponentInChildren<Kits.TownModelLayer>(true);
 
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
-        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
+        void OnEnable()
+        {
+            RenderPipelineManager.beginCameraRendering += Choose;
+            RenderPipelineManager.endCameraRendering += EndCamera;
+            if (wants.Count > 0) { focusPolicy = null; Show(wants, date); }
+        }
+        void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Choose;
+            RenderPipelineManager.endCameraRendering -= EndCamera;
+            StopAllCoroutines(); retirementScheduled = false;
+            RestoreRenderers(); ReleaseOwned();
+        }
+        void ClearInstances()
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            RestoreRenderers();
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var old = transform.GetChild(i).gameObject; old.SetActive(false);
+                retiredInstances.RemoveAll(instance => instance == null); retiredInstances.Add(old);
+                retiredInstances.AddRange(old.GetComponentsInChildren<Renderer>(true));
+                retiredInstances.AddRange(old.GetComponentsInChildren<MeshFilter>(true));
+                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+            }
+            renderers.Clear(); rendererTowns.Clear(); Placed.Clear(); Missing.Clear(); Seats.Clear();
+        }
+        void ReleaseOwned()
+        {
+            ClearInstances();
+            var layer = Layer();
+            if (layer != null) { layer.Suppress(Array.Empty<string>()); layer.WholeTownReady = null; }
+            versions.Clear(); asked.Clear(); prefabs.Clear(); admittedKeys.Clear();
+            foreach (var pair in leases) if (pair.Value != null) { retiring.Add(pair.Value); retiringKeys.Add((pair.Key, CollectionDetail.Far)); }
+            leases.Clear(); RetireLeases();
+        }
+        void OnDestroy() => ReleaseOwned();
+        void RestoreRenderers()
+        {
+            foreach (var (renderer, off) in previous) if (renderer != null) renderer.forceRenderingOff = off;
+            previous.Clear();
+        }
+        void EndCamera(ScriptableRenderContext _, Camera camera) => RestoreRenderers();
 
-        /// <summary>Before each camera culls: the landmarks hide where #700's building models draw the towns
-        /// (TownModelLayer.CloseAt at the camera's view distance, with its hysteresis), and draw everywhere else. Without the
-        /// building models (no kits, or TownModelLayer.HasModels false) they draw at every zoom.</summary>
+        void LateUpdate()
+        {
+            // The layer prunes quiet cameras too; releases must not depend on another camera starting a render.
+            RefreshWanted();
+        }
+
+        /// <summary>Admit whole-town originals only for this camera's overview focus; close cameras use individual
+        /// buildings. A whole-town asset owned for another camera never hides this camera's fallback.</summary>
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
-            var layer = Layer();
-            int id = cam.GetInstanceID();
-            bool close = Kits.TownModelLayer.CloseAt(Kits.TownModelLayer.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
-            closeFor[id] = close;
-            bool hide = close && layer != null && layer.HasModels;
-            LastHidden = hide;
-            foreach (var r in renderers) if (r != null) r.forceRenderingOff = hide;
+            RestoreRenderers();
+            var layer = Layer(); LastHidden = false;
+            // Do not depend on which beginCameraRendering subscriber was enabled first.
+            layer?.PrepareCamera(cam);
+            if (!Application.isPlaying) RefreshWanted();
+            layer?.PrepareCamera(cam); // synchronous editor/fake arrivals may have made a whole seat ready
+            foreach (var renderer in renderers)
+            {
+                if (renderer == null) continue;
+                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer != null &&
+                    (!layer.WantsWholeTown(town, cam) || layer.ReadyForTown(town, cam));
+                previous.Add((renderer, renderer.forceRenderingOff)); renderer.forceRenderingOff = hide;
+                LastHidden |= hide;
+            }
         }
     }
 }

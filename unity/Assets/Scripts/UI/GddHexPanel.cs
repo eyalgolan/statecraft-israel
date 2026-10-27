@@ -31,6 +31,8 @@ namespace Statecraft.Game.UI
         /// <summary>On the city's own hex, on a stacked bar or a short window, the project part folds behind this toggle
         /// ("City projects (N)") and the list it opens (owner ruling on #1150, 21 Oct 2026; Statecraft.uss .city-projects-list).</summary>
         public const string ToggleName = "city-projects-toggle", ListName = "city-projects-list", OpenClass = "info-projects-open";
+        /// <summary>The name over each city's block on a hex that holds two (Statecraft.uss).</summary>
+        public const string CityNameClass = "city-part-name";
         const string LineClass = "info-gdd-line", RowClass = "info-gdd-row", PairsClass = "info-gdd-pairs";
 
         public static void Hide(VisualElement host) { host.Clear(); host.style.display = DisplayStyle.None; }
@@ -38,15 +40,23 @@ namespace Statecraft.Game.UI
         /// <summary>Builds the hex's GDD part into <paramref name="host"/> and its city projects into <paramref name="projects"/>
         /// (each hidden when there is none) and returns the designated site's name in the UI's language when the hex holds one,
         /// else null. <paramref name="townName"/> names a city in the UI's language (InfoPanelPresenter's town names).</summary>
-        public static string? Render(VisualElement host, VisualElement projects, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName)
+        public static string? Render(VisualElement host, VisualElement projects, SimBridge bridge, UiText text, int q, int r, Func<string, string> townName, Action<int>? selectPioneer = null)
         {
             host.Clear(); projects.Clear();
             var c = bridge.Content; var s = bridge.State;
             string? title = null;
             if (c.IsGdd)
             {
-                foreach (var at in c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)))
-                    City(host, bridge, text, at.Id);
+                // A hex with two cities (Rishon LeZion and Rehovot) shows two stat blocks: each gets its own part, named, so the
+                // player can tell whose jobs stepper is whose (playtest B6). One city's block needs no name: the title has it.
+                var cities = c.SettlementHexes.Where(x => x.Q == q && x.R == r && s.Cities.ContainsKey(x.Id)).ToList();
+                foreach (var at in cities)
+                {
+                    var part = new VisualElement { name = "city-part-" + at.Id };
+                    host.Add(part);
+                    if (cities.Count > 1) Line(part, "city-name", townName(at.Id)).AddToClassList(CityNameClass);
+                    City(part, bridge, text, at.Id);
+                }
                 var cityHere = host.childCount > 0;
                 // A hex may hold two sites, a yishuv or the Hula swamp and the field it readies (R-FIELD-001, R-SWAMP-001): each
                 // gets its own part, the one to finish first on top, and its name is the title (#1124).
@@ -55,7 +65,7 @@ namespace Statecraft.Game.UI
                     title ??= Name(text, site);
                     var part = new VisualElement { name = "site-part-" + site.Id };
                     host.Add(part);
-                    Site(part, bridge, text, site, Work(site)!.Value);
+                    Site(part, bridge, text, site, Work(site)!.Value, selectPioneer);
                 }
                 // #792: each corridor segment through the hex (corridors.yaml; a hex where two segments meet is in both). Not on a
                 // city's own hex, whose column is full (InfoPanelLayoutTests): every segment has another hex.
@@ -66,7 +76,7 @@ namespace Statecraft.Game.UI
                             {
                                 var part = new VisualElement { name = $"corridor-part-{d.Id}-{i + 1}" };
                                 host.Add(part);
-                                Segment(part, bridge, text, d, i);
+                                Segment(part, bridge, text, d, i, selectPioneer);
                             }
                 CityProjects(projects, bridge, text, q, r, townName, cityHere);
             }
@@ -106,8 +116,13 @@ namespace Statecraft.Game.UI
             var max = Cities.MaxWorkers(s, id, bridge.Queued);
             var workers = Row(host, "city-workers-row");
             Button(workers, "city-workers-less", "−", () => Workers(bridge, id, city.Employed, target - 1)).SetEnabled(target > 0);
-            Line(workers, "city-workers", text.Format("city.workers", Groups(text, target)));
+            Line(workers, "city-workers", text.Format(queued == null ? "city.workers" : "city.workers_ordered", Groups(text, target)));
             Button(workers, "city-workers-more", "+", () => Workers(bridge, id, city.Employed, target + 1)).SetEnabled(target < max);
+            // The Assign order's Attention price (the queue's, at this turn's start) and when it applies (playtest B7): the
+            // Jobs line stays the sim's actual count until End turn. Changing a queued target does not buy another order.
+            Line(host, "city-workers-cost", bridge.Content.UsesAttention
+                ? text.Format("city.workers_cost", bridge.Price(new AssignWorkers(id, "job", target))!.Value)
+                : text.Format("city.workers_ordered", Groups(text, target)));
 
             // Train, for each facility the city has (Training.HasFacility: its own, D-D5, or a built camp site's, R-CAMP-001):
             // each press orders one more group; R-TRAIN-001 takes only civilians without work, and the sim counts every track's
@@ -130,6 +145,64 @@ namespace Statecraft.Game.UI
                 Button(row, $"city-cohort-{k.Id}-cancel", text[cancelled ? "city.cancel_ordered" : "city.cancel"],
                     () => bridge.Queue(new CancelTraining(k.Id))).SetEnabled(!cancelled);
             }
+
+            // Return and Reassign (#1511, R-QUAL-002 to R-QUAL-005): one group a press, like Train, shown only where the city has
+            // the people. The sim keeps the qualification and rules on each order; a button is off only where it would refuse it
+            // (more than the craftsmen or qualified groups, or than the civilians without work, Training.Idle, with this
+            // turn's orders counted by Training.Available).
+            if (city.Craftsmen > 0)
+            {
+                var back = (bridge.QueuedLike(new ReturnCraftsmen(id, 1)) as ReturnCraftsmen)?.Count ?? 0;
+                var row = Row(host, "city-return-craftsmen-row");
+                Button(row, "city-return-craftsmen", text["city.return_craftsmen"], () => bridge.Queue(new ReturnCraftsmen(id, back + 1))).SetEnabled(back < city.Craftsmen);
+                if (back > 0) Line(row, "city-return-craftsmen-ordered", text.Format("city.train_ordered", back));
+            }
+            // Training.Available already takes this turn's Train, Reinforce, Assign and Reassign orders off the idle civilians.
+            var idleLeft = Training.Available(s, id, bridge.Queued);
+            var q = city.Qualified;
+            // A queued Train or Reinforce that leaves fewer civilians than the city has qualified costs it qualifications first
+            // (R-QUAL-006, craftsmen first) and runs before the reassignment, so only what survives it can be reassigned.
+            // Training.Ordered now includes the reassignments themselves, which leave the civilians where they are, so only Train and Reinforce count here.
+            var trained = bridge.Queued.OfType<Train>().Where(x => x.City == id).Sum(x => x.Count) + bridge.Queued.OfType<Reinforce>().Where(x => x.City == id).Sum(x => x.Count);
+            var kept = q.Lose(Math.Max(0, q.Total - (city.Civilians - trained)));
+            foreach (var (role, have, left) in new[] { ("craftsmen", q.Craftsmen, kept.Craftsmen), ("halutz", q.Halutzim.Count, kept.Halutzim.Count), (Projects.VeteranType, q.Veterans, kept.Veterans) })
+            {
+                if (have == 0) continue;
+                Command Order(int n) => role == "craftsmen" ? new ReassignCraftsmen(id, n) : (Command)new ReassignPioneers(id, role, n);
+                var again = bridge.QueuedLike(Order(1));
+                var ordered = again is ReassignCraftsmen rc ? rc.Count : again is ReassignPioneers rp ? rp.Count : 0;
+                var row = Row(host, $"city-reassign-{role}-row");
+                Button(row, "city-reassign-" + role, text.Format("city.reassign_" + role, have), () => bridge.Queue(Order(ordered + 1)))
+                    .SetEnabled(ordered < left && idleLeft >= 1);
+                if (ordered > 0) Line(row, $"city-reassign-{role}-ordered", text.Format("city.train_ordered", ordered));
+            }
+            var hex = c.SettlementHexes.First(h => h.Id == id);   // every settlement has one
+            foreach (var u in s.Units.Values.Where(u => Projects.IsPioneer(u.Type) && u.Q == hex.Q && u.R == hex.R))
+                PioneerReturn(host, bridge, text, u.Id);
+        }
+
+        /// <summary>A pioneer group's Return (R-QUAL-003; #1511): the sim's unit order return_civilian, offered where
+        /// Qualification.CheckReturn takes the group (not one at work). It sits beside the places that list the group; the
+        /// pioneer card (#1549) offers the same order through <see cref="PioneerReturnOrder"/>. A unit order, it takes
+        /// effect at once (R-TURN-004): the group leaves the lists, and its Build buttons with it.</summary>
+        static void PioneerReturn(VisualElement host, SimBridge bridge, UiText text, int unit)
+        {
+            var offer = PioneerReturnOrder(bridge, unit);
+            if (!offer.Eligible) return;
+            Button(host, $"pioneer-return-{unit}", text.Format("pioneer.return", Group(text, bridge.State, unit)),
+                () => PioneerReturnOrder(bridge, unit, submit: true)).SetEnabled(!offer.WorkOrdered);
+        }
+
+        /// <summary>The one guarded Return for both the rows and the pioneer card (#1549): Eligible when
+        /// Qualification.CheckReturn takes the group, WorkOrdered while a Build or Stop is queued for it (that waits for End
+        /// turn, which the group would no longer be there for). With <paramref name="submit"/> it queues the order only when
+        /// both allow it, so a stale button cannot strand a queued Build or Stop.</summary>
+        public static (bool Eligible, bool WorkOrdered) PioneerReturnOrder(SimBridge bridge, int unit, bool submit = false)
+        {
+            var eligible = Qualification.CheckReturn(bridge.State, unit) == null;
+            var working = bridge.Queued.Any(x => (x is PioneerWork w && w.Unit == unit) || (x is StopWork sw && sw.Unit == unit));
+            if (submit && eligible && !working) bridge.Queue(new UnitOrder(unit, Qualification.ReturnOrder));
+            return (eligible, working);
         }
 
         static void Workers(SimBridge bridge, string city, int current, int count)
@@ -151,7 +224,7 @@ namespace Statecraft.Game.UI
         static string Name(UiText text, Statecraft.Sim.Site site) =>
             text["ui.lang"] == UiLanguage.Hebrew && !string.IsNullOrWhiteSpace(site.NameHe) ? site.NameHe : site.Name;
 
-        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind)
+        static void Site(VisualElement host, SimBridge bridge, UiText text, Statecraft.Sim.Site site, (string Action, string Key) kind, Action<int>? selectPioneer)
         {
             var c = bridge.Content; var s = bridge.State;
             var (action, key) = kind;
@@ -179,11 +252,13 @@ namespace Statecraft.Game.UI
                             : text.Format("site.build" + key, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Projects.TurnsToBuild(c, s, u.Id, site, terms.Turns, 0))),
                         () => bridge.Queue(new PioneerWork(u.Id, action, site.Id))).SetEnabled(!ordered && !taken);
+                    PioneerReturn(host, bridge, text, u.Id);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a site being built names its unit (SiteWork)
+                GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "site-state", text.Format("site.building" + key, Group(text, s, unit), Turns(text, Projects.TurnsToBuild(c, s, unit, site, work.TurnsLeft, work.Progress))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "site-stop", text[stopping ? "site.ordered" : "site.stop" + key], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
@@ -195,7 +270,7 @@ namespace Statecraft.Game.UI
         /// kind) with each idle pioneer group, with the kind's cost and the unit's own turns (Projects.Terms,
         /// Corridors.TurnsToBuild); or its turns left and Stop while it is built; or the day it was built. The order is
         /// PioneerWork(unit, action, "corridor:N"), SimBridge's corridor key.</summary>
-        static void Segment(VisualElement host, SimBridge bridge, UiText text, CorridorDef d, int index)
+        static void Segment(VisualElement host, SimBridge bridge, UiText text, CorridorDef d, int index, Action<int>? selectPioneer)
         {
             var c = bridge.Content; var s = bridge.State;
             var action = d.Kind == Corridors.Rail ? Corridors.BuildRail : Corridors.BuildRoad;
@@ -218,11 +293,13 @@ namespace Statecraft.Game.UI
                             : text.Format("corridor.build_" + d.Kind, Group(text, s, u.Id), PlayerText.Money(c, "treasury", terms.Cost),
                                 Turns(text, Corridors.TurnsToBuild(c, s, u.Id, terms.Turns, 0))),
                         () => bridge.Queue(new PioneerWork(u.Id, action, target))).SetEnabled(!ordered && !taken);
+                    PioneerReturn(host, bridge, text, u.Id);
                 }
             }
             else if (work.BuiltOn == null)
             {
                 var unit = work.Unit!.Value;   // a segment being built names its unit (SegmentWork)
+                GroupLink(host, bridge, text, unit, selectPioneer);
                 Line(host, "corridor-state", text.Format("site.building", Group(text, s, unit), Turns(text, Corridors.TurnsToBuild(c, s, unit, terms.Turns - work.Progress, work.Carry))));
                 var stopping = bridge.QueuedLike(new StopWork(unit)) is StopWork;
                 Button(host, "corridor-stop", text[stopping ? "site.ordered" : "site.stop"], () => bridge.Queue(new StopWork(unit))).SetEnabled(!stopping);
@@ -316,12 +393,19 @@ namespace Statecraft.Game.UI
             {
                 case "maabarot_policy": case "not_land": return text["info.map_action_reason." + reason.Kind];
                 case "occupied": return text.Format("info.map_action_reason.occupied", text["info.map_action." + reason.Values[0]]);
-                case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), reason.Values[1],
+                case "no_resource": return text.Format("city.project_reason.no_resource", townName(reason.Values[0]), ResourceName(text, reason.Values[1]),
                     ContentNames.Of(text, c.ProjectKinds.First(x => x.Id == reason.Values[2])));
                 case "turn_cap": return text.Format("city.project_reason.turn_cap", int.Parse(reason.Values[0], CultureInfo.InvariantCulture));
                 default: return reason.Text;
             }
         }
+
+        /// <summary>A resource's name in the UI's language (#1781), by its id. A resource is a record nested inside a
+        /// city, so it cannot carry its own name_he: the translation contract binds a &lt;file&gt;#&lt;list&gt;.&lt;id&gt;.&lt;field&gt;
+        /// key only (HebrewOverlay.Bindings), and a nested record has no such key. The name is a UI string instead, and
+        /// without one the id stands, which is what the line showed before.</summary>
+        static string ResourceName(UiText text, string id) =>
+            text.Has("city.resource." + id) ? text["city.resource." + id] : id;
 
         /// <summary>"1 group" or "n groups" (population groups, D-A1), in the UI's language.</summary>
         public static string Groups(UiText t, int n) => n == 1 ? t["city.groups_one"] : t.Format("city.groups", n);
@@ -335,6 +419,17 @@ namespace Statecraft.Game.UI
 
         /// <summary>A date in the UI's language, as the event card writes it (EventCardPresenter.ObjectiveLine).</summary>
         static string Date(UiText t, DateTime d) => t.Format("date.day_month_year", d.Day, t["date.month_" + d.Month], d.Year);
+
+        /// <summary>The worker's link to its pioneer card (#1549) on a site or segment under way; none without a callback, so
+        /// existing callers render as before. Idle candidates get none: they open from their own hex's list, and a link per
+        /// candidate per segment ran a three-segment hex off a 1024x768 window (InfoPanelLayoutTests).</summary>
+        static void GroupLink(VisualElement host, SimBridge bridge, UiText text, int id, Action<int>? select)
+        {
+            if (select == null) return;
+            var b = Button(host, "pioneer-project-" + id.ToString(CultureInfo.InvariantCulture),
+                text.Format("pioneer.card.open", Group(text, bridge.State, id)), () => select(id));
+            b.AddToClassList("pioneer-link");
+        }
 
         static Label Line(VisualElement parent, string name, string value)
         {
