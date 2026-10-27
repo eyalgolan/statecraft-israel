@@ -27,7 +27,6 @@ public class RegionNamesHebrewTests
         var r=m.Subdistricts.Regions.Single(r=>r.Key==id);
         var hex=m.Subdistricts.Layer.Hexes.First(h=>m.Subdistricts.Layer.RegionOf(h.q,h.r)==r.Id);
         var t=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he?UiPaths.StringsHebrew:UiPaths.Strings).text);
-        Assert.AreEqual(t.Format("info.region",he?name:r.Name,he?district:r.District),
-            InfoPanelPresenter.RegionText(m,t,hex.q,hex.r,new DateTime(1948,5,15)));
+        Assert.IsTrue(string.Equals(t.Format("info.region",he?name:r.Name,he?district:r.District), InfoPanelPresenter.RegionText(m,t,hex.q,hex.r,new DateTime(1948,5,15)), StringComparison.Ordinal));
     }
 }

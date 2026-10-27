@@ -57,7 +57,7 @@ public class RegionNamesVisualTests
                 for(int i=0;i<6;i++)yield return null;
                 var label=root.Q<Label>("info-region");
                 Assert.IsNotEmpty(label.text);
-                if(he&&after)StringAssert.Contains(scenario.expected,label.text);
+                if(he&&after)Assert.IsTrue((label.text).IndexOf(scenario.expected, StringComparison.Ordinal) >= 0);
                 Assert.Greater(label.contentRect.width,0);
                 var measured=label.MeasureTextSize(label.text,label.contentRect.width,VisualElement.MeasureMode.Exactly,0,VisualElement.MeasureMode.Undefined);
                 Assert.LessOrEqual(measured.y,label.contentRect.height+2,$"{scenario.key} {size} he={he} after={after}: text must wrap inside its actual region label");

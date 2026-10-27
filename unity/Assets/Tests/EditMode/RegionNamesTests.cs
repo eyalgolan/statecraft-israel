@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Globalization;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -42,7 +43,7 @@ public class RegionNamesTests
         var r = m.Subdistricts.Regions.Single(x => x.Key == id);
         var h = m.Subdistricts.Layer.Hexes.First(x => m.Subdistricts.Layer.RegionOf(x.q, x.r) == r.Id);
         var date = new DateTime(1948, 5, 15);
-        Assert.AreEqual(Text(true).Format("info.region", name, district), InfoPanelPresenter.RegionText(m, Text(true), h.q, h.r, date));
+        Assert.IsTrue(string.Equals(Text(true).Format("info.region", name, district), InfoPanelPresenter.RegionText(m, Text(true), h.q, h.r, date), StringComparison.Ordinal));
         Assert.AreEqual(Text(false).Format("info.region", r.Name, r.District), InfoPanelPresenter.RegionText(m, Text(false), h.q, h.r, date));
     }
 
@@ -50,7 +51,7 @@ public class RegionNamesTests
     const string Fixture = "names:\n  - key: subdistrict.acre.name\n    name: Test\n    name_he: בדיקה\n    name_he_sources:\n      - url: https://example.org/primary\n        checked: 2026-10-26\n        cite: page 1\n";
     [Test]
     public void AbsentReviewMarkerIsAcceptedAfterHumanReview() =>
-        Assert.AreEqual("בדיקה", MapRegionNames.Parse(Fixture).Pick("subdistrict.acre.name", "Acre", true));
+        Assert.IsTrue(string.Equals("בדיקה", MapRegionNames.Parse(Fixture).Pick("subdistrict.acre.name", "Acre", true), StringComparison.Ordinal));
     [Test]
     public void ExistingEditorPendingReviewMarkerIsAccepted() => Assert.DoesNotThrow(() => MapRegionNames.Parse(Fixture + "    name_he_review: agent-checked\n"));
     [Test]
@@ -128,7 +129,7 @@ public class RegionNamesTests
                 if (!Gaps.Contains(prefix + "agreement")) expected.Add(prefix + "agreement", i.Key.StartsWith("egypt_mv1950_",StringComparison.Ordinal) ? "פשרת שעה להסכם שביתת הנשק בין ישראל ומצרים" : Agreement(i.Front.Key));
             }
         CollectionAssert.AreEquivalent(all.Keys, expected.Keys.Concat(Gaps), "Every displayed field must be independently supplied or explicitly tracked; not a non-English inequality oracle.");
-        foreach (var (key, value) in expected) Assert.AreEqual(value, m.Names.Pick(key, all[key], true), key);
+        foreach (var (key, value) in expected) Assert.IsTrue(string.Equals(value, m.Names.Pick(key, all[key], true), StringComparison.Ordinal), key);
         var followup = File.ReadAllText(Path.Combine(Paths.RepoRoot, "docs", "map-region-names.md"));
         foreach (var key in Gaps)
         {
@@ -154,7 +155,7 @@ public class RegionNamesTests
                 Assert.AreEqual(InfoPanelPresenter.RegionText(plain, Text(false), h.q, h.r, date), InfoPanelPresenter.RegionText(m, Text(false), h.q, h.r, date));
                 // With the catalogue omitted, Hebrew UI patterns still use the original English display fields.
                 if (date.Year == 1948 && sub.SubdistrictAt(h.q,h.r) is Subdistricts1948.Region r)
-                    Assert.AreEqual(Text(true).Format("info.region",r.Name,r.District),InfoPanelPresenter.RegionText(plain,Text(true),h.q,h.r,date));
+                    Assert.IsTrue(string.Equals(Text(true).Format("info.region",r.Name,r.District), InfoPanelPresenter.RegionText(plain,Text(true),h.q,h.r,date), StringComparison.Ordinal));
             }
         }
     }
@@ -167,31 +168,31 @@ public class RegionNamesTests
         foreach (var f in m.Armistice!.Fronts) keys.Add("front."+f.Key+".name");
         foreach (var (kind,items) in new[] {("zone",m.Armistice.Zones),("line",m.Armistice.Lines)})
             foreach(var i in items) foreach(var field in new[]{"name","agreement","label_note"}) keys.Add(kind+"."+i.Key+"."+field);
-        var replacements = keys.Select((k,i)=>(k,v:"בדיקה "+i)).ToDictionary(x=>x.k,x=>x.v);
+        var replacements = keys.Select((k,i)=>(k,v:"בדיקה "+i.ToString(CultureInfo.InvariantCulture))).ToDictionary(x=>x.k,x=>x.v);
         var catalog = "names:\n" + string.Concat(replacements.Select(x=>Fixture.Substring("names:\n".Length)
             .Replace("subdistrict.acre.name",x.Key).Replace("name_he: בדיקה", "name_he: "+x.Value)+"    name_he_review: native-review-pending\n"));
         var synthetic = new MapRegions(m.Subdistricts,m.Armistice,names:MapRegionNames.Parse(catalog));
         string Date(DateTime d)=>"\u2067"+Control1948.DateText(d,k=>he[k])+"\u2069";
         foreach(var zone in synthetic.ZonesOn(date)) foreach(var h in synthetic.Armistice!.HexesOf(zone))
-            StringAssert.Contains(he.Format("info.armistice_zone",replacements["zone."+zone.Key+".name"],replacements["zone."+zone.Key+".agreement"],Date(zone.Signed)),InfoPanelPresenter.RegionText(synthetic,he,h.q,h.r,date));
+            Assert.IsTrue((InfoPanelPresenter.RegionText(synthetic,he,h.q,h.r,date)).IndexOf(he.Format("info.armistice_zone",replacements["zone."+zone.Key+".name"],replacements["zone."+zone.Key+".agreement"],Date(zone.Signed)), StringComparison.Ordinal) >= 0);
         foreach(var h in synthetic.Subdistricts.Layer.Hexes) foreach(var line in synthetic.LinesAt(h.q,h.r,date))
-            StringAssert.Contains(he.Format(line.LowAccuracy?"info.armistice_line_low":"info.armistice_line",replacements["line."+line.Key+".name"],replacements["line."+line.Key+".agreement"],Date(line.Signed)),InfoPanelPresenter.RegionText(synthetic,he,h.q,h.r,date));
+            Assert.IsTrue((InfoPanelPresenter.RegionText(synthetic,he,h.q,h.r,date)).IndexOf(he.Format(line.LowAccuracy?"info.armistice_line_low":"info.armistice_line",replacements["line."+line.Key+".name"],replacements["line."+line.Key+".agreement"],Date(line.Signed)), StringComparison.Ordinal) >= 0);
         var label=synthetic.Label(date,he.Format,true);
-        StringAssert.Contains(replacements["subdistrict.label"],label); StringAssert.Contains(replacements["armistice.label"],label);
-        StringAssert.Contains(he.Format("map.layer_front_low",replacements["front.jordan.name"]),label);
-        StringAssert.Contains(replacements["line.egypt_mv1950_demarcation.label_note"],label);
+        Assert.IsTrue((label).IndexOf(replacements["subdistrict.label"], StringComparison.Ordinal) >= 0); Assert.IsTrue((label).IndexOf(replacements["armistice.label"], StringComparison.Ordinal) >= 0);
+        Assert.IsTrue((label).IndexOf(he.Format("map.layer_front_low",replacements["front.jordan.name"]), StringComparison.Ordinal) >= 0);
+        Assert.IsTrue((label).IndexOf(replacements["line.egypt_mv1950_demarcation.label_note"], StringComparison.Ordinal) >= 0);
         // The sourced 1950 instrument note remains visible; its geometry and date are unchanged.
-        StringAssert.Contains("פשרת שעה, 1950",m.Label(date,he.Format,true));
-        StringAssert.DoesNotContain("1950 modus vivendi",m.Label(date,he.Format,true));
-        StringAssert.Contains(he.Format("map.layer_front_low","ירדן"),m.Label(date,he.Format,true));
+        Assert.IsTrue((m.Label(date,he.Format,true)).IndexOf("פשרת שעה, 1950", StringComparison.Ordinal) >= 0);
+        Assert.IsTrue((m.Label(date,he.Format,true)).IndexOf("1950 modus vivendi", StringComparison.Ordinal) < 0);
+        Assert.IsTrue((m.Label(date,he.Format,true)).IndexOf(he.Format("map.layer_front_low","ירדן"), StringComparison.Ordinal) >= 0);
         foreach(var line in m.Armistice.Lines)
         {
             var hex=m.Armistice.LineHexes.First(kv=>kv.Value.Contains(line)).Key;
             var name=ArmisticeIdentities.TryGetValue("line."+line.Key+".name",out var supplied)?supplied:line.Name;
             var agreement=line.Key.StartsWith("egypt_mv1950_",StringComparison.Ordinal)?"פשרת שעה להסכם שביתת הנשק בין ישראל ומצרים":Agreement(line.Front.Key);
             var expected=he.Format(line.LowAccuracy?"info.armistice_line_low":"info.armistice_line",name,agreement,Date(line.Signed));
-            StringAssert.DoesNotContain(expected,InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom.AddDays(-1)));
-            StringAssert.Contains(expected,InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom));
+            Assert.IsTrue((InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom.AddDays(-1))).IndexOf(expected, StringComparison.Ordinal) < 0);
+            Assert.IsTrue((InfoPanelPresenter.RegionText(m,he,hex.q,hex.r,line.ShownFrom)).IndexOf(expected, StringComparison.Ordinal) >= 0);
         }
     }
     [Test]
