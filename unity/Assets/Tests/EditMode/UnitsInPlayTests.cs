@@ -138,9 +138,10 @@ public class UnitsInPlayTests
                 if (u.Disbanded != null) Assert.LessOrEqual(UnitData.Day(a.To), UnitData.Day(u.Disbanded.Date), $"{at}: after its disbandment");
                 Assert.AreNotEqual("15 May 1948", a.Since, $"{at}: the game's first day is not a sourced arrival");
             }
-            // A drawn row stands at one place at a time (one token per row). A row the map does not draw may stand at two
-            // at once: the Egyptian force's forward and rear bases at the first truce (owner, 17 October 2026, on #860).
-            if (UnitRoster.OnMap(u))
+            // A drawn row stands at one place at a time (one token per row). The Egyptian force alone stands at two at once:
+            // its forward and rear bases at the first truce (owner, 17 October 2026, on #860), drawn as one token, the first
+            // anchor whose window holds the date (owner, 27 October 2026: "One token"; UnitRoster.AnchorAt).
+            if (UnitRoster.OnMap(u) && u.Id != "egyptian_expeditionary_force")
                 for (int i = 1; i < u.Anchors.Count; i++)
                     Assert.LessOrEqual(UnitData.Day(u.Anchors[i - 1].To), UnitData.Day(u.Anchors[i].From), $"{u.Id}: anchor windows in order, not overlapping");
         }
@@ -275,7 +276,7 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." Each deployed force has its own figure; Egypt awaits a map representation, Lebanon's hidden row and local forces without a row
+    /// no placeholder art." Each deployed force has its own figure (Egypt's as one token: owner, 27 October 2026); Lebanon's hidden row and local forces without a row
     /// stay off the map. The forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
     /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
@@ -284,7 +285,7 @@ public class UnitsInPlayTests
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
-        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force" };
+        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force", "egyptian_expeditionary_force" };
         CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
@@ -307,7 +308,7 @@ public class UnitsInPlayTests
             var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
             Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
-        CollectionAssert.AreEquivalent(drawn, seen, "the four forces stand on the map on their sourced days");
+        CollectionAssert.AreEquivalent(drawn, seen, "the five forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
         var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();

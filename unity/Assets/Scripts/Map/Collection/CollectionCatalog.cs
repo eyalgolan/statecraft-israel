@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Collection
     public enum CollectionDetail { Far, Near }
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
-    /// The independently generated Syrian and Iraqi infantry retain their own shared bundle, full-quality rigs and clips.
+    /// The independently generated Syrian and Iraqi infantry retain their own shared bundle, full-quality rigs and clips;
+    /// each later generated figure (the Egyptian infantry) streams in a bundle of its own.
     /// Each has one CRC/SHA-checked bundle and one full-quality prefab outside Resources. Map requests wait
     /// for a drawable view; the shared loader waits until the first game frame has rendered (#1273).</summary>
     public static class CollectionCatalog
@@ -61,7 +62,15 @@ namespace Statecraft.Game.Map.Collection
             Towns = "collection-towns", Buildings = "collection-special-buildings",
             // The Syrian and Iraqi infantry (#1377), full-quality rigs with exact 4096 px maps, in a bundle of their own (owner
             // ruling, 26 October 2026, #1763: "Own bundle"), so the opening civilians and soldier do not wait for them.
-            ArabArmies = "collection-people-1948-arab";
+            ArabArmies = "collection-people-1948-arab",
+            // Generated figures signed off later (owner, 27 October 2026, #756: "Sign off all 19"), each streamed in a bundle
+            // of its own, "collection-" + id, opened after the people's (coordinator, 27 October 2026: the smallest first
+            // download). This is a group name only, like People; no bundle carries it.
+            GeneratedFigures = "collection-generated-figures";
+
+        /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
+        /// "Sign off all 19" and, for Egypt, "One token").</summary>
+        public const string EgyptianInfantry = "figure-egyptian-infantry-1948-v1";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
@@ -111,6 +120,10 @@ namespace Statecraft.Game.Map.Collection
                 "figure-syrian-infantry-1948-v1",
                 "figure-iraqi-infantry-1948-v1",
             }),
+            (GeneratedFigures, new[]
+            {
+                "figure-egyptian-infantry-1948-v1",
+            }),
         };
 
         /// <summary>A bundle that is opened only after another has settled (opened or failed) when both are asked for: the Arab
@@ -119,6 +132,7 @@ namespace Statecraft.Game.Map.Collection
         public static readonly IReadOnlyDictionary<string, string> After = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [ArabArmies] = People,
+            ["collection-" + EgyptianInfantry] = People,
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -133,15 +147,18 @@ namespace Statecraft.Game.Map.Collection
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-yemenite-immigrant-v1", "figure-pioneer-farmer-v1-tpose",
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
+            EgyptianInfantry,
         };
 
+        /// <summary>The generated figures (#1377 and later): full-quality rigs that keep playing their idle at every zoom, each
+        /// with one prefab beside its FBX.</summary>
         public static bool IsFullQualityGeneratedInfantry(string id) =>
-            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1";
+            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry;
 
-        // Categories describe placement; Tal originals stream independently, while #1763's two figures share their own bundle.
+        // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Bundles =
-            Ids.Where(id => !IsFullQualityGeneratedInfantry(id)).Select(id => ("collection-" + id, new[] { id }))
+            Ids.Where(id => !Groups.Single(g => g.Bundle == ArabArmies).Ids.Contains(id)).Select(id => ("collection-" + id, new[] { id }))
                 .Concat(Groups.Where(g => g.Bundle == ArabArmies)).ToArray();
         public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
             || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
