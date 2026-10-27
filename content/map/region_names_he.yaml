@@ -474,3 +474,21 @@ names:
       - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf"
         checked: 2026-10-26
         cite: "Government of Israel international-treaties index, PDF p. 2, treaty row 9: Hebrew title and signature date 22 February 1950. Short display note uses the attested instrument name and year; existing runtime dates are not changed."
+  # Native Hebrew wording approved by the owner on 27 October 2026; signed-map reconciliation remains OPEN.
+  - key: zone.syria_dmz_central.name
+    name: "Demilitarized Zone (Syria-Israel), central part: Dardara, the Jordan and Mishmar HaYarden"
+    name_he: "האזור המפורז (ישראל–סוריה), החלק המרכזי: דרדרה, הירדן ומשמר־הירדן"
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db11/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C-%20%D7%A1%D7%95%D7%A8%D7%99%D7%94%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-10-27
+        cite: "Kitvei Amana, Hebrew Israel-Syria agreement: printed p. 51 / PDF p. 5, Art. V.5(a) (Dardara and demilitarized zone); printed p. 55 / PDF p. 9, Annex I items 8, 10 and 14 (Dardara and Jordan river); printed p. 56 / PDF p. 10, Annex III(b) (Mishmar HaYarden). Editorial composition; central part is a game division, not an Annex II sector; signed-map reconciliation and native Hebrew review pending. Evidence and visual scan check reported by coordinator in CAPTIONS-ANSWERS.md, accessed 2026-10-27; not independently retrieved by the caption author."
+  - key: line.egypt_adl_gaza.name
+    name: "Armistice Demarcation Line (Egypt-Israel) of 1949, Gaza-Rafah area: Wadi Hasi to Gaza"
+    name_he: "קו שביתת הנשק (מצרים–ישראל) של 1949, גזרת עזה־רפיח: מוצא ודי חזי עד עזה"
+    name_he_sources:
+      - url: "https://www.gov.il/BlobFolder/dynamiccollectorresultitem/translation-of-international-treaties-db16/he/translation-of-international-treaties-db_%D7%9B%D7%A8%D7%9A%20%D7%90%27-%20%D7%94%D7%A1%D7%9B%D7%9D%20%D7%9E%D7%A6%D7%A8%D7%99%D7%9D-%D7%99%D7%A9%D7%A8%D7%90%D7%9C%20%D7%A2%D7%9C%20%D7%A9%D7%91%D7%99%D7%AA%D7%AA%20%D7%A0%D7%A9%D7%A7%20%D7%9B%D7%9C%D7%9C%D7%99%D7%AA.pdf"
+        checked: 2026-10-27
+        cite: "Kitvei Amana, Hebrew Egypt-Israel agreement: printed/PDF p. 7, Art. VI.1, lines 1-4 (line name, Gaza-Rafah sector and mouth of Wadi Hasi); p. 8, lines 1-4 (Gaza form and continuation to Egyptian frontier). Editorial composition for the 1949 agreement; to Gaza is the game segment, not the treaty endpoint; signed-map reconciliation and native Hebrew review pending. Evidence and visual scan check reported by coordinator in CAPTIONS-ANSWERS.md, accessed 2026-10-27; not independently retrieved by the caption author."
+      - url: "https://content.ecf.org.il/files/M00209_ModusVivenditotheEgyptian-IsraeliGeneralArmistice-EnglishText_0.pdf"
+        checked: 2026-10-27
+        cite: "MV-EN, UN document S/1471, 17 March 1950, modus vivendi signed at El Auja on 22 February 1950 (ECF copy), Article I: Egypt-Israel General Armistice Agreement signed at Rhodes on 24 February 1949; supports the caption year 1949. Evidence reported by coordinator in CAPTIONS-ANSWERS.md:89, source URL at line 40, accessed 2026-10-27; not independently retrieved by the caption author. Signed-map reconciliation and native Hebrew review pending."
