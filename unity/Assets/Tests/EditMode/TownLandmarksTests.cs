@@ -16,19 +16,20 @@ using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 /// <summary>Issue #663, owner ruling of 17 October 2026: "The nine whole-town models ship (this reverses the 15 Oct 'layout
-/// references only' ruling). They are slimmed, streamed after the first frame, and pass the load gate. The ma'abara and the
+/// references only' ruling). They stream after the first frame; C89/C93 bounds their original-file residency by camera focus. The ma'abara and the
 /// shikun appear only from their sourced 1950s dates." Tal Heuberger's nine whole-town models stand as overview
 /// landmarks beside their towns (#507's mapping), streamed through CollectionStream, clear of every kit, and they fail open.</summary>
 public class TownLandmarksTests
 {
     Action<string, CollectionDetail, Action<GameObject?>> saved = null!;
+    readonly Dictionary<string, Camera> geometryCameras = new Dictionary<string, Camera>(StringComparer.Ordinal);
     readonly List<(string id, CollectionDetail detail, Action<GameObject?> done)> asked = new List<(string, CollectionDetail, Action<GameObject?>)>();
 
     [SetUp]
     public void Seam()
     {
         saved = TownLandmarks.Request;
-        asked.Clear();
+        asked.Clear(); geometryCameras.Clear();
         TownLandmarks.Request = (id, detail, done) => asked.Add((id, detail, done));
     }
 
@@ -50,13 +51,43 @@ public class TownLandmarksTests
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = Object.FindFirstObjectByType<MapScene>();
         map.Build();
+        ResidencyCall(map.GetComponentInChildren<TownModelLayer>(true), typeof(TownModelLayer), "ConfigureResidency",
+            1000f, 2000f, 1000f, 2, "test fixture only; not measured");
         return map;
     }
 
     static GameObject Far(string id) => AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
 
+    // Geometry tests explicitly admit the complete fixture catalog; these cameras only check geometry and seats.
+    // Production camera isolation/admission is checked independently by ResidencyFixture below.
+    void AdmitGeometryTowns(MapScene map, TownLandmarks towns)
+    {
+        var layer = map.GetComponentInChildren<TownModelLayer>(true);
+        var places = (IReadOnlyList<(string id, UnityEngine.Bounds bounds)>)typeof(TownModelLayer).GetField("places", ResidencyFlags)!.GetValue(layer)!;
+        Assert.IsNotEmpty(places);
+        // TEST ONLY: these geometry/seat checks intentionally cover every original town, not shipping admission.
+        // Derive the allowance from this fixture's extent; focused admission is checked by ResidencyFixture below.
+        float coverage = Mathf.Max(1f, places.Max(p => p.bounds.max.x) - places.Min(p => p.bounds.min.x)
+            + places.Max(p => p.bounds.max.z) - places.Min(p => p.bounds.min.z));
+        typeof(TownModelLayer).GetField("EdgeAllowance", ResidencyFlags)!.SetValue(layer,
+            new Func<IReadOnlyList<string>, string, bool>((_, __) => true));
+        ResidencyCall(layer, typeof(TownModelLayer), "ConfigureResidency", coverage, coverage, coverage, places.Count,
+            "TEST ONLY all-town geometry coverage; NOT measured or accepted residency limits");
+        foreach (var want in towns.Wanted)
+        {
+            if (!geometryCameras.TryGetValue(want.Key, out var camera))
+                geometryCameras[want.Key] = camera = new GameObject("geometry owner " + want.Key).AddComponent<Camera>();
+            var at = places.First(p => p.id == want.Key).bounds.center;
+            at.y = 0; // Aim at the same ground plane used by focused admission, not the building bounds' height.
+            camera.transform.position = at + new Vector3(0, 40000, -40000); camera.transform.LookAt(at);
+            towns.Choose(default, camera);
+            Assert.IsTrue((bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", want.Key, camera)!, want.Key);
+        }
+    }
     void AnswerAll()
     {
+        var map = Object.FindFirstObjectByType<MapScene>(); var towns = Object.FindFirstObjectByType<TownLandmarks>();
+        AdmitGeometryTowns(map, towns);
         var pending = asked.ToList();
         asked.Clear();
         foreach (var (id, _, done) in pending) done(Far(id));
@@ -67,7 +98,7 @@ public class TownLandmarksTests
     {
         var used = TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model)).Distinct();
         CollectionAssert.AreEquivalent(Towns, used, "all nine, as #507 mapped them, with #336's second Jerusalem for #507's (owner, 21 October 2026, #708)");
-        foreach (var id in Towns) Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(id), id);
+        foreach (var id in Towns) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
         Assert.AreEqual(TownLandmarks.TelAviv, TownLandmarks.ById["tel_aviv"]);
         Assert.AreEqual(TownLandmarks.Kibbutz, TownLandmarks.ByType["kibbutz"]);
     }
@@ -93,7 +124,7 @@ public class TownLandmarksTests
     [Test]
     public void JerusalemIsTheSecondStoneCityOnEveryDate()
     {
-        Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(TownLandmarks.Jerusalem3D));
+        Assert.AreEqual("collection-" + TownLandmarks.Jerusalem3D, CollectionCatalog.BundleOf(TownLandmarks.Jerusalem3D));
         Assert.AreEqual(TownLandmarks.Jerusalem3D, TownLandmarks.ById["jerusalem"]);
         CollectionAssert.DoesNotContain(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).ToList(), TownLandmarks.Jerusalem,
             "#507's first Jerusalem stays in the repository, unused on the map");
@@ -127,6 +158,9 @@ public class TownLandmarksTests
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         rig.LookAt = new Vector3(at.x, 0f, at.y); rig.Distance = distanceM; rig.Yaw = 0f; rig.Apply();
         RenderSample.Render(cam, 320, 180);
+        // Inspect this camera's flags before EndCamera restores them, rather than asserting a stale global flag.
+        var towns = map.GetComponentInChildren<TownLandmarks>(true);
+        towns.Choose(default, cam);
     }
 
     /// <summary>Owner ruling, 18 October 2026 (on #917, #663, #659 and #700): the towns are Tal Heuberger's models, "Whole model far,
@@ -231,15 +265,20 @@ public class TownLandmarksTests
         {
             RenderAt(map, tel, d);
             Assert.AreEqual(close, layer.LastClose, $"{d / 1000f} km, {why}: the building models");
-            Assert.IsTrue(renderers.All(r => r.forceRenderingOff == close), $"{d / 1000f} km, {why}: the whole-town models " + (close ? "hide" : "draw"));
+            foreach (var renderer in renderers)
+            {
+                var town = renderer.transform;
+                while (town.parent != t.transform) town = town.parent;
+                bool admitted = (bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", town.name, Camera.main)!;
+                Assert.AreEqual(!admitted, renderer.forceRenderingOff, $"{why}: only this camera's admitted whole town draws");
+            }
         }
     }
 
-    /// <summary>No procedural houses in a mapped town at any zoom (owner, 18 October 2026): its kit mesh never draws, its
-    /// close mesh (the kit without its buildings: its mosques, churches, walls and port, as #700 keeps them) draws far and
-    /// near. A town without a whole-town model keeps #700's swap: its kit far off, its close mesh up close.</summary>
+    /// <summary>C89/C93 scopes the older whole-far/buildings-near ruling by this camera's admitted towns. An original
+    /// ready for another camera does not hide this camera's procedural fallback.</summary>
     [Test]
-    public void AMappedTownDrawsNoProceduralHousesAtAnyZoom()
+    public void OnlyTheCurrentCamerasReadyTownsSuppressProceduralHouses()
     {
         var map = OpenMap();
         var t = ShowAll(map);
@@ -252,11 +291,18 @@ public class TownLandmarksTests
             RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, d);
             foreach (var s in mapped)
             {
-                Assert.IsTrue(root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, $"{s.Id}'s kit houses at {d / 1000f} km");
+                var layer = root.GetComponentInChildren<TownModelLayer>();
+                bool near = (bool)ResidencyCall(layer, typeof(TownModelLayer), "ReadyForTown", s.Id, Camera.main)!;
+                bool whole = (bool)ResidencyCall(layer, typeof(TownModelLayer), "WantsWholeTown", s.Id, Camera.main)! && t.Seats.ContainsKey(s.Id);
+                bool ready = near || whole;
+                Assert.AreEqual(ready, root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, s.Id);
                 var closeR = root.Find(s.Id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
-                if (closeR != null) Assert.IsFalse(closeR.forceRenderingOff, $"{s.Id}'s landmarks and ground at {d / 1000f} km");
+                Assert.IsNotNull(closeR, s.Id + " has a close mesh to swap");
+                Assert.AreEqual(!ready, closeR!.forceRenderingOff, s.Id);
             }
-            Assert.AreEqual(close, plainKit.forceRenderingOff, $"{plain.Id} (no whole-town model) keeps #700's swap at {d / 1000f} km");
+            var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
+            bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
+            Assert.AreEqual(plainReady, plainKit.forceRenderingOff, "an unrelated plain town keeps fallback");
         }
     }
 
@@ -270,12 +316,15 @@ public class TownLandmarksTests
         map.ConfigureTownModels(null!);
         LogAssert.Expect(LogType.Error, new Regex("town models: the map scene has no model list"));
         map.Build();
+        ResidencyCall(map.GetComponentInChildren<TownModelLayer>(true), typeof(TownModelLayer), "ConfigureResidency",
+            1000f, 2000f, 1000f, 2, "test fixture only; not measured");
         yield return null;
         var t = ShowAll(map);
         var root = map.transform.Find(KitLayer.RootName);
         Assert.IsFalse(root.GetComponentInChildren<TownModelLayer>().HasModels);
         RenderAt(map, map.KitFootprints.First(f => f.id == "tel_aviv").centre, CameraController.MinDistance);
-        Assert.IsTrue(t.GetComponentsInChildren<Renderer>(true).All(r => !r.forceRenderingOff), "the whole-town models draw at the closest zoom");
+        Assert.IsFalse(t.transform.Find("tel_aviv").GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+            "the admitted whole town remains visible when individual buildings are unavailable");
         Assert.IsTrue(root.Find("tel_aviv").GetComponent<MeshRenderer>().forceRenderingOff, "Tel Aviv's kit houses still never draw");
     }
 
@@ -404,6 +453,7 @@ public class TownLandmarksTests
         Assert.IsNotNull(t);
         CollectionAssert.IsEmpty(t.Placed, "nothing before the stream answers");
         Assert.AreEqual(0, t.transform.childCount);
+        AdmitGeometryTowns(map, t);
         Assert.Greater(asked.Count, 0);
         Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the far mesh only");
         Assert.AreEqual(asked.Count, asked.Select(a => a.id).Distinct().Count(), "each model once");
@@ -431,6 +481,7 @@ public class TownLandmarksTests
         AnswerAll();
         CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Model), TownLandmarks.Maabara, "not before 23 May 1950");
         TownLandmarks.ShowAt(map, new DateTime(1950, 5, 23), camp, c);
+        AdmitGeometryTowns(map, t);
         Assert.AreEqual(1, asked.Count(a => a.id == TownLandmarks.Maabara), "asked once it is wanted");
         AnswerAll();
         Assert.AreEqual(1, t.Placed.Count(p => p.Model == TownLandmarks.Maabara && p.Key == $"{MapActions.TransitCamp}_{hex.Q}_{hex.R}"));
@@ -450,6 +501,7 @@ public class TownLandmarksTests
         CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Model), TownLandmarks.Shikun, "not on the 15 November 1949 turn");
         CollectionAssert.DoesNotContain(asked.Select(a => a.id), TownLandmarks.Shikun);
         TownLandmarks.ShowAt(map, new DateTime(1949, 12, 15), housing, c);
+        AdmitGeometryTowns(map, t);
         Assert.AreEqual(1, asked.Count(a => a.id == TownLandmarks.Shikun), "asked once it is wanted");
         AnswerAll();
         Assert.AreEqual(1, t.Placed.Count(p => p.Model == TownLandmarks.Shikun && p.Key == $"{MapActions.Housing}_{hex.Q}_{hex.R}"));
@@ -461,6 +513,7 @@ public class TownLandmarksTests
         var map = OpenMap();
         var c = ContentLoader.Load(Statecraft.Game.Paths.Content);
         var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), c)!;
+        AdmitGeometryTowns(map, t);
         var tel = asked.Single(a => a.id == TownLandmarks.TelAviv);
         LogAssert.Expect(LogType.Warning, new Regex("^LANDMARKS: the town model tel-aviv-white-city-v1 did not stream"));
         tel.done(null);
@@ -469,5 +522,275 @@ public class TownLandmarksTests
         Assert.Greater(t.Placed.Count, 0, "the others are drawn");
         CollectionAssert.DoesNotContain(t.Placed.Select(p => p.Key), "tel_aviv");
         CollectionAssert.Contains(t.Missing, "tel_aviv");
+    }
+
+    const System.Reflection.BindingFlags ResidencyFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+    static object? ResidencyCall(object? owner, Type type, string method, params object?[] args)
+    {
+        var found = type.GetMethod(method, ResidencyFlags);
+        Assert.IsNotNull(found, "focused residency must implement " + method);
+        return found!.Invoke(owner, args);
+    }
+    sealed class ResidencySource : CollectionStream.ISource
+    {
+        public GameObject? Prefab;
+        public int Opens, Unloads;
+        public Action? BeforeUnload;
+        public IEnumerator Open(string bundle, Action<string?> done) { Opens++; yield return null; done(null); }
+        public IEnumerator Load(string bundle, string path, Action<GameObject?> done) { yield return null; done(Prefab); }
+        public void Unload(string bundle) { BeforeUnload?.Invoke(); Unloads++; }
+    }
+    static void ResidencyPump(IEnumerator run, int frames = 20)
+    {
+        var stack = new Stack<IEnumerator>(); stack.Push(run); int seen = 0;
+        while (stack.Count != 0 && seen < frames)
+        {
+            var top = stack.Peek();
+            if (!top.MoveNext()) stack.Pop();
+            else if (top.Current is IEnumerator child) stack.Push(child);
+            else seen++;
+        }
+    }
+    sealed class ResidencyFixture : IDisposable
+    {
+        public readonly MapScene map;
+        public readonly TownLandmarks towns;
+        public readonly TownModelLayer buildings;
+        public readonly Camera camera;
+        public readonly TownLandmarks.Want focus;
+        public readonly ResidencySource source;
+        public readonly CollectionStream stream;
+        public readonly List<string> acquired = new List<string>();
+        public readonly List<Action<GameObject?>> callbacks = new List<Action<GameObject?>>();
+        readonly List<GameObject> observedInstances = new List<GameObject>();
+        readonly List<Renderer> observedRenderers = new List<Renderer>();
+        readonly IEnumerator run;
+        readonly System.Reflection.FieldInfo acquireField;
+        readonly object? oldAcquire;
+        readonly GameObject prefab;
+        readonly Action<string, CollectionDetail, Action<GameObject?>> oldRequest;
+        /// <param name="approved">The shipping town policy (ProductionResidency.Approved(): in the footprint only, view band
+        /// 120/160 km) instead of the fixture's 1000/2000/1000/2 spatial values, and a focus admitted under it.</param>
+        public ResidencyFixture(Action<string, CollectionDetail, Action<GameObject?>> defaultRequest, bool approved = false)
+        {
+            acquireField = typeof(TownLandmarks).GetField("Acquire", ResidencyFlags)!;
+            Assert.IsNotNull(acquireField, "whole-town requests must use acquired ownership");
+            oldAcquire = acquireField.GetValue(null); oldRequest = TownLandmarks.Request;
+            map = OpenMap(); buildings = map.GetComponentInChildren<TownModelLayer>(true);
+            var policy = ProductionResidency.Approved().Towns;
+            if (approved) buildings.ConfigureProduction(policy);
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "fake original town";
+            source = new ResidencySource { Prefab = prefab }; stream = new CollectionStream(source); run = stream.Run();
+            TownLandmarks.Request = defaultRequest;
+            acquireField.SetValue(null, new Func<string, CollectionDetail, Action<GameObject?>, IDisposable>((id, detail, answer) =>
+            {
+                acquired.Add(id); callbacks.Add(answer);
+                var retain = typeof(CollectionStream).GetMethod("Retain", ResidencyFlags);
+                Assert.IsNotNull(retain);
+                return (IDisposable)retain!.Invoke(stream, new object[] { id, detail, answer })!;
+            }));
+            var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+            towns = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+            // Map.Build -> KitLayer.Build -> TownModelLayer.Init, including real explicit town/renderer identity wiring.
+            var places = (IReadOnlyList<(string id, UnityEngine.Bounds bounds)>)typeof(TownModelLayer).GetField("places", ResidencyFlags)!.GetValue(buildings)!;
+            var chosen = towns.Wanted.Where(w => w.OnTown && buildings.CountFor(w.Key) > 0).OrderBy(w => w.Key, StringComparer.Ordinal).First(w =>
+            {
+                var ids = approved
+                    ? TownModelLayer.FocusedTowns(places, new Vector3(w.At.x, 0, w.At.y), null, null, policy.Enter, policy.Exit, policy.Edge, policy.MaxEdges)
+                    : (string[])ResidencyCall(null, typeof(TownModelLayer), "FocusedTowns", places,
+                        new Vector3(w.At.x, 0, w.At.y), null, null, 1000f, 2000f, 1000f, 2)!;
+                return ids.Length > 0 && ids[0] == w.Key;
+            });
+            focus = chosen;
+            var go = new GameObject("residency camera"); camera = go.AddComponent<Camera>();
+        }
+        public void Choose(bool close = false, bool outside = false)
+        {
+            var at = outside ? new Vector2(-10000000, -10000000) : focus.At;
+            float height = close ? 10000 : 40000; // view-ray distance 14 km or 56 km, inside the original visibility gate
+            camera.transform.position = new Vector3(at.x, height, at.y - height);
+            camera.transform.LookAt(new Vector3(at.x, 0, at.y));
+            towns.Choose(default, camera);
+        }
+        public void Arrive()
+        {
+            ResidencyPump(run);
+            var instance = towns.transform.Find(focus.Key);
+            Assert.IsNotNull(instance, "capture a real instance before testing teardown");
+            observedInstances.Add(instance.gameObject); observedRenderers.AddRange(instance.GetComponentsInChildren<Renderer>(true));
+            Assert.IsNotEmpty(observedRenderers);
+        }
+        public void AssertConsumerCleared()
+        {
+            Assert.IsNotEmpty(observedInstances); Assert.IsNotEmpty(observedRenderers);
+            foreach (var instance in observedInstances) Assert.IsTrue(instance == null, "detached instances must actually be destroyed");
+            foreach (var renderer in observedRenderers) Assert.IsTrue(renderer == null, "a detached renderer is still a consumer");
+            Assert.IsNull(towns.transform.Find(focus.Key), "instances retire before Unload(true)");
+            Assert.IsFalse(towns.Seats.ContainsKey(focus.Key));
+            var cached = (System.Collections.IDictionary)typeof(TownLandmarks).GetField("prefabs", ResidencyFlags)!.GetValue(towns)!;
+            Assert.IsFalse(cached.Contains(focus.Model), "consumer prefab reference retires before source unload");
+        }
+        public void Dispose()
+        {
+            Object.DestroyImmediate(towns.gameObject); Object.DestroyImmediate(camera.gameObject);
+            acquireField.SetValue(null, oldAcquire); TownLandmarks.Request = oldRequest;
+            Object.DestroyImmediate(prefab);
+        }
+    }
+
+    /// <summary>The still-applicable part of the owner's 18 October 2026 ruling ("no procedural houses in a mapped town at any
+    /// zoom", the deleted AMappedTownDrawsNoProceduralHousesAtAnyZoom) under focused residency (#1273), across both
+    /// hysteresis bands, inward and outward: the town view band (in at 120 km, out at 160 km) and the close band (buildings in
+    /// below 40 km, out above 45 km). Once the town the camera is on has its original, its kit houses never draw; outside the
+    /// view band (125 km on the way in, 165 km on the way out) the procedural fallback draws again. It runs under the shipping
+    /// policy (ProductionResidency.Approved()), and each step also checks which original stands in: the building models
+    /// below the close band, the whole-town model above it, neither outside the view band.</summary>
+    [Test]
+    public void TheFocusedMappedTownDrawsNoProceduralHousesAtAnyZoom()
+    {
+        using (var f = new ResidencyFixture(saved, approved: true))
+        {
+            Assert.AreEqual(ProductionResidency.Approved().Towns.Evidence, f.buildings.SpatialPolicyEvidence, "the approved policy, not the fixture's values");
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var kit = identity.Where(p => p.Value == f.focus.Key).Select(p => p.Key).ToList();
+            Assert.IsNotEmpty(kit, f.focus.Key + " has kit houses to hide");
+            var root = f.map.transform.Find(KitLayer.RootName);
+            var closeR = root.Find(f.focus.Key + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(closeR, f.focus.Key + " has a close mesh to swap");
+            int arrived = 0;
+            // original: an original stands in (kit houses hidden); buildings: it is the building models (else the whole town).
+            var steps = new (float d, bool original, bool buildings, string why)[]
+            {
+                (125000f, false, false, "in: outside the 120 km view band, fallback"), (119000f, true, false, "in: inside the view band"),
+                (60000f, true, false, "in: the gameplay view"), (44000f, true, false, "in: above the 40 km close threshold, whole town"),
+                (39000f, true, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, true, "in: the closest zoom"),
+                (44000f, true, true, "out: below the 45 km close exit, still buildings"), (46000f, true, false, "out: above 45 km, whole town again"),
+                (150000f, true, false, "out: inside the 160 km view exit"), (165000f, false, false, "out: beyond 160 km, fallback restored"),
+            };
+            foreach (var (d, original, buildings, why) in steps)
+            {
+                float h = d / Mathf.Sqrt(2f);   // the view ray at 45 degrees: distance d to the ground
+                f.camera.transform.position = new Vector3(f.focus.At.x, h, f.focus.At.y - h);
+                f.camera.transform.LookAt(new Vector3(f.focus.At.x, 0, f.focus.At.y));
+                f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
+                if (f.acquired.Count > arrived) { f.Arrive(); arrived = f.acquired.Count; f.towns.Choose(default, f.camera); }
+                string at = FormattableString.Invariant($"{f.focus.Key} at {d / 1000f} km ({why})");
+                Assert.AreEqual(buildings, f.buildings.ReadyForTown(f.focus.Key, f.camera), "building models: " + at);
+                Assert.AreEqual(original && !buildings, f.buildings.WantsWholeTown(f.focus.Key, f.camera), "whole-town original: " + at);
+                foreach (var r in kit) Assert.AreEqual(original, r.forceRenderingOff, "kit houses: " + at);
+                Assert.AreEqual(!original, closeR!.forceRenderingOff, "close mesh: " + at);
+            }
+            Assert.Greater(arrived, 0, "the whole-town original was admitted and arrived");
+        }
+    }
+
+    [Test]
+    public void FocusedOverviewAcquiresOnlyItsWholeTownAndLoadingKeepsFallback()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            CollectionAssert.IsEmpty(f.acquired, "no camera has admitted a town yet");
+            f.Choose(); CollectionAssert.AreEqual(new[] { f.focus.Model }, f.acquired);
+            Assert.IsFalse(f.buildings.Suppressed(f.focus.Key), "pending original cannot hide fallback");
+            f.Arrive(); Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
+            Assert.AreEqual(1, f.towns.Placed.Count(p => p.Key == f.focus.Key));
+            Assert.AreEqual(1, f.source.Opens);
+            f.Choose();
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            foreach (var pair in identity) if (pair.Value == f.focus.Key) Assert.IsTrue(pair.Key.forceRenderingOff);
+        }
+    }
+    [Test]
+    public void CloseBuildingsAndWholeTownNeverOwnDuplicateRepresentations()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            f.Choose(close: true);
+            CollectionAssert.IsEmpty(f.acquired, "individual Near buildings are the only admitted representation");
+            Assert.IsTrue((bool)ResidencyCall(f.buildings, typeof(TownModelLayer), "ReadyForTown", f.focus.Key, f.camera)!);
+            f.Choose(); f.Arrive(); Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
+            f.Choose(close: true); Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
+            Assert.AreEqual(1, f.source.Unloads, "whole lease retires when near representation takes over");
+        }
+    }
+    [Test]
+    public void LeavingFocusClearsInstancesAndConsumerReferencesBeforeLeaseUnload()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            f.Choose(); f.Arrive();
+            f.source.BeforeUnload = f.AssertConsumerCleared;
+            f.Choose(outside: true);
+            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            foreach (var pair in identity) Assert.IsFalse(pair.Key.forceRenderingOff, "outside focus is code-built fallback");
+        }
+    }
+    [Test]
+    public void FailedOrLateWholeTownRepliesCannotCreateAHoleOrReviveAnEvictedTown()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            f.Choose(); var late = f.callbacks.Single(); f.Choose(outside: true);
+            late(null); // stale reply must not create a warning, asset reference or instance
+            Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
+            f.Choose(); LogAssert.Expect(LogType.Warning, new Regex("LANDMARKS: the town model .* did not stream"));
+            f.callbacks.Last()(null);
+            Assert.IsFalse(f.buildings.Suppressed(f.focus.Key)); Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
+        }
+    }
+    [Test]
+    public void LayerDisableRetiresWholeTownOwnershipAfterInstancesAndReferences()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            f.Choose(); f.Arrive(); f.source.BeforeUnload = f.AssertConsumerCleared;
+            f.towns.enabled = false;
+            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+        }
+    }
+    [Test]
+    public void ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            var settlementIds = f.map.Settlements.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+            Assert.IsNotEmpty(identity);
+            foreach (var pair in identity) Assert.IsTrue(settlementIds.Contains(pair.Value), "only built.Towns gets explicit identity");
+            var swaps = (IEnumerable<(Renderer kit, Renderer? close)>)typeof(TownModelLayer).GetField("swaps", ResidencyFlags)!.GetValue(f.buildings)!;
+            var mixed = swaps.Where(pair => !identity.ContainsKey(pair.kit)).ToList();
+            Assert.IsNotEmpty(mixed, "Map.Build must include grouped localities/camps for this fixture");
+            f.Choose(close: true);
+            foreach (var pair in mixed) Assert.IsFalse(pair.kit.forceRenderingOff, "an atomic mixed tile keeps its fallback");
+        }
+    }
+
+
+    [Test]
+    public void AQuietCameraExpiresAndRetiresWholeTownOwnershipWithoutAnotherRender()
+    {
+        using (var f = new ResidencyFixture(saved))
+        {
+            f.Choose(); f.Arrive(); f.source.BeforeUnload = f.AssertConsumerCleared;
+            ResidencyCall(f.buildings, typeof(TownModelLayer), "AdvanceCameraFrame", Time.frameCount + 3);
+            ResidencyCall(f.towns, typeof(TownLandmarks), "RefreshWanted");
+            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+        }
+    }
+
+    [Test]
+    public void NoAdmissionLayerCannotFallBackToUnboundedWholeTownRequests()
+    {
+        var root = new GameObject("no town policy");
+        try
+        {
+            var towns = root.AddComponent<TownLandmarks>();
+            var whole = new TownLandmarks.Want("town", TownLandmarks.TelAviv, Vector2.zero, 100, true);
+            var placement = new TownLandmarks.Want("placement", TownLandmarks.Kibbutz, Vector2.zero, 100, false);
+            Assert.IsFalse((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", whole)!);
+            Assert.IsTrue((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", placement)!);
+        }
+        finally { Object.DestroyImmediate(root); }
     }
 }

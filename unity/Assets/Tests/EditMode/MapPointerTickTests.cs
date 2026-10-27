@@ -37,7 +37,7 @@ public class MapPointerTickTests : InputTestFixture
             var asked = Asked;
             Pointer.IsOverUi = p => { asked.Add(p); return true; };   // true: the decision is recorded, no map needed
             var pointer = Pointer;
-            Controller.HoldsMouseDrag = () => pointer.RightTapCandidate;   // as GameRoot wires them
+            Controller.HoldsMouseDrag = () => pointer.RightTapCandidate || pointer.LeftTapCandidate;   // as GameRoot wires them
             Controller.HoldsTouchDrag = () => pointer.TouchTapCandidate;
             Send(Controller, "Awake"); Send(Controller, "OnEnable"); Send(Pointer, "OnEnable");
         }
@@ -97,18 +97,18 @@ public class MapPointerTickTests : InputTestFixture
     // and a test asserting it would be order-dependent. Reported on #1661 instead of pinned; the no-order half is
     // already covered by RightClickOrPanTests.ARightDragOutAndBackInsideOneFrameIsNoClick.
 
-    /// <summary>Item 4's touch half, pinning what happens **today**: a flick whose press, travel and release all land
-    /// in one input update comes back as a <em>tap</em>, and at the release point rather than where the finger landed.
-    /// <para>Why. <c>Tick</c> samples the touch once per frame, and <c>TapPress.Step</c> sets <c>start</c> from that
-    /// same sample on the press edge, so <c>position - start</c> is zero and <c>moved</c> never latches however far the
-    /// finger travelled. The 200 px of travel is invisible, and the one position the frame saw is the last one.</para>
-    /// <para>The warming frame matters: <c>ButtonControl.wasPressedThisFrame</c> takes an old path on its first call
-    /// ever and can miss a fast press (ButtonControl.cs:287-293, and its own remarks). Without it this test passed for
-    /// the wrong reason, with the gesture not seen at all. In the game <c>Tick</c> queries every frame, so the control
-    /// is warm, and this is what a real one-update flick would do. Reported on #1661; the fix would mean reading the
-    /// touch's travel or phase rather than one sampled position, which changes the tap rule.</para></summary>
+    /// <summary>Item 4's touch half, as the owner ruled it on 26 October 2026: **a very fast one-finger swipe pans
+    /// the map and selects nothing.** A flick whose press, travel and release all land in one input update used to
+    /// come back as a tap, at the release point rather than where the finger landed, because <c>Tick</c> samples the
+    /// touch once per frame and <c>TapPress.Step</c> set <c>start</c> from that same sample on the press edge: the
+    /// 200 px of travel was invisible to <c>position - start</c> and <c>moved</c> never latched. The press now carries
+    /// the finger's travel within the frame, so the slop sees it.
+    /// <para>The warming frame matters and must stay: <c>ButtonControl.wasPressedThisFrame</c> takes an old path on
+    /// its first call ever and can miss a fast press (ButtonControl.cs:287-293, and its own remarks). Without it this
+    /// test passes for the wrong reason, with the gesture not seen at all. In the game <c>Tick</c> queries every
+    /// frame, so the control is warm.</para></summary>
     [Test]
-    public void AFlickInsideOneInputUpdateIsATapAtTheReleasePointToday()
+    public void AFlickInsideOneInputUpdateSelectsNothing()
     {
         using var rig = new Rig();
         var start = rig.View.LookAt;
@@ -119,14 +119,38 @@ public class MapPointerTickTests : InputTestFixture
         EndTouch(1, from + new Vector2(200, 0));
         rig.Frame();
         rig.SettleFrame();
-        CollectionAssert.AreEqual(new[] { from + new Vector2(200, 0) }, rig.Asked,
-            "today a one-update flick taps, and at the release point: the travel is invisible to the slop");
-        Assert.AreEqual(start, rig.View.LookAt, "and it does not pan");
+        Assert.IsEmpty(rig.Asked, "a fast swipe selects nothing: the travel is inside the frame, and the slop sees it");
+        // The pan is not asserted here, and deliberately. In this extreme the finger is already up when the frame
+        // runs, so CameraController's FingersDown sees none and never reads its delta; panning it would mean changing
+        // the camera, which is ruling 2's file. A swipe the camera sees a finger during is the next test.
+        Assert.AreEqual(start, rig.View.LookAt, "today it also does not pan, because the finger is gone by the frame");
     }
 
-    /// <summary>The zero-travel control, and the reason the test above is a finding rather than an artefact: the same
-    /// one-update press and release with the finger still selects where it was pressed, which is correct. So the
-    /// difference between the two is the 200 px of travel being lost, not the gesture being dropped.</summary>
+    /// <summary>The same ruling for a swipe the camera can actually see: fast, but with the finger down across a
+    /// frame, as every swipe on a real screen is. Nothing is selected and the map pans by the swipe. This is the half
+    /// of the owner's ruling 3 that needs no change to the camera.</summary>
+    [Test]
+    public void AFastSwipeAcrossFramesPansAndSelectsNothing()
+    {
+        using var rig = new Rig();
+        var start = rig.View.LookAt;
+        var from = new Vector2(400, 400);
+        rig.Frame();   // warms press.wasPressedThisFrame, as above
+        BeginTouch(1, from);
+        rig.Frame();
+        MoveTouch(1, from + new Vector2(200, 0));
+        rig.Frame();
+        EndTouch(1, from + new Vector2(200, 0));
+        rig.Frame();
+        rig.SettleFrame();
+        Assert.IsEmpty(rig.Asked, "a swipe past the slop selects nothing");
+        Assert.AreNotEqual(start, rig.View.LookAt, "and the map pans by the swipe");
+    }
+
+    /// <summary>The zero-travel control for the two tests above: the same one-update press and release, with the
+    /// finger still, selects where it was pressed. The finger's travel in the frame is zero, so the slop sees nothing
+    /// and the press is a tap, as it should be. That is what makes the swipe above a travel rule rather than a
+    /// one-update gesture being dropped: the only difference between them is the 200 px.</summary>
     [Test]
     public void AStillPressInsideOneInputUpdateSelectsWhereItWasPressed()
     {

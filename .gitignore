@@ -63,6 +63,8 @@ unity/Assets/StreamingAssets/golden/
 unity/Assets/StreamingAssets/golden.meta
 unity/Assets/StreamingAssets/collection/
 unity/Assets/StreamingAssets/collection.meta
+unity/Assets/StreamingAssets/hex-props/
+unity/Assets/StreamingAssets/hex-props.meta
 unity/Builds/
 
 # local secrets, licences and agent workspaces

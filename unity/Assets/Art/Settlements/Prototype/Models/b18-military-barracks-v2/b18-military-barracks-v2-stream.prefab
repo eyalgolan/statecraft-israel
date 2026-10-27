@@ -59,5 +59,25 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c381176082d441ae89066fc5b17e79f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4208577043622626436}
   m_SourcePrefab: {fileID: 100100000, guid: 5c381176082d441ae89066fc5b17e79f, type: 3}
+--- !u!1 &5993338322849013710 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c381176082d441ae89066fc5b17e79f, type: 3}
+  m_PrefabInstance: {fileID: 6912449982862434975}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4208577043622626436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5993338322849013710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e77a9d0471f794527b4c41799be6b978, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.Map.Collection.OriginalModelDistance

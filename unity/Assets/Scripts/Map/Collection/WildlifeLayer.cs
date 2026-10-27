@@ -164,6 +164,10 @@ namespace Statecraft.Game.Map.Collection
             }
         }
 
+        internal CollectionResidencyMetrics.Category ResidencySnapshot() => CollectionResidencyMetrics.Row("wildlife",
+            isActiveAndEnabled ? wants.Count : 0, Placed.Count, prefabs.Keys.Concat(wants.Select(w => w.Model)), 0,
+            wants.Select(w => w.Model).Distinct().Count(id => !prefabs.ContainsKey(id)), prefabs.Values.Count(p => p != null),
+            renderers.Count(r => r != null), 0, Missing.Count);
         MapScene? map;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly List<Renderer> renderers = new List<Renderer>();
@@ -201,6 +205,7 @@ namespace Statecraft.Game.Map.Collection
 
         void Rebuild()
         {
+            CollectionResidencyMetrics.MarkDirty();
             if (map == null || map.Terrain == null) return;
             for (int i = transform.childCount - 1; i >= 0; i--)
             {

@@ -7,8 +7,9 @@ using UnityEngine.InputSystem;
 namespace Statecraft.Game.Map
 {
     /// <summary>The tap rule, with no devices: a finger becomes a tap only when it lifts within
-    /// <see cref="SlopPixels"/> of where it landed and no second finger was down while it was held. A moved finger
-    /// drags the camera and two fingers pinch (CameraController), so neither may also select a hex.</summary>
+    /// <see cref="SlopPixels"/> of where it landed, travelled no further than that inside any one frame, and no second
+    /// finger was down while it was held. A moved finger drags the camera and two fingers pinch (CameraController), so
+    /// neither may also select a hex.</summary>
     public struct TapPress
     {
         /// <summary>How far the finger may wander, in screen pixels, before the press stops being a tap (about
@@ -23,14 +24,22 @@ namespace Statecraft.Game.Map
         /// pan, never both (#1654 review).</summary>
         public bool TapCandidate => down && !moved && !pinched;
 
-        /// <summary>One frame of the watched finger: its pressed and released edges, where it is, and whether any
-        /// other finger is down. The tap's position on a release frame that still qualifies, otherwise null.</summary>
-        public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown)
+        /// <summary>One frame of the watched finger: its pressed and released edges, where it is, whether any other
+        /// finger is down, and how far it travelled within this frame. The tap's position on a release frame that
+        /// still qualifies, otherwise null.
+        /// <para><paramref name="travel"/> is what makes a very fast swipe a pan rather than a tap (owner's ruling of
+        /// 26 October 2026, #1661 item 4). A finger sampled once per frame can press, cross the screen and lift inside
+        /// one input update, and then <c>position</c> and <c>start</c> are the same sample: the distance test below
+        /// sees nothing moved however far it went. The frame's own travel does see it. Callers with no travel to
+        /// report (the mouse's right button, which is stepped from its action callbacks) pass none, so their rule is
+        /// unchanged.</para></summary>
+        public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown, Vector2 travel = default)
         {
             if (pressed) { start = position; down = true; moved = false; pinched = false; }
             if (!down) return null;
             if (otherFingerDown) pinched = true;                       // a pinch is never a tap, even a still thumb
             if ((position - start).sqrMagnitude > SlopPixels * SlopPixels) moved = true;   // latched: coming back helps not
+            if (travel.sqrMagnitude > SlopPixels * SlopPixels) moved = true;               // a whole flick inside one frame
             if (!released) return null;
             down = false;
             return moved || pinched ? (Vector2?)null : start;
@@ -40,9 +49,11 @@ namespace Statecraft.Game.Map
     /// <summary>Left click on the map (not on the UI) selects the hex under the pointer: a ray from the camera hits the
     /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker). On a touchscreen a tap (press and
     /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.
-    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing. One TapPress per
-    /// gesture decides both a click and the camera's pan (RightTapCandidate, TouchTapCandidate): the camera pans only once
-    /// the press has left the slop, so a press is a click or a pan, never both (#1654 review).</summary>
+    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing. Since #998 a
+    /// left press behaves the same way: inside the slop it selects on release, and past it the camera pans and nothing is
+    /// selected. One TapPress per gesture decides both a click and the camera's pan (RightTapCandidate, LeftTapCandidate,
+    /// TouchTapCandidate): the camera pans only once the press has left the slop, so a press is a click or a pan, never
+    /// both (#1654 review).</summary>
     /// <remarks>Runs before <see cref="CameraController"/> (#1661 item 5). The camera asks this pointer whether a press
     /// may still be a tap. For a finger that answer is <see cref="TouchTapCandidate"/>, which only this component's own
     /// frame moves; <see cref="RightTapCandidate"/> is moved by the right button's action callbacks
@@ -71,21 +82,28 @@ namespace Statecraft.Game.Map
         // Right clicks, as presses are: the right button's press, every pointer move while it is held and its release are
         // each stepped at their own event's position, so a drag out and back inside one slow frame is still a drag.
         readonly Queue<Vector2> rightClicks = new Queue<Vector2>();
-        InputAction? press, rightPress, rightMove;
+        InputAction? press, leftMove, rightPress, rightMove;
 
-        TapPress tap, rightTap;
+        TapPress tap, rightTap, leftTap;
 
         /// <summary>True while the right button's press could still end as a right click (TapPress.TapCandidate): the
         /// camera holds its right-drag pan until it is false.</summary>
         public bool RightTapCandidate => rightTap.TapCandidate;
         /// <summary>True while the primary finger's press could still end as a tap: the camera holds its one-finger pan.</summary>
         public bool TouchTapCandidate => tap.TapCandidate;
+        /// <summary>True while the left button's press could still end as a click (#998): the camera holds its drag
+        /// until the press leaves the slop, so a click never nudges the map and a drag past it pans.</summary>
+        public bool LeftTapCandidate => leftTap.TapCandidate;
 
         void OnEnable()
         {
             press = new InputAction("map-press", InputActionType.Button, "<Mouse>/leftButton");
             press.performed += OnPressed;
+            press.canceled += OnReleased;
             press.Enable();
+            leftMove = new InputAction("map-left-move", InputActionType.PassThrough, "<Mouse>/position");
+            leftMove.performed += OnLeftMoved;
+            leftMove.Enable();
             rightPress = new InputAction("map-right-press", InputActionType.Button, "<Mouse>/rightButton");
             rightPress.performed += OnRightPressed;
             rightPress.canceled += OnRightReleased;
@@ -97,11 +115,12 @@ namespace Statecraft.Game.Map
 
         void OnDisable()
         {
-            if (press != null) { press.performed -= OnPressed; press.Dispose(); press = null; }
+            if (press != null) { press.performed -= OnPressed; press.canceled -= OnReleased; press.Dispose(); press = null; }
+            if (leftMove != null) { leftMove.performed -= OnLeftMoved; leftMove.Dispose(); leftMove = null; }
             if (rightPress != null) { rightPress.performed -= OnRightPressed; rightPress.canceled -= OnRightReleased; rightPress.Dispose(); rightPress = null; }
             if (rightMove != null) { rightMove.performed -= OnRightMoved; rightMove.Dispose(); rightMove = null; }
             presses.Clear(); rightClicks.Clear();
-            rightTap = default;
+            rightTap = default; leftTap = default;
         }
 
         void OnRightPressed(InputAction.CallbackContext ctx)
@@ -118,7 +137,24 @@ namespace Statecraft.Game.Map
 
         void OnPressed(InputAction.CallbackContext ctx)
         {
-            if (ctx.control.device is Pointer p) OnPress(p.position.ReadValue());   // read during the event: its own position
+            if (ctx.control.device is Pointer p) LeftStep(true, false, p.position.ReadValue());   // read during the event: its own position
+        }
+
+        void OnLeftMoved(InputAction.CallbackContext ctx) => LeftStep(false, false, ctx.ReadValue<Vector2>());
+
+        void OnReleased(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Pointer p) LeftStep(false, true, p.position.ReadValue());
+        }
+
+        /// <summary>One step of the left button's press (#998, owner's ruling of 22 October 2026: a left drag pans the
+        /// map). The click is decided like the right button's: it is queued on the release, at the position the press
+        /// went down, and only while it never left the slop. Queuing on the release and not the press is what lets a
+        /// drag pan without selecting — a press cannot be known to be a drag until it moves — and the queue still holds
+        /// one entry per physical press, so each click acts exactly once (docs/m3-rulings.md, #1617).</summary>
+        internal void LeftStep(bool pressed, bool released, Vector2 position)
+        {
+            if (leftTap.Step(pressed, released, position, false) is Vector2 at) OnPress(at);
         }
 
         /// <summary>Queues a press at <paramref name="at"/> (screen pixels, y up).</summary>
@@ -147,7 +183,7 @@ namespace Statecraft.Game.Map
                 if (touch.press.isPressed) pressed++;
             // any other finger down cancels the tap (TapPress): a releasing pinch's thumb is inside the slop, yet must not select
             var tapAt = tap.Step(t.press.wasPressedThisFrame, t.press.wasReleasedThisFrame,
-                t.position.ReadValue(), pressed > (t.press.isPressed ? 1 : 0));
+                t.position.ReadValue(), pressed > (t.press.isPressed ? 1 : 0), t.delta.ReadValue());
             if (tapAt.HasValue) OnPress(tapAt.Value);   // a tap selects where the finger landed, like a click
         }
 

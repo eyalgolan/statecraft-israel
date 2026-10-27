@@ -51,7 +51,7 @@ namespace Statecraft.Sim
             s.ExhaustedTurns = s.Debt >= r.DebtCeiling!.Value && s.Food == 0 ? s.ExhaustedTurns + 1 : 0;
             if (s.ExhaustedTurns < r.DefeatTurns!.Value) return;
             s.GameOver = GameOverCodes.DefeatEconomy;
-            why.Add(new Cause("era", s.GameOver, s.ExhaustedTurns, PlayerText.GameOver(s.GameOver)));   // the game's end, grouped with the MVP end
+            why.Add(new Cause("era", s.GameOver, s.ExhaustedTurns, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));   // the game's end, grouped with the MVP end
         }
 
         /// <summary>R-END-003: an enemy military unit holding the hex of one of the player's GDD cities at the turn's
@@ -72,7 +72,7 @@ namespace Statecraft.Sim
                 if (u.Side == "" || u.Side == Movement.PlayerSide) continue;   // not an enemy (Movement's reading of "the enemy")
                 if (!cities.Contains((u.Q, u.R))) continue;
                 s.GameOver = GameOverCodes.DefeatWar;
-                why.Add(new Cause("era", s.GameOver, u.Id, PlayerText.GameOver(s.GameOver)));   // the game's end, grouped with the MVP end
+                why.Add(new Cause("era", s.GameOver, u.Id, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));   // the game's end, grouped with the MVP end
                 return;
             }
         }

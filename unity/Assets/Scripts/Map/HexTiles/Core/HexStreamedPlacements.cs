@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Statecraft.HexTiles
@@ -14,11 +15,13 @@ namespace Statecraft.HexTiles
         HexBoardAssets? boardAssets;
         Transform? drawn;
         bool dirty, stopped;
+        readonly List<UnityEngine.Object> retiringObjects = new List<UnityEngine.Object>();
 
         internal void Initialise(IReadOnlyList<HexPlacement> placements, HexBoardAssets assets)
         {
             this.placements = placements; boardAssets = assets;
             models = new HexCollectionFigures(() => dirty = true);
+            models.SetInstanceCounter(() => placements.Count(p => models != null && models.IsOriginalCached(HexModels.Resolve(p.Model, p.Position))));
             assets.OnTeardown(Stop);
             Draw(); dirty = false;
         }
@@ -42,8 +45,14 @@ namespace Statecraft.HexTiles
         void ReleaseDrawn()
         {
             if (drawn == null) return;
+            retiringObjects.RemoveAll(instance => instance == null);
+            retiringObjects.Add(drawn.gameObject);
+            retiringObjects.AddRange(drawn.GetComponentsInChildren<Renderer>(true));
+            retiringObjects.AddRange(drawn.GetComponentsInChildren<MeshFilter>(true));
+            var assets = drawn.GetComponent<HexBoardAssets>();
+            retiringObjects.AddRange(assets.PendingRetirementObjects);
             drawn.gameObject.SetActive(false);
-            drawn.GetComponent<HexBoardAssets>().Teardown();
+            assets.Teardown();
             if (Application.isPlaying) Destroy(drawn.gameObject); else DestroyImmediate(drawn.gameObject);
             drawn = null;
         }
@@ -51,8 +60,9 @@ namespace Statecraft.HexTiles
         void Stop()
         {
             if (stopped) return;
-            stopped = true; models?.Dispose(); models = null;
+            stopped = true;
             placements = Array.Empty<HexPlacement>(); ReleaseDrawn();
+            models?.DisposeAfterDestroyed(retiringObjects); models = null; retiringObjects.Clear();
         }
 
         void OnDestroy()
