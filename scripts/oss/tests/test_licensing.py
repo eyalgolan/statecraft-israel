@@ -1,6 +1,11 @@
+import fnmatch
+import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "tools"))
+import yaml12  # noqa: E402
 
 
 # sha256 of the official plain text, https://polyformproject.org/licenses/noncommercial/1.0.0.txt (fetched 22 Oct 2026;
@@ -95,3 +100,73 @@ def test_every_repo_path_licensing_names_exists():
         if not ok:
             missing.append(token)
     assert missing == [], f"LICENSING.md names paths that are not in the repository: {missing}"
+
+
+
+def test_tal_original_licensing_matches_manifest_exactly():
+    """Only the 146 pinned originals receive the 20 October 2026 original-file terms.
+
+    Execution is PENDING (root, at APPLY); this is a static pre-draft.
+    Selecting by manifest instead of artist permits independent newer grants and historical records.
+    """
+    manifest = json.loads((ROOT / "docs/original-models.json").read_text(encoding="utf-8"))
+    originals = {f["path"] for f in manifest["files"] if f["source"] in {"336", "507"}}
+    generated = {f["path"] for f in manifest["files"] if f["source"] == "generated (ours)"}
+    assert len(originals) == 146 and len(generated) == 311
+    assert originals.isdisjoint(generated)
+    assert len(manifest["files"]) == 457  # reject unknown classifications or duplicate paths
+    rules = yaml12.load_path(ROOT / "ASSETS.yaml")["rules"]
+    selected = [r for r in rules if any(fnmatch.fnmatch(p, r["glob"]) for p in originals)]
+    assert len(selected) == 146
+    assert {r["glob"] for r in selected} == originals  # no wildcard or extra path
+    for path in originals:
+        assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
+    independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
+    assert len(independent) == 48  # 146 originals + 48 independent grants = 194 total
+    for row in selected:
+        assert row["licence"] == "CC-BY-NC-ND-4.0"
+        assert row["artist"] == "Tal Heuberger"
+        for required in ("from 2026-10-20", "credit 'Tal Heuberger'",
+                         "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+                         "do not label the current originals as CC0"):
+            assert required in row["note"], (row["glob"], required)
+        assert "docs/original-models.json" in row["source"]
+
+
+def test_no_asset_licence_rule_matches_generated_manifest_paths():
+    manifest = json.loads((ROOT / "docs/original-models.json").read_text(encoding="utf-8"))
+    generated = {f["path"] for f in manifest["files"] if f["source"] == "generated (ours)"}
+    assert len(generated) == 311
+    rules = yaml12.load_path(ROOT / "ASSETS.yaml")["rules"]
+    captured = [(r["glob"], p) for r in rules for p in sorted(generated)
+                if fnmatch.fnmatch(p, r["glob"])]
+    assert captured == [], f"Asset-licence rows capture generated paths: {captured}"
+
+
+def test_tal_history_excludes_current_originals_and_keeps_generated_code_terms():
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    original = next(l for l in text.splitlines() if l.startswith("| Original 3D model files by Tal Heuberger |"))
+    for required in ("146", "docs/original-models.json", "20 October 2026", 'credit "Tal Heuberger"',
+                     "without their permission", "not slimmed", "311 generated"):
+        assert required in original
+    history = text.split("**Historical model copies and versions.**", 1)[1].split("\n\n", 1)[0]
+    for required in ("2d3e13c098e147493ab034ab2ff20f0b04765fab", "valid CC0 grant before 20 October 2026",
+                     "do not label the current originals as CC0", "same-path/same-blob"):
+        assert required in history
+    code = next(l for l in text.splitlines() if l.startswith("| Code |"))
+    assert "[PolyForm Noncommercial 1.0.0](LICENSE)" in code
+    assert "everything else under `unity/Assets/`" in code and "`.meta` files" in code
+    assert "v0.2.1" in code  # the earlier MIT boundary is retained
+    assert "any later model whose" not in text
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    credit = next(p for p in notice.split("\n\n") if "Tal Heuberger" in p)
+    for required in ("146 original files", "docs/original-models.json", "CC BY-NC-ND 4.0",
+                     "https://creativecommons.org/licenses/by-nc-nd/4.0/", "20 October 2026",
+                     "do not label the current originals as CC0", "311 generated"):
+        assert required in credit
+
+
+def test_exact_licensing_code_row_is_unchanged():
+    text = (ROOT / "LICENSING.md").read_text(encoding="utf-8")
+    code = [line for line in text.splitlines(keepends=True) if line.startswith("| Code |")]
+    assert code == ['| Code | `sim/`, `tools/` (Python), `scripts/`, `.github/`, `.gitignore`, `unity/Assets/Scripts/`, `unity/Assets/Editor/`, `unity/Assets/Tests/`, `promo/*.py`, `spikes/` code, and everything else under `unity/Assets/` not listed below (scenes such as `Map.unity`, `WebGLTemplates/`, `link.xml`, `*.inputactions`, `.meta` files) | [PolyForm Noncommercial 1.0.0](LICENSE). Code released up to and including v0.2.1 stays MIT; see below |\n']
