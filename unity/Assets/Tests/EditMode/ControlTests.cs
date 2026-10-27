@@ -158,7 +158,7 @@ public class ControlTests
         Assert.AreEqual(BorderStyle.Neutral, Style(AcreHex), "the Acre coast: Operation Ben-Ami, Acre taken 17/18 May");
         Assert.AreEqual(BorderStyle.Neutral, Style(JerusalemHex));
         Assert.AreEqual(BorderStyle.Primary, Style(YadMordechaiHex), "a settlement in the uncoloured south (owner ruling Q3)");
-        Assert.AreEqual(0, layer.RegionOf(GazaHex.q, GazaHex.r), "the south has no colour: no region, no band");
+        Assert.AreEqual(BorderStyle.None, Style(GazaHex), "the south has no colour: a region of style none, no band of its own (owner ruling of 27 October 2026)");
         var c = m.Control!;
         Assert.AreEqual((Control1948.Side.Contested, (string?)null), c.At(AcreHex.q, AcreHex.r, Start));
         Assert.AreEqual((Control1948.Side.NoMansLand, (string?)null), c.At(JerusalemHex.q, JerusalemHex.r, Start));
@@ -190,6 +190,43 @@ public class ControlTests
         Assert.AreEqual(BorderStyle.None, layer.StyleOf(layer.RegionOf(beyond.q, beyond.r)));
         var sea = HexOf(34.3, 32.5, land: false);
         Assert.AreEqual(0, layer.RegionOf(sea.q, sea.r), "the sea: no band along the coast");
+    }
+
+    /// <summary>Owner ruling of 27 October 2026 ("Close the borders"): no drawn band ends in mid-air in any period. A drawn
+    /// edge (two regions, at least one with a style) must, at each of its two ends, run on into another drawn edge, or end
+    /// at the coast or the edge of the data (a hex that is not land on the map). Before the ruling the uncoloured south was
+    /// in no region, so Shoval's pinned blue hex (-8, 28) drew one lone edge against the Hebron hills (-7, 28), and the
+    /// 9 July front stopped at (-5, 24)/(-5, 25) where it met the uncoloured Gaza sub-district.</summary>
+    [Test]
+    public void NoBorderEndsInMidAirInAnyPeriod()
+    {
+        var m = Regions();
+        var land = new HashSet<(int q, int r)>(JsonUtility.FromJson<HexFile>(Inputs.Map.HexesJson).hexes.Where(h => h.land).Select(h => (h.q, h.r)));
+        var steps = MapBorders.NeighbourSteps;
+        var dangling = new List<string>();
+        foreach (var period in m.Control!.Periods)
+        {
+            var layer = m.LayerOn(period.From)!;
+            bool Drawn((int q, int r) a, (int q, int r) b)
+            {
+                int x = layer.RegionOf(a.q, a.r), y = layer.RegionOf(b.q, b.r);
+                return x > 0 && y > 0 && x != y && (layer.StyleOf(x) != BorderStyle.None || layer.StyleOf(y) != BorderStyle.None);
+            }
+            foreach (var a in layer.Hexes)
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    var b = (q: a.q + steps[i].dq, r: a.r + steps[i].dr);
+                    if (!Drawn(a, b)) continue;
+                    // The edge's two ends: the hexes a and b both touch, the neighbours of a before and after b.
+                    foreach (int j in new[] { (i + 5) % 6, (i + 1) % 6 })
+                    {
+                        var x = (q: a.q + steps[j].dq, r: a.r + steps[j].dr);
+                        if (Drawn(a, x) || Drawn(b, x) || !land.Contains(x)) continue;
+                        dangling.Add($"{period.Id}: edge ({a.q}, {a.r})|({b.q}, {b.r}) ends at land hex ({x.q}, {x.r}) in region {layer.RegionOf(x.q, x.r)}");
+                    }
+                }
+        }
+        Assert.IsEmpty(dangling, "bands that end in mid-air:\n" + string.Join("\n", dangling));
     }
 
     [Test]
