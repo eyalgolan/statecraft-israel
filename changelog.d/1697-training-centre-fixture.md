@@ -1,0 +1,1 @@
+- Refs #1697: add an internal, fixture-only gdd-0.3 training centre course lifecycle (start, counted course turns, graduation to trained, cancel) on the population ledger. Open design points are refused as Deferred; no real centre, payment or game caller is added, and legacy/gdd-0.1 behaviour and content are unchanged.
