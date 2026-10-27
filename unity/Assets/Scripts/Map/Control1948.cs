@@ -67,7 +67,7 @@ namespace Statecraft.Game.Map
             public bool Covers(DateTime d) => d >= From && (Until == null || d < Until.Value);
         }
 
-        public const int IsraelId = 1, ArabId = 2, NeutralId = 3, OutsideId = 4;
+        public const int IsraelId = 1, ArabId = 2, NeutralId = 3, OutsideId = 4, NoColourId = 5;
         static readonly Dictionary<char, (Side side, string? holder)> CodeOf = new Dictionary<char, (Side, string?)>
         {
             ['I'] = (Side.Israel, null), ['E'] = (Side.Arab, "egypt"), ['J'] = (Side.Arab, "jordan"),
@@ -140,8 +140,9 @@ namespace Statecraft.Game.Map
         }
 
         /// <summary>The layer drawn on <paramref name="date"/> (null before the first period), built once per period: Israel
-        /// primary, the other side secondary, contested, no-man's land and demilitarized zones neutral, no colour left out (no
-        /// band, and it stops its neighbours' bands: the edge of the sourced data is not a front line).</summary>
+        /// primary, the other side secondary, contested, no-man's land and demilitarized zones neutral, no colour a region of
+        /// style none (owner ruling of 27 October 2026, "Close the borders"): it draws no band of its own, and each side's band
+        /// runs one-sided along it, as along the frontier, so a pinned settlement hex is ringed and no band ends in mid-air.</summary>
         public RegionLayer? LayerOn(DateTime date)
         {
             int i = Index(date);
@@ -151,11 +152,10 @@ namespace Statecraft.Game.Map
             foreach (var kv in codes)
             {
                 var side = CodeOf[kv.Value[i]].side;
-                int id = side switch { Side.Israel => IsraelId, Side.Arab => ArabId, Side.Contested => NeutralId, Side.NoMansLand => NeutralId, Side.Dmz => NeutralId, _ => 0 };
-                if (id != 0) hexes[kv.Key] = id;
+                hexes[kv.Key] = side switch { Side.Israel => IsraelId, Side.Arab => ArabId, Side.Contested => NeutralId, Side.NoMansLand => NeutralId, Side.Dmz => NeutralId, _ => NoColourId };
             }
             foreach (var h in outside) if (!hexes.ContainsKey(h)) hexes[h] = OutsideId;
-            var styles = new Dictionary<int, BorderStyle> { [IsraelId] = BorderStyle.Primary, [ArabId] = BorderStyle.Secondary, [NeutralId] = BorderStyle.Neutral, [OutsideId] = BorderStyle.None };
+            var styles = new Dictionary<int, BorderStyle> { [IsraelId] = BorderStyle.Primary, [ArabId] = BorderStyle.Secondary, [NeutralId] = BorderStyle.Neutral, [OutsideId] = BorderStyle.None, [NoColourId] = BorderStyle.None };
             return layers[i] = new RegionLayer("control_1948_49:" + Periods[i].Id, hexes, styles);
         }
 
