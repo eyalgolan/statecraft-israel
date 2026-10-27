@@ -216,7 +216,7 @@ public class Gdd03ImmigrationFixtureTests
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
             var expected = Assert.Throws<ContentException>(() => Parse(yaml));
-            Assert.True(expected.Field.StartsWith("line ", StringComparison.Ordinal));
+            Assert.StartsWith("line ", expected.Field, StringComparison.Ordinal);
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(name);
             var actual = Assert.Throws<ContentException>(() => Parse(yaml));
