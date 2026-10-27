@@ -339,7 +339,7 @@ public class Gdd03EventRulesTests
         "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
         "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
         "rafah_force_pressure:ab01fc670aadbb410928c22eccc23f66e785be775dea26a3644c1317b1edb82b",
-        "railway_complete:fb2c0b0edb93217a703a2e9437177943275546c177f5b0751936e3705bca1513",
+        "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
         "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",

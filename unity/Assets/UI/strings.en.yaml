@@ -695,6 +695,10 @@ city.project_ordered: "Ordered: {0}"
 city.project_building: "{0} for {1}: {2} left"
 city.project_built: "{0} for {1}, finished on {2}"
 city.project_reason.no_resource: "{0} has no {1} for {2}"
+# A city resource's name, by its id in cities.yaml `resources:` (#1781). A resource is a record inside a city, not a
+# top-level row, so it is named here rather than in content: the translation contract binds a <file>#<list>.<id>.<field>
+# key only (HebrewOverlay.Bindings), and a nested record has no such key. Without an entry the id stands.
+city.resource.vineyards: "vineyards"
 city.project_reason.turn_cap: "No more than {0} city projects in one turn"
 # The toggle that folds a city's own projects on a stacked bar or a short window (owner ruling on #1150).
 city.projects_toggle: "City projects ({0})"
