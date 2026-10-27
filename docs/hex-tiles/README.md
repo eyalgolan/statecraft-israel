@@ -2,6 +2,9 @@
 
 Status: local prototype for review (Tal, lead designer). The default game is unchanged.
 
+For building delivery, provenance, composition review and coordinated contributions, see the
+[building and hex asset workflow](../art/hex-asset-workflow.md).
+
 - **In the game, opt-in:** the board runs on the real map behind `?hex-tiles` (web) or `-hex-tiles` (desktop), wired in
   `GameRoot` next to `?map-look`.
 - **Where the code lives:**
