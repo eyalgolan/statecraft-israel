@@ -1,0 +1,13 @@
+#1135 finishing (0F-LANE 1135d), 27 Oct 2026. EditMode stills (real Game.uxml + PanelSettings, scale set as the Settings choice sets it).
+
+cabinet/  Cabinet screen open, turn 0, EN and HE.
+  *-before.png  main a2e65f73
+  *-after.png   lane/1135-finish c4fe6c18 (Agam's head + owner rulings + fixes; the later merge of main 634c8970 touches no UI file)
+  desktop-1920x1080 at 100 / 125 / 150, short-2560x1080 at 150, phone-390x844 at 150.
+  100%: identical geometry before/after (house, half circle, list). 125%: Agam's tight HUD. 150%: seat cards first, the house
+  and legend at the end of the same scroll (desktop and short); phone: half circle shrinks to its column (225x118), legend under it.
+
+cards/    the two #1545 follow-up decision cards (jerusalem_demilitarisation_guard, rafah_force_pressure), EN and HE.
+  *-before.png  lane head without prototype A (Hide cut at 150% on short windows)
+  *-protoA.png  with prototype A (compact head/foot at 150% only), commit 8881e688
+  1366x657 at 100 / 125 / 150, 1920x900 / 800x1000 / 390x844 at 150.
