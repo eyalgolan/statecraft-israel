@@ -975,7 +975,7 @@ why.cause.place_deported: "{0}: Deport. Its residents are displaced and the plac
 why.cause.deport_effect: "{0} {1} (Deport of {2})"
 why.cause.deport_cost: "{0} {1} (Deport of {2})"
 why.cause.occupation_started: "{0} is occupied for {1} turns: an Israeli unit stays there. {2}"
-why.cause.pending_became_raid: "{0}: no decision was made before the end, so it counts as a raid"
+why.cause.pending_became_raid: "{0}: no decision was made before the game ended, so it counts as a raid"
 why.cause.occupation_lost_unit: "{0}: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. {1}"
 why.cause.occupation_countdown: "{0}: {1} turns of occupation left"
 why.cause.depopulation_support: "{0} {1} (the places depopulated by Deport)"

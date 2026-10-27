@@ -148,14 +148,26 @@ namespace Statecraft.Game.Map
             var ts = Touchscreen.current;
             if (ts != null)
             {
+                // A second finger that pressed and lifted inside this update is already up when FingersDown samples, so
+                // a pinch would read as a one-finger drag and pan the map (#1792). Count the presses as well, and when
+                // two fingers touched, this frame is neither a drag nor a zoom: there is no live second finger to
+                // measure a pinch against, and guessing one from a finger that is gone would be worse than waiting.
+                var touched = 0;
+                foreach (var t in ts.touches)
+                    if (DownThisUpdate(t)) touched++;
                 switch (FingersDown(ts, out var a, out var b))
                 {
                     // one finger drags the map; its press observer latches the UI origin
-                    case 1:
+                    case 1 when touched < 2:
                         drag += HoldsTouchDrag != null ? touchDrag.Take(HoldsTouchDrag()) : a.delta.ReadValue();
                         fromUi |= touchDrag.FromUi;
                         down = true;
                         pointer = a.position.ReadValue();
+                        break;
+                    // one finger left, but two touched this update: a pinch, so neither a drag nor a zoom, and the
+                    // travel the press observer recorded must not arrive as a late pan on the next frame (#1795 review)
+                    case 1:
+                        touchDrag.Discard();
                         break;
                     // a pinch zooms by how far the fingers move; the UI check follows the first finger
                     case 2:
@@ -209,7 +221,20 @@ namespace Statecraft.Game.Map
             }
         }
 
-        /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>
+        /// <summary>Whether a finger was down at any point in this input update: pressed now, or pressed during the
+        /// update even though it has already lifted. <c>isPressed</c> alone is level state read once a frame, so a
+        /// finger whose whole press and release arrive between two samples is invisible to it and a pinch replays as a
+        /// one-finger pan or lets the thumb select (#1792). The press edge survives that, which is also how
+        /// <c>MapPointer.Tick</c> reads the primary finger's own press.</summary>
+        /// <remarks>Same class as #1661's one-update flick (#1777): a gesture that opens and closes between two
+        /// samples cannot be seen by level state, only by its edges.</remarks>
+        public static bool DownThisUpdate(UnityEngine.InputSystem.Controls.TouchControl t) =>
+            t.press.isPressed || t.press.wasPressedThisFrame;
+
+        /// <summary>The first two touches down <em>now</em> (2 stands for two or more), or fewer. Level state on
+        /// purpose: a finger that has already lifted contributes no ongoing drag, so counting it here would turn a
+        /// one-update flick into a pan. Whether a finger merely touched during the update is a separate question,
+        /// asked by <see cref="DownThisUpdate"/> at the call site (#1792).</summary>
         static int FingersDown(Touchscreen ts, out UnityEngine.InputSystem.Controls.TouchControl a,
             out UnityEngine.InputSystem.Controls.TouchControl b)
         {
