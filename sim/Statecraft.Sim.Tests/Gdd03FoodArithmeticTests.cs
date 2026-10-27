@@ -6,7 +6,7 @@ using Statecraft.Sim;
 /// <summary>Synthetic arithmetic probes only; no scenario, ledger, content or resolver fixture.</summary>
 public class Gdd03FoodArithmeticTests
 {
-    // Pinned GDD D (see NOTES.md), docs/gdd/balance.md:
+    // Pinned GDD 605277dfa511dc512562ececeb273b8393b21d35:docs/gdd/balance.md:
     // own ration 1 (:52), cohesion max 10 (:108), combat slope 1 (:109),
     // display max 100 (:17), storage max 1 (:18). No runtime fallback is introduced.
     static Gdd03FoodResult Settle(long available, long own, long provisions) =>
