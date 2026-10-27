@@ -16,7 +16,7 @@ using Object=UnityEngine.Object;
 public class C241CaptureTests
 {
     [UnityTest]
-    public IEnumerator SameOpeningStateHudAndDefenceFrames()
+    public IEnumerator SameOpeningStateHudDefenceReportAndWhyFrames()
     {
         var dir=Environment.GetEnvironmentVariable("C241_CAPTURE_DIR");
         if(!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
@@ -45,6 +45,15 @@ public class C241CaptureTests
                 Assert.IsTrue(ScreenNav.IsOpen(root.Q("screen-defence")));
                 Assert.AreEqual(unchanged,b.State.Hash(),"opening and scrolling Defence changes no sim state");
                 Save("defence");
+                // The same turn on both trees: one End turn with no order, then the report it opens and Why.
+                nav.Close(); for(int i=0;i<5;i++)yield return null;
+                using var report=new TurnReportPresenter(root,b,t,nav); using var why=new WhyPresenter(root,b,t);
+                b.EndTurn(); for(int i=0;i<25;i++)yield return null;
+                Assert.IsTrue(report.IsOpen,"the turn report opens after End turn");
+                Save("report");
+                report.Close(); nav.Open("why"); for(int i=0;i<25;i++)yield return null;
+                Assert.IsTrue(ScreenNav.IsOpen(root.Q("screen-why")));
+                Save("why");
                 void Save(string area)
                 {
                     if(string.IsNullOrEmpty(dir)) return;
