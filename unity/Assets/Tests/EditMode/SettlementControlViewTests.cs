@@ -14,6 +14,7 @@ public class SettlementControlViewTests
     [TestCase(SettlementControl.AwaitingChoice, false, "awaiting_choice")]
     [TestCase(SettlementControl.Occupied, false, "occupied")]
     [TestCase(SettlementControl.AwaitingEnd, false, "awaiting_end")]
+    [TestCase("puppet", false, "puppet")]
     [TestCase("", true, "depopulated")]
     public void EveryRecordOnMainHasOneView(string state, bool depopulated, string expected)
     {
@@ -58,6 +59,9 @@ public class SettlementControlViewTests
             "map.control.awaiting_choice", "map.control.occupied", "map.control.awaiting_end", "map.control.depopulated",
             "info.control.awaiting_choice", "info.control.occupied", "info.control.awaiting_end", "info.control.depopulated",
             "hud.standing_displaced_places",
+            "map.control.puppet", "info.control.puppet",
+            "capture.end.intro_puppet", "capture.end.option.puppet", "capture.end.about.puppet",
+            "why.cause.place_puppeted",
         };
         foreach (var key in keys)
         {

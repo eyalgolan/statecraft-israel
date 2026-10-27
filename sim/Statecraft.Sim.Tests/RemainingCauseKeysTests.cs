@@ -16,6 +16,7 @@ public class RemainingCauseKeysTests
 
     public static IEnumerable<object[]> Producers()
     {
+        yield return new object[] { "SettlementControl.cs", "PlacePuppeted", "new Cause(\"map\", id, 0, $\"{name}: a puppet regime self-governs under indirect Israeli control. No unit has to stay; no units or assignable residents are added\"" };
         yield return new object[] { "LocalityCapture.cs", "PlaceCaptured", "new Cause(\"map\", id, 0, $\"{c.SettlementNames[id]} is captured: Israeli units hold it and no enemy unit is there. \"\n                + (fled ? \"Its residents fled. \" : \"\") + \"It awaits a decision\"" };
         yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", city, count - x.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, city)}: {count} groups in work\")" };
         yield return new object[] { "Cities.cs", "WagesPaid", "new Cause(\"city\", x.Id, paid, $\"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, \"treasury\", paid)}\"" };
@@ -99,9 +100,9 @@ public class RemainingCauseKeysTests
     }
 
     [Fact]
-    public void InventoryContainsTheOriginal68SitesAndOneSelectedLocalityProducer()
+    public void InventoryContainsTheOriginal68SitesAndTheLocalityAndPuppetProducers()
     {
-        Assert.Equal(69, Producers().Count());
+        Assert.Equal(70, Producers().Count());
         Assert.Single(Producers(), row => (string)row[0] == "LocalityCapture.cs" && (string)row[1] == "PlaceCaptured");
     }
 
@@ -118,7 +119,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(105, sites); // One new keyed acquisition producer; all original sites stay required.
+        Assert.Equal(106, sites); // Acquisition and Puppet add keyed producers; all original sites stay required.
     }
 
     [Fact]

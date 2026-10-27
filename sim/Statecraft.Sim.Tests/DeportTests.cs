@@ -211,7 +211,7 @@ public class DeportTests
             // R-CTRL-017, R-CTRL-023: capture cannot restore a depopulated place; this old identity refuses the order.
             [typeof(CaptureLocality)] = new Command[] { new CaptureLocality("town_a") },
             // R-CTRL-017 (Q-ANNEX-2 (a)): a depopulated place is never annexed nor withdrawn from.
-            [typeof(EndOccupation)] = new Command[] { new EndOccupation("town_a", SettlementControl.Annex), new EndOccupation("town_a", SettlementControl.WithdrawOutcome) },
+            [typeof(EndOccupation)] = new Command[] { new EndOccupation("town_a", SettlementControl.Annex), new EndOccupation("town_a", "puppet"), new EndOccupation("town_a", SettlementControl.WithdrawOutcome) },
             // These name no place or hex: a city, a cohort, a unit's own work, a policy, a budget, an event, an office or a count.
             [typeof(SetPolicy)] = null, [typeof(AllocateBudget)] = null, [typeof(ChooseEventOption)] = null, [typeof(SetMobilization)] = null,
             [typeof(SecurityOrder)] = null, [typeof(Appoint)] = null, [typeof(AssignWorkers)] = null, [typeof(Train)] = null,

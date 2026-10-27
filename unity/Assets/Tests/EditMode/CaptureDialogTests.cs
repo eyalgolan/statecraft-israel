@@ -28,7 +28,7 @@ public class CaptureDialogTests
     /// <summary>The real content with Lydda and Ramle as targets; <paramref name="price"/> sets attention_cost.resolve_capture
     /// and <paramref name="endPrice"/> attention_cost.end_occupation (0 in the content), so the sim's Attention preview has a
     /// number to show.</summary>
-    static Content Targets(double price = 0, double endPrice = 0)
+    static Content Targets(double price = 0, double endPrice = 0, bool puppet = false, bool legacy = false)
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
@@ -38,6 +38,8 @@ public class CaptureDialogTests
             var path = Path.Combine(dir, rel);
             if (!File.Exists(path)) return null;
             var text = File.ReadAllText(path);
+            if (rel == "eras.yaml" && puppet) text = text.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3");
+            if (rel == "eras.yaml" && legacy) text = text.Replace("loop: gdd", "loop: legacy");
             if (rel == "settlement_targets.yaml") return "targets:\n" + Row("lod") + Row("ramla");
             if (rel == "rules.yaml" && price != 0)
             {
@@ -624,6 +626,49 @@ public class CaptureDialogTests
         Assert.IsTrue(helper.All(o => o.Refused == null), "precondition: the garrison is there: " + string.Join("; ", helper.Select(o => o.Refusal)));
         CollectionAssert.AreEqual(EndOrder.Select(o => "capture-option-" + o).ToList(), r.Options.Select(b => b.name).ToList());
         Assert.IsTrue(r.Options.All(b => b.enabledSelf));
+    }
+
+    // R-CTRL-024: expected red before implementation: no Puppet button, description or translated introduction.
+    [UnityTest]
+    public IEnumerator Gdd03PuppetUsesTheSimsOrderAndQueuesTheOutcomeInBothLanguages()
+    {
+        var c = Targets(puppet: true);
+        foreach (var text in new[] { En, He })
+        {
+            using var r = new Rig(Ending(c, true, false, "lod"), text);
+            yield return Frames(4);
+            CollectionAssert.AreEqual(new[] { "capture-option-annex", "capture-option-puppet", "capture-option-withdraw" },
+                r.Options.Select(b => b.name).ToArray());
+            var button = r.Options.Single(b => b.name == "capture-option-puppet");
+            Assert.AreEqual(text["capture.end.option.puppet"], button.text);
+            Assert.AreEqual(text["capture.end.about.puppet"], r.Root.Q<Label>("capture-about-puppet").text);
+            Assert.IsTrue(string.Equals(text.Format("capture.end.intro_puppet", ContentNames.Settlement(text, c, "lod", NamesHe())),
+                r.Root.Q<Label>("capture-intro").text, System.StringComparison.Ordinal));
+            Assert.IsTrue(button.enabledSelf);
+            Press(button);
+            yield return Frames(1);
+            Assert.AreEqual("puppet", r.Bridge.Queued.OfType<EndOccupation>().Single().Outcome);
+        }
+    }
+
+    // R-CTRL-015, R-CTRL-024: old identities keep the two-outcome introduction in both languages.
+    [UnityTest]
+    public IEnumerator OldIdentitiesKeepTheTwoOutcomeIntroductionInBothLanguages()
+    {
+        foreach (var identity in new[] { SaveGame.LegacyRuleset, SaveGame.GddRuleset })
+        {
+            var c = identity == SaveGame.LegacyRuleset ? Targets(legacy: true) : C;
+            Assert.AreEqual(identity, c.Ruleset);
+            foreach (var text in new[] { En, He })
+            {
+                using var r = new Rig(Ending(c, true, false, "lod"), text);
+                yield return Frames(4);
+                Assert.IsTrue(string.Equals(text.Format("capture.end.intro", ContentNames.Settlement(text, c, "lod", NamesHe())),
+                    r.Root.Q<Label>("capture-intro").text, System.StringComparison.Ordinal));
+                CollectionAssert.AreEqual(new[] { "capture-option-annex", "capture-option-withdraw" },
+                    r.Options.Select(b => b.name).ToArray());
+            }
+        }
     }
 
     /// <summary>Plan PR 10, EndNothingIsPreselected: the dialog itself has the focus, the options look alike, Tab reaches
