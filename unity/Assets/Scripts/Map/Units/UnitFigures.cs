@@ -327,6 +327,7 @@ namespace Statecraft.Game.Map.Units
             }
             if (code != null) code.enabled = false;
             if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            piece.GetComponentInParent<UnitTokenMotion>()?.RefreshPose();
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own

@@ -820,6 +820,53 @@ public class UnitsInPlayTests
         finally { UnityEngine.Object.DestroyImmediate(other.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    [TestCase(UnitData.Army)]
+    [TestCase(UnitData.Navy)]
+    public void MovingTokenHitBoundsFollowVisiblePiecesInsteadOfEmptyDestinationOrPath(string service)
+    {
+        var map = BuildMap();
+        var cameraObject = new GameObject("MotionHitCamera");
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            int index = layer.Tokens.ToList().FindIndex(t => t.Token.Unit.Service == service);
+            Assert.GreaterOrEqual(index, 0, "non-vacuous service fixture");
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(index);
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true; camera.orthographicSize = 1200000f;
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 2000000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            camera.farClipPlane = 4000000f;
+            layer.FaceCamera(camera);
+            var destinationBox = layer.KeepClear[index][1];
+            var destination = destinationBox.center;
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            var offset = Vector3.right * 1000000f;
+            motion.Begin(offset); motion.Advance(UnitTokenMotion.Duration / 2f);
+            var visible = destination + offset / 2f;
+            var hit = layer.TokenAtScreen(camera, camera.WorldToScreenPoint(visible));
+            Assert.IsTrue(hit.HasValue && hit.Value.Equals(layer.Tokens[index]), "midpoint visible standing pieces select their token");
+            Assert.IsFalse(layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination)) is PlacedToken atDestination
+                && atDestination.Equals(layer.Tokens[index]), "empty destination must not select moving token");
+            Assert.IsFalse(layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination + offset / 4f)) is PlacedToken alongPath
+                && alongPath.Equals(layer.Tokens[index]), "empty path must not select moving token");
+            var movedBox = layer.KeepClear[index][1];
+            // The army flag faces the eye from its new position, so its tight box can change shape.
+            Assert.Less(Vector3.Distance(movedBox.center, visible), destinationBox.size.magnitude,
+                "standing bounds stay around the visible token, allowing the flag to turn");
+            Assert.Less(movedBox.size.magnitude, destinationBox.size.magnitude * 2f,
+                "standing bounds must not grow to span the empty path");
+            motion.Advance(UnitTokenMotion.Duration);
+            // Advance invalidation is wired by Rebuild in play; force a different camera pose for this EditMode fixture.
+            camera.transform.position += Vector3.up;
+            var arrived = layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination));
+            Assert.IsTrue(arrived.HasValue && arrived.Value.Equals(layer.Tokens[index]), "destination selects after arrival");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(cameraObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     [Test]
     public void ScreenshotsShowUnitsOnlyWhenAsked()
     {

@@ -140,6 +140,7 @@ namespace Statecraft.Game.Map.Units
             foreach (var r in f.FarRenderers) if (r != null) r.forceRenderingOff = near;
             foreach (var r in f.NearRenderers) if (r != null) r.forceRenderingOff = !near;
             foreach (var a in f.Animators) if (a != null) a.enabled = near;
+            if (near && f.Holder != null) f.Holder.GetComponentInParent<UnitTokenMotion>()?.RefreshPose();
         }
     }
 }

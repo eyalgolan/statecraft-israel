@@ -58,7 +58,7 @@ public class Generated1948RigTests
         var idle = Clip(id, "near");
         Assert.AreEqual("idle", idle.name);
         Assert.IsTrue(idle.isLooping);
-        Assert.AreSame(idle, animator.runtimeAnimatorController.animationClips.Single());
+        CollectionAssert.Contains(animator.runtimeAnimatorController.animationClips, idle);
         Assert.AreEqual(ModelImporterMeshCompression.Off, imp.meshCompression);
         Assert.AreEqual(ModelImporterAnimationCompression.Off, imp.animationCompression);
         CollectionAssert.AreEquivalent(new[] { "idle", "walk" }, imp.clipAnimations.Select(c => c.name));

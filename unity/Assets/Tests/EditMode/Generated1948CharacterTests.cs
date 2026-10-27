@@ -228,7 +228,8 @@ public class Generated1948CharacterTests
         Assert.AreEqual($"{dir}/{id}.controller", AssetDatabase.GetAssetPath(controller));
         Assert.AreEqual(1, controller!.layers.Length);
         var machine = controller.layers[0].stateMachine;
-        Assert.AreEqual(1, machine.states.Length);
+        CollectionAssert.AreEquivalent(new[] { "idle", "walk" }, machine.states.Select(s => s.state.name));
+        Assert.AreSame(clips.Single(c => c.name == "walk"), machine.states.Single(s => s.state.name == "walk").state.motion);
         Assert.IsNotNull(machine.defaultState);
         Assert.AreSame(clips.Single(c => c.name == "idle"), machine.defaultState.motion, "the default idle comes from this character's FBX");
         Assert.AreEqual(source, AssetDatabase.GetAssetPath(machine.defaultState.motion));

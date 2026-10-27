@@ -135,10 +135,54 @@ namespace Statecraft.Game.EditorTools
                 .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).OrderBy(c => c.name.IndexOf(id == "figure-c05-pioneer-veteran-v2" ? "walk" : "idle", StringComparison.OrdinalIgnoreCase) < 0 ? 1 : 0).ThenBy(c => c.name, StringComparer.Ordinal).First();
             var path = Controller(id);
             var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
-            if (ctrl == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+            if (ctrl == null) ctrl = AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
             var state = ctrl.layers[0].stateMachine.defaultState;
             if (state.motion != clip) { state.motion = clip; EditorUtility.SetDirty(ctrl); }
+            AddWalkState(ctrl, Model(id, CollectionDetail.Near));
             return ctrl;
+        }
+
+        /// <summary>Only adds existing army animation states; does not reimport models, textures or prefabs.</summary>
+        public static void PrepareArmyControllers()
+        {
+            var originals = new[] { "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2",
+                "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2", "figure-c08-arab-legion-v2",
+                "figure-c09-irregular-v2", "figure-c12f-palmach-scout-v2" };
+            foreach (var id in originals)
+            {
+                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(Controller(id));
+                if (controller == null) throw new InvalidOperationException(id + ": missing existing controller");
+                AddWalkState(controller, Model(id, CollectionDetail.Near));
+            }
+            foreach (var id in Generated1948Characters.Ids)
+            {
+                var dir = Generated1948Characters.Dir(id);
+                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>($"{dir}/{id}.controller");
+                if (controller == null) throw new InvalidOperationException(id + ": missing existing controller");
+                AddWalkState(controller, $"{dir}/{id}.fbx");
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        internal static void AddWalkState(AnimatorController controller, string model)
+        {
+            var walk = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
+                .FirstOrDefault(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal) &&
+                    (c.name.EndsWith("|walk", StringComparison.OrdinalIgnoreCase) || c.name == "walk" || c.name.EndsWith("|idle_walk", StringComparison.OrdinalIgnoreCase)));
+            var fire = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
+                .FirstOrDefault(c => c.name == "fire" || c.name.EndsWith("|fire", StringComparison.OrdinalIgnoreCase));
+            if (fire != null)
+            {
+                var sm = controller.layers[0].stateMachine;
+                var attack = sm.states.Select(s => s.state).FirstOrDefault(s => s.name == "attack") ?? sm.AddState("attack");
+                attack.motion = fire;
+                EditorUtility.SetDirty(controller);
+            }
+            if (walk == null) return;
+            var machine = controller.layers[0].stateMachine;
+            var state = machine.states.Select(s => s.state).FirstOrDefault(s => s.name == "walk") ?? machine.AddState("walk");
+            state.motion = walk;
+            EditorUtility.SetDirty(controller);
         }
 
         static void MakePrefab(string id, CollectionDetail detail, Material mat, AnimatorController? idle)

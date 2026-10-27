@@ -144,10 +144,11 @@ namespace Statecraft.Game.EditorTools
             string path = $"{Dir(id)}/{id}.controller";
             var clip = Clip(id, "near");
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
-            if (controller == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
-            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Length != 1)
+            if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Any(s => s.state.name != "idle" && s.state.name != "walk" && s.state.name != "attack"))
                 throw new InvalidOperationException(id + ": expected an owned one-state idle controller");
             controller.layers[0].stateMachine.defaultState.motion = clip;
+            CollectionImport.AddWalkState(controller, Model(id, "original"));
             EditorUtility.SetDirty(controller);
             return controller;
         }

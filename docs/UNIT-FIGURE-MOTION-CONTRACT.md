@@ -1,0 +1,9 @@
+# Figure motion interface
+
+`Statecraft.Game.Map.Units.UnitFigureMotion.SetMoving(Transform token, bool moving)` applies the controller states `Base Layer.walk` / `Base Layer.idle` to loaded enabled Animators. Late source arrivals inherit the active token motion on the following LateUpdate. Missing controller/state is a no-op. `Play(Animator, string)` returns whether a state exists and can be played. Root motion remains owned by token presentation.
+
+`UnitTokenMotion.Begin(Vector3 offset)` starts a .65-second presentation offset ending exactly at zero. The simulation has already applied its move. Destruction/rebuild cancels the old component; disabling snaps to destination. Rebuild uses previous presented centres keyed by stable sim unit ID (legacy roster falls back to row ID).
+
+Attack consumers must not call SetMoving for one-shot clips. `UnitLayer.PlayAttack(int unitId)` returns false when no live token or compatible fire state exists. The one-shot attack takes priority over locomotion for the authored fire clip duration, then resumes current movement/idle. Token disable/destruction/rebuild cancels ownership; missing source does not queue an event. Active attacks may admit a near model while the timer remains live. Controllers expose `Base Layer.attack` only where the same FBX already supplies fire. Avoid changing these importer/controller files concurrently: CollectionImport.cs, Generated1948Characters.cs. Source FBX skeletons and takes remain untouched.
+
+Validation must include actual Animator idle-walk-idle playback, importer repeatability, same-row instance identity, asynchronous near-model arrival, and camera movement during transitions. Run the checks on the exact integration branch before merge; source-workspace results do not establish an integration-branch pass.
