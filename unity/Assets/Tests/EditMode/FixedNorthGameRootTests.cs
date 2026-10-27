@@ -29,6 +29,8 @@ public class FixedNorthGameRootTests
     [TearDown]
     public void Close()
     {
+        // Release owned policy while the scene's camera controller is still alive.
+        if (game != null) Object.DestroyImmediate(game);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);
         VisualToggles.Clear();
