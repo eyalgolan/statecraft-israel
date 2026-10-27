@@ -7,7 +7,7 @@
   "source_sha256": "7470a17c90b62af78ad225aaa2073c05686748f39819d46089d57ac831b66ab5",
   "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
   "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
-  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "runtime_placement": "existing faction formation (the Egyptian Expeditionary Force, one token), signed off by the owner 27 October 2026 (#756)",
   "files": {
     "figure-egyptian-infantry-1948-v1.fbx": "d84cef4b4e8c21ebfa57aa78788c89f160d295b948e7775653db7f0570df586e",
     "figure-egyptian-infantry-1948-v1_basecolor.jpg": "94d2e98fbccad98a7fee34fa4aefe3abfcc8a6f2f68dfb5dbd53fabc153e7b60"
