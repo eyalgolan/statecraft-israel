@@ -16,6 +16,7 @@ using UnityEngine.TestTools;
 /// gets null and one warning.</summary>
 public class CollectionStreamTests
 {
+    static string Bundle(string id) => "collection-" + id;
     const string Sheep = "figure-sheep-idle-1948-v1", Donkey = "figure-donkey-1948-v1", Jeep = "figure-vehicle-willys-jeep-1948-v2";
 
     /// <summary>Steps a coroutine (nested enumerators included) by hand; returns the number of frames (yield null) it took
@@ -45,6 +46,8 @@ public class CollectionStreamTests
 
     sealed class FakeSource : CollectionStream.ISource
     {
+        public void Unload(string bundle) { }
+
         public readonly List<string> Opened = new List<string>();
         public string? Error;
         public GameObject? Prefab;
@@ -69,7 +72,7 @@ public class CollectionStreamTests
             CollectionAssert.IsEmpty(src.Opened, "nothing is fetched in the frame of the request");
             Step(run, 10);
             CollectionAssert.AreEqual(new[] { go }, got);
-            CollectionAssert.AreEqual(new[] { CollectionCatalog.Animals }, src.Opened);
+            CollectionAssert.AreEqual(new[] { Bundle(Sheep) }, src.Opened);
         }
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
@@ -92,7 +95,7 @@ public class CollectionStreamTests
             CollectionAssert.IsEmpty(src.Opened, "nothing is fetched in the frame of the request");
             Step(run, 10);
             CollectionAssert.AreEqual(new[] { go }, got);
-            CollectionAssert.AreEqual(new[] { CollectionCatalog.Towns }, src.Opened, "only the towns bundle");
+            CollectionAssert.AreEqual(new[] { Bundle("tel-aviv-white-city-v1") }, src.Opened, "only the towns bundle");
         }
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
@@ -104,15 +107,15 @@ public class CollectionStreamTests
         var stream = new CollectionStream(src);
         var got = new List<GameObject?>();
         var calls = 0;
-        foreach (var (id, d) in new[] { (Sheep, CollectionDetail.Far), (Donkey, CollectionDetail.Near), (Sheep, CollectionDetail.Near) })
+        foreach (var (id, d) in new[] { (Sheep, CollectionDetail.Far), (Sheep, CollectionDetail.Near), (Sheep, CollectionDetail.Near) })
             stream.Enqueue(id, d, g => { calls++; got.Add(g); });
-        LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-animals did not load \\(no file\\)"));
+        LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-sheep-idle-1948-v1 did not load \\(no file\\)"));
         var run = stream.Run();
         Step(run, 20);
         Assert.AreEqual(3, calls);
         CollectionAssert.AreEqual(new GameObject?[] { null, null, null }, got);
-        CollectionAssert.AreEqual(new[] { CollectionCatalog.Animals }, src.Opened, "a failed bundle is tried once");
-        stream.Enqueue(Donkey, CollectionDetail.Far, g => { calls++; got.Add(g); });
+        CollectionAssert.AreEqual(new[] { Bundle(Sheep) }, src.Opened, "a failed bundle is tried once");
+        stream.Enqueue(Sheep, CollectionDetail.Far, g => { calls++; got.Add(g); });
         Step(run, 5);
         Assert.AreEqual(4, calls, "a later request is still answered");
         LogAssert.NoUnexpectedReceived();
@@ -143,16 +146,18 @@ public class CollectionStreamTests
 
     sealed class ThrowingSource : CollectionStream.ISource
     {
+        public void Unload(string bundle) { }
+
         public GameObject? Prefab;
         public IEnumerator Open(string bundle, Action<string?> done)
         {
             yield return null;
-            if (bundle == CollectionCatalog.Animals) throw new IOException("disk gone");
+            if (bundle == Bundle(Sheep)) throw new IOException("disk gone");
             done(null);
         }
         public IEnumerator Load(string bundle, string path, Action<GameObject?> done)
         {
-            if (path.EndsWith("-near.prefab", StringComparison.Ordinal)) throw new InvalidOperationException("bad asset");
+            if (path == CollectionCatalog.PrefabPath(Jeep, CollectionDetail.Near)) throw new InvalidOperationException("bad asset");
             yield return null;
             done(Prefab);
         }
@@ -169,10 +174,10 @@ public class CollectionStreamTests
             foreach (var (id, d) in new[] { (Sheep, CollectionDetail.Far), (Jeep, CollectionDetail.Near), (Jeep, CollectionDetail.Far),
                          (Donkey, CollectionDetail.Far), (Jeep, CollectionDetail.Near) })
                 stream.Enqueue(id, d, got.Add);
-            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-animals did not load \\(IOException: disk gone\\)"));
-            LogAssert.Expect(LogType.Warning, new Regex($"^Collection: bundle collection-vehicles did not load .*{Jeep}-near.prefab \\(InvalidOperationException: bad asset\\)"));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-sheep-idle-1948-v1 did not load \\(IOException: disk gone\\)"));
+            LogAssert.Expect(LogType.Warning, new Regex($"^Collection: bundle collection-figure-vehicle-willys-jeep-1948-v2 did not load .*{Jeep}-stream.prefab \\(InvalidOperationException: bad asset\\)"));
             Step(stream.Run(), 40);
-            CollectionAssert.AreEqual(new GameObject?[] { null, null, go, null, null }, got, "every request answered; only the jeep's far prefab loads");
+            CollectionAssert.AreEqual(new GameObject?[] { null, null, null, go, null }, got, "every request answered; the donkey survives the sheep bundle and jeep asset failures");
             LogAssert.NoUnexpectedReceived();
         }
         finally { UnityEngine.Object.DestroyImmediate(go); }
@@ -186,17 +191,17 @@ public class CollectionStreamTests
         try
         {
             // 10 bytes of garbage, and a bundle header whose declared size is longer than the file (a cut-short copy)
-            File.WriteAllBytes(Path.Combine(folder, CollectionCatalog.Animals), System.Text.Encoding.ASCII.GetBytes("not-bundle"));
+            File.WriteAllBytes(Path.Combine(folder, Bundle(Sheep)), System.Text.Encoding.ASCII.GetBytes("not-bundle"));
             var cut = new List<byte>(System.Text.Encoding.ASCII.GetBytes("UnityFS\0\0\0\0\x08" + "5.x.x\0" + "6000.3.25f1\0"));
             cut.AddRange(new byte[] { 0, 0, 0, 0, 0, 0, 0x10, 0 });   // 4096 bytes declared
             cut.AddRange(new byte[64]);
-            File.WriteAllBytes(Path.Combine(folder, CollectionCatalog.Vehicles), cut.ToArray());
+            File.WriteAllBytes(Path.Combine(folder, Bundle(Jeep)), cut.ToArray());
             var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
             var got = new List<GameObject?>();
-            foreach (var (id, d) in new[] { (Sheep, CollectionDetail.Far), (Donkey, CollectionDetail.Near), (Jeep, CollectionDetail.Far) })
+            foreach (var (id, d) in new[] { (Sheep, CollectionDetail.Far), (Sheep, CollectionDetail.Near), (Jeep, CollectionDetail.Far) })
                 stream.Enqueue(id, d, got.Add);
-            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-animals did not load \\(not an AssetBundle "));
-            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-vehicles did not load \\(a damaged AssetBundle \\(" + cut.Count + " bytes, its header says 4096\\)"));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-sheep-idle-1948-v1 did not load \\(not an AssetBundle "));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-vehicle-willys-jeep-1948-v2 did not load \\(a damaged AssetBundle \\(" + cut.Count + " bytes, its header says 4096\\)"));
             Step(stream.Run(), 20);
             CollectionAssert.AreEqual(new GameObject?[] { null, null, null }, got);
             LogAssert.NoUnexpectedReceived();
@@ -216,7 +221,7 @@ public class CollectionStreamTests
         foreach (var (checks, why) in new[]
                  {
                      ((string?)null, "no file .*" + CollectionCatalog.ChecksFile),
-                     ("collection-animals 12 x " + new string('0', 64) + "\n", "a damaged " + CollectionCatalog.ChecksFile),
+                     ("collection-figure-sheep-idle-1948-v1 12 x " + new string('0', 64) + "\n", "a damaged " + CollectionCatalog.ChecksFile),
                      ("collection-people 12 256 " + new string('0', 64) + "\n", "not in " + CollectionCatalog.ChecksFile),
                  })
         {
@@ -224,14 +229,14 @@ public class CollectionStreamTests
             Directory.CreateDirectory(folder);
             try
             {
-                File.WriteAllBytes(Path.Combine(folder, CollectionCatalog.Animals), head.ToArray());
-                Assert.IsNull(CollectionStream.BundleSource.CheckHeader(Path.Combine(folder, CollectionCatalog.Animals)));
+                File.WriteAllBytes(Path.Combine(folder, Bundle(Sheep)), head.ToArray());
+                Assert.IsNull(CollectionStream.BundleSource.CheckHeader(Path.Combine(folder, Bundle(Sheep))));
                 if (checks != null) File.WriteAllText(Path.Combine(folder, CollectionCatalog.ChecksFile), checks);
                 var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
                 var got = new List<GameObject?>();
                 stream.Enqueue(Sheep, CollectionDetail.Far, got.Add);
-                stream.Enqueue(Donkey, CollectionDetail.Near, got.Add);
-                LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-animals did not load \\(" + why));
+                stream.Enqueue(Sheep, CollectionDetail.Near, got.Add);
+                LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-sheep-idle-1948-v1 did not load \\(" + why));
                 Step(stream.Run(), 20);
                 CollectionAssert.AreEqual(new GameObject?[] { null, null }, got, why);
                 LogAssert.NoUnexpectedReceived();
@@ -245,9 +250,9 @@ public class CollectionStreamTests
     {
         var stream = new CollectionStream(new FakeSource());
         var calls = new List<GameObject?>();
-        LogAssert.Expect(LogType.Warning, new Regex("^Collection: no model 'b07-kibbutz-dining-hall-v2'"));
-        Assert.IsFalse(stream.Enqueue("b07-kibbutz-dining-hall-v2", CollectionDetail.Far, calls.Add));
-        Assert.IsFalse(stream.Enqueue("b07-kibbutz-dining-hall-v2", CollectionDetail.Near, calls.Add));
+        LogAssert.Expect(LogType.Warning, new Regex("^Collection: no model 'not-a-collection-model'"));
+        Assert.IsFalse(stream.Enqueue("not-a-collection-model", CollectionDetail.Far, calls.Add));
+        Assert.IsFalse(stream.Enqueue("not-a-collection-model", CollectionDetail.Near, calls.Add));
         CollectionAssert.AreEqual(new GameObject?[] { null, null }, calls);
         LogAssert.NoUnexpectedReceived();
     }
@@ -261,7 +266,7 @@ public class CollectionStreamTests
         var got = new List<GameObject?>();
         stream.Enqueue(Jeep, CollectionDetail.Far, got.Add);
         stream.Enqueue(Jeep, CollectionDetail.Near, got.Add);
-        LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-vehicles did not load \\(no file .*collection-vehicles\\)"));
+        LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-vehicle-willys-jeep-1948-v2 did not load \\(no file .*collection-figure-vehicle-willys-jeep-1948-v2\\)"));
         Step(stream.Run(), 10);
         CollectionAssert.AreEqual(new GameObject?[] { null, null }, got);
         LogAssert.NoUnexpectedReceived();
@@ -276,8 +281,8 @@ public class CollectionStreamTests
         stream.Enqueue(Jeep, CollectionDetail.Far, got.Add);
         Step(stream.Run(), 10);
         Assert.AreEqual(2, got.Count);
-        Assert.AreEqual(Sheep + "-near", got[0]?.name);
-        Assert.AreEqual(Jeep + "-far", got[1]?.name);
+        Assert.AreEqual(Sheep + "-stream", got[0]?.name);
+        Assert.AreEqual(Jeep + "-stream", got[1]?.name);
     }
 
     /// <summary>A built bundle with one byte flipped in the middle of its data (its header and size intact) is refused
@@ -287,11 +292,11 @@ public class CollectionStreamTests
     {
         var folder = Path.Combine(Path.GetTempPath(), "statecraft-flipped-collection-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
-        var animals = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Animals);
+        var animals = CollectionCatalog.Bundles.Single(b => b.Ids.Contains(Sheep));
         var build = new AssetBundleBuild
         {
             assetBundleName = animals.Bundle,
-            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).ToArray(),
+            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct().ToArray(),
         };
         var manifest = BuildPipeline.BuildAssetBundles(folder, new[] { build }, BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
             EditorUserBuildSettings.activeBuildTarget);
@@ -310,7 +315,7 @@ public class CollectionStreamTests
             foreach (var id in animals.Ids)
                 foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
                     stream.Enqueue(id, d, got.Add);
-            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-animals did not load \\(it does not match the build that made it"));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle collection-figure-sheep-idle-1948-v1 did not load \\(it does not match the build that made it"));
             var stack = new Stack<IEnumerator>();
             stack.Push(stream.Run());
             for (int frame = 0; frame < 2000 && got.Count < animals.Ids.Length * 2; frame++)
@@ -343,13 +348,14 @@ public class CollectionStreamTests
     {
         var folder = Path.Combine(Path.GetTempPath(), "statecraft-collection-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
-        var animals = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Animals);
+        var animals = CollectionCatalog.Bundles.Single(b => b.Ids.Contains(Sheep));
         var build = new AssetBundleBuild
         {
             assetBundleName = animals.Bundle,
-            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).ToArray(),
+            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct().ToArray(),
         };
-        var manifest = BuildPipeline.BuildAssetBundles(folder, new[] { build }, BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
+        var donkeyBuild = new AssetBundleBuild { assetBundleName = Bundle(Donkey), assetNames = new[] { CollectionCatalog.PrefabPath(Donkey, CollectionDetail.Far) } };
+        var manifest = BuildPipeline.BuildAssetBundles(folder, new[] { build, donkeyBuild }, BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
             EditorUserBuildSettings.activeBuildTarget);
         Assert.IsNotNull(manifest, "bundle build");
         WriteChecks(folder, manifest.GetAllAssetBundles());
@@ -377,11 +383,11 @@ public class CollectionStreamTests
                 yield return null;
             }
             Assert.AreEqual(2, got.Count, "both requests answered");
-            Assert.AreEqual(Sheep + "-near", got[0]?.name);
+            Assert.AreEqual(Sheep + "-stream", got[0]?.name);
             Assert.IsNotNull(got[0]!.GetComponentInChildren<SkinnedMeshRenderer>(true), "skinned");
             Assert.IsNotNull(got[0]!.GetComponentInChildren<Animator>(true)?.runtimeAnimatorController, "idle controller");
-            Assert.AreEqual(Donkey + "-far", got[1]?.name);
-            Assert.IsNotNull(got[1]!.GetComponentInChildren<MeshRenderer>(true)?.sharedMaterial, "material");
+            Assert.AreEqual(Donkey + "-stream", got[1]?.name);
+            Assert.IsTrue(got[1]!.GetComponentsInChildren<Renderer>(true).Any(r => r.sharedMaterial != null), "the original static or skinned renderer retains its material");
             var built = Path.Combine(folder, animals.Bundle);
             Assert.IsNull(CollectionStream.BundleSource.CheckHeader(built), "a whole built bundle passes the header check");
             var cut = built + "-cut";
@@ -404,11 +410,11 @@ public class CollectionStreamTests
     {
         var folder = Path.Combine(Path.GetTempPath(), "statecraft-http-collection-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
-        var animals = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Animals);
+        var animals = CollectionCatalog.Bundles.Single(b => b.Ids.Contains(Sheep));
         var build = new AssetBundleBuild
         {
             assetBundleName = animals.Bundle,
-            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).ToArray(),
+            assetNames = animals.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct().ToArray(),
         };
         var manifest = BuildPipeline.BuildAssetBundles(folder, new[] { build }, BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
             EditorUserBuildSettings.activeBuildTarget);
@@ -439,7 +445,7 @@ public class CollectionStreamTests
                 yield return null;
             }
             Assert.AreEqual(1, got.Count, "the request was answered");
-            Assert.AreEqual(Sheep + "-near", got[0]?.name, "the bundle got through the 429s");
+            Assert.AreEqual(Sheep + "-stream", got[0]?.name, "the bundle got through the 429s");
             Assert.AreEqual(3, server.Hits(CollectionCatalog.ChecksFile));
             Assert.AreEqual(3, server.Hits(animals.Bundle));
             Assert.AreEqual(0, Statecraft.Game.Boot.StreamingFetch.OpenRequests);
@@ -459,6 +465,7 @@ public class CollectionStreamTests
     /// <summary>Records the order bundles are opened in; the bundles in <see cref="Failing"/> fail to open.</summary>
     sealed class OrderSource : CollectionStream.ISource
     {
+        public void Unload(string bundle) { }
         public readonly List<string> Opened = new List<string>();
         public readonly HashSet<string> Failing = new HashSet<string>();
         public GameObject? Prefab;
@@ -481,8 +488,25 @@ public class CollectionStreamTests
             stream.Enqueue(Syrian, CollectionDetail.Far, _ => answered.Add(Syrian));
             stream.Enqueue(Villager, CollectionDetail.Far, _ => answered.Add(Villager));
             Step(stream.Run(), 20);
-            CollectionAssert.AreEqual(new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies }, source.Opened);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.BundleOf(Villager)!, CollectionCatalog.ArabArmies }, source.Opened);
             CollectionAssert.AreEqual(new[] { Villager, Syrian }, answered, "both are answered, the people first");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void EveryQueuedPeopleOriginalPrecedesTheSharedArabBundle()
+    {
+        const string other = "figure-c01-arriving-man-v2";
+        var go = new GameObject("prefab");
+        try
+        {
+            var source = new OrderSource { Prefab = go }; var stream = new CollectionStream(source);
+            stream.Enqueue(Syrian, CollectionDetail.Far, _ => { });
+            stream.Enqueue(Villager, CollectionDetail.Far, _ => { });
+            stream.Enqueue(other, CollectionDetail.Far, _ => { });
+            Step(stream.Run(), 30);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.BundleOf(Villager)!, CollectionCatalog.BundleOf(other)!, CollectionCatalog.ArabArmies }, source.Opened);
         }
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
@@ -496,14 +520,14 @@ public class CollectionStreamTests
         try
         {
             var failing = new OrderSource { Prefab = go };
-            failing.Failing.Add(CollectionCatalog.People);
+            failing.Failing.Add(CollectionCatalog.BundleOf(Villager)!);
             var stream = new CollectionStream(failing);
             var answered = new List<string>();
             stream.Enqueue(Syrian, CollectionDetail.Far, _ => answered.Add(Syrian));
             stream.Enqueue(Villager, CollectionDetail.Far, _ => answered.Add(Villager));
-            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + CollectionCatalog.People + " did not load \\(test: no file\\)"));
+            LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + CollectionCatalog.BundleOf(Villager)! + " did not load \\(test: no file\\)"));
             Step(stream.Run(), 20);
-            CollectionAssert.AreEqual(new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies }, failing.Opened);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.BundleOf(Villager)!, CollectionCatalog.ArabArmies }, failing.Opened);
             CollectionAssert.AreEquivalent(new[] { Villager, Syrian }, answered, "a failed people's bundle still lets the Arab armies' load");
 
             var alone = new OrderSource { Prefab = go };

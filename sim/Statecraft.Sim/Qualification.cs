@@ -79,7 +79,7 @@ namespace Statecraft.Sim
             if (count > x.Craftsmen) return FormattableString.Invariant($"{name} has {x.Craftsmen} craftsmen");
             s.Cities[city] = x.WithCraftsmen(x.Craftsmen - count).WithCounts(x.Civilians + count, x.Employed, x.Refugees)
                 .WithQualified(x.Qualified.WithCraftsmen(x.Qualified.Craftsmen + count));
-            why.Add(new Cause("city", city, count, $"{name}: {Groups(count)} of craftsmen returned to civilian life and keep their training"));
+            why.Add(new Cause("city", city, count, $"{name}: {Groups(count)} of craftsmen returned to civilian life and keep their training", key: CauseKeys.CraftsmenReturned, args: new[] { CauseKeys.Number(count) }));
             return null;
         }
 
@@ -97,7 +97,7 @@ namespace Statecraft.Sim
             if (count > idle) return FormattableString.Invariant($"{name} has {idle} civilians without work");
             s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees).WithCraftsmen(x.Craftsmen + count)
                 .WithQualified(x.Qualified.WithCraftsmen(x.Qualified.Craftsmen - count));
-            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} of qualified craftsmen are craftsmen again"));
+            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} of qualified craftsmen are craftsmen again", key: CauseKeys.CraftsmenReassigned, args: new[] { CauseKeys.Number(count) }));
             return null;
         }
 
@@ -124,7 +124,7 @@ namespace Statecraft.Sim
             var q = u.Type == Projects.VeteranType ? x.Qualified.WithVeterans(x.Qualified.Veterans + 1) : x.Qualified.AddHalutz(u.Service);
             s.Cities[city] = x.WithCounts(x.Civilians + 1, x.Employed, x.Refugees).WithQualified(q);
             why.Add(new Cause("map", unitId.ToString(CultureInfo.InvariantCulture), 1,
-                $"Unit {unitId} returned to civilian life in {PlayerText.Settlement(c, city)} and keeps its training"));
+                $"Unit {unitId} returned to civilian life in {PlayerText.Settlement(c, city)} and keeps its training", key: CauseKeys.PioneerReturned, args: new[] { city }));
             return null;
         }
 
@@ -156,7 +156,7 @@ namespace Statecraft.Sim
             }
             s.Cities[city] = x.WithCounts(x.Civilians - count, x.Employed, x.Refugees)
                 .WithQualified(veteran ? q.WithVeterans(q.Veterans - count) : q.TakeHalutzim(count));
-            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} of qualified {(veteran ? "veteran pioneers" : "halutzim")} are units again"));
+            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} of qualified {(veteran ? "veteran pioneers" : "halutzim")} are units again", key: CauseKeys.PioneersReassigned, args: new[] { CauseKeys.Number(count), veteran ? "veteran" : "halutz" }));
             return null;
         }
     }

@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace Statecraft.Game.Map
 {
     /// <summary>One frame of camera input, in the units the actions give: Pan in [-1, 1] per axis (keys), DragPan in
-    /// screen pixels (right-button drag), Zoom in wheel notches (positive = in), Orbit in [-1, 1] (Q/E).</summary>
+    /// screen pixels (a left- or right-button drag, #998), Zoom in wheel notches (positive = in), Orbit in [-1, 1] (Q/E).</summary>
     public struct CameraInput
     {
         public Vector2 Pan, DragPan; public float Zoom, Orbit;
@@ -15,7 +15,9 @@ namespace Statecraft.Game.Map
         public float KeyZoom;
         /// <summary>True while the pointer is over the UI: the camera then ignores pointer input (wheel zoom, drag).</summary>
         public bool OverUi;
-        /// <summary>True when the current right-button drag started over the UI (latched on button-down): that drag never pans the map.</summary>
+        /// <summary>True when the current mouse drag, with either button, started over the UI (latched on button-down):
+        /// that drag never pans the map. Since #998 a left drag pans too, so this latch is what keeps dragging a panel's
+        /// scrollbar from moving the map (ALeftDragStartingOverTheUiNeverPans).</summary>
         public bool DragFromUi;
     }
 
@@ -77,9 +79,10 @@ namespace Statecraft.Game.Map
         /// <summary>The highest the ground (and the frame round the map, which stays below it) reaches in world y: with it,
         /// ViewFootprint bounds the near side of the view tightly. ShadowFit.GroundY (the default) means flat ground.</summary>
         public float GroundTop = ShadowFit.GroundY;
-        /// <summary>True while the right button's press could still be a right click (MapPointer.RightTapCandidate): its drag
-        /// is held, not panned, until the press leaves the click's slop; only travel beyond the slop pans. A press is a right click
-        /// (an order, #1654) or a pan, never both. Null: the drag pans at once.</summary>
+        /// <summary>True while a mouse press could still be a click: a right click (MapPointer.RightTapCandidate) or,
+        /// since #998, a left one (MapPointer.LeftTapCandidate). Its drag is held, not panned, until the press leaves the
+        /// click's slop; only travel beyond the slop pans. A press is a click - an order for the right button (#1654), a selection
+        /// for the left - or a pan, never both. Null: the drag pans at once.</summary>
         public Func<bool>? HoldsMouseDrag;
         /// <summary>The same for a one-finger drag and a tap (MapPointer.TouchTapCandidate).</summary>
         public Func<bool>? HoldsTouchDrag;
@@ -134,7 +137,8 @@ namespace Statecraft.Game.Map
         {
             if (pan == null || dragPan == null || zoom == null || zoomKeys == null || orbit == null) return;
             Vector2? pointer = Pointer.current != null ? Pointer.current.position.ReadValue() : (Vector2?)null;
-            var down = Mouse.current != null && Mouse.current.rightButton.isPressed;
+            // Either button (#998): both drag bindings share the press-origin and UI-origin rules.
+            var down = Mouse.current != null && (Mouse.current.rightButton.isPressed || Mouse.current.leftButton.isPressed);
             // A null callback preserves immediate panning for this source alone (N1).
             var mouseGated = HoldsMouseDrag != null;
             var drag = mouseGated ? mouseDrag.Take(HoldsMouseDrag!()) : dragPan.ReadValue<Vector2>();

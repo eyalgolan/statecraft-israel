@@ -39,6 +39,7 @@ namespace Statecraft.Game.UI
         public void Dispose() { bridge.Changed -= Render; }
 
         GameSession? shownSession; StepResult? shown;
+        int shownFood, shownArms;
 
         /// <summary>Shows the session's last turn. Does nothing when that same result is already on screen.</summary>
         public void Render() => Show(bridge.Session.Last);
@@ -47,13 +48,21 @@ namespace Statecraft.Game.UI
         /// as last time are not rebuilt; a new turn, a new game or a loaded save are.</summary>
         internal void Show(StepResult? last)
         {
-            if (shownSession == bridge.Session && shown == last && screen.Q<ScrollView>("why-rows").childCount > 0) return;
+            if (shownSession == bridge.Session && shown == last && shownFood == bridge.State.Food && shownArms == bridge.State.Arms && screen.Q<ScrollView>("why-rows").childCount > 0) return;
             shownSession = bridge.Session; shown = last;
+            shownFood = bridge.State.Food; shownArms = bridge.State.Arms;
             var rows = screen.Q<ScrollView>("why-rows");
             rows.Clear();
             var prev = bridge.Session.Previous;
             screen.Q<Label>("why-turn").text = last == null || prev == null ? "" : text.Format("why.turn",
                 Statecraft.Game.Map.Control1948.DateText(prev.Date, k => text[k]), Statecraft.Game.Map.Control1948.DateText(bridge.State.Date, k => text[k]));   // PlayerText.Date is always English (#701)
+            // Stocks are separate from cause lines: the full system-grouped ledger below remains intact.
+            foreach (var stock in TurnReportPresenter.StockLines(bridge, text))
+            {
+                var label = new Label(stock.Heading) { name = "why-stock-" + stock.Meter };
+                label.AddToClassList("why-stock");
+                rows.Add(label);
+            }
             if (last == null) { rows.Add(new Label(text["why.empty"]) { name = "why-empty" }); return; }
             if (last.Why.Count == 0) { rows.Add(new Label(text["why.nothing"]) { name = "why-nothing" }); return; }
             int i = 0;

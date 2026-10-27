@@ -291,7 +291,7 @@ public class MapLabelTests
         MapLabelsPresenter? labels = null;
         try
         {
-            var layer = Statecraft.Game.Map.Collection.SpecialBuildingModels.ShowAt(map, new System.DateTime(1948, 5, 15))!;
+            var layer = CollectionGeometryFixture.Special(map, new System.DateTime(1948, 5, 15))!;
             var fort = layer.transform.Find("latrun_tegart");
             Assert.IsNotNull(fort, "the Tegart fort model stands at Latrun on 15 May 1948");
             labels = new MapLabelsPresenter(hd.Root, map, cam, locations: Locations());
