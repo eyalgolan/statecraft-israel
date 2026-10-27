@@ -80,3 +80,62 @@ public class AdvisorShowMeTests
         });
     }
 }
+
+
+public class AdvisorShowMeNoAttentionTests
+{
+    sealed class Picture : AdvisorMedia.IPicture
+    {
+        internal readonly List<string> Loaded = new List<string>();
+        public bool Ready => true;
+        public double Time => 0;
+        public void Load(string url, VisualElement target, System.Action<string> failed) => Loaded.Add(url);
+        public void Start() { }
+        public void Stop() { }
+        public void Seek(double time) { }
+    }
+    sealed class Output : DeclarationRecording.IOutput
+    {
+        public bool IsPlaying { get; private set; }
+        public float Position => 0;
+        public bool? Ready(AudioClip clip) => true;
+        public void Play(AudioClip clip) => IsPlaying = true;
+        public void Stop() => IsPlaying = false;
+        public void Dispose() { }
+    }
+    sealed class Request : DeclarationRecording.IRequest { public ulong Bytes => 0; public void Abort() { } }
+
+    // R-GOV-002: exercise Watch with in-memory fakes, never shipped media playback.
+    [TestCase(false)] [TestCase(true)]
+    public void TourNeverLoadsAttentionPictureNarrationCaptionOrTarget(bool he)
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(he);
+        var picture = new Picture(); var audio = new List<string>(); rig.Advisor.ForceInline = true;
+        rig.Advisor.Media = new AdvisorMedia(AdvisorTour1688Fixture.Text(he), picture, null, (url, done) =>
+        {
+            audio.Add(url); done(AudioClip.Create("tour-test", 1, 1, 44100, false), null); return new Request();
+        }, new Output());
+        rig.Advisor.OpenChain(); int steps = 0;
+        while (rig.Advisor.InChain)
+        {
+            Assert.Less(++steps, 7); Assert.AreNotEqual("opening.attention", rig.Advisor.Shown?.Id);
+            Assert.IsFalse(rig.Advisor.Shown!.Actions.Any(a => a.ShowMe == AdvisorTargets.Attention));
+            var caption = rig.Ui.Q<Label>("advisor-text");
+            Assert.AreNotEqual(AdvisorTour1688Fixture.Text(he)["advisor.opening.attention.text"], caption.text);
+            if (rig.Ui.Q<Button>("advisor-watch").style.display.value != DisplayStyle.None)
+            {
+                rig.Ui.Press("advisor-watch"); rig.Advisor.Media.Tick();
+                Assert.AreNotEqual(AdvisorTour1688Fixture.Text(he)["advisor.opening.attention.cue.1"], caption.text);
+                Assert.AreNotEqual(AdvisorTour1688Fixture.Text(he)["advisor.opening.attention.cue.2"], caption.text);
+            }
+            rig.Advisor.NextStep();
+        }
+        Assert.AreEqual(6, steps);
+        if (!he) { Assert.IsNotEmpty(picture.Loaded); Assert.IsNotEmpty(audio); }
+        Assert.IsFalse(picture.Loaded.Concat(audio).Any(url => url.Contains("opening.attention")));
+        Assert.IsFalse(rig.Ui.Root.Q("root").ClassListContains(AdvisorPresenter.RingClass));
+        Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Label>("attention").style.display.value);
+        Assert.AreEqual("player", rig.Selection); Assert.IsEmpty(rig.Bridge.Queued);
+        Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
+    }
+}

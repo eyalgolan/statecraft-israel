@@ -698,4 +698,206 @@ public class CameraZoomKeysThroughTheInputSystemTests : InputTestFixture
         }
         finally { Send(c, "OnDisable"); Object.DestroyImmediate(go); }
     }
+    [Test]
+    public void DragOnsetDiscardsThirtyPixelsAndNeverCatchesUp()
+    {
+        var go = new GameObject("DragOnset", typeof(Camera), typeof(CameraRig));
+        try
+        {
+            var c = go.AddComponent<CameraController>();
+            c.HoldsMouseDrag = () => true;
+            var gesture = new CameraController.PressDrag();
+            gesture.Begin(Vector2.zero);
+            var position = Vector2.zero;
+            Vector2 Drag(Vector2 delta, bool down, bool held)
+            {
+                if (!down) { gesture.End(); position = Vector2.zero; return Vector2.zero; }
+                if (position == Vector2.zero) gesture.Begin(position);
+                position += delta; gesture.Move(position); return gesture.Take(held);
+            }
+            Assert.AreEqual(30f, TapPress.SlopPixels);
+            Assert.AreEqual(Vector2.zero, Drag(new Vector2(29, 0), true, true));
+            Assert.AreEqual(Vector2.zero, Drag(new Vector2(1, 0), true, true));
+            Assert.AreEqual(new Vector2(1, 0), Drag(new Vector2(1, 0), true, false));
+            Assert.AreEqual(new Vector2(-5, 2), Drag(new Vector2(-5, 2), true, false), "after onset all motion pans");
+            Assert.AreEqual(Vector2.zero, Drag(Vector2.zero, false, false), "no delayed release jump");
+            Assert.AreEqual(new Vector2(70, 0), Drag(new Vector2(100, 0), true, false), "one crossing frame");
+            Drag(Vector2.zero, false, false);
+            var diagonal = Drag(new Vector2(42, 56), true, false);
+            Assert.That(diagonal.x, Is.EqualTo(24f).Within(0.0001f));
+            Assert.That(diagonal.y, Is.EqualTo(32f).Within(0.0001f));
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void TurningInsideTheSlopOnlyPansTheCrossingSegmentsExcess()
+    {
+        var go = new GameObject("DragCorner", typeof(Camera), typeof(CameraRig));
+        try
+        {
+            var c = go.AddComponent<CameraController>(); c.HoldsTouchDrag = () => true;
+            var gesture = new CameraController.PressDrag();
+            var position = Vector2.zero;
+            Vector2 Drag(Vector2 delta, bool down, bool held)
+            {
+                if (!down) { gesture.End(); position = Vector2.zero; return Vector2.zero; }
+                if (position == Vector2.zero) gesture.Begin(position);
+                position += delta; gesture.Move(position); return gesture.Take(held);
+            }
+            Drag(new Vector2(0, 24), true, true);
+            // The segment reaches the radius-30 circle at (18,24): only its last 12 px pan.
+            var excess = Drag(new Vector2(30, 0), true, false);
+            Assert.That(excess.x, Is.EqualTo(12f).Within(0.0001f));
+            Assert.That(excess.y, Is.EqualTo(0f).Within(0.0001f));
+            Drag(Vector2.zero, false, false);
+            Drag(new Vector2(10, 0), true, true);
+            Assert.AreEqual(Vector2.zero, Drag(Vector2.zero, false, false), "short press drops held travel");
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+}
+
+// #1661 B1/S1/N1: real actions, independent of Ella's pointer fixture.
+public class PressOriginCameraInputTests : InputTestFixture
+{
+    static void Send(Object o, string method) => o.GetType().GetMethod(method,
+        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(o, null);
+
+    sealed class Rig : System.IDisposable
+    {
+        public readonly SelectThenClickMoveTests.Rig Game = new SelectThenClickMoveTests.Rig();
+        public readonly GameObject Go;
+        public readonly CameraRig View;
+        public readonly CameraController Camera;
+        public readonly MapPointer Pointer;
+        public readonly System.Collections.Generic.List<Vector2> Orders = new System.Collections.Generic.List<Vector2>();
+        public Rig()
+        {
+            InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+            Go = new GameObject("PressOrigin", typeof(UnityEngine.Camera));
+            var lens = Go.GetComponent<UnityEngine.Camera>();
+            lens.fieldOfView = 60; lens.aspect = 16f / 9f; lens.rect = new Rect(0, 0, 1, 1);
+            View = Go.AddComponent<CameraRig>(); View.TopInset = 0;
+            View.Yaw = 0; View.LookAt = new Vector3(500000, 0, 500000); View.Distance = 100000;
+            Camera = Go.AddComponent<CameraController>();
+            Camera.Bounds = new Rect(0, 0, 1000000, 1000000);
+            Pointer = Go.AddComponent<MapPointer>(); Pointer.Map = Game.Map;
+            var game = Game;
+            var mover = game.Token("golani");
+            var target = game.Reach(game.Id(mover)).First(h => game.Layer.UnitToSelectAt(h.q, h.r) == null && !game.Info.IsCity(h.q, h.r));
+            game.Select(mover);
+            Pointer.PillHex = _ => target;
+            Pointer.IsOverUi = p => { Orders.Add(p); return false; };
+            Pointer.HexOrdered += (q, r) => Statecraft.Game.UI.GameRoot.OnHexOrdered(game.Map, game.Info, q, r);
+            var pointer = Pointer;
+            Camera.HoldsMouseDrag = () => pointer.RightTapCandidate;
+            Camera.HoldsTouchDrag = () => pointer.TouchTapCandidate;
+            Send(Camera, "Awake"); Send(Camera, "OnEnable"); Send(Pointer, "OnEnable");
+        }
+        public void Frame() { Pointer.Tick(); Camera.Tick(0.016f); }
+        public void Dispose() { Send(Pointer, "OnDisable"); Send(Camera, "OnDisable"); Object.DestroyImmediate(Go); Game.Dispose(); }
+    }
+
+    [TestCase(10)]
+    [TestCase(31)]
+    public void AReleaseAndNewPressBeforeTheCameraFrameStartsANewGesture(int travel)
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        using var rig = new Rig();
+        Set(mouse.position, new Vector2(400, 400)); Press(mouse.rightButton);
+        Move(mouse.position, new Vector2(450, 400), new Vector2(50, 0)); rig.Frame();
+        var afterA = rig.View.LookAt;
+        Assert.That(afterA.x, Is.EqualTo(500000 - 20 * 120).Within(0.1f), "A has panned");
+        Release(mouse.rightButton);
+        var b = new Vector2(700, 400);
+        Set(mouse.position, b); Press(mouse.rightButton);
+        Move(mouse.position, b + new Vector2(travel, 0), new Vector2(travel, 0));
+        rig.Frame(); // no camera frame between A's release and B's movement
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(afterA.x - (travel > 30 ? 120 : 0)).Within(0.1f));
+        Assert.AreEqual(afterA.z, rig.View.LookAt.z);
+        Release(mouse.rightButton); rig.Frame();
+        if (travel == 10)
+        {
+            CollectionAssert.AreEqual(new[] { b }, rig.Orders, "one order, at B's press position");
+            Assert.AreEqual(1, rig.Game.Bridge.Session.Committed.Count, "one sim command from B");
+            Assert.IsInstanceOf<Statecraft.Sim.Move>(rig.Game.Bridge.Session.Committed.Single());
+        }
+        else { Assert.IsEmpty(rig.Orders); Assert.IsEmpty(rig.Game.Bridge.Session.Committed); }
+    }
+
+    [TestCase(30)]
+    [TestCase(31)]
+    public void OnsetUsesThePressPositionDespitePrePressDeltaAndSeveralInputUpdates(int travel)
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        using var rig = new Rig();
+        Set(mouse.position, new Vector2(400, 400)); rig.Frame();
+        InputSystem.QueueStateEvent(mouse, new UnityEngine.InputSystem.LowLevel.MouseState
+            { position = new Vector2(500, 400), delta = new Vector2(100, 0) });
+        InputSystem.QueueStateEvent(mouse, new UnityEngine.InputSystem.LowLevel.MouseState
+            { position = new Vector2(500, 400), delta = new Vector2(100, 0) }
+            .WithButton(UnityEngine.InputSystem.LowLevel.MouseButton.Right));
+        InputSystem.Update(); rig.Frame(); // movement before press, in the same input update
+        Move(mouse.position, new Vector2(510, 400), new Vector2(10, 0));
+        Move(mouse.position, new Vector2(500 + travel, 400), new Vector2(travel - 10, 0));
+        rig.Frame(); // two InputSystem updates, one camera Tick
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - (travel > 30 ? 120 : 0)).Within(0.1f));
+        Release(mouse.rightButton); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - (travel > 30 ? 120 : 0)).Within(0.1f), "no release catch-up");
+        Assert.AreEqual(travel == 30 ? 1 : 0, rig.Game.Bridge.Session.Committed.Count);
+    }
+
+    [Test]
+    public void AUiOriginRemainsBlockedEvenAfterLeavingItBeforeTheCameraFrame()
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        using var rig = new Rig();
+        rig.Camera.IsOverUi = p => p.x < 500;
+        Set(mouse.position, new Vector2(400, 400)); Press(mouse.rightButton);
+        Move(mouse.position, new Vector2(600, 400), new Vector2(200, 0)); rig.Frame();
+        Assert.AreEqual(new Vector3(500000, 0, 500000), rig.View.LookAt);
+        Release(mouse.rightButton); rig.Frame();
+        Set(mouse.position, new Vector2(600, 400)); Press(mouse.rightButton);
+        Move(mouse.position, new Vector2(631, 400), new Vector2(31, 0)); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(499880).Within(0.1f), "new map press clears the UI latch");
+    }
+
+    [TestCase(30)]
+    [TestCase(31)]
+    public void TouchOnsetAlsoUsesThePressOriginAcrossInputUpdates(int travel)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame(); // warm the pointer's frame APIs, preserving Ella's still-tap rule
+        BeginTouch(1, new Vector2(600, 400)); rig.Frame();
+        MoveTouch(1, new Vector2(610, 400));
+        MoveTouch(1, new Vector2(600 + travel, 400)); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - (travel > 30 ? 120 : 0)).Within(0.1f));
+        EndTouch(1, new Vector2(600 + travel, 400)); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - (travel > 30 ? 120 : 0)).Within(0.1f), "no release jump");
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ANullCallbackPansThatSourceImmediatelyEvenWhenTheOtherIsGated(bool touch)
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        if (touch)
+        {
+            rig.Camera.HoldsTouchDrag = null;
+            BeginTouch(1, new Vector2(600, 400)); rig.Frame();
+            MoveTouch(1, new Vector2(610, 400)); rig.Frame();
+        }
+        else
+        {
+            rig.Camera.HoldsMouseDrag = null;
+            Set(mouse.position, new Vector2(600, 400)); Press(mouse.rightButton); rig.Frame();
+            Move(mouse.position, new Vector2(610, 400), new Vector2(10, 0)); rig.Frame();
+        }
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(498800).Within(0.1f), "ungated source pans all ten pixels");
+    }
 }

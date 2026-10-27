@@ -14,6 +14,17 @@ namespace Statecraft.Game.Map
     /// drawn from its side).</summary>
     public enum BorderStyle : byte { None = 0, Primary = 1, Secondary = 2, Neutral = 3 }
 
+    /// <summary>The Civ-like border prototype's variants for the owner to choose from (#196, owner 2026-10-26: "make the border
+    /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). A2 is the default (owner ruling 2026-10-27:
+    /// "A2: stronger bands (Recommended)"; MapBorders.DefaultVariant). Legacy: main's earlier borders exactly, still
+    /// selectable. A: bands that hold their weight at every
+    /// zoom, an equal wash on both sides reaching a quarter of the hex, pixel floors and a territory tint that grows as the
+    /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
+    /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
+    /// (coordinator, 2026-10-26: A read almost like main there): a 6 px colour stripe floor, a 0.45 wash that holds most
+    /// of its strength until near its reach, and a 0.12 tint up close (MapBorders.Strong*).</summary>
+    public enum BorderVariant : byte { Legacy = 0, A = 1, B = 2, C = 3, A2 = 4, B2 = 5, C2 = 6 }
+
     /// <summary>Which region each hex belongs to, and how each region is outlined: what the border renderer draws. A hex not
     /// listed belongs to no region, and no band is drawn against it (the coast, the edge of the data). Region ids run from 1
     /// to <see cref="MaxId"/>. The renderer draws only what a layer says, so a layer must come from real, sourced data (owner
@@ -67,38 +78,133 @@ namespace Statecraft.Game.Map
         public const string ToggleName = "borders";
 
         static readonly int RegionTex = Shader.PropertyToID("_ScRegionTex"), RegionInfo = Shader.PropertyToID("_ScRegionInfo"),
-            Borders = Shader.PropertyToID("_ScBorders"),
+            Borders = Shader.PropertyToID("_ScBorders"), Min = Shader.PropertyToID("_ScBorderMin"), Tint = Shader.PropertyToID("_ScBorderTint"),
+            Rim = Shader.PropertyToID("_ScBorderRim"), Dash = Shader.PropertyToID("_ScBorderDash"),
             Colour1 = Shader.PropertyToID("_ScBorderColour1"), Light1 = Shader.PropertyToID("_ScBorderLight1"), Shape1 = Shader.PropertyToID("_ScBorderShape1"),
             Colour2 = Shader.PropertyToID("_ScBorderColour2"), Light2 = Shader.PropertyToID("_ScBorderLight2"), Shape2 = Shader.PropertyToID("_ScBorderShape2"),
             Colour3 = Shader.PropertyToID("_ScBorderColour3"), Light3 = Shader.PropertyToID("_ScBorderLight3"), Shape3 = Shader.PropertyToID("_ScBorderShape3");
 
         /// <summary>One style's look. Colours are sRGB (above 1: brighter than white before the grade), measured on
         /// promo/final/03-gameplay-1936.png (2752 px wide) and set so the graded game matches them (docs/visual-v1.md, "Region borders"). BandM is the coloured plus light stripe in metres,
-        /// so the band grows towards the camera as the promo's does; ColourShare the coloured stripe's part of it; Wash the
-        /// wash's width as a multiple of the band, WashStrength its opacity at the band.</summary>
+        /// so the band grows towards the camera as the promo's does; ColourShare the coloured stripe's part of it; WashReach
+        /// how far the wash runs from the edge as a share of the hex's inradius, WashStrength its opacity at the band.</summary>
         public readonly struct Style
         {
-            public readonly Color Colour, Light; public readonly float BandM, ColourShare, Wash, WashStrength;
-            public Style(Color colour, Color light, float bandM, float colourShare, float wash, float washStrength)
-            { Colour = colour; Light = light; BandM = bandM; ColourShare = colourShare; Wash = wash; WashStrength = washStrength; }
+            public readonly Color Colour, Light; public readonly float BandM, ColourShare, WashReach, WashStrength;
+            public Style(Color colour, Color light, float bandM, float colourShare, float washReach, float washStrength)
+            { Colour = colour; Light = light; BandM = bandM; ColourShare = colourShare; WashReach = washReach; WashStrength = washStrength; }
         }
+
+        /// <summary>How far every style's wash runs from the edge: a quarter of the hex's inradius (about 1,080 m), the
+        /// reach the Civ VI research puts on each side of its border ribbon (prototype #196; was 0.9-1.0 of the band, about
+        /// 10% of the inradius with the band).</summary>
+        public const float WashReachShare = 0.25f;
+        /// <summary>Both sides' wash strength, equal so neither side's territory reads as the junior one (prototype #196;
+        /// the Secondary was 0.18 against the Primary's 0.40).</summary>
+        public const float SideWashStrength = 0.40f;
+        /// <summary>The stronger tier (A2, B2, C2): the colour stripe's floor, both sides' wash strength, the tint up close,
+        /// and a wash that holds (falls as 1 - x squared over its reach instead of a smoothstep), so it reads well into the
+        /// hex at gameplay03.</summary>
+        public const float StrongMinColourPx = 6f, StrongWashStrength = 0.45f, StrongTintNear = 0.12f;
+        public static bool Strong(BorderVariant v) => v >= BorderVariant.A2;
+
+        /// <summary>Legacy: main's styles, exactly (shape: band m, colour share, wash width times the band, wash strength),
+        /// with main's 2 px floor for the whole band and its far fade (StatecraftBorders.hlsl, ScBorderLegacy).</summary>
+        static readonly Vector4 LegacyShape1 = new Vector4(230f, 0.5f, 0.9f, 0.40f), LegacyShape2 = new Vector4(200f, 0.6f, 1.0f, 0.18f),
+            LegacyShape3 = new Vector4(200f, 0.6f, 0.8f, 0.14f);
+        public const float LegacyMinBandPx = 2f;
+        public static bool HasRim(BorderVariant v) => v == BorderVariant.B || v == BorderVariant.B2;
+        public static bool StrongBlue(BorderVariant v) => v == BorderVariant.C || v == BorderVariant.C2;
 
         /// <summary>The promo's blue line (6 + 6 px of blue and white with a 10 px wash at 2752 px; white 251,251,248), the
         /// heavier of the two, in the deeper blue of the owner's ruling (2026-10-14): about 89,119,156 on screen after the
         /// grade (promo 03's Israeli side), against main's lighter 120,142,192.</summary>
-        public static readonly Style Primary = new Style(new Color(0.29f, 0.40f, 0.56f), new Color(1.08f, 1.08f, 1.06f), 230f, 0.5f, 0.9f, 0.40f);
+        public static readonly Style Primary = new Style(new Color(0.29f, 0.40f, 0.56f), new Color(1.08f, 1.08f, 1.06f), 230f, 0.5f, WashReachShare, SideWashStrength);
+        /// <summary>Variant C's Primary: the same band in Okabe-Ito's colour-blind-safe blue #0072B2 (sRGB 0, 114, 178),
+        /// stronger and more saturated than the owner's 2026-10-14 deeper blue; a proposal, not a ruling.</summary>
+        public static readonly Style PrimaryStrongBlue = new Style(new Color(0f, 0.447f, 0.698f), new Color(1.08f, 1.08f, 1.06f), 230f, 0.5f, WashReachShare, SideWashStrength);
         /// <summary>The promo's red-orange line (4 + 3 px with an 8 px wash; 176,93,61 and 246,188,124), a little more
         /// saturated than the promo's so it keeps a contrast against both olive and dry-grass ground for colour-blind players
         /// (GradeTests).</summary>
-        public static readonly Style Secondary = new Style(new Color(0.75f, 0.31f, 0.13f), new Color(1.05f, 0.76f, 0.48f), 200f, 0.6f, 1.0f, 0.18f);
+        public static readonly Style Secondary = new Style(new Color(0.75f, 0.31f, 0.13f), new Color(1.05f, 0.76f, 0.48f), 200f, 0.6f, WashReachShare, SideWashStrength);
         /// <summary>A grey line with a pale inner stripe and a faint wash, the width of the red-orange: neither side's colour
         /// (contested, no-man's land, a demilitarized zone, the 1947 sub-districts before any side is sourced). Its lightness sits
         /// between the two sides' so colour-blind players still tell it from both (GradeTests).</summary>
-        public static readonly Style Neutral = new Style(new Color(0.46f, 0.46f, 0.44f), new Color(0.98f, 0.97f, 0.93f), 200f, 0.6f, 0.8f, 0.14f);
-        /// <summary>The band draws at least MinBandPx wide (the overview), unless that would make it, with its wash, wider than
-        /// MaxShareOfInradius of a hex's inradius: that cap wins (below about 8 px of inradius on screen the band goes under
-        /// 2 px), so a far hex is never filled by its outline.</summary>
-        public const float MinBandPx = 2f, MaxShareOfInradius = 0.5f;
+        public static readonly Style Neutral = new Style(new Color(0.46f, 0.46f, 0.44f), new Color(0.98f, 0.97f, 0.93f), 200f, 0.6f, WashReachShare, 0.14f);
+        /// <summary>The least on-screen widths, measured across the edge (metres per pixel along the band's normal, so they
+        /// hold under the camera's tilt): the colour stripe, the light stripe and the wash. They hold at every zoom (no far
+        /// fade), unless band plus wash would be wider than MaxShareOfInradius of a hex's inradius: that cap wins, the wash
+        /// giving way first, so a far hex is never filled by its outline (BandWidths).</summary>
+        public const float MinColourPx = 3f, MinLightPx = 1f, MinWashPx = 12f, MaxShareOfInradius = 0.5f;
+        /// <summary>The territory tint: TintNear of the region's colour over the whole region while a hex's inradius is
+        /// TintNearInradiusPx or more on screen, rising to TintFar at TintFarInradiusPx and below (the overview), so far off
+        /// the map reads as coloured territory with a firm edge (Civ V's 25% owned-hex fill; Civ VI's minimap).</summary>
+        public const float TintNear = 0.08f, TintFar = 0.25f, TintNearInradiusPx = 120f, TintFarInradiusPx = 40f;
+        /// <summary>The neutral style's dashes (a cue that is not colour, review S9 of #555): NeutralDashM metres a period,
+        /// the first NeutralDashOn of it drawn, the period doubling as the camera pulls out so a drawn dash is never under
+        /// NeutralDashMinPx.</summary>
+        public const float NeutralDashM = 2000f, NeutralDashOn = 0.65f, NeutralDashMinPx = 8f;
+        /// <summary>Variant B's dark outer rim along the edge, outside the colour stripe: RimM wide, never under RimMinPx,
+        /// drawn at RimOpacity in the band's colour at RimValue of its brightness. Not on a shared edge (one band, no seam).</summary>
+        public const float RimM = 50f, RimMinPx = 1f, RimOpacity = 0.6f, RimValue = 0.3f;
+
+        /// <summary>A band's on-screen widths (px) at <paramref name="metresPerPx"/> across its edge: the mirror of
+        /// StatecraftBorders.hlsl's ScBandWidths, for the tests. The wash runs to WashReach of the inradius from the edge.</summary>
+        public static (float rim, float colour, float light, float wash) BandWidths(Style s, float metresPerPx, float inradiusM, bool rim,
+            float minColourPx = MinColourPx)
+        {
+            float widest = MaxShareOfInradius * inradiusM / metresPerPx;
+            float rimPx = rim ? Mathf.Min(Mathf.Max(RimM / metresPerPx, RimMinPx), widest) : 0f;
+            float room = widest - rimPx;
+            float colour = Mathf.Max(s.BandM * s.ColourShare / metresPerPx, minColourPx);
+            float light = Mathf.Max(s.BandM * (1f - s.ColourShare) / metresPerPx, MinLightPx);
+            float wash = Mathf.Max(s.WashReach * inradiusM / metresPerPx - colour - light, MinWashPx);
+            wash = Mathf.Min(wash, Mathf.Max(room - colour - light, 0f));
+            float k = Mathf.Min(1f, room / Mathf.Max(colour + light, 1e-4f));
+            return (rimPx, colour * k, light * k, wash);
+        }
+
+        /// <summary>The territory tint's opacity when a hex's inradius is <paramref name="inradiusPx"/> on screen.</summary>
+        public static float TintAlpha(float inradiusPx, float near = TintNear) =>
+            Mathf.Lerp(near, TintFar, Mathf.Clamp01((TintNearInradiusPx - inradiusPx) / (TintNearInradiusPx - TintFarInradiusPx)));
+
+        /// <summary>The neutral dashes' period (m) at <paramref name="metresPerPx"/>: the mirror of the shader's.</summary>
+        public static float NeutralDashPeriodM(float metresPerPx) =>
+            NeutralDashM * Mathf.Pow(2f, Mathf.Max(0f, Mathf.Ceil(Mathf.Log(NeutralDashMinPx / NeutralDashOn * metresPerPx / NeutralDashM, 2f))));
+
+        /// <summary>The variant drawn when none is asked for: A2 (owner ruling 2026-10-27: "A2: stronger bands
+        /// (Recommended)").</summary>
+        public const BorderVariant DefaultVariant = BorderVariant.A2;
+
+        /// <summary>The variant drawn: DefaultVariant unless the "bordervariant=legacy|a|b|c|a2|b2|c2" URL parameter (WebGL)
+        /// or -bordervariant ... (desktop, editor) names one; anything else is DefaultVariant. Setting it redraws at once; it
+        /// outlives map builds.</summary>
+        public static BorderVariant Variant
+        {
+            get => variant ??= VariantRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
+            set { variant = value; if (texture != null) { SetStyles(); Push(); } }
+        }
+        static BorderVariant? variant;
+
+        public static BorderVariant VariantRequested(string? url, string[] args, bool webgl)
+        {
+            string? v = null;
+            if (webgl)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=((?i:legacy|[abc]2?))(?=[&#]|$)");
+                if (m.Success) v = m.Groups[1].Value;
+            }
+            else
+            {
+                int at = Array.IndexOf(args, "-bordervariant");
+                if (at >= 0 && at + 1 < args.Length) v = args[at + 1];
+            }
+            return v?.ToLowerInvariant() switch
+            {
+                "b" => BorderVariant.B, "c" => BorderVariant.C, "a2" => BorderVariant.A2, "b2" => BorderVariant.B2, "c2" => BorderVariant.C2,
+                "a" => BorderVariant.A, "legacy" => BorderVariant.Legacy, _ => DefaultVariant,
+            };
+        }
 
         static Texture2D? texture;
         static MapRuntimeAssets? owner;
@@ -134,9 +240,7 @@ namespace Statecraft.Game.Map
             Current = null; hasLayer = false; toggleOn = true; noEarlyOut = false;
             Shader.SetGlobalTexture(RegionTex, tex);
             Shader.SetGlobalVector(RegionInfo, new Vector4(qMin, rMin, w, h));
-            SetStyle(Colour1, Light1, Shape1, Primary);
-            SetStyle(Colour2, Light2, Shape2, Secondary);
-            SetStyle(Colour3, Light3, Shape3, Neutral);
+            SetStyles();
             Push();
             assets.OnTeardown(VisualToggles.Register(ToggleName, on => { toggleOn = on; Push(); }));
             assets.OnTeardown(() => { texture = null; owner = null; banner = null; Current = null; hasLayer = false; noEarlyOut = false; Push(); });
@@ -191,18 +295,40 @@ namespace Statecraft.Game.Map
         /// StatecraftBorders.hlsl's ScHexNormals, so bit i of the edge mask is the edge shared with neighbour i.</summary>
         public static readonly (int dq, int dr)[] NeighbourSteps = { (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1) };
 
+        static void SetStyles()
+        {
+            var v = Variant; bool strong = Strong(v);
+            if (v == BorderVariant.Legacy)
+            {
+                SetStyle(Colour1, Light1, Shape1, Primary); Shader.SetGlobalVector(Shape1, LegacyShape1);
+                SetStyle(Colour2, Light2, Shape2, Secondary); Shader.SetGlobalVector(Shape2, LegacyShape2);
+                SetStyle(Colour3, Light3, Shape3, Neutral); Shader.SetGlobalVector(Shape3, LegacyShape3);
+                Shader.SetGlobalVector(Min, new Vector4(0f, 0f, 0f, 1f));   // w 1: main's drawing (ScBorderLegacy)
+                Shader.SetGlobalVector(Rim, Vector4.zero);
+                return;
+            }
+            Style Side(Style s) => strong ? new Style(s.Colour, s.Light, s.BandM, s.ColourShare, s.WashReach, StrongWashStrength) : s;
+            SetStyle(Colour1, Light1, Shape1, Side(StrongBlue(v) ? PrimaryStrongBlue : Primary));
+            SetStyle(Colour2, Light2, Shape2, Side(Secondary));
+            SetStyle(Colour3, Light3, Shape3, Neutral);
+            Shader.SetGlobalVector(Min, new Vector4(MinLightPx, MinWashPx, strong ? 1f : 0f, 0f));   // w 0: the prototype's drawing
+            Shader.SetGlobalVector(Tint, new Vector4(strong ? StrongTintNear : TintNear, TintFar, TintNearInradiusPx, TintFarInradiusPx));
+            Shader.SetGlobalVector(Rim, new Vector4(RimM, RimMinPx, HasRim(v) ? RimOpacity : 0f, RimValue));
+            Shader.SetGlobalVector(Dash, new Vector4(NeutralDashM, NeutralDashOn, NeutralDashMinPx, 0f));
+        }
+
         static void SetStyle(int colour, int light, int shape, Style s)
         {
             var c = s.Colour.linear; var l = s.Light.linear;
             Shader.SetGlobalVector(colour, new Vector4(c.r, c.g, c.b, 1f));
             Shader.SetGlobalVector(light, new Vector4(l.r, l.g, l.b, 1f));
-            Shader.SetGlobalVector(shape, new Vector4(s.BandM, s.ColourShare, s.Wash, s.WashStrength));
+            Shader.SetGlobalVector(shape, new Vector4(s.BandM, s.ColourShare, s.WashReach, s.WashStrength));
         }
 
         static void Push()
         {
             bool drawn = toggleOn && hasLayer && texture != null;
-            Shader.SetGlobalVector(Borders, new Vector4(MinBandPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
+            Shader.SetGlobalVector(Borders, new Vector4(Variant == BorderVariant.Legacy ? LegacyMinBandPx : Strong(Variant) ? StrongMinColourPx : MinColourPx, MaxShareOfInradius, noEarlyOut ? 1f : 0f, drawn ? 1f : 0f));
             if (banner != null) banner.SetActive(drawn);
         }
 
