@@ -81,9 +81,9 @@ public class CauseTextTests
         var row = new Cause("city", "hadera", 0, "Hadera: jobs paid IL 0.0m", key: CauseKeys.WagesPaid);
         var missing = new Dictionary<string, string>();
         var line = CauseText.Line(row, C, NoRows, He);
-        Assert.AreEqual(line, CauseText.Line(row, C, NoRows, He, missing));
-        StringAssert.Contains(UiText.LeftToRightMark + "Hadera" + UiText.LeftToRightMark, line);
-        StringAssert.Contains("תשלום מעבודה", line);
+        Assert.IsTrue(string.Equals(line, CauseText.Line(row, C, NoRows, He, missing), StringComparison.Ordinal));
+        Assert.GreaterOrEqual(line.IndexOf(UiText.LeftToRightMark + "Hadera" + UiText.LeftToRightMark, StringComparison.Ordinal), 0);
+        Assert.GreaterOrEqual(line.IndexOf("תשלום מעבודה", StringComparison.Ordinal), 0);
         var unmarked = Regex.Replace(line, UiText.LeftToRightMark + "[^" + UiText.LeftToRightMark + "]*" + UiText.LeftToRightMark, "");
         Assert.IsFalse(Regex.IsMatch(unmarked, "[A-Za-z]"));
     }
@@ -246,7 +246,7 @@ public class CauseTextTests
     static void AssertHebrew(string line, string key)
     {
         Assert.IsTrue(UiDirection.RightToLeft(line), $"{key}: '{line}' reads right to left");
-        StringAssert.DoesNotContain("{", line, key);
+        Assert.Less(line.IndexOf("{", StringComparison.Ordinal), 0, key);
         var unmarked = Regex.Replace(line, UiText.LeftToRightMark + "[^" + UiText.LeftToRightMark + "]*" + UiText.LeftToRightMark, "");
         Assert.IsFalse(Regex.IsMatch(unmarked, "[A-Za-z]"), $"{key}: '{line}' has Latin text outside a marked value");
     }
@@ -407,11 +407,31 @@ public class CauseTextTests
             new Cause("draft", "morale", -0.025, "Social cohesion -2.5% (Deport of Town)", key: CauseKeys.DeportEffect, args: new[] { "town" }),
             new Cause("draft", "treasury", -1.25, "Money IL -1.3m (Deport of Town)", key: CauseKeys.DeportCost, args: new[] { "town" }),
             new Cause("draft", "town", 3, "Town is occupied for 3 turns: an Israeli unit stays there. Its residents fled when it was captured", key: CauseKeys.OccupationStarted, args: new[] { "1" }),
-            new Cause("draft", "town", 0, "Town: no decision was made before the end, so it counts as a raid", key: CauseKeys.PendingBecameRaid),
+            new Cause("draft", "town", 0, "Town: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid),
             new Cause("draft", "town", 0, "Town: no Israeli unit holds it any more, so the occupation ended as a raid. It is under enemy control again. Its residents fled when it was captured", key: CauseKeys.OccupationLostUnit, args: new[] { "1" }),
             new Cause("draft", "town", 3, "Town: 3 turns of occupation left", key: CauseKeys.OccupationCountdown),
             new Cause("draft", "intl_standing", -0.025, "International support -2.5% (the places depopulated by Deport)", key: CauseKeys.DepopulationSupport),
     };
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ReviewedCaptureStringsKeepExactWordingAndDirectionMarks(bool useHebrewName)
+    {
+        var c = RemainingFixture(); var en = En; var he = He;
+        var names = useHebrewName ? new Dictionary<string, string> { ["town"] = "עיר" } : null;
+        var place = useHebrewName ? "עיר" : "\u200ETown\u200E";
+        var countdown = new Cause("map", "town", 3, "Town: 3 turns of occupation left", key: CauseKeys.OccupationCountdown);
+        var raid = new Cause("map", "town", 0,
+            "Town: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid);
+        Assert.IsTrue(string.Equals("{0}: תורות שחרור שנותרו: {1}", he["why.cause.occupation_countdown"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("{0}: {1} turns of occupation left", en["why.cause.occupation_countdown"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("{0}: לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה", he["why.cause.pending_became_raid"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("{0}: no decision was made before the game ended, so it counts as a raid", en["why.cause.pending_became_raid"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("Town: 3 turns of occupation left", CauseText.Line(countdown, c, NoRows, en), StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("Town: no decision was made before the game ended, so it counts as a raid", CauseText.Line(raid, c, NoRows, en), StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals(place + ": תורות שחרור שנותרו: \u200E3\u200E", CauseText.Line(countdown, c, NoRows, he, names), StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals(place + ": לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה", CauseText.Line(raid, c, NoRows, he, names), StringComparison.Ordinal));
+    }
 
     [Test]
     public void EveryRemainingKeyPreservesEnglishAndFormatsHebrewIncludingLargeCounts()
