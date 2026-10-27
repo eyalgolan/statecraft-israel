@@ -32,7 +32,10 @@ namespace Statecraft.Sim
         internal static Gdd03IndustryRates Read(Content content)
         {
             if (!content.UsesPopulationLedger) throw new InvalidOperationException("Industry fixture rates require gdd-0.3.");
-            var catalogue = content.Gdd03Balance;
+            return Read(content.Gdd03Balance);
+        }
+        internal static Gdd03IndustryRates Read(Gdd03BalanceCatalogue? catalogue)
+        {
             if (catalogue == null || catalogue.Ruleset != SaveGame.Gdd03Ruleset || catalogue.Values == null
                 || !catalogue.Values.TryGetValue("industry.income", out var row) || row == null
                 || row.Basis != "Agreed" || row.Values == null || row.Values.Count != 3 || row.Values.Any(x => x <= 0)
