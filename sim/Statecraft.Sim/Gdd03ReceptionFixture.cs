@@ -38,7 +38,7 @@ namespace Statecraft.Sim
     /// credit are excluded. Uses the existing population ledger as the only person/progress authority.</summary>
     internal static class Gdd03ReceptionFixture
     {
-        // D docs/gdd/training.md:23. This is the common prerequisite proposed for future work entry points,
+        // Synthetic fixture eligibility: completed reception, free civilian, unassigned.
         // not proof of a job/field/project/course slot or permission to change an existing assignment.
         internal static bool CanStartCivilianActivity(Content content, PopulationUnit person)
         {
@@ -100,7 +100,7 @@ namespace Statecraft.Sim
                 }
                 ledger.Replace(progressed);
             }
-            // D docs/gdd/cutover-resource-layer.md:49: ascending unit id, then ordinal camp id.
+            // Synthetic fixture ordering: ascending unit id, then ordinal camp target.
             // New claims never progress here, including a bed released by completion in this step.
             foreach (var p in people.Where(p => p.Status == PopulationStatus.Refugee
                 && p.ReceptionTicks < turns && p.Assignment.Kind == PopulationAssignmentKind.Unassigned))
