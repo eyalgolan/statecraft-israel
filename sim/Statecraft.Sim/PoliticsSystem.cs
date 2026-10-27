@@ -36,13 +36,13 @@ namespace Statecraft.Sim
             var old = s.CoalitionStability;
             s.CoalitionStability = old + (EffectsSystem.Approval(c, s) - old) * Math.Min(1.0, yearFraction * 2);
             if (Math.Abs(s.CoalitionStability - old) > 1e-9)
-                why.Add(new Cause("politics", "coalition_stability", s.CoalitionStability - old, $"coalition stability {PlayerText.PercentChange(s.CoalitionStability - old)} (public approval)"));
+                why.Add(new Cause("politics", "coalition_stability", s.CoalitionStability - old, $"coalition stability {PlayerText.PercentChange(s.CoalitionStability - old)} (public approval)", key: CauseKeys.ApprovalStability));
             // R-GOV-001: in the GDD loop the coalition stays, but it can no longer end the game (D-C5; D-B5, "Coalition
             // collapse is off in the MVP"). The legacy loop keeps its collapse while the legacy code exists (D-E1).
             if (!c.IsGdd && s.CoalitionStability < CollapseBelow && s.GameOver == null)
             {
                 s.GameOver = GameOverCodes.CoalitionCollapse;
-                why.Add(new Cause("politics", "game_over", 0, "The coalition collapsed. Your premiership is over."));
+                why.Add(new Cause("politics", "game_over", 0, "The coalition collapsed. Your premiership is over.", key: CauseKeys.CoalitionCollapsed));
             }
         }
 
@@ -53,12 +53,12 @@ namespace Statecraft.Sim
             {
                 var (seats, size) = CoalitionSeats(c, to);
                 var elected = l1.Elected.HasValue ? $", elected {PlayerText.Date(l1.Elected.Value)}" : "";
-                why.Add(new Cause("politics", l1.Id, 0, FormattableString.Invariant($"{l1.Body} convened ({l1.Size} seats{elected}); coalition holds {seats}/{size}")));
+                why.Add(new Cause("politics", l1.Id, 0, FormattableString.Invariant($"{l1.Body} convened ({l1.Size} seats{elected}); coalition holds {seats}/{size}"), key: CauseKeys.LegislatureConvened, args: new[] { CauseKeys.Number(seats), CauseKeys.Number(size) }));
             }
             var g0 = Offices.Government(c, from); var g1 = Offices.Government(c, to);
             var tookOffice = g1 != null && g1 != g0;
             var reported = false;
-            void TookOffice() { reported = true; why.Add(new Cause("politics", g1!.Id, 0, $"{g1.Name} took office ({string.Join(", ", PartyNames(c, g1.CoalitionOn(g1.From)))})")); }
+            void TookOffice() { reported = true; why.Add(new Cause("politics", g1!.Id, 0, $"{g1.Name} took office ({string.Join(", ", PartyNames(c, g1.CoalitionOn(g1.From)))})", key: CauseKeys.GovernmentTookOffice, args: new[] { string.Join("|", g1!.CoalitionOn(g1.From)) })); }
             // Changes inside a term, in date order; a government taking office comes before the changes dated on or after its start.
             var changes = c.Governments.SelectMany(g => g.CoalitionChanges.Select(ch => (g, ch)))
                 .Where(x => x.ch.Date > from && x.ch.Date <= to).OrderBy(x => x.ch.Date);
@@ -69,7 +69,7 @@ namespace Statecraft.Sim
                 var what = new List<string>();
                 if (ch.Leaves.Count > 0) what.Add($"{string.Join(", ", PartyNames(c, ch.Leaves))} left the coalition");
                 if (ch.Joins.Count > 0) what.Add($"{string.Join(", ", PartyNames(c, ch.Joins))} joined the coalition");
-                why.Add(new Cause("politics", g.Id, 0, FormattableString.Invariant($"{string.Join("; ", what)} (coalition holds {seats}/{size})")));
+                why.Add(new Cause("politics", g.Id, 0, FormattableString.Invariant($"{string.Join("; ", what)} (coalition holds {seats}/{size})"), key: CauseKeys.CoalitionChanged, args: new[] { string.Join("|", ch.Leaves), string.Join("|", ch.Joins), CauseKeys.Number(seats), CauseKeys.Number(size) }));
             }
             if (tookOffice && !reported) TookOffice();
         }

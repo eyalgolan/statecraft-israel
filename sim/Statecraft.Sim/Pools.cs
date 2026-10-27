@@ -47,7 +47,7 @@ namespace Statecraft.Sim
             var cost = count * c.RulesAt(s.Date).Mvp!.ArmsPrice!.Value;
             EconomySystem.PayOrBorrow(c, s, cost, "for Arms", why, CauseKeys.Purpose.Arms);
             s.Arms += count;
-            why.Add(new Cause("economy", "arms", count, FormattableString.Invariant($"Bought {count} Arms, cost {PlayerText.Money(c, "treasury", cost)}")));
+            why.Add(new Cause("economy", "arms", count, FormattableString.Invariant($"Bought {count} Arms, cost {PlayerText.Money(c, "treasury", cost)}"), key: CauseKeys.ArmsBought, args: new[] { CauseKeys.Number(cost) }));
             return null;
         }
 
@@ -66,7 +66,7 @@ namespace Statecraft.Sim
             {
                 if (!(s.Sites.TryGetValue(f.Id, out var w) && w.BuiltOn != null)) continue;
                 s.Food += yield;
-                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {yield} units of Food")));
+                why.Add(new Cause("economy", "food", yield, FormattableString.Invariant($"{f.Name}: the plowed land yielded {yield} units of Food"), key: CauseKeys.FoodHarvest, args: new[] { f.Id }));
             }
         }
 
@@ -82,10 +82,10 @@ namespace Statecraft.Sim
             s.FoodNeed = need;
             s.FoodUnmet = need - eaten;
             if (s.FoodUnmet > 0)
-                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet")));
+                why.Add(new Cause("economy", "food", -s.FoodUnmet, FormattableString.Invariant($"Food ran out: {s.FoodUnmet} of {need} units of the month's need went unmet"), key: CauseKeys.FoodShortage, args: new[] { CauseKeys.Number(need) }));
             if (s.ActiveSituations.Contains(EconomySystem.FxCrisis))
             {
-                why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units")));
+                why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"No Food imported (foreign currency crisis): the stock fell to {s.Food} units"), key: CauseKeys.FoodWithoutImports, args: new[] { CauseKeys.Number(s.Food) }));
                 return;
             }
             var target = (long)r.CoverMonths!.Value * need;

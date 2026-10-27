@@ -400,8 +400,10 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 .hud-two-row .city-projects-list, .info-short .city-projects-list { display: none; }
 .hud-two-row .info-projects-open > .city-projects-list, .info-short .info-projects-open > .city-projects-list { display: flex; }
 /* Two counts on one row (Jobs | Craftsmen, Refugees waiting | Overflow; #1121): each keeps its width, so the row wraps
-   whole rather than squeezing a line into two, and a gap follows each (mirrored in Hebrew). */
-.info-gdd-pairs > .info-gdd-line { flex-shrink: 0; margin-right: 14px; }
+   whole rather than squeezing a line into two, and a gap follows each (mirrored in Hebrew). No wrap inside a count (#1789):
+   at a fractional scale (1024x768) layout can round its box a raster pixel under its text, and "filled" then dropped onto
+   the next row. */
+.info-gdd-pairs > .info-gdd-line { flex-shrink: 0; margin-right: 14px; white-space: nowrap; }
 /* Before a hex is chosen only the hint shows (InfoPanelPresenter sets info-empty): a one-line chip that hugs its text, as
    the promo shows no panel until a tile is chosen (HUD round 1, #398). */
 .info-panel.info-empty { min-height: 0; width: auto; padding: 8px 16px; }

@@ -416,7 +416,10 @@ namespace Statecraft.Game.UI
                 || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
             pointer.IsOverUi = pointerOverUi;
             // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
-            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
+            // Either button (#998): whichever is down holds the drag while it could still be a click, so a click never
+            // nudges the map and a drag past the slop pans.
+            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate || pointer.LeftTapCandidate,
+                       holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
