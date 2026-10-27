@@ -142,23 +142,23 @@ namespace Statecraft.Sim
         public const string PioneerReturned = "pioneer_returned";
         /// <summary>Args: CauseKeys.Number(count); veteran ? "veteran" : "halutz".</summary>
         public const string PioneersReassigned = "pioneers_reassigned";
-        /// <summary>Args: CauseKeys.Number(count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer"; unit.HasValue ? CauseKeys.Number(unit.Value) : ""; CauseKeys.Number(cost).</summary>
+        /// <summary>Args: CauseKeys.Number(count); Training.CourseId(type); unit.HasValue ? CauseKeys.Number(unit.Value) : ""; CauseKeys.Number(cost).</summary>
         public const string TrainingStarted = "training_started";
-        /// <summary>Args: city; type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer".</summary>
+        /// <summary>Args: city; Training.CourseId(type).</summary>
         public const string TrainingArms = "training_arms";
-        /// <summary>Args: CauseKeys.Number(k.Count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer".</summary>
+        /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type).</summary>
         public const string TrainingCancelled = "training_cancelled";
-        /// <summary>Args: k.City; type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer".</summary>
+        /// <summary>Args: k.City; Training.CourseId(type).</summary>
         public const string TrainingArmsReturned = "training_arms_returned";
         /// <summary>Args: CauseKeys.Number(aim).</summary>
         public const string ReplacementsStopped = "replacements_stopped";
-        /// <summary>Args: CauseKeys.Number(k.Count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer"; CauseKeys.Number(target.Id).</summary>
+        /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type); CauseKeys.Number(target.Id).</summary>
         public const string ReplacementsJoined = "replacements_joined";
-        /// <summary>Args: CauseKeys.Number(k.Count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer"; type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : "recruit".</summary>
+        /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : "recruit".</summary>
         public const string MilitaryTrained = "military_trained";
-        /// <summary>Args: CauseKeys.Number(k.Count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer".</summary>
+        /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type).</summary>
         public const string PioneersTrained = "pioneers_trained";
-        /// <summary>Args: CauseKeys.Number(k.Count); type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : type.Facility == "military_camp" ? "basic" : type.Facility == Industry ? "craft" : "pioneer".</summary>
+        /// <summary>Args: CauseKeys.Number(k.Count); Training.CourseId(type).</summary>
         public const string CraftsmenTrained = "craftsmen_trained";
         /// <summary>Args: person.Id; office.TitleHeOn(person, s.Date); displaced?.Id ?? "".</summary>
         public const string Appointed = "appointed";
