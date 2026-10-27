@@ -38,7 +38,7 @@ public class Gdd03ProjectCatalogueTests
             Assert.Equal(expected.Select(x => x.Item1), c.Projects.Select(x => x.Key));
             foreach (var (key, cost, work, upkeep) in expected)
             {
-                var p = Assert.Single(c.Projects.Where(x => x.Key == key));
+                var p = Assert.Single(c.Projects, x => x.Key == key);
                 Assert.Equal(cost, p.Cost.Amount); Assert.Equal(work, p.Work.Amount); Assert.Equal(upkeep, p.Upkeep.Amount);
                 Assert.Equal("Default", p.Upkeep.Basis);
                 Assert.Equal(key == "military_camp" ? "Default" : "Agreed", p.Cost.Basis);
@@ -142,7 +142,7 @@ public class Gdd03ProjectCatalogueTests
         cost.Values[0] = 7.25m; cost.Note = "test-only synthetic price";
         var result = Gdd03ProjectCatalogue.Read(input);
         cost.Values[0] = 9m;
-        var industry = Assert.Single(result.Projects.Where(x => x.Key == "industry"));
+        var industry = Assert.Single(result.Projects, x => x.Key == "industry");
         Assert.Equal(7.25m, industry.Cost.Amount); Assert.Equal("test-only synthetic price", industry.Cost.Note);
         Assert.Throws<NotSupportedException>(() => ((IList<Gdd03ProjectCatalogue.Project>)result.Projects).Clear());
     }
