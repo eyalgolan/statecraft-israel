@@ -1009,6 +1009,19 @@ row and column profiles across the lines):
 Each band lies inside its region, as Civ draws territory, so two outlined regions meet as a double band (blue+white next
 to red+cream: promo 03 near Tel Aviv). The bands are world-space: they widen towards the camera.
 
+**The default look: A2 (owner ruling, 27 Oct 2026, refs #196).** The owner picked "A2: stronger bands (Recommended)"
+from the Civ-like prototype's sheet (`captures/pr-1794`, `civ-borders/sheet.png`), so the map draws A2 unless told
+otherwise. Next to main's look, A2's bands keep their weight when the camera pulls out (no far fade); the colour stripe
+is never under 6 px, the light stripe 1 px and the wash 12 px, measured across the edge so they hold under the tilt.
+Both sides wash alike at 0.45, falling as 1 - x squared, so the wash holds well into the hex and reaches a quarter of
+its inradius (about 1,080 m); a light tint of the region's colour covers the territory, 0.12 up close and rising to
+0.25 at the overview. Band plus wash never pass half the inradius, so a far hex is not filled by its outline. The
+neutral grey keeps its 0.14 wash and its dashes, never shorter than 8 px. The other variants stay selectable for
+comparison: `?bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop and in the editor) draws
+main's earlier look exactly, and `a`, `b`, `c`, `b2` and `c2` draw the prototype's other variants; anything else draws A2
+(`MapBorders.VariantRequested`). The paragraphs below describe the drawing every variant shares; their widths, wash
+strengths and the 2 px floor are Legacy's.
+
 **What is drawn.** `MapBorders` (C#) bakes one texel per hex (`RegionHexes`, RGBA8 linear, point-sampled, 47 x 58: r + 256 g
 the region id, b the style; since issue #195, a's low six bits say which edges border another region) and sets the
 globals; `StatecraftBorders.hlsl`'s `ScBorderApply`, called last in the terrain
