@@ -360,6 +360,20 @@
                     <ui:Label name="defence-budget-share" class="budget-share" />
                     <Statecraft.Game.UI.UiFrame shadow="false" />
                 </ui:VisualElement>
+                <ui:VisualElement name="defence-arms" class="defence-panel">
+                    <ui:Label name="arms-title" class="section-title" />
+                    <ui:Label name="arms-stock" class="wrap" />
+                    <ui:IntegerField name="arms-count" value="1" />
+                    <ui:Label name="arms-money" class="wrap" />
+                    <ui:Label name="arms-attention" class="wrap" />
+                    <ui:VisualElement class="row arms-actions">
+                        <ui:Button name="buy-arms" />
+                        <ui:Button name="withdraw-arms" />
+                    </ui:VisualElement>
+                    <ui:Label name="arms-queued" class="wrap" />
+                    <ui:Label name="arms-refusal" class="wrap" />
+                    <Statecraft.Game.UI.UiFrame shadow="false" />
+                </ui:VisualElement>
                 <!-- #755: the prisoners held and returned and our soldiers held (R-POW-001, R-POW-004, R-POW-005), GDD loop only. -->
                 <ui:VisualElement name="defence-prisoners" class="defence-panel">
                     <ui:Label name="defence-title-prisoners" class="section-title" />

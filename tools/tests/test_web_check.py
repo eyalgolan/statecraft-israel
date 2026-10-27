@@ -318,7 +318,7 @@ class FakeGame:
             if target == "map":                      # a press the UI does not take: the map's hex click
                 self.nav(f"map click at ({x}, {1080 - y}) overUi=False")
             else:
-                self.nav(f"ui pointerdown id=0 at ({x}, {y}) target={target}")
+                self.nav(f"ui pointerdown id=0 at ({x}, {y}) target={target} path={target} < root.root modals=-")   # NavEventLog.cs:81's format
         elif kind == "click":
             target = self.at(x, y)
             self.nav(f"ui click count=1 target={target}")
