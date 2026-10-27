@@ -86,6 +86,12 @@ namespace Statecraft.Game.Map
         public Func<bool>? HoldsMouseDrag;
         /// <summary>The same for a one-finger drag and a tap (MapPointer.TouchTapCandidate).</summary>
         public Func<bool>? HoldsTouchDrag;
+        /// <summary>The trackpad pinch since the last frame, as the summed NSEvent magnification (positive = the fingers
+        /// spread). macOS sends a pinch as magnify events, which Unity's player passes to neither the Input System nor the
+        /// wheel (the owner found zooming did nothing in the macOS player, 27 Oct 2026), so TrackpadPinch.mm collects them
+        /// in the macOS player; elsewhere there is none (0). In the browser a pinch arrives as a wheel event instead
+        /// (WheelInput.jslib). Test seam (internal): an edit-mode test cannot make a Cocoa magnify event.</summary>
+        internal Func<float> TrackpadMagnification = DrainTrackpadMagnification;
 
         CameraRig rig = null!;
         InputAction? pan, dragPan, zoom, zoomKeys, orbit;
@@ -109,6 +115,7 @@ namespace Statecraft.Game.Map
             touchPosition.performed += ctx => touchDrag.Move(ctx.ReadValue<Vector2>());
             mousePress.Enable(); mousePosition.Enable(); touchPress.Enable(); touchPosition.Enable();
             DrainWheel();   // events from while the camera was off (a menu) are not a zoom
+            TrackpadMagnification();   // nor is a pinch from then
 
             var map = InputSystem.actions?.FindActionMap("Camera", throwIfNotFound: true);
             if (map == null) return;
@@ -144,7 +151,7 @@ namespace Statecraft.Game.Map
             var mouseGated = HoldsMouseDrag != null;
             var drag = mouseGated ? mouseDrag.Take(HoldsMouseDrag!()) : dragPan.ReadValue<Vector2>();
             var fromUi = down && mouseDrag.FromUi;
-            var zoomRaw = WheelOr(zoom.ReadValue<float>());
+            var zoomRaw = WheelOr(zoom.ReadValue<float>()) + MagnifyNotches(TrackpadMagnification());
             var ts = Touchscreen.current;
             if (ts != null)
             {
@@ -283,6 +290,26 @@ namespace Statecraft.Game.Map
             return actionValue;
 #endif
         }
+
+        /// <summary>A trackpad pinch in wheel notches, positive = in: <paramref name="magnification"/> is the summed NSEvent
+        /// magnification, which scales the view by 1 + m, so the camera comes 1 + m times closer, as far as the fingers
+        /// moved ((1 - ZoomPerStep)^notches = 1 / (1 + m)). A sum at or below -1 (no real pinch sends one) counts as the
+        /// farthest step out that 1 + m = 0.01 gives, never a NaN.</summary>
+        public static float MagnifyNotches(float magnification) =>
+            magnification == 0f ? 0f : -Mathf.Log(Mathf.Max(1f + magnification, 0.01f)) / Mathf.Log(1f - ZoomPerStep);
+
+        static float DrainTrackpadMagnification()
+        {
+#if UNITY_STANDALONE_OSX && !UNITY_EDITOR
+            return StatecraftMagnifyDrain();
+#else
+            return 0f;
+#endif
+        }
+
+#if UNITY_STANDALONE_OSX && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern float StatecraftMagnifyDrain();
+#endif
 
         void DrainWheel()
         {
