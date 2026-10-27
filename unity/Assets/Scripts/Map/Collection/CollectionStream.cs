@@ -19,9 +19,30 @@ namespace Statecraft.Game.Map.Collection
     /// from the source or from a caller's callback is caught for that request alone: it logs one warning (once per bundle,
     /// prefab or id) and the stream goes on serving every later request.
     /// The player reads the bundles from StreamingAssets/<see cref="CollectionCatalog.StreamingFolder"/> (every Build.*
-    /// player build, Web, Mac, Linux and Windows, puts them there); the editor reads the prefabs from the AssetDatabase, so map work needs no bundle build.</summary>
+    /// player build, Web, Mac, Linux and Windows, puts them there); the editor reads the prefabs from the AssetDatabase, so map work needs no bundle build.
+    /// The same loader serves any other set of streamed bundles through its own <see cref="Catalog"/> (the hex tiles' props,
+    /// HexProps; owner, 23 October 2026: "Own streamed bundle"), each with its own folder, checks file and shared stream.</summary>
     public sealed class CollectionStream
     {
+        /// <summary>What a stream serves: its bundles' folder in StreamingAssets, the checks file beside them (written by the
+        /// bundle build, <see cref="CollectionCatalog.ChecksFile"/>'s format), and each model id's bundle and prefab path.</summary>
+        public sealed class Catalog
+        {
+            public readonly string Name, StreamingFolder, ChecksFile;
+            public readonly Func<string, string?> BundleOf;
+            public readonly Func<string, CollectionDetail, string> PrefabPath;
+
+            public Catalog(string name, string streamingFolder, string checksFile, Func<string, string?> bundleOf,
+                Func<string, CollectionDetail, string> prefabPath)
+            {
+                Name = name; StreamingFolder = streamingFolder; ChecksFile = checksFile; BundleOf = bundleOf; PrefabPath = prefabPath;
+            }
+        }
+
+        /// <summary>The 1948 Collection (<see cref="CollectionCatalog"/>), the stream's default.</summary>
+        public static readonly Catalog Collection = new Catalog("The 1948 Collection", CollectionCatalog.StreamingFolder,
+            CollectionCatalog.ChecksFile, CollectionCatalog.BundleOf, CollectionCatalog.PrefabPath);
+
         /// <summary>Where the models come from: bundles in a build, the AssetDatabase in the editor, a fake in tests.</summary>
         public interface ISource
         {
@@ -29,57 +50,216 @@ namespace Statecraft.Game.Map.Collection
             IEnumerator Open(string bundle, Action<string?> done);
             /// <summary>Loads the prefab at <paramref name="path"/> from the opened <paramref name="bundle"/> (null if absent).</summary>
             IEnumerator Load(string bundle, string path, Action<GameObject?> done);
+            /// <summary>Releases one bundle only after every acquired consumer has retired.</summary>
+            void Unload(string bundle);
         }
 
         enum State { Closed, Open, Failed }
 
         readonly ISource source;
+        readonly Catalog catalog;
         readonly Dictionary<string, State> bundles = new Dictionary<string, State>(StringComparer.Ordinal);
         readonly Dictionary<string, GameObject?> loaded = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> warnedIds = new HashSet<string>(StringComparer.Ordinal);
         readonly HashSet<string> warnedCallbacks = new HashSet<string>(StringComparer.Ordinal);
-        readonly Queue<(string Id, CollectionDetail Detail, Action<GameObject?> Done)> pending =
-            new Queue<(string, CollectionDetail, Action<GameObject?>)>();
+        readonly Queue<(string Id, CollectionDetail Detail, Action<GameObject?> Done, Lease? Owner)> pending =
+            new Queue<(string, CollectionDetail, Action<GameObject?>, Lease?)>();
+        readonly Dictionary<string, int> owners = new Dictionary<string, int>(StringComparer.Ordinal);
+        readonly Dictionary<string, string> paths = new Dictionary<string, string>(StringComparer.Ordinal);
+        readonly HashSet<string> pinned = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> inflight = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> pendingEvictions = new HashSet<string>(StringComparer.Ordinal);
+        readonly HashSet<string> warnedRelease = new HashSet<string>(StringComparer.Ordinal);
 
-        public CollectionStream(ISource source) { this.source = source; }
+        sealed class Lease : IDisposable
+        {
+            CollectionStream? owner;
+            readonly string? bundle;
+            public bool Active => owner != null;
+            public Lease(CollectionStream owner, string? bundle) { this.owner = owner; this.bundle = bundle; }
+            public void Dispose()
+            {
+                var stream = owner; owner = null;
+                if (stream == null || bundle == null) return;
+                int left = stream.owners[bundle] - 1;
+                if (left == 0) stream.owners.Remove(bundle); else stream.owners[bundle] = left;
+                stream.Evict(bundle);
+            }
+        }
+
+        /// <summary>An owned request. Dispose after destroying instances and clearing asset references; late answers are
+        /// suppressed. Legacy Enqueue/Request callers keep their bundles pinned.</summary>
+        public IDisposable Retain(string id, CollectionDetail detail, Action<GameObject?> done)
+        {
+            var bundle = catalog.BundleOf(id);
+            var lease = new Lease(this, bundle);
+            if (bundle == null) { Enqueue(id, detail, done); lease.Dispose(); return lease; }
+            owners.TryGetValue(bundle, out int count); owners[bundle] = count + 1;
+            pending.Enqueue((id, detail, done, lease));
+            CollectionResidencyMetrics.MarkDirty();
+            return lease;
+        }
+
+        void Evict(string bundle)
+        {
+            if (Application.isPlaying) { pendingEvictions.Add(bundle); return; }
+            EvictNow(bundle);
+        }
+        void DrainEvictions()
+        {
+            var pending = new List<string>(pendingEvictions); pendingEvictions.Clear(); pending.Sort(StringComparer.Ordinal);
+            foreach (var bundle in pending) EvictNow(bundle);
+        }
+        void EvictNow(string bundle)
+        {
+            CollectionResidencyMetrics.MarkDirty();
+            if (pinned.Contains(bundle) || owners.ContainsKey(bundle) || inflight.Contains(bundle)) return;
+            if (!bundles.TryGetValue(bundle, out var state)) return;
+            var remove = new List<string>();
+            foreach (var pair in paths) if (pair.Value == bundle) remove.Add(pair.Key);
+            if (state == State.Open)
+            {
+                try { source.Unload(bundle); }
+                catch (Exception e)
+                {
+                    pendingEvictions.Add(bundle);
+                    if (warnedRelease.Add(bundle)) Debug.LogWarning($"Collection: could not release {bundle} ({Describe(e)}).");
+                    return;
+                }
+            }
+            foreach (string path in remove) { loaded.Remove(path); paths.Remove(path); }
+            bundles.Remove(bundle);
+        }
+
+        /// <summary>A detached diagnostic view, per ORIGINAL bundle (not category); no residency mutations.</summary>
+        public sealed class BundleDiagnostic
+        {
+            public string Bundle { get; internal set; } = "";
+            public string State { get; internal set; } = "";
+            public int Owners { get; internal set; }
+            public int CachedPrefabs { get; internal set; }
+            public int CachedPaths { get; internal set; }
+            public int PendingRequests { get; internal set; }
+            public bool Pinned { get; internal set; }
+            public bool InFlight { get; internal set; }
+            public bool EvictionQueued { get; internal set; }
+        }
+        public IReadOnlyList<BundleDiagnostic> Diagnostics()
+        {
+            var names = new SortedSet<string>(bundles.Keys, StringComparer.Ordinal);
+            names.UnionWith(owners.Keys); names.UnionWith(pinned); names.UnionWith(inflight); names.UnionWith(pendingEvictions);
+            foreach (var request in pending) { var name = catalog.BundleOf(request.Id); if (name != null) names.Add(name); }
+            var rows = new List<BundleDiagnostic>();
+            foreach (string name in names)
+            {
+                var row = new BundleDiagnostic { Bundle = name, State = bundles.TryGetValue(name, out var state) ? state.ToString() : "Pending",
+                    Owners = owners.TryGetValue(name, out int count) ? count : 0, Pinned = pinned.Contains(name),
+                    InFlight = inflight.Contains(name), EvictionQueued = pendingEvictions.Contains(name) };
+                foreach (var path in paths)
+                    if (path.Value == name)
+                    {
+                        row.CachedPaths++;
+                        if (loaded.TryGetValue(path.Key, out var prefab) && prefab != null) row.CachedPrefabs++;
+                    }
+                foreach (var request in pending) if (catalog.BundleOf(request.Id) == name) row.PendingRequests++;
+                rows.Add(row);
+            }
+            return rows.AsReadOnly();
+        }
+        internal static IReadOnlyList<BundleDiagnostic> SharedDiagnostics() =>
+            shared == null ? Array.Empty<BundleDiagnostic>() : shared.Diagnostics();
+        internal static bool Settled(IReadOnlyList<(string id, CollectionDetail detail)> keys)
+        {
+            if (shared == null) return true;
+            foreach (var key in keys)
+            {
+                var bundle = CollectionCatalog.BundleOf(key.id);
+                if (bundle == null) continue;
+                if (shared.inflight.Contains(bundle) || shared.pendingEvictions.Contains(bundle)) return false;
+                foreach (var request in shared.pending)
+                    if (CollectionCatalog.BundleOf(request.Id) == bundle) return false;
+            }
+            return true;
+        }
+
+        public CollectionStream(ISource source, Catalog? catalog = null) { this.source = source; this.catalog = catalog ?? Collection; }
 
         /// <summary>The game's stream, made on the first request with the source for this player (or the editor).</summary>
+        static int readyFrame = -1;
+        public static void GameReady() { if (readyFrame < 0) readyFrame = Time.frameCount; }
+        public static bool MayFetch(int frame, int ready) => ready >= 0 && frame > ready + 2;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetFrame() { readyFrame = -1; shared = null; host = null; }
         static CollectionStream? shared;
         static CollectionStreamHost? host;
+
+        /// <summary>The other catalogs' streams (the hex props), one per catalog, each made on its first request with the
+        /// source for this player (or the editor), and each run by its own host.</summary>
+        static readonly Dictionary<Catalog, CollectionStream> streams = new Dictionary<Catalog, CollectionStream>();
+        static readonly Dictionary<Catalog, CollectionStreamHost> hosts = new Dictionary<Catalog, CollectionStreamHost>();
 
         /// <summary>Asks for model <paramref name="id"/> at <paramref name="detail"/>; <paramref name="done"/> runs on a later
         /// frame with the prefab, or with null when the model cannot be had (fail open).</summary>
         public static void Request(string id, CollectionDetail detail, Action<GameObject?> done)
         {
-            shared ??= new CollectionStream(DefaultSource());
-            if (shared.Enqueue(id, detail, done) && host == null)
+            shared ??= new CollectionStream(DefaultSource(Collection));
+            if (shared.Enqueue(id, detail, done)) StartHost();
+        }
+
+        /// <summary><see cref="Request(string, CollectionDetail, Action{GameObject})"/> from <paramref name="catalog"/>'s
+        /// stream; nothing of it is fetched until something asks.</summary>
+        public static void Request(Catalog catalog, string id, CollectionDetail detail, Action<GameObject?> done)
+        {
+            if (catalog == Collection) { Request(id, detail, done); return; }
+            if (!streams.TryGetValue(catalog, out var stream)) streams[catalog] = stream = new CollectionStream(DefaultSource(catalog), catalog);
+            if (stream.Enqueue(id, detail, done) && (!hosts.TryGetValue(catalog, out var other) || other == null))
             {
-                var go = new GameObject("CollectionStream") { hideFlags = HideFlags.HideAndDontSave };
+                var go = new GameObject("CollectionStream " + catalog.StreamingFolder) { hideFlags = HideFlags.HideAndDontSave };
                 if (Application.isPlaying) UnityEngine.Object.DontDestroyOnLoad(go);
-                host = go.AddComponent<CollectionStreamHost>();
-                host.StartCoroutine(host.Run(shared));
+                hosts[catalog] = other = go.AddComponent<CollectionStreamHost>();
+                other.StartCoroutine(other.Run(stream));
             }
         }
 
-        static ISource DefaultSource()
+        /// <summary>Acquires a model from the same stream as the other map layers, without permanently pinning it.</summary>
+        public static IDisposable Acquire(string id, CollectionDetail detail, Action<GameObject?> done)
+        {
+            shared ??= new CollectionStream(DefaultSource(Collection));
+            var lease = shared.Retain(id, detail, done);
+            if (CollectionCatalog.BundleOf(id) != null) StartHost();
+            return lease;
+        }
+
+        static void StartHost()
+        {
+            if (host != null) return;
+            var go = new GameObject("CollectionStream") { hideFlags = HideFlags.HideAndDontSave };
+            if (Application.isPlaying) UnityEngine.Object.DontDestroyOnLoad(go);
+            host = go.AddComponent<CollectionStreamHost>();
+            host.StartCoroutine(host.Run(shared!));
+        }
+
+        static ISource DefaultSource(Catalog catalog)
         {
 #if UNITY_EDITOR
             return new EditorSource();
 #else
-            return new BundleSource(Path.Combine(Application.streamingAssetsPath, CollectionCatalog.StreamingFolder));
+            return new BundleSource(Path.Combine(Application.streamingAssetsPath, catalog.StreamingFolder), catalog.ChecksFile);
 #endif
         }
 
         /// <summary>Queues a request; false (and <paramref name="done"/> already called with null) for an unknown id.</summary>
         public bool Enqueue(string id, CollectionDetail detail, Action<GameObject?> done)
         {
-            if (CollectionCatalog.BundleOf(id) == null)
+            if (catalog.BundleOf(id) == null)
             {
-                if (warnedIds.Add(id)) Debug.LogWarning($"Collection: no model '{id}' in The 1948 Collection; nothing is drawn for it.");
+                if (warnedIds.Add(id)) Debug.LogWarning($"Collection: no model '{id}' in {catalog.Name}; nothing is drawn for it.");
                 done(null);
                 return false;
             }
-            pending.Enqueue((id, detail, done));
+            pinned.Add(catalog.BundleOf(id)!);
+            pending.Enqueue((id, detail, done, null));
+            CollectionResidencyMetrics.MarkDirty();
             return true;
         }
 
@@ -88,33 +268,41 @@ namespace Statecraft.Game.Map.Collection
         public IEnumerator Run()
         {
             yield return null;   // after the frame that made the first request
+            while (Application.isPlaying && !MayFetch(Time.frameCount, readyFrame)) yield return null;
             while (true)
             {
+                DrainEvictions();
                 while (pending.Count > 0)
                 {
-                    var (id, detail, done) = Next();
-                    var bundle = CollectionCatalog.BundleOf(id)!;
-                    if (!bundles.TryGetValue(bundle, out var state))
+                    var (id, detail, done, owner) = Next();
+                    var bundle = catalog.BundleOf(id)!;
+                    if (owner != null && !owner.Active) { Evict(bundle); continue; }
+                    inflight.Add(bundle);
+                    try
                     {
-                        string? error = null;
-                        yield return Guard(() => source.Open(bundle, e => error = e), e => error = e);
-                        state = error == null ? State.Open : State.Failed;
-                        bundles[bundle] = state;
-                        if (error != null)
-                            Debug.LogWarning($"Collection: bundle {bundle} did not load ({error}); its models stay off the map.");
+                        if (!bundles.TryGetValue(bundle, out var state))
+                        {
+                            string? error = null;
+                            yield return Guard(() => source.Open(bundle, e => error = e), e => error = e);
+                            state = error == null ? State.Open : State.Failed;
+                            bundles[bundle] = state;
+                            if (error != null) Debug.LogWarning($"Collection: bundle {bundle} did not load ({error}); its models stay off the map.");
+                        }
+                        if (owner != null && !owner.Active) continue;
+                        if (state != State.Open) { Answer(id, done, null); continue; }
+                        var path = catalog.PrefabPath(id, detail);
+                        if (!loaded.TryGetValue(path, out var prefab))
+                        {
+                            string? error = null;
+                            yield return Guard(() => source.Load(bundle, path, p => prefab = p), e => error = e);
+                            if (error != null) prefab = null;
+                            loaded[path] = prefab; paths[path] = bundle; CollectionResidencyMetrics.MarkDirty();
+                            if (error != null) Debug.LogWarning($"Collection: bundle {bundle} did not load {path} ({error}); nothing is drawn for it.");
+                            else if (prefab == null) Debug.LogWarning($"Collection: bundle {bundle} has no {path}; nothing is drawn for it.");
+                        }
+                        if (owner == null || owner.Active) Answer(id, done, prefab);
                     }
-                    if (state != State.Open) { Answer(id, done, null); continue; }
-                    var path = CollectionCatalog.PrefabPath(id, detail);
-                    if (!loaded.TryGetValue(path, out var prefab))
-                    {
-                        string? error = null;
-                        yield return Guard(() => source.Load(bundle, path, p => prefab = p), e => error = e);
-                        if (error != null) prefab = null;
-                        loaded[path] = prefab;
-                        if (error != null) Debug.LogWarning($"Collection: bundle {bundle} did not load {path} ({error}); nothing is drawn for it.");
-                        else if (prefab == null) Debug.LogWarning($"Collection: bundle {bundle} has no {path}; nothing is drawn for it.");
-                    }
-                    Answer(id, done, prefab);
+                    finally { inflight.Remove(bundle); Evict(bundle); }
                 }
                 yield return null;
             }
@@ -123,12 +311,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The next queued request to serve, in order, except that a request for a bundle that comes
         /// <see cref="CollectionCatalog.After"/> another waits behind a queued request for that other bundle until it has
         /// settled. It never waits for a bundle nobody has asked for, and a failed bundle counts as settled (fail open).</summary>
-        (string Id, CollectionDetail Detail, Action<GameObject?> Done) Next()
+        (string Id, CollectionDetail Detail, Action<GameObject?> Done, Lease? Owner) Next()
         {
             for (int n = pending.Count; n > 0; n--)
             {
                 var next = pending.Dequeue();
-                if (!CollectionCatalog.After.TryGetValue(CollectionCatalog.BundleOf(next.Id)!, out var first) || bundles.ContainsKey(first)
+                if (!CollectionCatalog.After.TryGetValue(catalog.BundleOf(next.Id)!, out var first) || bundles.ContainsKey(first)
                     || !Queued(first))
                     return next;
                 pending.Enqueue(next);
@@ -139,7 +327,11 @@ namespace Statecraft.Game.Map.Collection
         bool Queued(string bundle)
         {
             foreach (var p in pending)
-                if (CollectionCatalog.BundleOf(p.Id) == bundle) return true;
+            {
+                if (catalog.BundleOf(p.Id) == bundle) return true;
+                foreach (var group in CollectionCatalog.Groups)
+                    if (group.Bundle == bundle && Array.IndexOf(group.Ids, p.Id) >= 0) return true;
+            }
             return false;
         }
 
@@ -183,19 +375,19 @@ namespace Statecraft.Game.Map.Collection
         static IEnumerator Done() { yield break; }
 
         /// <summary>Reads the bundles from a folder: by URL on WebGL (StreamingAssets is served beside the page; StreamingFetch
-        /// retries a dropped connection, a 429 or a 5xx, #1054), from disk elsewhere. Each bundle must match its line of
-        /// <see cref="CollectionCatalog.ChecksFile"/>, written by the bundle build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
+        /// retries a dropped connection, a 429 or a 5xx, #1054), from disk elsewhere. Each bundle must match its line of the
+        /// checks file (<see cref="CollectionCatalog.ChecksFile"/> unless the catalog names another), written by the bundle build: Unity is given the bundle's CRC on both paths, and on disk a missing file, one that is not a whole
         /// AssetBundle by its header (<see cref="CheckHeader"/>) or one whose size or SHA-256 differs from the build fails at
         /// once without asking Unity to open it, so it logs this class's one warning and not Unity's own errors too.</summary>
         public sealed class BundleSource : ISource
         {
-            readonly string folder;
+            readonly string folder, checksFile;
             readonly Dictionary<string, AssetBundle> open = new Dictionary<string, AssetBundle>(StringComparer.Ordinal);
             Dictionary<string, CollectionCatalog.BundleCheck>? checks;
             string? checksError;
             bool checksRead;
 
-            public BundleSource(string folder) { this.folder = folder; }
+            public BundleSource(string folder, string checksFile = CollectionCatalog.ChecksFile) { this.folder = folder; this.checksFile = checksFile; }
 
             public IEnumerator Open(string bundle, Action<string?> done)
             {
@@ -242,7 +434,7 @@ namespace Statecraft.Game.Map.Collection
                 done(null);
             }
 
-            /// <summary>Reads <see cref="CollectionCatalog.ChecksFile"/> once (by URL or from disk, like the bundles).</summary>
+            /// <summary>Reads the checks file once (by URL or from disk, like the bundles).</summary>
             IEnumerator ReadChecks()
             {
                 if (checksRead) yield break;
@@ -250,10 +442,10 @@ namespace Statecraft.Game.Map.Collection
                 string? text = null;
                 if (folder.Contains("://"))
                 {
-                    var download = StreamingFetch.Get(folder + "/" + CollectionCatalog.ChecksFile);
+                    var download = StreamingFetch.Get(folder + "/" + checksFile);
                     string? failed = null;
-                    yield return Await(StreamingFetch.Done(download, CollectionCatalog.ChecksFile, StreamingFetch.StallSeconds), e => failed = e);
-                    if (failed != null) checksError = $"no {CollectionCatalog.ChecksFile} ({failed})";
+                    yield return Await(StreamingFetch.Done(download, checksFile, StreamingFetch.StallSeconds), e => failed = e);
+                    if (failed != null) checksError = $"no {checksFile} ({failed})";
                     else
                     {
                         try { text = download.Request.downloadHandler.text; }
@@ -262,12 +454,12 @@ namespace Statecraft.Game.Map.Collection
                 }
                 else
                 {
-                    var file = Path.Combine(folder, CollectionCatalog.ChecksFile);
+                    var file = Path.Combine(folder, checksFile);
                     if (File.Exists(file)) text = File.ReadAllText(file);
                     else checksError = "no file " + file;
                 }
                 if (text != null && (checks = CollectionCatalog.ParseChecks(text)) == null)
-                    checksError = $"a damaged {CollectionCatalog.ChecksFile}";
+                    checksError = $"a damaged {checksFile}";
             }
 
             /// <summary>Waits a frame at a time for a StreamingFetch download (with its retries) to end; a final failure
@@ -283,8 +475,8 @@ namespace Statecraft.Game.Map.Collection
             /// <summary>The bundle's line of the checks file, or null and why not.</summary>
             (CollectionCatalog.BundleCheck? Check, string Why) Lookup(string bundle)
             {
-                if (checks == null) return (null, checksError ?? "no " + CollectionCatalog.ChecksFile);
-                return checks.TryGetValue(bundle, out var c) ? (c, "") : (null, $"not in {CollectionCatalog.ChecksFile}");
+                if (checks == null) return (null, checksError ?? "no " + checksFile);
+                return checks.TryGetValue(bundle, out var c) ? (c, "") : (null, $"not in {checksFile}");
             }
 
             public IEnumerator Load(string bundle, string path, Action<GameObject?> done)
@@ -323,6 +515,13 @@ namespace Statecraft.Game.Map.Collection
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { return "unreadable (" + e.Message + ")"; }
             }
 
+            /// <summary>Unloads one retired bundle and its objects; other acquired consumers keep their own bundles.</summary>
+            public void Unload(string bundle)
+            {
+                if (!open.TryGetValue(bundle, out var asset)) return;
+                if (asset != null) asset.Unload(true); open.Remove(bundle);
+            }
+
             /// <summary>Unloads every bundle this source opened, and the objects loaded from them.</summary>
             public void UnloadAll()
             {
@@ -335,6 +534,8 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The editor's source: the prefabs as they stand in the project.</summary>
         public sealed class EditorSource : ISource
         {
+            public void Unload(string bundle) { } // AssetDatabase owns these assets; never destroy them.
+
             public IEnumerator Open(string bundle, Action<string?> done) { done(null); yield break; }
 
             public IEnumerator Load(string bundle, string path, Action<GameObject?> done)

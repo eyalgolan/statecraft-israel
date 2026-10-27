@@ -133,8 +133,74 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Raised once for each model when it first arrives (the unit layer then draws the tokens that waited for it).</summary>
         public static event Action<string>? ModelArrived;
 
+        internal static int AvailabilityVersion { get; private set; }
+        static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
+        static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
+        internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
+            arrived.Keys.Concat(near.Keys).Concat(asked).Concat(waiting.Keys).Concat(nearWaiting.Keys), 0, asked.Count + nearWaiting.Count,
+            arrived.Values.Count(p => p != null) + near.Values.Count(p => p != null), 0,
+            waiting.Values.Sum(list => list.Count(p => p != null)) + nearWaiting.Values.Sum(list => list.Count), 0,
+            arrived.Keys.Select(id => id + "|Far").Concat(near.Keys.Select(id => id + "|Near")));
+        sealed class ExternalLease : IDisposable { public void Dispose() { } }
+        static readonly Dictionary<(string id, CollectionDetail detail), List<Action<GameObject?>>> externalPending =
+            new Dictionary<(string, CollectionDetail), List<Action<GameObject?>>>();
+        static IDisposable AcquireSource(string id, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            if (Source == null) return CollectionStream.Acquire(id, detail, answer);
+            if (detail == CollectionDetail.Far && arrived.TryGetValue(id, out var far)) { answer(far); return new ExternalLease(); }
+            if (detail == CollectionDetail.Near && near.TryGetValue(id, out var close)) { answer(close); return new ExternalLease(); }
+            var key = (id, detail);
+            if (!externalPending.TryGetValue(key, out var callbacks)) externalPending[key] = callbacks = new List<Action<GameObject?>>();
+            callbacks.Add(answer);
+            if (callbacks.Count == 1) Source(id, detail, prefab =>
+            {
+                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !owned.ContainsKey(id)) return;
+                externalPending.Remove(key);
+                AnswerOwned(id, detail, prefab);
+                foreach (var done in callbacks.ToArray()) done(prefab);
+            });
+            return new ExternalLease();
+        }
+        sealed class Owner : IDisposable
+        {
+            readonly string id; IDisposable? lease;
+            internal Owner(string id, IDisposable lease) { this.id = id; this.lease = lease; }
+            public void Dispose()
+            {
+                if (lease == null) return;
+                lease.Dispose(); lease = null;
+                if (--owned[id] != 0) return;
+                owned.Remove(id); externalPending.Remove((id, CollectionDetail.Far)); externalPending.Remove((id, CollectionDetail.Near));
+                // A permanent legacy caller is an explicit retained blocker; never erase its still-live source cache.
+                if (legacyPinned.Contains(id)) return;
+                if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); near.Remove(id); nearWaiting.Remove(id);
+            }
+        }
+        internal static IDisposable AcquireOwned(string id, CollectionDetail detail, Action<GameObject?> answer,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
+        {
+            owned.TryGetValue(id, out int count); owned[id] = count + 1;
+            try { return new Owner(id, (acquire ?? AcquireSource)(id, detail, answer)); }
+            catch { if (--owned[id] == 0) owned.Remove(id); throw; }
+        }
+        internal static void AnswerOwned(string id, CollectionDetail detail, GameObject? prefab)
+        {
+            if (detail == CollectionDetail.Near) near[id] = prefab;
+            else if (prefab != null)
+            {
+                bool first = !arrived.ContainsKey(id); arrived[id] = prefab;
+                if (first) { AvailabilityVersion++; ModelArrived?.Invoke(id); }
+            }
+        }
+
         /// <summary>Forgets every model and request (tests, and a change of <see cref="Source"/>).</summary>
-        public static void Forget() { arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        internal static void ResetSession()
+        {
+            if (owned.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
+            Forget(); Source = null; ModelArrived = null;
+        }
+        public static void Forget() { externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear(); }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;
@@ -145,6 +211,16 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Puts model <paramref name="id"/> on <paramref name="piece"/> (a figure or a vehicle's holder, in real metres
         /// scaled by <see cref="UnitShowcase.FigureScale"/>): at once when it has arrived, else when it arrives. Nothing for a
         /// null id.</summary>
+        internal static void Dress(Transform piece, string? id, CollectionResidencyPolicy policy,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null)
+        {
+            if (policy == null) throw new ArgumentNullException(nameof(policy));
+            if (id == null || piece == null) return;
+            // The sandwich original remains explicitly pinned by the road consumer in this first production slice.
+            var owner = piece.GetComponent<UnitFigureResidency>() ?? piece.gameObject.AddComponent<UnitFigureResidency>();
+            owner.Initialize(id, policy, acquire);
+        }
+
         public static void Dress(Transform piece, string? id)
         {
             if (id == null || piece == null) return;
@@ -164,6 +240,7 @@ namespace Statecraft.Game.Map.Units
             if (!nearWaiting.TryGetValue(id, out var list)) nearWaiting[id] = list = new List<Action>();
             list.Add(ready);
             if (list.Count > 1) return;   // asked already
+            legacyPinned.Add(id);
             ask(id, CollectionDetail.Near, prefab =>
             {
                 near[id] = prefab;   // null: fail open, the far model stays (the stream has warned once)
@@ -181,7 +258,7 @@ namespace Statecraft.Game.Map.Units
             if (Arrived(id) || asked.Contains(id)) return;
             var ask = Requester;
             if (ask == null) return;
-            asked.Add(id);
+            asked.Add(id); legacyPinned.Add(id);
             ask(id, CollectionDetail.Far, prefab =>
             {
                 asked.Remove(id);
@@ -203,7 +280,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The swap: the model under the piece, in its frame (facing +Z, feet or wheels on the origin), and the
         /// code-built mesh's renderer off, together. A figure takes the code-built figure's height (or, with none, a man's
         /// height); a vehicle takes <see cref="VehicleLengthShare"/>.</summary>
-        static void Swap(Transform piece, string id, GameObject prefab)
+        internal static void Swap(Transform piece, string id, GameObject prefab)
         {
             if (piece.Find(ModelName) != null) return;
             // The model under a holder in the piece's frame: the prefab keeps its own root transform (every Collection far
@@ -212,6 +289,15 @@ namespace Statecraft.Game.Map.Units
             var holder = new GameObject(ModelName).transform;
             holder.SetParent(piece, false);
             var model = UnityEngine.Object.Instantiate(prefab, holder, false);
+            if (!CollectionCatalog.IsFullQualityGeneratedInfantry(id))
+                OriginalModelPose.Sample(model); // far Tal originals are still poses; #1763's generated rigs keep playing
+            else
+                foreach (var animator in model.GetComponentsInChildren<Animator>(true))
+                {
+                    if (!animator.enabled || animator.runtimeAnimatorController == null) continue;
+                    var culling = animator.cullingMode; animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    animator.Rebind(); animator.Update(0f); animator.cullingMode = culling;
+                }
             var code = piece.TryGetComponent<MeshRenderer>(out var mr) ? mr : null;
             var renderers = model.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length > 0)
@@ -241,8 +327,8 @@ namespace Statecraft.Game.Map.Units
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
-        /// bounds (Renderer.bounds is empty while the layer is off). A skinned mesh is drawn through its bones, so its box is
-        /// the renderer's local bounds in its root bone's space (as Unity bounds it), not its mesh's. Null with no mesh.</summary>
+        /// bounds (Renderer.bounds is empty while the layer is off). Skin bounds come from the actual posed vertices,
+        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. Null with no mesh.</summary>
         internal static Bounds? BoxIn(Transform frame, Transform model)
         {
             var inv = frame.worldToLocalMatrix;
@@ -257,8 +343,23 @@ namespace Statecraft.Game.Map.Units
                 }
             }
             foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
-            foreach (var s in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (s.sharedMesh != null) Add(s.localBounds, s.rootBone != null ? s.rootBone : s.transform);
+            foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (skin.sharedMesh == null) continue;
+                var posed = new Mesh();
+                try
+                {
+                    // true compensates the instance scale; the matrix below applies it exactly once (#1273).
+                    skin.BakeMesh(posed, true);
+                    var matrix = inv * skin.transform.localToWorldMatrix;
+                    foreach (var vertex in posed.vertices)
+                    {
+                        var point = matrix.MultiplyPoint3x4(vertex);
+                        if (box is Bounds have) { have.Encapsulate(point); box = have; } else box = new Bounds(point, Vector3.zero);
+                    }
+                }
+                finally { if (Application.isPlaying) UnityEngine.Object.Destroy(posed); else UnityEngine.Object.DestroyImmediate(posed); }
+            }
             return box;
         }
 

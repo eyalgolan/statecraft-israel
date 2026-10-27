@@ -60,7 +60,7 @@ public class SeaAirCollectionTests
     [Test]
     public void EveryModelOfTheLaneIsWantedOnSomeTurnFromTheStreamedVehicleBundle()
     {
-        foreach (var id in Models) Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf(id), id + " is in the streamed vehicle bundle");
+        foreach (var id in Models) Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id + " is in the streamed vehicle bundle");
         var turns = new List<DateTime>();
         for (var d = C.Rules.Start; d < C.End; d = d.AddMonths(1)) turns.Add(d);
         Assert.AreEqual(new DateTime(1948, 5, 15), turns[0]);
@@ -108,7 +108,7 @@ public class SeaAirCollectionTests
         bool first = true;
         foreach (var date in new[] { new DateTime(1948, 6, 15), new DateTime(1949, 8, 15) })
         {
-            var layer = SeaAirCollection.ShowAt(map, date, Array.Empty<Placement>(), C)!;
+            var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!;
             if (first) CollectionAssert.IsEmpty(layer.Placed, "nothing before the stream answers");
             first = false;
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the far mesh only");
@@ -117,8 +117,8 @@ public class SeaAirCollectionTests
             CollectionAssert.IsEmpty(layer.Missing, "every craft found a spot on " + date.ToString("d MMM yyyy"));
             Assert.AreEqual(4, layer.Placed.Count);
             var spots = layer.Placed.Select(p => p.At).ToArray();
-            SeaAirCollection.ShowAt(map, date.AddMonths(1), Array.Empty<Placement>(), C); AnswerAll();
-            SeaAirCollection.ShowAt(map, date, Array.Empty<Placement>(), C); AnswerAll();
+            CollectionGeometryFixture.Craft(map, date.AddMonths(1), Array.Empty<Placement>(), C); AnswerAll();
+            CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C); AnswerAll();
             CollectionAssert.AreEqual(spots, layer.Placed.Select(p => p.At).ToArray(), "the same spots again");
             var boats = layer.Placed.Where(p => p.Model != SeaAirCollection.C54).ToList();
             foreach (var (key, model, at) in layer.Placed)
@@ -170,11 +170,11 @@ public class SeaAirCollectionTests
     {
         var map = OpenMap();
         var date = new DateTime(1949, 8, 15);
-        var layer = SeaAirCollection.ShowAt(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
+        var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
         var first = layer.Placed.Single(p => p.Model == SeaAirCollection.C54).At;
         var hex = C.Hexes.OrderBy(h => { var w = map.Frame.ToWorld(h.Lon, h.Lat, 0); return (new Vector2(w.x, w.z) - new Vector2(first.x, first.z)).sqrMagnitude; }).First();
         var placed = new[] { new Placement(MapActions.TransitCamp, hex.Q, hex.R, date) };
-        SeaAirCollection.ShowAt(map, date, placed, C); AnswerAll();
+        CollectionGeometryFixture.Craft(map, date, placed, C); AnswerAll();
         var moved = layer.Placed.Single(p => p.Model == SeaAirCollection.C54).At;
         var c = map.Frame.ToWorld(hex.Lon, hex.Lat, 0);
         Assert.GreaterOrEqual((new Vector2(moved.x, moved.z) - new Vector2(c.x, c.z)).magnitude,
@@ -205,7 +205,7 @@ public class SeaAirCollectionTests
         var bad = new List<string>();
         foreach (var date in new[] { new DateTime(1948, 6, 15), new DateTime(1949, 8, 15) })
         {
-            var layer = SeaAirCollection.ShowAt(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
+            var layer = CollectionGeometryFixture.Craft(map, date, Array.Empty<Placement>(), C)!; AnswerAll();
             Assert.AreEqual(layer.Placed.Count, layer.KeepClear.Count, "the labels keep clear of every drawn craft");
             foreach (var (key, model, _) in layer.Placed)
             {
@@ -246,12 +246,12 @@ public class SeaAirCollectionTests
                 var none = Array.Empty<Placement>();
                 var layers = new MonoBehaviour?[]
                 {
-                    TownLandmarks.ShowAt(map, date, none, C), CivilianPeople.ShowAt(map, date, none, C), RuralLife.Show(map),
-                    WildlifeLayer.Show(map), SpecialBuildingModels.ShowAt(map, date),
+                    TownLandmarks.ShowAt(map, date, none, C), CollectionGeometryFixture.People(map, date, none, C), CollectionGeometryFixture.Rural(map),
+                    WildlifeLayer.Show(map), CollectionGeometryFixture.Special(map, date),
                 };
                 var boxes = layers.Where(l => l != null).SelectMany(l => l!.GetComponentsInChildren<Renderer>(true).Select(r => (l!.GetType().Name, r.bounds))).ToList();
                 others = Math.Max(others, boxes.Count);
-                var craft = SeaAirCollection.ShowAt(map, date, none, C)!; AnswerAll();
+                var craft = CollectionGeometryFixture.Craft(map, date, none, C)!; AnswerAll();
                 foreach (Transform t in craft.transform)
                 {
                     var b = WorldBounds(t.gameObject); checkedCraft++;
@@ -273,7 +273,7 @@ public class SeaAirCollectionTests
     [Test]
     public void AModelThatDoesNotStreamWarnsAndTheOthersDraw()
     {
-        var map = OpenMap(); var layer = SeaAirCollection.ShowAt(map, new DateTime(1949, 1, 15), Array.Empty<Placement>(), C)!;
+        var map = OpenMap(); var layer = CollectionGeometryFixture.Craft(map, new DateTime(1949, 1, 15), Array.Empty<Placement>(), C)!;
         var failed = asked.Single(x => x.id == SeaAirCollection.Steamer);
         LogAssert.Expect(LogType.Warning, new Regex("^SEA/AIR: the model vehicle-immigrant-steamer-1948-v2wl did not stream"));
         failed.done(null);

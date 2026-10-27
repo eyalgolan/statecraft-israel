@@ -36,15 +36,15 @@ namespace Statecraft.Game.Map.Kits
             Material kitMaterial, Material treeMaterial, TownModelSet? townModels, MapRuntimeAssets assets, GameObject markers, out Stats stats,
             IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null) =>
             Build(settlements, new List<Settlement>(), new List<Localities.Area>(), terrain, frame, hexes, elevMinM, kitMaterial, treeMaterial,
-                townModels, assets, markers, out stats, corridors, columns);
+                townModels, assets, markers, out stats, corridors, columns, residency: Collection.ProductionResidency.Approved());
 
         /// <summary>As Build, with the 1948 localities and the Bedouin camp areas (content/map/localities_1948.yaml) drawn
         /// beside the game settlements: their buildings merged per tile (SettlementKits.Result.Tiles), one renderer each.</summary>
-        public static GameObject Build(IReadOnlyList<Settlement> settlements, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
+        internal static GameObject Build(IReadOnlyList<Settlement> settlements, IReadOnlyList<Settlement> localities, IReadOnlyList<Localities.Area> camps,
             Terrain terrain, GeoFrame frame, HexFile hexes, float elevMinM,
             Material kitMaterial, Material treeMaterial, TownModelSet? townModels, MapRuntimeAssets assets, GameObject markers, out Stats stats,
             IReadOnlyList<(List<Vector2> line, float halfWidth)>? corridors = null, Dictionary<string, Bounds[]>? columns = null,
-            IReadOnlyList<(Vector2 centre, float radius)>? tokens = null)
+            IReadOnlyList<(Vector2 centre, float radius)>? tokens = null, Collection.ProductionResidency? residency = null)
         {
             var st = stats = new Stats();
             var root = new GameObject(RootName);
@@ -73,14 +73,17 @@ namespace Statecraft.Game.Map.Kits
             // Issue #659 (owner ruling on #700: "Models up close only"): each kit mesh, and beside it its close mesh (without
             // its buildings, with the models' plinths), which TownModelLayer swaps in when the camera is close.
             var swaps = new List<(Renderer kit, Renderer? close)>();
-            void AddKit(string name, Mesh mesh)
+            var rendererTownIds = new Dictionary<Renderer, string>();
+            void AddKit(string name, Mesh mesh, string? townId = null)
             {
                 var kit = Add(name, mesh);
                 Renderer? close = null;
                 if (built.Close.TryGetValue(mesh.name, out var cm)) { close = Add(name + CloseSuffix, cm, count: false); st.CloseVertices += cm.vertexCount; }
                 swaps.Add((kit, close));
+                if (townId != null) rendererTownIds[kit] = townId;
             }
-            foreach (var (s, mesh, n) in built.Towns) { AddKit(s.Id, mesh); stats.Buildings += n; }
+            var nearTowns = new List<string>();
+            foreach (var (s, mesh, n) in built.Towns) { AddKit(s.Id, mesh, s.Id); nearTowns.Add(s.Id); stats.Buildings += n; }
             foreach (var (name, mesh) in built.Tiles) AddKit(name, mesh);
             // The boats (SeaCraft): off the coast and moored in the harbours the kits recorded.
             var crafts = SeaCraft.Place(ground, placed);
@@ -98,7 +101,9 @@ namespace Statecraft.Game.Map.Kits
             var townGo = new GameObject(TownModelsName);
             townGo.transform.SetParent(root.transform, false);
             var towns = townGo.AddComponent<TownModelLayer>();
-            towns.Init(built.Models, townModels, swaps);
+            if (residency == null) throw new System.ArgumentNullException(nameof(residency));
+            towns.ConfigureProduction(residency.Towns);
+            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds);
             stats.Models = built.Models.Count;
             stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
             stats.Buildings += built.LocalityBuildings + built.Tents;
