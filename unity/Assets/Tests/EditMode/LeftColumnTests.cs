@@ -265,6 +265,9 @@ public class LeftColumnTests
                 Assert.AreEqual("cabinet", nav.Current, "covered navigation cannot replace the screen");
                 if (covered)
                 {
+                    // Focus() on a control that cannot take focus clears it, so the lap starts again from the screen's X.
+                    x.Focus();
+                    Assert.AreSame(x, root.panel.focusController.focusedElement, "precondition: the lap starts on the screen's X");
                     for (int i = 0; i < 24; i++)
                     {
                         var focused = (VisualElement)root.panel.focusController.focusedElement;
