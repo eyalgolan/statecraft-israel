@@ -204,6 +204,49 @@ public class AdvisorOpeningParityTests
         Assert.AreEqual(hex, game.Info!.Selected, "closing puts back the player's hex");
     }
 
+    /// <summary>A pioneer group's card is a selection of its own (#1549, review C288 S1): closing the advisor's city step puts
+    /// back the pioneer card it found, not an empty panel; a pioneer the player opens meanwhile stays.</summary>
+    [Test]
+    public void ClosingPutsBackAnOpenPioneerCard()
+    {
+        var game = OpenScene(new SaveStore(TempDir()), new SettingsStore(TempDir()));
+        Begin(game, Inputs, 0, startScreen: true); UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.CloseChain();
+        var bridge = game.Bridge!; var info = game.Info!; var units = game.Units!;
+        var city = AdvisorTargets.CityHex(bridge.Content, bridge.State)!.Value;
+        var hex = bridge.Content.Hexes.First(h => h.Land && (h.Q, h.R) != city && units.UnitToSelectAt(h.Q, h.R) == null
+            && !bridge.Content.SettlementHexes.Any(x => x.Q == h.Q && x.R == h.R) && !bridge.Content.Sites.Any(x => x.Q == h.Q && x.R == h.R));
+        var id = PioneerCardTests.Add(bridge.State, hex.Q, hex.R);
+        var other = PioneerCardTests.Add(bridge.State, hex.Q, hex.R);
+        void OpenCityStep()
+        {
+            game.Advisor!.OpenChain();
+            for (int i = 0; i < 2; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it"));
+            Assert.AreEqual(city, info.Selected, "precondition: the city step shows its city");
+            Assert.IsNull(info.Pioneer, "precondition: the advisor's city, not the pioneer card");
+        }
+
+        if (game.Card!.Shown != null && !game.Card.Collapsed) GameSceneTests.HideTheOpeningCard(Ui);   // the card over the HUD
+        info.Show(hex.Q, hex.R);
+        var link = PioneerCardTests.Link(Ui, id);
+        Assert.IsTrue(link != null && link.enabledInHierarchy, "precondition: the hex lists the pioneer group, pressable");
+        UiTestKit.Press(link!);
+        Assert.AreEqual(id, info.Pioneer, "precondition: the pioneer's card");
+        Assert.IsTrue(info.ShowsUnit);
+        OpenCityStep();
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        Assert.AreEqual(id, info.Pioneer, "closing puts back the pioneer card the advisor found");
+        Assert.IsTrue(info.ShowsUnit);
+        Assert.AreEqual(GddHexPanel.Group(En, bridge.State, id), Ui.Q<Label>("info-title").text);
+        Assert.IsNull(units.Selected, "no military token selected with it");
+
+        OpenCityStep();
+        info.Show(hex.Q, hex.R); UiTestKit.Press(PioneerCardTests.Link(Ui, other)!);   // the player opens another group meanwhile
+        Assert.AreEqual(other, info.Pioneer, "precondition: the player's newer pioneer card");
+        UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        Assert.AreEqual(other, info.Pioneer, "a pioneer the player opened meanwhile stays");
+    }
+
     // --- Skip, Escape and How to play -------------------------------------------------------------------------------
 
     sealed class Rig : IDisposable

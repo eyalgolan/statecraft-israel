@@ -150,6 +150,7 @@
                     <ui:Button name="build-camp" />
                     <ui:Button name="build-housing" />
                     <ui:Button name="info-defence" />
+                    <ui:Button name="info-pioneer-return" style="display: none;" />
                     <!-- Keep the three primary orders together when the laptop panel has room; the group still wraps on phones. -->
                     <ui:VisualElement name="info-primary-orders" class="row info-primary-orders">
                         <!-- The unit card's Move order (GDD loop, #754): shown only when the sim has a hex the unit can reach. -->
@@ -171,6 +172,7 @@
                 </ui:VisualElement>
                 <ui:Label name="info-reason" class="reason" />
                 <!-- The hex's city projects (GddHexPanel, #1122): here, not in the GDD column, which a city's own hex fills. -->
+                <ui:ScrollView name="info-pioneers" class="pioneer-list" mode="Vertical" style="display: none;" />
                 <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
