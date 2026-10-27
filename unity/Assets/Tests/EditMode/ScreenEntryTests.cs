@@ -92,6 +92,8 @@ public class ScreenEntryTests
     [UnityTest]
     [TestCase("cabinet", "seat-prime_minister", ExpectedResult = null)]
     [TestCase("budget", "budget-defense_minister-down", ExpectedResult = null)]
+    // #731: Defence's Arms purchase gives it a control of its own at the opening turn, the amount to buy.
+    [TestCase("defence", "arms-count", ExpectedResult = null)]
     public IEnumerator OpeningAScreenFromTheKeyboardPutsTheFocusOnItsFirstControl(string screen, string expected)
     {
         yield return Boot();
@@ -107,28 +109,27 @@ public class ScreenEntryTests
         Assert.AreNotEqual("screen-close-" + screen, FocusedName, "not the close X");
     }
 
-    /// <summary>Defence is the other case: at the opening turn it has no control of its own that can take the focus
-    /// (its ladder and call-up buttons are in the tree but not usable yet, and its scroll bar is no use from the
-    /// keyboard, #41 K3), so the screen's own X takes it. That is still better than leaving the focus on the rail
-    /// outside the screen the player just opened. The precondition is checked rather than assumed, so if Defence later
-    /// gains a usable control (#755 adds the call-up) this test says so instead of quietly passing.</summary>
+    /// <summary>The other case: a screen with no control of its own that can take the focus. Defence was this case until
+    /// #731 gave it the Arms purchase (its amount field now takes the focus, the case above); Objectives is it at the
+    /// opening turn (its objectives-rows hold no control), so the screen's own X takes the focus. That is still better than leaving the
+    /// focus on the rail outside the screen the player just opened. The precondition is checked rather than assumed, so
+    /// if Objectives later gains a usable control this test says so instead of quietly passing.</summary>
     [UnityTest]
     public IEnumerator AScreenWithNoUsableControlOfItsOwnTakesItsCloseButton()
     {
         yield return Boot();
-        yield return OpenFromTheRail("defence");
+        yield return OpenFromTheRail("objectives");
 
-        var panel = ui.Q<VisualElement>("screen-defence");
-        var x = ui.Q<Button>("screen-close-defence");
-        // Measured at the opening turn: de-escalate, escalate, mob-down and mob-up are all display:none, and the
-        // defence-body scroll bar is no use from the keyboard, so nothing in the screen but the X can hold the focus.
+        var panel = ui.Q<VisualElement>("screen-objectives");
+        var x = ui.Q<Button>("screen-close-objectives");
+        // A scroll bar is no use from the keyboard (#41 K3), so nothing in the screen but the X can hold the focus.
         var usable = panel.Query<VisualElement>().Build()
             .Where(e => e != panel && e != x && FocusReturn.CanTakeFocus(e)
                         && !(e is Scroller) && e.GetFirstAncestorOfType<Scroller>() == null)
             .ToList();
-        Assert.IsEmpty(usable, $"precondition: Defence has no control of its own that can take the focus at the opening turn");
+        Assert.IsEmpty(usable, $"precondition: Objectives has no control of its own that can take the focus at the opening turn");
         Assert.IsTrue(panel.Contains(At), $"the focus should be inside the screen, but it is on {FocusedName}");
-        Assert.AreEqual("screen-close-defence", FocusedName, "and on its X, the only thing in it that can hold the focus");
+        Assert.AreEqual("screen-close-objectives", FocusedName, "and on its X, the only thing in it that can hold the focus");
     }
 
     /// <summary>The pointer must not move the focus (PointerBlur's rule), as Close already respects.</summary>

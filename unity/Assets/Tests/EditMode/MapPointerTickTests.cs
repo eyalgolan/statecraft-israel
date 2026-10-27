@@ -197,4 +197,85 @@ public class MapPointerTickTests : InputTestFixture
         Assert.AreNotEqual(start, rig.View.LookAt, "the pan is not lost when the finger lifts right after the slop");
         Assert.IsEmpty(rig.Asked, "a drag past the slop never taps");
     }
+
+    // --- #1792: a second finger whose whole press lands inside one input update ---------------------------------
+
+    /// <summary>#1792: a pinch whose second finger presses, travels and lifts inside one input update must still cancel
+    /// the thumb's tap. This is <c>MapPointer.cs</c>'s own promise - "a releasing pinch's thumb is inside the slop, yet
+    /// must not select" - and before the fix the thumb selected at (400, 400).
+    /// <para>Why it broke. <c>Tick</c> counted the fingers from level state (<c>if (touch.press.isPressed)</c>), so a
+    /// finger already up when the frame sampled was never counted: <c>otherFingerDown</c> stayed false,
+    /// <c>TapPress.pinched</c> never latched, and the still thumb ended as a clean tap. The count now asks
+    /// <c>CameraController.DownThisUpdate</c>, which also takes the press edge. Same class as #1661's one-update flick
+    /// (#1777): a gesture that opens and closes between two samples is invisible to level state.</para></summary>
+    [Test]
+    public void APinchWhoseSecondFingerLivesInsideOneUpdateRefusesTheThumbsTap()
+    {
+        using var rig = new Rig();
+        var thumb = new Vector2(400, 400);
+        rig.Frame();                                   // warms press.wasPressedThisFrame (see the flick test above)
+        BeginTouch(1, thumb);
+        rig.Frame();
+        Assert.IsEmpty(rig.Asked, "nothing while the thumb alone is down");
+        // the second finger's whole life - press, 200 px of travel, release - inside one input update
+        BeginTouch(2, new Vector2(700, 400), queueEventOnly: true);
+        MoveTouch(2, new Vector2(900, 400), queueEventOnly: true);
+        EndTouch(2, new Vector2(900, 400));
+        rig.Frame();
+        EndTouch(1, thumb);
+        rig.Frame();
+        rig.SettleFrame();
+        Assert.IsEmpty(rig.Asked, "the thumb of a pinch must not select, however briefly the other finger was down");
+    }
+
+    /// <summary>#1792's other half, the one the issue names: the same invisible second finger, but with the thumb
+    /// <em>moving</em>. The camera's own finger count skipped on <c>!t.press.isPressed</c> too, so it saw one finger,
+    /// took <c>case 1</c> and panned by the thumb's delta instead of taking <c>case 2</c> and zooming - the map's
+    /// centre moved 16 800 world units before the fix. A pinch must not replay as a one-finger pan.</summary>
+    [Test]
+    public void APinchWhoseSecondFingerLivesInsideOneUpdateDoesNotPan()
+    {
+        using var rig = new Rig();
+        var start = rig.View.LookAt;
+        var thumb = new Vector2(400, 400);
+        rig.Frame();
+        BeginTouch(1, thumb);
+        rig.Frame();
+        // all four events in ONE input update: every call but the last passes queueEventOnly, or it flushes its own
+        // update and the thumb's drag would land in a later one, where there really is only one finger
+        BeginTouch(2, new Vector2(700, 400), queueEventOnly: true);
+        MoveTouch(2, new Vector2(900, 400), queueEventOnly: true);
+        EndTouch(2, new Vector2(900, 400), queueEventOnly: true);
+        MoveTouch(1, thumb + new Vector2(0, -TapPress.SlopPixels - 40));   // the thumb drags well past the slop
+        rig.Frame();
+        Assert.AreEqual(start, rig.View.LookAt, "a pinch must not pan the map, however briefly the other finger was down");
+        // ...and it must not arrive a frame late either (#1795 review). Skipping case 1 for one frame is enough today,
+        // because the drag is read from the finger's delta and that delta is gone next frame. On the #1661 camera lane
+        // the drag comes from travel recorded at the events, so a deferred pan would land here and a single assertion
+        // on the pinch frame alone would not notice.
+        rig.Frame();
+        Assert.AreEqual(start, rig.View.LookAt, "and the pan does not arrive on the frame after the pinch either");
+    }
+
+    /// <summary>The control, and the reason the test above is a finding rather than an artefact: the same gesture with
+    /// the second finger down long enough to be sampled does latch the pinch, and the thumb selects nothing. So the
+    /// difference between the two is the second finger being invisible to the sample, not the thumb being special.</summary>
+    [Test]
+    public void APinchWhoseSecondFingerSpansFramesCorrectlyRefusesTheThumbsTap()
+    {
+        using var rig = new Rig();
+        var thumb = new Vector2(400, 400);
+        rig.Frame();
+        BeginTouch(1, thumb);
+        rig.Frame();
+        BeginTouch(2, new Vector2(700, 400));
+        rig.Frame();                                   // sampled with both fingers down: otherFingerDown is true here
+        EndTouch(2, new Vector2(900, 400));
+        rig.Frame();
+        EndTouch(1, thumb);
+        rig.Frame();
+        rig.SettleFrame();
+        Assert.IsEmpty(rig.Asked, "a pinch's thumb selects nothing when the second finger was sampled");
+    }
+
 }

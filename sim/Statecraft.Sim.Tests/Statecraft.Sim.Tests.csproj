@@ -14,6 +14,9 @@
     <ProjectReference Include="../Statecraft.Cli/Statecraft.Cli.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../unity/Assets/Scripts/UI/StockMeter.cs" Link="Presentation/StockMeter.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

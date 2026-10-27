@@ -1,0 +1,1 @@
+- Left-button map drags now use the camera's per-press 30 px onset and UI-origin latch, matching right-button drags without replaying held travel (#1661, #998). This builds on Ella Sharakanski's left-drag support in #1791.
