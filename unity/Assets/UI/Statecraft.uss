@@ -286,8 +286,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 }
 .event-reopen:hover { border-color: var(--gold-light); }
 /* Up to 1040 px wide, its 960 px content holding the 16:9 media header at 960x540 (the photographs' and the clips' size);
-   the layer bounds its height. When the window is short the media header gives way first, then the text (it scrolls),
-   never the option buttons. */
+   the layer bounds its height. When the window is short the media header gives way first, then the body: the text and
+   the options scroll together (event-scroll, #1853), while the head and the foot with Hide stay in the card. */
 .event-card { width: 1040px; max-width: 100%; max-height: 100%; flex-shrink: 1; min-height: 0; overflow: hidden; padding: 16px 40px 10px 40px; }
 .hud-two-row .event-card { padding-left: 16px; padding-right: 16px; }
 /* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so. */

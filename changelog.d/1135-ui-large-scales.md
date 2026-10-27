@@ -9,3 +9,6 @@
   suites that failed at 125%/150% now run at all three scales.
 - At 150% on short windows the Cabinet scroll shows seat cards before the house and legend; on phones at 150% the
   half circle fits its column. Desktop half circles and the 100%/125% Cabinet order keep their existing layout.
+- The decision card's body scrolls as one (#1853): the text and the options with their effect lines sit in one scroll
+  between the pinned head and the pinned foot, so Hide stays inside the card at 150%. A card that fits shows no scroll
+  bar, Tab onto an option scrolls it into view, and a new card opens at the top of its text.

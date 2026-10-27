@@ -216,12 +216,18 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
-                <!-- event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card;
-                     inside the scroll, so on a short window it scrolls with the text and never pushes the options away. -->
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-alt-banner" class="muted event-alt-banner" /><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
-                <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
-                <ui:Label name="event-delegate" class="event-delegate" />
-                <ui:VisualElement name="event-options" />
+                <!-- The body: the text and the options with their effect lines scroll together, between the pinned head
+                     above and the pinned foot below, only when they overflow the card's height (#1853, as the Cabinet's
+                     cards and house scroll together, 26 Oct). Tab on an option scrolls it into view (FocusScroll).
+                     event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card. -->
+                <ui:ScrollView name="event-scroll" class="event-scroll">
+                    <ui:Label name="event-alt-banner" class="muted event-alt-banner" />
+                    <ui:Label name="event-text" class="event-text" />
+                    <ui:Label name="event-objective" class="muted event-objective" />
+                    <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
+                    <ui:Label name="event-delegate" class="event-delegate" />
+                    <ui:VisualElement name="event-options" />
+                </ui:ScrollView>
                 <!-- The count of other open decisions, and Hide: the card collapses to "Decision waiting" so the map can be
                      inspected (EventCardPresenter.Collapse); focus order: the options, then Hide. -->
                 <ui:VisualElement name="event-foot" class="event-foot">

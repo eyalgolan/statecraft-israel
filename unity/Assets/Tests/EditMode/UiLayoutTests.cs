@@ -552,17 +552,27 @@ public class UiLayoutTests
                     CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
                     if (c.height > tallest) { tallest = c.height; tallestId = e.Id; }
+                    var scroll = root.Q<ScrollView>("event-scroll");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
                     {
+                        // #1853: the options scroll with the text, so one past the body's visible part is first brought into
+                        // view, as Tab brings it (FocusScroll); then it must lie inside the card and the body's viewport.
+                        if (!Inside(b.worldBound, c))
+                        {
+                            scroll.ScrollTo(b);
+                            yield return null;
+                            if (!Inside(b.worldBound, scroll.contentViewport.worldBound))
+                                problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {scroll.contentViewport.worldBound}");
+                        }
                         if (b.worldBound.yMax > c.yMax + 0.5f || b.worldBound.yMin < c.yMin - 0.5f || b.worldBound.xMax > c.xMax + 0.5f || b.worldBound.xMin < c.xMin - 0.5f)
                             problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
                         // Playtest 2, P2-2: the option's text lies inside its button (it wraps; it is never cut at the edge).
                         if (!TextFits(b))
                             problems.Add($"{w}x{h}: {e.Id}: option text '{b.text}' does not fit its button {b.contentRect}");
                     }
+                    scroll.scrollOffset = Vector2.zero;
                     // Playtest 2, P2-3: in a window at least as tall (logically) as 1366x657, the body and the options fit
                     // without scrolling; shorter windows may scroll the body as the fallback.
-                    var scroll = root.Q<ScrollView>("event-scroll");
                     var logicalHeight = root.panel.visualTree.layout.height;
                     // Owner ruling, 27 October: "Compact card + allow scroll (Recommended)" (#1135).
                     // The narrow-card fallback is at 150% only; Hide and the options are still checked above at every size.
@@ -720,8 +730,20 @@ public class UiLayoutTests
                     if (card.PhotoAlt == null) dropped++; else shown++;
                     CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
+                    var body = root.Q<ScrollView>("event-scroll");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
+                    {
+                        // #1853: an option past the body's visible part is brought into view first, as Tab brings it.
+                        if (!Inside(b.worldBound, c))
+                        {
+                            body.ScrollTo(b);
+                            yield return null;
+                            if (!Inside(b.worldBound, body.contentViewport.worldBound))
+                                problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {body.contentViewport.worldBound}");
+                        }
                         if (!Inside(b.worldBound, c)) problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
+                    }
+                    body.scrollOffset = Vector2.zero;
                 }
                 Debug.Log($"I6 {w}x{h}: {shown} photographs shown, {dropped} dropped");
                 Assert.Greater(shown, 0, $"{w}x{h}: photographs show on this window");
