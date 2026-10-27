@@ -192,6 +192,29 @@ public class UnitFiguresTests
         Assert.IsFalse(before.SequenceEqual(after), "Harel's jeep arrives on 1 June 1948");
     }
 
+    /// <summary>The order the stream opens bundles for <paramref name="requests"/> queued at once (CollectionStream.Next): a request
+    /// whose bundle comes <see cref="CollectionCatalog.After"/> a group waits behind any queued request of that group.</summary>
+    static List<string> ServedOrder(IEnumerable<string> requests)
+    {
+        bool InGroup(string id, string group) => CollectionCatalog.BundleOf(id) == group
+            || CollectionCatalog.Groups.Any(g => g.Bundle == group && Array.IndexOf(g.Ids, id) >= 0);
+        var queue = new Queue<string>(requests);
+        var served = new List<string>();
+        while (queue.Count > 0)
+        {
+            string next = null;
+            for (int n = queue.Count; n > 0 && next == null; n--)
+            {
+                var id = queue.Dequeue();
+                if (!CollectionCatalog.After.TryGetValue(CollectionCatalog.BundleOf(id)!, out var first) || !queue.Any(q => InGroup(q, first)))
+                    next = id;
+                else queue.Enqueue(id);
+            }
+            served.Add(next ?? queue.Dequeue());
+        }
+        return served;
+    }
+
     /// <summary>Every figure on a token stands with its arms down in its far prefab, the one the tokens draw (C05 shipped in
     /// his T-pose: his static meshes are now posed at his walk's first frame, tools/slim_collection.py POSE_CLIP).</summary>
     [Test]
@@ -576,9 +599,9 @@ public class UnitFiguresTests
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
-                // Original people requests precede the shared Arab bundle (#1763), even when its request was queued first.
-                var expectedBundles = requested.Distinct().OrderBy(id => CollectionCatalog.IsFullQualityGeneratedInfantry(id) ? 1 : 0)
-                    .Select(CollectionCatalog.BundleOf).Distinct();
+                // A generated figure's bundle waits while a people's request is queued (#1763, CollectionCatalog.After), even when
+                // its own request was queued first; otherwise the stream serves requests in order.
+                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct();
                 foreach (var b in expectedBundles)
                     LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
