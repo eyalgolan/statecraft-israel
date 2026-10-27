@@ -472,13 +472,34 @@ public class PromoScreensTests
             texts["prisoners-returned"] = Text.Format("defence.prisoners_returned", s.PrisonersReturned.Values.Sum() * ppu);
             texts["soldiers-held"] = Text.Format("defence.soldiers_held", s.SoldiersHeld.Values.Sum() * ppu);
             texts["defence-budget-share"] = $"{PlayerText.Percent(s.Budget[DefencePresenter.BudgetLine])} of budget spending";
+            // #731: the Arms panel (GDD loop only): the sim's stock, and the price of the amount field's opening 1 at the
+            // era's arms price (Pools.BuyArms), with its Attention cost and what is left when the era spends Attention.
+            if (C.IsGdd)
+            {
+                var one = new BuyArms(1);
+                texts["arms-stock"] = Text.Format("arms.stock", s.Arms);
+                // The amount field opens at 1 (Game.uxml) unless a BuyArms is queued; these dates have none.
+                Assert.IsNull(bridge.QueuedLike(one), $"{where}: precondition: no Arms purchase is queued");
+                texts["arms-count"] = "1";
+                texts["arms-money"] = Text.Format("arms.money", PlayerText.Money(C, "treasury", C.RulesAt(s.Date).Mvp!.ArmsPrice!.Value));
+                texts["arms-attention"] = C.UsesAttention ? Text.Format("arms.attention", bridge.Price(one)!.Value, bridge.AttentionLeft!.Value) : "";
+                // Require the named figures, even if a missing/blank control would evade the digit inventory.
+                Assert.AreEqual(texts["arms-stock"], ui.Q<Label>("arms-stock").text);
+                Assert.AreEqual(texts["arms-money"], ui.Q<Label>("arms-money").text);
+                Assert.AreEqual(1, ui.Q<IntegerField>("arms-count").value);
+                Assert.AreEqual(texts["arms-attention"], ui.Q<Label>("arms-attention").text);
+                Assert.AreEqual(C.UsesAttention ? DisplayStyle.Flex : DisplayStyle.None,
+                    ui.Q<Label>("arms-attention").style.display.value);
+            }
             bars["mob-bar"] = (float)callUp; bars["defence-budget-bar"] = (float)s.Budget[DefencePresenter.BudgetLine];
             foreach (var name in new[] { "screen-cabinet", "screen-defence" })
             {
                 foreach (var t in ui.Q<VisualElement>(name).Query<TextElement>().ToList().Where(t => t.text.Any(char.IsDigit)))
                 {
-                    Assert.IsTrue(texts.ContainsKey(t.name), $"{where}: '{t.text}' in {t.name} is a figure no test binds to the sim");
-                    Assert.AreEqual(texts[t.name], t.text, $"{where}: {t.name}");
+                    // A text field's digits are drawn by an unnamed TextElement inside it: bind them by the field's own name.
+                    var key = t.name.Length == 0 && t.GetFirstAncestorOfType<IntegerField>() is IntegerField field ? field.name : t.name;
+                    Assert.IsTrue(texts.ContainsKey(key), $"{where}: '{t.text}' in {key} is a figure no test binds to the sim");
+                    Assert.AreEqual(texts[key], t.text, $"{where}: {key}");
                 }
                 foreach (var bar in ui.Q<VisualElement>(name).Query<UiBar>().ToList().Where(b => b.resolvedStyle.display != DisplayStyle.None && b.parent.style.display != DisplayStyle.None))
                 {

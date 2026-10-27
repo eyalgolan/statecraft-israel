@@ -18,7 +18,7 @@ and villages, the lines, and localities outside the boundary are not in it.
 
 It follows the format of `development-towns-1957-77.md` and of
 [`settlements-1949-51.md`](../GDD%20objectives/settlements-1949-51.md). Every page below was opened on **25 October
-2026** unless a row says otherwise.
+2026** unless a row says otherwise; the second pass on the [GAP] rows was run on **27 October 2026** and its rows are marked.
 
 The question: which new residential neighbourhoods were started inside the municipal boundary between June 1967 and
 1977, and for each: the planning or land-taking decision if a source dates it, the start of construction, the first
@@ -36,14 +36,20 @@ residents, the place (coordinates from a named source), and the sources.
 - **Dated land-taking instruments found:** an order on 18 April 1968 (Jewish Quarter and the land of Kfar Ivri / Neve
   Ya'akov), reported by JTA from the gazette publication of that day; a JTA report of 2 September 1970 of about 2,700
   acres; and a large order of 11 January 1968 that Hebrew Wikipedia gives as 3,345 dunams (not confirmed in a primary
-  source here). No Israeli official gazette or Knesset text was reached; those stay [GAP].
+  source here). Second pass (27 Oct 2026): a
+  US State Department telegram of 12 January 1968 (FRUS) relays a New York Times report of the same day of 838 acres taken
+  in a crescent from Mount Scopus to the Sanhedrin area, and a United Nations report of 1971 relays a memorandum that cites
+  Official Gazette No. 1656 of 30 August 1970 for a further order of 11,680 dunams (see "Dated instruments"). No Israeli
+  official gazette or Knesset text was reached; those stay [GAP].
 - **First-residents days:** one is dated by a contemporaneous report (Ramat Eshkol, 3 September 1969). For the others no
   day was found; they stay [GAP] with what was tried.
 
 ## Conventions and tags
 
 - **[V, agent read 2026-10-25; a person's check pending]**: read today in a primary or official source (here only United
-  Nations documents S/8667 (its cover letter) and S/8439). A newspaper article reproduced inside either keeps its own tag.
+  Nations documents S/8667 (its cover letter) and S/8439; second pass, read 2026-10-27: FRUS 1964-68 volume XX document 44,
+  UN document A/8389 page 34 and Security Council resolution 252). A newspaper article or a party's memorandum reproduced
+  inside any of them keeps its own tag (widened in the second pass).
 - **[S]** secondary: one source, or several that plainly copy one another. Contemporaneous press (JTA daily bulletin, The
   New York Times) is [S]. **[S, Wikipedia]**: the fact rests on Hebrew or English Wikipedia, read as wikitext of the
   revision named (`oldid`). Where Wikipedia cites a newspaper, a book or an organisation (for example ARIJ), I give its
@@ -131,6 +137,16 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   - **End of 1969** [S, Wikipedia]: Hebrew Wikipedia: the neighbourhood "was populated from the end of that same year" (1969; our
     translation; the sentence's citation is a newspaper issue of 1970 that the article names and that was not read).
   - All three are kept. They may mark different things (keys handed to a first group, then moving in); no source says so.
+  - **Before the move-in, 14-15 May 1969** [S]: JTA daily bulletin of 16 May 1969 (page 2, headline "Mark 2nd Anniversary Of
+    Jerusalem's Reunification, 21st Year Of Statehood"), dateline "JERUSALEM, May 15 (JTA)": "The observance began with the
+    naming yesterday of a main road leading to a new housing project in East Jerusalem for the late Premier Levi Eshkol. The
+    housing project, for both Arabs and Jews, was named Ramat Eshkol. ... The first families are expected to move into Ramat
+    Eshkol next September." Dateline 15 May, "yesterday" = 14 May 1969 (read on the page image, OCR-assisted at 200 dpi;
+    page 2 of `http://pdfs.jta.org/1969/1969-05-16_094.pdf`; web page
+    https://www.jta.org/archive/mark-2nd-anniversary-of-jerusalems-reunification-21st-year-of-statehood). This fits the
+    3 September 1969 handing-over of keys above. **[C]** Hebrew Wikipedia dates the naming of the main boulevard to July 1969
+    (above); this JTA item dates the naming of "a main road leading to" the project to 14 May 1969. They may be two
+    different namings (the project, then the boulevard); no source says so. Both kept. Opened 2026-10-27.
 
 ### Givat HaMivtar
 
@@ -155,7 +171,14 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   given the name Giv'at Shapira in 1971 [S, Wikipedia].
 - **Start and year [C].** English Wikipedia: "In 1969, construction began"; its Ring list says "established in 1968"; the
   article cites ARIJ for land taken "in 1968" (394 dunams from Isawiya and 394 from Shuafat; ARIJ not read). Hebrew
-  Wikipedia: "founded in 1971" (our translation). Three values: 1968, 1969, 1971. First residents: [GAP].
+  Wikipedia: "founded in 1971" (our translation). Three values: 1968, 1969, 1971. First residents: [GAP]. **Narrowed (27 Oct
+  2026)**: JTA daily bulletin of 19 November 1974 (page 3, headline "West Bank Disturbances Spread To Jerusalem; 10 Injured,
+  80 Arrested"), dateline "JERUSALEM, Nov. 18 (JTA)": "Yesterday, residents of a large apartment building on French Hill in
+  the city's northern outskirts were evacuated after two bazooka rockets were found in a stairwell" [S]; "yesterday" = 17
+  November 1974. A bulletin of 3 February 1975 (headline "Bomb on Jerusalem Bus", dateline not read; read as web text at https://www.jta.org/archive/bomb-on-jerusalem-bus, not on the page image) calls French Hill "a
+  new suburb in the north of the city on formerly Jordanian land". So French Hill had residents by 17 November 1974 (an upper
+  bound only). Page image (OCR-assisted, 200 dpi) of `http://pdfs.jta.org/1974/1974-11-19_218.pdf`; web page
+  https://www.jta.org/archive/west-bank-disturbances-spread-to-jerusalem-10-injured-80-arrested.
 
 ### Ma'alot Dafna
 
@@ -187,7 +210,13 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 - **Construction and residents.** JTA bulletin of 30 March 1971, dateline "JERUSALEM, March 29": 750 units "in the Neveh
   Yaacov area" in the first stage (see the 1971 row below). JTA bulletin of 6 July 1973, dateline "JERUSALEM, July 5":
   "Housing construction in Neve Yaacov and Gilo has already begun" and families "will settle in four new Jerusalem
-  suburbs ... by the end of the year" [S]. First residents' day: [GAP].
+  suburbs ... by the end of the year" [S]. First residents' day: [GAP]. **Narrowed (27 Oct 2026)**: JTA daily bulletin of
+  31 January 1975 (page 4, headline "Chicago Jewish Leader Donates Money For Mother-And-Child Center"), dateline "JERUSALEM,
+  Jan. 30 (JTA)": "A mother-and-child center was opened in the new north Jerusalem suburb of Neve Yaacov yesterday", and its
+  users will include "Israeli young couples who have moved to Neve Yaacov, the northernmost section of the capital on the
+  road to Ramallah" [S]. "Yesterday" = 29 January 1975. So the suburb had residents by 29 January 1975 (an upper bound;
+  not the first day). Read on the page image of `http://pdfs.jta.org/1975/1975-01-31_022.pdf`; web page
+  https://www.jta.org/archive/chicago-jewish-leader-donates-money-for-mother-and-child-center.
 
 ### Ramot (Ramot Alon)
 
@@ -197,7 +226,12 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 - **Year [C].** Hebrew infobox: founded 1972. Hebrew text: "נוסדה בשנת 1974" (founded in 1974). English: "founded in 1974".
 - **Plans.** JTA 30 March 1971 (dateline 29 March): 550 units in Ramot in the first stage. The Hebrew article says that in
   the 1968 master plan the area was to stay rural and that the initiative for the neighbourhood arose in the early 1970s
-  (our translation) [S, Wikipedia]. First residents: [GAP].
+  (our translation) [S, Wikipedia]. First residents: [GAP]. **Searched (27 Oct 2026)**: JTA daily bulletin of 27 February
+  1974 (page 3, headline "JNF Reports Green Belt Progress"), dateline "JERUSALEM, Feb. 26 (JTA)": "the two new housing
+  projects of Ramot Eshkol and Ramot, also in the north" [S]. The item says "housing projects", not residents; so it dates
+  the project, not the first residents. `http://pdfs.jta.org/1974/1974-02-27_040.pdf`; web page
+  https://www.jta.org/archive/jnf-reports-green-belt-progress. Note: "Ramot Eshkol" there is JTA's wording for the Ramat
+  Eshkol of this note's first row; the item does not say so.
 
 ### Gilo
 
@@ -209,7 +243,13 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   established in 1973"; it has no 1971. The 1971 on the English side is in the separate "Ring Neighborhoods, Jerusalem"
   article (oldid 1357154222), whose list says "Established in 1971".
 - **Construction.** JTA 30 March 1971 (dateline 29 March): 700 units "in Giloh" in the first stage; JTA 6 July 1973 (dateline
-  5 July): construction already begun. First residents: [GAP].
+  5 July): construction already begun. First residents: [GAP]. **Searched (27 Oct 2026)**: JTA, JNF item of 26 February
+  1974 (as under Ramot above): "a further 1000 dunams near the Gilo housing estate in the south on the Bethlehem Road" [S];
+  JTA daily bulletin of 16 August 1977 (page 4, headline "American Mizrachi Women Unveil Plan To Build Nursery School In
+  Israel"), dateline "LOS ANGELES, Aug. 15 (JTA)": "The school, located at Gilo, a new residential area under construction
+  in Jerusalem" [S]. So a source of 15 August 1977 still calls Gilo a residential area "under construction"; no residents'
+  date. `http://pdfs.jta.org/1977/1977-08-16_156.pdf`; web page
+  https://www.jta.org/archive/american-mizrachi-women-unveil-plan-to-build-nursery-school-in-israel.
 
 ### East Talpiot
 
@@ -218,7 +258,13 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   Plan"; it cites ARIJ for 1,343 dunams from Sur Baher and 544 from Jabel Mukaber (ARIJ not read) [S, Wikipedia].
 - **Year [C].** Hebrew: founded 1972. English: "established by Israel in 1973" and the Ring list "1973".
 - **Plans.** JTA 30 March 1971 (dateline 29 March): 600 units in the first stage; JTA 6 July 1973: planned among the four
-  suburbs. First residents: [GAP].
+  suburbs. First residents: [GAP]. **Narrowed (27 Oct 2026)**: the JTA daily bulletin of 2 October 1975 (page 4, headline
+  "Behind The Headlines: Arab Building Boom Around Jerusalem", a feature with the dateline "JERUSALEM, Oct. 1 (JTA)", seen on the page image) says an immigrant
+  from the United States "now lives in the neighborhood of Talpiot-East" [S] (the article names him; he is given by role
+  here). So the
+  neighbourhood had residents by 1 October 1975 (dateline), as an upper bound only. `http://pdfs.jta.org/1975/1975-10-02_188.pdf`.
+  JTA items of 9, 10 and 21 June 1971 that mention "Talpiot" concern the older "fashionable Talpiot" quarter, not this
+  neighbourhood, and are not used.
 
 ### Jewish Quarter rebuild
 
@@ -241,7 +287,32 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 ### The 1968 order and the August 1970 announcement
 
 - **11 January 1968:** Hebrew Wikipedia (Givat HaMivtar) only, 3,345 dunams; a primary source for it was not reached [S,
-  Wikipedia]. [GAP] for the order's text.
+  Wikipedia]. [GAP] for the order's text. **Narrowed (27 Oct 2026)** to a
+  report of the order on 12 January 1968: [V, agent read 2026-10-27; a person's check pending] Foreign Relations of the United States
+  1964-1968, volume XX, document 44, "Telegram From the Department of State to the Embassy in Israel", Washington, 12
+  January 1968, 8:46 p.m., https://history.state.gov/historicaldocuments/frus1964-68v20/d44 (read as TEI XML from
+  `raw.githubusercontent.com/HistoryAtState/frus`, `volumes/frus1964-68v20.xml`). It says: "Front page NYTimes today
+  reports GOI "expropriation" 838 acres in crescent reaching from Mount Scopus to Sanhedrin sector of Israeli Jerusalem.
+  About 225 acres privately owned by Arabs, remainder GOI property. GOI Finance Ministry said property destined for public
+  institutions, roads, parks and 1,400 housing units, including 400 residences for Arabs who were removed from Old City.
+  Requisition order signed by Pinhas Sapir as Acting PM." The tag above covers only that the telegram says this; the facts are the
+  New York Times report as the Department relays it, [S]; the New York Times page itself was not opened. The telegram does
+  not give the order's date. **[C] size:** 838 acres (telegram) = 838 x 4.04686 = about 3,391 dunams (derived), against
+  Hebrew Wikipedia's 3,345 dunams = about 826.6 acres (derived above); they differ by about 46 dunams (derived: 3,391 -
+  3,345), and the New York Times of 3 July 1968 in S/8667 says "slightly more than 800 acres". Whether the three describe
+  one order is not stated by any of them. The order's own date (11 January) and text: still [GAP]. JTA search for the
+  order: wp-json archive search `https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=<date>&before=<date>`, run
+  2026-10-27: "expropriation" and "expropriate" for 1968-01-08 to 1968-01-20, 0 results each; "Jerusalem" for 1968-01-10
+  to 1968-01-16, 14 results, none containing "acres" or "dunam"; "Jerusalem" for 1968-01-01 to 1968-02-29, 92 results, one
+  containing "expropriat" (bulletin of 22 January 1968, "Warns Coordinated Action Needed To Bar 'Erosion' Of Us Mideast
+  Policy", a speaker's remark that the State Department "had criticized Israel for condemning property in Jerusalem for a
+  needed housing development"; its dateline was not read). I found no JTA report of the order itself.
+- **Security Council resolution 252 (21 May 1968):** [V, agent read 2026-10-27; a person's check pending] text read in the printed Council volume at
+  `https://documents.un.org/api/symbol/access?s=S/RES/252(1968)&l=en&t=pdf`: operative paragraph 2 "Considers that all
+  legislative and administrative measures and actions taken by Israel, including expropriation of land and properties
+  thereon, which tend to change the legal status of Jerusalem are invalid and cannot change that status". It names no
+  order, date or neighbourhood, so it does not confirm Hebrew Wikipedia's link between the 11 January order and the
+  Council's condemnation.
 - **18 April 1968:** see Neve Ya'akov and the Jewish Quarter above [S].
 - **Reported 2 September 1970** [S]: JTA bulletin of 3 September 1970 (page 2, headline "Government To Expropriate 2700 Acres In
   Jerusalem For Housing, Parks"), dateline "JERUSALEM, Sept. 2 (JTA)": "The government has announced that it will
@@ -250,10 +321,29 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   The government said there were some 350 Jewish and 20 Arab families in the zone". Page image of
   `http://pdfs.jta.org/1970/1970-09-03_171.pdf`; web page https://www.jta.org/archive/government-to-expropriate-2700-acres-in-jerusalem-for-housing-parks.
   The item names no neighbourhood.
-- **[C] sizes for 1970.** JTA "about 2700 acres" = 2,700 x 4.04686 = about 10,927 dunams (derived). English Wikipedia (Gilo):
+- **30 August 1970, Official Gazette No. 1656** [S]: [V, agent read 2026-10-27; a person's check pending] United Nations document A/8389 (5 October 1971),
+  "Report of the Special Committee to Investigate Israeli Practices Affecting the Human Rights of the Population of the
+  Occupied Territories", 26th session, page 34, read on the page image,
+  `https://documents.un.org/api/symbol/access?s=A/8389&l=en&t=pdf` (text layer garbled, page 34 is PDF page 34). Under the
+  heading of a memorandum presented to the Special Committee by the Mayor of Jerusalem at the time of the June 1967
+  hostilities, who maintains he is still the de jure holder of the office (page 33; role used), the Committee writes:
+  "The memorandum quotes the Israeli Official Gazette No. 1656 of 30 August 1970 according to which the Israeli Minister of
+  Finance, Mr. Pinhas Sapir, ordered the expropriation of Arab lands in and around Jerusalem. According to the memorandum
+  the total area of the new land expropriated under this order is 11,680 dunams, the equivalent of 2,920 acres." The
+  memorandum adds that the lands belong to "over 10,000 Arabs in seven villages around Jerusalem". The date, gazette number
+  and figure are the memorandum's, relayed by the Committee; the gazette was not opened (a party's claim, [S]). It names no
+  neighbourhood. Derived: 11,680 / 4.04686 = about 2,886 acres, so the memorandum's 2,920 acres uses 4 dunams to the acre
+  (11,680 / 4 = 2,920) where this note uses 4.04686. The later Special
+  Committee reports A/8089 (1970), A/8389/Add.1, A/8828 (1972), A/9817 (1974), A/10272 (1975) and A/31/218 (1976) were
+  fetched on the same day and their text layers searched for "Ramot", "Gilo", "Talpiot", "French Hill", "Neve Ya", "Mivtar",
+  "Eshkol" and "dunam": the only name hits were "Ramot" in lists of A/8828 and A/31/218 that sit among settlements of other
+  areas (not read on the image, so not used); A/10272 paragraph 76 (p. 16, read on the page image) summarises a report in the Jerusalem Post magazine of 8 November 1974, in the Committee's own words without quotation marks:
+  "Nine thousand families have settled in the occupied part of Jerusalem since 1967" (the Committee's summary of a newspaper, [S]). A/9148 has almost no text layer and was not read.
+- **[C] sizes for 1970.** The memorandum above adds 11,680 dunams (2,886 acres at 4.04686). JTA "about 2700 acres" = 2,700 x 4.04686 = about 10,927 dunams (derived). English Wikipedia (Gilo):
   12,300 dunams in 1970. English Wikipedia (Neve Yaakov): "In August 1970 3,500 acres ... was confiscated" = 3,500 x
-  4.04686 = about 14,164 dunams (derived). Three figures; they may count different areas, and no source here says so.
-  Hebrew Wikipedia dates the Ramot and East Talpiot land-taking to August 1970; JTA's report is dated 2 September 1970.
+  4.04686 = about 14,164 dunams (derived). Three figures; they may count different areas, and no source here says so. Second pass (27 Oct 2026): a fourth figure, 11,680 dunams (A/8389), makes four (10,927, 11,680, 12,300 and 14,164 dunams); they may count different areas or dates.
+  Hebrew Wikipedia dates the Ramot and East Talpiot land-taking to August 1970; JTA's report is dated 2 September 1970; the
+  Gazette date given in A/8389 is 30 August 1970, which fits both, but no source links that order to those two neighbourhoods.
 
 ### Contemporary reporting of 1968 (United Nations S/8667)
 
@@ -323,7 +413,18 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 ## Gaps and what was tried
 
 - **[GAP] First-residents days** for Givat HaMivtar, French Hill, Ma'alot Dafna, Neve Ya'akov, Ramot, Gilo and East Talpiot,
-  and **the construction-start days** for all rows. Tried (25 Oct 2026), JTA site search, which has no date filter; the
+  and **the construction-start days** for all rows. Second pass (27 Oct 2026), JTA wp-json archive search with the item
+  text filtered for the name, window 1968-01-01 to 1977-12-31; counts are results returned (the API returned at most 350
+  per query here) and then the items whose text contained the name: "Gilo" 173 returned, 5 containing "Gilo"; "Giloh" 5,
+  1; "Ramot" 298, 14 containing "Ramot" (read from the returned text: most are the Golan moshav Ramot, a student centre
+  "Ramot Shapira", a physician's surname, or JTA's "Ramot Eshkol" for Ramat Eshkol; only the 29 March 1971, 6 July 1973 and
+  26 February 1974 items concern this neighbourhood Ramot); "Talpiot" 17, 15 (see East Talpiot); "Yaacov" 350 of 716, 3 containing a Neve Ya'akov spelling;
+  "Eshkol" 350 of 454, 9 containing "Ramat Eshkol" or "Ramot Eshkol"; "Hamivtar" 3, 1 ("Mivtar Hill" as the reviewing
+  stand of the 2 May 1968 parade, not the neighbourhood); "Mivtar" 350 of 743, 0; "Maalot" 350 of 478, 0 containing
+  "Maalot Dafna"; "Dafna" 11, 3 (Kibbutz Dafna, not the neighbourhood); "French Hill" 350 of 573, 3 containing it (bombing
+  items of 1974-75); "Shapira" 350 of 693, 0 containing "Giv'at Shapira" or "French Hill". Items found are used above;
+  no JTA item gave a first-residents day for any of these seven. Results capped at 350 mean the tail of the three
+  largest queries was not read. Tried first (25 Oct 2026), JTA site search, which has no date filter; the
   count is what the page returned, and only the items named as read were opened: `https://www.jta.org/?s=Gilo+first+residents`
   (1 result, not opened); `?s=Ramot+first+residents` (2 results, not opened); `?s=Giloh` (1 result, read: the 29 March
   1971 item); `?s=Neveh+Yaacov` (7 results; only the 29 March 1971 item opened); `?s=Neve+Yaakov` (1 result, not opened);
@@ -331,11 +432,17 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
   results, not opened); `?s=East+Talpiot` (3 results; the 5 July 1973 and 29 March 1971 items opened); `?s=Ramot+Eshkol`
   (10 results, one opened, a JNF item whose dateline was not read and which is not cited).
 - **[GAP] The orders' texts** (11 January 1968, 18 April 1968, August 1970) and their gazette publication. Not reached.
+  Narrowed (27 Oct 2026): the 11 January 1968 order is reported on 12 January 1968 (FRUS, above) and a gazette number and
+  date for the August 1970 order (No. 1656, 30 August 1970) come from a UN report; the gazette texts themselves were not
+  opened. A search of the UN document A/8389 and the later Special Committee reports found no text of any order.
   Tried: Internet Archive advanced search
   `https://archive.org/advancedsearch.php?q=title:(yalkut ha-pirsumim) OR title:("official gazette" israel 1968)`, run 25 Oct
   2026, `numFound` 0. No Knesset or State Archives page was tried; those hosts are known to block this box (see
   `development-towns-1957-77.md`).
-- **[GAP] United Nations documents with a list of the neighbourhoods or the orders.** Tried (25 Oct 2026), the UN Digital
+- **[GAP] United Nations documents with a list of the neighbourhoods or the orders.** Second pass (27 Oct 2026): the
+  Special Committee reports reached through `https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf` (A/8089,
+  A/8389 and Add.1, A/8828, A/9148, A/9817, A/10272, A/31/218) and Security Council resolution 252: one dated instrument
+  found (A/8389 page 34, above); no list of the neighbourhoods. Tried (25 Oct 2026), the UN Digital
   Library MARC search (`https://digitallibrary.un.org/search?ln=en&of=xm&rg=<n>&p=<query>`, results are the page's own
   count): `Jerusalem 191__a:"S/8*"` (30 of 37 results returned on the page; it listed A/7133 = S/8667, A/7092
   and A/7191); `Jerusalem 269__a:"1968-01*"` (1 result, A/7092); `Jerusalem 269__a:"1968-02*"` (5 results: S/8570,
@@ -364,3 +471,7 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 | English and Hebrew Wikipedia articles listed in "Conventions", wikitext by `oldid` | 2026-10-25 | years, plans, coordinates |
 | English Wikipedia "East Jerusalem" oldid 1378661048 | 2026-10-25 | one context sentence |
 | `lines-1967-74.md` in this folder | 2026-10-25 | boundary, resolution 252 |
+| FRUS 1964-68 vol. XX doc. 44, `raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1964-68v20.xml` | 2026-10-27 | 12 Jan 1968 report of 838 acres |
+| UN A/8389 (page images 33 and 34) and S/RES/252(1968), `documents.un.org/api/symbol/access` | 2026-10-27 | Official Gazette No. 1656 of 30 Aug 1970 as relayed; resolution 252 wording |
+| UN A/8089, A/8389/Add.1, A/8828, A/9148, A/9817, A/10272, A/31/218 (text layers) | 2026-10-27 | searched for neighbourhood names and dunams; one A/10272 sentence cited |
+| JTA bulletins 1969-05-16 (No. 94), 1974-02-27 (No. 40), 1974-11-19 (No. 218), 1975-01-31 (No. 22), 1975-10-02 (No. 188), 1977-08-16 (No. 156), `pdfs.jta.org` page images; and the web text of the 3 February 1975 item "Bomb on Jerusalem Bus" (`jta.org/archive/bomb-on-jerusalem-bus`, not read on a page image) | 2026-10-27 | datelines and quoted items above |

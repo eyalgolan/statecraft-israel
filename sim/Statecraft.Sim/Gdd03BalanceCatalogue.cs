@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Statecraft.Sim
@@ -11,6 +12,10 @@ namespace Statecraft.Sim
         public const string FileName = "gdd03-balance.yaml";
         public string Ruleset { get; set; } = "";
         public Dictionary<string, Gdd03DesignValue> Values { get; set; } = new Dictionary<string, Gdd03DesignValue>();
+
+        /// <summary>#1706 slices 0/1: explicit design-data read for synthetic gdd-0.3 fixtures.
+        /// No loader, combat, preview, AI or shipping caller selects this table.</summary>
+        internal static Gdd03CombatCatalogue ReadCombatCatalogue(Content content) => Gdd03Military.ReadCombatCatalogue(content);
 
         internal void Validate()
         {
@@ -58,4 +63,68 @@ namespace Statecraft.Sim
             }
         }
     }
+
+    internal enum Gdd03CombatOutcome { AttackerLoss, BothHold, DefenderRetreats, DefenderLoss }
+
+    /// <summary>Inclusive draw interval; no state transition is implemented here.</summary>
+    internal sealed class Gdd03CombatBand
+    {
+        public int First { get; }
+        public int Last { get; }
+        public Gdd03CombatOutcome Outcome { get; }
+        internal Gdd03CombatBand(int first, int last, Gdd03CombatOutcome outcome)
+        { First = first; Last = last; Outcome = outcome; }
+    }
+
+    /// <summary>Frozen source metadata: Default is never promoted to Agreed by validation.</summary>
+    internal sealed class Gdd03CombatSource
+    {
+        public string Basis { get; }
+        public string Note { get; }
+        public IReadOnlyList<decimal> Values { get; }
+        internal Gdd03CombatSource(Gdd03DesignValue value)
+        { Basis = value.Basis; Note = value.Note; Values = Array.AsReadOnly(value.Values.ToArray()); }
+    }
+
+    /// <summary>Validated catalogue snapshot only. Accepts an already supplied exact decimal ratio;
+    /// it calculates no strength, consumes no RNG and applies no combat outcome.</summary>
+    internal sealed class Gdd03CombatCatalogue
+    {
+        readonly decimal[] thresholds;
+        readonly IReadOnlyList<Gdd03CombatBand>[] rows;
+        public int DrawCount { get; }
+        public decimal ArmouredFactor { get; }
+        public decimal ArtilleryFactor { get; }
+        public int ArtilleryRange { get; }
+        public IReadOnlyDictionary<string, Gdd03CombatSource> Sources { get; }
+
+        internal Gdd03CombatCatalogue(decimal[] thresholds, IReadOnlyList<Gdd03CombatBand>[] rows,
+            int draws, decimal armour, decimal artillery, int range, Dictionary<string, Gdd03CombatSource> sources)
+        {
+            this.thresholds = thresholds; this.rows = rows; DrawCount = draws;
+            ArmouredFactor = armour; ArtilleryFactor = artillery; ArtilleryRange = range;
+            Sources = new ReadOnlyDictionary<string, Gdd03CombatSource>(sources);
+        }
+
+        // Exact comparison of a caller-supplied ratio, with no display-percent rounding.
+        public int Row(decimal ratio)
+        {
+            if (ratio < 0) throw new ArgumentOutOfRangeException(nameof(ratio));
+            for (var i = 0; i < thresholds.Length; i++) if (ratio < thresholds[i]) return i;
+            return thresholds.Length;
+        }
+
+        public IReadOnlyList<Gdd03CombatBand> Bands(int row)
+        {
+            if (row < 0 || row >= rows.Length) throw new ArgumentOutOfRangeException(nameof(row));
+            return rows[row];
+        }
+
+        public Gdd03CombatOutcome Outcome(decimal ratio, int draw)
+        {
+            if (draw < 0 || draw > 99) throw new ArgumentOutOfRangeException(nameof(draw));
+            return rows[Row(ratio)].Single(b => draw >= b.First && draw <= b.Last).Outcome;
+        }
+    }
+
 }

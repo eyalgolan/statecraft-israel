@@ -129,7 +129,7 @@ GeoNames; the largest distance between them is **derived** (haversine, 6,371.008
 |---|---|---|---|---|---|---|
 | 1 | Kfar Darom (Nahal outpost, on the site of the Kfar Darom of 1946) | Nahal outpost | text: 1970; no appendix row | decision 13 Sep 1970; on the land 11 Oct 1970; official ceremony 30 Nov 1970 (album); Oct 1970 / Dec 1970 (he WP); 1970 (en WP); announced 3 Dec 1970 (UN A/8389) | he 31.40361, 34.35528; en 31.40139, 34.36000; GeoNames 31.40369, 34.35396; max 0.63 km | [S] |
 | 2 | Nahal Netzarim | Nahal outpost | text: 1972; no appendix row | 29 Feb 1972 on the land (he WP, album); 1 Mar 1972 "officially established today" (JTA); 6 Nov 1972 "officially established yesterday" (JTA); Nov 1972 houses (he WP) | he/en 31.48222, 34.41111; GeoNames 31.48333, 34.45000; 3.69 km | [C] |
-| 3 | Nahal Morag | Nahal outpost | text: 1972; no appendix row | 15 Sivan 5732 = 28 May 1972 (derived); "30.5.1972" (album); 29 May 1972 (en WP); ceremony 9 Nov 1972 (album, he WP caption); in a list of 19 Jul 1972 (UN A/8828); inaugurated early Nov 1972 (UN A/9148 para. 57, as "Morg") | he 31.30783, 34.28689; en 31.30833, 34.28806; GeoNames 31.21667, 34.33333; 11.06 km | [C] |
+| 3 | Nahal Morag | Nahal outpost | text: 1972; no appendix row | 15 Sivan 5732 = 28 May 1972 (derived); "30.5.1972" (album); 29 May 1972 (en WP); ceremony 9 Nov 1972 (album, he WP caption); in the Jerusalem Post list of 20 Jul 1972 (UN A/8828); inaugurated early Nov 1972 (UN A/9148 para. 57, as "Morg") | he 31.30783, 34.28689; en 31.30833, 34.28806; GeoNames 31.21667, 34.33333; 11.06 km | [C] |
 | 4 | Nahal Gadish, called Katif, later Netzer Hazani | Nahal outpost, then moshav | appendix "נצר חזני", region "פיתחת רפיח", 29.5.73; text: by mid-1977 | 29 May 1973 on the land (appendix, he WP, en WP, album); "this week" before 31 May 1973 (JTA, as "Nahal Samir"); moshav inaugurated 10 Feb 1977 | he/en 31.38000, 34.32194; GeoNames 31.38012, 34.32118 (and GeoNames "Nahal Qatif" 31.42507, 34.37340); 7.04 km | [S] on the date, [C] on the name |
 | 5 | Katif (moshav, "Katif B") | moshav | text: by mid-1977; no appendix row | JTA bulletin of 2 Jun 1976 (meeting of 31 May 1976) most likely concerns the row 4 outpost; foundation stone 10 Aug 1977 (he WP); first families Oct 1978 (album); 1977 / 1978 / 1985 (WP infoboxes) | he/en 31.37528, 34.31278; GeoNames 31.36667, 34.31667; 1.03 km | [C] |
 
@@ -181,8 +181,8 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    1972 and in Ma'ariv on 7 November 1972, of the inauguration of two settlements in the Gaza Strip; one settlement,
    called Netzaren, located 5 kilometres south of Gaza and the other, Morg, located south of Khan Yunis" (as printed;
    Netzaren and Morg are the report's spellings of Netzarim and Morag; the paragraph names Netzarim and Morag together, so the Nov 1972
-   events of rows 2 and 3 are the same press wave); UN A/8828, p. 17: the list taken from the
-   Jerusalem Post of 20 July 1972 (Galili's Knesset statement of 19 July 1972) includes "Nahal Netzarim"; A/31/218, p.
+   events of rows 2 and 3 are the same press wave); UN A/8828, p. 17: the list in the
+   Jerusalem Post of 20 July 1972 (A/8828: "The same report gives a list"; it does not say the list is Galili's) includes "Nahal Netzarim"; A/31/218, p.
    19, para. 62: "Nahal Netzarim, s.w. of Gaza town". **[C]:** 29 Feb 1972 (he WP, album: the land), 1 Mar 1972 (JTA,
    "officially established") and 6 Nov 1972 (JTA, "officially established"; he WP: housing ceremony). A/9148 para. 57 (above) also cites a Ha'aretz report of 5 Nov 1972, a day before the JTA "yesterday"
    (6 Nov 1972). All are in 1972; the sources mark different events and I did not settle which is the founding.
@@ -196,7 +196,7 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    printed "9.11.1972", with Minister Gvati and General Zeevi. **Derived:** 15 Sivan 5732 = 28 May 1972 and 30 May
    1972 = 17 Sivan 5732, so the album's Hebrew and civil dates differ by two days; 3 Kislev 5733 = 9 Nov 1972 (a
    Thursday). UN A/8828, p. 17: "Nahal Morag" is the last name in the list of "Gaza Strip and Sinai" localities
-   reported by the Jerusalem Post of 20 July 1972, so it existed by 19 July 1972; A/31/218, p. 19: "Nahal Morag near Umm
+   reported by the Jerusalem Post of 20 July 1972, so it was listed by 20 July 1972; A/31/218, p. 19: "Nahal Morag near Umm
    Kalb". One JTA item names Morag, 17 Jan 1975 (row 4), and says only that it will be built as a moshav; no JTA item gives its founding (see "Searches"); A/9148, p. 25, para. 57 (quoted in row 2) reports "Morg" among two settlements inaugurated in early Nov 1972. **[C]:** 28 May, 29 May and 30 May 1972 for the land, 9 Nov 1972 for
    the ceremony; all within 1972.
 
