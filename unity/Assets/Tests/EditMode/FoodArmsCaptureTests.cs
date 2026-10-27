@@ -13,19 +13,19 @@ using UnityEngine.UIElements;
 using Object=UnityEngine.Object;
 
 // Review-only capture seam: opt-in environment path, no game behaviour or test expectations depend on screenshots.
-public class C241CaptureTests
+public class FoodArmsCaptureTests
 {
     [UnityTest]
     public IEnumerator SameOpeningStateHudDefenceReportAndWhyFrames()
     {
-        var dir=Environment.GetEnvironmentVariable("C241_CAPTURE_DIR");
+        var dir=Environment.GetEnvironmentVariable("FOOD_ARMS_CAPTURE_DIR");
         if(!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         foreach(bool he in new[]{false,true})
         foreach(var size in new[]{(1920,1080),(1280,720),(375,667)})
         {
             var rt=new RenderTexture(size.Item1,size.Item2,0); rt.Create();
             var ps=Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture=rt; ps.clearColor = true; ps.colorClearValue = Color.black;
-            var go=new GameObject("C241MatchedCapture"); go.SetActive(false);
+            var go=new GameObject("FoodArmsMatchedCapture"); go.SetActive(false);
             var doc=go.AddComponent<UIDocument>(); doc.panelSettings=ps; doc.visualTreeAsset=AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
             try
             {

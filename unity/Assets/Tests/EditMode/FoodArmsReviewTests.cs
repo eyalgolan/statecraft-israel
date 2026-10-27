@@ -15,7 +15,7 @@ using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-public class C241ReviewTests
+public class FoodArmsReviewTests
 {
     static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
     static SimBridge Bridge(bool he, bool modern = false, bool legacy = false)
@@ -70,7 +70,7 @@ public class C241ReviewTests
     static string Inv(FormattableString value) => FormattableString.Invariant(value);
     static void Snapshot(RenderTexture rt, string name)
     {
-        var dir = Environment.GetEnvironmentVariable("C241_CAPTURE_DIR");
+        var dir = Environment.GetEnvironmentVariable("FOOD_ARMS_CAPTURE_DIR");
         if (string.IsNullOrEmpty(dir)) return;
         Directory.CreateDirectory(dir);
         var prior = RenderTexture.active;
@@ -82,7 +82,7 @@ public class C241ReviewTests
     {
         var rt = new RenderTexture(width, height, 0); rt.Create();
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel)); ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.black;
-        var go = new GameObject("C241Review"); go.SetActive(false);
+        var go = new GameObject("FoodArmsReview"); go.SetActive(false);
         var doc = go.AddComponent<UIDocument>(); doc.panelSettings = ps;
         doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml); go.SetActive(true);
         try

@@ -35,7 +35,7 @@ public class FoodArmsHudTests
         return b;
     }
 
-    // C334 red-first specifications. Run these on BASE before applying production hunks.
+    // The owner's ruling: Food and Arms stay off the main bar, Arms lives in Defence, and both stocks show in the turn report and Why.
     [TestCase(false)] [TestCase(true)]
     public void OwnerRulingKeepsTheMainBarMeterSet(bool he)
     {
@@ -106,7 +106,7 @@ public class FoodArmsHudTests
         CollectionAssert.AreEqual(expected, actual);
     }
 
-    // C334B S1: literal expected output, independent of the translated summary patterns.
+    // Literal expected output, independent of the translated summary patterns.
     [TestCase(false, 0, "")] [TestCase(true, 0, "")]
     [TestCase(false, -12, "-12")] [TestCase(true, -12, "-12")]
     [TestCase(false, 12, "+12")] [TestCase(true, 12, "+12")]
