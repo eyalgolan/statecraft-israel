@@ -59,7 +59,7 @@ namespace Statecraft.Sim
     {
         // Balance scalars are explicit plain inputs, with no defaults or runtime catalogue hookup.
         // Synthetic tests supply pinned docs/gdd/balance.md:52,108,109,17,18 values.
-        // R-FOOD-001, R-FOOD-002, R-FOOD-003; arithmetic draft only, not a replacement for the shipping rule paths.
+        // R-FOOD-001, R-FOOD-002, R-FOOD-003; foundation only, not a replacement for the shipping rule paths.
         internal static Gdd03FoodResult Settle(long available, long ownUnits, long provisionDemand,
             long ownRation, long cohesionMaximum, long combatSlope,
             long indicatorDisplayMaximum, long indicatorStorageMaximum)
