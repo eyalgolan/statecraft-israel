@@ -24,6 +24,10 @@ def test_population_hash_check_cleans_its_copy_on_success_and_failure(tmp_path, 
         repo = root / "repo"
         shutil.copytree(REPO / "sim", repo / "sim", ignore=shutil.ignore_patterns("bin", "obj", "TestResults"))
         shutil.copytree(REPO / "content", repo / "content")
+        # The managed HUD tests compile the real Unity-free formatter via a linked source.
+        formatter = Path("unity/Assets/Scripts/UI/StockMeter.cs")
+        (repo / formatter).parent.mkdir(parents=True)
+        shutil.copyfile(REPO / formatter, repo / formatter)
 
         source = repo / "sim/Statecraft.Sim.Tests/SaveGameTests.cs"
         text = source.read_text(encoding="utf-8")
@@ -51,7 +55,7 @@ def test_population_hash_check_cleans_its_copy_on_success_and_failure(tmp_path, 
         (sentinel / "keep.txt").write_text("another run's data", encoding="utf-8")
         results = root / "results"
         run = subprocess.run(
-            ["dotnet", "test", str(repo / "sim/Statecraft.sln"), "-c", "Release", "--nologo",
+            ["dotnet", "test", str(repo / "sim/Statecraft.sln"), "-c", "Release", "--nologo", "-nodeReuse:false", "-p:UseSharedCompilation=false",
              "--filter", f"FullyQualifiedName={TEST}", "--logger", "trx;LogFileName=population.trx",
              "--results-directory", str(results)],
             cwd=repo, env={**os.environ, "TMPDIR": str(temporary), "TMP": str(temporary), "TEMP": str(temporary)},

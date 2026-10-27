@@ -9,22 +9,16 @@ using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>The 1948 Collection's 31 non-building models (issue #664; Tal Heuberger's Tripo models from #507, slimmed by
-/// tools/slim_collection.py under the owner's ruling of 15 October 2026, "Plain git, slimmed first") are imported to load
-/// light (the maintainer's gate: "we need to make sure this is built in a way that doesnt make the game extremely hard to
-/// load"): nothing under a Resources folder; each model a far mesh of at most 1,500 triangles (4,500 for a vehicle, ship
-/// or aircraft) with no rig or clip and a near mesh of at most 8,000, skinned with its one idle clip only on the 13 models that have one; compressed,
-/// non-readable meshes; crunched 512 px colour maps; instanced materials; and each model's two prefabs in its category's
-/// streamed bundle, with every dependency inside the collection's own folder (CollectionImport.Run sets all of this).</summary>
+/// <summary>#1273: all 73 full originals stream independently after the first frame, without generated LODs,
+/// mesh/animation compression or texture resizing. Import tests preserve source geometry/clips and isolate dependencies.</summary>
 public class CollectionImportTests
 {
     const string Folder = CollectionCatalog.Folder;
-    const int MaxTextureSize = 512, FarTriangles = 1500, FarTrianglesVehicle = 4500, FarTrianglesTown = 4500, NearTriangles = 8000;
 
     static string Dir(string id) => $"{Folder}/{id}";
-    static string Model(string id, string level) => $"{Dir(id)}/{id}-{level}.fbx";
+    static string Model(string id) => $"{Dir(id)}/{id}.fbx";
     static string ColourMap(string id) => $"{Dir(id)}/{id}_basecolor.jpg";
-    static IEnumerable<string> Ids => CollectionCatalog.Ids.Where(id => CollectionCatalog.BundleOf(id) != CollectionCatalog.Buildings);
+    static IEnumerable<string> Ids => CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id));
     static bool Animated(string id) => CollectionCatalog.Animated.Contains(id);
     static readonly string[] GeneratedInfantry =
     {
@@ -65,28 +59,31 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void TheCatalogKeepsTheOriginalModelsAndPutsTheGeneratedInfantryInTheirOwnBundle()
+    public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(57, ids.Count);
+        Assert.AreEqual(75, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2 }, CollectionCatalog.Bundles.Select(b => b.Ids.Length), "people (#507's 12 and #336's 9), vehicles, animals, towns, special buildings, and the two generated infantry in their own bundle (owner, 26 October 2026, #1763)");
-        Assert.AreEqual(23, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(74, CollectionCatalog.Bundles.Count, "73 independent originals plus #1763's shared generated bundle");
+        Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
+            .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
+        Assert.AreEqual(23, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
-        Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
-        Assert.IsNull(CollectionCatalog.BundleOf("b07-kibbutz-dining-hall-v2"), "the buildings are #659's");
+        Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
+        Assert.AreEqual("collection-b07-kibbutz-dining-hall-v2", CollectionCatalog.BundleOf("b07-kibbutz-dining-hall-v2"), "the 18 kit originals now stream too");
     }
 
     [Test]
     public void TheFiveSpecialBuildingsUsePrototypeAssetsInTheirOwnStreamedBundle()
     {
         var ids = new[] { "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b18-military-barracks-v2", "b21-artisan-workshop-v2", "b22-industrial-factory-v2" };
-        CollectionAssert.AreEqual(ids, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Buildings).Ids);
+        CollectionAssert.AreEqual(ids, CollectionCatalog.Groups.Single(b => b.Bundle == CollectionCatalog.Buildings).Ids);
         foreach (var id in ids)
         {
-            Assert.AreEqual(CollectionCatalog.Buildings, CollectionCatalog.BundleOf(id));
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id));
             var path = CollectionCatalog.PrefabPath(id, CollectionDetail.Near);
             StringAssert.StartsWith("Assets/Art/Settlements/Prototype/Models/", path);
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path), path);
@@ -109,7 +106,7 @@ public class CollectionImportTests
         };
         foreach (var id in towns)
         {
-            Assert.AreEqual(CollectionCatalog.Towns, CollectionCatalog.BundleOf(id), id);
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
             CollectionAssert.DoesNotContain(CollectionCatalog.Animated, id, id + " is one static mesh");
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
             {
@@ -118,10 +115,10 @@ public class CollectionImportTests
                 Assert.IsFalse(UnderResources(path), path);
             }
         }
-        CollectionAssert.AreEqual(towns, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.Towns).Ids);
+        CollectionAssert.AreEqual(towns, CollectionCatalog.Groups.Single(b => b.Bundle == CollectionCatalog.Towns).Ids);
         var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
-        Assert.IsTrue(builds.Any(b => b.assetBundleName == CollectionCatalog.Towns), "the towns are built as their own bundle");
+        Assert.IsTrue(towns.All(id => builds.Any(b => b.assetBundleName == "collection-" + id)), "each town has its own bundle");
         // No copy of a town model anywhere under a Resources folder (#507 shipped them all in one).
         CollectionAssert.IsEmpty(towns.SelectMany(id => AssetDatabase.FindAssets(id)).Select(AssetDatabase.GUIDToAssetPath).Where(UnderResources));
     }
@@ -140,8 +137,8 @@ public class CollectionImportTests
             "figure-immigrant-woman-v1", "figure-kibbutz-woman-v1", "figure-soldier-1948-v1", "figure-yemenite-immigrant-v1",
             "figure-pioneer-farmer-v1-tpose",
         };
-        var people = CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.People).Ids;
-        CollectionAssert.AreEqual(nine, people.Skip(12).Take(9).ToArray(), "the original people keep their order");
+        var people = CollectionCatalog.Groups.Single(b => b.Bundle == CollectionCatalog.People).Ids;
+        CollectionAssert.AreEqual(nine, people.Skip(12).ToArray());
         CollectionAssert.AreEqual(nine.Where(id => id != "figure-soldier-1948-v1"), nine.Where(Animated));
         foreach (var id in nine)
             foreach (var d in new[] { CollectionDetail.Far, CollectionDetail.Near })
@@ -160,15 +157,20 @@ public class CollectionImportTests
         {
             var files = new List<string>
             {
-                Model(id, "far"), Model(id, "near"), $"{Dir(id)}/{id}.mat", ColourMap(id),
+                Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
-            if (Animated(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             if (GeneratedInfantry.Contains(id))
                 return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id),
                     $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/{id}.controller", $"{Dir(id)}/provenance.json" };
+            if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
+            foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
+            {
+                var retained = $"{Dir(id)}/{id}{suffix}";
+                if (System.IO.File.Exists(retained)) files.Add(retained);
+            }
             return files;
-        }).OrderBy(p => p, StringComparer.Ordinal);
+        }).Distinct().OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)
             .Where(p => !AssetDatabase.IsValidFolder(p)).Distinct().OrderBy(p => p, StringComparer.Ordinal);
         CollectionAssert.AreEqual(expected, found);
@@ -187,9 +189,9 @@ public class CollectionImportTests
     {
         var imp = AssetImporter.GetAtPath(path) as ModelImporter;
         Assert.IsNotNull(imp, path);
-        Assert.AreEqual(ModelImporterMeshCompression.Medium, imp!.meshCompression, path + " mesh compression");
+        Assert.AreEqual(ModelImporterMeshCompression.Off, imp!.meshCompression, path + " mesh compression");
         Assert.IsFalse(imp.isReadable, path + " Read/Write");
-        Assert.IsFalse(imp.importBlendShapes, path + " blend shapes");
+        Assert.IsTrue(imp.importBlendShapes, path + " blend shapes");
         Assert.IsFalse(imp.importVisibility, path + " visibility");
         Assert.IsFalse(imp.importCameras, path + " cameras");
         Assert.IsFalse(imp.importLights, path + " lights");
@@ -202,95 +204,73 @@ public class CollectionImportTests
 
     static long Triangles(Mesh mesh) => Enumerable.Range(0, mesh.subMeshCount).Sum(i => (long)mesh.GetIndexCount(i)) / 3;
 
-    static void AssertStatic(string path, int maxTriangles)
-    {
-        var imp = Importer(path);
-        Assert.IsFalse(imp.importAnimation, path + " animation");
-        Assert.AreEqual(ModelImporterAnimationType.None, imp.animationType, path + " rig");
-        var assets = AssetDatabase.LoadAllAssetsAtPath(path);
-        var meshes = assets.OfType<Mesh>().ToArray();
-        Assert.AreEqual(1, meshes.Length, path + " one mesh (parts joined)");
-        Assert.That(Triangles(meshes[0]), Is.InRange(1, maxTriangles), path + " triangles");
-        Assert.IsFalse(meshes[0].isReadable, path + " mesh readable");
-        Assert.IsFalse(meshes[0].HasVertexAttribute(VertexAttribute.Tangent), path + " tangent stream");
-        CollectionAssert.IsEmpty(assets.OfType<AnimationClip>(), path + " clips");
-        CollectionAssert.IsEmpty(assets.OfType<Avatar>(), path + " avatar");
-        var root = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        CollectionAssert.IsEmpty(root.GetComponentsInChildren<Component>(true)
-            .Where(c => !(c is Transform || c is MeshFilter || c is MeshRenderer)), path + " other components");
-    }
-
     [Test]
-    public void EveryFarModelIsOneStaticMeshOfAtMost1500TrianglesOr4500ForAVehicleOrATown()
-    {
-        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
-            AssertStatic(Model(id, "far"), CollectionCatalog.BundleOf(id) == CollectionCatalog.Towns ? FarTrianglesTown
-                : CollectionCatalog.BundleOf(id) == CollectionCatalog.Vehicles ? FarTrianglesVehicle : FarTriangles);
-    }
-
-    [Test]
-    public void EveryNearModelIsAtMost8000TrianglesAndOnlyTheAnimatedOnesKeepARigAndTheirIdleClip()
+    public void BothPlacementDetailsUseOnlyTheOriginalGeometry()
     {
         foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
-            var path = Model(id, "near");
-            if (!Animated(id)) { AssertStatic(path, NearTriangles); continue; }
-            var imp = Importer(path);
-            Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
-            Assert.IsTrue(imp.importAnimation, path + " animation");
-            Assert.IsTrue(imp.optimizeGameObjects, path + " optimize game objects");
-            Assert.AreEqual(ModelImporterAnimationCompression.Optimal, imp.animationCompression, path + " clip compression");
-            Assert.AreEqual(1, imp.clipAnimations.Length, path + " clips");
-            Assert.AreEqual("idle", imp.clipAnimations[0].name, path);
-            Assert.IsTrue(imp.clipAnimations[0].loopTime, path + " loops");
-
-            var assets = AssetDatabase.LoadAllAssetsAtPath(path);
-            var clips = assets.OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToArray();
-            Assert.AreEqual(1, clips.Length, path + " one clip");
-            Assert.AreEqual("idle", clips[0].name, path);
-            Assert.Greater(clips[0].length, 1f, path + " idle length");
-            var meshes = assets.OfType<Mesh>().ToArray();
-            Assert.AreEqual(1, meshes.Length, path + " meshes");
-            Assert.That(Triangles(meshes[0]), Is.InRange(1, NearTriangles), path + " triangles");
-            Assert.IsFalse(meshes[0].isReadable, path + " mesh readable");
-            Assert.Greater(meshes[0].bindposeCount, 10, path + " the cut mesh is still skinned");
-            Assert.IsTrue(meshes[0].HasVertexAttribute(VertexAttribute.BlendWeight), path + " vertex weights");
-            var root = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            var skin = root.GetComponentInChildren<SkinnedMeshRenderer>(true);
-            Assert.IsNotNull(skin, path + " skinned renderer");
+            var path = Model(id); var imp = Importer(path);
+            var meshes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Mesh>().ToArray();
+            Assert.IsNotEmpty(meshes, path + " original geometry");
+            Assert.IsTrue(meshes.All(m => Triangles(m) > 0 && !m.isReadable), path + " geometry stays GPU-only");
+            Assert.AreEqual(CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), id + " one original at both placement details");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Far));
+            foreach (var mesh in prefab.GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh)
+                .Concat(prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(f => f.sharedMesh)))
+                Assert.AreEqual(path, AssetDatabase.GetAssetPath(mesh), id + " no baked/decimated geometry");
+            var serialized = new SerializedObject(imp);
+            var lod = serialized.FindProperty("m_GenerateMeshLods") ?? serialized.FindProperty("generateMeshLods");
+            Assert.IsNotNull(lod, path + " inspectable LOD setting"); Assert.IsFalse(lod.boolValue, path);
         }
     }
 
     [Test]
-    public void EveryColourMapIsCrunchedMipmappedAndAtMost512OnEveryTarget()
+    public void OriginalModelsRetainAllSourceTakesAndBonesWithoutReduction()
     {
         foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
-            var path = ColourMap(id);
-            var imp = AssetImporter.GetAtPath(path) as TextureImporter;
-            Assert.IsNotNull(imp, path);
-            Assert.AreEqual(MaxTextureSize, imp!.maxTextureSize, path + " max size");
-            Assert.IsTrue(imp.crunchedCompression, path + " crunch");
-            Assert.AreNotEqual(TextureImporterCompression.Uncompressed, imp.textureCompression, path + " compression");
-            Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps");
-            Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
-            Assert.IsFalse(imp.isReadable, path + " Read/Write");
+            var path = Model(id); var imp = Importer(path);
+            Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " source rig");
+            Assert.IsTrue(imp.importAnimation, path + " source takes");
+            Assert.IsFalse(imp.optimizeGameObjects, path + " bones retained");
+            Assert.IsFalse(imp.resampleCurves, path + " original curves");
+            Assert.AreEqual(ModelImporterAnimationCompression.Off, imp.animationCompression, path);
+            var clips = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
+                .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToArray();
+            Assert.AreEqual(imp.defaultClipAnimations.Length, clips.Length, path + " every original take");
+            if (Animated(id))
+            {
+                Assert.IsNotEmpty(clips, path + " animated original has a take");
+                Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path).GetComponentInChildren<SkinnedMeshRenderer>(true), path + " skin retained");
+            }
+        }
+    }
+
+    [Test]
+    public void EveryColourMapKeepsItsSourceSizeAndMipmapsWithoutCrunch()
+    {
+        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
+        {
+            var path = ColourMap(id); var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+            Assert.IsNotNull(imp, path); imp!.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.GreaterOrEqual(imp.maxTextureSize, Math.Max(width, height), path + " no downscaling");
+            Assert.IsFalse(imp.crunchedCompression, path + " no Crunch");
+            Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps"); Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
+            Assert.IsFalse(imp.isReadable, path + " GPU-only");
             foreach (var target in new[] { "Standalone", "WebGL" })
             {
-                var s = imp.GetPlatformTextureSettings(target);
-                Assert.LessOrEqual(s.maxTextureSize, MaxTextureSize, path + " " + target);
-                Assert.IsTrue(s.crunchedCompression, path + " " + target + " crunch");
-                Assert.AreNotEqual(TextureImporterCompression.Uncompressed, s.textureCompression, path + " " + target);
+                var setting = imp.GetPlatformTextureSettings(target);
+                Assert.GreaterOrEqual(setting.maxTextureSize, Math.Max(width, height), path + " " + target + " keeps source size");
+                Assert.IsFalse(setting.crunchedCompression, path + " " + target);
             }
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            Assert.LessOrEqual(Mathf.Max(tex.width, tex.height), MaxTextureSize, path + " imported size");
+            Assert.AreEqual(width, tex.width, path + " source width"); Assert.AreEqual(height, tex.height, path + " source height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
-            StringAssert.Contains("Crunched", tex.format.ToString(), path + " imported format");
         }
     }
 
     [Test]
-    public void EveryPrefabDrawsItsOwnInstancedMaterialAndOnlyTheAnimatedNearOnesPlayTheIdleClip()
+    public void BothPlacementAliasesKeepTheOriginalMaterialRigAndController()
     {
         foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
         {
@@ -305,24 +285,28 @@ public class CollectionImportTests
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 Assert.IsNotNull(prefab, path);
                 var renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                Assert.AreEqual(1, renderers.Length, path + " renderers");
-                CollectionAssert.AreEqual(new[] { mat }, renderers[0].sharedMaterials, path + " material");
+                var original = AssetDatabase.LoadAssetAtPath<GameObject>(Model(id));
+                Assert.AreEqual(original.GetComponentsInChildren<Renderer>(true).Length, renderers.Length, path + " every original part retained");
+                Assert.Greater(renderers.Length, 0, path + " geometry present");
+                foreach (var renderer in renderers)
+                    Assert.IsTrue(renderer.sharedMaterials.Length > 0 && renderer.sharedMaterials.All(m => m == mat), path + " each part uses its own material");
                 var animator = prefab.GetComponentInChildren<Animator>(true);
-                if (detail == CollectionDetail.Near && Animated(id))
+                if (Animated(id) || OriginalModelPose.Required(id))
                 {
-                    Assert.IsInstanceOf<SkinnedMeshRenderer>(renderers[0], path);
+                    Assert.IsNotNull(prefab.GetComponentInChildren<SkinnedMeshRenderer>(true), path + " original skin");
                     Assert.IsNotNull(animator, path + " animator");
                     var ctrl = animator!.runtimeAnimatorController as AnimatorController;
                     Assert.IsNotNull(ctrl, path + " controller");
                     Assert.AreEqual(AssetDatabase.GetAssetPath(ctrl), $"{Dir(id)}/{id}-near.controller", path);
                     var clip = ctrl!.layers[0].stateMachine.defaultState.motion as AnimationClip;
-                    Assert.AreEqual("idle", clip?.name, path + " default state");
-                    Assert.AreEqual(Model(id, "near"), AssetDatabase.GetAssetPath(clip), path + " clip source");
+                    Assert.IsNotNull(clip, path + " original take selected");
+                    Assert.Greater(clip!.length, 0f, path + " nonempty take");
+                    Assert.AreEqual(Model(id), AssetDatabase.GetAssetPath(clip), path + " clip source");
                     Assert.AreEqual(AnimatorCullingMode.CullCompletely, animator.cullingMode, path + " culling");
                 }
                 else
                 {
-                    Assert.IsInstanceOf<MeshRenderer>(renderers[0], path);
+                    Assert.IsTrue(renderers.All(r => r is MeshRenderer || r is SkinnedMeshRenderer), path + " original renderer types");
                     Assert.IsNull(animator, path + " no animator");
                 }
             }
@@ -330,17 +314,18 @@ public class CollectionImportTests
     }
 
     [Test]
-    public void EachBundleCarriesItsModelsTwoPrefabsAndNothingFromOutsideTheCollection()
+    public void EachOriginalBundleKeepsItsPrefabAndOnlyItsOwnAssetsAndPlacementScripts()
     {
         foreach (var (bundle, ids) in CollectionCatalog.Bundles)
         {
             var entries = ids.SelectMany(id => new[] { CollectionDetail.Far, CollectionDetail.Near }.Select(d => CollectionCatalog.PrefabPath(id, d))).ToArray();
             foreach (var e in entries) Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(e), e);
-            var folders = ids.Select(id => CollectionCatalog.BundleOf(id) == CollectionCatalog.Buildings
+            var folders = ids.Select(id => CollectionCatalog.IsBuilding(id)
                 ? $"Assets/Art/Settlements/Prototype/Models/{id}/" : Dir(id) + "/").ToArray();
             var deps = AssetDatabase.GetDependencies(entries, true);
             var outside = deps.Where(d => !folders.Any(f => d.StartsWith(f, StringComparison.Ordinal))
-                && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)).ToArray();
+                && !d.StartsWith("Packages/com.unity.render-pipelines.", StringComparison.Ordinal)
+                && d != "Assets/Scripts/Map/Collection/OriginalModelDistance.cs" && d != "Assets/Scripts/Map/Collection/OriginalModelPose.cs").ToArray();
             CollectionAssert.IsEmpty(outside, bundle + " pulls in files from outside its models' folders");
         }
         // No asset carries a bundle label: the bundles are built from the catalog alone (CollectionImport.Builds).
@@ -355,7 +340,7 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id) }).Distinct(),
                 b.assetNames, bundle);
     }
 }

@@ -54,6 +54,10 @@ namespace Statecraft.Game.Map.Routes
         public DateTime From { get; private set; }
         /// <summary>The train, once its model has streamed in; null before, and for good when it did not.</summary>
         public RouteTrain? Train { get; private set; }
+        internal Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Category ResidencySnapshot() =>
+            Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Row("train", isActiveAndEnabled && requested ? 1 : 0,
+                Train != null ? 1 : 0, requested ? new[] { ModelId } : Array.Empty<string>(), 0,
+                requested && Train == null && !failed ? 1 : 0, 0, GetComponentsInChildren<Renderer>(true).Length, 0, failed ? 1 : 0);
         public bool Requested => requested;
         public bool Failed => failed;
 
@@ -90,6 +94,7 @@ namespace Statecraft.Game.Map.Routes
 
         void OnModel(GameObject? prefab)
         {
+            Statecraft.Game.Map.Collection.CollectionResidencyMetrics.MarkDirty();
             if (this == null) return;   // the map was rebuilt before the model came; the new map asks again
             if (prefab == null || data == null || assets == null)
             {

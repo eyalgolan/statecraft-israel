@@ -111,13 +111,13 @@ namespace Statecraft.Sim
             if (s.Treasury < 0)
             {
                 s.Debt += -s.Treasury;
-                why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} to build {PlayerText.MapAction(c, action)}"));
+                why.Add(new Cause("economy", "debt", -s.Treasury, $"borrowed {PlayerText.Money(c, "debt", -s.Treasury)} to build {PlayerText.MapAction(c, action)}", key: CauseKeys.MapBorrowed, args: new[] { action }));
                 s.Treasury = 0;
             }
             var housing = rule.Housing == 0 ? 0 : EffectsSystem.Shift(c, s, "housing", rule.Housing);
             var morale = rule.Morale == 0 ? 0 : EffectsSystem.Shift(c, s, "morale", rule.Morale);
             why.Add(new Cause("map", action, 1, FormattableString.Invariant(
-                $"Built {PlayerText.MapAction(c, action)}: cost {PlayerText.Money(c, "treasury", rule.Cost)}, {PlayerText.Change(c, "housing", housing)}, {PlayerText.Change(c, "morale", morale)}")));
+                $"Built {PlayerText.MapAction(c, action)}: cost {PlayerText.Money(c, "treasury", rule.Cost)}, {PlayerText.Change(c, "housing", housing)}, {PlayerText.Change(c, "morale", morale)}"), key: CauseKeys.MapBuilt, args: new[] { CauseKeys.Number(rule.Cost), CauseKeys.Number(housing), CauseKeys.Number(morale) }));
             return null;
         }
     }

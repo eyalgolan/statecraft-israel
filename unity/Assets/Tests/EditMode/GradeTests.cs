@@ -13,8 +13,13 @@ using UnityEngine.TestTools;
 /// <summary>Plan Task 4: the grade, the tonemapper, the vignette, and what they do to readability.</summary>
 public class GradeTests
 {
+    /// <summary>The border checks here pin main's earlier look (the Legacy variant; A2 is the default since the owner's
+    /// ruling of 2026-10-27, and BorderCivTests runs these checks on it and the prototype's other variants, #196).</summary>
+    [SetUp]
+    public void Legacy() => MapBorders.Variant = BorderVariant.Legacy;
+
     [TearDown]
-    public void Reset() { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
+    public void Reset() { MapBorders.Variant = MapBorders.DefaultVariant; EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear(); }
 
     static (MapScene map, CameraRig rig, VolumeProfile profile) Open()
     {
@@ -202,7 +207,12 @@ public class GradeTests
     /// apart, the neutral band's stronger stripe >= 15 from the land, its two stripes >= 20 apart; and it is dashed, a cue
     /// that is not colour (review S9 of #555): some walks fall in a gap.</summary>
     [UnityTest]
-    public IEnumerator ColourBlindPlayersTellTheNeutralBandFromBothSides()
+    public IEnumerator ColourBlindPlayersTellTheNeutralBandFromBothSides() => NeutralBandApart(0.02f);
+
+    /// <summary>The body of ColourBlindPlayersTellTheNeutralBandFromBothSides with the neutral stripe's least greyness gain
+    /// as a parameter: the Civ-like prototype's variants (#196) wash and tint the neutral side, so BorderCivTests reads its
+    /// stripe above that (0.10).</summary>
+    internal static IEnumerator NeutralBandApart(float neutralGain)
     {
         var (map, cam, rig) = BorderTests.Open();
         yield return null;
@@ -226,7 +236,7 @@ public class GradeTests
                 var b = BorderTests.WalkEdge(map, cam, inner, outer, 5, 1920, 1080);
                 for (int i = 0; i < a.Count; i++)
                 {
-                    var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, 0.02f);
+                    var p = BorderTests.Read(a[i], -1, BorderTests.Blueness, 0.45f); var n = BorderTests.Read(a[i], +1, Greyness, neutralGain);
                     var s = BorderTests.Read(b[i], +1, BorderTests.Redness);
                     if (n.WidthPx < 1f) { gaps++; continue; }   // a walk through a gap between the neutral band's dashes
                     drawn++;

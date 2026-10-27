@@ -107,8 +107,8 @@ public class TurnReportTests
         var changed = HudModel.MeterIds.Where(id => m.For(id).Delta.Length > 0).ToArray();
         Assert.GreaterOrEqual(changed.Length, 3, "the opening turn moves at least three numbers in the bar");
         var rows = k.Ui.Q<ScrollView>("turn-report-rows").Children().ToList();
-        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id).Append("turn-report-" + TurnReportPresenter.EnemyRow), rows.Select(r => r.name),
-            "every changed number, in the bar's order, and no other; then the enemy's orders (#1293)");
+        CollectionAssert.AreEqual(changed.Select(id => "turn-report-" + id).Concat(new[] { "turn-report-food", "turn-report-arms" }).Append("turn-report-" + TurnReportPresenter.EnemyRow), rows.Select(r => r.name),
+            "every changed bar number, then Food and Arms stocks, then enemy orders (#1293)");
         var messages = new HashSet<string>(turn.Why.Select(w => w.Message));
         foreach (var id in changed)
         {

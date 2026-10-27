@@ -17,6 +17,8 @@ namespace Statecraft.Game.UI
     /// and Send home after the unit's front signs its armistice (#1309).</summary>
     public sealed class InfoPanelPresenter : System.IDisposable
     {
+        readonly Button confirmMove;
+        (Command command, GameSession session, int turn)? pendingMove;
         readonly System.Action? clearSelection;
         readonly EventCallback<NavigationCancelEvent> onCancel;
 
@@ -105,6 +107,12 @@ namespace Statecraft.Game.UI
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
             orders = panel.Q<VisualElement>("info-orders");
+            confirmMove = new Button(ConfirmMove) { name = "info-confirm-move" };
+            confirmMove.RegisterCallback<KeyDownEvent>(OnConfirmKey);
+            confirmMove.style.whiteSpace = WhiteSpace.Normal;
+            panel.Q<Label>("info-title").parent.Insert(2, confirmMove);
+            DiscardMove();
+            ScreenNav.InfoIntentCovered += OnInfoCovered;
             this.selectPioneer = selectPioneer;
             pioneerList = panel.Q<VisualElement>("info-pioneers");
             pioneerReturn = panel.Q<Button>("info-pioneer-return");
@@ -159,7 +167,7 @@ namespace Statecraft.Game.UI
             reinforceButton = panel.Q<Button>("info-reinforce");
             onReinforce = () => { if (reinforce is Reinforce r) { bridge.Queue(r); Render(); } };
             reinforceButton.clicked += onReinforce;
-            bridge.Changed += Render;
+            bridge.Changed += OnStateChanged;
             panel.parent?.RegisterCallback<GeometryChangedEvent>(OnHudGeometry);
             Render();
         }
@@ -167,7 +175,7 @@ namespace Statecraft.Game.UI
         void OnHudGeometry(GeometryChangedEvent e) => panel.EnableInClassList(ShortClass, e.newRect.height < ShortBelowPx);
 
         /// <summary>Unsubscribes from the bridge and the buttons (the owner calls this when disabled).</summary>
-        public void Dispose() { pioneerReturn.clicked -= onPioneerReturn; pioneerList.Clear(); panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= Render; panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
+        public void Dispose() { pioneerReturn.clicked -= onPioneerReturn; pioneerList.Clear(); panel.UnregisterCallback(onCancel); presses.Dispose(); bridge.Changed -= OnStateChanged; ScreenNav.InfoIntentCovered -= OnInfoCovered; confirmMove.UnregisterCallback<KeyDownEvent>(OnConfirmKey); confirmMove.clicked -= ConfirmMove; confirmMove.RemoveFromHierarchy(); panel.parent?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometry); campButton.clicked -= onCamp; housingButton.clicked -= onHousing; defenceButton.clicked -= onDefence; moveButton.clicked -= onMove; fortifyButton.clicked -= onFortify; holdButton.clicked -= onHold; attackButton.clicked -= onAttack; sendHomeButton.clicked -= onSendHome; skipButton.clicked -= onSkip; reinforceButton.clicked -= onReinforce; EndPick(); }
 
         /// <summary>Below this window height (logical px; 1366x657 is about 998) the panel gets ShortClass, and the city's own
         /// hex folds its projects behind their toggle as on a stacked bar (GddHexPanel.ToggleName): there the full list ran into
@@ -213,6 +221,7 @@ namespace Statecraft.Game.UI
         /// cannot see.</summary>
         public void Show(int q, int r)
         {
+            DiscardMove();
             if (Covered) return;   // covered (#210)
             if (unitMode || Selected != (q, r)) projects.RemoveFromClassList(GddHexPanel.OpenClass);   // a newly chosen hex starts with its city projects folded
             EndPick();
@@ -223,6 +232,7 @@ namespace Statecraft.Game.UI
         /// <summary>Shows the selected unit's card (the unit comes from the selectedUnit callback); ignored while covered.</summary>
         public void ShowUnit()
         {
+            DiscardMove();
             if (Covered) return;
             EndPick();
             pioneer = null; pioneerSession = null; unitMode = true; Selected = null; Render();
@@ -231,6 +241,7 @@ namespace Statecraft.Game.UI
         /// <summary>Shows nothing selected (the hint), as before the first click; ignored while covered.</summary>
         public void Clear()
         {
+            DiscardMove();
             if (Covered) return;
             EndPick();
             pioneer = null; pioneerSession = null; unitMode = false; Selected = null; Render();
@@ -392,6 +403,7 @@ namespace Statecraft.Game.UI
 
         void EndPick()
         {
+            DiscardMove();
             if (pick == null) return;
             pick = null;
             shownRoute = null;
@@ -448,6 +460,72 @@ namespace Statecraft.Game.UI
         /// <summary>True when (q, r) is one of a city's settlement hexes (GameRoot.CityAt): a left click there shows the city
         /// even while Move picks (owner, 25 Oct 2026: "Clicking another unit or a city still selects it").</summary>
         public bool IsCity(int q, int r) => GameRoot.CityAt(bridge.Content, bridge.State, q, r) != null;
+
+        void DiscardMove()
+        {
+            pendingMove = null;
+            confirmMove.style.display = DisplayStyle.None;
+        }
+
+        void OnStateChanged() { DiscardMove(); Render(); }
+
+        void OnInfoCovered(VisualElement root)
+        {
+            if (root == panel || root.Contains(panel)) DiscardMove();
+        }
+
+        /// <summary>Captures the original mover before ordinary selection changes the card. The returned action
+        /// offers its confirmation after that selection. No command is queued until the button is activated.
+        /// <paramref name="friendDrawn"/>: another friendly unit's token is drawn on (q, r) (GameRoot asks the unit layer);
+        /// a token stands at its anchor, which need not be its sim hex.</summary>
+        internal System.Action? PrepareFriendlyMove(int q, int r, bool friendDrawn = false)
+        {
+            DiscardMove();
+            var c = bridge.Content; var s = bridge.State;
+            if (!panel.enabledInHierarchy || panel.parent?.ClassListContains(ScreenNav.ScreenOpenClass) == true
+                || pick is not { attack: false } p || p.session != bridge.Session || p.turn != s.Turn
+                || MoveTargets() is not { } moves || moves.unit != p.unit || !Takes(p, q, r)) return null;
+            // Route allows travel towards a currently full hex; this explicit confirmation must not offer it.
+            var moving = s.Units[p.unit];
+            var limit = c.RulesAt(s.Date).Mvp!.StackLimit!.Value;
+            if (s.Units.Values.Count(u => u.Id != p.unit && u.Side == moving.Side && u.Q == q && u.R == r) >= limit) return null;
+            var occupants = s.Units.Values.Where(u => u.Q == q && u.R == r).ToList();
+            if (occupants.Any(u => u.Side != "" && u.Side != Movement.PlayerSide)
+                || (!IsCity(q, r) && !friendDrawn && !occupants.Any(u => u.Id != p.unit))) return null;
+            var token = selectedUnit();
+            if (token == null) return null;
+            var mover = UnitCard.For(token.Value, s, text, c.IsGdd, c, townNamesHe).Title;
+            var target = HexPlaces.Of(string.Format(CultureInfo.InvariantCulture, "{0},{1}", q, r), c, text, townNamesHe);
+            Command command = p.hexes.Contains((q, r)) ? new Move(p.unit, q, r) : new UnitOrder(p.unit, Movement.GoTo, q, r);
+            return () =>
+            {
+                if (bridge.Session != p.session || bridge.State.Turn != p.turn || !panel.enabledInHierarchy) return;
+                pendingMove = (command, p.session, p.turn);
+                confirmMove.text = text.Format("unit.confirm_move", mover, target);
+                confirmMove.style.display = DisplayStyle.Flex;
+            };
+        }
+
+        void OnConfirmKey(KeyDownEvent e)
+        {
+            if (e.keyCode != UnityEngine.KeyCode.Space) return;
+            // Enter arrives as NavigationSubmit; Space needs the same explicit path as the map stop.
+            using var submit = NavigationSubmitEvent.GetPooled();
+            submit.target = confirmMove; confirmMove.SendEvent(submit);
+            e.StopPropagation();
+        }
+
+        void ConfirmMove()
+        {
+            var proposal = pendingMove;
+            var keyboard = presses.ByKeyboard;
+            DiscardMove();   // a reentrant Changed, or a second activation, cannot repeat the command
+            if (proposal is not { } p || p.session != bridge.Session || p.turn != bridge.State.Turn
+                || !panel.enabledInHierarchy || Covered || panel.parent?.ClassListContains(ScreenNav.ScreenOpenClass) == true) return;
+            bridge.Queue(p.command);   // existing bridge/sim validation; the button itself confirms a far route too
+            Render();
+            if (keyboard) FocusReturn.To(mapFocus);
+        }
 
         /// <summary>True while the open pick is a Move's (not an Attack's).</summary>
         public bool MovePicking => pick is { attack: false };

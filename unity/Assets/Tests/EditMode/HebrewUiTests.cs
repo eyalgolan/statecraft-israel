@@ -230,7 +230,7 @@ public class HebrewUiTests
     /// <summary>Many texts a presenter builds after boot get their words before they are on the panel (new Label(text)), so
     /// no text change reaches UiDirection: they take their direction when it walks the tree again, on the next frame after
     /// a submit, a click or a turn. Here: a label added before a submit, one added before a click, and the Why rows End
-    /// Turn rebuilds (Hebrew headers, English lines).</summary>
+    /// Turn rebuilds (localized rows plus an explicit legacy English fallback fixture).</summary>
     [UnityTest]
     public IEnumerator InHebrewTextsBuiltAfterBootTakeTheirDirectionAfterASubmitAClickOrATurn()
     {
@@ -259,12 +259,16 @@ public class HebrewUiTests
 
             // A turn: End Turn rebuilds the Why rows.
             game.Bridge!.EndTurn();
+            // #1682 localizes the actual causes. Keep mixed-direction coverage through the supported unkeyed fallback.
+            Ui.Q<ScrollView>("why-rows").contentContainer.Add(new Label(CauseText.Line(
+                new Statecraft.Sim.Cause("fixture", "fixture", 0, "Legacy fallback"), game.Bridge.Content,
+                Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), He)));
             var built = Ui.Q<ScrollView>("why-rows").contentContainer.Query<TextElement>().ToList();
             Assert.IsTrue(built.All(t => t.languageDirection == LanguageDirection.Inherit), "the new rows have no direction before the next frame");
             for (int i = 0; i < 2; i++) yield return null;
             Directed(built, "a turn");
             Assert.IsTrue(built.Any(t => t.languageDirection == LanguageDirection.RTL) && built.Any(t => t.languageDirection == LanguageDirection.LTR),
-                "the rows mix Hebrew (the headers) and English (the lines, #55)");
+                "the rebuilt rows mix Hebrew and the explicit legacy English fallback");
         }
         finally { restore(); }
     }

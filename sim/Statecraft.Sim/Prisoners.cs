@@ -63,12 +63,12 @@ namespace Statecraft.Sim
             {
                 var eaten = (int)Math.Min(need, s.Food);
                 s.Food -= eaten;
-                why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"The prisoners held ate {eaten} units of Food")));
+                why.Add(new Cause("economy", "food", -eaten, FormattableString.Invariant($"The prisoners held ate {eaten} units of Food"), key: CauseKeys.PrisonerFood));
                 var unfed = need - eaten;
                 if (unfed > 0)
                 {
                     var change = EffectsSystem.Shift(c, s, "morale", -unfed * r.PrisonerShortfallCohesion!.Value);
-                    why.Add(new Cause("economy", "morale", change, FormattableString.Invariant($"The prisoners held went short of {unfed} units of Food: {PlayerText.Change(c, "morale", change)}")));
+                    why.Add(new Cause("economy", "morale", change, FormattableString.Invariant($"The prisoners held went short of {unfed} units of Food: {PlayerText.Change(c, "morale", change)}"), key: CauseKeys.PrisonerFoodShortage, args: new[] { CauseKeys.Number(unfed) }));
                 }
             }
             var held = s.SoldiersHeld.Values.Sum();

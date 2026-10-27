@@ -19,6 +19,10 @@ namespace Statecraft.Game.Map.Routes
     public sealed class RoadVehicles : MonoBehaviour
     {
         public const string Name = "RoadVehicles";
+        internal Collection.CollectionResidencyMetrics.Category RetainedSnapshot() => Collection.CollectionResidencyMetrics.Row(
+            "retained_road", prefabs.Count, transform.childCount, prefabs.Keys, 0, 0, prefabs.Count, 0, 0, 0);
+        internal Collection.CollectionResidencyMetrics.Category SharedSnapshot() => Collection.CollectionResidencyMetrics.Row(
+            "shared_road", 0, 0, System.Array.Empty<string>(), 0, 0, 0, 0, 0, 0);
         public const string IntercityBus = "figure-vehicle-intercity-bus-1948-v2";
         public const string CitrusTruck = "figure-vehicle-citrus-truck-1948-v2";
         public const string CanvasLorry = "figure-vehicle-canvas-lorry-1948-v2";

@@ -416,7 +416,10 @@ namespace Statecraft.Game.UI
                 || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
             pointer.IsOverUi = pointerOverUi;
             // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
-            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
+            // Either button (#998): whichever is down holds the drag while it could still be a click, so a click never
+            // nudges the map and a drag past the slop pans.
+            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate || pointer.LeftTapCandidate,
+                       holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
@@ -595,6 +598,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
+            Statecraft.Game.Map.Collection.CollectionStream.GameReady();
             Debug.Log(FormattableString.Invariant($"GAME OK {bridge.State.Date:yyyy-MM-dd} turn {bridge.State.Turn} hash {bridge.State.Hash()}"));
             // Unlike the other browser instruments, ?firstcard keeps the normal start screen, clip mapping and video players.
             // It closes the screen through its real button immediately, then gives tools/web_check.py a bounded result to
@@ -660,12 +664,17 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
+            // A friendly token is drawn where the player tapped (its anchor), which can be a neighbour of its sim hex.
+            var friendDrawn = units.Tokens.Any(t => t.Q == q && t.R == r && t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel
+                && t.Token.Unit.Id != units.Selected);
+            var offerMove = info.PrepareFriendlyMove(q, r, friendDrawn);
             // #1661: a name pill means the city even when another unit stands there. A badge/terrain or keyboard
             // pick keeps the existing unit-first routing; the event carries intent, not a mutable "last hit" flag.
             if (cityPill && info.IsCity(q, r))
             {
                 units.Select(null);
                 info.Show(q, r);
+                offerMove?.Invoke();
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
@@ -673,6 +682,7 @@ namespace Statecraft.Game.UI
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+            offerMove?.Invoke();
         }
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the

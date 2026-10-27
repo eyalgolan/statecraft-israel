@@ -74,8 +74,8 @@ public class WildlifeLayerTests
         var layer = WildlifeLayer.Show(map)!;
         CollectionAssert.AreEquivalent(new[] { WildlifeLayer.Ibex, WildlifeLayer.Hyena }, asked.Select(a => a.id));
         Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Near), "close zoom uses the near static animal meshes");
-        Assert.AreEqual(CollectionCatalog.Animals, CollectionCatalog.BundleOf(WildlifeLayer.Ibex));
-        Assert.AreEqual(CollectionCatalog.Animals, CollectionCatalog.BundleOf(WildlifeLayer.Hyena));
+        Assert.AreEqual("collection-" + WildlifeLayer.Ibex, CollectionCatalog.BundleOf(WildlifeLayer.Ibex));
+        Assert.AreEqual("collection-" + WildlifeLayer.Hyena, CollectionCatalog.BundleOf(WildlifeLayer.Hyena));
 
         foreach (var (id, _, done) in asked.ToList()) done(Near(id));
         Assert.AreEqual(WildlifeLayer.IbexCount + WildlifeLayer.HyenaCount, layer.Placed.Count);

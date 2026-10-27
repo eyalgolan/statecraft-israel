@@ -10,6 +10,7 @@ namespace Statecraft.Game.Map.Collection
     /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
     /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
+    [ExecuteAlways]
     public sealed class SpecialBuildingModels : MonoBehaviour
     {
         public const string Name = "SpecialBuildingModels";
@@ -108,6 +109,82 @@ namespace Statecraft.Game.Map.Collection
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         readonly List<Renderer> renderers = new List<Renderer>();
         IReadOnlyList<Want> wants = Array.Empty<Want>();
+
+        CollectionResidency? residency;
+        CollectionResidencyView? residencyView;
+        Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? ownedAcquire;
+        readonly List<UnityEngine.Object> retired = new List<UnityEngine.Object>();
+        internal CollectionResidencyMetrics.Category ResidencySnapshot() => CollectionResidencyMetrics.Row("special",
+            isActiveAndEnabled ? Admitted().Count() : 0, transform.childCount,
+            prefabs.Keys.Concat((isActiveAndEnabled ? Admitted().Select(w => w.Model) : Enumerable.Empty<string>())), residency?.OwnerCount ?? 0, residency?.PendingCount ?? 0,
+            prefabs.Values.Count(p => p != null), GetComponentsInChildren<Renderer>(true).Length, 0, prefabs.Values.Count(p => p == null), prefabs.Keys.Select(k => k + "|Near"));
+
+        internal void ConfigureResidency(CollectionResidencyPolicy policy,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
+        {
+            if (residencyView != null) throw new InvalidOperationException("Residency already configured.");
+            if (asked.Count != 0 && acquire == null) throw new InvalidOperationException("Configure residency before requests; pinned originals remain blockers.");
+            ownedAcquire = acquire; residencyView = new CollectionResidencyView(policy);
+            // Construction configures before first Show; injected acquisition is a test seam.
+            ClearForRetirement();
+        }
+        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer) =>
+            ownedAcquire != null ? ownedAcquire(id, detail, answer) : CollectionStream.Acquire(id, detail, answer);
+        IEnumerable<Want> Admitted()
+        {
+            var keys = residencyView?.Keys;
+            return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
+        }
+        IEnumerable<(string key, Vector3 at, float radius)> Anchors()
+        {
+            if (map == null) yield break;
+            foreach (var w in wants) yield return (w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model));
+        }
+        void RefreshResidency()
+        {
+            if (residencyView == null || !isActiveAndEnabled) return;
+            residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) =>
+                {
+                    prefabs[id] = prefab;
+                    if (prefab == null) { FailedOpen = true; Debug.LogWarning($"BUILDINGS: {id} did not stream; it stays off the map."); }
+                    Rebuild();
+                },
+                (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
+                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
+            residency.Replace(Admitted().Select(w => (w.Model, CollectionDetail.Near)));
+            Rebuild();
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement()
+        {
+            ClearVisuals(); prefabs.Clear(); asked.Clear();
+            closeFor.Clear();
+            var pending = retired.ToArray(); retired.Clear(); return pending;
+        }
+        void ClearVisuals()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
+                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+            }
+            renderers.Clear(); Placed.Clear();
+            if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
+        }
+        bool residencyDirty;
+        void ObserveResidency(Camera camera)
+        {
+            var before = residencyView!.Keys;
+            residencyView.Observe(camera, Anchors(), Time.frameCount);
+            if (!before.SetEquals(residencyView.Keys))
+            { if (Application.isPlaying) residencyDirty = true; else RefreshResidency(); }
+        }
+        void LateUpdate()
+        {
+            if (residencyView != null && residencyView.Prune(Time.frameCount)) residencyDirty = true;
+            if (residencyDirty) { residencyDirty = false; RefreshResidency(); }
+        }
+        void OnDestroy() { residency?.Dispose(); residency = null; }
+
         MapScene? map; DateTime date; bool shown;
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
         public bool FailedOpen { get; private set; }
@@ -122,6 +199,7 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<SpecialBuildingModels>(); layer.map = map;
             }
+            if (layer.residencyView == null) layer.ConfigureResidency(map.Residency.Special, null);
             // GameRoot calls this on every refresh: rebuild only when the game date changes (the dated list and the dated
             // tokens' clearance both follow it).
             if (layer.shown && layer.date == date) return layer;
@@ -133,6 +211,7 @@ namespace Statecraft.Game.Map.Collection
         void Show(IReadOnlyList<Want> wants)
         {
             this.wants = wants;
+            if (residencyView != null) { RefreshResidency(); return; }
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { string model = w.Model; Request(model, CollectionDetail.Near, p => { if (this == null) return; prefabs[model] = p; if (p == null) { FailedOpen = true; Debug.LogWarning($"BUILDINGS: {model} did not stream; it stays off the map."); } Rebuild(); }); }
             Rebuild();
@@ -140,13 +219,9 @@ namespace Statecraft.Game.Map.Collection
 
         void Rebuild()
         {
+            CollectionResidencyMetrics.MarkDirty();
             if (map == null || map.Terrain == null) return;
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-                var old = transform.GetChild(i).gameObject;
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
-            }
-            renderers.Clear(); Placed.Clear();
+            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var taken = new List<(Vector2 centre, float radius)>();
@@ -158,7 +233,7 @@ namespace Statecraft.Game.Map.Collection
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             var holes = new List<(Vector2 centre, float radius)>();
-            foreach (var w in wants)
+            foreach (var w in Admitted())
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
@@ -194,10 +269,15 @@ namespace Statecraft.Game.Map.Collection
         public static bool CloseAt(float distance, bool? was) =>
             was == true ? distance <= Statecraft.Game.Map.Kits.TownModelLayer.CloseExitM : distance <= Statecraft.Game.Map.Kits.TownModelLayer.CloseEnterM;
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
-        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
+        void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Choose;
+            if (residencyView != null) { residencyDirty = false; residencyView.Clear(); residency?.Replace(Array.Empty<(string, CollectionDetail)>()); }
+        }
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            if (residencyView != null) ObserveResidency(cam);
             int id = cam.GetInstanceID(); bool close = CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close; foreach (var r in renderers) if (r != null) r.forceRenderingOff = !close;
         }
