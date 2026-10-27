@@ -45,8 +45,8 @@ The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 20
 ## What it looks like today
 
 <p align="center">
-  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army decision, and End turn moving the date to 15 June, with the turn report" width="820">
-  <br><em>Real gameplay, main at 8dae186, 2026-10-20.</em>
+  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army and Defence of Degania decisions, End turn selecting each unit that needs orders for a Skip (the Golani and Carmeli Brigades, then after a cut the Negev Brigade), and the date moving to 15 June, with the turn report and the First Truce card" width="820">
+  <br><em>Real gameplay, main at 230042c, 2026-10-27. One hard cut leaves out six of the eight units End turn selects.</em>
 </p>
 <p align="center">
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
