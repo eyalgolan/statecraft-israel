@@ -100,7 +100,7 @@ public class Gdd03CombatCatalogueTests
                         : draw <= ends[row][1] ? Gdd03CombatOutcome.BothHold
                         : draw <= ends[row][2] ? Gdd03CombatOutcome.DefenderRetreats : Gdd03CombatOutcome.DefenderLoss;
                     Assert.Equal(outcome, table.Outcome(ratio, draw));
-                    Assert.Single(table.Bands(row).Where(b => draw >= b.First && draw <= b.Last));
+                    Assert.Single(table.Bands(row), b => draw >= b.First && draw <= b.Last);
                 }
             }
             Assert.Equal(1, table.DrawCount);
