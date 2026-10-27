@@ -122,7 +122,7 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    assert len(independent) == 48  # 146 originals + 48 independent grants = 194 total
+    assert len(independent) == 49  # 146 originals + 49 independent grants (with the hex-tile props row) = 195 total
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
