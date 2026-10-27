@@ -44,7 +44,7 @@ public class TopBarTests
     /// flags changed), and 1813x1080 (1865 logical, one row) and 1794x1080 (1855, stacked) hold the new edge.</summary>
     static readonly (int w, int h, bool oneRow)[] Boundary =
         { (1315, 1024, false), (1317, 1024, false), (1389, 1024, false), (1280, 1024, false), (1600, 1200, false), (1024, 768, false),
-          (1360, 1024, false), (1350, 1024, false), (1024, 1024, false), (1813, 1080, false), (1794, 1080, false), (2560, 1080, false), (3840, 1080, true) };
+          (1360, 1024, false), (1350, 1024, false), (1024, 1024, false), (1813, 1080, true), (1794, 1080, false) };
 
     /// <summary>The 16:9 windows, promo 03's frame shape. (21:9 is drawn larger: the panel scales by the plain mean of the two
     /// ratios, so a 2560x1080 window has 926 panel rows; its share is logged, not pinned.) With seven meters (#380; the owner's
@@ -96,10 +96,10 @@ public class TopBarTests
             if (widest)
             {
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", text.Format("hud.delta_people", 12345.0)),
-                                                      ("food", "-12,345"), ("arms", "+1,234"), ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
+                                                      ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
                     root.Q<Label>(name + "-delta").text = delta;
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", text.Format("hud.people", 123456.0)),
-                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("food", "123,456"), ("arms", "12,345"), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
+                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = text.Format("hud.turn", 120);
@@ -123,9 +123,8 @@ public class TopBarTests
                 if (afterRender != null)
                 {
                     Assert.IsNotNull(captionRow, "the real Game.uxml has its Security caption row");
-                    if (!hebrew) Assert.AreEqual(Wrap.NoWrap, beforeDispose.value,
-                        "precondition: explicit column NoWrap is still active immediately before HUD Dispose");
-                    Assert.AreEqual(StyleKeyword.Undefined, beforeDispose.keyword, "the override must actually be owned inline");
+                    if (!hebrew) Assert.AreEqual(Wrap.Wrap, beforeDispose.value,
+                        "precondition: inline wrapping is still active immediately before HUD Dispose");
                     Assert.AreEqual(StyleKeyword.Null, captionRow!.style.flexWrap.keyword,
                         "HUD Dispose clears its inline Security caption-row wrapping");
                 }
@@ -192,11 +191,9 @@ public class TopBarTests
                 Assert.AreEqual(startingBar, bar.worldBound, "removing the inset restores original bar bounds");
             }
             string at = $"{(he ? "he" : "en")} widest={widest} {phase.name}";
-            var securityRow = root.Q(className: "meter-caption-row");
-            TestContext.WriteLine(System.FormattableString.Invariant($"C241 HEADER {at}: root={string.Join(",",inner.GetClasses())} direction={securityRow.resolvedStyle.flexDirection} wrap={securityRow.resolvedStyle.flexWrap} row={securityRow.worldBound} body={securityRow.parent.worldBound}"));
             var labels = root.Q("top-bar").Query<Label>(className: "meter-name").ToList()
                 .Where(l => Shown(l) && !string.IsNullOrEmpty(l.text)).ToList();
-            Assert.AreEqual(10, labels.Count, "nine captions and Security level must be exercised");
+            Assert.AreEqual(8, labels.Count, "seven captions and Security level must be exercised");
             var ink = new List<(Label label, Rect bounds)>();
             foreach (var l in labels)
             {
@@ -234,8 +231,8 @@ public class TopBarTests
         css = (47f, 0f);
         for (int i = 0; i < 40; i++) { EditorApplication.QueuePlayerLoopUpdate(); yield return null; }
         if (!he)
-            Assert.AreEqual(Wrap.NoWrap, root.Q(className: "meter-caption-row").style.flexWrap.value,
-                "precondition: real scheduled inset keeps explicit column NoWrap before Dispose");
+            Assert.AreEqual(Wrap.Wrap, root.Q(className: "meter-caption-row").style.flexWrap.value,
+                "precondition: real scheduled left inset activated inline caption-row wrapping before Dispose");
     }
 
     /// <summary>A label's text fits its box: on one line, or wrapped within its height (InfoPanelLayoutTests).</summary>
@@ -258,9 +255,10 @@ public class TopBarTests
         return true;
     }
 
-    /// <summary>Nine meters use the bounded stacked tier at Full HD, including the raised-font windows.</summary>
+    /// <summary>Promo 03 and T29: the one-row bar is about 6.5% of the frame's height (T54: main's was 8.8%), and the date
+    /// plate hangs below it, as promo 03's "1936 / Turn 1 / January 1936" plate does (about 8.6% of the height).</summary>
     [UnityTest]
-    public IEnumerator NineMetersUseTheStackedBarAtFullHd()
+    public IEnumerator TheOneRowBarIsAboutSixAndAHalfPercentOfTheFrame()
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
@@ -272,9 +270,11 @@ public class TopBarTests
                     var bar = root.Q("top-bar").worldBound;
                     float share = bar.height / frame.height;
                     TestContext.WriteLine($"{at}: bar {bar.height:0} of {frame.height:0} = {share:P1}; plate {root.Q(className: "date-box").worldBound}");
-                    if (!root.Q("root").ClassListContains(HudPresenter.NarrowClass) || root.Q("root").ClassListContains(HudPresenter.TwoRowClass))
-                        problems.Add($"{at}: nine meters need the stacked bar");
-                    if (share > 0.13f) problems.Add($"{at}: the desktop bar uses too much of the frame: {share:P1}");
+                    if (root.Q("root").ClassListContains(HudPresenter.NarrowClass) || root.Q("root").ClassListContains(HudPresenter.TwoRowClass))
+                        problems.Add($"{at}: not the one-row bar");
+                    if (share < 0.060f || share > 0.070f) problems.Add($"{at}: the bar is {share:P1} of the frame (promo 03 and T29: 6.5%)");
+                    var plate = root.Q(className: "date-box").worldBound;
+                    if (!(plate.yMax > bar.yMax + 4f)) problems.Add($"{at}: the date plate {plate} does not hang below the bar {bar}");
                 }, widest: false);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
@@ -505,7 +505,7 @@ public class TopBarTests
                     labels.Add(root.Q<Label>("attention"));   // the captions' query also holds security-level (class meter-name)
                     labels.Add(root.Q<Label>("turn")); labels.Add(root.Q<Label>("date"));   // the plate's date line
                     labels = labels.Distinct().ToList();
-                    if (labels.Count != 13) problems.Add($"{at}: precondition: 13 small labels (nine resource captions, level, Attention and date lines), found {labels.Count}");
+                    if (labels.Count != 11) problems.Add($"{at}: precondition: 11 small labels (Social cohesion's caption with #380), found {labels.Count}");
                     foreach (var l in labels)
                     {
                         if (string.IsNullOrEmpty(l.text) || !(l.worldBound.height > 0)) { problems.Add($"{at}: precondition: {l.name} '{l.text}' shows"); continue; }

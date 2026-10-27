@@ -46,20 +46,6 @@
                         <ui:VisualElement class="meter-row"><ui:Label name="treasury-value" class="meter-value" /><ui:Label name="treasury-delta" class="meter-delta" /></ui:VisualElement>
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="meter-food" class="meter">
-                    <Statecraft.Game.UI.UiIcon glyph="people" class="meter-icon" />
-                    <ui:VisualElement class="meter-body">
-                        <ui:Label text="Food" class="meter-name" />
-                        <ui:VisualElement class="meter-row"><ui:Label name="food-value" class="meter-value" /><ui:Label name="food-delta" class="meter-delta" /></ui:VisualElement>
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement name="meter-arms" class="meter">
-                    <Statecraft.Game.UI.UiIcon glyph="shield" class="meter-icon" />
-                    <ui:VisualElement class="meter-body">
-                        <ui:Label text="Arms" class="meter-name" />
-                        <ui:VisualElement class="meter-row"><ui:Label name="arms-value" class="meter-value" /><ui:Label name="arms-delta" class="meter-delta" /></ui:VisualElement>
-                    </ui:VisualElement>
-                </ui:VisualElement>
                 <ui:VisualElement name="meter-immigration" class="meter">
                     <Statecraft.Game.UI.UiIcon glyph="people" class="meter-icon" />
                     <ui:VisualElement class="meter-body">

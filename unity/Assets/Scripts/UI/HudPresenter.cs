@@ -34,11 +34,7 @@ namespace Statecraft.Game.UI
         /// the value, and the panels below it move down to match (Statecraft.uss .hud-narrow). Above it, the 70 px one-row bar
         /// (promo 03's 6.5%) holds seven values and their changes side by side with the icons.</summary>
         public const float NarrowBelowPx = 1860f;
-        // #731: two more stocks need space. Older loops retain their six-meter tiers.
-        // These nine-meter thresholds require runtime EN/HE visual verification before merge.
-        public const float PoolNarrowBelowPx = 2400f, PoolCompactBelowPx = 2100f,
-            PoolTwoRowBelowPx = 1600f;
-        public const string NarrowClass = "hud-narrow", PoolsClass = "hud-pools";
+        public const string NarrowClass = "hud-narrow";
         /// <summary>The noncompact stacked tier has room for natural-width resource captions (laptop playtest).</summary>
         public const string CaptionLineClass = "top-bar--caption-line";
         /// <summary>Below this width the meters also drop their icons (Statecraft.uss .top-bar--compact): a square window does not
@@ -155,7 +151,6 @@ namespace Statecraft.Game.UI
             endTurn.generateVisualContent += PaintHourglass;
             bar = root.Q<VisualElement>("top-bar");
             hudRoot = root.Q<VisualElement>("root");
-            hudRoot.EnableInClassList(PoolsClass, bridge.Content.IsGdd);
             bar.RegisterCallback<GeometryChangedEvent>(OnBarGeometry);
             meters = root.Q<VisualElement>("meters").Children().ToList();
             nav = root.Q<VisualElement>("nav");
@@ -218,13 +213,8 @@ namespace Statecraft.Game.UI
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
             dateRow?.parent?.UnregisterCallback<GeometryChangedEvent>(OnPlateGeometry);
-            foreach (var m in meters)
-            {
-                m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
-                if (bridge.Content.IsGdd) { m.style.minWidth = StyleKeyword.Null; var body = m.Q(className: "meter-body"); if (body != null) body.style.minWidth = StyleKeyword.Null; }
-            }
+            foreach (var m in meters) m.UnregisterCallback<GeometryChangedEvent>(OnMeterGeometry);
             bar.RemoveFromClassList(RoomyClass);
-            hudRoot.RemoveFromClassList(PoolsClass);
             bar.RemoveFromClassList(CaptionLineClass);
             bar.RemoveFromClassList(CompactClass); hudRoot.RemoveFromClassList(NarrowClass); hudRoot.RemoveFromClassList(TwoRowClass); hudRoot.RemoveFromClassList(ThreeRowClass);
             ScreenNav.DisableCovered(hudRoot);
@@ -253,13 +243,9 @@ namespace Statecraft.Game.UI
             if (meters.Count == 0) return;
             var oneRow = !hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass);
             // Panel coordinates (logical px), so the meters and the screen buttons compare directly.
-            // Legacy keeps its original arithmetic. The nine-meter Hebrew bar must measure from its mirrored end.
-            bool mirrored = bridge.Content.IsGdd && hudRoot.ClassListContains(UiLanguage.HebrewClass);
-            float first = mirrored ? meters[meters.Count - 1].worldBound.xMin : meters[0].worldBound.xMin;
-            float last = mirrored ? meters[0].worldBound.xMax : meters[meters.Count - 1].worldBound.xMax;
-            float limit = mirrored ? nav.worldBound.xMax : nav.worldBound.xMin;
+            float first = meters[0].worldBound.xMin, last = meters[meters.Count - 1].worldBound.xMax, limit = nav.worldBound.xMin;
             if (!oneRow || float.IsNaN(first) || float.IsNaN(limit)) { bar.RemoveFromClassList(RoomyClass); return; }
-            var used = last - first; var spare = mirrored ? first - limit : limit - last;
+            var used = last - first; var spare = limit - last;
             if (bar.ClassListContains(RoomyClass))
             {
                 if (spare < SpareShare * used) bar.RemoveFromClassList(RoomyClass);
@@ -303,8 +289,6 @@ namespace Statecraft.Game.UI
             foreach (var l in smallText)
             {
                 if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
-                // Food/Arms did not exist in the legacy bar. Keep its original hidden-cohesion term (#731).
-                if (!bridge.Content.IsGdd && (said["food"].element.Contains(l) || said["arms"].element.Contains(l))) continue;
                 var current = l.resolvedStyle.fontSize;
                 if (!(current > 0f)) continue;
                 var oneLine = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
@@ -347,9 +331,8 @@ namespace Statecraft.Game.UI
                 l.style.whiteSpace = oneLine ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
                 l.style.maxWidth = oneLine || captionFitWrap ? new StyleLength(StyleKeyword.None) : new StyleLength(StyleKeyword.Null);
             }
-            if (captionRow != null) captionRow.style.flexWrap = bridge.Content.IsGdd
-                ? new StyleEnum<Wrap>(Wrap.NoWrap)
-                : captionFitWrap ? new StyleEnum<Wrap>(Wrap.Wrap) : new StyleEnum<Wrap>(StyleKeyword.Null);
+            if (captionRow != null) captionRow.style.flexWrap = captionFitWrap
+                ? new StyleEnum<Wrap>(Wrap.Wrap) : new StyleEnum<Wrap>(StyleKeyword.Null);
             foreach (var l in plateText)
             {
                 l.style.fontSize = raised ? new StyleLength(smallTextSize) : new StyleLength(StyleKeyword.Null);
@@ -368,41 +351,6 @@ namespace Statecraft.Game.UI
             var box = TurnBoxWidth;
             turnBox.style.width = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
             turnBox.style.minWidth = raised ? new StyleLength(box) : new StyleLength(StyleKeyword.Null);
-        }
-
-        // Wrapped stock meters must fit whole words and actual values, not Yoga's shrinking auto minimum.
-        // This is text geometry only; no resource amount or game rule is introduced here.
-        void SizePoolMeters()
-        {
-            if (!bridge.Content.IsGdd) return;
-            bool wrapped = hudRoot.ClassListContains(ThreeRowClass);
-            foreach (var meter in meters)
-            {
-                var body = meter.Q(className: "meter-body");
-                if (!wrapped)
-                {
-                    meter.style.minWidth = StyleKeyword.Null;
-                    if (body != null) body.style.minWidth = StyleKeyword.Null;
-                    continue;
-                }
-                float needed = 0;
-                foreach (var label in meter.Query<Label>().ToList())
-                {
-                    if (string.IsNullOrEmpty(label.text) || !(label.resolvedStyle.fontSize > 0)) continue;
-                    bool caption = label.ClassListContains("meter-name");
-                    var runs = caption && label.name != "security-level" ? label.text.Split(' ') : new[] { label.text };
-                    foreach (var run in runs)
-                    {
-                        float width = label.MeasureTextSize(run, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x;
-                        if (caption) width *= smallTextSize / label.resolvedStyle.fontSize;
-                        needed = UnityEngine.Mathf.Max(needed, width);
-                    }
-                }
-                float minimum = UnityEngine.Mathf.Ceil(needed / (1f - SpareShare) + 2f);
-                if (body != null && UnityEngine.Mathf.Abs(body.style.minWidth.value.value - minimum) > .5f) body.style.minWidth = minimum;
-                float outer = minimum + 20f + meter.resolvedStyle.borderLeftWidth + meter.resolvedStyle.borderRightWidth; // stylesheet: 10px each side
-                if (UnityEngine.Mathf.Abs(meter.style.minWidth.value.value - outer) > .5f) meter.style.minWidth = outer;
-            }
         }
 
         void PadPlate(VisualElement plate, bool raised)
@@ -503,19 +451,13 @@ namespace Statecraft.Game.UI
             if (!(width > 0)) return;   // NaN before layout: wait for it
             var raised = FloorRaises(width);
             var tierWidth = raised ? width - FloorGrowth() : width;   // the owner's text floor needs room (#624)
-            bar.EnableInClassList(CompactClass, tierWidth < (bridge.Content.IsGdd ? PoolCompactBelowPx : CompactBelowPx));
-            hudRoot.EnableInClassList(NarrowClass, tierWidth < (bridge.Content.IsGdd ? PoolNarrowBelowPx : NarrowBelowPx) || bridge.Content.UsesAttention && raised && smallTextSize > OneRowSmallMaxPx);
-            // Preserve legacy's measured caption fit. GDD uses a font-growth-adjusted tier budget:
-            // reading class-dependent geometry here would alternate between two and three rows.
-            captionFitWrap = !bridge.Content.IsGdd && raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
-            hudRoot.EnableInClassList(TwoRowClass, bridge.Content.IsGdd ? tierWidth < PoolTwoRowBelowPx : width < TwoRowBelowPx || captionFitWrap);
-            // Nine natural-width meters get a full row when their measured caption budget needs it.
-            // The existing height measurement then keeps the bar tight, including on phones.
-            hudRoot.EnableInClassList(ThreeRowClass, bridge.Content.IsGdd ? hudRoot.ClassListContains(TwoRowClass) : width < ThreeRowBelowPx);
-            bar.EnableInClassList(CaptionLineClass, bridge.Content.IsGdd ? !hudRoot.ClassListContains(TwoRowClass)
-                : hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass));
+            bar.EnableInClassList(CompactClass, tierWidth < CompactBelowPx);
+            hudRoot.EnableInClassList(NarrowClass, tierWidth < NarrowBelowPx || bridge.Content.UsesAttention && raised && smallTextSize > OneRowSmallMaxPx);
+            bar.EnableInClassList(CaptionLineClass, hudRoot.ClassListContains(NarrowClass) && !bar.ClassListContains(CompactClass));
+            captionFitWrap = raised && width >= TwoRowBelowPx && bar.ClassListContains(CompactClass) && CaptionsNeedAnotherRow(width);
+            hudRoot.EnableInClassList(TwoRowClass, width < TwoRowBelowPx || captionFitWrap);
+            hudRoot.EnableInClassList(ThreeRowClass, width < ThreeRowBelowPx);
             StyleSmallText(raised);
-            SizePoolMeters();
             PlaceUnderBar();
             ScreenNav.DisableCovered(hudRoot);   // two rows or one: what an open screen covers changes with it (#400)
         }
@@ -559,9 +501,6 @@ namespace Statecraft.Game.UI
             Set("treasury", m.Treasury); Set("immigration", m.Immigration); Set("security", m.Security);
             Set("support", m.Support); Set("standing", m.Standing); Set("fx", m.Fx);
             // Social cohesion: the GDD loop only (#380), as the score; a hidden meter takes no room in the bar.
-            Set("food", m.Food); Set("arms", m.Arms);
-            said["food"].element.style.display = m.ShowsPools ? DisplayStyle.Flex : DisplayStyle.None;
-            said["arms"].element.style.display = m.ShowsPools ? DisplayStyle.Flex : DisplayStyle.None;
             Set("cohesion", m.Cohesion);
             said["cohesion"].element.style.display = m.ShowsCohesion ? DisplayStyle.Flex : DisplayStyle.None;
             root.Q<Button>("end-turn").SetEnabled(bridge.State.GameOver == null);
@@ -571,7 +510,6 @@ namespace Statecraft.Game.UI
             var cabinet = root.Q<Button>("nav-cabinet"); bool vacant = bridge.Vacancies.Count > 0;
             cabinet.EnableInClassList(ActionClass, vacant);
             cabinet.tooltip = vacant ? text["hud.nav.cabinet_vacant"] : cabinet.text;
-            SizePoolMeters();
             meterTip?.Refresh();   // an open tip follows the new words
         }
     }

@@ -38,7 +38,7 @@ public class C241ReviewTests
     // S2: mutate only the PRE-turn fixture, never manufacture a delta after the sim has run.
     [TestCase(false, false)] [TestCase(true, false)]
     [TestCase(false, true)] [TestCase(true, true)]
-    public void RealFoodChangeExplainsTheActualStockInTipAndReport(bool he, bool crisis)
+    public void RealFoodChangeExplainsTheActualStockInReportAndWhy(bool he, bool crisis)
     {
         var b = Bridge(he); var t = Text(he);
         if (crisis) { b.State.ActiveSituations.Add(EconomySystem.FxCrisis); b.State.FxReserves = -100; }
@@ -57,18 +57,11 @@ public class C241ReviewTests
             .Select(w => CauseText.Line(w, b.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t)).ToArray();
         if (crisis) { Assert.IsNotEmpty(expected); StringAssert.Contains("No Food imported", b.Session.Last.Why.Single(w => w.Target == Pools.FoodTarget && w.Message.Contains("No Food imported")).Message); }
         else Assert.IsEmpty(expected, "do not invent causes for normal automatic imports");
-        var model = HudModel.From(b, t);
-        Assert.AreEqual(t.Format("hud.stock", b.State.Food), model.For("food").Value);
-        Assert.AreEqual(t.Format("hud.delta_stock", delta), model.For("food").Delta);
-        var meter = ui.Q<VisualElement>("meter-food");
-        using var tip = new MeterTip(ui.Root, b, t, new[] { meter });
-        var lines = tip.Lines(meter);
-        CollectionAssert.AreEqual(expected, lines.causes);
-        StringAssert.Contains(t.Format("hud.stock", b.State.Food), lines.words);
-        StringAssert.Contains(t.Format("hud.stock", Math.Abs(delta)), lines.words);
+        using var why = new WhyPresenter(ui.Root, b, t);
+        StringAssert.Contains(t.Format("hud.stock", b.State.Food), ui.Q<Label>("why-stock-food").text);
         var row = TurnReportPresenter.Lines(b, t).Single(x => x.Meter == "food");
         CollectionAssert.AreEqual(expected, row.Causes);
-        Assert.AreEqual(t.Format("report.line", t["hud.caption.food"], t.Format("hud.delta_stock", delta)), row.Heading);
+        Assert.AreEqual(t.Format("report.stock_change", t["hud.caption.food"], t.Format("hud.stock", b.State.Food), t.Format("hud.delta_stock", delta)), row.Heading);
         Assert.AreEqual(row.Heading, ui.Q<Label>("turn-report-heading-food").text);
         CollectionAssert.AreEqual(expected, ui.Q<VisualElement>("turn-report-food").Query<Label>(className: "turn-report-cause").ToList().Select(x => x.text));
     }
@@ -103,7 +96,7 @@ public class C241ReviewTests
     }
 
     // S1: original arithmetic, including hidden cohesion, copied from the task's fresh main FloorGrowth.
-    // Only Food/Arms are excluded: they did not exist in that baseline. No general hidden-caption filter is allowed.
+    // No general hidden-caption filter is allowed.
     [UnityTest]
     public IEnumerator LegacyRaisedFontKeepsTheOriginalGrowthAndTierBoundaries()
     {
@@ -127,7 +120,7 @@ public class C241ReviewTests
             Assert.Greater(cohesion.resolvedStyle.fontSize,0,"exercise original hidden-cohesion measurement");
             foreach (var l in captions)
             {
-                if (l.name == "attention" || string.IsNullOrEmpty(l.text) || root.Q("meter-food")?.Contains(l)==true || root.Q("meter-arms")?.Contains(l)==true) continue;
+                if (l.name == "attention" || string.IsNullOrEmpty(l.text)) continue;
                 var current = l.resolvedStyle.fontSize; if (!(current>0)) continue;
                 var oneLine = l.MeasureTextSize(l.text,0,VisualElement.MeasureMode.Undefined,0,VisualElement.MeasureMode.Undefined).x;
                 expected += oneLine * small/current - Mathf.Min(oneLine*15f/current,120f);

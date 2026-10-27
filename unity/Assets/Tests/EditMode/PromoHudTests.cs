@@ -166,13 +166,13 @@ public class PromoHudTests
         // moved, each to the tier the seven meters' measured widths need (HudPresenter's notes): 1280x720 and 1366x768 (the
         // floor raises their captions to 18 and 17 px), 1920x1200 and 1440x900 (16:10) take the stacked bar with its icons;
         // 1280x1024 (5:4) drops them; 1024x1024 (square) takes two rows. Every fit assert below is unchanged.
-        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, false, true, false, false), (1280, 720, false, true, false, false),
-                                                              (1366, 768, false, true, false, false), (1760, 1000, false, true, false, false),
-                                                              (2560, 1080, true, true, false, false),
-                                                              (1920, 1200, false, true, false, false), (1440, 900, false, true, false, false),
-                                                              (1024, 768, false, true, true, true), (1280, 1024, false, true, true, true),
-                                                              (1024, 1024, false, true, true, true), (960, 1080, false, true, true, true),
-                                                              (800, 1000, false, true, true, true), (390, 844, false, true, true, true) })
+        foreach (var (w, h, icons, narrow, twoRow, threeRow) in new[] { (1920, 1080, true, false, false, false), (1280, 720, true, true, false, false),
+                                                              (1366, 768, true, true, false, false), (1760, 1000, true, false, false, false),
+                                                              (2560, 1080, true, false, false, false),
+                                                              (1920, 1200, true, true, false, false), (1440, 900, true, true, false, false),
+                                                              (1024, 768, false, true, false, false), (1280, 1024, false, true, false, false),
+                                                              (1024, 1024, false, true, true, false), (960, 1080, false, true, true, false),
+                                                              (800, 1000, false, true, true, false), (390, 844, false, true, true, true) })
         {
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -194,9 +194,9 @@ public class PromoHudTests
                 hud = new HudPresenter(root, bridge, Text);
                 bridge.EndTurn();                                       // real changes on every meter that moved
                 for (int i = 0; i < 6; i++) yield return null;
-                if (w == 390)
+                if (threeRow)
                 {
-                    // #731: a phone's nine meters still take two lines with the turn-1 values
+                    // #380 (a consequence of the owner's "tighten + re-tier", 16 October 2026): a phone's seven meters take two lines with the turn-1 values
                     // too, so the bar's second meter line is never an empty band. A line's meters share their centre (.meters
                     // align-items: center); their tops differ with their captions' lines.
                     // (Within a line the centres can differ by a pixel: review of #831, so lines are 3 px apart or more.)
@@ -205,26 +205,26 @@ public class PromoHudTests
                     var lines = 1 + centres.Zip(centres.Skip(1), (a, b) => b - a).Count(d => d > 3f);
                     Assert.AreEqual(2, lines, $"{w}x{h}: the meters' lines with the turn-1 values");
                 }
-                if ((w, h) == (2560, 1080))
+                if ((w, h) == (1920, 1080) || (w, h) == (2560, 1080))
                 {
-                    // #731: nine meters at 21:9 retain the stacked tier and readable base typography.
+                    // Review P1: with typical (turn-1) values at 16:9, and at 21:9 (#398), the bar has room for the promo's sizes.
                     var at = $"{w}x{h}";
-                    Assert.IsFalse(root.Q("top-bar").ClassListContains(HudPresenter.RoomyClass), at + ": nine meters use the stacked base-size tier");
+                    Assert.IsTrue(root.Q("top-bar").ClassListContains(HudPresenter.RoomyClass), at + ": roomy with typical values");
                     foreach (var icon in root.Q("meters").Query<UiIcon>().ToList())
-                        Assert.GreaterOrEqual(icon.worldBound.width, 24f, $"{at}: the {icon.Glyph} icon keeps its base target");
+                        Assert.GreaterOrEqual(icon.worldBound.width, 36f, $"{at}: the {icon.Glyph} icon is promo-sized");
                     foreach (var v in root.Q("meters").Query<Label>(className: "meter-value").ToList())
-                        Assert.GreaterOrEqual(v.resolvedStyle.fontSize, 22f, $"{at}: '{v.text}' keeps its base type size");
-                    // The noncompact stacked bar still keeps each caption on one line.
+                        Assert.GreaterOrEqual(v.resolvedStyle.fontSize, 24f, $"{at}: '{v.text}' is promo-sized");
+                    // Integration bug B8: on the roomy bar every caption keeps one line, as in the promo.
                     foreach (var c in root.Q("meters").Query<Label>(className: "meter-name").ToList().Where(c => c.name != "security-level"))
                         Assert.Less(c.worldBound.height, c.resolvedStyle.fontSize * 2f, $"{at}: '{c.text}' wraps");
                 }
                 // The widest realistic changes, formatted as HudModel formats them, and the widest date line.
                 foreach (var (name, delta) in new[] { ("treasury", PlayerText.MoneyChange(C, "treasury", -12.4)), ("immigration", Text.Format("hud.delta_people", 12345.0)),
-                                                      ("food", "-12,345"), ("arms", "+1,234"), ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
+                                                      ("security", "-10%"), ("support", "-10%"), ("cohesion", "-10%"), ("standing", "+10%"), ("fx", PlayerText.MoneyChange(C, "fx_reserves", 12.5)) })
                     root.Q<Label>(name + "-delta").text = delta;
                 // ... and the widest late-game values (review N7).
                 foreach (var (name, value) in new[] { ("treasury", PlayerText.Money(C, "treasury", -123.4)), ("immigration", Text.Format("hud.people", 123456.0)),
-                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("food", "123,456"), ("arms", "12,345"), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
+                                                      ("fx", PlayerText.Money(C, "fx_reserves", 123.4)), ("security", "100%"), ("support", "100%"), ("cohesion", "100%"), ("standing", "100%") })
                     root.Q<Label>(name + "-value").text = value;
                 root.Q<Label>("security-level").text = Text.Format("hud.level", 5);
                 root.Q<Label>("turn").text = Text.Format("hud.turn", 120);
@@ -232,7 +232,6 @@ public class PromoHudTests
                 for (int i = 0; i < 6; i++) yield return null;          // the roomy bar steps back down if it must
                 var bar = root.Q("top-bar"); var barRect = bar.worldBound;
                 var where = $"{w}x{h} (bar {barRect.width:0} px)";
-                TestContext.WriteLine(System.FormattableString.Invariant($"C241 TIERS {w}x{h}: compact={bar.ClassListContains(HudPresenter.CompactClass)} narrow={root.Q("root").ClassListContains(HudPresenter.NarrowClass)} two={root.Q("root").ClassListContains(HudPresenter.TwoRowClass)} three={root.Q("root").ClassListContains(HudPresenter.ThreeRowClass)}"));
                 Assert.AreEqual(!icons, bar.ClassListContains(HudPresenter.CompactClass), where + ": compact (no icons)");
                 Assert.AreEqual(narrow, root.Q("root").ClassListContains(HudPresenter.NarrowClass), where + ": narrow");
                 Assert.AreEqual(twoRow, root.Q("root").ClassListContains(HudPresenter.TwoRowClass), where + ": two rows");
@@ -271,9 +270,9 @@ public class PromoHudTests
                 var used = meters[meters.Count - 1].worldBound.xMax - meters[0].worldBound.xMin;
                 var limit = twoRow ? barRect.xMax - 14f : root.Q("nav").worldBound.xMin;
                 Assert.GreaterOrEqual(limit - meters[meters.Count - 1].worldBound.xMax, 0.05f * used, $"{where}: the meters use {used:0} of {limit - meters[0].worldBound.xMin:0} px");
-                // On a phone the nine meters wrap at measured natural widths; each label also keeps
-                // the existing 5% spare inside its meter (review of #831).
-                if (w == 390)
+                // On a phone the meters wrap into quarters (#380), so the rule above holds by construction there: each meter's
+                // labels keep 5% of its own quarter free instead (review of #831).
+                if (threeRow)
                     foreach (var m in meters.Where(m => m.resolvedStyle.display != DisplayStyle.None))
                         foreach (var l in m.Query<Label>().ToList().Where(l => !string.IsNullOrEmpty(l.text)))
                         {

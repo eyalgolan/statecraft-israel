@@ -1090,16 +1090,3 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he #arms-count { flex-direction: row-reverse; }
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
-/* Nine-meter geometry is scoped to the GDD bar; legacy keeps the inherited stylesheet. */
-.hud-pools .meter { flex-shrink: 0; }
-.lang-he.hud-pools .meter-caption-row { flex-direction: row-reverse; }
-.hud-pools.hud-narrow .meter-caption-row { flex-direction: column; align-items: flex-start; flex-shrink: 0; }
-.lang-he.hud-pools.hud-narrow .meter-caption-row { align-items: flex-end; }
-.hud-pools.hud-narrow .meter-caption-row > Label { flex-shrink: 0; }
-.hud-pools.hud-narrow #security-level { margin-left: 0; margin-right: 0; }
-/* Natural widths keep two phone meter lines; minimums are measured from words and values, with the existing 5% spare. */
-.hud-pools.hud-three-row .meters { padding-right: 5%; }
-.lang-he.hud-pools.hud-three-row .meters { padding-right: 0; padding-left: 5%; }
-.hud-pools.hud-three-row .meter { flex-basis: auto; flex-grow: 0; min-width: 0; padding-left: 10px; padding-right: 10px; }
-.hud-pools.hud-three-row .meter-body { flex-shrink: 0; }
-.hud-pools.hud-narrow .meter-caption-row > .meter-name { white-space: nowrap; }

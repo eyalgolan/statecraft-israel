@@ -891,3 +891,7 @@ arms.attention: "Attention cost: {0:0.0} · Left: {1:0.0}"
 arms.queued: "Arms ordered: {0:N0}, at End turn"
 arms.minimum: "Buy at least 1 Arms. Enter a larger amount."
 arms.no_attention: "Not enough Attention for this purchase. Withdraw another order or wait until next turn."
+
+# #731 stock summaries in the report and Why.
+report.stock_line: "{0}: {1}"
+report.stock_change: "{0}: {1} ({2})"

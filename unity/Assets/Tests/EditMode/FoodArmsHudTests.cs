@@ -35,22 +35,122 @@ public class FoodArmsHudTests
         return b;
     }
 
+    // C334 red-first specifications. Run these on BASE before applying production hunks.
+    [TestCase(false)] [TestCase(true)]
+    public void OwnerRulingKeepsTheMainBarMeterSet(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var hud = new HudPresenter(ui.Root, b, t);
+        CollectionAssert.AreEqual(new[] { "treasury", "immigration", "security", "support", "cohesion", "standing", "fx" }, HudModel.MeterIds);
+        Assert.IsNull(ui.Root.Q("meter-food"));
+        Assert.IsNull(ui.Root.Q("meter-arms"));
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void ArmsStockLivesInDefenceWithoutABarDuplicate(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var defence = new DefencePresenter(ui.Root, b, t);
+        var stock = ui.Q<Label>("arms-stock");
+        Assert.IsTrue(ui.Q<VisualElement>("defence-arms").Contains(stock));
+        Assert.AreEqual(t.Format("arms.stock", b.State.Arms), stock.text);
+        ui.Q<IntegerField>("arms-count").value = 3;
+        ui.Press("buy-arms");
+        Assert.AreEqual(t.Format("arms.stock", b.State.Arms), stock.text, "queueing does not spend or deliver stock");
+        b.EndTurn();
+        Assert.AreEqual(t.Format("arms.stock", b.State.Arms), stock.text, "Defence refreshes after the sim delivers");
+        Assert.IsNull(ui.Root.Q("meter-arms"), "the owner moved this stock off the bar");
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    [SetCulture("he-IL")]
+    public void ReportIncludesBothCurrentStocksEvenWhenArmsDidNotChange(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var report = new TurnReportPresenter(ui.Root, b, t, nav);
+        b.EndTurn();
+        Assert.AreEqual(b.Session.Previous!.Arms, b.State.Arms, "no purchase in this fixture");
+        foreach (var id in new[] { "food", "arms" })
+        {
+            var row = TurnReportPresenter.Lines(b, t).Single(x => x.Meter == id);
+            var now = id == "food" ? b.State.Food : b.State.Arms;
+            var before = id == "food" ? b.Session.Previous!.Food : b.Session.Previous!.Arms;
+            AssertStockDirection(he, t, now, (long)now - before, row.Heading);
+            Assert.AreEqual(row.Heading, ui.Q<Label>("turn-report-heading-" + id).text);
+        }
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    [SetCulture("he-IL")]
+    public void WhyIncludesBothStocksAndKeepsEveryExistingCause(bool he)
+    {
+        var b = Bridge(false, he); var t = Text(he);
+        using var ui = new UiTestKit();
+        using var why = new WhyPresenter(ui.Root, b, t);
+        Assert.IsNotNull(ui.Root.Q<Label>("why-stock-food"));
+        Assert.IsNotNull(ui.Root.Q<Label>("why-stock-arms"));
+        b.Queue(new BuyArms(3)); b.EndTurn();
+        foreach (var id in new[] { "food", "arms" })
+        {
+            var now = id == "food" ? b.State.Food : b.State.Arms;
+            var before = id == "food" ? b.Session.Previous!.Food : b.Session.Previous!.Arms;
+            AssertStockDirection(he, t, now, (long)now - before, ui.Q<Label>("why-stock-" + id).text);
+        }
+        var actual = ui.Q<ScrollView>("why-rows").Query<Label>(className: "why-line").ToList().Select(l => l.text).ToArray();
+        var expected = WhyPresenter.Order.SelectMany(sys => b.Session.Last!.Why.Where(w => w.System == sys))
+            .Select(w => CauseText.Line(w, b.Content, Array.Empty<Statecraft.Game.Map.Units.UnitEntry>(), t)).ToArray();
+        CollectionAssert.AreEqual(expected, actual);
+    }
+
+    // C334B S1: literal expected output, independent of the translated summary patterns.
+    [TestCase(false, 0, "")] [TestCase(true, 0, "")]
+    [TestCase(false, -12, "-12")] [TestCase(true, -12, "-12")]
+    [TestCase(false, 12, "+12")] [TestCase(true, 12, "+12")]
+    [SetCulture("he-IL")]
+    public void StockSummaryPatternsProtectHebrewNumbersAndLeaveEnglishUnchanged(bool he, int delta, string signed)
+    {
+        var t = Text(he);
+        foreach (var id in new[] { "food", "arms" })
+        {
+            var caption = t["hud.caption." + id];
+            var count = t.Format("hud.stock", 1200);
+            var actual = delta == 0
+                ? t.Format("report.stock_line", caption, count)
+                : t.Format("report.stock_change", caption, count, t.Format("hud.delta_stock", delta));
+            var expected = he ? caption + " במלאי: \u200e1,200\u200e" : caption + ": 1,200";
+            if (delta != 0) expected += he ? " (שינוי של \u200e" + signed + "\u200e)" : " (" + signed + ")";
+            Assert.AreEqual(expected, actual, id);
+        }
+    }
+
+    static void AssertStockDirection(bool he, UiText t, int now, long delta, string heading)
+    {
+        var count = t.Format("hud.stock", now);
+        StringAssert.Contains(he ? "\u200e" + count + "\u200e" : count, heading);
+        if (delta != 0)
+        {
+            var signed = t.Format("hud.delta_stock", delta);
+            StringAssert.Contains(he ? "\u200e" + signed + "\u200e" : signed, heading);
+        }
+        if (!he) StringAssert.DoesNotContain("\u200e", heading);
+    }
+
     [TestCase(false, false)] [TestCase(false, true)]
     [TestCase(true, false)] [TestCase(true, true)]
-    public void StocksChangeOnlyAtEndTurnAndTheHudUsesSimCauses(bool modern, bool he)
+    public void StocksChangeOnlyAtEndTurnAndTheReportUsesSimCauses(bool modern, bool he)
     {
         var b = Bridge(modern, he); var t = Text(he);
         var start = b.State.Arms;
         using var ui = new UiTestKit();
         using var hud = new HudPresenter(ui.Root, b, t);
         using var defence = new DefencePresenter(ui.Root, b, t);
-        var opening = HudModel.From(b, t);
-        Assert.IsTrue(opening.ShowsPools);
-        Assert.AreEqual(t.Format("hud.stock", b.State.Food), opening.Food.Value);
-        Assert.AreEqual(t.Format("hud.stock", start), opening.Arms.Value);
-        Assert.IsEmpty(opening.Arms.Delta);
-        Assert.AreEqual(t["hud.caption.food"], ui.Q<VisualElement>("meter-food").Q<Label>(className: "meter-name").text);
-        Assert.AreEqual(t["hud.caption.arms"], ui.Q<VisualElement>("meter-arms").Q<Label>(className: "meter-name").text);
+        Assert.IsNull(ui.Root.Q("meter-food"));
+        Assert.IsNull(ui.Root.Q("meter-arms"));
+        Assert.AreEqual(t.Format("arms.stock", start), ui.Q<Label>("arms-stock").text);
         ui.Q<IntegerField>("arms-count").value = 3;
         Assert.AreEqual(t.Format("arms.money", PlayerText.Money(b.Content, "treasury", 3 * b.Content.RulesAt(b.State.Date).Mvp!.ArmsPrice!.Value)),
             ui.Q<Label>("arms-money").text);
@@ -61,14 +161,14 @@ public class FoodArmsHudTests
         b.EndTurn();
         Assert.IsEmpty(b.Queued);
         Assert.AreEqual(start + 3, b.State.Arms);
-        Assert.AreEqual(t.Format("hud.delta_stock", 3), HudModel.From(b, t).Arms.Delta);
+        Assert.AreEqual(t.Format("arms.stock", start + 3), ui.Q<Label>("arms-stock").text);
         Assert.IsEmpty(ui.Q<Label>("arms-queued").text);
         var expected = b.Session.Last!.Why.Where(w => w.Target == Pools.ArmsTarget && w.Delta != 0)
             .OrderByDescending(w => Math.Abs(w.Delta)).Take(HudModel.MaxCauses).Select(w => w.Message).ToArray();
-        CollectionAssert.AreEqual(expected, HudModel.Causes(b.Session.Last, "arms", w => w.Message));
+        CollectionAssert.AreEqual(expected, TurnReportPresenter.StockCauses(b.Session.Last, "arms", w => w.Message));
         Assert.IsNotEmpty(expected);
         Assert.IsTrue(TurnReportPresenter.Lines(b, t).Any(x => x.Meter == "arms"));
-        StringAssert.Contains(t.Format("hud.stock", start + 3), ui.Q<VisualElement>("meter-arms").tooltip);
+        StringAssert.Contains(t.Format("hud.stock", start + 3), TurnReportPresenter.Lines(b, t).Single(x => x.Meter == "arms").Heading);
     }
 
     [TestCase(false, false)] [TestCase(false, true)]
@@ -130,8 +230,8 @@ public class FoodArmsHudTests
             new Cause("economy", "food", 1, "food smaller"),
             new Cause("events", "arms", 3, "arms"),
         }, Array.Empty<Rejection>());
-        CollectionAssert.AreEqual(new[] { "Food first", "Food tied" }, HudModel.Causes(turn, "food", w => w.Message));
-        CollectionAssert.AreEqual(new[] { "Arms" }, HudModel.Causes(turn, "arms", w => w.Message));
+        CollectionAssert.AreEqual(new[] { "Food first", "Food tied" }, TurnReportPresenter.StockCauses(turn, "food", w => w.Message));
+        CollectionAssert.AreEqual(new[] { "Arms" }, TurnReportPresenter.StockCauses(turn, "arms", w => w.Message));
     }
 
     [Test]
@@ -142,9 +242,10 @@ public class FoodArmsHudTests
         using var ui = new UiTestKit();
         using var hud = new HudPresenter(ui.Root, b, t);
         using var defence = new DefencePresenter(ui.Root, b, t);
-        Assert.IsFalse(HudModel.From(b, t).ShowsPools);
-        foreach (var name in new[] { "meter-food", "meter-arms", "defence-arms" })
-            Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>(name).style.display.value);
+        Assert.IsNull(ui.Root.Q("meter-food"));
+        Assert.IsNull(ui.Root.Q("meter-arms"));
+        Assert.IsEmpty(TurnReportPresenter.StockLines(b, t));
+        Assert.AreEqual(DisplayStyle.None, ui.Q<VisualElement>("defence-arms").style.display.value);
     }
 
     [TestCase(false)] [TestCase(true)]
@@ -165,7 +266,7 @@ public class FoodArmsHudTests
 
     // Real panels at desktop, laptop and phone sizes; EN and mirrored HE. No screenshot is claimed by this test draft.
     [UnityTest]
-    public IEnumerator ResourceMetersFitInEnglishAndHebrew()
+    public IEnumerator RestoredBarFitsInEnglishAndHebrew()
     {
         foreach (var he in new[] { false, true })
         foreach (var size in new[] { new Vector2Int(1920, 1080), new Vector2Int(1280, 720), new Vector2Int(375, 667) })
@@ -190,19 +291,8 @@ public class FoodArmsHudTests
                 hud = new HudPresenter(root, b, t);
                 for (int i = 0; i < 20; i++) yield return null;
                 var bar = root.Q("top-bar").worldBound;
-                foreach (var id in new[] { "food", "arms" })
-                {
-                    var meter = root.Q("meter-" + id); var value = root.Q<Label>(id + "-value");
-                    Assert.Greater(value.worldBound.width, 0);
-                    Assert.GreaterOrEqual(meter.worldBound.xMin, bar.xMin - 1);
-                    Assert.LessOrEqual(meter.worldBound.xMax, bar.xMax + 1);
-                    Assert.GreaterOrEqual(meter.worldBound.yMin, bar.yMin - 1);
-                    Assert.LessOrEqual(meter.worldBound.yMax, bar.yMax + 1);
-                    var caption = meter.Q<Label>(className: "meter-name");
-                    Assert.GreaterOrEqual(caption.resolvedStyle.fontSize * root.panel.scaledPixelsPerPoint, HudPresenter.TextFloorPx - .1f);
-                    Assert.LessOrEqual(value.MeasureTextSize(value.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x,
-                        value.worldBound.width + 1, id + " stock must not clip");
-                }
+                Assert.IsNull(root.Q("meter-food"));
+                Assert.IsNull(root.Q("meter-arms"));
                 var visible = root.Q("meters").Children().Where(x => x.resolvedStyle.display != DisplayStyle.None).ToList();
                 for (int i = 0; i < visible.Count; i++)
                 for (int j = i + 1; j < visible.Count; j++)

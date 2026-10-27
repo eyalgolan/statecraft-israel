@@ -483,6 +483,13 @@ public class PromoScreensTests
                 texts["arms-count"] = "1";
                 texts["arms-money"] = Text.Format("arms.money", PlayerText.Money(C, "treasury", C.RulesAt(s.Date).Mvp!.ArmsPrice!.Value));
                 texts["arms-attention"] = C.UsesAttention ? Text.Format("arms.attention", bridge.Price(one)!.Value, bridge.AttentionLeft!.Value) : "";
+                // C292 N1: require the named figures, even if a missing/blank control would evade the digit inventory.
+                Assert.AreEqual(texts["arms-stock"], ui.Q<Label>("arms-stock").text);
+                Assert.AreEqual(texts["arms-money"], ui.Q<Label>("arms-money").text);
+                Assert.AreEqual(1, ui.Q<IntegerField>("arms-count").value);
+                Assert.AreEqual(texts["arms-attention"], ui.Q<Label>("arms-attention").text);
+                Assert.AreEqual(C.UsesAttention ? DisplayStyle.Flex : DisplayStyle.None,
+                    ui.Q<Label>("arms-attention").style.display.value);
             }
             bars["mob-bar"] = (float)callUp; bars["defence-budget-bar"] = (float)s.Budget[DefencePresenter.BudgetLine];
             foreach (var name in new[] { "screen-cabinet", "screen-defence" })
