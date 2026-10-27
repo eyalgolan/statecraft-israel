@@ -412,6 +412,16 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   passage cites *Davar* of 23 February 1951, not opened here. **Our reading:** there was no single
   restoration event to date. The year stays a [GAP] in the sense that no source read gives one.
 
+- (third pass, 27 Oct) Moledet destroyed by an explosion in 1939, not in the passages read before. JTA daily
+  bulletin of 27 June 1939 (page image, http://pdfs.jta.org/1939/1939-06-27_171.pdf, printed p. 3,
+  opened 2026-10-27), item "Colony Wrecked by Explosion", dateline "JERUSALEM, June 26. (JTA)": "The
+  Jewish settlement of Moledet in the vicinity of Beisan, established two years ago, was completely
+  destroyed today by an accidental explosion of a cooking stove. The wooden huts and stockade were
+  destroyed quickly and portions of the fields were damaged. The settlers were given temporary
+  shelter at the Ain Charod and Geva colonies." [V, agent read 2026-10-27; a person's check pending] Event date: 26 June 1939, from the dateline.
+  The item does not say the place was rebuilt or when. This does not fill the restoration-year [GAP]
+  above, which stays open.
+
 ### Bet Zeid (CBS 353)
 - CBS **1943**; Gvati: no row. The 1945 Haifa table names "Giv‘ot Zeid (previously part of Esh Sheikh
   Bureik)".
@@ -444,6 +454,15 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   north-south, 1,399 m east-west, at 93.7 km per degree of longitude at 32.7 N). The he.wiki `בית
   זייד` coordinate, 32.702397, 35.131597, is 198 m from CBS's point (122 m and 156 m). [S, Wikipedia]
   Not a map reading; Survey of Palestine sheets and GovMap were not opened.
+
+- (third pass, 27 Oct) Killing of Alexander Zeid, the date. JTA daily bulletin of 12 July 1938 (page
+  image, http://pdfs.jta.org/1938/1938-07-12_085.pdf, PDF pp. 1-2, opened 2026-10-27), last two sentences of the next-to-last paragraph of the lead item, whose
+  dateline reads "JERUSALEM, July 11. (JTA)": "During the night, Arabs killed from ambush Alexander
+  Zeid, 52, one of the oldest Jewish watchmen in Palestine. Zeid, who was slain while on duty between
+  Sheikh Abrek and the newly established settlement of Kvutzath Alonim, had been a watchman since
+  1904." [V, agent read 2026-10-27; a person's check pending] The dateline is 11 July 1938 and "during the night" is not resolved to a day in the
+  item; it fits he.wiki's 11 July above and does not contradict it. The item does not name Giv'ot
+  Zeid, so the naming year and the coordinate [GAP] for Giv'ot Zeid above are unchanged.
 
 ### Alonim (CBS 285)
 - CBS **1938**; Gvati `20.6.38`. [V] The 1945 Haifa table names "Tiv'on (Alonim)".
@@ -504,6 +523,27 @@ column of Gvati's dates does not say what event a date records (see above).
   population Jews 380, land Jews 3,114, public 70, total 3,184. **Our reading, not shown:** the 1931
   unit may be Geva. No source read says Geva was called HaGiv'a, and the he.wiki `גבע` article
   does not. [GAP]
+
+- (third pass, 27 Oct) Geva, year of founding. JTA daily bulletin of 12 September 1941 (page image,
+  http://pdfs.jta.org/1941/1941-09-12_229.pdf, printed p. 3 (PDF p. 4), opened 2026-10-27), last sentence of the item "Twentieth Anniversary of En Harod Colony Celebrated in Palestine" (not a Geva item), dateline "JERUSALEM,
+  Sept. 11. (JTA)": "\"Beth Etkin,\" in honor of Ahron Etkin, will be opened at Kvuzath Geva on
+  December 7th, when the colony will celebrate its twentieth anniversary." [V, agent read 2026-10-27; a person's check pending] **Computed here:** twenty years before
+  7 December 1941 is December 1921, which agrees with CBS 1921 and he.wiki "1921" above; the item
+  gives no founding day. This is a contemporary anniversary notice, not a founding record, and the row
+  stays without a Gvati day. In the same JTA search (queries `Ginegar` and `Geva`, `after=1930-01-01T00:00:00&before=1950-12-31T23:59:59` on the same endpoint as below, re-run 2026-10-27: `Ginegar` 48 results, 3 with the word in the returned record; `Geva` 187 results over 2 pages, 9 with the word in the returned record) the
+  Keren Hayesod subsidy item of 26 Nov 1931 (bulletin date) lists Geva among settlements that no
+  longer needed subsidies, so, **our reading:** Geva stood in 1931 (archive page text read; the bulletin PDF and its dateline were not opened). Afula and Bet Zeid
+  are not touched by these items.
+- (third pass, 27 Oct) Searched again and not found, JTA archive search through
+  `https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=<date>&before=<date>&per_page=100`,
+  run 2026-10-27, each result's text then searched for the word: `Hamadia`, 1938-07-01 to
+  1948-05-15, 53 results, none with Hamadia, Hamidia, Chamadia or Hamadiya in its text; `Hamidia`,
+  same range, 17 results, none; `Chamadia`, same range, 0 results; `Hamadiya`, 1938-01-01 to
+  1944-12-31, 1 result, none; `Hermonim`, 1942-01-01 to 1945-12-31, 47 results, none with Hermonim
+  in its text; `Zeid`, 1938-07-01 to 1948-05-15, 48 results, the 12 July 1938 item above is the only
+  one with Zeid. The abandonment of the first Hamadya, the Hermonim group and Giv'ot Zeid therefore
+  stay [GAP]. The Hebrew name of "El Ro-i" and the question whether the 1931 unit "Giv'a, Hag" is
+  Geva were not settled by any source read on 27 Oct. [GAP]
 
 ### Census of Palestine 1931, rows read for this note (24 Oct)
 Each row is the unit as printed (names are the census's spellings), the printed page, the persons
@@ -650,6 +690,12 @@ is proposed about how it appears in the game. [checked 2026-10-23: no CBS row ma
   and Gvati's sentence.
 - [GAP] **Gvati rows**: Afula, Geva and Bet Zeid have none (searched again 2026-10-24, see "Geva and
   Afula, no Gvati row"), so their year rests on CBS with Wikipedia beside it.
+- (third pass, 27 Oct) Of the [GAP] rows above, none is closed. Narrowed with a JTA bulletin read as a
+  page image: Geva's 1921 (twentieth anniversary on 7 Dec 1941, bulletin of 12 Sept 1941), the
+  26 June 1939 destruction of Moledet (new fact), and the dateline of Alexander Zeid's killing
+  (11 July 1938). The JTA searches for Hamadya, Hermonim and Giv'ot Zeid found nothing and are
+  recorded under "Geva and Afula, no Gvati row". Israeli archives and *Davar* stay out of reach
+  from this box (403).
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources, as the
   six rows in part 2 show.
