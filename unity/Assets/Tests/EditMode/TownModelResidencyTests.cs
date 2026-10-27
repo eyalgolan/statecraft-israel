@@ -284,6 +284,23 @@ public class TownModelResidencyTests
     }
 
     [Test]
+    public void ProductionInstalledTownReleasesAtStartPlusTwo()
+    {
+        using (var f = new Fixture(configurePolicy: false))
+        {
+            Call(f.layer, "ConfigureProduction", ProductionResidency.Approved().Towns);
+            var camera = f.Camera(); f.Prepare(camera); f.Arrive("b01-white-city-v2");
+            Assert.IsTrue(f.Ready("a", camera));
+            int start = Time.frameCount;
+            Call(f.layer, "AdvanceCameraFrame", start + 1); f.Retire();
+            Assert.IsFalse(f.Releases.ContainsKey("b01-white-city-v2"));
+            Call(f.layer, "AdvanceCameraFrame", start + 2); f.Retire();
+            Assert.AreEqual(1, f.Releases["b01-white-city-v2"]);
+            Assert.IsFalse(f.Ready("a", camera));
+        }
+    }
+
+    [Test]
     public void CameraPriorityUsesSortedOwnerIdsRatherThanInsertionOrder()
     {
         using (var f = new Fixture())
