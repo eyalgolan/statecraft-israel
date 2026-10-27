@@ -1,16 +1,16 @@
 # Region review index (inclusive physical lines in this YAML file).
 # Each range includes the region definition, members and ancillary rows.
-# Shared provenance, camp and loader context: 20-166.
-# galilee: 167-6163
-# valleys: 6164-9699
-# haifa_sharon: 9700-16719
-# tel_aviv_jaffa: 16720-20215
-# central_plain: 20216-26472
-# jerusalem_hills: 26473-35029
-# northern_hills: 35030-40396
-# southern_coast: 40397-49115
-# negev: 49116-50727
-# Shared gaps, retained roster, counts and source-layer notes: 50728-51109.
+# Shared provenance, camp and loader context: 20-170.
+# galilee: 171-6232
+# valleys: 6233-9833
+# haifa_sharon: 9834-16918
+# tel_aviv_jaffa: 16919-20479
+# central_plain: 20480-26801
+# jerusalem_hills: 26802-35423
+# northern_hills: 35424-40855
+# southern_coast: 40856-49639
+# negev: 49640-51316
+# Shared gaps, retained roster, counts and source-layer notes: 51317-51699.
 # Research identifiers use gdd03-NNNN; numbers preserve the original joins.
 # Public source index and carried evidence: gdd03-regions-capitals-fields.md.
 # Public research note: research_notes/Map/regions-1948-opening-control-p1.md (administrative anchors and capitals).
@@ -34,6 +34,7 @@ owner_design_decisions:
   retained_extents:
     haifa_sharon: { status: APPROVED, label: 'Keep as proposed' }
     jerusalem_hills: { status: APPROVED, label: 'Keep as proposed' }
+  opening_allocation: { status: APPROVED, label: 'Approve as proposed', issue: '#1691', rows: 'opening field, housing and Industry allocation rows of each region; method in research_notes/gdd03-region-allocation.md' }
 historical_review: NEEDS-HUMAN-CHECK
 status_vocabulary:
   SOURCED: Narrow identity/reference assertion has an in-repo citation; not fresh
@@ -51,9 +52,12 @@ assignment_method: Named proposal using source-listed subdistrict provenance and
   or whole-polygon conversion. Candidate marker hexes only; missing locality hexes
   and unlisted land remain NEEDS-RESEARCH.
 opening_control_policy: "Opening control uses only embedded place-specific public evidence, not independently verified here. SOURCED values retain the research holder wording; ambiguous or incomplete evidence is PARTIAL-EVIDENCE with an empty value; NEEDS-RESEARCH values stay empty. No regional, hex, capital-designation or facility control is inferred. Public reference: research_notes/Map borders/control-15-may-1948.md; specific source URLs, dates, quoted locators and qualifications remain in each original_citations list. Owner policy relayed 26 Oct 2026: Research first; original public record unavailable."
-population_rule: No people, jobs, workforce screens, garrisons or facility capacity
+population_rule: 'No people, jobs, workforce screens, garrisons or facility capacity
   initialized. Tel Aviv/Jaffa share one accounting path; Rishon/Rehovot retain separate
-  ids.
+  ids. One scoped exception: the opening housing and Industry counts in each region''s
+  opening allocation rows follow Jewish population by owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691).
+  This applies to that opening allocation only; they are evidence rows, not initialized
+  capacity, and no facility inventory is inferred from population.'
 army:
   A: Deferred
   free_civilians: 34 - A
@@ -5984,11 +5988,27 @@ regions:
     needed: 'Dated cadastral/agricultural workability and control evidence; prerequisite
       completion and #1690 field contract; owner allocation approval.'
   - id: galilee_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 2
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -5997,8 +6017,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: galilee_port_inventory
     status: NEEDS-RESEARCH
@@ -6100,8 +6122,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: galilee_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 1
+    places: 3
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: galilee_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   - id: hula
     kind: future drainage works
     status: DRAFT-OWNER-VERIFY
@@ -9584,11 +9653,27 @@ regions:
       caveat: Adjusted 9 July lines; draft owner-verify; not exact 15 May control.
   fields:
   - id: valleys_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 6
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -9597,8 +9682,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: valleys_port_inventory
     status: NEEDS-RESEARCH
@@ -9685,8 +9772,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: valleys_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 1
+    places: 3
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: valleys_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   capital_sources:
   - file: content/map/settlements_1948.yaml
     line: 83
@@ -16495,11 +16629,27 @@ regions:
       caveat: Adjusted 9 July lines; draft owner-verify; not exact 15 May control.
   fields:
   - id: haifa_sharon_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 6
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -16508,8 +16658,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: haifa_sharon_port_inventory
     status: NEEDS-RESEARCH
@@ -16607,8 +16759,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: haifa_sharon_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 5
+    places: 15
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: haifa_sharon_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 2
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   - id: camp_80
     kind: military camp
     status: DRAFT-OWNER-VERIFY
@@ -20059,11 +20258,27 @@ regions:
       caveat: Adjusted 9 July lines; draft owner-verify; not exact 15 May control.
   fields:
   - id: tel_aviv_jaffa_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 2
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -20072,8 +20287,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: tel_aviv_jaffa_port_inventory
     status: NEEDS-RESEARCH
@@ -20175,8 +20392,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: tel_aviv_jaffa_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 12
+    places: 36
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: tel_aviv_jaffa_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 4
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   - id: tel_aviv_military_camp
     status: NEEDS-RESEARCH
     sources:
@@ -26197,11 +26461,27 @@ regions:
       caveat: Adjusted 9 July lines; draft owner-verify; not exact 15 May control.
   fields:
   - id: central_plain_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 2
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -26210,8 +26490,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: central_plain_port_inventory
     status: NEEDS-RESEARCH
@@ -26298,8 +26580,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: central_plain_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 1
+    places: 3
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: central_plain_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   - id: tzrifin
     kind: military camp
     status: DRAFT-OWNER-VERIFY
@@ -34897,11 +35226,27 @@ regions:
     needed: 'Dated cadastral/agricultural workability and control evidence; prerequisite
       completion and #1690 field contract; owner allocation approval.'
   - id: jerusalem_hills_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -34910,8 +35255,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: jerusalem_hills_port_inventory
     status: NEEDS-RESEARCH
@@ -34998,8 +35345,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: jerusalem_hills_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 4
+    places: 12
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: jerusalem_hills_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 2
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   capital_sources:
   - file: content/map/settlements_1948.yaml
     line: 9
@@ -40276,11 +40670,27 @@ regions:
   hexes: []
   fields:
   - id: northern_hills_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -40289,8 +40699,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: northern_hills_port_inventory
     status: NEEDS-RESEARCH
@@ -40377,8 +40789,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: northern_hills_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 0
+    places: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: northern_hills_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   capital_sources:
   - file: content/map/localities_1948.yaml
     line: 88
@@ -48780,11 +49239,27 @@ regions:
     needed: 'Dated cadastral/agricultural workability and control evidence; prerequisite
       completion and #1690 field contract; owner allocation approval.'
   - id: southern_coast_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 1
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -48793,8 +49268,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: southern_coast_port_inventory
     status: NEEDS-RESEARCH
@@ -48881,8 +49358,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: southern_coast_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 0
+    places: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: southern_coast_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   - id: iraq_suwaydan_fort
     kind: fort
     status: DRAFT-OWNER-VERIFY
@@ -50611,11 +51135,27 @@ regions:
     needed: 'Dated cadastral/agricultural workability and control evidence; prerequisite
       completion and #1690 field contract; owner allocation approval.'
   - id: negev_opening_field_allocation
-    status: NEEDS-RESEARCH
-    slots: Deferred
+    status: PARTIAL-EVIDENCE
+    slots: 1
+    farmer_tiers: Deferred
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
     hexes:
     prepared_at_opening:
     sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 73
+      end_line: 86
+      original_citations: []
     - file: content/gdd03-balance.yaml
       line: 70
       end_line: 77
@@ -50624,8 +51164,10 @@ regions:
       line: 126
       end_line: 145
       original_citations: []
-    needed: "#1690 workability predicate, sourced land/control, twenty explicit slots
-      and owner-approved regional allocation; no convenient split."
+    needed: 'Count approved; basis is Jewish cultivable land owned on 1 April 1945,
+      not land farmed on 15 May 1948. Hex placement waits for the #1690 workability
+      predicate (Amir Q36 on #1668) and sourced land/control; farmer tier mix by region
+      Deferred.'
   ports:
   - id: negev_port_inventory
     status: NEEDS-RESEARCH
@@ -50712,8 +51254,55 @@ regions:
       line: 7
       end_line: 84
       original_citations: []
-    needed: Dated 1948 facility inventory with footprints, functions and opening operation/control;
-      no facility count inferred from population.
+    needed: 'Dated 1948 facility inventory with footprints, functions and opening operation/control;
+      no facility inventory inferred from population. Scoped exception: the opening housing
+      and Industry counts in the two allocation rows below follow Jewish population by
+      owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691), for this opening allocation only; they name no facility,
+      footprint or place.'
+  - id: negev_opening_housing_allocation
+    status: PARTIAL-EVIDENCE
+    projects: 0
+    places: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 90
+      end_line: 103
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate. Places assume
+      3 per project (72 / 24, not a catalogue key). Whether farmers must be housed in
+      their own region is open.'
+  - id: negev_opening_industry_allocation
+    status: PARTIAL-EVIDENCE
+    slots: 0
+    owner_approval: '"Approve as proposed", owner ruling, 27 October 2026, #1691'
+    sources:
+    - file: research_notes/gdd03-region-allocation.md
+      line: 7
+      end_line: 20
+      original_citations:
+      - cite: 'Village Statistics 1945 (Government of Palestine, Department of Statistics,
+          April 1945): Summary for Palestine, as at 1.4.45, scan PDF page 4, Jewish columns;
+          Explanatory Note, scan PDF page 3.'
+        url: https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf
+        checked: '2026-10-27'
+        licence: Public domain (Government of Palestine, 1945; see the licence note)
+    - file: research_notes/gdd03-region-allocation.md
+      line: 107
+      end_line: 120
+      original_citations: []
+    needed: 'Count approved; basis is Jewish population, end-1944 estimate, as a proxy:
+      no Jewish industrial statistic by town or sub-district was reached.'
   capital_sources:
   - file: content/map/settlements_1948.yaml
     line: 177
@@ -50796,8 +51385,9 @@ needs_research:
 - id: prepared_fields
   status: NEEDS-RESEARCH
   needed: '20 explicitly reviewed distinct workable, prepared, friendly field slots
-    across multiple regions, allocation and 5/10/5 staffing from #1717; capacity remains
-    Deferred by region. Future field markers and Hula do not count.'
+    across multiple regions and 5/10/5 staffing from #1717. The per-region counts are
+    approved (each region''s opening field allocation row); hex placement and the farmer
+    tier mix by region remain open. Future field markers and Hula do not count.'
   sources:
   - file: content/sites.yaml
     line: 13
