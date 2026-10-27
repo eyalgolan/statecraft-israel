@@ -901,3 +901,92 @@ public class PressOriginCameraInputTests : InputTestFixture
         Assert.That(rig.View.LookAt.x, Is.EqualTo(498800).Within(0.1f), "ungated source pans all ten pixels");
     }
 }
+
+/// <summary>Zoom from a pointing device through CameraController's frame (Tick, which Update calls), as the zoom keys are
+/// tested above: the wheel through the Input System's test fixture and the project-wide Camera actions, and a macOS
+/// trackpad pinch through the magnification the player's window received (TrackpadMagnification: TrackpadPinch.mm
+/// in the macOS player, a stand-in here, since an edit-mode test cannot make a Cocoa magnify event). The owner found
+/// on 27 Oct 2026 that zooming did nothing in the macOS player: the wheel, a two-finger scroll and the keys did zoom
+/// there, but a pinch never reached the Input System at all.</summary>
+public class CameraPointerZoomThroughTheFrameTests : InputTestFixture
+{
+    static void Send(Object o, string message) =>
+        o.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(o, null);
+
+    static CameraController NewController(out CameraRig rig)
+    {
+        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var go = new GameObject("PointerZoomTest", typeof(Camera));
+        rig = go.AddComponent<CameraRig>();
+        rig.LookAt = new Vector3(500000, 0, 500000); rig.Distance = 100000f;
+        var c = go.AddComponent<CameraController>();
+        c.Bounds = new Rect(0, 0, 1000000, 1000000);   // far larger than the view: no view clamp here
+        Send(c, "Awake"); Send(c, "OnEnable");
+        return c;
+    }
+
+    static void Dispose(CameraController c) { Send(c, "OnDisable"); Object.DestroyImmediate(c.gameObject); }
+
+    [TestCase(1f)]
+    [TestCase(-1f)]
+    public void AWheelNotchZoomsOneStepInOrOut(float notches)
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        var c = NewController(out var rig);
+        try
+        {
+            Set(mouse.position, new Vector2(400, 400)); c.Tick(0.016f);
+            Set(mouse.scroll, new Vector2(0, notches)); c.Tick(0.016f);
+            Assert.AreEqual(100000f * Mathf.Pow(1f - CameraController.ZoomPerStep, notches), rig.Distance, 1f,
+                notches > 0 ? "a notch up zooms in 10%" : "a notch down zooms out");
+        }
+        finally { Dispose(c); }
+    }
+
+    [TestCase(0.05f)]
+    [TestCase(-0.05f)]
+    public void ATrackpadPinchScalesTheViewByItsMagnification(float magnification)
+    {
+        InputSystem.AddDevice<Mouse>();
+        var c = NewController(out var rig);
+        try
+        {
+            var pending = magnification;
+            c.TrackpadMagnification = () => { var m = pending; pending = 0f; return m; };
+            c.Tick(0.016f);
+            // Fingers spread by 5% (magnification +0.05): the map shows 5% larger, so the camera is 1.05 times closer.
+            Assert.AreEqual(100000f / (1f + magnification), rig.Distance, 1f, "the pinch zooms as far as the fingers moved");
+            c.Tick(0.016f);
+            Assert.AreEqual(100000f / (1f + magnification), rig.Distance, 1f, "a pinch is taken once, not every frame");
+        }
+        finally { Dispose(c); }
+    }
+
+    [Test]
+    public void APinchOverTheUiIsTheUisAsTheWheelIs()
+    {
+        var mouse = InputSystem.AddDevice<Mouse>();
+        var c = NewController(out var rig);
+        try
+        {
+            c.IsOverUi = _ => true;
+            Set(mouse.position, new Vector2(400, 400));
+            c.TrackpadMagnification = () => 0.05f;
+            c.Tick(0.016f);
+            Assert.AreEqual(100000f, rig.Distance, 1e-3, "over a panel a pinch does not zoom the map");
+        }
+        finally { Dispose(c); }
+    }
+
+    [Test]
+    public void ThePinchPluginIsBuiltIntoTheMacPlayerOnly()
+    {
+        var plugin = (PluginImporter)AssetImporter.GetAtPath("Assets/Scripts/Map/TrackpadPinch.mm");
+        Assert.IsNotNull(plugin, "TrackpadPinch.mm is imported as a native plugin");
+        Assert.IsTrue(plugin.GetCompatibleWithPlatform(BuildTarget.StandaloneOSX), "the macOS player compiles it");
+        Assert.IsFalse(plugin.GetCompatibleWithEditor(), "the editor has no such symbol: CameraController asks only in the player");
+        foreach (var other in new[] { BuildTarget.StandaloneWindows64, BuildTarget.StandaloneLinux64, BuildTarget.WebGL })
+            Assert.IsFalse(plugin.GetCompatibleWithPlatform(other), other + " does not build AppKit code");
+    }
+}
