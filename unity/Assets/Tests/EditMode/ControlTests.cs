@@ -194,9 +194,10 @@ public class ControlTests
 
     /// <summary>Owner ruling of 27 October 2026 ("Close the borders"): no drawn band ends in mid-air in any period. A drawn
     /// edge (two regions, at least one with a style) must, at each of its two ends, run on into another drawn edge, or end
-    /// at the coast or the edge of the data (a hex that is not land on the map). Before the ruling the uncoloured south was
-    /// in no region, so Shoval's pinned blue hex (-8, 28) drew one lone edge against the Hebron hills (-7, 28), and the
-    /// 9 July front stopped at (-5, 24)/(-5, 25) where it met the uncoloured Gaza sub-district.</summary>
+    /// at the coast or the edge of the data (a hex that is not land on the map). It holds for any hex grid: no hex is named,
+    /// and a failure lists each offending edge and the hex it ends at. Before the ruling the uncoloured south was in no
+    /// region, so Shoval's pinned blue hex drew one lone edge against the Hebron hills, and the 9 July front stopped where
+    /// it met the uncoloured Gaza sub-district.</summary>
     [Test]
     public void NoBorderEndsInMidAirInAnyPeriod()
     {
