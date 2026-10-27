@@ -1,8 +1,8 @@
-# Glossary (draft v0.5)
+# Glossary (v0.5)
 
-Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. DRAFT for review. Adopted decisions are identified individually; other recommendations await maintainer or native Hebrew review. Snapshot date 2026-10-17.
+Source of truth: `UX_GLOSSARY.yaml`. This Markdown is its readable view; update the YAML first and keep both views in sync. Status: binding for new strings from 22 October 2026 (#622). Adopted decisions are identified individually; recommendations that still await maintainer or native Hebrew review stay marked that way. Snapshot date 2026-10-17.
 
-Entries: 6 contested, 7 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (49 concepts, 6 conventions).
+Entries: 6 contested, 8 decision-needed, 3 pending-gdd, 27 preferred, 6 use-with-caution (50 concepts, 7 conventions).
 
 Revision 19 October 2026: targeted terminology and implementation checks against upstream/main 9e571342 address the #970 review. The original snapshot date remains above; this is not a full review of every new string.
 
@@ -19,6 +19,7 @@ Revision 21 October 2026, localisation follow-up: the Cabinet reads government a
 | security-level | contested | security level | open | Eyal and the native reviewer |
 | attention | decision-needed | Attention at the start of a label, attention inside a sentence (sentence case, as in the strings) | open | Eyal |
 | turn | preferred | turn | תור | Eyal |
+| movement-points | decision-needed | movement points | נקודות תנועה | Eyal and the native reviewer |
 | end-turn | preferred | End turn (the button), 'end the turn' (the action) | סיום התור (the button); 'לסיים את התור' in sentences | Eyal |
 | decision | preferred | decision | החלטה | Eyal, for the plural form |
 | event | preferred | event (data and history), 'event card' (the card the player sees) | open | Eyal |
@@ -76,11 +77,19 @@ Recommendation (see status): Move the rule from the offices.yaml comment into do
 
 Decision owner: Eyal: where the rule is documented and the dictionary; the rule itself is already his
 
-### transliteration (decision-needed)
+### transliteration (preferred)
 
-Hebrew terms in English text are transliterated in several ways: ma'abarot (README), Halutz and Hakhshara (GDD), yishuv and yishuvim (GDD), Knesset. No scheme is written down.
+Hebrew terms in English text: ma'abara and ma'abarot take a straight apostrophe (owner's ruling, 26 October 2026, #1760). Halutz, Hakhshara (with kh), yishuv, yishuvim, aliyah and Knesset keep the spelling already in use, observed in the game rather than ruled; the owner has ruled on ma'abara / ma'abarot only. An identifier is not display text, so ids, YAML keys, filenames and C# names keep their apostrophe-free spelling (content/model.yaml: id maabarot beside name "Transit camps (ma'abarot)"); a quoted source form and a URL keep what they print. The rule is docs/WRITING_GUIDE.md section 10. Arabic place names are settled separately (see place-names).
 
-Recommendation (see status): Pick one scheme, list each term once in this glossary, define each at first use, and keep the Hebrew spelling beside it in the glossary.
+Recommendation (see status): Written down in docs/WRITING_GUIDE.md section 10; each term is listed once here, glossed at first use in prose, with the Hebrew beside it.
+
+Decision owner: Eyal
+
+### place-names (preferred)
+
+The Arabic place names of 1948 in English text follow *Village Statistics, 1945* (Beit, not 'Bayt'; Deir, not 'Dayr'), as the map labels already do (`localities_1948.yaml`, `name_basis: vs1945`). A quoted source form keeps the spelling its source prints, so `listed_as` values and the armistice line names are unchanged. Kafr (Arabic) and Kfar (Hebrew) stay distinct. URLs, record ids and a living place's `today.name` are outside the rule. Owner, 25 October 2026, #1586.
+
+Recommendation (see status): Keep it as the rule, written in `docs/WRITING_GUIDE.md` section 9. New place names follow it.
 
 Decision owner: Eyal
 
@@ -211,15 +220,40 @@ Category: game-system. Scope: ui, docs, marketing, code.
 | In use | Where |
 |---|---|
 | תור {0} | strings.he.yaml hud.turn |
-| תורים של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
+| תורות של רבעון / חודש / שבוע | strings.he.yaml defence.turn_* |
 | {0} תורות | strings.he.yaml city.turns (#869) |
 
 **Recommendation (see status).**
 - English: Use turn. When duration matters, say one month for the current MVP. Do not infer a quarter or week from unused legacy strings.
-- Hebrew: The city panel uses תורות (city.turns), while legacy defence.turn_* strings use תורים. A native reviewer decides whether the variants need alignment.
+- Hebrew: The plural of תור is תורות everywhere (city.turns, defence.turn_*; owner, 24 October 2026: "plural of תור is תורות").
 - Reasons: (1) The current rules set all five turn lengths to month.
 
 **Decision owner.** Eyal.
+
+### movement-points (decision-needed)
+
+Category: game-system. Scope: ui, docs, code.
+
+**Definition.** The number of points a military unit can spend entering hexes during one turn.
+
+**English.** Preferred: movement points.
+
+| In use | Where |
+|---|---|
+| Movement points: {0} of {1} | strings.en.yaml unit.points |
+
+**Hebrew.** Preferred: נקודות תנועה.
+
+| In use | Where |
+|---|---|
+| נקודות תנועה: {0} מתוך {1} | strings.he.yaml unit.points |
+
+**Recommendation (see status).**
+- English: Use movement points in the card and rules.
+- Hebrew: The candidate נקודות תנועה needs a native review.
+- Reasons: (1) The term is new on screen with Civ-style movement.
+
+**Decision owner.** Eyal and the native reviewer.
 
 ### end-turn (preferred)
 
@@ -566,7 +600,6 @@ Category: place. Scope: ui, docs, marketing.
 | In use | Where |
 |---|---|
 | Place a transit camp ({0}) | strings.en.yaml info.build_camp |
-| the ma'abarot transit camps | README.md, site press page |
 
 **Hebrew.** Preferred: מעברה.
 
@@ -575,9 +608,9 @@ Category: place. Scope: ui, docs, marketing.
 | הקמת מעברה ({0}) | strings.he.yaml info.build_camp |
 
 **Recommendation (see status).**
-- English: UI says 'transit camp'. Prose says 'the ma'abarot (transit camps)' the first time, then either word. Decide the transliteration once (conventions: transliteration).
+- English: UI says 'transit camp'. Prose says 'the ma'abarot (transit camps)' the first time, then either word. The spelling is settled (conventions: transliteration; owner, 26 October 2026, #1760).
 - Hebrew: No change proposed.
-- Reasons: (1) That is what the README already does.
+- Reasons: (1) That is what the GDD already does; the README carried this example until #1200 rewrote it.
 
 **Decision owner.** Eyal.
 

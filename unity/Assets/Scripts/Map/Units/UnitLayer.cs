@@ -20,6 +20,9 @@ namespace Statecraft.Game.Map.Units
     public sealed class UnitLayer : MonoBehaviour
     {
         public const string RootName = "Units", ToggleName = "units";
+        /// <summary>A player unit with no movement points left this turn has its badge drawn at this share of its colours
+        /// (plate and glyph alike, so the glyph keeps its contrast on the plate).</summary>
+        public const float DimShade = 0.5f;
         /// <summary>A parked aircraft's centre of gravity above the ground, in real metres (on its undercarriage).</summary>
         public const float ParkedHeightM = 1.4f;
         public const float ParkedHeadingDegrees = 200f;
@@ -31,12 +34,49 @@ namespace Statecraft.Game.Map.Units
         UnitGround ground = null!;
         IReadOnlyDictionary<UnitAnchor, AnchorSpot> spots = new Dictionary<UnitAnchor, AnchorSpot>();
         MapRuntimeAssets assets = null!;
-        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!, flagWhite = null!, flagBlue = null!;
+        Material paint = null!, ringTemplate = null!, badgePlate = null!, badgeGlyph = null!, rim = null!;
+        readonly Dictionary<string, Material[]> flagCloth = new Dictionary<string, Material[]>();   // per side, made on first use
         readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
         /// <summary>The meshes built for the tokens drawn now (each base's draped top, lip and ring follow its own ground):
         /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
+        readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
+        bool updatingPrefetch;
+        int seenAvailability = -1;
+        void PrefetchFigures(IReadOnlyList<UnitToken> candidates)
+        {
+            updatingPrefetch = true;
+            try
+            {
+                var needed = new HashSet<string>();
+                foreach (var token in candidates)
+                {
+                    var ids = Enumerable.Range(0, token.Figures).Select(i => UnitFigures.FigureFor(token.Unit, i,
+                        token.Unit.Side == UnitData.Israel ? token.Headgear[i] : null))
+                        .Concat(token.Vehicles).Where(id => id != null).Distinct();
+                    foreach (var id in ids)
+                    {
+                        string key = token.Unit.Id + "|" + id; needed.Add(key);
+                        if (!figurePrefetch.TryGetValue(key, out var owner))
+                        {
+                            var holder = new GameObject("Original demand " + key); holder.transform.SetParent(transform, false);
+                            owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[key] = owner;
+                            holder.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                            owner.Initialize(id!, map.Residency.Units, null, draw: false);
+                        }
+                        owner.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                    }
+                }
+                foreach (string key in figurePrefetch.Keys.ToArray()) if (!needed.Contains(key))
+                {
+                    var old = figurePrefetch[key]; figurePrefetch.Remove(key);
+                    old.gameObject.SetActive(false);
+                    if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
+                }
+            }
+            finally { updatingPrefetch = false; }
+        }
         /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
         /// it (an Arab force's, issue #665).</summary>
         Content? shownContent;
@@ -141,9 +181,6 @@ namespace Statecraft.Game.Map.Units
             layer.badgePlate = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (plate)", color = UnitBadge.PlateColour });
             layer.badgeGlyph = layer.assets.Own(new Material(ringTemplate) { name = "UnitBadge (glyph)", color = UnitBadge.GlyphColour });
             layer.rim = layer.assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
-            layer.flagWhite = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
-            layer.flagBlue = layer.assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
-            layer.flagBlue.renderQueue = layer.flagWhite.renderQueue + 1;   // the blue over the white
             layer.tokensRoot = new GameObject("Tokens").transform;
             layer.tokensRoot.SetParent(root.transform, false);
             // The kit trees under the figures are left out while the layer shows (issue #249), and come back with the layer
@@ -154,8 +191,6 @@ namespace Statecraft.Game.Map.Units
             // can draw (nothing is fetched before the frame after the request, CollectionStream), and draw again when one arrives.
             UnitFigures.ModelArrived += layer.OnModelArrived;
             layer.assets.OnTeardown(() => UnitFigures.ModelArrived -= layer.OnModelArrived);
-            foreach (var u in units)
-                if (UnitRoster.OnMap(u) && u.Side != UnitData.Israel) UnitFigures.Prefetch(UnitFigures.SideFigure(u.Side)!);
             layer.assets.OnTeardown(VisualToggles.Register(ToggleName, on =>
             {
                 if (root != null) root.SetActive(on);
@@ -187,6 +222,7 @@ namespace Statecraft.Game.Map.Units
         /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation.</summary>
         public void FaceCamera(Camera cam)
         {
+            if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);
             if (cam == null) return;
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
@@ -253,15 +289,39 @@ namespace Statecraft.Game.Map.Units
             shownContent = content; shownState = state;
             // The GDD loop draws the army from the sim's units (GDD Phase 5 PR 14); the legacy loop keeps the rows and the call-up.
             var now = content.IsGdd
-                ? UnitRoster.FromState(units, content, state, UnitFigures.Arrived, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
-                : UnitRoster.Build(units, content, state, UnitFigures.Arrived);
-            if (roster != null && roster.SequenceEqual(now)) return false;
+                ? UnitRoster.FromState(units, content, state, _ => true, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
+                : UnitRoster.Build(units, content, state, _ => true);
+            PrefetchFigures(now);
+            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
+            if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? spots);
             Rebuild();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
+            seenAvailability = UnitFigures.AvailabilityVersion;
             return true;
+        }
+
+        /// <summary>Dims the listed unit rows' badges for this turn (each badge renderer at <see cref="DimShade"/> of its
+        /// material's colour); every other badge has no property override.</summary>
+        public void Dim(IReadOnlyCollection<string> rowIds)
+        {
+            var dim = new HashSet<string>(rowIds ?? Array.Empty<string>());
+            var block = new MaterialPropertyBlock();
+            for (int i = 0; i < tokensRoot.childCount; i++)
+            {
+                var token = tokensRoot.GetChild(i);
+                var badge = token.Find("Badge");
+                if (badge == null) continue;
+                foreach (var renderer in badge.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!dim.Contains(token.name)) { renderer.SetPropertyBlock(null); continue; }
+                    var c = renderer.sharedMaterial.color;
+                    block.SetColor("_BaseColor", new Color(c.r * DimShade, c.g * DimShade, c.b * DimShade, c.a));
+                    renderer.SetPropertyBlock(block);
+                }
+            }
         }
 
         /// <summary>The anchor of <paramref name="row"/>'s unit on sim hex (<paramref name="q"/>, <paramref name="r"/>) after a
@@ -288,6 +348,21 @@ namespace Statecraft.Game.Map.Units
                 .Where(s => s != null).Select(s => (s!.Value.Q, s.Value.R)).ToList();
             var entries = fresh.Select(t => new UnitEntry { Id = t.Unit.Id, Side = t.Unit.Side, Service = t.Unit.Service, Anchors = new List<UnitAnchor> { t.Anchor } }).ToList();
             foreach (var kv in ground.Place(entries, XZ(map), Debug.LogWarning, taken)) movedSpots[kv.Key] = kv.Value;
+            // A sim unit with no clear spot within a hex is still drawn, compact on its own sim hex: left out, it could not
+            // be seen or selected, and End turn waits for it (UnitPlacer.OnOwnHex). The spots are placed in token order.
+            var toXZ = XZ(map);
+            var used = tokens.Select(t => spots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
+                .Where(s => s != null).Select(s => (s!.Value.X, s.Value.Z)).ToList();
+            foreach (var t in fresh)
+            {
+                if (movedSpots.ContainsKey(t.Anchor) || t.StateUnit == null || !(shownContent?.HexAt(t.StateUnit.Q, t.StateUnit.R) is MapHex hex)) continue;
+                var c = toXZ(hex.Lon, hex.Lat);
+                var spot = UnitPlacer.OnOwnHex(hex.Q, hex.R, (c.x, c.y), ground.HexSizeM, used, 1.5 * ground.RingRadius(true),
+                    (x, z) => ground.Clear(t.Unit.Service, new Vector2((float)x, (float)z), true, false, c));
+                movedSpots[t.Anchor] = spot;
+                used.Add((spot.X, spot.Z));
+                Debug.Log($"UNITS {t.Unit.Id} (unit {t.StateUnit.Id}) drawn compact on its own hex ({hex.Q},{hex.R})");
+            }
             MovedSpotsPlaced += fresh.Count;
             drawSpots = new Dictionary<UnitAnchor, AnchorSpot>(spots.Count + movedSpots.Count);
             foreach (var kv in spots) drawSpots[kv.Key] = kv.Value;
@@ -297,7 +372,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A Collection model arrived: draws the tokens again if it lets a new one show (an Arab force's figure).</summary>
         void OnModelArrived(string id)
         {
-            if (this == null || shownContent == null || shownState == null) return;
+            if (this == null || updatingPrefetch || shownContent == null || shownState == null) return;
             Show(shownContent, shownState);
         }
 
@@ -308,12 +383,15 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>What a click on hex (q, r) selects: the unit standing there, unless it is already selected (a second
         /// click shows the hex, so a token never hides the hex's map actions) or the "units" toggle hides the layer; null
-        /// means show the hex.</summary>
+        /// means show the hex. Where several tokens stand on the hex (a unit drawn on its own crowded hex,
+        /// UnitPlacer.OnOwnHex), each click selects the next of them in drawing order, then the hex, so every one can be
+        /// clicked.</summary>
         public string? UnitToSelectAt(int q, int r)
         {
             if (!gameObject.activeInHierarchy) return null;
-            var hit = At(q, r);
-            return hit != null && hit.Value.Token.Unit.Id != Selected ? hit.Value.Token.Unit.Id : null;
+            var here = placed.Where(p => p.Q == q && p.R == r).Select(p => p.Token.Unit.Id).ToList();
+            int i = Selected == null ? -1 : here.IndexOf(Selected);
+            return i + 1 < here.Count ? here[i + 1] : null;
         }
 
         /// <summary>The token on hex (q, r), or null.</summary>
@@ -321,6 +399,33 @@ namespace Statecraft.Game.Map.Units
         {
             foreach (var p in placed) if (p.Q == q && p.R == r) return p;
             return null;
+        }
+
+        /// <summary>The token <paramref name="cam"/> draws under <paramref name="screen"/> (pixels, y up): its badge's or its
+        /// standing pieces' box (<see cref="KeepClear"/>) as that camera projects it, the nearest to the camera when several
+        /// hold the point; null off every token, behind the camera, or while the "units" toggle hides the layer. The badge
+        /// floats over the figures and behind them, so the terrain under it is often the next hex (owner's report on v0.2.0:
+        /// a click on a unit's badge showed the hex behind it, with no Move). No allocation.</summary>
+        public PlacedToken? TokenAtScreen(Camera cam, Vector2 screen)
+        {
+            if (cam == null || !gameObject.activeInHierarchy) return null;
+            FaceCamera(cam);   // the boxes as this camera draws them (a no-op from the pose it last turned them to)
+            PlacedToken? best = null; float nearest = float.MaxValue;
+            for (int i = 0; i < placed.Count && i < keepClear.Count; i++)
+                foreach (var box in keepClear[i])
+                {
+                    float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue; bool behind = false;
+                    for (int c = 0; c < 8 && !behind; c++)
+                    {
+                        var p = cam.WorldToScreenPoint(new Vector3((c & 1) == 0 ? box.min.x : box.max.x, (c & 2) == 0 ? box.min.y : box.max.y, (c & 4) == 0 ? box.min.z : box.max.z));
+                        behind = p.z <= 0f;
+                        x0 = Mathf.Min(x0, p.x); y0 = Mathf.Min(y0, p.y); x1 = Mathf.Max(x1, p.x); y1 = Mathf.Max(y1, p.y);
+                    }
+                    if (behind || screen.x < x0 || screen.x > x1 || screen.y < y0 || screen.y > y1) continue;
+                    float depth = (box.center - cam.transform.position).sqrMagnitude;
+                    if (depth < nearest) { nearest = depth; best = placed[i]; }
+                }
+            return best;
         }
 
         /// <summary>Selects a drawn unit by id (the ring goes round it), or clears the selection (null).</summary>
@@ -352,6 +457,13 @@ namespace Statecraft.Game.Map.Units
                 meshes[key] = mesh;
             }
             return mesh;
+        }
+
+        /// <summary>A side's flag cloth materials, made once per side and shared by its tokens.</summary>
+        Material[] FlagCloth(string side)
+        {
+            if (!flagCloth.TryGetValue(side, out var mats)) flagCloth[side] = mats = UnitFlags.ClothMaterials(side, ringTemplate, assets.Own);
+            return mats;
         }
 
         /// <summary>Takes a mesh built for one token: freed with the tokens (<see cref="FreeTokenMeshes"/>).</summary>
@@ -401,7 +513,7 @@ namespace Statecraft.Game.Map.Units
                         // rim, under the side's flag (refs #197). The base fits the full trio, whatever the call-up.
                         float k = UnitShowcase.DrawSpread * hex * Scale(p.Spot);
                         plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3), k));
-                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, flagWhite, flagBlue);
+                        foot.y = UnitPlinth.Build(map, go.transform, centre, plinth, t.Unit.Side, TokenMesh, MeshFor, paint, rim, FlagCloth);
                         treeHoles.Add((new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter));
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
@@ -424,7 +536,7 @@ namespace Statecraft.Game.Map.Units
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
-                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null));   // the Collection's figure, once streamed (#665)
+                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null), map.Residency.Units);   // the Collection's figure, once streamed (#665)
                             figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
                         }
                         for (int j = 0; j < vehicles; j++)
@@ -434,7 +546,7 @@ namespace Statecraft.Game.Map.Units
                             var at = centre + offset;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
-                            UnitFigures.Dress(vehicle, t.Vehicles[j]);   // the gun or the jeep: drawn only once streamed (#665)
+                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units);   // the gun or the jeep: drawn only once streamed (#665)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;

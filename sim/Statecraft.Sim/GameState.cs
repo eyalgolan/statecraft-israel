@@ -26,6 +26,17 @@ namespace Statecraft.Sim
     /// <summary>All mutable game data. Systems never share references between states: Step works on Clone().</summary>
     public sealed class GameState
     {
+        /// <summary>Immutable replay identity. Old manually constructed states retain their historical hash layout.</summary>
+        public string Ruleset { get; } = SaveGame.LegacyRuleset;
+        readonly bool usesAttention = true;
+        public bool UsesPopulationLedger => Ruleset == SaveGame.Gdd03Ruleset;
+        public PopulationLedger PopulationLedger { get; private set; } = new PopulationLedger(false);
+        public GameState() { }
+        internal GameState(Content c)
+        {
+            Ruleset = c.Ruleset; usesAttention = c.UsesAttention;
+            PopulationLedger = new PopulationLedger(UsesPopulationLedger);
+        }
         public DateTime Date;
         public ulong RngState;
         public Mode Mode;
@@ -83,9 +94,13 @@ namespace Statecraft.Sim
         public SortedDictionary<string, DateTime> Objectives = new SortedDictionary<string, DateTime>(StringComparer.Ordinal);
         /// <summary>Settlement control by target id, ordinal (R-CTRL-002).</summary>
         public SortedDictionary<string, SettlementControl> Settlements = new SortedDictionary<string, SettlementControl>(StringComparer.Ordinal);
-        /// <summary>The player's score (GDD "Objectives": bonus points). An int assumes whole-number points; the point values and
-        /// the timing bonus are open decisions with the owner (D-B2, D-B6), so the type is revisited when they are set.</summary>
+        /// <summary>The player's score (GDD "Objectives": bonus points). An int: the point values (D-B6) and the timing bonus (D-B2)
+        /// the owner set on 14 October 2026 (#456) are whole numbers (R-OBJ-002).</summary>
         public int Score;
+        /// <summary>The parts of <see cref="Score"/> (R-SCORE-001; Q-SCORE-1), each added when it scores, so no reading has to
+        /// rebuild them from rules that may have changed since: objective base points (R-OBJ-002, R-OBJ-006), timing bonuses
+        /// (R-OBJ-002, R-OBJ-005) and points for prisoners returned (R-POW-004). Their sum is <see cref="Score"/>.</summary>
+        public int ScoreObjectivePoints, ScoreTimingBonuses, ScorePrisonerPoints;
         /// <summary>The national Food stock (R-FOOD-001; D-C2): units of Food, one population unit's food for a month. Never below 0.</summary>
         public int Food;
         /// <summary>The Food the nation needed in the last turn (R-FOOD-002): its population in units, set at the start and in step 7.</summary>
@@ -103,8 +118,12 @@ namespace Statecraft.Sim
         public SortedDictionary<string, int> PrisonersReturned = new SortedDictionary<string, int>(StringComparer.Ordinal);
         /// <summary>The player's soldiers held by the enemy, in population units, by the side that took them (R-POW-005; Q-POW-4).</summary>
         public SortedDictionary<string, int> SoldiersHeld = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        /// <summary>The places the player has deported, the permanent record of R-CTRL-018 and R-CTRL-019: a count of places,
+        /// not people (Q-CAP-2 (b)), with no destination on the board (Q-DEP-3 (a)).</summary>
+        public int DisplacedByPlayer;
 
-        public double TotalPopulation => Population.Values.Sum();
+        public double TotalPopulation => PopulationLedger.IsInitialized
+            ? PopulationLedger.TotalPeople : Population.Values.Sum();
 
         public GameState Clone()
         {
@@ -116,6 +135,7 @@ namespace Statecraft.Sim
             c.ActiveSituations = new SortedSet<string>(ActiveSituations, StringComparer.Ordinal);
             c.Budget = new Dictionary<string, double>(Budget);
             c.Population = new Dictionary<string, double>(Population);
+            c.PopulationLedger = PopulationLedger.Clone();
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
@@ -155,6 +175,7 @@ namespace Statecraft.Sim
             // Hash text: one line, ';'-separated, closing brackets. Readable text: a section label per line, each entry
             // on its own indented line, no closing brackets. Both are written by the calls below, in the same order.
             var sb = new StringBuilder();
+            if (!usesAttention) sb.Append("ruleset=").Append(Ruleset).Append(';');
             void Nl() { if (readable) sb.Append('\n'); }
             void Entry() { if (readable) sb.Append("\n  "); }
             void Close(char c) { if (!readable) sb.Append(c); }
@@ -185,7 +206,7 @@ namespace Statecraft.Sim
             List("sit", ActiveSituations);
             Num("treasury", Treasury); Num("debt", Debt); Num("fx", FxReserves);
             Nl(); sb.Append("rung=").Append(Rung).Append(";cf=").Append(CeasefireWeeksLeft).Append(';');
-            Num("mob", Mobilization); Num("stab", CoalitionStability); Num("att", Attention);
+            Num("mob", Mobilization); Num("stab", CoalitionStability); if (usesAttention) Num("att", Attention);
             List("fired", FiredEvents);
             List("pending", PendingEvents);
             Nl(); sb.Append("chosen{");
@@ -228,6 +249,12 @@ namespace Statecraft.Sim
             if (Settlements.Count > 0)
                 Section("ctrl", '{', '}', Settlements.Select(kv => kv.Key + "=" + kv.Value.Canonical()));
             if (Score != 0) { Sep(); Nl(); sb.Append("score=").Append(Score.ToString(CultureInfo.InvariantCulture)); }
+            if (ScoreObjectivePoints != 0 || ScoreTimingBonuses != 0 || ScorePrisonerPoints != 0)
+            {
+                Sep(); Nl();
+                sb.Append("scoreparts=").Append(ScoreObjectivePoints.ToString(CultureInfo.InvariantCulture)).Append(',')
+                  .Append(ScoreTimingBonuses.ToString(CultureInfo.InvariantCulture)).Append(',').Append(ScorePrisonerPoints.ToString(CultureInfo.InvariantCulture));
+            }
             if (Food != 0 || FoodNeed != 0 || FoodUnmet != 0)
             {
                 Sep(); Nl();
@@ -241,6 +268,8 @@ namespace Statecraft.Sim
             if (PrisonersHeld.Count > 0) Section("pow", '{', '}', Counts(PrisonersHeld));
             if (PrisonersReturned.Count > 0) Section("powret", '{', '}', Counts(PrisonersReturned));
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
+            if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
+            if (UsesPopulationLedger) Section("population-ledger", '{', '}', PopulationLedger.Canonical());
             return sb.ToString();
         }
     }

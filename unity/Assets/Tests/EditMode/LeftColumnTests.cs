@@ -33,6 +33,7 @@ public class LeftColumnTests
     {
         ("nav-cabinet", "hud.nav.cabinet", "columns"), ("nav-budget", "hud.nav.budget", "ledger"),
         ("nav-defence", "hud.nav.defence", "helmet"), ("nav-why", "hud.nav.why", "question"),
+        ("nav-timeline", "nav.timeline", "hourglass"),
         ("nav-how-to-play", "hud.nav.how_to_play", "book"), ("nav-objectives", "hud.nav.objectives", "flag"),
         ("nav-settings", "hud.nav.settings", "gear"),
     };
@@ -169,7 +170,7 @@ public class LeftColumnTests
     }
 
     /// <summary>Review of #859 at fb2a8dc (WebGL) and the owner's ruling there (17 October 2026): on a phone held upright,
-    /// 390x844, 360x800 and 375x667, with a photo card open (turn 0's One Army and turn 1's The First Truce, taller than
+    /// 390x844, 360x800 and 375x667, with a photo card open (turn 0's One Army, shown before Degania, and turn 1's The First Truce, taller than
     /// WithAnEventOpen's card, which the test above uses), no rail button sits under the card, Why? and Settings included
     /// (they did on main), in English and Hebrew.</summary>
     [UnityTest]
@@ -179,7 +180,7 @@ public class LeftColumnTests
         Assert.IsNotNull(catalog, "precondition: the photo catalog");
         var problems = new List<string>();
         var turn0 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
-        CollectionAssert.AreEqual(new[] { "idf_founding" }, turn0.State.PendingEvents, "precondition: One Army at turn 0");
+        CollectionAssert.AreEqual(new[] { "idf_founding", "degania_defence" }, turn0.State.PendingEvents, "precondition: One Army first at turn 0 (R-EVT-006)");
         var turn1 = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
         turn1.Step(new Command[0]);
         Assert.IsNotEmpty(turn1.State.PendingEvents, "precondition: an event at turn 1");
@@ -255,7 +256,7 @@ public class LeftColumnTests
                 var order = root.Query<VisualElement>().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0 && e is Button).ToList()
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
                 // Under the open card the minimap column is out of reach (the backdrop covers it); the column and the bar are not.
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn" },
                     order, $"{at}: the Tab order under the open card");
                 var r = root.Q("root");
                 Assert.IsTrue(r.ClassListContains(EventCardPresenter.ModalClass), at + ": precondition: the card is open");
@@ -309,6 +310,58 @@ public class LeftColumnTests
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
+    /// <summary>#1323 (owner, v0.2.0): a screen closed with its X by the mouse hands no focus on (PointerBlur's rule), so its
+    /// button in the column shows neither its tip nor the focus fill. Closed from the keyboard (Escape, even after a mouse
+    /// press on the X; Enter on the X) the focus goes back to that button and its tip shows, and Tab moves the tip on.</summary>
+    [UnityTest]
+    public IEnumerator ClosingAScreenWithTheMouseShowsNoTipAndTheKeyboardKeepsIt()
+    {
+        var problems = new List<string>();
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        yield return Rendered(1280, 720, false, g, (root, nav) =>
+        {
+            var tip = root.Q<Label>(HoverTip.TipName);
+            var focus = root.panel.focusController;
+            // HoverTip shows the tip inline (display: flex) and hides it inline; with no inline value the stylesheet hides it
+            bool Shown() => tip.style.display.keyword == StyleKeyword.Undefined && tip.style.display.value == DisplayStyle.Flex;
+            bool TipFor(VisualElement b) => Shown() && tip.text == b.tooltip;
+            Assert.IsFalse(root.Q("root").ClassListContains(EventCardPresenter.ModalClass), "precondition: the decision card is hidden (open, it takes the focus when a screen closes)");
+            foreach (var s in ScreenNav.Screens)
+            {
+                var button = root.Q<Button>("nav-" + s); var x = root.Q<Button>("screen-close-" + s);
+                nav.Open(s);
+                PressWithPointer(x);
+                if (nav.Current != null) problems.Add($"{s}: the X pressed with the mouse closes the screen");
+                if (focus.focusedElement == button) problems.Add($"{s}: the X pressed with the mouse puts the focus on {button.name}");
+                if (Shown()) problems.Add($"{s}: the X pressed with the mouse shows the tip '{tip.text}'");
+
+                nav.Open(s); x.Focus();
+                using (var e = NavigationCancelEvent.GetPooled()) { e.target = x; x.SendEvent(e); }
+                if (nav.Current != null || focus.focusedElement != button || !TipFor(button)) problems.Add($"{s}: Escape after a mouse press gives {button.name} the focus and its tip");
+
+                nav.Open(s); x.Focus(); UiTestKit.Press(x);
+                if (nav.Current != null || focus.focusedElement != button || !TipFor(button)) problems.Add($"{s}: Enter on the X gives {button.name} the focus and its tip");
+
+                using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = button; button.SendEvent(e); }
+                var next = focus.focusedElement as VisualElement;
+                if (next == null || next == button || !TipFor(next)) problems.Add($"{s}: Tab from {button.name} moves the tip to the next button (focus on {next?.name ?? "nothing"}, tip '{tip.text}')");
+            }
+        }, act: (root, nav) => UiTestKit.Press(root.Q<Button>("event-hide")));   // turn 0's card (One Army) put behind "Decision waiting", as the owner had it
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>A mouse press as the player makes it (StartScreenTests' helper): pointer down, which also gives the button the
+    /// focus, then the button's Clickable fires `clicked` on pointer up. UiTestKit.Press is the keyboard's Submit instead.</summary>
+    static void PressWithPointer(Button b)
+    {
+        b.Focus();
+        using (var down = PointerDownEvent.GetPooled()) { down.target = b; b.SendEvent(down); }
+        using var click = ClickEvent.GetPooled();
+        click.target = b;
+        typeof(Clickable).GetMethod("Invoke", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+            null, new[] { typeof(EventBase) }, null)!.Invoke(b.clickable, new object[] { click });
+    }
+
     /// <summary>#1109: the Cabinet disc wears a small gold badge, and its tip says why, while the sim has a vacant seat the
     /// player can fill this turn (SimBridge.Vacancies, Cabinet.Vacancies); queuing an appointment to every such seat takes
     /// it off. No other disc has a badge. Education is vacant from 19 May 1951 (as Minority Affairs, which has no holder
@@ -343,7 +396,7 @@ public class LeftColumnTests
             var disc = cabinet.Q(className: "nav-disc").worldBound; var dot = badge.worldBound;
             Assert.IsTrue(dot.width > 0 && dot.center.x > disc.center.x && dot.center.y < disc.center.y && disc.Overlaps(dot),
                 $"the badge sits on the disc's upper right ({dot} on {disc})");
-            foreach (var other in ScreenNav.Screens.Where(x => x != "cabinet"))
+            foreach (var other in ScreenNav.Screens.Where(x => x != "cabinet" && x != "budget"))   // Budget's: the next test
                 Assert.IsNull(ui.Q<Button>("nav-" + other).Q(className: HudPresenter.BadgeClass), other + ": no badge");
 
             foreach (var office in Cabinet.Vacancies(C, g.State, new Command[0]))
@@ -352,6 +405,54 @@ public class LeftColumnTests
             Assert.IsFalse(cabinet.ClassListContains(HudPresenter.ActionClass), "every vacant seat has a queued appointment");
             Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "the badge goes");
             Assert.AreEqual(text["hud.nav.cabinet"], cabinet.tooltip, "the tip is the name again");
+        }
+    }
+
+    /// <summary>#1109: the Budget disc wears the same badge, and its tip says why, while the Budget screen's draft differs from
+    /// what End turn will apply and Submit can apply it (EconomySystem.Unsubmitted through SimBridge.BudgetUnsubmitted): an
+    /// edit lights it, Submit takes it off, an edit after Submit lights it again, and with no Attention left for an
+    /// allocation it goes off, since Submit would be refused.</summary>
+    [UnityTest]
+    public IEnumerator TheBudgetDiscShowsABadgeWhileAnEditedBudgetIsNotSubmitted()
+    {
+        foreach (var hebrew in new[] { false, true })
+        {
+            var text = hebrew ? He : En;
+            using var ui = new UiTestKit();
+            ui.Root.Q("root").RemoveFromClassList("loading");
+            var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+            g.State.Attention = 4;   // the opening rung 5 prices an allocation at 2 x (1 + 4 x 0.25) = 4: just affordable
+            var bridge = new SimBridge(g, text);
+            using var hud = new HudPresenter(ui.Root, bridge, text);
+            using var screen = new BudgetPresenter(ui.Root, bridge, text);
+            var nav = ui.Q<Button>("nav-budget");
+            var badge = nav.Q(className: HudPresenter.BadgeClass);
+            Assert.IsNotNull(badge, "the Budget disc carries a badge element");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "untouched: nothing to submit");
+            Assert.AreEqual(DisplayStyle.None, badge.resolvedStyle.display, "untouched: the badge is hidden");
+            Assert.AreEqual(text["hud.nav.budget"], nav.tooltip, "untouched: the tip is the disc's name");
+
+            UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsTrue(nav.ClassListContains(HudPresenter.ActionClass), "edited: not submitted");
+            Assert.AreEqual(DisplayStyle.Flex, badge.resolvedStyle.display, "edited: the badge shows");
+            Assert.AreEqual(text["hud.nav.budget_unsubmitted"], nav.tooltip, "edited: the tip says why");
+            Assert.AreEqual(text["hud.nav.budget"], nav.text, "the name stays the text (the event log records it)");
+            var disc = nav.Q(className: "nav-disc").worldBound; var dot = badge.worldBound;
+            Assert.IsTrue(dot.width > 0 && dot.center.x > disc.center.x && dot.center.y < disc.center.y && disc.Overlaps(dot),
+                $"the badge sits on the disc's upper right ({dot} on {disc})");
+
+            ui.Press("budget-submit");
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "submitted: the badge goes");
+            Assert.AreEqual(text["hud.nav.budget"], nav.tooltip, "submitted: the tip is the name again");
+
+            UiTestKit.Press(ui.Q<Button>("budget-education_minister-up"));
+            Assert.IsTrue(nav.ClassListContains(HudPresenter.ActionClass), "edited after Submit: not submitted again (the queued budget's 4 is refunded first)");
+            g.State.Attention = 0;
+            screen.Render();
+            Assert.IsFalse(nav.ClassListContains(HudPresenter.ActionClass), "no Attention left: Submit could not apply it");
         }
     }
 }

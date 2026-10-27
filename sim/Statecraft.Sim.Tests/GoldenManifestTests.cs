@@ -15,7 +15,7 @@ public class GoldenManifestTests
     {
         var m = GoldenManifest.Read();
         var scenarios = System.IO.Directory.GetFiles(ScenarioTests.Dir(), "*.yaml").Select(f => "scenario-" + System.IO.Path.GetFileNameWithoutExtension(f));
-        var known = new[] { "hash1950", "hash1952", "smoke5", "mvp-end" }.Concat(scenarios).OrderBy(k => k, StringComparer.Ordinal).ToArray();   // one line per scenario file (#296)
+        var known = new[] { "hash1950", "hash1952", "smoke5", "smoke-orders", "mvp-end" }.Concat(scenarios).OrderBy(k => k, StringComparer.Ordinal).ToArray();   // one line per scenario file (#296)
         Assert.Equal(known, m.Keys.OrderBy(k => k, StringComparer.Ordinal).ToArray());
         Assert.All(m.Values, h => Assert.Matches("^[0-9a-f]{64}$", h));
     }
@@ -44,11 +44,13 @@ public class GoldenManifestTests
     [InlineData("hash1950")]
     [InlineData("hash1952")]
     [InlineData("smoke5")]
+    [InlineData("smoke-orders")]
     public void TheDocsAndTheWebCheckShowTheManifestHash(string name)
     {
         var hash = GoldenManifest.Expected(name);
         Assert.True(Text("docs", "determinism.md").Contains(hash), $"docs/determinism.md does not show the current {name} hash {hash}");
-        Assert.True(Text("docs", "RELEASING.md").Contains(hash), $"docs/RELEASING.md does not show the current {name} hash {hash}");
+        if (name != "smoke-orders")   // the release runs pin smoke5's UI path only; smoke-orders' sim value is in their manifest loop
+            Assert.True(Text("docs", "RELEASING.md").Contains(hash), $"docs/RELEASING.md does not show the current {name} hash {hash}");
         if (name != "smoke5")
             Assert.True(Text("tools", "web_check.py").Contains(hash), $"tools/web_check.py does not show the current {name} hash {hash}");
     }

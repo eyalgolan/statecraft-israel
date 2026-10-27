@@ -123,6 +123,19 @@ def test_pr_template_has_evidence_and_no_cla_item():
     assert "CLA" not in text and "contributors/" not in text
 
 
+def test_contribution_terms_match_the_code_licence():
+    """Owner, 22 Oct 2026: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0, so
+    the licence-line waiver covers docs only. The template line still starts "I contribute" (the merge tooling looks
+    for "[x] I contribute")."""
+    c = read("CONTRIBUTING.md")
+    for s in ("under [MIT](LICENSES/MIT.txt)", "[PolyForm Noncommercial 1.0.0](LICENSE)", "should be checked by a lawyer",
+              "**Docs only:**", "**Everything else needs the tick, code included:**"):
+        assert s in c, s
+    assert "**Code or docs only:**" not in c
+    line = next(l for l in read(".github/pull_request_template.md").splitlines() if "MIT" in l)
+    assert line.startswith("- [ ] I contribute this under the terms in `CONTRIBUTING.md`") and "PolyForm Noncommercial 1.0.0" in line
+
+
 def test_pr_template_asks_for_ai_disclosure_issue_link_and_goldens():
     # Issue #264: the checklist pointed at a disclosure "above" that nothing asked for.
     text = read(".github/pull_request_template.md")
@@ -256,3 +269,25 @@ def test_release_gate_runs_the_tools_tests_exactly_as_ci_does():
     ci = [l.strip() for l in read(".github/workflows/ci.yml").splitlines() if "pytest tools/tests" in l]
     assert len(ci) == 1 and ci[0].startswith("run: ")
     assert ci[0][len("run: "):] in read("scripts/oss/release_gate.sh")
+
+
+def test_new_strings_are_pointed_at_the_binding_ui_guides():
+    # Issue #1375: the owner ruled on 22 Oct 2026 (#622, "Binding, changes later") that the glossary and the two UI
+    # guides bind new player-facing strings. The contributor docs and the PR template point at them, and no guide
+    # header still calls itself a draft.
+    guides = ("docs/UX_GLOSSARY.md", "docs/WRITING_UI.md", "docs/WRITING_UI_HE.md")
+    for rel in ("CONTRIBUTING.md", "AGENTS.md"):
+        text = read(rel)
+        assert "#622" in text, rel
+        for guide in guides:
+            assert guide in text, (rel, guide)
+    template = read(".github/pull_request_template.md")
+    line = next(l for l in template.splitlines() if "docs/WRITING_UI.md" in l)
+    assert line.startswith("- [ ] New UI strings follow the glossary and the UI guides"), line
+    assert "docs/WRITING_UI_HE.md" in line and "#622" in line, line
+    for rel in guides:
+        header = "\n".join(read(rel).splitlines()[:3])
+        assert "DRAFT" not in header and "draft" not in header, rel
+        assert "binding for new strings from 22 October 2026 (#622)" in header, rel
+    glossary = read("docs/UX_GLOSSARY.yaml")
+    assert "DRAFT" not in glossary.split("conventions:")[0], "UX_GLOSSARY.yaml header"

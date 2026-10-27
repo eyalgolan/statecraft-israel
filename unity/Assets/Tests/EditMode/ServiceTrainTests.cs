@@ -116,7 +116,7 @@ public class ServiceTrainTests
     static string Rebody(string tsv)
     {
         var lines = tsv.TrimEnd('\n').Split('\n').ToList();
-        var rows = lines.Where(l => l.StartsWith("route\t") || l.StartsWith("service\t")).ToList();
+        var rows = lines.Where(l => l.StartsWith("route\t") || l.StartsWith("segments\t") || l.StartsWith("service\t")).ToList();   // #792: the segments rows too
         lines[lines.Count - 1] = $"meta\tbody_check\t{RoutePaths.BodyCheck(rows)}";
         return string.Join("\n", lines) + "\n";
     }
@@ -178,7 +178,7 @@ public class ServiceTrainTests
     {
         Assert.AreEqual(typeof(CollectionStream), saved.Method.DeclaringType, "the game's seam is CollectionStream.Request");
         Assert.AreEqual(nameof(CollectionStream.Request), saved.Method.Name);
-        Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf(ServiceTrain.ModelId));
+        Assert.AreEqual("collection-" + ServiceTrain.ModelId, CollectionCatalog.BundleOf(ServiceTrain.ModelId));
         foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
         {
             var path = CollectionCatalog.PrefabPath(ServiceTrain.ModelId, detail);

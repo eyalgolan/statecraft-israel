@@ -6,16 +6,12 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-/// <summary>Tal Heuberger's 23 Tripo building models (issue #659, from #507) are imported to load light, the maintainer's gate of
-/// 15 October 2026: "we need to make sure this is built in a way that doesnt make the game extremely hard to load". No
-/// model sits under a Resources folder (Unity ships every file there whether used or not); each mesh is a static,
-/// compressed, non-readable mesh with no animation, rig, blend shapes, cameras, lights, colliders or tangents; each
-/// colour map is crunch-compressed, mipmapped and at most 512 px on every target; each material draws its own colour
-/// map with GPU instancing on. The reasons for each value are in the PR that added the models.</summary>
+/// <summary>#1273: the 23 full original buildings stream outside Resources, retain original geometry/takes and
+/// texture dimensions, and use their own instanced materials. Scene placement and frame costs have separate gates.</summary>
 public class BuildingModelImportTests
 {
     const string Folder = "Assets/Art/Settlements/Prototype/Models";
-    const int MaxTextureSize = 512, MaxTriangles = 8000;
+
 
     static readonly string[] Ids =
     {
@@ -38,9 +34,9 @@ public class BuildingModelImportTests
     public void TheFolderHoldsTheTwentyThreeBuildingsAndNothingElse()
     {
         Assert.AreEqual(23, Ids.Length);
-        var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Bundles
-            .Single(b => b.Bundle == Statecraft.Game.Map.Collection.CollectionCatalog.Buildings).Ids;
-        Assert.AreEqual(5, streamed.Length);
+        var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Ids
+            .Where(Statecraft.Game.Map.Collection.CollectionCatalog.IsBuilding).ToArray();
+        Assert.AreEqual(23, streamed.Length);
         CollectionAssert.IsSubsetOf(streamed, Ids);
         var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) })
             .Concat(streamed.Select(id => Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, Statecraft.Game.Map.Collection.CollectionDetail.Near)))
@@ -74,18 +70,18 @@ public class BuildingModelImportTests
     }
 
     [Test]
-    public void EveryModelImportsAsAStaticCompressedMeshAndNothingElse()
+    public void EveryOriginalBuildingImportsWithoutCompressionAndKeepsItsSourceTakes()
     {
         foreach (var id in Ids)
         {
             var path = Model(id);
             var imp = AssetImporter.GetAtPath(path) as ModelImporter;
             Assert.IsNotNull(imp, path);
-            Assert.AreEqual(ModelImporterMeshCompression.Medium, imp!.meshCompression, path + " mesh compression");
+            Assert.AreEqual(ModelImporterMeshCompression.Off, imp!.meshCompression, path + " mesh compression");
             Assert.IsFalse(imp.isReadable, path + " Read/Write");
-            Assert.IsFalse(imp.importAnimation, path + " animation");
-            Assert.AreEqual(ModelImporterAnimationType.None, imp.animationType, path + " rig");
-            Assert.IsFalse(imp.importBlendShapes, path + " blend shapes");
+            Assert.IsTrue(imp.importAnimation, path + " all original takes retained");
+            Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
+            Assert.IsTrue(imp.importBlendShapes, path + " blend shapes");
             Assert.IsFalse(imp.importVisibility, path + " visibility");
             Assert.IsFalse(imp.importCameras, path + " cameras");
             Assert.IsFalse(imp.importLights, path + " lights");
@@ -100,45 +96,37 @@ public class BuildingModelImportTests
             var mesh = meshes[0];
             long triangles = Enumerable.Range(0, mesh.subMeshCount).Sum(i => (long)mesh.GetIndexCount(i)) / 3;
             Assert.Greater(triangles, 0, path);
-            Assert.LessOrEqual(triangles, MaxTriangles, path + " triangles");
+            Assert.AreEqual(Model(id), AssetDatabase.GetAssetPath(mesh), path + " exact original geometry");
             Assert.IsFalse(mesh.isReadable, path + " mesh readable");
             Assert.IsFalse(mesh.HasVertexAttribute(VertexAttribute.Tangent), path + " tangent stream");
-            CollectionAssert.IsEmpty(assets.OfType<AnimationClip>(), path + " clips");
-            CollectionAssert.IsEmpty(assets.OfType<Avatar>(), path + " avatar");
+            Assert.AreEqual(imp.defaultClipAnimations.Length, assets.OfType<AnimationClip>().Count(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)), path + " every original take");
             CollectionAssert.IsEmpty(assets.OfType<Material>(), path + " embedded materials");
             var root = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             CollectionAssert.IsEmpty(root.GetComponentsInChildren<Component>(true)
-                .Where(c => !(c is Transform || c is MeshFilter || c is MeshRenderer)), path + " other components");
+                .Where(c => !(c is Transform || c is MeshFilter || c is MeshRenderer || c is Animator)), path + " other components");
         }
     }
 
     [Test]
-    public void EveryColourMapIsCrunchedMipmappedAndAtMost512OnEveryTarget()
+    public void EveryColourMapKeepsItsSourceSizeAndMipmapsWithoutCrunch()
     {
         foreach (var id in Ids)
         {
-            var path = ColourMap(id);
-            var imp = AssetImporter.GetAtPath(path) as TextureImporter;
-            Assert.IsNotNull(imp, path);
-            Assert.AreEqual(MaxTextureSize, imp!.maxTextureSize, path + " max size");
-            Assert.IsTrue(imp.crunchedCompression, path + " crunch");
-            Assert.AreNotEqual(TextureImporterCompression.Uncompressed, imp.textureCompression, path + " compression");
-            Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps");
-            Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
-            Assert.IsFalse(imp.isReadable, path + " Read/Write");
-            imp.GetSourceTextureWidthAndHeight(out int w, out int h);
-            Assert.LessOrEqual(Mathf.Max(w, h), MaxTextureSize, path + " committed file size (no masters in the repository)");
+            var path = ColourMap(id); var imp = AssetImporter.GetAtPath(path) as TextureImporter;
+            Assert.IsNotNull(imp, path); imp!.GetSourceTextureWidthAndHeight(out int width, out int height);
+            Assert.GreaterOrEqual(imp.maxTextureSize, Math.Max(width, height), path + " no downscaling");
+            Assert.IsFalse(imp.crunchedCompression, path + " no Crunch");
+            Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps"); Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
+            Assert.IsFalse(imp.isReadable, path + " GPU-only");
             foreach (var target in new[] { "Standalone", "WebGL" })
             {
-                var s = imp.GetPlatformTextureSettings(target);
-                Assert.LessOrEqual(s.maxTextureSize, MaxTextureSize, path + " " + target);
-                Assert.IsTrue(s.crunchedCompression, path + " " + target + " crunch");
-                Assert.AreNotEqual(TextureImporterCompression.Uncompressed, s.textureCompression, path + " " + target);
+                var setting = imp.GetPlatformTextureSettings(target);
+                Assert.GreaterOrEqual(setting.maxTextureSize, Math.Max(width, height), path + " " + target + " keeps source size");
+                Assert.IsFalse(setting.crunchedCompression, path + " " + target);
             }
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-            Assert.LessOrEqual(Mathf.Max(tex.width, tex.height), MaxTextureSize, path + " imported size");
+            Assert.AreEqual(width, tex.width, path + " source width"); Assert.AreEqual(height, tex.height, path + " source height");
             Assert.Greater(tex.mipmapCount, 1, path + " imported mipmaps");
-            StringAssert.Contains("Crunched", tex.format.ToString(), path + " imported format");
         }
     }
 

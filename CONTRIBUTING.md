@@ -15,13 +15,22 @@ If you're unsure where to start, open an issue first and describe what you want 
 
 ## Licence of your contribution
 
-There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed under this repository's licences, as GitHub's Terms of Service (section D.6) also say:
+There is no CLA and no sign-off. By opening a pull request you agree that your contribution is licensed as follows:
 
-- code under [MIT](LICENSE);
+- **code:** to the project maintainer, Eyal Golan, under [MIT](LICENSES/MIT.txt), which lets him give permission for commercial use; everyone else gets it with the rest of the code, under [PolyForm Noncommercial 1.0.0](LICENSE);
 - `content/` under [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt);
 - other original material under [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 
+For `content/` and the other original material this is "inbound = outbound", as GitHub's Terms of Service (section D.6) also say. For code it is not: code comes in under MIT to the maintainer and goes out under PolyForm Noncommercial 1.0.0 (the owner's decision of 22 October 2026). This wording is the owner's choice, not legal advice, and it should be checked by a lawyer.
+
 [LICENSING.md](LICENSING.md) lists which licence covers each path. Only contribute work you have the right to license this way. If you add a third-party file, include its source and licence. Material from the Unity Asset Store is never accepted.
+
+**The licence line in the pull request.** The template's last box, "I contribute this under the terms in `CONTRIBUTING.md`", is asked of everyone; please tick it.
+
+- **Docs only:** the maintainer may merge without the tick, relying on GitHub's Terms of Service, section D.6 ("inbound = outbound"). That means every changed path is in `docs/` (except `docs/sources/`), `research_notes/`, `reports/`, `changelog.d/` or a root `*.md` file other than `LICENSING.md` and `THIRD-PARTY-NOTICES.md`, or is one of the UI text and layout files of the CC BY 4.0 row: `unity/Assets/UI/*.uxml`, `*.uss` and `strings.en.yaml`. No image, audio, video, 3D model, font, PDF or other binary file anywhere.
+- **Everything else needs the tick, code included:** code comes in under MIT to the maintainer, which is not the licence it goes out under, so GitHub's terms do not cover it. That means `sim/`, `tools/`, `scripts/`, `.github/`, `.gitignore`, `promo/*.py` and every `unity/Assets/` file of the code row (scripts, tests, scenes, prefabs, `.meta` files, `strings.he.yaml`, `WebGLTemplates/` and the rest), as well as `content/`, `ASSETS.yaml`, the licence and notice files, art, audio, video, models, fonts, materials, shaders, `.asset` files, `unity/Assets/Settings/`, `unity/Assets/StreamingAssets/`, `unity/Assets/UI/Fonts/`, `unity/Assets/UI/Portraits/`, Shader Graphs, `site/`, `spikes/`, `unity/Packages/`, `unity/ProjectSettings/` and any other path. A pull request that mixes the two needs it too.
+
+These are the owner's decisions of 22 October 2026 (D2 in [docs/oss/DECISIONS.md](docs/oss/DECISIONS.md)).
 
 ## Setup
 
@@ -42,7 +51,8 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
      `uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q`;
    - the repository policy checks:
      `uv run --with pytest==9.1.1 --with pyyaml==6.0.3 --with requests==2.32.5 pytest scripts/oss/tests -q` and `uv run scripts/oss/check_repo.py` (the command CI runs);
-   - Unity EditMode tests, if you touched `unity/` (`-buildTarget OSXUniversal` keeps an earlier WebGL build from leaving the editor on the wrong platform):
+   - Unity EditMode tests, if you touched `unity/` (`-buildTarget OSXUniversal` keeps an earlier WebGL build from leaving the editor on the wrong platform). First the Unity-MCP warm-up, every time (it exits by itself, so no `-quit`; it fetches the plugin's DLLs and adds its defines, which the tests need loaded and the post-build cleanup removes):
+     `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -projectPath unity -buildTarget OSXUniversal -executeMethod Statecraft.Game.EditorTools.UnityMcpGuard.WarmUp -logFile unity-warmup.log`, then
      `"$UNITY" -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -projectPath unity -buildTarget OSXUniversal -runTests -testPlatform EditMode -testResults "$PWD/unity-editmode.xml" -logFile unity-tests.log`. There must be 0 `warning CS` in the log.
 4. **Text the player sees** has no internal ids, gives dates as "15 May 1948", and shows money as "IL 1.2m" or "$1.2m". The tests enforce this.
 5. **Keep the pull request focused:** one change per PR, and no unrelated refactors.
@@ -54,6 +64,7 @@ Follow [docs/dev-setup.md](docs/dev-setup.md). In short:
 ## History and content rules
 
 - **Adding an event?** Follow [docs/WRITING_EVENTS.md](docs/WRITING_EVENTS.md): every field, what the loader rejects, and how to run the tests.
+- **Adding a player-facing string?** Follow [docs/UX_GLOSSARY.md](docs/UX_GLOSSARY.md), [docs/WRITING_UI.md](docs/WRITING_UI.md) and [docs/WRITING_UI_HE.md](docs/WRITING_UI_HE.md). They bind new strings from 22 October 2026 ([#622](https://github.com/eyalgolan/statecraft-israel/issues/622#issuecomment-6350231000)), and reviewers check against them. An existing string that doesn't match them changes one PR at a time, never in a sweep: name the guide rule, change `strings.en.yaml` and `strings.he.yaml` together, and send the Hebrew to the native read on #564.
 - **Every fact needs a source.** Every event, minister, office term, date and number in `content/` carries `sources:` with a URL and the date you checked it. A claim without a source can't be merged.
 - **No invented quotes.** Paraphrase, and never put words in a real person's mouth.
 - **Framing.** The project tells the story from the Israeli perspective. Contested narratives are not shown as parallel accounts.
@@ -79,7 +90,7 @@ AI-assisted work is welcome. Say so in the pull request: which parts, and how yo
 - **Security:** the local server lets the agent run editor actions, including editing files and executing code in the editor. It listens on loopback only and rejects browser pages from other sites, and the token keeps other local programs out. Keep it local: never expose the server's port (no port forwarding, tunnels or `0.0.0.0` binds), and stop the server when you're done.
 - **Not connecting?** Connect only works in an interactive editor: in batch mode (tests and builds) the plugin is held offline on purpose, and its windows don't open. Check that the server shows Running on the port in the Server URL, then click Connect. The first attempt can fail while the server is still starting; the plugin retries. If the editor is stopped without quitting, `gamedev-mcp-server` can stay behind on the port: stop it with the window's Stop button or by its PID.
 - **Batch mode and builds:** `UnityMcpGuard` (`unity/Assets/Editor/UnityMcpGuard.cs`) keeps the plugin from connecting, starting its server or opening a window in batch mode (tests and builds), and drops its assemblies from every player build. The browser build's golden hashes don't change. Run batch Unity with `-CI false -GITHUB_ACTIONS false -TF_BUILD false` (as every command in these docs does): the plugin treats `CI`, `GITHUB_ACTIONS` or `TF_BUILD` set to `true` in the environment as CI (every CI runner sets at least one of them, and so do some agent shells), and then it skips its NuGet download but still adds its defines, and a fresh clone fails to compile. The update popup is off for the team (`unity/ProjectSettings/AI-Game-Developer-UpdateSettings.asset`); version bumps come by pull request. On every Unity-MCP version bump, run the Unity EditMode tests in batch mode and paste the `UnityMcpGuardTests` result in the pull request.
-- **Leave one change uncommitted:** the plugin adds `UNITY_MCP_READY;UNITY_MCP_DEPS_7` to the scripting defines in `unity/ProjectSettings/ProjectSettings.asset` once its DLLs are in place. Don't commit that change: on a fresh clone the defines would arrive before the DLLs, and the plugin wouldn't compile. A policy test refuses it. The post-build cleanup (`git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`) drops the defines too; the plugin adds them back on the next open, at the cost of one extra compile.
+- **Leave one change uncommitted:** the plugin adds `UNITY_MCP_READY;UNITY_MCP_DEPS_7` to the scripting defines in `unity/ProjectSettings/ProjectSettings.asset` once its DLLs are in place. Don't commit that change: on a fresh clone the defines would arrive before the DLLs, and the plugin wouldn't compile. A policy test refuses it. The post-build cleanup (`git checkout -- unity/Assets/Settings unity/ProjectSettings/ProjectSettings.asset`) drops the defines too; the plugin adds them back on the next open, at the cost of one extra compile. A batch test run that starts without them runs its tests before the plugin loads, and the `UnityMcpGuardTests` fail ("its editor assembly must be loaded"): run the warm-up above first.
 - **Per-user state the plugin keeps:** besides the settings file, it stores `Unity-MCP.MainWindow.Initialized` and `Unity_MCP_SelectedAiAgent` in this project's editor PlayerPrefs, and the server's PID and update-check state in EditorPrefs.
 
 ## Pull requests

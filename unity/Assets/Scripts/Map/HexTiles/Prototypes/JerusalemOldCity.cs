@@ -27,13 +27,13 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The wall, towers, drum, dome and al-Aqsa have no models (tiles:jerusalem_old_city/...), so they always draw stand-ins.
     /// The gold dome is a Tree stand-in whose crown rises out of the drum.</summary>
-    [HexPrototype("jerusalem_old_city")]
+    [HexPrototype("jerusalem_old_city", Kind = "city")]
     public sealed class JerusalemOldCity : IHexPrototype
     {
         public string Title => "Jerusalem, the walled Old City (1948)";
         public HexTerrain Terrain => HexTerrain.Hills;
         public string Ground => "hills";
-        public int TriangleBudget => 90000;
+        public int TriangleBudget => 240000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 217k on the israel board and the test hex
 
         const string Cluster = "proto:jerusalem-stone-city-v1", House = "sandbox:kit_jerusalem*", Cypress = "sandbox:cypress_lite",
             Olive = "sandbox:olive_lite", Wall = "tiles:jerusalem_old_city/wall", Tower = "tiles:jerusalem_old_city/tower",

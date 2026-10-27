@@ -8,7 +8,8 @@ namespace Statecraft.HexTiles
 {
     /// <summary>The hex-tile map (docs/hex-tiles/README.md), opt-in while it covers only central Israel and its models
     /// are local: Web ?hex-tiles or ?hex-tiles=1, desktop -hex-tiles; a board id picks another board (Web
-    /// ?hex-tiles=tel_aviv_crop, desktop -hex-tiles tel_aviv_crop). Puts the board on the real map (HexRealMap) under one
+    /// ?hex-tiles=tel_aviv_crop, desktop -hex-tiles tel_aviv_crop), with a time of day over it (HexTimeOfDay: Web
+    /// &amp;hex-time=dusk|night, desktop -hex-time dusk|night; without the board it does nothing). Puts the board on the real map (HexRealMap) under one
     /// "HexTiles" root beside the map's own; off with nothing applied touches nothing, so the shipped map is unchanged.
     /// Presentation only: no simulation state is read or written.</summary>
     public static class HexTilesLook
@@ -63,11 +64,17 @@ namespace Statecraft.HexTiles
             // over them; both come back when the board is removed. Off before the board is placed, so what the kits
             // switch shows is already settled when the board hides the map's markers on its land.
             SetDressing(false);
-            var (root, _) = HexRealMap.Place(map, HexBoard.Load(id), HexBoard.GroundFromResources, holder,
+            var board = HexBoard.Load(id);
+            var (root, _) = HexRealMap.Place(map, board, HexBoard.GroundFromResources, holder,
                 restoreDressing: () => SetDressing(true));
-            // Civ's warm, saturated diorama light while the board is up.
+            // Civ's warm, saturated diorama light while the board is up, then the time of day asked for over it (day, the
+            // default, changes nothing). Teardown runs last registered first, so the time's undo runs before HexLook's.
             var rig = Camera.main != null ? Camera.main.GetComponent<CameraRig>() : null;
-            root.GetComponent<HexBoardAssets>().OnTeardown(HexLook.Apply(rig != null && rig.Volume != null ? rig.Volume.profile : null, MapLighting.FindSun()));
+            var profile = rig != null && rig.Volume != null ? rig.Volume.profile : null;
+            var sun = MapLighting.FindSun();
+            var assets = root.GetComponent<HexBoardAssets>();
+            assets.OnTeardown(HexLook.Apply(profile, sun));
+            assets.OnTeardown(HexTimeOfDay.Apply(HexTimeOfDay.Requested(), profile, sun, root, board));
         }
 
         static void SetDressing(bool on)

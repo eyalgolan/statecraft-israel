@@ -154,3 +154,48 @@ public class EconomyCoverageTests
         Assert.Equal(shares, s.Budget);
     }
 }
+
+/// <summary>#1109: the side menu's Budget badge reads EconomySystem.Unsubmitted, true while the Budget screen's draft differs
+/// from what End turn will apply (a queued budget's shares, else today's) and Submit can change that this turn.</summary>
+public class EconomyUnsubmittedTests
+{
+    static readonly Content C = ContentLoader.Load(RealContentTests.ContentRoot());
+
+    static Dictionary<string, double> Moved(IReadOnlyDictionary<string, double> shares)
+    {
+        var d = new Dictionary<string, double>(shares);
+        d["defense_minister"] += 0.05; d["finance_minister"] -= 0.05;
+        return d;
+    }
+
+    [Theory]
+    // case, expected: Attention 4 = a full turn (rules.yaml attention_per_turn), allocate_budget costs 2.
+    [InlineData("untouched", false)]
+    [InlineData("edited", true)]
+    [InlineData("edited_and_submitted", false)]
+    [InlineData("edited_after_submitting", true)]       // Submit again: the queued budget is refunded first
+    [InlineData("edited_after_submitting_refund", true)]   // Attention 2 = the queued budget's price: only its refund pays
+    [InlineData("back_to_today_after_submitting", true)]   // Submit withdraws the queued budget, which costs nothing
+    [InlineData("back_to_today_no_attention", true)]
+    [InlineData("game_over", false)]
+    [InlineData("no_attention", false)]
+    [InlineData("attention_queued", false)]             // Attention 2.5 less set_mobilization 1 leaves 1.5 < 2
+    public void TrueOnlyWhileADraftDiffersAndSubmitCanApplyIt(string probe, bool expected)
+    {
+        var s = new GameState { Date = new DateTime(1949, 6, 1), Attention = probe.Contains("no_attention") ? 0 : probe == "attention_queued" ? 2.5 : probe.EndsWith("_refund") ? 2 : 4 };
+        EconomySystem.Init(C, s);
+        var today = new Dictionary<string, double>(s.Budget);
+        var edited = Moved(today);
+        if (probe == "game_over") s.GameOver = GameOverCodes.CoalitionCollapse;
+        var (draft, pending) = probe switch
+        {
+            "untouched" => (today, new Command[0]),
+            "edited_and_submitted" => (edited, new Command[] { new AllocateBudget(new Dictionary<string, double>(edited)) }),
+            "edited_after_submitting" or "edited_after_submitting_refund" => (Moved(edited), new Command[] { new AllocateBudget(new Dictionary<string, double>(edited)) }),
+            "back_to_today_after_submitting" or "back_to_today_no_attention" => (today, new Command[] { new AllocateBudget(new Dictionary<string, double>(edited)) }),
+            "attention_queued" => (edited, new Command[] { new SetMobilization(0.5) }),
+            _ => (edited, new Command[0]),
+        };
+        Assert.Equal(expected, EconomySystem.Unsubmitted(C, s, draft, pending));
+    }
+}

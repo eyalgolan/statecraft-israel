@@ -43,13 +43,14 @@ namespace Statecraft.Game.Boot
         }
 
         /// <summary>The run a manifest name pins (docs/determinism.md): hash1950 and hash1952 (GoldenRun.Play), mvp-end
-        /// (GoldenRun.PlayToEnd), smoke&lt;N&gt; (GoldenRun.PlaySmoke), scenario-&lt;name&gt; (that scenario file) and the
+        /// (GoldenRun.PlayToEnd), smoke&lt;N&gt; (GoldenRun.PlaySmoke), smoke-orders (GoldenRun.PlaySmokeOrders), scenario-&lt;name&gt; (that scenario file) and the
         /// era goldens hash_&lt;era&gt;_&lt;year&gt; (GoldenRun.PlayEra to 1 January of that year, as EraGolden names them).</summary>
         internal static GameState Play(string name, Content c, GoldenData data)
         {
             if (name == "hash1950") return GoldenRun.Play(c, GoldenRun.Until1950);
             if (name == "hash1952") return GoldenRun.Play(c, GoldenRun.Until1952);
             if (name == "mvp-end") return GoldenRun.PlayToEnd(c);
+            if (name == "smoke-orders") return GoldenRun.PlaySmokeOrders(c);
             if (name.StartsWith("smoke", StringComparison.Ordinal)
                 && int.TryParse(name.Substring("smoke".Length), NumberStyles.None, CultureInfo.InvariantCulture, out var turns) && turns > 0)
                 return GoldenRun.PlaySmoke(c, turns);

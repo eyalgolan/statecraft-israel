@@ -4,7 +4,7 @@ Use this pattern when a timeline moment is underrepresented.
 
 ## Candidate theme
 
-- ma’abarot absorption pressures after independence
+- ma'abarot absorption pressures after independence
 
 ## What to check
 

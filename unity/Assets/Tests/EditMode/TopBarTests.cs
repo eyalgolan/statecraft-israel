@@ -625,8 +625,24 @@ public class TopBarTests
             {
                 var order = root.Query<Button>().ToList().Where(e => e.focusable && e.canGrabFocus && e.tabIndex >= 0)
                     .Select(e => e.name).Where(n => n.StartsWith("nav-") || n == "new-game" || n == "end-turn" || n.StartsWith("minimap-")).ToList();
-                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
+                CollectionAssert.AreEqual(new[] { "nav-cabinet", "nav-budget", "nav-defence", "nav-why", "nav-timeline", "nav-how-to-play", "nav-objectives", "nav-settings", "new-game", "end-turn", "minimap-overview", "minimap-labels", "minimap-borders" },
                     order, (hebrew ? "he" : "en") + ": the Tab order");
             }, widest: false);
     }
+    [UnityTest]
+    public IEnumerator LaptopCaptionKeepsOneLineWithoutSmallerType([Values(false, true)] bool hebrew)
+    {
+        yield return Rendered(1512, 982, hebrew, (root, text) =>
+        {
+            var caption = root.Q("meter-standing").Q<Label>(className: "meter-name");
+            Assert.AreEqual(text["hud.caption.standing"], caption.text, "retain the full adopted resource name");
+            Assert.Greater(caption.worldBound.width, 0f, "the caption is actually laid out");
+            Assert.AreEqual(DisplayStyle.Flex, caption.resolvedStyle.display);
+            var line = caption.MeasureTextSize(caption.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+            Assert.LessOrEqual(caption.contentRect.height, line.y + 1f, "International support keeps one line at the playtest size");
+            Assert.IsTrue(TextFits(caption));
+            Assert.GreaterOrEqual(caption.resolvedStyle.fontSize, 15f, "do not solve wrapping by shrinking type");
+        });
+    }
+
 }

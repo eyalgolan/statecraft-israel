@@ -1,0 +1,9 @@
+{
+  "format": "gzip, byte-exact decompression",
+  "file": "figure-syrian-infantry-1948-v1-local-actions.json.gz",
+  "uncompressed_sha256": "5c399d3e13cea0216315ba66a221d433e1745e521716df9d8f0115adad4117a2",
+  "uncompressed_bytes": 51965431,
+  "compressed_sha256": "8c8074b6c254d8ded7b21658cf6e8d7d205d14885859c0d848d31ca3b42d3aa6",
+  "compressed_bytes": 4231955,
+  "note": "Original target F-curves, keys and handles from preserved authoring blend. Archival data, not a Unity import dependency."
+}

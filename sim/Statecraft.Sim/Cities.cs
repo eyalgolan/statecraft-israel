@@ -14,9 +14,10 @@ namespace Statecraft.Sim
         /// civilians and craftsmen (a craftsman fills an ordinary job slot, R-CRAFT-002). R-CITY-009's default fills to it.</summary>
         public static int MaxWorkers(City city) => Math.Min(city.JobSlots, city.Civilians + city.Craftsmen);
 
-        /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train orders in
-        /// <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one of
-        /// them accepted, whatever order they run in. Other orders do not count.</summary>
+        /// <summary>R-CITY-001 with R-TRAIN-001: <see cref="MaxWorkers(City)"/> once the city's Train, Reinforce and Reassign
+        /// orders in <paramref name="pending"/> (this turn's queue) have taken their civilians, so a count up to it keeps every one
+        /// of them accepted, whatever order they run in. Every queued reassignment counts in full, craftsmen too (#1548): if the
+        /// job order runs first, the civilians a reassignment needs are already in work.</summary>
         public static int MaxWorkers(GameState s, string city, IEnumerable<Command> pending)
         {
             var x = s.Cities[city];
@@ -31,9 +32,25 @@ namespace Statecraft.Sim
         public static int NearestUnit(decimal people, int peoplePerUnit) =>
             (int)Math.Round(people / peoplePerUnit, MidpointRounding.AwayFromZero);
 
+        /// <summary>R-CTRL-016 (OWNER QUESTION 1 (a) on #799, the starting-city rule): a stayed target joins the player's
+        /// population as one new city: its approved people in units (R-CITY-007), homes equal to them, jobs equal to the
+        /// employed (people times employed_share to the nearest unit), the usual start condition, and no refugees, recruits or
+        /// craftsmen. Null when added, else the reason with the state unchanged (the id is already a city).</summary>
+        internal static string? Annex(Content c, GameState s, SettlementTarget t)
+        {
+            if (s.Cities.ContainsKey(t.Id)) return $"{c.SettlementNames[t.Id]} is already a city";
+            var r = c.RulesAt(s.Date).Mvp!;
+            var people = t.Annexation!.People!.Value;   // the loader requires both values on a stayed row
+            var units = StartUnits(people, r.PeoplePerUnit);
+            var employed = NearestUnit(people * t.Annexation.EmployedShare!.Value, r.PeoplePerUnit);
+            s.Cities[t.Id] = new City(t.Id, units, employed, units, employed, 0, 0, r.HousingStartCondition!.Value);
+            return null;
+        }
+
         /// <summary>Fills the state's cities from cities.yaml, with no refugees yet and the start housing condition (R-HOUSE-001). Does nothing in the legacy loop.</summary>
         public static void Init(Content c, GameState s)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;
             foreach (var x in c.Cities) s.Cities[x.Id] = new City(x.Id, x.HousingCapacity, x.JobSlots, x.Civilians, x.Employed, 0, 0, r.HousingStartCondition!.Value);
@@ -46,6 +63,7 @@ namespace Statecraft.Sim
         /// the job slots or above the civilians and craftsmen. Step has already refused it in the legacy loop.</summary>
         public static string? Assign(Content c, GameState s, string city, string role, int count, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!s.Cities.TryGetValue(city, out var x)) return "There is no such city";
             // Craftsmen fill ordinary job slots (Q-CRAFT-2, R-CRAFT-002), so "job" stays the only role.
             if (role != "job") return "There is no such role";
@@ -63,6 +81,7 @@ namespace Statecraft.Sim
         /// year. Craftsmen take the jobs first, and each employed craftsman earns craftsman_income_multiple times that.</summary>
         public static void Produce(Content c, GameState s, MvpRules r, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var x in s.Cities.Values)
             {
                 if (x.Employed == 0) continue;
@@ -77,6 +96,7 @@ namespace Statecraft.Sim
         /// projects and camp sites count. The six rates are explicit content design values; all are 0 in the MVP.</summary>
         public static double AnnualUpkeep(Content c, GameState s, MvpRules r)
         {
+            PopulationLedger.RefuseAggregate(s);
             var total = s.Cities.Count * r.CityUpkeepPerYear!.Value;
             foreach (var p in s.CityProjects.Values)
             {
@@ -104,6 +124,7 @@ namespace Statecraft.Sim
         /// default is on fills its free job slots from its people without a job, at no Attention cost.</summary>
         public static void House(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             // R-MIN-001, R-MIN-002 (D-H3; Q-MIN-1, Q-MIN-2): the Immigration minister's multiplier scales how many of the
             // city's refugees are housed this turn; the count is floored (whole groups only) and the rest wait as
             // refugees. At a neutral multiplier every refugee is housed, as R-CITY-004 says.
@@ -126,11 +147,21 @@ namespace Statecraft.Sim
 
         /// <summary>R-HOUSE-003 (Q-HOUSE-5): the people who take the city's housing: its civilians, craftsmen, recruits and groups
         /// in training (a halutz group too, until it becomes a movable unit and leaves). Refugees wait for housing and are not
-        /// in it. Summed as integers, so the order of the training groups cannot change it.</summary>
+        /// in it. Israeli formations retain their home city's housing after graduation, including when they move or become
+        /// veterans. Summed as integers, so the order of the training groups and formations cannot change it.</summary>
         public static int Housed(GameState s, City x)
         {
             var n = x.Civilians + x.Craftsmen + x.Recruits;
             foreach (var k in s.Cohorts.Values) if (k.City == x.Id) n += k.Count;
+            return n + Soldiers(s, x);
+        }
+
+        /// <summary>R-HOUSE-003, R-UNIT-004 (Q-HOUSE-5): the Israeli formations the city houses, their strength summed:
+        /// recruits, veterans, guns and armoured cars whose home it is, wherever they stand (#1345, the panel's soldiers line).</summary>
+        public static int Soldiers(GameState s, City x)
+        {
+            var n = 0;
+            foreach (var u in s.Units.Values) if (u.Side == "israel" && u.HomeCity == x.Id) n += u.Strength;
             return n;
         }
 
@@ -166,6 +197,7 @@ namespace Statecraft.Sim
         /// counts (R-HOUSE-001: the condition is per city).</summary>
         public static void UpdateCondition(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             foreach (var x in s.Cities.Values.ToList())
             {
                 var over = Overflow(s, x);
@@ -195,6 +227,7 @@ namespace Statecraft.Sim
         /// count from the game's start, and the cities are the part of it placed in towns (R-CITY-008, Q-ARRV-2).</summary>
         public static void Arrive(Content c, GameState s, MvpRules r, DateTime next, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var units = ArrivedUnits(c, s.Date, next, r.PeoplePerUnit);
             if (units == 0) return;
             var before = UnitsBy(c, s.Date, r.PeoplePerUnit);

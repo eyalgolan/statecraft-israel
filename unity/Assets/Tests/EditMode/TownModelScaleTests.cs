@@ -178,7 +178,7 @@ public class TownModelScaleTests
     }
 
     /// <summary>Issue #1032: each kit landmark's real height (m), the tallest part the kit draws for it, read off the kit's
-    /// own parts (SettlementKits.Landmarks.cs, .Moshav.cs, .Outpost.cs). The harbour works (low, in the sea), the Haram's
+    /// own parts (SettlementKits.Landmarks.cs, .Outpost.cs). The harbour works (low, in the sea), the Haram's
     /// platform (ground, sized in metres to hold the Old City's lots) and the palms (trees) are not buildings and keep the
     /// kit's size.</summary>
     static readonly Dictionary<string, float> LandmarkRealM = new Dictionary<string, float>
@@ -195,7 +195,6 @@ public class TownModelScaleTests
         ["walls"] = 9.9f,              // Suleiman's walls and their parapet at 100x
         ["wall_tower"] = 13f,          // a tower by a gate (the others 11.6 m)
         ["gate"] = 13f,
-        ["public_building"] = 6.8f,    // Nahalal's hall: 1.3 storeys and its gable
         ["outpost_yard"] = 10.5f,      // the lookout tower and its cap
     };
 

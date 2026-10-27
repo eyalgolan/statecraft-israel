@@ -29,6 +29,8 @@ public class TownModelTests
     {
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+        var layer = map.GetComponentInChildren<TownModelLayer>();
+        layer.ConfigureResidency(1000000, 1000001, 1000000, 1000, "GEOMETRY TEST ONLY; not production defaults");
         return map;
     }
 
@@ -58,7 +60,7 @@ public class TownModelTests
         switch (s.Type)
         {
             case "kibbutz": return new HashSet<M> { M.B07DiningHall, M.B09aCommunal, M.B24Barn, M.B28WaterTower };   // #820: sheds are barns
-            case "moshav": return new HashSet<M>(moshava);
+            case "moshav": return new HashSet<M>(moshava) { M.B09aCommunal };   // #659: Nahalal's public building
             case "town" when s.Id != "tiberias" && s.Id != "safed":
                 var h = new HashSet<M>(moshava) { M.B13aTwoStorey };
                 if (TownModels.WineMoshava(s.Id)) h.Add(M.B23Winery);
@@ -80,8 +82,6 @@ public class TownModelTests
             var used = built.Models.Where(m => m.Id == s.Id).Select(m => m.Model).ToList();
             TestContext.WriteLine($"{s.Id} ({s.Type}): {used.Count} models: " +
                 string.Join(", ", used.GroupBy(x => x).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}")));
-            // A Negev lookout's yard (#825) has no model that fits a 1943 walled outpost: it keeps its kit up close.
-            if (outposts.Contains(s.Id)) { if (used.Count > 0) bad.Add(s.Id + ": a lookout with models"); continue; }
             if (used.Count == 0) bad.Add(s.Id + " has no models");
             var wrong = used.Where(u => !Allowed(s).Contains(u)).Distinct().ToList();
             if (wrong.Count > 0) bad.Add($"{s.Id} ({s.Type}) uses {string.Join(", ", wrong)}");
@@ -89,7 +89,8 @@ public class TownModelTests
             var halls = placed.Where(p => p.Id == s.Id && p.Kind == "dining_hall").ToList();
             var b07 = built.Models.Where(m => m.Id == s.Id && m.Model == M.B07DiningHall).ToList();
             if (b07.Count != halls.Count) bad.Add($"{s.Id}: {b07.Count} b07 models for {halls.Count} dining halls");
-            else if (halls.Count == 1 && (b07[0].C - halls[0].C).magnitude > 1f) bad.Add($"{s.Id}: the b07 model is not on the dining hall");
+            // A lookout's hall stands in its yard's shrunk close copy, not on the kit's plot (RevivimAndNahalalDrawB09aAndB07UpClose).
+            else if (halls.Count == 1 && !outposts.Contains(s.Id) && (b07[0].C - halls[0].C).magnitude > 1f) bad.Add($"{s.Id}: the b07 model is not on the dining hall");
             if (TownModels.WineMoshava(s.Id) && used.Count(u => u == M.B23Winery) != 1) bad.Add(s.Id + ": not one winery");
         }
         // The cities' own models are there (not only a fallback).
@@ -125,10 +126,10 @@ public class TownModelTests
     {
         var map = OpenMap();
         var built = Build(map, out var placed);
-        var outposts = Outposts(placed);   // a Negev lookout keeps its kit up close (#825)
+        var outposts = Outposts(placed);   // a lookout's models stand in its yard copy, not on kit plots (RevivimAndNahalalDrawB09aAndB07UpClose)
         var towns = map.Settlements.Select(s => s.Id).Where(id => !outposts.Contains(id)).ToHashSet();
         var want = placed.Where(p => towns.Contains(p.Id)
-            && (p.Kind == "building" || p.Kind == "water_tower" || p.Kind == "warehouse" || p.Kind == "dining_hall")).ToList();
+            && (p.Kind == "building" || p.Kind == "water_tower" || p.Kind == "warehouse" || p.Kind == "dining_hall" || p.Kind == "public_building")).ToList();
         Assert.IsTrue(want.Any(p => p.Kind == "dining_hall"), "the kibbutzim's dining halls are in the census (#820)");
         var got = built.Models.Where(m => towns.Contains(m.Id)).ToList();
         TestContext.WriteLine($"{want.Count} town buildings in the census, {got.Count} town models, {built.Models.Count} models with the localities");
@@ -162,10 +163,10 @@ public class TownModelTests
     /// <summary>Owner ruling, 18 October 2026: "Whole model far, buildings near". Every town
     /// with a whole-town model (TownLandmarks.ModelFor: the cities, the six moshavot, every kibbutz, the moshav and every
     /// Arab town) is built of the single building models up close: every house, hall, water tower and warehouse its kit
-    /// places is a model on its plot. What keeps the kit up close is a landmark no model fits (the list below), Nahalal's
-    /// public building (#851: no model of a moshav's school or offices) and Revivim's walled lookout (#825: no model of a
-    /// 1943 walled outpost); those two are the gaps the PR lists. A new kind of building in these towns fails here until it
-    /// is given a model or named as a gap.</summary>
+    /// places is a model on its plot. What keeps the kit up close is a landmark no model fits (the list below). Nahalal's
+    /// public building is a b09a and Revivim's walled lookout, whose buildings stand in its yard's close copy rather than on
+    /// their kit plots, has its own test (the owner, 18 October 2026: "Use b09a and b07"). A new kind of building in these
+    /// towns fails here until it is given a model or named as a landmark.</summary>
     [Test]
     public void EveryTownWithAWholeTownModelIsTheBuildingModelsUpClose()
     {
@@ -176,14 +177,14 @@ public class TownModelTests
         var ids = mapped.Select(s => s.Id).ToHashSet();
         CollectionAssert.IsSubsetOf(new[] { "tel_aviv", "jerusalem", "haifa", "rishon_lezion", "degania_alef", "nahalal", "nazareth" }, ids);
         Assert.AreEqual(new[] { "arab_town", "city", "kibbutz", "moshav", "town" }, mapped.Select(s => s.Type).Distinct().OrderBy(t => t).ToArray());
-        var modelled = new HashSet<string> { "building", "dining_hall", "water_tower", "warehouse" };
+        var modelled = new HashSet<string> { "building", "dining_hall", "water_tower", "warehouse", "public_building" };
         var landmarks = new HashSet<string>
         {
             "al_aqsa", "breakwater", "church", "citadel", "clock_tower", "dome_of_the_rock", "gate", "german_colony", "haram",
             "lighthouse", "mosque", "palm", "port", "village_mosque", "walls", "white_tower",
         };
         var outposts = Outposts(placed);
-        CollectionAssert.AreEqual(new[] { "revivim" }, outposts.Where(ids.Contains).ToArray(), "the one walled lookout (a listed gap)");
+        CollectionAssert.AreEqual(new[] { "revivim" }, outposts.Where(ids.Contains).ToArray(), "the one walled lookout (RevivimAndNahalalDrawB09aAndB07UpClose)");
         var at = built.Models.ToLookup(m => (m.Id, Mathf.RoundToInt(m.Plot.x), Mathf.RoundToInt(m.Plot.y)));
         var bad = new List<string>();
         int houses = 0;
@@ -195,11 +196,41 @@ public class TownModelTests
                 houses++;
                 if (!at[(p.Id, Mathf.RoundToInt(p.C.x), Mathf.RoundToInt(p.C.y))].Any()) bad.Add($"{p.Id}: a {p.Kind} at {p.C} with no model");
             }
-            else if (!landmarks.Contains(p.Kind) && !(p.Id == "nahalal" && p.Kind == "public_building")) bad.Add($"{p.Id}: {p.Kind} keeps the kit up close");
+            else if (!landmarks.Contains(p.Kind)) bad.Add($"{p.Id}: {p.Kind} keeps the kit up close");
         }
         TestContext.WriteLine($"{houses} buildings in those towns, all models: {bad.Count == 0}");
         Assert.Greater(houses, 100);
         CollectionAssert.IsEmpty(bad.Take(20), $"{bad.Count} kit buildings left up close");
+    }
+
+    /// <summary>Issue #659, the owner on 18 October 2026: "Use b09a and b07" at Revivim and Nahalal, the two places whose
+    /// kit buildings had no fitting model. Up close Nahalal's public building is one b09a communal building on its plot, and
+    /// the kit's hall no longer draws there. Revivim's walled lookout keeps its wall and tower (no model of either), and its
+    /// four buildings are models: the dining hall a b07 and the other three b09a, each inside the yard's close copy, so they
+    /// stand within its wall at the models' scale.</summary>
+    [Test]
+    public void RevivimAndNahalalDrawB09aAndB07UpClose()
+    {
+        var map = OpenMap();
+        var built = Build(map, out var placed);
+        var hall = placed.Single(p => p.Id == "nahalal" && p.Kind == "public_building");
+        var onHall = built.Models.Where(m => m.Id == "nahalal" && (m.Plot - hall.C).magnitude < 1f).Select(m => m.Model).ToArray();
+        CollectionAssert.AreEqual(new[] { M.B09aCommunal }, onHall, "Nahalal's public building up close");
+        Assert.IsFalse(built.CloseLandmarks.Any(l => l.Id == "nahalal" && l.Kind == "public_building"), "Nahalal's kit hall still draws up close");
+        var revivim = built.Models.Where(m => m.Id == "revivim").ToList();
+        TestContext.WriteLine($"revivim: {string.Join(", ", revivim.Select(m => $"{m.Model} at {m.C}"))}");
+        Assert.AreEqual(1, revivim.Count(m => m.Model == M.B07DiningHall), "Revivim's dining hall is a b07");
+        Assert.AreEqual(3, revivim.Count(m => m.Model == M.B09aCommunal), "Revivim's other three buildings are b09a");
+        Assert.AreEqual(4, revivim.Count, "Revivim's four buildings, no other model");
+        var yard = built.CloseLandmarks.Single(l => l.Id == "revivim" && l.Kind == "outpost_yard");
+        var corners = new List<Vector3>();
+        foreach (var mi in revivim)
+        {
+            corners.Clear(); mi.Corners(corners);
+            foreach (var c in corners)
+                Assert.IsTrue(Mathf.Abs(c.x - yard.C.x) <= 0.5f * yard.W + 1f && Mathf.Abs(c.z - yard.C.y) <= 0.5f * yard.D + 1f,
+                    $"Revivim's {mi.Model} at {mi.C} stands outside the yard's close copy ({yard.C}, {yard.W:0} x {yard.D:0} m)");
+        }
     }
 
     /// <summary>A model stands on its plot at the world scale (SettlementKits.ModelScale, the owner on v0.1.1: the buildings
@@ -243,7 +274,7 @@ public class TownModelTests
     /// list, which lists exactly the issue's models with their meshes and materials, in TownModel order; neither the list
     /// nor any model is reachable from a Resources folder.</summary>
     [Test]
-    public void TheMapSceneLoadsTheModelsAndNoResourcesFolderDoes()
+    public void TheMapSceneLeavesOriginalModelsToStreamingAndNoResourcesFolderLoadsThem()
     {
         var set = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
         Assert.IsNotNull(set, TownModels.SetPath);
@@ -261,8 +292,8 @@ public class TownModelTests
             Assert.AreEqual(0f, b.center.x, 0.006f, id); Assert.AreEqual(0f, b.center.y, 0.006f, id); Assert.AreEqual(0f, b.min.z, 0.006f, id + " base");
         }
         var deps = AssetDatabase.GetDependencies("Assets/Map.unity", true);
-        Assert.Contains(TownModels.SetPath, deps, "the map scene loads the town models");
-        foreach (var id in TownModels.Ids) Assert.Contains($"{TownModels.Folder}/{id}/{id}.fbx", deps, id);
+        CollectionAssert.DoesNotContain(deps, TownModels.SetPath, "#1273: the map scene must not eagerly load the original list");
+        foreach (var id in TownModels.Ids) CollectionAssert.DoesNotContain(deps, $"{TownModels.Folder}/{id}/{id}.fbx", id + " streams after the first frame");
         Assert.IsFalse(TownModels.SetPath.Split('/').Any(x => x.Equals("Resources", StringComparison.OrdinalIgnoreCase)));
         var inResources = AssetDatabase.GetAllAssetPaths()
             .Where(p => p.StartsWith("Assets/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)
@@ -342,39 +373,21 @@ public class TownModelTests
         }
     }
 
-    /// <summary>Each model has three lighter levels of detail baked into the model list (separate meshes: a WebGL build
-    /// ignored RenderParams.forceMeshLod and drew every building's full mesh): about 800, about 200 and the lightest that
-    /// keeps the model's size, standing on the model's base, none heavier than the one before,
-    /// in the model's own mesh space and within a fifth of its size (so one fitted matrix places every level), without a
-    /// CPU copy; the far views draw the light ones (LodFor, TownModelSet.Mesh).</summary>
+    /// <summary>#1273: every compatibility detail alias is the same original FBX mesh. No baked lighter substitute.
+    /// Strategic distance hides originals, separately checked by OriginalModelsStreamingTests.</summary>
     [Test]
-    public void EveryModelHasBakedLevelsAndTheFarViewDrawsALightOne()
+    public void EveryDetailAliasReferencesTheSameOriginalMesh()
     {
         var set = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
+        set.Validate();
         foreach (M model in Enum.GetValues(typeof(M)))
         {
-            var full = set.Mesh(model); var levels = new[] { set.mid[(int)model], set.far[(int)model], set.farthest[(int)model] };
-            long T(Mesh m) => m.GetIndexCount(0) / 3;
-            TestContext.WriteLine($"{model}: {T(full)} / {T(levels[0])} / {T(levels[1])} / {T(levels[2])} triangles");
-            Assert.That(T(levels[0]), Is.InRange(400, 1600), model + " mid");
-            // The far levels are the lightest generated levels that keep the model's size (TownModelAssets.KeepsShape; the
-            // base is put back on the model's by the bake): about 200 triangles or fewer for most, never more than the mid
-            // target (b03a's lightest is 476, b03c's 768).
-            Assert.LessOrEqual(T(levels[1]), TownModelSet.MidTriangles, model + " far");
-            Assert.LessOrEqual(T(levels[2]), TownModelSet.MidTriangles, model + " farthest");
-            Assert.Greater(T(full), T(levels[0])); Assert.GreaterOrEqual(T(levels[0]), T(levels[1])); Assert.GreaterOrEqual(T(levels[1]), T(levels[2]));
-            foreach (var m in levels)
-            {
-                Assert.AreEqual(TownModels.SetPath, AssetDatabase.GetAssetPath(m), m.name + " lives in the model list");
-                Assert.IsFalse(m.isReadable, m.name + " keeps no CPU copy");
-                Assert.AreEqual(full.bounds.min.z, m.bounds.min.z, 0.02f, m.name + " stands on the model's base");
-                Assert.AreEqual(full.bounds.size.y, m.bounds.size.y, 0.2f, m.name + " depth");
-                // A light level may lose a roof's small top (b01's far mesh is 15% lower): within a fifth of the model.
-                Assert.AreEqual(full.bounds.size.x, m.bounds.size.x, 0.2f, m.name + " width"); Assert.AreEqual(full.bounds.size.z, m.bounds.size.z, 0.2f, m.name + " height");
-                Assert.AreEqual(full.bounds.center.x, m.bounds.center.x, 0.05f, m.name + " centre");
-            }
-            Assert.AreSame(full, set.Mesh(model, 0)); Assert.AreSame(levels[0], set.Mesh(model, 3)); Assert.AreSame(levels[1], set.Mesh(model, 5));
-            Assert.AreSame(levels[2], set.Mesh(model, 6));
+            var full = set.Mesh(model); string id = TownModels.Ids[(int)model];
+            Assert.AreEqual($"{TownModels.Folder}/{id}/{id}.fbx", AssetDatabase.GetAssetPath(full), model + " full original");
+            Assert.Greater(full.GetIndexCount(0), 0, model + " geometry present");
+            Assert.IsFalse(full.isReadable, model + " GPU-only");
+            for (int level = 0; level <= TownModelSet.Levels; level++)
+                Assert.AreSame(full, set.Mesh(model, level), model + " no generated LOD or substitute at level " + level);
         }
         // A 840 m block (a Tel Aviv block at 60x), 1080 px tall, the camera's 30 degrees: at tel_aviv30 (30 km) about 56 px,
         // the mid mesh; at the 6 km closest zoom about 280 px, the full mesh.
@@ -441,7 +454,8 @@ public class TownModelTests
 
     /// <summary>Owner ruling on #700, "Models up close only": at gameplay03 and diorama02 every kit mesh draws (main's
     /// towns) and no model does; at the close views (tel_aviv30, jaffa12) the models draw (well over a hundred), every kit
-    /// mesh gives way to its close mesh, and the models stay within <see cref="MaxTriangles"/>; zooming back out restores
+    /// individual-town mesh gives way to its close mesh (mixed locality tiles keep fallback), and the models stay within
+    /// the fixture's complete original-geometry work; zooming back out restores
     /// the kits. The "kits" toggle stops the models too.</summary>
     [UnityTest]
     public IEnumerator TheKitsDrawFarAndTheModelsUpClose()
@@ -451,6 +465,18 @@ public class TownModelTests
         var cam = Camera.main; var rig = cam.GetComponent<CameraRig>();
         var root = map.transform.Find(KitLayer.RootName);
         var layer = root.GetComponentInChildren<TownModelLayer>(); Assert.IsNotNull(layer);
+        // TEST ONLY: this complete-geometry fixture prices/draws all original towns; it is not a shipping policy.
+        const System.Reflection.BindingFlags fixtureFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var places = (IReadOnlyList<(string id, Bounds bounds)>)typeof(TownModelLayer).GetField("places", fixtureFlags)!.GetValue(layer)!;
+        Assert.IsNotEmpty(places);
+        float coverage = Mathf.Max(1f, places.Max(p => p.bounds.max.x) - places.Min(p => p.bounds.min.x)
+            + places.Max(p => p.bounds.max.z) - places.Min(p => p.bounds.min.z));
+        typeof(TownModelLayer).GetField("EdgeAllowance", fixtureFlags)!.SetValue(layer,
+            new Func<IReadOnlyList<string>, string, bool>((_, __) => true));
+        typeof(TownModelLayer).GetMethod("ConfigureResidency", fixtureFlags)!.Invoke(layer,
+            new object[] { coverage, coverage, coverage, places.Count, "TEST ONLY full geometry; NOT accepted residency limits" });
+        var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", fixtureFlags)!.GetValue(layer)!;
+        Assert.IsTrue(layer.HasModels, "this editor geometry fixture requires the complete original model set");
         Assert.Greater(layer.Count, 1000);
         int Plots(string id) => layer.InstancesOf(id).Select(m => m.Plot).Distinct().Count();
         Assert.Greater(Plots("tel_aviv"), Plots("petah_tikva"), "the big city has more building plots");
@@ -460,20 +486,35 @@ public class TownModelTests
             .Concat(renderers.Where(r => r.name.StartsWith("Localities ") && !r.name.EndsWith(KitLayer.CloseSuffix))).ToList();
         Assert.Greater(closeRs.Count, 20, "close meshes"); Assert.Greater(kitRs.Count, 40, "kit meshes");
         Assert.IsNotNull(root.Find("tel_aviv" + KitLayer.CloseSuffix), "Tel Aviv keeps its landmarks and palms up close");
+        var originals = AssetDatabase.LoadAssetAtPath<TownModelSet>(TownModels.SetPath);
+        // Full-original geometry has no decimated-mesh triangle cap. Bound submitted WORK instead:
+        // rendering more than every fixture instance once is a duplicate-submission regression.
+        long maxGeometryWork = layer.Instances().Sum(i => (long)originals.meshes[(int)i.model].triangles.Length / 3);
         var results = new List<string>();
         void Check(PromoPose pose, bool close)
         {
             Assert.AreEqual(close, layer.LastClose, pose.Name);
-            Assert.IsTrue(kitRs.All(r => r.forceRenderingOff == close), pose.Name + ": the kit meshes");
-            Assert.IsTrue(closeRs.All(r => r.forceRenderingOff == !close), pose.Name + ": the close meshes");
+            foreach (var renderer in kitRs)
+            {
+                bool ready = close && identity.TryGetValue(renderer, out var town) && layer.CountFor(town) > 0;
+                Assert.AreEqual(ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " fallback");
+            }
+            foreach (var renderer in closeRs)
+            {
+                var kitName = renderer.name.Substring(0, renderer.name.Length - KitLayer.CloseSuffix.Length);
+                var kit = root.Find(kitName).GetComponent<MeshRenderer>();
+                bool ready = close && identity.TryGetValue(kit, out var town) && layer.CountFor(town) > 0;
+                Assert.AreEqual(!ready, renderer.forceRenderingOff, pose.Name + ": " + renderer.name + " close mesh");
+            }
+            Assert.IsTrue(kitRs.Any(r => !identity.ContainsKey(r)), "mixed locality tiles stay fallback at every zoom");
             results.Add($"{pose.Name}: close={close} {layer.LastDrawn} models, {layer.LastTriangles} triangles, {layer.LastDraws} draws");
             if (!close) { Assert.AreEqual(0, layer.LastDrawn, pose.Name + ": no model"); return; }
             Assert.Greater(layer.LastDrawn, 100, pose.Name + ": models drawn");
-            Assert.LessOrEqual(layer.LastTriangles, MaxTriangles, pose.Name);
+            Assert.LessOrEqual(layer.LastTriangles, maxGeometryWork, pose.Name + ": no more than all original instances once");
         }
-        foreach (var pose in PromoPose.All) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); Check(pose, false); }
-        foreach (var pose in PromoPose.CloseUps) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); Check(pose, true); }
-        PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); Check(PromoPose.Gameplay03, false);
+        foreach (var pose in PromoPose.All) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, false); }
+        foreach (var pose in PromoPose.CloseUps) { pose.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(pose, true); }
+        PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 1920, 1080); layer.PrepareCamera(cam); Check(PromoPose.Gameplay03, false);
         TestContext.WriteLine($"{layer.Count} models; " + string.Join("; ", results));
         PromoPose.CloseUps[0].Apply(rig, map.Frame);
         VisualToggles.Set("kits", false); RenderSample.Render(cam, 320, 180);
@@ -481,6 +522,4 @@ public class TownModelTests
         Assert.AreEqual(0, layer.LastDrawn, "no model drawn with the kits off");
     }
 
-    /// <summary>The town models' triangle budget per frame at the close views (the shadow pass draws them again).</summary>
-    public const long MaxTriangles = 1_500_000;
 }

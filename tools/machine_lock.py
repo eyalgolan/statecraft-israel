@@ -7,8 +7,13 @@ Unity editor.
 
 Usage: uv run tools/machine_lock.py (--shared | --exclusive) [--wait-unity] [--timeout SECONDS] -- <command> [args...]
 --shared takes the machine lock shared (Unity builds, captures and edit-mode runs); --exclusive takes it alone (frame-time
-profiles and boot budgets) and, with --wait-unity, then waits until no Unity is left running: no batch-mode Unity process,
-and no process (an interactive editor included) holding any worktree's unity/Temp/UnityLockfile. The lock file is
+profiles and boot budgets). In either mode, --wait-unity waits until no Unity is left running: no batch-mode Unity process,
+and no process (an interactive editor included) holding any worktree's unity/Temp/UnityLockfile. Shared --wait-unity
+requests also take a separate exclusive reservation (the lock path plus ".unity") before checking for Unity and hold it
+while running their command. Two such requests therefore cannot both pass an idle check and launch together, even
+before either child appears in process listings. Ordinary --shared requests and unwrapped Unity launches can still
+overlap them; --exclusive excludes every participating shared holder. --timeout limits the Unity-process wait, not lock
+acquisition. The lock file is
 ~/.cache/statecraft/machine.lock (fcntl.flock; STATECRAFT_MACHINE_LOCK overrides it), shared by every worktree of this
 user. Exit code: the command's, or 3 when --wait-unity times out.
 
@@ -19,17 +24,26 @@ A waiting exclusive request holds the gate until it has the lock, so no new shar
 running ones drain (issue #207; before, a stream of shared jobs starved a profile, review M9).
 
 When STATECRAFT_LOCK_HOLDER names a file, it writes "<this pid> <command pid>" there once the command has started:
-the holder record tools/unity_postmerge.py uses to stop a hung Unity by its PID (T72)."""
+the holder record tools/unity_postmerge.py uses to stop a hung Unity by its PID (T72). The command starts in its own
+session/process group; its PID in that unchanged pair is also its process-group ID. SIGTERM, SIGHUP and SIGINT to the
+holder are forwarded to that group, followed by bounded TERM/KILL cleanup before the lock is released. A terminal
+Ctrl-C no longer reaches the child directly across the new session; the holder forwards SIGINT. Error paths also
+retire the whole group. Descendants that deliberately leave the group are outside this lifetime guarantee.
+Residual risk on macOS: SIGKILL or an OOM-kill of the holder itself cannot be caught, and there is no PDEATHSIG;
+its lock can still close while its workload survives. This does not make holder SIGKILL safe."""
 import argparse
 import fcntl
 import os
+import signal
 import subprocess
 import sys
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 LOCK = Path(os.environ.get("STATECRAFT_MACHINE_LOCK", str(Path.home() / ".cache" / "statecraft" / "machine.lock")))
 GATE = LOCK.with_name(LOCK.name + ".gate")
+UNITY_LOCK = LOCK.with_name(LOCK.name + ".unity")
 UNITY_EXE = "/Unity.app/Contents/MacOS/Unity"
 HOLDER_ENV = "STATECRAFT_LOCK_HOLDER"
 
@@ -105,28 +119,97 @@ def wait_for_unity(timeout: float, pids=unity_pids, sleep=time.sleep, now=time.m
         sleep(10)
 
 
+def stop_command_group(child: subprocess.Popen, grace: float = 1.0) -> None:
+    """Retire our child's session, including grandchildren, before releasing flock."""
+    def send(sig):
+        try:
+            os.killpg(child.pid, sig)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            # Darwin reports EPERM, not ESRCH, for a group holding only zombies: our own not-yet-reaped child
+            # (a forwarded signal often kills it first) or orphans awaiting their reaper. That group is retired.
+            rows = subprocess.check_output(["ps", "-axo", "pgid=,stat="], text=True)
+            if not any(int(parts[0]) == child.pid and not parts[1].startswith("Z")
+                       for row in rows.splitlines() if len(parts := row.split()) == 2):
+                return False
+            if sig != 0:
+                raise  # A live member refused the signal: never treat that as successful retirement.
+            return True
+
+    if send(signal.SIGTERM):
+        deadline = time.monotonic() + grace
+        while time.monotonic() < deadline:
+            child.poll()  # reap the direct child even if grandchildren outlive it
+            if not send(0):
+                break
+            time.sleep(0.02)
+        send(signal.SIGKILL)
+    child.wait()
+    # Let killed descendants retire too; orphan zombies may await their system reaper.
+    deadline = time.monotonic() + grace
+    while send(0) and time.monotonic() < deadline:
+        time.sleep(0.02)
+
+
 def main(argv: list[str] | None = None) -> int:
     a = parse(sys.argv[1:] if argv is None else argv)
     LOCK.parent.mkdir(parents=True, exist_ok=True)
-    with open(GATE, "a+") as gate, open(LOCK, "a+") as f:
+    with open(GATE, "a+") as gate, open(LOCK, "a+") as f, ExitStack() as reservations:
         print(f"machine_lock: taking the machine lock ({'exclusive' if a.exclusive else 'shared'})", flush=True)
         fcntl.flock(gate, fcntl.LOCK_EX)
         fcntl.flock(f, fcntl.LOCK_EX if a.exclusive else fcntl.LOCK_SH)
         fcntl.flock(gate, fcntl.LOCK_UN)
+        if a.shared and a.wait_unity:
+            unity_lock = reservations.enter_context(open(UNITY_LOCK, "a+"))
+            fcntl.flock(unity_lock, fcntl.LOCK_EX)
         if a.wait_unity and not wait_for_unity(a.timeout):
             print("machine_lock: timed out waiting for Unity")
             return 3
-        child = subprocess.Popen(a.command)
-        if record := os.environ.get(HOLDER_ENV):
-            tmp = Path(record + ".tmp")
-            tmp.write_text(f"{os.getpid()} {child.pid}\n")
-            os.replace(tmp, record)
+        child = None
+        signals = (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)
+        previous = {}
+        pending = None
+        stopping = False
+
+        def interrupted(signum, frame):
+            nonlocal pending, stopping
+            if child is None:
+                # Popen may have spawned but not returned its handle yet. Defer until ownership is known.
+                pending = pending or signum
+                return
+            try:
+                os.killpg(child.pid, signum)
+            except (ProcessLookupError, PermissionError):
+                pass  # gone, or only its zombie is left (Darwin EPERM); stop_command_group below decides
+            if not stopping:  # a second signal must not abort the cleanup already under way
+                stopping = True
+                raise SystemExit(128 + signum)
+
         try:
+            for sig in signals:
+                previous[sig] = signal.signal(sig, interrupted)
+            # Do not block signals around spawn: the exec'd child would inherit the blocked mask.
+            child = subprocess.Popen(a.command, start_new_session=True)
+            if pending is not None:
+                interrupted(pending, None)
+            if record := os.environ.get(HOLDER_ENV):
+                tmp = Path(record + ".tmp")
+                tmp.write_text(f"{os.getpid()} {child.pid}\n")
+                os.replace(tmp, record)
             return child.wait()
-        except BaseException:
-            child.kill()
-            child.wait()
-            raise
+        finally:
+            # Cleanup must finish under the lock even if another terminal signal arrives.
+            stopping = True
+            for sig in previous:
+                signal.signal(sig, signal.SIG_IGN)
+            try:
+                if child is not None:
+                    stop_command_group(child)
+            finally:
+                for sig, handler in previous.items():
+                    signal.signal(sig, handler)
 
 
 if __name__ == "__main__":

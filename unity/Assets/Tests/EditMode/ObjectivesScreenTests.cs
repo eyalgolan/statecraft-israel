@@ -77,10 +77,10 @@ public class ObjectivesScreenTests
 
         Assert.IsTrue(Objectives.Status(bridge.Content, bridge.State).All(o => !o.Done), "precondition: nothing done at the start");
         Check("at the start");
-        var first = C.Objectives[0];
+        var first = C.Objectives.Single(x => x.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
         Assert.IsTrue(Objectives.Record(C, bridge.State, C.RulesAt(bridge.State.Date).Mvp!, first.Id, first.ReferenceDate.AddMonths(-1), new List<Cause>()));
         presenter.Render();
-        Assert.IsTrue(Objectives.Status(bridge.Content, bridge.State)[0].Done, "precondition: the first is done");
+        Assert.IsTrue(Objectives.Status(bridge.Content, bridge.State).Single(x => x.Id == first.Id).Done, "precondition: the first is done");
         Check("after the first is done");
     }
 

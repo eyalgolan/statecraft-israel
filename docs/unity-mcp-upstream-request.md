@@ -9,7 +9,7 @@ Gate the main asmdefs without writing scripting defines into ProjectSettings.ass
 
 ## Body
 
-We use Unity-MCP 0.93.3 from OpenUPM in an open-source project and git-ignore `Assets/Plugins/NuGet`, so the resolver
+We use Unity-MCP 0.93.3 from OpenUPM in a free game and git-ignore `Assets/Plugins/NuGet`, so the resolver
 downloads the DLLs on each machine's first open. That part works well.
 
 On every healthy resolve, `RecompileGate.EnsureReadyDefine()` writes `UNITY_MCP_READY;UNITY_MCP_DEPS_7` into the

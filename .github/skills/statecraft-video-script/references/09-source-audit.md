@@ -26,7 +26,7 @@ This records AI-assisted source checks for the examples and cited guidance. It i
 
 ## Repository claims
 
-- README.md supports the free/open-source description, historical-source standard and Why panel.
+- README.md supports the free, non-commercial description, historical-source standard and Why panel.
 - content/events/hula_drainage.yaml defines the prime-minister decision, its two options and their security/intl_standing effects. This is a file check, not proof of what a particular recorded build displays.
 - docs/GDD.md limits the current MVP to May 1948 through January 1952. Later historical graphics must be labelled as context; they do not promise playable content.
 - docs/event-videos.md distinguishes illustration loops from 3.5-second outcome clips, requires silent video and UI disclosure, and excludes Deport options. The channel table now preserves that distinction.

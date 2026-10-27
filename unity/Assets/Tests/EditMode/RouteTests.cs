@@ -1024,7 +1024,8 @@ public class RouteTests
             CollectionAssert.IsEmpty(derivedAtLoad, "the map places the bake");
             var (_, heights) = HeightmapLoader.Load(inputs.HeightmapJson, inputs.HeightmapR16z);
             var source = RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml);
-            var plans = RouteLayer.Plan(RoutePaths.Parse(inputs.RoutesYaml, Bounds));
+            // As the map reads them: the runtime file carries the corridors' segment ends (#792).
+            var plans = RouteLayer.Plan(RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, Bounds, Debug.LogWarning));
             var data = map.Terrain.terrainData; var origin = map.Terrain.transform.position;
             Assert.IsTrue(RouteRibbonFile.TryRead(baked.bytes, source, data.size, origin, plans, out var read, out var why), why);
             var placed = Ribbons(RoutesRoot(map), "Rail").Concat(Ribbons(RoutesRoot(map), "Roads"))

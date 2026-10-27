@@ -9,18 +9,24 @@ using UnityEngine;
 namespace Statecraft.Game.Map.Routes
 {
     /// <summary>One route's share of a ribbon mesh: its first vertex and vertex count, and its first index and index count
-    /// (whole triangles). A route whose line is shorter than two points has none.</summary>
+    /// (whole triangles). A route whose line is shorter than two points has none. A route a corridor follows (GDD Phase 4,
+    /// #792) also has its segments' index ranges: <see cref="Segments"/> holds the index each segment starts at, then the
+    /// route's end (FirstIndex + IndexCount), so segment k is [Segments[k], Segments[k + 1]); empty for any other route.</summary>
     public readonly struct RouteSpan : IEquatable<RouteSpan>
     {
         public readonly string Id;
         public readonly int FirstVertex, VertexCount, FirstIndex, IndexCount;
-        public RouteSpan(string id, int firstVertex, int vertexCount, int firstIndex, int indexCount)
-        { Id = id; FirstVertex = firstVertex; VertexCount = vertexCount; FirstIndex = firstIndex; IndexCount = indexCount; }
+        public readonly int[] Segments;
+        public RouteSpan(string id, int firstVertex, int vertexCount, int firstIndex, int indexCount, int[]? segments = null)
+        {
+            Id = id; FirstVertex = firstVertex; VertexCount = vertexCount; FirstIndex = firstIndex; IndexCount = indexCount;
+            Segments = segments ?? Array.Empty<int>();
+        }
         public bool Equals(RouteSpan o) => Id == o.Id && FirstVertex == o.FirstVertex && VertexCount == o.VertexCount
-            && FirstIndex == o.FirstIndex && IndexCount == o.IndexCount;
+            && FirstIndex == o.FirstIndex && IndexCount == o.IndexCount && (Segments ?? Array.Empty<int>()).AsSpan().SequenceEqual(o.Segments ?? Array.Empty<int>());
         public override bool Equals(object? o) => o is RouteSpan s && Equals(s);
         public override int GetHashCode() => HashCode.Combine(Id, FirstVertex, VertexCount, FirstIndex, IndexCount);
-        public override string ToString() => $"{Id} v{FirstVertex}+{VertexCount} i{FirstIndex}+{IndexCount}";
+        public override string ToString() => $"{Id} v{FirstVertex}+{VertexCount} i{FirstIndex}+{IndexCount}" + (Segments is { Length: > 0 } s ? $" segments {string.Join(",", s)}" : "");
     }
 
     /// <summary>A ribbon mesh's arrays (RouteLayer.Geometry), and which routes it holds where (<see cref="Routes"/>), so a
@@ -43,6 +49,23 @@ namespace Statecraft.Game.Map.Routes
             mesh.RecalculateBounds();
             return mesh;
         }
+
+        /// <summary>Segment <paramref name="segment"/> of route <paramref name="route"/> (<see cref="RouteSpan.Segments"/>) as
+        /// a mesh of its own: its triangles and only the vertices they use, so the GDD loop can show each built segment by
+        /// itself (RouteLayer.ShowAt).</summary>
+        public Mesh SegmentMesh(int route, int segment, string name)
+        {
+            var s = Routes[route].Segments;
+            int from = s[segment], count = s[segment + 1] - from;
+            if (count == 0) return new Mesh { name = name };   // two cuts on one cross-section: nothing to draw
+            int low = int.MaxValue, high = -1;
+            for (int i = from; i < from + count; i++) { low = Math.Min(low, Indices[i]); high = Math.Max(high, Indices[i]); }
+            var indices = new int[count];
+            for (int i = 0; i < count; i++) indices[i] = Indices[from + i] - low;
+            int n = high - low + 1;
+            return new RibbonGeometry(Vertices.AsSpan(low, n).ToArray(), Normals.AsSpan(low, n).ToArray(), Uvs.AsSpan(low, n).ToArray(),
+                indices, Array.Empty<RouteSpan>()).ToMesh(name);
+        }
     }
 
     /// <summary>The route ribbons, baked (Editor RouteRibbonBake, issue #321), so a player places them instead of deriving
@@ -52,7 +75,7 @@ namespace Statecraft.Game.Map.Routes
     /// and route_paths_1948.yaml (<see cref="Check"/>), the terrain's size and origin (6 floats), the geometry constants
     /// (<see cref="Floats"/>, then <see cref="Ints"/>), the mesh count;</item>
     /// <item>each mesh, in RouteLayer.Plan's order: its name, its vertex, index and route counts, each route's id and
-    /// <see cref="RouteSpan"/>, then the vertices, normals and uvs (floats) and the indices (int32).</item>
+    /// <see cref="RouteSpan"/> (its four ints, then the count of its segment starts and the starts), then the vertices, normals and uvs (floats) and the indices (int32).</item>
     /// </list>
     /// A string is its UTF-8 byte count (int32) and the bytes. tools/tests/test_route_ribbon_bake.py checks the header
     /// against the shipped files without Unity.</summary>
@@ -63,7 +86,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>Bump it when RouteLayer.Geometry's rule changes (the constants are checked on their own), so CI fails a
         /// bake made by the old rule. tools/tests/test_route_ribbon_bake.py pins it with a fingerprint of that code
         /// (RouteLayer.Plan, Derive and what they call, and Bake below) and fails on an edit until both are re-pinned.</summary>
-        public const int Version = 3;   // 2: roads cut at the Old City's walls (RouteLayer.Drawn, #319); 3: the railway too
+        public const int Version = 4;   // 2: roads cut at the Old City's walls (RouteLayer.Drawn, #319); 3: the railway too; 4: segments (#792)
         const int Magic = 0x31524353;   // "SCR1"
 
         /// <summary>What the ribbons were made from, as the map read it.</summary>
@@ -105,7 +128,8 @@ namespace Statecraft.Game.Map.Routes
                 data.size = MapBuilder.TerrainSize(meta);
                 data.SetHeights(0, 0, heights);
                 var frame = new GeoFrame(meta.lon0, meta.lon1, meta.lat0, meta.lat1, data.size.x, data.size.z);
-                var routes = RoutePaths.ReadOrNone(inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
+                // As the map reads them (MapScene): the runtime file carries the corridors' segment ends (#792).
+                var routes = RoutePaths.ReadRuntimeOrYaml(inputs.RoutesTsv, inputs.RoutesYaml, (meta.lon0, meta.lon1, meta.lat0, meta.lat1), Debug.LogWarning);
                 var plans = RouteLayer.Plan(routes);
                 var ribbons = plans.ConvertAll(p => RouteLayer.Derive(p, frame, data, Vector3.zero));
                 return Bytes(Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), data.size, Vector3.zero, plans, ribbons);
@@ -133,6 +157,8 @@ namespace Statecraft.Game.Map.Routes
                 {
                     WriteString(w, s.Id);
                     w.Write(s.FirstVertex); w.Write(s.VertexCount); w.Write(s.FirstIndex); w.Write(s.IndexCount);
+                    w.Write(s.Segments.Length);
+                    foreach (var start in s.Segments) w.Write(start);
                 }
                 var floats = new float[g.Vertices.Length * 8];
                 for (int i = 0, n = g.Vertices.Length; i < n; i++)
@@ -194,7 +220,17 @@ namespace Statecraft.Game.Map.Routes
                     {
                         var id = r.Text();
                         if (id != plan.Routes[k].Id) { reason = $"'{name}' holds '{id}' where the routes have '{plan.Routes[k].Id}'"; return false; }
-                        spans[k] = new RouteSpan(id, r.Int(), r.Int(), r.Int(), r.Int());
+                        int fv = r.Int(), cv = r.Int(), fi = r.Int(), ci = r.Int();
+                        var segments = r.Ints(r.Count());
+                        // One start per segment and the route's end: the ends the routes give (RoutePath.SegmentEnds), each
+                        // inside the route's range and in order, so a stale bake cannot cut a segment out of another route.
+                        int want = plan.Routes[k].SegmentEnds?.Count ?? 0;
+                        if (segments.Length != want) { reason = $"'{name}' cuts '{id}' at {segments.Length} points, the routes give {want} (re-bake: RouteRibbonBake.Bake)"; return false; }
+                        for (int j = 0; j < segments.Length; j++)
+                            if (segments[j] < fi || segments[j] > fi + ci || j > 0 && segments[j] < segments[j - 1]
+                                || (j == 0 && segments[j] != fi) || (j == segments.Length - 1 && segments[j] != fi + ci))
+                            { reason = $"'{name}' cuts '{id}' outside its range"; return false; }
+                        spans[k] = new RouteSpan(id, fv, cv, fi, ci, segments);
                     }
                     var floats = r.Floats(8 * nv);
                     var verts = new Vector3[nv]; var normals = new Vector3[nv]; var uvs = new Vector2[nv];

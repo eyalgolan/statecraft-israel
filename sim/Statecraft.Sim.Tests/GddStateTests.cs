@@ -43,6 +43,7 @@ public class GddStateTests
             ("next=", x => x.NextId = 2),
             ("obj{", x => x.Objectives["first_new_yishuv"] = new DateTime(1949, 3, 15)),
             ("score=", x => x.Score = 5),
+            ("scoreparts=", x => x.ScoreTimingBonuses = 5),
         };
         foreach (var (label, set) in steps)
         {

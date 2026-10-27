@@ -87,7 +87,7 @@ Build id or footage note: REPLACE with a real build and commit id for Hula; late
 | 3 | 21-33 | Historical Carrier graphic, labelled context | 1964. The National Water Carrier. A route of about 130 kilometres. | In 1964, the National Water Carrier began operating. Its route carried water about 130 kilometres from the Sea of Galilee towards southern Israel. | F2, F3 |
 | 4 | 33-49 | Treaty graphic, labelled historical context | 1994. Israel and Jordan agree to seek sources for an additional 50 million cubic metres of drinking water a year for Jordan. | The 1994 peace treaty also addressed water. Both countries would seek new sources of drinking water for Jordan. The target: an additional 50 million cubic metres each year. | F4 |
 | 5 | 49-62 | Ashkelon historical graphic, labelled context | September 2000. A tender for a large seawater desalination plant at Ashkelon. | In September 2000, a tender was issued for a large seawater desalination plant at Ashkelon. The initial contract followed in November 2001. | F6 |
-| 6 | 62-73 | Return to the Hula options and title card | 1951. Your choice: continue or halt. Statecraft: Israel. Free and open source. Every historical fact has a source. | Back in 1951, you face the Hula decision. Statecraft: Israel is free and open source, with a source for every historical fact. | game:G1, F7 |
+| 6 | 62-73 | Return to the Hula options and title card | 1951. Your choice: continue or halt. Statecraft: Israel. Free. Every historical fact has a source. | Back in 1951, you face the Hula decision. Statecraft: Israel is free, with a source for every historical fact. | game:G1, F7 |
 
 ### Fact sheet for the rewrite
 
@@ -100,7 +100,7 @@ Build id or footage note: REPLACE with a real build and commit id for Hula; late
 | F3 | The Carrier operated from 1964; its route was about 130 km. | history | [Mekorot visitor centre](https://www.mekorot-int.com/visitor-center/), Sapir pumps since 1964; Mekorot history, 1960s, 130 km | [V] operator's account |
 | F4 | The 1994 treaty required joint efforts to find sources for an additional 50 million cubic metres a year for Jordan. | history | [Treaty, Annex II, Article I.3, Yale Avalon reproduction](https://avalon.law.yale.edu/20th_century/jordan_treaty_annex2.asp) | [V] primary treaty text |
 | F6 | The Ashkelon tender was issued in September 2000, followed by the initial contract in November 2001. | history | [Dreizin, Tenne and Hoffman, 2007, Water Commission-hosted paper](https://www.gov.il/BlobFolder/generalpage/desalination-main/he/GRCE0035.pdf), PDF page 12 | [V] planners' account |
-| F7 | The game is free and open source; historical facts carry sources. | game | README.md, opening description and history section, at 46abd99c | [V] repository check |
+| F7 | The game is free; historical facts carry sources. | game | README.md, opening description and history section, at 46abd99c | [V] repository check |
 | G1 | The prime minister's Hula event has continue and halt options. | game | content/events/hula_drainage.yaml at 46abd99c | [V] definition checked; recorded-build appearance pending |
 
 ### Notes on the rewrite

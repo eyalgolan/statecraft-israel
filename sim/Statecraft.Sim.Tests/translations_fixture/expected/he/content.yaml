@@ -1,0 +1,18 @@
+"offices.yaml#offices.prime_minister.title":
+  text: "ראש הממשלה"
+"offices.yaml#offices.prime_minister.title_f":
+  text: "ראש הממשלה"
+  review: "agent-checked"
+"people.yaml#people.ben_gurion.name":
+  text: "דוד בן-גוריון"
+  review: "agent-checked"
+"zeta.yaml#things.line.name":
+  text: "קו \"א\" \\ ב"
+"zeta.yaml#regions.north.label":
+  text: "צפון"
+"map/units_1948.yaml#units.golani.name":
+  text: "חטיבת גולני"
+"map/units_1948.yaml#units.golani.sector":
+  text: "הגליל"
+"map/units_1948.yaml#units.golani.anchors.0.place":
+  text: "יבנאל"

@@ -56,7 +56,7 @@ namespace Statecraft.Game.Map.Units
             var far = holder.GetChild(0);
             var f = new Figure { Holder = holder, Far = far, Id = id, FarRenderers = far.GetComponentsInChildren<Renderer>(true) };
             figures.Add(f);
-            if (LastClose) { Ask(id); Attach(f); }
+            if (LastClose) { Ask(f); Attach(f); }
             Show(f);
         }
 
@@ -72,12 +72,31 @@ namespace Statecraft.Game.Map.Units
             if (close == LastClose) return;
             LastClose = close;
             figures.RemoveAll(Gone);
-            foreach (var f in figures) { if (close) { Ask(f.Id); Attach(f); } Show(f); }
+            foreach (var f in figures) { if (close) { Ask(f); Attach(f); } Show(f); }
         }
 
-        void Ask(string id)
+        internal CollectionResidencyMetrics.Category ResidencySnapshot()
         {
-            if (nearAsked.Add(id)) UnitFigures.RequestNear(id, () => Arrived(id));
+            var ids = new HashSet<string>(StringComparer.Ordinal); int refs = 0;
+            foreach (var f in figures)
+            {
+                if (f.Holder == null) continue; ids.Add(f.Id);
+                refs += Array.FindAll(f.FarRenderers, r => r != null).Length + Array.FindAll(f.NearRenderers, r => r != null).Length;
+                refs += Array.FindAll(f.Animators, a => a != null).Length;
+            }
+            return CollectionResidencyMetrics.Row("units", 0, 0, ids, 0, 0, 0, refs, 0, 0);
+        }
+        void Ask(Figure figure)
+        {
+            var owner = figure.Holder != null && figure.Holder.parent != null ? figure.Holder.parent.GetComponent<UnitFigureResidency>() : null;
+            if (owner != null) { owner.RequestNear(); return; }
+            if (nearAsked.Add(figure.Id)) UnitFigures.RequestNear(figure.Id, () => Arrived(figure.Id));
+        }
+        internal void OwnedArrived(string id) => Arrived(id);
+        internal void Remove(Transform holder)
+        {
+            figures.RemoveAll(f => f.Holder == null || f.Holder == holder);
+            nearAsked.RemoveWhere(id => !figures.Exists(f => f.Id == id));
         }
 
         void Arrived(string id)
@@ -97,6 +116,7 @@ namespace Statecraft.Game.Map.Units
             if (prefab == null) return;
             var near = Instantiate(prefab, f.Holder, false).transform;   // the prefab's own root rotation (the FBX axis turn) kept
             near.name = NearName;
+            OriginalModelPose.Sample(near.gameObject); // measure the same frame-zero pose before close idle starts
             if (UnitFigures.BoxIn(f.Holder, f.Far) is Bounds far && UnitFigures.BoxIn(f.Holder, near) is Bounds box && box.size.y > 1e-6f)
             {
                 near.localScale *= far.size.y / box.size.y;

@@ -128,7 +128,9 @@ from: 1948-05-15
     // at run time. A site has no window yet and starts unbuilt, so a site target is refused until sites carry a date.
     [Theory]
     [InlineData("    grant_units:\n      - { type: tank, n: 1 }\n", "grant_units[0].type", "unknown unit type")]
-    [InlineData("    grant_units:\n      - { type: recruit, n: 1 }\n", "grant_units[0].type", "not a unit")]
+    [InlineData("    grant_units:\n      - { type: civilian, n: 1 }\n", "grant_units[0].type", "not a unit")]
+    [InlineData("    grant_units:\n      - { type: recruit, n: 1 }\n", "grant_units[0].type", "military strength")]
+    [InlineData("    grant_units:\n      - { type: veteran_soldier, n: 1 }\n", "grant_units[0].type", "military strength")]
     [InlineData("    grant_units:\n      - { type: halutz, n: 0 }\n", "grant_units[0].n", "at least 1")]
     [InlineData("    grant_units:\n      - { type: halutz, n: -2 }\n", "grant_units[0].n", "at least 1")]
     [InlineData("    grant_units:\n      - { type: halutz, n: 1, at: nowhere }\n", "grant_units[0].at", "unknown city")]

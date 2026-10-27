@@ -98,7 +98,7 @@ def test_a_download_with_the_wrong_sha1_is_refused(tmp_path, capsys, as_isolated
 
 def test_every_row_has_a_shipped_file_and_a_crop():
     rows = ei.load_rows()
-    assert len(rows) == 27   # #791 adds the selected Road of Valour frame (owner-reviewed 21 Oct 2026); #739 adds absorb_immigrants
+    assert len(rows) == 29   # #791 adds the selected Road of Valour frame (owner-reviewed 21 Oct 2026); #739 adds absorb_immigrants; #1565 adds degania_defence; #1564 adds reparations_vote
     selected = next(r for r in rows if r["event"] == "burma_road_complete")
     assert selected["sha1"] == "55b3ea19042035fbd45812ffc6576029b3d171dc"
     assert selected["original_size"] == [1370, 924]
@@ -109,6 +109,23 @@ def test_every_row_has_a_shipped_file_and_a_crop():
         with Image.open(ei.FOLDER / r["file"]) as im:
             assert im.size[0] * 9 == im.size[1] * 16
 
+
+
+@pytest.mark.parametrize("only", [["typo"], ["altalena", "typo", "other_typo"]])
+def test_an_unknown_only_is_refused_before_any_original_is_looked_at(tmp_path, capsys, as_isolated, only):
+    # #1465: an --only that matches no row used to build nothing and exit 0. The originals folder does not even exist,
+    # so a refusal that names only the unknown values proves no source was looked at.
+    assert "altalena" in {r["event"] for r in ei.load_rows()}
+    out = tmp_path / "out"
+    out.mkdir()
+    args = ["--originals", str(tmp_path / "no-originals"), "--out", str(out)]
+    for o in only:
+        args += ["--only", o]
+    assert ei.main(args) == 2
+    printed = capsys.readouterr().out
+    unknown = [o for o in only if o != "altalena"]
+    assert printed.splitlines() == [f"UNKNOWN --only {', '.join(unknown)} (not an event in {ei.MAPPING.name})"]
+    assert list(out.iterdir()) == []
 
 
 ISOLATED_IMPORT = ("import importlib.util, sys; s = importlib.util.spec_from_file_location('m', sys.argv[1]); "

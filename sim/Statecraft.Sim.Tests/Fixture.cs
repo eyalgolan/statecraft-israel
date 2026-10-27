@@ -228,6 +228,8 @@ series:
     {
         var o = new Dictionary<string, string>
         {
+            // Empty availability list for synthetic content. Old modes never read or hash this file.
+            ["gdd03-events.yaml"] = "ruleset: gdd-0.3\nexclusions: []\n",
             ["eras.yaml"] = Files["eras.yaml"] + "    systems: { loop: gdd }\n",
             ["rules.yaml"] = Files["rules.yaml"].Replace("map_action: 1 }", GddCosts) + GddRules,
             ["cities.yaml"] = GddCities,
@@ -243,7 +245,7 @@ series:
     }
 
     /// <summary>The fixture's attention_cost line with the GDD command kinds added (replaces "map_action: 1 }").</summary>
-    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1, move: 0, unit_order: 0, resolve_capture: 0 }";
+    public const string GddCosts = "map_action: 1, assign_workers: 1, train: 1, cancel_training: 1, reinforce: 1, return_craftsmen: 0.5, reassign_craftsmen: 0.5, reassign_pioneers: 0, pioneer_work: 0, stop_work: 0, start_project: 1, cancel_project: 0.5, buy_arms: 1, move: 0, unit_order: 0, resolve_capture: 0, end_occupation: 0 }";
 
     public const string GddRules = @"
 mvp:
@@ -278,6 +280,8 @@ mvp:
   arms_start: 20
   arms_price: 0.25
   arms_per_recruit_group: 2
+  military_upkeep_per_turn: 0.1
+  veteran_soldier_service: 3
   veteran_halutz_service: 4
   veteran_progress: 2
   housing_start_condition: 0.5
@@ -298,6 +302,13 @@ mvp:
   prisoner_shortfall_cohesion: 0.05
   points_per_prisoner_unit_returned: 7
   held_soldier_cost_per_turn: 0.5
+  occupation_turns: 3
+  occupation_upkeep_per_turn: 0.25
+  deport_cohesion_cost: 0.2
+  deport_support_cost: 0.1
+  deport_support_drag_per_turn: 0.01
+  deport_support_ceiling_drop: 0.3
+  deport_money_cost: 121   # >= occupation_upkeep_per_turn x the 449 turns to the end (112.25) + the dearest project (housing, 8)
   combat_terrain_percent: { coastal_plain: 100, hills: 150, desert: 100 }
   combat_table:
     - { min_ratio_percent: 0, attacker_loss: [1, 1], defender_loss: [1, 1], defender_retreats: [0, 0] }
@@ -316,9 +327,10 @@ mvp:
 types:
   - { id: civilian, kind: population }
   - { id: refugee, kind: population }
-  - { id: recruit, kind: population, facility: military_camp, training_turns: 2, training_cost: 0.5 }
+  - { id: recruit, kind: unit, side: israel, class: infantry, facility: military_camp, training_turns: 2, training_cost: 0.5, movement_points: 3 }
   - { id: halutz, kind: unit, facility: hakhshara, training_turns: 3, training_cost: 0.25 }
   - { id: craftsman, kind: population, facility: industry, training_turns: 3, training_cost: 0.75 }
+  - { id: veteran_soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }
 ";
 
     /// <summary>The three city project kinds (R-PROJ-001). Fixture values, not the game's.</summary>

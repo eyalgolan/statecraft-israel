@@ -48,6 +48,11 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The sourced start, as the card shows it ("February 1948"), or null when no source dates the arrival
         /// (the card then gives no start; the game's first day is never shown as one).</summary>
         public string? Since { get; set; }
+        /// <summary>A since date in prose ("late 1947") in Hebrew (#1292), only beside an English <see cref="Since"/>.</summary>
+        [YamlIgnore] public UnitHebrewText SinceHebrew { get; } = new UnitHebrewText();
+        public string? SinceHe { get => SinceHebrew.Text; set => SinceHebrew.Text = value; }
+        public List<UnitSource>? SinceHeSources { get => SinceHebrew.Sources; set => SinceHebrew.Sources = value; }
+        public string? SinceHeReview { get => SinceHebrew.Review; set => SinceHebrew.Review = value; }
         public string To { get; set; } = "";
         /// <summary>Why the window ends: <see cref="UnitData.EndBySource"/> (with <see cref="EndNote"/>) or
         /// <see cref="UnitData.EndByFrontArmistice"/> (with <see cref="Front"/>).</summary>
@@ -127,6 +132,13 @@ namespace Statecraft.Game.Map.Units
         [YamlIgnore] public bool NameHeReviewGiven { get; private set; }
         string? nameHeReview;
         public string Number { get; set; } = "";
+        /// <summary>The number in Hebrew (#1219 item 2), shown only in the Hebrew card's subtitle; the English
+        /// <see cref="Number"/> where absent. Sourced and agent-checked until the native read (#564), as the other
+        /// Hebrew card texts (#558, #1292).</summary>
+        [YamlIgnore] public UnitHebrewText NumberHebrew { get; } = new UnitHebrewText();
+        public string? NumberHe { get => NumberHebrew.Text; set => NumberHebrew.Text = value; }
+        public List<UnitSource>? NumberHeSources { get => NumberHebrew.Sources; set => NumberHebrew.Sources = value; }
+        public string? NumberHeReview { get => NumberHebrew.Review; set => NumberHebrew.Review = value; }
         public string Service { get; set; } = "";
         /// <summary>Whose formation it is (<see cref="UnitData.Sides"/>): the token flies that side's flag where one is
         /// sourced (<see cref="UnitFlags"/>).</summary>
@@ -136,6 +148,11 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The force's sourced strength; every row of a side other than Israel gives it.</summary>
         public UnitStrength? Strength { get; set; }
         public string? Formed { get; set; }
+        /// <summary>A formed date in prose ("Late 1947") in Hebrew (#1292), only beside an English <see cref="Formed"/>.</summary>
+        [YamlIgnore] public UnitHebrewText FormedHebrew { get; } = new UnitHebrewText();
+        public string? FormedHe { get => FormedHebrew.Text; set => FormedHebrew.Text = value; }
+        public List<UnitSource>? FormedHeSources { get => FormedHebrew.Sources; set => FormedHebrew.Sources = value; }
+        public string? FormedHeReview { get => FormedHebrew.Review; set => FormedHebrew.Review = value; }
         public string? FirstCommander { get; set; }
         /// <summary>The first commander in Hebrew (#558), only beside an English <see cref="FirstCommander"/>.</summary>
         [YamlIgnore] public UnitHebrewText FirstCommanderHebrew { get; } = new UnitHebrewText();
@@ -180,10 +197,13 @@ namespace Statecraft.Game.Map.Units
             foreach (var s in FactSources()) yield return s;
         }
 
-        /// <summary>The row's Hebrew card texts: its anchors' places, its first commander and its sector (#558).</summary>
+        /// <summary>The row's Hebrew card texts: its number (#1219), its anchors' places and since dates, its formed
+        /// date (#1292), its first commander and its sector (#558).</summary>
         IEnumerable<UnitHebrewText> HebrewTexts()
         {
-            foreach (var a in Anchors) yield return a.PlaceHebrew;
+            yield return NumberHebrew;
+            foreach (var a in Anchors) { yield return a.PlaceHebrew; yield return a.SinceHebrew; }
+            yield return FormedHebrew;
             yield return FirstCommanderHebrew;
             yield return SectorHebrew;
         }
@@ -228,9 +248,9 @@ namespace Statecraft.Game.Map.Units
         public const string SlouchHat = "slouch_hat", SteelHelmet = "steel_helmet", WoolCap = "wool_cap";
         public static readonly IReadOnlyList<string> Headgears = new[] { SlouchHat, SteelHelmet, WoolCap };
         /// <summary>The equipment a row can put on its token (<see cref="UnitVehicle"/>): the 65 mm mountain gun (the
-        /// "Napoleonchik") and the jeep.</summary>
-        public const string Gun65mm = "gun_65mm", Jeep = "jeep";
-        public static readonly IReadOnlyList<string> VehicleTypes = new[] { Gun65mm, Jeep };
+        /// "Napoleonchik"), the jeep and the improvised "sandwich" armoured car (#1536).</summary>
+        public const string Gun65mm = "gun_65mm", Jeep = "jeep", ArmouredCar = "armoured_car";
+        public static readonly IReadOnlyList<string> VehicleTypes = new[] { Gun65mm, Jeep, ArmouredCar };
         /// <summary>The uniform default where no source ties headgear to a unit: the 1948 photographs' bush hat and Mk II
         /// steel helmet (docs/units.md, "Sources").</summary>
         public static readonly IReadOnlyList<string> DefaultHeadgear = new[] { SlouchHat, SteelHelmet, SlouchHat };
@@ -291,8 +311,10 @@ namespace Statecraft.Game.Map.Units
                 if (!((IList<string>)Sides).Contains(u.Side)) throw new InvalidDataException($"{at} has unknown side '{u.Side}' ({string.Join(", ", Sides)})");
                 if (string.IsNullOrWhiteSpace(u.Name) || string.IsNullOrWhiteSpace(u.Sector)) throw new InvalidDataException($"{at} needs a name and a sector");
                 ValidateHebrewName(u, at);
+                ValidateHebrewText(u.FormedHebrew, "formed", u.Formed, at);
                 ValidateHebrewText(u.FirstCommanderHebrew, "first_commander", u.FirstCommander, at);
                 ValidateHebrewText(u.SectorHebrew, "sector", u.Sector, at);
+                ValidateHebrewText(u.NumberHebrew, "number", u.Number, at);
                 if (u.Echelon != null && !((IList<string>)Echelons).Contains(u.Echelon)) throw new InvalidDataException($"{at} has unknown echelon '{u.Echelon}' ({string.Join(", ", Echelons)})");
                 if (u.Side != Israel && (u.Echelon == null || u.Strength == null)) throw new InvalidDataException($"{at} is a row of {u.Side}, so it needs an echelon and a strength (#570)");
                 if (u.Strength != null)
@@ -318,6 +340,7 @@ namespace Statecraft.Game.Map.Units
                     if (a == null || string.IsNullOrWhiteSpace(a.Place)) throw new InvalidDataException($"{at} an anchor has no place");
                     var where = $"{at} anchor '{a.Place}'";
                     ValidateHebrewText(a.PlaceHebrew, "place", a.Place, where);
+                    ValidateHebrewText(a.SinceHebrew, "since", a.Since, where);
                     Window(where, a.From, a.To, toRequired: true);
                     if (!(a.Lon >= -180 && a.Lon <= 180 && a.Lat >= -90 && a.Lat <= 90)) throw new InvalidDataException($"{where} has bad coordinates");
                     if (a.Precision != null && a.Precision != "month") throw new InvalidDataException($"{where} precision must be 'month' or left out");

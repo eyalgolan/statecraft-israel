@@ -59,14 +59,21 @@ namespace Statecraft.HexTiles
             return m;
         }
 
-        /// <summary>Poses an animated model at its idle's first frame (the first clip whose name has "idle", else the first).</summary>
+        /// <summary>Samples the idle's first frame for authoring/Legacy clips; player non-Legacy rigs keep their authored Animator.</summary>
         public static void SampleIdle(Animator a)
         {
             var clips = a.runtimeAnimatorController != null ? a.runtimeAnimatorController.animationClips : System.Array.Empty<AnimationClip>();
             AnimationClip? clip = null;
             foreach (var c in clips) if (c != null && c.name.IndexOf("idle", System.StringComparison.OrdinalIgnoreCase) >= 0) { clip = c; break; }
             if (clip == null && clips.Length > 0) clip = clips[0];
-            if (clip != null) clip.SampleAnimation(a.gameObject, 0f);
+            if (clip != null) SampleClip(clip, a.gameObject, 0f);
+        }
+
+        // Collection's non-Legacy player rigs run their authored Animator controller. Manual sampling is reserved for
+        // Editor previews and Legacy clips; sampling these streamed rigs in a player logs an error on every pose.
+        internal static void SampleClip(AnimationClip clip, GameObject rig, float time)
+        {
+            if (Application.isEditor || clip.legacy) clip.SampleAnimation(rig, time);
         }
     }
 }

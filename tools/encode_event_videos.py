@@ -138,9 +138,14 @@ def main(argv: list[str] | None = None) -> int:
     if a.steadiest:
         start, numbers = steadiest(a.steadiest, decimate=a.decimate)
         print(json.dumps({"start_frame": start, "start_s": round(start / FPS, 3), "frames": int(round(3.5 * FPS)), **numbers})); return 0
+    all_rows = load_rows()
+    known = {Path(r["file"]).stem for r in all_rows}
+    unknown = [o for o in dict.fromkeys(a.only) if o not in known]
+    if unknown:   # before ffmpeg or any source is looked at, so a typo cannot pass for "nothing to build"
+        print(f"UNKNOWN --only {', '.join(unknown)} (not a clip's file stem in {MAPPING.name})"); return 2
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         print("ffmpeg and ffprobe are needed"); return 2
-    rows = [r for r in load_rows() if not a.only or Path(r["file"]).stem in a.only]
+    rows = [r for r in all_rows if not a.only or Path(r["file"]).stem in a.only]
     for r in rows:   # check every source before writing anything
         src = a.root / r["source"]
         if not src.is_file():

@@ -13,7 +13,8 @@
 - It includes the wars, the Holocaust, terror attacks, the British Mandate, disasters, the Cold War, relations with the Arab world, the Palestinians and world powers, and the aliyah waves.
 
 **Purpose:**
-- Build it with AI (Claude agents) toward a commercial English-language Steam release.
+- Build it with AI (Claude agents) toward a commercial English-language Steam release. Superseded: the game is free
+  (O2, 14 October 2026, `docs/oss/DECISIONS.md`) and there is no paid release (owner, 22 October 2026, [#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744)).
 - Produce something early that convinces people to join the project.
 
 **Success, for this spec:**

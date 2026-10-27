@@ -5,7 +5,7 @@ Status: DRAFT. The segments below are working hypotheses built from what the rep
 ## What the project says about itself
 
 - A turn-based grand-strategy game about governing Israel. The player is the prime minister on 15 May 1948. The ministers are real, the map is real, and every historical fact carries a source (`README.md`). [V]
-- Free, open source and non-commercial (`README.md`; owner decision O2 in `docs/oss/DECISIONS.md`). [V]
+- Free and non-commercial; the code is free to read and change for non-commercial use (`README.md`; owner decision O2 in `docs/oss/DECISIONS.md`). [V]
 - The framing is Israeli, and the game says so. No quotes are invented (`README.md`, `docs/CONTENT_POLICY.md` section 1). [V]
 - It treats war, terror and the Holocaust as historical events, through text and archival photographs, without graphic violence (`docs/steam/store-page-draft.md`). [V]
 - The core tension in the store text: "There is never enough money, arms or food for everything, and each choice is paid for somewhere else." [V]
@@ -18,7 +18,7 @@ Status: DRAFT. The segments below are working hypotheses built from what the rep
 | 1 | Strategy players (Civilization, Paradox and Democracy-style games) | The design spec and research report compare the game to Civ VII's look, Victoria 3's journal entries and Democracy 4's effects web. [V] | See the game: a map, a decision card, a consequence. Know in ten seconds what they would do in it. |
 | 2 | History-minded players and readers who care about sourcing | "Every historical fact comes with a source"; a "Report a historical error" issue form. [V] | Proof that the facts are checkable. Real dates, real offices, archival images, no invented speeches. |
 | 3 | Hebrew readers in Israel and abroad | `README.he.md`, Hebrew UI, bilingual captions on the trailer. [V] | Hebrew that reads as natural Hebrew, with the right names and terms. Not a translation of an English script. |
-| 4 | Open-source contributors (historians, Unity developers, translators, content writers) | `CONTRIBUTING.md`, "Before you start, comment here" on issues. [V] | What is built, what is open, and how to help. A concrete next step. |
+| 4 | Contributors (historians, Unity developers, translators, content writers) | `CONTRIBUTING.md`, "Before you start, comment here" on issues. [V] | What is built, what is open, and how to help. A concrete next step. |
 | 5 | Press, curators and store visitors | The existing [press page](../../../../site/src/content/en/press.md) and its downloads (#1026 closed #417), Steam Coming Soon page work (#424). [V] | A clear one-line description, honest labelling of what is real footage and what is not. |
 | 6 | Teachers and students | No evidence in the repo. [H] | Do not write for this segment until the maintainer confirms it. |
 

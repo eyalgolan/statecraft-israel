@@ -5,7 +5,7 @@ HeightsCheck, FNV-1a checks of heightmap.json and route_paths_1948.yaml, the ter
 the bake's version) and then derives the ribbons at boot, which is slower. CI runs no Unity, so this checks the same
 header here, with the constants read from the C# source: a change to any of them without a re-bake
 (RouteRibbonBake.Bake) fails CI, as the water's bake does. It also walks the meshes and their route index (route id, vertex
-and index range) for the GDD Phase 4 corridors (#384). Unity's RouteTests.TheBakedRibbonsMatchTheRoutes compares the
+and index range, and a corridor route's segment cuts, #792) for the GDD Phase 4 corridors (#384). Unity's RouteTests.TheBakedRibbonsMatchTheRoutes compares the
 whole meshes.
 
 The header holds the ribbons' data and constants, not the code that drapes them. A fingerprint of that code (RouteLayer.Plan,
@@ -113,7 +113,7 @@ def test_the_route_ribbon_bake_is_for_the_shipped_map_and_routes():
 def test_every_route_is_in_the_index_once_and_its_ranges_tile_its_mesh():
     r = Reader(bake_bytes())
     head = read_header(r)
-    ids = []
+    ids, segmented = [], {}
     for _ in range(head["meshes"]):
         name = r.text()
         nv, ni, nr = r.take("<3i")
@@ -121,8 +121,16 @@ def test_every_route_is_in_the_index_once_and_its_ranges_tile_its_mesh():
         for _ in range(nr):
             rid = r.text()
             first_v, count_v, first_i, count_i = r.take("<4i")
+            cuts = list(r.take(f"<{r.int()}i"))
             assert (first_v, first_i) == (vertex, index), f"{name}: {rid} does not follow the route before it"
             assert count_i % 3 == 0, f"{name}: {rid}"
+            if cuts:
+                # A corridor's route (#792): its segments tile its range, in order, each cut between two cross-sections.
+                assert (cuts[0], cuts[-1]) == (first_i, first_i + count_i), f"{name}: {rid}'s segments do not tile it"
+                assert cuts == sorted(cuts), f"{name}: {rid}'s segments are out of order"
+                per = 6 * (int(csharp_const("Routes/RouteLayer.cs", "Across")) - 1)
+                assert all((c - first_i) % per == 0 for c in cuts), f"{name}: {rid} is cut inside a cross-section"
+                segmented[rid] = (len(cuts) - 1, nr)
             vertex, index = first_v + count_v, first_i + count_i
             ids.append(rid)
         assert (vertex, index) == (nv, ni), f"{name}: the routes do not cover the mesh"
@@ -132,6 +140,10 @@ def test_every_route_is_in_the_index_once_and_its_ranges_tile_its_mesh():
     assert r.at == len(r.data), "longer than its meshes: " + REBAKE
     shipped = [route["id"] for route in yaml12.load(ROUTES.read_text(encoding="utf-8"))["routes"]]
     assert sorted(ids) == sorted(shipped), "stale (route ids): " + REBAKE
+    # Each corridor's route is cut into its corridor's segments, and is alone in its mesh, so RouteLayer can hide its
+    # dated ribbon in the GDD loop without hiding another route.
+    corridors = yaml12.load((ROOT / "content/corridors.yaml").read_text(encoding="utf-8"))["corridors"]
+    assert segmented == {c["route"]: (len(c["segments"]), 1) for c in corridors}, "stale (corridor segments): " + REBAKE
 
 
 def test_the_check_is_fnv1a():
@@ -142,7 +154,7 @@ def test_the_check_is_fnv1a():
 
 # The fingerprint of the ribbons' C# code (code_fingerprint), and the RouteRibbonFile.Version it was pinned at. Re-pin both
 # together, only after re-baking (RouteRibbonBake.Bake) with Version bumped.
-PINNED_VERSION, PINNED_CODE = 3, "a60ad9441761c59d2dab361e68be89fb710cc59a5edc31e0c051a6ff14367328"
+PINNED_VERSION, PINNED_CODE = 4, "55d8f29f2b769273eba9ea01c328fee536db68b57b5155dd2853345808ceb056"
 
 
 def code_fingerprint() -> str:
@@ -161,6 +173,8 @@ def code_fingerprint() -> str:
         method(layer, "public sealed class RibbonPlan"),
         method(layer, "public static List<RibbonPlan> Plan("),
         method(layer, "public static RibbonGeometry Derive("),
+        method(layer, "public static int[] SegmentStarts("),
+        method(layer, "static float Project("),
         method(layer, "public static List<Vector2> World("),
         method(layer, "public static List<Vector2> Drawn("),
         method(layer, "public static List<Vector2> TrimEndsInside("),
@@ -207,6 +221,7 @@ def ribbon_vertices_by_route(look: str) -> dict[str, np.ndarray]:
         for _ in range(nr):
             rid = r.text()
             first_v, count_v, _, _ = r.take("<4i")
+            r.take(f"<{r.int()}i")   # the segment cuts
             spans.append((rid, first_v, count_v))
         xyz = np.array(r.take(f"<{3 * nv}f"), dtype=np.float64).reshape(-1, 3) if nv else np.zeros((0, 3))
         r.take(f"<{5 * nv}f")

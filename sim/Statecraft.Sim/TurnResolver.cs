@@ -13,12 +13,14 @@ namespace Statecraft.Sim
         /// of a year long).</summary>
         public static void Resolve(Content c, GameState s, DateTime next, double yearFraction, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (!c.IsGdd) return;
             var r = c.RulesAt(s.Date).Mvp!;   // the loader requires it in the GDD loop
             EnemyAI.Order(c, s, why, next);               // 1. enemy orders, in ascending unit id (R-ENEMY-001)
             Combat.Resolve(c, s, why);                    // 2. combat, in ascending attacker id (R-COMBAT-002)
             SettlementControl.Capture(c, s, next, why);   // 3. capture, in ordinal settlement id (R-CTRL-004, R-CTRL-005)
             Orders.Settle(s, why);                        // 3b. after combat: fortify given this turn is set, and lost where a unit left its hex (R-ORDER-002)
+            Military.Serve(s, r, why);                    //    service by formations already in play, before graduation
             Training.Progress(c, s, why);                 // 4. training
             Projects.Advance(c, s, next, why);            // 5. construction
             Projects.AdvanceCity(c, s, next, why);        //    and the city projects (R-PROJ-003)
@@ -27,13 +29,14 @@ namespace Statecraft.Sim
             Pools.Consume(c, s, r, why);                  // 7. consumption: the nation eats, then imports (R-FOOD-002)
             Prisoners.Upkeep(c, s, r, why);               //    then the prisoners eat, and the soldiers held are paid for (R-POW-002, R-POW-005)
             EconomySystem.PayCivilianUpkeep(c, s, r, yearFraction, why); //    and pays Money upkeep (R-MONEY-002)
+            Military.PayUpkeep(c, s, r, why);             //    military formations pay Money, never Arms (R-UNIT-010)
             Cities.House(c, s, r, why);                      // 8. housing, then the housing condition; Social cohesion is morale, which the effects web moves after the resolution
             Cities.UpdateCondition(c, s, r, why);
             Cities.Arrive(c, s, r, next, why);            // 9. arrivals
             StartingForces.Arrive(c, s, next);            //    and the brigades dated after the start (R-UNIT-009)
-            // 10. Occupation timers: Phase 6 PR 6. On the turn that reaches the game's end, a capture still awaiting the choice
-            //     counts as Raid (R-CTRL-008, #797).
-            if (next >= c.End) SettlementControl.EndPending(c, s, why);
+            SettlementControl.Tick(c, s, r, why);         // 10. occupation timers, in ordinal settlement id (R-CTRL-011 to R-CTRL-013)
+            SettlementControl.Drag(c, s, r, why);         //     then the International Support drag of the places deported (R-CTRL-018)
+            if (next >= c.End) SettlementControl.EndPending(c, s, why);   //     and on the turn that reaches the game's end, a capture still awaiting the choice counts as Raid (R-CTRL-008, #797)
             Objectives.Complete(c, s, r, next, why);      // 11. objectives and score
             Defeat(s, r, why);                            //     then the economic defeat (D-B5, R-END-002)
             WarLoss(c, s, why);                           //     and the war loss (R-END-003)

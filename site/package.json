@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "description": "The Statecraft: Israel website (static, English and Hebrew).",
-  "license": "MIT",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "engines": {
     "node": ">=22.12"
   },
@@ -13,7 +13,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "7.3.5",
+    "astro": "7.3.8",
     "sharp": "0.35.5",
     "yaml": "2.9.1"
   }

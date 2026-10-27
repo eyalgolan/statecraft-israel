@@ -28,8 +28,12 @@ namespace Statecraft.Game.Map.Units
 
         public const string SabraPioneer = "figure-c04-sabra-pioneer-v3", PioneerVeteran = "figure-c05-pioneer-veteran-v2",
             YoungRecruit = "figure-c06-young-recruit-v2", VeteranFighter = "figure-c07-veteran-fighter-v2",
-            PalmachScout = "figure-c12f-palmach-scout-v2", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
-            Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2";
+            PalmachScout = "figure-c12f-palmach-scout-v2", Soldier1948 = "figure-soldier-1948-v1", ArabLegion = "figure-c08-arab-legion-v2", Irregular = "figure-c09-irregular-v2",
+            Napoleonchik = "figure-vehicle-napoleonchik-65mm-1948-v2", WillysJeep = "figure-vehicle-willys-jeep-1948-v2",
+            SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
+
+        public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
+            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1";
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -45,26 +49,42 @@ namespace Statecraft.Game.Map.Units
         /// battalions escorted the convoys between Sha'ar HaGai, where its token stands, and Saris (its anchor, Izkor);
         /// a Palmach woman's duties included "escorting convoys" (https://en.wikipedia.org/wiki/Netiva_Ben-Yehuda, checked
         /// 2026-10-18), and the Palmach memorial site records 34 of its women killed, seventeen in action
-        /// (https://en.wikipedia.org/wiki/Palmach, checked 2026-10-18).</summary>
+        /// (https://en.wikipedia.org/wiki/Palmach, checked 2026-10-18).
+        /// Yiftach's and Negev's is #336's 1948 soldier (owner, 21 October 2026, through the coordinator: "place it as a third
+        /// figure on some brigade unit tokens, next to C06 and C07"): a rifleman in khaki wearing the knitted stocking cap, the
+        /// Palmach's (as C07 wears it), so he stands third on the other two Palmach brigades, the 11th and 12th (their rows'
+        /// numbers, palmach.org.il). On Negev's token he takes the third figure's sourced cap from C07
+        /// (<see cref="ThirdOverHeadgear"/>), so it shows C07, C06 and the soldier.</summary>
         public static readonly IReadOnlyDictionary<string, string> ThirdFigure = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["harel"] = PalmachScout,
+            ["harel"] = PalmachScout, ["yiftach"] = Soldier1948, ["negev"] = Soldier1948,
         };
 
-        /// <summary>An Arab force's figures, by its side: the Arab Legion (C08) for Transjordan's army, the irregular (C09) for
-        /// the Arab Liberation Army, "an irregular army" of volunteers (https://en.wikipedia.org/wiki/Arab_Liberation_Army,
-        /// checked 2026-10-18). Unit models by Tal Heuberger count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3).
-        /// No other side has a figure, so its rows stay off the map (<see cref="UnitRoster.OnMap"/>).</summary>
+        /// <summary>The headgear a sourced third figure must wear for a <see cref="ThirdFigure"/> row to stand in its place: the
+        /// soldier's knitted stocking cap, so a row never changes what its headgear source shows.</summary>
+        public static readonly IReadOnlyDictionary<string, string> ThirdOverHeadgear = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [Soldier1948] = UnitData.WoolCap,
+        };
+
+        /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, ALA and
+        /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens. The new ALA candidate is review-only: no local-force
+        /// row is authored here. Egypt awaits an approved representation of its simultaneous bases, and Lebanon's hidden
+        /// row remains off the map (<see cref="UnitRoster.OnMap"/>).
+        /// Tal Heuberger's 1948 Collection figures count as reviewed and approved (owner, 17 October 2026, #756, Q-ART-3);
+        /// the Syrian and Iraqi figures of 22 October await sign-off (#756).</summary>
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
+            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry,
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
-        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys.</summary>
+        /// (owner, 17 October 2026, #756: Tal Heuberger's H02 is the gun), the jeep H03, the Willys, the armoured car H01, the "sandwich"
+        /// armoured truck (the owner's Q-ART-2 choice, #756; #1536).</summary>
         public static readonly IReadOnlyDictionary<string, string> ByVehicle = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep,
+            [UnitData.Gun65mm] = Napoleonchik, [UnitData.Jeep] = WillysJeep, [UnitData.ArmouredCar] = SandwichArmouredCar,
         };
 
         /// <summary>The figure of an Arab force's side, or null (that side's rows stay off the map).</summary>
@@ -75,7 +95,9 @@ namespace Statecraft.Game.Map.Units
         public static string? FigureFor(UnitEntry u, int index, string? headgear)
         {
             if (u.Side != UnitData.Israel) return SideFigure(u.Side);
-            if (index == 2 && u.Headgear == null) return ThirdFigure.TryGetValue(u.Id, out var third) ? third : PioneerVeteran;
+            if (index == 2 && ThirdFigure.TryGetValue(u.Id, out var third)
+                && (u.Headgear == null || ThirdOverHeadgear.TryGetValue(third, out var cap) && cap == headgear)) return third;
+            if (index == 2 && u.Headgear == null) return PioneerVeteran;
             return headgear != null && ByHeadgear.TryGetValue(headgear, out var id) ? id : null;
         }
 
@@ -111,8 +133,74 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Raised once for each model when it first arrives (the unit layer then draws the tokens that waited for it).</summary>
         public static event Action<string>? ModelArrived;
 
+        internal static int AvailabilityVersion { get; private set; }
+        static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
+        static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
+        internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
+            arrived.Keys.Concat(near.Keys).Concat(asked).Concat(waiting.Keys).Concat(nearWaiting.Keys), 0, asked.Count + nearWaiting.Count,
+            arrived.Values.Count(p => p != null) + near.Values.Count(p => p != null), 0,
+            waiting.Values.Sum(list => list.Count(p => p != null)) + nearWaiting.Values.Sum(list => list.Count), 0,
+            arrived.Keys.Select(id => id + "|Far").Concat(near.Keys.Select(id => id + "|Near")));
+        sealed class ExternalLease : IDisposable { public void Dispose() { } }
+        static readonly Dictionary<(string id, CollectionDetail detail), List<Action<GameObject?>>> externalPending =
+            new Dictionary<(string, CollectionDetail), List<Action<GameObject?>>>();
+        static IDisposable AcquireSource(string id, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            if (Source == null) return CollectionStream.Acquire(id, detail, answer);
+            if (detail == CollectionDetail.Far && arrived.TryGetValue(id, out var far)) { answer(far); return new ExternalLease(); }
+            if (detail == CollectionDetail.Near && near.TryGetValue(id, out var close)) { answer(close); return new ExternalLease(); }
+            var key = (id, detail);
+            if (!externalPending.TryGetValue(key, out var callbacks)) externalPending[key] = callbacks = new List<Action<GameObject?>>();
+            callbacks.Add(answer);
+            if (callbacks.Count == 1) Source(id, detail, prefab =>
+            {
+                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !owned.ContainsKey(id)) return;
+                externalPending.Remove(key);
+                AnswerOwned(id, detail, prefab);
+                foreach (var done in callbacks.ToArray()) done(prefab);
+            });
+            return new ExternalLease();
+        }
+        sealed class Owner : IDisposable
+        {
+            readonly string id; IDisposable? lease;
+            internal Owner(string id, IDisposable lease) { this.id = id; this.lease = lease; }
+            public void Dispose()
+            {
+                if (lease == null) return;
+                lease.Dispose(); lease = null;
+                if (--owned[id] != 0) return;
+                owned.Remove(id); externalPending.Remove((id, CollectionDetail.Far)); externalPending.Remove((id, CollectionDetail.Near));
+                // A permanent legacy caller is an explicit retained blocker; never erase its still-live source cache.
+                if (legacyPinned.Contains(id)) return;
+                if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); near.Remove(id); nearWaiting.Remove(id);
+            }
+        }
+        internal static IDisposable AcquireOwned(string id, CollectionDetail detail, Action<GameObject?> answer,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
+        {
+            owned.TryGetValue(id, out int count); owned[id] = count + 1;
+            try { return new Owner(id, (acquire ?? AcquireSource)(id, detail, answer)); }
+            catch { if (--owned[id] == 0) owned.Remove(id); throw; }
+        }
+        internal static void AnswerOwned(string id, CollectionDetail detail, GameObject? prefab)
+        {
+            if (detail == CollectionDetail.Near) near[id] = prefab;
+            else if (prefab != null)
+            {
+                bool first = !arrived.ContainsKey(id); arrived[id] = prefab;
+                if (first) { AvailabilityVersion++; ModelArrived?.Invoke(id); }
+            }
+        }
+
         /// <summary>Forgets every model and request (tests, and a change of <see cref="Source"/>).</summary>
-        public static void Forget() { arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        internal static void ResetSession()
+        {
+            if (owned.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
+            Forget(); Source = null; ModelArrived = null;
+        }
+        public static void Forget() { externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear(); }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;
@@ -123,6 +211,16 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Puts model <paramref name="id"/> on <paramref name="piece"/> (a figure or a vehicle's holder, in real metres
         /// scaled by <see cref="UnitShowcase.FigureScale"/>): at once when it has arrived, else when it arrives. Nothing for a
         /// null id.</summary>
+        internal static void Dress(Transform piece, string? id, CollectionResidencyPolicy policy,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null)
+        {
+            if (policy == null) throw new ArgumentNullException(nameof(policy));
+            if (id == null || piece == null) return;
+            // The sandwich original remains explicitly pinned by the road consumer in this first production slice.
+            var owner = piece.GetComponent<UnitFigureResidency>() ?? piece.gameObject.AddComponent<UnitFigureResidency>();
+            owner.Initialize(id, policy, acquire);
+        }
+
         public static void Dress(Transform piece, string? id)
         {
             if (id == null || piece == null) return;
@@ -142,6 +240,7 @@ namespace Statecraft.Game.Map.Units
             if (!nearWaiting.TryGetValue(id, out var list)) nearWaiting[id] = list = new List<Action>();
             list.Add(ready);
             if (list.Count > 1) return;   // asked already
+            legacyPinned.Add(id);
             ask(id, CollectionDetail.Near, prefab =>
             {
                 near[id] = prefab;   // null: fail open, the far model stays (the stream has warned once)
@@ -159,7 +258,7 @@ namespace Statecraft.Game.Map.Units
             if (Arrived(id) || asked.Contains(id)) return;
             var ask = Requester;
             if (ask == null) return;
-            asked.Add(id);
+            asked.Add(id); legacyPinned.Add(id);
             ask(id, CollectionDetail.Far, prefab =>
             {
                 asked.Remove(id);
@@ -181,7 +280,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The swap: the model under the piece, in its frame (facing +Z, feet or wheels on the origin), and the
         /// code-built mesh's renderer off, together. A figure takes the code-built figure's height (or, with none, a man's
         /// height); a vehicle takes <see cref="VehicleLengthShare"/>.</summary>
-        static void Swap(Transform piece, string id, GameObject prefab)
+        internal static void Swap(Transform piece, string id, GameObject prefab)
         {
             if (piece.Find(ModelName) != null) return;
             // The model under a holder in the piece's frame: the prefab keeps its own root transform (every Collection far
@@ -190,6 +289,15 @@ namespace Statecraft.Game.Map.Units
             var holder = new GameObject(ModelName).transform;
             holder.SetParent(piece, false);
             var model = UnityEngine.Object.Instantiate(prefab, holder, false);
+            if (!CollectionCatalog.IsFullQualityGeneratedInfantry(id))
+                OriginalModelPose.Sample(model); // far Tal originals are still poses; #1763's generated rigs keep playing
+            else
+                foreach (var animator in model.GetComponentsInChildren<Animator>(true))
+                {
+                    if (!animator.enabled || animator.runtimeAnimatorController == null) continue;
+                    var culling = animator.cullingMode; animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    animator.Rebind(); animator.Update(0f); animator.cullingMode = culling;
+                }
             var code = piece.TryGetComponent<MeshRenderer>(out var mr) ? mr : null;
             var renderers = model.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length > 0)
@@ -215,12 +323,12 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             if (code != null) code.enabled = false;
-            if (CollectionCatalog.Animated.Contains(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
-        /// bounds (Renderer.bounds is empty while the layer is off). A skinned mesh is drawn through its bones, so its box is
-        /// the renderer's local bounds in its root bone's space (as Unity bounds it), not its mesh's. Null with no mesh.</summary>
+        /// bounds (Renderer.bounds is empty while the layer is off). Skin bounds come from the actual posed vertices,
+        /// not the imported whole-animation culling envelope. No rendered mesh or source asset is replaced. Null with no mesh.</summary>
         internal static Bounds? BoxIn(Transform frame, Transform model)
         {
             var inv = frame.worldToLocalMatrix;
@@ -235,12 +343,27 @@ namespace Statecraft.Game.Map.Units
                 }
             }
             foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
-            foreach (var s in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (s.sharedMesh != null) Add(s.localBounds, s.rootBone != null ? s.rootBone : s.transform);
+            foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (skin.sharedMesh == null) continue;
+                var posed = new Mesh();
+                try
+                {
+                    // true compensates the instance scale; the matrix below applies it exactly once (#1273).
+                    skin.BakeMesh(posed, true);
+                    var matrix = inv * skin.transform.localToWorldMatrix;
+                    foreach (var vertex in posed.vertices)
+                    {
+                        var point = matrix.MultiplyPoint3x4(vertex);
+                        if (box is Bounds have) { have.Encapsulate(point); box = have; } else box = new Bounds(point, Vector3.zero);
+                    }
+                }
+                finally { if (Application.isPlaying) UnityEngine.Object.Destroy(posed); else UnityEngine.Object.DestroyImmediate(posed); }
+            }
             return box;
         }
 
-        static bool ByVehicleId(string id) => id == Napoleonchik || id == WillysJeep;
+        static bool ByVehicleId(string id) => id == Napoleonchik || id == WillysJeep || id == SandwichArmouredCar;
 
         /// <summary>True when <paramref name="piece"/> shows its Collection model (and not a code-built mesh).</summary>
         public static bool Dressed(Transform piece)

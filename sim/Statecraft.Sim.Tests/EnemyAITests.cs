@@ -392,4 +392,48 @@ public class EnemyAITests
         }
         Assert.Empty(s.Settlements);
     }
+
+    // R-ENEMY-001: what the enemy does is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a scripted
+    // move, an attack (on its engagement, #1297) and a fortify. The player's own orders, through the same checks, name none.
+    [Fact]
+    public void EachEnemyOrderIsNamedOnItsCause()
+    {
+        var c = Load();
+        var fought = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10)), Array.Empty<Command>());
+        Assert.Equal(new[] { Combat.Attack }, fought.Why.Where(x => x.EnemyOrder != "").Select(x => x.EnemyOrder));
+        var mine = Simulation.Step(c, CombatTests.With(c, Soldier(1, 3, 0, 10), Enemy(2, 2, 0, 1)), new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
+        Assert.Contains(mine.Why, x => x.Message.StartsWith("The attack on hex 2,0", StringComparison.Ordinal));
+        Assert.DoesNotContain(mine.Why, x => x.EnemyOrder == Combat.Attack);
+        var r = Simulation.Step(c, CombatTests.With(c, Soldier(1, 0, 0, 5), Enemy(2, 5, 2, 1)),
+            new Command[] { new Move(1, 1, 0), new UnitOrder(1, Orders.Hold) });
+        Assert.Equal(new[] { "", "", Orders.Fortify }, r.Why.Where(x => x.System == "map").Select(x => x.EnemyOrder).ToArray());
+        var first = Simulation.Step(Real, Simulation.NewGame(Real, 1, Mode.Historical), Array.Empty<Command>());
+        var scripted = Real.StartingForces.Select((f, i) => (f, i)).Where(x => x.f.Script != null).Select(x => x.i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(scripted, first.Why.Where(x => x.EnemyOrder == Movement.Kind).Select(x => x.Target));
+    }
+
+    // #1297: a standing attack the AI keeps (R-ENEMY-003) still engages every turn (R-COMBAT-002), so the turn report must
+    // name it on each turn it engages, not only on the turn it is ordered. With no retreat at 2:1, unit 1 holds its hex
+    // and unit 2's attack stands into the second turn.
+    [Fact]
+    public void AStandingEnemyAttackIsNamedOnEveryTurnItEngages()
+    {
+        var files = Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n"
+        });
+        files["rules.yaml"] = files["rules.yaml"].Replace("defender_retreats: [1, 1]", "defender_retreats: [0, 0]");
+        var c = ContentLoader.Load(Fixture.Write(files));
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 5), Enemy(2, 2, 0, 10));
+        for (int turn = 0; turn < 2; turn++)
+        {
+            var r = Simulation.Step(c, s, Array.Empty<Command>());
+            Assert.Equal((Combat.Attack, "3,0"), (r.State.Units[2].Order, r.State.Units[2].OrderTarget));
+            Assert.Equal(4 - turn, r.State.Units[1].Strength);   // it engaged this turn
+            var attack = Assert.Single(r.Why, x => x.EnemyOrder == Combat.Attack);
+            Assert.Equal("3,0", attack.Target);
+            Assert.Equal(new[] { 2 }, attack.EnemyAttackers);
+            s = r.State;
+        }
+    }
 }

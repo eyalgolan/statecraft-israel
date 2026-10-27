@@ -16,7 +16,7 @@ namespace Statecraft.Sim
         /// <summary>The front whose exchange card returns each enemy side's prisoners: the armistice agreements' parties
         /// (Q-OBJ-1), with Iraq under Jordan, whose agreement took over the Iraqi sector (Art. VI). The ALA and the local
         /// forces belong to no front, so no card returns their prisoners (they stay held to the game's end).</summary>
-        static readonly Dictionary<string, string> FrontOf = new Dictionary<string, string>(StringComparer.Ordinal)
+        internal static readonly Dictionary<string, string> FrontOf = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["egypt"] = "egypt", ["lebanon"] = "lebanon", ["syria"] = "syria", ["jordan"] = "jordan", ["iraq"] = "jordan",
         };
@@ -34,6 +34,7 @@ namespace Statecraft.Sim
         /// Combat's surrender, the one way a unit is captured.</summary>
         internal static string Take(GameState s, Unit u, Unit captor)
         {
+            PopulationLedger.RefuseAggregate(s);
             if (u.Side == Movement.PlayerSide)
             {
                 Add(s.SoldiersHeld, captor.Side, u.Strength);
@@ -56,6 +57,7 @@ namespace Statecraft.Sim
         /// player's soldiers held, borrowing what it lacks (Q-POW-4; R-MONEY-003).</summary>
         public static void Upkeep(Content c, GameState s, MvpRules r, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             var need = (long)s.PrisonersHeld.Values.Sum() * r.FoodPerPrisonerUnit!.Value;
             if (need > 0)
             {
@@ -72,7 +74,7 @@ namespace Statecraft.Sim
             var held = s.SoldiersHeld.Values.Sum();
             if (held == 0) return;
             var cost = held * r.HeldSoldierCostPerTurn!.Value;
-            if (cost > 0) EconomySystem.PayOrBorrow(c, s, cost, "for our soldiers held by the enemy", why);
+            if (cost > 0) EconomySystem.PayOrBorrow(c, s, cost, "for our soldiers held by the enemy", why, CauseKeys.Purpose.Prisoners);
         }
 
         /// <summary>R-POW-004, R-POW-005: <paramref name="front"/>'s exchange card was resolved. Its sides' prisoners go home and
@@ -80,6 +82,7 @@ namespace Statecraft.Sim
         /// score (Q-POW-4).</summary>
         internal static void Return(Content c, GameState s, string front, List<Cause> why)
         {
+            PopulationLedger.RefuseAggregate(s);
             // Only GDD combat creates prisoners and the card waits for them, so this runs only in the GDD loop, which has Mvp.
             var points = c.RulesAt(s.Date).Mvp!.PointsPerPrisonerUnitReturned!.Value;
             var ppu = c.RulesAt(s.Date).Mvp!.PeoplePerUnit;
@@ -92,10 +95,13 @@ namespace Statecraft.Sim
             if (returned > 0)
             {
                 s.Score += returned * points;
-                why.Add(new Cause("events", "prisoners", returned, FormattableString.Invariant($"Prisoners exchanged: {returned * ppu:N0} prisoners returned to {Name(front)}")));
+                s.ScorePrisonerPoints += returned * points;   // R-SCORE-001
+                why.Add(new Cause("events", "prisoners", returned, FormattableString.Invariant($"Prisoners exchanged: {returned * ppu:N0} prisoners returned to {Name(front)}"),
+                    key: CauseKeys.PrisonersReturned, args: new[] { CauseKeys.Number(returned * ppu), front }));
             }
             if (home > 0)
-                why.Add(new Cause("events", "prisoners", home, FormattableString.Invariant($"Prisoners exchanged: {home * ppu:N0} of our soldiers came home from {Name(front)}")));
+                why.Add(new Cause("events", "prisoners", home, FormattableString.Invariant($"Prisoners exchanged: {home * ppu:N0} of our soldiers came home from {Name(front)}"),
+                    key: CauseKeys.SoldiersReturned, args: new[] { CauseKeys.Number(home * ppu), front }));
         }
     }
 }

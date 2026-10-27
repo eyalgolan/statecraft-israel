@@ -84,7 +84,7 @@ public class EndScreenTests
     /// <summary>A game on its last day, ended as the MVP ends, with the first objective completed a month early.</summary>
     static void Ended(GameState s)
     {
-        var first = C.Objectives[0];
+        var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
         Objectives.Record(C, s, C.RulesAt(s.Date).Mvp!, first.Id, first.ReferenceDate.AddMonths(-1), new List<Cause>());
         s.Date = C.End;
         s.GameOver = GameOverCodes.MvpEnded;
@@ -118,11 +118,11 @@ public class EndScreenTests
         Assert.AreEqual(En.Format("hud.score", s.Score), k.Line("score"));
         Assert.Greater(s.Score, 0);
         // The first objective: the card's title, the player's date and the historical date (Q-END-1).
-        var first = C.Objectives[0];
+        var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
         string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
         var title = EventSystem.Title(C, s, C.Events.First(e => e.Id == first.Card));
         Assert.AreEqual(En.Format("end.objective_done", title, Date(first.ReferenceDate.AddMonths(-1)), Date(first.ReferenceDate)), k.Line("objective-" + first.Id));
-        foreach (var o in C.Objectives.Skip(1))
+        foreach (var o in C.Objectives.Where(o => o.Id != first.Id))
             StringAssert.Contains(Date(o.ReferenceDate), k.Line("objective-" + o.Id), "an open objective still shows its historical date");
         Assert.AreEqual(En.Format("end.parameter", En["hud.caption.cohesion"], PlayerText.Percent(r.SocialCohesion)), k.Line("cohesion"));
         Assert.AreEqual(En.Format("end.parameter", En["hud.caption.standing"], PlayerText.Percent(r.InternationalSupport)), k.Line("standing"));

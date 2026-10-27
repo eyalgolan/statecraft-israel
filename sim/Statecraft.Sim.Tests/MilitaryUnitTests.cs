@@ -30,14 +30,28 @@ public class MilitaryUnitTests
         Assert.Equal("2:artillery@3,4/1|side=israel", new Unit(2, "artillery", 3, 4, 1, side: "israel").Canonical());
     }
 
-    // R-UNIT-001: the game's military types are Israel's three, with their class (Q-UNIT-1; owner, 18 October 2026, #741).
+    // R-HOUSE-003, R-UNIT-002: home affects housing, so it is state and survives the immutable clone.
     [Fact]
-    public void TheRealGameHasTheThreeIsraeliMilitaryTypes()
+    public void AFormationsHomeCityChangesItsHashAndSurvivesAClone()
+    {
+        var s = new GameState();
+        s.Units.Add(1, new Unit(1, "recruit", 0, 0, side: "israel", strength: 3, homeCity: "tel_aviv"));
+        var copy = s.Clone();
+        Assert.Equal("tel_aviv", copy.Units[1].HomeCity);
+        Assert.Equal(s.Hash(), copy.Hash());
+        copy.Units[1] = new Unit(1, "recruit", 0, 0, side: "israel", strength: 3, homeCity: "jerusalem");
+        Assert.NotEqual(s.Hash(), copy.Hash());
+        Assert.Equal("tel_aviv", s.Units[1].HomeCity);
+    }
+
+    // R-UNIT-001: the recruit now joins the three military types introduced by #741, with its side and class.
+    [Fact]
+    public void TheRealGameHasTheFourIsraeliMilitaryTypes()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        Assert.Equal(new[] { ("veteran_soldier", "unit", "israel", "infantry"), ("artillery", "unit", "israel", "artillery"), ("armoured_car", "unit", "israel", "armour") },
+        Assert.Equal(new[] { ("recruit", "unit", "israel", "infantry"), ("veteran_soldier", "unit", "israel", "infantry"), ("artillery", "unit", "israel", "artillery"), ("armoured_car", "unit", "israel", "armour") },
                      c.UnitTypes.Where(t => t.Side == "israel").Select(t => (t.Id, t.Kind, t.Side, t.Class)));
-        Assert.Equal("", c.UnitTypes.Single(t => t.Id == "recruit").Side);   // a count per city until PR 3 (R-TRAIN-003)
+        Assert.Equal("israel", c.UnitTypes.Single(t => t.Id == "recruit").Side); // R-TRAIN-003: now a formation.
     }
 
     // R-UNIT-001: a military type needs both a side and a class; a type with neither still loads.

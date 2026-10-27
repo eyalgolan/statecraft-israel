@@ -19,13 +19,13 @@ namespace Statecraft.HexTiles.Prototypes
     ///
     /// The minaret and the prickly pear have no models (tiles:arab_village/...), so they draw stand-ins: Pine, a slim spire,
     /// for the minaret and a low Tree for the prickly pear.</summary>
-    [HexPrototype("arab_village")]
+    [HexPrototype("arab_village", Kind = "village")]
     public sealed class ArabVillage : IHexPrototype
     {
         public string Title => "Arab stone village on a hill (1948)";
         public HexTerrain Terrain => HexTerrain.Hills;
         public string Ground => "hills";
-        public int TriangleBudget => 60000;
+        public int TriangleBudget => 125000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 113k on the israel board and the test hex
 
         // Explicit house ids, not wildcards: kit_jerusalem* and kit_stone_village* both include b17, kept for the mosque.
         static readonly string[] Houses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3", "sandbox:kit_stone_village_2" };

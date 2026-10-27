@@ -4,8 +4,8 @@ using System.Linq;
 using Statecraft.Sim;
 
 /// <summary>Artillery's combat role and the armoured car (GDD Phase 5 PR 9, part 1; #748). Q-ARTY-1 and Q-ARTY-2 are the
-/// plan's recommendations, taken by the owner on 15 October 2026 ("Take all recommendations", #375): artillery adds its
-/// strength to an attack on a hex within its range, never attacks alone or holds ground, and spends Arms when it fires; the
+/// plan's recommendations, updated by OQ-1 on 23 October 2026: player artillery attacks alone at once from range, never
+/// holds ground, and spends Arms when it fires; enemy artillery still supports another attacker in resolver step 2. The
 /// armoured car has its own combat factor and no other special rule. The fixture's numbers are fixture values: a gun with
 /// range 2, 3 Arms a firing and a factor of 200, a car with a factor of 150, and CombatTests' table (below 2:1 both sides
 /// lose 1, from 2:1 the defenders lose 1 and retreat), so a test does not depend on the draw.</summary>
@@ -44,35 +44,46 @@ public class ArtilleryTests
         Assert.Equal("That hex is not next to the unit", Assert.Single(Step(c, s, new UnitOrder(3, Combat.Attack, 2, 0)).Rejected).Reason);
     }
 
-    // R-COMBAT-007: artillery never attacks alone. With no other unit of its side attacking the hex, it holds its fire: no
-    // draw, no Arms, no loss, a line, and the order stands for a later turn.
+    // R-COMBAT-007 (owner, 23 October 2026, OQ-1: "One unit per attack, Civ"): artillery attacks alone from range, at once,
+    // pays its arms_per_fire and loses nothing.
     [Fact]
-    public void ArtilleryAloneHoldsItsFire()
+    public void ArtilleryAloneFiresAtOnceAndLosesNothing()
     {
         var c = Load();
         var s = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Enemy(2, 2, 0, 3));
-        var r = Step(c, s, new UnitOrder(1, Combat.Attack, 2, 0));
-        Assert.Empty(r.Rejected);
-        Assert.Equal(3, r.State.Units[2].Strength);
-        Assert.Equal(s.Arms, r.State.Arms);
-        Assert.Equal(Step(c, s).State.RngState, r.State.RngState);
-        Assert.Equal((Combat.Attack, "2,0"), (r.State.Units[1].Order, r.State.Units[1].OrderTarget));
-        Assert.Contains(r.Why, w => w.Message == "Unit 1 holds its fire: no attack on hex 2,0 to support");
+        var arms = s.Arms;
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
+        Assert.Empty(now.Rejected);
+        Assert.Contains(now.Why, w => w.Key == WhyKeys.Engagement);
+        Assert.Equal(arms - 3, now.State.Arms);
+        Assert.Equal(2, now.State.Units[1].Strength);
+        Assert.Equal((2, 0), now.Attacked[1]);
     }
 
-    // R-COMBAT-007: in support, the guns add their strength times their factor and pay their own Arms. 1 + 2 x 200% = 5
-    // against 2 is 250 percent, the 2:1 row; the soldier alone would be at 50.
+    // R-UNIT-005 (spec 4.6): a gun's front is that of the enemy it attacked this turn, two hexes away, though it borders none.
     [Fact]
-    public void ArtilleryAddsItsStrengthTimesItsFactorToAnAttack()
+    public void AGunsFrontIsTheEnemyItAttackedThisTurn()
+    {
+        var c = Load();
+        var s = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Enemy(2, 2, 0, 9));
+        s.ChosenOptions["armistice_syria"] = "sign";
+        Assert.Null(Demobilization.Check(c, s, 1));
+        var now = Simulation.Preview(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0) });
+        Assert.Equal("The armistice with Egypt is not signed", Demobilization.Check(c, now.State, 1, now.Attacked));
+        Assert.Equal("The armistice with Egypt is not signed",
+            Simulation.Step(c, s, new Command[] { new UnitOrder(1, Combat.Attack, 2, 0), new UnitOrder(1, Demobilization.SendHome) }).Rejected.Single().Reason);
+    }
+
+    // R-COMBAT-007, OQ-1: the preview and engagement count the selected player unit alone, not another standing attacker.
+    [Fact]
+    public void APlayersAttackDoesNotAddAStandingGun()
     {
         var c = Load();
         var s = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Of("soldier", 3, 3, 0, 1), Enemy(2, 2, 0, 2));
-        Assert.Equal(250, Combat.Preview(c, s, 3, 2, 0)!.Value.RatioPercent);
+        Assert.Equal(50, Combat.Preview(c, s, 3, 2, 0)!.Value.RatioPercent);
         var r = Step(c, s, new UnitOrder(3, Combat.Attack, 2, 0));
         Assert.Empty(r.Rejected);
-        Assert.Equal(1, r.State.Units[2].Strength);   // the 2:1 row: the defenders lose 1 and retreat, the attackers nothing
-        Assert.NotEqual((2, 0), (r.State.Units[2].Q, r.State.Units[2].R));
-        Assert.Equal(s.Arms - 2 - 3, r.State.Arms);   // the soldier's attack and the guns' firing
+        Assert.Equal(s.Arms - 2, r.State.Arms);
     }
 
     // R-COMBAT-007: the guns fire from behind the line, so the attackers' losses fall on the other attackers only. 1 + 2 x
@@ -88,33 +99,6 @@ public class ArtilleryTests
         Assert.False(r.State.Units.ContainsKey(3));   // the soldier took the loss and was destroyed
         Assert.Equal(2, r.State.Units[2].Strength);
         Assert.Contains(r.Why, w => w.Message.StartsWith("The attack on hex 2,0 (units 1, 3 against unit 2,", StringComparison.Ordinal));   // id order, though the guns join last
-    }
-
-    // R-COMBAT-007: the guns pay after the other attackers; a stock that cannot pay for the firing calls it off, and the
-    // attack goes ahead without them. At the order, the firing counts the attacks already ordered.
-    [Fact]
-    public void ArtilleryTheStockCannotPayForIsCalledOff()
-    {
-        var c = Load();
-        var s = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Attacking(Of("soldier", 3, 3, 0, 1), 2, 0), Enemy(2, 2, 0, 2));
-        s.Arms = 4;   // the soldier's 2, then 2 left for the guns' 3
-        var r = Step(c, s);
-        Assert.Contains(r.Why, w => w.Message == "Unit 1's attack on hex 2,0 is called off: it needs 3 Arms and the stock has 2");
-        Assert.Equal("", r.State.Units[1].Order);
-        Assert.Equal(2, r.State.Arms);
-        Assert.False(r.State.Units.ContainsKey(3));   // 1 against 2, the first row: both sides lose 1
-        Assert.Equal(1, r.State.Units[2].Strength);
-
-        var t = CombatTests.With(c, Of("gun", 1, 4, 0, 2), Attacking(Of("soldier", 3, 3, 0, 1), 2, 0), Enemy(2, 2, 0, 2));
-        t.Arms = 4;
-        Assert.Equal("An attack needs 3 Arms and the stock has 4, of which 2 go to attacks already ordered",
-            Assert.Single(Step(c, t, new UnitOrder(1, Combat.Attack, 2, 0)).Rejected).Reason);
-
-        // The other way round: a gun already ordered counts at its own 3 Arms, not at one attack's 2.
-        var g = CombatTests.With(c, Attacking(Of("gun", 1, 4, 0, 2), 2, 0), Of("soldier", 3, 3, 0, 1), Enemy(2, 2, 0, 2));
-        g.Arms = 4;
-        Assert.Equal("An attack needs 2 Arms and the stock has 4, of which 3 go to attacks already ordered",
-            Assert.Single(Step(c, g, new UnitOrder(3, Combat.Attack, 2, 0)).Rejected).Reason);
     }
 
     // R-COMBAT-007: artillery never holds ground. The hold order is refused with a reason; fortify is not.
@@ -167,5 +151,119 @@ public class ArtilleryTests
         Assert.Equal((2, 2, 200), (gun.Range, gun.ArmsPerFire, gun.CombatPercent));
         Assert.Equal(150, c.UnitTypes.Single(t => t.Id == "armoured_car").CombatPercent);
         Assert.Null(c.UnitTypes.Single(t => t.Id == "veteran_soldier").CombatPercent);
+    }
+
+    // ---- R-UNIT-008 (part 2; Q-ARTY-3, owner, 15 October 2026: "Take all recommendations"): the guns and the armoured cars
+    // are acquired by training at a military camp, a crew of civilians plus an Arms and Money cost. Fixture values: the gun
+    // trains 2 turns for IL 1.5m and 3 Arms a group, the car 2 turns for IL 1.0m and 2 Arms a group; the fixture's stock is 20.
+    const string Trained = Fixture.GddUnitTypes
+        + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 3, facility: military_camp, training_turns: 2, training_cost: 1.5, training_arms: 3 }\n"
+        + "  - { id: car, kind: unit, side: israel, class: armour, movement_points: 5, facility: military_camp, training_turns: 2, training_cost: 1.0, training_arms: 2 }\n";
+
+    // R-UNIT-008, R-TRAIN-001, R-ARMS-003: Train(city, gun, n) takes n civilians without work as the crew, pays n times the
+    // type's Money and takes n times its training_arms when it starts; the cohort keeps the Arms it took.
+    [Theory]
+    [InlineData("gun", 3, 1.5, "artillery training")]
+    [InlineData("car", 2, 1.0, "armoured car training")]
+    public void AMilitaryCampTrainsACrewForArmsAndMoney(string track, int arms, double cost, string course)
+    {
+        var c = Load(Trained);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var r = Step(c, s, new Train("town_a", track, 2));
+        Assert.Empty(r.Rejected);
+        var k = Assert.Single(r.State.Cohorts.Values);
+        Assert.Equal((track, "town_a", 2, 2, 2 * arms), (k.Type, k.City, k.Count, k.TurnsLeft + 1, k.Arms));
+        Assert.Equal(s.Arms - 2 * arms, r.State.Arms);
+        Assert.Equal(s.Cities["town_a"].Civilians - 2, r.State.Cities["town_a"].Civilians);
+        Assert.Contains(r.Why, w => w.Target == "town_a" && w.Message.StartsWith("Town A: 2 groups began " + course + ", cost ", StringComparison.Ordinal));
+        Assert.Contains(r.Why, w => w.Target == "arms" && w.Delta == -2 * arms && w.Message == $"Town A: {course} took {2 * arms} Arms");
+        var paid = Assert.Single(r.Why, w => w.Message.StartsWith("Town A: 2 groups began", StringComparison.Ordinal));
+        Assert.Contains(PlayerText.Money(c, "treasury", 2 * cost), paid.Message);
+    }
+
+    // R-UNIT-008, R-UNIT-003, R-HOUSE-003 (Q-HOUSE-5): a finished crew is one formation of its own type at its city's
+    // settlement hex, strength = its groups, housed in that city. It is not a recruit, so service never promotes it (R-UNIT-004).
+    [Theory]
+    [InlineData("gun", "artillery")]
+    [InlineData("car", "armoured cars")]
+    public void AFinishedCrewIsOneFormationOfItsType(string track, string noun)
+    {
+        var c = Load(Trained);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        var id = s.NextId++;
+        s.Cohorts.Add(id, new Cohort(id, track, "town_a", 2, 1, 4));
+        var next = s.NextId;
+        var arms = s.Arms;
+        var housed = Cities.Housed(s, s.Cities["town_a"]);
+        var why = new List<Cause>();
+        Training.Progress(c, s, why);
+        Assert.Empty(s.Cohorts);
+        var u = s.Units[next];
+        var hex = c.SettlementHexes.Single(h => h.Id == "town_a");
+        Assert.Equal((track, "israel", 2, hex.Q, hex.R, "town_a"), (u.Type, u.Side, u.Strength, u.Q, u.R, u.HomeCity));
+        Assert.Equal(next + 1, s.NextId);
+        Assert.Equal(arms, s.Arms);
+        Assert.Equal(housed, Cities.Housed(s, s.Cities["town_a"]));
+        Assert.Contains(why, w => w.Message.EndsWith("training and are " + noun, StringComparison.Ordinal));
+        for (int i = 0; i < 10; i++) Military.Serve(s, c.RulesAt(s.Date).Mvp!, why);
+        Assert.Equal(track, s.Units[next].Type);
+    }
+
+    // R-UNIT-008, R-ARMS-003: a stock short of the crew's Arms refuses the order, state and Attention as if never given;
+    // cancelling the cohort (R-TRAIN-002) returns the Arms it took.
+    [Fact]
+    public void TooFewArmsRefusesACrewAndCancellingReturnsThem()
+    {
+        var c = Load(Trained);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        s.Arms = 5;
+        var r = Step(c, s, new Train("town_a", "gun", 2));
+        Assert.Equal("Town A: not enough Arms for artillery training (need 6, have 5)", Assert.Single(r.Rejected).Reason);
+        Assert.Equal(Step(c, s).State.Hash(), r.State.Hash());
+        s.Arms = 6;
+        var trained = Step(c, s, new Train("town_a", "gun", 2)).State;
+        Assert.Equal(0, trained.Arms);
+        var back = Step(c, trained, new CancelTraining(trained.Cohorts.Keys.Single()));
+        Assert.Empty(back.Rejected);
+        Assert.Equal(6, back.State.Arms);
+        Assert.Contains(back.Why, w => w.Target == "arms" && w.Delta == 6 && w.Message == "Town A: artillery training returned 6 Arms");
+    }
+
+    // R-UNIT-008: a trained military type other than the recruit carries its own Arms a group, at least 1; the recruit's is
+    // rules.yaml mvp.arms_per_recruit_group (R-ARMS-003), and a type nobody trains has none.
+    [Theory]
+    [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, facility: military_camp, training_turns: 2, training_cost: 1.0 }\n", "types[g].training_arms", "required for a trained military type, at least 1")]
+    [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, facility: military_camp, training_turns: 2, training_cost: 1.0, training_arms: 0 }\n", "types[g].training_arms", "required for a trained military type, at least 1")]
+    [InlineData("  - { id: g, kind: unit, side: israel, class: armour, movement_points: 2, training_arms: 2 }\n", "types[g].training_arms", "only a type with a facility trains")]
+    [InlineData("  - { id: g, kind: unit, facility: hakhshara, training_turns: 2, training_cost: 1.0, training_arms: 2 }\n", "types[g].training_arms", "only a trained military type other than the recruit")]
+    public void TheTrainingArmsAreValidated(string row, string field, string message)
+    {
+        var ex = Assert.Throws<ContentException>(() => Load(Fixture.GddUnitTypes + row));
+        Assert.Equal("unit_types.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.Contains(message, ex.Message);
+    }
+
+    // R-UNIT-008: the recruit's Arms stay in rules.yaml, so a training_arms on it is refused rather than read by nothing.
+    [Fact]
+    public void ARecruitTakesNoTrainingArms()
+    {
+        var types = Fixture.GddUnitTypes.Replace("training_cost: 0.5, movement_points: 3 }", "training_cost: 0.5, movement_points: 3, training_arms: 1 }");
+        Assert.NotEqual(Fixture.GddUnitTypes, types);
+        var ex = Assert.Throws<ContentException>(() => Load(types));
+        Assert.Equal("types[recruit].training_arms", ex.Field);
+        Assert.Contains("only a trained military type other than the recruit", ex.Message);
+    }
+
+    // R-UNIT-008: the real types train at a military camp with the values proposed on #748 (22 October 2026, for the owner
+    // to set or accept): 3 turns and IL 1.0m a group for both, 3 Arms a group for the guns and 2 for the armoured car.
+    [Fact]
+    public void TheRealTypesTrainAtAMilitaryCamp()
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot());
+        var gun = c.UnitTypes.Single(t => t.Id == "artillery");
+        var car = c.UnitTypes.Single(t => t.Id == "armoured_car");
+        Assert.Equal(("military_camp", 3, 1.0, (int?)3), (gun.Facility, gun.TrainingTurns, gun.TrainingCost, gun.TrainingArms));
+        Assert.Equal(("military_camp", 3, 1.0, (int?)2), (car.Facility, car.TrainingTurns, car.TrainingCost, car.TrainingArms));
     }
 }

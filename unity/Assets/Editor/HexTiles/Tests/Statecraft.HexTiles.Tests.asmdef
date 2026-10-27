@@ -1,6 +1,6 @@
 {
     "name": "Statecraft.HexTiles.Tests",
-    "references": ["Statecraft.HexTiles.Editor", "Statecraft.Game", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+    "references": ["Statecraft.HexTiles.Editor", "Statecraft.Game", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
     "includePlatforms": ["Editor"],
     "overrideReferences": true,
     "precompiledReferences": ["nunit.framework.dll"],

@@ -29,6 +29,10 @@ public class SimBridgeGuardTests
         [typeof(AssignWorkers)] = new AssignWorkers("tel_aviv", "job", 1),
         [typeof(Train)] = new Train("tel_aviv", "halutz", 1),
         [typeof(CancelTraining)] = new CancelTraining(1),
+        [typeof(ReturnCraftsmen)] = new ReturnCraftsmen("tel_aviv", 1),
+        [typeof(ReassignCraftsmen)] = new ReassignCraftsmen("tel_aviv", 1),
+        [typeof(ReassignPioneers)] = new ReassignPioneers("tel_aviv", "halutz", 1),
+        [typeof(Reinforce)] = new Reinforce(1, "tel_aviv", 1),
         [typeof(PioneerWork)] = new PioneerWork(1, "build_yishuv", "mefalsim"),
         [typeof(StopWork)] = new StopWork(1),
         [typeof(UnitOrder)] = new UnitOrder(1, "fortify"),
@@ -37,6 +41,7 @@ public class SimBridgeGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),
+        [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),
     };
 
     static IEnumerable<Type> CommandTypes() =>
@@ -63,7 +68,7 @@ public class SimBridgeGuardTests
         foreach (var t in CommandTypes().Where(Samples.ContainsKey))
         {
             var key = SimBridge.Key(Samples[t]);
-            if (OnePerTurn.Contains(t)) Assert.AreEqual(Samples[t].Kind, key, t.Name);
+            if (OnePerTurn.Contains(t) || Simulation.IsInstant(Samples[t])) Assert.AreEqual(Samples[t].Kind, key, t.Name);
             else Assert.AreNotEqual(Samples[t].Kind, key, t.Name + " has no branch in SimBridge.Key: add one, or list it in OnePerTurn");
         }
     }

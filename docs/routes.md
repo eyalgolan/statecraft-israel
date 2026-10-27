@@ -303,7 +303,11 @@ the YAML (about 125 ms at `--cpu 4`), as the localities do since #291.
 - The YAML still ships. When the runtime file is missing, of another version, made from another YAML, cut short (even
   inside a number) or edited by hand, the map reads the YAML with a warning (`...; reading the YAML`): the same routes,
   only slower.
-- Rerun `uv run tools/route_paths_bake.py` after `tools/routes_1948.py` rewrites the YAML. `test_route_paths_bake.py`
+- A `segments` row per route a corridor follows (`content/corridors.yaml`, #792): the route's first waypoint, then the
+  waypoint each segment ends at, from `routes_1948.yaml` (the map never reads that file). The ribbon bake cuts the
+  route there (Route index, below). Inside `body_check`.
+- Rerun `uv run tools/route_paths_bake.py` after `tools/routes_1948.py` rewrites the YAML, and after a change to a
+  corridor's segments or waypoints (then re-bake the ribbons too). `test_route_paths_bake.py`
   fails a stale file and pins a fingerprint of the C# readers; Unity's `RoutePathsRuntimeTests` compares every route
   and point with the YAML's.
 
@@ -317,14 +321,30 @@ does (#320, docs/visual-v1.md).
 - When any of them differs from what the map loaded, the bake is refused with a warning (`ROUTES ...: deriving the route
   ribbons at load`) and the ribbons are derived as before: the same meshes, only slower.
 - **Route index** (for the GDD Phase 4 corridors, #384). Each mesh lists its routes, each with its first vertex, vertex
-  count, first index and index count (`RouteSpan`), so a later change can show one route by its construction state.
-  Nothing reads it yet; the vertex layout is unchanged.
+  count, first index and index count (`RouteSpan`). Since version 4 (#792), a route a corridor follows also lists where
+  each of its segments starts in the index range, and the range's end (`RouteSpan.Segments`): the first segment starts
+  at the ribbon's start and the last ends at its end, and between them the cut is the cross-section nearest the point of
+  the line nearest the segment's end waypoint (the runtime file's `segments` row), searched in order along the line as
+  `tools/corridor_hexes.py` splits the hexes. The vertex layout is unchanged. The bake's header does not hash the segment ends: CI
+  without Unity checks only their count and alignment, and a moved waypoint or segment end is caught by
+  `RouteTests.TheBakedRibbonsMatchTheRoutes` (a fresh derivation, byte for byte). A map that reads the YAML (no or a
+  stale runtime file, with its warning) has no segment ends, so it derives the ribbons uncut and the corridors draw by
+  date.
+- **Corridors in the GDD loop** (spec §2.6, "Routes"; #792). `RouteLayer.Build` gives each segment of a corridor's route
+  a ribbon of its own (`Corridors/<route> <n>`, outside the dated groups), and marks the route's dated ribbon
+  (`RouteSegment`). In the GDD loop `GameRoot` passes `RouteLayer.BuiltSegments` (the sim's `State.Corridors`) to
+  `ShowAt`: the dated ribbon is hidden and only the built segments are drawn, at any date. Outside the GDD loop the
+  segments are hidden and the route keeps its dates. Every other route keeps its dates in both. Each corridor's route is
+  alone in its mesh (`test_route_ribbon_bake.py` checks it), so hiding its dated ribbon hides no other route. Segments
+  being built are not drawn yet (Q-UI-1's dashed outline is a later slice of #792). Tests:
+  `RouteLayerCorridorTests.OnlyBuiltSegmentsDraw`, `TheLegacyLoopDrawsByDate`.
 - **Re-bake** whenever the heightmap, `heightmap.json`, the route file, a constant in the header or the ribbon rule
   (`RouteLayer.Geometry`; bump `RouteRibbonFile.Version` with it) changes:
   `Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod
   Statecraft.Game.EditorTools.RouteRibbonBake.Bake`, under `tools/machine_lock.py` as any Unity run.
 - **Checks.** `tools/tests/test_route_ribbon_bake.py` (CI, no Unity) fails on a stale header, reading the constants from
-  the C# source, and checks the route index. `RouteTests.TheBakedRibbonsMatchTheRoutes` compares the bake with a fresh
+  the C# source, and checks the route index, its segment cuts and that they are the corridors' segments.
+  `RouteTests.TheBakedRibbonsMatchTheRoutes` compares the bake with a fresh
   derivation byte for byte, and with the map's own terrain vertex for vertex; `AStaleRibbonBakeIsDerivedAtLoad` checks
   the fallback. A change to `RouteLayer.Geometry` without a version bump is caught only by the Unity test.
 - **Boot** (`tools/headed.py boot --runs 3 --cpu 4`, phase `routes built`, three rounds interleaved with main `bc67247`

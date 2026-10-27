@@ -21,7 +21,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// under 2,400. Total under 31,400 of 40,000 (still under 36,000 if the limestone variants run twice as heavy).
     ///
     /// The garrigue has no model (tiles:judean_highlands/garrigue), so it draws the Tree stand-in tinted dusty green.</summary>
-    [HexPrototype("judean_highlands")]
+    [HexPrototype("judean_highlands", Kind = "nature")]
     public sealed class JudeanHighlands : IHexPrototype
     {
         public string Title => "Judean highlands: limestone crags, terraced olives (1948)";

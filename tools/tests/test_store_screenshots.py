@@ -53,3 +53,45 @@ def test_cli_pass_is_explicitly_limited(tmp_path, capsys):
     assert 'DIMENSIONS OK' in out
     assert 'not gameplay provenance' in out
     assert m.main([]) == 1
+
+
+def bomb_png(path):
+    """A small PNG whose header claims 32000 x 18000 (576 Mpx), over twice Pillow's MAX_IMAGE_PIXELS, so Image.open
+    raises DecompressionBombError (not an OSError) before any pixel is decoded."""
+    import struct
+    import zlib
+
+    def chunk(kind, data):
+        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
+    path.write_bytes(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 32000, 18000, 8, 2, 0, 0, 0))
+                     + chunk(b'IDAT', zlib.compress(b'\0')) + chunk(b'IEND', b''))
+
+
+def test_a_decompression_bomb_is_a_named_refusal_with_the_protection_kept_on(tmp_path):
+    m = module()
+    paths = shots(tmp_path)
+    bomb_png(paths[0])
+    errors = m.validate(paths)
+    assert len(errors) == 1 and errors[0].startswith(f'{paths[0]}: cannot read image (') and 'exceeds limit' in errors[0]
+    assert Image.MAX_IMAGE_PIXELS == 1024 * 1024 * 1024 // 4 // 3   # Pillow's default: refused, the limit is not lifted
+    assert m.main([str(p) for p in paths]) == 1
+
+
+def test_a_symlink_loop_is_a_named_refusal(tmp_path, monkeypatch):
+    m = module()
+    paths = shots(tmp_path)
+    loop = tmp_path / 'loop.png'
+    loop.symlink_to(loop.name)
+    errors = m.validate(paths + [loop])
+    assert len(errors) == 1 and errors[0].startswith(f'{loop}: cannot read image (')
+    # Python 3.11 and 3.12 (CI runs 3.12) raise RuntimeError("Symlink loop ...") from Path.resolve() itself; 3.13 and
+    # later return the path and Image.open then fails with OSError. Stand in for the older behaviour on any Python.
+    real_resolve = Path.resolve
+
+    def resolve(self, strict=False):
+        if self == loop:
+            raise RuntimeError(f'Symlink loop from {str(loop)!r}')
+        return real_resolve(self, strict)
+    monkeypatch.setattr(Path, 'resolve', resolve)
+    errors = m.validate(paths + [loop])
+    assert errors == [f"{loop}: cannot read image (Symlink loop from {str(loop)!r})"]

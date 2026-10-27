@@ -13,7 +13,7 @@ Status: DRAFT, version 0.3. Tags: [V] already in the repo, [H] proposal, [Q] que
 
 ## Proposed rules [H]
 
-1. **A synthetic voice never speaks as a real, named person.** No cloned voice, no sound-alike, no "voice of" a historical figure, living or dead. A narrator speaks as the project.
+1. **A synthetic voice never speaks as a real, named person.** No cloned voice, no sound-alike, no "voice of" a historical figure, living or dead. A narrator speaks as the project. The one exception is the game's three advisors, David Ben-Gurion, Golda Meyerson (later Meir) and Moshe Dayan (`docs/oss/DECISIONS.md` D-ADV, `docs/CONTENT_POLICY.md`): in their advisor clips, voices made close to their own speak fictional game dialogue, each clip is reviewed by the owner, and the clip is labelled "AI animation and voice. Fictional dialogue."
 2. **Real recordings come from archives**, with the archive, date and rights recorded, as for the Declaration recording.
 3. **The narrator is disclosed.** The video description, the caption under any embed and the `ASSETS.yaml` row say the voice is synthetic, and name the tool.
 4. **Record how it was made.** Tool, voice id or preset, model, date, the exact script text, the pronunciation list used, the licence or terms, and the sha256 of the file. Large files may stay out of the repo if the hash is recorded, as other promo files do.
@@ -21,7 +21,7 @@ Status: DRAFT, version 0.3. Tags: [V] already in the repo, [H] proposal, [Q] que
 6. **Pronunciation is checked** against the signed-off list before release (`templates/pronunciation-list.md`).
 7. **Music** is licensed and recorded in the same way. It never starts before the first fact and never swells on a casualty.
 8. **Keep the policy text in step.** If a video adds synthetic voice or music, the README AI-use section, the Steam draft and `docs/ai-disclosure.md` change in the same PR.
-9. **Do not generate a voice of a real person to read a quote.** Show the quote as text with its source.
+9. **Do not generate a voice of a real person to read a quote.** This holds for the three advisors too: their clips speak only fictional game dialogue. Show the quote as text with its source.
 
 ## Maintainer answers [M]
 

@@ -257,12 +257,14 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 |---|---|---|---|
 | C04 sabra pioneer | an Israeli rifleman in the bush hat (the uniform default's first figure; the showcase trio's first) | #507's pairing | always |
 | C06 young recruit | an Israeli rifleman in the Mk II steel helmet (every token's second figure) | #507's pairing | always |
-| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first and third, the showcase's third | the Negev headgear photographs (Sources) | always |
-| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel | a presentation choice: the default's third figure is not sourced | always |
+| C07 veteran fighter | an Israeli rifleman in the knitted stocking cap: the Negev Brigade's first, the showcase's third | the Negev headgear photographs (Sources) | always |
+| C05 pioneer veteran | the third figure of every Israeli brigade with the uniform default, except Harel and Yiftach | a presentation choice: the default's third figure is not sourced | always |
+| #336's 1948 soldier | the third figure of Yiftach and Negev, the Palmach brigades other than Harel: a rifleman in khaki in the Palmach's knitted stocking cap, so Negev's token shows C07, C06 and him and keeps its sourced caps | owner, 21 October 2026 (#708, through the coordinator): "a third figure on some brigade unit tokens, next to C06 and C07"; the rows' numbers (11th and 12th Brigade (Palmach)) | always |
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
+| H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
 
 - **The vehicles are data:** `vehicles` in `units_1948.yaml` (`type`, `from`, `note`, `sources`), checked by
@@ -275,8 +277,8 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
   45 km), each figure whose model has an idle clip (`CollectionCatalog.Animated`) shows its skinned near model playing the
   clip, as tall as its far model and under the same holder (`UnitFigureDetail`). The near models are asked for only once a
   camera first comes close; until one arrives, and for good if it is missing, the far mesh stays. C05 has no idle clip
-  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"). The vehicles
-  stay far.
+  (walk and run only) and keeps his still far model (owner, 18 October 2026, #665: "Keep its still model"); #336's soldier
+  has no rig and keeps his still far model too. The vehicles stay far.
 - **Fail open:** an Israeli figure keeps its code-built mesh until its model arrives, and for good if the bundle is
   missing or damaged; a vehicle and an Arab force's token are not drawn until their model arrives.
 - Tests: `UnitFiguresTests` (every one of the nine is placed on some day of the war; the table; the swap; arms down;
@@ -344,8 +346,8 @@ next to the anchor on that side. The token stands at the clear spot nearest that
   Anata side, which Jordan held. It is in town, with a clearing. In every round the placer also tries rings round a
   `toward` point, every 500 m out to 2.5 km, so a spot can sit between a town's roads near the sourced place.
 - The 7th Brigade is anchored at Hulda, its headquarters for the Latrun attacks (Battles of Latrun), not at Latrun.
-  The Arab Legion held Latrun and the Yalu–Bayt Nuba ridge. The ground between was contested until the Bayt Jiz and
-  Bayt Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
+  The Arab Legion held Latrun and the Yalu–Beit Nuba ridge. The ground between was contested until the Beit Jiz and
+  Beit Susin area was cleared on 28 May, and Sar'a was taken only on 13–14 July.
 - Harel stands by Saris on the corridor road, hex (-2,23), taken on 16–17 April 1948. It no longer stands by Sar'a and
   Artuf.
 
@@ -397,29 +399,41 @@ checks every anchor and logs each spot and its distance.
 - The card gives the name, the number and the service, where the unit stands (with "since" only from a sourced start),
   its formation and first commander where sourced, and the sector in the source's words.
 - In the Hebrew UI the place, the first commander and the sector each show their optional Hebrew counterpart in
-  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, each with its
+  `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, and for a date in
+  prose `since_he` on an anchor and `formed_he` on the row (#1292; a plain day or month names its month through the
+  date strings instead), and `number_he` on the row for the subtitle's number line (#1219 item 2), each with its
   `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
-  (#564). A field without one shows its English, independently of the other two; the English card never changes.
+  (#564). A field without one shows its English, independently of the others; the English card never changes.
   `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
-  blank key, sources or a review flag without the text, and text without Hebrew letters; an unknown key such as
-  `formed_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
-  never clear `wikipedia_only` (#902). The shipped rows carry none yet; the translations in `research_notes/Map/unit-card-hebrew-harel-givati-negev.md` wait for its
-  person's source checks. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
-  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `BadHebrewProseNamesTheProblem`), on test-only fixtures.
+  blank key, sources or a review flag without the text, and text without Hebrew letters; any other Hebrew key fails
+  as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
+  never clear `wikipedia_only` (#902). The shipped rows carry them since #1292 (all `agent-checked`, each name's source its he.wiki article), except
+  the Iraqi force's sector, whose "Ma'ad" has no Hebrew spelling found. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
+  `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `AProseDateShowsItsHebrewInTheHebrewCard`,
+  `BadHebrewProseNamesTheProblem`, `HebrewUnitNumbersAreSourcedAndAgentChecked`,
+  `TheHebrewUnitCardSubtitleShowsTheSourcedNumberAndEnglishKeepsItsNumber`), on test-only fixtures.
 - It also gives the national values the token reflects on Israel's cards (legacy loop: "Reserve call-up 80% · security level
   5 of 5"; in the GDD loop only the squadron's card has one, "Security level 5 of 5", see above) and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
 - A button opens the Defence screen. In the GDD loop the card also gives the Move order (GDD Phase 5 PR 15, slice 1,
   #754; Q-UI-2's name, "Move" / "תנועה"). The button shows only when `Movement.Reachable` has a hex for the unit (the
   token's sim unit is its row's starting force, `UnitCard.SimUnit`), and not once the game is over. Pressing it lights
-  exactly those hexes (`MapScene.ShowReachable`, a band half the selection's width); a click on a lit hex queues the
-  sim's `Move` through `SimBridge` and the card says the move waits for End turn; any other click, a second press, a
-  turn or another selection ends the pick. The sim refuses a move that is no longer possible at End turn with its own
-  reason. Slice 2 adds Fortify and Hold (Q-UI-2's "Fortify" / "ביצור", "Hold" / "החזקה"): each button shows only where
+  exactly those hexes (`MapScene.ShowReachable`, a band half the selection's width); a click on a lit hex moves the unit at once
+  through `SimBridge`, and the move is final (R-TURN-004; owner, 23 October 2026, #1398: "No undo, like Civ"); a click
+  on a farther land hex the unit has a route to gives it a go-to that continues on later turns (on touch, the first tap
+  shows the route and a second tap confirms it); any other click, a second press, a turn or another selection ends the
+  pick. The sim refuses a move that is not possible at the click, with its own reason. Slice 2 adds Fortify and Hold (Q-UI-2's "Fortify" / "ביצור", "Hold" / "החזקה"): each button shows only where
   the sim's `Orders.Check` takes the order, and where it does not, the card shows the sim's reason as the sim gives it
-  (in English for now, as the End turn toast does). A press queues the sim's `UnitOrder` through `SimBridge` (one standing
-  order per unit: Hold replaces a queued Fortify, and either replaces a queued attack) and the card says when it takes
-  effect. Tests: `UnitOrdersTests`,
+  (in English for now, as the End turn toast does). A press gives the sim's `UnitOrder` through `SimBridge` at once (one standing
+  order per unit: Hold replaces a Fortify, and either replaces a go-to) and the card says when it takes
+  effect. Slice 3 adds Attack (Q-UI-2's "Attack" / "התקפה"): the button shows only where the sim's `Combat.Check` takes
+  some unit's hex, and the sim's reasons for the enemy hexes in reach it refuses (no Arms, no movement points left)
+  show as the others do. Pressing it lights those hexes; for each the card gives the units there by name, the sim's
+  strength ratio (`Combat.Preview`) and its `combat_table` row's outcome bands (`Combat.Outcomes`: how many faces of the
+  draw give each outcome, and the people each side loses), as Q-UI-1 decided. A click on a lit hex gives the sim's
+  `UnitOrder(unit, attack, q, r)` through `SimBridge`, and the attack is fought at once (owner, 23 October 2026, #1398:
+  "Instant, like Civ"); its Why lines show as a toast. `Orders.Give` and `Combat.Give` run `Orders.Check` and
+  `Combat.Check` first, so the card and the click refuse the same orders for the same reasons. Tests: `UnitOrdersTests`,
   `InfoPanelLayoutTests.TheUnitCardWithItsOrdersFitsEveryWindow`.
 
 **The Avia S-199** (`UnitModels.AviaS199`; type `avia-s199-101sqn-1948`):
@@ -547,7 +561,7 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
   and the pole behind it (`TheTrioReadsSideBySideAndThePoleStandsBehindItAtEveryYaw`).
   - **Use of the flag:** the Flag and Emblem Law, 5709-1949, s. 2(a), forbids using the State flag for commerce, business or
     profession without a permit from the Minister of the Interior (the 1949 text, read on the cited scan; the amended text
-    not checked). The game is free and non-commercial; a paid release needs this checked first. Only a side whose 1948
+    not checked). The game is free and non-commercial, and there is no paid release (owner ruling, 2026-10-22, #30). Only a side whose 1948
   flag is sourced here gets one, so no flag is invented:
   - Israel: the Provisional Council of State's "Proclamation on the Flag of the State of Israel" of 25 Tishrei 5709
     (28 October 1948), Iton Rishmi No. 32, 10 Heshvan 5709 (12 November 1948), p. 62

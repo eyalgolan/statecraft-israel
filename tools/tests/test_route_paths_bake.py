@@ -25,7 +25,7 @@ REBAKE = "run uv run tools/route_paths_bake.py"
 
 # The fingerprint of the readers (code_fingerprint). Re-pin only after RoutePathsRuntimeTests passes in Unity, with
 # RoutePaths.RuntimeVersion and route_paths_bake.VERSION bumped together if the runtime layout changed.
-PINNED_CODE = "ea5cd1dccf91f9cc5f5824104546f95e2281925c6b7e6bb6f7bfcbd414e2bf8d"
+PINNED_CODE = "dd12cec870c16d107705d3ff0046f5a71b7ce35d19e3bd8e6d5df45ad084fdc6"
 
 
 def member(text: str, signature: str) -> str:
@@ -61,7 +61,7 @@ def code_fingerprint() -> str:
 
 
 def test_the_runtime_file_is_the_bake_of_the_yaml():
-    assert bake.RUNTIME.read_text(encoding="utf-8") == bake.bake(bake.SOURCE.read_bytes(), bake.ROUTES.read_bytes()), f"stale: {REBAKE}"
+    assert bake.RUNTIME.read_text(encoding="utf-8") == bake.bake(bake.SOURCE.read_bytes(), bake.ROUTES.read_bytes(), bake.CORRIDORS.read_bytes()), f"stale: {REBAKE}"
 
 
 def test_the_bake_and_the_reader_share_a_version():
@@ -87,7 +87,7 @@ def test_the_file_ends_with_its_body_check():
     lines = bake.RUNTIME.read_text(encoding="utf-8").rstrip("\n").split("\n")
     kind, name, value = lines[-1].split("\t")
     assert (kind, name) == ("meta", "body_check")
-    rows = [line for line in lines if line.startswith(("route\t", "service\t"))]
+    rows = [line for line in lines if line.startswith(("route\t", "segments\t", "service\t"))]
     assert int(value) == bake.body_check(rows)
     cut = rows[-1][:-1]                                       # the last number a digit short
     assert bake.body_check(rows[:-1] + [cut]) != int(value)
@@ -100,13 +100,13 @@ def test_the_runtime_file_carries_the_train_service():
     lines = bake.RUNTIME.read_text(encoding="utf-8").rstrip("\n").split("\n")
     services = [line.split("\t") for line in lines if line.startswith("service\t")]
     assert services == [["service", "jaffa_jerusalem_railway", "1950-03-02", "34.87556 31.94583", "35.22471 31.76685"]]
-    rows = [line for line in lines if line.startswith(("route\t", "service\t"))]
+    rows = [line for line in lines if line.startswith(("route\t", "segments\t", "service\t"))]
     assert rows[-1].startswith("service\t"), "the service rows follow the route rows"
     assert int(lines[-1].split("\t")[2]) == bake.body_check(rows), "the body check covers the service rows too"
 
 
 def _service_row(routes_text: str) -> list[str] | None:
-    tsv = bake.bake(bake.SOURCE.read_bytes(), routes_text.encode("utf-8"))
+    tsv = bake.bake(bake.SOURCE.read_bytes(), routes_text.encode("utf-8"), bake.CORRIDORS.read_bytes())
     rows = [line.split("\t") for line in tsv.split("\n") if line.startswith("service\t")]
     return rows[0] if rows else None
 

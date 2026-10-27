@@ -654,6 +654,7 @@ Each is a question with its options and what each costs. Recommended defaults ar
 
 **O2. Free or paid on Steam?**
 - **Decided (owner, 2026-10-14):** "free". (a).
+- **Then decided (owner, 22 Oct 2026 ([#30](https://github.com/eyalgolan/statecraft-israel/issues/30#issuecomment-6340595744))):** "there is not going to be a paid release, everything is going to stay free and expanded over time." Option (b) no longer applies.
 - (a) Free. Cost: the 100 USD Steam Direct fee is never recouped; D-D's paid-release condition does not apply; the
   question of the #465 recording's commercial terms is softer but not gone.
 - (b) Paid. Cost: pricing work; D-D needs commercial rights or a new painting; the #465 recording's terms ("except

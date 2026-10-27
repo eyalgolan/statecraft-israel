@@ -17,6 +17,11 @@ namespace Statecraft.Game.Map.Units
         public string ArtType { get; }
         /// <summary>An air unit flies over its base (security level 4 or 5) or stands parked on it.</summary>
         public bool Flying { get; }
+        /// <summary>The sim unit represented by this token in the GDD loop; null for legacy and token-only rows.</summary>
+        public Unit? StateUnit { get; }
+        public int? SimId => StateUnit?.Id;
+        /// <summary>True when the sim formed this unit in play rather than from a starting-forces row.</summary>
+        public bool Raised { get; }
         /// <summary>An army token's riflemen's headgear, one per figure in the trio's order (<see cref="UnitData.Headgears"/>);
         /// empty for aircraft and ships.</summary>
         public IReadOnlyList<string> Headgear { get; }
@@ -25,16 +30,20 @@ namespace Statecraft.Game.Map.Units
         public IReadOnlyList<string> Vehicles { get; }
 
         public UnitToken(UnitEntry unit, UnitAnchor anchor, int figures, string artType, bool flying, IReadOnlyList<string>? headgear = null,
-            IReadOnlyList<string>? vehicles = null)
+            IReadOnlyList<string>? vehicles = null, Unit? stateUnit = null, bool raised = false)
         {
             Unit = unit; Anchor = anchor; Figures = figures; ArtType = artType; Flying = flying;
             Headgear = headgear ?? Array.Empty<string>();
             Vehicles = vehicles ?? Array.Empty<string>();
+            StateUnit = stateUnit; Raised = raised;
         }
 
-        public bool Equals(UnitToken? o) => o != null && ReferenceEquals(Unit, o.Unit) && ReferenceEquals(Anchor, o.Anchor)
+        public bool Equals(UnitToken? o) => o != null && (ReferenceEquals(Unit, o.Unit) || Raised && o.Raised && Unit.Id == o.Unit.Id)
+            && ReferenceEquals(Anchor, o.Anchor)
             && Figures == o.Figures && ArtType == o.ArtType && Flying == o.Flying && Headgear.SequenceEqual(o.Headgear)
-            && Vehicles.SequenceEqual(o.Vehicles);
+            && Vehicles.SequenceEqual(o.Vehicles) && SimId == o.SimId && Raised == o.Raised
+            && (StateUnit == null && o.StateUnit == null || StateUnit != null && o.StateUnit != null
+                && StateUnit.Type == o.StateUnit.Type && StateUnit.Strength == o.StateUnit.Strength && StateUnit.HomeCity == o.StateUnit.HomeCity);
         public override bool Equals(object? o) => Equals(o as UnitToken);
         public override int GetHashCode() => HashCode.Combine(Unit.Id, Anchor.Place, Figures, ArtType, Flying);
         public override string ToString() => $"{Unit.Id}@{Anchor.Place}:{ArtType}x{Figures}{(Headgear.Count > 0 ? "[" + string.Join("/", Headgear) + "]" : "")}{(Vehicles.Count > 0 ? "+" + string.Join("+", Vehicles) : "")}{(Flying ? " flying" : "")}";
@@ -115,9 +124,10 @@ namespace Statecraft.Game.Map.Units
         /// tokens only, Q-UNIT-5). The sim hex is authoritative: a unit on its starting hex stands on its row's starting
         /// anchor (that anchor's spot, UnitPlacer's one-hex offset included); a unit that moved takes
         /// <paramref name="moved"/>'s anchor for its row and hex (the layer caches it with its spot). Its figures follow
-        /// Q-UI-3 (<see cref="FiguresForStrength"/>), not the call-up. A unit is drawn only from a row: unit i of a new game is
-        /// <c>content.StartingForces[i]</c> (R-UNIT-006), whose row is its card, flag and figures, and a unit with no row (a
-        /// halutz; a unit raised in play, which has no art yet) draws no token. An Arab force's token still waits for its
+        /// Q-UI-3 (<see cref="FiguresForStrength"/>), not the call-up. Unit i of a new game uses
+        /// <c>content.StartingForces[i]</c> (R-UNIT-006) for its card, flag and figures. A military unit raised in play reuses
+        /// the first Israeli starting row as its figure default, with the existing gun or sandwich armoured car for those
+        /// types; a halutz still draws no token. An Arab force's token still waits for its
         /// Collection figure (<paramref name="arrived"/>), and a row off the map (<see cref="OnMap"/>) draws nothing.
         /// Pure and read-only like Build.</summary>
         public static List<UnitToken> FromState(IReadOnlyList<UnitEntry> units, Content content, GameState state, Func<string, bool>? arrived,
@@ -130,9 +140,13 @@ namespace Statecraft.Game.Map.Units
             var list = new List<UnitToken>();
             foreach (var unit in state.Units.Values.OrderBy(v => v.Q).ThenBy(v => v.R).ThenBy(v => v.Id))
             {
-                // Unit i of a new game is StartingForces[i] (R-UNIT-006); a unit raised in play takes the next id, at or above
-                // the count, and has no row yet (UnitsFromStateTests.AUnitRaisedInPlayDrawsNoToken).
-                if (unit.Side == "" || unit.Id >= content.StartingForces.Count) continue;
+                if (unit.Side == "") continue;   // a halutz is not a military token (R-UNIT-001)
+                if (unit.Id >= content.StartingForces.Count)
+                {
+                    var raised = RaisedToken(units, content, unit, moved);
+                    if (raised != null) list.Add(raised);
+                    continue;
+                }
                 var force = content.StartingForces[unit.Id];
                 var row = units.FirstOrDefault(u => u.Id == force.Row);
                 if (row == null || !OnMap(row) || row.Service != UnitData.Army) continue;
@@ -143,14 +157,40 @@ namespace Statecraft.Game.Map.Units
                 if (row.Side != UnitData.Israel)
                 {
                     var figure = UnitFigures.SideFigure(row.Side)!;
-                    if (arrived != null && arrived(figure)) list.Add(new UnitToken(row, anchor, figures, figure, false));
+                    if (arrived != null && arrived(figure)) list.Add(new UnitToken(row, anchor, figures, figure, false, stateUnit: unit));
                     continue;
                 }
                 var hats = (row.Headgear ?? (IReadOnlyList<string>)UnitData.DefaultHeadgear).Take(figures).ToList();
-                list.Add(new UnitToken(row, anchor, figures, RiflemanType(hats[0]), false, hats, UnitFigures.VehiclesAt(row, state.Date)));
+                list.Add(new UnitToken(row, anchor, figures, RiflemanType(hats[0]), false, hats, UnitFigures.VehiclesAt(row, state.Date), unit));
             }
             list.AddRange(Build(units, content, state, arrived).Where(t => t.Unit.Service != UnitData.Army));
             return list;
+        }
+
+        /// <summary>A raised Israeli military unit's presentation-only token. The first Israeli starting army row is the
+        /// existing neutral figure default and its sourced strength (currently four) is Q-UI-3's full-strength denominator.
+        /// Type changes only the already shipped figure set/vehicle. The synthetic row and anchor never enter sim state.</summary>
+        static UnitToken? RaisedToken(IReadOnlyList<UnitEntry> units, Content content, Unit unit,
+            Func<UnitEntry, UnitAnchor, int, int, UnitAnchor> moved)
+        {
+            if (unit.Side != UnitData.Israel || unit.Type != "recruit" && unit.Type != StartingForces.IsraeliBrigadeType
+                && unit.Type != "artillery" && unit.Type != "armoured_car") return null;
+            var force = content.StartingForces.FirstOrDefault(f => f.Side == UnitData.Israel && f.Type == StartingForces.IsraeliBrigadeType);
+            if (force == null) return null;
+            var visual = units.FirstOrDefault(u => u.Id == force.Row);
+            if (visual == null || visual.Service != UnitData.Army) return null;
+            var start = AnchorAt(visual, force.Arrives ?? content.Rules.Start) ?? visual.Anchors.FirstOrDefault();
+            if (start == null) return null;
+            var row = new UnitEntry
+            {
+                Id = $"raised-{unit.Id}", Service = UnitData.Army, Side = UnitData.Israel,
+                Headgear = unit.Type == "recruit" ? new List<string> { UnitData.SteelHelmet, UnitData.SteelHelmet, UnitData.SteelHelmet } : null,
+            };
+            int figures = FiguresForStrength(unit.Strength, force.Strength);
+            var hats = (row.Headgear ?? (IReadOnlyList<string>)UnitData.DefaultHeadgear).Take(figures).ToList();
+            IReadOnlyList<string> vehicles = unit.Type == "artillery" ? new[] { UnitFigures.Napoleonchik }
+                : unit.Type == "armoured_car" ? new[] { UnitFigures.SandwichArmouredCar } : Array.Empty<string>();
+            return new UnitToken(row, moved(row, start, unit.Q, unit.R), figures, RiflemanType(hats[0]), false, hats, vehicles, unit, raised: true);
         }
 
         /// <summary>Q-UI-3 (owner, 15 October 2026, "Take all recommendations"; #226, 17 October 2026): "3 figures at two

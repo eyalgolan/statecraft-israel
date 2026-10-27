@@ -1,0 +1,16 @@
+# What an occupation costs (GDD Phase 6 PR 6, #798): from a capture in the real content, choose Occupy and run to the
+# timer's end. Golani's unit (id 0) moves onto Nazareth's hex on the first turn (open to the player's units since #1304,
+# R-MOVE-005) and captures it when the move ends (R-CTRL-004). The next turn the scenario answers with Occupy (R-CTRL-011).
+# Step 10 charges the upkeep each turn and counts the timer down (R-CTRL-012), so the place waits for EndOccupation
+# (#799) when the run stops on 15 December 1948: the timer has run out after six turn resolutions from the choice. It
+# plays the real content, so it moves whenever a rule or value it reaches changes. The paired mvp-deport-cost is not
+# here: Deport is out of play in the real content (mvp.deport_in_play: false, #800).
+name: mvp-occupy-cost
+until: 1948-12-15
+steps:
+  - on: 1948-05-15
+    commands:
+      - { kind: move, unit: 0, q: 7, r: 10 }
+  - on: 1948-06-15
+    commands:
+      - { kind: resolve_capture, settlement: nazareth, outcome: occupy }

@@ -141,10 +141,8 @@ namespace Statecraft.Game.Map.Units
             var offsets = FigureOffsets(looks.Length);
             float plinth = UnitPlinth.Radius(UnitPlinth.TrioWidth(offsets, DrawSpread * hex));
             var rim = assets.Own(new Material(ringTemplate) { name = "UnitPlinthRim", color = UnitPlinth.RimColour });
-            var flagWhite = assets.Own(new Material(ringTemplate) { name = "UnitFlag (white)", color = UnitFlags.WhiteColour });
-            var flagBlue = assets.Own(new Material(ringTemplate) { name = "UnitFlag (blue)", color = UnitFlags.BlueColour });
-            flagBlue.renderQueue = flagWhite.renderQueue + 1;   // the blue over the white
-            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => UnitPlinth.Upload(assets.Own(m)), (_, build) => Built(build()), paint, rim, flagWhite, flagBlue);
+            UnitPlinth.Build(map, root.transform, centre, plinth, UnitData.Israel, m => UnitPlinth.Upload(assets.Own(m)), (_, build) => Built(build()), paint, rim,
+                side => UnitFlags.ClothMaterials(side, ringTemplate, assets.Own));
             var holes = new List<(Vector2 centre, float radius)> { (new Vector2(centre.x, centre.z), plinth * UnitPlinth.RimOuter) };
             for (int i = 0; i < looks.Length; i++)
             {
@@ -154,7 +152,7 @@ namespace Statecraft.Game.Map.Units
                 var figure = Piece(root.transform, $"Rifleman{i}", type, () => Built(UnitModels.Rifleman(hat, pose, faded, $"Rifleman1948-{i}")),
                     paint, p, Quaternion.Euler(0, heading, 0), FigureScale);
                 var headgear = UnitData.Headgears.First(h => UnitRoster.RiflemanType(h) == type);
-                UnitFigures.Dress(figure.transform, UnitFigures.ByHeadgear[headgear]);   // the Collection's soldier, once streamed (#665)
+                UnitFigures.Dress(figure.transform, UnitFigures.ByHeadgear[headgear], map.Residency.Units);   // the Collection's soldier, once streamed (#665)
             }
             Ring(map, assets, ringTemplate, root.transform, centre, RingRadius * hex);
 

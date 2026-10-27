@@ -165,13 +165,15 @@ namespace Statecraft.Game.UI
 
         /// <summary>Hide: the card gives the map back and waits behind the "Decision waiting" button, which takes the focus.</summary>
         public void Collapse() => Collapse(takeFocus: true);
+        int collapsedAt = -1;
+        internal bool CollapsedThisFrame => collapsedAt == UnityEngine.Time.frameCount;
 
         /// <summary>Hide; with <paramref name="takeFocus"/> false "Decision waiting" leaves the focus where it is (the
-        /// first-turn guide hides the card while its own panel has the focus, FirstTurnGuidePresenter).</summary>
+        /// advisor opening chain hides the card while its popup has the focus).</summary>
         public void Collapse(bool takeFocus)
         {
             if (Shown == null) return;
-            collapsedFor = Shown.Id;
+            collapsedFor = Shown.Id; collapsedAt = UnityEngine.Time.frameCount;
             Render();
             if (!takeFocus) return;
             if (hideByPointer) { hideByPointer = false; return; }
@@ -203,7 +205,17 @@ namespace Statecraft.Game.UI
         /// under the start screen, is collapsed or is hidden in a capture run (GameAudio's cue, #39).</summary>
         public event System.Action<string>? Opened;
 
+        /// <summary>Raised at the end of every render, whatever it showed: the capture dialog (CaptureDialogPresenter) waits
+        /// while this card is open, and follows it when it is hidden, answered or opened again.</summary>
+        public event System.Action? Rendered;
+
         public void Render()
+        {
+            try { RenderCard(); }
+            finally { Rendered?.Invoke(); }
+        }
+
+        void RenderCard()
         {
             var c = bridge.Content; var s = bridge.State;
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
@@ -221,7 +233,7 @@ namespace Statecraft.Game.UI
             // does. When the turn's Attention left cannot pay, every option would be refused (#1034, #1043): the options are
             // greyed out with their price, the card says End Turn hands it to its minister, and End Turn is highlighted.
             var answer = Shown == null ? null : new ChooseEventOption(Shown.Id, "");
-            var price = answer == null ? 0 : bridge.Price(answer);
+            var price = answer == null ? null : bridge.Price(answer);
             var unpaid = answer != null && !bridge.CanPay(answer);
             endTurn?.EnableInClassList(EndTurnWaitingClass, !hiddenInCapture && unpaid);
             if (Shown == null || Collapsed) video?.Stop();
@@ -269,7 +281,7 @@ namespace Statecraft.Game.UI
             {
                 var option = o;
                 var label = Local(Cabinet.Fill(c, s, o.Text, date), o.TextHe);
-                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price > 0 ? text.Format("event.option_cost", label, price) : label };
+                var b = new Button(() => Choose(e, option)) { name = "option-" + o.Id, text = price is double cost && cost > 0 ? text.Format("event.option_cost", label, cost) : label };
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid);
                 options.Add(b);
@@ -279,7 +291,7 @@ namespace Statecraft.Game.UI
                 rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
                 options.Add(rejoin);
             }
-            card.Q<Label>("event-count").text = open.Count > 1 ? text.Format("event.more", open.Count - 1) : "";
+            card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
         }
@@ -456,7 +468,13 @@ namespace Statecraft.Game.UI
             if (h < needs - 0.5f) SetPhotoShown(false);
         }
 
-        void OnPhotoGeometry(GeometryChangedEvent evt) => FitPhoto();
+        void OnPhotoGeometry(GeometryChangedEvent evt)
+        {
+            // A padding change can resize the header without changing the card's outer rectangle (#649).
+            // The existing width guard prevents the height update from chasing its own geometry events.
+            OnCardGeometry(evt);
+            FitPhoto();
+        }
 
         /// <summary>The decision layer changed size (the window did; the card's content never moves it, as the layer is pinned
         /// to the window on every side). A shown photograph is checked again; a dropped one comes back only when the room now
@@ -488,9 +506,12 @@ namespace Statecraft.Game.UI
         void Choose(GameEvent e, EventOption o)
         {
             // The bridge raises Refused (the toast shows it) or Changed (the toast clears and Render shows the next event,
-            // which takes the focus). Answered from the keyboard with no event left, the focus goes to End Turn (#41 M1).
+            // which takes the focus). Answered from the keyboard with no event left, the focus goes to End Turn (#41 M1),
+            // unless a control outside the card took it meanwhile (the opening chain's Next, as it moves on, #1323).
             bridge.Queue(new ChooseEventOption(e.Id, o.Id));
-            if (Shown == null && presses.ByKeyboard) FocusReturn.To(hudRoot.Q<Button>("end-turn"));
+            var focused = hudRoot.focusController?.focusedElement as VisualElement;
+            bool kept = focused != null && focused.panel != null && !layer.Contains(focused);
+            if (Shown == null && presses.ByKeyboard && !kept) FocusReturn.To(hudRoot.Q<Button>("end-turn"));
         }
     }
 }

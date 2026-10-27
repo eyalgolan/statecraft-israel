@@ -23,7 +23,7 @@ LISTS = ["indicators", "policies", "effects", "situations", "voter_groups", "act
 
 
 def git(root: Path, *args: str) -> str:
-    r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+    r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, encoding="utf-8")
     return r.stdout if r.returncode == 0 else ""
 
 

@@ -1,0 +1,32 @@
+{
+  "asset": "figure-bedouin-civilian-1948-v1",
+  "source_number": 22,
+  "generator": "Tripo Studio Smart Mesh P2.0",
+  "rig_preset": "Unity Humanoid Compatible (67 bones)",
+  "rig_credits": 20,
+  "source_sha256": "941d0f7e435b238ee8098abc4be665dec62e34a9b4cd3d824c5fb45385f01c88",
+  "local_processing": "Full geometry/UVs/skin retained; compatibility FBX with both local idle/walk takes, bake step 1, simplify 0. Mesh/animation import compression Off; exact embedded provider 4096px JPEG, no Crunch. FBX animation interpolation conversion is not mathematically lossless; see source validation.",
+  "animation_source": "Existing figure-c09-irregular-v2, original source at repository commit 3ef0a7a5a36887aee7a24fd11ddf722507695f3c; source licence unchanged.",
+  "runtime_placement": "editor-only review; not in runtime catalogs/build dependencies",
+  "files": {
+    "figure-bedouin-civilian-1948-v1.fbx": "27c3781eae0f9f1a18ed87eec8b03cde2187cbbe5310e2d3a5e85186181981d4",
+    "figure-bedouin-civilian-1948-v1_basecolor.jpg": "03652a0eb90e4ca4253cf47959c5234d716abafb621f5ce4edd0322c1de98548"
+  },
+  "provider_model_id": "b3e14af5-3fb5-464d-afc4-02f7642f2827",
+  "provider_rig_job_id": "not separately exposed by provider UI",
+  "source_triangles": 7306,
+  "bones": 67,
+  "source_animation_actions": [],
+  "runtime_controller_actions": [
+    "idle"
+  ],
+  "licence": "CC BY-NC-ND 4.0",
+  "attribution": "Tal Heuberger",
+  "provider_animation_clip_count": 0,
+  "local_retarget_actions": [
+    "idle",
+    "walk"
+  ],
+  "source_archive": "asset-sources/generated-1948/figure-bedouin-civilian-1948-v1/original.glb",
+  "validation": "asset-sources/generated-1948/figure-bedouin-civilian-1948-v1/validation.json"
+}

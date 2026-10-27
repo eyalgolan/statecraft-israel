@@ -1,11 +1,11 @@
-# A cautious player: modest rationing from the start, and accepts the First Truce (the historical answer, written out so the
-# scenario does not lean on delegation).
+# A cautious player: modest rationing from the rationing office's first turn, and accepts the First Truce (the historical
+# answer, written out so the scenario does not lean on delegation).
 name: cautious
-until: 1949-01-01
+until: 1949-04-01
 steps:
-  - on: 1948-05-15
-    commands:
-      - { kind: set_policy, policy: rationing, level: 0.4 }
   - on: 1948-06-01
     commands:
       - { kind: choose_event_option, event: first_truce, option: accept }
+  - on: 1949-03-10
+    commands:
+      - { kind: set_policy, policy: rationing, level: 0.4 }

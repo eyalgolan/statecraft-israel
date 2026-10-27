@@ -18,6 +18,11 @@ namespace Statecraft.Game.Map
         Vector2 start;
         bool down, moved, pinched;
 
+        /// <summary>True while the press could still end as a tap: it is down, has stayed inside the slop and no second
+        /// finger came. The camera does not pan on such a press (CameraController.HoldsDrag), so a press is either a tap or a
+        /// pan, never both (#1654 review).</summary>
+        public bool TapCandidate => down && !moved && !pinched;
+
         /// <summary>One frame of the watched finger: its pressed and released edges, where it is, and whether any
         /// other finger is down. The tap's position on a release frame that still qualifies, otherwise null.</summary>
         public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown)
@@ -34,12 +39,27 @@ namespace Statecraft.Game.Map
 
     /// <summary>Left click on the map (not on the UI) selects the hex under the pointer: a ray from the camera hits the
     /// terrain's collider, the hit becomes lon/lat (GeoFrame) and then a hex (HexPicker). On a touchscreen a tap (press and
-    /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.</summary>
+    /// release inside TapPress.SlopPixels, with no second finger down) does the same, so a one-finger drag pans and a pinch zooms without selecting.
+    /// A right click (press and release inside the same slop) raises HexOrdered instead, selecting nothing. One TapPress per
+    /// gesture decides both a click and the camera's pan (RightTapCandidate, TouchTapCandidate): the camera pans only once
+    /// the press has left the slop, so a press is a click or a pan, never both (#1654 review).</summary>
+    /// <remarks>Runs before <see cref="CameraController"/> (#1661 item 5). The camera asks this pointer whether a press
+    /// may still be a tap. For a finger that answer is <see cref="TouchTapCandidate"/>, which only this component's own
+    /// frame moves; <see cref="RightTapCandidate"/> is moved by the right button's action callbacks
+    /// (<see cref="RightStep"/>) instead, so it does not depend on the order. With no order declared, Unity was free to
+    /// tick the camera first, which then read the touch answer from the frame before: a one-finger drag lifted just
+    /// after crossing the slop had its delta kept by CameraController.HoldDrag and then dropped, so the pan was lost.
+    /// The order is the cause, so the order is what is fixed; HoldDrag's contract (a press is a click or a pan, never
+    /// both, #1654) is left alone.</remarks>
+    [DefaultExecutionOrder(-100)]
     public sealed class MapPointer : MonoBehaviour
     {
         public MapScene? Map;
         public Func<Vector2, bool>? IsOverUi;
-        public event Action<int, int>? HexClicked;
+        /// <summary>A picked hex and whether its pointer hit was a city's name pill. Keyboard picks always pass false.</summary>
+        public event Action<int, int, bool>? HexClicked;
+        /// <summary>A right click on a hex (owner, 25 Oct 2026, "Civ: select, then click": it moves the selected unit there).</summary>
+        public event Action<int, int>? HexOrdered;
         /// <summary>The hex a point goes to before the terrain is asked, or null: a city's name pill sends its click to the
         /// city's hex (#1063), wherever the land under the pill is.</summary>
         public Func<Vector2, (int q, int r)?>? PillHex;
@@ -48,21 +68,52 @@ namespace Statecraft.Game.Map
         // queued and evaluated in order in Update: several presses in one slow frame are each checked where they happened,
         // never all at the frame's last pointer position (playtest 2, P2-4).
         readonly Queue<Vector2> presses = new Queue<Vector2>();
-        InputAction? press;
+        // Right clicks, as presses are: the right button's press, every pointer move while it is held and its release are
+        // each stepped at their own event's position, so a drag out and back inside one slow frame is still a drag.
+        readonly Queue<Vector2> rightClicks = new Queue<Vector2>();
+        InputAction? press, rightPress, rightMove;
 
-        TapPress tap;
+        TapPress tap, rightTap;
+
+        /// <summary>True while the right button's press could still end as a right click (TapPress.TapCandidate): the
+        /// camera holds its right-drag pan until it is false.</summary>
+        public bool RightTapCandidate => rightTap.TapCandidate;
+        /// <summary>True while the primary finger's press could still end as a tap: the camera holds its one-finger pan.</summary>
+        public bool TouchTapCandidate => tap.TapCandidate;
 
         void OnEnable()
         {
             press = new InputAction("map-press", InputActionType.Button, "<Mouse>/leftButton");
             press.performed += OnPressed;
             press.Enable();
+            rightPress = new InputAction("map-right-press", InputActionType.Button, "<Mouse>/rightButton");
+            rightPress.performed += OnRightPressed;
+            rightPress.canceled += OnRightReleased;
+            rightPress.Enable();
+            rightMove = new InputAction("map-right-move", InputActionType.PassThrough, "<Mouse>/position");
+            rightMove.performed += OnRightMoved;
+            rightMove.Enable();
         }
 
         void OnDisable()
         {
             if (press != null) { press.performed -= OnPressed; press.Dispose(); press = null; }
-            presses.Clear();
+            if (rightPress != null) { rightPress.performed -= OnRightPressed; rightPress.canceled -= OnRightReleased; rightPress.Dispose(); rightPress = null; }
+            if (rightMove != null) { rightMove.performed -= OnRightMoved; rightMove.Dispose(); rightMove = null; }
+            presses.Clear(); rightClicks.Clear();
+            rightTap = default;
+        }
+
+        void OnRightPressed(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Pointer p) RightStep(true, false, p.position.ReadValue());
+        }
+
+        void OnRightMoved(InputAction.CallbackContext ctx) => RightStep(false, false, ctx.ReadValue<Vector2>());
+
+        void OnRightReleased(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Pointer p) RightStep(false, true, p.position.ReadValue());
         }
 
         void OnPressed(InputAction.CallbackContext ctx)
@@ -77,9 +128,15 @@ namespace Statecraft.Game.Map
         internal void ProcessPresses()
         {
             while (presses.Count > 0) HandleClick(presses.Dequeue());
+            while (rightClicks.Count > 0) HandleRightClick(rightClicks.Dequeue());
         }
 
-        void Update()
+        void Update() => Tick();
+
+        /// <summary>One frame of this pointer: the queued presses, then the primary finger's tap rule. Test seam (internal;
+        /// the tests see it through InternalsVisibleTo), as CameraController.Tick is (#890): an EditMode test has no player
+        /// loop, so it drives the real Update path instead of the handlers underneath it (#1661 item 6).</summary>
+        internal void Tick()
         {
             ProcessPresses();
             var ts = Touchscreen.current;
@@ -100,9 +157,28 @@ namespace Statecraft.Game.Map
         {
             var overUi = IsOverUi != null && IsOverUi(pos);
             Boot.DiagLog.NavLine(FormattableString.Invariant($"map click at ({pos.x:0}, {pos.y:0}) overUi={overUi}"));
-            if (overUi || HexAt(pos, false, true) is not (int q, int r)) return false;   // the UI asked once per press (MapPressTests)
+            if (overUi || HexAt(pos, false, true, out var cityPill) is not (int q, int r)) return false;   // the UI asked once per press (MapPressTests)
             Map!.Select(q, r);                                          // the map marks the hex the info panel describes
-            HexClicked?.Invoke(q, r);
+            HexClicked?.Invoke(q, r, cityPill);
+            return true;
+        }
+
+        /// <summary>One right-button event: its press, a pointer move or its release, at the event's own position. A release
+        /// with the press never past TapPress.SlopPixels queues a right click where it was pressed (handled in Update, as
+        /// presses are); a press that went farther was the camera's drag pan.</summary>
+        internal void RightStep(bool pressed, bool released, Vector2 position)
+        {
+            if (rightTap.Step(pressed, released, position, false) is Vector2 at) rightClicks.Enqueue(at);
+        }
+
+        /// <summary>A right click at <paramref name="pos"/> (screen pixels): ignored over the UI, otherwise the hex under the
+        /// pointer is raised as HexOrdered (no outline: it selects nothing). Returns whether a hex was raised.</summary>
+        public bool HandleRightClick(Vector2 pos)
+        {
+            var overUi = IsOverUi != null && IsOverUi(pos);
+            Boot.DiagLog.NavLine(FormattableString.Invariant($"map right click at ({pos.x:0}, {pos.y:0}) overUi={overUi}"));
+            if (overUi || HexAt(pos, false, true) is not (int q, int r)) return false;
+            HexOrdered?.Invoke(q, r);
             return true;
         }
 
@@ -115,24 +191,53 @@ namespace Statecraft.Game.Map
             // terrain only: the stop's centre ring marks the land, not a city's name pill
             if (HexAt(pos, false, false) is not (int q, int r)) return false;
             Map!.Select(q, r);                                          // the map marks the hex the info panel describes
-            HexClicked?.Invoke(q, r);
+            HexClicked?.Invoke(q, r, false);
             return true;
         }
 
         /// <summary>The hex a click at <paramref name="pos"/> (screen pixels) would pick, or null over the UI or off the map:
-        /// a pill's city hex (PillHex), else the hex of the terrain under the pointer. GameRoot also asks it for the hover.</summary>
+        /// a pill's city hex (PillHex), else the hex of the unit token drawn under the pointer (UnitLayer.TokenAtScreen), else
+        /// the hex of the terrain under the pointer. GameRoot also asks it for the hover.</summary>
         public (int q, int r)? HexAt(Vector2 pos) => HexAt(pos, IsOverUi != null && IsOverUi(pos), true);
 
-        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills)
+        /// <summary>The hex a click at <paramref name="pos"/> would pick were no UI there (HexAt without the UI check).
+        /// GameRoot asks it for a click on the unit card over a lit hex (#1617).</summary>
+        public (int q, int r)? HexUnder(Vector2 pos) => HexAt(pos, false, true);
+
+        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills) => HexAt(pos, overUi, pills, out _);
+
+        (int q, int r)? HexAt(Vector2 pos, bool overUi, bool pills, out bool cityPill)
         {
+            cityPill = false;
             if (overUi) return null;                                    // the UI is asked first, whatever else is missing
             if (Map == null || Map.Terrain == null) return null;
-            if (pills && PillHex?.Invoke(pos) is (int, int) pill) return pill;
+            if (pills && PillHex?.Invoke(pos) is (int, int) pill) { cityPill = true; return pill; }
             var cam = Camera.main;
-            var collider = Map.Terrain.GetComponent<TerrainCollider>();
-            // only the terrain's own collider: other colliders (markers, future props) never decide which hex is clicked
-            if (cam == null || collider == null || !collider.Raycast(cam.ScreenPointToRay(pos), out var hit, 1_000_000f)) return null;
+            // A unit's badge and figures stand above the ground: a click on them is a click on the unit's hex, not on the
+            // terrain behind them (owner's report on v0.2.0). Not for the keyboard's look-at point (pills false).
+            var units = pills && cam != null ? Map.Terrain.transform.Find(Units.UnitLayer.RootName) : null;
+            if (units != null && units.TryGetComponent<Units.UnitLayer>(out var layer) && layer.TokenAtScreen(cam!, pos) is Units.PlacedToken token)
+                return (token.Q, token.R);
+            if (cam == null || !TryGroundHit(Map, cam.ScreenPointToRay(pos), out var hit)) return null;
             return Pick(Map, hit.point);
+        }
+
+        // The opt-in board draws its own terrain above the lowered real map. Use the nearest displayed ground,
+        // falling through its sea/outside holes to the real map. Props and markers never decide the clicked hex.
+        static bool TryGroundHit(MapScene map, Ray ray, out RaycastHit hit)
+        {
+            hit = default;
+            bool found = false;
+            foreach (var terrain in map.GetComponentsInChildren<Terrain>())
+            {
+                if (!terrain.enabled || !terrain.drawHeightmap) continue;
+                var collider = terrain.GetComponent<TerrainCollider>();
+                if (collider == null || !collider.enabled ||
+                    !collider.Raycast(ray, out var candidate, found ? hit.distance : 1_000_000f)) continue;
+                hit = candidate;
+                found = true;
+            }
+            return found;
         }
 
         public static (int q, int r) Pick(MapScene map, Vector3 world)

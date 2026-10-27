@@ -1,10 +1,10 @@
 ## דף נתונים
 
-- **מפתח:** <span lang="en" dir="ltr">Eyal Golan</span> והתורמים ל־Statecraft: Israel. פרויקט קוד פתוח עצמאי.
+- **מפתח:** <span lang="en" dir="ltr">Eyal Golan</span> והתורמים ל־Statecraft: Israel. פרויקט עצמאי וחינמי.
 - **מצב:** אב־טיפוס מוקדם. אפשר לשחק בשנים 1948 עד 1951 בדפדפן, ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel).
 - **פלטפורמה:** דפדפן (WebGL), נבנה ב־<span dir="ltr">Unity 6000.3.25f1</span>.
-- **מחיר:** חינם, קוד פתוח. המשחק אינו מסחרי.
-- **רישיונות:** קוד: MIT; אמנות ומסמכים מקוריים: CC BY 4.0; תוכן המשחק: CC BY-SA 4.0; תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות.
+- **מחיר:** חינם. המשחק אינו מסחרי, ואת הקוד שלו אפשר לקרוא ולשנות בחינם לשימוש לא מסחרי.
+- **רישיונות:** קוד: <span lang="en" dir="ltr">PolyForm Noncommercial 1.0.0</span> (שימוש מסחרי דורש אישור בכתב; MIT עד גרסה <span dir="ltr">v0.2.1</span> כולל); אמנות ומסמכים מקוריים: CC BY 4.0; תוכן המשחק: CC BY-SA 4.0; תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות.
 - **שפות:** המשחק באנגלית, וממשק בעברית נמצא בעבודה. האתר הזה באנגלית ובעברית.
 - **קוד המקור:** [<span dir="ltr">github.com/eyalgolan/statecraft-israel</span>](https://github.com/eyalgolan/statecraft-israel)
 

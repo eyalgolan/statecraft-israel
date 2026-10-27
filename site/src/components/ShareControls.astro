@@ -1,0 +1,67 @@
+---
+import { type Lang, t } from '../i18n/ui';
+interface Props { lang: Lang; url: string }
+const { lang, url } = Astro.props;
+---
+<div class="share-tools" role="group" aria-label={t(lang, 'share.label')} data-site-share
+  data-url={url} data-title={t(lang, 'site.name')} data-copied={t(lang, 'share.copied')}
+  data-unavailable={t(lang, 'share.unavailable')} data-manual={t(lang, 'share.manual')}>
+  <div class="share-actions">
+    <button class="btn" type="button" data-share-native hidden>{t(lang, 'share.native')}</button>
+    <button class="btn" type="button" data-share-copy hidden>{t(lang, 'share.copy')}</button>
+  </div>
+  <p class="share-status" role="status" aria-live="polite" aria-atomic="true" data-share-status></p>
+  <div class="share-manual" data-share-manual hidden>
+    <label>{t(lang, 'share.url')}<input type="url" dir="ltr" readonly value={url} data-share-url /></label>
+  </div>
+  <noscript><p>{t(lang, 'share.manual')} <a href={url} dir="ltr">{url}</a></p></noscript>
+</div>
+
+<script>
+  import { createSharing } from '../lib/share.mjs';
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-site-share]')) {
+    const native = root.querySelector<HTMLButtonElement>('[data-share-native]');
+    const copy = root.querySelector<HTMLButtonElement>('[data-share-copy]');
+    const status = root.querySelector<HTMLElement>('[data-share-status]');
+    const manual = root.querySelector<HTMLElement>('[data-share-manual]');
+    const input = root.querySelector<HTMLInputElement>('[data-share-url]');
+    if (!native || !copy || !status || !manual || !input) continue;
+
+    const controller = createSharing({
+      url: root.dataset.url,
+      title: root.dataset.title,
+      secure: window.isSecureContext,
+      share: navigator.share?.bind(navigator),
+      writeText: navigator.clipboard?.writeText?.bind(navigator.clipboard),
+    }, (state) => {
+      const busy = state === 'sharing' || state === 'copying';
+      native.setAttribute('aria-disabled', String(busy));
+      copy.setAttribute('aria-disabled', String(busy));
+      status.textContent = state === 'copied' ? root.dataset.copied ?? ''
+        : state === 'share-unavailable' ? root.dataset.unavailable ?? ''
+        : state === 'manual-copy' ? root.dataset.manual ?? '' : '';
+      if (state === 'manual-copy') {
+        manual.hidden = false;
+        input.value = controller.url;
+        input.focus();
+        input.select();
+      }
+    });
+    native.hidden = !controller.canShare;
+    copy.hidden = false;
+    native.addEventListener('click', () => { void controller.share(); });
+    copy.addEventListener('click', () => { void controller.copy(); });
+  }
+</script>
+
+<style>
+  .share-tools { margin-block-start: 1.25rem; }
+  .share-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+  .share-actions .btn { font-family: inherit; font-size: inherit; cursor: pointer; }
+  .share-actions [hidden], .share-manual[hidden] { display: none; }
+  .share-status { min-block-size: 1.5em; margin-block: .5rem 0; text-align: center; }
+  .share-manual { text-align: center; }
+  .share-manual label { display: grid; justify-items: center; gap: .35rem; }
+  .share-manual input { inline-size: min(100%, 36rem); padding: .5rem; font: inherit; }
+</style>

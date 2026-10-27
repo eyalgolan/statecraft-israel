@@ -6,7 +6,7 @@ namespace Statecraft.HexTiles.Prototypes
     /// from the first (10 October, faceted low-poly) Tripo batch, drawn as a cluster of houses at a building's footprint, so detail
     /// stays realistic at the square and the edge reads denser. Render it on the city's hex with
     /// -prototype tel_aviv_city_mixed -on tel_aviv_city.</summary>
-    [HexPrototype("tel_aviv_city_mixed")]
+    [HexPrototype("tel_aviv_city_mixed", Kind = "city")]
     public sealed class TelAvivCityMixed : TelAvivCity
     {
         public override string Title => "Tel Aviv, White City (1948), mixed with the first batch";

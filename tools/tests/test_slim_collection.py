@@ -1,5 +1,6 @@
-"""tools/slim_collection.py (issue #664) slims the same models, in the same categories, that the game's catalog
-(unity/Assets/Scripts/Map/Collection/CollectionCatalog.cs) streams; the caps match the Unity import tests."""
+"""The original #507/#336 models retain their canonical slimming inputs and runtime categories.
+The catalog also streams independently generated infantry, outside that converter; all use the import caps.
+"""
 import re
 from pathlib import Path
 
@@ -11,19 +12,35 @@ REPO = Path(__file__).resolve().parents[2]
 CATALOG = REPO / "unity/Assets/Scripts/Map/Collection/CollectionCatalog.cs"
 IMPORT_TESTS = REPO / "unity/Assets/Tests/EditMode/CollectionImportTests.cs"
 
+# These characters have their own generated sources and rigging/export pipeline, not #507/#336 FBX inputs.
+GENERATED_PEOPLE = [
+    "figure-syrian-infantry-1948-v1",
+    "figure-iraqi-infantry-1948-v1",
+]
+
 
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
 
-def test_the_tool_slims_the_50_models_the_catalog_streams():
+def test_the_original_50_slim_inputs_and_generated_infantry_partition_the_catalog():
     bundles = catalog_bundles()
-    assert bundles == {"People": slim.PEOPLE, "Vehicles": slim.VEHICLES, "Animals": slim.ANIMALS, "Towns": slim.TOWNS}
+    assert bundles == {
+        "People": slim.PEOPLE,
+        "Vehicles": slim.VEHICLES,
+        "Animals": slim.ANIMALS,
+        "Towns": slim.TOWNS,
+        # The generated infantry stream from a bundle of their own (owner ruling, 26 October 2026, #1763).
+        "ArabArmies": GENERATED_PEOPLE,
+    }
     assert len(slim.IDS) == len(set(slim.IDS)) == 50
+    assert not set(GENERATED_PEOPLE) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
+    assert "figure-egyptian-infantry-1948-v1" not in sum(bundles.values(), []), "Egyptian art stays in review"
+    assert "figure-egyptian-infantry-1948-v1" not in slim.IDS
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
 
 
@@ -76,13 +93,12 @@ def test_a_pose_clip_poses_only_a_person_without_an_idle_clip():
         assert mid in slim.PEOPLE and f'"{mid}"' not in animated, mid
 
 
-def test_the_caps_match_the_unity_import_tests():
-    text = IMPORT_TESTS.read_text(encoding="utf-8")
-    assert f"FarTriangles = {slim.FAR_TRIS}," in text
-    assert f"FarTrianglesVehicle = {slim.FAR_TRIS_VEHICLE}," in text
-    assert f"FarTrianglesTown = {slim.FAR_TRIS_TOWN}," in text
-    assert f"NearTriangles = {slim.NEAR_TRIS}" in text
-    assert f"MaxTextureSize = {slim.TEX_PX}" in text
+def test_retained_slim_derivatives_keep_their_historical_limits():
+    # #1273 imports full originals: its native geometry checks no longer use this historical slimmer.
+    # Keep the retained derivative tool's approved limits pinned; do not raise them to fit full originals.
+    assert (slim.FAR_TRIS, slim.FAR_TRIS_VEHICLE, slim.FAR_TRIS_TOWN, slim.NEAR_TRIS, slim.TEX_PX) == (
+        1500, 4500, 4500, 8000, 512
+    )
 
 
 def _fbx(*strings: bytes) -> bytes:

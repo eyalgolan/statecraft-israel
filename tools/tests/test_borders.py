@@ -28,6 +28,14 @@ GAZETTE_1947 = {
     "Gaza District": ["Beersheba Sub-District", "Gaza Sub-District"],
 }
 
+GAZETTE_HE_1945 = {
+    "acre": "נפת עכו", "beisan": "נפת בית־שאן", "nazareth": "נפת נצרת", "safad": "נפת צפת",
+    "tiberias": "נפת טבריה", "haifa": "נפת חיפה", "jenin": "נפת ג'נין", "nablus": "נפת שכם",
+    "tulkarm": "נפת טול כרם", "hebron": "נפת חברון", "jerusalem": "נפת ירושלים",
+    "ramallah": "נפת ראם־אללה", "jaffa": "נפת יפו", "ramle": "נפת רמלה", "gaza": "נפת עזה",
+    "beersheba": "נפת באר־שבע",
+}
+
 
 def region_of(q: int, r: int) -> str:
     keys = {x["id"]: x["key"] for x in BAKED["regions"]}
@@ -45,16 +53,20 @@ def test_every_sub_district_of_the_1947_schedule_once_with_its_district():
 
 
 def test_each_feature_carries_name_sources_checked_date_and_reviewed_status():
+    assert {f["properties"]["id"]: f["properties"]["name_he"] for f in SOURCE["features"]} == GAZETTE_HE_1945
     for f in SOURCE["features"]:
         p = f["properties"]
         assert p["name"] and p["name_he"] and p["name_ar"], p["id"]
         assert p["sources"] and all(s.startswith("https://") for s in p["sources"]), p["id"]
         assert p["checked"] == "2026-10-11" and p["status"] == "sensitivity-reviewed", p["id"]   # owner-delegated, 2026-10-11
-        assert "Wikipedia" in p["names_source"], p["id"]
+        assert p["names_source"].startswith("name_he / district_he: The Palestine Gazette (Hebrew edition) No. 1415"), p["id"]
+        assert "name_ar / district_ar: Wikipedia" in p["names_source"], p["id"]
         assert p["in_force_from"] == "1947-01-01", p["id"]
     meta = SOURCE["statecraft"]
     assert meta["status"] == "sensitivity-reviewed" and meta["sources"] and meta["licence_note"] and meta["uncertain_segments"]
-    assert any("amendment" in q for q in meta["open_questions"]), "the 1947-48 amendment check stays open (review M8)"
+    assert not any("amendment" in q for q in meta["open_questions"]), "the owner closed the 1947-48 amendment check"
+    assert "section 3.3" in meta["provenance"] and "#196 comment 6359825082" in meta["provenance"]
+    assert all(gap in meta["provenance"] for gap in ("29 April to 14 May 1948", "typescript", "Hebrew schedule", "village lists"))
     assert all("district_ar_note" in f["properties"] for f in SOURCE["features"] if f["properties"]["district"] == "Samaria District")
 
 

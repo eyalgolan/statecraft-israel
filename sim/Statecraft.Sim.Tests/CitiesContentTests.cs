@@ -18,7 +18,7 @@ public class CitiesContentTests
         var c = Load();
         var city = Assert.Single(c.Cities);
         Assert.Equal(("town_a", 12, 8, 10, 6), (city.Id, city.HousingCapacity, city.JobSlots, city.Civilians, city.Employed));
-        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz", "craftsman" }, c.UnitTypes.Select(t => t.Id));
+        Assert.Equal(new[] { "civilian", "refugee", "recruit", "halutz", "craftsman", "veteran_soldier" }, c.UnitTypes.Select(t => t.Id));
         var halutz = c.UnitTypes.Single(t => t.Id == "halutz");
         Assert.Equal(("unit", "hakhshara", 3, 0.25), (halutz.Kind, halutz.Facility, halutz.TrainingTurns, halutz.TrainingCost));
         Assert.Equal("", c.UnitTypes.Single(t => t.Id == "civilian").Facility);
@@ -46,7 +46,7 @@ public class CitiesContentTests
         Assert.True(c.Rules.AttentionCost.ContainsKey("assign_workers"));
         Assert.Equal(new[] { "tel_aviv" }, c.Cities.Where(x => x.Facilities.Count > 0).Select(x => x.Id));
         Assert.Equal(new[] { "military_camp", "hakhshara" }, c.Cities.Single(x => x.Id == "tel_aviv").Facilities);   // D-D5: one of each at the start
-        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara"), ("craftsman", "industry") },
+        Assert.Equal(new[] { ("recruit", "military_camp"), ("halutz", "hakhshara"), ("craftsman", "industry"), ("artillery", "military_camp"), ("armoured_car", "military_camp") },   // R-UNIT-008: the guns and the car (Q-ARTY-3)
                      c.UnitTypes.Where(t => t.Facility != "").Select(t => (t.Id, t.Facility)));
         Assert.True(c.Rules.AttentionCost.ContainsKey("train") && c.Rules.AttentionCost.ContainsKey("cancel_training"));
     }

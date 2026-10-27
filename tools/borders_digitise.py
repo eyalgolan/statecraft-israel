@@ -41,11 +41,12 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "content" / "map" / "subdistricts_1948.geojson"
 MAP_DIR = ROOT / "unity" / "Assets" / "StreamingAssets" / "map"
 CHECKED = "2026-10-11"
-# Sensitivity review done by the controller on the owner's behalf (owner-delegated, 2026-10-11); the 1947-48 amendment
-# check stays open (open_questions).
+# Sensitivity review done by the controller on the owner's behalf (owner-delegated, 2026-10-11).
 STATUS = "sensitivity-reviewed"
-NAMES_SOURCE = ("name_he / name_ar / district_he / district_ar: Wikipedia (secondary), accepted for now (owner-delegated "
-                "ruling, 2026-10-11); the Gazette's Hebrew and Arabic editions were not reachable")
+NAMES_SOURCE = ("name_he / district_he: The Palestine Gazette (Hebrew edition) No. 1415, Supplement No. 2, 7 June 1945, "
+                "the schedule's headings, pp. 493-499 (owner ruling, 2026-10-23, #196; research_notes/Map borders/"
+                "subdistrict-names-and-amendments-1947-48.md section 2). name_ar / district_ar: Wikipedia (secondary), "
+                "accepted for now (owner-delegated ruling, 2026-10-11); the Gazette's Arabic edition was not reachable")
 SAMARIA_AR_NOTE = ("'لواء السامرة' renders the official English 'Samaria District' directly; 'لواء نابلس' is the common "
                    "usage. No official Arabic Mandate text (al-Waqa'i' al-Filastiniyya) was reachable online (searched "
                    "2026-10-11): unverified")
@@ -95,13 +96,14 @@ DISTRICTS = {"galilee": "Galilee District", "haifa": "Haifa District", "samaria"
 OUTSIDE = [(35.30, 33.30), (35.80, 33.20), (35.80, 32.60), (35.80, 31.60), (35.70, 30.40), (34.30, 30.40),
            (34.25, 29.70), (35.85, 29.60)]
 
-# Hebrew and Arabic names: secondary sources (no Mandate-era trilingual list was reachable), owner review.
+# Hebrew names: the Palestine Gazette's 1945 schedule headings (NAMES_SOURCE); the Hebrew Wikipedia page stays as a
+# secondary source. Arabic names: secondary (no Mandate-era Arabic list was reachable), owner review.
 NAMES_HE_URL = "https://he.wikipedia.org/wiki/%D7%9E%D7%97%D7%95%D7%96%D7%95%D7%AA_%D7%94%D7%9E%D7%A0%D7%93%D7%98_%D7%94%D7%91%D7%A8%D7%99%D7%98%D7%99"
 NAMES_AR_URL = "https://ar.wikipedia.org/wiki/%D8%A7%D9%84%D8%AA%D9%82%D8%B3%D9%8A%D9%85_%D8%A7%D9%84%D8%A5%D8%AF%D8%A7%D8%B1%D9%8A_%D9%84%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86_(1920-1948)"
-NAMES_HE = {"acre": "נפת עכו", "beisan": "נפת ביסאן", "nazareth": "נפת נצרת", "safad": "נפת צפת", "tiberias": "נפת טבריה",
-            "haifa": "נפת חיפה", "jenin": "נפת ג'נין", "nablus": "נפת שכם", "tulkarm": "נפת טולכרם", "hebron": "נפת חברון",
-            "jerusalem": "נפת ירושלים", "ramallah": "נפת רמאללה", "jaffa": "נפת יפו", "ramle": "נפת רמלה", "gaza": "נפת עזה",
-            "beersheba": "נפת באר שבע",
+NAMES_HE = {"acre": "נפת עכו", "beisan": "נפת בית־שאן", "nazareth": "נפת נצרת", "safad": "נפת צפת", "tiberias": "נפת טבריה",
+            "haifa": "נפת חיפה", "jenin": "נפת ג'נין", "nablus": "נפת שכם", "tulkarm": "נפת טול כרם", "hebron": "נפת חברון",
+            "jerusalem": "נפת ירושלים", "ramallah": "נפת ראם־אללה", "jaffa": "נפת יפו", "ramle": "נפת רמלה", "gaza": "נפת עזה",
+            "beersheba": "נפת באר־שבע",
             "galilee": "מחוז הגליל", "haifa_d": "מחוז חיפה", "samaria": "מחוז שומרון", "jerusalem_d": "מחוז ירושלים",
             "lydda": "מחוז לוד", "gaza_d": "מחוז עזה"}
 NAMES_AR = {"acre": "قضاء عكا", "beisan": "قضاء بيسان", "nazareth": "قضاء الناصرة", "safad": "قضاء صفد", "tiberias": "قضاء طبريا",
@@ -430,8 +432,13 @@ def geojson(main: dict, geoms: dict, cross: dict | None) -> dict:
                    "the Lisan) as baked. Display rule (controller ruling, owner-delegated, 2026-10-11): the hex that holds a "
                    "Gazette-listed place always takes that place's sub-district, never outside (tools/borders_bake.py rule 5; "
                    "it puts Rafah town's hex (-15, 31) in Gaza and Metulla's hex (15, 1) in Safad, which the centre rule "
-                   "had left outside). These true lines are not changed by it. The 1947-48 amendment check stays open "
-                   "(open_questions)."),
+                   "had left outside). These true lines are not changed by it."),
+        "provenance": ("Hebrew name_he follows the Palestine Gazette headings in research_notes/Map borders/"
+                       "subdistrict-names-and-amendments-1947-48.md section 2; the 1 January 1947 to 28 April 1948 "
+                       "amendment check is closed (owner ruling, 23 October 2026, #196 comment 6359825082). Remaining "
+                       "gaps from the note's section 3.3: 29 April to 14 May 1948 was not checked; the 1948 index is a "
+                       "typescript of unknown origin and was only partly read; the 1947 Hebrew schedule was not found; "
+                       "the Schedule's village lists were not re-checked."),
         "licence": "CC-BY-SA-4.0 (content/); coast from the Copernicus DEM (NOTICE)", "licence_note": LICENCE_NOTE,
         "sources": SOURCES,
         "scan": {"label": main["info"]["label"], "url": main["info"]["url"], "sha256": main["sha256"],
@@ -448,12 +455,8 @@ def geojson(main: dict, geoms: dict, cross: dict | None) -> dict:
                               + [{"why": f"narrow salients of solid lines (the frontier): the coarse closing fills them; a fine closing ({FINE_R} px) gives each back to the region on its side where that side is unambiguous"}]
                               + [{"box": b, "why": "boundary under a district name's red lettering, joined by the closing"} for b in PATCHES["labels"]]
                               + [{"box": b, "why": "boundary crossing a sub-district name's red underline, joined by the closing"} for b in PATCHES["erase"]],
-        "open_questions": ["No amendment after the 1947 Schedule was found (web searches 2026-10-11, twice); one between "
-                           "mid-1947 and 14 May 1948 cannot be ruled out. To close it: the Palestine Gazette's 1947 and 1948 "
-                           "indexes, or 'Laws of Palestine 1947' (subsidiary legislation), at the National Library of Israel. "
-                           "This check stays open (review M8; the status records the sensitivity review only).",
-                           "Hebrew and Arabic names come from Wikipedia (secondary), accepted for now (owner-delegated "
-                           "ruling, 2026-10-11); the Gazette's Hebrew and Arabic editions were not reachable. Samaria "
+        "open_questions": ["Arabic names come from Wikipedia (secondary), accepted for now (owner-delegated ruling, "
+                           "2026-10-11); the Gazette's Arabic edition was not reachable. Samaria "
                            "District in Arabic stays 'لواء السامرة' (see district_ar_note), unverified.",
                            "Known near-line place: Ra'anana (Jaffa Sub-District in the 1947 Schedule, p. 132) falls 0.1 km "
                            "inside Tulkarm on these lines, within the stated accuracy."],

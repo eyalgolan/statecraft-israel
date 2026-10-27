@@ -85,7 +85,7 @@ public class MoneyTests
     }
 
     // R-MONEY-002, owner option 3 (18 October 2026, #884): in the real MVP no civilian place pays upkeep, so a turn with
-    // every kind built charges nothing and names no upkeep cause.
+    // every kind built names no civilian upkeep cause; military formations still pay their accepted upkeep.
     [Fact]
     public void TheMvpChargesNoCivilianUpkeep()
     {
@@ -99,7 +99,8 @@ public class MoneyTests
         Assert.Equal(0, Cities.AnnualUpkeep(C, s, C.Rules.Mvp!));
         var why = new List<Cause>();
         TurnResolver.Resolve(C, s, s.Date.AddMonths(1), 1 / 12.0, why);
-        Assert.DoesNotContain(why, x => x.Message.Contains("upkeep"));
+        Assert.DoesNotContain(why, x => x.Message.Contains("civilian upkeep", StringComparison.Ordinal));
+        Assert.Contains(why, x => x.Message.EndsWith("(military upkeep)", StringComparison.Ordinal) && x.Delta < 0);
     }
 
     // R-MONEY-001 (D-C3): a guard, not a change. The real game runs the GDD loop, its debt and foreign currency are in the

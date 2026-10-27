@@ -31,6 +31,11 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>The railway's train service in normal play (issue #668), or null: from the runtime file's service row
         /// (tools/route_paths_bake.py reads it from routes_1948.yaml); route_paths_1948.yaml never carries one.</summary>
         [YamlIgnore] public RouteService? Service { get; set; }
+        /// <summary>Where a corridor's segments meet on this route (GDD Phase 4, #792), or null: the route's first waypoint,
+        /// then the waypoint each segment ends at, as [lon, lat] pairs, from the runtime file's segments row
+        /// (tools/route_paths_bake.py reads them from corridors.yaml and routes_1948.yaml); the YAML never carries them. The
+        /// ribbons are cut there (RouteLayer.Geometry), so the GDD loop draws only the built segments.</summary>
+        [YamlIgnore] public List<List<double>>? SegmentEnds { get; set; }
     }
 
     /// <summary>A railway's train service (issue #668; maintainer decision on #35, 16 October 2026): the date regular
@@ -66,7 +71,7 @@ namespace Statecraft.Game.Map.Routes
         public const string RuntimeFileName = "route_paths_1948.tsv";
         /// <summary>Bump it, with tools/route_paths_bake.py's VERSION, when the runtime file's layout or its reading
         /// (ParseRuntime, RuntimeRows) changes; tools/tests/test_route_paths_bake.py pins a fingerprint of that code.</summary>
-        public const int RuntimeVersion = 3;   // 2: the body_check row (review of #547); 3: the service rows (#668)
+        public const int RuntimeVersion = 4;   // 2: the body_check row (review of #547); 3: the service rows (#668); 4: segments (#792)
         public const string Rail = "rail", Road = "road", Track = "track";
         static readonly HashSet<string> Kinds = new HashSet<string> { Rail, Road, Track };
         static readonly Regex IdRule = new Regex(@"^[a-z][a-z0-9_]*\z");
@@ -183,6 +188,22 @@ namespace Statecraft.Game.Map.Routes
                     }
                     var (startLon, startLat) = End(c[3], "start"); var (endLon, endLat) = End(c[4], "end");
                     route.Service = new RouteService { From = c[2], StartLon = startLon, StartLat = startLat, EndLon = endLon, EndLat = endLat };
+                }
+                else if (c[0] == "segments")
+                {
+                    if (c.Length != 3) throw new InvalidDataException($"{file}:{line}: a segments row has {c.Length} fields, not 3");
+                    rows.Add(text);
+                    var route = routes.Find(r => r.Id == c[1]) ?? throw new InvalidDataException($"{file}:{line}: segments for '{c[1]}', which no route row before it has");
+                    if (route.SegmentEnds != null) throw new InvalidDataException($"{file}:{line}: a second segments row for '{c[1]}'");
+                    var ends = new List<List<double>>();
+                    foreach (var pair in c[2].Split(';'))
+                    {
+                        int sp = pair.IndexOf(' ');
+                        if (sp < 0 || pair.IndexOf(' ', sp + 1) >= 0) throw new InvalidDataException($"{file}:{line}: segment end '{pair}' is not 'lon lat'");
+                        ends.Add(new List<double> { Num(pair.Substring(0, sp), "lon", line), Num(pair.Substring(sp + 1), "lat", line) });
+                    }
+                    if (ends.Count < 2) throw new InvalidDataException($"{file}:{line}: segments for '{c[1]}' need a start and at least one end");
+                    route.SegmentEnds = ends;
                 }
                 else if (c[0] == "route")
                 {

@@ -12,6 +12,7 @@ cd "$(dirname "$0")/.."
 base="${1:-${CHECK_BASE:-origin/main}}"
 tail_lines="${CHECK_TAIL:-40}"
 export UV_PYTHON="${UV_PYTHON:-3.12}"   # the Python CI uses (UV_PYTHON in .github/workflows/ci.yml)
+export PYTHONUTF8=1                      # so check.sh reads and writes UTF-8 on any system locale (Windows cp1255)
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 

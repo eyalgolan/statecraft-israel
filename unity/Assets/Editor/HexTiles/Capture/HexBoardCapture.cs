@@ -22,7 +22,9 @@ namespace Statecraft.HexTiles.Capture
     /// -prototype &lt;id&gt; builds and shoots only that tile (with the board's ground and mountains around it).
     /// Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity
     ///   -executeMethod Statecraft.HexTiles.Capture.HexBoardCapture.Run [-board tel_aviv] [-prototype &lt;id&gt; [-on &lt;tile&gt;]]
-    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly]
+    ///   [-captureDir asset-staging/ui-local/hex-tiles] [-captureSize 3840x2160] [-boardOnly] [-time day|dusk|night] [-closeM 12500]
+    /// -time lays a HexTimeOfDay preset over the look once the board is built (day, the default, changes nothing); night
+    /// also darkens the background.
     /// A board too large for the standard board shot (the whole country) is framed whole instead. Each prototype and unit
     /// is shot once (its last hex in the board file, the one whose shots used to be kept); -boardOnly skips those shots.</summary>
     public static class HexBoardCapture
@@ -32,7 +34,7 @@ namespace Statecraft.HexTiles.Capture
         /// them the board paints flat colours.</summary>
         const string GroundFolder = "Assets/Art/Settlements/Prototype/HexSandboxGround";
         /// <summary>A livelier grade than the shipped map's, for the hex-tile captures (the opt-in look's start values).</summary>
-        const float Pitch = 50f, Fov = 35f, BoardDistanceM = 80000f, MidDistanceM = 26000f, CloseDistanceM = 12500f;
+        public const float Pitch = 50f, Fov = 35f, BoardDistanceM = 80000f, MidDistanceM = 26000f, CloseDistanceM = 12500f;
 
         [MenuItem("Statecraft/Hex Tiles/Capture Tel Aviv Board")]
         public static void Run()
@@ -63,8 +65,12 @@ namespace Statecraft.HexTiles.Capture
             var on = Arg("-on");
             if (only != null && on != null) foreach (var h in board.Hexes.Values) if (h.prototype == on) h.prototype = only;
             if (only != null && !board.Hexes.Values.Any(h => h.prototype == only)) throw new ArgumentException($"board {boardId} has no tile '{only}' (try -on <tile>)");
+            var time = HexTime.Day;
+            if (Arg("-time") is string timeId && !HexTimeOfDay.TryParse(timeId, out time)) throw new ArgumentException($"-time {timeId}: not one of {string.Join(", ", HexTimeOfDay.Ids)}");
             var cam = Stage();
             var (root, reports) = HexBoardBuilder.Build(board, Ground, only: only);
+            // After the build, so the night's lit windows find the board's city and town tiles.
+            var undoTime = ApplyTime(cam, time, root, board, only);
             long buildMs = clock.ElapsedMilliseconds;
             Directory.CreateDirectory(dir);
             try
@@ -73,7 +79,7 @@ namespace Statecraft.HexTiles.Capture
                 Vector3 OnGround(Vector3 p) => new Vector3(p.x, Mathf.Max(surface.Height(p), 0f), p.z);
                 var centres = board.Hexes.Values.Select(h => HexGeometry.Centre(h.q, h.r, HexScale.HexM)).ToList();
                 var middle = new Vector3(centres.Average(c => c.x), 0f, centres.Average(c => c.z));
-                float boardDistance = BoardDistance(board, cam, width / (float)height);
+                float boardDistance = BoardDistance(board, OnGround(middle), width / (float)height);
                 if (only == null) Shoot(cam, OnGround(middle), boardDistance, Path.Combine(dir, "board.png"), width, height);
                 // A board with an environment ring: one wider shot that takes in the landscape round the play hexes.
                 if (only == null && board.Hexes.Values.Any(h => h.env)) Shoot(cam, OnGround(middle), boardDistance * 1.6f, Path.Combine(dir, "board-wide.png"), width, height);
@@ -83,11 +89,11 @@ namespace Statecraft.HexTiles.Capture
                 {
                     var c = OnGround(HexGeometry.Centre(t.q, t.r, HexScale.HexM));
                     Shoot(cam, c, MidDistanceM, Path.Combine(dir, $"{t.prototype}-mid.png"), width, height);
-                    Shoot(cam, c, CloseDistanceM, Path.Combine(dir, $"{t.prototype}-close.png"), width, height);
+                    Shoot(cam, c, CloseM(), Path.Combine(dir, $"{t.prototype}-close.png"), width, height);
                 }
                 // Units: one close shot each, at the unit's own zoom.
                 foreach (var u in board.Hexes.Values.Where(h => tiles && h.unit != "" && (only == null || h.prototype == only)).GroupBy(h => h.unit).Select(g => g.Last()))
-                    Shoot(cam, OnGround(HexGeometry.Centre(u.q, u.r, HexScale.HexM)), CloseDistanceM, Path.Combine(dir, $"unit-{u.unit}-close.png"), width, height);
+                    Shoot(cam, OnGround(HexGeometry.Centre(u.q, u.r, HexScale.HexM)), CloseM(), Path.Combine(dir, $"unit-{u.unit}-close.png"), width, height);
                 var lines = new List<string> { $"board {boardId}: {board.Hexes.Count} hexes, built in {buildMs} ms, {width}x{height}" };
                 lines.AddRange(reports.Select(r => "  " + r));
                 File.WriteAllLines(Path.Combine(dir, only == null ? "stats.txt" : $"{only}-stats.txt"), lines);
@@ -95,6 +101,7 @@ namespace Statecraft.HexTiles.Capture
             }
             finally
             {
+                undoTime();
                 TiltShift.Reset();
                 Object.DestroyImmediate(root);
             }
@@ -117,14 +124,52 @@ namespace Statecraft.HexTiles.Capture
             return cam;
         }
 
+        /// <summary>Night's sky behind the board: a dark navy instead of the day's teal.</summary>
+        public static readonly Color NightBackground = new Color(0.02f, 0.06f, 0.11f);
+
+        /// <summary>Lays <paramref name="time"/> over the look Stage() set (its volume and sun), as HexTilesLook does in the
+        /// game, and darkens the camera's background for night. Returns the undo.</summary>
+        public static Action ApplyTime(Camera cam, HexTime time, GameObject root, HexBoard board, string? only)
+        {
+            var volume = Object.FindFirstObjectByType<Volume>();
+            var undo = HexTimeOfDay.Apply(time, volume != null ? volume.profile : null, MapLighting.FindSun(), root, board, only);
+            if (time != HexTime.Night) return undo;
+            var background = cam.backgroundColor; cam.backgroundColor = NightBackground;
+            return () => { undo(); if (cam != null) cam.backgroundColor = background; };
+        }
+
         /// <summary>The board shot's distance: the standard one, unless the board would not fit at twice it (the whole
-        /// country), when it is framed whole: its width across the view, its depth foreshortened by the pitch.</summary>
-        static float BoardDistance(HexBoard board, Camera cam, float aspect)
+        /// country, by the rough fit below), when it is framed whole: the shortest distance at which all four corners of
+        /// the board's rect (HexBoardBuilder.Bounds, at sea level) project inside the view with a small margin, the camera
+        /// still aimed at <paramref name="lookAt"/>. The rough fit alone (the depth foreshortened by sin(pitch)) left the
+        /// near, southern edge out of frame: at a 50 degree pitch the perspective spreads the near side.</summary>
+        public static float BoardDistance(HexBoard board, Vector3 lookAt, float aspect)
         {
             var b = HexBoardBuilder.Bounds(board);
-            float tanV = Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad), tanH = tanV * aspect;
-            float fit = 1.05f * Mathf.Max(b.width * 0.5f / tanH, b.height * 0.5f * Mathf.Sin(Pitch * Mathf.Deg2Rad) / tanV);
-            return fit > 2f * BoardDistanceM ? fit : BoardDistanceM;
+            float tanV = Mathf.Tan(Fov * 0.5f * Mathf.Deg2Rad), tanH = tanV * aspect;
+            float rough = 1.05f * Mathf.Max(b.width * 0.5f / tanH, b.height * 0.5f * Mathf.Sin(Pitch * Mathf.Deg2Rad) / tanV);
+            if (rough <= 2f * BoardDistanceM) return BoardDistanceM;
+            var corners = new[] { new Vector3(b.xMin, 0f, b.yMin), new Vector3(b.xMax, 0f, b.yMin), new Vector3(b.xMin, 0f, b.yMax), new Vector3(b.xMax, 0f, b.yMax) };
+            bool Fits(float d) => corners.All(c =>
+            {
+                var v = View(c, lookAt, d);
+                return v.z > 0f && Mathf.Abs(v.x / v.z) <= tanH * (1f - FrameMargin) && Mathf.Abs(v.y / v.z) <= tanV * (1f - FrameMargin);
+            });
+            float lo = rough * 0.5f, hi = rough;
+            while (!Fits(hi)) hi *= 1.5f;
+            for (int i = 0; i < 40; i++) { float mid = 0.5f * (lo + hi); if (Fits(mid)) hi = mid; else lo = mid; }
+            return hi;
+        }
+
+        /// <summary>The share of the half-view kept free round a board framed whole.</summary>
+        public const float FrameMargin = 0.03f;
+
+        /// <summary>A world point in view space (x right, y up, z forward) for a shot of <paramref name="lookAt"/> from
+        /// <paramref name="distance"/>, the camera placed as Shoot places it.</summary>
+        static Vector3 View(Vector3 p, Vector3 lookAt, float distance)
+        {
+            var rot = Quaternion.Euler(Pitch, 0f, 0f);
+            return Quaternion.Inverse(rot) * (p - (lookAt - rot * Vector3.forward * distance));
         }
 
         public static void Shoot(Camera cam, Vector3 lookAt, float distance, string path, int width, int height)
@@ -153,6 +198,11 @@ namespace Statecraft.HexTiles.Capture
             }
             return (Load($"{texture}_diff_2k.jpg", false), Load($"{texture}_nor_gl_2k.jpg", true));
         }
+
+        /// <summary>The close shots' camera distance: -closeM &lt;metres&gt; (for example 3000, a squad's figures up close), else
+        /// <see cref="CloseDistanceM"/>.</summary>
+        static float CloseM() =>
+            float.TryParse(Arg("-closeM"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var m) && m > 0f ? m : CloseDistanceM;
 
         public static string? Arg(string name)
         {

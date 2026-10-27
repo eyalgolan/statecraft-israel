@@ -18,14 +18,34 @@ The simulation must produce the same state, bit for bit, on .NET, Unity Mono and
   Round-trip decimal formatting is only a display concern: .NET and Unity Mono can spell the same carry bits
   differently. The Phase 7 minister carry correction re-pins hash1950, hash1952 and mvp-end for this representation
   only; stored values, gameplay and completion dates are unchanged.
-- **Settlement control (resolver step 3):** targets resolve in ordinal id order, and the capture check reads only unit
-  positions, with no RNG draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder` and `NoRngDraw`). The shipped
-  list has six targets (#793), and no golden captures a place: the five enemy-held ones are no-entry hexes for player
-  units (R-MOVE-005), and the reference player's unit on Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa
-  is not enemy-held at the start.
+- **Settlement control:** the player capture check runs after the route step and each order, then again in resolver
+  step 3 after enemy combat. Each check visits targets in ordinal id order and reads only unit positions, with no RNG
+  draw (R-CTRL-004; `CaptureTests.SettlementsResolveInOrdinalOrder`, `NoRngDraw` and `TheInstantCheckDrawsNothing`).
+  The shipped list has six targets (#793), and only `mvp-occupy-cost` and `mvp-annex-nazareth` capture a place (Nazareth, whose residents stayed, so no golden records a flight, `fled=1`, #799): player units may
+  enter the five enemy-held ones since #1304 (R-MOVE-005), but the reference player sends no Move, so none of its units stands on one, and its unit on
+  Jaffa's hex (shared with Tel Aviv) captures nothing, since Jaffa is not enemy-held at the start. The smoke-orders
+  move skips the lit hexes of enemy-held places on purpose (`GoldenRun.SmokeMove`), so it stays a plain move.
 - **Answering a capture (Raid and withdraw):** the units on the place leave in ascending id, each to the first free hex in
   the fixed neighbour order, and the captures still waiting at the game's end resolve in ordinal id order, with no RNG
-  draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). No golden captures a place, so none answers one.
+  draw (R-CTRL-008, R-CTRL-010; `RaidTests.RaidDrawsNothing`). Only `mvp-occupy-cost` captures a place, and it answers with Occupy, so no golden Raids one.
+- **Occupation timers (resolver step 10):** after step 9's arrivals and before objectives and score, each occupied place
+  in ordinal id order pays its upkeep and counts its `turns=` down, or ends as a Raid when no Israeli military unit holds
+  its hex, with no RNG draw (R-CTRL-011 to R-CTRL-013; `OccupyTests.TheTimerCountsDownInStepTen` and
+  `OccupationDrawsNothing`). `mvp-occupy-cost` (#798) is the golden that occupies a place: it plays the real content, moves
+  Golani's unit onto Nazareth, answers the capture with Occupy and runs to the end of the timer; `OccupyTests` plays the
+  same run on fixture content. `mvp-annex-nazareth` (#799) plays the same run and annexes Nazareth when the timer ends (R-CTRL-016): one new city from the row's count, with no RNG draw (`EndOccupationTests`). No other golden occupies a place, so none moves.
+- **Deport (resolver step 10, after the occupation timers):** the units leave as in Raid; the costs, the drag (each turn,
+  per place in `DisplacedByPlayer`) and the International Support ceiling are plain arithmetic on the indicator's shift,
+  with no RNG draw (R-CTRL-018; `DeportTests.DeportDrawsNothing`). `DisplacedByPlayer` is hashed as `displaced=` only when
+  non-zero. The real content keeps Deport out of play (`mvp.deport_in_play: false`), and no golden Deports, so
+  none moves. The `mvp-deport-cost` golden, paired with `mvp-occupy-cost`, cannot play the real content, where Deport
+  is refused (#800);
+  `DeportNeverDominatesTests` plays both runs from the same fixture states.
+
+## Combat draws
+
+A player engagement draws `Combat.DrawsPerEngagement` (1) when its order runs in `RunOrders`, after the route step and any
+earlier committed order, before every waiting order. The enemy's engagements draw in resolver step 2, in ascending attacker id.
 
 ## Golden playthroughs
 
@@ -41,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `d14a4899a1e068bf238f84f4e8fe06270b5164b2c6ba62f2fef399fd7eaada8e` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `3bacd2b10340aa95ec130d84aedfb560828dae6b0ed35323f64410f9ac8eee85` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -52,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755`.
+ministers): `SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -63,7 +83,22 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 7559f30cc7649555cb369b729442d203fa0b42968679f870ac88f0e519a8b755"
+  --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+```
+
+`smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
+`-smoke-orders`: the golden seed, one turn). It hides the turn's event card (the events go to their ministers), clicks the
+hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
+10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
+place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
+`SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b`.
+`GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
+prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
+attack slices can add their orders to it. Check a WebGL build with:
+
+```
+uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
+  --expect "SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -95,7 +130,7 @@ scripted command passes. A command the sim rejects fails the test with the date,
 fails too. To add one: write the file, run `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln --filter ScenarioTests` (it adds the
 manifest line and the snapshot), then run the tests plain. A scenario that moves is re-pinned with the hash goldens by the same
 command; its snapshot diff in the PR shows what moved, and the commit message says why. All four play the real content.
-`cautious` and `reckless` stay in 1948, so they move only when a 1948 rule or event does; `mvp-absorb-first` (GDD Phase 1
+`cautious` and `reckless` run through March 1949, setting rationing on the first turn after its office opens; `mvp-absorb-first` (GDD Phase 1
 PR 3) fills Tel Aviv's jobs on the first turn and completes the absorb objective on 15 January 1950; `mvp-defeat` (GDD Phase 7 PR 5) overspends and
 turns down every source of foreign currency until Money and Food run out, and ends in `defeat_economy` (R-END-002).
 
@@ -141,7 +176,7 @@ goldens (playtest 2 changed every line's casing with no hash change). They are s
 `FinalWaveTests.AReloadedSaveReproducesTheLastTurnsCauses` checks a reloaded save gives the same last-turn Causes, and
 `TheGoldenRunsCausesAreTheSameInEveryCulture` runs the 1952 golden under de-DE and ar-SA against the invariant culture.
 
-Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, and the scenario lines above). The .NET tests
+Each golden hash is pinned in `sim/Statecraft.Sim.Tests/golden/manifest.txt` (`hash1950`, `hash1952`, `mvp-end`, `smoke5`, `smoke-orders`, and the scenario lines above). The .NET tests
 compare against it. These places must agree with it, and `GoldenManifestTests` fails naming the one that does not:
 - `sim/Statecraft.Sim/GoldenRun.cs`, which Unity code and players compare against (the update command rewrites it);
 - this file, `docs/RELEASING.md` and `tools/web_check.py`'s usage example (by hand).
@@ -371,3 +406,47 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-cautious | `e45c5429` | same as reckless (was `230791a1`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-absorb-first | `64bdd93b` | same as reckless (was `de176931`) |
 | #1241: Etzioni starts, the 7th Brigade arrives (R-UNIT-009), on the enemy AI (#1263) | scenario-mvp-defeat | `54ec7d6b` | same as reckless; the defeat is unchanged (was `7404295a`) |
+| GDD Phase 5 PR 15 slice 4 (#754) | smoke-orders | `98422be8` | new: one turn from the golden seed whose only order is unit 0 (Golani) moving from 10,9 to 7,11, given through the unit card in the browser run; no other golden moves |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1950 | `f70d7cc2` | R-WAR-002: the GDD loop refuses the call-up order, so HistoricalAI sends none, and the call-up follows the rung down to its minimum the turn an event lowers it: 40% on the first truce's rung 4 (15 August 1948) and 5% on the armistices' rung 2 (15 April 1949), each a turn before HistoricalAI's order used to. Only the debt line moves, IL 87.5m to 81.8m. R-WAR-003: the ceasefire clock never starts, which this run's end state does not show (rung 2, `cf=0` either way) (was `d14a4899`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | 1952 | `ca78893d` | same as 1950: only the debt line, IL 211.9m to 206.1m; the 1950-51 rise stays inside the Michaely anchor's tolerance (EconomyCalibrationTests) (was `3bacd2b1`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | mvp-end | `ca78893d` | same as 1952 (was `3bacd2b1`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | smoke5 | `71a4cef0` | the smoke run sends no call-up order, so on main the 80% call-up stayed through the first truce; now it follows rung 4 down to 40%. Only `mob` (0.8 to 0.4) and the debt (IL 8.9m to 2.9m) move (was `7559f30c`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-cautious | `d6e7cea0` | the call-up follows the truce's rung down and back up (debt IL 27.0m to 21.0m), and the ceasefire clock never starts (`cf=40` to `cf=0`) (was `e45c5429`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-reckless | `57b3c29d` | the scenario's `set_mobilization: 1.0` order is gone (the GDD loop refuses it), so the call-up is the war rung's 80% (`mob` 1 to 0.8, debt IL 35.0m to 21.0m), and `cf=40` to `cf=0` as in cautious (was `030817e3`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-absorb-first | `912504be` | the scenario sends no call-up order, so on main the 80% call-up stayed after the armistices; now it follows rung 2 down to 5% (`mob` 0.8 to 0.05, debt IL 316.4m to 272.9m) (was `64bdd93b`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | scenario-mvp-defeat | `109b0a5e` | the retired full call-up is replaced by 120 Arms bought on credit on the first turn (`arms` 12 to 132), and the call-up follows the armistices to 5% (`mob` 1 to 0.05). The debt passes the ceiling in July 1951 (was April) and ends at IL 281.6m (was 339.1m); the defeat is unchanged: `defeat_economy` on 15 January 1952 after three exhausted turns (was `54ec7d6b`) |
+| GDD Phase 5 PR 11, slice 1: the call-up retires in the GDD loop (#750, #1148) | smoke-orders | `4c991630` | R-WAR-003: the ceasefire clock never starts, so the one-turn run ends on `cf=0` (was `cf=48`); nothing else moves (was `98422be8`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | 1950 | `f3ec68b7` | owner-accepted military upkeep (R-UNIT-010; IL 0.05m per Israeli formation per turn, owner 19 October 2026 on #1130) charges the starting forces and the 7th Brigade once it arrives; the reference player trains no recruits, so only debt moves, by IL 8.2m over 20 turns (164 formation-turns); every other snapshot field is unchanged (was `f70d7cc2`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | 1952 | `6b374f69` | same; debt alone rises by IL 17.8m over 44 turns (356 formation-turns) (was `ca78893d`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | mvp-end | `6b374f69` | same as 1952 (was `ca78893d`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | smoke5 | `d449bf19` | same upkeep over the five smoke turns; no snapshot is kept for this run (was `71a4cef0`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | smoke-orders | `ee6bfee5` | the same upkeep over its one turn; no snapshot is kept for this run (was `4c991630`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-reckless | `6650ed3e` | same; debt alone rises by IL 3.4m (was `57b3c29d`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-cautious | `95982cf8` | same as reckless (was `d6e7cea0`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-mvp-absorb-first | `d6d47fd8` | same; debt alone rises by IL 8.2m (was `912504be`) |
+| GDD Phase 5 PR 3: recruit formations and their upkeep (#742, #1130) | scenario-mvp-defeat | `584a828a` | same; debt alone rises by IL 17.8m; the defeat is unchanged (was `109b0a5e`) |
+| GDD Phase 7 PR 6, slice 1: the score's parts (R-SCORE-001, #809) | scenario-mvp-absorb-first | `6aa49f62` | the state keeps the score's parts as they score, a new `scoreparts=` line (objective points, timing bonuses, prisoner points): `scoreparts=100,0,0` beside `score=100`. Nothing else moves; the other goldens score nothing, so they keep their hashes (was `d6d47fd8`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | smoke5 | `bc2ab42b` | the rationing policy and its two effects leave the state before 10 March 1949, so their keys (all at 0 in this run) leave the hashed state; no value moves (was `d449bf19`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | smoke-orders | `9f224bd4` | same as smoke5 (was `ee6bfee5`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-cautious | `f672a0f3` | rationing can no longer be set on 15 May 1948, so the scenario sets it (0.4) on the first turn the office exists (15 March 1949) and runs to 15 April 1949 (was 15 January 1949) so it acts; the snapshot moves with the three extra turns (was `95982cf8`) |
+| #80: rationing, rationing_feeds and rationing_grates from 10 March 1949 (owner ruling 22 Oct 2026) | scenario-reckless | `cb1c96d5` | same as cautious, rationing 1.0 (was `6650ed3e`) |
+| #798: the `mvp-occupy-cost` golden (the plan's PR 6 scenario; owner, 23 Oct 2026, now that a capture is reachable in play, #1304) | scenario-mvp-occupy-cost | `a767bb66` | new: Golani's unit moves to Nazareth on 15 May 1948, the scenario answers the capture with Occupy on 15 June, and the run ends on 15 December 1948 with Nazareth awaiting `EndOccupation` (`since=1948-06-15`). No existing golden moves |
+| #799: the `mvp-annex-nazareth` golden (the plan's Task 6, #1520) | scenario-mvp-annex-nazareth | `d37e6db4` | new: `mvp-occupy-cost`'s two steps, then `end_occupation nazareth annex` on 15 December 1948, run to 15 January 1949. Nazareth ends `owner=israel,state=annexed,since=1948-06-15` and is a city of 17 units, 7 employed (16,994 people, the census-day count the owner approved on #799, times the national share 0.439), housing 17. It pins the approved count. The fled field and EndOccupation move no existing golden: `mvp-occupy-cost` captures Nazareth (stayed) and keeps `a767bb66` |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | 1950 | `8578966e` | the reference player answers the new 15 May 1948 card with its historical `jordan_valley` option (security +0.015); answering two cards takes that turn's Attention, so the first halutz group is trained on 15 August 1948 instead of 15 May. Security, morale and stability rise a little and debt is IL 2.0m lower at 1950 (was `f3ec68b7`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | 1952 | `5bfeb265` | the same card and later first training; by 1952 debt is back to the old run's value, while security, morale and stability stay a little higher. The last required yishuv (Re'im) is built on 15 September 1951, not 15 July, so `first_new_yishuv` fires two months later (was `6b374f69`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | mvp-end | `5bfeb265` | same as 1952 (was `6b374f69`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | smoke5 | `7bdf646a` | the first option of the new card over the five smoke turns; no snapshot is kept for this run (was `bc2ab42b`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | smoke-orders | `bf0b41cc` | same over its one turn; no snapshot is kept for this run (was `9f224bd4`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-reckless | `a2ca9626` | the scenario's player answers the card `jordan_valley`: security +0.015, with morale and stability following (was `cb1c96d5`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-cautious | `c06d89f0` | same as reckless (was `f672a0f3`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-absorb-first | `9c98ae51` | same as reckless (was `6aa49f62`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-defeat | `d5bc68f9` | same as reckless; the defeat is unchanged (was `584a828a`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-occupy-cost | `9fcc7bae` | same as reckless; Nazareth's capture and Occupy are unchanged (was `a767bb66`) |
+| #1565: the `degania_defence` card on turn 1 (#1568; owner, 24 Oct 2026: "Keep +0.015", "Accept the shift") | scenario-mvp-annex-nazareth | `8fe6d129` | same as reckless; the annexation is unchanged (was `d37e6db4`) |
+| #939 Task 12: accepted slice-one follow-up cards | all manifest runs | unchanged | `jerusalem_demilitarisation_guard` and `rafah_force_pressure` fire only after their approved alternative roads. `STATECRAFT_UPDATE_GOLDEN=1 dotnet test sim/Statecraft.sln -c Release` on 24 October 2026 passed 2,600 tests; no golden moved. The content hash changes, so earlier saves retain the content-mismatch warning. |
+| #1564: the `reparations_vote` card, the Knesset vote on talks with West Germany (fires 15 December 1951) | hash1952 | `6dfd2337` | the new hard card fires on turn 43 of the historical run, the reference player answers it historically (`negotiate`, morale -0.02), and the run's state and fired events change (was `6b374f69`) |
+| #1564: as above | mvp-end | `6dfd2337` | same run as hash1952 (was `6b374f69`) |
+| #1564: as above | scenario-mvp-defeat | `85c86120` | the scenario's run reaches December 1951, so the card fires in it too and, left unanswered, resolves to `negotiate` (morale -0.02; was `584a828a`) |
+| #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
+| #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
+| #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |

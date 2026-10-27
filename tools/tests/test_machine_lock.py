@@ -1,4 +1,3 @@
-import fcntl
 import os
 import subprocess
 import sys
@@ -7,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-import machine_lock as ml
+# machine_lock is the Mac's flock-based lock; fcntl does not exist on Windows, so the module skips there.
+fcntl = pytest.importorskip("fcntl", reason="fcntl is POSIX-only (machine_lock uses flock); not available on Windows")
+
+import machine_lock as ml  # noqa: E402
 
 
 def test_the_command_follows_the_double_dash_and_a_mode_is_required():
@@ -136,3 +138,84 @@ def test_no_holder_record_is_written_unless_asked(tmp_path):
     assert subprocess.run([sys.executable, ml.__file__, "--shared", "--", sys.executable, "-c", "pass"],
                           env=env).returncode == 0
     assert sorted(p.name for p in tmp_path.iterdir()) == ["machine.lock", "machine.lock.gate"]
+
+
+@pytest.mark.parametrize("wait_flags,serial", [((True, True), True), ((False, False), False), ((True, False), False)])
+def test_shared_waiters_serialize_commands_but_ordinary_shared_jobs_still_overlap(tmp_path, wait_flags, serial):
+    """#1211: two idle checks may both succeed before either launched Unity becomes observable.
+
+    Use the real wrapper, OS locks and children, replacing only Unity detection with an idle result. Queue both
+    wrappers behind the existing gate, then release them together. Children record entry/exit and wait briefly for
+    the peer's entry, widening the launch gap without depending on a particular elapsed execution time.
+    """
+    runner = tmp_path / "runner.py"
+    runner.write_text("import machine_lock as ml\nml.wait_for_unity = lambda timeout: True\nraise SystemExit(ml.main())\n")
+    command = tmp_path / "command.py"
+    command.write_text("""import fcntl, sys, time
+from pathlib import Path
+root, who = Path(sys.argv[1]), sys.argv[2]
+def record(event):
+    with (root / 'events').open('a') as stream:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        stream.write(f'{event} {who}\\n')
+        stream.flush()
+record('start')
+(root / f'started-{who}').touch()
+peer = root / f'started-{1 - int(who)}'
+deadline = time.monotonic() + 2
+while not peer.exists() and time.monotonic() < deadline:
+    time.sleep(0.01)
+record('end')
+""")
+    lock = tmp_path / "machine.lock"
+    env = {k: v for k, v in os.environ.items() if k != ml.HOLDER_ENV}
+    env.update(STATECRAFT_MACHINE_LOCK=str(lock), PYTHONPATH=str(Path(ml.__file__).parent))
+    procs = []
+    with lock.with_name(lock.name + ".gate").open("a+") as gate:
+        fcntl.flock(gate, fcntl.LOCK_EX)
+        try:
+            for who, wait in enumerate(wait_flags):
+                flags = ["--wait-unity"] if wait else []
+                process = subprocess.Popen([sys.executable, str(runner), "--shared", *flags, "--", sys.executable,
+                                            str(command), str(tmp_path), str(who)], env=env, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE, text=True)
+                procs.append(process)
+                assert "taking the machine lock (shared)" in process.stdout.readline()
+            fcntl.flock(gate, fcntl.LOCK_UN)
+            for process in procs:
+                stdout, stderr = process.communicate(timeout=15)
+                assert process.returncode == 0, (stdout, stderr)
+        finally:
+            for process in procs:
+                if process.poll() is None:
+                    process.kill()
+                process.wait(10)
+                process.stdout.close()
+                process.stderr.close()
+    events = [line.split() for line in (tmp_path / "events").read_text().splitlines()]
+    assert len(events) == 4 and sorted(events) == sorted([[event, str(who)] for event in ["start", "end"] for who in [0, 1]])
+    if serial:
+        assert [event for event, who in events] == ["start", "end", "start", "end"], events
+        assert events[0][1] == events[1][1] and events[2][1] == events[3][1], events
+    else:
+        assert [event for event, who in events[:2]] == ["start", "start"], events
+
+
+def test_a_shared_wait_timeout_does_not_launch_and_releases_its_locks(tmp_path):
+    runner = tmp_path / "runner.py"
+    runner.write_text("import sys, machine_lock as ml\nstate = sys.argv.pop(1)\nml.wait_for_unity = lambda timeout: state == 'idle'\n"
+                      "raise SystemExit(ml.main())\n")
+    marker = tmp_path / "launched"
+    env = {k: v for k, v in os.environ.items() if k != ml.HOLDER_ENV}
+    env.update(STATECRAFT_MACHINE_LOCK=str(tmp_path / "machine.lock"), PYTHONPATH=str(Path(ml.__file__).parent))
+
+    def run(state, command):
+        return subprocess.run([sys.executable, str(runner), state, "--shared", "--wait-unity", "--", sys.executable,
+                               "-c", command], env=env, capture_output=True, text=True, timeout=10)
+
+    command = f"from pathlib import Path; Path({str(marker)!r}).touch()"
+    busy = run("busy", command)
+    assert busy.returncode == 3 and "timed out waiting for Unity" in busy.stdout
+    assert not marker.exists(), "a command started after the Unity wait timed out"
+    assert run("idle", "raise SystemExit(7)").returncode == 7
+    assert run("idle", command).returncode == 0 and marker.exists()

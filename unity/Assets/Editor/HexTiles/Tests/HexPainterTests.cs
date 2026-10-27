@@ -11,8 +11,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-/// <summary>The map builder's hand edits (HexBoardOverrides), the Hex Painter's write-back and one-hex rebuild, and
-/// the environment's region species (docs/hex-tiles/README.md, "Laying out the whole map").</summary>
+/// <summary>The map builder's hand edits (HexBoardOverrides), the Hex Painter's write-back and one-hex rebuild, its
+/// palette, brushes and preview switches, and the environment's region species (docs/hex-tiles/README.md, "Laying out the whole map").</summary>
 public class HexPainterTests
 {
     string dir = "";
@@ -219,6 +219,242 @@ public class HexPainterTests
         {
             AssetDatabase.DeleteAsset(board); AssetDatabase.DeleteAsset(over);
         }
+    }
+
+    // --- The palette ---
+
+    [Test]
+    public void TheTilesPaletteListsEveryPrototypeOnceInKindThenRegionOrder()
+    {
+        var groups = HexPalette.Tiles();
+        var ids = groups.SelectMany(g => g.Entries).Select(e => e.Id).ToList();
+        Assert.That(ids.Count, Is.EqualTo(ids.Distinct().Count()), "listed twice");
+        CollectionAssert.AreEquivalent(HexPrototypes.All.Keys, ids);
+        int Order(HexPaletteEntry e) => Array.IndexOf(HexPrototypes.Kinds, HexPrototypes.Kinds.Contains(e.Kind) ? e.Kind : "other") * 10
+            + (HexPrototypes.Regions.Contains(e.Region) ? Array.IndexOf(HexPrototypes.Regions, e.Region) : HexPrototypes.Regions.Length);
+        var orders = groups.SelectMany(g => g.Entries).Select(Order).ToList();
+        Assert.That(orders, Is.Ordered, "kind order, then region order");
+        Assert.That(groups.Select(g => g.Name), Is.Unique);
+        foreach (var e in groups.SelectMany(g => g.Entries))
+            Assert.That((e.Kind, e.Region, e.Title), Is.EqualTo((HexPrototypes.Info(e.Id).Kind, HexPrototypes.Info(e.Id).Region, HexPrototypes.Create(e.Id).Title)));
+    }
+
+    [Test]
+    public void TheTilesGroupingComesFromTheAttributeNotAList()
+    {
+        // As the regional variants another lane adds will register: farm and forest, north, centre or south.
+        HexPaletteEntry E(string id, string kind, string region = "") => new HexPaletteEntry { Id = id, Kind = kind, Region = region };
+        var groups = HexPalette.GroupTiles(new[]
+        {
+            E("wheat_fields_south_a", "farm", "south"), E("odd_one", ""), E("pine_forest_north_b", "forest", "north"), E("wheat_fields", "farm"),
+            E("wheat_fields_north_b", "farm", "north"), E("wheat_fields_north_a", "farm", "north"), E("tel_aviv_city", "city"), E("odd_two", "nowhere", "mars"),
+        });
+        Assert.That(groups.Select(g => g.Name), Is.EqualTo(new[] { "city", "farm, north", "farm, south", "farm", "forest, north", "other" }));
+        Assert.That(groups[1].Entries.Select(e => e.Id), Is.EqualTo(new[] { "wheat_fields_north_a", "wheat_fields_north_b" }));
+        Assert.That(groups.Last().Entries.Select(e => e.Id), Is.EqualTo(new[] { "odd_one", "odd_two" }));
+    }
+
+    [Test]
+    public void TheUnitsPaletteListsEveryUnitTypeOnceCharactersThenVehicles()
+    {
+        var groups = HexPalette.Units();
+        var ids = groups.SelectMany(g => g.Entries).Select(e => e.Id).ToList();
+        Assert.That(ids.Count, Is.EqualTo(ids.Distinct().Count()), "listed twice");
+        CollectionAssert.AreEquivalent(HexUnitTypes.All.Keys, ids);
+        Assert.That(groups.Select(g => g.Name).Take(2), Is.EqualTo(new[] { HexPalette.Characters, HexPalette.Vehicles }));
+        foreach (var e in groups[0].Entries) Assert.That(HexUnitTypes.Create(e.Id).Create().Members.Count, Is.EqualTo(HexUnitScale.Characters), e.Id);
+        foreach (var e in groups[1].Entries) Assert.That(HexUnitTypes.Create(e.Id).Create().Members.Count, Is.EqualTo(1), e.Id);
+        Assert.That(groups[0].Entries.Select(e => e.Id), Does.Contain("palmach_squad"));
+        Assert.That(groups[1].Entries.Select(e => e.Id), Does.Contain("willys_jeep"));
+        Assert.That(groups.SelectMany(g => g.Entries).All(e => e.IsUnit));
+    }
+
+    [Test]
+    public void TheSixFacingsPointAtTheSixNeighbours()
+    {
+        Assert.That(HexPalette.Facings.Select(f => f.degrees), Is.EqualTo(new[] { 30f, 90f, 150f, 210f, 270f, 330f }));
+        Assert.That(HexPalette.Facings.Select(f => f.label), Is.EqualTo(new[] { "NE", "E", "SE", "SW", "W", "NW" }));
+        // East is the neighbour (1, 0): the heading HexUnitMotion gives a unit walking there.
+        var east = HexGeometry.Centre(1, 0, HexScale.HexM) - HexGeometry.Centre(0, 0, HexScale.HexM);
+        Assert.That(Mathf.Atan2(east.x, east.z) * Mathf.Rad2Deg, Is.EqualTo(90f).Within(1e-3f));
+    }
+
+    /// <summary>A small per-hex board in a new scene, as the painter loads one.</summary>
+    static GameObject PainterBoard()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var file = new HexBoardFile { id = "t", hexes = new[] { Hex(0, 0), Hex(1, 0, "pine_forest"), Hex(0, 1, ""), Hex(-1, 1, unit: "palmach_squad") } };
+        return HexBoardBuilder.Build(new HexBoard(file), null, options: new HexBoardBuilder.Options { PerHex = true }).root;
+    }
+
+    static void Destroy(GameObject? root)
+    {
+        if (root == null) return;
+        root.GetComponent<HexBoardAssets>().Teardown();
+        Object.DestroyImmediate(root);
+    }
+
+    [Test]
+    public void TheBrushWritesAnOverrideForEachPaintedHex()
+    {
+        var root = PainterBoard();
+        try
+        {
+            var path = HexPainter.OverridesPath(dir, "t");
+            var painted = HexPalette.Paint(root, path, new[] { (0, 0), (1, 0), (0, 1), (1, 0) }, "kibbutz");
+            Assert.That(painted, Is.EqualTo(new[] { (0, 0), (1, 0), (0, 1) }), "a hex painted twice in a stroke is painted once");
+            var saved = HexBoardOverrides.FromJson(File.ReadAllText(path));
+            Assert.That(All(saved), Is.EqualTo(new[] { (0, 0, "prototype", "kibbutz"), (1, 0, "prototype", "kibbutz"), (0, 1, "prototype", "kibbutz") }));
+            var state = root.GetComponent<HexBoardState>();
+            var pieces = root.transform.Find(HexBoardBuilder.PiecesName);
+            foreach (var hex in painted)
+            {
+                Assert.That(state.Board.Hexes[hex].prototype, Is.EqualTo("kibbutz"));
+                Assert.That(state.Reports[hex].Prototype, Is.EqualTo("kibbutz"), "the hex was rebuilt");
+                Assert.That(pieces.Find(HexBoardBuilder.HexName(hex.Item1, hex.Item2)), Is.Not.Null);
+            }
+        }
+        finally { Destroy(root); }
+    }
+
+    [Test]
+    public void PlacingAUnitWritesItsUnitAndFacingAndClearingRemovesIt()
+    {
+        var root = PainterBoard();
+        try
+        {
+            var path = HexPainter.OverridesPath(dir, "t");
+            HexPalette.PlaceUnit(root, path, 0, 0, "willys_jeep", 120f);
+            var saved = HexBoardOverrides.FromJson(File.ReadAllText(path));
+            Assert.That(All(saved), Is.EqualTo(new[] { (0, 0, "unit", "willys_jeep"), (0, 0, "facing", "120") }));
+            var h = root.GetComponent<HexBoardState>().Board.Hexes[(0, 0)];
+            Assert.That((h.unit, h.facing), Is.EqualTo(("willys_jeep", 120f)));
+            var unit = root.transform.Find(HexBoardBuilder.UnitsName).Find(HexBoardBuilder.UnitName(0, 0));
+            Assert.That(unit.childCount, Is.EqualTo(1));
+            Assert.That(unit.GetChild(0).localEulerAngles.y, Is.EqualTo(Mathf.Repeat(120f - 90f, 360f)).Within(0.01f), "the jeep's -90 model turn on top of the facing");
+
+            HexPalette.Face(root, path, 0, 0, 270f);
+            Assert.That(HexBoardOverrides.FromJson(File.ReadAllText(path)).List("facing").Single().value, Is.EqualTo("270"));
+            HexPalette.ClearUnit(root, path, 0, 0);
+            Assert.That(root.transform.Find(HexBoardBuilder.UnitsName).Find(HexBoardBuilder.UnitName(0, 0)), Is.Null);
+            Assert.That(HexBoardOverrides.FromJson(File.ReadAllText(path)).List("unit").Single().value, Is.EqualTo(""), "cleared stays cleared after regenerating");
+            Assert.Throws<ArgumentException>(() => HexPalette.PlaceUnit(root, path, 0, 0, "no_such_unit", 0f));
+        }
+        finally { Destroy(root); }
+    }
+
+    // --- The time-of-day and under-attack switches (previews: undone, never written) ---
+
+    [Test]
+    public void TheTimeOfDayIsUndoneBeforeTheNextPresetAndOnClear()
+    {
+        var log = new List<string>();
+        Action Apply(HexTime t) { log.Add("apply " + HexTimeOfDay.Id(t)); return () => log.Add("undo " + HexTimeOfDay.Id(t)); }
+        var switches = new HexPainterSwitches();
+        switches.SetTime(HexTime.Dusk, Apply);
+        switches.SetTime(HexTime.Night, Apply);
+        Assert.That(switches.Time, Is.EqualTo(HexTime.Night));
+        // A painter edit rebuilds a hex: night's lit windows are made again for it.
+        switches.Rebuilt(0, 0);
+        Assert.That(switches.Time, Is.EqualTo(HexTime.Night));
+        switches.Clear();
+        switches.Clear();
+        switches.Rebuilt(0, 0);   // day: nothing to apply again
+        Assert.That(log, Is.EqualTo(new[] { "apply dusk", "undo dusk", "apply night", "undo night", "apply night", "undo night" }));
+        Assert.That(switches.Time, Is.EqualTo(HexTime.Day));
+    }
+
+    [Test]
+    public void UnderAttackSurvivesARebuildAndIsHiddenOnClearNeverWritten()
+    {
+        var root = PainterBoard();
+        try
+        {
+            var hidden = new List<(int, int)>();
+            var switches = new HexPainterSwitches(hide: (b, q, r) => { hidden.Add((q, r)); return HexUnderAttack.Hide(b, q, r); });
+            var state = root.GetComponent<HexBoardState>();
+            var path = HexPainter.OverridesPath(dir, "t");
+            switches.SetAttack(root.transform, state.Surface, 0, 0, true);
+            switches.SetAttack(root.transform, state.Surface, 1, 0, true);
+            HexPainter.Change(root, path, 0, 0, "prototype", "kibbutz");
+            switches.Rebuilt(0, 0);
+            Assert.That(HexUnderAttack.IsShown(root.transform, 0, 0), Is.True, "after the hex's rebuild");
+            switches.SetAttack(root.transform, state.Surface, 1, 0, false);
+            Assert.That(HexUnderAttack.IsShown(root.transform, 1, 0), Is.False);
+            switches.Clear();
+            Assert.That(hidden, Is.EqualTo(new[] { (1, 0), (0, 0) }));
+            Assert.That(HexUnderAttack.IsShown(root.transform, 0, 0), Is.False);
+            Assert.That(switches.Attacked, Is.Empty);
+            Assert.That(File.ReadAllText(path), Does.Not.Contain("attack"));
+            Assert.That(All(HexBoardOverrides.FromJson(File.ReadAllText(path))), Is.EqualTo(new[] { (0, 0, "prototype", "kibbutz") }));
+        }
+        finally { Destroy(root); }
+    }
+
+    [Test]
+    public void TheWindowUndoesTheSwitchesOnUnloadAndOnClose()
+    {
+        var root = PainterBoard();
+        var window = ScriptableObject.CreateInstance<HexPainterWindow>();
+        try
+        {
+            var log = new List<string>();
+            window.Switches = new HexPainterSwitches(hide: (b, q, r) => { log.Add($"hide {q},{r}"); return HexUnderAttack.Hide(b, q, r); });
+            window.Switches.SetTime(HexTime.Night, t => () => log.Add("undo night"));
+            window.Switches.SetAttack(root.transform, root.GetComponent<HexBoardState>().Surface, 0, 0, true);
+            window.UnloadAll();
+            Assert.That(log, Is.EqualTo(new[] { "hide 0,0", "undo night" }), "the previews are undone while the board still stands");
+            Assert.That(root == null, Is.True, "the board is unloaded");
+
+            log.Clear();
+            window.Switches.SetTime(HexTime.Dusk, t => () => log.Add("undo dusk"));
+            Object.DestroyImmediate(window);   // closing the window (and a script reload) runs OnDisable
+            Assert.That(log, Is.EqualTo(new[] { "undo dusk" }));
+        }
+        finally
+        {
+            if (window != null) Object.DestroyImmediate(window);
+            Destroy(root);
+        }
+    }
+
+    // --- Thumbnails and the command line ---
+
+    [Test]
+    public void AMissingThumbnailFallsBackToText()
+    {
+        var tile = new HexPaletteEntry { Id = "kibbutz" };
+        var unit = new HexPaletteEntry { Id = "palmach_squad", IsUnit = true };
+        Assert.That(Path.GetFileName(HexPalette.ThumbPath(dir, tile)), Is.EqualTo("kibbutz.png"));
+        Assert.That(Path.GetFileName(HexPalette.ThumbPath(dir, unit)), Is.EqualTo("unit-palmach_squad.png"));
+        Assert.That(HexPalette.LoadThumb(dir, tile), Is.Null);
+        var png = new Texture2D(4, 4); File.WriteAllBytes(HexPalette.ThumbPath(dir, unit), png.EncodeToPNG()); Object.DestroyImmediate(png);
+        var loaded = HexPalette.LoadThumb(dir, unit);
+        Assert.That(loaded!.width, Is.EqualTo(4));
+        Object.DestroyImmediate(loaded);
+    }
+
+    [Test]
+    public void AThumbnailBoardIsTheEntryRingedByPlainGround()
+    {
+        var board = HexPaletteThumbs.ThumbBoard(new HexPaletteEntry { Id = "judean_highlands" });
+        Assert.That(board.Hexes.Count, Is.EqualTo(7));
+        var c = board.Hexes[(0, 0)];
+        Assert.That((c.prototype, c.terrain, c.unit), Is.EqualTo(("judean_highlands", "mountain", "")));
+        Assert.That(board.Hexes.Values.Count(h => h.prototype == "" && h.unit == ""), Is.EqualTo(6));
+        var u = HexPaletteThumbs.ThumbBoard(new HexPaletteEntry { Id = "palmach_squad", IsUnit = true }).Hexes[(0, 0)];
+        Assert.That((u.prototype, u.unit), Is.EqualTo(("", "palmach_squad")));
+    }
+
+    [Test]
+    public void TheCaptureReadsAnOperationList()
+    {
+        var ops = HexPainterCapture.ParseOps("prototype=kibbutz; unit=palmach_squad@120;time=dusk;attack");
+        Assert.That(ops.Select(o => o.ToString()), Is.EqualTo(new[] { "prototype=kibbutz", "unit=palmach_squad@120", "time=dusk", "attack" }));
+        Assert.That(ops.Select((o, i) => o.Folder(i + 1)), Is.EqualTo(new[] { "1-prototype-kibbutz", "2-unit-palmach_squad-120", "3-time-dusk", "4-attack" }));
+        Assert.Throws<ArgumentException>(() => HexPainterCapture.ParseOps("time=noon"));
+        Assert.Throws<ArgumentException>(() => HexPainterCapture.ParseOps("prototype=no_such_tile"));
+        Assert.Throws<ArgumentException>(() => HexPainterCapture.ParseOps("terrain=water"));
     }
 
     // --- The environment's region species ---

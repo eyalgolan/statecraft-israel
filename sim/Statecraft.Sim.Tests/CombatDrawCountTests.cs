@@ -43,9 +43,8 @@ public class CombatDrawCountTests
     public void AStepTwoWithNoEngagementDrawsNothing()
     {
         var c = Load();
-        // An attack that is called off (the stock is empty) and one whose hex is empty are not engagements.
-        var s = CombatTests.With(c, Soldier(1, 3, 0, 4, "2,0"), Enemy(2, 2, 0, 3), Soldier(3, 0, 2, 4, "1,2"));
-        s.Arms = 0;
+        // Standing attacks whose hexes are empty are not engagements.
+        var s = CombatTests.With(c, Soldier(1, 3, 0, 4, "2,0"), Soldier(3, 0, 2, 4, "1,2"));
         var before = s.RngState;
         Combat.Resolve(c, s, new List<Cause>());
         Assert.Equal(before, s.RngState);

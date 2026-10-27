@@ -114,6 +114,24 @@ def test_only_selects_a_loop_or_an_outcome_by_its_file(monkeypatch, tmp_path, ca
     assert "y.mp4" in capsys.readouterr().out, "only the outcome row is looked at"
 
 
+@pytest.mark.parametrize("only", [["typo"], ["e", "typo", "e-outcome", "other_typo"]])
+def test_an_unknown_only_is_refused_before_any_source_is_looked_at(monkeypatch, tmp_path, capsys, only):
+    # #1465: an --only that matches no row used to build nothing and exit 0. The checkout has no promo/ at all, so a
+    # refusal that names only the unknown values proves no source was looked at; ffmpeg is not needed either.
+    rows = [{"event": "e", "file": "e.mp4", "source": "promo/x.mp4", "source_sha256": "0" * 64},
+            {"event": "e", "option": "o", "file": "e-outcome.mp4", "source": "promo/y.mp4", "source_sha256": "0" * 64}]
+    monkeypatch.setattr(ev, "load_rows", lambda mapping=ev.MAPPING: rows)
+    monkeypatch.setattr(ev.shutil, "which", lambda name: None)
+    args = ["--root", str(tmp_path), "--out", str(tmp_path / "out")]
+    for o in only:
+        args += ["--only", o]
+    assert ev.main(args) == 2
+    unknown = [o for o in only if o not in ("e", "e-outcome")]
+    assert capsys.readouterr().out.splitlines() == [
+        f"UNKNOWN --only {', '.join(unknown)} (not a clip's file stem in {ev.MAPPING.name})"]
+    assert not (tmp_path / "out").exists()
+
+
 def test_a_source_with_the_wrong_sha256_is_refused(tmp_path, capsys, monkeypatch):
     row = dict(ev.load_rows()[0])
     (tmp_path / "promo").mkdir()
@@ -139,6 +157,8 @@ def test_an_outcome_row_cuts_its_recorded_window_and_decimates_a_dreamina_shot()
 # light text, made the box 14 to 95 levels darker and its gradient 1.1 to 21 times the strip's; main's captioned files
 # fail both tests below. A deliberate re-encode updates these from tools/encode_event_videos.py's output.
 CAPTION_FREE = {
+    "absorb_immigrants-outcome.mp4": ("8c2c560b9c348420eada2a599be9c6213fb2a07f1fa9bb6e7f10cfc96a765cc2", -3.0, 1.08),
+    "absorb_immigrants.mp4": ("2df9e9c6d30782de43957b0117fc471c0f01b26aaa89fdf524d8043d9c2955cb", -1.3, 1.09),
     "altalena-outcome.mp4": ("3290235920ee9d1dc2359b85effe168ab272140a3c15551323686098aec804a0", -6.4, 0.79),
     "altalena.mp4": ("37d2e740653c056c3eb5e682911ee9bb591c0eb94519fbda894ed232c50a2909", -7.1, 0.83),
     "austerity_1949-outcome.mp4": ("a67fe90992ccedb57f1d217d881635f9906068076033aa2da2419b485d6b2b67", -3.1, 0.92),

@@ -28,13 +28,13 @@ namespace Statecraft.HexTiles.Prototypes
     /// - Total about 66,000 of 70,000 with the harbour, about 39,100 without it.
     ///
     /// The clock tower, church, belfry and minaret have no models (tiles:jaffa_old_city/...), so they always draw stand-ins.</summary>
-    [HexPrototype("jaffa_old_city")]
+    [HexPrototype("jaffa_old_city", Kind = "city")]
     public sealed class JaffaOldCity : IHexPrototype
     {
         public string Title => "Jaffa, the old port town (1948)";
         public HexTerrain Terrain => HexTerrain.Flat;
         public string Ground => "plains";
-        public int TriangleBudget => 70000;
+        public int TriangleBudget => 125000;   // the shipped b*-v2 buildings at full detail (Tal, 19 Oct 2026): measured 113k on the israel board and the test hex
 
         const string House = "sandbox:kit_jaffa*", Cluster = "proto:stone-village-v1", Boat = "proto:vehicle-fishing-boat-1948-v2",
             Palm = "sandbox:date_palm", ClockTower = "tiles:jaffa_old_city/clock_tower", Church = "tiles:jaffa_old_city/st_peter",

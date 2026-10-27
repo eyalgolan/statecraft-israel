@@ -1,19 +1,20 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.UIElements;
 
 namespace Statecraft.Game.UI
 {
-    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, How to play, Objectives and Settings screens, one at a time; pressing the open
+    /// <summary>The side-menu buttons open the Cabinet, Budget, Defence, Why, Timeline, How to play, Objectives and Settings screens, one at a time; pressing the open
     /// screen's button again closes it. Every press toggles, synchronously, with no debounce: two presses in one frame (a
     /// double click, or a click plus Enter) open and close again, so the result depends only on the number of presses
     /// (HudTests.TwoPressesInOneFrameToggleTwice; playtest 1, item 11).</summary>
     public sealed class ScreenNav : System.IDisposable
     {
-        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "how-to-play", "objectives", "settings" };
+        public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "timeline", "how-to-play", "objectives", "settings" };
         /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
         public const string OpenClass = "nav-open";
-        /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence) is
+        /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence, Timeline) is
         /// open: Statecraft.uss hides the info panel it covers, so its buttons take no focus and no clicks.</summary>
         public const string WideOpenClass = "wide-screen-open", WideClass = "screen-wide";
         /// <summary>The class on the "root" element while any screen is open: Statecraft.uss hides the decision layer under it,
@@ -30,7 +31,8 @@ namespace Statecraft.Game.UI
         /// open screen covers the decision layer (it sits where the card does), and in the two-row HUD also the minimap
         /// column and the info panel; a wide screen covers the info panel; the open decision card's backdrop
         /// (EventCardPresenter.OpenClass, with no start screen or screen over it: ModalClass, set here) covers the minimap
-        /// column and the info panel; an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
+        /// column and the info panel, and so does the open capture dialog's (CaptureDialogPresenter.OpenClass, in the same
+        /// layer); an End Turn outcome clip (OutcomePresenter.OpenClass) covers the top bar, the minimap
         /// column, the info panel and the decision layer. The turn report (TurnReportPresenter.OpenClass, #1037) covers them
         /// too, and is itself enabled only while it shows and no start screen or outcome clip covers it; when it comes out it
         /// takes the focus (OnUncovered on its element). Called wherever one of those classes changes (StartScreenPresenter,
@@ -42,10 +44,10 @@ namespace Statecraft.Game.UI
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
-            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass);   // an End Turn outcome clip covers all but itself
+            bool outcome = r.ClassListContains(OutcomePresenter.OpenClass) || r.ClassListContains(AdvisorPresenter.OverlayOpenClass);   // an End Turn outcome clip covers all but itself
             bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
             bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
-            bool modal = r.ClassListContains(EventCardPresenter.OpenClass) && !start && !screen && !outcome;
+            bool modal = (r.ClassListContains(EventCardPresenter.OpenClass) || r.ClassListContains(CaptureDialogPresenter.OpenClass)) && !start && !screen && !outcome && !report;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
             r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
             r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
@@ -76,11 +78,20 @@ namespace Statecraft.Game.UI
                 over.SetEnabled(now);
                 if (!was && now) (over.userData as System.Action)?.Invoke();   // EndScreenPresenter: Close takes the focus
             }
+            // The advisors' popup (spec 4.2) hides under every layer above and comes back when they close: every layer calls
+            // this method when its class changes, so the popup needs no class of its own here.
+            (r.Q(AdvisorPresenter.LayerName)?.userData as System.Action)?.Invoke();
         }
 
         /// <summary>Asks to be told, synchronously, whenever the decision layer comes out from under the start screen, a
         /// screen or an outcome clip (DisableCovered enables it again); null stops it.</summary>
         public static void OnUncovered(VisualElement layer, System.Action? action) => layer.userData = action;
+
+        /// <summary>A second listener on the decision layer, beside the one <see cref="OnUncovered"/> set (the capture dialog
+        /// shares the event card's layer): added after it, and taken away again with <see cref="NotOnUncovered"/>.</summary>
+        public static void AlsoOnUncovered(VisualElement layer, System.Action action) => layer.userData = (layer.userData as System.Action) + action;
+
+        public static void NotOnUncovered(VisualElement layer, System.Action action) => layer.userData = (layer.userData as System.Action) - action;
 
         /// <summary>Asks to be told, synchronously, whenever <paramref name="screen"/> is opened (a presenter that skips
         /// rendering while its screen is hidden catches up then).</summary>
@@ -163,6 +174,7 @@ namespace Statecraft.Game.UI
         readonly List<Button> closes = new List<Button>();
         readonly EventCallback<NavigationCancelEvent> onCancel;
         readonly EventCallback<GeometryChangedEvent> onGeometry;
+        readonly PressSource presses;
 
         /// <summary>A layer over the screens that takes Escape first (GameRoot: the report panel, #1169, and the share panel, #1170): true when it used the
         /// key, and the open screen under it stays open. This handler trickles down from the root, so it runs before the layer's own.</summary>
@@ -178,6 +190,7 @@ namespace Statecraft.Game.UI
             root.RegisterCallback(onCancel, TrickleDown.TrickleDown);
             onGeometry = e => FitCloseButtons();
             root.RegisterCallback(onGeometry);
+            presses = new PressSource(root);
             foreach (var s in Screens)
             {
                 var screen = s;
@@ -187,10 +200,12 @@ namespace Statecraft.Game.UI
                 hooks.Add((b, h));
 
                 // an X on the screen itself closes it: a phone has no Escape, and re-tapping the lit rail button is not
-                // discoverable (playtest v0.1.1). The same Close() as Escape, so the focus return is identical.
+                // discoverable (playtest v0.1.1). The same Close as Escape: pressed from the keyboard, the focus returns as
+                // after Escape; pressed with the pointer it moves nowhere (PointerBlur's rule), else the rail button would
+                // light up and show its tip (#1323).
                 var header = root.Q("screen-" + screen)?.Q(className: "screen-header");
                 if (header == null) continue;
-                var x = new Button(() => Close()) { name = "screen-close-" + screen, text = "X" };
+                var x = new Button(() => Close(handFocus: presses.ByKeyboard)) { name = "screen-close-" + screen, text = "X" };
                 x.AddToClassList("screen-close");
                 header.Add(x);
                 closes.Add(x);
@@ -246,6 +261,7 @@ namespace Statecraft.Game.UI
             closes.Clear();
             root.UnregisterCallback(onCancel, TrickleDown.TrickleDown);
             root.UnregisterCallback(onGeometry);
+            presses.Dispose();
             var r = root.Q("root") ?? root;
             r.RemoveFromClassList(WideOpenClass); r.RemoveFromClassList(ScreenOpenClass);
             DisableCovered(root);
@@ -254,14 +270,19 @@ namespace Statecraft.Game.UI
         /// <summary>Closes the open screen (Escape); false when none was open. When the focus was on the screen's contents it
         /// goes to the screen's top-bar button, so the next Tab carries on from there (#41 M1); an open decision card
         /// takes it instead (EventCardPresenter, when its cover closes).</summary>
-        public bool Close()
+        public bool Close() => Close(handFocus: true);
+        int closedFrame = -1;
+        public bool ClosedThisFrame => closedFrame == UnityEngine.Time.frameCount;
+
+        /// <param name="handFocus">False when the screen's X was pressed with the pointer: the focus is not handed on.</param>
+        bool Close(bool handFocus)
         {
             if (Current == null) return false;
             var screen = root.Q<VisualElement>("screen-" + Current); var button = root.Q<Button>("nav-" + Current);
             var focused = root.panel?.focusController?.focusedElement as VisualElement;
             var inside = focused != null && (focused == screen || screen.Contains(focused));
-            Open(null);
-            if (inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
+            Open(null); closedFrame = UnityEngine.Time.frameCount;
+            if (handFocus && inside && !(root.Q("root") ?? root).ClassListContains(EventCardPresenter.ModalClass)) FocusReturn.To(button);
             return true;
         }
 
@@ -289,6 +310,38 @@ namespace Statecraft.Game.UI
             (root.Q("root") ?? root).EnableInClassList(ScreenOpenClass, screen != null);
             DisableCovered(root);
             if (screen != null) (root.Q<VisualElement>("screen-" + screen).userData as System.Action)?.Invoke();
+            // After the OnOpened action, which is what builds a screen's rows (CabinetPresenter, DefencePresenter):
+            // before it there is nothing in the screen to hand the focus to.
+            if (screen != null && presses.ByKeyboard) HandFocusTo(root.Q<VisualElement>("screen-" + screen));
+        }
+
+        /// <summary>Gives the keyboard focus to the screen just opened (accessibility audit, #41, the keyboard-only
+        /// turn's last "Still open" item). Without it the focus stayed on the rail button that opened the screen, and
+        /// since a screen's content sits after the whole HUD in the Tab order, reaching it meant walking the rail, New
+        /// Game, End Turn, the minimap's three buttons and star, report and share first: 16 stops for the Cabinet and
+        /// the Budget, 14 for Defence. Close is already the other half of this, handing the focus back to the rail
+        /// button, so open was the asymmetric one.
+        ///
+        /// The screen's own X is first in its order, because the header is its first child, so the focus goes to the
+        /// first control of the screen's content instead and leaves the X one Shift+Tab back; Escape and the X itself
+        /// are unchanged. A screen with no other control that can take the focus takes its X, which is better than
+        /// leaving the focus outside the screen the player just opened.</summary>
+        void HandFocusTo(VisualElement screen)
+        {
+            var x = closes.FirstOrDefault(b => screen.Contains(b));
+            VisualElement? first = null;
+            foreach (var e in screen.Query<VisualElement>().Build())
+            {
+                if (e == screen || e == x || !FocusReturn.CanTakeFocus(e)) continue;
+                // Not a scroll bar: Defence's defence-body puts its scroller before any control of its own, and a bar is
+                // no use from the keyboard (#41 K3, which took the Cabinet's bars out of the Tab order, and K6, which
+                // took every other one out too). The skip stays: it is what keeps the landing control a real control
+                // even while a bar is on screen.
+                if (e is Scroller || e.GetFirstAncestorOfType<Scroller>() != null) continue;
+                first = e;
+                break;
+            }
+            FocusReturn.To(first ?? x);
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace Statecraft.HexTiles.Prototypes
 {
     /// <summary>Built-in context tile for a mountain hex: two to four great rock masses (Poly Haven scans, stand-in rocks).</summary>
-    [HexPrototype("mountain_peaks")]
+    [HexPrototype("mountain_peaks", Kind = "nature")]
     public sealed class MountainPeaks : IHexPrototype
     {
         public string Title => "Mountain peaks";

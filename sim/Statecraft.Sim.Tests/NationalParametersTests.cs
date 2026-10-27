@@ -127,4 +127,57 @@ public class NationalParametersTests
         EffectsSystem.UpdateSituations(Mvp, s, why);
         Assert.DoesNotContain(situation, s.ActiveSituations);
     }
+
+    /// <summary>Q-NAT-3's other half: neither situation has a mechanical effect of its own, because events read the
+    /// indicator and not the situation. Two copies of the same played state, the indicator parked inside the band so
+    /// the step neither opens nor closes the situation, one copy with the situation active and one without: once the
+    /// two situation sets are made equal again the states and the Why lists are identical. Describe() lists
+    /// ActiveSituations (GameState.cs, `List("sit", ...)`), which is why they are equalised before the comparison:
+    /// the test is blind to the label itself and fails only if the situation ever starts changing something.</summary>
+    // R-NAT-002, R-NAT-004
+    [Theory]
+    [InlineData("morale", "low_cohesion")]
+    [InlineData("intl_standing", "low_intl_support")]
+    public void TheSituationHasNoEffectOfItsOwn(string indicator, string situation)
+    {
+        var sit = Mvp.Situations.Single(x => x.Id == situation);
+        double onBelow = Assert.NotNull(sit.OnBelow), offAbove = Assert.NotNull(sit.OffAbove);
+        const double Parked = 0.40;   // inside (OnBelow, OffAbove), so neither copy switches during the step
+        Assert.True(onBelow < Parked && Parked < offAbove, "precondition: 0.40 is inside the band");
+
+        GameState AtParked()
+        {
+            var x = Played();
+            EffectsSystem.Shift(Mvp, x, indicator, Parked - x.Indicators[indicator]);
+            x.ActiveSituations.Remove(situation);
+            return x;
+        }
+        var off = AtParked();
+        var on = AtParked();
+        on.ActiveSituations.Add(situation);
+
+        // precondition: before the step the two differ in nothing but the situation
+        var onWithout = on.Clone();
+        onWithout.ActiveSituations.Remove(situation);
+        Assert.Equal(off.Describe(), onWithout.Describe());
+
+        var a = Step(Mvp, off);
+        var b = Step(Mvp, on);
+
+        // the indicator stayed inside the band, so the step did not open it in one copy or close it in the other
+        Assert.InRange(a.State.Indicators[indicator], onBelow, offAbove);
+        Assert.InRange(b.State.Indicators[indicator], onBelow, offAbove);
+        Assert.DoesNotContain(situation, a.State.ActiveSituations);
+        Assert.Contains(situation, b.State.ActiveSituations);
+
+        b.State.ActiveSituations.Remove(situation);
+        Assert.Equal(a.State.Describe(), b.State.Describe());
+        // Every field of the line, not just the first four: a difference only in the unit or placeholder fields is
+        // unlikely without the message changing too, but this way the comparison cannot miss one (owner's nit).
+        static IEnumerable<string> Lines(StepResult r) =>
+            r.Why.Select(w => $"{w.System}|{w.Target}|{w.Delta:R}|{w.Message}|{w.EnemyOrder}|" +
+                              $"{string.Join(",", w.EnemyAttackers)}|{w.Key}|" +
+                              $"{string.Join(",", w.Units.Select(u => u.Id))}|{string.Join(",", w.Args)}");
+        Assert.Equal(Lines(a), Lines(b));
+    }
 }
