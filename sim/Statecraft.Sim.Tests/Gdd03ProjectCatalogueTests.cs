@@ -2,7 +2,7 @@ using System.Globalization;
 using Statecraft.Sim;
 
 // R-PROJ-001, R-PROJ-002, R-PROJ-003: detached catalogue contract only.
-// Written before the adapter. Red/green execution is reserved for the APPLY lane.
+// Synthetic tests for the detached project catalogue contract.
 public class Gdd03ProjectCatalogueTests
 {
     static Content Input(string identity = SaveGame.Gdd03Ruleset)
