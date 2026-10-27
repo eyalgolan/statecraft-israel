@@ -122,6 +122,7 @@ namespace Statecraft.HexTiles
                 refresh = holder.AddComponent<HexUnitFigureRefresh>();
             }
             models = new HexCollectionFigures(() => { if (refresh != null) refresh.Dirty(); });
+            models.SetInstanceCounter(() => live.Count(l => l.Go != null && l.Prefab != null && models.IsOriginalCached(l.M.Model)));
             if (refresh != null) refresh.Initialise(models, RefreshFigures, streamedAssets!, parent.GetComponentInParent<HexBoardAssets>());
             foreach (var member in unit.Members)
             {

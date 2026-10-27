@@ -1,0 +1,1 @@
+- Add isolated synthetic reception fixtures for dedicated bed allocation, ordinary progress and civilian eligibility.

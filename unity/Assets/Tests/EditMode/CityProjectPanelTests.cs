@@ -224,7 +224,7 @@ public class CityProjectPanelTests
             var expected = why switch
             {
                 "policy" => t["info.map_action_reason.maabarot_policy"],
-                "resource" => t.Format("city.project_reason.no_resource", Towns[City], "vineyards", ContentNames.Of(t, winery)),
+                "resource" => t.Format("city.project_reason.no_resource", Towns[City], t["city.resource.vineyards"], ContentNames.Of(t, winery)),
                 "sea" => t["info.map_action_reason.not_land"],
                 "placement" => t.Format("info.map_action_reason.occupied", t["info.map_action.housing"]),
                 _ => t.Format("city.project_reason.turn_cap", C.RulesAt(s0.Date).MapActionsPerTurn),
@@ -276,5 +276,25 @@ public class CityProjectPanelTests
         panel.Show(q, r);
         Assert.IsNull(ui.Root.Q("city-project-for"));
         Assert.IsNull(ui.Root.Q("city-project-housing"));
+    }
+
+    /// <summary>#1781: the Hebrew refusal names the resource and the kind in Hebrew, with no Latin letters left in the
+    /// line. Before this, `winery` had no name_he and the resource had no name at all, so a Hebrew player read
+    /// "ב־תל אביב אין vineyards עבור a winery". This uses the real content's kind rather than a fixture, because the
+    /// point is the shipped wording.</summary>
+    [Test]
+    public void TheHebrewRefusalForTheRealWineryHasNoEnglishWords()
+    {
+        var kind = C.ProjectKinds.First(x => x.Id == "winery");
+        Assert.AreEqual("vineyards", kind.Requires, "precondition: the winery is the kind that requires a resource");
+        Assert.IsTrue(He.Has("city.resource." + kind.Requires), "the required resource is named in the Hebrew strings");
+        // The town name comes from the settlement's own name_he and is not this issue's scope, so the line is built
+        // with a Hebrew town to isolate the two words that were English: the resource and the kind.
+        var line = He.Format("city.project_reason.no_resource", "\u05ea\u05dc \u05d0\u05d1\u05d9\u05d1",
+            He["city.resource." + kind.Requires], ContentNames.Of(He, kind));
+        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(line, "[A-Za-z]"),
+            "no Latin letters left in the Hebrew refusal: " + line);
+        StringAssert.Contains("\u05db\u05e8\u05de\u05d9\u05dd", line);   // כרמים
+        StringAssert.Contains("\u05d9\u05e7\u05d1", line);                 // יקב
     }
 }

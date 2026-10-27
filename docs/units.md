@@ -401,16 +401,17 @@ checks every anchor and logs each spot and its distance.
 - In the Hebrew UI the place, the first commander and the sector each show their optional Hebrew counterpart in
   `units_1948.yaml` (#558): `place_he` on an anchor, `first_commander_he` and `sector_he` on the row, and for a date in
   prose `since_he` on an anchor and `formed_he` on the row (#1292; a plain day or month names its month through the
-  date strings instead), each with its
+  date strings instead), and `number_he` on the row for the subtitle's number line (#1219 item 2), each with its
   `*_he_sources` (the sources of its proper names) and `*_he_review: agent-checked` until a native speaker has read it
   (#564). A field without one shows its English, independently of the others; the English card never changes.
   `UnitData.Parse` refuses a Hebrew text without its English (so a Hebrew commander never adds a line), a present but
-  blank key, sources or a review flag without the text, and text without Hebrew letters; an unknown key such as
-  `number_he` fails as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
+  blank key, sources or a review flag without the text, and text without Hebrew letters; any other Hebrew key fails
+  as every unknown key does. Their sources join the card's source hosts but, like `name_he_sources`,
   never clear `wikipedia_only` (#902). The shipped rows carry them since #1292 (all `agent-checked`, each name's source its he.wiki article), except
   the Iraqi force's sector, whose "Ma'ad" has no Hebrew spelling found. Tests: `UnitsInPlayTests` (`TheHebrewProseShows...`, `EachHebrewFieldFallsBack...`,
   `AHebrewCommanderWithoutTheEnglishAddsNoLine`, `AProseDateShowsItsHebrewInTheHebrewCard`,
-  `BadHebrewProseNamesTheProblem`), on test-only fixtures.
+  `BadHebrewProseNamesTheProblem`, `HebrewUnitNumbersAreSourcedAndAgentChecked`,
+  `TheHebrewUnitCardSubtitleShowsTheSourcedNumberAndEnglishKeepsItsNumber`), on test-only fixtures.
 - It also gives the national values the token reflects on Israel's cards (legacy loop: "Reserve call-up 80% · security level
   5 of 5"; in the GDD loop only the squadron's card has one, "Security level 5 of 5", see above) and the source
   hosts, with a draft note that says "Wikipedia only" when the position's own sources are.
@@ -697,3 +698,15 @@ Brigades, the squadron's bases and the ships: every position, date and coordinat
 in `content/map/units_1948.yaml`.
 
 The photographs are references only: no image file is copied into the repository.
+
+### Friendly destinations and drag onset (#1661, owner rulings 26 October 2026)
+
+Selecting another friendly unit or a city while a movable unit is selected keeps the normal selection and offers
+"Send {unit} to {place}" for the previously selected mover. Activating that confirmation gives the existing Move or
+go-to command immediately; the confirmation itself also confirms a far route on touch. A new selection, state change
+(including a turn or loaded session), or screen opening discards the proposal. Right-click ordering stays immediate.
+The English and Hebrew confirmation share the same placeholders; the Hebrew is native-review-pending.
+
+Map drags retain the 30 device-pixel threshold. Each press captures its own origin from input events. On the first
+crossing, only the part of that movement segment outside the threshold pans; subsequent motion pans normally, with no
+replay of held travel. The tap rule and complete between-frame touch swipes are ruling 3 (#1777).

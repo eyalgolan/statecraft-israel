@@ -100,7 +100,9 @@ namespace Statecraft.Sim
             if (enemy && u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
             if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? "That hex is beyond the unit's range" : "That hex is not next to the unit";
             if (Defenders(s, u, q.Value, r.Value).Count == 0) return "There is no enemy unit on that hex";
-            if (!enemy && spent != null && Movement.PointsLeft(c, s, unitId, spent) == 0)
+            if (!enemy && spent != null && (Gdd03Military.Applies(c) && Guns(c, u)
+                ? Movement.AttackPoints(c, u) <= (spent.TryGetValue(unitId, out var used) ? used : 0)
+                : Movement.PointsLeft(c, s, unitId, spent) == 0))
                 return "That unit has no movement points left this turn";
             if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
@@ -137,7 +139,7 @@ namespace Statecraft.Sim
             if (u.Order == Orders.Fortify)
                 why.Add(UnitLines.Line(WhyKeys.FortifyLost,
                     $"Unit {unitId} left hex {u.OrderTarget} and is no longer fortified", new[] { u }, u.OrderTarget));
-            spent[unitId] = Movement.Points(c, attacker);
+            spent[unitId] = Movement.AttackPoints(c, attacker);
             attacked[unitId] = (q!.Value, r!.Value);
             Engage(c, s, mvp, new List<Unit> { attacker }, Defenders(s, attacker, q.Value, r.Value), q.Value, r.Value, why);
             return null;
@@ -185,6 +187,15 @@ namespace Statecraft.Sim
         static int Ratio(Content c, MvpRules mvp, List<Unit> attackers, List<Unit> defenders, int q, int r)
         {
             long attack = attackers.Sum(x => x.Strength * Factor(c, x));   // in 1/100 of a strength unit
+            if (Gdd03Military.Applies(c))
+            {
+                var biomeBonus = Gdd03Military.Defence(c, c.HexAt(q, r)!.Biome);
+                var fortBonus = c.HasPermanentFort(q, r) ? Gdd03Military.Scalar(c, "military.fort_bonus", false) : 0;
+                long total = defenders.Sum(x => (long)x.Strength * Factor(c, x) *
+                    (100L + biomeBonus + fortBonus + (x.Order == Orders.Fortify && x.OrderTarget == Hex(x.Q, x.R)
+                        ? Gdd03Military.Scalar(c, "military.fortify_bonus", false) : 0)));
+                return total == 0 ? int.MaxValue : (int)Math.Min(int.MaxValue, attack * 10_000 / total);
+            }
             var terrain = mvp.CombatTerrainPercent[c.HexAt(q, r)!.Biome];   // a unit stands on land, and the loader requires every land biome
             long defence = defenders.Sum(x => x.Strength * Factor(c, x) * Orders.DefencePercent(mvp, x) * terrain);   // in 1/1,000,000 of a strength unit
             return defence == 0 ? int.MaxValue : (int)Math.Min(int.MaxValue, attack * 1_000_000 / defence);   // 0: no real unit has no strength
@@ -349,7 +360,7 @@ namespace Statecraft.Sim
                 int q = u.Q + dq, r = u.R + dr;
                 if (!(c.HexAt(q, r) is MapHex hex) || !hex.Land || noEntry.Contains((q, r))) continue;
                 var here = s.Units.Values.Where(x => x.Q == q && x.R == r).ToList();
-                if (here.Any(x => Player(x) != Player(u)) || here.Count(x => x.Side == u.Side) >= mvp.StackLimit!.Value) continue;
+                if (here.Any(x => Player(x) != Player(u)) || here.Count(x => x.Side == u.Side) >= Movement.StackLimit(c, s)) continue;
                 return (q, r);
             }
             return null;

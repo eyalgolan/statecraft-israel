@@ -903,4 +903,24 @@ public class UnitOrdersTests
         Assert.IsEmpty(bridge.Queued, "closing selection does not alter the turn's orders");
     }
 
+    [Test]
+    public void PioneerSelectionClearsMilitaryPicksAndEscapeGivesNoOrder()
+    {
+        using var ui = new UiTestKit(); var t = Text;
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var token = UnitRoster.FromState(Units, C, g.State, _ => true, (row, a, q, r) => a).Single(x => x.Unit.Id == "golani");
+        PlacedToken? shown = new PlacedToken(token, new AnchorSpot(0, 0, 0, 0, false));
+        var golani = g.State.Units[UnitCard.SimUnit(C, g.State, token.Unit)!.Value];
+        var id = PioneerCardTests.Add(g.State, golani.Q, golani.R);
+        var b = new SimBridge(g, t); IReadOnlyCollection<(int q, int r)>? reach = null;
+        using var p = new InfoPanelPresenter(ui.Root, b, t, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id), selectedUnit: () => shown,
+            showReachable: x => reach = x, clearSelection: () => shown = null);
+        p.ShowUnit(); Assert.IsNotEmpty(reach!);
+        var select = typeof(InfoPanelPresenter).GetMethod("ShowPioneer");
+        Assert.IsNotNull(select, "a pioneer selection transition is absent on base");
+        select!.Invoke(p, new object[] { id }); Assert.IsNull(shown); Assert.IsEmpty(reach!); Assert.IsFalse(p.MovePicking);
+        Assert.IsTrue(p.ShowsUnit); Assert.IsTrue(p.Escape()); Assert.IsFalse(p.ShowsUnit);
+        Assert.IsNull(p.Selected); Assert.IsEmpty(b.Session.Committed); Assert.IsEmpty(b.Queued);
+    }
+
 }

@@ -22,6 +22,7 @@ namespace Statecraft.Game.UI
         public const string BudgetLine = "defense_minister";
         /// <summary>The leadership portrait box in logical pixels (Statecraft.uss .leader .card-portrait).</summary>
         public static readonly UnityEngine.Vector2 LeaderPortrait = new UnityEngine.Vector2(190f, 200f);
+        readonly ArmsPurchasePresenter arms;
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly Button escalate, deEscalate, mobUp, mobDown; readonly Action onEscalate, onDeEscalate, onMobUp, onMobDown;
 
@@ -37,6 +38,7 @@ namespace Statecraft.Game.UI
             screen.Q<Label>("defence-screen-title").text = text["defence.title"];
             screen.Q<Label>("defence-title-prisoners").text = text["defence.section_prisoners"].ToUpperInvariant();   // #755, as Sections
             deEscalate.text = text["defence.lower"]; escalate.text = text["defence.raise"];
+            arms = new ArmsPurchasePresenter(screen, bridge, text);
             bridge.Changed += OnChanged;
             ScreenNav.OnOpened(screen, () => { if (dirty) Render(); });
             Render();
@@ -59,6 +61,7 @@ namespace Statecraft.Game.UI
         /// <summary>Unsubscribes from the bridge and the buttons and empties the leadership cards (the owner calls this when disabled).</summary>
         public void Dispose()
         {
+            arms.Dispose();
             bridge.Changed -= OnChanged;
             if (screen.userData is System.Action) screen.userData = null;
             escalate.clicked -= onEscalate; deEscalate.clicked -= onDeEscalate; mobUp.clicked -= onMobUp; mobDown.clicked -= onMobDown;

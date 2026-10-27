@@ -39,7 +39,8 @@ public class InfoPanelLayoutTests
     /// card and the info panel (with the region lines) on the session given.</summary>
     static IEnumerator Rendered(int w, int h, GameSession g, System.Action<VisualElement, InfoPanelPresenter> act, System.Action<VisualElement> check,
                                 UiText? text = null, bool hebrew = false, System.Action<VisualElement>? settled = null,
-                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null)
+                                System.Func<Statecraft.Game.Map.Units.PlacedToken?>? unit = null, System.Func<int, string?>? unitName = null,
+                                System.Action<IReadOnlyCollection<(int q, int r)>>? showReachable = null)
     {
         var t = text ?? Text;
         var rt = new RenderTexture(w, h, 0);
@@ -57,7 +58,7 @@ public class InfoPanelLayoutTests
         var bridge = new SimBridge(g, t);
         var hud = new HudPresenter(root, bridge, t);
         var card = new EventCardPresenter(root, bridge, t, null);
-        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName);
+        var info = new InfoPanelPresenter(root, bridge, t, Names(), regions: Regions(), selectedUnit: unit, unitName: unitName, showReachable: showReachable);
         try
         {
             act(root, info);
@@ -80,10 +81,11 @@ public class InfoPanelLayoutTests
         var box = l.contentRect;
         var natural = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
         if (natural.x <= box.width + 1f) return true;
-        if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return false;
-        var wrapped = l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
         // Text and layout round to raster pixels: at fractional panel scale one pixel can exceed one logical px.
         var pixel = l.panel == null ? 1f : 1f / l.panel.scaledPixelsPerPoint;
+        // A line that does not wrap draws on one line: a box one raster pixel under its text still shows it all (#1789).
+        if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return natural.x <= box.width + pixel + 0.01f;
+        var wrapped = l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
         return wrapped.y <= box.height + pixel + 0.01f;
     }
 
@@ -580,6 +582,305 @@ public class InfoPanelLayoutTests
             Assert.That(fortify.worldBound.yMin, Is.EqualTo(move.worldBound.yMin).Within(1f));
             Assert.That(hold.worldBound.yMin, Is.EqualTo(move.worldBound.yMin).Within(1f), "Hold does not get stranded on a line of its own");
         }, text: text, hebrew: hebrew, unit: () => selected);
+    }
+
+    /// <summary>#1789: Tel Aviv's hex in #1788's crowded city state (three idle halutz groups, craftsmen, the ma'abarot policy)
+    /// at 1024x768: the Jobs line ("Jobs: 106 of 106 filled") lies inside its column with its whole text, in English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator TheCityJobsLineStaysInsideItsColumnAt1024x768([Values(false, true)] bool hebrew)
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var s = g.State;
+        foreach (var id in s.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).ToList()) s.Units.Remove(id);
+        s.Sites.Clear(); s.Corridors.Clear();
+        var city = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+        for (int k = 0; k < 3; k++) PioneerCardTests.Add(s, city.Q, city.R);
+        s.Cities[city.Id] = s.Cities[city.Id].WithCraftsmen(2).WithQualified(new Qualified(1, 1, new[] { 3, 5 }));
+        s.Policies[MapActions.MaabarotPolicy] = 1;
+        yield return Rendered(1024, 768, g, (root, info) => info.Show(city.Q, city.R), root =>
+        {
+            var column = root.Q(GddHexPanel.HostName); var jobs = root.Q<Label>("city-jobs");
+            Assert.IsTrue(Shown(jobs), "precondition: the Jobs line shows");
+            Assert.IsTrue(Inside(jobs.worldBound, column.worldBound), $"'{jobs.text}' {jobs.worldBound} leaves its column {column.worldBound}");
+            Assert.IsTrue(TextFits(jobs), $"'{jobs.text}' does not fit its box {jobs.contentRect}");
+        }, text, hebrew, GameSceneTests.HideTheOpeningCard);
+    }
+
+    [UnityTest]
+    public IEnumerator PioneerListsAndCardsFitTheRequiredWindowsInBothLanguages()
+    {
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1024, 768), (1366, 768) })
+                foreach (var mode in new[] { "list", "idle", "busy" })
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    var site = C.Sites.Where(x => Projects.IsYishuvSite(x)).OrderByDescending(x => x.Name.Length + x.NameHe.Length).First();
+                    var hex = C.Hexes.First(x => x.Land && !C.SettlementHexes.Any(y => y.Q == x.Q && y.R == x.R)
+                        && !C.Sites.Any(y => y.Q == x.Q && y.R == x.R)
+                        && !C.Corridors.Any(d => d.Segments.Any(seg => seg.Hexes.Any(hh => hh[0] == x.Q && hh[1] == x.R)))
+                        && Projects.CitiesFor(C, g.State, x.Q, x.R).Count == 0);
+                    var id = PioneerCardTests.Add(g.State, hex.Q, hex.R, Projects.VeteranType);
+                    for (int i = 0; i < 24; i++) PioneerCardTests.Add(g.State, hex.Q, hex.R);
+                    if (mode == "busy") g.State.Sites[site.Id] = new SiteWork(site.Id, id, 3, null);
+                    var t = PioneerCardTests.Text(hebrew);
+                    yield return Rendered(w, h, g, (root, info) => info.Show(hex.Q, hex.R), root =>
+                    {
+                        var panel = root.Q("info-panel"); Assert.IsTrue(Inside(panel.worldBound, root.worldBound));
+                        if (mode == "list")
+                        {
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            Assert.IsTrue(Inside(list.worldBound, panel.worldBound));
+                            Assert.AreEqual(25, list.Query<Button>().ToList().Count);
+                            var last = list.Query<Button>().ToList().Last();
+                            Assert.IsTrue(Inside(last.worldBound, list.contentViewport.worldBound), "last entry is reachable after scrolling");
+                            Assert.IsTrue(TextFits(last), last.text);
+                        }
+                        else
+                        {
+                            var back = root.Q<Button>("info-pioneer-return");
+                            Assert.AreEqual(mode == "idle", back.enabledSelf);
+                            foreach (var line in panel.Query<TextElement>().ToList().Where(x => Shown(x) && !string.IsNullOrEmpty(x.text)))
+                            {
+                                Assert.IsTrue(Inside(line.worldBound, panel.worldBound), line.name);
+                                Assert.IsTrue(TextFits(line), line.text);
+                            }
+                        }
+                    }, t, hebrew, root =>
+                    {
+                        // The new game's opening card is modal and disables the panel: hide it, as a player does, then press once
+                        // the HUD has its tier, as the other presses here.
+                        GameSceneTests.HideTheOpeningCard(root);
+                        var link = PioneerCardTests.Link(root, id); Assert.IsNotNull(link);
+                        if (mode != "list") { UiTestKit.Press(link); return; }
+                        var list = root.Q<ScrollView>("info-pioneers");
+                        list.ScrollTo(list.Query<Button>().ToList().Last());
+                    });
+                }
+    }
+
+    [UnityTest]
+    public IEnumerator PioneerLinksCoexistWithCityAndLongNamedProjects()
+    {
+        var problems = new List<string>();
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1024, 768), (1366, 768) })
+                foreach (var mode in new[] { "city", "site-idle", "site-busy", "corridor-idle", "corridor-busy" })
+                {
+                    var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+                    // Isolate the three candidate links; retain the rest of the real scenario and UI.
+                    foreach (var id in g.State.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).ToList())
+                        g.State.Units.Remove(id);
+                    g.State.Sites.Clear(); g.State.Corridors.Clear();
+                    var city = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+                    var site = C.Sites.Where(x => Projects.IsYishuvSite(x))
+                        .OrderByDescending(x => (hebrew ? x.NameHe : x.Name).Length).First();
+                    // Pick a longest-name corridor with a non-city hex in its first segment.
+                    var d = C.Corridors.Where(x => x.Segments[0].Hexes.Any(hh => !C.SettlementHexes.Any(c => c.Q == hh[0] && c.R == hh[1])))
+                        .OrderByDescending(x => (hebrew ? x.NameHe : x.Name).Length).First();
+                    var segmentHex = d.Segments[0].Hexes.First(hh => !C.SettlementHexes.Any(c => c.Q == hh[0] && c.R == hh[1]));
+                    var q = mode == "city" ? city.Q : mode.StartsWith("site", System.StringComparison.Ordinal) ? site.Q : segmentHex[0];
+                    var r = mode == "city" ? city.R : mode.StartsWith("site", System.StringComparison.Ordinal) ? site.R : segmentHex[1];
+                    var ids = Enumerable.Range(0, 3).Select(_ => PioneerCardTests.Add(g.State, city.Q, city.R)).ToArray();
+                    if (mode == "city")
+                    {
+                        var x = g.State.Cities[city.Id];
+                        g.State.Cities[city.Id] = x.WithCraftsmen(2).WithQualified(new Qualified(1, 1, new[] { 3, 5 }));
+                        g.State.Policies[MapActions.MaabarotPolicy] = 1;
+                    }
+                    if (mode == "site-busy") g.State.Sites[site.Id] = new SiteWork(site.Id, ids[0], 3, null);
+                    if (mode == "corridor-busy") g.State.Corridors[d.Id] = new CorridorWork(d.Id,
+                        d.Segments.Select((_, i) => i == 0 ? new SegmentWork(ids[0], 0, null) : null).ToArray());
+                    var t = PioneerCardTests.Text(hebrew);
+                    var at = $"{(hebrew ? "he" : "en")} {w}x{h} {mode}";
+                    void Expect(bool ok, string what) { if (!ok) problems.Add($"{at}: {what}"); }
+                    yield return Rendered(w, h, g, (root, info) => info.Show(q, r), root =>
+                    {
+                        var panel = root.Q("info-panel"); var host = root.Q(GddHexPanel.HostName);
+                        Expect(Inside(panel.worldBound, root.worldBound), $"the panel {panel.worldBound} leaves the window {root.worldBound}");
+                        Assert.IsTrue(Shown(host), mode);
+                        Assert.AreEqual(DisplayStyle.None, root.Q<Button>("info-pioneer-return").resolvedStyle.display,
+                            "measure project links before opening any card");
+                        if (mode == "city")
+                        {
+                            Assert.IsNotNull(host.Q<Button>("city-reassign-halutz"));
+                            Assert.IsNotNull(host.Q<Button>("city-workers-more"));
+                            var projects = root.Q(GddHexPanel.ProjectsHostName);
+                            Assert.IsTrue(Shown(projects));
+                            Assert.IsNotNull(projects.Q<Button>("city-project-" + C.ProjectKinds[0].Id));
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            Assert.IsTrue(Inside(list.worldBound, panel.worldBound));
+                            var links = list.Query<Button>().ToList(); Assert.AreEqual(3, links.Count);
+                            Assert.Greater(list.contentContainer.worldBound.height, list.contentViewport.worldBound.height,
+                                "crowded city list needs scrolling");
+                            Assert.IsTrue(Inside(links.Last().worldBound, list.contentViewport.worldBound), "last city link reachable after scrolling");
+                            foreach (var link in links) Assert.IsTrue(TextFits(link), link.text);
+                        }
+                        else
+                        {
+                            var part = mode.StartsWith("site", System.StringComparison.Ordinal)
+                                ? host.Q("site-part-" + site.Id) : host.Q("corridor-part-" + d.Id + "-1");
+                            Assert.IsNotNull(part);
+                            var links = part.Query<Button>().ToList().Where(b => b.name.StartsWith("pioneer-project-", System.StringComparison.Ordinal)).ToList();
+                            var busy = mode.EndsWith("busy", System.StringComparison.Ordinal);
+                            // The worker's row links to its card; idle candidates keep #1540's rows unchanged (they open from
+                            // their own hex's list): three extra links per segment ran a three-segment hex off the window.
+                            Assert.AreEqual(busy ? 1 : 0, links.Count, "only the worker's row links to its card");
+                            var action = part.Q<Button>(busy ? (mode.StartsWith("site", System.StringComparison.Ordinal) ? "site-stop" : "corridor-stop")
+                                : (mode.StartsWith("site", System.StringComparison.Ordinal) ? "site-build-" : "corridor-build-") + ids[0].ToString(System.Globalization.CultureInfo.InvariantCulture));
+                            Assert.IsNotNull(action);
+                            Expect(action.enabledInHierarchy && Shown(action), $"{action.name} '{action.text}' enabled {action.enabledInHierarchy} shown {Shown(action)}");
+                            Expect(Inside(action.worldBound, panel.worldBound), $"{action.name} {action.worldBound} leaves the panel {panel.worldBound}");
+                            foreach (var link in links)
+                            {
+                                Expect(link.enabledInHierarchy && Shown(link), $"{link.name} enabled {link.enabledInHierarchy} shown {Shown(link)}");
+                                Expect(Inside(link.worldBound, panel.worldBound), $"{link.name} {link.worldBound} leaves the panel {panel.worldBound}"); Expect(TextFits(link), $"'{link.text}' does not fit");
+                            }
+                        }
+                        foreach (var line in panel.Query<TextElement>().ToList().Where(x => Shown(x) && !string.IsNullOrEmpty(x.text)
+                            && !root.Q<ScrollView>("info-pioneers").Contains(x)))
+                        {
+                            Expect(Inside(line.worldBound, panel.worldBound), $"'{line.text}' {line.worldBound} leaves the panel {panel.worldBound} ({line.name})");
+                            Expect(TextFits(line), $"'{line.text}' does not fit its box {line.contentRect} ({line.name})");
+                        }
+                    }, t, hebrew, root =>
+                    {
+                        GameSceneTests.HideTheOpeningCard(root);   // the modal opening card disables the panel's links
+                        if (mode == "city")
+                        {
+                            var list = root.Q<ScrollView>("info-pioneers");
+                            list.ScrollTo(list.Query<Button>().ToList().Last());
+                        }
+                    });
+                }
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    // R-MOVE-001 (#1708): both locales display the same effective allowance used by sim reachability.
+    [UnityTest]
+    public IEnumerator Gdd03UnitCardUsesEffectivePointsDenominator([Values(false, true)] bool hebrew)
+    {
+        var c = ContentLoader.Load(rel =>
+        {
+            var path = Path.Combine(Paths.Content, rel);
+            if (!File.Exists(path)) return null;
+            var source = File.ReadAllText(path);
+            return rel == "eras.yaml" ? source.Replace("loop: gdd", "loop: gdd, ruleset: gdd-0.3") : source;
+        }, Directory.GetFiles(Path.Combine(Paths.Content, "events"), "*.yaml").Select(p => "events/" + Path.GetFileName(p)));
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var g = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        var data = Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var token = Statecraft.Game.Map.Units.UnitRoster.FromState(data, c, g.State, _ => true, (row, a, q, r) => a).Single(t => t.Unit.Id == "golani");
+        var id = UnitCard.SimUnit(c, g.State, token.Unit)!.Value;
+        Assert.AreEqual(2, Movement.Allowance(c, g.State.Units[id]));
+        Statecraft.Game.Map.Units.PlacedToken? selected = new Statecraft.Game.Map.Units.PlacedToken(token, new Statecraft.Game.Map.Units.AnchorSpot(0, 0, 0, 0, false));
+        yield return Rendered(1512, 982, g, (root, info) => info.ShowUnit(), root =>
+        {
+            StringAssert.Contains(text.Format("unit.points", 2, 2), root.Q<Label>("info-settlements").text);
+        }, text: text, hebrew: hebrew, unit: () => selected);
+    }
+
+    static (GameSession session, Statecraft.Game.Map.Units.PlacedToken token, int id) MilitaryFixture(string role)
+    {
+        var c = ContentLoader.Load(rel => {
+            var path=Path.Combine(Paths.Content,rel); if(!File.Exists(path)) return null;
+            var source=File.ReadAllText(path);
+            return rel=="eras.yaml" ? source.Replace("loop: gdd","loop: gdd, ruleset: gdd-0.3") : source;
+        },Directory.GetFiles(Path.Combine(Paths.Content,"events"),"*.yaml").Select(p=>"events/"+Path.GetFileName(p)));
+        var g=GameSession.New(c,GoldenRun.Seed,Mode.Historical);
+        var data=Statecraft.Game.Map.Units.UnitData.Parse(MapFile(Statecraft.Game.Map.Units.UnitData.DefaultFileName));
+        var token=Statecraft.Game.Map.Units.UnitRoster.FromState(data,c,g.State,_=>true,(row,a,q,r)=>a).Single(t=>t.Unit.Id=="golani");
+        var id=UnitCard.SimUnit(c,g.State,token.Unit)!.Value;
+        var type=c.UnitTypes.First(t=>t.Side==Movement.PlayerSide && t.Class==role).Id;
+        c.Hexes=Enumerable.Range(0,8).SelectMany(q=>Enumerable.Range(0,3).Select(r=>new MapHex { Q=q,R=r,Biome="coastal_plain",Land=true })).ToList();
+        c.Corridors.Clear();c.MapLocations.Clear();
+        g.State.Units.Clear();g.State.PendingEvents.Clear();
+        g.State.Units[id]=new Unit(id,type,0,1,side:Movement.PlayerSide,strength:6);
+        g.State.Arms=0;g.State.GameOver=null;
+        return (g,new Statecraft.Game.Map.Units.PlacedToken(token,new Statecraft.Game.Map.Units.AnchorSpot(0,0,0,0,false)),id);
+    }
+
+    // R-MOVE-001/002: actual committed movement, both role denominators and UI reachability in both locales.
+    [UnityTest]
+    public IEnumerator Gdd03AfterMoveUsesRemainingRolePointsAndReach([Values(false,true)] bool hebrew,[Values("infantry","armour")] string role)
+    {
+        var f=MilitaryFixture(role);var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new Move(f.id,1,1)));
+        var allowance=Movement.Allowance(g.Content,bridge.State.Units[f.id]);
+        var reach=InfoPanelPresenter.MoveReach(bridge,f.id)!;
+        CollectionAssert.AreEquivalent(Movement.Reachable(g.Content,bridge.State,f.id,bridge.Spent).Keys,reach.Keys);
+        Assert.AreEqual((1, 1), (bridge.State.Units[f.id].Q, bridge.State.Units[f.id].R), "the committed Move put the unit on (1,1)");
+        // The lit hexes the card hands the map, pinned by hand on the all-plain 8x3 board: one point left (infantry, 2 of 2
+        // spent 1) reaches the six neighbours of (1,1); two points left (armour, 3 less 1) reach every hex within two steps.
+        var expected = role == "infantry"
+            ? new[] { (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1) }
+            : new[] { (0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1) };
+        var lit = new List<IReadOnlyCollection<(int q, int r)>>();
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.points",allowance-1,allowance),root.Q<Label>("info-settlements").text);
+            Assert.IsNotEmpty(lit, "the card lit the unit's reach on the map");
+            CollectionAssert.AreEquivalent(expected, lit[lit.Count - 1].Select(h => (h.q, h.r)), "the highlighted hexes are the remaining-points reach");
+        },text:text,hebrew:hebrew,unit:()=>f.token,showReachable:hexes=>lit.Add(hexes.ToList()));
+    }
+
+    // R-MOVE-008/009: standing route ETA is computed on the post-commit state and same effective points.
+    [UnityTest]
+    public IEnumerator Gdd03RouteEtaUsesCommittedRemainder([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);Assert.IsNull(bridge.Queue(new UnitOrder(f.id,Movement.GoTo,6,1)));
+        var route=Movement.Route(g.Content,bridge.State,f.id,6,1,bridge.Spent);Assert.IsNotEmpty(route);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.go_to_given",System.Math.Max(0,route[route.Count-1].Turn-1)),root.Q<Label>("info-settlements").text);
+        },text:text,hebrew:hebrew,unit:()=>f.token);
+    }
+
+    // R-COMBAT-010/002: attack pick renders the sim's additive permanent+settled Fortify odds.
+    [UnityTest]
+    public IEnumerator Gdd03FortifiedDefenderOddsComeFromTheSim([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,1,1,side:"egypt",strength:6,order:Orders.Fortify,orderTarget:"1,1");
+        c.MapLocations.Add(new MapLocation { Id="fixture_fort",Kind="fort",Q=1,R=1 });
+        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var expected=Combat.Preview(c,g.State,f.id,1,1)!.Value.RatioPercent;Assert.AreEqual(57,expected);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            StringAssert.Contains(text.Format("unit.attack_odds","1,1",expected),root.Q<Label>("info-settlements").text);
+        },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
+    }
+
+    // R-MOVE-010/#1749: a gun retains its action prompt/fire, but move explicitly refuses without a guessed allowance.
+    [UnityTest]
+    public IEnumerator Gdd03GunPromptsBeforeFireAndStopsAfterShot([Values(false,true)] bool hebrew)
+    {
+        var f=MilitaryFixture(Combat.ArtilleryClass);var g=f.session;var c=g.Content;
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
+        var text=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew?UiPaths.StringsHebrew:UiPaths.Strings).text);
+        var bridge=new SimBridge(g,text);CollectionAssert.Contains(bridge.NeedsOrders,f.id);
+        Assert.Greater(Movement.ActionsLeft(c,bridge.State,f.id,bridge.Spent),0);
+        Assert.AreEqual(text["unit.artillery_move_missing"],bridge.Queue(new Move(f.id,1,1)));
+        var odds = Combat.Preview(c, bridge.State, f.id, 2, 1)!.Value.RatioPercent;
+        InfoPanelPresenter? shown = null;
+        // The card's own Fire control: shown and pressed, its pick shows the sim's odds while the movement refusal stays on
+        // the card, and the lit target fires through the same pick a map click uses.
+        yield return Rendered(1512,982,g,(root,info)=>{ info.ShowUnit(); shown = info; },root=> {
+            var card = root.Q<Label>("info-settlements").text;
+            Assert.IsTrue(Shown(root.Q<Button>("info-attack")), "the gun's attack control stays visible while movement is blocked");
+            Assert.IsFalse(Shown(root.Q<Button>("info-move")), "no Move is offered for the gun");
+            StringAssert.Contains(text["unit.fire_ready"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            StringAssert.Contains(text.Format("unit.attack_odds", "2,1", odds), card);
+            Assert.IsTrue(shown!.PickTarget(2, 1), "the lit enemy hex takes the shot");
+        },text:text,hebrew:hebrew,unit:()=>f.token,settled:root=>UiTestKit.Press(root.Q<Button>("info-attack")));
+        var after = new SimBridge(g, text);
+        CollectionAssert.DoesNotContain(after.NeedsOrders,f.id);
+        Assert.AreEqual(0,Movement.ActionsLeft(c,after.State,f.id,after.Spent));Assert.AreEqual(0,after.State.Arms);
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            var card = root.Q<Label>("info-settlements").text;
+            StringAssert.Contains(text["unit.fire_spent"], card);
+            StringAssert.Contains(text["unit.artillery_move_missing"], card);
+            Assert.IsFalse(Shown(root.Q<Button>("info-attack")), "no second shot is offered");
+        },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
 }

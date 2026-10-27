@@ -1,0 +1,1 @@
+- Add an isolated synthetic arms workshop cycle contract with catalogue pricing and explicit reservations.

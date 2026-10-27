@@ -1,0 +1,1 @@
+- Add typed farming rates and a detached synthetic staffed-field output evaluator for GDD 0.3 groundwork.

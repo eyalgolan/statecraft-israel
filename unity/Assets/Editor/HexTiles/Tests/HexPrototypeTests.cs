@@ -1,4 +1,6 @@
 #nullable enable
+using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -6,10 +8,11 @@ using NUnit.Framework;
 using Statecraft.HexTiles;
 using Statecraft.HexTiles.Capture;
 using UnityEditor;
+using UnityEngine;
 
 /// <summary>The contract every hex prototype keeps, checked for each one registered (so a new file is tested with no
 /// edit here): a lower_snake_case id; the same placements for the same seed; every piece inside its inset hexagon; at
-/// most its triangle budget (with the models on this machine, else stand-ins); and every board names known prototypes.</summary>
+/// most its triangle budget for non-original placements (Tal originals use the #1273 memory gates); and every board names known prototypes.</summary>
 public class HexPrototypeTests
 {
     static IEnumerable<string> Ids() => HexPrototypes.All.Keys.OrderBy(k => k);
@@ -58,8 +61,85 @@ public class HexPrototypeTests
     {
         var proto = HexPrototypes.Create(id);
         var ctx = Built(id);
-        int tris = ctx.Placements.Sum(p => p.StandIn == StandIn.Flat ? 12 : HexModels.Triangles(p.Model, p.StandIn, p.Position));
-        Assert.That(tris, Is.LessThanOrEqualTo(proto.TriangleBudget), $"{id}: {tris} triangles");
+        var originals = OriginalMeshPaths();
+        int tris = ctx.Placements.Sum(p => p.StandIn == StandIn.Flat ? 12 : CountTowardsCap(
+            Meshes(HexModels.Prefab(HexModels.Resolve(p.Model, p.Position))),
+            HexModels.Triangles(p.Model, p.StandIn, p.Position), originals));
+        AssertBudget(id, tris, proto.TriangleBudget);
+    }
+
+    // Tal Heuberger chose option 1 (exempt originals; memory gates instead), relayed by the owner, 26 Oct 2026, #1273.
+    // A piece is one placement, not a whole prototype: mixed/generated pieces and stand-ins retain their cap.
+    [Serializable] sealed class OriginalManifest { public OriginalFile[] files = Array.Empty<OriginalFile>(); }
+    [Serializable] sealed class OriginalFile { public string path = ""; public string source = ""; }
+
+    static HashSet<string> OriginalMeshPaths()
+    {
+        // Override is local test instrumentation for the required empty-manifest RED, never a game/build setting.
+        string file = Environment.GetEnvironmentVariable("STATECRAFT_CAPS_MANIFEST")
+            ?? Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/original-models.json"));
+        var manifest = JsonUtility.FromJson<OriginalManifest>(File.ReadAllText(file));
+        return manifest.files.Where(f => (f.source == "507" || f.source == "336")
+                && f.path.StartsWith("unity/Assets/", StringComparison.Ordinal)
+                && f.path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+            .Select(f => f.path.Substring("unity/".Length)).ToHashSet(StringComparer.Ordinal);
+    }
+
+    static Mesh[] Meshes(GameObject? prefab) => prefab == null ? Array.Empty<Mesh>()
+        : prefab.GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh)
+            .Concat(prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(f => f.sharedMesh)).ToArray();
+
+    static bool AllOriginals(Mesh[] meshes, HashSet<string> originals) => meshes.Length > 0
+        && meshes.All(m => m != null && originals.Contains(AssetDatabase.GetAssetPath(m)));
+
+    static int CountTowardsCap(Mesh[] meshes, int triangles, HashSet<string> originals) =>
+        AllOriginals(meshes, originals) ? 0 : triangles;
+
+    static void AssertBudget(string id, int triangles, int limit) =>
+        Assert.That(triangles, Is.LessThanOrEqualTo(limit), $"{id}: {triangles} triangles");
+
+    [Test]
+    public void TheExemptSetEqualsTheManifestsActualImportedMeshes()
+    {
+        var paths = OriginalMeshPaths();
+        Assert.Greater(paths.Count, 0, "real manifest contains original FBX");
+        // Independent oracle: load actual FBX mesh subassets from the manifest, rather than using the path predicate.
+        var originalMeshes = paths.SelectMany(AssetDatabase.LoadAllAssetsAtPath).OfType<Mesh>().ToHashSet();
+        Assert.GreaterOrEqual(originalMeshes.Count, paths.Count, "every original FBX has an imported mesh");
+        var models = Ids().SelectMany(id => Built(id).Placements).Where(p => p.StandIn != StandIn.Flat)
+            .Select(p => HexModels.Resolve(p.Model, p.Position)).Distinct().OrderBy(id => id).ToArray();
+        var expected = models.Where(id => {
+            var meshes = Meshes(HexModels.Prefab(id));
+            return meshes.Length > 0 && meshes.All(originalMeshes.Contains);
+        }).ToArray();
+        var actual = models.Where(id => AllOriginals(Meshes(HexModels.Prefab(id)), paths)).ToArray();
+        CollectionAssert.AreEqual(expected, actual, "no hand-written exemption ids or whole-prototype escape");
+        Assert.IsNotEmpty(actual);
+        TestContext.WriteLine($"CAPS exempt placement models={actual.Length}: {string.Join(",", actual)}");
+    }
+
+    [Test]
+    public void GeneratedMixedAndMissingPiecesKeepTheirCapAndAnOverBudgetPieceFails()
+    {
+        var generated = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.up }, triangles = new[] { 0, 1, 2 } };
+        try
+        {
+            var paths = OriginalMeshPaths();
+            Assert.IsFalse(AllOriginals(new[] { generated }, paths));
+            Assert.IsFalse(AllOriginals(Array.Empty<Mesh>(), paths));
+            Assert.IsFalse(AllOriginals(new Mesh[] { null! }, paths));
+            var original = paths.SelectMany(AssetDatabase.LoadAllAssetsAtPath).OfType<Mesh>().First();
+            Assert.IsTrue(AllOriginals(new[] { original }, paths));
+            Assert.IsFalse(AllOriginals(new[] { original, generated }, paths), "one original must not exempt a mixed piece");
+            Assert.AreEqual(0, CountTowardsCap(new[] { original }, 1, paths));
+            int generatedCount = CountTowardsCap(new[] { generated }, generated.triangles.Length / 3, paths);
+            Assert.AreEqual(1, generatedCount);
+            Assert.Throws<AssertionException>(() => AssertBudget("synthetic generated", generatedCount, 0));
+            int mixedCount = CountTowardsCap(new[] { original, generated }, 2, paths);
+            Assert.AreEqual(2, mixedCount);
+            Assert.Throws<AssertionException>(() => AssertBudget("synthetic mixed", mixedCount, 1));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(generated); }
     }
 
     [TestCase("https://x/?hex-tiles", "central_israel")]

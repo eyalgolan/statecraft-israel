@@ -27,7 +27,30 @@ namespace Statecraft.Sim
 
         static bool IsEnemy(Unit u) => u.Side != "" && u.Side != PlayerSide;
 
-        internal static int Points(Content c, Unit u) => c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.MovementPoints ?? 0;
+        /// <summary>R-MOVE-001: effective movement allowance, shared by simulation and presentation.
+        /// Artillery movement in 0.3 is blocked until its Deferred allowance and terrain column are approved.</summary>
+        public static int Allowance(Content c, Unit u)
+        {
+            var type = c.UnitTypes.FirstOrDefault(t => t.Id == u.Type);
+            if (type == null) return 0;
+            if (!Gdd03Military.Applies(c) || type.Side == "") return type.MovementPoints;
+            if (type.Class == "infantry") return Gdd03Military.Scalar(c, "military.move_infantry");
+            if (type.Class == "armour") return Gdd03Military.Scalar(c, "military.move_armoured");
+            return 0; // no fallback to an older identity's number for Deferred/unknown roles
+        }
+
+        public const string MissingArtilleryMovement = "Artillery cannot move: the gdd-0.3 artillery movement allowance is not specified.";
+        public static bool MovementDeferred(Content c, Unit u) => Gdd03Military.Applies(c)
+            && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass;
+        /// <summary>Existing action budget, including artillery fire; not a new movement allowance.</summary>
+        public static int ActionsLeft(Content c, GameState s, int id, IReadOnlyDictionary<int, int> spent) =>
+            s.Units.TryGetValue(id, out var u) ? Math.Max(0, AttackPoints(c, u) - (spent.TryGetValue(id, out var used) ? used : 0)) : 0;
+        internal static int Points(Content c, Unit u) => Allowance(c, u);
+
+        // #1708 does not adopt an artillery allowance or redesign #1706's existing fire/shot accounting.
+        internal static int AttackPoints(Content c, Unit u) => Gdd03Military.Applies(c)
+            && c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class == Combat.ArtilleryClass
+            ? c.UnitTypes.First(t => t.Id == u.Type).MovementPoints : Points(c, u);
 
         /// <summary>The hexes unit <paramref name="unitId"/> can move to this turn, each with its path's cost, in (q, r) order:
         /// what Move accepts on a turn the unit has not moved yet (R-MOVE-001 to R-MOVE-005). Empty for an unknown unit, an
@@ -118,6 +141,7 @@ namespace Statecraft.Sim
             if (q == null || r == null) return "A route names a hex";
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u)) return "That unit is not yours";
+            if (MovementDeferred(c, u)) return MissingArtilleryMovement;
             if (Points(c, u) == 0) return "That unit cannot move";
             if (u.Q == q && u.R == r) return "That unit is already there";
             if (!(c.HexAt(q.Value, r.Value) is MapHex hex) || !hex.Land) return "Units cannot enter water or leave the map";
@@ -180,7 +204,7 @@ namespace Statecraft.Sim
         /// attacked this turn (nothing in <paramref name="spent"/>) and have no order (fortify, fortifying, hold and go-to are
         /// orders). End turn waits for them (spec 2026-10-23 section 7); Skip is the UI's and not in the sim.</summary>
         public static IReadOnlyList<int> NeedsOrders(Content c, GameState s, IReadOnlyDictionary<int, int> spent) =>
-            s.Units.Values.Where(u => u.Side == PlayerSide && Points(c, u) > 0 && u.Order == ""
+            s.Units.Values.Where(u => u.Side == PlayerSide && AttackPoints(c, u) > 0 && u.Order == ""
                     && !(spent.TryGetValue(u.Id, out var used) && used > 0))
                 .Select(u => u.Id).ToList();
 
@@ -193,6 +217,7 @@ namespace Statecraft.Sim
         {
             if (!s.Units.TryGetValue(unitId, out var u)) return "There is no such unit";
             if (IsEnemy(u) != enemy) return "That unit is not yours";
+            if (MovementDeferred(c, u)) return MissingArtilleryMovement;
             var points = Points(c, u);
             if (points == 0) return "That unit cannot move";
             if (u.Q == q && u.R == r) return "That unit is already there";
@@ -219,10 +244,13 @@ namespace Statecraft.Sim
             return null;
         }
 
+        internal static int StackLimit(Content c, GameState s) => Gdd03Military.Applies(c)
+            ? Gdd03Military.Scalar(c, "military.stack_limit") : c.RulesAt(s.Date).Mvp!.StackLimit!.Value;
+
         /// <summary>R-MOVE-003: the refusal when (q, r) already holds stack_limit units of <paramref name="u"/>'s side, else null.</summary>
         internal static string? Full(Content c, GameState s, Unit u, int q, int r)
         {
-            var limit = c.RulesAt(s.Date).Mvp!.StackLimit!.Value;   // the loader requires it in the GDD loop
+            var limit = StackLimit(c, s);   // the loader requires it in the GDD loop
             var held = s.Units.Values.Count(x => x.Id != u.Id && x.Side == u.Side && x.Q == q && x.R == r);
             return held >= limit ? FormattableString.Invariant($"That hex already holds {held} units of that side, the most one hex can hold") : null;
         }
@@ -256,11 +284,13 @@ namespace Statecraft.Sim
         /// <paramref name="r"/>), by the same search as Move, or null when no path leads there or its first step is out of reach.</summary>
         internal static (int Q, int R)? Toward(Content c, GameState s, Unit u, int q, int r)
         {
+            var points = Points(c, u);
+            if (points == 0) return null;
             var (dist, prev) = Search(c, s, u, int.MaxValue);
             if (!dist.ContainsKey((q, r)) || (u.Q, u.R) == (q, r)) return null;
-            var points = Points(c, u);
             var h = (q, r);
-            while (dist[h] > points) h = prev[h];
+            while (dist[h] > points && prev[h] != (u.Q, u.R)) h = prev[h];
+            if (dist[h] > points && !Gdd03Military.Applies(c)) h = prev[h];
             return h == (u.Q, u.R) ? ((int, int)?)null : h;
         }
 
@@ -275,7 +305,9 @@ namespace Statecraft.Sim
                     for (int i = 0; i < d.Segments.Count; i++)
                         if (w.Segments[i]?.BuiltOn != null)
                             built.Add((new HashSet<(int Q, int R)>(d.Segments[i].Hexes.Select(h => (h[0], h[1]))),
-                                d.Kind == Corridors.Rail ? m.RailMoveCost!.Value : m.RoadMoveCost!.Value));
+                                Gdd03Military.Applies(c)
+                                    ? Gdd03Military.Scalar(c, d.Kind == Corridors.Rail ? "military.move_rail" : "military.move_road")
+                                    : d.Kind == Corridors.Rail ? m.RailMoveCost!.Value : m.RoadMoveCost!.Value));
             return built;
         }
 
@@ -297,6 +329,7 @@ namespace Statecraft.Sim
             var dist = new Dictionary<(int Q, int R), int> { [(u.Q, u.R)] = 0 };
             var prev = new Dictionary<(int Q, int R), (int Q, int R)>();
             var frontier = new SortedSet<(int Cost, int Q, int R)> { (0, u.Q, u.R) };
+            var role = c.UnitTypes.FirstOrDefault(t => t.Id == u.Type)?.Class ?? "";
             while (frontier.Count > 0)
             {
                 var (cost, q, r) = frontier.Min;
@@ -305,16 +338,16 @@ namespace Statecraft.Sim
                 {
                     var next = (q + dq, r + dr);
                     if (!(c.HexAt(next.Item1, next.Item2) is MapHex hex) || !hex.Land || blocked.Contains(next)) continue;
-                    var step = costs[hex.Biome];
+                    var step = Gdd03Military.Applies(c) && role != "" ? Gdd03Military.Terrain(c, hex.Biome, role) : costs[hex.Biome];
                     foreach (var (hexes, kindCost) in built)
                         if (kindCost < step && hexes.Contains((q, r)) && hexes.Contains(next)) step = kindCost;
-                    var total = cost + step;
+                    var total = Gdd03Military.Applies(c) ? (long)cost + step : cost + step;
                     if (fresh && cost == 0 && total > budget) total = budget;   // R-MOVE-001: with full points a unit can always move one hex (OQ-3)
                     if (total > budget || (dist.TryGetValue(next, out var known) && known <= total)) continue;
                     if (dist.ContainsKey(next)) frontier.Remove((known, next.Item1, next.Item2));
-                    dist[next] = total;
+                    dist[next] = (int)total;
                     prev[next] = (q, r);
-                    frontier.Add((total, next.Item1, next.Item2));
+                    frontier.Add(((int)total, next.Item1, next.Item2));
                 }
             }
             return (dist, prev);

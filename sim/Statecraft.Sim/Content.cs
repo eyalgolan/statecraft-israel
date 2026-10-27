@@ -1264,8 +1264,13 @@ namespace Statecraft.Sim
         internal int RequirePopulationInteger(string key)
         {
             if (!UsesPopulationLedger) throw new InvalidOperationException("Population catalogue access requires gdd-0.3.");
-            if (Gdd03Balance == null || Gdd03Balance.Values == null || Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset
-                || !Gdd03Balance.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
+            return RequirePopulationInteger(Gdd03Balance, key);
+        }
+        // Shared catalogue reader; synthetic consumers retain the same positive Agreed Int32 contract.
+        internal static int RequirePopulationInteger(Gdd03BalanceCatalogue? catalogue, string key)
+        {
+            if (catalogue == null || catalogue.Values == null || catalogue.Ruleset != SaveGame.Gdd03Ruleset
+                || !catalogue.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
                 || row.Values == null || row.Values.Count != 1 || row.Parts == null || row.Parts.Count != 0
                 || !string.IsNullOrEmpty(row.Expression) || row.Values[0] <= 0 || row.Values[0] > int.MaxValue
                 || decimal.Truncate(row.Values[0]) != row.Values[0])
@@ -1352,6 +1357,9 @@ namespace Statecraft.Sim
         public List<SettlementHex> SettlementHexes = new List<SettlementHex>();
         /// <summary>Named GDD map locations. Presentation metadata only; gameplay roles remain in their owning systems.</summary>
         public List<MapLocation> MapLocations = new List<MapLocation>();
+        /// <summary>R-COMBAT-010: immutable, effective location placement; duplicate markers grant one bonus.</summary>
+        public bool HasPermanentFort(int q, int r) => Ruleset == SaveGame.Gdd03Ruleset
+            && MapLocations.Any(l => l.Kind == "fort" && l.Q == q && l.R == r);
         /// <summary>The curated settlement-control targets, in file order (R-CTRL-001).</summary>
         public List<SettlementTarget> SettlementTargets = new List<SettlementTarget>();
         /// <summary>The display name of each settlement id (map/settlements_1948.yaml name), for text the player reads.</summary>

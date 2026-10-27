@@ -312,7 +312,7 @@ public class RoadVehiclesTests
 
         foreach (var id in RoadVehicles.Plans.Select(p => p.Model).Distinct())
         {
-            Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf(id));
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id));
             var path = CollectionCatalog.PrefabPath(id, CollectionDetail.Near);
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(path), path);
             StringAssert.DoesNotContain("/Resources/", path);
