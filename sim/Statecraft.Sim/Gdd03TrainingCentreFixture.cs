@@ -22,20 +22,22 @@ namespace Statecraft.Sim
     }
 
     /// <summary>R-TRAIN-005 to R-TRAIN-008: gdd-0.3 farmer/pioneer course lifecycle over the #1689 population ledger,
-    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. Open design points
+    /// synthetic fixtures only. No command, save, loader, resolver, Money, Food or UI caller. Graduation is not reachable
+    /// while #1668 Q43(a) is open: no turn that would bring a course within one turn of its end is counted. Open design points
     /// (#1668 Q42, Q43, Q44 and the 27 Oct list Q9) are refused with a "Deferred:" NotSupportedException.</summary>
     internal sealed class Gdd03TrainingCentreFixture
     {
-        readonly Content content;
         readonly GameState state;
         readonly SortedDictionary<string, Gdd03FixtureTrainingCentre> centres;
         readonly int courseTurns, pupilsPerTeacher, bedsPerCamp, receptionTurns;
+        // Per fixture instance only (not saved): month ordinals of each pupil's enrolment and last counted course turn.
+        readonly SortedDictionary<int, (int enrolment, int lastCounted)> months = new SortedDictionary<int, (int, int)>();
 
         internal Gdd03TrainingCentreFixture(Content content, GameState state, IEnumerable<Gdd03FixtureTrainingCentre> centres)
         {
             if (!content.UsesPopulationLedger || !state.UsesPopulationLedger || !state.PopulationLedger.IsInitialized)
                 throw new InvalidOperationException("Training centre courses require an initialized gdd-0.3 synthetic fixture.");
-            this.content = content; this.state = state;
+            this.state = state;
             courseTurns = content.RequirePopulationInteger("profession.course_turns");
             pupilsPerTeacher = content.RequirePopulationInteger("profession.trainees_per_teacher");
             bedsPerCamp = content.RequirePopulationInteger("reception.capacity");
@@ -147,16 +149,24 @@ namespace Statecraft.Sim
             if (traineeOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
                 || (teacherOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned && !teacherOpenedHere))
                 throw Deferred(Q43);
+            // A bed freed after the month's opening (for example by a cancel) is not reused that month: Q43(b), Q41.
+            if (month.OpeningPeople.Count(p => (p.Assignment.Kind == PopulationAssignmentKind.Reception
+                    && string.Equals(p.Assignment.Target, centre.ParentCamp, StringComparison.Ordinal))
+                || (p.Assignment.Kind == PopulationAssignmentKind.Course
+                    && string.Equals(p.Assignment.Target, centre.Id, StringComparison.Ordinal))) >= bedsPerCamp)
+                throw Deferred(Q43);
 
             var course = new PopulationAssignment(PopulationAssignmentKind.Course, centre.Id, 0, teacher.Id);
             var pupil = trainee.WithPlacement(PopulationStatus.Trainee, trainee.Location, course, trainee.Captor, trainee.Home);
             if (teachingHere) Commit(pupil);
             else Commit(teacher.WithPlacement(teacher.Status, teacher.Location,
                 new PopulationAssignment(PopulationAssignmentKind.Teaching, centre.Id), teacher.Captor, teacher.Home), pupil);
+            months[trainee.Id] = (month.MonthOrdinal, month.MonthOrdinal);
         }
 
-        /// <summary>R-TRAIN-006: count one completed course turn for a course already held at the month's opening.
-        /// At the Agreed course length the same id becomes trained (#1693 helper) and teacher and bed are released.</summary>
+        /// <summary>R-TRAIN-006: count one completed course turn for a course already held at the month's opening, once per
+        /// month ordinal. Counting the turn that would leave one turn or none to go depends on whether the enrolment turn
+        /// counts (#1668 Q43(a)), so it is refused: graduation timing is Deferred and no trained tier is granted here.</summary>
         internal void Advance(int traineeId, Gdd03SyntheticMonthContext month)
         {
             ValidateInventory();
@@ -167,24 +177,26 @@ namespace Statecraft.Sim
                 || !string.Equals(opening.Assignment.Target, centre.Id, StringComparison.Ordinal)
                 || opening.Assignment.TeacherId != trainee.Assignment.TeacherId)
                 throw Deferred(Q43);
+            bool tracked = months.TryGetValue(trainee.Id, out var known);
+            if (tracked)
+            {
+                if (month.MonthOrdinal == known.enrolment) throw Deferred(Q43);
+                if (month.MonthOrdinal <= known.lastCounted) throw new ArgumentException("This month ordinal was already counted or is earlier.");
+            }
             if (!month.CourseEligibleIds.Contains(trainee.Id)) throw Deferred(Q9);
             if (trainee.Assignment.ProgressTicks != opening.Assignment.ProgressTicks)
                 throw new ArgumentException("This month's course turn was already counted.");
 
             int progress = checked(trainee.Assignment.ProgressTicks + 1);
-            if (progress < courseTurns)
-            {
-                Commit(trainee.WithPlacement(trainee.Status, trainee.Location, new PopulationAssignment(PopulationAssignmentKind.Course,
-                    centre.Id, progress, trainee.Assignment.TeacherId), trainee.Captor, trainee.Home));
-                return;
-            }
-            var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
-            var graduate = Released(CivilianProfessionRules.AfterMatchingCourse(content, state, trainee.Id, teacher.Profession));
-            if (Pupils(teacher.Id) > 1) Commit(graduate); else Commit(graduate, Released(teacher));
+            if (progress > courseTurns - 2) throw Deferred(Q43);
+            Commit(trainee.WithPlacement(trainee.Status, trainee.Location, new PopulationAssignment(PopulationAssignmentKind.Course,
+                centre.Id, progress, trainee.Assignment.TeacherId), trainee.Captor, trainee.Home));
+            if (tracked) months[trainee.Id] = (known.enrolment, month.MonthOrdinal);
         }
 
         /// <summary>R-TRAIN-007: cancel keeps the id, profession, tier, tools and their payment fact and reception credit;
-        /// it clears the unfinished course and releases the teacher and the bed. Nothing is refunded or granted.</summary>
+        /// it clears the unfinished course and releases the teacher and the bed. Nothing is refunded or granted and no one
+        /// moves. When the released people and bed can be used again is #1668 Q43(b).</summary>
         internal void Cancel(int traineeId)
         {
             ValidateInventory();
@@ -192,6 +204,7 @@ namespace Statecraft.Sim
             if (!centre.ParentOperating || !centre.UpgradeComplete) throw Deferred(Q9);
             var teacher = ledger.Get(trainee.Assignment.TeacherId!.Value);
             if (Pupils(teacher.Id) > 1) Commit(Released(trainee)); else Commit(Released(trainee), Released(teacher));
+            months.Remove(trainee.Id);
         }
     }
 }
