@@ -407,6 +407,7 @@ namespace Statecraft.Game.UI
             return local;
         }
 
+        // Original catalogue position, retained for existing callers; runtime routing uses message identity.
         public const int EventStep = 5;
         public IReadOnlyList<AdvisorCatalog.Message> Chain => chain;
         public bool InChain => session.Chain.Step >= 0 && IsOpen;
@@ -426,7 +427,12 @@ namespace Statecraft.Game.UI
             return line;
         }
 
-        bool InTour(AdvisorCatalog.Message message) => message.ApprovedIn(hebrew) && AdvisorSignals.When(Context(), message.When);
+        // R-GOV-002 / #1688: keep the complete requires chain, but omit the obsolete resource lesson in 0.3.
+        // A skip is not Queue.Done: it must never write Attention into the shared seen preferences.
+        bool IncludedInTour(AdvisorCatalog.Message message) =>
+            bridge.Content.Ruleset != SaveGame.Gdd03Ruleset || message.Id != "opening.attention";
+        static bool IsEventStep(AdvisorCatalog.Message message) => message.Id == "opening.event";
+        bool InTour(AdvisorCatalog.Message message) => IncludedInTour(message) && message.ApprovedIn(hebrew) && AdvisorSignals.When(Context(), message.When);
         int NextChainStep(int after)
         {
             for (int i = after + 1; i < chain.Count; i++) if (InTour(chain[i])) return i;
@@ -458,7 +464,7 @@ namespace Statecraft.Game.UI
         {
             int step = session.Chain.Step;
             if (disposed || step < 0 || step >= chain.Count || !chain[step].ApprovedIn(hebrew)) return;
-            session.Queue.Done(chain[step], Turn, bridge.State.Date);
+            if (IncludedInTour(chain[step])) session.Queue.Done(chain[step], Turn, bridge.State.Date);
             int next = NextChainStep(step);
             if (next < 0) CloseChain(); else ShowStep(next);
         }
@@ -482,15 +488,22 @@ namespace Statecraft.Game.UI
         void ShowStep(int step)
         {
             session.Chain.Step = step;
+            // A retained original index can be restored on a presenter rebuild. Route before Fill/targets/media.
+            if (!IncludedInTour(chain[step]))
+            {
+                int next = NextChainStep(step);
+                if (next < 0) CloseChain(); else ShowStep(next);
+                return;
+            }
             if (!chain[step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
             if (Covered(hudRoot)) { Hide(); return; }
             // The same step drawn again (the game changed under it, or a layer over it closed): its city or unit stays as
             // the player has it now, rather than being put back and shown again on every change.
             bool same = ReferenceEquals(Shown, chain[step]) && target != null;
             if (!same) ClearTarget();
-            if (step == EventStep) session.Chain.EventShown = true;
+            if (IsEventStep(chain[step])) session.Chain.EventShown = true;
             Fill(chain[step]);
-            bool Counted(int i) => chain[i].ApprovedIn(hebrew) && (i == EventStep ? session.Chain.EventShown || InTour(chain[i]) : InTour(chain[i]));
+            bool Counted(int i) => IncludedInTour(chain[i]) && chain[i].ApprovedIn(hebrew) && (IsEventStep(chain[i]) ? session.Chain.EventShown || InTour(chain[i]) : InTour(chain[i]));
             int number = Enumerable.Range(0, step + 1).Count(Counted), total = Enumerable.Range(0, chain.Count).Count(Counted);
             count.text = text.Format("advisor.step", number, total);
             gotIt.text = text[NextChainStep(step) < 0 ? "advisor.done" : "advisor.next"];
@@ -504,9 +517,10 @@ namespace Statecraft.Game.UI
         {
             if (session.Chain.Step < 0) return;
             if (Turn != session.Chain.OpenTurn) { CloseChain(hooks.Card?.Shown?.Id == session.Chain.CardEvent); return; }
+            if (!IncludedInTour(chain[session.Chain.Step])) { ShowStep(session.Chain.Step); return; }
             if (!chain[session.Chain.Step].ApprovedIn(hebrew)) { Shown = null; Hide(); return; }
             if (Covered(hudRoot)) { Hide(); return; }
-            if (session.Chain.Step == EventStep && hooks.Card?.Shown == null)
+            if (IsEventStep(chain[session.Chain.Step]) && hooks.Card?.Shown == null)
             {
                 NextStep();                                 // the card was answered: on to the next step
                 if (InChain) TakeFocusFromTheCard();

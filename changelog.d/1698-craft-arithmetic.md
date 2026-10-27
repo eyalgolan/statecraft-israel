@@ -1,0 +1,1 @@
+- Add isolated GDD 0.3 craftsman catalogue and course/work tick arithmetic for synthetic fixtures.

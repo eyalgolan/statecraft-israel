@@ -1021,3 +1021,218 @@ public class AdvisorOpeningParityTests
         }
     }
 }
+
+
+public class AdvisorOpeningNoAttentionParityTests
+{
+    // R-GOV-002: both language rebuild directions preserve indices and visible positions.
+    [TestCase(false)] [TestCase(true)]
+    public void RebuildKeepsEveryVisibleStepAndItsPosition(bool startsHebrew)
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(startsHebrew); rig.Advisor.OpenChain();
+        for (int n = 0; n < AdvisorTour1688Fixture.Visible.Length; n++)
+        {
+            var id = AdvisorTour1688Fixture.Visible[n]; Assert.AreEqual(id, rig.Advisor.Shown?.Id);
+            var index = rig.Session.Chain.Step; rig.Rebuild(!startsHebrew);
+            Assert.AreEqual(id, rig.Advisor.Shown?.Id); Assert.AreEqual(index, rig.Advisor.ChainStep);
+            Assert.AreEqual(AdvisorTour1688Fixture.Text(!startsHebrew).Format("advisor.step", n + 1, 6), rig.Ui.Q<Label>("advisor-count").text);
+            rig.Rebuild(startsHebrew); Assert.AreEqual(id, rig.Advisor.Shown?.Id); rig.Advisor.NextStep();
+        }
+        Assert.IsFalse(rig.Advisor.InChain); Assert.AreEqual("player", rig.Selection);
+        Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
+    }
+
+    // R-GOV-002: base has no Back control. Restore earlier retained steps, including
+    // the original Attention index; it must route forward without being marked seen.
+    [Test]
+    public void BackwardRetainedStepRestorationNeverRendersAttention()
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(); rig.Advisor.OpenChain();
+        rig.Advisor.NextStep(); Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+        foreach (var index in new[] { 0, 1, 0, 2 })
+        {
+            rig.Advisor.Dispose(); rig.Session.Chain.Step = index; rig.Rebuild(false);
+            Assert.AreEqual(index < 1 ? "opening.greeting" : "opening.city", rig.Advisor.Shown?.Id);
+            Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
+        }
+    }
+
+    // R-GOV-002: the event message opens the card, after four visible predecessors.
+    [TestCase(false)] [TestCase(true)]
+    public void EventMessageOpensTheCardAndResumesAfterBothSyntheticDecisions(bool he)
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(he); rig.Advisor.OpenChain();
+        foreach (var id in AdvisorTour1688Fixture.Visible.Take(4))
+        {
+            Assert.AreEqual(id, rig.Advisor.Shown?.Id); Assert.IsTrue(rig.Card.Collapsed); rig.Advisor.NextStep();
+        }
+        Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id); Assert.IsTrue(rig.Card.Collapsed);
+        rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed); Assert.IsFalse(rig.Advisor.IsOpen);
+        rig.Card.Collapse(); Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id); Assert.IsTrue(rig.Advisor.IsOpen);
+        rig.Ui.Press("advisor-show-me"); UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        Assert.AreEqual("tour_test_b", rig.Card.Shown?.Id); Assert.IsFalse(rig.Advisor.IsOpen);
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        Assert.IsNull(rig.Card.Shown); Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", 6, 6), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.IsTrue(rig.Advisor.IsOpen); Assert.AreEqual("player", rig.Selection);
+    }
+
+    // R-GOV-002: a missing decision is another skip; requires cannot block objectives.
+    [Test]
+    public void NoDecisionSkipsEventWithoutBlockingObjectives()
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig();
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        rig.Advisor.OpenChain(); var ids = new List<string>();
+        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 5); rig.Advisor.NextStep(); }
+        CollectionAssert.AreEqual(AdvisorTour1688Fixture.Visible.Where(id => id != "opening.event"), ids);
+    }
+}
+
+
+public class AdvisorOpeningEventIdentityTests
+{
+    // R-GOV-002: shift the catalogue event index with a synthetic, condition-skipped step.
+    // A positional EventStep check would lose the event from the total after its card is answered.
+    [Test]
+    public void EventIdentitySurvivesAnAdditionalSkippedPredecessor()
+    {
+        var yaml = File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved")
+            .Replace("requires: [opening.move]", "requires: [opening.detour]")
+            .Replace("pages: []", "  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages: []");
+        using var rig = new AdvisorTour1688Fixture.Rig(catalog: AdvisorCatalog.Parse(yaml));
+        rig.Advisor.OpenChain();
+        for (int i = 0; i < 4; i++) rig.Advisor.NextStep();
+        Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
+        Assert.AreNotEqual(AdvisorPresenter.EventStep, rig.Advisor.ChainStep, "shifted catalogue precondition");
+        rig.Ui.Press("advisor-show-me");
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        UiTestKit.Press(rig.Ui.Root.Q("event-options").Query<Button>().First());
+        Assert.AreEqual("opening.objectives", rig.Advisor.Shown?.Id);
+        Assert.AreEqual(AdvisorTour1688Fixture.Text(false).Format("advisor.step", 6, 6), rig.Ui.Q<Label>("advisor-count").text);
+        Assert.IsTrue(rig.Advisor.IsOpen);
+    }
+
+    // R-GOV-002: close restores the initially collapsed card too.
+    [Test]
+    public void ClosingEventRestoresTheOriginallyCollapsedCard()
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(); rig.Card.Collapse(); rig.Advisor.OpenChain();
+        for (int i = 0; i < 4; i++) rig.Advisor.NextStep();
+        Assert.AreEqual("opening.event", rig.Advisor.Shown?.Id);
+        rig.Ui.Press("advisor-show-me"); Assert.IsFalse(rig.Card.Collapsed);
+        rig.Advisor.CloseChain(); Assert.IsTrue(rig.Card.Collapsed);
+        Assert.AreEqual("player", rig.Selection);
+    }
+}
+
+
+public class AdvisorOpeningNoAttentionGameRootTests
+{
+    readonly List<string> dirs = new List<string>();
+    static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+    string TempDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-tour1688-root-" + Guid.NewGuid().ToString("N"));
+        dirs.Add(dir); return dir;
+    }
+    [TearDown]
+    public void Clean()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        foreach (var dir in dirs) if (Directory.Exists(dir)) Directory.Delete(dir, true);
+        dirs.Clear();
+    }
+
+    // R-GOV-002 / #1688 S1: Settings invokes GameRoot.SwitchLanguage -> Begin(keep: Bridge),
+    // rebuilding the HUD, localized bridge, card and advisor, not just the advisor presenter.
+    // Red-first: base reaches opening.attention instead of opening.city after the first Next.
+    [Test]
+    public void SettingsRebuildKeepsGdd03TourIdentityAndRestoresCardAndSelection()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var settings = new SettingsStore(TempDir());
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.CloseChain();
+        Assert.AreEqual(SaveGame.Gdd03Ruleset, game.Bridge!.Content.Ruleset);
+        Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
+        Assert.IsFalse(game.Card.Collapsed, "the card the tour must put back");
+        Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var city = AdvisorTargets.CityHex(game.Bridge.Content, game.Bridge.State)!.Value;
+        var hex = game.Bridge.Content.Hexes.Where(h => h.Land).Select(h => (h.Q, h.R))
+            .First(h => h != city && game.Units!.UnitToSelectAt(h.Item1, h.Item2) == null);
+        GameRoot.OnHexClicked(map, game.Units!, game.Info!, hex.Item1, hex.Item2);
+        Assert.AreEqual(hex, game.Info!.Selected, "the player's selection before the tour");
+        game.Advisor.OpenChain(); game.Advisor.NextStep();
+        Assert.AreEqual("opening.city", game.Advisor.Shown?.Id);
+        Assert.AreEqual(city, game.Info.Selected, "the tour temporarily selects its city");
+        RoundTrip("opening.city", 2);
+        Assert.AreEqual(city, game.Info!.Selected, "the rebuilt city step selects its city again");
+        game.Advisor!.CloseChain();
+        Assert.AreEqual(hex, game.Info.Selected, "closing restores the player's selection in the rebuilt info panel");
+        Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
+        Assert.IsFalse(game.Card.Collapsed, "closing restores the previously open card in the rebuilt UI");
+
+        game.Advisor.OpenChain();
+        foreach (var id in AdvisorTour1688Fixture.Visible)
+        {
+            Assert.AreEqual(id, game.Advisor!.Shown?.Id);
+            Assert.AreNotEqual("opening.attention", game.Advisor.Shown?.Id);
+            Assert.IsFalse(game.AdvisorSession!.Settings.Seen("opening.attention"));
+            if (id == "opening.event")
+            {
+                RoundTrip(id, 5);
+                UiTestKit.Press(Ui.Q<Button>("advisor-show-me"));
+                Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
+                Assert.IsFalse(game.Card.Collapsed, "the rebuilt event action opens the same decision by identity");
+                game.Card.Collapse();
+                Assert.AreEqual(id, game.Advisor!.Shown?.Id);
+            }
+            game.Advisor.NextStep();
+        }
+        Assert.IsFalse(game.Advisor!.InChain);
+        Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id);
+        Assert.IsFalse(game.Card.Collapsed, "finishing restores the initially open decision");
+        AssertNoAttention();
+
+        void AssertNoAttention()
+        {
+            Assert.IsFalse(game.AdvisorSession!.Settings.Seen("opening.attention"));
+            Assert.IsFalse(new AdvisorSettings(settings).Seen("opening.attention"), "no shared preference was written");
+            Assert.IsFalse(game.AdvisorSession.Queue.History.Any(e => e.Id == "opening.attention"));
+        }
+        void RoundTrip(string id, int position)
+        {
+            var session = game.AdvisorSession;
+            var sim = game.Bridge!.Session;
+            var index = game.Advisor!.ChainStep;
+            foreach (var language in new[] { UiLanguage.Hebrew, UiLanguage.English })
+            {
+                var oldAdvisor = game.Advisor; var oldCard = game.Card; var oldBridge = game.Bridge;
+                UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+                UiTestKit.Press(Ui.Q<Button>("settings-language-" + language));
+                Assert.AreEqual(language == UiLanguage.Hebrew, Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+                Assert.AreNotSame(oldAdvisor, game.Advisor); Assert.AreNotSame(oldCard, game.Card);
+                Assert.AreNotSame(oldBridge, game.Bridge, "Begin rebuilds the localized bridge over the retained game");
+                Assert.AreSame(sim, game.Bridge!.Session); Assert.AreSame(session, game.AdvisorSession);
+                if (Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass)) UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+                Assert.IsTrue(game.Advisor!.InChain);
+                Assert.AreEqual(id, game.Advisor.Shown?.Id); Assert.AreEqual(index, game.Advisor.ChainStep);
+                Assert.AreNotEqual("opening.attention", game.Advisor.Shown?.Id);
+                Assert.AreEqual(AdvisorTour1688Fixture.Text(language == UiLanguage.Hebrew).Format("advisor.step", position, 6),
+                    Ui.Q<Label>("advisor-count").text);
+                Assert.AreEqual("tour_test_a", game.Card!.Shown?.Id); Assert.IsTrue(game.Card.Collapsed);
+                AssertNoAttention();
+            }
+        }
+    }
+}
