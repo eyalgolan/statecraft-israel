@@ -176,8 +176,11 @@
                 <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
-                 second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
-            <ui:VisualElement name="info-gdd" class="info-gdd" />
+                 second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd).
+                 Hidden until GddHexPanel fills it (it sets the display on every render): shown empty on the two- and
+                 three-row HUD, its 100% width took the whole unwrapped row and left the facts column 0 px wide, so their
+                 text wrapped a word a line and the panel's height swung by over 1000 px between runs (#40). -->
+            <ui:VisualElement name="info-gdd" class="info-gdd" style="display: none;" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
         </ui:ScrollView>
         <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
