@@ -29,7 +29,13 @@ public class CameraInputTests
         var map = asset.FindActionMap("Camera", true);
         foreach (var name in new[] { "Pan", "DragPan", "Zoom", "ZoomKeys", "Orbit" }) Assert.IsNotNull(map.FindAction(name), name);
         Assert.AreEqual(8, map.FindAction("Pan").bindings.Count(b => b.isPartOfComposite && b.path.StartsWith("<Keyboard>/")));
-        Assert.AreEqual(3, map.FindAction("DragPan").bindings.Count);
+        // Two OneModifier composites since #998: the right button and the left one, each over <Mouse>/delta. Naming the
+        // modifiers says more than the count, and catches a composite losing its button rather than only its arity.
+        Assert.AreEqual(6, map.FindAction("DragPan").bindings.Count);
+        CollectionAssert.AreEquivalent(new[] { "<Mouse>/rightButton", "<Mouse>/leftButton" },
+            map.FindAction("DragPan").bindings.Where(b => b.name == "modifier").Select(b => b.path).ToArray());
+        CollectionAssert.AreEquivalent(new[] { "<Mouse>/delta", "<Mouse>/delta" },
+            map.FindAction("DragPan").bindings.Where(b => b.name == "binding").Select(b => b.path).ToArray());
         Assert.AreEqual(1, map.FindAction("Zoom").bindings.Count);
         // a11y B1a: = and -, and the numpad's + and -, as two 1D composites; the wheel's Zoom keeps its one binding.
         CollectionAssert.AreEquivalent(new[] { "<Keyboard>/equals", "<Keyboard>/minus", "<Keyboard>/numpadPlus", "<Keyboard>/numpadMinus" },

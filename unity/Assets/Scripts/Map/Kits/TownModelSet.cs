@@ -4,12 +4,9 @@ using UnityEngine;
 
 namespace Statecraft.Game.Map.Kits
 {
-    /// <summary>The town models in <see cref="TownModel"/> order: each one's full mesh (Tal Heuberger's), its material, and three
-    /// lighter levels of detail baked from the full mesh by the editor (TownModelAssets, with Unity's Mesh LOD generator) and
-    /// kept as sub-assets of this list. They are separate meshes, not Mesh LOD ranges of one mesh: a WebGL build drew the
-    /// full mesh whatever RenderParams.forceMeshLod asked for (measured 16 October 2026, issue #659). The map scene's
-    /// MapScene references this list, so the models load with the map and never through a Resources folder (owner,
-    /// 16 October 2026: "No, load with the map").</summary>
+    /// <summary>The Editor/test town-model list. Every tier references the same full original mesh (#1273).
+    /// In play, TownModelLayer assembles an equivalent list from individually streamed building prefabs;
+    /// Map.unity has no reference to the asset, so these originals are outside the initial download.</summary>
     public sealed class TownModelSet : ScriptableObject
     {
         public Mesh[] meshes = System.Array.Empty<Mesh>();

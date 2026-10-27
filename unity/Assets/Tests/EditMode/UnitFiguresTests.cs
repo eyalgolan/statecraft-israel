@@ -85,22 +85,32 @@ public class UnitFiguresTests
     {
         var model = piece.Find(UnitFigures.ModelName);
         Bounds? box = null;
-        void Add(Bounds b, Transform at)
+        void Add(Bounds b, Transform mesh)
         {
-            var m = piece.worldToLocalMatrix * at.localToWorldMatrix;
+            var m = piece.worldToLocalMatrix * mesh.localToWorldMatrix;
             for (int c = 0; c < 8; c++)
             {
                 var p = m.MultiplyPoint3x4(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
                 if (box is Bounds bb) { bb.Encapsulate(p); box = bb; } else box = new Bounds(p, Vector3.zero);
             }
         }
-        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true)) Add(f.sharedMesh.bounds, f.transform);
+        foreach (var f in model.GetComponentsInChildren<MeshFilter>(true))
+            if (f.sharedMesh != null) Add(f.sharedMesh.bounds, f.transform);
         foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
-            var baked = new Mesh();
-            try { skin.BakeMesh(baked); Add(baked.bounds, skin.transform); }
-            finally { UnityEngine.Object.DestroyImmediate(baked); }
+            var posed = new Mesh();
+            try
+            {
+                skin.BakeMesh(posed, true);
+                foreach (var vertex in posed.vertices)
+                {
+                    var point = piece.InverseTransformPoint(skin.transform.TransformPoint(vertex));
+                    if (box is Bounds have) { have.Encapsulate(point); box = have; } else box = new Bounds(point, Vector3.zero);
+                }
+            }
+            finally { UnityEngine.Object.DestroyImmediate(posed); }
         }
+        Assert.IsTrue(box.HasValue, "the original has static or posed skinned geometry");
         return box!.Value;
     }
 
@@ -190,17 +200,19 @@ public class UnitFiguresTests
             var go = (GameObject)PrefabUtility.InstantiatePrefab(Prefab(id));
             try
             {
-                var animator = go.GetComponentInChildren<Animator>();
-                if (animator != null) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Rebind(); animator.Update(0f); }
-                var rs = go.GetComponentsInChildren<Renderer>();
-                var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
+                // Far originals now keep their skin; use the placement's frame-zero operation, not the bind pose.
+                var controllers = go.GetComponentsInChildren<Animator>().Select(x => x.runtimeAnimatorController).ToArray();
                 if (CollectionCatalog.IsFullQualityGeneratedInfantry(id))
                 {
-                    var skin = go.GetComponentInChildren<SkinnedMeshRenderer>(); var baked = new Mesh();
-                    try { skin.BakeMesh(baked); var vertices = baked.vertices.Select(skin.transform.TransformPoint).ToArray();
-                        b = new Bounds(vertices[0], Vector3.zero); foreach (var v in vertices) b.Encapsulate(v); }
-                    finally { UnityEngine.Object.DestroyImmediate(baked); }
+                    foreach (var a in go.GetComponentsInChildren<Animator>()) { a.Rebind(); a.Update(0f); }
                 }
+                else
+                {
+                    OriginalModelPose.Sample(go);
+                    Assert.IsTrue(go.GetComponentsInChildren<Animator>().All(x => !x.enabled), "far poses do not keep animators running");
+                }
+                CollectionAssert.AreEqual(controllers, go.GetComponentsInChildren<Animator>().Select(x => x.runtimeAnimatorController));
+                var b = WorldBounds(go.transform); // the current rendered pose, not the source animation's culling envelope
                 Debug.Log($"UNITS figures {id}: {b.size.x:0.000} x {b.size.z:0.000}, {b.size.y:0.000} tall");
                 Assert.Less(Mathf.Max(b.size.x, b.size.z), 0.55f * b.size.y, $"{id}: arms down, not a T-pose (wider than half his height)");
             }
@@ -228,7 +240,8 @@ public class UnitFiguresTests
             CollectionAssert.AreEquivalent(new[] { "carmeli", "givati", "givati", "harel", "harel", "yiftach", "negev", "negev" }, vehicles.Select(v => v.parent.name),
                 "the guns of the 11 July distribution, Givati's armoured trucks and the Harel and Negev jeeps");
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far), "the strategic-zoom mesh");
-            CollectionAssert.AreEquivalent(WarModels, asked.Select(a => a.id), "each token model once, including the forces' own figures prefetched ahead");
+            var activeModels = UnitRoster.Build(Units, C, StateAt(July12, 0.8), _ => true).SelectMany(ModelsOf).Distinct();
+            CollectionAssert.AreEquivalent(activeModels, asked.Select(a => a.id), "each active roster model once; no inactive-force prefetch pin");
             Assert.IsTrue(figures.All(f => !UnitFigures.Dressed(f) && f.GetComponent<MeshRenderer>().enabled), "the code-built figures until the models arrive");
             Assert.IsTrue(vehicles.All(v => v.childCount == 0 && v.GetComponentsInChildren<Renderer>().Length == 0), "no vehicle is drawn before it arrives");
             var before = figures.ToDictionary(f => f, f => (f.position, f.rotation));
@@ -384,10 +397,21 @@ public class UnitFiguresTests
 
     static Bounds WorldBounds(Transform model)
     {
-        var rs = model.GetComponentsInChildren<Renderer>(true);
-        var b = rs[0].bounds;
-        foreach (var r in rs) b.Encapsulate(r.bounds);
-        return b;
+        Bounds? result = null;
+        void Add(Vector3 point) { if (result is Bounds b) { b.Encapsulate(point); result = b; } else result = new Bounds(point, Vector3.zero); }
+        foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
+        {
+            var box = filter.sharedMesh.bounds;
+            for (int i = 0; i < 8; i++) Add(filter.transform.TransformPoint(new Vector3((i & 1) == 0 ? box.min.x : box.max.x, (i & 2) == 0 ? box.min.y : box.max.y, (i & 4) == 0 ? box.min.z : box.max.z)));
+        }
+        foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            var mesh = new Mesh();
+            try { skin.BakeMesh(mesh, true); foreach (var point in mesh.vertices) Add(skin.transform.TransformPoint(point)); }
+            finally { UnityEngine.Object.DestroyImmediate(mesh); }
+        }
+        Assert.IsTrue(result.HasValue, "the original has actual geometry");
+        return result!.Value;
     }
 
     static Camera TopDownCamera(Transform parent)
@@ -419,8 +443,10 @@ public class UnitFiguresTests
             var units = Units;
             var layer = UnitLayer.Create(map, units, C.Hexes, still: true);
             layer.Show(C, StateAt(May20, 0.8));
-            CollectionAssert.IsSubsetOf(new[] { UnitFigures.ArabLegion, UnitFigures.Irregular,
-                UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry }, asked.Keys, "each deployed force's figure is asked for");
+            CollectionAssert.IsSubsetOf(new[] { UnitFigures.ArabLegion, UnitFigures.Irregular }, asked.Keys,
+                "each force in this dated legacy roster is asked for");
+            Assert.IsFalse(asked.ContainsKey(UnitFigures.SyrianInfantry), "no inactive global prefetch pin");
+            Assert.IsFalse(asked.ContainsKey(UnitFigures.IraqiInfantry), "no inactive global prefetch pin");
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "no Arab force before its figure arrives");
             asked[UnitFigures.Irregular](null);   // the ALA's figure never comes
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Side != UnitData.Israel), "a figure that never comes draws nothing");
@@ -459,6 +485,42 @@ public class UnitFiguresTests
                     Assert.AreNotEqual(Control1948.Side.Israel, side, $"{u.Id} at {a.Place}: not on ground Israel held");
                 }
             LogAssert.NoUnexpectedReceived();
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [TestCase("syrian_army", UnitFigures.SyrianInfantry)]
+    [TestCase("iraqi_expeditionary_force", UnitFigures.IraqiInfantry)]
+    public void AFormationRequestsItsOwnModelOnlyWhileItIsPresentInTheSimState(string row, string model)
+    {
+        var map = BuildMap(); var asked = new Dictionary<string, Action<GameObject>>();
+        UnitFigures.Source = (id, detail, done) => asked[id] = done;
+        try
+        {
+            var content = ContentLoader.Load(Paths.Content); Assert.IsTrue(content.IsGdd);
+            var force = content.StartingForces.Single(f => f.Row == row);
+            int id = content.StartingForces.IndexOf(force);
+            var state = Simulation.NewGame(content, GoldenRun.Seed, Mode.Historical);
+            Assert.IsTrue(state.Units.TryGetValue(id, out var unit), "real GDD content supplies this existing formation");
+            state.Units.Remove(id);
+            var layer = UnitLayer.Create(map, Units, content.Hexes, still: true); layer.Show(content, state);
+            Assert.IsFalse(asked.ContainsKey(model), "an absent unit has no residency demand");
+            // Synthetic remove/restore of the real instance tests residency, not resolver arrival dates or saves.
+            state.Units[id] = unit!;
+            layer.Show(content, state);
+            Assert.IsTrue(asked.ContainsKey(model));
+            Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Id == row), "no placeholder before its own figure arrives");
+            asked[model](Prefab(model));
+            var token = layer.Tokens.Single(t => t.Token.Unit.Id == row);
+            Assert.AreEqual(model, token.Token.ArtType);
+            var figures = Tokens(map).Find(row).Cast<Transform>().Where(t => t.name.StartsWith("Figure")).ToList();
+            Assert.AreEqual(3, figures.Count);
+            foreach (var f in figures)
+            {
+                Assert.IsTrue(UnitFigures.Dressed(f));
+                StringAssert.StartsWith(model, f.Find(UnitFigures.ModelName).GetChild(0).name);
+                Assert.IsTrue(f.GetComponentInChildren<Animator>(true).enabled, "new generated rigs keep their existing animation");
+            }
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -503,17 +565,19 @@ public class UnitFiguresTests
             try
             {
                 if (damaged)
-                    foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.Vehicles, CollectionCatalog.ArabArmies })
+                    foreach (var b in WarModels.Select(CollectionCatalog.BundleOf).Distinct())
                         File.WriteAllBytes(Path.Combine(folder, b), System.Text.Encoding.ASCII.GetBytes("not-a-bundle"));
                 UnitFigures.Forget();
                 var stream = new CollectionStream(new CollectionStream.BundleSource(folder));
-                UnitFigures.Source = (id, d, done) => stream.Enqueue(id, d, done);
+                var requested = new List<string>();
+                UnitFigures.Source = (id, d, done) => { requested.Add(id); stream.Enqueue(id, d, done); };
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
-                // In the order the stream opens them: the Arab armies' figures are asked for first (UnitLayer prefetches them),
-                // but their bundle waits for the people's (#1763), then comes before the vehicles' asked for after it.
-                foreach (var b in new[] { CollectionCatalog.People, CollectionCatalog.ArabArmies, CollectionCatalog.Vehicles })
+                // Original people requests precede the shared Arab bundle (#1763), even when its request was queued first.
+                var expectedBundles = requested.Distinct().OrderBy(id => CollectionCatalog.IsFullQualityGeneratedInfantry(id) ? 1 : 0)
+                    .Select(CollectionCatalog.BundleOf).Distinct();
+                foreach (var b in expectedBundles)
                     LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);
                 var figures = Pieces(map, "Rifleman");

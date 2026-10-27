@@ -402,4 +402,36 @@ public class CabinetTests
         Assert.DoesNotContain(Cabinet.Lineup(c, new GameState { Date = new DateTime(1949, 6, 13) }), seat => seat.Office.Id == "minority_affairs_minister");
         Assert.DoesNotContain(Cabinet.Vacancies(c, new GameState { Date = new DateTime(1949, 6, 14), Attention = 4 }, none), o => o.Id == "minority_affairs_minister");
     }
+
+    [Fact]
+    public void AppointmentAndReshuffleRowsSnapshotTheirPeopleAndDatedTitles()
+    {
+        var c = Load();
+        var office = c.Offices.Single(x => x.Id == "finance_minister");
+        // Synthetic titles, native-review-pending; these assert snapshots, not historical names.
+        office.TitleHe = "תפקיד קודם";
+        office.TitleHeFrom = new DateTime(1948, 5, 15);
+        office.TitleHeUntil = new DateTime(1948, 5, 16);
+        var s = Simulation.NewGame(c, 42, Mode.Historical);
+        var why = new List<Cause>();
+        Assert.Null(Cabinet.Appoint(c, s, "finance_minister", "loyalist", why));
+        var appointed = Assert.Single(why, x => x.Key == "appointed");
+        var replaced = Assert.Single(why, x => x.Key == "reshuffle");
+        Assert.Equal(new[] { "loyalist", "תפקיד קודם", "def_two" }, appointed.Args);
+        Assert.Equal("Loy Alist appointed Minister of Finance, replacing Def Two", appointed.Message);
+        Assert.Equal(new[] { "", "def_two", "other", "Minister of Finance", "תפקיד קודם" }, replaced.Args);
+        Assert.Equal("Coalition stability -10.0% (Def Two lost the Minister of Finance)", replaced.Message);
+        why.Clear();
+        Assert.Null(Cabinet.Appoint(c, s, "finance_minister", "loyal_two", why));
+        var reshuffled = Assert.Single(why, x => x.Key == "reshuffle");
+        Assert.Equal(new[] { "alpha", "loyalist", "same", "Minister of Finance", "תפקיד קודם" }, reshuffled.Args);
+        Assert.Equal("Coalition stability -3.0% (Alpha resents the reshuffle)", reshuffled.Message);
+        s.Date = s.Date.AddDays(2);
+        Assert.Equal("", office.TitleHeOn(Cabinet.Holder(c, s, office.Id), s.Date));
+        office.TitleHe = "תפקיד נוכחי";
+        Assert.Equal("תפקיד קודם", appointed.Args[1]);
+        Assert.Equal("def_two", appointed.Args[2]);
+        Assert.Equal("תפקיד קודם", replaced.Args[4]);
+    }
+
 }
