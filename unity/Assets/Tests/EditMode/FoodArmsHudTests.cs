@@ -127,16 +127,19 @@ public class FoodArmsHudTests
         }
     }
 
+    // Ordinal on purpose: StringAssert compares by culture, which ignores U+200E, so it can neither see nor rule out the marks.
     static void AssertStockDirection(bool he, UiText t, int now, long delta, string heading)
     {
         var count = t.Format("hud.stock", now);
-        StringAssert.Contains(he ? "\u200e" + count + "\u200e" : count, heading);
+        var want = he ? "\u200e" + count + "\u200e" : count;
+        Assert.IsTrue(heading.IndexOf(want, StringComparison.Ordinal) >= 0, $"'{want}' in '{heading}'");
         if (delta != 0)
         {
             var signed = t.Format("hud.delta_stock", delta);
-            StringAssert.Contains(he ? "\u200e" + signed + "\u200e" : signed, heading);
+            var wantSigned = he ? "\u200e" + signed + "\u200e" : signed;
+            Assert.IsTrue(heading.IndexOf(wantSigned, StringComparison.Ordinal) >= 0, $"'{wantSigned}' in '{heading}'");
         }
-        if (!he) StringAssert.DoesNotContain("\u200e", heading);
+        if (!he) Assert.AreEqual(-1, heading.IndexOf('\u200e'), "English headings carry no direction marks: " + heading);
     }
 
     [TestCase(false, false)] [TestCase(false, true)]

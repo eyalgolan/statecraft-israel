@@ -45,6 +45,10 @@ public class C241CaptureTests
                 Assert.IsTrue(ScreenNav.IsOpen(root.Q("screen-defence")));
                 Assert.AreEqual(unchanged,b.State.Hash(),"opening and scrolling Defence changes no sim state");
                 Save("defence");
+                // The panel after the budget share: Arms on this branch, the prisoners panel on main.
+                root.Q<ScrollView>("defence-body").ScrollTo(root.Q("defence-arms") ?? root.Q("defence-prisoners"));
+                for(int i=0;i<20;i++)yield return null;
+                Save("defence-lower");
                 // The same turn on both trees: one End turn with no order, then the report it opens and Why.
                 nav.Close(); for(int i=0;i<5;i++)yield return null;
                 using var report=new TurnReportPresenter(root,b,t,nav); using var why=new WhyPresenter(root,b,t);
