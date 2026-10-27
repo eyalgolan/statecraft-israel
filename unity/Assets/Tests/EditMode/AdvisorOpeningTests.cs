@@ -179,3 +179,143 @@ public class AdvisorOpeningTests
         Assert.IsFalse(rig.Advisor.InChain); Assert.AreEqual(state, rig.Bridge.State.Hash()); Assert.AreEqual(save, rig.Bridge.Session.Save.Write()); Assert.IsEmpty(rig.Bridge.Queued);
     }
 }
+
+
+// R-GOV-002 / #1688: isolated test sessions; no shipped selector is changed.
+internal static class AdvisorTour1688Fixture
+{
+    internal static readonly string[] Visible = { "opening.greeting", "opening.city", "opening.training", "opening.move", "opening.event", "opening.objectives" };
+    internal static UiText Text(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+    internal static Content Content(string ruleset = SaveGame.Gdd03Ruleset)
+    {
+        // Borrow existing topology/rules but replace ALL historical cards before creating any session.
+        // None of the gdd03-events exclusion manifest becomes a synthetic 0.3 card.
+        var c = ContentLoader.Load(Paths.Content);
+        foreach (var era in c.Eras)
+        {
+            era.Systems.Loop = ruleset == SaveGame.LegacyRuleset ? EraSystems.Legacy : EraSystems.Gdd;
+            era.Systems.Ruleset = ruleset;
+        }
+        c.Events.Clear(); c.Objectives.Clear();
+        foreach (var id in new[] { "tour_test_a", "tour_test_b" })
+            c.Events.Add(new GameEvent { Id = id, From = c.Rules.Start, Title = "Synthetic decision", Text = "Test only",
+                Options = new List<EventOption> { new EventOption { Id = "yes", Text = "Continue" } } });
+        return c;
+    }
+    internal sealed class Rig : IDisposable
+    {
+        internal readonly UiTestKit Ui = new UiTestKit();
+        internal readonly SimBridge Bridge;
+        internal readonly EventCardPresenter Card;
+        internal readonly AdvisorSession Session;
+        internal readonly AdvisorHooks Hooks;
+        internal AdvisorPresenter Advisor;
+        readonly HudPresenter hud;
+        internal string Selection = "player";
+        internal Rig(bool he = false, SettingsStore? store = null, string ruleset = SaveGame.Gdd03Ruleset, GameSession? game = null, AdvisorCatalog? catalog = null)
+        {
+            Ui.Root.Q("root").RemoveFromClassList("loading");
+            var text = Text(he);
+            Bridge = new SimBridge(game ?? GameSession.New(Content(ruleset), 1, Mode.Historical), text);
+            hud = new HudPresenter(Ui.Root, Bridge, text);
+            Card = new EventCardPresenter(Ui.Root, Bridge, text, null);
+            Session = new AdvisorSession(catalog ?? AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved")), new AdvisorSettings(store), true);
+            Hooks = new AdvisorHooks { Card = Card, ShowCity = () => Selection = "city", ShowUnit = () => Selection = "unit",
+                KeepSelection = () => { var previous = Selection; return () => Selection = previous; } };
+            Advisor = new AdvisorPresenter(Ui.Root, Bridge, text, Session, hooks: Hooks);
+        }
+        internal void Rebuild(bool he)
+        {
+            Advisor.Dispose();
+            Advisor = new AdvisorPresenter(Ui.Root, Bridge, Text(he), Session, hooks: Hooks);
+        }
+        public void Dispose() { Advisor.Dispose(); Card.Dispose(); hud.Dispose(); Ui.Dispose(); }
+    }
+}
+
+public class AdvisorOpeningNoAttentionTests
+{
+    readonly List<string> dirs = new List<string>();
+    SettingsStore Store()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "statecraft-tour1688-" + Guid.NewGuid().ToString("N"));
+        dirs.Add(path); return new SettingsStore(path);
+    }
+    [TearDown] public void Clean() { foreach (var d in dirs) if (Directory.Exists(d)) Directory.Delete(d, true); dirs.Clear(); }
+
+    // R-GOV-002: traverse requires:[opening.attention] without recording it as watched.
+    [TestCase(false, false)] [TestCase(true, false)] [TestCase(false, true)] [TestCase(true, true)]
+    public void AutoStartAndManualReplaySkipAttentionWithoutChangingItsPreference(bool he, bool alreadySeen)
+    {
+        var store = Store(); if (alreadySeen) store.Write(AdvisorSettings.SeenKey, "opening.attention");
+        using var rig = new AdvisorTour1688Fixture.Rig(he, store);
+        rig.Advisor.NewGame(); Assert.IsTrue(rig.Advisor.InChain);
+        var state = rig.Bridge.State.Hash(); var save = rig.Bridge.Session.Save.Write();
+        for (int replay = 0; replay < 2; replay++)
+        {
+            if (replay > 0) rig.Advisor.OpenChain();
+            var visited = new List<string>();
+            while (rig.Advisor.InChain)
+            {
+                visited.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(visited.Count, 6, "requires must not dead-end or loop");
+                Assert.AreEqual(AdvisorTour1688Fixture.Text(he).Format("advisor.step", visited.Count, 6), rig.Ui.Q<Label>("advisor-count").text);
+                rig.Advisor.NextStep();
+            }
+            CollectionAssert.AreEqual(AdvisorTour1688Fixture.Visible, visited);
+            Assert.AreEqual(alreadySeen, rig.Session.Settings.Seen("opening.attention"));
+            Assert.IsFalse(rig.Session.Queue.History.Any(e => e.Id == "opening.attention"));
+        }
+        Assert.AreEqual(alreadySeen, new AdvisorSettings(store).Seen("opening.attention"));
+        Assert.AreEqual(state, rig.Bridge.State.Hash()); Assert.AreEqual(save, rig.Bridge.Session.Save.Write());
+        Assert.IsEmpty(rig.Bridge.Queued);
+        rig.Advisor.NewGame(); Assert.IsFalse(rig.Advisor.InChain, "profile already opened the tour");
+    }
+
+    // R-GOV-002: closing each visible step restores card/selection; replay starts at greeting.
+    [TestCase(false)] [TestCase(true)]
+    public void EveryVisibleStepCanCloseAndReopen(bool he)
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(he);
+        foreach (var id in AdvisorTour1688Fixture.Visible)
+        {
+            rig.Advisor.OpenChain();
+            for (int n = 0; rig.Advisor.Shown?.Id != id && n < 6; n++) rig.Advisor.NextStep();
+            Assert.AreEqual(id, rig.Advisor.Shown?.Id);
+            rig.Ui.Press("advisor-close"); Assert.IsFalse(rig.Advisor.InChain);
+            Assert.AreEqual("player", rig.Selection); Assert.IsFalse(rig.Card.Collapsed);
+        }
+        Assert.IsFalse(rig.Session.Settings.Seen("opening.attention"));
+    }
+
+    // R-GOV-002: new controls; every original old-mode test above is untouched.
+    [TestCase(SaveGame.LegacyRuleset)] [TestCase(SaveGame.GddRuleset)]
+    public void OlderSessionsStillTraverseAndRememberAttention(string ruleset)
+    {
+        using var rig = new AdvisorTour1688Fixture.Rig(ruleset: ruleset);
+        rig.Advisor.OpenChain(); var ids = new List<string>();
+        while (rig.Advisor.InChain) { ids.Add(rig.Advisor.Shown!.Id); Assert.LessOrEqual(ids.Count, 7); rig.Advisor.NextStep(); }
+        CollectionAssert.AreEqual(AdvisorPresenter.ChainIds(rig.Session.Catalog), ids);
+        Assert.IsTrue(rig.Session.Settings.Seen("opening.attention"));
+        Assert.IsTrue(rig.Session.Queue.History.Any(e => e.Id == "opening.attention"));
+    }
+}
+
+
+public class AdvisorOpeningNoAttentionPreferenceTests
+{
+    // R-GOV-002: an already-opened profile still has manual replay, with no Attention seen mark.
+    [Test]
+    public void AlreadyOpenedProfileReplaysManuallyWithoutAttention()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "statecraft-tour1688-seen-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new SettingsStore(path); store.Write(AdvisorSettings.OpeningKey, "seen");
+            using var rig = new AdvisorTour1688Fixture.Rig(store: store);
+            rig.Advisor.NewGame(); Assert.IsFalse(rig.Advisor.InChain);
+            rig.Advisor.OpenChain(); rig.Advisor.NextStep(); Assert.AreEqual("opening.city", rig.Advisor.Shown?.Id);
+            Assert.IsFalse(new AdvisorSettings(store).Seen("opening.attention"));
+        }
+        finally { if (Directory.Exists(path)) Directory.Delete(path, true); }
+    }
+}
