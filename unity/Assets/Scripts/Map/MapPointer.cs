@@ -180,10 +180,10 @@ namespace Statecraft.Game.Map
             var t = ts.primaryTouch;
             var pressed = 0;
             foreach (var touch in ts.touches)
-                if (touch.press.isPressed) pressed++;
+                if (CameraController.DownThisUpdate(touch)) pressed++;   // counts a finger that already lifted this update (#1792)
             // any other finger down cancels the tap (TapPress): a releasing pinch's thumb is inside the slop, yet must not select
             var tapAt = tap.Step(t.press.wasPressedThisFrame, t.press.wasReleasedThisFrame,
-                t.position.ReadValue(), pressed > (t.press.isPressed ? 1 : 0), t.delta.ReadValue());
+                t.position.ReadValue(), pressed > (CameraController.DownThisUpdate(t) ? 1 : 0), t.delta.ReadValue());
             if (tapAt.HasValue) OnPress(tapAt.Value);   // a tap selects where the finger landed, like a click
         }
 
