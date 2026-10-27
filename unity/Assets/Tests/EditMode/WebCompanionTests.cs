@@ -160,7 +160,7 @@ public sealed class WebCompanionTests
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
         using var mirror = new WebCompanion(ui.Root, text, () => card.Shown != null, _ => { });
         Assert.AreEqual(e.Id, card.Shown!.Id);
-        var capture = System.Environment.GetEnvironmentVariable("C243_CAPTURE_DIR");
+        var capture = System.Environment.GetEnvironmentVariable("WEB_COMPANION_CAPTURE_DIR");
         if (!string.IsNullOrEmpty(capture))
         {
             System.IO.Directory.CreateDirectory(capture);
