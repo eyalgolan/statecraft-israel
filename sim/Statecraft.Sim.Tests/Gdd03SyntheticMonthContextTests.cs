@@ -1,7 +1,7 @@
 using Statecraft.Sim;
 using System.Globalization;
 
-// UNTESTED C301 draft. All ids, counts, progress, capacities and amounts below are
+// Synthetic #1716 contract tests. All ids, counts, progress, capacities and amounts below are
 // test-only synthetic values, not starting-state or balance data.
 public class Gdd03SyntheticMonthContextTests
 {
