@@ -1020,3 +1020,11 @@ why.cause.ending.defeat_economy: "Money and Food ran out"
 why.cause.ending.defeat_war: "The enemy holds a city"
 
 unit.confirm_move: "Send {0} to {1}"
+
+# Puppet regime control in gdd-0.3; economy is a later slice.
+capture.end.intro_puppet: "The occupation period in {0} is over. Choose annexation, a puppet regime or withdrawal. Your choice takes effect at End turn; until you choose, the unit stays and the occupation upkeep continues."
+capture.end.option.puppet: "Install puppet regime"
+capture.end.about.puppet: "The place self-governs under indirect Israeli control after the garrison leaves. The occupation upkeep ends. No units or assignable residents are added."
+map.control.puppet: "Puppet regime"
+info.control.puppet: "{0}: self-governing under indirect Israeli control"
+why.cause.place_puppeted: "{0}: a puppet regime self-governs under indirect Israeli control. No unit has to stay; no units or assignable residents are added"

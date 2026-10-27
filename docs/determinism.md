@@ -450,3 +450,15 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
+
+### Puppet regime control behind gdd-0.3
+
+The `puppet` outcome uses the existing `endocc <settlement> <outcome>` command format.
+Its regime is represented by the existing locality record (`owner=israel,state=puppet`),
+without a new field or schema. No published legacy or gdd-0.1 save bytes change.
+The compatibility gate uses the existing golden manifest and same-run save/replay
+comparisons, including the old-identity controls in `Gdd03CaptureTests`. No new hashes
+are pinned by this change. `Gdd03PuppetTests` covers a completed capture, occupation,
+Puppet installation, parsed save, load and replay. Under the save policy of 27 October
+2026, unpublished gdd-0.3 fixtures may be regenerated without migration; this change
+adds a command-driven fixture and changes no checked-in golden value.

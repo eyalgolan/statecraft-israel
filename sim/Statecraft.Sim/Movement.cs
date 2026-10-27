@@ -260,8 +260,11 @@ namespace Statecraft.Sim
         internal static HashSet<(int Q, int R)> NoEntry(Content c, GameState s, bool enemy = false)
         {
             // An annexed target is Israeli for good (R-CTRL-016, OWNER QUESTION 3 (a) on #799): not enemy-held.
+            // R-CTRL-024: Puppet places, like annexed places, cannot yet be recaptured because enemy capture of the
+            // player's localities is unbuilt (#1305); recapture of both is deferred to later work on enemy capture.
             var ids = c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities
-                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && x.State == SettlementControl.Annexed)).ToList();
+                .Where(id => !(s.Settlements.TryGetValue(id, out var x) && (x.State == SettlementControl.Annexed
+                    || (c.Ruleset == SaveGame.Gdd03Ruleset && x.State == SettlementControl.Puppet)))).ToList();
             var held = new HashSet<(int Q, int R)>(c.SettlementHexes.Where(h => ids.Contains(h.Id)).Select(h => (h.Q, h.R)));
             return enemy ? new HashSet<(int Q, int R)>(c.SettlementHexes.Select(h => (h.Q, h.R)).Where(h => !held.Contains(h))) : held;
         }

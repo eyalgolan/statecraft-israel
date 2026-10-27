@@ -134,23 +134,26 @@ namespace Statecraft.Sim
 
         /// <summary>The kind of <see cref="EndOccupation"/>, with one attention_cost key (R-CTRL-014).</summary>
         public const string EndKind = "end_occupation";
-        /// <summary>The outcomes of EndOccupation (R-CTRL-015; Q-PUP-1 (c): no puppet regime).</summary>
+        /// <summary>The outcomes of EndOccupation (R-CTRL-015 for old identities; R-CTRL-024 for gdd-0.3).</summary>
         public const string Annex = "annex";
         public const string WithdrawOutcome = "withdraw";
+        /// <summary>R-CTRL-024: gdd-0.3 end outcome and self-governing state; Owner records indirect Israeli control.</summary>
+        public const string Puppet = "puppet";
         /// <summary>The <see cref="State"/> of an annexed place: Israeli for good, no timer, upkeep or garrison (R-CTRL-016).</summary>
         public const string Annexed = "annexed";
 
         /// <summary>R-CTRL-015: the end outcomes in their one fixed order, the ruling's words "annex or withdraw".</summary>
         static readonly string[] EndOutcomes = { Annex, WithdrawOutcome };
+        static readonly string[] Gdd03EndOutcomes = { Annex, Puppet, WithdrawOutcome };
 
-        /// <summary>R-CTRL-015: what the end of <paramref name="id"/>'s occupation offers, Annex then Withdraw, each with its
+        /// <summary>R-CTRL-015/024: Annex then Withdraw in old identities; Annex, Puppet, Withdraw in gdd-0.3, each with its
         /// refusal or preview, as <see cref="CaptureOptions"/> does; empty when the place is not awaiting the end. Leaves
         /// <paramref name="s"/> as it found it.</summary>
         public static IReadOnlyList<CaptureOption> EndOptions(Content c, GameState s, string id)
         {
             if (NotEnding(s, id) != null) return Array.Empty<CaptureOption>();
             var options = new List<CaptureOption>();
-            foreach (var outcome in EndOutcomes)
+            foreach (var outcome in c.Ruleset == SaveGame.Gdd03Ruleset ? Gdd03EndOutcomes : EndOutcomes)
             {
                 var after = s.Clone();
                 var refusal = Spend(c, after, EndKind) ?? Ended(c, after, id, outcome, new List<Cause>());
@@ -171,6 +174,8 @@ namespace Statecraft.Sim
             switch (outcome)
             {
                 case Annex: return AnnexPlace(c, s, id, why);
+                case Puppet:
+                    return c.Ruleset == SaveGame.Gdd03Ruleset ? InstallPuppetControlWithoutEconomy(c, s, id, why) : UnknownOutcome;
                 case WithdrawOutcome:
                     // R-CTRL-014: withdrawing needs the unit that holds the place too, as annexing does.
                     if (!Garrisoned(s, c.SettlementTargets.First(x => x.Id == id)))
@@ -178,6 +183,20 @@ namespace Statecraft.Sim
                     return Withdraw(c, s, id, why, false);
                 default: return UnknownOutcome;
             }
+        }
+
+        /// <summary>R-CTRL-024. Control-only seam for the later regime-economy slice: no tax, support cost or price is
+        /// applied here. No city or unit is created, so residents supply neither workers nor a local military AI.</summary>
+        static CaptureRefusal? InstallPuppetControlWithoutEconomy(Content c, GameState s, string id, List<Cause> why)
+        {
+            var target = c.SettlementTargets.First(x => x.Id == id);
+            var name = c.SettlementNames[id];
+            if (!Garrisoned(s, target))
+                return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Puppet needs an Israeli military unit on {name}");
+            var x = s.Settlements[id];
+            s.Settlements[id] = new SettlementControl(Movement.PlayerSide, Puppet, x.Since, x.Depopulated, x.Combatants, x.Buildings, 0, x.Fled);
+            why.Add(new Cause("map", id, 0, $"{name}: a puppet regime self-governs under indirect Israeli control. No unit has to stay; no units or assignable residents are added", key: CauseKeys.PlacePuppeted));
+            return null;
         }
 
         static CaptureRefusal? NotEnding(GameState s, string id) =>

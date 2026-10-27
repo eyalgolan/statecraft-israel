@@ -205,7 +205,8 @@ namespace Statecraft.Sim
     }
 
     /// <summary>Answers the end of <see cref="Settlement"/>'s occupation with <see cref="Outcome"/>: annex or withdraw
-    /// (SettlementControl.End, R-CTRL-014 to R-CTRL-017; no puppet regime, Q-PUP-1 (c)). GDD v0.1 loop only.</summary>
+    /// (SettlementControl.End, R-CTRL-014 to R-CTRL-017; no puppet regime in legacy/gdd-0.1, Q-PUP-1 (c));
+    /// gdd-0.3 also offers Puppet under R-CTRL-024. GDD loop only.</summary>
     public sealed class EndOccupation : Command
     {
         public override string Kind => SettlementControl.EndKind;

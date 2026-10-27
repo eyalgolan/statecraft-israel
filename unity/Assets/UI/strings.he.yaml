@@ -1124,3 +1124,11 @@ why.cause.ending.defeat_war: "האויב מחזיק בעיר"
 
 # native-review-pending: #1661 occupied-destination confirmation
 unit.confirm_move: "שליחת {0} אל {1}"
+
+# Puppet regime control in gdd-0.3: native review pending.
+capture.end.intro_puppet: "תקופת ההחזקה ב{0} הסתיימה. יש לבחור בסיפוח, בהקמת משטר בובות או בנסיגה. הבחירה תיכנס לתוקף בסיום התור; עד שתיבחר אפשרות, היחידה נשארת במקום ועלות ההחזקה נמשכת."
+capture.end.option.puppet: "הקמת משטר בובות"
+capture.end.about.puppet: "המקום מנהל את ענייניו בעצמו תחת שליטה ישראלית עקיפה גם לאחר יציאת חיל המצב. עלות ההחזקה מסתיימת. לא מתווספות יחידות או אוכלוסייה שאפשר לשבץ לעבודה."
+map.control.puppet: "משטר בובות"
+info.control.puppet: "{0}: ניהול עצמי תחת שליטה ישראלית עקיפה"
+why.cause.place_puppeted: "{0}: משטר בובות מנהל את ענייניו בעצמו תחת שליטה ישראלית עקיפה. אין צורך להשאיר יחידה במקום; לא מתווספות יחידות או אוכלוסייה שאפשר לשבץ לעבודה"

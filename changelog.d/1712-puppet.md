@@ -1,0 +1,1 @@
+- GDD 0.3 occupation endings offer a puppet regime between annexation and withdrawal. The locality self-governs under indirect control after the garrison leaves, without adding units or assignable residents. Regime taxes and establishment costs remain deferred. Legacy and gdd-0.1 choices are unchanged.

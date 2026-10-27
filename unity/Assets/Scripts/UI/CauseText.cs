@@ -84,6 +84,7 @@ namespace Statecraft.Game.UI
         // #1682: these branches use captured ids, values and resident flags, never the live GameState.
         static readonly HashSet<string> RemainingKeys = new HashSet<string>
         {
+            CauseKeys.PlacePuppeted,
             CauseKeys.WorkersAssigned, CauseKeys.WagesPaid, CauseKeys.ImmigrantsHoused, CauseKeys.HousingShortage, CauseKeys.ImmigrantsWaiting, CauseKeys.RecruitsVeteran, CauseKeys.CorridorStarted, CauseKeys.CorridorCancelled, CauseKeys.CorridorCompleted, CauseKeys.PioneersVeteran, CauseKeys.MapBorrowed, CauseKeys.MapBuilt, CauseKeys.LandWorkStarted, CauseKeys.SiteStarted, CauseKeys.SiteCancelled, CauseKeys.SiteCompleted, CauseKeys.ProjectStarted, CauseKeys.ProjectCancelled, CauseKeys.ProjectCompleted, CauseKeys.ArmsBought, CauseKeys.FoodHarvest, CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports, CauseKeys.PrisonerFood, CauseKeys.PrisonerFoodShortage, CauseKeys.CraftsmenReturned, CauseKeys.CraftsmenReassigned, CauseKeys.PioneerReturned, CauseKeys.PioneersReassigned, CauseKeys.TrainingStarted, CauseKeys.TrainingArms, CauseKeys.TrainingCancelled, CauseKeys.TrainingArmsReturned, CauseKeys.ReplacementsStopped, CauseKeys.ReplacementsJoined, CauseKeys.MilitaryTrained, CauseKeys.PioneersTrained, CauseKeys.CraftsmenTrained, CauseKeys.Appointed, CauseKeys.Reshuffle, CauseKeys.AppointmentsEnded, CauseKeys.ApprovalStability, CauseKeys.CoalitionCollapsed, CauseKeys.LegislatureConvened, CauseKeys.GovernmentTookOffice, CauseKeys.CoalitionChanged, CauseKeys.EraEnded, CauseKeys.AdvisoryPolicyRejected, CauseKeys.PolicyRejected, CauseKeys.PolicySet, CauseKeys.AdvisoryBudgetRejected, CauseKeys.BudgetRejected, CauseKeys.PlaceCaptured, CauseKeys.EnemyRegained, CauseKeys.PlaceAnnexed, CauseKeys.PlaceWithdrawn, CauseKeys.PlaceDeported, CauseKeys.DeportEffect, CauseKeys.DeportCost, CauseKeys.OccupationStarted, CauseKeys.PendingBecameRaid, CauseKeys.OccupationLostUnit, CauseKeys.OccupationCountdown, CauseKeys.DepopulationSupport
         };
 
@@ -222,6 +223,7 @@ namespace Statecraft.Game.UI
                 case CauseKeys.PlaceWithdrawn:
                     return text.Format(key, Settlement(cause.Target), text["why.cause.withdrew." + A(0)], Residents(A(1)));
                 case CauseKeys.PlaceDeported:
+                case CauseKeys.PlacePuppeted:
                     return text.Format(key, Settlement(cause.Target));
                 case CauseKeys.DeportEffect:
                     return text.Format(key, Name(text, cause.Target), Change(c, cause.Target, cause.Delta), Settlement(A(0)));

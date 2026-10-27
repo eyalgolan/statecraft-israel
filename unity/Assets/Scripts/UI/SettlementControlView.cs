@@ -15,6 +15,7 @@ namespace Statecraft.Game.UI
                 SettlementControl.AwaitingChoice => "awaiting_choice",
                 SettlementControl.Occupied => "occupied",
                 SettlementControl.AwaitingEnd => "awaiting_end",
+                SettlementControl.Puppet => "puppet",
                 _ => null,
             };
         }

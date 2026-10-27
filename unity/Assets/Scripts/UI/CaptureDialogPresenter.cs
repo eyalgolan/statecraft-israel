@@ -131,7 +131,7 @@ namespace Statecraft.Game.UI
             var stem = ending ? EndStem : CaptureStem;
             var name = ContentNames.Settlement(text, c, id, namesHe);
             title.text = name;
-            intro.text = text.Format(stem + ".intro", name);
+            intro.text = text.Format(ending && c.Ruleset == SaveGame.Gdd03Ruleset ? stem + ".intro_puppet" : stem + ".intro", name);
             none.text = text[stem + ".none"];
             reopen.text = text.Format("capture.reopen", name);
             Listed = (ending ? endOptionsFor : optionsFor)(c, s, id).Where(o => o.Refused?.Id != CaptureRefusal.NotInPlay).ToList();

@@ -194,6 +194,7 @@ namespace Statecraft.Sim
         public const string EnemyRegained = "enemy_regained";
         /// <summary>Args: x.Fled ? "1" : "0".</summary>
         public const string PlaceAnnexed = "place_annexed";
+        public const string PlacePuppeted = "place_puppeted";
         /// <summary>Args: moved.Count &gt; 0 ? "1" : "0"; residentsFled ? "1" : "0".</summary>
         public const string PlaceWithdrawn = "place_withdrawn";
         /// <summary>Args: none.</summary>
@@ -238,6 +239,7 @@ namespace Statecraft.Sim
             EventNew, EventChosen, EventDelegated, EventDelegatedPartial, EventAmount, EventStock, EventGrant, EventCity,
             EventUnlock, EventPolicy, EventSetRung, EventRejoin, MilitaryUpkeep,
             ObjectiveCompleted, PrisonersReturned, SoldiersReturned,
+            PlacePuppeted,
             WorkersAssigned, WagesPaid, ImmigrantsHoused, HousingShortage, ImmigrantsWaiting, RecruitsVeteran, CorridorStarted, CorridorCancelled, CorridorCompleted, PioneersVeteran, MapBorrowed, MapBuilt, LandWorkStarted, SiteStarted, SiteCancelled, SiteCompleted, ProjectStarted, ProjectCancelled, ProjectCompleted, ArmsBought, FoodHarvest, FoodShortage, FoodWithoutImports, PrisonerFood, PrisonerFoodShortage, CraftsmenReturned, CraftsmenReassigned, PioneerReturned, PioneersReassigned, TrainingStarted, TrainingArms, TrainingCancelled, TrainingArmsReturned, ReplacementsStopped, ReplacementsJoined, MilitaryTrained, PioneersTrained, CraftsmenTrained, Appointed, Reshuffle, AppointmentsEnded, ApprovalStability, CoalitionCollapsed, LegislatureConvened, GovernmentTookOffice, CoalitionChanged, EraEnded, AdvisoryPolicyRejected, PolicyRejected, PolicySet, AdvisoryBudgetRejected, BudgetRejected, PlaceCaptured, EnemyRegained, PlaceAnnexed, PlaceWithdrawn, PlaceDeported, DeportEffect, DeportCost, OccupationStarted, PendingBecameRaid, OccupationLostUnit, OccupationCountdown, DepopulationSupport,
         };
 
