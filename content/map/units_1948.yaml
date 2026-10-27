@@ -33,8 +33,9 @@
 # name_he, name_he_sources, name_he_review: the unit's Hebrew name, as an accepted source writes it, its sources (a comment
 #   above them quotes the line), and `agent-checked` until a native speaker reads it (#564; CONTENT_POLICY section 2,
 #   rule 6). A name's source does not check the row's facts, so it does not count for wikipedia_only (#902).
-# place_he, since_he, formed_he, first_commander_he, sector_he (each with *_he_sources and *_he_review): the card's text in
-#   Hebrew, shown only in the Hebrew UI, each field falling back to its English alone (#558, #1292). An AI agent drafted
+# number_he, place_he, since_he, formed_he, first_commander_he, sector_he (each with *_he_sources and *_he_review): the card's
+#   text in Hebrew, shown only in the Hebrew UI, each field falling back to its English alone (#558, #1292; number_he is the
+#   subtitle's number, #1219 item 2). An AI agent drafted
 #   them against the he.wiki article of each proper name (the sources); `agent-checked` until a native speaker reads them (#564).
 # wikipedia_only: true when every source of the row is a Wikipedia article (English or Hebrew) or a Wikidata item (for
 #   coordinates only). Such a row is a draft until checked against a published history (Netanel Lorch, The Edge of the
@@ -86,6 +87,10 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.mitgaisim.idf.il/כתבות/ראשי/כללי/אחד-מי-יודע/', checked: '2026-10-17'}]
   number: 1st Brigade
+  number_he: "חטיבה 1"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת גולני: "חטיבת גולני (חטיבה 1) היא חטיבת חיל רגלים סדירה בצה״ל".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%92%D7%95%D7%9C%D7%A0%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: 22 February 1948
@@ -150,6 +155,10 @@ units:
   # Haganah Heritage lexicon, "Golani": "בסוף מאי רוכזו חטיבת כרמלי וחלק מגולני בעמק יזרעאל".
   name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: 2nd Brigade
+  number_he: "חטיבה 2"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת כרמלי: "חטיבת כרמלי – (חטיבה 2; ...)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%9B%D7%A8%D7%9E%D7%9C%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: 22 February 1948
@@ -233,6 +242,10 @@ units:
   # Netanya municipality heritage site (moreshet.netanya.muni.il), page heading "חטיבת אלכסנדרוני".
   name_he_sources: [{url: 'https://moreshet.netanya.muni.il/timeline/?itemId=27824', checked: '2026-10-17'}]
   number: 3rd Brigade
+  number_he: "חטיבה 3"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת אלכסנדרוני: "חטיבת אלכסנדרוני (חטיבה 3; ...)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%90%D7%9C%D7%9B%D7%A1%D7%A0%D7%93%D7%A8%D7%95%D7%A0%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: November 1947 (the Haganah's decision of 7 November)
@@ -288,6 +301,10 @@ units:
   # Haganah Heritage lexicon, "Givati": "גרמו בפברואר 1948 להחלטה להקים בעיר את חטיבת קרייתי".
   name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47227', checked: '2026-10-17'}]
   number: 4th Brigade
+  number_he: "חטיבה 4"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת קרייתי: "חטיבת קרייתי (חטיבה 4, ...)"; "עם הקמת צה״ל הפכה קרייתי לחטיבה 4".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%A7%D7%A8%D7%99%D7%99%D7%AA%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: February 1948
@@ -331,6 +348,10 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.mitgaisim.idf.il/כתבות/ראשי/כללי/אחד-מי-יודע/', checked: '2026-10-17'}]
   number: 5th Brigade
+  number_he: "חטיבה 5"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת גבעתי: "'חטיבת גבעתי' (חטיבה 5 המקורית) הייתה חטיבת חיל רגלים סדירה שלחמה במלחמת העצמאות".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%92%D7%91%D7%A2%D7%AA%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: December 1947
@@ -393,6 +414,10 @@ units:
   # Haganah Heritage lexicon, "Etzioni": "מחטיבת עציוני נבצר להכניס לרובע תגבורת מספקת".
   name_he_sources: [{url: 'https://www.hahagana.org.il/lexicon/lexiconpage/?itemId=47926', checked: '2026-10-17'}]
   number: 6th Brigade
+  number_he: "חטיבה 6"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת עציוני: "חטיבת עציוני, חטיבה 6, היא ...".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%A2%D7%A6%D7%99%D7%95%D7%A0%D7%99', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: Late 1947
@@ -454,6 +479,10 @@ units:
   # Ma'arachot 263-4 (June 1978), "קרבות לטרון", PDF p. 11 (a scan; read on the page image): "חטיבה 7 — חטיבת העתודה החדשה".
   name_he_sources: [{url: 'https://www.maarachot.idf.il/media/aisluj2h/%D7%A9%D7%A2%D7%A8-3-%D7%94%D7%93%D7%99%D7%A4%D7%AA-%D7%94%D7%A4%D7%9C%D7%99%D7%A9%D7%94.pdf', checked: '2026-10-17'}]
   number: 7th Brigade
+  number_he: "חטיבה 7"
+  number_he_review: agent-checked
+  # he.wiki, חטיבה 7: "חטיבה 7, המכונה גם 'עוצבת סער מגולן'".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_7', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: 14 May 1948
@@ -524,6 +553,10 @@ units:
   # Lehi Heritage Association, "June 1948 - 1951": "משבר אמון מחודש כלפי יוצאי לח"י בחטיבה 8".
   name_he_sources: [{url: 'https://lehi.org.il/he/%d7%99%d7%95%d7%a0%d7%99-1948-1951/', checked: '2026-10-17'}]
   number: 8th Brigade
+  number_he: "חטיבה 8"
+  number_he_review: agent-checked
+  # he.wiki, חטיבה 8: "חטיבה 8 היא חטיבת שריון במילואים".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%94_8', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: 24 May 1948
@@ -556,6 +589,10 @@ units:
   # Haganah Heritage lexicon, "Golani": "גדוד זה צורף לחטיבת עודד, עם הקמתה בסוף מאי 1948".
   name_he_sources: [{url: 'https://www.hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: 9th Brigade
+  number_he: "חטיבה 9"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת עודד: "חטיבת עודד (חטיבה 9, ...)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%A2%D7%95%D7%93%D7%93', checked: '2026-10-26'}]
   service: army
   side: israel
   sector: The sources conflict.
@@ -586,6 +623,10 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 10th Brigade (Palmach)
+  number_he: "חטיבה 10 (הפלמ״ח)"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת הראל: "חטיבת הראל (חטיבה 10, ...)". Palmach tag: he.wiki, חטיבת הנגב: "הייתה אחת משלוש חטיבות הפלמ״ח ('יפתח' – בצפון, 'הראל' – במרכז, 'הנגב' – בדרום)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A8%D7%90%D7%9C', checked: '2026-10-26'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A0%D7%92%D7%91', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: 16 April 1948
@@ -658,6 +699,10 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 11th Brigade (Palmach)
+  number_he: "חטיבה 11 (הפלמ״ח)"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת יפתח: "חֲטִיבַת יִפְתָּח - חטיבה 11". Palmach tag: he.wiki, חטיבת הנגב: "הייתה אחת משלוש חטיבות הפלמ״ח ('יפתח' – בצפון, 'הראל' – במרכז, 'הנגב' – בדרום)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%99%D7%A4%D7%AA%D7%97', checked: '2026-10-26'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A0%D7%92%D7%91', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: April 1948
@@ -709,6 +754,10 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=5523', checked: '2026-10-17'}]
   number: 12th Brigade (Palmach)
+  number_he: "חטיבה 12 (הפלמ״ח)"
+  number_he_review: agent-checked
+  # he.wiki, חטיבת הנגב: "חטיבת הנגב (חטיבה 12, ...)"; "הייתה אחת משלוש חטיבות הפלמ״ח ('יפתח' – בצפון, 'הראל' – במרכז, 'הנגב' – בדרום)".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%97%D7%98%D7%99%D7%91%D7%AA_%D7%94%D7%A0%D7%92%D7%91', checked: '2026-10-26'}]
   service: army
   side: israel
   formed: March 1948
@@ -773,6 +822,10 @@ units:
   # Palmach archive, veteran page: "מונה למפקד טייסת 101 ("טייסת הקרב הראשונה")". The IDF page first cited returned no text on re-fetch.
   name_he_sources: [{url: 'https://www.palmach.org.il/veterans/veteranpage/?itemId=75303', checked: '2026-10-17'}]
   number: First Fighter Squadron
+  number_he: "טייסת הקרב הראשונה"
+  number_he_review: agent-checked
+  # he.wiki, טייסת 101: "טייסת 101, המכונה גם 'טייסת הקרב הראשונה'".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%98%D7%99%D7%99%D7%A1%D7%AA_101', checked: '2026-10-26'}]
   service: air
   side: israel
   formed: 20 May 1948
@@ -865,6 +918,10 @@ units:
   # The Palmach service record names the ship; Palyam identifies it as K-20. These sources check the name only.
   name_he_sources: [{url: 'https://palmach.org.il/veterans/veteranpage/?itemId=76294', checked: '2026-10-19'}, {url: 'https://www.palyam.org/Hahapala/Teur_haflagot/hf_Hagana.php', checked: '2026-10-19'}]
   number: Corvette, commissioned 1948
+  number_he: "קורבטה, הוכנסה לשירות ב־1948"
+  number_he_review: agent-checked
+  # he.wiki, אח"י הגנה: "הייתה קורבטה מסדרת פלאואר"; "לאחר הכרזת המדינה שופצה והוכנסה לשירות בחיל הים".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%90%D7%97%22%D7%99_%D7%94%D7%92%D7%A0%D7%94', checked: '2026-10-26'}]
   service: navy
   side: israel
   formed: 1948 (taken over and rearmed by the navy)
@@ -902,6 +959,10 @@ units:
   # 2026: "ווג'ווד".
   name_he_sources: [{url: 'https://palmach.org.il/veterans/veteranpage/?itemId=76294', checked: '2026-10-17'}, {url: 'https://herzl.haifa.ac.il/images/anatkidron.pdf', checked: '2026-10-17'}]
   number: Corvette, commissioned 1948
+  number_he: "קורבטה, הוכנסה לשירות ב־1948"
+  number_he_review: agent-checked
+  # he.wiki, אח"י וג'ווד: "הוא כינויה של הקורבטה השומר (ק-18)"; "ב-9 ביוני 1948 נכנסה וג'ווד ... לשירות קרבי".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%90%D7%97%22%D7%99_%D7%95%D7%92%27%D7%95%D7%95%D7%93', checked: '2026-10-26'}]
   service: navy
   side: israel
   formed: 1948 (commissioned after independence)
@@ -948,6 +1009,11 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.palmach.org.il/history/database/?itemId=8476', checked: '2026-10-17'}]
   number: Two brigade groups (a coastal brigade group and an inland column)
+  number_he: "שתי קבוצות חטיבתיות (קבוצה חטיבתית חופית וטור פנים-ארצי)"
+  number_he_review: agent-checked
+  # he.wiki, מלחמת העצמאות: "בדרום נע הצבא המצרי בשני טורים, הטור המערבי, העיקרי, נע מעזה צפונה לאורך כביש החוף. הטור המזרחי נע דרך באר שבע לחברון ולירושלים".
+  # "קבוצות חטיבתיות" translates the row's sourced English number; both cited Hebrew pages say "בשני טורים".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%9C%D7%97%D7%9E%D7%AA_%D7%94%D7%A2%D7%A6%D7%9E%D7%90%D7%95%D7%AA', checked: '2026-10-26'}, {url: 'https://he.wikipedia.org/wiki/%D7%97%D7%99%D7%9C_%D7%94%D7%9E%D7%A9%D7%9C%D7%95%D7%97_%D7%94%D7%9E%D7%A6%D7%A8%D7%99_%281948%29', checked: '2026-10-26'}]
   service: army
   side: egypt
   echelon: force
@@ -1038,6 +1104,11 @@ units:
   # IDF-hosted article on the 1948 war (PDF): "הלחימה נגד הכוחות המקומיים והכוחות הצבאיים — הלגיון הערבי במרכז". The IDF page first cited returned no text on re-fetch.
   name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/%D7%A1%D7%A8%D7%99%D7%A7%D7%AA_%D7%9E%D7%90%D7%9E%D7%A8_%D7%90%D7%9C%D7%97%D7%A0%D7%9F_%D7%9E%D7%95%D7%92%D7%9E%D7%A8.pdf', checked: '2026-10-17'}]
   number: One division in the field (the 1st, 3rd and 4th brigades)
+  number_he: "דיוויזיה אחת בשדה (החטיבות הראשונה, השלישית והרביעית)"
+  number_he_review: agent-checked
+  # he.wiki, הלגיון הערבי: "לפני סוף מאי 1948 הוא היה מורכב משלוש חטיבות"; "חטיבה 1 של הלגיון פנתה צפונה לעבר שכם"; "חטיבה 3 פנתה מערבה".
+  # The division and the 4th brigade follow the row's sourced English number (the strength note's sources); the cited he.wiki page supports three brigades and names the 1st and 3rd.
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%94%D7%9C%D7%92%D7%99%D7%95%D7%9F_%D7%94%D7%A2%D7%A8%D7%91%D7%99', checked: '2026-10-26'}]
   service: army
   side: jordan
   echelon: division
@@ -1103,6 +1174,10 @@ units:
   # IDF-hosted article on the 1948 war (PDF): "הצבא הסורי פלש לעמק הירדן, כבש את צמח, אבל נהדף בדגניה". The IDF page first cited returned no text on re-fetch.
   name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/%D7%A1%D7%A8%D7%99%D7%A7%D7%AA_%D7%9E%D7%90%D7%9E%D7%A8_%D7%90%D7%9C%D7%97%D7%A0%D7%9F_%D7%9E%D7%95%D7%92%D7%9E%D7%A8.pdf', checked: '2026-10-17'}]
   number: The 1st and 2nd Infantry Brigades
+  number_he: "חטיבות החי״ר הראשונה והשנייה"
+  number_he_review: agent-checked
+  # he.wiki, הצבא הסורי: "עם הקמת 'החטיבה הראשונה' ... בהמשך הוקמו גם חטיבה 2 וחטיבה 3".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%94%D7%A6%D7%91%D7%90_%D7%94%D7%A1%D7%95%D7%A8%D7%99', checked: '2026-10-26'}]
   service: army
   side: syria
   echelon: force
@@ -1169,6 +1244,7 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.idf.il/media/rked3mfr/זרקור-הסברה-עיראק.pdf', checked: '2026-10-17'}]
   number: One infantry brigade and one armoured battalion
+  # number_he: not yet - he.wiki's חיל המשלוח העיראקי במלחמת העצמאות describes the force as division-sized with a mechanised regiment and tank battalion (undated), which does not read as "one infantry brigade and one armoured battalion"; the Hebrew number waits for that to settle (native/owner lane).
   service: army
   side: iraq
   echelon: force
@@ -1232,6 +1308,7 @@ units:
   name_he_review: agent-checked
   name_he_sources: [{url: 'https://www.idf.il/media/is5dlct2/סריקת_מאמר_אלחנן_מוגמר.pdf', checked: '2026-10-17'}]
   number: The force that took the field
+  # number_he: not yet - the English number is a descriptive phrase ("The force that took the field") whose only sources are the row's unread-here Glubb/Rogan-Shlaim snippets (checked 2026-10-13); the Hebrew waits for a readable source.
   service: army
   side: lebanon
   echelon: force
@@ -1268,6 +1345,10 @@ units:
   # Haganah Heritage lexicon, "Golani": "מפני התקפות אפשריות של צבא ההצלה". The IDF page first cited returned no text on re-fetch.
   name_he_sources: [{url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47295', checked: '2026-10-17'}]
   number: The Arab League's volunteer army
+  number_he: "צבא המתנדבים של הליגה הערבית"
+  number_he_review: agent-checked
+  # he.wiki, צבא ההצלה: "צבא של מתנדבים ממדינות ערביות ... צבא ההצלה היה יציר כפיה של הליגה הערבית".
+  number_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%94%D7%94%D7%A6%D7%9C%D7%94', checked: '2026-10-26'}]
   service: army
   side: ala
   echelon: force

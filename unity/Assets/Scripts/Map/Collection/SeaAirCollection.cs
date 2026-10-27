@@ -28,6 +28,7 @@ namespace Statecraft.Game.Map.Collection
     /// unit figures). Every craft draws at every zoom, as SeaCraft's boats do. Each model is the Far mesh, asked of
     /// <see cref="CollectionStream"/> when first wanted, so nothing is fetched before the first frame. It fails open: a model
     /// that does not stream logs one warning and is not drawn; the map plays on.</summary>
+    [ExecuteAlways]
     public sealed class SeaAirCollection : MonoBehaviour
     {
         public const string Name = "SeaAirCollection";
@@ -125,6 +126,81 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
+
+        CollectionResidency? residency;
+        CollectionResidencyView? residencyView;
+        Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? ownedAcquire;
+        readonly List<UnityEngine.Object> retired = new List<UnityEngine.Object>();
+        internal CollectionResidencyMetrics.Category ResidencySnapshot() => CollectionResidencyMetrics.Row("craft",
+            isActiveAndEnabled ? Admitted().Count() : 0, transform.childCount,
+            prefabs.Keys.Concat((isActiveAndEnabled ? Admitted().Select(w => w.Model) : Enumerable.Empty<string>())), residency?.OwnerCount ?? 0, residency?.PendingCount ?? 0,
+            prefabs.Values.Count(p => p != null), GetComponentsInChildren<Renderer>(true).Length, 0, prefabs.Values.Count(p => p == null), prefabs.Keys.Select(k => k + "|Far"));
+
+        internal void ConfigureResidency(CollectionResidencyPolicy policy,
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
+        {
+            if (residencyView != null) throw new InvalidOperationException("Residency already configured.");
+            if (asked.Count != 0 && acquire == null) throw new InvalidOperationException("Configure residency before requests; pinned originals remain blockers.");
+            ownedAcquire = acquire; residencyView = new CollectionResidencyView(policy);
+            // Construction configures before first Show; injected acquisition is a test seam.
+            ClearForRetirement();
+        }
+        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer) =>
+            ownedAcquire != null ? ownedAcquire(id, detail, answer) : CollectionStream.Acquire(id, detail, answer);
+        IEnumerable<Want> Admitted()
+        {
+            var keys = residencyView?.Keys;
+            return keys == null ? wants : wants.Where(w => keys.Contains(w.Key));
+        }
+        IEnumerable<(string key, Vector3 at, float radius)> Anchors()
+        {
+            if (map == null) yield break;
+            foreach (var w in wants)
+            {
+                var c = SeaCraft.Coasts.FirstOrDefault(x => x.place == w.Place);
+                yield return (w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model));
+            }
+        }
+        void RefreshResidency()
+        {
+            if (residencyView == null || !isActiveAndEnabled) return;
+            residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) => OnModel(id, prefab),
+                (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("craft", instances, owners, complete,
+                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
+            residency.Replace(Admitted().Select(w => (w.Model, CollectionDetail.Far)));
+            Rebuild();
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement()
+        {
+            ClearVisuals(); prefabs.Clear(); asked.Clear();
+
+            var pending = retired.ToArray(); retired.Clear(); return pending;
+        }
+        void ClearVisuals()
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
+                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+            }
+            Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>();
+            if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
+        }
+        bool residencyDirty;
+        void ObserveResidency(Camera camera)
+        {
+            var before = residencyView!.Keys;
+            residencyView.Observe(camera, Anchors(), Time.frameCount);
+            if (!before.SetEquals(residencyView.Keys))
+            { if (Application.isPlaying) residencyDirty = true; else RefreshResidency(); }
+        }
+        void LateUpdate()
+        {
+            if (residencyView != null && residencyView.Prune(Time.frameCount)) residencyDirty = true;
+            if (residencyDirty) { residencyDirty = false; RefreshResidency(); }
+        }
+        void OnDestroy() { residency?.Dispose(); residency = null; }
+
         MapScene? map;
         Content? content;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
@@ -157,6 +233,7 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<SeaAirCollection>(); layer.map = map;
             }
+            // Not under residency (owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km"): Show asks once in view.
             layer.content = content;
             layer.Show(Wants(date, content), placements.Select(p => (p.Q, p.R)).ToList(), date);
             return layer;
@@ -168,8 +245,13 @@ namespace Statecraft.Game.Map.Collection
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
             if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
             wants = next; placements = placed; taken = others;
+            if (residencyView != null) { RefreshResidency(); return; }
+            OriginalModelRequests.WhenVisible(this, () =>
+            {
+            if (residencyView != null) { RefreshResidency(); return; }
             foreach (var w in wants)
                 if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
+            });
             Rebuild();
         }
 
@@ -183,18 +265,13 @@ namespace Statecraft.Game.Map.Collection
 
         void Rebuild()
         {
+            CollectionResidencyMetrics.MarkDirty();
             if (map == null || map.Terrain == null) return;
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-                var old = transform.GetChild(i).gameObject;
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
-            }
-            Placed.Clear(); Missing.Clear();
-            keepAll = new List<Bounds[]>();
+            ClearVisuals();
             var ground = PlacementLayer.CampGround(map);
             var works = map.KitStats?.HarbourWorks ?? Array.Empty<SettlementKits.Placed>();
             var boats = new List<SeaCraft.Craft>(map.KitStats?.Crafts ?? Array.Empty<SeaCraft.Craft>());
-            foreach (var w in wants)
+            foreach (var w in Admitted())
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
                 Vector2? at = null;
@@ -272,6 +349,15 @@ namespace Statecraft.Game.Map.Collection
             }
             return Free(airport, r) ? airport : TownLandmarks.Spot(airport, 0f, r, Free);
         }
+
+        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
+        void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Choose;
+            if (residencyView != null) { residencyDirty = false; residencyView.Clear(); residency?.Replace(Array.Empty<(string, CollectionDetail)>()); }
+        }
+        internal void Choose(ScriptableRenderContext context, Camera camera)
+        { if (residencyView != null) ObserveResidency(camera); }
 
         static Bounds Bounds(GameObject go)
         {

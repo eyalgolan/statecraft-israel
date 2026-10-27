@@ -166,6 +166,38 @@ public class UnitsInPlayTests
         }
     }
 
+    /// <summary>#1219 item 2: every sourced Hebrew unit number has dated https sources and stays agent-checked pending
+    /// the native-speaker review in #564; a row without one keeps the English number in the Hebrew card.</summary>
+    [Test]
+    public void HebrewUnitNumbersAreSourcedAndAgentChecked()
+    {
+        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        {
+            StringAssert.IsMatch("[א-ת]", u.NumberHe, u.Id);
+            Assert.AreEqual("agent-checked", u.NumberHeReview, u.Id);
+            Assert.IsNotEmpty(u.NumberHeSources, u.Id);
+            Assert.That(u.NumberHeSources.All(s => s.Url.StartsWith("https://", StringComparison.Ordinal) && !string.IsNullOrEmpty(s.Checked)), u.Id);
+        }
+    }
+
+    /// <summary>#1219 item 2: the Hebrew card's subtitle carries the sourced Hebrew number with no Latin letters left
+    /// (digits stand, HE-08); the English card keeps the English number.</summary>
+    [Test]
+    public void TheHebrewUnitCardSubtitleShowsTheSourcedNumberAndEnglishKeepsItsNumber()
+    {
+        var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+        var state = StateAt(C.Rules.Start, 5, 0.8);
+        foreach (var u in Units.Where(u => !string.IsNullOrEmpty(u.NumberHe)))
+        {
+            var anchor = u.Anchors.FirstOrDefault() ?? new UnitAnchor { Place = "test position" };
+            var placed = new PlacedToken(new UnitToken(u, anchor, 0, "", false), default);
+            var subtitleHe = UnitCard.For(placed, state, he).Subtitle;
+            StringAssert.Contains(u.NumberHe, subtitleHe, u.Id + ": Hebrew subtitle");
+            Assert.IsFalse(subtitleHe.Any(ch => ch is >= 'A' and <= 'Z' or >= 'a' and <= 'z'), u.Id + ": no Latin letters in the Hebrew subtitle");
+            StringAssert.Contains(u.Number, UnitCard.For(placed, state, Text).Subtitle, u.Id + ": English subtitle");
+        }
+    }
+
     const string Anchor = "{place: P, lon: 34.8, lat: 32.0, from: '1948-05-15', to: '1948-06-01', end_basis: source, end_note: n, sources: [{url: 'https://x.org', checked: '2026-10-11'}]}";
     const string Unit = "units:\n- {id: a, name: A, number: '1', service: army, side: israel, sector: s, status: draft, wikipedia_only: true, anchors: [";
 
@@ -1012,8 +1044,12 @@ public class UnitsInPlayTests
     [TestCase(ProseRow + FormedHe + "anchors: []}", "formed_he is set without formed")]
     [TestCase(ProseRow + ProseAnchor + "since_he_review: agent-checked}]}", "since_he_review is set without since_he")]
     [TestCase(ProseRow + ProseAnchor + "since_he: סוף 1947, since_he_sources: " + HeSource + "}]}", "since_he is set without since")]
-    // Only the five meanings: other Hebrew keys are unknown, and a key twice is refused.
-    [TestCase(ProseRow + "number_he: 'חטיבה 1', anchors: []}", "Property 'number_he' not found")]
+    // number_he (#1219 item 2) follows the same rules: blank, orphaned sources or review, a wrong review value.
+    [TestCase(ProseRow + "number_he: '', anchors: []}", "number_he is blank")]
+    [TestCase(ProseRow + "number_he_sources: " + HeSource + ", anchors: []}", "number_he_sources is set without number_he")]
+    [TestCase(ProseRow + "number_he_review: agent-checked, anchors: []}", "number_he_review is set without number_he")]
+    [TestCase(ProseRow + "number_he: 'חטיבה 1', number_he_sources: " + HeSource + ", number_he_review: reviewed, anchors: []}", "number_he_review must be agent-checked")]
+    // Only the known meanings: other Hebrew keys are unknown, and a key twice is refused.
     [TestCase(ProseRow + "sector_he: גזרה, sector_he: גזרה, anchors: []}", "duplicate key sector_he")]
     public void BadHebrewProseNamesTheProblem(string yaml, string expected)
     {

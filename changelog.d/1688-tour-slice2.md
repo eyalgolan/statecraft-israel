@@ -1,0 +1,1 @@
+- Skip the Attention lesson in the gdd-0.3 opening tour while preserving its remaining steps and the full legacy/gdd-0.1 tour.

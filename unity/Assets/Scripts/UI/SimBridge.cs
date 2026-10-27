@@ -67,6 +67,7 @@ namespace Statecraft.Game.UI
         /// SimBridgeGuardTests, which checks that every command type is listed here or is one per turn by design.</summary>
         internal static string Key(Command c) => c switch
         {
+            BuyArms _ => Pools.BuyArmsKind,
             ChooseEventOption e => "event:" + e.EventId,
             SetPolicy p => "policy:" + p.Policy,
             Appoint a => "appoint:" + a.Office,

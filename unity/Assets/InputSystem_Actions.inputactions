@@ -1087,6 +1087,39 @@
                     "isPartOfComposite": true
                 },
                 {
+                    "name": "LeftDrag",
+                    "id": "b0c4f952-045c-4207-8dfe-fc874867a8e8",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DragPan",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "98b00b14-6638-46ea-b3a4-62f8e04b4aef",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "DragPan",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "58344891-672f-450f-bebd-d95d6a1b39aa",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "DragPan",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "5b1f0c3e-7a8d-4c51-9e2b-3a6d4f8e1c30",
                     "path": "<Mouse>/scroll/y",

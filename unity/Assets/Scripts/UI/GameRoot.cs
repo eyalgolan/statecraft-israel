@@ -331,14 +331,14 @@ namespace Statecraft.Game.UI
             // From their runtime forms when they match the YAML (issue #321: boot time), the sub-districts as the map read them.
             var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
-                map.Control);   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+                map.Control, MapRegionNames.Parse(inputs.Map.RegionNamesYaml));   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
             Regions = regions;
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
-                    ?? regions.Label(bridge.State.Date, text.Format);
+                    ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
@@ -385,7 +385,7 @@ namespace Statecraft.Game.UI
                 showReachable: map.ShowReachable,
                 unitName: id => unitLayer.Tokens.Where(p => UnitCard.SimUnit(bridge.Content, bridge.State, p.Token) == id)
                     .Select(p => UnitCard.For(p, bridge.State, text, bridge.Content.IsGdd, bridge.Content, townNamesHe).Title).FirstOrDefault(),
-                unitDone: FocusNextUnit, showRoute: map.ShowRoute, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
+                unitDone: FocusNextUnit, showRoute: map.ShowRoute, selectPioneer: FocusPioneer, clearSelection: () => { unitLayer.Select(null); map.ClearSelection(); }));
             toast.Units = unitData; toast.TownNamesHe = townNamesHe; why.TownNamesHe = townNamesHe;
             report.TownNamesHe = townNamesHe; hudPresenter.TownNamesHe = townNamesHe;
             // A smoke session never touches the player's save: no autosave, and no New Game (which deletes the autosave).
@@ -420,7 +420,10 @@ namespace Statecraft.Game.UI
                 || (UiPointer.PickAt(root.panel, p, Screen.height) is { } picked && !info.TakesClickThrough(picked, () => pointer.HexUnder(p)));
             pointer.IsOverUi = pointerOverUi;
             // #1654 review: the pointer's tap rule decides both a click and the camera's drag, so a press is never both.
-            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate, holdsTouchDrag = () => pointer.TouchTapCandidate;
+            // Either button (#998): whichever is down holds the drag while it could still be a click, so a click never
+            // nudges the map and a drag past the slop pans.
+            Func<bool> holdsMouseDrag = () => pointer.RightTapCandidate || pointer.LeftTapCandidate,
+                       holdsTouchDrag = () => pointer.TouchTapCandidate;
             cameraController.HoldsMouseDrag = holdsMouseDrag; cameraController.HoldsTouchDrag = holdsTouchDrag;
             Action<int, int, bool> onHex = (q, r, cityPill) =>
             {
@@ -537,10 +540,13 @@ namespace Statecraft.Game.UI
                 camRig.Distance = Mathf.Min(camRig.Distance, AdvisorTargets.MoveStepDistanceM);
                 FocusUnit(id);
             };
-            // When it closes, the advisor puts back the selection it found (a hex, a unit, or none), unless the player has
-            // picked something else meanwhile (the HUD stays usable under it).
+            // When it closes, the advisor puts back the selection it found (a hex, a unit, a pioneer group's card, or none),
+            // unless the player has picked something else meanwhile (the HUD stays usable under it).
             Func<Action> keepSelection = () =>
             {
+                // A pioneer card has no token (ShowPioneer clears it), so it is a selection of its own, kept with its game
+                // (review C288 S1 of #1788): a language switch keeps the session, a load or new game does not.
+                var pioneer = info.Pioneer; var pioneerSession = bridge.Session;
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
                 var city = AdvisorTargets.CityHex(bridge.Content, bridge.State);
@@ -552,6 +558,11 @@ namespace Statecraft.Game.UI
                     if (this.info is not { } nowInfo || this.units is not { } nowUnits) return;
                     // Under a screen, or the player picked another than the advisor's city or unit: kept.
                     if (nowInfo.Covered || (nowInfo.ShowsUnit ? nowUnits.Selected != shownUnit : nowInfo.Selected != city)) return;
+                    if (pioneer is int pioneerId && Bridge?.Session == pioneerSession)
+                    {
+                        nowInfo.ShowPioneer(pioneerId);   // clears the token and the hex outline, as a click on its link does
+                        if (nowInfo.Pioneer == pioneerId) return;
+                    }
                     nowUnits.Select(unit);
                     if (nowUnits.Selected != null) { map.ClearSelection(); nowInfo.ShowUnit(); }
                     else if (hex is (int q, int r)) { map.Select(q, r); nowInfo.Show(q, r); }
@@ -593,6 +604,7 @@ namespace Statecraft.Game.UI
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
+            Statecraft.Game.Map.Collection.CollectionStream.GameReady();
             Debug.Log(FormattableString.Invariant($"GAME OK {bridge.State.Date:yyyy-MM-dd} turn {bridge.State.Turn} hash {bridge.State.Hash()}"));
             // Unlike the other browser instruments, ?firstcard keeps the normal start screen, clip mapping and video players.
             // It closes the screen through its real button immediately, then gives tools/web_check.py a bounded result to
@@ -658,12 +670,17 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
+            // A friendly token is drawn where the player tapped (its anchor), which can be a neighbour of its sim hex.
+            var friendDrawn = units.Tokens.Any(t => t.Q == q && t.R == r && t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel
+                && t.Token.Unit.Id != units.Selected);
+            var offerMove = info.PrepareFriendlyMove(q, r, friendDrawn);
             // #1661: a name pill means the city even when another unit stands there. A badge/terrain or keyboard
             // pick keeps the existing unit-first routing; the event carries intent, not a mutable "last hit" flag.
             if (cityPill && info.IsCity(q, r))
             {
                 units.Select(null);
                 info.Show(q, r);
+                offerMove?.Invoke();
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
@@ -671,6 +688,7 @@ namespace Statecraft.Game.UI
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+            offerMove?.Invoke();
         }
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the
@@ -680,6 +698,12 @@ namespace Statecraft.Game.UI
         {
             if (info.Covered || !info.ShowsUnit || !info.PickTakes(q, r)) return;
             if (info.PickTarget(q, r)) map.ClearSelection();
+        }
+
+        void FocusPioneer(int id)
+        {
+            // ShowPioneer ends military picks/routes and invokes the same map/token cleanup as Escape.
+            info?.ShowPioneer(id);
         }
 
         /// <summary>Selects a drawn unit row, opens its card and centres the camera on its current hex.</summary>

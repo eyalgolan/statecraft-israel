@@ -41,6 +41,42 @@ namespace Statecraft.Game.Map.Units
         /// destroyed when the tokens are rebuilt and with the layer, so no roster change leaks them (review of #559, M1).</summary>
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
+        readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
+        bool updatingPrefetch;
+        int seenAvailability = -1;
+        void PrefetchFigures(IReadOnlyList<UnitToken> candidates)
+        {
+            updatingPrefetch = true;
+            try
+            {
+                var needed = new HashSet<string>();
+                foreach (var token in candidates)
+                {
+                    var ids = Enumerable.Range(0, token.Figures).Select(i => UnitFigures.FigureFor(token.Unit, i,
+                        token.Unit.Side == UnitData.Israel ? token.Headgear[i] : null))
+                        .Concat(token.Vehicles).Where(id => id != null).Distinct();
+                    foreach (var id in ids)
+                    {
+                        string key = token.Unit.Id + "|" + id; needed.Add(key);
+                        if (!figurePrefetch.TryGetValue(key, out var owner))
+                        {
+                            var holder = new GameObject("Original demand " + key); holder.transform.SetParent(transform, false);
+                            owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[key] = owner;
+                            holder.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                            owner.Initialize(id!, map.Residency.Units, null, draw: false);
+                        }
+                        owner.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                    }
+                }
+                foreach (string key in figurePrefetch.Keys.ToArray()) if (!needed.Contains(key))
+                {
+                    var old = figurePrefetch[key]; figurePrefetch.Remove(key);
+                    old.gameObject.SetActive(false);
+                    if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
+                }
+            }
+            finally { updatingPrefetch = false; }
+        }
         /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
         /// it (an Arab force's, issue #665).</summary>
         Content? shownContent;
@@ -155,8 +191,6 @@ namespace Statecraft.Game.Map.Units
             // can draw (nothing is fetched before the frame after the request, CollectionStream), and draw again when one arrives.
             UnitFigures.ModelArrived += layer.OnModelArrived;
             layer.assets.OnTeardown(() => UnitFigures.ModelArrived -= layer.OnModelArrived);
-            foreach (var u in units)
-                if (UnitRoster.OnMap(u) && u.Side != UnitData.Israel) UnitFigures.Prefetch(UnitFigures.SideFigure(u.Side)!);
             layer.assets.OnTeardown(VisualToggles.Register(ToggleName, on =>
             {
                 if (root != null) root.SetActive(on);
@@ -188,6 +222,7 @@ namespace Statecraft.Game.Map.Units
         /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation.</summary>
         public void FaceCamera(Camera cam)
         {
+            if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);
             if (cam == null) return;
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
@@ -254,14 +289,17 @@ namespace Statecraft.Game.Map.Units
             shownContent = content; shownState = state;
             // The GDD loop draws the army from the sim's units (GDD Phase 5 PR 14); the legacy loop keeps the rows and the call-up.
             var now = content.IsGdd
-                ? UnitRoster.FromState(units, content, state, UnitFigures.Arrived, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
-                : UnitRoster.Build(units, content, state, UnitFigures.Arrived);
-            if (roster != null && roster.SequenceEqual(now)) return false;
+                ? UnitRoster.FromState(units, content, state, _ => true, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
+                : UnitRoster.Build(units, content, state, _ => true);
+            PrefetchFigures(now);
+            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
+            if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? spots);
             Rebuild();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
+            seenAvailability = UnitFigures.AvailabilityVersion;
             return true;
         }
 
@@ -334,7 +372,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>A Collection model arrived: draws the tokens again if it lets a new one show (an Arab force's figure).</summary>
         void OnModelArrived(string id)
         {
-            if (this == null || shownContent == null || shownState == null) return;
+            if (this == null || updatingPrefetch || shownContent == null || shownState == null) return;
             Show(shownContent, shownState);
         }
 
@@ -498,7 +536,7 @@ namespace Statecraft.Game.Map.Units
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
-                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null));   // the Collection's figure, once streamed (#665)
+                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null), map.Residency.Units);   // the Collection's figure, once streamed (#665)
                             figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
                         }
                         for (int j = 0; j < vehicles; j++)
@@ -508,7 +546,7 @@ namespace Statecraft.Game.Map.Units
                             var at = centre + offset;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
-                            UnitFigures.Dress(vehicle, t.Vehicles[j]);   // the gun or the jeep: drawn only once streamed (#665)
+                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units);   // the gun or the jeep: drawn only once streamed (#665)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;
