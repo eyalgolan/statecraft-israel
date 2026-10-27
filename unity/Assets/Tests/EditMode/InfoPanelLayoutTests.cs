@@ -81,10 +81,11 @@ public class InfoPanelLayoutTests
         var box = l.contentRect;
         var natural = l.MeasureTextSize(l.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
         if (natural.x <= box.width + 1f) return true;
-        if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return false;
-        var wrapped = l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
         // Text and layout round to raster pixels: at fractional panel scale one pixel can exceed one logical px.
         var pixel = l.panel == null ? 1f : 1f / l.panel.scaledPixelsPerPoint;
+        // A line that does not wrap draws on one line: a box one raster pixel under its text still shows it all (#1789).
+        if (l.resolvedStyle.whiteSpace != WhiteSpace.Normal) return natural.x <= box.width + pixel + 0.01f;
+        var wrapped = l.MeasureTextSize(l.text, box.width, VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
         return wrapped.y <= box.height + pixel + 0.01f;
     }
 
@@ -583,6 +584,29 @@ public class InfoPanelLayoutTests
         }, text: text, hebrew: hebrew, unit: () => selected);
     }
 
+    /// <summary>#1789: Tel Aviv's hex in #1788's crowded city state (three idle halutz groups, craftsmen, the ma'abarot policy)
+    /// at 1024x768: the Jobs line ("Jobs: 106 of 106 filled") lies inside its column with its whole text, in English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator TheCityJobsLineStaysInsideItsColumnAt1024x768([Values(false, true)] bool hebrew)
+    {
+        var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(hebrew ? UiPaths.StringsHebrew : UiPaths.Strings).text);
+        var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
+        var s = g.State;
+        foreach (var id in s.Units.Values.Where(u => Projects.IsPioneer(u.Type)).Select(u => u.Id).ToList()) s.Units.Remove(id);
+        s.Sites.Clear(); s.Corridors.Clear();
+        var city = C.SettlementHexes.Single(x => x.Id == "tel_aviv");
+        for (int k = 0; k < 3; k++) PioneerCardTests.Add(s, city.Q, city.R);
+        s.Cities[city.Id] = s.Cities[city.Id].WithCraftsmen(2).WithQualified(new Qualified(1, 1, new[] { 3, 5 }));
+        s.Policies[MapActions.MaabarotPolicy] = 1;
+        yield return Rendered(1024, 768, g, (root, info) => info.Show(city.Q, city.R), root =>
+        {
+            var column = root.Q(GddHexPanel.HostName); var jobs = root.Q<Label>("city-jobs");
+            Assert.IsTrue(Shown(jobs), "precondition: the Jobs line shows");
+            Assert.IsTrue(Inside(jobs.worldBound, column.worldBound), $"'{jobs.text}' {jobs.worldBound} leaves its column {column.worldBound}");
+            Assert.IsTrue(TextFits(jobs), $"'{jobs.text}' does not fit its box {jobs.contentRect}");
+        }, text, hebrew, GameSceneTests.HideTheOpeningCard);
+    }
+
     [UnityTest]
     public IEnumerator PioneerListsAndCardsFitTheRequiredWindowsInBothLanguages()
     {
@@ -713,10 +737,8 @@ public class InfoPanelLayoutTests
                                 Expect(Inside(link.worldBound, panel.worldBound), $"{link.name} {link.worldBound} leaves the panel {panel.worldBound}"); Expect(TextFits(link), $"'{link.text}' does not fit");
                             }
                         }
-                        // city-jobs: 'Jobs: 106 of 106 filled' already overflows its box at en 1024x768 on main with this city state
-                        // (measured on b56011ba, before this change); not this test's subject.
                         foreach (var line in panel.Query<TextElement>().ToList().Where(x => Shown(x) && !string.IsNullOrEmpty(x.text)
-                            && x.name != "city-jobs" && !root.Q<ScrollView>("info-pioneers").Contains(x)))
+                            && !root.Q<ScrollView>("info-pioneers").Contains(x)))
                         {
                             Expect(Inside(line.worldBound, panel.worldBound), $"'{line.text}' {line.worldBound} leaves the panel {panel.worldBound} ({line.name})");
                             Expect(TextFits(line), $"'{line.text}' does not fit its box {line.contentRect} ({line.name})");
