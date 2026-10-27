@@ -990,6 +990,27 @@ why.cause.prisoners_returned: "חילופי שבויים: {0:N0} שבויים ה
 # C166: agent-drafted Hebrew; native review: owner, in chat on 25 Oct 2026 (approved as drafted, C155 HE-V031.md row 33).
 why.cause.soldiers_returned: "חילופי שבויים: {0:N0} מחיילינו חזרו הביתה מידי {1}"
 
+# Agent-drafted Hebrew; native-review-pending (#564).
+hud.caption.food: "מזון"
+hud.caption.arms: "נשק"
+hud.stock: "{0:N0}"
+hud.delta_stock: "{0:+#,##0;-#,##0}"
+arms.count: "כמות נשק לרכישה"
+arms.buy: "רכישת נשק"
+arms.withdraw: "ביטול הרכישה"
+arms.stock: "נשק במלאי: {0:N0}"
+arms.money: "עלות בכסף: {0}"
+arms.attention: "עלות תשומת לב: {0:0.0} · נותר: {1:0.0}"
+arms.queued: "נשק שהוזמן: {0:N0}, בסיום התור"
+arms.minimum: "יש לרכוש לפחות יחידת נשק אחת. יש להזין כמות גדולה יותר."
+arms.no_attention: "אין די תשומת לב לרכישה. יש לבטל הוראה אחרת או להמתין לתור הבא."
+
+# #731 stock summaries in the report and Why.
+# native-review-pending
+report.stock_line: "{0} במלאי: {1}"
+# native-review-pending
+report.stock_change: "{0} במלאי: {1} (שינוי של {2})"
+
 # #1708 artillery action status. Hebrew: native review pending (#564).
 unit.artillery_move_missing: "לא ניתן להזיז ארטילריה עדיין: נקודות התנועה שלה טרם נקבעו"
 unit.fire_ready: "ניתן לירות"
@@ -1100,3 +1121,6 @@ why.cause.ending.mvp_ended: "המשחק הגיע לתור האחרון" # native
 why.cause.ending.coalition_collapse: "הקואליציה התפרקה" # native-review-pending (#564)
 why.cause.ending.defeat_economy: "הכסף והמזון אזלו" # native-review-pending (#564)
 why.cause.ending.defeat_war: "האויב מחזיק בעיר" # native-review-pending (#564)
+
+# native-review-pending: #1661 occupied-destination confirmation
+unit.confirm_move: "שליחת {0} אל {1}"

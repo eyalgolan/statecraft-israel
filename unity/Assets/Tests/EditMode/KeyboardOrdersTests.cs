@@ -175,4 +175,56 @@ public class KeyboardOrdersTests
         // Event answers correctly stay deferred (spec3.2:89); only the attack must be absent.
         Assert.IsEmpty(Bridge.Queued.OfType<UnitOrder>().Where(o => o.Order == Combat.Attack), "the attack does not wait for End turn");
     }
+
+    /// <summary>#1661 ruling 1 with the keyboard alone, in the real game: select Golani, Tab round to the map stop over a
+    /// city (Tel Aviv) or over another Israeli unit's token, Enter. That selects as before and offers "Send Golani to
+    /// ..."; Tab reaches the offer, and Enter (Submit) or Space takes it: Golani's one order is committed. The offer is
+    /// also where a finger lands: the UI pick at its centre is the button, so a tap there is not a map tap.</summary>
+    [UnityTest]
+    public IEnumerator AFriendlyDestinationIsConfirmedWithTheKeyboardAlone(
+        [Values("city", "friendly")] string kind, [Values(KeyCode.Return, KeyCode.Space)] KeyCode key)
+    {
+        yield return Boot();
+        var id = -1;
+        yield return SelectGolani(i => id = i);
+        var layer = Object.FindFirstObjectByType<UnitLayer>();
+        var c = Bridge.Content; var s = Bridge.State;
+        (int q, int r) target;
+        if (kind == "city")
+        {
+            var city = c.SettlementHexes.First(x => x.Id == "tel_aviv" && layer.UnitToSelectAt(x.Q, x.R) == null);
+            target = (city.Q, city.R);
+        }
+        else
+        {
+            var friend = layer.Tokens.First(t => t.Token.Unit.Side == UnitData.Israel && t.Token.Unit.Id != "golani"
+                && layer.UnitToSelectAt(t.Q, t.R) == t.Token.Unit.Id
+                && Movement.Route(c, s, id, t.Q, t.R, Bridge.Spent).Count > 0);
+            target = (friend.Q, friend.R);
+        }
+        var expected = layer.UnitToSelectAt(target.q, target.r);
+        var near = Movement.Reachable(c, s, id, Bridge.Spent).ContainsKey((target.q, target.r));
+        yield return EnterOnTheMapAt(target.q, target.r);
+        Assert.IsEmpty(Bridge.Session.Committed, "the pick itself gives no order");
+        Assert.AreEqual(expected, layer.Selected, "ordinary selection stays");
+        var send = ui.Q<Button>("info-confirm-move");
+        Assert.IsNotNull(send);
+        Assert.AreEqual(DisplayStyle.Flex, send.resolvedStyle.display, "the offer shows");
+        yield return Frames(2);
+        Assert.AreSame(send, ui.panel.Pick(send.worldBound.center), "a finger on the offer lands on the button, not the map");
+        yield return TabTo("info-confirm-move");
+        if (key == KeyCode.Return) yield return Enter();
+        else
+        {
+            var at = At;
+            using (var k = KeyDownEvent.GetPooled(' ', KeyCode.Space, EventModifiers.None)) { k.target = at; at.SendEvent(k); }
+            yield return Frames(3);
+        }
+        Assert.AreEqual(1, Bridge.Session.Committed.Count, "one order");
+        var u = Bridge.State.Units[id];
+        if (near) Assert.AreEqual(target, (u.Q, u.R), "in reach: Golani moves there now");
+        else Assert.AreEqual(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}", target.q, target.r),
+            u.OrderTarget, "beyond reach: Golani's go-to");
+        Assert.AreEqual(DisplayStyle.None, send.resolvedStyle.display, "the offer is used up");
+    }
 }
