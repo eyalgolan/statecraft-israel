@@ -338,7 +338,7 @@ namespace Statecraft.Sim
         {
             foreach (var id in s.Settlements.Where(kv => kv.Value.State == AwaitingChoice).Select(kv => kv.Key).ToList())   // ordinal
             {
-                why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]}: no decision was made before the end, so it counts as a raid", key: CauseKeys.PendingBecameRaid));
+                why.Add(new Cause("map", id, 0, $"{c.SettlementNames[id]}: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid));
                 Withdraw(c, s, id, why, true);   // at the end it never refuses
             }
         }

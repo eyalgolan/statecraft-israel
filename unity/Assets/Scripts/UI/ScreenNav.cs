@@ -12,6 +12,9 @@ namespace Statecraft.Game.UI
     public sealed class ScreenNav : System.IDisposable
     {
         public static readonly string[] Screens = { "cabinet", "budget", "defence", "why", "timeline", "how-to-play", "objectives", "settings" };
+        // Transient map confirmations expire even for a narrow screen that leaves the info panel visible.
+        internal static event System.Action<VisualElement>? InfoIntentCovered;
+
         /// <summary>The class on the open screen's button (Statecraft.uss lights its ring).</summary>
         public const string OpenClass = "nav-open";
         /// <summary>The class on the "root" element while a wide screen (class <see cref="WideClass"/>: Cabinet, Defence, Timeline) is
@@ -55,6 +58,7 @@ namespace Statecraft.Game.UI
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
             bool infoCovered = start || full || modal || outcome || report || r.ClassListContains(WideOpenClass);
             r.Q("info-panel")?.SetEnabled(!infoCovered);
+            if (screen || infoCovered) InfoIntentCovered?.Invoke(r);
             // the map's keyboard stop (#41 B1b): out of reach exactly when the info panel is, so a pick is never refused (#210)
             r.Q("map-focus")?.SetEnabled(!infoCovered);
             var layer = r.Q("event-layer");

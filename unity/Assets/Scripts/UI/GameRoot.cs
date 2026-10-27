@@ -664,12 +664,17 @@ namespace Statecraft.Game.UI
                 if (info.Selected is (int sq, int sr) && !info.ShowsUnit) map.Select(sq, sr); else map.ClearSelection();
                 return;
             }
+            // A friendly token is drawn where the player tapped (its anchor), which can be a neighbour of its sim hex.
+            var friendDrawn = units.Tokens.Any(t => t.Q == q && t.R == r && t.Token.Unit.Side == Statecraft.Game.Map.Units.UnitData.Israel
+                && t.Token.Unit.Id != units.Selected);
+            var offerMove = info.PrepareFriendlyMove(q, r, friendDrawn);
             // #1661: a name pill means the city even when another unit stands there. A badge/terrain or keyboard
             // pick keeps the existing unit-first routing; the event carries intent, not a mutable "last hit" flag.
             if (cityPill && info.IsCity(q, r))
             {
                 units.Select(null);
                 info.Show(q, r);
+                offerMove?.Invoke();
                 return;
             }
             var id = units.UnitToSelectAt(q, r);
@@ -677,6 +682,7 @@ namespace Statecraft.Game.UI
             units.Select(id);
             if (id != null) { map.ClearSelection(); info.ShowUnit(); }
             else info.Show(q, r);
+            offerMove?.Invoke();
         }
 
         /// <summary>A right click on the map (MapPointer.HexOrdered; owner, 25 Oct 2026, "Civ: select, then click"): while the

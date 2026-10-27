@@ -311,4 +311,75 @@ public class RightClickOrPanTests : InputTestFixture
         LeftDrag(rig, onMap, onMap + new Vector2(120, 0), onMap + new Vector2(240, 0));
         Assert.AreNotEqual(start, rig.View.LookAt, "the identical drag begun on the map does pan");
     }
+
+    // Extends Ella's #1791 left-drag coverage to the camera-owned press observer (#1808).
+    [TestCase(30)]
+    [TestCase(31)]
+    public void ALeftDragUsesThePressOriginAcrossInputUpdates(int travel)
+    {
+        using var rig = new Rig();
+        rig.View.Yaw = 0;
+        var start = rig.View.LookAt;
+        var from = new Vector2(600, 400);
+        Set(mouse.position, from); rig.Frame();
+        Press(mouse.leftButton);
+        Move(mouse.position, from + new Vector2(10, 0), new Vector2(10, 0));
+        Move(mouse.position, from + new Vector2(travel, 0), new Vector2(travel - 10, 0));
+        rig.Frame(); // two input updates, no camera frame since the press
+        var expected = start.x - (travel > 30 ? 120f : 0f);
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(expected).Within(0.1f), "only travel past 30 px pans");
+        Assert.AreEqual(start.z, rig.View.LookAt.z);
+        rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(expected).Within(0.1f), "travel is consumed once");
+        Release(mouse.leftButton); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(expected).Within(0.1f), "no release catch-up");
+        if (travel == 30) CollectionAssert.AreEqual(new[] { from }, rig.Clicks);
+        else Assert.IsEmpty(rig.Clicks);
+    }
+
+    [TestCase(10)]
+    [TestCase(31)]
+    public void ALeftReleaseAndRepressBeforeTheCameraFrameStartsANewGesture(int travel)
+    {
+        using var rig = new Rig();
+        rig.View.Yaw = 0;
+        var start = rig.View.LookAt;
+        var a = new Vector2(400, 400);
+        Set(mouse.position, a); rig.Frame();
+        Press(mouse.leftButton);
+        Move(mouse.position, a + new Vector2(50, 0), new Vector2(50, 0)); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x - 20 * 120).Within(0.1f), "A pans its excess");
+        var afterA = rig.View.LookAt;
+        Release(mouse.leftButton);
+        var b = new Vector2(700, 400);
+        Set(mouse.position, b); Press(mouse.leftButton);
+        Move(mouse.position, b + new Vector2(travel, 0), new Vector2(travel, 0)); rig.Frame();
+        var expected = afterA.x - (travel > 30 ? 120f : 0f);
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(expected).Within(0.1f), "B has its own origin and onset");
+        Assert.AreEqual(afterA.z, rig.View.LookAt.z);
+        Release(mouse.leftButton); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(expected).Within(0.1f));
+        if (travel == 10) CollectionAssert.AreEqual(new[] { b }, rig.Clicks);
+        else Assert.IsEmpty(rig.Clicks);
+    }
+
+    [Test]
+    public void ALeftUiOriginRemainsBlockedAfterLeavingBeforeTheCameraFrame()
+    {
+        using var rig = new Rig();
+        rig.View.Yaw = 0;
+        rig.Controller.IsOverUi = p => p.x < 500;
+        var start = rig.View.LookAt;
+        Set(mouse.position, new Vector2(400, 400)); rig.Frame();
+        Press(mouse.leftButton);
+        Move(mouse.position, new Vector2(600, 400), new Vector2(200, 0)); rig.Frame();
+        Assert.AreEqual(start, rig.View.LookAt, "the press began on UI, even though the frame ends on the map");
+        Release(mouse.leftButton); rig.Frame();
+        Press(mouse.leftButton);
+        Move(mouse.position, new Vector2(631, 400), new Vector2(31, 0)); rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x - 120f).Within(0.1f), "a new map press clears the latch and pans one pixel");
+        Assert.AreEqual(start.z, rig.View.LookAt.z);
+        Release(mouse.leftButton); rig.Frame();
+        Assert.IsEmpty(rig.Clicks);
+    }
 }
