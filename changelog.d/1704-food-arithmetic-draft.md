@@ -1,0 +1,1 @@
+- Refs #1704: add an internal pure Food arithmetic foundation with synthetic unit-test drafts. No shipping call site or turn integration; existing Food paths remain unchanged.
