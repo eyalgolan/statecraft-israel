@@ -9,7 +9,7 @@ using Statecraft.Game.UI;
 using UnityEditor;
 using UnityEngine;
 
-public class C242RedTests
+public class RegionNamesHebrewTests
 {
     // Gazette1415, Hebrew supplement2,7June1945:493/498. Independent identity oracle, not Names.Pick.
     [TestCase("acre", "נפת עכו", "מחוז הגליל", false)]

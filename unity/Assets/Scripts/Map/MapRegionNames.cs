@@ -10,7 +10,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Statecraft.Game.Map
 {
-    /// <summary>Sourced presentation names, separate from generated geometry and its runtime cache (C242).
+    /// <summary>Sourced presentation names, separate from generated geometry and its runtime cache.
     /// A missing entry keeps the existing English field. New supplied names await the owner's native review; removing a flag is a human action.</summary>
     public sealed class MapRegionNames
     {

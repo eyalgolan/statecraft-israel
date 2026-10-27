@@ -61,7 +61,7 @@ public class RegionNamesVisualTests
                 Assert.Greater(label.contentRect.width,0);
                 var measured=label.MeasureTextSize(label.text,label.contentRect.width,VisualElement.MeasureMode.Exactly,0,VisualElement.MeasureMode.Undefined);
                 Assert.LessOrEqual(measured.y,label.contentRect.height+2,$"{scenario.key} {size} he={he} after={after}: text must wrap inside its actual region label");
-                var output=Environment.GetEnvironmentVariable("C242_CAPTURE_DIR");
+                var output=Environment.GetEnvironmentVariable("REGION_NAMES_CAPTURE_DIR");
                 if(!string.IsNullOrWhiteSpace(output))
                 {
                     Directory.CreateDirectory(output);

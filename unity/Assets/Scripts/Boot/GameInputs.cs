@@ -17,7 +17,7 @@ namespace Statecraft.Game.Boot
         public string OverridesYaml = "";
         /// <summary>content/map/subdistrict_hexes_1948.yaml: the 1948 sub-districts the map outlines (display only).</summary>
         public string RegionsYaml = "";
-        /// <summary>Sourced Hebrew region/armistice display names (C242); absent in older bundles.</summary>
+        /// <summary>Sourced Hebrew region/armistice display names; absent in older bundles.</summary>
         public string RegionNamesYaml = "";
         /// <summary>The baked runtime forms of the region files the map reads at boot (tools/regions_bake.py; issue #321;
         /// "" when absent: the YAML is read, with a warning).</summary>

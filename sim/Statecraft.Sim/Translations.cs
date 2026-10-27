@@ -233,7 +233,7 @@ namespace Statecraft.Sim
         {
             if (!map.Children.TryGetValue(new YamlScalarNode("review"), out var v)) return "";
             var text = v is YamlScalarNode s ? s.Value : null;
-            // C242's separately sourced Unity catalogue uses this task-specific pending marker.
+            // The sourced region-name catalogue uses this pending marker.
             // Keep every other content/event review contract strict; this grants no human sign-off.
             var regionPending = field.StartsWith("map/region_names_he.yaml#names.", StringComparison.Ordinal)
                 && field.EndsWith(".name", StringComparison.Ordinal) && text == "native-review-pending";
