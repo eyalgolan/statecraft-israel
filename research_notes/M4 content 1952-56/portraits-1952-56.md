@@ -16,6 +16,7 @@ The ids are those of `content/people.yaml`; none of the 20 has a `portrait:` ent
   Bar-Yehuda, Carmel, Namir, Warhaftig, Ben-Meir, Susayeff, Tzur, Unna, Assaf and Dayan.
 - **2 of 20 have none: Haim Cohn and Israel Rokach.** Their only single-person portraits are Government Press Office (GPO)
   files under PD-Israel alone, and the CC BY 4.0 frames I found of them are group shots or do not name them (details below).
+  (second pass, 27 Oct: Rokach does have one qualifying file, a Meitar frame whose NLI title names him; see "Second pass, 27 October" below. Haim Cohn still has none.)
 - Sixteen of the 18 rest only on Knesset Archives portraits (CC BY-SA 4.0); Nurock has both kinds and Maklef only a Meitar frame. Those are **member portraits with no photograph
   date**: Commons gives only the span of the person's Knesset membership. For Carmel (member from 1958), Pinchas Sapir and
   Dayan (both from 1959) the photograph is probably later than 1956 [S]. Maklef and Nurock have dated Meitar frames
@@ -35,6 +36,7 @@ The ids are those of `content/people.yaml`; none of the 20 has a `portrait:` ent
   because the NLI page itself returned HTTP 403 to this machine). Treat it as "probably".
 - **[C]** sources conflict. Every version is given.
 - **[GAP]** not found, or the page could not be opened. A gap stays a gap.
+- (second pass, 27 Oct) A claim added on 27 October is tagged `[V, agent read 27 Oct; a person's check pending]`; the other tags are used as above.
 
 ## What was opened, and when (all on 2026-10-24)
 
@@ -49,9 +51,13 @@ The ids are those of `content/people.yaml`; none of the 20 has a `portrait:` ent
   which it owns the copyrights". That is a fee licence, so it does not meet the rule. [V]
 - **Opened but empty:** the GPO terms URL from the owner's starter list returned a gov.il "page not found" error body
   (HTTP 200). [GAP]
+  (second pass, 27 Oct: the same URL now opens and carries the GPO licence terms; read, see below. [V, agent read 27 Oct; a person's check pending])
 - **Not reachable:** `nli.org.il` record pages and `archives.gov.il` answered HTTP 403. [GAP]
+  (second pass, 27 Oct: again HTTP 403 from `nli.org.il` and `archives.gov.il`, and from Europeana's item pages; still [GAP]. See below.)
 - **Not opened:** the IDF archive's catalogue search (`SearchCatalogTz.aspx`), Europeana, the Knesset site itself, and
   any search by the people's names in the Israel State Archives. Anything that depends on them is [GAP], not "none exists".
+  (second pass, 27 Oct: Europeana was searched through its API and the Knesset site was tried; see below. The IDF catalogue and
+  the Israel State Archives are still not searched.)
 
 ## The 18 with a qualifying file
 
@@ -106,6 +112,8 @@ record. Whether the face is the right man is the likeness check a person does.
   name him with Moshe Landau, one is a group, one names nobody, and all are 1980. Do not qualify.
 - He was not a Knesset member (so there is no Knesset Archives file) and I found no Nationaal Archief, US-government or
   other explicit-US-status photograph of him. [GAP: the IDF archive catalogue and Europeana were not searched.]
+  (second pass, 27 Oct: Europeana was searched, see below, and found no photograph of him from before 1980; the IDF archive
+  catalogue is still not searched. Still [GAP] for that catalogue.)
 
 ### Israel Rokach (Wikidata Q129676) [V]
 
@@ -113,11 +121,15 @@ record. Whether the face is the right man is the likeness check a person does.
   Rokach, mayor of Tel Aviv (Gen. Zionists)". `{{PD-Israel}}` only. **Does not qualify.**
 - He was a Knesset member, but a search of the Knesset Archives pattern (`"Knesset member" Rokach`,
   `insource:"Knesset Archive" Rokach`, and the same in Hebrew) found no file. [GAP]
+  (second pass, 27 Oct: searched again by the Knesset member code, with a control that finds Lavon; no Knesset Archives file
+  for Rokach, see below. Closed as "none found by these searches". [V, agent read 27 Oct; a person's check pending])
 - 17 Meitar frames (Benno Rothenberg, 1948 to December 1949) sit in his category, headed only "Tel Aviv-Yafo (Israel)
   Photographs" and "Politicians Israel Photographs". None names him, so identity from the archive record fails. [S] The
   rest of the category is GPO or Zoltan Kluger material under PD-Israel and group shots (for example with Weizmann or
   Sharett). The Dutch Nationaal Archief CC0 file in the category (Willem van de Poll, 1949, a Knesset doorman in Tel Aviv)
   does not show him.
+  (second pass, 27 Oct: this is wrong for ten of the 17. On the file pages the Hebrew title or the Hebrew caption names him in
+  ten of them; one frame, titled with his name and office, shows him alone. See "Second pass, 27 October" below. [V, agent read 27 Oct; a person's check pending])
 
 ## Files that look usable and are not
 
@@ -165,10 +177,132 @@ Each was read on its file page on 2026-10-24. [V]
   Maklef Q1391515, Dayan Q188783, Warhaftig Q2890045, Ben-Meir Q2906644, Susayeff Q2902132, Tzur Q2902009,
   Unna Q2909985, Assaf Q470672. [V]
 
+## Second pass, 27 October 2026
+
+Added after review of the first pass: this section adds to the note above and changes none of it. Where the first pass is
+wrong, a dated correction sits right after the line, marked "second pass, 27 Oct". Refs #6. Research only: no image is added.
+
+**Result of the second pass.**
+
+- **Israel Rokach now has one qualifying file.** The first pass said no CC BY 4.0 frame names him. That was wrong: on the file
+  pages, ten of the 17 Meitar frames in his category name him in the Hebrew title or the Hebrew caption, and one is titled with
+  his name and office alone. I opened that frame's thumbnail and it shows one man, head and shoulders, with a sliver of a second
+  face at the right edge and part of a sleeve at the left edge. Details in the table below. The likeness is for a person to check.
+- **Haim Cohn still has no qualifying file.** Europeana (searched through its API) adds nothing from before 1980.
+- **Knesset Archives file for Rokach: none found.** His Knesset member code is 620 (Wikidata P9770); no Commons file carries it.
+- Still [GAP]: the Knesset portraits' photograph dates (the Knesset site is not reachable from here), the IDF archive catalogue
+  search, the Israel State Archives, and the NLI record pages.
+
+**Opened on 27 October 2026, and what each returned**
+
+- **Wikimedia Commons API**, `https://commons.wikimedia.org/w/api.php`: file-page wikitext, `imageinfo` size and licence,
+  the category lists of Israel Rokach (61 files) and Haim Cohn (10 files), the thumbnails of two frames.
+  [V, agent read 27 Oct; a person's check pending]
+- **Wikidata API** (`wbgetentities`): the item of Israel Rokach, Q129676, has P9770 (Knesset member ID) = 620 and P18 =
+  `Israel Rokach 1950.jpg`. [V, agent read 27 Oct; a person's check pending]
+- **Europeana search API** (`https://api.europeana.eu/record/v2/search.json`, the public demo key): titles, years and rights of
+  the records returned. The Europeana item pages answered HTTP 403 (a browser check), so only the API's record fields were read.
+  [V, agent read 27 Oct; a person's check pending]
+- **GPO photo collection terms**, `https://gpophoto.gov.il/haetonot/Eng_ShowPage.aspx?id=30`: opens now (HTTP 200, a page headed
+  "Terms"). Its summary says "You may: Use any photograph that appears on the Site, except photographs which bear the notice
+  '© Copyright held by the photographer'", and "You are prohibited from: ... Creating derivative works". A crop is a derivative,
+  and the licence also bars "commercial advertising or political activity", so it is not one of the four licences the project
+  accepts. [V, agent read 27 Oct; a person's check pending] The gov.il photography page returned HTTP 403 (Cloudflare "Attention
+  Required"). [GAP]
+- **IDF and Defence Establishment Archive**, `https://archives.mod.gov.il/Pages/SearchCatalogTz.aspx`: the page opens (HTTP 200)
+  but is a search form that runs in a browser; no search was run. [GAP] Its photographs carry a fee licence (first pass), so this
+  source could add identity and date only, not a qualifying licence.
+- **Knesset site**, `https://main.knesset.gov.il/en/mk/pages/mk.aspx?mkid=620` and the older `knesset.gov.il/mk/eng/mk_eng.asp`
+  form: both answered HTTP 303 and then a page at `https://www.knesset.gov.il/maintenance-page-geo` whose text says "The site is
+  temporarily inaccessible from your location". [V, agent read 27 Oct; a person's check pending] Not spoofed. [GAP]
+- **NLI** (`https://www.nli.org.il/en/archives/NNL_ARCHIVE_AL997008137543605171/NLI`): HTTP 403, "Checking your browser...".
+  **Israel State Archives** (`https://www.archives.gov.il/`): HTTP 403. [GAP]
+
+### Israel Rokach: one file that meets the rule
+
+| Person | File page (https://commons.wikimedia.org/wiki/File:...) | Licence | Size | Date as the page gives it | Identity as the page gives it | Note |
+|---|---|---|---|---|---|---|
+| Israel Rokach | `Tel_Aviv-Yafo_(997008137543605171).jpg` | CC BY 4.0 | 920x657 | 1949-02 | NLI title "ראש עיריית תל אביב, ישראל רוקח" (my translation: Mayor of Tel Aviv, Israel Rokach), depicted person Q129676 only [S] | single man in the thumbnail; a crop at least 512 px tall fits the 657 px frame |
+
+- The page's wikitext, read 27 Oct: photographer Benno Rothenberg, institution National Library of Israel, call number "ARC. 4*
+  2068 / 269 ארכיון בנו רותנברג", `{{cc-by-4.0|1={{Meitar Collection/license credit line|...}}}}`, permission ticket VRTS
+  2021092910005788 (the same ticket as the first pass's Meitar files), categories "1949 in Tel Aviv-Yafo", "Israel Rokach",
+  "Photographs by Benno Rothenberg". The category "Meitar Collection (review needed)" is not on it. [V, agent read 27 Oct; a
+  person's check pending]
+- Identity is the NLI title as copied onto Commons [S]; the NLI record page itself returned HTTP 403. The photograph is dated
+  February 1949 and its title gives his office as mayor of Tel Aviv, so it is earlier than the 1952-56 period of this note.
+- **Frame size.** The whole frame is 920x657 (so the 512 px height limit of `tools/tests/test_portraits_1948_51.py` leaves
+  room). Part of a second face is at the right edge, so the crop has to keep clear of it; whether the result is large enough is for
+  a person with the file.
+- **Attribution.** CC BY 4.0 needs an attribution entry in NOTICE; the owner's comment on #6 after the Lavon, Dov Yosef, Yadin and
+  Naftali candidates accepts Meitar CC BY 4.0 portraits on that condition. [V, agent read 27 Oct; a person's check pending]
+
+### Why the other Rokach frames were not taken
+
+The 17 Meitar frames in his category are all `{{cc-by-4.0|...}}`, by Benno Rothenberg, dated on the pages from 1948 to December 1949.
+By the wikitext's depicted-person field, six show only Rokach (`...652905171`, `...653005171`, `...653105171`, `...160805171`,
+`...543505171`, `...543605171`) and eleven name two or three people. The Hebrew title or caption names him in ten of the 17
+(the title for `...543605171`, the caption for nine). Two were opened as images:
+
+- `Tel_Aviv-Yafo_(997008137543505171).jpg` (February 1949, 936x673, welcoming the President): three men. Group shot, does not
+  qualify. [V, agent read 27 Oct; a person's check pending]
+- `Tel_Aviv-Yafo_(997008137543605171).jpg`: the one in the table above.
+
+The other 15 were not opened as images. Of the six with only Rokach in the depicted-person field, three (`...652905171`,
+`...653005171`, `...653105171`, 1948, 1451x949, 1459x932 and 1451x924) have a caption saying the mayor accompanies "them" on a visit, so they are not portraits by their own record; `...160805171` (936x653, 1949) has no
+caption. [S] A person could open these. The 1948 to 1949 frames with two or more depicted people (Weizmann, the Health Minister,
+the Interior Minister) are group frames by their own record and were not taken.
+
+### Knesset Archives file for Rokach: searched again, none
+
+Commons API, `list=search`, namespace 6 (File), 50 results asked, run 27 Oct 2026. URL form:
+`https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srlimit=50&format=json&srsearch=<query>`.
+[V, agent read 27 Oct; a person's check pending]
+
+| Query | Total hits | Note |
+|---|---|---|
+| `insource:"Knesset Archive\|1=620\|"` | 0 | code 620 is Rokach's (Wikidata P9770) |
+| `insource:"Knesset Archive\|1=620"` | 0 | same without the closing bar |
+| `insource:"Knesset Archive\|1=468\|"` | 2 | control: both are Pinchas Lavon files, so the pattern works |
+| `insource:"Knesset Archive" "Rokach"` | 0 | |
+| `insource:"Knesset Archive" "Rokah"` | 0 | |
+| `insource:"Knesset Archive" "רוקח"` | 2 | two PDF documents, no photograph |
+| `haswbstatement:P180=Q129676` | 1 | `Israel Rokach 1950.jpg`, the GPO file already refused |
+| `insource:"Israel Rokach" insource:"Cc-by-4.0"` | 57 | includes the IPPA frames of a bridge opening named after him; with `-intitle:Opening` 17, the 17 Meitar frames |
+
+Category "Israel Rokach", 61 files, by licence as the API reports it: Public domain 40, CC BY 4.0 17, CC BY-SA 3.0 2, CC BY-SA 4.0 1
+(a graphic of the 1951 election, not a photograph), CC0 1 (the 1949 Nationaal Archief doorman frame of the first pass).
+
+Europeana API, `https://api.europeana.eu/record/v2/search.json?wskey=<demo key>&query=<query>&rows=100&profile=standard`, 27 Oct:
+`Israel Rokach` 38 records, titles read, none a photograph of him as the subject (a tennis-courts record, a bridge, unrelated
+items); `ישראל רוקח` 4 records, none a photograph of him; `"Israel Rokach"` 0; `Rokach Tel Aviv mayor` 3 (a bridge dig of 1974
+and a 1932 conference). [V, agent read 27 Oct; a person's check pending]
+
+### Haim Cohn: still none
+
+- Category "Haim Cohn", 10 files: 8 CC BY 4.0 (the five June 1965 Meitar frames titled "שופטי בית המשפט העליון." (Supreme Court
+  judges) with no depicted person, the two June 1965 frames naming three judges, and one IPPA frame of 1980) and 2 Public domain
+  (`Cohen haim.jpg`, PD-Israel only, 10 June 1952, refused in the first pass, and `6 - MekorotOilAgreement.jpg`).
+- New in this pass: `6 - MekorotOilAgreement.jpg`, 4 March 1952, source Yad Levi Eshkol, description "Signature of the Ampal Contract
+  ... Standing behind: Moshe Sharett, Levi Eshkol, Haim Cohen", licence `{{PD-Israel}}` only. A group shot and PD-Israel only: does
+  not qualify. [V, agent read 27 Oct; a person's check pending]
+- `haswbstatement:P180=Q1058964`: 13 hits, the same files as the category plus three IPPA frames of 1980 (FL45815251,
+  FL45815269, FL45815294), all already in the first pass. Other Commons queries: `insource:"חיים כהן" insource:"היועץ המשפטי"` 0;
+  `Chaim Cohn Israel justice` 1 (a PDF). [V, agent read 27 Oct; a person's check pending]
+- Europeana, 27 Oct: `Haim Cohn` 48 records. Where a year is given it is between 1980 and 1986 (Hadani collection items such as
+  "Movement tolerance with Judge Haim Cohen" of 1982, conference and prize-giving frames); one more, "Eli Rothschild Collection.,
+  1986", carries CC BY-NC-ND 4.0. `Haim Cohen attorney general`, `חיים כהן היועץ המשפטי` and `Attorney General Cohen Israel`: 0 each.
+  [V, agent read 27 Oct; a person's check pending]
+- So the second pass found no qualifying file for Haim Cohn. "None found by these searches": the IDF catalogue and the Israel
+  State Archives were not searched.
+
 ## Open for a person (not for this note)
 
 - The likeness check of every file above (owner's rule on #6).
 - [GAP] The photograph dates of the Knesset portraits. The Knesset Archives record pages, which may hold them, were not
   opened.
+  (second pass, 27 Oct: the Knesset site answered "temporarily inaccessible from your location"; still [GAP]. [V, agent read 27 Oct; a person's check pending])
 - [GAP] Haim Cohn and Israel Rokach: a search of the IDF archive catalogue, Europeana and the Israel State Archives.
+  (second pass, 27 Oct: Europeana done, see below; the IDF catalogue, the Israel State Archives and the Knesset record pages
+  stay [GAP].)
 - Which of the two or three files per person to choose, and the crop (a crop must stay at least 512 px tall).
