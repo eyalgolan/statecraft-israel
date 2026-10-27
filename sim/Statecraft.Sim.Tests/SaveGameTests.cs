@@ -272,13 +272,35 @@ public class SaveGameTests
         Assert.NotEqual(before, after);
     }
 
-    /// <summary>Every command type the sim has must be savable: the played session uses each one, and a new Command type
+    /// <summary>Every command type the sim has must be savable: the played sessions use each one, and a new Command type
     /// that the save format cannot write fails here.</summary>
     [Fact]
     public void EveryCommandTypeIsInTheSavedSession()
     {
+        // R-CTRL-023, R-SAVE-003: Fixture1 is legacy; also play and save a successful gdd-0.3 acquisition.
+        var c = CaptureTests.Load(files =>
+        {
+            files["eras.yaml"] = files["eras.yaml"].Replace("loop: gdd", "loop: gdd, ruleset: " + SaveGame.Gdd03Ruleset);
+            files[Gdd03BalanceCatalogue.FileName] = File.ReadAllText(Path.Combine(RealContentTests.ContentRoot(), Gdd03BalanceCatalogue.FileName));
+        }, CaptureTests.AllTargets);
+        c.StartingForces.Add(new StartingForce { Row = "fixture", Type = "soldier", Side = "israel", Strength = 2, Q = 1, R = 0 });
+        var modern = GameSession.New(c, 1, Mode.Historical);
+        Assert.Null(modern.Commit(new CaptureLocality("town_a")));
+        Assert.Empty(modern.EndTurn(new Command[] { new ResolveCapture("town_a", SettlementControl.Occupy) }).Rejected);
+        Assert.Empty(modern.Save.Open);
+        var text = modern.Save.Write();
+        Assert.Contains("capture_locality town_a\ncapture town_a occupy\n", text);
+        var saved = SaveGame.Parse(text, c.Ruleset);
+        Assert.IsType<CaptureLocality>(Assert.Single(saved.Turns)[0]);
+        Assert.Equal(text, saved.Write());
+        var loaded = GameSession.Load(c, text, out var warnings);
+        Assert.Empty(warnings);
+        Assert.Equal(modern.State.Hash(), loaded.State.Hash());
+        Assert.Equal(text, loaded.Save.Write());
+
         var all = typeof(Command).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Command)) && !t.IsAbstract).Select(t => t.Name).OrderBy(x => x).ToList();
-        var used = Played(Fixture1()).Save.Turns.SelectMany(x => x).Select(x => x.GetType().Name).Distinct().OrderBy(x => x).ToList();
+        var used = Played(Fixture1()).Save.Turns.SelectMany(x => x).Concat(saved.Turns.SelectMany(x => x))
+            .Select(x => x.GetType().Name).Distinct().OrderBy(x => x).ToList();
         Assert.Equal(all, used);
     }
 
