@@ -11,7 +11,7 @@ using UnityEngine.TestTools;
 /// <summary>The Civ-like border prototype (#196, owner 2026-10-26): its variants' rules (MapBorders.BandWidths, TintAlpha,
 /// the neutral dashes), which StatecraftBorders.hlsl mirrors, rendered checks of each variant, and the switch. A2 is the
 /// default (owner ruling 2026-10-27); BorderTests, GradeTests and SubdistrictTests pin Legacy (main's earlier look) and run
-/// main's assertions unchanged on it (review C320).</summary>
+/// main's assertions unchanged on it.</summary>
 public class BorderCivTests
 {
     const float Inradius = 4330.127f;   // 5 km hexes
@@ -125,7 +125,7 @@ public class BorderCivTests
         Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("", new[] { "Unity", "-batchmode" }, webgl: false));
     }
 
-    /// <summary>Review C320: a bad selection draws the default (A2, WithNoFlagTheMapDrawsA2); "legacy" draws main's earlier
+    /// <summary>A bad selection draws the default (A2, WithNoFlagTheMapDrawsA2); "legacy" draws main's earlier
     /// look; a URL parameter or a command-line flag picks a variant, and the switch reaches the shader. Every transition
     /// installs its whole set of globals (B2 to C2 drops the rim, C2 to A drops the blue, back to Legacy restores main's).</summary>
     [Test]
@@ -180,7 +180,7 @@ public class BorderCivTests
 
     // ---- Rendered: the shader against its mirror, for every variant ----
 
-    /// <summary>Review C320: each prototype variant's rendered Primary band (colour and light stripes) is the width
+    /// <summary>Each prototype variant's rendered Primary band (colour and light stripes) is the width
     /// MapBorders.BandWidths predicts for the metres per pixel measured along the walk, at gameplay03 and at 150 km (where
     /// the pixel floors bind): no narrower than 0.5 px under it, and no more than 2 px over it (the band's two box-filtered
     /// end pixels count whole when partly covered; measured +1.3 to +1.7 px). A shader that drifted from its C# mirror
@@ -400,7 +400,7 @@ public class BorderCivTests
         Assert.LessOrEqual(nm, dm + 2f, "no band along the coast: only the tint the whole hex has");
     }
 
-    /// <summary>Review C320: a shared neutral edge's dashes line up on both sides (one dash phase per edge, not per hex).
+    /// <summary>A shared neutral edge's dashes line up on both sides (one dash phase per edge, not per hex).
     /// Across the proof's blocks drawn all Neutral (every block boundary a shared neutral edge), at 11 points along an edge
     /// the two sides within 80 m of it are both on a dash or both in a gap at least 9 times.</summary>
     [UnityTest]

@@ -17,7 +17,7 @@ namespace Statecraft.Game.Map
     /// <summary>The Civ-like border prototype's variants for the owner to choose from (#196, owner 2026-10-26: "make the border
     /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). A2 is the default (owner ruling 2026-10-27:
     /// "A2: stronger bands (Recommended)"; MapBorders.DefaultVariant). Legacy: main's earlier borders exactly, still
-    /// selectable (review C320). A: bands that hold their weight at every
+    /// selectable. A: bands that hold their weight at every
     /// zoom, an equal wash on both sides reaching a quarter of the hex, pixel floors and a territory tint that grows as the
     /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
     /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
