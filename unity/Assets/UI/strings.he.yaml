@@ -135,7 +135,7 @@ feedback.itch: "אין חשבון בגיטהאב? תגובה בדף המשחק �
 # "Share" (#1170, SharePresenter): the button and the panel's title ("sharing a picture from the game"), the post, Share,
 # "downloading the picture", and the note ("these sites do not take a picture through a link: the downloaded picture is
 # to be attached to the post"). The post opens with a noun phrase ("running the State of Israel in 1948 in the game
-# Statecraft: Israel, ...") instead of the English "I'm running", which in Hebrew would agree with the player's gender;
+# Statecraft: Israel, ...") instead of the English "I'm playing", which in Hebrew would agree with the player's gender;
 # it keeps the game's name and the URL in Latin letters, as README.he.md does. Approved by Beri, a native speaker,
 # on #1182 (20 Oct 2026). share.post no longer says "בקוד פתוח" (open source) since the code licence changed (#1371,
 # 22 Oct 2026): agent-checked, for the native reviewer (#564). share.post's second link, "קוד המקור" (the source code,
