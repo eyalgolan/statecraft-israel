@@ -503,6 +503,7 @@ namespace Statecraft.Game.UI
                         || scaled && r.height < TightScaledBelowHeightPx;
             var changed = tight != hudRoot.ClassListContains(TightClass);
             hudRoot.EnableInClassList(TightClass, tight);
+            if (changed) ScreenNav.DisableCovered(hudRoot);
             var ratioSum = r.width / 1920f + r.height / 1080f;
             var scale150 = ratioSum < 1.4f;
             hudRoot.EnableInClassList(Scale150Class, scale150);

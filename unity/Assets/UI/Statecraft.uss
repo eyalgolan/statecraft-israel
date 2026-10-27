@@ -1209,7 +1209,7 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .party-chip,
 .hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .party-chip > Label { flex-shrink: 1; min-width: 0; }
 
-/* PROTOTYPE for the owner (#1135, morning batch): at 150% on a tight window the decision card's head is compact, so the
+/* Owner ruling, 27 October: "Compact card + allow scroll (Recommended)" (#1135). At 150% on a tight window the head is compact, so the
    longest cards (#1545's Jerusalem and Rafah follow-ups) keep Hide and the options inside the card. Same 3:4 portrait
    (EventCardPresenter frames it by aspect), smaller; the title one step down. 100% and 125% are unchanged. */
 .hud-tight.hud-scale-150 .event-card { padding-top: 8px; padding-bottom: 4px; }

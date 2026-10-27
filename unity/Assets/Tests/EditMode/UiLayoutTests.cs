@@ -564,11 +564,10 @@ public class UiLayoutTests
                     // without scrolling; shorter windows may scroll the body as the fallback.
                     var scroll = root.Q<ScrollView>("event-scroll");
                     var logicalHeight = root.panel.visualTree.layout.height;
-                    // PROTOTYPE (owner to pick, #1135): at 150% a window can be tall enough in logical px but too narrow for the
-                    // card's full width (800x1000 is 794 px wide, a phone 528), so the text wraps into more lines than at 100%;
-                    // there the body may scroll as the fallback. Hide and the options are still checked above, at every size.
-                    var narrowAt150 = uiScale == 150 && root.Q("event-card").worldBound.width < CardMaxWidth - 1f;
-                    if (!narrowAt150 && logicalHeight >= EventCardPresenter.ScrollFallbackHeight && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
+                    // Owner ruling, 27 October: "Compact card + allow scroll (Recommended)" (#1135).
+                    // The narrow-card fallback is at 150% only; Hide and the options are still checked above at every size.
+                    if (CardBodyScrollsTooMuch(uiScale, root.Q("event-card").worldBound.width, logicalHeight,
+                                              scroll.contentContainer.layout.height, scroll.contentViewport.layout.height))
                         problems.Add($"{w}x{h} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
                 }
                 Debug.Log($"I2 {w}x{h}: tallest card {tallestId} {tallest:0} px");
@@ -581,6 +580,37 @@ public class UiLayoutTests
             }
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static bool CardBodyScrollsTooMuch(int uiScale, float width, float logicalHeight, float contentHeight, float viewportHeight)
+    {
+        var narrowAt150 = uiScale == 150 && width < CardMaxWidth - 1f;
+        return !narrowAt150 && logicalHeight >= EventCardPresenter.ScrollFallbackHeight && contentHeight > viewportHeight + 1f;
+    }
+
+    [TestCase(150, 1038f, false)]
+    [TestCase(150, 1039f, true)]
+    [TestCase(150, 1040f, true)]
+    [TestCase(150, 1041f, true)]
+    [TestCase(125, 1038f, true)]
+    [TestCase(125, 1039f, true)]
+    [TestCase(125, 1040f, true)]
+    [TestCase(125, 1041f, true)]
+    [TestCase(100, 1038f, true)]
+    [TestCase(100, 1039f, true)]
+    [TestCase(100, 1040f, true)]
+    [TestCase(100, 1041f, true)]
+    public void TheBodyScrollCheckKeepsItsWidthAndScaleBoundary(int uiScale, float width, bool expectedProblem)
+    {
+        Assert.AreEqual(expectedProblem, CardBodyScrollsTooMuch(uiScale, width, EventCardPresenter.ScrollFallbackHeight, 200f, 100f));
+    }
+
+    [TestCase(100, 1039f)]
+    [TestCase(125, 1040f)]
+    [TestCase(150, 1041f)]
+    public void ShortWindowsKeepTheBodyScrollFallback(int uiScale, float width)
+    {
+        Assert.IsFalse(CardBodyScrollsTooMuch(uiScale, width, EventCardPresenter.ScrollFallbackHeight - 1f, 200f, 100f));
     }
 
     /// <summary>The decision card's place: in the decision layer, centred across it, at most CardMaxWidth logical px wide and

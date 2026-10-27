@@ -62,7 +62,8 @@ public class LeftColumnTests
     /// navigation, the decision card (open when the session has an event), the info panel on Lydda's hex, the minimap and the
     /// border caption. <paramref name="photos"/>: the card shows its event's photograph (the taller card).</summary>
     static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, System.Action<VisualElement, ScreenNav> check, System.Action<VisualElement, ScreenNav>? act = null,
-                                EventImageCatalog? photos = null, int uiScale = 100)
+                                EventImageCatalog? photos = null, int uiScale = 100,
+                                System.Func<VisualElement, ScreenNav, PanelSettings, IEnumerator>? interact = null)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
@@ -95,6 +96,7 @@ public class LeftColumnTests
             for (int i = 0; i < 30 && !(root.Q("nav-cabinet").layout.width > 0); i++) yield return null;
             for (int i = 0; i < 3; i++) yield return null;
             check(root, nav);
+            if (interact != null) yield return interact(root, nav, ps);
         }
         finally
         {
@@ -188,10 +190,100 @@ public class LeftColumnTests
                     if (!hud.ClassListContains(HudPresenter.TightClass) || !hud.ClassListContains(HudPresenter.ThreeRowClass)) problems.Add($"{at}: precondition: the tight three-row HUD");
                     var window = root.worldBound; var screen = root.Q("screen-cabinet").worldBound;
                     if (!(screen.width > 0)) { problems.Add($"{at}: precondition: the Cabinet shows"); return; }
-                    if (screen.yMin > window.yMin + 12f)   // its 8 px inset, give or take the panel's scaling problems.Add($"{at}: the screen {screen} starts {screen.yMin - window.yMin:0} px down, not at the window's top");
-                    if (screen.xMin < window.xMin - 0.5f || screen.xMax > window.xMax + 0.5f || screen.yMax > window.yMax + 0.5f) problems.Add($"{at}: the screen {screen} leaves the window {window}");
+                    CheckPhoneScreenBounds(at, window, screen, problems);
                 }, (root, nav) => nav.Toggle("cabinet"));
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static void CheckPhoneScreenBounds(string at, Rect window, Rect screen, List<string> problems)
+    {
+        // Its 8 px inset, give or take the panel's scaling.
+        if (screen.yMin > window.yMin + 12f)
+        {
+            problems.Add(System.FormattableString.Invariant($"{at}: the screen {screen} starts {screen.yMin - window.yMin:0} px down, not at the window's top"));
+        }
+        if (screen.xMin < window.xMin - 0.5f || screen.xMax > window.xMax + 0.5f || screen.yMax > window.yMax + 0.5f)
+        {
+            problems.Add(System.FormattableString.Invariant($"{at}: the screen {screen} leaves the window {window}"));
+        }
+    }
+
+    [TestCase(8f, 8f, 374f, 800f, 0)]
+    [TestCase(8f, 12f, 374f, 800f, 0)]
+    [TestCase(8f, 20f, 374f, 800f, 1)]
+    [TestCase(-1f, 8f, 374f, 800f, 1)]
+    [TestCase(8f, 8f, 383f, 800f, 1)]
+    [TestCase(8f, 8f, 374f, 837f, 1)]
+    [TestCase(-1f, 20f, 374f, 800f, 2)]
+    public void PhoneScreenBoundsRejectDisplacementAndOverflowIndependently(float x, float y, float width, float height, int expectedProblems)
+    {
+        var problems = new List<string>();
+        CheckPhoneScreenBounds("phone", new Rect(0f, 0f, 390f, 844f), new Rect(x, y, width, height), problems);
+        Assert.AreEqual(expectedProblems, problems.Count, string.Join("\n", problems));
+    }
+
+    [UnityTest]
+    public IEnumerator FullWindowScreensExcludeCoveredControlsAcrossLiveScaleChanges()
+    {
+        foreach (var hebrew in new[] { false, true })
+            yield return Rendered(1024, 1024, hebrew, GameSession.New(C, GoldenRun.Seed, Mode.Historical),
+                (root, nav) => { }, interact: CheckFullWindowKeyboard);
+    }
+
+    static IEnumerator CheckFullWindowKeyboard(VisualElement root, ScreenNav nav, PanelSettings ps)
+    {
+        int activations = 0;
+        var controls = new[] { root.Q<Button>("new-game"), root.Q<Button>("end-turn") }
+            .Concat(root.Q("left-column").Query<Button>().ToList()).ToArray();
+        // Community controls also belong to the covered lane.
+        controls = controls.Concat(root.Q(CommunityIconsPresenter.ColumnName).Query<Button>().ToList()).ToArray();
+        System.Action activated = () => activations++;
+        foreach (var b in controls) b.clicked += activated;
+        try
+        {
+            UiTestKit.Press(root.Q<Button>("event-hide"));
+            nav.Open("cabinet");
+            foreach (var scale in new[] { 100, 125, 150, 100, 150 })
+            {
+                ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / scale), Mathf.RoundToInt(1080f * 100f / scale));
+                for (int i = 0; i < 8; i++) yield return null;
+                var hud = root.Q("root");
+                bool covered = hud.ClassListContains(HudPresenter.TightClass) && hud.ClassListContains(HudPresenter.ThreeRowClass);
+                Assert.AreEqual(scale == 150, covered, "1024x1024 crosses into the full-window tier at 150%");
+                var x = root.Q<Button>("screen-close-cabinet");
+                x.Focus();
+                foreach (var b in controls)
+                {
+                    Assert.AreEqual(!covered, b.enabledInHierarchy, "covered lanes restore when leaving the tier");
+                    if (!covered) continue;
+                    Assert.IsFalse(b.canGrabFocus, "covered controls are outside keyboard focus");
+                    b.Focus();
+                    Assert.AreNotSame(b, root.panel.focusController.focusedElement);
+                    UiTestKit.Press(b);
+                }
+                Assert.AreEqual(0, activations, "keyboard submit cannot activate a covered control");
+                Assert.AreEqual("cabinet", nav.Current, "covered navigation cannot replace the screen");
+                if (covered)
+                {
+                    for (int i = 0; i < 24; i++)
+                    {
+                        var focused = (VisualElement)root.panel.focusController.focusedElement;
+                        Assert.IsNotNull(focused, "the keyboard retains a traversal target");
+                        using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = focused; focused.SendEvent(e); }
+                        yield return null;
+                        Assert.IsFalse(controls.Any(b => b == root.panel.focusController.focusedElement), "Tab skips the covered controls");
+                    }
+                }
+                nav.Close();
+                foreach (var b in controls) Assert.IsTrue(b.enabledInHierarchy, "closing restores covered controls");
+                root.Q<Button>("nav-budget").Focus();
+                UiTestKit.Press(root.Q<Button>("nav-budget"));
+                Assert.AreEqual("budget", nav.Current, "restored navigation activates by keyboard");
+                activations = 0;
+                nav.Open("cabinet");
+            }
+        }
+        finally { foreach (var b in controls) b.clicked -= activated; }
     }
 
     /// <summary>Review of #859 at fb2a8dc (WebGL) and the owner's ruling there (17 October 2026): on a phone held upright,
