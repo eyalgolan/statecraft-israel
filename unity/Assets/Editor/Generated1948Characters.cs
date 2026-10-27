@@ -25,7 +25,8 @@ namespace Statecraft.Game.EditorTools
         {
             int index = Array.IndexOf(Ids, id);
             if (index < 0) throw new ArgumentException("Character is outside the explicit import scope", nameof(id));
-            return (index == 1 || index == 3 ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
+            return (Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry(id)
+                ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
         }
         static string Model(string id, string level) => $"{Dir(id)}/{id}.fbx";
         static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath(Model(id, level))
@@ -245,10 +246,11 @@ namespace Statecraft.Game.EditorTools
                 var rig = camera.GetComponent<Statecraft.Game.Map.CameraRig>();
                 camera.aspect = 16f / 9f;
                 var records = new List<string>();
-                foreach (string side in new[] { "syria", "iraq" })
+                foreach (string side in new[] { "syria", "iraq", "egypt" })
                 {
                     var row = map.UnitEntries.First(u => u.Side == side && u.Anchors.Count > 0);
-                    var spot = layer.Spots.First(p => row.Anchors.Contains(p.Key) && state.Date >= Statecraft.Game.Map.Units.UnitData.Day(p.Key.From) && state.Date < Statecraft.Game.Map.Units.UnitData.Day(p.Key.To)).Value;
+                    // The anchor the roster draws (UnitRoster.AnchorAt): Egypt's forward base where its two truce windows overlap.
+                    var spot = layer.Spots[Statecraft.Game.Map.Units.UnitRoster.AnchorAt(row, state.Date)];
                     rig.LookAt = Statecraft.Game.Map.Units.UnitShowcase.Ground(map, new Vector3((float)spot.X, 0, (float)spot.Z));
                     rig.Distance = 24000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply(); layer.FaceCamera(camera);
                     string before = Path.Combine(output, side + "-before.jpg");
