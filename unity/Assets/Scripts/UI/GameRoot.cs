@@ -785,7 +785,7 @@ namespace Statecraft.Game.UI
 
         // R-CAMERA-001: exact ruleset identity; gdd-0.1 retains orbit.
         internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
-            controller.SetFixedNorth(false);
+            controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         void Shutdown()
