@@ -1,5 +1,4 @@
 #nullable enable
-using System.Collections.Generic;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.UI;
@@ -15,72 +14,16 @@ public class FixedNorthCameraTests : InputTestFixture
     CameraRig rig = null!;
     CameraController controller = null!;
     InputActionAsset actions = null!;
-    readonly List<(InputAction action, bool enabled, InputBinding[] bindings)> saved =
-        new List<(InputAction, bool, InputBinding[])>();
-
-    public override void Setup()
-    {
-        go = null!; controller = null!;
-        saved.Clear();
-        actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
-        Assert.IsNotNull(actions, "the shipped input asset must exist");
-        // Capture before the input fixture resets and disables project-wide actions.
-        foreach (var action in actions.FindActionMap("Camera", true).actions)
-        {
-            var bindings = new InputBinding[action.bindings.Count];
-            for (int i = 0; i < bindings.Length; i++) bindings[i] = action.bindings[i];
-            saved.Add((action, action.enabled, bindings));
-        }
-        base.Setup();
-    }
-
-    public override void TearDown()
-    {
-        try
-        {
-            Close();
-        }
-        finally
-        {
-            try
-            {
-                // Restore all three override fields, preserving null versus empty strings.
-                foreach (var state in saved)
-                {
-                    state.action.Disable();
-                    for (int i = 0; i < state.bindings.Length; i++)
-                        state.action.ApplyBindingOverride(i, state.bindings[i]);
-                }
-            }
-            finally
-            {
-                try { base.TearDown(); }
-                finally
-                {
-                    foreach (var state in saved)
-                    {
-                        if (state.enabled) state.action.Enable();
-                        else state.action.Disable();
-                    }
-                    saved.Clear();
-                }
-            }
-        }
-    }
 
     static void Send(CameraController c, string method) => typeof(CameraController).GetMethod(method,
         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
 
     void Open(string ruleset)
     {
+        // The persisted shipped asset, as CameraInputTests uses it; InputTestFixture restores the input system.
+        actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        Assert.IsNotNull(actions, "the shipped input asset must exist");
         InputSystem.actions = actions;
-        // Exercise the shipped paths without inheriting another test's runtime overrides.
-        foreach (var state in saved)
-        {
-            state.action.Disable();
-            for (int i = 0; i < state.bindings.Length; i++)
-                state.action.ApplyBindingOverride(i, default(InputBinding));
-        }
         go = new GameObject("FixedNorthCamera", typeof(Camera), typeof(CameraRig));
         rig = go.GetComponent<CameraRig>();
         rig.LookAt = new Vector3(500000, 0, 500000); rig.Distance = 100000f; rig.Yaw = 37f;
