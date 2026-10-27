@@ -338,4 +338,82 @@ people:
     [Fact]
     public void AnUnsupportedKeywordIsRefusedNotIgnored() =>
         Assert.Throws<InvalidOperationException>(() => Check(JsonDocument.Parse("{\"oneOf\": []}").RootElement, default, JsonValue.Create("x"), "$", new List<string>()));
+
+    // R-MEDIT-001/002/003: synthetic authoring shape, never runtime content.
+    static string SyntheticEditorEnvelope()
+    {
+        var value = new MapEditorOverlay {
+            Version = MapEditorOverlay.VersionId, Ruleset = SaveGame.Gdd03Ruleset, Draft = true,
+            BaseRevision = "fixture'only", BaseDigest = new string('a', 64),
+            Overlay = MapOverrides.Parse("terrain: []\ncontrol: []\nlocations: []\n"),
+            Workable = new List<MapEditorWorkable> { new MapEditorWorkable {
+                Hex = new MapEditorHex { Q = 1, R = -2 }, Value = false } },
+            Regions = new List<MapEditorRegion> { new MapEditorRegion {
+                Hex = new MapEditorHex { Q = 1, R = -2 }, RegionId = "fixture'only" } },
+            Infrastructure = new List<MapEditorInfrastructure> { new MapEditorInfrastructure {
+                Hex = new MapEditorHex { Q = 1, R = -2 }, Id = "fixture'only", Kind = "fixture'only", ParentId = "fixture'only" } }
+        };
+        value.Overlay = MapOverrides.Parse("terrain: [{ hex: { q: 1, r: -2 }, value: hills }]\n"
+            + "control: [{ hex: { q: 1, r: -2 }, period: fixture_only, value: I }]\n"
+            + "locations: [{ id: fixture_only, hex: { q: 1, r: -2 } }]\n");
+        return MapEditorOverlay.Serialize(value);
+    }
+
+    [Fact]
+    public void SyntheticEditorEnvelopePassesItsSeparateSchema()
+    {
+        var text = SyntheticEditorEnvelope();
+        Assert.Equal("# yaml-language-server: $schema=../schema/map-editor-overlay.schema.json", text.Split('\n')[0]);
+        Assert.Empty(Errors("map-editor-overlay.schema.json", text));
+        Assert.NotEmpty(Errors("map-overrides.schema.json", text));
+        Assert.Equal(text, MapEditorOverlay.Serialize(MapEditorOverlay.Parse(text, SaveGame.Gdd03Ruleset)));
+    }
+
+    [Fact]
+    public void EveryAuthoringSchemaKeywordIsSupportedWithoutWideningTheValidator()
+    {
+        void Visit(JsonElement node)
+        {
+            foreach (var property in node.EnumerateObject())
+            {
+                Assert.Contains(property.Name, Supported);
+                if (property.Name == "properties" || property.Name == "definitions")
+                    foreach (var child in property.Value.EnumerateObject()) Visit(child.Value);
+                else if ((property.Name == "items" || property.Name == "additionalProperties")
+                    && property.Value.ValueKind == JsonValueKind.Object) Visit(property.Value);
+            }
+        }
+        Visit(LoadSchema("map-editor-overlay.schema.json"));
+    }
+
+    [Theory]
+    [InlineData("version: 'map-editor-0.3'", "version: future")]
+    [InlineData("ruleset: 'gdd-0.3'", "ruleset: legacy")]
+    [InlineData("draft: true", "unknown: true")]
+    public void AuthoringSchemaRejectsWrongVersionRulesetAndMissingFields(string old, string replacement) =>
+        Assert.NotEmpty(Errors("map-editor-overlay.schema.json", SyntheticEditorEnvelope().Replace(old, replacement)));
+
+    [Theory]
+    [InlineData("fixture\nrevision")]
+    [InlineData("fixture\rrevision")]
+    [InlineData("fixture\trevision")]
+    [InlineData("fixture\n")]
+    [InlineData("fixture revision")]
+    public void AuthoringSchemaRejectsControlAndWhitespaceTokens(string token)
+    {
+        var schema = LoadSchema("map-editor-overlay.schema.json");
+        foreach (var pointer in new[] { "/properties/base_revision", "/properties/regions/items/properties/region_id",
+            "/properties/infrastructure/items/properties/id", "/properties/infrastructure/items/properties/kind",
+            "/properties/infrastructure/items/properties/parent_id" })
+        {
+            Assert.Equal(MapEditorOverlay.TokenPattern, At(schema, pointer).GetProperty("pattern").GetString());
+            var value = (JsonObject)ParseYaml(SyntheticEditorEnvelope())!;
+            if (pointer == "/properties/base_revision") value["base_revision"] = token;
+            else if (pointer.Contains("/regions/")) value["regions"]![0]!["region_id"] = token;
+            else value["infrastructure"]![0]![pointer.Substring(pointer.LastIndexOf('/') + 1)] = token;
+            var errors = new List<string>();
+            Check(schema, schema, value, "$", errors);
+            Assert.NotEmpty(errors);
+        }
+    }
 }
