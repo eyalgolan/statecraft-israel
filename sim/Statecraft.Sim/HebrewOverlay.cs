@@ -51,6 +51,9 @@ namespace Statecraft.Sim
             "map/localities_1948.yaml", "map/settlements_1948.yaml", "map/units_1948.yaml",
         };
 
+        /// <summary>The content files the sim holds Hebrew for.</summary>
+        internal static IEnumerable<string> Files => Bindings.Select(b => b.File).Distinct();
+
         /// <summary>The (type, property) pairs the overlay fills, events included.</summary>
         public static IEnumerable<(Type Type, string Property)> Covered =>
             Bindings.Select(b => (b.Value.DeclaringType!, b.Value.Name))

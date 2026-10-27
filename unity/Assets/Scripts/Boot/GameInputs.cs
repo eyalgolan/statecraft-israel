@@ -90,10 +90,17 @@ namespace Statecraft.Game.Boot
         }
 
         /// <summary>Builds the inputs from fetched texts (keys are manifest paths) and the packed heightmap's bytes.</summary>
-        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z)
+        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z) =>
+            FromTexts(texts, manifest, heightmapJson, r16z, new Dictionary<string, string>(), new string[0]);
+
+        /// <summary>FromTexts with the bundle's translations (#1618 step 2): their texts, keyed as
+        /// <paramref name="translationFiles"/> lists them ("ro/ui.yaml").</summary>
+        public static GameInputs FromTexts(IReadOnlyDictionary<string, string> texts, IEnumerable<string> manifest, string heightmapJson, byte[] r16z,
+            IReadOnlyDictionary<string, string> translationTexts, IEnumerable<string> translationFiles)
         {
             var events = manifest.Where(f => f.StartsWith("events/", StringComparison.Ordinal)).ToList();
-            var content = ContentLoader.Load(rel => texts.TryGetValue(rel, out var t) ? t : null, events);
+            var content = ContentLoader.Load(rel => texts.TryGetValue(rel, out var t) ? t : null, events,
+                rel => translationTexts.TryGetValue(rel, out var t) ? t : null, translationFiles);
             return new GameInputs
             {
                 Content = content,
@@ -162,11 +169,11 @@ namespace Statecraft.Game.Boot
                 var goldenText = GoldenCheck.Requested() ? await Text(Get("golden/manifest.txt"), "golden/manifest.txt", stallSeconds) : "";
                 var scenarioNames = goldenText.Length == 0 ? new List<string>() : GoldenData.Parse(goldenText).Select(x => x.name).Where(n => n.StartsWith("scenario-", StringComparison.Ordinal)).Select(n => n.Substring("scenario-".Length)).ToList();
                 foreach (var n in scenarioNames) scenarioRequests.Add((n, Get("golden/scenarios/" + n + ".yaml")));
-                var (manifest, texts) = ContentManifest.ParseBundle(await Text(bundle, ContentManifest.BundleFileName, stallSeconds));
+                var (manifest, texts, translations, translationTexts) = ContentManifest.ParseBundleWithTranslations(await Text(bundle, ContentManifest.BundleFileName, stallSeconds));
                 var metaText = await Text(meta, "heightmap.json", stallSeconds);
                 var r16zBytes = await Bytes(r16z, HeightmapCodec.FileName, stallSeconds);
-                DiagLog.BootPhase($"downloaded {texts.Count + 2} files");
-                var inputs = FromTexts(texts, manifest, metaText, r16zBytes);
+                DiagLog.BootPhase($"downloaded {texts.Count + translationTexts.Count + 2} files");
+                var inputs = FromTexts(texts, manifest, metaText, r16zBytes, translationTexts, translations);
                 inputs.Goldens = new GoldenData { Manifest = goldenText };
                 foreach (var (name, request) in scenarioRequests) inputs.Goldens.Scenarios[name] = await Text(request, "golden/scenarios/" + name + ".yaml", stallSeconds);
                 DiagLog.BootPhase("content parsed and validated");
