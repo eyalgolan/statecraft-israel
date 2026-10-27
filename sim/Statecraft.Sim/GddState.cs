@@ -5,6 +5,64 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
+    public enum PlayerRegionFacilityKind { Industry, Workshop, Reception, Training }
+
+    /// <summary>Explicit fixture capacity contribution. Its stable id may be counted only once nationally.</summary>
+    public sealed class PlayerRegionFacility
+    {
+        public string Id { get; }
+        public string Location { get; }
+        public PlayerRegionFacilityKind Kind { get; }
+        public int Capacity { get; }
+        public PlayerRegionFacility(string id, string location, PlayerRegionFacilityKind kind, int capacity)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(location) || capacity < 0
+                || !Enum.IsDefined(typeof(PlayerRegionFacilityKind), kind)) throw new ArgumentException("Explicit facility identity, kind and nonnegative capacity required.");
+            PopulationText.ValidateText(id); PopulationText.ValidateText(location);
+            Id = id; Location = location; Kind = kind; Capacity = capacity;
+        }
+        internal string Canonical() => PopulationText.Fields(Id, Location, Kind.ToString(), Capacity);
+    }
+
+    /// <summary>Immutable regional capacity record, with base values separate from uniquely owned contributions.
+    /// All quantities must be supplied; there is no start allocation or old-city fallback.</summary>
+    public sealed class PlayerRegionPool
+    {
+        public string Id { get; }
+        public int BaseOrdinaryHousing { get; }
+        public int BaseIndustrySlots { get; }
+        public int BaseWorkshopSlots { get; }
+        public decimal Condition { get; }
+        public IReadOnlyList<PlayerRegionFacility> Facilities { get; }
+        public int OrdinaryHousing => BaseOrdinaryHousing;
+        public int IndustrySlots => checked(BaseIndustrySlots + Capacity(PlayerRegionFacilityKind.Industry));
+        public int WorkshopSlots => checked(BaseWorkshopSlots + Capacity(PlayerRegionFacilityKind.Workshop));
+        public int ReceptionBeds => Capacity(PlayerRegionFacilityKind.Reception);
+        public int TrainingBeds => Capacity(PlayerRegionFacilityKind.Training);
+        public PlayerRegionPool(string id, int ordinaryHousing, decimal condition, int industrySlots, int workshopSlots,
+            IEnumerable<PlayerRegionFacility> facilities)
+        {
+            if (string.IsNullOrWhiteSpace(id) || ordinaryHousing < 0 || industrySlots < 0 || workshopSlots < 0 || condition < 0m || condition > 1m)
+                throw new ArgumentException("Explicit region id, nonnegative capacities and a condition fraction from zero to one required.");
+            PopulationText.ValidateText(id);
+            Id = id; BaseOrdinaryHousing = ordinaryHousing; Condition = condition;
+            BaseIndustrySlots = industrySlots; BaseWorkshopSlots = workshopSlots;
+            var rows = facilities.OrderBy(f => f.Id, StringComparer.Ordinal).ToArray();
+            if (rows.Select(f => f.Id).Distinct(StringComparer.Ordinal).Count() != rows.Length) throw new ArgumentException("Duplicate facility id.");
+            Facilities = Array.AsReadOnly(rows);
+            // Validate sums before a record can enter a state.
+            _ = IndustrySlots; _ = WorkshopSlots; _ = ReceptionBeds; _ = TrainingBeds;
+        }
+        int Capacity(PlayerRegionFacilityKind kind)
+        {
+            int sum = 0;
+            foreach (var f in Facilities) if (f.Kind == kind) sum = checked(sum + f.Capacity);
+            return sum;
+        }
+        internal string Canonical() => PopulationText.Fields(Id, BaseOrdinaryHousing, Condition, BaseIndustrySlots,
+            BaseWorkshopSlots, string.Join(";", Facilities.Select(f => f.Canonical())));
+    }
+
     /// <summary>One settlement's control state. Residents are a state, inhabited (the default) or depopulated, never a count
     /// or a combatant field (Q-CAP-2 (b); R-CTRL-003). Immutable so <see cref="GameState.Clone"/> can copy the containing map
     /// shallowly.</summary>
