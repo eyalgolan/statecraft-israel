@@ -30,6 +30,8 @@ R-LOOP-005: Every balance number of the GDD loop (all of `cities.yaml` and `unit
 
 The ID R-LOOP-003 (the Phase 1 overlay, `MvpSlice.Overlay`) is retired with the overlay at the cutover and is not reused.
 
+Synthetic #1716 fixtures provide an internal immutable monthly snapshot for future gdd-0.3 work (R-LOOP-001/002; #1668, loop-switch.md:17-39 at 605277df). There is no shipping caller, resolver integration, persistence or activation. Consumers must revalidate eligibility; R-LOOP-004 is unchanged.
+
 ## Settlement control
 
 R-CTRL-001: Only a settlement in `settlement_targets.yaml` may be captured. Each target is an `arab_town` row of `map/settlements_1948.yaml` (Q-TGT-1 (a), owner ruling of 18 October 2026), stands on a land hex of `map/hexes.json` that is its own hex in `map/settlement_hexes.yaml`, names a sourced operation (each source an https URL with a `checked` date) and carries a review status; any other row is a load error naming file and field. The shipped list holds the six rows the owner approved on 19 October 2026 and filled on 21 October 2026 (#793: jaffa, acre, nazareth, lod, ramla, beersheba; Gaza excluded), which the owner sensitivity-reviewed on #793. #799 adds each row's residents outcome (R-CTRL-016) and returns every row to `status: draft` until the owner reviews those fields, so the release gate holds them (D-F5).

@@ -1219,3 +1219,10 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .hud-tight.hud-scale-150 .event-image { width: 60px; height: 80px; margin-right: 8px; }
 .lang-he.hud-tight.hud-scale-150 .event-image { margin-right: 0; margin-left: 8px; }
 .hud-tight.hud-scale-150 .event-title { font-size: 24px; margin-bottom: 2px; }
+
+/* #731: purchase controls remain inside Defence's scroll view; entered numbers must stay visible. */
+.arms-actions { flex-wrap: wrap; }
+#arms-count { min-width: 0; flex-shrink: 1; }
+.lang-he #arms-count { flex-direction: row-reverse; }
+#arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
+#arms-count:focus .unity-base-field__input { border-color: var(--gold); }

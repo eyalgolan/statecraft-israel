@@ -1,0 +1,1 @@
+- Add an internal synthetic monthly-context contract for #1716; no game activation or resolver integration.

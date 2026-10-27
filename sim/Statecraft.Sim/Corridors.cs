@@ -64,7 +64,7 @@ namespace Statecraft.Sim
             s.Corridors[def.Id] = work == null
                 ? new CorridorWork(def.Id, Enumerable.Range(0, def.Segments.Count).Select(i => i == index ? started : null).ToArray())
                 : work.With(index, started)!;
-            why.Add(new Cause("map", def.Id, 1, $"{name}: a group of halutzim began building, cost {PlayerText.Money(c, "treasury", cost)}"));
+            why.Add(new Cause("map", def.Id, 1, $"{name}: a group of halutzim began building, cost {PlayerText.Money(c, "treasury", cost)}", key: CauseKeys.CorridorStarted, args: new[] { def.Id, CauseKeys.Number(n), CauseKeys.Number(cost) }));
             return null;
         }
 
@@ -77,7 +77,7 @@ namespace Statecraft.Sim
             var rest = work.With(index, null);
             if (rest == null) s.Corridors.Remove(work.Id); else s.Corridors[work.Id] = rest;
             var def = c.Corridors.First(x => x.Id == work.Id);
-            why.Add(new Cause("map", work.Id, -1, $"{SegmentName(def, index)}: the halutzim stopped building; the Money spent is not returned"));
+            why.Add(new Cause("map", work.Id, -1, $"{SegmentName(def, index)}: the halutzim stopped building; the Money spent is not returned", key: CauseKeys.CorridorCancelled, args: new[] { def.Id, CauseKeys.Number(index + 1) }));
             return true;
         }
 
@@ -108,14 +108,14 @@ namespace Statecraft.Sim
                     else
                     {
                         cur = cur.With(i, new SegmentWork(null, progress, next))!;
-                        why.Add(new Cause("map", w.Id, 1, $"{SegmentName(def, i)} built"));
+                        why.Add(new Cause("map", w.Id, 1, $"{SegmentName(def, i)} built", key: CauseKeys.CorridorCompleted, args: new[] { def.Id, CauseKeys.Number(i + 1) }));
                     }
                     // R-VET-001: the segment progressed this turn, so a halutz serves a turn; a veteran counts no further.
                     if (u.Type != "halutz") continue;
                     var service = u.Service + 1;
                     var promoted = service >= r.VeteranHalutzService!.Value;
                     s.Units[u.Id] = new Unit(u.Id, promoted ? Projects.VeteranType : u.Type, u.Q, u.R, service, u.Side, u.Strength, u.Order, u.OrderTarget, u.HomeCity, u.Full);
-                    if (promoted) why.Add(new Cause("map", w.Id, 1, "A group of halutzim became veteran pioneers"));
+                    if (promoted) why.Add(new Cause("map", w.Id, 1, "A group of halutzim became veteran pioneers", key: CauseKeys.PioneersVeteran));
                 }
                 s.Corridors[w.Id] = cur;
             }
