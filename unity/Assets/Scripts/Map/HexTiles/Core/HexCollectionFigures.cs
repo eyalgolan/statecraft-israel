@@ -7,16 +7,25 @@ using UnityEngine;
 
 namespace Statecraft.HexTiles
 {
-    /// <summary>A hex visual owner's acquired Collection prefabs. Requests only placed aliases, once per owner;
-    /// pending/failed requests keep Resources or stand-in fallback. Retire generated instances and prefab/mesh/material
-    /// references before disposing the acquired leases. A late callback must not revive a disposed board.</summary>
+    /// <summary>A hex visual owner's acquired Collection prefabs, and its borrowed hex props (<see cref="HexProps"/>, from
+    /// their own bundle's stream, pinned like any Request). Requests only placed ids, once per owner; pending/failed
+    /// requests keep Resources or stand-in fallback. Retire generated instances and prefab/mesh/material references before
+    /// disposing the acquired leases. A late callback must not revive a disposed board.</summary>
     internal sealed class HexCollectionFigures : IDisposable
     {
-        internal static Action<string, CollectionDetail, Action<GameObject?>>? Source;
+        internal static Action<string, CollectionDetail, Action<GameObject?>>? Source, PropSource;
         internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = CollectionStream.Acquire;
         static Action<string, CollectionDetail, Action<GameObject?>>? Requester =>
             Source ?? (Application.isPlaying ? CollectionStream.Request : (Action<string, CollectionDetail, Action<GameObject?>>?)null);
+        static Action<string, CollectionDetail, Action<GameObject?>>? PropRequester =>
+            PropSource ?? (Application.isPlaying ? (id, detail, done) => CollectionStream.Request(HexProps.Catalog, id, detail, done)
+                : (Action<string, CollectionDetail, Action<GameObject?>>?)null);
         internal static bool Available => (HexModels.DrawCollectionFigures || HexModels.DrawTownModels) && Requester != null;
+
+        /// <summary>Whether <paramref name="id"/> is drawn from a stream here: a hex prop while playing (or with a test
+        /// source), a Collection alias while <see cref="Available"/>.</summary>
+        internal static bool Streams(string id) =>
+            HexProps.Has(id) ? PropRequester != null : Available && HexModels.CollectionAlias(id, out _, out _);
 
         static readonly List<WeakReference<HexCollectionFigures>> diagnosticOwners = new List<WeakReference<HexCollectionFigures>>();
         readonly HashSet<(string id, CollectionDetail detail)> originalKeys = new HashSet<(string, CollectionDetail)>();
@@ -44,10 +53,14 @@ namespace Statecraft.HexTiles
 
         internal GameObject? Prefab(string id)
         {
-            if (!Available || !HexModels.CollectionAlias(id, out var figure, out var detail)) return HexModels.Prefab(id);
+            // A prop is asked for by its own id (one prefab, so any detail); a figure alias by its Collection id and level.
+            string figure = id; var detail = CollectionDetail.Far;
+            bool prop = HexProps.Has(id);
+            if (prop ? PropRequester == null : !Available || !HexModels.CollectionAlias(id, out figure, out detail)) return HexModels.Prefab(id);
             if (!disposed && !prefabs.ContainsKey(id))
             {
-                originalIds.Add(figure); originalKeys.Add((figure, detail)); CollectionResidencyMetrics.MarkDirty();
+                // The residency metrics' originals are the Collection's models only; a hex prop is pinned and not one of them.
+                if (!prop) { originalIds.Add(figure); originalKeys.Add((figure, detail)); CollectionResidencyMetrics.MarkDirty(); }
                 prefabs[id] = null; // before Request: a source is allowed to answer synchronously
                 var weak = new WeakReference<HexCollectionFigures>(this);
                 Action<GameObject?> answer = prefab =>
@@ -56,7 +69,8 @@ namespace Statecraft.HexTiles
                     owner.prefabs[id] = prefab; CollectionResidencyMetrics.MarkDirty();
                     if (prefab != null) owner.changed?.Invoke();
                 };
-                if (Source != null) Source(figure, detail, answer);
+                if (prop) PropRequester!(figure, detail, answer);
+                else if (Source != null) Source(figure, detail, answer);
                 else leases.Add(Acquire(figure, detail, answer));
             }
             if (prefabs.TryGetValue(id, out var loaded) && loaded != null) return loaded;

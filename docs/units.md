@@ -698,3 +698,15 @@ Brigades, the squadron's bases and the ships: every position, date and coordinat
 in `content/map/units_1948.yaml`.
 
 The photographs are references only: no image file is copied into the repository.
+
+### Friendly destinations and drag onset (#1661, owner rulings 26 October 2026)
+
+Selecting another friendly unit or a city while a movable unit is selected keeps the normal selection and offers
+"Send {unit} to {place}" for the previously selected mover. Activating that confirmation gives the existing Move or
+go-to command immediately; the confirmation itself also confirms a far route on touch. A new selection, state change
+(including a turn or loaded session), or screen opening discards the proposal. Right-click ordering stays immediate.
+The English and Hebrew confirmation share the same placeholders; the Hebrew is native-review-pending.
+
+Map drags retain the 30 device-pixel threshold. Each press captures its own origin from input events. On the first
+crossing, only the part of that movement segment outside the threshold pans; subsequent motion pans normally, with no
+replay of held travel. The tap rule and complete between-frame touch swipes are ruling 3 (#1777).

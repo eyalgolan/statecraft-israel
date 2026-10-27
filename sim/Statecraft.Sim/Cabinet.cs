@@ -169,7 +169,7 @@ namespace Statecraft.Sim
             s.Appointments[officeId] = new Appointment(personId, s.Date);
             why.Add(new Cause("cabinet", officeId, 0, displaced == null
                 ? $"{person.Name} appointed {office.Title}"
-                : $"{person.Name} appointed {office.Title}, replacing {displaced.Name}"));
+                : $"{person.Name} appointed {office.Title}, replacing {displaced.Name}", key: CauseKeys.Appointed, args: new[] { person.Id, office.TitleHeOn(person, s.Date), displaced?.Id ?? "" }));
             if (displaced == null) return null;
             var oldParty = Offices.PartyOf(c, displaced, s.Date);
             var newParty = Offices.PartyOf(c, person, s.Date);
@@ -181,7 +181,7 @@ namespace Statecraft.Sim
             s.CoalitionStability = Math.Max(0, before - cost);
             var who = oldParty == "" ? displaced.Name : c.Parties.First(p => p.Id == oldParty).Name;
             why.Add(new Cause("politics", "coalition_stability", s.CoalitionStability - before, (
-                $"coalition stability {PlayerText.PercentChange(s.CoalitionStability - before)} ({who} {(sameParty ? "resents the reshuffle" : "lost the " + office.Title)})")));
+                $"coalition stability {PlayerText.PercentChange(s.CoalitionStability - before)} ({who} {(sameParty ? "resents the reshuffle" : "lost the " + office.Title)})"), key: CauseKeys.Reshuffle, args: new[] { oldParty, displaced.Id, sameParty ? "same" : "other", office.Title, office.TitleHeOn(displaced, s.Date) }));
             return null;
         }
 
@@ -190,7 +190,7 @@ namespace Statecraft.Sim
         {
             if (s.AppointedUnder == "" || Offices.Government(c, s.Date)?.Id == s.AppointedUnder) return;
             if (s.Appointments.Count > 0)
-                why.Add(new Cause("cabinet", "appointments", -s.Appointments.Count, "A new government took office with its own ministers; your appointments ended"));
+                why.Add(new Cause("cabinet", "appointments", -s.Appointments.Count, "A new government took office with its own ministers; your appointments ended", key: CauseKeys.AppointmentsEnded));
             s.Appointments.Clear();
             s.AppointedUnder = "";
         }

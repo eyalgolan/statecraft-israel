@@ -129,7 +129,7 @@ GeoNames; the largest distance between them is **derived** (haversine, 6,371.008
 |---|---|---|---|---|---|---|
 | 1 | Kfar Darom (Nahal outpost, on the site of the Kfar Darom of 1946) | Nahal outpost | text: 1970; no appendix row | decision 13 Sep 1970; on the land 11 Oct 1970; official ceremony 30 Nov 1970 (album); Oct 1970 / Dec 1970 (he WP); 1970 (en WP); announced 3 Dec 1970 (UN A/8389) | he 31.40361, 34.35528; en 31.40139, 34.36000; GeoNames 31.40369, 34.35396; max 0.63 km | [S] |
 | 2 | Nahal Netzarim | Nahal outpost | text: 1972; no appendix row | 29 Feb 1972 on the land (he WP, album); 1 Mar 1972 "officially established today" (JTA); 6 Nov 1972 "officially established yesterday" (JTA); Nov 1972 houses (he WP) | he/en 31.48222, 34.41111; GeoNames 31.48333, 34.45000; 3.69 km | [C] |
-| 3 | Nahal Morag | Nahal outpost | text: 1972; no appendix row | 15 Sivan 5732 = 28 May 1972 (derived); "30.5.1972" (album); 29 May 1972 (en WP); ceremony 9 Nov 1972 (album, he WP caption); in a list of 19 Jul 1972 (UN A/8828); inaugurated early Nov 1972 (UN A/9148 para. 57, as "Morg") | he 31.30783, 34.28689; en 31.30833, 34.28806; GeoNames 31.21667, 34.33333; 11.06 km | [C] |
+| 3 | Nahal Morag | Nahal outpost | text: 1972; no appendix row | 15 Sivan 5732 = 28 May 1972 (derived); "30.5.1972" (album); 29 May 1972 (en WP); ceremony 9 Nov 1972 (album, he WP caption); in the Jerusalem Post list of 20 Jul 1972 (UN A/8828); inaugurated early Nov 1972 (UN A/9148 para. 57, as "Morg") | he 31.30783, 34.28689; en 31.30833, 34.28806; GeoNames 31.21667, 34.33333; 11.06 km | [C] |
 | 4 | Nahal Gadish, called Katif, later Netzer Hazani | Nahal outpost, then moshav | appendix "נצר חזני", region "פיתחת רפיח", 29.5.73; text: by mid-1977 | 29 May 1973 on the land (appendix, he WP, en WP, album); "this week" before 31 May 1973 (JTA, as "Nahal Samir"); moshav inaugurated 10 Feb 1977 | he/en 31.38000, 34.32194; GeoNames 31.38012, 34.32118 (and GeoNames "Nahal Qatif" 31.42507, 34.37340); 7.04 km | [S] on the date, [C] on the name |
 | 5 | Katif (moshav, "Katif B") | moshav | text: by mid-1977; no appendix row | JTA bulletin of 2 Jun 1976 (meeting of 31 May 1976) most likely concerns the row 4 outpost; foundation stone 10 Aug 1977 (he WP); first families Oct 1978 (album); 1977 / 1978 / 1985 (WP infoboxes) | he/en 31.37528, 34.31278; GeoNames 31.36667, 34.31667; 1.03 km | [C] |
 
@@ -181,8 +181,8 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    1972 and in Ma'ariv on 7 November 1972, of the inauguration of two settlements in the Gaza Strip; one settlement,
    called Netzaren, located 5 kilometres south of Gaza and the other, Morg, located south of Khan Yunis" (as printed;
    Netzaren and Morg are the report's spellings of Netzarim and Morag; the paragraph names Netzarim and Morag together, so the Nov 1972
-   events of rows 2 and 3 are the same press wave); UN A/8828, p. 17: the list taken from the
-   Jerusalem Post of 20 July 1972 (Galili's Knesset statement of 19 July 1972) includes "Nahal Netzarim"; A/31/218, p.
+   events of rows 2 and 3 are the same press wave); UN A/8828, p. 17: the list in the
+   Jerusalem Post of 20 July 1972 (A/8828: "The same report gives a list"; it does not say the list is Galili's) includes "Nahal Netzarim"; A/31/218, p.
    19, para. 62: "Nahal Netzarim, s.w. of Gaza town". **[C]:** 29 Feb 1972 (he WP, album: the land), 1 Mar 1972 (JTA,
    "officially established") and 6 Nov 1972 (JTA, "officially established"; he WP: housing ceremony). A/9148 para. 57 (above) also cites a Ha'aretz report of 5 Nov 1972, a day before the JTA "yesterday"
    (6 Nov 1972). All are in 1972; the sources mark different events and I did not settle which is the founding.
@@ -196,7 +196,7 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    printed "9.11.1972", with Minister Gvati and General Zeevi. **Derived:** 15 Sivan 5732 = 28 May 1972 and 30 May
    1972 = 17 Sivan 5732, so the album's Hebrew and civil dates differ by two days; 3 Kislev 5733 = 9 Nov 1972 (a
    Thursday). UN A/8828, p. 17: "Nahal Morag" is the last name in the list of "Gaza Strip and Sinai" localities
-   reported by the Jerusalem Post of 20 July 1972, so it existed by 19 July 1972; A/31/218, p. 19: "Nahal Morag near Umm
+   reported by the Jerusalem Post of 20 July 1972, so it was listed by 20 July 1972; A/31/218, p. 19: "Nahal Morag near Umm
    Kalb". One JTA item names Morag, 17 Jan 1975 (row 4), and says only that it will be built as a moshav; no JTA item gives its founding (see "Searches"); A/9148, p. 25, para. 57 (quoted in row 2) reports "Morg" among two settlements inaugurated in early Nov 1972. **[C]:** 28 May, 29 May and 30 May 1972 for the land, 9 Nov 1972 for
    the ceremony; all within 1972.
 
@@ -250,6 +250,7 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    search returned 100 items each and none contained the phrase), and Gvati has no such name. It is not a row; it is listed here
    so the name sits in this note. Whether it is a variant spelling of one of the five, or a place that was not set up, is
    not settled.
+   (Second pass, 27 Oct 2026: still [GAP]; the maps and searches that were read are in "Second pass (27 Oct 2026)" below.)
 
 ## JTA items and their datelines
 
@@ -328,6 +329,53 @@ The items that contained `Kfar Darom`, `Bnai Darom`, `Netzarim`, `Ein Netzarim`,
 Election Won't Stop Peace Quest") and the `Khan Yunis` and `Nahal` items were screened and not used. "Gaza Strip" windows of 1972-01-15
 to 1972-04-15 returned 31 items; the three that bear on the settlement debate (20 Mar, 3 Apr, 7 Apr 1972) were read as
 page text and are context only.
+
+## Second pass (27 Oct 2026)
+
+Status: research only; docs only; Refs #130. Everything above is kept as written. Tags as in "Conventions and tags"
+(first-pass legend unchanged); every item here is [S] or [GAP], none is [V]. All pages opened on 27 October 2026 (UTC),
+tool: curl and pdftotext/pdftoppm on this box (no Tavily key here); UN files from
+`https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf`: A/8089 (128 pp.), A/8389 (64), A/8828 (47), A/9148 (50),
+A/9817 (36), A/10272 (36), A/31/218 (118), A/32/284 (100).
+
+**Tel Or (row note 6): still [GAP], narrowed.**
+
+- **A map of November 1977 does not show it.** A/32/284, annex I, the printed title is "MAP SHOWING ISRAELI SETTLEMENTS IN THE TERRITORIES OCCUPIED IN JUNE
+  1967", "MAP NO. 2956 UNITED NATIONS NOVEMBER 1977", on PDF page 46 (read on the page image at 200 dpi). Its note says
+  "The information concerning settlements which appears on this map has been furnished by the Special Committee". In the
+  Gaza Strip it labels four points: "Netzarim", "Kfar-Daron" (as printed), "Nahal-Katif" and "Nahal-Morag". It prints no
+  "Tel Or" or "Tal Or" and no "Netzer Hazani" or "Katif B"; the label "Nahal-Katif" is printed north-northeast of Rafah.
+  [S] (a map of the Special Committee's own list, not an Israeli record). It confirms that the committee itself used the
+  name Nahal Katif in November 1977, nine months after A/32/284 para. 68 reported the conversion into Netzer Hazani.
+- **The text layers of eight reports.** I searched the text of A/8089, A/8389, A/8828, A/9817, A/10272, A/31/218 and
+  A/32/284 for "Tel Or", "Tal Or", Netzarim, Morag, Katif, Gadish and Kfar Darom. "Tel Or" occurs once, in A/31/218 para. 62
+  (already row note 6); the five names occur only where the first pass read them (A/8389, A/8828 p. 17, A/31/218 paras. 56
+  and 62, A/32/284 para. 68). A/8089, A/9817 and A/10272 have no hit. A/9148 has only 1,227 characters of text layer, so
+  it cannot be searched this way; its pages 25 and 43 were read as images (below).
+- **JTA, single words and spellings** (wp-json, `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&after=1967-06-01T00:00:00&before=1978-06-30T23:59:59&per_page=100&page=1`,
+  run 27 Oct 2026; "contain" = returned items whose text matches the pattern, tested by script, not read):
+  `Telor` total 26, returned 26, 0 contain "telor"; `Tel-Or` total 4776, returned 100, 0 contain "Tel Or"; `Talor` total 120,
+  returned 100, 0 contain "Tal Or"; `Gadid` total 9, returned 9, 0 contain "gadid"; `Deir el Balah` total 12, returned 12,
+  2 contain it (bulletins of 25 Apr 1972 and 7 Jun 1967, security and war items, not opened, so no use is made of them);
+  `Deir al-Balah` total 2, returned 2, 0 contain it; `Nezer` total 2473, returned 100, 0 contain "nezer" or "netzer";
+  `Morag` total 1477, returned 100, 0 contain "morag" (the first pass's `Nahal Morag` query, 47 items, 1 item: the
+  bulletin of 17 Jan 1975, unchanged). Items beyond the first 100 were not examined.
+- **Wikipedia search** (MediaWiki API `list=search`, 27 Oct 2026): Hebrew `"תל אור" רצועת עזה` returned 2 pages
+  (Transjordan and Jordan-Israel relations pages, unrelated); English `"Tel Or" Gaza Nahal` and `"Tal Or" Deir al-Balah` returned 0.
+  The Ben-Yehuda text of Gvati (same URL as above) has no string "תל אור" (counted by script).
+- Result: the name appears in one UN paragraph, attributed there to two visitors, and in no map or search result read. Whether it
+  is a variant of Gadish or Netzer Hazani, or a place not set up, stays open. [GAP]
+
+**Founding days (the "Founding days" bullet in the short answer): still not closed, one count added.**
+
+- A/9148 (25 Oct 1973), para. 138 on p. 43, read on the page image: "as of 19 August 1973, 44 settlements have been
+  established in the occupied territories" and "In the Gaza Strip, a concentration of three settlements has been
+  established in the southern-most region, where the Strip borders Egypt. Three other settlements have been established in
+  other areas of the Gaza Strip, stretching northward." It names none of them and does not say whether the southernmost
+  three are the Rafah approaches or Strip places in the sense of "Where the line ... falls" above. [S] (the committee's count; it quotes no source here.) It does not
+  decide any date. It gives a Special Committee count of six in or at the edge of the Strip as of 19 Aug 1973, nearly three
+  months after the 29 May 1973 on-the-land date of row 4 (Netzer Hazani); it does not check that date.
+- No Israeli record, Knesset item or Gazette item was reachable (same as "What was not done"); no row changed from [C] or [S].
 
 ## Outside the window and outside the scope
 

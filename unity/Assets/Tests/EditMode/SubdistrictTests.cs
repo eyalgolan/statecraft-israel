@@ -27,11 +27,20 @@ public class SubdistrictTests
     static UiText Text => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
     string saveDir = "";
 
-    [SetUp] public void TempSaves() => saveDir = Path.Combine(Path.GetTempPath(), "statecraft-subd-" + Guid.NewGuid().ToString("N"));
+    /// <summary>Saves go to a temporary folder. The rendered check pins main's earlier look (the Legacy variant): its
+    /// "outlines, not fills" bound is Legacy's, since the default A2 also tints the territory (owner ruling 2026-10-27,
+    /// #196; BorderCivTests covers A2).</summary>
+    [SetUp]
+    public void TempSaves()
+    {
+        saveDir = Path.Combine(Path.GetTempPath(), "statecraft-subd-" + Guid.NewGuid().ToString("N"));
+        MapBorders.Variant = BorderVariant.Legacy;
+    }
 
     [TearDown]
     public void DiscardScene()
     {
+        MapBorders.Variant = MapBorders.DefaultVariant;
         MapShaderGlobals.PinWaterTime(null);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear();
         if (Directory.Exists(saveDir)) Directory.Delete(saveDir, true);

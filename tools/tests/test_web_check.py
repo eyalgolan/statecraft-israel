@@ -3,10 +3,12 @@ import gzip
 import http.client
 import queue
 import re
+import shutil
 import socket
 import threading
 import time
 import urllib.request
+from pathlib import Path
 
 import pytest
 
@@ -318,7 +320,7 @@ class FakeGame:
             if target == "map":                      # a press the UI does not take: the map's hex click
                 self.nav(f"map click at ({x}, {1080 - y}) overUi=False")
             else:
-                self.nav(f"ui pointerdown id=0 at ({x}, {y}) target={target}")
+                self.nav(f"ui pointerdown id=0 at ({x}, {y}) target={target} path={target} < root.root modals=-")   # NavEventLog.cs:81's format
         elif kind == "click":
             target = self.at(x, y)
             self.nav(f"ui click count=1 target={target}")
@@ -741,3 +743,62 @@ def test_commit_timeout_is_polled_while_an_unrelated_expectation_is_still_missin
         wc.watch(queue.Queue(), lambda: None, lambda: None, ["UNRELATED"], re.compile("BOOT FAIL"), 20,
                  now=lambda: clock[0], sleep=lambda seconds: clock.__setitem__(0, clock[0] + 1),
                  complete=lambda: check.done)
+
+
+# --- the itch.io save test: --url, --profile, --first-save ----------------------------------------------------------------
+
+def test_first_save_stops_after_the_first_durable_commit(capsys):
+    game = FakeGame()
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, lambda seconds: None, first_save_only=True)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    assert not check.done
+    check.feed("TURN 1 1948-05-16 hash ab")
+    check.feed("AUTOSAVE PENDING 1 1948-05-16 turn 1 hash ab")
+    assert not check.done, "a commit that is not acknowledged is not durable yet"
+    check.feed("AUTOSAVE OK 1 1948-05-16 turn 1 hash ab")
+    assert check.done and "reload" not in game.actions
+    assert "PERSISTENCE saved 1948-05-16 turn 1 hash ab" in capsys.readouterr().out
+
+
+def test_first_save_still_fails_on_a_wrong_first_turn():
+    game = FakeGame()
+    check = wc.PersistenceCheck(game, _buttons(), game.tail, lambda seconds: None, first_save_only=True)
+    check.feed("GAME OK 1948-05-15 turn 0 hash aa")
+    with pytest.raises(ValueError, match="expected turn 1"):
+        check.feed("TURN 2 1948-05-16 hash ab")
+
+
+def test_first_save_uses_the_persistence_driver_and_navlog():
+    driver, fail, plan = _plan("--first-save")
+    assert isinstance(driver, wc.PersistenceCheck) and driver.first_save_only and plan["complete_what"].endswith("--first-save run")
+    assert wc.page_query(_args("--first-save")) == "navlog"
+    assert not _plan("--persistence")[0].first_save_only
+    with pytest.raises(ValueError, match="separate runs"):
+        _plan("--first-save", "--startscreen", "new")
+
+
+def test_url_and_build_are_exclusive_and_one_is_required(capsys):
+    ap = wc.parser()
+    for argv in ([], ["build", "--url", "https://x.invalid/index.html"]):
+        a = ap.parse_args(argv)
+        with pytest.raises(SystemExit):
+            wc.check_source(ap, a)
+        assert "exactly one of build and --url" in capsys.readouterr().err
+    wc.check_source(ap, ap.parse_args(["build"]))
+    wc.check_source(ap, ap.parse_args(["--url", "https://x.invalid/index.html"]))
+
+
+def test_a_url_takes_the_query_after_a_question_mark_or_an_ampersand():
+    assert wc.with_query("https://h/index.html", "navlog") == "https://h/index.html?navlog"
+    assert wc.with_query("https://h/index.html?v=1", "navlog") == "https://h/index.html?v=1&navlog"
+    assert wc.with_query("https://h/index.html?v=1", "") == "https://h/index.html?v=1"
+
+
+def test_a_given_profile_is_made_and_kept_and_a_default_one_is_owned(tmp_path):
+    given = tmp_path / "kept" / "profile"
+    assert wc.pick_profile(_args("--profile", str(given))) == (str(given), False) and given.is_dir()
+    own, owned = wc.pick_profile(_args())
+    try:
+        assert owned and Path(own).is_dir()
+    finally:
+        shutil.rmtree(own)

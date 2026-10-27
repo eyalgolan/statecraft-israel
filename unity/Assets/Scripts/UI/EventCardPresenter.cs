@@ -32,6 +32,8 @@ namespace Statecraft.Game.UI
         public const string EndTurnWaitingClass = "end-turn-waiting";
         /// <summary>The line under an option that returns the course to the record (EventOption.Rejoin, #954; Statecraft.uss).</summary>
         public const string RejoinClass = "event-rejoin";
+        /// <summary>One line under an option for one of its effects, from the sim's preview (#1125, R-EVT-005; Statecraft.uss).</summary>
+        public const string EffectClass = "event-effect";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -285,6 +287,15 @@ namespace Statecraft.Game.UI
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid);
                 options.Add(b);
+                // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
+                // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
+                foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
+                {
+                    if (preview.Kind == OptionEffectPreviewKind.Rejoin) continue;
+                    var effect = new Label(EffectLine(c, preview, text));
+                    effect.AddToClassList("muted"); effect.AddToClassList(EffectClass);
+                    options.Add(effect);
+                }
                 if (o.Rejoin == "") continue;
                 // Under the option, not in it: the button's label stays the choice itself, and a Label takes no Tab stop.
                 var rejoin = new Label(text["event.rejoin"]);
@@ -295,6 +306,24 @@ namespace Statecraft.Game.UI
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
         }
+
+        /// <summary>One option-effect row in the UI's language. An indicator, money or policy is named as the top bar and the Why
+        /// panel name it (why.name.&lt;id&gt;, Hebrew in Hebrew), the sim's English name where the strings have none; a project
+        /// unlock takes the kind's own Hebrew name (ContentNames).</summary>
+        public static string EffectLine(Content c, OptionEffectPreview row, UiText text)
+        {
+            var key = "why.name." + row.ContextId;
+            var name = row.Kind switch
+            {
+                OptionEffectPreviewKind.Amount or OptionEffectPreviewKind.SetPolicy => text.Has(key) ? text[key] : null,
+                OptionEffectPreviewKind.ProjectUnlock => HebrewKindName(text, c.ProjectKinds.First(k => k.Id == row.ContextId)),
+                _ => null,
+            };
+            return EventEffectText.Format(row, text, name);
+        }
+
+        /// <summary>The kind's Hebrew name in Hebrew; null otherwise, so the sim's capitalised English row stands.</summary>
+        static string? HebrewKindName(UiText text, ProjectKind k) { var n = ContentNames.Of(text, k); return n == k.Name ? null : n; }
 
         /// <summary>An objective card's line under its text (#380; the owner's wording, #379): completed early, "Completed on
         /// {date}; historically {date}; n months early."; in the same calendar month, "Completed on time, as in history.";

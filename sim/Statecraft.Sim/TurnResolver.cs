@@ -51,15 +51,16 @@ namespace Statecraft.Sim
             s.ExhaustedTurns = s.Debt >= r.DebtCeiling!.Value && s.Food == 0 ? s.ExhaustedTurns + 1 : 0;
             if (s.ExhaustedTurns < r.DefeatTurns!.Value) return;
             s.GameOver = GameOverCodes.DefeatEconomy;
-            why.Add(new Cause("era", s.GameOver, s.ExhaustedTurns, PlayerText.GameOver(s.GameOver)));   // the game's end, grouped with the MVP end
+            why.Add(new Cause("era", s.GameOver, s.ExhaustedTurns, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));   // the game's end, grouped with the MVP end
         }
 
-        /// <summary>R-END-003: an enemy military unit holding the hex of one of the player's GDD cities at the turn's
+        /// <summary>R-END-003: gdd-0.3 has no city-loss defeat. Under gdd-0.1 an enemy military unit holding a city at the turn's
         /// end ends the game at once with defeat_war (Q-WAR-5; Q-DEF-3, owner, 17 Oct 2026, #784: one turn is enough, any
         /// of the GDD cities, at any time, truces included). A halutz or the player's own unit on the hex ends nothing
         /// (R-UNIT-001: a halutz has no side), and a game the economic count has just ended this turn keeps its code.</summary>
         static void WarLoss(Content c, GameState s, List<Cause> why)
         {
+            if (c.Ruleset == SaveGame.Gdd03Ruleset) return;   // R-END-003: city or region loss alone is not a defeat in 0.3
             if (s.GameOver != null) return;
             var cities = new HashSet<(int Q, int R)>();
             foreach (var city in c.Cities)
@@ -72,7 +73,7 @@ namespace Statecraft.Sim
                 if (u.Side == "" || u.Side == Movement.PlayerSide) continue;   // not an enemy (Movement's reading of "the enemy")
                 if (!cities.Contains((u.Q, u.R))) continue;
                 s.GameOver = GameOverCodes.DefeatWar;
-                why.Add(new Cause("era", s.GameOver, u.Id, PlayerText.GameOver(s.GameOver)));   // the game's end, grouped with the MVP end
+                why.Add(new Cause("era", s.GameOver, u.Id, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));   // the game's end, grouped with the MVP end
                 return;
             }
         }
