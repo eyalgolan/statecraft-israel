@@ -5,8 +5,8 @@ using System.Linq;
 
 namespace Statecraft.Sim
 {
-    /// <summary>UNTESTED C301 contract draft, synthetic fixtures only. Not a live-state adapter.
-    /// GDD 605277df docs/gdd/loop-switch.md:17-39; PLAN-1716.md:59-63.
+    /// <summary>Synthetic #1716 contract, test fixtures only. Not a live-state adapter.
+    /// GDD 605277df docs/gdd/loop-switch.md:17-39.
     /// Frozen eligibility is only an upper bound: future consumers must recheck survival,
     /// location, control and facility availability immediately before using an entry.
     /// This object neither executes phases nor authorizes work, settlement or persistence.</summary>
