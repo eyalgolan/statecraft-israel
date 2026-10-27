@@ -93,13 +93,12 @@ def test_a_pose_clip_poses_only_a_person_without_an_idle_clip():
         assert mid in slim.PEOPLE and f'"{mid}"' not in animated, mid
 
 
-def test_the_caps_match_the_unity_import_tests():
-    text = IMPORT_TESTS.read_text(encoding="utf-8")
-    assert f"FarTriangles = {slim.FAR_TRIS}," in text
-    assert f"FarTrianglesVehicle = {slim.FAR_TRIS_VEHICLE}," in text
-    assert f"FarTrianglesTown = {slim.FAR_TRIS_TOWN}," in text
-    assert f"NearTriangles = {slim.NEAR_TRIS}" in text
-    assert f"MaxTextureSize = {slim.TEX_PX}" in text
+def test_retained_slim_derivatives_keep_their_historical_limits():
+    # #1273 imports full originals: its native geometry checks no longer use this historical slimmer.
+    # Keep the retained derivative tool's approved limits pinned; do not raise them to fit full originals.
+    assert (slim.FAR_TRIS, slim.FAR_TRIS_VEHICLE, slim.FAR_TRIS_TOWN, slim.NEAR_TRIS, slim.TEX_PX) == (
+        1500, 4500, 4500, 8000, 512
+    )
 
 
 def _fbx(*strings: bytes) -> bytes:

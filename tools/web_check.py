@@ -483,7 +483,7 @@ class ConsoleTail:
 
 
 # What ?navlog's NavEventLog says of a press and a click: the deepest UI element under the pointer, by name.
-NAV_DOWN = re.compile(r"^NAV f=\d+ t=\d+ ui pointerdown id=\d+ at \([^)]*\) target=(\S+)$")
+NAV_DOWN = re.compile(r"^NAV f=\d+ t=\d+ ui pointerdown id=\d+ at \([^)]*\) target=(\S+)(?: .*)?$")   # NavEventLog adds path= and modals= after target
 NAV_CLICK = re.compile(r"^NAV f=\d+ t=\d+ ui click count=\d+ target=(\S+)$")
 # A left press the map takes: not over the UI, or (#1617) on the unit card's text over a lit hex of its armed Move pick,
 # which moves the unit. So EndTurn finds Skip with the middle button, which only the UI's pointer events see.

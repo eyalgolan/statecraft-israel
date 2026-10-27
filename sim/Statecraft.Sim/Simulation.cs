@@ -74,7 +74,7 @@ namespace Statecraft.Sim
             {
                 // #19's legacy report is EndReport.For, which the end screen reads once GameOver is set (D-H4)
                 s.GameOver = end == c.Eras[c.Eras.Count - 1].To ? GameOverCodes.EraEnded : GameOverCodes.MvpEnded;
-                why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver)));
+                why.Add(new Cause("era", s.GameOver, 0, PlayerText.GameOver(s.GameOver), key: CauseKeys.EraEnded));
             }
             ContentWindows.Update(c, s, turnStart);
             Cabinet.ExpireOnGovernmentChange(c, s, why);
@@ -179,15 +179,15 @@ namespace Statecraft.Sim
                     if (!PassVote(c, s))
                     {
                         if (Advisory(c, s))
-                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted against {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}, but its vote does not bind"));
+                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted against {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}, but its vote does not bind", key: CauseKeys.AdvisoryPolicyRejected, args: new[] { legislature.Id, CauseKeys.Number(p.Level) }));
                         else
                         {
-                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted down {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}"));
+                            why.Add(new Cause("politics", p.Policy, 0, $"{legislature.Body} voted down {PlayerText.Target(c, p.Policy)} at {PlayerText.Percent(p.Level)}", key: CauseKeys.PolicyRejected, args: new[] { legislature.Id, CauseKeys.Number(p.Level) }));
                             return null;
                         }
                     }
                     s.Policies[p.Policy] = p.Level;
-                    why.Add(new Cause("policy", p.Policy, p.Level, $"{PlayerText.Target(c, p.Policy)} set to {PlayerText.Percent(p.Level)}"));
+                    why.Add(new Cause("policy", p.Policy, p.Level, $"{PlayerText.Target(c, p.Policy)} set to {PlayerText.Percent(p.Level)}", key: CauseKeys.PolicySet));
                     return null;
                 case AllocateBudget b:
                 {
@@ -198,11 +198,11 @@ namespace Statecraft.Sim
                     if (PoliticsSystem.BudgetNeedsVote(c, s.Date) && !PassVote(c, s))
                     {
                         if (Advisory(c, s))
-                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted against the budget, but its vote does not bind"));
+                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted against the budget, but its vote does not bind", key: CauseKeys.AdvisoryBudgetRejected, args: new[] { Offices.Legislature(c, s.Date)!.Id }));
                         else
                         {
                             s.Budget = old;
-                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted the budget down"));
+                            why.Add(new Cause("politics", "budget", 0, $"{Offices.Legislature(c, s.Date)!.Body} voted the budget down", key: CauseKeys.BudgetRejected, args: new[] { Offices.Legislature(c, s.Date)!.Id }));
                         }
                     }
                     return null;

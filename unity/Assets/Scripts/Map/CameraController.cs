@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace Statecraft.Game.Map
 {
     /// <summary>One frame of camera input, in the units the actions give: Pan in [-1, 1] per axis (keys), DragPan in
-    /// screen pixels (right-button drag), Zoom in wheel notches (positive = in), Orbit in [-1, 1] (Q/E).</summary>
+    /// screen pixels (a left- or right-button drag, #998), Zoom in wheel notches (positive = in), Orbit in [-1, 1] (Q/E).</summary>
     public struct CameraInput
     {
         public Vector2 Pan, DragPan; public float Zoom, Orbit;
@@ -15,7 +15,9 @@ namespace Statecraft.Game.Map
         public float KeyZoom;
         /// <summary>True while the pointer is over the UI: the camera then ignores pointer input (wheel zoom, drag).</summary>
         public bool OverUi;
-        /// <summary>True when the current right-button drag started over the UI (latched on button-down): that drag never pans the map.</summary>
+        /// <summary>True when the current mouse drag, with either button, started over the UI (latched on button-down):
+        /// that drag never pans the map. Since #998 a left drag pans too, so this latch is what keeps dragging a panel's
+        /// scrollbar from moving the map (ALeftDragStartingOverTheUiNeverPans).</summary>
         public bool DragFromUi;
     }
 
@@ -77,20 +79,35 @@ namespace Statecraft.Game.Map
         /// <summary>The highest the ground (and the frame round the map, which stays below it) reaches in world y: with it,
         /// ViewFootprint bounds the near side of the view tightly. ShadowFit.GroundY (the default) means flat ground.</summary>
         public float GroundTop = ShadowFit.GroundY;
-        /// <summary>True while the right button's press could still be a right click (MapPointer.RightTapCandidate): its drag
-        /// is held, not panned, until the press leaves the click's slop, and then applied at once. A press is a right click
-        /// (an order, #1654) or a pan, never both. Null: the drag pans at once.</summary>
+        /// <summary>True while a mouse press could still be a click: a right click (MapPointer.RightTapCandidate) or,
+        /// since #998, a left one (MapPointer.LeftTapCandidate). Its drag is held, not panned, until the press leaves the
+        /// click's slop; only travel beyond the slop pans. A press is a click - an order for the right button (#1654), a selection
+        /// for the left - or a pan, never both. Null: the drag pans at once.</summary>
         public Func<bool>? HoldsMouseDrag;
         /// <summary>The same for a one-finger drag and a tap (MapPointer.TouchTapCandidate).</summary>
         public Func<bool>? HoldsTouchDrag;
 
         CameraRig rig = null!;
         InputAction? pan, dragPan, zoom, zoomKeys, orbit;
+        InputAction? mousePress, mousePosition, touchPress, touchPosition;
 
         void Awake() => rig = GetComponent<CameraRig>();
 
         void OnEnable()
         {
+            // Camera-owned observers record press origins; they never recognise or enqueue taps.
+            mousePress = new InputAction("camera-drag-press", InputActionType.Button, "<Mouse>/rightButton");
+            mousePress.AddBinding("<Mouse>/leftButton");
+            mousePress.performed += ctx => mouseDrag.Begin(((Mouse)ctx.control.device).position.ReadValue(), IsOverUi);
+            mousePress.canceled += _ => mouseDrag.End();
+            mousePosition = new InputAction("camera-drag-position", InputActionType.PassThrough, "<Mouse>/position");
+            mousePosition.performed += ctx => mouseDrag.Move(ctx.ReadValue<Vector2>());
+            touchPress = new InputAction("camera-touch-press", InputActionType.Button, "<Touchscreen>/primaryTouch/press");
+            touchPress.performed += ctx => touchDrag.Begin(((Touchscreen)ctx.control.device).primaryTouch.position.ReadValue(), IsOverUi);
+            touchPress.canceled += _ => touchDrag.End();
+            touchPosition = new InputAction("camera-touch-position", InputActionType.PassThrough, "<Touchscreen>/primaryTouch/position");
+            touchPosition.performed += ctx => touchDrag.Move(ctx.ReadValue<Vector2>());
+            mousePress.Enable(); mousePosition.Enable(); touchPress.Enable(); touchPosition.Enable();
             DrainWheel();   // events from while the camera was off (a menu) are not a zoom
 
             var map = InputSystem.actions?.FindActionMap("Camera", throwIfNotFound: true);
@@ -100,10 +117,17 @@ namespace Statecraft.Game.Map
             map.Enable();
         }
 
-        void OnDisable() => InputSystem.actions?.FindActionMap("Camera")?.Disable();
+        void OnDisable()
+        {
+            InputSystem.actions?.FindActionMap("Camera")?.Disable();
+            mousePress?.Dispose(); mousePress = null; mousePosition?.Dispose(); mousePosition = null;
+            touchPress?.Dispose(); touchPress = null; touchPosition?.Dispose(); touchPosition = null;
+            mouseDrag.End(); touchDrag.End();
+            dragFromUi = dragWasDown = false;
+        }
 
         bool dragFromUi, dragWasDown;
-        Vector2 heldDrag;   // the drag of a press that may still be a click (HoldsMouseDrag, HoldsTouchDrag)
+        readonly PressDrag mouseDrag = new PressDrag(), touchDrag = new PressDrag();
 
         void Update() => Tick(Time.unscaledDeltaTime);
 
@@ -114,47 +138,103 @@ namespace Statecraft.Game.Map
         {
             if (pan == null || dragPan == null || zoom == null || zoomKeys == null || orbit == null) return;
             Vector2? pointer = Pointer.current != null ? Pointer.current.position.ReadValue() : (Vector2?)null;
-            var down = Mouse.current != null && Mouse.current.rightButton.isPressed;
-            var held = down && HoldsMouseDrag?.Invoke() == true;
-            var drag = dragPan.ReadValue<Vector2>();
+            // Either button (#998): both drag bindings share the press-origin and UI-origin rules.
+            var down = Mouse.current != null && (Mouse.current.rightButton.isPressed || Mouse.current.leftButton.isPressed);
+            // A null callback preserves immediate panning for this source alone (N1).
+            var mouseGated = HoldsMouseDrag != null;
+            var drag = mouseGated ? mouseDrag.Take(HoldsMouseDrag!()) : dragPan.ReadValue<Vector2>();
+            var fromUi = down && mouseDrag.FromUi;
             var zoomRaw = WheelOr(zoom.ReadValue<float>());
             var ts = Touchscreen.current;
             if (ts != null)
             {
+                // A second finger that pressed and lifted inside this update is already up when FingersDown samples, so
+                // a pinch would read as a one-finger drag and pan the map (#1792). Count the presses as well, and when
+                // two fingers touched, this frame is neither a drag nor a zoom: there is no live second finger to
+                // measure a pinch against, and guessing one from a finger that is gone would be worse than waiting.
+                var touched = 0;
+                foreach (var t in ts.touches)
+                    if (DownThisUpdate(t)) touched++;
                 switch (FingersDown(ts, out var a, out var b))
                 {
-                    // one finger drags the map, like the right button: Gather's latch answers whether it started over the UI
-                    case 1:
-                        drag += a.delta.ReadValue();
+                    // one finger drags the map; its press observer latches the UI origin
+                    case 1 when touched < 2:
+                        drag += HoldsTouchDrag != null ? touchDrag.Take(HoldsTouchDrag()) : a.delta.ReadValue();
+                        fromUi |= touchDrag.FromUi;
                         down = true;
-                        held |= HoldsTouchDrag?.Invoke() == true;
                         pointer = a.position.ReadValue();
+                        break;
+                    // one finger left, but two touched this update: a pinch, so neither a drag nor a zoom, and the
+                    // travel the press observer recorded must not arrive as a late pan on the next frame (#1795 review)
+                    case 1:
+                        touchDrag.Discard();
                         break;
                     // a pinch zooms by how far the fingers move; the UI check follows the first finger
                     case 2:
+                        touchDrag.Discard();
                         zoomRaw += PinchNotches(a.position.ReadValue(), a.delta.ReadValue(), b.position.ReadValue(), b.delta.ReadValue());
                         pointer = a.position.ReadValue();
                         break;
                 }
             }
-            drag = HoldDrag(drag, down, held);
             var modifier = ModifierHeld(Keyboard.current);
-            Step(rig, Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier),
-                ClampDt(dt), Bounds, Ground, GroundTop);
+            var input = Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier);
+            if (down) input.DragFromUi = fromUi; // latched at the actual press, even between camera frames
+            Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop);
         }
 
-        /// <summary>This frame's drag, given whether a drag press is <paramref name="down"/> and still <paramref name="held"/>
-        /// (it may yet be a click): nothing while held (kept), the kept drag and this frame's once it is not, and the kept
-        /// drag dropped when the press ends while still held (it was a click).</summary>
-        internal Vector2 HoldDrag(Vector2 drag, bool down, bool held)
+        /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between
+        /// camera ticks. Event positions, rather than Mouse/delta, exclude pre-press movement and retain multiple
+        /// input updates. Released gestures are not replayed here (Ella owns ruling 3).</summary>
+        internal sealed class PressDrag
         {
-            if (!down) { heldDrag = Vector2.zero; return drag; }
-            if (held) { heldDrag += drag; return Vector2.zero; }
-            drag += heldDrag; heldDrag = Vector2.zero;
-            return drag;
+            Vector2 origin, previous, pending;
+            bool down, panning;
+            internal bool FromUi { get; private set; }
+            internal void Begin(Vector2 at, Func<Vector2, bool>? overUi = null)
+            {
+                origin = previous = at; pending = Vector2.zero;
+                down = true; panning = false; FromUi = overUi?.Invoke(at) == true;
+            }
+            internal void End() { down = panning = false; pending = Vector2.zero; }
+            internal void Discard() { pending = Vector2.zero; }
+            internal void Move(Vector2 at)
+            {
+                if (!down) return;
+                var segment = at - previous;
+                var start = previous - origin;
+                previous = at;
+                if (panning) { pending += segment; return; }
+                var radius = TapPress.SlopPixels;
+                if ((at - origin).sqrMagnitude <= radius * radius || segment.sqrMagnitude == 0f) return;
+                panning = true;
+                var dot = Vector2.Dot(start, segment);
+                var t = (-dot + Mathf.Sqrt(Mathf.Max(0f, dot * dot + segment.sqrMagnitude
+                    * (radius * radius - start.sqrMagnitude)))) / segment.sqrMagnitude;
+                pending += segment * (1f - Mathf.Clamp01(t));
+            }
+            internal Vector2 Take(bool held)
+            {
+                // A current click candidate always wins over any prior panning state.
+                if (held) { pending = Vector2.zero; panning = false; return Vector2.zero; }
+                var result = pending; pending = Vector2.zero; return result;
+            }
         }
 
-        /// <summary>The first two touches down (2 stands for two or more), or fewer.</summary>
+        /// <summary>Whether a finger was down at any point in this input update: pressed now, or pressed during the
+        /// update even though it has already lifted. <c>isPressed</c> alone is level state read once a frame, so a
+        /// finger whose whole press and release arrive between two samples is invisible to it and a pinch replays as a
+        /// one-finger pan or lets the thumb select (#1792). The press edge survives that, which is also how
+        /// <c>MapPointer.Tick</c> reads the primary finger's own press.</summary>
+        /// <remarks>Same class as #1661's one-update flick (#1777): a gesture that opens and closes between two
+        /// samples cannot be seen by level state, only by its edges.</remarks>
+        public static bool DownThisUpdate(UnityEngine.InputSystem.Controls.TouchControl t) =>
+            t.press.isPressed || t.press.wasPressedThisFrame;
+
+        /// <summary>The first two touches down <em>now</em> (2 stands for two or more), or fewer. Level state on
+        /// purpose: a finger that has already lifted contributes no ongoing drag, so counting it here would turn a
+        /// one-update flick into a pan. Whether a finger merely touched during the update is a separate question,
+        /// asked by <see cref="DownThisUpdate"/> at the call site (#1792).</summary>
         static int FingersDown(Touchscreen ts, out UnityEngine.InputSystem.Controls.TouchControl a,
             out UnityEngine.InputSystem.Controls.TouchControl b)
         {

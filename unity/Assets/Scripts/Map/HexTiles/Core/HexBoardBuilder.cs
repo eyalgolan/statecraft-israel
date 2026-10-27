@@ -351,6 +351,7 @@ namespace Statecraft.HexTiles
     {
         [SerializeField, HideInInspector] List<Object> owned = new List<Object>();
         readonly List<Action> teardown = new List<Action>();
+        internal IReadOnlyList<Object> PendingRetirementObjects => owned;
         public T Own<T>(T o) where T : Object { owned.Add(o); return o; }
         /// <summary>Destroys <paramref name="o"/> now if the board made it (a rebuilt hex's meshes and materials).</summary>
         public void Release(Object? o) { if (o != null && owned.Remove(o)) { if (Application.isPlaying) Destroy(o); else DestroyImmediate(o); } }
@@ -432,8 +433,7 @@ namespace Statecraft.HexTiles
             foreach (var p in placements)
             {
                 var id = HexModels.Resolve(p.Model, p.Position);
-                if (prefabOf == null && HexCollectionFigures.Available && p.StandIn != StandIn.Flat
-                    && HexModels.CollectionAlias(id, out _, out _)) { streamed.Add(p); continue; }
+                if (prefabOf == null && p.StandIn != StandIn.Flat && HexCollectionFigures.Streams(id)) { streamed.Add(p); continue; }
                 var prefab = p.StandIn == StandIn.Flat ? null : (prefabOf ?? HexModels.Prefab)(id);
                 if (prefab != null && HexModels.Skinned(prefab))
                 {

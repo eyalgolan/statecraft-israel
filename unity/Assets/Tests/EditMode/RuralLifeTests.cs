@@ -59,7 +59,7 @@ public class RuralLifeTests
     public void EveryLaneModelIsPlacedInItsSourcedSettingAtBothDetails()
     {
         var map = OpenMap();
-        var layer = RuralLife.Show(map)!;
+        var layer = CollectionGeometryFixture.Rural(map)!;
         CollectionAssert.AreEquivalent(RuralLife.Models, layer.Wanted.Select(w => w.Model).Distinct());
         Assert.AreEqual(layer.Wanted.Count, layer.Wanted.Select(w => (w.Key, w.Model)).Distinct().Count(), "each anchor once per model");
         foreach (var id in RuralLife.Models)
@@ -92,11 +92,11 @@ public class RuralLifeTests
     public void SeededSpotsAreDeterministicClearAndUpright()
     {
         var map = OpenMap();
-        var first = RuralLife.Show(map)!;
+        var first = CollectionGeometryFixture.Rural(map)!;
         AnswerAll();
         var spots = first.Placed.Select(p => (p.Key, p.Model, p.Detail, p.At, p.Member)).ToList();
         Object.DestroyImmediate(first.gameObject);
-        var second = RuralLife.Show(map)!;
+        var second = CollectionGeometryFixture.Rural(map)!;
         AnswerAll();
         CollectionAssert.AreEqual(spots, second.Placed.Select(p => (p.Key, p.Model, p.Detail, p.At, p.Member)).ToList(), "same map, same seeded spots");
 
@@ -137,7 +137,7 @@ public class RuralLifeTests
     public void CloseZoomUsesNearModelsAndOnlyNearAnimalsAnimate()
     {
         var map = OpenMap();
-        var layer = RuralLife.Show(map)!;
+        var layer = CollectionGeometryFixture.Rural(map)!;
         AnswerAll();
         Assert.IsFalse(RuralLife.CloseAt(RuralLife.CloseExitM + 1f, true));
         Assert.IsTrue(RuralLife.CloseAt(RuralLife.CloseEnterM, false));
@@ -153,7 +153,11 @@ public class RuralLifeTests
             SelectMany(t => t.GetComponentsInChildren<Renderer>(true)).All(r => r.forceRenderingOff));
         var animated = layer.GetComponentsInChildren<Animator>(true).Where(a => a.runtimeAnimatorController != null).ToList();
         Assert.Greater(animated.Count, 0, "the supplied near-detail horse and sheep idle clips are present");
-        Assert.IsTrue(animated.All(a => a.enabled));
+        foreach (Transform placement in layer.transform)
+            foreach (var animator in placement.GetComponentsInChildren<Animator>(true))
+                if (animator.runtimeAnimatorController != null)
+                    Assert.AreEqual(placement.name.EndsWith(":near", StringComparison.Ordinal), animator.enabled,
+                        placement.name + ": far originals keep a frozen pose; only close near originals animate");
         cam.transform.position = new Vector3(0f, RuralLife.CloseExitM + 1f, 0f);
         layer.Choose(default, cam);
         Assert.IsFalse(layer.LastClose);
@@ -168,7 +172,7 @@ public class RuralLifeTests
     public void ABundleThatDoesNotStreamLeavesTheMapRunning()
     {
         var map = OpenMap();
-        var layer = RuralLife.Show(map)!;
+        var layer = CollectionGeometryFixture.Rural(map)!;
         int requests = asked.Count;
         for (int i = 0; i < requests; i++)
             LogAssert.Expect(LogType.Warning, new Regex("^RURAL: .* did not stream"));
@@ -176,7 +180,7 @@ public class RuralLifeTests
         Assert.AreEqual(0, layer.transform.childCount);
         CollectionAssert.AreEquivalent(RuralLife.Models, layer.Missing);
         Assert.IsNotNull(map.Terrain);
-        Assert.DoesNotThrow(() => RuralLife.Show(map));
+        Assert.DoesNotThrow(() => CollectionGeometryFixture.Rural(map));
         Assert.AreEqual(0, asked.Count, "a failed detail is not requested every frame");
     }
 
@@ -187,7 +191,7 @@ public class RuralLifeTests
         Assert.AreEqual(nameof(CollectionStream.Request), saved.Method.Name);
         foreach (var id in RuralLife.Models)
         {
-            Assert.IsTrue(CollectionCatalog.BundleOf(id) == CollectionCatalog.Vehicles || CollectionCatalog.BundleOf(id) == CollectionCatalog.Animals, id);
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
             foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
             {
                 var path = CollectionCatalog.PrefabPath(id, detail);
@@ -211,7 +215,7 @@ public class RuralLifeTests
     public void EveryModelStandsAtABelievableSizeBesideTheTrain()
     {
         var map = OpenMap();
-        var layer = RuralLife.Show(map)!;
+        var layer = CollectionGeometryFixture.Rural(map)!;
         AnswerAll();
         float loco = RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize / ServiceTrain.Cars;
         float figure = UnitBadge.FigureHeightM * UnitShowcase.FigureScale;
@@ -256,9 +260,9 @@ public class RuralLifeTests
         try
         {
             var content = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
-            var people = CivilianPeople.ShowAt(map, new DateTime(1948, 5, 15), Array.Empty<Statecraft.Sim.Placement>(), content)!;
+            var people = CollectionGeometryFixture.People(map, new DateTime(1948, 5, 15), Array.Empty<Statecraft.Sim.Placement>(), content)!;
             Assert.Greater(people.Wanted.Count, 0, "the civilians are wanted");
-            var layer = RuralLife.Show(map)!;
+            var layer = CollectionGeometryFixture.Rural(map)!;
             AnswerAll();
             var others = RuralLife.OtherProps(map);
             Assert.Greater(others.Count, people.Wanted.Count, "the civilians and the wildlife");

@@ -70,7 +70,7 @@ public sealed class CivilianPeopleTests
         }, CivilianPeople.CampModels);
         foreach (var id in CivilianPeople.SettledModels.Concat(CivilianPeople.CampModels))
         {
-            Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.BundleOf(id), id);
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
             foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
             {
                 var path = CollectionCatalog.PrefabPath(id, detail);
@@ -114,7 +114,7 @@ public sealed class CivilianPeopleTests
         var second = CivilianPeople.Wants(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content);
         CollectionAssert.AreEqual(first, second, "same ids and seed give bit-for-bit equal plans");
 
-        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        var layer = CollectionGeometryFixture.People(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
         Assert.AreEqual(first.Select(w => w.Model).Distinct().Count(), asked.Count, "each wanted far model, once");
         Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Far));
         CollectionAssert.IsEmpty(layer.Placed, "the stream never answers in the requesting frame");
@@ -142,7 +142,7 @@ public sealed class CivilianPeopleTests
     {
         var map = OpenMap();
         var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
-        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        var layer = CollectionGeometryFixture.People(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
         Answer(CollectionDetail.Far);
         Assert.Greater(layer.Placed.Count, 0);
         foreach (var p in layer.Placed)
@@ -167,7 +167,7 @@ public sealed class CivilianPeopleTests
     {
         var map = OpenMap();
         var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
-        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        var layer = CollectionGeometryFixture.People(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
         Answer(CollectionDetail.Far);
         Assert.Greater(layer.Placed.Count, 0);
         float house = Statecraft.Game.Map.Kits.SettlementKits.ReferenceHouseM * Statecraft.Game.Map.Kits.SettlementKits.ModelScale;
@@ -190,7 +190,7 @@ public sealed class CivilianPeopleTests
         Assert.IsFalse(CivilianPeople.CloseAt(40001f, false));
         var map = OpenMap();
         var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
-        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        var layer = CollectionGeometryFixture.People(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
         Answer(CollectionDetail.Far);
         var camera = CameraAt(30000f);
         try
@@ -200,9 +200,15 @@ public sealed class CivilianPeopleTests
             Assert.IsTrue(asked.All(a => a.detail == CollectionDetail.Near));
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).Any(r => !r.forceRenderingOff), "far figures remain while near streams");
             Answer(CollectionDetail.Near);
-            Assert.AreEqual(layer.Placed.Count, layer.GetComponentsInChildren<Animator>(true).Length, "the near idle prefab for every figure");
+            Assert.AreEqual(layer.Placed.Count, layer.Placed.Sum(p => layer.transform.Find(p.Key + "/Near").GetComponentsInChildren<Animator>(true).Length), "the near idle prefab for every figure");
+            Assert.IsTrue(layer.Placed.SelectMany(p => layer.transform.Find(p.Key + "/Far").GetComponentsInChildren<Animator>(true)).All(a => !a.enabled), "far originals are posed once, never animated behind the near instances");
             Assert.IsTrue(layer.Placed.All(p => layer.transform.Find(p.Key + "/Far").GetComponentInChildren<Renderer>().forceRenderingOff));
             Assert.IsTrue(layer.Placed.All(p => !layer.transform.Find(p.Key + "/Near").GetComponentInChildren<Renderer>().forceRenderingOff));
+            Assert.IsTrue(layer.Placed.Where(p => !OriginalModelPose.Required(p.Model))
+                .SelectMany(p => layer.transform.Find(p.Key + "/Near").GetComponentsInChildren<Animator>(true)).All(a => a.enabled), "visible near originals play their idle");
+            camera.transform.position = new Vector3(0f, CivilianPeople.CloseExitM + 1f, 0f);
+            layer.Choose(default, camera);
+            Assert.IsTrue(layer.GetComponentsInChildren<Animator>(true).All(a => !a.enabled), "far originals and hidden near originals do not animate");
         }
         finally { Object.DestroyImmediate(camera.gameObject); }
     }
@@ -212,7 +218,7 @@ public sealed class CivilianPeopleTests
     {
         var map = OpenMap();
         var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
-        var layer = CivilianPeople.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+        var layer = CollectionGeometryFixture.People(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
         var failed = asked.Single(a => a.id == CivilianPeople.Townsman);
         asked.Remove(failed);
         LogAssert.Expect(LogType.Warning, new Regex("^PEOPLE: figure-c02-townsman-v2 far did not stream"));
@@ -437,7 +443,7 @@ public sealed class CivilianPeopleTests
     {
         foreach (var id in CivilianPeople.Models)
         {
-            Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.BundleOf(id), id);
+            Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), id);
             foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
             {
                 StringAssert.DoesNotContain("/Resources/", CollectionCatalog.PrefabPath(id, detail));
@@ -471,6 +477,7 @@ public sealed class CivilianPeopleTests
             .Concat(Statecraft.Game.Map.Units.UnitFigures.BySide.Values).Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
+        placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: the 18 kit originals are now catalogued and requested by TownModelLayer
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem }, CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
             "every catalogued model has a place but b21 and the first Jerusalem, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");
@@ -486,9 +493,20 @@ public sealed class CivilianPeopleTests
 
     static Bounds WorldBounds(GameObject go)
     {
-        var renderers = go.GetComponentsInChildren<Renderer>(true);
-        var bounds = renderers[0].bounds;
-        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
-        return bounds;
+        Bounds? result = null;
+        void Add(Vector3 point) { if (result is Bounds b) { b.Encapsulate(point); result = b; } else result = new Bounds(point, Vector3.zero); }
+        foreach (var filter in go.GetComponentsInChildren<MeshFilter>(true))
+        {
+            var box = filter.sharedMesh.bounds;
+            for (int i = 0; i < 8; i++) Add(filter.transform.TransformPoint(new Vector3((i & 1) == 0 ? box.min.x : box.max.x, (i & 2) == 0 ? box.min.y : box.max.y, (i & 4) == 0 ? box.min.z : box.max.z)));
+        }
+        foreach (var skin in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            var mesh = new Mesh();
+            try { skin.BakeMesh(mesh, true); foreach (var point in mesh.vertices) Add(skin.transform.TransformPoint(point)); }
+            finally { UnityEngine.Object.DestroyImmediate(mesh); }
+        }
+        Assert.IsTrue(result.HasValue, "the original has actual geometry");
+        return result!.Value;
     }
 }

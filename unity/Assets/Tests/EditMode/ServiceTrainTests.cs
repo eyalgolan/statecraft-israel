@@ -178,7 +178,7 @@ public class ServiceTrainTests
     {
         Assert.AreEqual(typeof(CollectionStream), saved.Method.DeclaringType, "the game's seam is CollectionStream.Request");
         Assert.AreEqual(nameof(CollectionStream.Request), saved.Method.Name);
-        Assert.AreEqual(CollectionCatalog.Vehicles, CollectionCatalog.BundleOf(ServiceTrain.ModelId));
+        Assert.AreEqual("collection-" + ServiceTrain.ModelId, CollectionCatalog.BundleOf(ServiceTrain.ModelId));
         foreach (var detail in new[] { CollectionDetail.Far, CollectionDetail.Near })
         {
             var path = CollectionCatalog.PrefabPath(ServiceTrain.ModelId, detail);
