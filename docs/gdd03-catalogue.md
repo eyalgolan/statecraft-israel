@@ -26,3 +26,9 @@ The coordinator's catalogue citation is **owner ruling, 25 Oct 2026, on #1668**.
 | Attention removed | None | No Attention key invented. Rule implementation tracked separately in #1688. |
 
 Numeric parameters the owner did not set are not made Agreed by these rulings. The catalogue contains no new debt, economic-defeat or timing numbers. Other GDD 0.3 systems and the eventual switch-over have their own issues.
+
+## #1706 slices 0/1: inactive combat catalogue foundation
+
+Coordinator decision, 26 Oct 2026 (Q5): synthetic catalogue validation only; the foundation remains inactive in the actual game. The catalogue defines one draw (Agreed), four ratio ranges, complete, non-overlapping inclusive 0..99 outcome bands, role factors and artillery support range (Default). Required missing, malformed or Deferred entries are refused without an old-table fallback.
+
+Sources: `content/gdd03-balance.yaml:447-475,484-495`; pinned GDD `605277df`, `docs/gdd/balance.md:172,175-177,180-185`. See [the combat rules](rules/mvp.md#combat) for current runtime behavior.
