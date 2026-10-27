@@ -32,6 +32,11 @@ namespace Statecraft.Sim
             t.Class == Combat.ArtilleryClass ? "artillery training" : t.Class == Armour ? "armoured car training"
             : t.Facility == "military_camp" ? "basic training" : t.Facility == Industry ? "craft training" : "pioneer training";
 
+        /// <summary>The course of <see cref="Course"/> as a report Arg (#1682): the UI words it from why.cause.course.&lt;id&gt;.</summary>
+        static string CourseId(UnitType t) =>
+            t.Class == Combat.ArtilleryClass ? "artillery" : t.Class == Armour ? "armour"
+            : t.Facility == "military_camp" ? "basic" : t.Facility == Industry ? "craft" : "pioneer";
+
         /// <summary>The armoured car's class (R-UNIT-001).</summary>
         const string Armour = "armour";
 
@@ -141,11 +146,11 @@ namespace Statecraft.Sim
             // T+3", open the cohort with type.TrainingTurns + 1 here; nothing else changes.
             s.Cohorts.Add(id, new Cohort(id, type.Id, city, count, type.TrainingTurns, (int)arms, unit));
             var aim = unit is int target ? FormattableString.Invariant($" as replacements for unit {target}") : "";
-            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} began {Course(type)}{aim}, cost {PlayerText.Money(c, "treasury", cost)}"));
+            why.Add(new Cause("city", city, -count, $"{name}: {Groups(count)} began {Course(type)}{aim}, cost {PlayerText.Money(c, "treasury", cost)}", key: CauseKeys.TrainingStarted, args: new[] { CauseKeys.Number(count), CourseId(type), unit.HasValue ? CauseKeys.Number(unit.Value) : "", CauseKeys.Number(cost) }));
             if (arms > 0)
             {
                 s.Arms -= (int)arms;
-                why.Add(new Cause("city", "arms", -arms, FormattableString.Invariant($"{name}: {Course(type)} took {arms} Arms")));
+                why.Add(new Cause("city", "arms", -arms, FormattableString.Invariant($"{name}: {Course(type)} took {arms} Arms"), key: CauseKeys.TrainingArms, args: new[] { city, CourseId(type) }));
             }
             return null;
         }
@@ -163,12 +168,12 @@ namespace Statecraft.Sim
             s.Cohorts.Remove(cohort);
             var type = c.UnitTypes.First(t => t.Id == k.Type);
             why.Add(new Cause("city", k.City, k.Count,
-                $"{PlayerText.Settlement(c, k.City)}: {Groups(k.Count)} left {Course(type)}; the Money spent is not returned"));
+                $"{PlayerText.Settlement(c, k.City)}: {Groups(k.Count)} left {Course(type)}; the Money spent is not returned", key: CauseKeys.TrainingCancelled, args: new[] { CauseKeys.Number(k.Count), CourseId(type) }));
             if (k.Arms > 0)
             {
                 var back = (int)Math.Min(k.Arms, (long)int.MaxValue - s.Arms);   // the stock stops at int.MaxValue, as an event or a purchase leaves it
                 s.Arms += back;
-                why.Add(new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: {Course(type)} returned {back} Arms")));
+                why.Add(new Cause("city", "arms", back, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: {Course(type)} returned {back} Arms"), key: CauseKeys.TrainingArmsReturned, args: new[] { k.City, CourseId(type) }));
             }
             return null;
         }
@@ -189,7 +194,7 @@ namespace Statecraft.Sim
                     var at = c.SettlementHexes.First(h => h.Id == k.City);
                     if (!s.Units.TryGetValue(aim, out target) || (target.Q, target.R) != (at.Q, at.R))
                     {
-                        why.Add(new Cause("city", k.City, 0, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: unit {aim} is no longer in {PlayerText.Settlement(c, k.City)}, so its replacements stop training")));
+                        why.Add(new Cause("city", k.City, 0, FormattableString.Invariant($"{PlayerText.Settlement(c, k.City)}: unit {aim} is no longer in {PlayerText.Settlement(c, k.City)}, so its replacements stop training"), key: CauseKeys.ReplacementsStopped, args: new[] { CauseKeys.Number(aim) }));
                         Cancel(c, s, k.Id, why);
                         continue;
                     }
@@ -204,26 +209,26 @@ namespace Statecraft.Sim
                     var strength = target.Strength + k.Count;
                     s.Units[target.Id] = new Unit(target.Id, target.Type, target.Q, target.R, target.Service, target.Side, strength,
                         target.Order, target.OrderTarget, target.HomeCity, strength >= target.Full ? 0 : target.Full);
-                    why.Add(new Cause("city", k.City, k.Count, FormattableString.Invariant($"{name}: {Groups(k.Count)} finished {Course(type)} and joined unit {target.Id}")));
+                    why.Add(new Cause("city", k.City, k.Count, FormattableString.Invariant($"{name}: {Groups(k.Count)} finished {Course(type)} and joined unit {target.Id}"), key: CauseKeys.ReplacementsJoined, args: new[] { CauseKeys.Number(k.Count), CourseId(type), CauseKeys.Number(target.Id) }));
                 }
                 else if (type.Side != "")
                 {
                     var hex = c.SettlementHexes.First(h => h.Id == k.City);
                     var id = s.NextId++;
                     s.Units.Add(id, new Unit(id, type.Id, hex.Q, hex.R, side: type.Side, strength: k.Count, homeCity: k.City));
-                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are {Trained(type)}"));
+                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are {Trained(type)}", key: CauseKeys.MilitaryTrained, args: new[] { CauseKeys.Number(k.Count), CourseId(type), type.Class == Combat.ArtilleryClass ? "artillery" : type.Class == Armour ? "armour" : "recruit" }));
                 }
                 else if (type.Kind == "unit")
                 {
                     var hex = c.SettlementHexes.First(h => h.Id == k.City);   // every settlement has one (ValidateMap)
                     for (int i = 0; i < k.Count; i++) { var id = s.NextId++; s.Units.Add(id, new Unit(id, type.Id, hex.Q, hex.R)); }
-                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are halutzim"));
+                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are halutzim", key: CauseKeys.PioneersTrained, args: new[] { CauseKeys.Number(k.Count), CourseId(type) }));
                 }
                 else if (type.Id == Craftsman)
                 {
                     var x = s.Cities[k.City];
                     s.Cities[k.City] = x.WithCraftsmen(x.Craftsmen + k.Count);
-                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are craftsmen"));
+                    why.Add(new Cause("city", k.City, k.Count, $"{name}: {Groups(k.Count)} finished {Course(type)} and are craftsmen", key: CauseKeys.CraftsmenTrained, args: new[] { CauseKeys.Number(k.Count), CourseId(type) }));
                 }
             }
         }

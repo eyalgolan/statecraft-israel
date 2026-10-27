@@ -94,7 +94,7 @@ namespace Statecraft.Game.UI
         }
 
         /// <summary>The report's lines for the session's last turn: each top-bar meter whose shown change is not empty, in
-        /// the bar's order (the meters have different units, so no order by size is given without a rule); then, under
+        /// the bar's order (the meters have different units, so no order by size is given without a rule); then national stocks; under
         /// <see cref="EnemyRow"/>, the enemy's orders (#1293).</summary>
         public static IReadOnlyList<Line> Lines(SimBridge bridge, UiText text, IReadOnlyList<UnitEntry>? units = null,
             IReadOnlyDictionary<string, string>? townNamesHe = null)
@@ -108,10 +108,40 @@ namespace Statecraft.Game.UI
                 lines.Add(new Line(id, text.Format("report.line", text["hud.caption." + id], meter.Delta), HudModel.Causes(bridge.Session.Last, id,
                     w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
             }
+            lines.AddRange(StockLines(bridge, text, units, townNamesHe));
             var enemy = EnemyOrders(bridge, text, units);
             if (enemy.Count > 0) lines.Add(new Line(EnemyRow, text["report.enemy"], enemy));
             return lines;
         }
+
+        /// <summary>National stocks, independently of the top bar. Include unchanged stocks; never invent causes
+        /// for consumption/imports that the sim did not report. Legacy has no national pools.</summary>
+        public static IReadOnlyList<Line> StockLines(SimBridge bridge, UiText text,
+            IReadOnlyList<UnitEntry>? units = null, IReadOnlyDictionary<string, string>? townNamesHe = null)
+        {
+            var lines = new List<Line>();
+            if (!bridge.Content.IsGdd) return lines;
+            foreach (var id in new[] { Pools.FoodTarget, Pools.ArmsTarget })
+            {
+                var s = bridge.State; var prev = bridge.Session.Previous;
+                var stock = StockMeter.From(id == Pools.FoodTarget ? s.Food : s.Arms,
+                    prev == null ? (int?)null : id == Pools.FoodTarget ? prev.Food : prev.Arms,
+                    (key, n) => text.Format(key, n));
+                var heading = stock.Delta.Length == 0
+                    ? text.Format("report.stock_line", text["hud.caption." + id], stock.Value)
+                    : text.Format("report.stock_change", text["hud.caption." + id], stock.Value, stock.Delta);
+                lines.Add(new Line(id, heading, StockCauses(bridge.Session.Last, id,
+                    w => CauseText.Line(w, bridge.Content, units ?? Array.Empty<UnitEntry>(), text, townNamesHe))));
+            }
+            return lines;
+        }
+
+        /// <summary>The same largest-two and stable tie order as the report's indicators, matched to stock targets.</summary>
+        public static IReadOnlyList<string> StockCauses(StepResult? turn, string target, Func<Cause, string> line) =>
+            turn == null ? Array.Empty<string>() : turn.Why.Select((w, i) => (w, i))
+                .Where(x => x.w.Target == target && x.w.Delta != 0)
+                .OrderByDescending(x => Math.Abs(x.w.Delta)).ThenBy(x => x.i)
+                .Take(HudModel.MaxCauses).Select(x => line(x.w)).ToList();
 
         /// <summary>#1293: every order the enemy AI gave in the last turn, and every attack its units made, a standing one too
         /// (#1297), as the sim names it on its cause (Cause.EnemyOrder, R-ENEMY-001), in the sim's order, in the player's
