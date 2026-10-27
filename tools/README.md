@@ -114,7 +114,7 @@ Run from the repo root; this installs every pinned dependency (rasterio included
 uv run --with pytest==9.1.1 --with rasterio==1.5.2 --with numpy==2.5.3 --with pyyaml==6.0.3 --with pillow==12.3.0 --with requests==2.32.5 --with pyproj==3.8.0 pytest tools/tests -q
 ```
 
-Expected: `917 passed, 4 skipped` (two need skimage and scipy, and two are the headed browser checks; add `--headed` and `--with websockets==15.0.1` to run them). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
+Expected: `1892 passed, 5 skipped, 1 xfailed` (one needs pypdf, two need skimage and scipy, and two are the headed browser checks; add `--headed` and `--with websockets==15.0.1` to run them; the xfail is the nightly's pending itch fixture). Omitting a dependency (e.g. rasterio) silently drops tests or fails collection.
 
 ## Required attribution (Copernicus DEM licence, modified data)
 
@@ -202,3 +202,64 @@ itself needs the `cp` again; a change to `unity_postmerge.py` does not.
 Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.unity-postmerge`, then delete the plist. To remove the
 worktree too: `git worktree remove --force ~/.cache/statecraft/unity-postmerge/worktree`. A trial without opening an
 issue or moving the state: `uv run tools/unity_postmerge.py --dry-run --home <scratch folder>`.
+
+## Nightly release
+
+`tools/nightly.py` builds the newest `main` every night and publishes it when every gate passes; the gates, the outputs
+and what is public are in `docs/RELEASING.md`, "Nightly builds". It runs on the owner's Mac from a launchd job
+(`tools/nightly.plist.in`) at 03:00, and the Mac has to be awake.
+- launchd starts `nightly_launch.py` (a copy in the job folder, `~/israel-game/.superpowers/nightly`, next to a copy of
+  `nightly_state.py`). It fetches `origin/main` into the job's own clone (`~/.cache/statecraft/nightly/repo`), resets
+  that clone to it (`checkout main`, `reset --hard`, `clean -ffdx` keeping the Unity Library and the NuGet plugin
+  download) and runs `tools/nightly.py run` from there. So a merged change to the script takes effect on the next
+  night, no checkout's working tree is used, and what Unity changed in the clone (`ProjectSettings.asset`,
+  `Assets/Settings`, the prickly pear material) is gone before the next night. A missing clone is a REFUSED line in
+  `LOG.md` (`gate=clone`); the launcher never clones. While a run is in progress it exits 0 and touches nothing.
+- The job folder holds `config.json` (optional; its keys are the fields of `Config` in `nightly_state.py`, and a wrong
+  one refuses the night), `state.json`, `LOG.md`, `runs/` (one folder per night with every step's log), `run.lock`,
+  `launchd.log` and `no-mcp-server`. A corrupt `config.json` or `state.json` refuses the night; it never counts as a
+  first night.
+- itch.io pushes stay off (`itch_enabled` is false) until the save test passes: set `itch_page_url` in `config.json`
+  to the itch page, then, from the clone and after the first PUBLISHED night,
+  `uv run tools/nightly.py savetest --tag <that nightly's tag>`. It pushes to the public itch page twice and, on a
+  pass, turns `itch_enabled` on in `config.json`. `INCONCLUSIVE` and `FAIL` leave itch off.
+- The boot-time baseline is the median headless boot of the first 5 PUBLISHED nights; later nights must stay within
+  the spread of those 5. To measure it again (a new machine, a new Chrome), delete `boot_baseline` from `state.json`;
+  the next 5 published nights record it.
+
+Install (owner's Mac only, from a checkout of `main` that has these files):
+
+```bash
+job=~/israel-game/.superpowers/nightly
+clone=~/.cache/statecraft/nightly/repo
+mkdir -p "$job" "$(dirname "$clone")"
+git clone https://github.com/eyalgolan/statecraft-israel.git "$clone"
+cp -c -R ~/israel-game/unity/Library "$clone/unity/Library"
+cp tools/nightly_launch.py tools/nightly_state.py "$job/"
+sed -e "s#@UV@#$(command -v uv)#g" -e "s#@REPO@#$HOME/israel-game#g" -e "s#@HOME@#$job#g" \
+    -e "s#@PATH@#$(dirname "$(command -v uv)"):$(dirname "$(command -v gh)"):$(dirname "$(command -v dotnet)"):$(dirname "$(command -v git)"):$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin#g" \
+    tools/nightly.plist.in > ~/Library/LaunchAgents/com.statecraft.nightly.plist
+plutil -lint ~/Library/LaunchAgents/com.statecraft.nightly.plist
+```
+
+Before loading it, run one night by hand without publishing, from the clone:
+
+```bash
+cd "$clone" && uv run tools/nightly.py run --manual --no-publish
+```
+
+It runs every gate and build, writes nothing to `LOG.md` or `state.json` and touches no store, and must end with
+`NO-PUBLISH: all gates passed for v<version>`. A run that ends `REFUSED` prints no reason (a by-hand run writes no
+`LOG.md` line); the step that stopped it has its log in the newest folder under `$job/runs/` (a refusal before the first step, such as disk,
+licence or the clone, leaves none). Fix that step first
+(`gh` and `butler` must be logged in, and the Unity licence and `unity_slots.py` must be where `Config` says), then
+run it again. Then:
+
+```bash
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.statecraft.nightly.plist
+```
+
+A change to `nightly_launch.py` or `nightly_state.py` needs the `cp` again; a change to `nightly.py` does not.
+
+Uninstall: `launchctl bootout gui/$(id -u)/com.statecraft.nightly`, then delete the plist. To remove the clone too,
+delete `~/.cache/statecraft/nightly/repo`.
