@@ -207,6 +207,64 @@ public static class MapCapture
         finally { QualitySettings.SetQualityLevel(saved, true); }
     }
 
+    /// <summary>The Civ-like border prototype's evidence (#196): the map as a new game starts (the side-coloured control
+    /// layer of 15 May 1948, as GameRoot.Begin draws it; kits and trees on, the water's clock pinned), on the WebGL tier,
+    /// at 1920x1080, from three views: gameplay03, a close view (20 km over the Israeli/Arab boundary hex nearest
+    /// gameplay03) and the overview (diorama02); then the synthetic proof at gameplay03. One set for the variant this run draws
+    /// unasked ("Default": A2, or what -bordervariant names), then one per variant (Legacy, main's earlier look, then A-C2) into
+    /// &lt;-captureDir&gt; (default captures/borders) as &lt;variant&gt;-&lt;view&gt;.png.</summary>
+    public static void BorderVariants()
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        int at = System.Array.IndexOf(args, "-captureDir");
+        var dir = at >= 0 && at + 1 < args.Length ? args[at + 1] : Path.Combine(CaptureDir, "borders");
+        var map = OpenAndBuild();
+        var previous = MapBorders.Variant;
+        int saved = QualitySettings.GetQualityLevel();
+        MapShaderGlobals.PinWaterTime(100f);
+        try
+        {
+            var subdistricts = Subdistricts1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Subdistricts1948.FileName)));
+            var control = map.Control ?? Control1948.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Control1948.FileName)));
+            new MapRegions(subdistricts, Armistice1949.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", Armistice1949.FileName))), control)
+                .Apply(subdistricts.ShownFrom);
+            var layer = MapBorders.Current ?? throw new System.InvalidOperationException("no region layer on the start date");
+            // The close view: the Primary hex nearest gameplay03 with a Secondary neighbour.
+            var centre = BorderProof.HexAt(map, PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat);
+            BorderStyle Style(int q, int r) => layer.StyleOf(layer.RegionOf(q, r));
+            var close = map.Hexes.hexes.Where(h => Style(h.q, h.r) == BorderStyle.Primary
+                    && MapBorders.NeighbourSteps.Any(d => Style(h.q + d.dq, h.r + d.dr) == BorderStyle.Secondary))
+                .OrderBy(h => BorderProof.Distance((h.q, h.r), centre)).FirstOrDefault()
+                ?? throw new System.InvalidOperationException("no Israeli/Arab boundary on the start date");
+            Debug.Log($"BorderVariants: close view over hex ({close.q}, {close.r}) at {close.lon:0.000}, {close.lat:0.000}");
+            var closePose = new PromoPose("close20", close.lon, close.lat, 20000f, PromoPose.Gameplay03.Yaw);
+            var rig = Camera.main.GetComponent<CameraRig>();
+            QualitySettings.SetQualityLevel(0, true);   // Mobile: the WebGL tier
+            void Shoot(string prefix, IEnumerable<PromoPose> poses)
+            {
+                var sets = new[] { ("Default", previous) }
+                    .Concat(((BorderVariant[])System.Enum.GetValues(typeof(BorderVariant))).Select(v => (v.ToString(), v)));
+                foreach (var (name, variant) in sets)
+                {
+                    MapBorders.Variant = variant;
+                    foreach (var pose in poses)
+                    {
+                        pose.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
+                        Save(Camera.main, 1920, 1080, Path.Combine(dir, $"{name}-{prefix}{pose.Name}.png"));
+                    }
+                }
+            }
+            Shoot("", new[] { PromoPose.Gameplay03, closePose, PromoPose.Diorama02 });
+            BorderProof.Show(map);
+            Shoot("proof-", new[] { PromoPose.Gameplay03 });
+        }
+        finally
+        {
+            QualitySettings.SetQualityLevel(saved, true); MapBorders.Variant = previous; MapShaderGlobals.PinWaterTime(null);
+            if (MapBorders.Current != null) MapBorders.Use(null);   // the layer and the synthetic proof go with the capture
+        }
+    }
+
     /// <summary>The scripted trailer capture (issue #45): flies the camera through TrailerShot.Default and renders every frame
     /// at 1920x1080 on the desktop tier (PC) into &lt;-captureDir&gt; (default captures/trailer) as frame-NNNNN.png, one numbered
     /// sequence across the shots, with the water's clock pinned to the frame's time so a re-run gives the same camera, state
