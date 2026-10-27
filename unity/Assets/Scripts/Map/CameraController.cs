@@ -97,6 +97,7 @@ namespace Statecraft.Game.Map
         {
             // Camera-owned observers record press origins; they never recognise or enqueue taps.
             mousePress = new InputAction("camera-drag-press", InputActionType.Button, "<Mouse>/rightButton");
+            mousePress.AddBinding("<Mouse>/leftButton");
             mousePress.performed += ctx => mouseDrag.Begin(((Mouse)ctx.control.device).position.ReadValue(), IsOverUi);
             mousePress.canceled += _ => mouseDrag.End();
             mousePosition = new InputAction("camera-drag-position", InputActionType.PassThrough, "<Mouse>/position");
