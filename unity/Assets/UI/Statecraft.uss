@@ -352,12 +352,12 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
 /* A consequence card's banner (#954): which road it follows and the record beside it, above the text; sober, in the muted
-   ink, set off by a thin gold rule at its start edge. The rejoin line under an option is in the same muted ink,
-   indented 46 px to line up with the option's text after its round sign (.event-option padding). */
+   ink, set off by a thin gold rule at its start edge. The rejoin line and the effect lines (#1125) under an
+   option are in the same muted ink, indented 46 px to line up with the option's text after its round sign (.event-option padding). */
 .event-alt-banner { display: none; white-space: normal; margin: 0 0 8px 0; padding: 2px 0 2px 10px; border-left-width: 2px; border-color: var(--gold); }
 .lang-he .event-alt-banner { border-left-width: 0; border-right-width: 2px; padding: 2px 10px 2px 0; }
-.event-rejoin { white-space: normal; margin: -1px 0 4px 46px; }
-.lang-he .event-rejoin { margin: -1px 46px 4px 0; }
+.event-rejoin, .event-effect { white-space: normal; margin: -1px 0 4px 46px; }
+.lang-he .event-rejoin, .lang-he .event-effect { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 /* The capture dialog (CaptureDialogPresenter): under each option its plain description, then the sim's preview of what
