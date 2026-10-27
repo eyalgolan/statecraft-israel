@@ -137,7 +137,8 @@ public class RaidTests
         Assert.NotNull(result.State.GameOver);
         Assert.Empty(result.State.Settlements);
         Assert.Equal((2, 0), (result.State.Units[1].Q, result.State.Units[1].R));
-        Assert.Contains(result.Why, x => x.Target == "town_a" && x.Message.Contains("counts as a raid"));
+        var raid = Assert.Single(result.Why, x => x.Target == "town_a" && x.Key == CauseKeys.PendingBecameRaid);
+        Assert.Equal(c.SettlementNames["town_a"] + ": no decision was made before the game ended, so it counts as a raid", raid.Message);
         var other = Step(c, twin).State;
         Assert.Equal(other.Score, result.State.Score);
         Assert.Equal(other.Describe(), result.State.Describe());
