@@ -499,6 +499,10 @@ R-ALT-011: A shareable build refuses while any consequence card, or any event wi
 R-ALT-012: The historical run (the reference player's orders from 15 May 1948 to 15 January 1952) raises no consequence card and diverges nowhere.
 
 
+## Gameplay camera (gdd-0.3 only)
+
+R-CAMERA-001: Only exact `gdd-0.3` fixes gameplay yaw at zero (north), including entry, input frames and minimap settling. Orbit input has no effect. Legacy and gdd-0.1 retain orbit. Pan, the 30 px drag onset, fixed pitch and view-axis zoom retain their existing behavior, rates and 6 to 250 km distance range. Explicit promo poses remain separate. Heading and zoom: owner ruling, 27 October 2026, #1720. Camp marker and label dimensions remain subject to measurement and owner approval.
+
 ## Population identity foundation (gdd-0.3 only)
 
 These contracts cover #1689 steps 1–2 only. Production era selection, Food consumption and command/save/reload integration remain held; helper coverage does not complete #1689. See [population-ledger.md](../population-ledger.md).

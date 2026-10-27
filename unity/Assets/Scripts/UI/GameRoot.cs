@@ -233,6 +233,9 @@ namespace Statecraft.Game.UI
                 : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
+            var oldFixedNorth = cameraController.FixedNorth;
+            ConfigureCameraHeading(cameraController, bridge.Content.Ruleset);
+            owned.Add(new Undo(() => cameraController.SetFixedNorth(oldFixedNorth)));
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
             if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
@@ -779,6 +782,10 @@ namespace Statecraft.Game.UI
 #else
         static void HandCursor(bool on) { }   // the game ships as the browser build; the editor keeps its own cursor
 #endif
+
+        // R-CAMERA-001: exact ruleset identity; gdd-0.1 retains orbit.
+        internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
+            controller.SetFixedNorth(false);
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         void Shutdown()
