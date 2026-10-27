@@ -250,6 +250,7 @@ what each date marks where a source says. "Bulletin" is the JTA archive date.
    search returned 100 items each and none contained the phrase), and Gvati has no such name. It is not a row; it is listed here
    so the name sits in this note. Whether it is a variant spelling of one of the five, or a place that was not set up, is
    not settled.
+   (Second pass, 27 Oct 2026: still [GAP]; the maps and searches that were read are in "Second pass (27 Oct 2026)" below.)
 
 ## JTA items and their datelines
 
@@ -328,6 +329,53 @@ The items that contained `Kfar Darom`, `Bnai Darom`, `Netzarim`, `Ein Netzarim`,
 Election Won't Stop Peace Quest") and the `Khan Yunis` and `Nahal` items were screened and not used. "Gaza Strip" windows of 1972-01-15
 to 1972-04-15 returned 31 items; the three that bear on the settlement debate (20 Mar, 3 Apr, 7 Apr 1972) were read as
 page text and are context only.
+
+## Second pass (27 Oct 2026)
+
+Status: research only; docs only; Refs #130. Everything above is kept as written. Tags as in "Conventions and tags"
+(first-pass legend unchanged); every item here is [S] or [GAP], none is [V]. All pages opened on 27 October 2026 (UTC),
+tool: curl and pdftotext/pdftoppm on this box (no Tavily key here); UN files from
+`https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf`: A/8089 (128 pp.), A/8389 (64), A/8828 (47), A/9148 (50),
+A/9817 (36), A/10272 (36), A/31/218 (118), A/32/284 (100).
+
+**Tel Or (row note 6): still [GAP], narrowed.**
+
+- **A map of November 1977 does not show it.** A/32/284, annex I, the printed title is "MAP SHOWING ISRAELI SETTLEMENTS IN THE TERRITORIES OCCUPIED IN JUNE
+  1967", "MAP NO. 2956 UNITED NATIONS NOVEMBER 1977", on PDF page 46 (read on the page image at 200 dpi). Its note says
+  "The information concerning settlements which appears on this map has been furnished by the Special Committee". In the
+  Gaza Strip it labels four points: "Netzarim", "Kfar-Daron" (as printed), "Nahal-Katif" and "Nahal-Morag". It prints no
+  "Tel Or" or "Tal Or" and no "Netzer Hazani" or "Katif B"; the label "Nahal-Katif" is printed north-northeast of Rafah.
+  [S] (a map of the Special Committee's own list, not an Israeli record). It confirms that the committee itself used the
+  name Nahal Katif in November 1977, nine months after A/32/284 para. 68 reported the conversion into Netzer Hazani.
+- **The text layers of eight reports.** I searched the text of A/8089, A/8389, A/8828, A/9817, A/10272, A/31/218 and
+  A/32/284 for "Tel Or", "Tal Or", Netzarim, Morag, Katif, Gadish and Kfar Darom. "Tel Or" occurs once, in A/31/218 para. 62
+  (already row note 6); the five names occur only where the first pass read them (A/8389, A/8828 p. 17, A/31/218 paras. 56
+  and 62, A/32/284 para. 68). A/8089, A/9817 and A/10272 have no hit. A/9148 has only 1,227 characters of text layer, so
+  it cannot be searched this way; its pages 25 and 43 were read as images (below).
+- **JTA, single words and spellings** (wp-json, `https://www.jta.org/wp-json/wp/v2/archive?search=<term>&after=1967-06-01T00:00:00&before=1978-06-30T23:59:59&per_page=100&page=1`,
+  run 27 Oct 2026; "contain" = returned items whose text matches the pattern, tested by script, not read):
+  `Telor` total 26, returned 26, 0 contain "telor"; `Tel-Or` total 4776, returned 100, 0 contain "Tel Or"; `Talor` total 120,
+  returned 100, 0 contain "Tal Or"; `Gadid` total 9, returned 9, 0 contain "gadid"; `Deir el Balah` total 12, returned 12,
+  2 contain it (bulletins of 25 Apr 1972 and 7 Jun 1967, security and war items, not opened, so no use is made of them);
+  `Deir al-Balah` total 2, returned 2, 0 contain it; `Nezer` total 2473, returned 100, 0 contain "nezer" or "netzer";
+  `Morag` total 1477, returned 100, 0 contain "morag" (the first pass's `Nahal Morag` query, 47 items, 1 item: the
+  bulletin of 17 Jan 1975, unchanged). Items beyond the first 100 were not examined.
+- **Wikipedia search** (MediaWiki API `list=search`, 27 Oct 2026): Hebrew `"תל אור" רצועת עזה` returned 2 pages
+  (Transjordan and Jordan-Israel relations pages, unrelated); English `"Tel Or" Gaza Nahal` and `"Tal Or" Deir al-Balah` returned 0.
+  The Ben-Yehuda text of Gvati (same URL as above) has no string "תל אור" (counted by script).
+- Result: the name appears in one UN paragraph, attributed there to two visitors, and in no map or search result read. Whether it
+  is a variant of Gadish or Netzer Hazani, or a place not set up, stays open. [GAP]
+
+**Founding days (the "Founding days" bullet in the short answer): still not closed, one count added.**
+
+- A/9148 (25 Oct 1973), para. 138 on p. 43, read on the page image: "as of 19 August 1973, 44 settlements have been
+  established in the occupied territories" and "In the Gaza Strip, a concentration of three settlements has been
+  established in the southern-most region, where the Strip borders Egypt. Three other settlements have been established in
+  other areas of the Gaza Strip, stretching northward." It names none of them and does not say whether the southernmost
+  three are the Rafah approaches or Strip places in the sense of "Where the line ... falls" above. [S] (the committee's count; it quotes no source here.) It does not
+  decide any date. It gives a Special Committee count of six in or at the edge of the Strip as of 19 Aug 1973, nearly three
+  months after the 29 May 1973 on-the-land date of row 4 (Netzer Hazani); it does not check that date.
+- No Israeli record, Knesset item or Gazette item was reachable (same as "What was not done"); no row changed from [C] or [S].
 
 ## Outside the window and outside the scope
 
