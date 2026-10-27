@@ -139,15 +139,19 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   Nothing is invented"). The Syrian, Iraqi and Lebanese figures rest on Glubb's figures alone (Rogan and Shlaim
   reproduce them), merged as data only and marked `to_verify` (owner, 17 October 2026, on #860).
 - **Two places at once.** At the first truce the Egyptian row stands at both its forward base (Isdud) and its rear base
-  (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time. Only a row the map does not draw may do
-  that: a drawn row has one token, at one place at a time. How PR 17 draws such a row is its decision.
+  (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time, the only drawn row whose do. It is drawn as
+  one token (owner, 27 October 2026: "One token"): in the GDD loop the row's one sim unit, from Gaza; in the legacy loop
+  the first anchor whose window holds the date (`UnitRoster.AnchorAt`), so the forward base. Majdal stays in the row and
+  in the card's sector text.
 - **Drawn only with their own figures** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to
   `units_1948.yaml` and filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its
   sensitivity review. Nothing is drawn with IDF figures, and there is no placeholder art." Tal Heuberger's 1948 Collection has
   figures for two forces, and Tal Heuberger's unit models count as reviewed and approved (owner, 17 October 2026, #756), so
   those two are drawn (issue #665; see "The 1948 Collection on the tokens"): the Arab Legion and the Arab Liberation
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
-  those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
+  those rows. Tal Heuberger's generated figures have since joined them (owner, 27 October 2026, #756: "Sign off all 19"):
+  the Syrian, Iraqi and Egyptian infantry on their forces' tokens. The Lebanese row (hidden) gives no token, takes no spot
+  and clears no ground for the kits.
   A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
   bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
   strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its

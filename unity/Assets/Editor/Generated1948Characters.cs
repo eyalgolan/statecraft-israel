@@ -25,7 +25,8 @@ namespace Statecraft.Game.EditorTools
         {
             int index = Array.IndexOf(Ids, id);
             if (index < 0) throw new ArgumentException("Character is outside the explicit import scope", nameof(id));
-            return (index == 1 || index == 3 ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
+            return (Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry(id)
+                ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
         }
         static string Model(string id, string level) => $"{Dir(id)}/{id}.fbx";
         static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath(Model(id, level))

@@ -19,7 +19,7 @@ using UnityEngine.TestTools;
 /// <summary>Issue #665: the 1948 Collection (Tal Heuberger, #507) on the army tokens, streamed after the first frame. Every one of
 /// the original unit models retains its identity (owner, 17 October 2026, #663: every model is used): the Israeli figures,
 /// the Arab Legion and C09 on the ALA, and the 65 mm gun and the jeep where a source puts them. New Syrian and
-/// Iraqi figures join their existing formations; the Egyptian figure awaits an approved map representation. Until a model
+/// Iraqi figures join their existing formations, and the Egyptian figure its force's one token. Until a model
 /// arrives, and when its bundle is missing or damaged, an Israeli token keeps its code-built figures (fail open); an Arab
 /// force's token is not drawn at all (#740: no IDF figures, no placeholder).</summary>
 public class UnitFiguresTests
