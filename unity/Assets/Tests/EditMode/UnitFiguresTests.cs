@@ -38,7 +38,7 @@ public class UnitFiguresTests
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
-        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1",
+        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",

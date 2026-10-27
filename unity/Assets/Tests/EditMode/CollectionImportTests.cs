@@ -161,7 +161,7 @@ public class CollectionImportTests
                 Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
-            if (GeneratedInfantry.Contains(id))
+            if (CollectionCatalog.IsFullQualityGeneratedInfantry(id))
                 return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id),
                     $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/{id}.controller", $"{Dir(id)}/provenance.json" };
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
@@ -208,7 +208,7 @@ public class CollectionImportTests
     [Test]
     public void BothPlacementDetailsUseOnlyTheOriginalGeometry()
     {
-        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
         {
             var path = Model(id); var imp = Importer(path);
             var meshes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Mesh>().ToArray();
@@ -228,7 +228,7 @@ public class CollectionImportTests
     [Test]
     public void OriginalModelsRetainAllSourceTakesAndBonesWithoutReduction()
     {
-        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
         {
             var path = Model(id); var imp = Importer(path);
             Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " source rig");
@@ -250,7 +250,7 @@ public class CollectionImportTests
     [Test]
     public void EveryColourMapKeepsItsSourceSizeAndMipmapsWithoutCrunch()
     {
-        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
         {
             var path = ColourMap(id); var imp = AssetImporter.GetAtPath(path) as TextureImporter;
             Assert.IsNotNull(imp, path); imp!.GetSourceTextureWidthAndHeight(out int width, out int height);
@@ -273,7 +273,7 @@ public class CollectionImportTests
     [Test]
     public void BothPlacementAliasesKeepTheOriginalMaterialRigAndController()
     {
-        foreach (var id in Ids.Where(id => !GeneratedInfantry.Contains(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
         {
             var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat");
             Assert.IsNotNull(mat, id);
