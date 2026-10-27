@@ -1,0 +1,141 @@
+# Source check of the `latrun_fort`, `iraq_suwaydan_fort` and `shaar_hagai` rows (#1008, second slice)
+
+Status: **draft, needs a person to check**. Research only: an AI agent opened every source below on 27 October 2026.
+`docs/CONTENT_POLICY.md` section 2, rule 6, still requires a person to check each claim against its source. This note
+changes nothing in `content/`, `sim/` or `unity/`: the three rows keep `status: draft` and `name_he_review: agent-checked`,
+and no `reviewed_by` is written (the owner's 22 October rule on #1008: only the person who did the check does that).
+
+Scope: the three rows `latrun_fort`, `iraq_suwaydan_fort` and `shaar_hagai` of
+[`content/map/locations_1948.yaml`](../../content/map/locations_1948.yaml) as on `main` at `b02f82a0`. It follows the layout and
+method of the first slice, [`locations-1008-check-negba-hulda-nir-am.md`](locations-1008-check-negba-hulda-nir-am.md) (PR #1775,
+not yet merged when this note was written); none of that note's rows are touched here. Field meanings are from
+[`docs/locations.md`](../../docs/locations.md).
+
+## Conventions
+
+- **[V, agent read 27 Oct 2026; a person's check pending]**: the printed or served text was opened by an agent on that day,
+  as a page image or map tile that the agent looked at, and says what the cell reports.
+- **[S]**: Wikipedia, Wikidata or the web text of a JTA item (a compilation or a transcription, never primary), read by
+  revision id or item id. Wikilink brackets are removed from quoted wikitext, and a hyphen stands for an en dash inside a quoted year range.
+- **[C]**: sources conflict; both values are kept.
+- **[GAP]**: not reached or not found; what was tried is written next to it.
+- **Result** column: *match* (the source supports the row), *conflict* (the source says something different),
+  *not covered* (the source is silent), *not a row field* (the row has no such field; the fact is recorded for the owner).
+- Hex conversion is the repo's own: `tools/hexgrid.py` `settlement_hex(lon, lat, grid)` over `content/map/hexes.json`
+  (hex circumradius 5 km), run on 27 Oct 2026. "Edge" is the distance from the point to the nearest hex edge. Run on the
+  first slice's Hulda and Negba points, the same script gave 4.68 km and 0.27 km, and 1.88 km and 2.60 km, the figures that note prints.
+  The three rows' stored `q`/`r` equal what it returns for their own `lon`/`lat`: latrun_fort (-2, 22), iraq_suwaydan_fort (-7, 25),
+  shaar_hagai (-2, 23).
+- Distances between coordinates are flat-earth metres at latitude 31.7 and are rounded.
+
+## Summary
+
+| Row | Fields checked | match | conflict | not covered / not a row field |
+|---|---|---|---|---|
+| `latrun_fort` | name, name_he, kind, lon/lat, hex (5 row fields); period names, dates, starting control (not row fields) | 5 | 0 | 3 not row fields (control on 15 May is a [GAP]; sources conflict on 2 June) |
+| `iraq_suwaydan_fort` | same | 5 | 0 | 3 not row fields (the founding date and the first holder of the fort conflict among the sources) |
+| `shaar_hagai` | same | 5 | 0 | 3 not row fields (no source reached for 15 May); the `pass` wording differs from every source |
+
+No field of the three rows conflicts with a source. What the sources show that the owner may want to know:
+(1) **`shaar_hagai` sits 0.03 km (30 m) from a hex edge**: moving the point 50 m north or 100 m west puts it in hex (-2, 22),
+the hex that holds `latrun_fort`, and the printed map label is within about 60 m of the row point;
+(2) `iraq_suwaydan_fort`: Wikidata's item is labelled "Fort Yoav", the name given after the Israeli capture, while the row
+carries the earlier name, which is correct for the period; the sources disagree on who held the fort in the days after 12 May 1948
+and on its building date (1932 or 1940);
+(3) `latrun_fort`: no source reached says who held the fort on 15 May 1948; he.wiki dates the Arab Legion takeover to 18 May,
+and on 2 June 1948 an Israeli spokesman (JTA) says the Arabs had been driven out of the police station (correction 27 Oct 2026: the 2 June bulletin prints that the Arabs were driven out, in the sentence after the spokesman's statement, so reading it as his words is derived, not printed) while he.wiki says
+Latrun stayed in Jordanian hands;
+(4) the rows carry no `starting_control` or dates, and none of the three has a printed 15 May 1948 statement in a primary source.
+
+## Sources opened
+
+| Id | Source | Day opened | Used for |
+|---|---|---|---|
+| WD1, WD2, WD3 | Wikidata items Q16129570 (Latrun fort), Q97971283 (Fort Yoav), Q1282220 (Sha'ar HaGai), `https://www.wikidata.org/wiki/Special:EntityData/<Q>.json`, revisions 2411487800, 2512679443, 2410472233 | 27 Oct 2026 | the rows' own cited coordinate source [S] |
+| HW1, HW2, HW3 | he.wikipedia, `https://he.wikipedia.org/w/index.php?oldid=41904369` (משטרת לטרון), `oldid=43963842` (משטרת עיראק סווידאן), `oldid=43120667` (שער הגיא), read as wikitext with `action=raw` | 27 Oct 2026 | the rows' cited `name_he` source [S] |
+| EW1, EW2, EW3 | en.wikipedia, `oldid=1376600230` (Latrun, the fort's section), `oldid=1371377076` (Operation Shmone, the row's cited identity source), `oldid=1357158180` (Sha'ar HaGai, the row's cited name source) | 27 Oct 2026 | names, dates, control, coordinates [S] |
+| MAP | Survey of Palestine 1:20,000 as served by Palestine Open Maps, tile layer `https://palopenmaps.org/tiles/pal20k-1940s/{z}/{x}/{y}.jpg`, zoom 16, 3 x 3 tiles around each row point, row point marked with a red circle on the agent's copy; the agent looked at each crop | 27 Oct 2026 | printed names and positions [V, agent read 27 Oct 2026; a person's check pending] |
+| SHEETS | Palestine Open Maps sheet index `raw-data/sheets.csv` at `PalOpenMaps/pom-data` commit `55fe58c45d53f7bce6045659e19286d30c544288` (the commit the first slice used) | 27 Oct 2026 | which sheets cover the points: 14-13 Latrun (listed editions: undated, 1942, 1948), 11-11 El Majdal (undated, 1942, 1946-48), 15-13 Bab El Wad (1943 only) |
+| JTA-1 | JTA Daily News Bulletin, Sunday 16 May 1948, `http://pdfs.jta.org/1948/1948-05-16_113.pdf`, page 1 masthead and page 2 (page images, 220 dpi) | 27 Oct 2026 | Bab el Wad on 14 to 16 May 1948 |
+| JTA-2 | JTA Daily News Bulletin, Tuesday 1 June 1948, `http://pdfs.jta.org/1948/1948-06-01_126.pdf`, page 1 (page image, 250 dpi, top half read) | 27 Oct 2026 | Latrun on 31 May 1948 |
+| JTA-3 | JTA Daily News Bulletin, Thursday 3 June 1948, `http://pdfs.jta.org/1948/1948-06-03_128.pdf`, the PDF page that carries the masthead (page 2 of the file; page image, 300 dpi, three crops read). **Correction 27 Oct 2026, after a review agent's check (agent read 27 Oct; a person's check pending):** the masthead wording above does not hold, because page 1 of the file is a "Last Minute News" sheet that also carries a masthead (the issue number is corrected by hand to 128; viewed on a page image, 200 dpi, 27 Oct 2026). Read it as page 2 of the file, the page whose lead story is datelined "TEL AVIV, June 2. (JTA)" (page image, 300 dpi, three crops read) | 27 Oct 2026 | Latrun and Bab el Wad on 2 June 1948 |
+| JTA-W | JTA wp-json items 730729 (4 Aug 1948) and 731646 (5 Nov 1948), web text only: the web text carries no dateline and the bulletin PDF was not opened (the 5 Nov PDF address `1948-11-05_255.pdf` returned an HTML page, not a PDF; the 4 Aug PDF was not tried) | 27 Oct 2026 | the Egyptian-held fort in Aug and Nov 1948 [S] |
+
+Not reached or not used: the Israeli archives (National Library, State Archives, IDF Maarachot) were not tried on this day; the
+first slice recorded HTTP 403 from this box on 26 Oct 2026. The sources that the Wikipedia articles cite (Eilon 1959, Bell 1966,
+the Carta atlas pages) were not opened; where a cell quotes a claim that rests on them, it is marked as a Wikipedia claim.
+
+## `latrun_fort` (row: `Latrun police fort`, `משטרת לטרון`, fort, lon 34.98036, lat 31.8381, q -2, r 22)
+
+| Field | Row says | Source says | Result | Tag | Source | Read |
+|---|---|---|---|---|---|---|
+| name | `Latrun police fort` | Mandate map (sheet 14-13 Latrun) prints "Police Sta." beside a hatched building symbol on the hill; Wikidata English label "Latrun fort"; he.wiki: "משטרת לטרון היא תחנת משטרה שהוקמה בשנת 1940 בלטרון על ידי שלטונות המנדט הבריטי, כאחת מ-11 מצודות טגארט" | match (the sources say police station or fort; the row combines them) | [V, agent read 27 Oct 2026; a person's check pending] for the map label; [S] for the rest | MAP, WD1, HW1 | 27 Oct 2026 |
+| name_he | `משטרת לטרון` | Wikidata Hebrew label "משטרת לטרון"; he.wikipedia title "משטרת לטרון" | match | [S] | WD1, HW1 | 27 Oct 2026 |
+| kind | `fort` | Wikidata P31 = Q1156360, English label "tegart fort" (it also lists Q41176 "building" and Q33506 "museum"); he.wiki "כאחת מ-11 מצודות טגארט"; en.wiki "The Tegart police fort" (image caption) | match | [S] | WD1, HW1, EW1 | 27 Oct 2026 |
+| lon/lat | 34.98036, 31.8381 | Wikidata P625 31.8381, 34.98036 (precision 1e-05; 0 m from the row, the row copies it). en.wiki "Latrun" prints one coordinate, 31°49'55"N 34°58'53"E, which is the village (688 m from the row point, same hex), not the fort. he.wiki prints no coordinate in its text (the map is a template). Mandate map: the red row point lies on the building symbol labelled "Police Sta.", roughly 25 m from the symbol's centre (zoom 16, 2.03 m/px) | match (Wikidata, the row's only coordinate source, equals the row; the map symbol is within 25 m) | [S] for Wikidata and en.wiki; [V, agent read 27 Oct 2026; a person's check pending] for the map reading | WD1, EW1, HW1, MAP | 27 Oct 2026 |
+| hex | q -2, r 22 | `settlement_hex` on the row point gives (-2, 22), 4.37 km from the hex centre and 0.54 km from the nearest edge. The map-read building position (about 25 m away) also gives (-2, 22); so does the en.wiki village point | match | [V, agent read 27 Oct 2026; a person's check pending] (computation) | tools/hexgrid.py | 27 Oct 2026 |
+| period / other names | none in the row | No other name is printed in the sources opened. he.wiki and en.wiki both call it a police station or fort of the British Mandate; the Hebrew article title is the row's name_he. The Mandate map label "Police Sta." is the period wording | not a row field; no conflict with the row's name | [S] | HW1, EW1, MAP | 27 Oct 2026 |
+| dates | none in the row | he.wiki: "הוקמה בשנת 1940". en.wiki: built "Following the 1936-39 Arab revolt" with no year. Wikidata has no inception date for this item | not a row field; the sources do not conflict (he.wiki gives 1940, en.wiki no year) | [S] | HW1, EW1, WD1 | 27 Oct 2026 |
+| starting control | no such field on this row | **15 May 1948: [GAP].** he.wiki: "ב-18 במאי 1948 השתלט הלגיון הערבי על בניין המשטרה הבריטית" (on 18 May the Arab Legion took the building), a date after 15 May, so it does not say who held it on the 15th. en.wiki: "after the British withdrew and handed the fort of Latrun over to Jordan's Arab Legion", no date. JTA search for "Latrun" found no item naming Latrun between 14 and 23 May 1948 (searches below). **31 May:** JTA 1 June 1948, dateline "TEL AVIV, May 31. (JTA)": "A late Arab Legion communique claimed that the Haganah force engaged at Latrun has been routed, but Israeli dispatches said that a Jewish task force had seized and burned the village and police station of Latrun, leaving 150 enemy troops dead before withdrawing." **2 June:** JTA 3 June 1948, dateline "TEL AVIV, June 2. (JTA)": "A Jewish military spokesman ... stated that ... Latrun has become a no-man's land. The Arabs have been driven out of the Latrun monastery and police station" (**correction 27 Oct 2026, after a review agent's check (agent read 27 Oct; a person's check pending):** the quote above stops mid-sentence; the two sentences in full, read on the 300 dpi page image, are "A Jewish military spokesman, presenting a picture of the situation on the Jerusalem supply highway, stated that from Jerusalem to Bab el Wad the road was and is in Jewish hands and that Latrun has become a no-man's land." and "The Arabs have been driven out of the Latrun monastery and police station and control the villages of Deir Youb and Yalu, to the north of Latrun, while the Israelis hold Beith Jis and Beith Suhin, to the south."; in the page image the typed word reads "no" then a mark then "man's", which a review agent's check (agent read 27 Oct; a person's check pending) reads as "no men's land" in JTA's archive text; both bear on the [C]); he.wiki: "לאחר כישלונות אלה נותרה לטרון בשליטת ירדן עד למלחמת ששת הימים" (after these failures Latrun stayed under Jordanian control until the Six-Day War) | not a row field. Arab-held (Arab Legion) at some point before 31 May: [S]. 31 May and 2 June are what the bulletins print: the Israeli side's claim and the Arab Legion's claim, which do not agree: [C]. **Correction 27 Oct 2026, after a review agent's check (agent read 27 Oct; a person's check pending), to the Result cell above:** on 2 June the bulletin prints no Arab Legion claim. The 31 May bulletin has a Legion claim (the Haganah force "routed") and Israeli dispatches (village and police station seized and burned, then a withdrawal); those disagree on the outcome of the fight, not on who held the fort afterwards. The [C] is JTA of 2 June against he.wiki's "נותרה לטרון בשליטת ירדן". In the 2 June bulletin the sentence "The Arabs have been driven out ..." comes after the spokesman's statement ("stated that from Jerusalem to Bab el Wad the road was and is in Jewish hands and that Latrun has become a no-man's land.") and is not inside it, so reading it as his words is derived, not printed | [V, agent read 27 Oct 2026; a person's check pending] for what the two bulletins print; [S] for he.wiki and en.wiki; [GAP] for 15 May | JTA-2, JTA-3, HW1, EW1 | 27 Oct 2026 |
+
+## `iraq_suwaydan_fort` (row: `Iraq Suwaydan police fort`, `משטרת עיראק סווידאן`, fort, lon 34.6818194, lat 31.6480118, q -7, r 25)
+
+| Field | Row says | Source says | Result | Tag | Source | Read |
+|---|---|---|---|---|---|---|
+| name | `Iraq Suwaydan police fort` | Mandate map (sheet 11-11 El Majdal) prints "Police Post" in purple inside a rectangular boundary beside the road, with a building symbol; the printed name of the village is not on the crop. Wikidata Q97971283 is labelled "Fort Yoav" in English and "מצודת יואב" in Hebrew. he.wiki: "משטרת עיראק סווידאן, נקראת גם מצודת יואב" and "שונה שמה למצודת יואב" after the capture. en.wiki Operation Shmone: "the Egyptian-held police fort of Iraq Suwaydan" | match (the row carries the period name; Wikidata carries the name given after the Israeli capture) | [V, agent read 27 Oct 2026; a person's check pending] for the map; [S] for the rest | MAP, WD2, HW2, EW2 | 27 Oct 2026 |
+| name_he | `משטרת עיראק סווידאן` | he.wikipedia title "משטרת עיראק סווידאן" (the title "מצודת יואב" redirects to it on 27 Oct 2026) | match | [S] | HW2 | 27 Oct 2026 |
+| kind | `fort` | Wikidata P31 = Q1156360, "tegart fort"; he.wiki "היא מצודת טגארט"; en.wiki "police fort" | match | [S] | WD2, HW2, EW2 | 27 Oct 2026 |
+| lon/lat | 34.6818194, 31.6480118 | Wikidata P625 31.648011779, 34.681819358 (0 m from the row, the row copies it). en.wiki Operation Shmone infobox: 31°38'53.24"N 34°40'55.95"E = 31.64812, 34.68221 (39 m from the row). he.wiki prints no coordinate in its text. Mandate map: the red row point is inside the rectangular boundary of the police post, roughly 35 m north-west of the building symbol (zoom 16, 2.03 m/px) | match | [S] for Wikidata and en.wiki; [V, agent read 27 Oct 2026; a person's check pending] for the map reading | WD2, EW2, HW2, MAP | 27 Oct 2026 |
+| hex | q -7, r 25 | `settlement_hex` on the row point gives (-7, 25), 1.97 km from the hex centre and 2.48 km from the nearest edge; the en.wiki point and the map-read building position give the same hex. The `negba` row of the first slice is in the same hex (-7, 25), about 1.4 km from it | match | [V, agent read 27 Oct 2026; a person's check pending] (computation) | tools/hexgrid.py | 27 Oct 2026 |
+| period / other names | none in the row | he.wiki: "נקראה בראשיתה נקודת המשטרה אל-פאלוג'ה, על שם הכפר הערבי הגדול באזור" (at first called the al-Faluja police point, after the large Arab village in the area); "נקראת גם מצודת יואב"; after the capture "שונה שמה למצודת יואב" (named for the Haganah officer Yitzhak Dubno, whose underground name was "Yoav"); the Israelis' nickname "המפלצת על הגבעה" (en.wiki: "The Monster on the Hill"). The row's name is the name in use in 1948 | not a row field; the row's name is right for the period, and the Wikidata label is not | [S] | HW2, EW2, WD2 | 27 Oct 2026 |
+| dates | none in the row | Building date: he.wiki infobox field "סיום בנייה" gives 15 בינואר 1940 and the lead says "מצודת טגארט שנבנתה בראשית שנות ה-40"; Wikidata P571 gives 1932 (year precision); en.wiki: built "in the wake of the 1936-1939 Arab revolt". Capture: en.wiki Operation Shmone, "9 November 1948" (the eighth attack) | not a row field; **[C]**: 1932 (Wikidata) against 15 January 1940 (he.wiki), both kept; neither is a primary source and none was reached | [C] for the building date; [S] for 9 November 1948 | WD2, HW2, EW2 | 27 Oct 2026 |
+| starting control | no such field on this row | **12 to 13 May 1948, three accounts, none primary [C]:** he.wiki: "הבריטים איישו את התחנת המשטרה עד 12 במאי 1948" and "כפריים אלו שמרו על תחנת המשטרה עד הגעת חיל המשלוח המצרי" (villagers held it until the Egyptian expeditionary force arrived); en.wiki Operation Shmone quotes a telegram of 12 May from Dubno, as printed in Eilon 1959 (not opened): "the Iraq Suwaydan police fort was captured by Egyptian forces, in cooperation with a number of armed villagers", and then Haganah intelligence on 13 May that "the Egyptian army had left the fort, which was now in the hands of local villagers"; the same article's background says "the fort was handed over to Muslim Brotherhood forces". All three say Arab-held, none Israeli-held. **15 May exactly: [GAP]**; JTA searches for the name (spellings below) found no item before 4 Aug 1948. JTA web text, 4 Aug 1948: "the Egyptian base at Iraq Suweidan, in the Negev"; 5 Nov 1948: "Egyptian troops made an unsuccessful attempt to break out of the fortress police station at Iraq Suweiden". The Israelis took the fort on 9 November 1948 (en.wiki and he.wiki) | not a row field. Arab-held from 12 May: [S] and [C] on which force. Egyptian-held on 4 Aug and 5 Nov (web text, bulletin pages not opened): [S] | [S], [C] | HW2, EW2, JTA-W | 27 Oct 2026 |
+
+## `shaar_hagai` (row: `Bab al-Wad (Sha'ar HaGai)`, `באב אל-ואד (שער הגיא)`, pass, lon 35.024865, lat 31.814508, q -2, r 23)
+
+| Field | Row says | Source says | Result | Tag | Source | Read |
+|---|---|---|---|---|---|---|
+| name | `Bab al-Wad (Sha'ar HaGai)` | Mandate map (sheet 15-13 Bab El Wad) prints "Bāb el Wād" beside the road, with the spot height 1089H / 1297.1. JTA 16 May 1948 prints "the Bab el Wad gorge"; JTA 3 June 1948 prints "Bab el Wad". Wikidata labels: English "Sha'ar HaGai", Hebrew "שער הגיא". en.wiki: "The Arabic name Bab al-Wad ... was used in Hebrew as well, as seen in the 1948 song, until after the establishment of the State of Israel and the creation of the Hebrew name, Sha'ar HaGai". he.wiki: "הלוחמים במלחמת העצמאות עשו שימוש קבע בשם באב אל-ואד" | match (the row gives the 1948 name first and the later Hebrew name in brackets) | [V, agent read 27 Oct 2026; a person's check pending] for the map and the two bulletins; [S] for the rest | MAP, JTA-1, JTA-3, WD3, EW3, HW3 | 27 Oct 2026 |
+| name_he | `באב אל-ואד (שער הגיא)` | he.wiki lead gives the Arabic name in Hebrew letters as "באב אל-ואד" (the article's own spelling is vocalised, "בָּאב אל-וָאד") and the title "שער הגיא"; the article calls the name "באב אל-ואד" in 1948 military use | match | [S] | HW3 | 27 Oct 2026 |
+| kind | `pass` | Wikidata P31 = Q83620 ("thoroughfare") and Q1544071 ("narrows"). he.wiki: "פתח כניסה צר מהשפלה אל הרי ירושלים" (a narrow entrance from the lowland to the Jerusalem Mountains). en.wiki: "a point on the Tel Aviv-Jerusalem highway ... where the road begins to ascend through a deep valley" and "the defile it guards". No source calls it a pass | match in substance; the wording differs, and the owner may want to confirm that `pass` is the kind label wanted | [S] | WD3, HW3, EW3 | 27 Oct 2026 |
+| lon/lat | 35.024865, 31.814508 | Wikidata P625 31.814508, 35.024865 (0 m from the row, the row copies it). en.wiki prints 31°49'N 35°2'E, arcminute precision, which is 837 m from the row point and consistent with that rounding. he.wiki prints no coordinate in its text. Mandate map: the red row point is on the highway just below the start of the printed name "Bāb el Wād", roughly 60 m from the label (zoom 16, 2.03 m/px; the label is text, not a point symbol) | match | [S] for Wikidata and en.wiki; [V, agent read 27 Oct 2026; a person's check pending] for the map reading | WD3, EW3, HW3, MAP | 27 Oct 2026 |
+| hex | q -2, r 23 | `settlement_hex` on the row point gives (-2, 23), 4.75 km from the hex centre and **only 0.03 km (30 m) from the nearest edge**. Points moved 50 m north of the row point, or 100 m west, give (-2, 22). The en.wiki point (837 m away) also gives (-2, 23), 0.22 km from an edge. The row is in the same column as `latrun_fort` (-2, 22), the next hex to the north | match, with the edge-proximity note: the binding rests on a coordinate that Wikidata gives to about 0.3 m and that the map label puts within about 60 m | [V, agent read 27 Oct 2026; a person's check pending] (computation) | tools/hexgrid.py | 27 Oct 2026 |
+| period / other names | none in the row | Bab al-Wad is the name in 1948 use (above). he.wiki: Sapir used the loan translation "שער הגיא" in 1869; en.wiki: the Hebrew name Sha'ar HaGai was created after 1948 (the article's link points to the 1951 Governmental Naming Committee, but the sentence prints no year) | not a row field; the row already carries both names | [S] | HW3, EW3 | 27 Oct 2026 |
+| dates | none in the row | No founding date applies; it is a place. en.wiki: "until April 20 1948, when the Arabs recaptured the heights around Bab al-Wad" (cites Bell 1966, not opened); Burma Road "fully operational" by 10 June 1948 on the Latrun page (cites Morris 2008, not opened) | not a row field | [S] | EW3, EW1 | 27 Oct 2026 |
+| starting control | no such field on this row | **14 to 16 May:** JTA bulletin of 16 May 1948, page 2, under the sub-headline "Jews Suffer First Major Defeat As Kfar Etzion Falls to Arab Legion": "News of Kfar Etzion and of continued bitter fighting in the Bab el Wad gorge overlooking the vital Tel Aviv-Jerusalem highway, where late reports said the Jews still had the upper hand, did not lessen the festive mood of the citizens of the state of Israel." The item's own dateline was not read: page 2 opens mid-story, the page is stamped "5/16/48", and the one dateline seen on page 1 is "WASHINGTON, May 14" (a different item). **Correction 27 Oct 2026, after a review agent's check (agent read 27 Oct; a person's check pending):** that sentence is incomplete. On the page images of the 16 May bulletin (200 dpi, viewed 27 Oct 2026), page 1 has two datelines, "WASHINGTON, May 14. (JTA)" and "FLUSHING MEADOWS, May 14. (JTA)", and page 2 has a third, "WASHINGTON, May 14. (JTA)", lower down on the flag-raising item. All three belong to other items, not to the Bab el Wad item. **2 June:** JTA 3 June 1948, dateline "TEL AVIV, June 2. (JTA)": "A Jewish military spokesman ... stated that from Jerusalem to Bab el Wad the road was and is in Jewish hands". en.wiki: the Harel Brigade "managed to capture Bab al-Wad itself" (no date in the sentence); he.wiki: "כאשר אזור שער הגיא נכבש על ידי הפלמ"ח" (no date) | not a row field. On 2 June a Jewish military spokesman says the road from Jerusalem to Bab el Wad "was and is in Jewish hands": the bulletin prints that statement, not a state of control, and it is [V, agent read 27 Oct 2026; a person's check pending] only as a statement. 14 to 16 May: "the Jews still had the upper hand" in fighting, reported late, is not a statement of control. 15 May exactly: [GAP] | [V, agent read 27 Oct 2026; a person's check pending] for the two bulletins; [S] for the Wikipedia claims | JTA-1, JTA-3, EW3, HW3 | 27 Oct 2026 |
+
+## Searches run (so others can repeat them)
+
+All through `https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<from>T00:00:00&before=<to>T23:59:59&per_page=100&page=1`,
+run 27 Oct 2026 with a script. "Items returned" is capped at 100 by `per_page`; "items whose text matched" counts a case-insensitive
+pattern on the item's page text, and the dates are the first and last matched item. Queries that returned exactly 100 may have more
+results on a second page, which was not fetched.
+
+| Query | Range | Items returned | Items whose text matched | First to last matched |
+|---|---|---|---|---|
+| Latrun | 1 Jan to 23 May 1948 | 48 | 4 | 15 Jan to 13 Apr 1948 |
+| Latrun | 1 May to 15 Jun 1948 | 23 | 11 | 24 May to 15 Jun 1948 |
+| Latroun | 1 May to 15 Jun 1948 | 12 | 0 | none |
+| Suedan | 1 Apr to 31 Dec 1948 | 100 (capped) | 2 | 4 Aug to 30 Nov 1948 |
+| Sueidan | 1 Apr to 31 Dec 1948 | 6 | 3 | 4 Aug to 30 Nov 1948 |
+| Suweidan | 1 Apr to 31 Dec 1948 | 6 | 3 | 4 Aug to 30 Nov 1948 |
+| Suweid | 1 Apr to 31 Dec 1948 | 13 | 3 | 4 Aug to 30 Nov 1948 |
+| Suwaydan | 1 Apr to 31 Dec 1948 | 2 | 2 | 4 Aug to 30 Nov 1948 |
+| Wad | 15 Apr to 31 May 1948 | 100 (capped) | 1 | 16 May 1948 |
+| Wad | 1 May to 15 Jun 1948 | 100 (capped) | 2 | 3 Jun to 15 Jun 1948 |
+
+The pattern for the Iraq Suwaydan queries was `suedan|sueidan|suweid|suwayd`, for "Wad" `bab.el.wa|bab.al.wa`. The "Wad" queries were
+capped at 100 items and only the first 100 were scanned, so a mention beyond them would be missed. Of the matched items, the 1 June,
+3 June and 16 May 1948 bulletins were read on the page image (JTA-1 to JTA-3); the 4 Aug and 5 Nov items were read as web text only (JTA-W);
+the other matched items were not read beyond the match.
+
+## What a person still has to do
+
+1. Open the Mandate map sheets 14-13 (Latrun), 11-11 (El Majdal) and 15-13 (Bab El Wad) on `palopenmaps.org` and confirm the three
+   readings above, including which edition the tile layer shows and where the printed "Bāb el Wād" label sits against the row point.
+2. Decide whether `shaar_hagai` should keep its present point: it is 30 m from a hex edge, and a source that puts the pass 50 m to
+   the north would move it into the hex of `latrun_fort`.
+3. Settle the two [C] items in a primary source, if the owner wants them on the rows: the building date of the Iraq Suwaydan fort
+   (1932 or 1940) and which force first held it after 12 May 1948; and look for a primary statement of who held the Latrun fort and the
+   Bab el Wad gorge on 15 May 1948 (the first slice's table lists the same open question for the other three rows).
+4. Decide whether the rows should gain a period name or a `starting_control`. This note gives the facts only.
