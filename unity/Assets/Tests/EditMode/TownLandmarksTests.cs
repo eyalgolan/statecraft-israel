@@ -297,7 +297,8 @@ public class TownLandmarksTests
                 bool ready = near || whole;
                 Assert.AreEqual(ready, root.Find(s.Id).GetComponent<MeshRenderer>().forceRenderingOff, s.Id);
                 var closeR = root.Find(s.Id + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
-                if (closeR != null) Assert.AreEqual(!ready, closeR.forceRenderingOff, s.Id);
+                Assert.IsNotNull(closeR, s.Id + " has a close mesh to swap");
+                Assert.AreEqual(!ready, closeR!.forceRenderingOff, s.Id);
             }
             var buildingLayer = root.GetComponentInChildren<TownModelLayer>();
             bool plainReady = (bool)ResidencyCall(buildingLayer, typeof(TownModelLayer), "ReadyForTown", plain.Id, Camera.main)!;
@@ -568,12 +569,16 @@ public class TownLandmarksTests
         readonly object? oldAcquire;
         readonly GameObject prefab;
         readonly Action<string, CollectionDetail, Action<GameObject?>> oldRequest;
-        public ResidencyFixture(Action<string, CollectionDetail, Action<GameObject?>> defaultRequest)
+        /// <param name="approved">The shipping town policy (ProductionResidency.Approved(): in the footprint only, view band
+        /// 120/160 km) instead of the fixture's 1000/2000/1000/2 spatial values, and a focus admitted under it.</param>
+        public ResidencyFixture(Action<string, CollectionDetail, Action<GameObject?>> defaultRequest, bool approved = false)
         {
             acquireField = typeof(TownLandmarks).GetField("Acquire", ResidencyFlags)!;
             Assert.IsNotNull(acquireField, "whole-town requests must use acquired ownership");
             oldAcquire = acquireField.GetValue(null); oldRequest = TownLandmarks.Request;
             map = OpenMap(); buildings = map.GetComponentInChildren<TownModelLayer>(true);
+            var policy = ProductionResidency.Approved().Towns;
+            if (approved) buildings.ConfigureProduction(policy);
             prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "fake original town";
             source = new ResidencySource { Prefab = prefab }; stream = new CollectionStream(source); run = stream.Run();
             TownLandmarks.Request = defaultRequest;
@@ -590,8 +595,10 @@ public class TownLandmarksTests
             var places = (IReadOnlyList<(string id, UnityEngine.Bounds bounds)>)typeof(TownModelLayer).GetField("places", ResidencyFlags)!.GetValue(buildings)!;
             var chosen = towns.Wanted.Where(w => w.OnTown && buildings.CountFor(w.Key) > 0).OrderBy(w => w.Key, StringComparer.Ordinal).First(w =>
             {
-                var ids = (string[])ResidencyCall(null, typeof(TownModelLayer), "FocusedTowns", places,
-                    new Vector3(w.At.x, 0, w.At.y), null, null, 1000f, 2000f, 1000f, 2)!;
+                var ids = approved
+                    ? TownModelLayer.FocusedTowns(places, new Vector3(w.At.x, 0, w.At.y), null, null, policy.Enter, policy.Exit, policy.Edge, policy.MaxEdges)
+                    : (string[])ResidencyCall(null, typeof(TownModelLayer), "FocusedTowns", places,
+                        new Vector3(w.At.x, 0, w.At.y), null, null, 1000f, 2000f, 1000f, 2)!;
                 return ids.Length > 0 && ids[0] == w.Key;
             });
             focus = chosen;
@@ -635,35 +642,43 @@ public class TownLandmarksTests
     /// zoom", the deleted AMappedTownDrawsNoProceduralHousesAtAnyZoom) under focused residency (#1273), across both
     /// hysteresis bands, inward and outward: the town view band (in at 120 km, out at 160 km) and the close band (buildings in
     /// below 40 km, out above 45 km). Once the town the camera is on has its original, its kit houses never draw; outside the
-    /// view band (125 km on the way in, 165 km on the way out) the procedural fallback draws again.</summary>
+    /// view band (125 km on the way in, 165 km on the way out) the procedural fallback draws again. It runs under the shipping
+    /// policy (ProductionResidency.Approved()), and each step also checks which original stands in: the building models
+    /// below the close band, the whole-town model above it, neither outside the view band.</summary>
     [Test]
     public void TheFocusedMappedTownDrawsNoProceduralHousesAtAnyZoom()
     {
-        using (var f = new ResidencyFixture(saved))
+        using (var f = new ResidencyFixture(saved, approved: true))
         {
+            Assert.AreEqual(ProductionResidency.Approved().Towns.Evidence, f.buildings.SpatialPolicyEvidence, "the approved policy, not the fixture's values");
             var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
             var kit = identity.Where(p => p.Value == f.focus.Key).Select(p => p.Key).ToList();
             Assert.IsNotEmpty(kit, f.focus.Key + " has kit houses to hide");
             var root = f.map.transform.Find(KitLayer.RootName);
             var closeR = root.Find(f.focus.Key + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(closeR, f.focus.Key + " has a close mesh to swap");
             int arrived = 0;
-            var steps = new (float d, bool original, string why)[]
+            // original: an original stands in (kit houses hidden); buildings: it is the building models (else the whole town).
+            var steps = new (float d, bool original, bool buildings, string why)[]
             {
-                (125000f, false, "in: outside the 120 km view band, fallback"), (119000f, true, "in: inside the view band"),
-                (60000f, true, "in: the gameplay view"), (44000f, true, "in: above the 40 km close threshold, whole town"),
-                (39000f, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, "in: the closest zoom"),
-                (44000f, true, "out: below the 45 km close exit, still buildings"), (46000f, true, "out: above 45 km, whole town again"),
-                (150000f, true, "out: inside the 160 km view exit"), (165000f, false, "out: beyond 160 km, fallback restored"),
+                (125000f, false, false, "in: outside the 120 km view band, fallback"), (119000f, true, false, "in: inside the view band"),
+                (60000f, true, false, "in: the gameplay view"), (44000f, true, false, "in: above the 40 km close threshold, whole town"),
+                (39000f, true, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, true, "in: the closest zoom"),
+                (44000f, true, true, "out: below the 45 km close exit, still buildings"), (46000f, true, false, "out: above 45 km, whole town again"),
+                (150000f, true, false, "out: inside the 160 km view exit"), (165000f, false, false, "out: beyond 160 km, fallback restored"),
             };
-            foreach (var (d, original, why) in steps)
+            foreach (var (d, original, buildings, why) in steps)
             {
                 float h = d / Mathf.Sqrt(2f);   // the view ray at 45 degrees: distance d to the ground
                 f.camera.transform.position = new Vector3(f.focus.At.x, h, f.focus.At.y - h);
                 f.camera.transform.LookAt(new Vector3(f.focus.At.x, 0, f.focus.At.y));
                 f.towns.Choose(default, f.camera);   // also prepares the building layer for this camera
                 if (f.acquired.Count > arrived) { f.Arrive(); arrived = f.acquired.Count; f.towns.Choose(default, f.camera); }
-                foreach (var r in kit) Assert.AreEqual(original, r.forceRenderingOff, $"{f.focus.Key}'s kit houses at {d / 1000f} km ({why})");
-                if (closeR != null) Assert.AreEqual(!original, closeR.forceRenderingOff, $"{f.focus.Key}'s close mesh at {d / 1000f} km ({why})");
+                string at = FormattableString.Invariant($"{f.focus.Key} at {d / 1000f} km ({why})");
+                Assert.AreEqual(buildings, f.buildings.ReadyForTown(f.focus.Key, f.camera), "building models: " + at);
+                Assert.AreEqual(original && !buildings, f.buildings.WantsWholeTown(f.focus.Key, f.camera), "whole-town original: " + at);
+                foreach (var r in kit) Assert.AreEqual(original, r.forceRenderingOff, "kit houses: " + at);
+                Assert.AreEqual(!original, closeR!.forceRenderingOff, "close mesh: " + at);
             }
             Assert.Greater(arrived, 0, "the whole-town original was admitted and arrived");
         }
