@@ -267,6 +267,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
+| Egyptian infantry (Tal Heuberger, generated) | the Egyptian Expeditionary Force's three figures, one token (in the legacy loop the first anchor whose window holds the date) | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "One token") | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
 | H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |
