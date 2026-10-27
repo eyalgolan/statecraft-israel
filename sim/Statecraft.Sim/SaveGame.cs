@@ -161,6 +161,7 @@ namespace Statecraft.Sim
             CancelProject p => $"unproject {Int(p.Project)}",
             Move m => $"move {Int(m.Unit)} {Int(m.Q)} {Int(m.R)}",
             BuyArms a => $"arms {Int(a.Count)}",
+            CaptureLocality r => $"capture_locality {Esc(r.Settlement)}",
             ResolveCapture r => $"capture {Esc(r.Settlement)} {Esc(r.Outcome)}",
             EndOccupation e => $"endocc {Esc(e.Settlement)} {Esc(e.Outcome)}",
             _ => throw new ArgumentException($"Cannot save command kind '{cmd.Kind}'", nameof(cmd)),
@@ -295,6 +296,7 @@ namespace Statecraft.Sim
                 case "unproject": Arity(2); return new CancelProject(I(f[1]));
                 case "move": Arity(4); return new Move(I(f[1]), I(f[2]), I(f[3]));
                 case "arms": Arity(2); return new BuyArms(I(f[1]));
+                case "capture_locality": Arity(2); return new CaptureLocality(Str(f[1]));
                 case "capture": Arity(3); return new ResolveCapture(Str(f[1]), Str(f[2]));
                 case "endocc": Arity(3); return new EndOccupation(Str(f[1]), Str(f[2]));
                 default: throw new SaveException(line, $"unknown command '{f[0]}'");

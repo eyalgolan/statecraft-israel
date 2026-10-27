@@ -38,7 +38,7 @@ namespace Statecraft.Sim
             return new GameSession(c, s, new SaveGame(c.Hash, seed, mode, c.Ruleset, s.Hash()));
         }
 
-        /// <summary>R-TURN-004: commits a move or a unit order. Null when taken (it is shown at once and saved in the open
+        /// <summary>R-TURN-004: commits an instant order, including selected locality capture (R-CTRL-023). Null when taken (shown at once and saved in the open
         /// turn, R-SAVE-003), else the sim's reason, with nothing changed. A deferred order is a programmer error.</summary>
         public string? Commit(Command cmd)
         {

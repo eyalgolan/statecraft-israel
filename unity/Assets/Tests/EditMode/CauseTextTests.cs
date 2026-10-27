@@ -491,6 +491,21 @@ public class CauseTextTests
         }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void CaptureMetadataUsesTheExistingEnglishAndHebrewRendering(bool fled)
+    {
+        var c = RemainingFixture(); var en = En; var he = He;
+        var names = new Dictionary<string, string> { ["town"] = "עיר" };
+        var row = new Cause("map", "town", 0,
+            "Town is captured: Israeli units hold it and no enemy unit is there. "
+            + (fled ? "Its residents fled. " : "") + "It awaits a decision",
+            key: CauseKeys.PlaceCaptured, args: new[] { fled ? "1" : "0" });
+        Assert.AreEqual(row.Message, CauseText.Line(row, c, NoRows, en));
+        Assert.AreEqual(he.Format("why.cause.place_captured", "עיר", fled ? he["why.cause.fled_capture"] : ""),
+            CauseText.Line(row, c, NoRows, he, names));
+    }
+
     [Test]
     public void RemainingRowsPreserveTheWholeEnglishReportInBothLoops()
     {

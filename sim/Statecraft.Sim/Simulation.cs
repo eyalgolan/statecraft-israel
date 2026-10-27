@@ -129,9 +129,9 @@ namespace Statecraft.Sim
             return new PreviewResult(s, spent, attacked, why, rejected);
         }
 
-        /// <summary>A move, a go-to, an attack, fortify or hold takes effect at once; Send home and every other order waits
+        /// <summary>A confirmed locality capture, move, go-to, attack, fortify or hold takes effect at once; Send home and other orders wait
         /// for End turn (spec 2026-10-23 section 3.2).</summary>
-        public static bool IsInstant(Command cmd) => cmd is Move || (cmd is UnitOrder o && o.Order != Demobilization.SendHome);
+        public static bool IsInstant(Command cmd) => cmd is Move || cmd is CaptureLocality || (cmd is UnitOrder o && o.Order != Demobilization.SendHome);
 
         /// <summary>The turn's orders in order: each pays Attention first; one that fails validation is refunded and
         /// rejected with its reason. Step, DelegatedTo and Preview share it, so every dry run sees what End Turn will.</summary>
@@ -143,6 +143,9 @@ namespace Statecraft.Sim
             var priceRung = s.Rung;   // every command this turn is priced at the rung the turn started at
             foreach (var cmd in commands)
             {
+                // R-CTRL-023: refuse before Attention lookup; older rules have no price for this kind.
+                if (cmd is CaptureLocality && c.Ruleset != SaveGame.Gdd03Ruleset)
+                { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
                 if (!AttentionSystem.IsCommandKind(cmd.Kind)) { rejected.Add(new Rejection(cmd, "That order is not known")); continue; }
                 // A GDD order has no price in the legacy rules: refuse it before charging (R-CITY-001).
                 if (AttentionSystem.IsGddKind(cmd.Kind) && !c.IsGdd) { rejected.Add(new Rejection(cmd, "That order is not available in this game")); continue; }
@@ -249,6 +252,8 @@ namespace Statecraft.Sim
                     return Movement.Move(c, s, m.Unit, m.Q, m.R, spent, why);
                 case BuyArms a:
                     return Pools.BuyArms(c, s, a.Count, why);
+                case CaptureLocality x:
+                    return SettlementControl.Acquire(c, s, x.Settlement, why)?.Text;
                 case ResolveCapture x:
                     return SettlementControl.Resolve(c, s, x.Settlement, x.Outcome, why);
                 case EndOccupation x:

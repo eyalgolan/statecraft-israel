@@ -15,9 +15,13 @@ namespace Statecraft.Sim
         /// refuses them before charging Attention.</summary>
         static readonly HashSet<string> GddKinds = new HashSet<string> { "assign_workers", "train", "cancel_training", "reinforce", "return_craftsmen", "reassign_craftsmen", "reassign_pioneers", "pioneer_work", "stop_work", "start_project", "cancel_project", "buy_arms", "move", "unit_order", "resolve_capture", "end_occupation" };
 
+        /// <summary>The Attention-priced registry, also used to validate content cost keys.</summary>
         public static IReadOnlyCollection<string> CommandKinds => Kinds;
 
-        public static bool IsCommandKind(string kind) => Kinds.Contains(kind);
+        public static bool IsPricedKind(string kind) => Kinds.Contains(kind);
+
+        // R-CTRL-023: known only to the no-Attention identity; not an old-rules price requirement.
+        public static bool IsCommandKind(string kind) => IsPricedKind(kind) || kind == "capture_locality";
 
         public static bool IsGddKind(string kind) => GddKinds.Contains(kind);
 
@@ -39,7 +43,7 @@ namespace Statecraft.Sim
         /// <summary>The order's Attention price at this turn's prices (0 for a kind Attention does not price): what the UI's
         /// queue charges for it.</summary>
         public static double Price(Content c, GameState s, Command cmd)
-        { RequireAttention(c); return IsCommandKind(cmd.Kind) ? Cost(c, s, cmd.Kind) : 0; }
+        { RequireAttention(c); return IsPricedKind(cmd.Kind) ? Cost(c, s, cmd.Kind) : 0; }
 
         /// <summary>Attention left after paying for <paramref name="pending"/> (this turn's queue) at this turn's prices: what
         /// the UI's queue still has to spend (#1110: the Cabinet badge and SimBridge.Queue read the same number).</summary>

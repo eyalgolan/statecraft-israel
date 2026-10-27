@@ -41,11 +41,35 @@ public class SimBridgeGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),
+        [typeof(CaptureLocality)] = new CaptureLocality("town_a"),
         [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),
     };
 
     static IEnumerable<Type> CommandTypes() =>
         typeof(Command).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Command)) && !t.IsAbstract);
+
+    // R-CTRL-023: red before pricing fix: Price/CanPay index a missing old-mode cost.
+    [TestCase(false)]
+    [TestCase(true)]
+    public void OldModesCanQueryUnpricedCaptureButRefuseItBeforeSpending(bool gdd)
+    {
+        var c = gdd ? Slice : SimBridgeGddTests.Legacy;
+        Assert.AreEqual(gdd ? SaveGame.GddRuleset : SaveGame.LegacyRuleset, c.Ruleset);
+        var game = GameSession.New(c, GoldenRun.Seed, Mode.Historical);
+        game.State.Attention = 0;
+        var bridge = new SimBridge(game, Text);
+        var cmd = new CaptureLocality("town_a");
+        var before = game.State.Describe(); var save = game.Save.Write();
+        Assert.AreEqual(0.0, bridge.Price(cmd));
+        Assert.IsTrue(bridge.CanPay(cmd));
+        Assert.AreEqual(0.0, bridge.AttentionLeft);
+        Assert.IsNotNull(bridge.Queue(cmd));
+        Assert.AreEqual(before, game.State.Describe());
+        Assert.AreEqual(save, game.Save.Write());
+        Assert.AreEqual(0.0, bridge.AttentionLeft);
+        Assert.IsEmpty(bridge.Queued);
+        Assert.IsEmpty(game.Committed);
+    }
 
     [Test]
     public void EveryCommandTypeHasASample()

@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 namespace Statecraft.Sim.Tests;
 
 /// <summary>#1682's 68 source producers, including rare branches. The pre-key constructor expressions are pinned to
-/// c7851de so Message, Target and Delta cannot drift while metadata is added. This is not runtime branch coverage.</summary>
+/// c7851de so Message, Target and Delta cannot drift while metadata is added. One additional selected-locality producer
+/// uses the same capture contract. This is not runtime branch coverage.</summary>
 public class RemainingCauseKeysTests
 {
     static string Root()
@@ -15,6 +16,7 @@ public class RemainingCauseKeysTests
 
     public static IEnumerable<object[]> Producers()
     {
+        yield return new object[] { "LocalityCapture.cs", "PlaceCaptured", "new Cause(\"map\", id, 0, $\"{c.SettlementNames[id]} is captured: Israeli units hold it and no enemy unit is there. \"\n                + (fled ? \"Its residents fled. \" : \"\") + \"It awaits a decision\"" };
         yield return new object[] { "Cities.cs", "WorkersAssigned", "new Cause(\"city\", city, count - x.Employed, FormattableString.Invariant($\"{PlayerText.Settlement(c, city)}: {count} groups in work\")" };
         yield return new object[] { "Cities.cs", "WagesPaid", "new Cause(\"city\", x.Id, paid, $\"{PlayerText.Settlement(c, x.Id)}: jobs paid {PlayerText.MoneyChange(c, \"treasury\", paid)}\"" };
         yield return new object[] { "Cities.cs", "ImmigrantsHoused", "new Cause(\"city\", x.Id, absorbed, FormattableString.Invariant($\"{PlayerText.Settlement(c, x.Id)}: {absorbed} groups of immigrants housed\")" };
@@ -97,9 +99,10 @@ public class RemainingCauseKeysTests
     }
 
     [Fact]
-    public void InventoryContainsExactly68ProducerSites()
+    public void InventoryContainsTheOriginal68SitesAndOneSelectedLocalityProducer()
     {
-        Assert.Equal(68, Producers().Count());
+        Assert.Equal(69, Producers().Count());
+        Assert.Single(Producers(), row => (string)row[0] == "LocalityCapture.cs" && (string)row[1] == "PlaceCaptured");
     }
 
     [Fact]
@@ -115,7 +118,7 @@ public class RemainingCauseKeysTests
                 sites++;
             }
         }
-        Assert.Equal(104, sites);
+        Assert.Equal(105, sites); // One new keyed acquisition producer; all original sites stay required.
     }
 
     [Fact]

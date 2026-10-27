@@ -404,6 +404,7 @@ namespace Statecraft.Sim
                 c.Corridors = Read<CorridorsFile>(readFile, "corridors.yaml").Corridors;   // sourced, hexes derived (Phase 4 PR 2)
                 ValidateGdd(c, settlementIds);
                 Gdd03Military.Validate(c); // after effective map overrides and role validation, only exact gdd-0.3
+                if (c.Ruleset == SaveGame.Gdd03Ruleset) SettlementControl.ValidateCatalogue(c);
                 // The sourced starting forces (Phase 5 PR 4, R-UNIT-006), once the types and people_per_unit are known valid.
                 c.StartingForces = StartingForces.Read(readFile, c);
             }
@@ -593,7 +594,7 @@ namespace Statecraft.Sim
                 foreach (var kv in r.AttentionCost)
                     if (!(kv.Value >= 0 && !double.IsInfinity(kv.Value))) throw new ContentException(file, $"attention_cost.{kv.Key}", "must be a finite non-negative number");
                 foreach (var k in r.AttentionCost.Keys)
-                    if (!AttentionSystem.IsCommandKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
+                    if (!AttentionSystem.IsPricedKind(k)) throw new ContentException(file, $"attention_cost.{k}", "unknown command kind");
                 foreach (var k in AttentionSystem.CommandKinds)
                     if ((c.IsGdd || !AttentionSystem.IsGddKind(k)) && !r.AttentionCost.ContainsKey(k))   // a GDD kind is priced only where it can run
                         throw new ContentException(file, $"attention_cost.{k}", "missing cost");

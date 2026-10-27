@@ -21,6 +21,7 @@ namespace Statecraft.Sim
         /// captures nothing. The preview has no capture date; Step stamps the turn's end before the resolver.</summary>
         internal static void CaptureHeld(Content c, GameState s, List<Cause> why)
         {
+            if (c.Ruleset == SaveGame.Gdd03Ruleset) return; // R-CTRL-023: acquisition needs explicit locality confirmation.
             var enemyHeld = new HashSet<string>(c.RulesAt(s.Date).Mvp!.EnemyHeldLocalities, StringComparer.Ordinal);
             foreach (var t in c.SettlementTargets.Where(x => enemyHeld.Contains(x.Id)).OrderBy(x => x.Id, StringComparer.Ordinal))
             {
@@ -306,7 +307,7 @@ namespace Statecraft.Sim
         internal const string SupportIndicator = "intl_standing";
 
         /// <summary>R-CTRL-011, R-CTRL-012 (Q-OCC-1 (a), Q-OCC-3 (a)): Occupy keeps the place under the player's control and
-        /// starts its timer at mvp.occupation_turns, the one X for every place. It needs an Israeli military unit on the hex,
+        /// starts its timer at the ruleset's duration, the one X for every place. It needs an Israeli military unit on the hex,
         /// the one unit that stays (a halutz holds nothing, #796), and is refused with the state unchanged otherwise. It moves
         /// no unit, and it changes no resident field (R-CTRL-003): only the record's state and timer.</summary>
         static CaptureRefusal? StartOccupation(Content c, GameState s, string id, List<Cause> why)
@@ -315,7 +316,7 @@ namespace Statecraft.Sim
             var name = c.SettlementNames[id];
             if (!Garrisoned(s, t)) return new CaptureRefusal(CaptureRefusal.NeedsUnit, $"Occupy needs an Israeli military unit on {name}");
             var x = s.Settlements[id];
-            var turns = c.RulesAt(s.Date).Mvp!.OccupationTurns!.Value;
+            var turns = OccupationDuration(c, s);
             s.Settlements[id] = new SettlementControl(x.Owner, Occupied, x.Since, x.Depopulated, x.Combatants, x.Buildings, turns, x.Fled);
             why.Add(new Cause("map", id, turns, FormattableString.Invariant($"{name} is occupied for {turns} turns: an Israeli unit stays there. ") + Residents(x), key: CauseKeys.OccupationStarted, args: new[] { x.Fled ? "1" : "0" }));
             return null;

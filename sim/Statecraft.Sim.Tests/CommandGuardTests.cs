@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Statecraft.Sim;
 
-/// <summary>Every command kind has its touch-points (spec 2026-10-12 section 2.3): an Attention kind with a cost in the real
-/// rules, CommandText (Step refuses an unknown type outright), the save format, and the scenario runner. The Unity order
+/// <summary>Every command kind has its touch-points (spec 2026-10-12 section 2.3): recognition and, where priced, an Attention
+/// cost in the real rules, CommandText (Step refuses an unknown type outright), the save format, and the scenario runner. The Unity order
 /// queue is the fifth, guarded in Unity's own tests. A new Command type fails EveryCommandTypeHasASample until it is added
 /// here, and then fails the others until every touch-point knows it.</summary>
 public class CommandGuardTests
@@ -33,6 +33,7 @@ public class CommandGuardTests
         [typeof(Move)] = new Move(1, 2, 0),
         [typeof(BuyArms)] = new BuyArms(0),   // refused (fewer than one unit), as GovernmentTests.ARefusedGddOrderRefundsItsAttention needs
         [typeof(ResolveCapture)] = new ResolveCapture("town_a", "raid"),   // refused (nothing awaits a decision), like BuyArms(0)
+        [typeof(CaptureLocality)] = new CaptureLocality("town_a"), // R-CTRL-023: refused in old modes before price lookup.
         [typeof(EndOccupation)] = new EndOccupation("town_a", "annex"),   // refused (nothing awaits the end of an occupation)
     };
 
@@ -45,15 +46,22 @@ public class CommandGuardTests
         foreach (var t in CommandTypes()) Assert.True(Samples.ContainsKey(t), $"{t.Name} has no sample: add it, then its touch-points");
     }
 
-    /// <summary>Every kind, the GDD ones included, is priced in the real rules since the cutover (the GDD kinds' costs are
-    /// design values, R-LOOP-005).</summary>
+    /// <summary>Every kind is recognized; the Attention-priced kinds have costs in the real rules (R-LOOP-005).
+    /// Selected capture belongs only to the no-Attention ruleset and has no shared price key.</summary>
     [Fact]
-    public void EveryCommandHasAnAttentionKindAndACostInTheRealRules()
+    public void EveryCommandIsRecognizedAndOnlyAttentionKindsHaveCostsInTheRealRules()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         foreach (var cmd in Samples.Values)
         {
             Assert.True(AttentionSystem.IsCommandKind(cmd.Kind), cmd.Kind);
+            if (cmd is CaptureLocality)
+            {
+                Assert.False(AttentionSystem.IsPricedKind(cmd.Kind));
+                Assert.False(c.Rules.AttentionCost.ContainsKey(cmd.Kind));
+                continue;
+            }
+            Assert.True(AttentionSystem.IsPricedKind(cmd.Kind), cmd.Kind);
             Assert.True(c.Rules.AttentionCost.ContainsKey(cmd.Kind), cmd.Kind);
         }
     }
@@ -87,5 +95,5 @@ public class CommandGuardTests
 
     [Fact]
     public void EveryAttentionKindHasACommand() =>
-        Assert.Equal(AttentionSystem.CommandKinds.OrderBy(k => k, StringComparer.Ordinal), Samples.Values.Select(x => x.Kind).OrderBy(k => k, StringComparer.Ordinal));
+        Assert.Equal(AttentionSystem.CommandKinds.OrderBy(k => k, StringComparer.Ordinal), Samples.Values.Where(x => !(x is CaptureLocality)).Select(x => x.Kind).OrderBy(k => k, StringComparer.Ordinal));
 }

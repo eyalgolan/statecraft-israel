@@ -23,7 +23,7 @@ public class NoAttentionTests
     static bool Unavailable(string kind) => kind is "map_action" or "set_mobilization" or "security_order";
     static (Content c,GameState s,Command valid,Command invalid) Case(string kind,bool modern)
     {
-        var c = kind is "resolve_capture" or "end_occupation"
+        var c = kind is "resolve_capture" or "end_occupation" or "capture_locality"
             ? CaptureTests.Load(files=>Select(files,modern),CaptureTests.AllTargets) : Load(modern);
         var s=Simulation.NewGame(c,1,Mode.Historical); s.Attention=500; s.NextId=1000;
         Command valid=CommandGuardTests.Samples.Values.Single(x=>x.Kind==kind), invalid=valid;
@@ -49,6 +49,11 @@ public class NoAttentionTests
             case "move":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new Move(99,2,0);invalid=new Move(999,2,0);break;
             case "unit_order":s.Units[99]=new Unit(99,"recruit",1,0,side:"israel",strength:1);valid=new UnitOrder(99,"fortify");invalid=new UnitOrder(999,"fortify");break;
             case "buy_arms":valid=new BuyArms(1);invalid=new BuyArms(0);break;
+            case "capture_locality":
+                s.Units.Clear();
+                // Old identities acquire held targets automatically; isolate their command refusal without a holder.
+                if(modern) s.Units[99]=CaptureTests.Soldier(99,1,0);
+                valid=new CaptureLocality("town_a");invalid=new CaptureLocality("missing");break;
             case "resolve_capture":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingChoice,s.Date);valid=new ResolveCapture("town_a","raid");invalid=new ResolveCapture("town_a","missing");break;
             case "end_occupation":s.Units[99]=CaptureTests.Soldier(99,1,0);s.Settlements["town_a"]=new SettlementControl("israel",SettlementControl.AwaitingEnd,s.Date);valid=new EndOccupation("town_a","withdraw");invalid=new EndOccupation("town_a","missing");break;
         }
@@ -56,12 +61,27 @@ public class NoAttentionTests
     }
     [Fact] public void CoversEveryConcreteCommand()
     {
-        Assert.Equal(23,Kinds().Count());
+        Assert.Equal(24,Kinds().Count()); // capture_locality adds one concrete command kind.
         Assert.Equal(CommandGuardTests.Samples.Keys.OrderBy(t=>t.Name),typeof(Command).Assembly.GetTypes().Where(t=>t.IsSubclassOf(typeof(Command))&&!t.IsAbstract).OrderBy(t=>t.Name));
     }
     [Theory] [MemberData(nameof(Kinds))]
     public void SetupProvesSuccessfulOldModePathForEveryAvailableKind(string kind)
     {
+        if(kind=="capture_locality")
+        {
+            var(captureContent,captureState,captureValid,captureInvalid)=Case(kind,true);
+            var good=Simulation.Preview(captureContent,captureState,new[]{captureValid});
+            Assert.Empty(good.Rejected);
+            Assert.Equal(SettlementControl.AwaitingChoice,good.State.Settlements["town_a"].State);
+            Assert.Single(Simulation.Preview(captureContent,captureState,new[]{captureInvalid}).Rejected);
+            var(oldContent,oldState,oldValid,_)=Case(kind,false);Poison(oldContent);oldState.Attention=0;
+            var before=oldState.Describe();
+            var refused=Simulation.Preview(oldContent,oldState,new[]{oldValid});
+            Assert.Equal("That order is not available in this game",Assert.Single(refused.Rejected).Reason);
+            Assert.Equal(before,oldState.Describe());Assert.Equal(before,refused.State.Describe());
+            Assert.Equal(0,refused.State.Attention);
+            return;
+        }
         var(c,s,valid,invalid)=Case(kind,false);var p=Simulation.Preview(c,s,new[]{valid});
         if(Unavailable(kind)) Assert.Contains("not part of this game",p.Rejected.Single().Reason.Replace("not available in this game","not part of this game"));
         else {Assert.Empty(p.Rejected);Assert.NotEmpty(Simulation.Preview(c,s,new[]{invalid}).Rejected);}
@@ -77,6 +97,20 @@ public class NoAttentionTests
         Assert.DoesNotContain("attention",bad.Rejected[0].Reason,StringComparison.OrdinalIgnoreCase);
         Assert.Equal(123.456,s.Attention);Assert.Equal(123.456,good.State.Attention);Assert.Equal(123.456,bad.State.Attention);
         var step=Simulation.Step(c,s,new[]{valid});Assert.Equal(123.456,step.State.Attention);
+        if(kind=="capture_locality")
+        {
+            Assert.Equal(SettlementControl.AwaitingChoice,good.State.Settlements["town_a"].State);
+            Assert.Equal(s.Describe(),bad.State.Describe());
+            Assert.Empty(s.Settlements);
+            var(oldCaptureContent,oldCaptureState,oldCaptureValid,_)=Case(kind,false);
+            Poison(oldCaptureContent);oldCaptureState.Attention=0;
+            var before=oldCaptureState.Describe();
+            var refused=Simulation.Preview(oldCaptureContent,oldCaptureState,new[]{oldCaptureValid});
+            Assert.Equal("That order is not available in this game",Assert.Single(refused.Rejected).Reason);
+            Assert.Equal(before,oldCaptureState.Describe());Assert.Equal(before,refused.State.Describe());
+            Assert.Equal(0,refused.State.Attention);
+            return;
+        }
         var(oldContent,oldState,oldValid,oldInvalid)=Case(kind,false);
         var oldGood=Simulation.Preview(oldContent,oldState,new[]{oldValid});
         var oldBad=Simulation.Preview(oldContent,oldState,new[]{oldInvalid});

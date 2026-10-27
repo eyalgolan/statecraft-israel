@@ -70,7 +70,7 @@ namespace Statecraft.Sim
             ["unit_order"] = new[] { "unit", "order", "q", "r" },   // q and r: an attack's hex only (R-COMBAT-001)
             ["start_project"] = new[] { "project", "city", "q", "r" }, ["cancel_project"] = new[] { "project" },
             ["move"] = new[] { "unit", "q", "r" },
-            ["buy_arms"] = new[] { "count" }, ["resolve_capture"] = new[] { "settlement", "outcome" },
+            ["buy_arms"] = new[] { "count" }, ["capture_locality"] = new[] { "settlement" }, ["resolve_capture"] = new[] { "settlement", "outcome" },
             ["end_occupation"] = new[] { "settlement", "outcome" },
         };
 
@@ -110,6 +110,7 @@ namespace Statecraft.Sim
                 case "cancel_project": return new CancelProject(Whole(c, "project"));
                 case "move": return new Move(Whole(c, "unit"), Whole(c, "q"), Whole(c, "r"));
                 case "buy_arms": return new BuyArms(Whole(c, "count"));
+                case "capture_locality": return new CaptureLocality(Str(c, "settlement"));
                 case "resolve_capture": return new ResolveCapture(Str(c, "settlement"), Str(c, "outcome"));
                 case "end_occupation": return new EndOccupation(Str(c, "settlement"), Str(c, "outcome"));
                 default: throw new InvalidDataException($"command kind '{kind}' has no builder");
@@ -156,6 +157,7 @@ namespace Statecraft.Sim
             UnitOrder o => FormattableString.Invariant($"{o.Unit} {o.Order}") + (o.Q is int q && o.R is int r ? FormattableString.Invariant($" {q},{r}") : ""),
             StartProject p => FormattableString.Invariant($"{p.ProjectKind} {p.City} {p.Q},{p.R}"), CancelProject p => p.Project.ToString(CultureInfo.InvariantCulture),
             Move m => FormattableString.Invariant($"{m.Unit} {m.Q},{m.R}"),
+            CaptureLocality r => r.Settlement,
             BuyArms a => a.Count.ToString(CultureInfo.InvariantCulture), ResolveCapture r => $"{r.Settlement} {r.Outcome}",
             EndOccupation e => $"{e.Settlement} {e.Outcome}",
             _ => c.Kind,

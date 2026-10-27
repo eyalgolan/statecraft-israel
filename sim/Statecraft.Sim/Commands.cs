@@ -188,9 +188,15 @@ namespace Statecraft.Sim
         public BuyArms(int count) { Count = count; }
     }
 
-    /// <summary>Answers the capture of <see cref="Settlement"/> with <see cref="Outcome"/>: raid, occupy or deport
-    /// (SettlementControl.Resolve, R-CTRL-007 to R-CTRL-010). One kind for every outcome, so they cost the same Attention
-    /// (Q-TECH-3). GDD v0.1 loop only.</summary>
+    /// <summary>Confirms one locality's acquisition in gdd-0.3 (R-CTRL-023). Instant; its outcome remains a separate command.</summary>
+    public sealed class CaptureLocality : Command
+    {
+        public override string Kind => "capture_locality";
+        public string Settlement { get; }
+        public CaptureLocality(string settlement) { Settlement = settlement; }
+    }
+
+    /// <summary>Answers a captured locality with the existing Raid, Occupy or owner-gated Deport outcome (R-CTRL-007).</summary>
     public sealed class ResolveCapture : Command
     {
         public override string Kind => SettlementControl.ResolveKind;
@@ -263,6 +269,7 @@ namespace Statecraft.Sim
                     case CancelProject _: break;
                     case Move _: break;
                     case BuyArms _: break;
+                    case CaptureLocality r: Text(r.Settlement, "Settlement"); break;
                     case ResolveCapture r: Text(r.Settlement, "Settlement"); Text(r.Outcome, "Outcome"); break;
                     case EndOccupation e: Text(e.Settlement, "Settlement"); Text(e.Outcome, "Outcome"); break;
                     case SetMobilization _: case SecurityOrder _: break;

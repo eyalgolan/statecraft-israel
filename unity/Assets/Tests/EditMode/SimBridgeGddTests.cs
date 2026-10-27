@@ -253,6 +253,10 @@ public class NoAttentionPresentationTests
         Assert.IsNull(b.AttentionLeft);
         Assert.IsNull(b.Price(first));
         Assert.IsTrue(b.CanPay(first));
+        // R-CTRL-023: recognizing an unpriced kind keeps the bridge's no-Attention API contract.
+        var capture = new CaptureLocality("town_a");
+        Assert.IsNull(b.Price(capture));
+        Assert.IsTrue(b.CanPay(capture));
         Assert.IsNull(b.Queue(first)); Assert.IsNull(b.Queue(next));
         Assert.AreEqual(1, b.Queued.Count);
         Assert.AreEqual(next, b.Queued[0]);

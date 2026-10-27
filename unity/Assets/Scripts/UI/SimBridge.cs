@@ -204,6 +204,7 @@ namespace Statecraft.Game.UI
                 case BuyArms _: return null;
                 // Answering a capture (#797): the sim refuses a place not awaiting the choice, or an outcome not built yet, with
                 // its own reason and never throws on the id. The capture dialog is PR 10.
+                case CaptureLocality _: return null; // R-CTRL-023: the sim revalidates the selected locality before committing.
                 case ResolveCapture _: return null;
                 // Answering the end of an occupation (#799): the sim refuses a place not awaiting the end with its own reason.
                 case EndOccupation _: return null;
