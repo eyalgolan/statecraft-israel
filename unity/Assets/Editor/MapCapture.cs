@@ -210,7 +210,8 @@ public static class MapCapture
     /// <summary>The Civ-like border prototype's evidence (#196): the map as a new game starts (the side-coloured control
     /// layer of 15 May 1948, as GameRoot.Begin draws it; kits and trees on, the water's clock pinned), on the WebGL tier,
     /// at 1920x1080, from three views: gameplay03, a close view (20 km over the Israeli/Arab boundary hex nearest
-    /// gameplay03) and the overview (diorama02); then the synthetic proof at gameplay03. One set per variant (Legacy, main's look, then A-C2) into
+    /// gameplay03) and the overview (diorama02); then the synthetic proof at gameplay03. One set for the variant this run draws
+    /// unasked ("Default": A2, or what -bordervariant names), then one per variant (Legacy, main's earlier look, then A-C2) into
     /// &lt;-captureDir&gt; (default captures/borders) as &lt;variant&gt;-&lt;view&gt;.png.</summary>
     public static void BorderVariants()
     {
@@ -241,13 +242,15 @@ public static class MapCapture
             QualitySettings.SetQualityLevel(0, true);   // Mobile: the WebGL tier
             void Shoot(string prefix, IEnumerable<PromoPose> poses)
             {
-                foreach (var variant in (BorderVariant[])System.Enum.GetValues(typeof(BorderVariant)))
+                var sets = new[] { ("Default", previous) }
+                    .Concat(((BorderVariant[])System.Enum.GetValues(typeof(BorderVariant))).Select(v => (v.ToString(), v)));
+                foreach (var (name, variant) in sets)
                 {
                     MapBorders.Variant = variant;
                     foreach (var pose in poses)
                     {
                         pose.Apply(rig, map.Frame); rig.TopInset = 0; rig.Apply();
-                        Save(Camera.main, 1920, 1080, Path.Combine(dir, $"{variant}-{prefix}{pose.Name}.png"));
+                        Save(Camera.main, 1920, 1080, Path.Combine(dir, $"{name}-{prefix}{pose.Name}.png"));
                     }
                 }
             }

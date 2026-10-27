@@ -15,8 +15,9 @@ namespace Statecraft.Game.Map
     public enum BorderStyle : byte { None = 0, Primary = 1, Secondary = 2, Neutral = 3 }
 
     /// <summary>The Civ-like border prototype's variants for the owner to choose from (#196, owner 2026-10-26: "make the border
-    /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). Legacy, the default: main's borders exactly,
-    /// so nothing changes until the owner picks one (review C320). A: bands that hold their weight at every
+    /// lines more visible and civ-like", "Try dark outline, Try stronger blue"). A2 is the default (owner ruling 2026-10-27:
+    /// "A2: stronger bands (Recommended)"; MapBorders.DefaultVariant). Legacy: main's earlier borders exactly, still
+    /// selectable (review C320). A: bands that hold their weight at every
     /// zoom, an equal wash on both sides reaching a quarter of the hex, pixel floors and a territory tint that grows as the
     /// camera pulls out. B: A with a thin dark outer rim. C: A with the Primary blue pushed toward Okabe-Ito's
     /// colour-blind-safe blue (#0072B2). A2, B2, C2: the same on the stronger tier for gameplay03, the view players live in
@@ -171,9 +172,13 @@ namespace Statecraft.Game.Map
         public static float NeutralDashPeriodM(float metresPerPx) =>
             NeutralDashM * Mathf.Pow(2f, Mathf.Max(0f, Mathf.Ceil(Mathf.Log(NeutralDashMinPx / NeutralDashOn * metresPerPx / NeutralDashM, 2f))));
 
-        /// <summary>The variant drawn: Legacy (main's look) unless the "bordervariant=a|b|c|a2|b2|c2" URL parameter (WebGL) or
-        /// -bordervariant ... (desktop, editor) names one; anything else is Legacy. Setting it redraws at once; it outlives
-        /// map builds.</summary>
+        /// <summary>The variant drawn when none is asked for: A2 (owner ruling 2026-10-27: "A2: stronger bands
+        /// (Recommended)").</summary>
+        public const BorderVariant DefaultVariant = BorderVariant.A2;
+
+        /// <summary>The variant drawn: DefaultVariant unless the "bordervariant=legacy|a|b|c|a2|b2|c2" URL parameter (WebGL)
+        /// or -bordervariant ... (desktop, editor) names one; anything else is DefaultVariant. Setting it redraws at once; it
+        /// outlives map builds.</summary>
         public static BorderVariant Variant
         {
             get => variant ??= VariantRequested(Application.absoluteURL, Environment.GetCommandLineArgs(), Application.platform == RuntimePlatform.WebGLPlayer);
@@ -186,7 +191,7 @@ namespace Statecraft.Game.Map
             string? v = null;
             if (webgl)
             {
-                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=([abcABC]2?)(?=[&#]|$)");
+                var m = System.Text.RegularExpressions.Regex.Match(url ?? "", @"[?&]bordervariant=((?i:legacy|[abc]2?))(?=[&#]|$)");
                 if (m.Success) v = m.Groups[1].Value;
             }
             else
@@ -197,7 +202,7 @@ namespace Statecraft.Game.Map
             return v?.ToLowerInvariant() switch
             {
                 "b" => BorderVariant.B, "c" => BorderVariant.C, "a2" => BorderVariant.A2, "b2" => BorderVariant.B2, "c2" => BorderVariant.C2,
-                "a" => BorderVariant.A, _ => BorderVariant.Legacy,
+                "a" => BorderVariant.A, "legacy" => BorderVariant.Legacy, _ => DefaultVariant,
             };
         }
 

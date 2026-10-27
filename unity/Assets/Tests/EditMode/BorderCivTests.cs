@@ -9,8 +9,9 @@ using UnityEngine;
 using UnityEngine.TestTools;
 
 /// <summary>The Civ-like border prototype (#196, owner 2026-10-26): its variants' rules (MapBorders.BandWidths, TintAlpha,
-/// the neutral dashes), which StatecraftBorders.hlsl mirrors, rendered checks of each variant, and the switch. Legacy (main's
-/// look) stays the default, so BorderTests, GradeTests and SubdistrictTests run unchanged on it (review C320).</summary>
+/// the neutral dashes), which StatecraftBorders.hlsl mirrors, rendered checks of each variant, and the switch. A2 is the
+/// default (owner ruling 2026-10-27); BorderTests, GradeTests and SubdistrictTests pin Legacy (main's earlier look) and run
+/// main's assertions unchanged on it (review C320).</summary>
 public class BorderCivTests
 {
     const float Inradius = 4330.127f;   // 5 km hexes
@@ -21,7 +22,7 @@ public class BorderCivTests
     [TearDown]
     public void Reset()
     {
-        MapBorders.Variant = BorderVariant.Legacy;
+        MapBorders.Variant = MapBorders.DefaultVariant;
         MapBorders.NoEarlyOut = false;
         MapShaderGlobals.PinWaterTime(null);
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); VisualToggles.Clear();
@@ -113,16 +114,30 @@ public class BorderCivTests
         }
     }
 
-    /// <summary>Review C320: with no selection (or a bad one) the map draws Legacy, main's look; a URL parameter or a
-    /// command-line flag picks a variant, and the switch reaches the shader. Every transition installs its whole set of
-    /// globals (B2 to C2 drops the rim, C2 to A drops the blue, back to Legacy restores main's).</summary>
+    /// <summary>The owner's pick, 27 Oct 2026 ("A2: stronger bands (Recommended)"): with no flag, in the WebGL URL or on the
+    /// command line, the map draws A2.</summary>
     [Test]
-    public void TheVariantsSwitchAndLegacyIsTheDefault()
+    public void WithNoFlagTheMapDrawsA2()
     {
-        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?golden", new string[0], webgl: true));
-        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?bordervariant=bx", new string[0], webgl: true));
-        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "zz" }, webgl: false));
-        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested(null, new[] { "Statecraft" }, webgl: false));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/?golden", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested(null, new[] { "Statecraft" }, webgl: false));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("", new[] { "Unity", "-batchmode" }, webgl: false));
+    }
+
+    /// <summary>Review C320: a bad selection draws the default (A2, WithNoFlagTheMapDrawsA2); "legacy" draws main's earlier
+    /// look; a URL parameter or a command-line flag picks a variant, and the switch reaches the shader. Every transition
+    /// installs its whole set of globals (B2 to C2 drops the rim, C2 to A drops the blue, back to Legacy restores main's).</summary>
+    [Test]
+    public void TheVariantsSwitchAndLegacyStaysSelectable()
+    {
+        Assert.AreEqual(BorderVariant.A2, MapBorders.DefaultVariant);
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/?bordervariant=bx", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested("https://x.invalid/?bordervariant=legacyx", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.A2, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "zz" }, webgl: false));
+        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?bordervariant=legacy", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested("https://x.invalid/?golden&bordervariant=Legacy#x", new string[0], webgl: true));
+        Assert.AreEqual(BorderVariant.Legacy, MapBorders.VariantRequested(null, new[] { "Statecraft", "-bordervariant", "legacy" }, webgl: false));
         Assert.AreEqual(BorderVariant.A, MapBorders.VariantRequested("https://x.invalid/?bordervariant=a", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.B, MapBorders.VariantRequested("https://x.invalid/?golden&bordervariant=b", new string[0], webgl: true));
         Assert.AreEqual(BorderVariant.C, MapBorders.VariantRequested("https://x.invalid/?bordervariant=C#x", new string[0], webgl: true));
