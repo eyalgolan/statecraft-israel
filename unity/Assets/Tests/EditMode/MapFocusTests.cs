@@ -319,16 +319,19 @@ public class MapFocusTests
         finally { pointer.HexClicked -= onPick; root.Language = null; }
     }
 
-    /// <summary>The hint names the keyboard way in both languages and keeps the mouse's right-drag.</summary>
+    /// <summary>The hint names the keyboard way in both languages and keeps drag panning without naming a mouse button:
+    /// either button pans (#998, #1791). The Hebrew clause is the owner's approved wording (27 Oct 2026).</summary>
     [Test]
-    public void TheHintNamesTabAndEnterAndKeepsRightDrag()
+    public void TheHintNamesTabAndEnterAndKeepsDrag()
     {
         StringAssert.Contains("Tab", Text["info.hint"]);
         StringAssert.Contains("Enter", Text["info.hint"]);
-        StringAssert.Contains("right-drag", Text["info.hint"]);
+        Assert.GreaterOrEqual(Text["info.hint"].IndexOf("; drag to move the map", StringComparison.Ordinal), 0, Text["info.hint"]);
+        Assert.Less(Text["info.hint"].IndexOf("right", StringComparison.Ordinal), 0, Text["info.hint"]);
         StringAssert.Contains("Tab", TextHe["info.hint"]);
         StringAssert.Contains("Enter", TextHe["info.hint"]);
-        StringAssert.Contains("גרירה", TextHe["info.hint"]);
+        Assert.GreaterOrEqual(TextHe["info.hint"].IndexOf("; גרירה מזיזה את המפה", StringComparison.Ordinal), 0, TextHe["info.hint"]);
+        Assert.Less(TextHe["info.hint"].IndexOf("לחצן", StringComparison.Ordinal), 0, TextHe["info.hint"]);
     }
 
     static float Luminance(Color c) => 0.2126f * c.linear.r + 0.7152f * c.linear.g + 0.0722f * c.linear.b;
