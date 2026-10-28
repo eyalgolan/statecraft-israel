@@ -26,17 +26,17 @@ public class BuildingModelImportTests
         "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house",
         "generated-1948-05-plastered-courtyard-house-original",
     };
-    static bool Generated(string id) => id.StartsWith("generated-1948-", StringComparison.Ordinal);
+    static bool Generated(string id) => Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedHouse(id);
 
     static string Model(string id) => $"{Folder}/{id}/{id}.fbx";
     static string ColourMap(string id) => $"{Folder}/{id}/{id}_basecolor.jpg";
 
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>The 23 buildings (model, material, colour map), and beside each of #707's five the prefab its streamed
-    /// bundle carries (CollectionImport.MakeBuildingPrefabs).</summary>
+    /// <summary>The 28 buildings, #507's 23 and Tal Heuberger's five generated houses (model, material, colour map, and each
+    /// house's provenance receipt), and beside each the streamed prefab its bundle carries (CollectionImport.MakeBuildingPrefabs).</summary>
     [Test]
-    public void TheFolderHoldsTheTwentyThreeBuildingsAndNothingElse()
+    public void TheFolderHoldsTheTwentyEightBuildingsAndNothingElse()
     {
         Assert.AreEqual(28, Ids.Length, "#507's 23 and the five generated houses");
         var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Ids
@@ -86,7 +86,8 @@ public class BuildingModelImportTests
             Assert.AreEqual(ModelImporterMeshCompression.Off, imp!.meshCompression, path + " mesh compression");
             Assert.IsFalse(imp.isReadable, path + " Read/Write");
             Assert.IsTrue(imp.importAnimation, path + " all original takes retained");
-            Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
+            // #507's buildings import with a Generic rig; the generated houses keep their delivered import, with none.
+            Assert.AreEqual(Generated(id) ? ModelImporterAnimationType.None : ModelImporterAnimationType.Generic, imp.animationType, path + " rig");
             Assert.IsTrue(imp.importBlendShapes, path + " blend shapes");
             Assert.IsFalse(imp.importVisibility, path + " visibility");
             Assert.IsFalse(imp.importCameras, path + " cameras");
@@ -124,6 +125,15 @@ public class BuildingModelImportTests
             Assert.IsFalse(imp.crunchedCompression, path + " no Crunch");
             Assert.IsTrue(imp.mipmapEnabled, path + " mipmaps"); Assert.IsTrue(imp.sRGBTexture, path + " sRGB");
             Assert.IsFalse(imp.isReadable, path + " GPU-only");
+            if (Generated(id))
+            {
+                // The generated houses keep their delivered, approved import: compressed, quality 100, exactly 4096, no overrides.
+                Assert.AreEqual(4096, imp.maxTextureSize, path + " max size");
+                Assert.AreEqual(100, imp.compressionQuality, path + " quality");
+                Assert.AreEqual(TextureImporterCompression.Compressed, imp.textureCompression, path + " compression");
+                foreach (var target in new[] { "Standalone", "WebGL", "Android", "iPhone" })
+                    Assert.IsFalse(imp.GetPlatformTextureSettings(target).overridden, path + " " + target + " override");
+            }
             foreach (var target in new[] { "Standalone", "WebGL" })
             {
                 var setting = imp.GetPlatformTextureSettings(target);

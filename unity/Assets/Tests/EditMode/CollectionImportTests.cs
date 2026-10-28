@@ -333,10 +333,15 @@ public class CollectionImportTests
         CollectionAssert.IsEmpty(AssetDatabase.GetAllAssetBundleNames(), "asset bundle labels");
     }
 
-    /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder.</summary>
-    static string[] FilesOf(string id, IEnumerable<string> closure) => closure.Where(p => p.StartsWith(Dir(id) + "/", StringComparison.Ordinal)).ToArray();
+    /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder
+    /// (the collection's, or the town buildings' for a house).</summary>
+    static string[] FilesOf(string id, IEnumerable<string> closure)
+    {
+        string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
+        return closure.Where(p => p.StartsWith(folder, StringComparison.Ordinal)).ToArray();
+    }
 
-    /// <summary>Every placed generated model (Tal Heuberger's figures and props, #756) reaches the player only through its own
+    /// <summary>Every placed generated model (Tal Heuberger's figures, props and houses, #756) reaches the player only through its own
     /// streamed bundle: no enabled build scene and no asset under any Resources folder (nested ones too) depends on a file of
     /// its folder, its own bundle's build entry pulls in its model, and no other bundle pulls in any of its files.</summary>
     [Test]
@@ -348,8 +353,9 @@ public class CollectionImportTests
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
         var resources = AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
             .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
-        var placed = CollectionCatalog.Ids.Where(CollectionCatalog.IsGenerated).ToList();
+        var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
         CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, placed);
+        Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
             CollectionAssert.IsEmpty(FilesOf(id, scenes), id + " in a player scene's closure");

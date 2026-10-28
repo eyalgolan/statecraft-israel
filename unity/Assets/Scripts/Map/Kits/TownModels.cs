@@ -66,8 +66,10 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>The stone-village house: #507's courtyard house, and Tal Heuberger's plastered courtyard house (05) as a
         /// variation (the prepared role in docs/generated-buildings-props-mapping.json).</summary>
         internal static readonly TownModel[] Stone = { TownModel.B17CourtyardHouse, TownModel.G05CourtyardHouse };
+        /// <summary>A town centre's houses (the large moshavot's TownBlock plots): #507's two-storey house.</summary>
+        internal static readonly TownModel[] TownBlock = { TownModel.B13aTwoStorey };
         /// <summary>Netanya's houses: #507's two-storey house and Tal Heuberger's three Netanya houses (01 to 03) as variations
-        /// (the prepared roles in docs/generated-buildings-props-mapping.json).</summary>
+        /// (the prepared roles in docs/generated-buildings-props-mapping.json), in Netanya only.</summary>
         internal static readonly TownModel[] Netanya =
         {
             TownModel.B13aTwoStorey, TownModel.G01NetanyaTiledHouse, TownModel.G02NetanyaBalconyHouse, TownModel.G03NetanyaPorchHouse,
