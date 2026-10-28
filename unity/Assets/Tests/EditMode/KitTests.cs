@@ -923,7 +923,20 @@ public class KitTests
             int Cached() => ((Dictionary<string, string>)Field("paths")).Count(kv => kv.Value == bundle);
             int Queued() => ((System.Collections.ICollection)Field("pending")).Count;
             int Loaded() => ((System.Collections.ICollection)Field("loaded")).Count;
-            int PendingEvictions() => ((System.Collections.ICollection)Field("pendingEvictions")).Count;
+            int PendingEvictions() => ((ICollection<string>)Field("pendingEvictions")).Count;
+            // The whole stream back to empty, not only this bundle's entries: no owner, pin, load in flight, open bundle, cached
+            // prefab, queued request, loaded model or waiting eviction.
+            void StreamEmpty(string when)
+            {
+                Assert.AreEqual(0, Owners(), $"{when}: no owner");
+                Assert.AreEqual(0, ((ICollection<string>)Field("pinned")).Count, $"{when}: no pin");
+                Assert.AreEqual(0, ((ICollection<string>)Field("inflight")).Count, $"{when}: no load in flight");
+                Assert.AreEqual(0, ((System.Collections.IDictionary)Field("bundles")).Count, $"{when}: no open bundle");
+                Assert.AreEqual(0, ((Dictionary<string, string>)Field("paths")).Count, $"{when}: no cached prefab");
+                Assert.AreEqual(0, Queued(), $"{when}: nothing queued");
+                Assert.AreEqual(0, Loaded(), $"{when}: nothing loaded");
+                Assert.AreEqual(0, PendingEvictions(), $"{when}: no eviction waits");
+            }
 
             camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam); b.Choose(default, cam);
             Pump(run, 20);
@@ -948,6 +961,7 @@ public class KitTests
             Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
             Assert.AreEqual(0, Owners(), "the stream holds no owner"); Assert.AreEqual(0, Leases()); Assert.IsFalse(Pinned(), "and no pin"); Assert.IsFalse(Inflight());
             Assert.IsFalse(Open(), "the bundle is gone"); Assert.AreEqual(0, Cached(), "and its cached prefab"); Assert.AreEqual(0, Queued(), "nothing queued");
+            StreamEmpty("after the last leave");
 
             // A load still in flight when the camera leaves: nothing is placed, and the bundle unloads once the load ends.
             camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam);
@@ -960,6 +974,7 @@ public class KitTests
             Assert.AreEqual(0, a.ModelCount, "the cancelled load places nothing");
             Assert.AreEqual(2, source.Unloaded.Count, "and the bundle unloads after it");
             Assert.IsFalse(Inflight()); Assert.IsFalse(Pinned());
+            StreamEmpty("after the cancelled load");
 
             // Destroying a camp while its models stand destroys them before the bundle unloads.
             camGo.transform.position = new Vector3(100f, 10000f, 200f); b.Choose(default, cam);
@@ -972,6 +987,7 @@ public class KitTests
             Assert.AreEqual(3, source.Unloaded.Count, "destroying the last owner unloads it");
             Assert.AreEqual(0, Owners()); Assert.IsFalse(Pinned());
             Assert.AreEqual(0, Loaded(), "nothing loaded is left"); Assert.AreEqual(0, PendingEvictions(), "and no eviction waits");
+            StreamEmpty("after the destroy");
         }
         finally
         {
