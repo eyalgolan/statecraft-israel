@@ -146,17 +146,17 @@ public class UnitPlinthTests
         var slots = pennant.uv.Select(u => Enumerable.Range(0, UnitPalette.Count).Single(s => Mathf.Abs(u.x - UnitPalette.U(s)) < 1e-4f)).Distinct();
         CollectionAssert.AreEquivalent(new[] { UnitPalette.RifleWood, UnitPalette.HullGrey }, slots, "a wooden pole and a plain grey cloth");
 
-        // An Arab side's row draws nothing: no IDF figures, no placeholder (owner, 17 October 2026, #740). The file with
-        // every Israeli row relabelled Egypt's (each given an echelon and a strength, as such a row needs) draws no token.
+        // A side with no figure draws nothing: no IDF figures, no placeholder (owner, 17 October 2026, #740). The file with
+        // every Israeli row relabelled the local forces' (each given an echelon and a strength, as such a row needs) draws no token.
         var map = BuildMap();
         try
         {
             // A brigade that already gives its strength (#743) keeps it: a second strength key would not parse.
-            var egypt = UnitData.Parse(string.Join("\n- id: ", CommittedYaml.Split(new[] { "\n- id: " }, StringSplitOptions.None).Select(row =>
-                row.Replace("side: israel", "side: egypt\n  echelon: brigade" + (row.Contains("\n  strength:") ? ""
+            var local = UnitData.Parse(string.Join("\n- id: ", CommittedYaml.Split(new[] { "\n- id: " }, StringSplitOptions.None).Select(row =>
+                row.Replace("side: israel", "side: local_arab_forces\n  echelon: brigade" + (row.Contains("\n  strength:") ? ""
                     : "\n  strength: {value: 1, as_of: '1948-05-15', sources: [{url: 'https://x.org', checked: '2026-10-11'}]}")))));
-            Assert.Greater(egypt.Count(u => u.Side == "egypt" && u.Service == UnitData.Army), 3);
-            var layer = UnitLayer.Create(map, egypt, C.Hexes, still: true);
+            Assert.Greater(local.Count(u => u.Side == "local_arab_forces" && u.Service == UnitData.Army), 3);
+            var layer = UnitLayer.Create(map, local, C.Hexes, still: true);
             layer.Show(C, StateAt(Dates[0]));
             Assert.IsEmpty(layer.Tokens, "a row that is not Israel's is not drawn");
             Assert.AreEqual(0, map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").childCount);
