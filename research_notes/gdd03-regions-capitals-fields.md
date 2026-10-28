@@ -16,7 +16,7 @@ Region review index: inclusive physical lines in `gdd03-regions-capitals-fields.
 | Shared provenance, camp and loader context | 20–166 |
 | Shared gaps, retained roster, counts and source-layer notes | 50728–51109 |
 
-Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six regions approved as proposed (owner ruling, 27 October 2026). This is approval of the supplied design content by name. Historical rows still need a person's check. SOURCED means the inherited narrow assertion has cited evidence; it does not mean a person has checked this adaptation.
+Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). This is approval of the supplied design content by name. Historical rows still need a person's check. SOURCED means the inherited narrow assertion has cited evidence; it does not mean a person has checked this adaptation.
 
 | Decision | Exact owner label | Recorded value |
 | --- | --- | --- |

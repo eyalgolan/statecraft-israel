@@ -22,7 +22,7 @@ revision: approved-regions-2026-10-27
 base_commit: fd34c3bcb26723efb05754c2eee6a2376d556b29
 runtime_activation: false
 evidence_provenance: "Administrative-anchor research dated 27 Oct 2026, not independently re-fetched. Anchor statuses are separate from owner approval; all 19 whole research items remain PARTIAL. Public sources: Gazette 1552 (1947), pp.125-133 (https://commons.wikimedia.org/wiki/File:PalestineDistricts1947.pdf); Village Statistics 1945, Explanatory Note A para.3 (https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf). No dated capital-designating act was located; seats mean district headquarters or sub-district chefs-lieux."
-approval: 'APPROVED design content, owner 27 Oct 2026: all six regions approved as proposed (owner ruling, 27 October 2026). Historical rows still require a person’s check; schema acceptance is separate.'
+approval: 'APPROVED design content, owner 27 Oct 2026: all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Historical rows still require a person’s check; schema acceptance is separate.'
 owner_design_decisions:
   date: '2026-10-27'
   provenance: 'Owner answers relayed by coordinator; exact labels recorded in gdd03-regions-capitals-fields.md.'
@@ -69,7 +69,7 @@ reception_site:
   region_binding:
     value: haifa_sharon
     status: APPROVED
-    provenance: 'Owner 27 Oct 2026: "Haifa-Sharon"; all six regions approved as proposed (owner ruling, 27 October 2026). Design association only.'
+    provenance: 'Owner 27 Oct 2026: "Haifa-Sharon"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Design association only.'
   mandate_anchor:
     status: PARTIAL
     item_status: PARTIAL
@@ -6175,14 +6175,14 @@ regions:
   mandate_capital_anchor:
     status: SOURCED
     item_status: PARTIAL
-    finding: 'Tiberias is the Tiberias Sub-District chef-lieu. Nazareth is the Galilee District HQ inside the region. APPROVED design capital, owner 27 Oct 2026: "Tiberias"; all six regions approved as proposed (owner ruling, 27 October 2026).'
+    finding: 'Tiberias is the Tiberias Sub-District chef-lieu. Nazareth is the Galilee District HQ inside the region. APPROVED design capital, owner 27 Oct 2026: "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026).'
     citation: "Village Statistics 1945, Explanatory Note A Population para.3; Survey of Palestine I, pp.104/112 (https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf); https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf"
   reference_subdistricts:
   - Nazareth
   - Tiberias
   - Beisan
   capital_place_id: tiberias
-  capital_approval: 'APPROVED, owner 27 Oct 2026: "Tiberias"; all six regions approved as proposed (owner ruling, 27 October 2026)'
+  capital_approval: 'APPROVED, owner 27 Oct 2026: "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)'
   capital_status: NEEDS-RESEARCH
   boundary_status: NEEDS-RESEARCH
   boundary_hexes:
@@ -9696,7 +9696,7 @@ regions:
       verbatim: "- url: https://he.wikipedia.org/wiki/טבריה"
     - at: content/map/settlements_1948.yaml:96
       verbatim: "- url: https://en.wikipedia.org/wiki/Tiberias"
-  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Tiberias"; all six regions approved as proposed (owner ruling, 27 October 2026). Source identity evidence remains separate.'
+  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Source identity evidence remains separate.'
 - id: haifa_sharon
   name: Haifa, Carmel and Sharon
   status: NEEDS-RESEARCH
@@ -9713,7 +9713,7 @@ regions:
     item_status: PARTIAL
     finding: "Haifa is Haifa District HQ and Haifa Sub-District town."
     citation: "Survey of Palestine I, p.104; Gazette 1552 (1947), p.128; Village Statistics 1945, Haifa SD serial 29 (https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf); https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf"
-  boundary_design_approval: 'APPROVED, owner 27 Oct 2026: "Keep as proposed" for Haifa-Sharon; all six regions approved as proposed (owner ruling, 27 October 2026). Crosses into Samaria District through Tulkarm Sub-District, including hill villages. No geometry inferred.'
+  boundary_design_approval: 'APPROVED, owner 27 Oct 2026: "Keep as proposed" for Haifa-Sharon; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Crosses into Samaria District through Tulkarm Sub-District, including hill villages. No geometry inferred.'
   reference_subdistricts:
   - Haifa
   - Tulkarm
@@ -16731,12 +16731,12 @@ regions:
   mandate_capital_anchor:
     status: SOURCED
     item_status: PARTIAL
-    finding: 'Tel Aviv was not a Mandate seat. Jaffa was Jaffa Sub-District chef-lieu and Lydda District HQ inside this region. APPROVED design capital, owner 27 Oct 2026: "Tel Aviv"; all six regions approved as proposed (owner ruling, 27 October 2026).'
+    finding: 'Tel Aviv was not a Mandate seat. Jaffa was Jaffa Sub-District chef-lieu and Lydda District HQ inside this region. APPROVED design capital, owner 27 Oct 2026: "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026).'
     citation: "Gazette 1552 (1947), p.132; Village Statistics 1945, Explanatory Note A Population para.3; Survey of Palestine I, pp.104/112; Fuller Collection GB165-0114 catalogue (Apr-May 1948) (https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf); https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf"
   reference_subdistricts:
   - Jaffa
   capital_place_id: tel_aviv
-  capital_approval: 'APPROVED, owner 27 Oct 2026: "Tel Aviv"; all six regions approved as proposed (owner ruling, 27 October 2026)'
+  capital_approval: 'APPROVED, owner 27 Oct 2026: "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)'
   capital_status: NEEDS-RESEARCH
   boundary_status: NEEDS-RESEARCH
   boundary_hexes:
@@ -20212,7 +20212,7 @@ regions:
       verbatim: "- url: https://he.wikipedia.org/wiki/תל_אביב-יפו"
     - at: content/map/settlements_1948.yaml:36
       verbatim: "- url: https://en.wikipedia.org/wiki/Tel_Aviv"
-  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Tel Aviv"; all six regions approved as proposed (owner ruling, 27 October 2026). Source identity evidence remains separate.'
+  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Source identity evidence remains separate.'
 - id: central_plain
   name: Central Plain
   status: NEEDS-RESEARCH
@@ -20227,12 +20227,12 @@ regions:
   mandate_capital_anchor:
     status: SOURCED
     item_status: PARTIAL
-    finding: 'Rishon LeZion was not a Mandate seat. Ramle was Ramle Sub-District chef-lieu. APPROVED design capital, owner 27 Oct 2026: "Rishon LeZion"; all six regions approved as proposed (owner ruling, 27 October 2026).'
+    finding: 'Rishon LeZion was not a Mandate seat. Ramle was Ramle Sub-District chef-lieu. APPROVED design capital, owner 27 Oct 2026: "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026).'
     citation: "Gazette 1552 (1947), p.133; Village Statistics 1945, Explanatory Note A Population para.3; Survey of Palestine I, p.104 (https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf); https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf"
   reference_subdistricts:
   - Ramle
   capital_place_id: rishon_lezion
-  capital_approval: 'APPROVED, owner 27 Oct 2026: "Rishon LeZion"; all six regions approved as proposed (owner ruling, 27 October 2026)'
+  capital_approval: 'APPROVED, owner 27 Oct 2026: "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)'
   capital_status: NEEDS-RESEARCH
   boundary_status: NEEDS-RESEARCH
   boundary_hexes:
@@ -26469,7 +26469,7 @@ regions:
       verbatim: "- url: https://he.wikipedia.org/wiki/ראשון_לציון"
     - at: content/map/settlements_1948.yaml:217
       verbatim: "- url: https://en.wikipedia.org/wiki/Rishon_LeZion"
-  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Rishon LeZion"; all six regions approved as proposed (owner ruling, 27 October 2026). Source identity evidence remains separate.'
+  capital_design_provenance: 'APPROVED, owner 27 Oct 2026: "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Source identity evidence remains separate.'
 - id: jerusalem_hills
   name: Jerusalem Corridor and Southern Hills
   status: NEEDS-RESEARCH
@@ -26486,7 +26486,7 @@ regions:
     item_status: PARTIAL
     finding: "Jerusalem as a whole was the district HQ and sub-district town. West Jerusalem was not a Mandate unit; the West qualifier has no Mandate basis and any control meaning stays NEEDS-RESEARCH. Proposal remains West Jerusalem."
     citation: "Survey of Palestine I, p.104; Village Statistics 1945, Explanatory Note A Population para.3; Gazette 1552 (1947), p.131 (https://www.bjpa.org/content/upload/bjpa/a_su/A%20SURVEY%20OF%20PALESTINE%20DEC%201945-JAN%201946%20VOL%20I.pdf); https://commons.wikimedia.org/wiki/File:Village_Statistics_1945_full.pdf"
-  boundary_design_approval: 'APPROVED, owner 27 Oct 2026: "Keep as proposed" for Jerusalem; all six regions approved as proposed (owner ruling, 27 October 2026). Covers the whole Jerusalem District, including Ramallah to the north. No geometry inferred.'
+  boundary_design_approval: 'APPROVED, owner 27 Oct 2026: "Keep as proposed" for Jerusalem; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Covers the whole Jerusalem District, including Ramallah to the north. No geometry inferred.'
   reference_subdistricts:
   - Jerusalem
   - Ramallah
@@ -50731,7 +50731,7 @@ unplaced_members:
 needs_research:
 - id: boundaries_and_capitals
   status: NEEDS-RESEARCH
-  needed: 'Design associations APPROVED, owner 27 Oct 2026: all six regions approved as proposed (owner ruling, 27 October 2026). Explicit reviewed member-hex geometry is still missing. Independent 1948 boundary evidence would be required for any historical boundary claim; design groups are not historical boundaries. All unlisted land hexes remain unresolved.'
+  needed: 'Design associations APPROVED, owner 27 Oct 2026: all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). Explicit reviewed member-hex geometry is still missing. Independent 1948 boundary evidence would be required for any historical boundary claim; design groups are not historical boundaries. All unlisted land hexes remain unresolved.'
   sources:
   - file: content/map/subdistricts_1948.geojson
     line: 12
