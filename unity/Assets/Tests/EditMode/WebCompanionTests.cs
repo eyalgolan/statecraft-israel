@@ -151,7 +151,7 @@ public sealed class WebCompanionTests
         var text = Locale(he);
         var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
         var e = System.Linq.Enumerable.First(c.Events, x => x.Id == "armistice_egypt");
-        e.Options[0].Rejoin = "fixture-record"; // presentation-only fixture: the real presenter renders its existing note
+        e.Options[0].Rejoin = "first_truce"; // presentation-only fixture: a real event id, because the card now resolves the rejoin target for its effect rows
         var game = Statecraft.Sim.GameSession.New(c, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical);
         game.State.Date = e.From;
         game.State.PendingEvents.Clear(); game.State.PendingEvents.Add(e.Id);
