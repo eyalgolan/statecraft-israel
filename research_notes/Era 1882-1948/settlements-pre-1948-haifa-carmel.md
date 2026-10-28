@@ -12,6 +12,9 @@ Update 2026-10-24: the [GAP] rows were worked again by an agent (Claude Code) fo
 still pending, and no row below was moved to [V] by this update. New tag used once for coordinates:
 **[S, Wikidata]**, a single source that is a Wikidata statement read through its API.
 
+Update 2026-10-27 (second pass of the [GAP] rows, #97): the first-pass and 24 Oct text above and below is
+kept as written; additions are marked "(second pass, 27 Oct)". No row was moved to a verified tag. Tag legend unchanged.
+
 ## How it was done
 
 - Every page was fetched on 23 October 2026 with the User-Agent
@@ -334,6 +337,14 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   Israel newspaper site, and `https://www.nli.org.il` and `https://www.nli.org.il/en/newspapers`
   answered HTTP 403 to `curl` on 24 Oct, so it was not opened. Census 1931 (above) prints "Kufritta";
   Village Statistics 1945 prints "Kefar ‘Atta (Kufritta)". [GAP]
+  (second pass, 27 Oct) Searched again for the year of the rename and not found. JTA search
+  `https://www.jta.org/wp-json/wp/v2/archive?search=Kfar+Atta&after=1933-01-01T00:00:00&before=1936-12-31T23:59:59`
+  (run 27 Oct with `curl`) returned 4 items (1933-10-29 to 1936-10-13); the
+  1936-10-13 item "Arabs End Strike After 175 Days; 88th Jew is Killed" was fetched and its text holds no
+  "Atta". Searches `Kfar+Ata` and `Kiryat+Ata` over 1925-01-01 to 1948-12-31 returned 112 and 4 items (the `x-wp-total` header; same URL form as above); the
+  Kiryat Ata items of 1938-11-04 and 1936-07-23 were fetched and hold no "Ata". The search is fuzzy, so a
+  hit list is not a mention. Nothing is read from the 1934 to 1941 window that dates the rename. [GAP]
+  (second pass, 27 Oct, added after review) The `Kfar+Atta` search above also lists "Poles Visit Holy Land" (22 July 1934, page text): "A delegation of the "Avodath Israel" Society in Warsaw has arrived in Palestine to look over land owned by the Society at Kfar Atta." That shows the spelling "Kfar Atta" was in use in July 1934; English cannot tell עטא from אתא, so the [GAP] stays. [S, JTA archive page; agent read 27 Oct; a person's check pending]
 
 ### Kiryat Bialik (CBS 9500)
 - CBS **1934**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -347,12 +358,31 @@ Hebrew Wikipedia pages below were read at the `oldid` given, checked 2026-10-23.
   1934, and the article's founding day, 18 July 1934, is 14 days later (18 minus 4); which name the
   neighbourhood carried on the day it was founded is not stated. [S, Wikipedia] **Our reading:** CBS's
   1934 holds under either name. The year of the first name's replacement stays [GAP].
+- (second pass, 27 Oct) The year of the first name's replacement is narrowed. The JTA *Jewish Daily
+  Bulletin* of Monday 9 July 1934, page 4 (`http://pdfs.jta.org/1934/1934-07-09_2892.pdf`, read as a page
+  image on 27 Oct), prints under "Colony to Be Named After Noted Poet", dateline "JERUSALEM, July 8": "A new
+  quarter of 100 houses for German Jewish refugee settlers in the Haifa Bay colony of the Jewish National
+  Fund is to be named Kiriat Bialik in honor of the dead Hebrew poet laureate, it was announced today. The
+  cornerstone of the new town is to be laid shortly." So the name was announced on 8 July 1934, four days
+  after Bialik's death on 4 July (8 minus 4) and ten days before he.wiki's founding day of 18 July (18 minus
+  8); the cornerstone was still to come. The item does not give any earlier name. **Our reading:** the
+  replacement year is 1934, and the name was set before the cornerstone; whether "שכונת עולי גרמניה" was
+  ever used before 8 July is not shown by any source read here. [S, JTA bulletin; agent read 27 Oct; a
+  person's check pending] The JTA archive page text of 20 August 1934, "Refugee Town to Be Erected Near Haifa
+  Bay" (`https://www.jta.org/archive/refugee-town-to-be-erected-near-haifa-bay`, page text only, the PDF was
+  not opened), says the cornerstone of "Kiryath Bialik" "was laid in July, according to a report just
+  received here by the United Jewish Appeal", which agrees with he.wiki's July 1934. [S, JTA archive page; agent read 27 Oct; a person's check pending]
 
 ### Kiryat Motzkin (CBS 8200)
 - CBS **1934**. Not in Gvati's appendix. [checked 2026-10-23: no row]
 - he.wiki `קריית מוצקין`, oldid **43507011**: "ב-9 באוקטובר 1934 הונחה אבן הפינה לשכונה"; "ב-1935
   התיישבו המשפחות הראשונות בבתיהן שבשכונה". [S, Wikipedia]
 - **Our reading:** CBS's 1934 is the cornerstone; the first families moved in during 1935.
+- (second pass, 27 Oct) JTA, read as a page image of the bulletin PDF: the JTA news bulletin of
+  Thursday 17 December 1936 (`http://pdfs.jta.org/1936/1936-12-17_113.pdf`, item "German Chalutzi to Build Settlement for Henrietta Szold" (headline and dateline "JERUSALEM (JTA)", no
+  day, at the foot of page 5; the quoted passage is on page 6, header "J.T.A. NEWS 12/17/36"), says of the Jewish National Fund's projects: "houses for a new Jewish quarter near Kiriat Motzkin to
+  be called Kiriat Samuel". So Kiryat Motzkin existed under that name by the bulletin of 17 December 1936.
+  A presence check, not a founding date. [S, JTA bulletin; agent read 27 Oct; a person's check pending]
 
 ### Kiryat Yam (CBS 9600)
 - CBS **1941**. Not in Gvati's appendix. [checked 2026-10-23: no row]
@@ -479,6 +509,8 @@ is proposed about how it appears in the game. None is a CBS locality under its o
 - [GAP] **Rename years**: (24 Oct) Ma'apilim to Newe Yam (1947) and Ma'yan to Ma'yan Zevi (1945) are now
   dated (part 2). Still open: Zamarin to Zikhron Ya'akov (in print by 1883, part 2), Kfar Atta to Kfar Ata,
   Ramat HaTzafon and Usha to Ramat Yohanan, and the first name of Kiryat Bialik (after 4 July 1934).
+  (second pass, 27 Oct: the first name of Kiryat Bialik is narrowed, see its entry in part 2; the other three
+  stay open.)
 - **Gvati day versus CBS year.** Where they agree on the year the row is [V]; the day rests on Gvati
   alone, and as `settlements-1949-51.md` notes, it can be a day or more off other sources. Eight of
   the 22 rows (Nesher, the Krayot, Kiryat Tiv'on, Meir Shefeya and Kfar HaNo'ar HaDati) have no Gvati

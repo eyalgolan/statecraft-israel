@@ -327,9 +327,10 @@ the owner's review also stands as their fact check); `egypt_adl_gaza`, `egypt_mv
 | `jordan_adl_iraqi_*` (four stages), `jordan_adl_a_latrun`, `jordan_adl_bc_south`, `jordan_adl_d_arava` | Jordan, 3 Apr 1949 (line A by its deadlines: 8 May, 22 May, 17 Jul 1949) | low accuracy, traced from a low-resolution scan, and labelled so; the Art. VI.3 stage areas as read; Latrun traced along the outer loop; Jerusalem, the no-man's-lands and Mount Scopus left out (gaps) |
 | On-screen strings | from 1949 | the map label ("Mandate sub-districts, 1947 · 1949 armistice lines: Egypt (and the 1950 modus vivendi), Lebanon, Jordan (low accuracy), Syria"), the info panel lines ("On the ... · low accuracy, from a low-resolution scan"), the agreement titles in the "Egypt-Israel" style (the agreements' own: "Egyptian-Israeli", "Lebanese-Israeli", "Hashemite Jordan Kingdom-Israel", "Israeli-Syrian"), and the seven Hebrew strings in `strings.he.yaml` (Hebrew is off until reviewed) |
 
-## Deferred to M4: upload to itch.io (OWNER STEP)
-Deferred to the start of M4, as a private Draft (owner ruling, 2026-10-10). The steps stay correct for then. This needs the
-owner's itch.io account and is never automated, and the build must pass the sensitivity gate above (`-shareable`).
+## Upload to itch.io
+The steps below are the project's first setup (OWNER STEP: they need the owner's itch.io account). Nightly builds are now
+pushed with `butler` by `tools/nightly.py`, enabled only after `nightly.py savetest` passes (owner, 27 October 2026,
+"Public: website + itch"). The build must pass the sensitivity gate above (`-shareable`).
 1. Sign in at https://itch.io. Go to Dashboard, then **Create new project**.
 2. Set the title to "Statecraft: Israel (M3 preview)", Kind of project to **HTML**, and Classification to Games.
 3. Under Uploads, upload the zip made by `bash scripts/oss/package_web.sh unity/Builds/Web-gzip unity/Builds/statecraft-m3-web.zip` (it puts the licence and attribution files inside, then runs `tools/package_release.py`; see `docs/RELEASING.md`) and tick **This file will be played in the browser**.
@@ -351,13 +352,15 @@ uncompressed (checked with curl on two public Unity games, 17 October 2026). Tha
 
 Published at: (owner fills in)
 
-## Saves on itch.io: the fix, and its test (the test is deferred to M4)
+## Saves on itch.io: the fix, and its test
 - **Problem:** on WebGL, `Application.persistentDataPath` is `/idbfs/<MD5 of the page's directory URL>`. itch.io serves every upload from a new URL, so a new upload would hide the saves made with the previous one.
 - **Fix (Task 21):** the autosave lives at the fixed path `/idbfs/statecraft-saves/autosave.txt`.
   - The template sets `autoSyncPersistentDataPath: true`, so closing the file persists it to IndexedDB.
   - IndexedDB is per origin, so saves survive re-uploads to the same project and stay separate per browser profile.
   - The local checks above passed: reload, tab close, browser restart, and a second directory on the same origin.
-- **Test plan (OWNER STEP, deferred to M4 with the upload; after the first two uploads):**
+- **Automated test:** `uv run tools/nightly.py savetest --tag <published nightly>` runs this plan against the public
+  itch page and records its result in the job's evidence file. It pushes to the public page twice, so only the owner starts it.
+- **Test plan (after the first two uploads):**
   1. Use one browser profile throughout, without clearing site data or using private mode. Record browser/version, OS,
      project page URL and the actual game-frame URL/origin (not only the outer itch.io page). Upload A as above. Play two
      turns and copy the last `TURN` line, including date, turn and full state hash. Record the upload/build ID, the git
@@ -415,6 +418,6 @@ changed page-directory paths and changed-content warnings. Those code/tests supp
 - The headless smoke plays five turns; a full-slice smoke is M4.
 - The wheel-zoom step (one notch = 10%) was measured in Chrome on macOS only. Firefox reports wheel deltas in lines and
   Windows at 125% scaling reports 125 px per notch, so re-check the step in the owner's M4 itch.io check.
-- Not uploaded to itch.io: the upload and the cross-upload save test are deferred to the start of M4 (owner ruling,
-  2026-10-10). The seven sensitive events are `sensitivity-reviewed`, with the owner's sign-off recorded in commit
+- Nightlies upload to itch.io once the cross-upload save test passes (owner, 27 October 2026; until then this build is
+  not uploaded there). The seven sensitive events are `sensitivity-reviewed`, with the owner's sign-off recorded in commit
   [25d2ef6](https://github.com/eyalgolan/statecraft-israel/commit/25d2ef6004436668b42e289aff3dce06af128e09) (see above).

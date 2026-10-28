@@ -66,6 +66,7 @@ public class Generated1948CharacterTests
 
     [TestCase("figure-syrian-infantry-1948-v1")]
     [TestCase("figure-iraqi-infantry-1948-v1")]
+    [TestCase("figure-egyptian-infantry-1948-v1")]
     public void FullQualityFigureKeepsOneModelWithoutTheLegacyLodSwitcher(string id)
     {
         var root = new GameObject("Full quality figure fixture");
@@ -118,6 +119,7 @@ public class Generated1948CharacterTests
     }
 
     [TestCase("syria", "syrian_army", "syrian_army", "figure-syrian-infantry-1948-v1")]
+    [TestCase("egypt", "egyptian_expeditionary_force", "egyptian_army", "figure-egyptian-infantry-1948-v1")]
     [TestCase("ala", "arab_liberation_army", "arab_liberation_army", "figure-c09-irregular-v2")]
     [TestCase("iraq", "iraqi_expeditionary_force", "iraqi_army", "figure-iraqi-infantry-1948-v1")]
     public void AnExistingFormationWaitsForItsOwnFigure(string side, string rowId, string type, string model)
@@ -149,7 +151,7 @@ public class Generated1948CharacterTests
         Assert.AreEqual("figure-c08-arab-legion-v2", UnitFigures.SideFigure("jordan"));
         Assert.IsNull(UnitFigures.SideFigure("local_arab_forces"), "no undeployed alias masks loss of the original campaign role");
         Assert.AreEqual("figure-c09-irregular-v2", UnitFigures.SideFigure("ala"));
-        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "the Lebanese candidate is review-only");
+        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "the Lebanese row is hidden and has no figure yet");
         var rows = Units;
         Assert.IsFalse(rows.Any(r => r.Side == "local_arab_forces"), "art does not author a local-force deployment");
         var lebanon = rows.Single(r => r.Id == "lebanese_army");
@@ -159,32 +161,48 @@ public class Generated1948CharacterTests
         CollectionAssert.IsEmpty(C.StartingForces.Where(f => f.Side == "lebanon" || f.Side == "local_arab_forces"));
     }
 
+    /// <summary>Owner, 27 October 2026: "Sign off all 19" and, for Egypt's forward and rear bases at the first truce, "One
+    /// token". The GDD loop draws the one sim unit of the row, standing on Gaza from the first day; the legacy roster draws the
+    /// row's first anchor whose window holds the date, so at the truce the forward base at Isdud, and Majdal stays in the
+    /// row (owner, 17 October 2026, on #860).</summary>
     [Test]
-    public void EgyptianFigureStaysInReviewUntilItsSimultaneousBasesHaveAnApprovedMapRepresentation()
+    public void EgyptIsDrawnAsOneTokenWithItsOwnFigure()
     {
         const string id = "figure-egyptian-infantry-1948-v1", rowId = "egyptian_expeditionary_force";
-        Assert.IsNull(UnitFigures.SideFigure("egypt"), "art alone does not decide how to draw simultaneous bases");
-        Assert.IsNull(CollectionCatalog.BundleOf(id), "review art does not enter a runtime bundle");
-        CollectionAssert.DoesNotContain(CollectionCatalog.Animated, id);
+        Assert.AreEqual(id, UnitFigures.SideFigure("egypt"));
+        Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), "its own bundle, not the Arab armies' or the people's");
+        CollectionAssert.Contains(CollectionCatalog.Animated, id);
         var rows = Units;
         var egypt = rows.Single(r => r.Id == rowId);
-        Assert.IsFalse(UnitRoster.OnMap(egypt));
-        // Preserve the owner's simultaneous forward/rear bases at the first truce (#860, 17 October 2026).
+        Assert.IsTrue(UnitRoster.OnMap(egypt));
         var truce = new DateTime(1948, 6, 11);
         CollectionAssert.AreEquivalent(new[] { "Isdud", "Majdal" }, egypt.Anchors
-            .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]));
-        Assert.AreEqual("egyptian_army", C.StartingForces.Single(f => f.Row == rowId).Type,
-            "holding map art does not remove the simulation's existing force");
+            .Where(a => UnitData.Day(a.From) <= truce && truce < UnitData.Day(a.To)).Select(a => a.Place.Split(',')[0]),
+            "the row keeps both bases");
+        Assert.AreEqual("egyptian_army", C.StartingForces.Single(f => f.Row == rowId).Type);
         UnitAnchor Unmoved(UnitEntry row, UnitAnchor start, int q, int r) => start;
-        var arrived = UnitRoster.FromState(rows, C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical), _ => true, Unmoved);
-        Assert.IsFalse(arrived.Any(t => t.Unit.Id == rowId), "even available art cannot invent a token placement");
+        var gdd = UnitRoster.FromState(rows, C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical), _ => true, Unmoved)
+            .Where(t => t.Unit.Id == rowId).ToList();
+        Assert.AreEqual(1, gdd.Count, "one token for the one sim unit");
+        Assert.AreEqual("Gaza", gdd[0].Anchor.Place);
+        Assert.AreEqual(id, gdd[0].ArtType);
+        var legacy = SimBridgeGddTests.Legacy;
+        foreach (var (day, place) in new[] { (new DateTime(1948, 5, 15), "Gaza"), (truce, "Isdud"), (new DateTime(1948, 7, 7), "Isdud") })
+        {
+            var tokens = UnitRoster.Build(rows, legacy.Rules, day, 5, 0.8, _ => true).Where(t => t.Unit.Id == rowId).ToList();
+            Assert.AreEqual(1, tokens.Count, $"{day:yyyy-MM-dd}: one token");
+            Assert.AreEqual(place, tokens[0].Anchor.Place.Split(',')[0], $"{day:yyyy-MM-dd}");
+        }
+        Assert.IsFalse(UnitRoster.Build(rows, legacy.Rules, new DateTime(1948, 7, 8), 5, 0.8, _ => true).Any(t => t.Unit.Id == rowId),
+            "no sourced anchor after the truce: no token");
     }
 
-    [TestCase("figure-syrian-infantry-1948-v1")]
-    [TestCase("figure-iraqi-infantry-1948-v1")]
-    public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id)
+    [TestCase("figure-syrian-infantry-1948-v1", CollectionCatalog.ArabArmies)]
+    [TestCase("figure-iraqi-infantry-1948-v1", CollectionCatalog.ArabArmies)]
+    [TestCase("figure-egyptian-infantry-1948-v1", "collection-figure-egyptian-infantry-1948-v1")]
+    public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id, string bundle)
     {
-        Assert.AreEqual(CollectionCatalog.ArabArmies, CollectionCatalog.BundleOf(id), "its own bundle, not the opening people's (#1763)");
+        Assert.AreEqual(bundle, CollectionCatalog.BundleOf(id), "a bundle of its own, not the opening people's (#1763)");
         CollectionAssert.Contains(CollectionCatalog.Animated, id);
         string dir = $"{CollectionCatalog.Folder}/{id}", source = $"{dir}/{id}.fbx";
         var importer = AssetImporter.GetAtPath(source) as ModelImporter;
