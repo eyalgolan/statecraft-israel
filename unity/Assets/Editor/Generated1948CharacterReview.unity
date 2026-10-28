@@ -183,8 +183,8 @@ MonoBehaviour:
     Walk: {fileID: 7747523122156599542, guid: 0f1fdfe45c64048559ae663c10a7d76f, type: 3}
   - Id: figure-ala-infantry-1948-v1
     Label: ALA infantry
-    Status: Review only; original C09 remains on ALA tokens
-    Campaign: 0
+    Status: Campaign formation, third figure beside two C09
+    Campaign: 1
     Model: {fileID: 919132149155446097, guid: 31f21311220ed4a3a99bfb84f1da4d22, type: 3}
     Material: {fileID: 2100000, guid: 30ad3e28b3b794569b501a647ce9314e, type: 2}
     Idle: {fileID: 3752702422747699540, guid: 31f21311220ed4a3a99bfb84f1da4d22, type: 3}
