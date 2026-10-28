@@ -157,16 +157,22 @@ public class Gdd03ReceptionFixtureTests
 
     [Fact] public void PredicateRequiresCompletedFreeUnassignedCivilianForEveryFutureWorkConsumer()
     {
+        static bool Eligible(PopulationUnit template)
+        {
+            var state = State(template);
+            return Gdd03ReceptionFixture.CanStartCivilianActivity(
+                Catalogue(), state.PopulationLedger, state.PopulationLedger.Get(0));
+        }
         foreach (var ticks in new[] { 0, 5 })
         {
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(ticks)));
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(ticks, status: PopulationStatus.FreeCivilian)));
+            Assert.False(Eligible(Person(ticks)));
+            Assert.False(Eligible(Person(ticks, status: PopulationStatus.FreeCivilian)));
         }
-        Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(6, status: PopulationStatus.FreeCivilian)));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(6)));
+        Assert.True(Eligible(Person(6, status: PopulationStatus.FreeCivilian)));
+        Assert.False(Eligible(Person(6)));
         var s = State(Person(6, status: PopulationStatus.FreeCivilian));
         s.PopulationLedger.ChangeAssignment(0, new(PopulationAssignmentKind.Work, "synthetic-work"));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, s.PopulationLedger.Get(0)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), s.PopulationLedger, s.PopulationLedger.Get(0)));
         // This tests the proposed shared predicate; job/farm/build/course entry points are deliberately unwired.
     }
 

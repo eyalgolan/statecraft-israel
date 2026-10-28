@@ -44,6 +44,8 @@ namespace Statecraft.Sim
         {
             var turns = MatchingReceptionTurns(content, ledger);
             if (person == null) throw new ArgumentNullException(nameof(person));
+            if (!ReferenceEquals(ledger.Get(person.Id), person))
+                throw new ArgumentException("Eligibility requires the current record from the supplied ledger.", nameof(person));
             return person.ReceptionTicks == turns && person.Status == PopulationStatus.FreeCivilian
                 && person.Assignment.Kind == PopulationAssignmentKind.Unassigned;
         }
