@@ -346,8 +346,7 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         var closures = builds.ToDictionary(b => b.assetBundleName, b => AssetDatabase.GetDependencies(b.assetNames, true));
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
-        var resources = AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
-            .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
+        var resources = ResourcesClosure();
         var placed = CollectionCatalog.Ids.Where(CollectionCatalog.IsGenerated).ToList();
         CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent }, placed);
         foreach (var id in placed)
@@ -359,9 +358,32 @@ public class CollectionImportTests
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
         }
-        // The check sees a reference: a closure holding the tent's prefab, as a Resources prefab that placed it would have.
-        CollectionAssert.IsNotEmpty(FilesOf(CollectionCatalog.BedouinTent,
-            new[] { "Assets/Resources/Probe.prefab", CollectionCatalog.PrefabPath(CollectionCatalog.BedouinTent, CollectionDetail.Near) }));
+    }
+
+    /// <summary>What every asset under any Resources folder (nested ones too) depends on: all of it ships in every build.</summary>
+    static string[] ResourcesClosure() => AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
+        .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
+
+    /// <summary>The isolation check above rejects a real reference: a prefab in a nested Resources folder that places the tent
+    /// puts the tent's files in the Resources closure. The probe is deleted afterwards.</summary>
+    [Test]
+    public void TheResourcesCheckSeesANestedResourcesPrefabThatPlacesAGeneratedModel()
+    {
+        string root = "Assets/TalClosureProbe" + Guid.NewGuid().ToString("N");
+        try
+        {
+            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+            AssetDatabase.CreateFolder(root, "Deep");
+            AssetDatabase.CreateFolder(root + "/Deep", "Resources");
+            CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "no Resources reference before the probe");
+            var tent = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(CollectionCatalog.BedouinTent, CollectionDetail.Near));
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(tent);
+            try { PrefabUtility.SaveAsPrefabAsset(go, root + "/Deep/Resources/Probe.prefab"); }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+            CollectionAssert.IsNotEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe's reference reaches the tent's files");
+        }
+        finally { AssetDatabase.DeleteAsset(root); }
+        CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe is gone");
     }
 
     [Test]
