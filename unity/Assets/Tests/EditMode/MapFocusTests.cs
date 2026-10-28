@@ -390,8 +390,12 @@ public class MapFocusCameraKeysTests : InputTestFixture
     [Test]
     public void TheCameraKeysStillPanWithTheStopFocused()
     {
-        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        InputSystem.actions = actions;
         var keyboard = InputSystem.AddDevice<Keyboard>();
+        // Resolve the shared asset against this fixture's own keyboard only. Earlier tests can leave it resolved against
+        // devices this fixture does not have, and enabling the Camera map then fails (a test isolation issue).
+        actions.devices = new InputDevice[] { keyboard };
         using var kit = new UiTestKit();
         kit.Q<VisualElement>("root").RemoveFromClassList("loading");
         var stop = kit.Q<VisualElement>("map-focus");
@@ -423,6 +427,6 @@ public class MapFocusCameraKeysTests : InputTestFixture
             Assert.AreSame(stop, kit.Root.panel.focusController.focusedElement, "the focus stays on the stop");
             Assert.AreEqual(0, picked, "a pan picks nothing");
         }
-        finally { presenter.Dispose(); Send(c, "OnDisable"); Object.DestroyImmediate(go); }
+        finally { presenter.Dispose(); Send(c, "OnDisable"); Object.DestroyImmediate(go); actions.devices = null; }
     }
 }

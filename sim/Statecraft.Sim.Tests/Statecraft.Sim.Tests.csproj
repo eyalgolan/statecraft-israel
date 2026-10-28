@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../unity/Assets/Scripts/UI/StockMeter.cs" Link="Presentation/StockMeter.cs" />
+    <Compile Include="../../unity/Assets/Scripts/UI/CameraHeadingPolicy.cs" Link="Presentation/CameraHeadingPolicy.cs" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
