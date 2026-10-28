@@ -6,12 +6,12 @@ The [admission receipt](generated-buildings-props-admission.json) identifies eve
 
 | Number | Source triangles | Current readiness |
 |---|---:|---|
-|01 tiled house|9324|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
-|02 balcony house|4798|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
-|03 porch house|9261|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
-|04 lighter basalt variant|5624|In the game since the owner's sign-off of 27 October 2026: Tiberias's houses, a town building streamed after the first frame|
-|05 courtyard house|8193|In the game since the owner's sign-off of 27 October 2026: the stone-village houses of the Arab towns and villages, a town building streamed after the first frame|
-|06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: at up to three Bedouin-area anchors, on clear ground apart from the code-built camps' plots, in its own streamed bundle|
+|01 tiled house|9324|Signed off by the owner, 27 October 2026. In the game: Netanya's houses, a town building streamed after the first frame|
+|02 balcony house|4798|Signed off by the owner, 27 October 2026. In the game: Netanya's houses, a town building streamed after the first frame|
+|03 porch house|9261|Signed off by the owner, 27 October 2026. In the game: Netanya's houses, a town building streamed after the first frame|
+|04 lighter basalt variant|5624|Signed off by the owner, 27 October 2026. In the game: Tiberias's houses, a town building streamed after the first frame|
+|05 courtyard house|8193|Signed off by the owner, 27 October 2026. In the game: the stone-village houses of the Arab towns and villages, a town building streamed after the first frame|
+|06 enclosed Bedouin tent|3184|Signed off by the owner, 27 October 2026. In the game: at up to three Bedouin-area anchors, on clear ground apart from the code-built camps' plots, in its own streamed bundle|
 |08 khaki canvas tent|3988|Full-source editor review captured; signed off 27 Oct 2026, placement pending|
 |09 well|3992|Editor-only; no sourced map role|
 |10 sandbags|4074|Editor-only; no sourced map role|

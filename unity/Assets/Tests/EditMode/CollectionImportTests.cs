@@ -360,7 +360,10 @@ public class CollectionImportTests
             CollectionAssert.IsEmpty(FilesOf(id, scenes), id + " in a player scene's closure");
             CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
             string own = CollectionCatalog.BundleOf(id)!;
-            CollectionAssert.Contains(closures[own], CollectionCatalog.SourceModelPath(id), id + " in its own bundle");
+            string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
+            // Its model, streamed prefab, material and colour map are all in its own bundle's closure.
+            foreach (var file in new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
+                CollectionAssert.Contains(closures[own], file, id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
         }
