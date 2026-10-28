@@ -16,12 +16,18 @@ public class VehicleReviewTests
 {
     [SetUp] public void EmptyScene() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
     [TearDown] public void Cleanup() => EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+    /// <summary>The candidates still in review: every one but the R35, which stands at Degania Alef from 20 May 1948 in its own
+    /// streamed bundle (owner, 27 October 2026: "Degania landmark (Recommended)").</summary>
+    static readonly string[] InReview = VehicleReviewCatalog.Ids.Where(id => !CollectionCatalog.IsGeneratedProp(id)).ToArray();
+
     [Test]
     public void ReviewIsEditorOnlyAndHasNoPlayerDependencyOrBundle()
     {
+        CollectionAssert.AreEqual(new[] { "generated-1948-13-egyptian-spitfire", "generated-1948-16-egyptian-dakota-c47" }, InReview);
+        Assert.AreEqual("collection-" + CollectionCatalog.SyrianR35, CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35), "the placed R35 streams on its own");
         foreach (var id in VehicleReviewCatalog.Ids)
         {
-            Assert.IsNull(CollectionCatalog.BundleOf(id));
+            if (InReview.Contains(id)) Assert.IsNull(CollectionCatalog.BundleOf(id));
             Assert.IsFalse(UnitFigures.BySide.Values.Contains(id));
             Assert.IsFalse(UnitFigures.ByVehicle.Values.Contains(id));
         }
@@ -45,7 +51,7 @@ public class VehicleReviewTests
     }
 
     static bool IsVehicle(string path) => path.StartsWith(VehicleReviewCatalog.Folder + "/", StringComparison.Ordinal) ||
-        VehicleReviewCatalog.Ids.Any(id => path.Contains(id));
+        InReview.Any(id => path.Contains(id));
 
     [Test]
     public void DeliveredSourceArchivesStayOutsideUnityWithVerifiedHashes()
@@ -71,7 +77,7 @@ public class VehicleReviewTests
         foreach (var entry in catalog.entries)
         {
             string path = AssetDatabase.GetAssetPath(entry.model);
-            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.Folder + "/" + entry.id + "/", StringComparison.Ordinal));
+            Assert.IsTrue(path.StartsWith(VehicleReviewCatalog.DirOf(entry.id) + "/", StringComparison.Ordinal), path);
             var dependencies = AssetDatabase.GetDependencies(path, true);
             Assert.IsTrue(dependencies.Any(p => p.EndsWith("-compatibility.fbx", StringComparison.Ordinal)));
             Assert.IsTrue(dependencies.Any(p => p.EndsWith("_basecolor.jpg", StringComparison.Ordinal)));
@@ -89,7 +95,7 @@ public class VehicleReviewTests
     [TestCase(2, 6854)]
     public void SourceGeometryAndOriginalColourMapImportWithoutReduction(int index, int triangles)
     {
-        string id = VehicleReviewCatalog.Ids[index], folder = VehicleReviewCatalog.Folder + "/" + id;
+        string id = VehicleReviewCatalog.Ids[index], folder = VehicleReviewCatalog.DirOf(id);
         string file = folder + "/" + id + "-compatibility.fbx", map = folder + "/" + id + "_basecolor.jpg";
         var importer = (ModelImporter)AssetImporter.GetAtPath(file);
         Assert.AreEqual(ModelImporterMeshCompression.Off, importer.meshCompression);
@@ -101,9 +107,16 @@ public class VehicleReviewTests
         texture.GetSourceTextureWidthAndHeight(out int width, out int height);
         Assert.AreEqual(4096, width); Assert.AreEqual(4096, height);
         Assert.GreaterOrEqual(texture.maxTextureSize, Mathf.Max(width, height));
-        Assert.AreEqual(TextureImporterCompression.Uncompressed, texture.textureCompression); Assert.IsFalse(texture.crunchedCompression);
-        foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" })
+        // The placed R35 streams compressed like the other placed generated models (no Crunch, full size); review candidates stay uncompressed.
+        Assert.AreEqual(CollectionCatalog.IsGeneratedProp(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed,
+            texture.textureCompression); Assert.IsFalse(texture.crunchedCompression);
+        foreach (string platform in new[] { "Android", "iPhone" })
             Assert.IsFalse(texture.GetPlatformTextureSettings(platform).overridden, platform);
+        foreach (string platform in new[] { "Standalone", "WebGL" })
+        {
+            var settings = texture.GetPlatformTextureSettings(platform);
+            Assert.IsTrue(!settings.overridden || (settings.maxTextureSize >= 4096 && !settings.crunchedCompression), platform);
+        }
         var image = AssetDatabase.LoadAssetAtPath<Texture2D>(map); Assert.AreEqual(width, image.width); Assert.AreEqual(height, image.height);
         Assert.IsFalse(System.IO.Directory.GetFiles(AssetFile(folder)).Any(p => p.Contains("-near.") || p.Contains("-far.")));
         var provenance = JsonUtility.FromJson<SourceProof>(System.IO.File.ReadAllText(AssetFile(folder + "/provenance.json")));

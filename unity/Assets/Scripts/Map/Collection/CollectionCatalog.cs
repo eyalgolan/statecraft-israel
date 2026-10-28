@@ -82,6 +82,11 @@ namespace Statecraft.Game.Map.Collection
         /// 2026, #756: "Sign off all 19").</summary>
         public const string BedouinCivilian = "figure-bedouin-civilian-1948-v1", BedouinTent = "generated-1948-06-bedouin-b-enclosed-striped-tent";
 
+        /// <summary>Tal Heuberger's Syrian Renault R35, the tank stopped at Degania Alef on 20 May 1948 (SpecialBuildingModels; owner,
+        /// 27 October 2026: "Degania landmark (Recommended)"). Its source is the vehicle delivery's compatibility FBX
+        /// (<see cref="SourceModelPath"/>).</summary>
+        public const string SyrianR35 = "generated-1948-14-syrian-renault-r35";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -139,6 +144,7 @@ namespace Statecraft.Game.Map.Collection
             (GeneratedProps, new[]
             {
                 "generated-1948-06-bedouin-b-enclosed-striped-tent",
+                "generated-1948-14-syrian-renault-r35",
             }),
         };
 
@@ -177,7 +183,12 @@ namespace Statecraft.Game.Map.Collection
             || id == BedouinCivilian;
 
         /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
-        public static bool IsGeneratedProp(string id) => id == BedouinTent;
+        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == SyrianR35;
+
+        /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
+        /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>
+        public static string SourceModelPath(string id) =>
+            $"{(IsBuilding(id) ? BuildingsFolder : Folder)}/{id}/{id}{(id == SyrianR35 ? "-compatibility" : "")}.fbx";
 
         /// <summary>Every generated model (figure or prop): imported by its own lossless importer, not the original Collection's.</summary>
         public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id);

@@ -34,6 +34,14 @@ namespace Statecraft.Game.Tests
                 SpecialBuildingModels.Shikun, "Ramat HaHayal starts after the sourced year 1950");
             Assert.AreEqual(1, SpecialBuildingModels.Placements(new DateTime(1951, 1, 1))
                 .Count(x => x.Model == SpecialBuildingModels.Shikun), "Ramat HaHayal on the owner-ruled year-level date");
+            // Degania's tank from the day of the Syrian attack, 20 May 1948 (owner, 27 October 2026: "Degania landmark").
+            CollectionAssert.DoesNotContain(SpecialBuildingModels.Placements(new DateTime(1948, 5, 19)).Select(x => x.Model), SpecialBuildingModels.SyrianR35);
+            var tank = SpecialBuildingModels.Placements(new DateTime(1948, 5, 20)).Single(x => x.Model == SpecialBuildingModels.SyrianR35);
+            Assert.AreEqual("degania_r35", tank.Key);
+            Assert.AreEqual(35.5747, tank.Lon, 1e-9, "Degania Alef's row in settlements_1948.yaml");
+            Assert.AreEqual(32.7081, tank.Lat, 1e-9);
+            StringAssert.Contains("degania_defence.yaml", tank.Source);
+            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's sourced length");
         }
 
         [Test]

@@ -129,8 +129,7 @@ public class OriginalModelsStreamingTests
     {
         foreach (var id in CollectionCatalog.Ids)
         {
-            string dir = CollectionCatalog.IsBuilding(id) ? CollectionCatalog.BuildingsFolder : CollectionCatalog.Folder;
-            string path = $"{dir}/{id}/{id}.fbx";
+            string path = CollectionCatalog.SourceModelPath(id);
             var model = (ModelImporter)AssetImporter.GetAtPath(path);
             Assert.AreEqual(ModelImporterMeshCompression.Off, model.meshCompression, id);
             Assert.AreEqual(ModelImporterAnimationCompression.Off, model.animationCompression, id);
@@ -142,6 +141,7 @@ public class OriginalModelsStreamingTests
             var lod = serialized.FindProperty("m_GenerateMeshLods") ?? serialized.FindProperty("generateMeshLods");
             Assert.IsNotNull(lod, "Unity's LOD setting must be verifiable");
             Assert.IsFalse(lod.boolValue, id);
+            string dir = CollectionCatalog.IsBuilding(id) ? CollectionCatalog.BuildingsFolder : CollectionCatalog.Folder;
             var texture = (TextureImporter)AssetImporter.GetAtPath($"{dir}/{id}/{id}_basecolor.jpg");
             texture.GetSourceTextureWidthAndHeight(out int width, out int height);
             Assert.GreaterOrEqual(texture.maxTextureSize, Math.Max(width, height), id);

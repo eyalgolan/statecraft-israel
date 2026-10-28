@@ -62,13 +62,13 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(79, ids.Count);
+        Assert.AreEqual(80, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(78, CollectionCatalog.Bundles.Count,
+        Assert.AreEqual(79, CollectionCatalog.Bundles.Count,
             "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 3, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 3, 2 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(26, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
@@ -162,7 +162,7 @@ public class CollectionImportTests
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
             if (CollectionCatalog.IsGenerated(id))
-                return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
+                return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
                     .Concat(CollectionCatalog.IsGeneratedProp(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })

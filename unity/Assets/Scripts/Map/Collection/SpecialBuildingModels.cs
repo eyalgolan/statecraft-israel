@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Collection
 {
-    /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places. They use the collection stream after the
+    /// <summary>Issue #707: Tal Heuberger's single-building models at sourced places, and the tank stopped at Degania Alef. They use the collection stream after the
     /// first frame, draw only close up (#700's switch, TownModelLayer.CloseEnterM / CloseExitM), follow the game date and
     /// fail open. b21 remains catalogued but unplaced until an artisan-workshop location is sourced.</summary>
     [ExecuteAlways]
@@ -16,7 +16,7 @@ namespace Statecraft.Game.Map.Collection
         public const string Name = "SpecialBuildingModels";
         public const string Shikun = "b11-shikun-housing-v2", Tegart = "b12-tegart-fort-v2",
             Barracks = "b18-military-barracks-v2", Workshop = "b21-artisan-workshop-v2",
-            Factory = "b22-industrial-factory-v2";
+            Factory = "b22-industrial-factory-v2", SyrianR35 = CollectionCatalog.SyrianR35;
 
         /// <summary>The one world scale of Tal Heuberger's building models: <see cref="Kits.SettlementKits.ModelScale"/> (issue
         /// #1032).</summary>
@@ -28,6 +28,9 @@ namespace Statecraft.Game.Map.Collection
         public static float RealLengthM(string model) => model switch
         {
             Tegart => 30f, Barracks => 25f, Factory => 30f, Shikun => 30f, Workshop => 12f,
+            // Sourced, unlike the buildings' design values: the Renault R35's length, 4.02 m (en.wiki Renault R35, infobox,
+            // checked 2026-10-28).
+            SyrianR35 => 4.02f,
             _ => throw new ArgumentException($"'{model}' is not one of #707's models", nameof(model)),
         };
 
@@ -56,7 +59,13 @@ namespace Statecraft.Game.Map.Collection
         /// entrance, and Netanya's Kiryat Eliezer Kaplan industrial zone was inaugurated in 1949 (en.wiki Netanya, checked
         /// 18 October 2026). Ramat HaHayal's shikun: most of its families moved in during 1950 (Balslev, Iyunim Bitkumat
         /// Israel 23, p. 247, in the shikun research note), and the owner ruled on 18 October 2026 ("Ramat HaHayal, 1950",
-        /// #1068) that the year-level date starts on 1 January 1951; its point is Wikidata Q2776362's (checked 2026-10-18).</summary>
+        /// #1068) that the year-level date starts on 1 January 1951; its point is Wikidata Q2776362's (checked 2026-10-18).
+        /// Degania's tank (owner, 27 October 2026: "Degania landmark (Recommended)"): Tal Heuberger's Syrian Renault R35 stands at
+        /// Degania Alef from the day of the attack, 20 May 1948: the Syrian attack of that dawn, "an R35 that broke through the
+        /// fence and was stopped (it stands there today)" (JVL, credited to the IDF, in content/events/degania_defence.yaml),
+        /// and en.wiki Renault R35 ("five R35s took part in an unsuccessful Syrian Army attack on the Jewish kibbutz Degania
+        /// Alef" on 20 May 1948; one disabled R35 still stands near the kibbutz as a memorial; checked 2026-10-28). Its point
+        /// is Degania Alef's row in content/map/settlements_1948.yaml (en.wiki Degania Alef).</summary>
         static readonly Want[] All =
         {
             new Want("latrun_tegart", Tegart, new DateTime(1948, 5, 15), 34.98139, 31.83194,
@@ -68,6 +77,9 @@ namespace Statecraft.Game.Map.Collection
             new Want("ramat_hahayal_shikun", Shikun, new DateTime(1951, 1, 1), 34.8365083, 32.1152583,
                 "research_notes/Map/shikun-before-1952.md: 1 (Balslev, Iyunim Bitkumat Israel 23, p. 247, " +
                 "https://in.bgu.ac.il/bgi/iyunim/23/yaron-balslev.pdf); https://www.wikidata.org/wiki/Q2776362 (checked 2026-10-18)"),
+            new Want("degania_r35", SyrianR35, new DateTime(1948, 5, 20), 35.5747, 32.7081,
+                "content/events/degania_defence.yaml (https://www.jewishvirtuallibrary.org/the-battle-for-degania-may-1948); " +
+                "https://en.wikipedia.org/wiki/Renault_R35 (checked 2026-10-28); content/map/settlements_1948.yaml: degania_alef"),
         };
 
         public static IReadOnlyList<Want> Placements(DateTime date) => All.Where(x => date >= x.From).ToList();

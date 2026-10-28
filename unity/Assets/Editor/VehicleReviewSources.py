@@ -17,6 +17,13 @@ import zipfile
 
 IDS = {13: "generated-1948-13-egyptian-spitfire", 14: "generated-1948-14-syrian-renault-r35", 16: "generated-1948-16-egyptian-dakota-c47"}
 ART = Path("unity/Assets/Editor/Generated1948VehicleReview")
+# A candidate placed in the game lives in the 1948 Collection's folder (the R35 at Degania Alef; owner, 27 October 2026).
+PLACED = {"generated-1948-14-syrian-renault-r35"}
+COLLECTION = Path("unity/Assets/Art/Collection")
+
+
+def art_dir(repo, mid):
+    return repo / (COLLECTION if mid in PLACED else ART) / mid
 SOURCES = Path("asset-sources/generated-1948/vehicles")
 sha = lambda data: hashlib.sha256(data).hexdigest()
 
@@ -60,7 +67,7 @@ def verify(repo):
         data, colour = glb(source)
         assert len(data.get("animations", [])) == item["source_animation_count"] == 0
         assert jpeg_size(colour) == item["texture_dimensions"] == [4096, 4096]
-        dest = repo / ART / item["id"]
+        dest = art_dir(repo, item["id"])
         assert (dest / (item["id"] + "_basecolor.jpg")).read_bytes() == colour
         assert sha(colour) == item["texture_sha256"]
         assert sha((dest / (item["id"] + "-compatibility.fbx")).read_bytes()) == item["compatibility_fbx_sha256"]
@@ -95,7 +102,7 @@ def convert(repo, batch):
                 data, colour = glb(blob)
                 assert not data.get("skins") and not data.get("animations")
                 assert jpeg_size(colour) == [4096, 4096]
-                dest = repo / ART / mid; dest.mkdir(parents=True, exist_ok=True)
+                dest = art_dir(repo, mid); dest.mkdir(parents=True, exist_ok=True)
                 (dest / (mid + "_basecolor.jpg")).write_bytes(colour)
                 bpy.ops.wm.read_factory_settings(use_empty=True)
                 bpy.ops.import_scene.gltf(filepath=str(batch / record["source_relative"]), merge_vertices=False)

@@ -12,6 +12,10 @@ namespace Statecraft.Game.VehicleReview
         public const string Path = Folder + "/Models.asset";
         public const string ScenePath = Folder + "/VehicleReview.unity";
         public static readonly string[] Ids = { "generated-1948-13-egyptian-spitfire", "generated-1948-14-syrian-renault-r35", "generated-1948-16-egyptian-dakota-c47" };
+        /// <summary>The folder of candidate <paramref name="id"/>: the 1948 Collection's once it is placed in the game (the R35, at
+        /// Degania Alef from 20 May 1948: Map.Collection.SpecialBuildingModels), else this review's folder.</summary>
+        public static string DirOf(string id) => Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(id)
+            ? $"{Statecraft.Game.Map.Collection.CollectionCatalog.Folder}/{id}" : $"{Folder}/{id}";
         [Serializable] public sealed class Entry
         {
             public string id = "", label = "";
