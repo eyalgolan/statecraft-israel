@@ -38,7 +38,7 @@ public class UnitFigureMotionTests
             motion.Begin(Vector3.right * 100f);
             motion.enabled = false;
             // EditMode does not dispatch this runtime callback for an unstarted component.
-            go.SendMessage("OnDisable", SendMessageOptions.RequireReceiver);
+            typeof(UnitTokenMotion).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(motion, null);
             Assert.IsFalse(motion.Moving);
             Assert.AreEqual(Vector3.zero, go.transform.position);
             Assert.AreEqual(1, changes, "the camera must refresh cached hit bounds after the snap");
