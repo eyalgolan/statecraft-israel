@@ -73,7 +73,7 @@ assert.equal(elements['companion'].lang, 'he');
 assert.equal(elements['companion'].hidden, false);
 assert.equal(elements['companion-title'].textContent, payload.title);
 assert.deepEqual(elements['companion-body'].children.map(x => x.textContent), payload.body);
-assert.deepEqual(elements['companion-choices'].children.map(x => x.textContent), ['First\nReturns to the recorded course.', 'Second — Unavailable']);
+assert.deepEqual(elements['companion-choices'].children.map(x => x.textContent), ['First\nReturns to the recorded course.', 'Second: Unavailable']);
 assert.equal(elements['companion-focus'].textContent, 'מפה');
 assert.equal(elements['companion-status'].textContent, 'Not done: reason');
 assert.equal(document.head.children.length, 1);

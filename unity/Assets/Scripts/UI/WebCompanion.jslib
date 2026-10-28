@@ -162,7 +162,7 @@ mergeInto(LibraryManager.library, {
           node("choices").textContent = "";
           snapshot.choices.forEach(function (choice) {
             var li = document.createElement("li"); li.dir = "auto";
-            li.textContent = choice.text + (choice.available ? "" : " — " + snapshot.unavailable)
+            li.textContent = choice.text + (choice.available ? "" : ": " + snapshot.unavailable)
               + (choice.note ? "\n" + choice.note : "");
             node("choices").appendChild(li);
           });
