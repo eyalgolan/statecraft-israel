@@ -1969,7 +1969,10 @@ def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
 
 
 @pytest.mark.parametrize("kw", [{"target": None}, {"target": "eyalgolan/statecraft-israel:html5"},
-                                {"page_url": None}, {"public_page": PAGE_URL}])
+                                {"target": "eyalgolan/statecraft-israel:savetest"},   # another channel, same page
+                                {"target": "EyalGolan/Statecraft-Israel:html5"},
+                                {"page_url": None}, {"public_page": PAGE_URL},
+                                {"public_page": PAGE_URL.upper() + "/#game"}])
 def test_savetest_runs_only_against_a_separate_test_page(saved, kw):
     t = saved(**kw)   # 28 Oct 2026: each upload hid the public game while itch unpacked it, for up to an hour
     assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
@@ -1988,9 +1991,22 @@ def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tm
     monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
     built = []
     monkeypatch.setattr(nightly, "Itch", lambda *a: built.append(a))
-    cfg = dataclasses.replace(ns.Config(), butler=butler)
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md")
     assert nightly.run_savetest(cfg, tmp_path, TAG) == 1
     assert built == [] and "savetest_itch_target" in capsys.readouterr().err
+
+
+def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path, monkeypatch):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    built = []
+    monkeypatch.setattr(nightly, "Itch", lambda runner, path, target: built.append(target) or "itch")
+    monkeypatch.setattr(nightly, "savetest", lambda cfg, config, job, runner, gh, itch, *, tag: "PASS")
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET, savetest_itch_page_url=PAGE_URL)
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
 
 
 def too_many_requests(retry_after=None):

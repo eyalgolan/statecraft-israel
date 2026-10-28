@@ -885,11 +885,23 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     return result
 
 
+def _itch_project(target: str) -> str:
+    """`user/project` of a butler target, without its channel: every channel of a project uploads to its one page."""
+    return target.rpartition(":")[0].lower()
+
+
+def _page_key(url: str) -> tuple[str, str]:
+    parts = urllib.parse.urlsplit(url.strip())
+    return parts.netloc.lower(), parts.path.rstrip("/").lower()
+
+
 def _test_page_problem(cfg: Config) -> str | None:
-    """Why the save test may not push, or None: it needs its own test page, distinct from the public one."""
+    """Why the save test may not push, or None: it needs its own test project, distinct from the public one."""
     if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
         return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
-    if cfg.savetest_itch_target == cfg.itch_target or cfg.savetest_itch_page_url == cfg.itch_page_url:
+    if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
+        return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
+    if cfg.itch_page_url and _page_key(cfg.savetest_itch_page_url) == _page_key(cfg.itch_page_url):
         return "the save test's test page must not be the public itch page"
     return None
 
