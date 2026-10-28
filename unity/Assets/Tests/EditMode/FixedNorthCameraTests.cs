@@ -43,6 +43,9 @@ public class FixedNorthCameraTests : InputTestFixture
         {
             if (go != null) Object.DestroyImmediate(go);
             go = null!; controller = null!;
+            // Leave every map of the shared asset off (the UI map too, not only Camera): a later input test must not
+            // inherit this fixture's enabled asset state.
+            if (actions != null) actions.Disable();
         }
     }
 
