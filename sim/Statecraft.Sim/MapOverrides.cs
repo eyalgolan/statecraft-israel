@@ -241,4 +241,222 @@ namespace Statecraft.Sim
                 if (TryLocation(l.Id, out var q, out var r)) { l.Q = q; l.R = r; }
         }
     }
+    /// <summary>Authoring-only envelope. No loader or runtime caller consumes this format.
+    /// Region, field and facility semantics remain with their owning issues. No evidence or campaign state lives here.</summary>
+    public sealed class MapEditorOverlay
+    {
+        // Strict end assertion also rejects a final LF (unlike the .NET $ anchor).
+        public const string TokenPattern = @"^[^\s\u0000-\u001f\u007f]+(?![\s\S])";
+        public const string VersionId = "map-editor-0.3";
+        public string Version { get; set; } = "";
+        public string Ruleset { get; set; } = "";
+        public bool? Draft { get; set; }
+        public string BaseRevision { get; set; } = "";
+        public string BaseDigest { get; set; } = "";
+        public MapOverrides Overlay { get; set; } = null!;
+        public List<MapEditorWorkable> Workable { get; set; } = null!;
+        public List<MapEditorRegion> Regions { get; set; } = null!;
+        public List<MapEditorInfrastructure> Infrastructure { get; set; } = null!;
+
+        // R-MEDIT-003: no receipt or export until accepted dependency adapters and base-manifest contract exist.
+        [YamlIgnore] public bool CanExport => false;
+
+        static readonly IDeserializer Reader = new DeserializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance).WithDuplicateKeyChecking().Build();
+
+        public static MapEditorOverlay Parse(string source, string selectedRuleset)
+        {
+            if (selectedRuleset != SaveGame.Gdd03Ruleset)
+                throw Error("MAPEDIT_RULESET", "ruleset", "select an explicit gdd-0.3 authoring context");
+            MapEditorOverlay value;
+            try
+            {
+                CheckPayloadCoordinates(source);
+                value = Reader.Deserialize<MapEditorOverlay>(source)
+                    ?? throw Error("MAPEDIT_SHAPE", "(file)", "an envelope is required");
+            }
+            catch (YamlException e)
+            {
+                throw Error("MAPEDIT_SHAPE", FormattableString.Invariant($"line {e.Start.Line}"), e.InnerException?.Message ?? e.Message);
+            }
+            Validate(value);
+            return value;
+        }
+
+        static void CheckPayloadCoordinates(string source)
+        {
+            var stream = new YamlDotNet.RepresentationModel.YamlStream();
+            stream.Load(new System.IO.StringReader(source));
+            if (stream.Documents.Count != 1) throw Error("MAPEDIT_SHAPE", "(file)", "one YAML document is required");
+            if (!(stream.Documents[0].RootNode is YamlDotNet.RepresentationModel.YamlMappingNode root)) return;
+            if (!root.Children.TryGetValue(new YamlDotNet.RepresentationModel.YamlScalarNode("overlay"), out var payload)
+                || !(payload is YamlDotNet.RepresentationModel.YamlMappingNode overlay)) return;
+            foreach (var section in overlay.Children)
+            {
+                if (!(section.Value is YamlDotNet.RepresentationModel.YamlSequenceNode rows)) continue;
+                foreach (var row in rows.Children)
+                {
+                    if (!(row is YamlDotNet.RepresentationModel.YamlMappingNode mapping)) continue;
+                    if (!mapping.Children.TryGetValue(new YamlDotNet.RepresentationModel.YamlScalarNode("hex"), out var hex)
+                        || !(hex is YamlDotNet.RepresentationModel.YamlMappingNode coordinates)
+                        || !HasInteger(coordinates, "q") || !HasInteger(coordinates, "r"))
+                        throw Error("MAPEDIT_SHAPE", "overlay." + section.Key + ".hex", "both axial coordinates are required");
+                }
+            }
+        }
+
+        static bool HasInteger(YamlDotNet.RepresentationModel.YamlMappingNode map, string key) =>
+            map.Children.TryGetValue(new YamlDotNet.RepresentationModel.YamlScalarNode(key), out var node)
+            && node is YamlDotNet.RepresentationModel.YamlScalarNode scalar
+            && int.TryParse(scalar.Value, System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out _);
+
+        static void Validate(MapEditorOverlay value)
+        {
+            if (value.Version != VersionId) throw Error("MAPEDIT_VERSION", "version", "unsupported editor envelope version");
+            if (value.Ruleset != SaveGame.Gdd03Ruleset) throw Error("MAPEDIT_RULESET", "ruleset", "expected gdd-0.3");
+            if (value.Draft == null) throw Error("MAPEDIT_SHAPE", "draft", "an explicit boolean is required");
+            if (!IsToken(value.BaseRevision) || value.BaseDigest == null
+                || value.BaseDigest.Length != 64 || value.BaseDigest.Any(c => !(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f')))
+                throw Error("MAPEDIT_BASE", "base", "a single-line revision token and lowercase SHA-256 base-input digest are required");
+            if (value.Overlay == null || value.Workable == null || value.Regions == null || value.Infrastructure == null)
+                throw Error("MAPEDIT_SHAPE", "(file)", "overlay and all edit lists are required");
+            // Reuse legacy duplicate/shape checks without changing their behavior or serialization.
+            try { MapOverrides.Serialize(value.Overlay); }
+            catch (ContentException e) { throw Error("MAPEDIT_SHAPE", "overlay." + e.Field, e.Message); }
+            foreach (var row in value.Overlay.Terrain) Nonempty(row.Value, "overlay.terrain.value");
+            foreach (var row in value.Overlay.Control)
+            { Nonempty(row.Period, "overlay.control.period"); Nonempty(row.Value, "overlay.control.value"); }
+            foreach (var row in value.Overlay.Locations)
+                if (row.Id == null || !System.Text.RegularExpressions.Regex.IsMatch(row.Id, "^[a-z][a-z0-9_]*$"))
+                    throw Error("MAPEDIT_SHAPE", "overlay.locations.id", "a stable location id is required");
+            CheckRows(value.Workable, "workable", x => HexKey(x.Hex));
+            foreach (var row in value.Workable)
+                if (row.Value == null) throw Error("MAPEDIT_SHAPE", "workable.value", "an explicit boolean is required");
+            CheckRows(value.Regions, "regions", x => HexKey(x.Hex));
+            foreach (var row in value.Regions) Token(row.RegionId, "regions.region_id");
+            CheckRows(value.Infrastructure, "infrastructure", x => x.Id);
+            foreach (var row in value.Infrastructure)
+            {
+                Token(row.Id, "infrastructure.id"); Token(row.Kind, "infrastructure.kind");
+                Token(row.ParentId, "infrastructure.parent_id");
+            }
+        }
+
+        static ContentException Error(string code, string field, string message) =>
+            new ContentException(MapOverrides.FileName, field, code + ": " + message);
+
+        static void Nonempty(string value, string field)
+        {
+            if (string.IsNullOrEmpty(value)) throw Error("MAPEDIT_SHAPE", field, "a nonempty value is required");
+        }
+
+        static bool IsToken(string value) => value != null
+            && System.Text.RegularExpressions.Regex.IsMatch(value, TokenPattern);
+
+        static void Token(string value, string field)
+        {
+            if (!IsToken(value)) throw Error("MAPEDIT_SHAPE", field, "a single-line owning-registry token without whitespace or controls is required");
+        }
+
+        static string HexKey(MapEditorHex hex) => FormattableString.Invariant($"{hex.Q},{hex.R}");
+
+        static void CheckRows<T>(List<T> rows, string field, Func<T, string> key) where T : MapEditorHexEdit
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var at = FormattableString.Invariant($"{field}[{i}]");
+                var row = rows[i];
+                if (row == null || row.Hex == null || row.Hex.Q == null || row.Hex.R == null)
+                    throw Error("MAPEDIT_SHAPE", at + ".hex", "an axial hex with both integer coordinates is required");
+                if (!seen.Add(key(row))) throw Error("MAPEDIT_DUPLICATE", at, "a second override of the same identity");
+            }
+        }
+
+        static string Quote(string value) => "'" + value.Replace("'", "''") + "'";
+        static string Hex(MapEditorHex h) => FormattableString.Invariant($"{{ q: {h.Q}, r: {h.R} }}");
+        static void Rows<T>(StringBuilder text, string field, IEnumerable<T> rows, Func<T, string> format)
+        {
+            var list = rows.ToList();
+            if (list.Count == 0) { text.Append(field).Append(": []\n"); return; }
+            text.Append(field).Append(":\n");
+            foreach (var row in list) text.Append("  - ").Append(format(row)).Append('\n');
+        }
+
+        /// <summary>Stable authoring text, not a validation receipt. Never mutates or reorders caller-owned lists.</summary>
+        public static string Serialize(MapEditorOverlay value)
+        {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            // Validate object callers too; never use a culture-sensitive intermediate serializer.
+            Validate(value);
+            var copy = value;
+            var text = new StringBuilder("# yaml-language-server: $schema=../schema/map-editor-overlay.schema.json\n");
+            text.Append("version: ").Append(Quote(copy.Version)).Append("\nruleset: 'gdd-0.3'\ndraft: ")
+                .Append(copy.Draft == true ? "true" : "false").Append("\nbase_revision: ").Append(Quote(copy.BaseRevision))
+                .Append("\nbase_digest: ").Append(Quote(copy.BaseDigest)).Append("\noverlay:\n");
+            foreach (var line in MapOverrides.Serialize(copy.Overlay).Split('\n').Skip(1))
+                if (line.Length != 0) text.Append("  ").Append(line).Append('\n');
+            Rows(text, "workable", copy.Workable.OrderBy(x => x.Hex.R).ThenBy(x => x.Hex.Q),
+                x => "{ hex: " + Hex(x.Hex) + ", value: " + (x.Value == true ? "true" : "false") + " }");
+            Rows(text, "regions", copy.Regions.OrderBy(x => x.Hex.R).ThenBy(x => x.Hex.Q),
+                x => "{ hex: " + Hex(x.Hex) + ", region_id: " + Quote(x.RegionId) + " }");
+            Rows(text, "infrastructure", copy.Infrastructure.OrderBy(x => x.Id, StringComparer.Ordinal),
+                x => "{ id: " + Quote(x.Id) + ", hex: " + Hex(x.Hex) + ", kind: " + Quote(x.Kind) + ", parent_id: " + Quote(x.ParentId) + " }");
+            return text.ToString();
+        }
+
+        /// <summary>Infrastructure diagnostics only. Caller supplies current base identity; this is not Content.Hash.
+        /// Missing domain adapters are explicit errors, even on an empty candidate. No automatic repair is performed.</summary>
+        public IReadOnlyList<MapEditorDiagnostic> Diagnostics(string currentRevision, string currentDigest)
+        {
+            var result = new List<MapEditorDiagnostic>();
+            if (BaseRevision != currentRevision || BaseDigest != currentDigest)
+                result.Add(new MapEditorDiagnostic("MAPEDIT_BASE_CONFLICT", "base",
+                    "overlay base " + BaseRevision + "/" + BaseDigest + "; current base " + currentRevision + "/" + currentDigest,
+                    "Compare base inputs and deliberately rebase; retain the current edits."));
+            if (Draft == true)
+                result.Add(new MapEditorDiagnostic("MAPEDIT_DRAFT", "draft", "draft input cannot be canonical content",
+                    "Resolve all diagnostics before requesting canonical export."));
+            foreach (var field in new[] { "regions", "fields", "facilities", "corridors", "anchors", "targets", "objectives", "base_manifest" })
+                result.Add(new MapEditorDiagnostic("MAPEDIT_DEPENDENCY_UNAVAILABLE", field, "accepted validation adapter is not installed",
+                    "Integrate the owning contract before canonical save or export."));
+            return result.OrderBy(x => x.Field, StringComparer.Ordinal).ThenBy(x => x.Code, StringComparer.Ordinal).ToList().AsReadOnly();
+        }
+    }
+
+    public sealed class MapEditorHex
+    {
+        public int? Q { get; set; }
+        public int? R { get; set; }
+    }
+    public abstract class MapEditorHexEdit
+    {
+        public MapEditorHex Hex { get; set; } = null!;
+    }
+    public sealed class MapEditorWorkable : MapEditorHexEdit
+    {
+        public bool? Value { get; set; }
+    }
+    public sealed class MapEditorRegion : MapEditorHexEdit
+    {
+        public string RegionId { get; set; } = "";
+    }
+    public sealed class MapEditorInfrastructure : MapEditorHexEdit
+    {
+        public string Id { get; set; } = "";
+        public string Kind { get; set; } = "";
+        public string ParentId { get; set; } = "";
+    }
+    public sealed class MapEditorDiagnostic
+    {
+        public string Code { get; }
+        public string File => MapOverrides.FileName;
+        public string Field { get; }
+        public string Message { get; }
+        public string Action { get; }
+        public MapEditorDiagnostic(string code, string field, string message, string action)
+        { Code = code; Field = field; Message = message; Action = action; }
+    }
+
 }
