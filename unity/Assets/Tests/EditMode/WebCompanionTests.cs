@@ -31,7 +31,7 @@ public sealed class WebCompanionTests
         var root = Tree(); bool active = true; int inputs = 0;
         root.Q<Button>().clicked += () => inputs++;
         var sent = new List<string>();
-        using var mirror = new WebCompanion(root, Text, () => active, sent.Add);
+        using var mirror = new WebCompanion(root, Text, null, () => active, sent.Add);
         var state = mirror.Capture(root.Q<Button>());
         Assert.AreEqual("A <title> & a name", state.title);
         CollectionAssert.Contains(state.body, "Body שלום");
@@ -54,7 +54,7 @@ public sealed class WebCompanionTests
     public void HiddenStatusAndFocusAreClearedAndUnnamedCardHasItsTitle()
     {
         var root = Tree();
-        using var mirror = new WebCompanion(root, Text, () => true, _ => { });
+        using var mirror = new WebCompanion(root, Text, null, () => true, _ => { });
         Assert.AreEqual("A <title> & a name", mirror.Capture(root.Q("event-card")).focus);
         root.style.display = DisplayStyle.None;
         var state = mirror.Capture(root.Q<Button>());
@@ -76,7 +76,7 @@ public sealed class WebCompanionTests
             ui.Root.Clear();
             var root = Tree(); ui.Root.Add(root);
             var sent = new List<string>();
-            using var mirror = new WebCompanion(root, Text, () => true, sent.Add);
+            using var mirror = new WebCompanion(root, Text, null, () => true, sent.Add);
             yield return null;
             yield return null;
             var button = root.Q<Button>();
@@ -113,17 +113,30 @@ public sealed class WebCompanionTests
     public void SendsOnlyChangedSnapshotsAndDisposalClearsAndStopsPublishing()
     {
         var root = Tree(); var sent = new List<string>();
-        var mirror = new WebCompanion(root, Text, () => true, sent.Add);
+        var mirror = new WebCompanion(root, Text, null, () => true, sent.Add);
+        Assert.IsEmpty(sent, "nothing is published before the first frame");
         mirror.Refresh(); var initial = sent.Count;
+        Assert.AreEqual(1, initial);
         mirror.Refresh(); Assert.AreEqual(initial, sent.Count);
         root.Q<Label>("toast").text = "Result";
         mirror.Refresh(); Assert.AreEqual(initial + 1, sent.Count);
         mirror.Dispose(); Assert.AreEqual("null", sent[sent.Count - 1]);
         var disposed = sent.Count;
         mirror.Refresh(); mirror.Dispose(); Assert.AreEqual(disposed, sent.Count);
-        using var next = new WebCompanion(root, Text, () => false, sent.Add);
+        using var next = new WebCompanion(root, Text, null, () => false, sent.Add);
         next.Refresh();
         Assert.AreEqual("", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).title);
+    }
+
+    [Test]
+    public void APublicationThatThrewIsTriedAgain()
+    {
+        var root = Tree(); var sent = new List<string>(); var fail = true;
+        using var mirror = new WebCompanion(root, Text, null, () => true, json => { if (fail) throw new System.InvalidOperationException("page"); sent.Add(json); });
+        Assert.Throws<System.InvalidOperationException>(mirror.Refresh);
+        fail = false;
+        mirror.Refresh();
+        Assert.AreEqual(1, sent.Count, "the unchanged snapshot goes out once the page takes it");
     }
 
     static UiText Locale(bool he) => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(he ? UiPaths.StringsHebrew : UiPaths.Strings).text, he ? "strings.he.yaml" : "strings.en.yaml");
@@ -137,7 +150,7 @@ public sealed class WebCompanionTests
         Assert.IsTrue(stop.focusable);
         int inputs = 0;
         stop.RegisterCallback<NavigationSubmitEvent>(_ => inputs++);
-        using var mirror = new WebCompanion(ui.Root, Locale(he), () => false, _ => { });
+        using var mirror = new WebCompanion(ui.Root, Locale(he), null, () => false, _ => { });
         Assert.AreEqual(expected, mirror.Capture(stop).focus);
         using (var e = NavigationSubmitEvent.GetPooled()) { e.target = stop; stop.SendEvent(e); }
         Assert.AreEqual(1, inputs, "the mirror registers no input handlers");
@@ -158,7 +171,7 @@ public sealed class WebCompanionTests
         var bridge = new Statecraft.Game.UI.SimBridge(game, text);
         using var ui = new UiTestKit();
         using var card = new EventCardPresenter(ui.Root, bridge, text, null);
-        using var mirror = new WebCompanion(ui.Root, text, () => card.Shown != null, _ => { });
+        using var mirror = new WebCompanion(ui.Root, text, bridge, () => card.Shown != null, _ => { });
         Assert.AreEqual(e.Id, card.Shown!.Id);
         var capture = System.Environment.GetEnvironmentVariable("WEB_COMPANION_CAPTURE_DIR");
         if (!string.IsNullOrEmpty(capture))
@@ -195,7 +208,9 @@ public sealed class WebCompanionTests
             var sent = new List<string>(); game.CompanionSend = sent.Add;
             game.Language = UiLanguage.English;
             game.Begin(inputs, 0);
-            Assert.IsNotEmpty(sent, "Begin must invoke the production hookup");
+            Assert.IsEmpty(sent, "nothing is published before the first frame");
+            game.Companion!.Refresh();
+            Assert.IsNotEmpty(sent, "Begin must create the mirror with the production hookup");
             var old = game.Companion!;
             Assert.AreEqual("en", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
             var session = game.Bridge!.Session;
@@ -208,6 +223,7 @@ public sealed class WebCompanionTests
             Assert.AreSame(session, game.Bridge!.Session);
             Assert.AreSame(state, game.Bridge.State);
             Assert.Contains("null", sent, "the old mirror is cleared before publishing its replacement");
+            game.Companion!.Refresh();
             Assert.AreEqual("he", JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]).lang);
             var count = sent.Count; old.Refresh(); Assert.AreEqual(count, sent.Count);
             var current = game.Companion!;
@@ -222,6 +238,135 @@ public sealed class WebCompanionTests
             UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
             Statecraft.Game.Map.VisualToggles.Clear();
             if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+        }
+    }
+
+    static readonly Statecraft.Sim.Content GameContent = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+
+    static Statecraft.Game.UI.SimBridge NewBridge(UiText text) =>
+        new Statecraft.Game.UI.SimBridge(Statecraft.Sim.GameSession.New(GameContent, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical), text);
+
+    [Test]
+    public void CoveredChoicesAreUnavailableAndComeBackWhenUncovered()
+    {
+        // The production cover rule: an open screen disables the decision layer, not each button's own state.
+        var root = new VisualElement { name = "root" };
+        var layer = new VisualElement { name = "event-layer" }; root.Add(layer);
+        layer.Add(Tree());
+        using var mirror = new WebCompanion(root, Text, null, () => true, _ => { });
+        CollectionAssert.AreEqual(new[] { true, false }, System.Linq.Enumerable.Select(mirror.Capture().choices, c => c.available));
+        root.AddToClassList(ScreenNav.ScreenOpenClass);
+        ScreenNav.DisableCovered(root);
+        Assert.IsFalse(layer.enabledSelf, "precondition: the open screen covers the decision layer");
+        var covered = mirror.Capture();
+        CollectionAssert.AreEqual(new[] { false, false }, System.Linq.Enumerable.Select(covered.choices, c => c.available));
+        Assert.AreEqual("First", covered.choices[0].text, "a covered choice stays readable");
+        root.RemoveFromClassList(ScreenNav.ScreenOpenClass);
+        ScreenNav.DisableCovered(root);
+        CollectionAssert.AreEqual(new[] { true, false }, System.Linq.Enumerable.Select(mirror.Capture().choices, c => c.available),
+            "uncovered: each choice is back to its own state, the unpaid one still unavailable");
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void EndTurnReportIsMirroredWithoutAnEventAndClearsWhenClosed(bool he)
+    {
+        var text = Locale(he);
+        var bridge = NewBridge(text);
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var toast = new ToastPresenter(ui.Root, bridge, text);
+        using var report = new TurnReportPresenter(ui.Root, bridge, text, nav);
+        using var mirror = new WebCompanion(ui.Root, text, bridge, () => false, _ => { });
+        Assert.AreEqual("", mirror.Capture().reportTitle);
+        Assert.IsEmpty(mirror.Capture().report);
+        bridge.EndTurn();
+        Assert.IsTrue(report.IsOpen, "precondition: End Turn opens the report");
+        var state = mirror.Capture();
+        Assert.AreEqual(bridge.State.Turn, state.turn);
+        Assert.AreEqual(text["report.title"], state.reportTitle);
+        StringAssert.Contains(text["report.title"], state.status, "the status line names the result");
+        var expected = new List<string> { text["report.intro"] };
+        foreach (var row in ui.Q<ScrollView>("turn-report-rows").Children())
+            expected.Add(string.Join("\n", System.Linq.Enumerable.Where(System.Linq.Enumerable.Select(row.Query<Label>().ToList(), l => l.text), t => t.Length > 0)));
+        Assert.Greater(expected.Count, 1, "precondition: the report has rows");
+        CollectionAssert.AreEqual(expected, state.report, "the report's own words, in its order");
+        var capture = System.Environment.GetEnvironmentVariable("WEB_COMPANION_CAPTURE_DIR");
+        if (!string.IsNullOrEmpty(capture))
+        {
+            System.IO.Directory.CreateDirectory(capture);
+            System.IO.File.WriteAllText(System.IO.Path.Combine(capture, he ? "report-he.json" : "report-en.json"), JsonUtility.ToJson(state));
+        }
+        report.Close();
+        state = mirror.Capture();
+        Assert.AreEqual("", state.reportTitle);
+        Assert.IsEmpty(state.report);
+        StringAssert.DoesNotContain(text["report.title"], state.status);
+    }
+
+    [UnityTest]
+    public IEnumerator RefusalWithoutChangedAndTheSameResultOnTheNextTurnArePublished()
+    {
+        var ui = new UiTestKit();
+        var settings = Object.Instantiate(ui.Doc.panelSettings);
+        var texture = new RenderTexture(640, 480, 0);
+        settings.targetTexture = texture;
+        var text = Locale(false);
+        var bridge = NewBridge(text);
+        try
+        {
+            ui.Doc.panelSettings = settings; // a rendered runtime panel, so its scheduler runs
+            ui.Root.Clear();
+            var root = Tree(); ui.Root.Add(root);
+            using var toast = new ToastPresenter(root, bridge, text);
+            var sent = new List<string>();
+            var changed = 0; bridge.Changed += () => changed++;
+            var mirror = new WebCompanion(root, text, bridge, () => true, sent.Add);
+            Assert.IsEmpty(sent, "nothing is published before the first frame");
+            yield return Pump(() => sent.Count > 0);
+            Assert.IsNotEmpty(sent, "the first frame publishes");
+            WebCompanion.Snapshot Last() => JsonUtility.FromJson<WebCompanion.Snapshot>(sent[sent.Count - 1]);
+
+            var reason = bridge.Queue(new Statecraft.Sim.SetPolicy("curfew", 1));
+            Assert.IsNotNull(reason, "precondition: the order is refused");
+            Assert.AreEqual(0, changed, "precondition: a refusal raises no Changed");
+            var refused = text.Format("toast.refused", reason!);
+            yield return Pump(() => Last().status == refused);
+            Assert.AreEqual(refused, Last().status, "a refusal without Changed reaches the page");
+            var firstTurn = Last().turn;
+
+            bridge.EndTurn();
+            Assert.AreEqual(reason, bridge.Queue(new Statecraft.Sim.SetPolicy("curfew", 1)), "precondition: the same refusal");
+            yield return Pump(() => Last().turn != firstTurn && Last().status == refused);
+            Assert.AreEqual(refused, Last().status);
+            Assert.AreEqual(bridge.State.Turn, Last().turn, "the same result on a new turn is a new publication");
+            Assert.AreNotEqual(firstTurn, Last().turn);
+
+            bridge.Queue(new Statecraft.Sim.SetPolicy("curfew", 2));   // schedules a publication...
+            mirror.Dispose();                                           // ...that disposal cancels
+            var count = sent.Count;
+            Assert.AreEqual("null", sent[count - 1]);
+            yield return Pump(() => false, 0.3);
+            Assert.AreEqual(count, sent.Count, "a pending publication never runs after disposal");
+            bridge.Queue(new Statecraft.Sim.SetPolicy("curfew", 3));
+            yield return Pump(() => false, 0.3);
+            Assert.AreEqual(count, sent.Count, "disposal unsubscribes from the bridge");
+        }
+        finally
+        {
+            ui.Dispose(); Object.DestroyImmediate(settings); texture.Release(); Object.DestroyImmediate(texture);
+        }
+    }
+
+    /// <summary>Frames until the condition holds or the time runs out (EditMode yields alone do not pump a UIDocument's
+    /// runtime scheduler).</summary>
+    static IEnumerator Pump(System.Func<bool> until, double seconds = 2)
+    {
+        var end = EditorApplication.timeSinceStartup + seconds;
+        while (!until() && EditorApplication.timeSinceStartup < end)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            yield return null;
         }
     }
 }

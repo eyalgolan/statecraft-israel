@@ -8,8 +8,10 @@ using UnityEngine.UIElements;
 namespace Statecraft.Game.UI
 {
     /// <summary>One-way WebGL mirror of the presenter's words. It never receives game commands or changes focus.
-    /// Periodic sampling also catches toast writes, focus moves and controls rebuilt without a sim change.
-    /// Owned by GameRoot: a restart/language switch disposes it and clears the page before creating the next mirror.</summary>
+    /// It publishes in the frame after a sim change, an End Turn, a refused order, a click, a submit or a focus move, once
+    /// the presenters have rendered; periodic sampling also catches toast writes and controls rebuilt without any of those.
+    /// Nothing is published before the first frame. Owned by GameRoot: a restart/language switch disposes it and clears the
+    /// page before creating the next mirror.</summary>
     public sealed class WebCompanion : IDisposable
     {
         [Serializable]
@@ -23,24 +25,45 @@ namespace Statecraft.Game.UI
         public sealed class Snapshot
         {
             public string lang = "", heading = "", help = "", focusHeading = "", statusHeading = "", choicesHeading = "", empty = "", unavailable = "";
-            public string title = "", focus = "", status = "";
+            public string title = "", focus = "", status = "", reportTitle = "";
+            /// <summary>The game turn: the page announces the same status again when it comes on a new turn.</summary>
+            public int turn;
             public string[] body = Array.Empty<string>();
+            /// <summary>The open turn report's introduction, then one entry a row: its heading and its causes, one a line.</summary>
+            public string[] report = Array.Empty<string>();
             public Choice[] choices = Array.Empty<Choice>();
         }
 
         readonly VisualElement root;
         readonly UiText text;
+        readonly SimBridge? bridge;
         readonly Func<bool> hasEvent;
         readonly Action<string> send;
-        readonly IVisualElementScheduledItem pending;
+        readonly IVisualElementScheduledItem poll;
+        readonly Action later;
+        readonly Action<IReadOnlyList<Statecraft.Sim.Rejection>> onTurn;
+        readonly Action<string> onRefused;
+        readonly EventCallback<ClickEvent> onClick;
+        readonly EventCallback<NavigationSubmitEvent> onSubmit;
+        readonly EventCallback<FocusInEvent> onFocus;
+        IVisualElementScheduledItem? next;
         string? previous;
         bool disposed;
 
-        public WebCompanion(VisualElement root, UiText text, Func<bool> hasEvent, Action<string>? send = null)
+        /// <param name="bridge">The game's bridge, for the turn and its events; null in tests of a bare tree.</param>
+        public WebCompanion(VisualElement root, UiText text, SimBridge? bridge, Func<bool> hasEvent, Action<string>? send = null)
         {
-            this.root = root; this.text = text; this.hasEvent = hasEvent; this.send = send ?? Publish;
-            pending = root.schedule.Execute(Refresh).Every(100);
-            Refresh();
+            this.root = root; this.text = text; this.bridge = bridge; this.hasEvent = hasEvent; this.send = send ?? Publish;
+            // One publication in the next frame however many notifications arrive in this one (as UiDirection schedules).
+            later = () => { if (disposed) return; next?.Pause(); next = root.schedule.Execute(Refresh); };
+            onTurn = _ => later(); onRefused = _ => later();
+            onClick = _ => later(); onSubmit = _ => later(); onFocus = _ => later();
+            if (bridge != null) { bridge.Changed += later; bridge.TurnEnded += onTurn; bridge.Refused += onRefused; }
+            root.RegisterCallback(onClick, TrickleDown.TrickleDown);
+            root.RegisterCallback(onSubmit, TrickleDown.TrickleDown);
+            root.RegisterCallback(onFocus, TrickleDown.TrickleDown);
+            poll = root.schedule.Execute(Refresh).Every(100);
+            later();
         }
 
         /// <summary>Copies rendered/localised strings, not event IDs or an independently formatted sim projection.
@@ -53,9 +76,32 @@ namespace Statecraft.Game.UI
                 lang = text["ui.lang"], heading = text["companion.title"], help = text["companion.help"],
                 focusHeading = text["companion.focus"], statusHeading = text["companion.status"],
                 choicesHeading = text["companion.choices"], empty = text["companion.empty"], unavailable = text["companion.unavailable"],
+                turn = bridge?.State.Turn ?? 0,
             };
             var toast = root.Q<Label>("toast");
-            snapshot.status = Visible(toast) ? toast!.text : "";
+            var status = new List<string>();
+            if (Visible(toast) && toast!.text.Length > 0) status.Add(toast.text);
+            // The End Turn result, whether or not a decision waits: the status line names the open report, and the report
+            // section carries its rows as the panel shows them.
+            var report = root.Q(TurnReportPresenter.ElementName);
+            if (Visible(report))
+            {
+                snapshot.reportTitle = Words("turn-report-title");
+                if (snapshot.reportTitle.Length > 0) status.Add(snapshot.reportTitle);
+                var lines = new List<string>();
+                var intro = Words("turn-report-intro");
+                if (intro.Length > 0) lines.Add(intro);
+                var rows = report!.Q<ScrollView>("turn-report-rows");
+                if (rows != null)
+                    foreach (var row in rows.Children())
+                    {
+                        var words = new List<string>();
+                        row.Query<Label>().ForEach(l => { if (l.text.Length > 0) words.Add(l.text); });
+                        if (words.Count > 0) lines.Add(string.Join("\n", words));
+                    }
+                snapshot.report = lines.ToArray();
+            }
+            snapshot.status = string.Join("\n", status);
             focused ??= root.focusController?.focusedElement as VisualElement;
             if (focused != null && root.Contains(focused) && Visible(focused))
             {
@@ -85,7 +131,7 @@ namespace Statecraft.Game.UI
             if (options != null)
                 foreach (var child in options.Children())
                 {
-                    if (child is Button b) choices.Add(new Choice { text = b.text, available = b.enabledSelf });
+                    if (child is Button b) choices.Add(new Choice { text = b.text, available = b.enabledInHierarchy });
                     else if (child is Label note && note.ClassListContains(EventCardPresenter.RejoinClass) && choices.Count > 0)
                         choices[choices.Count - 1].note = note.text;
                 }
@@ -109,15 +155,19 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             var json = JsonUtility.ToJson(Capture());
             if (json == previous) return;
-            previous = json;
             send(json);
+            previous = json;   // only once it has gone out: a publication that threw is tried again
         }
 
         public void Dispose()
         {
             if (disposed) return;
             disposed = true;
-            pending.Pause();
+            poll.Pause(); next?.Pause(); next = null;
+            if (bridge != null) { bridge.Changed -= later; bridge.TurnEnded -= onTurn; bridge.Refused -= onRefused; }
+            root.UnregisterCallback(onClick, TrickleDown.TrickleDown);
+            root.UnregisterCallback(onSubmit, TrickleDown.TrickleDown);
+            root.UnregisterCallback(onFocus, TrickleDown.TrickleDown);
             send("null");
         }
 

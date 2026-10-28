@@ -600,7 +600,7 @@ namespace Statecraft.Game.UI
             if (hebrew) Own(new UiDirection(root, bridge));
             root.Q("root")?.RemoveFromClassList("loading");                // ready: the bar, panels and screens may show (P2-1)
             if (Application.platform == RuntimePlatform.WebGLPlayer || CompanionSend != null)
-                companion = Own(new WebCompanion(root, text, () => card?.Shown != null, CompanionSend));
+                companion = Own(new WebCompanion(root, text, bridge, () => card?.Shown != null, CompanionSend));
             DiagLog.BootPhase("screens ready");
 
             if (notes.Count > 0) toast.Show(notes);
