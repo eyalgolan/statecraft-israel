@@ -887,7 +887,7 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
 
 def _itch_project(target: str) -> str:
     """`user/project` of a butler target, without its channel: every channel of a project uploads to its one page."""
-    return target.rpartition(":")[0].lower()
+    return target.partition(":")[0].lower()
 
 
 def _page_key(url: str) -> tuple[str, str]:

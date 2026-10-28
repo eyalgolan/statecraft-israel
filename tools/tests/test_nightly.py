@@ -1971,6 +1971,7 @@ def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
 @pytest.mark.parametrize("kw", [{"target": None}, {"target": "eyalgolan/statecraft-israel:html5"},
                                 {"target": "eyalgolan/statecraft-israel:savetest"},   # another channel, same page
                                 {"target": "EyalGolan/Statecraft-Israel:html5"},
+                                {"target": "eyalgolan/statecraft-israel"},   # no channel: still the public project
                                 {"page_url": None}, {"public_page": PAGE_URL},
                                 {"public_page": PAGE_URL.upper() + "/#game"}])
 def test_savetest_runs_only_against_a_separate_test_page(saved, kw):
