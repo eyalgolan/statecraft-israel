@@ -49,7 +49,7 @@ public class EventCardScrollShots
         var tag = $"{(hebrew ? "he" : "en")}-1920x1080-{uiScale}";
         var rt = new RenderTexture(1920, 1080, 24);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
-        ps.targetTexture = rt;
+        ps.targetTexture = rt; ps.clearColor = true; ps.colorClearValue = Color.black;   // else each still shows the frames before it
         if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));
         var go = new GameObject("EventCardScrollShots");
         go.SetActive(false);
