@@ -93,7 +93,7 @@ namespace Statecraft.Game.Map.Collection
             var gone = instances.Where(go => go != null).ToArray();
             foreach (var go in gone)
                 if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
-            instances.Clear(); models.Clear(); closeFor.Clear();
+            instances.Clear(); models.Clear(); closeFor.Clear(); missing = false;
             if (kit != null) kit.forceRenderingOff = false;
             CollectionResidencyMetrics.MarkDirty();
             return gone;

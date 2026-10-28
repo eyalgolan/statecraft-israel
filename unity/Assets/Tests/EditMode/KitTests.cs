@@ -825,7 +825,9 @@ public class KitTests
             for (int i = 0; i < models.Count; i++)
             {
                 Assert.AreEqual(models[0].localScale.x, models[i].localScale.x, 1e-4f, $"yaw {yaws[i]}: the same scale");
-                Assert.AreEqual(Mathf.Abs(yaws[i] - yaws[0]), Quaternion.Angle(models[0].rotation, models[i].rotation), 0.01f, $"yaw {yaws[i]}: turned by its yaw");
+                // A pure turn about y by the yaw difference, signed: the kit's yaw is counter-clockwise in x-z, Unity's y turn clockwise.
+                float turn = Mathf.DeltaAngle(0f, (models[i].rotation * Quaternion.Inverse(models[0].rotation)).eulerAngles.y);
+                Assert.AreEqual(-(yaws[i] - yaws[0]), turn, 0.01f, $"yaw {yaws[i]}: turned by its yaw, the right way");
                 var b = models[i].GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
                 Assert.AreEqual(tents[i].C.x, b.center.x, 0.01f, $"yaw {yaws[i]}: centred"); Assert.AreEqual(tents[i].C.y, b.center.z, 0.01f);
                 Assert.AreEqual(tents[i].Y, b.min.y, 0.01f, $"yaw {yaws[i]}: on the ground");
@@ -842,9 +844,10 @@ public class KitTests
     {
         public readonly List<string> Opened = new List<string>(), Unloaded = new List<string>();
         public GameObject? Prefab;
+        public System.Action? BeforeUnload;
         public IEnumerator Open(string bundle, System.Action<string?> done) { Opened.Add(bundle); yield return null; done(null); }
-        public IEnumerator Load(string bundle, string path, System.Action<GameObject?> done) { yield return null; done(Prefab); }
-        public void Unload(string bundle) => Unloaded.Add(bundle);
+        public IEnumerator Load(string bundle, string path, System.Action<GameObject?> done) { yield return null; yield return null; done(Prefab); }
+        public void Unload(string bundle) { BeforeUnload?.Invoke(); Unloaded.Add(bundle); }
     }
 
     static void Pump(Stack<IEnumerator> stack, int frames)
@@ -901,6 +904,29 @@ public class KitTests
             Assert.AreEqual(new[] { bundle }, source.Unloaded.ToArray(), "the last leave unloads it: no owner, no pin");
             var after = Special();
             Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
+            var owners = (System.Collections.IDictionary)typeof(Statecraft.Game.Map.Collection.CollectionStream)
+                .GetField("owners", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(stream)!;
+            Assert.AreEqual(0, owners.Count, "the stream holds no owner");
+
+            // A load still in flight when the camera leaves: nothing is placed, and the bundle unloads once the load ends.
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam);
+            Pump(run, 2);
+            Assert.AreEqual(2, source.Opened.Count, "the bundle is opening again");
+            camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
+            Pump(run, 20);
+            Assert.AreEqual(0, a.ModelCount, "the cancelled load places nothing");
+            Assert.AreEqual(2, source.Unloaded.Count, "and the bundle unloads after it");
+
+            // Destroying a camp while its models stand destroys them before the bundle unloads.
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); b.Choose(default, cam);
+            Pump(run, 20);
+            Assert.AreEqual(tents.Length, b.ModelCount);
+            var bKit = b.gameObject;
+            source.BeforeUnload = () => Assert.IsFalse(bKit.GetComponentsInChildren<Transform>(true).Any(t => t.name == Statecraft.Game.Map.Collection.CampTentModels.Model),
+                "no model instance is left when the bundle unloads");
+            Object.DestroyImmediate(b);
+            Assert.AreEqual(3, source.Unloaded.Count, "destroying the last owner unloads it");
+            source.BeforeUnload = null;
         }
         finally
         {
