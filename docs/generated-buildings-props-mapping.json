@@ -1,5 +1,5 @@
 {
-  "status": "Prepared mapping only; no runtime loader/catalog references. Await #1273 or maintainer-owned own-stream bundle interface, then matched screenshots and Eyal sign-off.",
+  "status": "The enclosed Bedouin tent (06) is active at the Bedouin camp areas, in the runtime catalog and its own streamed bundle, following the owner's sign-off of 27 October 2026 (#756), recorded in docs/generated-buildings-props.md. The other ten remain editor-only until each has its own placement PR.",
   "models": [
     {
       "number": 1,
