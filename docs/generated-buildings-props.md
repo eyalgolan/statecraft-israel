@@ -11,7 +11,7 @@ The [admission receipt](generated-buildings-props-admission.json) identifies eve
 |03 porch house|9261|Regenerated 24 Oct 2026; four closed walls; editor review captured, signed off 27 Oct 2026, placement pending|
 |04 lighter basalt variant|5624|Full-source editor review captured; signed off 27 Oct 2026, placement pending|
 |05 courtyard house|8193|Regenerated 24 Oct 2026; continuous roof deck; editor review captured, signed off 27 Oct 2026, placement pending|
-|06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: at up to three Bedouin-area anchors, with the camels, in its own streamed bundle|
+|06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: at up to three Bedouin-area anchors, on clear ground apart from the code-built camps' plots, in its own streamed bundle|
 |08 khaki canvas tent|3988|Full-source editor review captured; signed off 27 Oct 2026, placement pending|
 |09 well|3992|Editor-only; no sourced map role|
 |10 sandbags|4074|Editor-only; no sourced map role|

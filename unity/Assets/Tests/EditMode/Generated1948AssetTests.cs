@@ -126,7 +126,21 @@ public class Generated1948AssetTests
             CollectionAssert.Contains(PrefabProblems(copy, tentMeshes, tentMaterial, tentMaterial.mainTexture), "not its own material");
         }
         finally { UnityEngine.Object.DestroyImmediate(copy); UnityEngine.Object.DestroyImmediate(other); }
-        CollectionAssert.Contains(MapProblems(true, false, false, 1), "no mipmaps");
+        // A real colour map imported without mipmaps (a temporary texture, deleted afterwards) is rejected the same way.
+        string root = "Assets/TalMipProbe" + Guid.NewGuid().ToString("N"), png = root + "/probe.png";
+        try
+        {
+            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+            var source = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+            try { File.WriteAllBytes(Disk(png), source.EncodeToPNG()); } finally { UnityEngine.Object.DestroyImmediate(source); }
+            AssetDatabase.ImportAsset(png, ImportAssetOptions.ForceSynchronousImport);
+            var probe = (TextureImporter)AssetImporter.GetAtPath(png);
+            probe.sRGBTexture = true; probe.isReadable = false; probe.mipmapEnabled = false; probe.SaveAndReimport();
+            var imported = AssetDatabase.LoadAssetAtPath<Texture2D>(png);
+            Assert.AreEqual(1, imported.mipmapCount, "the probe imported without mipmaps");
+            CollectionAssert.AreEqual(new[] { "no mipmaps" }, MapProblems(probe.sRGBTexture, probe.mipmapEnabled, probe.isReadable, imported.mipmapCount));
+        }
+        finally { AssetDatabase.DeleteAsset(root); }
     }
 
     [Test] public void CampaignActivationWaitsForStreamingAndAddsNoBootAssetReference()

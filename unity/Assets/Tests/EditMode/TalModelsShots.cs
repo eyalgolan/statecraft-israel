@@ -90,15 +90,18 @@ public class TalModelsShots
         var people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
         var tent = rural.Placed.First(p => p.Model == RuralLife.BedouinTent);
         var figure = people.Placed.First(p => p.Model == CivilianPeople.BedouinCivilian);
-        // The tent's frame holds the tent and the camel at the same Bedouin-area anchor: the midpoint of the two, from the
-        // closest zoom the player can reach or as far as needed to hold both.
-        var camel = rural.Placed.First(p => p.Model == RuralLife.Camel && p.Key == tent.Key);
+        // The tent's frame holds the tent and the nearest code-built camp (coordinator decision on #1893: the tent stands in the
+        // camp area, apart from the camps' plots): the midpoint of the tent and that camp's footprint, from the closest zoom the
+        // player can reach or as far as needed to hold both. Every placed tent's distance to its nearest camp is logged.
         Vector2 Flat(Vector3 v) => new Vector2(v.x, v.z);
-        float apart = Vector2.Distance(Flat(tent.At), Flat(camel.At));
         var camps = map.KitFootprints.Where(f => f.id.StartsWith("camp:", StringComparison.Ordinal)).ToList();
-        float nearestCamp = camps.Count == 0 ? float.NaN : camps.Min(f => Vector2.Distance(Flat(tent.At), f.centre) - f.radius);
-        Debug.Log($"SHOT bedouin tent {tent.Key}: camel {apart:F0} m away; nearest code-built camp footprint edge {nearestCamp:F0} m away");
-        var frames = new[] { ("tent", tent.Key, (tent.At + camel.At) * 0.5f, Mathf.Max(CameraController.MinDistance, 2.5f * apart)),
+        (Vector2 centre, float radius, float edge) Nearest(Vector3 at) => camps.Select(f => (f.centre, f.radius, Vector2.Distance(Flat(at), f.centre) - f.radius)).OrderBy(c => c.Item3).First();
+        foreach (var placed in rural.Placed.Where(p => p.Model == RuralLife.BedouinTent && p.Detail == CollectionDetail.Near))
+            Debug.Log($"SHOT bedouin tent {placed.Key}: nearest code-built camp footprint edge {Nearest(placed.At).edge:F0} m away");
+        var camp = Nearest(tent.At);
+        var campAt = new Vector3(camp.centre.x, 0f, camp.centre.y);
+        float span = Vector2.Distance(Flat(tent.At), camp.centre) + camp.radius;
+        var frames = new[] { ("tent", tent.Key, (tent.At + campAt) * 0.5f, Mathf.Max(CameraController.MinDistance, 2.5f * span)),
                              ("figure", figure.Key, figure.At, CameraController.MinDistance) };
         if (!after)
         {
