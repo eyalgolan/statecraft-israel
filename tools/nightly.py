@@ -751,7 +751,10 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
 # --- the itch.io save test --------------------------------------------------------------------------------------------
 
 PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$", re.M)
-SAVETEST_FRAME_TRIES = 20      # the page names a new upload's frame a little after butler shows the build live
+# The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
+# ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
+# 10-minute wait, so the save test now waits up to 40 minutes.
+SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent

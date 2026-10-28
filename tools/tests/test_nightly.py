@@ -1734,6 +1734,18 @@ def test_savetest_needs_a_published_nightly_and_a_page_url(saved, kw):
     assert "SAVETEST INCONCLUSIVE" in t.log()
 
 
+def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
+    t = saved()   # 28 Oct 2026: the page showed only a load_url for about 17 minutes before it named the frame
+    framed, calls = page_for(t.itch), {"n": 0}
+
+    def fetch(url, timeout=30):
+        calls["n"] += 1
+        if calls["n"] <= 30:   # 30 polls x 30 s = 15 minutes of {"status":"extracting"}
+            return Page('<div class="html_embed_widget">Embed({"load_url":"https:\\/\\/x.itch.io\\/g\\/html_url\\/1"})')
+        return framed(url, timeout)
+    assert t.run(fetch) == "PASS" and t.enabled()
+
+
 def test_savetest_a_page_without_a_frame_is_inconclusive(saved):
     t = saved()
     assert t.run(page_for(t.itch, frame=False)) == "INCONCLUSIVE" and t.runner.runs == [] and not t.enabled()
