@@ -13,6 +13,91 @@ public class Gdd03HousingFormulaTests
         new Gdd03HousingInput(surcharge, beforeArrival, cohesion, population,
             capacity, condition, due, paid);
 
+    // Each fixture changes one coefficient before the existing reader validates/snapshots it.
+    static Gdd03HousingFormula FormulaWithSyntheticScalar(string key, decimal value)
+    {
+        var c = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
+        var row = c.Values[key];
+        row.Values[0] = value;
+        row.Note = "TEST-ONLY SYNTHETIC coefficient override: " + value.ToString(CultureInfo.InvariantCulture);
+        return Gdd03HousingFormula.FromCatalogue(c);
+    }
+
+    // Exact decimal arithmetic only; all divisions below terminate, so no tolerance is needed.
+    [Fact] public void SyntheticMoneyThresholdComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-001: catches moneyThreshold replaced by the shipped literal 0.50m.
+        const decimal threshold = 0.70m;
+        var f = FormulaWithSyntheticScalar("housing.money_threshold", threshold);
+        var expected = 10m * Math.Max(0m, threshold - 0.40m) * 1m;
+        Assert.Equal(expected, f.Evaluate(Input(condition: 0.40m)).SurchargeMoney);
+    }
+
+    [Fact] public void SyntheticMoneySlopeComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-001: catches moneySlope replaced by the shipped literal 1m.
+        const decimal slope = 2.5m;
+        var f = FormulaWithSyntheticScalar("housing.money_slope", slope);
+        var expected = 10m * Math.Max(0m, 0.50m - 0.40m) * slope;
+        Assert.Equal(expected, f.Evaluate(Input(condition: 0.40m)).SurchargeMoney);
+    }
+
+    [Fact] public void SyntheticCohesionThresholdComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-002: catches cohesionThreshold replaced by the shipped literal 0.25m.
+        const decimal threshold = 0.50m;
+        var f = FormulaWithSyntheticScalar("housing.cohesion_threshold", threshold);
+        var expected = 2m * (5m / 20m) * Math.Max(0m, (threshold - 0.125m) / threshold);
+        Assert.Equal(expected, f.Evaluate(Input(cohesion: 5, population: 20,
+            capacity: 10m, condition: 0.125m, due: 0m, paid: 0m)).CohesionLossPoints);
+    }
+
+    [Fact] public void SyntheticMaximumCohesionLossComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-002: catches maxCohesionLoss replaced by the shipped literal 2m.
+        const decimal maximumLoss = 3m;
+        var f = FormulaWithSyntheticScalar("housing.max_cohesion_loss", maximumLoss);
+        var expected = maximumLoss * (5m / 20m) * Math.Max(0m, (0.25m - 0.125m) / 0.25m);
+        Assert.Equal(expected, f.Evaluate(Input(cohesion: 5, population: 20,
+            capacity: 10m, condition: 0.125m, due: 0m, paid: 0m)).CohesionLossPoints);
+    }
+
+    [Fact] public void SyntheticOverflowRateComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-002: catches overflowPp replaced by the shipped literal 5m.
+        const decimal overflowPp = 12.5m;
+        var f = FormulaWithSyntheticScalar("housing.overflow_deterioration", overflowPp);
+        var expectedLoss = (overflowPp / 100m) * Math.Max(0m, 20m - 8m) / 20m;
+        var r = f.Evaluate(Input(beforeArrival: 20, capacity: 8m,
+            condition: 0.40m, due: 4m, paid: 4m));
+        Assert.Equal(expectedLoss, r.OverflowConditionLoss);
+        Assert.Equal(0.40m - expectedLoss, r.ConditionAfter);
+    }
+
+    [Fact] public void SyntheticUnpaidRateComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-002: catches unpaidPp replaced by the shipped literal 10m.
+        const decimal unpaidPp = 18m;
+        var f = FormulaWithSyntheticScalar("housing.max_deterioration", unpaidPp);
+        var expectedLoss = (unpaidPp / 100m) * ((10m - 2m) / 10m);
+        var r = f.Evaluate(Input(capacity: 10m, condition: 0.40m, due: 10m, paid: 2m));
+        Assert.Equal(expectedLoss, r.UnpaidConditionLoss);
+        Assert.Equal(0.40m - expectedLoss, r.ConditionAfter);
+    }
+
+    [Fact] public void SyntheticRepairEffectComesFromSuppliedCatalogue()
+    {
+        // R-HOUSE-001: catches repairPp replaced by the shipped literal 10m.
+        const decimal repairPp = 25m;
+        var c = ContentLoader.Load(RealContentTests.ContentRoot()).Gdd03Balance ?? throw new InvalidOperationException("GDD 0.3 catalogue required");
+        var row = c.Values["housing_repair"].Parts["condition_pp"];
+        row.Values[0] = repairPp;
+        row.Note = "TEST-ONLY SYNTHETIC repair effect: " + repairPp.ToString(CultureInfo.InvariantCulture);
+        var f = Gdd03HousingFormula.FromCatalogue(c);
+        var expected = Math.Min(1m, 0.40m + repairPp / 100m);
+        Assert.Equal(expected, f.RepairCondition(0.40m));
+    }
+
     [Fact] public void PreDeteriorationPriceAndBothLossesHaveWorkedNumbers()
     {
         // R-HOUSE-001, R-HOUSE-002: price first, deteriorate once, return arithmetic only.
