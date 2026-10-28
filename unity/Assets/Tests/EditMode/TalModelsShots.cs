@@ -77,14 +77,22 @@ public class TalModelsShots
         var withheld = after ? new string[0] : new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian };
         RuralLife.Request = CivilianPeople.Request = Answer(withheld);
         Drop(map, RuralLife.Name); Drop(map, CivilianPeople.Name);
-        var rural = CollectionGeometryFixture.Rural(map)!;
+        CollectionGeometryFixture.Rural(map);
         CollectionGeometryFixture.People(map, root.Bridge!.State.Date, Array.Empty<Placement>(), root.Bridge.Content);
-        // The first camel scene the layer placed: the same camp before and after (the tent and the figure come last).
-        var camel = rural.Placed.First(p => p.Model == RuralLife.Camel && p.Detail == CollectionDetail.Near);
-        Look(camel.At, 5000f);
-        for (int i = 0; i < 5; i++) yield return null;
-        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT bedouin camp {camel.Key} at {camel.At}");
+        // The camps come from the layers' pure plans, so the frames are the same before and after: the first camp the tent
+        // stands at, and the first camp of the camels, where the Bedouin civilian stands.
+        var plan = RuralLife.Wants(map);
+        var tentCamp = plan.First(w => w.Model == RuralLife.BedouinTent);
+        var figureCamp = CivilianPeople.Served(plan, RuralLife.Camel).First();
+        foreach (var (what, camp) in new[] { ("tent", tentCamp), ("figure", figureCamp) })
+        {
+            var at = new Vector3(camp.Anchor.x, 0f, camp.Anchor.y);
+            at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+            Look(at, 2500f);
+            for (int i = 0; i < 5; i++) yield return null;
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+            Debug.Log($"SHOT bedouin {what} camp {camp.Key} at {at}");
+        }
     }
 
     [UnityTest] public IEnumerator BedouinBeforeEnglish() { yield return Bedouin(false, false); }
