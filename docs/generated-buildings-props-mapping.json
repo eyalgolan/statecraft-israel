@@ -1,5 +1,5 @@
 {
-  "status": "Signed off by the owner on 27 October 2026 (#756). The entries with active_in_campaign true are in the game, each streamed in its own bundle after the first frame (the houses 01 to 05, the Bedouin tent 06 and the khaki tent 08); the others await their own placement PR with matched screenshots.",
+  "status": "The enclosed Bedouin tent (06) is active at the Bedouin camp areas, the houses 01 to 05 in their towns' house pools and the khaki canvas tent (08) at the transit camps, each in the runtime catalog and its own streamed bundle, following the owner's sign-off of 27 October 2026 (#756), recorded in docs/generated-buildings-props.md. The other four remain editor-only until each has its own placement PR.",
   "models": [
     {
       "number": 1,
