@@ -20,7 +20,7 @@
   "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
   "decimation": false,
   "local_geometry_repairs": false,
-  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "campaign_status": "In the game as a town building, streamed after the first frame (TownModels); signed off by the owner 27 October 2026 (#756)",
   "source_caveats": "Regenerated 24 October 2026 at the owner's request on #1379; four closed walls replace the provider original with a broad rear opening.",
   "fbx_sha256": "27c837e0c8a884860799e6af6c78c4ed0312cecca1791ca200329c3525b2d753",
   "compatibility_export_triangles": 9261,

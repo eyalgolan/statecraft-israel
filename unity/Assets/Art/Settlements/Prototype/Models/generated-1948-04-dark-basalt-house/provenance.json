@@ -16,7 +16,7 @@
   "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
   "decimation": false,
   "local_geometry_repairs": false,
-  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "campaign_status": "In the game as a town building, streamed after the first frame (TownModels); signed off by the owner 27 October 2026 (#756)",
   "source_caveats": "Original source review pending at full quality",
   "fbx_sha256": "e2bc341f784d9ba436c183f3d081c1c65d8cb054c00fcd719e724531fd15f3f6",
   "compatibility_export_triangles": 5624,

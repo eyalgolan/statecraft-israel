@@ -44,9 +44,17 @@ namespace Statecraft.Game.EditorTools
                 var ti = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(texture)) as TextureImporter;
                 if (texture == null || ti == null || ti.crunchedCompression || ti.textureCompression != TextureImporterCompression.Compressed || ti.maxTextureSize < 4096)
                     throw new InvalidOperationException("Exact original full-size colour map required: " + Ids[i]);
-                var go = UnityEngine.Object.Instantiate(source);
-                foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;
-                var prefab = PrefabUtility.SaveAsPrefabAsset(go, stem + ".prefab"); UnityEngine.Object.DestroyImmediate(go);
+                GameObject prefab;
+                if (Array.IndexOf(Statecraft.Game.Map.Kits.TownModels.Ids, Ids[i]) >= 0)
+                    // A house placed in the game: the review shows its streamed prefab (CollectionImport.MakeBuildingPrefabs makes it).
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Generated1948BuildingsPropsReview.PrefabOf(Ids[i]))
+                        ?? throw new InvalidOperationException("Run CollectionImport.MakeBuildingPrefabs first: no streamed prefab for " + Ids[i]);
+                else
+                {
+                    var go = UnityEngine.Object.Instantiate(source);
+                    foreach (var renderer in go.GetComponentsInChildren<Renderer>(true)) renderer.sharedMaterial = material;
+                    prefab = PrefabUtility.SaveAsPrefabAsset(go, stem + ".prefab"); UnityEngine.Object.DestroyImmediate(go);
+                }
                 prefabs.GetArrayElementAtIndex(i).objectReferenceValue = prefab;
                 materials.GetArrayElementAtIndex(i).objectReferenceValue = material;
                 labels.GetArrayElementAtIndex(i).stringValue = names[i];

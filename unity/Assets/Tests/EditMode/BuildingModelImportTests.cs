@@ -21,7 +21,12 @@ public class BuildingModelImportTests
         "b09a-kibbutz-communal-building-v2", "b11-shikun-housing-v2", "b12-tegart-fort-v2", "b13a-netanya-two-storey-v2",
         "b16-farmhouse-v2", "b17-stone-courtyard-house-v2", "b18-military-barracks-v2", "b21-artisan-workshop-v2",
         "b22-industrial-factory-v2", "b23-winery-v2", "b24-agricultural-barn-v2", "b28-water-tower-v2", "b32-port-cargo-shed-v2",
+        // Tal Heuberger's generated houses, placed on 27 October 2026 (#756: "Sign off all 19"); each keeps its provenance receipt.
+        "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
+        "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house",
+        "generated-1948-05-plastered-courtyard-house-original",
     };
+    static bool Generated(string id) => id.StartsWith("generated-1948-", StringComparison.Ordinal);
 
     static string Model(string id) => $"{Folder}/{id}/{id}.fbx";
     static string ColourMap(string id) => $"{Folder}/{id}/{id}_basecolor.jpg";
@@ -33,12 +38,13 @@ public class BuildingModelImportTests
     [Test]
     public void TheFolderHoldsTheTwentyThreeBuildingsAndNothingElse()
     {
-        Assert.AreEqual(23, Ids.Length);
+        Assert.AreEqual(28, Ids.Length, "#507's 23 and the five generated houses");
         var streamed = Statecraft.Game.Map.Collection.CollectionCatalog.Ids
             .Where(Statecraft.Game.Map.Collection.CollectionCatalog.IsBuilding).ToArray();
-        Assert.AreEqual(23, streamed.Length);
+        Assert.AreEqual(28, streamed.Length);
         CollectionAssert.IsSubsetOf(streamed, Ids);
-        var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) })
+        var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) }
+                .Concat(Generated(id) ? new[] { $"{Folder}/{id}/provenance.json" } : Array.Empty<string>()))
             .Concat(streamed.Select(id => Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, Statecraft.Game.Map.Collection.CollectionDetail.Near)))
             .OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)

@@ -28,7 +28,7 @@ public class Generated1948AssetTests
 
     [Test] public void OriginalDeliveriesAndExactMapsMatchReceiptsWithLosslessImport()
     {
-        var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder, Statecraft.Game.Map.Collection.CollectionCatalog.Folder })
+        var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder, Statecraft.Game.Map.Collection.CollectionCatalog.Folder, TownModels.Folder })
             .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
             // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
             .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal)).ToArray();
@@ -61,15 +61,18 @@ public class Generated1948AssetTests
             Assert.IsFalse(ti.crunchedCompression, image);
             Assert.AreEqual(TextureImporterCompression.Compressed, ti.textureCompression, image);
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
-            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(dir + "/" + receipt.id + ".prefab"));
+            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(Generated1948BuildingsPropsReview.PrefabOf(receipt.id)), receipt.id);
         }
     }
 
-    [Test] public void CampaignActivationWaitsForStreamingAndAddsNoBootAssetReference()
+    /// <summary>The five houses placed in the town kits (owner, 27 October 2026, #756) stream after the first frame like the other
+    /// town buildings: the map scene reaches none of the generated models, in review or placed.</summary>
+    [Test] public void PlacedHousesStreamAndAddNoBootAssetReference()
     {
-        Assert.IsFalse(TownModels.Ids.Any(id => id.StartsWith("generated-1948-", StringComparison.Ordinal)));
-        Assert.IsFalse(File.ReadAllText(Disk(TownModels.SetPath)).Contains("generated-1948-"));
+        CollectionAssert.AreEqual(new[] { "generated-1948-01-netanya-tiled-house-original", "generated-1948-02-netanya-two-storey-balcony-house",
+            "generated-1948-03-netanya-flat-roof-porch-house", "generated-1948-04-dark-basalt-house", "generated-1948-05-plastered-courtyard-house-original" },
+            TownModels.Ids.Where(id => id.StartsWith("generated-1948-", StringComparison.Ordinal)));
         Assert.IsFalse(AssetDatabase.GetDependencies("Assets/Map.unity", true)
-            .Any(p => p.StartsWith(Generated1948BuildingsPropsReview.AssetFolder, StringComparison.Ordinal)));
+            .Any(p => p.StartsWith(Generated1948BuildingsPropsReview.AssetFolder, StringComparison.Ordinal) || p.Contains("/generated-1948-")));
     }
 }

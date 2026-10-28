@@ -32,7 +32,8 @@ public class Generated1948BuildingsPropsTests
             Assert.IsNotNull(review.Prefabs[i]); Assert.IsNotNull(review.Materials[i]);
             var path = AssetDatabase.GetAssetPath(review.Prefabs[i]);
             Assert.IsTrue(path.StartsWith(Generated1948BuildingsPropsReview.AssetFolder + "/", System.StringComparison.Ordinal)
-                || path.StartsWith(Statecraft.Game.Map.Collection.CollectionCatalog.Folder + "/", System.StringComparison.Ordinal), path);
+                || path.StartsWith(Statecraft.Game.Map.Collection.CollectionCatalog.Folder + "/", System.StringComparison.Ordinal)
+                || path.StartsWith(Statecraft.Game.Map.Kits.TownModels.Folder + "/", System.StringComparison.Ordinal), path);
         }
         // 01, 03 and 05 were regenerated on #1379; no label may still mark a roof gap or rear opening.
         Assert.IsFalse(review.Labels.Any(s => s.Contains("roof gaps") || s.Contains("rear opening")));

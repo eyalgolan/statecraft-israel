@@ -20,7 +20,7 @@
   "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
   "decimation": false,
   "local_geometry_repairs": false,
-  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "campaign_status": "In the game as a town building, streamed after the first frame (TownModels); signed off by the owner 27 October 2026 (#756)",
   "source_caveats": "Regenerated 24 October 2026 at the owner's request on #1379; one closed hipped roof replaces the provider original with roof openings.",
   "fbx_sha256": "e51a8a4e0c65ea6fe7f752dbc81376622242697d2f5ea509690c7b71c6b2c355",
   "compatibility_export_triangles": 9324,

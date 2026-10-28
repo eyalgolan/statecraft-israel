@@ -1,16 +1,16 @@
 # Generated buildings and props: source editor review
 
-**The owner signed off all of them on 27 October 2026 (#756, "Sign off all 19"). The enclosed Bedouin tent (06) is in the game at the Bedouin camp areas, in `Assets/Art/Collection/` and its own streamed bundle; the other ten are still editor-only until each has its own placement PR.** At Eyal's 24 October 2026 request on #1379 ("Ask Tal to regenerate"), Tal regenerated 01, 03 and 05 in Tripo Studio. The provider originals had roof gaps (01 and 05) and a broad rear opening (03); the new deliveries have one closed hipped roof (01), four closed walls (03) and one continuous L-shaped roof deck (05). Each is a provider delivery, not a local repair. The earlier local roof caps/rear panel stay offline and are not used. None of the eleven has Eyal's final art/sensitivity sign-off here.
+**The owner signed off all of them on 27 October 2026 (#756, "Sign off all 19"). The enclosed Bedouin tent (06) is in the game at the Bedouin camp areas, in `Assets/Art/Collection/` and its own streamed bundle. The five houses (01 to 05) are town buildings in `Assets/Art/Settlements/Prototype/Models/`, each streamed after the first frame like #507's: 01 to 03 among Netanya's houses, 04 at Tiberias, 05 among the stone-village houses. The other five are still editor-only until each has its own placement PR.** At Eyal's 24 October 2026 request on #1379 ("Ask Tal to regenerate"), Tal regenerated 01, 03 and 05 in Tripo Studio. The provider originals had roof gaps (01 and 05) and a broad rear opening (03); the new deliveries have one closed hipped roof (01), four closed walls (03) and one continuous L-shaped roof deck (05). Each is a provider delivery, not a local repair. The earlier local roof caps/rear panel stay offline and are not used. None of the eleven has Eyal's final art/sensitivity sign-off here.
 
 The [admission receipt](generated-buildings-props-admission.json) identifies every source by hash. Byte-identical provider GLBs are archived under `asset-sources/generated-1948/<id>/<id>.glb`, outside Unity’s import tree. Each matching directory under `unity/Assets/Editor/Generated1948Review/` contains the exact embedded 4096×4096 colour-map bytes, a local FBX compatibility export, material/prefab and provenance. The FBX is not a provider-original export. Conversion preserves triangle positions/connectivity and UVs within documented float serialization tolerance; its stored corner normals exactly match the Blender-imported source values. Blender's reimport quantization is recorded separately, rather than claimed to be exporter loss. No geometry centering, decimation, roof repair, atlas or texture resize/recompression is performed. The GLB remains the exact source of record.
 
 | Number | Source triangles | Current readiness |
 |---|---:|---|
-|01 tiled house|9324|Regenerated 24 Oct 2026; closed hipped roof; editor review captured, activation/sign-off held|
-|02 balcony house|4798|Full-source editor review captured; activation/sign-off held|
-|03 porch house|9261|Regenerated 24 Oct 2026; four closed walls; editor review captured, activation/sign-off held|
-|04 lighter basalt variant|5624|Full-source editor review captured; activation/sign-off held|
-|05 courtyard house|8193|Regenerated 24 Oct 2026; continuous roof deck; editor review captured, activation/sign-off held|
+|01 tiled house|9324|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
+|02 balcony house|4798|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
+|03 porch house|9261|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
+|04 lighter basalt variant|5624|In the game since the owner's sign-off of 27 October 2026: Tiberias's houses, a town building streamed after the first frame|
+|05 courtyard house|8193|In the game since the owner's sign-off of 27 October 2026: the stone-village houses of the Arab towns and villages, a town building streamed after the first frame|
 |06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: beside the camels at the Bedouin camp areas, in its own streamed bundle|
 |08 khaki canvas tent|3988|Full-source editor review captured; activation/sign-off held|
 |09 well|3992|Editor-only; no sourced map role|
