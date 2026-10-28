@@ -39,7 +39,7 @@ public class UnitFiguresTests
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
         "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
-        "figure-ala-infantry-1948-v1",
+        "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",
@@ -170,7 +170,8 @@ public class UnitFiguresTests
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
         CollectionAssert.AreEqual(new[] { UnitFigures.Irregular, UnitFigures.Irregular, UnitFigures.AlaInfantry }, Trio("arab_liberation_army"),
             "two C09 and Tal Heuberger's ALA infantry third (owner, 27 October 2026: \"Third figure (Recommended)\")");
-        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
+        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.LebaneseRegular, 3), Trio("lebanese_army"),
+            "Tal Heuberger's Lebanese regular, three of it (owner, 27 October 2026: \"Map-only token (Recommended)\")");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 6, 1)), "the Burma Road jeeps");

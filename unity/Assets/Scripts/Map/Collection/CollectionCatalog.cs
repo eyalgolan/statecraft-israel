@@ -76,6 +76,10 @@ namespace Statecraft.Game.Map.Collection
         /// 2026: "Third figure (Recommended)").</summary>
         public const string AlaInfantry = "figure-ala-infantry-1948-v1";
 
+        /// <summary>Tal Heuberger's Lebanese regular, the figure of the Lebanese army's map-only token at al-Malikiyya (owner, 27
+        /// October 2026: "Sign off all 19" and "Map-only token (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)").</summary>
+        public const string LebaneseRegular = "figure-lebanese-regular-1948-v1";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -128,6 +132,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 "figure-egyptian-infantry-1948-v1",
                 "figure-ala-infantry-1948-v1",
+                "figure-lebanese-regular-1948-v1",
             }),
         };
 
@@ -139,6 +144,7 @@ namespace Statecraft.Game.Map.Collection
             [ArabArmies] = People,
             ["collection-" + EgyptianInfantry] = People,
             ["collection-" + AlaInfantry] = People,
+            ["collection-" + LebaneseRegular] = People,
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -155,12 +161,14 @@ namespace Statecraft.Game.Map.Collection
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
             AlaInfantry,
+            LebaneseRegular,
         };
 
         /// <summary>The generated figures (#1377 and later): full-quality rigs that keep playing their idle at every zoom, each
         /// with one prefab beside its FBX.</summary>
         public static bool IsFullQualityGeneratedInfantry(string id) =>
-            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry;
+            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry
+            || id == LebaneseRegular;
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);

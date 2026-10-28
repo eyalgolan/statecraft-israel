@@ -34,7 +34,7 @@ namespace Statecraft.Game.Map.Units
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
-            EgyptianInfantry = CollectionCatalog.EgyptianInfantry;
+            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular;
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -70,8 +70,9 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
         /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens, with the new ALA infantry as their third figure
-        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's hidden row remains off the map
-        /// (<see cref="UnitRoster.OnMap"/>).
+        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's army is drawn with Tal Heuberger's Lebanese
+        /// regular as a map-only token at al-Malikiyya from 6 June to 8 July 1948 (owner, 27 October 2026: "Map-only token
+        /// (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)"); it has no sim unit (<see cref="UnitRoster.MapOnly"/>).
         /// Egypt is drawn as one token (owner, 27 October 2026: "One token"): in the GDD loop the one sim unit of its row,
         /// in the legacy loop its row's first anchor whose window holds the date (<see cref="UnitRoster.AnchorAt"/>), so at
         /// the first truce the forward base at Isdud; the rear base at Majdal stays in the row and on the unit card.
@@ -80,7 +81,7 @@ namespace Statecraft.Game.Map.Units
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
-            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry,
+            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry, ["lebanon"] = LebaneseRegular,
         };
 
         /// <summary>The third figure of an Arab force's token, by side, in place of its side figure: the ALA's is Tal Heuberger's ALA
