@@ -66,9 +66,10 @@ namespace Statecraft.Sim
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
             if (input.SurchargeResidents < 0 || input.PreArrivalResidents < 0
-                || input.CohesionResidents < 0 || input.OwnPopulation < 0 || input.Capacity < 0m
+                || input.CohesionResidents < 0 || input.OwnPopulation < 0
+                || input.CohesionResidents > input.OwnPopulation || input.Capacity < 0m
                 || input.UpkeepDue < 0m || input.UpkeepPaid < 0m || input.UpkeepPaid > input.UpkeepDue)
-                throw new ArgumentOutOfRangeException(nameof(input), "counts/capacity/upkeep must be nonnegative; paid cannot exceed due");
+                throw new ArgumentOutOfRangeException(nameof(input), "counts/capacity/upkeep must be nonnegative; regional residents cannot exceed own population; paid cannot exceed due");
             ValidateCondition(input.ConditionBefore);
             // GDD cities.md:29,33,35; loop-switch.md:29,33 at 605277df.
             // Counts are independently supplied; this helper makes no timing/status decision.
