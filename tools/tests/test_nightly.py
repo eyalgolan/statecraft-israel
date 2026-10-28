@@ -2272,3 +2272,105 @@ def test_mid_sequence_deadline_stops_work_but_keeps_shutdown_budget(night, env, 
     assert r.calls == [["uv", "run", str(night.cfg.clone / "tools/build_sim_for_unity.py")],
                        ["dotnet", "build-server", "shutdown"]]
     assert len(cleanup_deadlines) == 1 and cleanup_deadlines[0] > time.monotonic()
+
+
+import os
+import signal
+import subprocess
+import sys
+import time
+from contextlib import contextmanager
+from pathlib import Path
+
+import pytest
+REAL_POPEN = subprocess.Popen
+import nightly
+from nightly_state import Refused
+
+
+def test_shutdown_refuses_inside_a_callers_except(night, env):
+    r = gates_runner(night, env)
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(Refused) as error:
+            nightly.run_gates(night, r)
+    assert error.value.gate == "build-server-shutdown"
+    assert len(r.calls) == 6
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_shutdown_interrupt_propagates_inside_a_callers_except(night, env, monkeypatch, kind):
+    r = gates_runner(night, env)
+    original = r.run
+    raised = kind()
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            raise raised
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, r)
+    assert error.value is raised
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_managed_child_is_reaped_before_shared_hold_releases(night, env, tmp_path, monkeypatch, kind):
+    marker = tmp_path / "child-started"
+    instances = []
+    real_popen = REAL_POPEN
+    interruption = kind()
+    class InterruptingPopen(real_popen):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.injected = False
+            instances.append(self)
+        def wait(self, timeout=None):
+            if not self.injected:
+                self.injected = True
+                end = time.monotonic() + 10
+                while not marker.exists() and time.monotonic() < end:
+                    time.sleep(.02)
+                assert marker.exists(), "infrastructure: owned child never started"
+                raise interruption
+            return super().wait(timeout)
+    argv = [sys.executable, "-c", "import os,pathlib,time;pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid())+' '+str(os.getpgid(0)));time.sleep(120)"]
+    real = nightly.ProcRunner(grace=.2)
+    class R:
+        def run(self, cmd, **kwargs):
+            if cmd == ["dotnet", "build-server", "shutdown"]:
+                return 0
+            return real.run(argv, **kwargs)
+    old_hold = nightly.unity_postmerge.machine_lock.hold
+    reaped_at_release = []
+    @contextmanager
+    def checked_hold():
+        with old_hold():
+            try:
+                yield
+            finally:
+                reaped_at_release.append(bool(instances) and instances[0].poll() is not None)
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", checked_hold)
+    monkeypatch.setattr(nightly.subprocess, "Popen", InterruptingPopen)
+    try:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, R())
+        assert error.value is interruption
+        assert marker.exists(), "infrastructure: no positive child start proof"
+        pid, pgid = map(int, marker.read_text().split())
+        assert pid == pgid and pgid != os.getpgid(0)
+        assert reaped_at_release == [True], "managed child still running when the shared hold releases"
+        with pytest.raises(ProcessLookupError):
+            os.killpg(pgid, 0)
+    finally:
+        for proc in instances:
+            if proc.pid != os.getpgid(0):
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                real_popen.wait(proc, timeout=5)
