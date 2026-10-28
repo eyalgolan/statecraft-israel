@@ -699,6 +699,23 @@ public class KitTests
             Assert.IsNotEmpty(split[0].khakiTents);
             foreach (var t in split[0].khakiTents)
                 Assert.IsTrue(placedSplit.Any(p => p.Kind == "tent" && p.C == t.C && p.W == t.W && p.D == t.D), $"{t.C}: a census tent");
+            // The partition is white against khaki: the census records each tent's canvas (Placed.Wall). White canvas
+            // (0.88 base, jitter 0.04) never reads below r 211, khaki (0.72, 0.05) never above 198, grey-olive lower still.
+            // A ridge tent has W != D (5-6 x 3.6-4.2), a bell tent W == D (2r); bell tents are never split.
+            const byte WhiteFloor = 205;
+            var ridge = placedSplit.Where(p => p.Kind == "tent" && p.W != p.D).ToList();
+            var khakiRidge = ridge.Where(p => p.Wall.r < WhiteFloor).ToList();
+            var whiteRidge = ridge.Where(p => p.Wall.r >= WhiteFloor).ToList();
+            Assert.IsNotEmpty(whiteRidge, "the camp also has white ridge tents, so the partition is tested");
+            Assert.AreEqual(khakiRidge.Count, split[0].khakiTents.Count, "every non-white ridge tent, and only those, is split");
+            foreach (var t in khakiRidge)
+                Assert.IsTrue(split[0].khakiTents.Any(k => k.C == t.C && k.W == t.W && k.D == t.D && k.Yaw == t.Yaw), $"{t.C}: a khaki ridge tent left in the camp's mesh");
+            foreach (var t in whiteRidge)
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a white ridge tent split off as khaki");
+            foreach (var t in placedSplit.Where(p => p.Kind == "tent" && p.W == p.D))
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a bell tent split off");
+            foreach (var t in placedSplit.Where(p => p.Kind == "hut"))
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a hut split off");
         }
         finally
         {
@@ -1059,6 +1076,70 @@ public class KitTests
         Assert.IsTrue(mesh == null, "the camp's mesh goes with it");
         Assert.AreEqual(1, layer.transform.childCount);
         Assert.AreSame(map.MarkerMaterial, layer.transform.GetChild(0).GetComponent<MeshRenderer>().sharedMaterial, "housing keeps its box");
+    }
+
+    /// <summary>#756 through PlacementLayer: a transit camp's khaki ridge tents get a child of their own carrying
+    /// CampTentModels; up close the streamed tent models stand under it. Redrawing (housing in the camp's place) destroys
+    /// the camp's and the khaki child's own meshes, destroys the models and releases the lease, and leaves the streamed
+    /// prefab's shared meshes alive.</summary>
+    [Test]
+    public void APlacedCampsKhakiTentModelsRetireWithItAndKeepThePrefabsMeshes()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        GameObject? camGo = null, prefabFixture = null;
+        Mesh? sharedFixture = null;
+        try
+        {
+            var map = OpenMap();
+            camGo = new GameObject("placed camp tents camera", typeof(Camera));
+            var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            var hex = c.SettlementHexes.Single(s => s.Id == "revivim");
+            var date = new System.DateTime(1950, 8, 26);
+            // Owned transient geometry makes the cleanup control safe even when it intentionally collects a model mesh.
+            // Import tests separately verify the shipped tent's original mesh, material and texture.
+            var prefab = prefabFixture = new GameObject("camp model source fixture", typeof(MeshFilter), typeof(MeshRenderer));
+            sharedFixture = Object.Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
+            prefab.GetComponent<MeshFilter>().sharedMesh = sharedFixture;
+            prefab.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Kit.mat");
+            prefab.SetActive(false);
+            var prefabMeshes = new List<Mesh> { sharedFixture };
+            int acquired = 0, released = 0;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => { acquired++; done(prefab); return new FakeLease(() => released++); };
+
+            var layer = new GameObject("Placements").AddComponent<PlacementLayer>();
+            layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.TransitCamp, hex.Q, hex.R, date) }, c, map);
+            var camp = layer.transform.GetChild(0);
+            var campMesh = camp.GetComponent<MeshFilter>().sharedMesh;
+            var khaki = camp.Find(camp.name + "_khaki");
+            Assert.IsNotNull(khaki, "the camp's khaki ridge tents are a child of their own");
+            var khakiMesh = khaki.GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(khakiMesh); Assert.AreNotSame(campMesh, khakiMesh);
+            var tents = khaki.GetComponent<Statecraft.Game.Map.Collection.CampTentModels>();
+            Assert.IsNotNull(tents, "PlacementLayer attaches CampTentModels to the khaki child");
+            Assert.AreEqual(0, acquired, "nothing asked for before a camera comes close");
+
+            var cam = camGo.GetComponent<Camera>();
+            camGo.transform.SetPositionAndRotation(khaki.GetComponent<MeshRenderer>().bounds.center + Vector3.up * 10000f, Quaternion.Euler(90f, 0f, 0f));
+            tents.Choose(default, cam);
+            Assert.AreEqual(1, acquired); Assert.Greater(tents.ModelCount, 0, "up close the models stand under the khaki child");
+            var models = tents.Instances.ToList();
+            CollectionAssert.IsSubsetOf(models.SelectMany(m => m.GetComponentsInChildren<MeshFilter>(true)).Select(f => f.sharedMesh).Where(m => m != null).Distinct().ToList(),
+                prefabMeshes, "the models share the prefab's meshes");
+
+            layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.Housing, hex.Q, hex.R, date) }, c, map);
+            Assert.IsTrue(campMesh == null, "the camp's own mesh goes with it");
+            Assert.IsTrue(khakiMesh == null, "the khaki tents' own mesh goes with it");
+            Assert.IsTrue(models.All(m => m == null), "the tent models go");
+            Assert.AreEqual(1, released, "and the lease is released");
+            Assert.IsTrue(prefabMeshes.All(m => m != null), "the streamed prefab's shared meshes stay");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            if (camGo != null) Object.DestroyImmediate(camGo);
+            if (prefabFixture != null) Object.DestroyImmediate(prefabFixture);
+            if (sharedFixture != null) Object.DestroyImmediate(sharedFixture);
+        }
     }
 
     /// <summary>Review (issue #32): with the "kits" toggle off a transit camp is drawn as its marker box, as the settlements
