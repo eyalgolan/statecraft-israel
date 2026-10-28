@@ -133,6 +133,10 @@ public class TalModelsShots
         var close = ui.Q<Button>("turn-report-close");
         if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
         for (int i = 0; i < 3; i++) yield return null;
+        // The new turn opens a decision card over the map; the player's Hide button puts it away.
+        var hide = ui.Q<Button>("event-hide");
+        if (hide != null && hide.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(hide);
+        for (int i = 0; i < 3; i++) yield return null;
         var map = Object.FindFirstObjectByType<MapScene>();
         SpecialBuildingModels Layer(ICollection<string> withheld)
         {
@@ -150,7 +154,7 @@ public class TalModelsShots
         Look(point, CameraController.MinDistance);
         for (int i = 0; i < 5; i++) yield return null;
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, card hidden {hide == null || hide.resolvedStyle.display != DisplayStyle.Flex}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
     }
 
     [UnityTest] public IEnumerator DeganiaBeforeEnglish() { yield return Degania(false, false); }
