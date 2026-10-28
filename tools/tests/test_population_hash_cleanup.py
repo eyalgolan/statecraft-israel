@@ -24,10 +24,13 @@ def test_population_hash_check_cleans_its_copy_on_success_and_failure(tmp_path, 
         repo = root / "repo"
         shutil.copytree(REPO / "sim", repo / "sim", ignore=shutil.ignore_patterns("bin", "obj", "TestResults"))
         shutil.copytree(REPO / "content", repo / "content")
-        # The managed HUD tests compile the real Unity-free formatter via a linked source.
-        formatter = Path("unity/Assets/Scripts/UI/StockMeter.cs")
-        (repo / formatter).parent.mkdir(parents=True)
-        shutil.copyfile(REPO / formatter, repo / formatter)
+        # The managed tests compile some real Unity-free sources through links outside sim/; copy each one.
+        project = REPO / "sim/Statecraft.Sim.Tests/Statecraft.Sim.Tests.csproj"
+        for item in ET.parse(project).getroot().iter("Compile"):
+            linked = (project.parent / item.get("Include", "")).resolve().relative_to(REPO)
+            if linked.parts[0] != "sim":
+                (repo / linked).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(REPO / linked, repo / linked)
 
         source = repo / "sim/Statecraft.Sim.Tests/SaveGameTests.cs"
         text = source.read_text(encoding="utf-8")

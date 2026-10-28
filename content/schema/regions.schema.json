@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Gameplay region geography",
+  "description": "Geography and evidence only. Absence leaves regional initialization inactive. No start allocations or operational control are implied.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["player_regions"],
+  "properties": {
+    "player_regions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/region" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "hex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["q", "r"],
+      "properties": {
+        "q": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+        "r": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["SOURCED", "PARTIAL-EVIDENCE", "NEEDS-RESEARCH"] },
+        "value": { "type": ["string", "null"] }
+      },
+      "if": { "properties": { "status": { "const": "SOURCED" } } },
+      "then": { "required": ["value"], "properties": { "value": { "type": "string", "minLength": 1 } } },
+      "else": { "properties": { "value": { "type": "null" } } }
+    },
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "capital_location", "member_hexes", "member_locations", "design_note", "sources", "capital_approval", "binding_status", "opening_control"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "capital_location": { "$ref": "#/$defs/id" },
+        "member_hexes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/hex" } },
+        "member_locations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "design_note": { "type": "string", "minLength": 1 },
+        "sources": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "capital_approval": { "enum": ["APPROVED", "NEEDS-RESEARCH"] },
+        "binding_status": { "enum": ["SOURCED", "PARTIAL-EVIDENCE", "NEEDS-RESEARCH"] },
+        "opening_control": { "$ref": "#/$defs/control" }
+      }
+    }
+  }
+}

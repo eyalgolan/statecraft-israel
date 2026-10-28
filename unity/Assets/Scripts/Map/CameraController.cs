@@ -94,6 +94,18 @@ namespace Statecraft.Game.Map
         internal Func<float> TrackpadMagnification = DrainTrackpadMagnification;
 
         CameraRig rig = null!;
+        /// <summary>Gameplay heading policy supplied by GameRoot, separate from explicit promo poses.</summary>
+        internal bool FixedNorth { get; private set; }
+
+        internal void SetFixedNorth(bool value)
+        {
+            FixedNorth = value;
+            if (!value) return;
+            var view = GetComponent<CameraRig>();
+            view.Yaw = 0f;
+            view.Apply();
+        }
+
         InputAction? pan, dragPan, zoom, zoomKeys, orbit;
         InputAction? mousePress, mousePosition, touchPress, touchPosition;
 
@@ -187,7 +199,7 @@ namespace Statecraft.Game.Map
             var modifier = ModifierHeld(Keyboard.current);
             var input = Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier);
             if (down) input.DragFromUi = fromUi; // latched at the actual press, even between camera frames
-            Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop);
+            Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop, FixedNorth);
         }
 
         /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between
@@ -274,7 +286,7 @@ namespace Statecraft.Game.Map
 
         /// <summary>Fits the rig's current pose with no input (review B-m3: a minimap jump goes through the same view fit and
         /// ground clearance as panning, so no frame shows the map's frame or the inside of a hill).</summary>
-        public void Settle() => Step(GetComponent<CameraRig>(), default, 0f, Bounds, Ground, GroundTop);
+        public void Settle() => Step(GetComponent<CameraRig>(), default, 0f, Bounds, Ground, GroundTop, FixedNorth);
 
         /// <summary>The frame's wheel in notches. In WebGL, from the browser's own events (WheelInput.jslib): Unity's player
         /// takes the smallest delta it has seen since the page loaded as one notch, whatever the mode, so a touchpad's
@@ -369,19 +381,19 @@ namespace Statecraft.Game.Map
                 // notch; in WebGL WheelOr counts the browser's events (#43). Clamp bursts.
                 Zoom = Mathf.Clamp(zoomRaw, -3f, 3f),
                 KeyZoom = modifierHeld ? 0f : Mathf.Clamp(zoomKeys, -1f, 1f),
-                Orbit = orbitValue, OverUi = over, DragFromUi = dragFromUi,
+                Orbit = FixedNorth ? 0f : orbitValue, OverUi = over, DragFromUi = dragFromUi,
             };
         }
 
         /// <summary>Applies one frame of input to the rig and calls rig.Apply(). Pure apart from the rig (and the ground's
         /// height, when given), so it is testable. <paramref name="groundTop"/>: see GroundTop.</summary>
         public static void Step(CameraRig rig, CameraInput input, float dt, Rect bounds, Func<Vector2, float>? ground = null,
-            float groundTop = ShadowFit.GroundY)
+            float groundTop = ShadowFit.GroundY, bool fixedNorth = false)
         {
             // The wheel is the UI's while the pointer is over it; the zoom keys are not (plan amendment A4, as keyboard pan).
             var zoom = (input.OverUi ? 0f : input.Zoom) + input.KeyZoom * ZoomKeysPerSecond * dt;
             var drag = input.DragFromUi ? Vector2.zero : input.DragPan;
-            rig.Yaw = Mathf.Repeat(rig.Yaw + input.Orbit * OrbitDegreesPerSecond * dt, 360f);
+            rig.Yaw = fixedNorth ? 0f : Mathf.Repeat(rig.Yaw + input.Orbit * OrbitDegreesPerSecond * dt, 360f);
             // (1 - step)^zoom: one notch in is exactly ZoomPerStep closer, and n notches out undo n notches in (Task 24 review M3).
             rig.Distance = Mathf.Clamp(rig.Distance * Mathf.Pow(1f - ZoomPerStep, zoom), MinDistance, MaxDistance);
             var yaw = Quaternion.Euler(0, rig.Yaw, 0);
