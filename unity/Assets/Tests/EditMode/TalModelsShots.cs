@@ -74,17 +74,41 @@ public class TalModelsShots
     {
         yield return Boot(hebrew);
         var map = Object.FindFirstObjectByType<MapScene>();
-        var withheld = after ? new string[0] : new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian };
-        RuralLife.Request = CivilianPeople.Request = Answer(withheld);
-        Drop(map, RuralLife.Name); Drop(map, CivilianPeople.Name);
-        var rural = CollectionGeometryFixture.Rural(map)!;
-        CollectionGeometryFixture.People(map, root.Bridge!.State.Date, Array.Empty<Placement>(), root.Bridge.Content);
-        // The first camel scene the layer placed: the same camp before and after (the tent and the figure come last).
-        var camel = rural.Placed.First(p => p.Model == RuralLife.Camel && p.Detail == CollectionDetail.Near);
-        Look(camel.At, 5000f);
-        for (int i = 0; i < 5; i++) yield return null;
-        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT bedouin camp {camel.Key} at {camel.At}");
+        var state = root.Bridge!.State; var content = root.Bridge.Content;
+        void Layers(ICollection<string> withheld)
+        {
+            RuralLife.Request = CivilianPeople.Request = Answer(withheld);
+            Drop(map, RuralLife.Name); Drop(map, CivilianPeople.Name);
+            // GameRoot's order and inputs: the figures first, then the rural scenes, which keep clear of them.
+            CollectionGeometryFixture.People(map, state.Date, state.Placements, content, state.Settlements, state.CityProjects.Values);
+            CollectionGeometryFixture.Rural(map);
+        }
+        // The frames come from the map with the new models, so they are the same before and after: where the tent and the
+        // figure stand. Both layers add them last, so nothing else moves when they are withheld.
+        Layers(Array.Empty<string>());
+        var rural = map.Terrain.transform.Find(RuralLife.Name).GetComponent<RuralLife>();
+        var people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
+        var tent = rural.Placed.First(p => p.Model == RuralLife.BedouinTent);
+        var figure = people.Placed.First(p => p.Model == CivilianPeople.BedouinCivilian);
+        var frames = new[] { ("tent", tent.Key, tent.At), ("figure", figure.Key, figure.At) };
+        if (!after)
+        {
+            Layers(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian });
+            rural = map.Terrain.transform.Find(RuralLife.Name).GetComponent<RuralLife>();
+            people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
+        }
+        Debug.Log($"SHOT bedouin {(after ? "after" : "before")}: rural tents {rural.Placed.Count(p => p.Model == RuralLife.BedouinTent)}, " +
+                  $"figures {people.Placed.Count(p => p.Model == CivilianPeople.BedouinCivilian)}, tent size {RuralLife.SizeOf(RuralLife.BedouinTent)} m");
+        foreach (var (what, key, flat) in frames)
+        {
+            var at = new Vector3(flat.x, 0f, flat.z);
+            at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+            // The closest the player's camera comes (CameraController.MinDistance).
+            Look(at, CameraController.MinDistance);
+            for (int i = 0; i < 5; i++) yield return null;
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+            Debug.Log($"SHOT bedouin {what} at {key} {at}");
+        }
     }
 
     /// <summary>Degania Alef after the first turn (15 June 1948: the tank stands from 20 May), the camera on the kibbutz's own point,
@@ -99,12 +123,20 @@ public class TalModelsShots
         if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
         for (int i = 0; i < 3; i++) yield return null;
         var map = Object.FindFirstObjectByType<MapScene>();
-        SpecialBuildingModels.Request = Answer(after ? new string[0] : new[] { CollectionCatalog.SyrianR35 });
-        Drop(map, SpecialBuildingModels.Name);
-        var layer = CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
-        var point = map.Frame.ToWorld(35.5747, 32.7081, 0);
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
+        }
+        // The frame is where the tank stands on this date with the model answered, the same before and after.
+        var layer = Layer(Array.Empty<string>());
+        var tank = layer.Placed.First(p => p.Model == CollectionCatalog.SyrianR35);
+        if (!after) layer = Layer(new[] { CollectionCatalog.SyrianR35 });
+        var point = tank.At;
         point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
-        Look(point, 6000f);
+        // The closest the player's camera comes (CameraController.MinDistance).
+        Look(point, CameraController.MinDistance);
         for (int i = 0; i < 5; i++) yield return null;
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
