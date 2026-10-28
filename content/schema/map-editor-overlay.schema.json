@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Isolated gdd-0.3 map authoring envelope",
+  "description": "R-MEDIT-001/002/003: legacy format is unchanged. The explicit gdd-0.3 envelope is authoring infrastructure only, not runtime content or a validation receipt. Registry ids require owning validators; canonical export is blocked until those contracts are integrated. Offset units and base manifest remain deferred.",
+  "definitions": {
+    "hex": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "q",
+        "r"
+      ],
+      "properties": {
+        "q": {
+          "type": "integer"
+        },
+        "r": {
+          "type": "integer"
+        }
+      }
+    },
+    "legacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terrain",
+        "control",
+        "locations"
+      ],
+      "properties": {
+        "terrain": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hex",
+              "value"
+            ],
+            "properties": {
+              "hex": {
+                "$ref": "#/definitions/hex"
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "control": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "hex",
+              "period",
+              "value"
+            ],
+            "properties": {
+              "hex": {
+                "$ref": "#/definitions/hex"
+              },
+              "period": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "hex"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "hex": {
+                "$ref": "#/definitions/hex"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "ruleset",
+    "draft",
+    "base_revision",
+    "base_digest",
+    "overlay",
+    "workable",
+    "regions",
+    "infrastructure"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": [
+        "map-editor-0.3"
+      ]
+    },
+    "ruleset": {
+      "type": "string",
+      "enum": [
+        "gdd-0.3"
+      ]
+    },
+    "draft": {
+      "type": "boolean"
+    },
+    "base_revision": {
+      "type": "string",
+      "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+    },
+    "base_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "overlay": {
+      "$ref": "#/definitions/legacy"
+    },
+    "workable": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hex",
+          "value"
+        ],
+        "properties": {
+          "hex": {
+            "$ref": "#/definitions/hex"
+          },
+          "value": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "regions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hex",
+          "region_id"
+        ],
+        "properties": {
+          "hex": {
+            "$ref": "#/definitions/hex"
+          },
+          "region_id": {
+            "type": "string",
+            "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "infrastructure": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "hex",
+          "kind",
+          "parent_id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+          },
+          "hex": {
+            "$ref": "#/definitions/hex"
+          },
+          "kind": {
+            "type": "string",
+            "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+          },
+          "parent_id": {
+            "type": "string",
+            "pattern": "^[^\\s\\u0000-\\u001f\\u007f]+(?![\\s\\S])"
+          }
+        }
+      }
+    }
+  }
+}
