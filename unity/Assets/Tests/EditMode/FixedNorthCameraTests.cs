@@ -14,6 +14,7 @@ public class FixedNorthCameraTests : InputTestFixture
     CameraRig rig = null!;
     CameraController controller = null!;
     InputActionAsset actions = null!;
+    InputActionAsset? previousActions;
 
     static void Send(CameraController c, string method) => typeof(CameraController).GetMethod(method,
         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
@@ -23,6 +24,7 @@ public class FixedNorthCameraTests : InputTestFixture
         // The persisted shipped asset, as CameraInputTests uses it; InputTestFixture restores the input system.
         actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
         Assert.IsNotNull(actions, "the shipped input asset must exist");
+        previousActions = InputSystem.actions;
         InputSystem.actions = actions;
         go = new GameObject("FixedNorthCamera", typeof(Camera), typeof(CameraRig));
         rig = go.GetComponent<CameraRig>();
@@ -43,9 +45,10 @@ public class FixedNorthCameraTests : InputTestFixture
         {
             if (go != null) Object.DestroyImmediate(go);
             go = null!; controller = null!;
-            // Leave every map of the shared asset off (the UI map too, not only Camera): a later input test must not
-            // inherit this fixture's enabled asset state.
+            // Leave every map of the shared asset off (the UI map too, not only Camera) and the project-wide actions as
+            // this fixture found them, so that a later input test does not inherit this fixture's asset state.
             if (actions != null) actions.Disable();
+            InputSystem.actions = previousActions;
         }
     }
 
