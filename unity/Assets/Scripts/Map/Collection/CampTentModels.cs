@@ -46,6 +46,15 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Whether a game camera is close to this camp now, so the model is demanded and its lease held.</summary>
         public bool Demanded => view != null && view.Keys.Count > 0;
         public bool LastClose { get; private set; }
+        bool missing;
+
+        /// <summary>This camp's counters for the residency diagnostics, in the special-buildings category whose policy it uses.</summary>
+        internal CollectionResidencyMetrics.Category ResidencySnapshot()
+        {
+            var ids = Demanded || instances.Count > 0 ? new[] { Model } : Array.Empty<string>();
+            return CollectionResidencyMetrics.Row("special", isActiveAndEnabled && Demanded ? 1 : 0, instances.Count, ids,
+                residency?.OwnerCount ?? 0, residency?.PendingCount ?? 0, 0, models.Count, 0, missing ? 1 : 0, ids.Select(id => id + "|Near"));
+        }
 
         /// <summary>Attaches to <paramref name="khakiKit"/>, the camp's khaki tents' kit object. Nothing is asked for until a
         /// game camera comes close to the camp (<paramref name="policy"/>).</summary>
@@ -70,8 +79,8 @@ namespace Statecraft.Game.Map.Collection
             if (view == null || !isActiveAndEnabled || tents.Count == 0) return;
             residency ??= new CollectionResidency(Acquire, ClearForRetirement, (id, detail, prefab) =>
                 {
-                    if (prefab == null) { Debug.LogWarning($"CAMPS: {Model} did not stream; the kit's khaki tents stay."); return; }
-                    Place(prefab);
+                    if (prefab == null) { missing = true; Debug.LogWarning($"CAMPS: {Model} did not stream; the kit's khaki tents stay."); return; }
+                    missing = false; Place(prefab); CollectionResidencyMetrics.MarkDirty();
                 },
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
                     Application.isPlaying && Acquire == DefaultAcquire ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
@@ -86,6 +95,7 @@ namespace Statecraft.Game.Map.Collection
                 if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
             instances.Clear(); models.Clear(); closeFor.Clear();
             if (kit != null) kit.forceRenderingOff = false;
+            CollectionResidencyMetrics.MarkDirty();
             return gone;
         }
 

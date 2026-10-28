@@ -679,7 +679,7 @@ public class KitTests
 
     /// <summary>Owner, 27 October 2026 (#756: "Sign off all 19"): a camp's khaki ridge tents can be built into a mesh of their
     /// own (MaabarotSplit), for Tal Heuberger's khaki canvas tent to stand in for them up close. Nothing else moves: the two
-    /// meshes hold exactly Maabarot's vertices, and the counts and the census are the same.</summary>
+    /// meshes hold Maabarot's vertex positions, split between them, and the counts and the census are the same.</summary>
     [Test]
     public void TheSplitCampHoldsTheSameKitWithItsKhakiTentsApart()
     {
@@ -692,6 +692,9 @@ public class KitTests
             Assert.IsNotNull(whole[0].mesh); Assert.IsNotNull(split[0].mesh); Assert.IsNotNull(split[0].khaki, "the camp has khaki ridge tents");
             Assert.AreEqual((whole[0].tents, whole[0].huts, whole[0].at), (split[0].tents, split[0].huts, split[0].at));
             Assert.AreEqual(whole[0].mesh!.vertexCount, split[0].mesh!.vertexCount + split[0].khaki!.vertexCount, "the vertices are only partitioned");
+            static Vector3[] Sorted(IEnumerable<Vector3> v) => v.OrderBy(p => p.x).ThenBy(p => p.y).ThenBy(p => p.z).ToArray();
+            CollectionAssert.AreEqual(Sorted(whole[0].mesh!.vertices), Sorted(split[0].mesh!.vertices.Concat(split[0].khaki!.vertices)),
+                "the same vertex positions, split between the two meshes");
             CollectionAssert.AreEqual(placedWhole.Select(p => (p.Kind, p.C, p.W, p.D)), placedSplit.Select(p => (p.Kind, p.C, p.W, p.D)));
             Assert.IsNotEmpty(split[0].khakiTents);
             foreach (var t in split[0].khakiTents)
@@ -789,6 +792,115 @@ public class KitTests
             Near(); failed.Choose(default, cam);
             Assert.AreEqual(0, failed.ModelCount);
             Assert.IsFalse(bare.GetComponent<Renderer>().forceRenderingOff, "no model: the kit's tents stay");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
+    /// <summary>The khaki tent model keeps its size whatever the tent's yaw: tents of one length at 0, 45 and 90 degrees get the
+    /// same scale, turn by their yaw differences, and stand centred on their plots on the ground.</summary>
+    [Test]
+    public void TheKhakiTentModelKeepsItsSizeAtEveryYaw()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("camp tents yaw fixture");
+        var camGo = new GameObject("camp tents yaw camera", typeof(Camera));
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => { done(prefab); return new FakeLease(() => { }); };
+            var yaws = new[] { 0f, 45f, 90f };
+            var tents = yaws.Select((yaw, i) => new SettlementKits.KhakiTent(new Vector2(200f * i, 0f), 5f, yaw, 60f, 40f)).ToArray();
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.SetPositionAndRotation(new Vector3(200f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, cam);
+            var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
+                .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
+            Assert.AreEqual(tents.Length, models.Count);
+            for (int i = 0; i < models.Count; i++)
+            {
+                Assert.AreEqual(models[0].localScale.x, models[i].localScale.x, 1e-4f, $"yaw {yaws[i]}: the same scale");
+                Assert.AreEqual(Mathf.Abs(yaws[i] - yaws[0]), Quaternion.Angle(models[0].rotation, models[i].rotation), 0.01f, $"yaw {yaws[i]}: turned by its yaw");
+                var b = models[i].GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.AreEqual(tents[i].C.x, b.center.x, 0.01f, $"yaw {yaws[i]}: centred"); Assert.AreEqual(tents[i].C.y, b.center.z, 0.01f);
+                Assert.AreEqual(tents[i].Y, b.min.y, 0.01f, $"yaw {yaws[i]}: on the ground");
+            }
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
+    sealed class TentSource : Statecraft.Game.Map.Collection.CollectionStream.ISource
+    {
+        public readonly List<string> Opened = new List<string>(), Unloaded = new List<string>();
+        public GameObject? Prefab;
+        public IEnumerator Open(string bundle, System.Action<string?> done) { Opened.Add(bundle); yield return null; done(null); }
+        public IEnumerator Load(string bundle, string path, System.Action<GameObject?> done) { yield return null; done(Prefab); }
+        public void Unload(string bundle) => Unloaded.Add(bundle);
+    }
+
+    static void Pump(Stack<IEnumerator> stack, int frames)
+    {
+        int seen = 0;
+        while (stack.Count != 0 && seen < frames)
+        {
+            var top = stack.Peek();
+            if (!top.MoveNext()) stack.Pop();
+            else if (top.Current is IEnumerator nested) stack.Push(nested);
+            else seen++;
+        }
+    }
+
+    /// <summary>The khaki tent's bundle really unloads: through a collection stream (with a stand-in source), two camps that a
+    /// camera comes close to share one open bundle; one camp's leave keeps it, the last one's unloads it, with no owner and
+    /// no pin left. While admitted, the residency diagnostics count the camps' live models and leases in the special
+    /// category; after leave they count none.</summary>
+    [Test]
+    public void TheKhakiTentsBundleUnloadsWhenTheLastCampLeaves()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("camp tents unload fixture");
+        var camGo = new GameObject("camp tents unload camera", typeof(Camera));
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            var source = new TentSource { Prefab = prefab };
+            var stream = new Statecraft.Game.Map.Collection.CollectionStream(source);
+            var run = new Stack<IEnumerator>(); run.Push(stream.Run());
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => stream.Retain(id, d, done);
+            string bundle = Statecraft.Game.Map.Collection.CollectionCatalog.BundleOf(Statecraft.Game.Map.Collection.CampTentModels.Model)!;
+            var policy = Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special;
+            var tents = new[] { new SettlementKits.KhakiTent(new Vector2(100f, 200f), 5f, 30f, 60f, 40f) };
+            GameObject Kit(string name) { var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root.transform, false); return go; }
+            var a = Statecraft.Game.Map.Collection.CampTentModels.Attach(Kit("camp a"), tents, policy);
+            var b = Statecraft.Game.Map.Collection.CampTentModels.Attach(Kit("camp b"), tents, policy);
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Category Special() =>
+                Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Capture().categories.Single(c => c.category == "special");
+
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam); b.Choose(default, cam);
+            Pump(run, 20);
+            Assert.AreEqual(new[] { bundle }, source.Opened.ToArray(), "one open bundle for both camps");
+            Assert.AreEqual(tents.Length, a.ModelCount); Assert.AreEqual(tents.Length, b.ModelCount);
+            var live = Special();
+            Assert.AreEqual(2 * tents.Length, live.liveInstances, "the diagnostics count the camps' models");
+            Assert.AreEqual(2, live.ownedLeases, "and their leases");
+
+            camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
+            CollectionAssert.IsEmpty(source.Unloaded, "the other camp still owns the bundle");
+            b.Choose(default, cam);
+            Assert.AreEqual(new[] { bundle }, source.Unloaded.ToArray(), "the last leave unloads it: no owner, no pin");
+            var after = Special();
+            Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
         }
         finally
         {
