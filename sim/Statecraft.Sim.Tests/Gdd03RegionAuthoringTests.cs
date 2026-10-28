@@ -1,5 +1,6 @@
 using System.Globalization;
 using Statecraft.Sim;
+using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
 /// <summary>R-CITY-006: design approval does not complete geometry or verify history.</summary>
@@ -17,6 +18,14 @@ public class Gdd03RegionAuthoringTests
     }
     static YamlNode Get(YamlMappingNode row, string key) => row.Children[new YamlScalarNode(key)];
     static string? Text(YamlMappingNode row, string key) => Assert.IsType<YamlScalarNode>(Get(row, key)).Value;
+    static string Approved => File.ReadAllText(Research("gdd03-regions.approved-draft.yaml"));
+    /// <summary>A scalar's value with YAML's plain nulls read as null, so a quoted "null" or "" stays text; an absent key is null.</summary>
+    static string? Value(YamlMappingNode row, string key)
+    {
+        if (!row.Children.TryGetValue(new YamlScalarNode(key), out var node)) return null;
+        var scalar = Assert.IsType<YamlScalarNode>(node);
+        return scalar.Style == ScalarStyle.Plain && scalar.Value is "" or "~" or "null" or "Null" or "NULL" ? null : scalar.Value;
+    }
     static YamlMappingNode Map(YamlMappingNode row, string key) => Assert.IsType<YamlMappingNode>(Get(row, key));
     static YamlMappingNode[] Rows(YamlMappingNode root, string key) =>
         Assert.IsType<YamlSequenceNode>(Get(root, key)).Children.Select(n => Assert.IsType<YamlMappingNode>(n)).ToArray();
@@ -93,6 +102,37 @@ public class Gdd03RegionAuthoringTests
             Assert.True(Unknown(Get(original, "boundary_hexes")));
             Assert.Empty(Assert.IsType<YamlSequenceNode>(Get(row, "member_hexes")).Children);
             Assert.Equal("design value, not a historical boundary", Text(row, "design_note"));
+        }
+    }
+
+    // #1852 review: the imported evidence keeps the owner-approved draft's membership and opening control, identity by
+    // identity (the reference is generated from the approved file by tools/regions_draft_reference.py; its header pins the
+    // draft's id, size and SHA-256).
+    [Fact]
+    public void EvidenceKeepsTheApprovedDraftMembershipAndControlPerIdentity()
+    {
+        var approved = Parse(Approved);
+        var source = Map(approved, "source");
+        Assert.Equal("1691-c274-r1", Text(source, "draft"));
+        Assert.Equal("69e0586f6805bf97b49b64c4ee3fd6732afd128594939a9f92e8f5aa3113f125", Text(source, "sha256"));
+        var draft = Rows(approved, "regions");
+        var evidence = Rows(Parse(Evidence), "regions");
+        Assert.Equal(draft.Select(r => Text(r, "id")), evidence.Select(r => Text(r, "id")));
+        Assert.Equal(326, draft.Sum(r => Rows(r, "members").Length));
+        foreach (var (want, got) in draft.Zip(evidence))
+        {
+            var id = Text(want, "id");
+            var control = Map(got, "opening_control");
+            Assert.Equal((id, Value(want, "capital_place_id"), Value(want, "binding_status"), Value(want, "control_status"), Value(want, "control_value")),
+                (id, Value(got, "capital_place_id"), Value(got, "binding_status"), Value(control, "status"), Value(control, "value")));
+            var members = Rows(got, "members");
+            Assert.Equal(Rows(want, "members").Select(m => Text(m, "id")), members.Select(m => Text(m, "id")));
+            foreach (var (w, g) in Rows(want, "members").Zip(members))
+            {
+                var c = Map(g, "opening_control");
+                Assert.Equal((Value(w, "id"), Value(w, "region_id"), Value(w, "binding_status"), Value(w, "control_status"), Value(w, "control_value"), Value(w, "control_date")),
+                    (Value(g, "id"), Value(g, "region_id"), Value(g, "binding_status"), Value(c, "status"), Value(c, "value"), Value(c, "date")));
+            }
         }
     }
 
