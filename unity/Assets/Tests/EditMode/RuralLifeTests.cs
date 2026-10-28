@@ -224,6 +224,8 @@ public class RuralLifeTests
         {
             [RuralLife.Tractor] = (0.25f, 0.5f), [RuralLife.Wagon] = (0.3f, 0.85f), [RuralLife.Horse] = (0.2f, 0.4f),
             [RuralLife.Sheep] = (0.1f, 0.2f), [RuralLife.Donkey] = (0.13f, 0.3f), [RuralLife.Camel] = (0.25f, 0.5f),
+            // The Bedouin tent: the camp kit's 7 to 12 m goat-hair tent at the camel's world scale (10 m against its 3 m).
+            [RuralLife.BedouinTent] = (0.8f, 1.7f),
         };
         var bad = new List<string>();
         var sizes = new Dictionary<(string, string, CollectionDetail), float>();
