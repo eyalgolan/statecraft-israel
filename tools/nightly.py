@@ -901,7 +901,12 @@ def _test_page_problem(cfg: Config) -> str | None:
         return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
     if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
         return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
-    if cfg.itch_page_url and _page_key(cfg.savetest_itch_page_url) == _page_key(cfg.itch_page_url):
+    try:
+        test_page = _page_key(cfg.savetest_itch_page_url)
+        public_page = _page_key(cfg.itch_page_url) if cfg.itch_page_url else None
+    except ValueError as e:
+        return f"the save test's test page URL or the public page URL is not usable: {e}"
+    if test_page == public_page:
         return "the save test's test page must not be the public itch page"
     return None
 

@@ -1973,7 +1973,8 @@ def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
                                 {"target": "EyalGolan/Statecraft-Israel:html5"},
                                 {"target": "eyalgolan/statecraft-israel"},   # no channel: still the public project
                                 {"page_url": None}, {"public_page": PAGE_URL},
-                                {"public_page": PAGE_URL.upper() + "/#game"}])
+                                {"public_page": PAGE_URL.upper() + "/#game"},
+                                {"page_url": "http://["}])   # a malformed URL refuses instead of raising
 def test_savetest_runs_only_against_a_separate_test_page(saved, kw):
     t = saved(**kw)   # 28 Oct 2026: each upload hid the public game while itch unpacked it, for up to an hour
     assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
