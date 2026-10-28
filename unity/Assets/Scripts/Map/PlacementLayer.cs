@@ -124,7 +124,7 @@ namespace Statecraft.Game.Map
                     var kr = tents.AddComponent<MeshRenderer>();
                     kr.sharedMaterial = map.KitMaterial;
                     kr.shadowCastingMode = ShadowCastingMode.On;
-                    Collection.CampTentModels.Attach(tents, built[i].khakiTents);
+                    Collection.CampTentModels.Attach(tents, built[i].khakiTents, map.Residency.Special);
                 }
                 drawn.Add(camps[i].id);
             }

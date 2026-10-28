@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Statecraft.Game.Map.Kits;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -10,62 +11,96 @@ namespace Statecraft.Game.Map.Collection
     /// <summary>Tal Heuberger's khaki canvas tent (owner, 27 October 2026, #756: "Sign off all 19"; the prepared role in
     /// docs/generated-buildings-props-mapping.json, "Existing non-white transit-camp ridge tents") in place of a transit camp's
     /// khaki ridge tents, up close. The camp kit builds those tents into a mesh of their own (SettlementKits.MaabarotSplit);
-    /// this component sits on that mesh's object, asks the collection stream for the model after the first frame, and once it
-    /// has arrived, for each camera, draws one model per tent below the town models' switch distance
-    /// (TownModelLayer.CloseEnterM / CloseExitM) with the kit's khaki tents switched off, and the kit's tents beyond it.
-    /// It fails open: until the model arrives, and for ever when its bundle is missing or damaged, the kit's tents stay.</summary>
+    /// this component sits on that mesh's object. It owns the model the way the single-building models do (#1273's residency,
+    /// the special-buildings policy): a game camera close to the camp admits it, and the model is acquired from the collection
+    /// stream; when no camera is close any more, and on disable or destroy, its instances are destroyed and the lease is
+    /// released, so the bundle can unload. While the model stands, each camera draws one model per tent below the town models'
+    /// switch distance (TownModelLayer.CloseEnterM / CloseExitM) with the kit's khaki tents switched off, and the kit's tents
+    /// beyond it. It fails open: until the model arrives, and for ever when its bundle is missing or damaged, the kit's tents
+    /// stay.</summary>
     [ExecuteAlways]
     public sealed class CampTentModels : MonoBehaviour
     {
         public const string Model = CollectionCatalog.KhakiTent;
+        const string Key = "camp";
 
-        /// <summary>Test seam (internal; the tests see it through InternalsVisibleTo).</summary>
-        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = CollectionStream.Request;
+        static readonly Func<string, CollectionDetail, Action<GameObject?>, IDisposable> DefaultAcquire = CollectionStream.Acquire;
+        /// <summary>Test seam: owned acquisition (internal; the tests see it through InternalsVisibleTo).</summary>
+        internal static Func<string, CollectionDetail, Action<GameObject?>, IDisposable> Acquire = DefaultAcquire;
 
         readonly List<Renderer> models = new List<Renderer>();
+        readonly List<GameObject> instances = new List<GameObject>();
         readonly Dictionary<int, bool> closeFor = new Dictionary<int, bool>();
         IReadOnlyList<SettlementKits.KhakiTent> tents = Array.Empty<SettlementKits.KhakiTent>();
         Renderer? kit;
-        bool asked;
+        CollectionResidencyView? view;
+        CollectionResidency? residency;
+        Vector3 centre;
+        float extent;
+        bool dirty;
 
         /// <summary>Whether the model has arrived and its instances stand (false: the kit's tents are the only ones drawn).</summary>
-        public bool HasModels => models.Count > 0;
-        /// <summary>The model instances, one per khaki tent (empty until the model arrives).</summary>
-        public int ModelCount => models.Count;
+        public bool HasModels => instances.Count > 0;
+        /// <summary>The model instances, one per khaki tent (empty until the model arrives, and again after leave).</summary>
+        public int ModelCount => instances.Count;
+        /// <summary>Whether a game camera is close to this camp now, so the model is demanded and its lease held.</summary>
+        public bool Demanded => view != null && view.Keys.Count > 0;
         public bool LastClose { get; private set; }
 
-        /// <summary>Attaches to <paramref name="khakiKit"/>, the camp's khaki tents' kit object, and asks for the model.</summary>
-        public static CampTentModels Attach(GameObject khakiKit, IReadOnlyList<SettlementKits.KhakiTent> tents)
+        /// <summary>Attaches to <paramref name="khakiKit"/>, the camp's khaki tents' kit object. Nothing is asked for until a
+        /// game camera comes close to the camp (<paramref name="policy"/>).</summary>
+        internal static CampTentModels Attach(GameObject khakiKit, IReadOnlyList<SettlementKits.KhakiTent> tents, CollectionResidencyPolicy policy)
         {
             var layer = khakiKit.AddComponent<CampTentModels>();
             layer.kit = khakiKit.GetComponent<Renderer>();
             layer.tents = tents;
-            layer.Ask();
+            layer.view = new CollectionResidencyView(policy);
+            if (tents.Count > 0)
+            {
+                // The camp's anchor: its tents' centre, reaching out to its farthest tent's end (the kit's vertices are in world space).
+                var c = new Vector2(tents.Average(t => t.C.x), tents.Average(t => t.C.y));
+                layer.centre = new Vector3(c.x, 0f, c.y);
+                layer.extent = tents.Max(t => (t.C - c).magnitude + 0.5f * t.W);
+            }
             return layer;
         }
 
-        void Ask()
+        void Refresh()
         {
-            if (asked || tents.Count == 0) return;
-            asked = true;
-            Request(Model, CollectionDetail.Near, prefab =>
-            {
-                if (this == null) return;
-                if (prefab == null) { Debug.LogWarning($"CAMPS: {Model} did not stream; the kit's khaki tents stay."); return; }
-                Place(prefab);
-            });
+            if (view == null || !isActiveAndEnabled || tents.Count == 0) return;
+            residency ??= new CollectionResidency(Acquire, ClearForRetirement, (id, detail, prefab) =>
+                {
+                    if (prefab == null) { Debug.LogWarning($"CAMPS: {Model} did not stream; the kit's khaki tents stay."); return; }
+                    Place(prefab);
+                },
+                (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
+                    Application.isPlaying && Acquire == DefaultAcquire ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
+            residency.Replace(Demanded ? new[] { (Model, CollectionDetail.Near) } : Array.Empty<(string, CollectionDetail)>());
+        }
+
+        /// <summary>Leave: the model's instances go, the kit's tents come back, and every reference to the prefab is dropped.</summary>
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement()
+        {
+            var gone = instances.Where(go => go != null).ToArray();
+            foreach (var go in gone)
+                if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+            instances.Clear(); models.Clear(); closeFor.Clear();
+            if (kit != null) kit.forceRenderingOff = false;
+            return gone;
         }
 
         void Place(GameObject prefab)
         {
             foreach (var t in tents)
             {
-                var go = Instantiate(prefab, transform, false); go.name = Model;
+                var go = Instantiate(prefab, transform, false); go.name = Model; instances.Add(go);
+                // Sized in the model's own frame first, so its size does not depend on the yaw: its long side seen from above
+                // becomes the kit tent's length.
+                var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
+                if (edge > 1e-4f) go.transform.localScale *= t.W / edge;
                 // The model's long side lies along the prefab's z once it stands up; the kit's ridge runs along the tent's
                 // length at its yaw (counter-clockwise in x-z), so a turn of 90 - yaw about y lays it along the ridge.
                 go.transform.localRotation = Quaternion.Euler(0f, 90f - t.Yaw, 0f) * prefab.transform.localRotation;
-                var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
-                if (edge > 1e-4f) go.transform.localScale *= t.W / edge;
                 b = Bounds(go);
                 go.transform.position += new Vector3(t.C.x - b.center.x, t.Y - b.min.y, t.C.y - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
@@ -87,12 +122,27 @@ namespace Statecraft.Game.Map.Collection
         }
 
         void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
-        void OnDisable() => RenderPipelineManager.beginCameraRendering -= Choose;
+        void OnDisable()
+        {
+            RenderPipelineManager.beginCameraRendering -= Choose;
+            view?.Clear();
+            residency?.Replace(Array.Empty<(string, CollectionDetail)>());
+        }
+        void OnDestroy() { residency?.Dispose(); residency = null; }
+        void LateUpdate()
+        {
+            if (view != null && view.Prune(Time.frameCount)) dirty = true;
+            if (dirty) { dirty = false; Refresh(); }
+        }
 
-        /// <summary>The per-camera switch: the models up close once they have arrived, the kit's tents otherwise.</summary>
+        /// <summary>The per-camera step: the camera's demand for the model (residency), then the switch, the models up close
+        /// once they have arrived, the kit's tents otherwise.</summary>
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
-            if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
+            if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection || view == null) return;
+            bool before = Demanded;
+            view.Observe(cam, new[] { (Key, centre, extent) }, Time.frameCount);
+            if (before != Demanded) { if (Application.isPlaying) dirty = true; else Refresh(); }
             int id = cam.GetInstanceID();
             bool close = SpecialBuildingModels.CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;

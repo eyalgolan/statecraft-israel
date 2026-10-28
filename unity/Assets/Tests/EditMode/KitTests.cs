@@ -704,12 +704,22 @@ public class KitTests
         }
     }
 
-    /// <summary>The khaki tent model takes the kit's khaki tents' place up close once it has streamed, and the kit's tents
-    /// come back beyond the switch distance; a model that never arrives leaves the kit's tents (fail open).</summary>
-    [Test]
-    public void TheKhakiTentModelStandsInForTheKitsKhakiTentsUpClose()
+    sealed class FakeLease : System.IDisposable
     {
-        var saved = Statecraft.Game.Map.Collection.CampTentModels.Request;
+        readonly System.Action release; bool done;
+        public FakeLease(System.Action release) { this.release = release; }
+        public void Dispose() { if (!done) { done = true; release(); } }
+    }
+
+    /// <summary>Tal Heuberger's khaki canvas tent (#756) stands in for a camp's khaki ridge tents up close, and is owned like the
+    /// single-building models (#1273's residency): nothing is asked for until a game camera comes close to the camp; leaving,
+    /// disabling or destroying the camp destroys the models, brings the kit's tents back and releases the lease; coming back
+    /// asks again; an answer that arrives after leave places nothing; a model that does not stream leaves the kit's tents.</summary>
+    [Test]
+    public void TheKhakiTentModelIsOwnedUpCloseAndReleasedOnLeave()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var policy = Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special;
         var root = new GameObject("camp tents fixture");
         var camGo = new GameObject("camp tents camera", typeof(Camera));
         try
@@ -721,29 +731,68 @@ public class KitTests
             Assert.IsNotNull(prefab, "the khaki tent's prefab is in the 1948 Collection's folder");
             GameObject Kit(string name) { var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root.transform, false); return go; }
             var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            void Near() => camGo.transform.position = new Vector3(200f, 10000f, 200f);
+            void Far() => camGo.transform.position = new Vector3(200f, 60000f, 200f);
 
-            Statecraft.Game.Map.Collection.CampTentModels.Request = (id, d, done) => done(prefab);
+            int acquired = 0, released = 0;
+            System.Action<GameObject?>? late = null; bool answerNow = true; GameObject? answer = prefab;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) =>
+            {
+                acquired++;
+                Assert.AreEqual(Statecraft.Game.Map.Collection.CampTentModels.Model, id);
+                if (answerNow) done(answer); else late = done;
+                return new FakeLease(() => released++);
+            };
+
             var kit = Kit("with model");
-            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents);
-            Assert.AreEqual(tents.Length, layer.ModelCount, "one model per khaki tent");
-            camGo.transform.position = new Vector3(0f, 10000f, 0f); layer.Choose(default, cam);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, policy);
+            Assert.AreEqual(0, acquired, "nothing is asked for before a camera comes close");
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(1, acquired); Assert.AreEqual(tents.Length, layer.ModelCount, "one model per khaki tent");
             Assert.IsTrue(kit.GetComponent<Renderer>().forceRenderingOff, "up close the kit's khaki tents give way");
-            Assert.IsTrue(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).All(r => !r.forceRenderingOff), "and the models draw");
-            camGo.transform.position = new Vector3(0f, 60000f, 0f); layer.Choose(default, cam);
-            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "far off the kit's tents are back");
-            Assert.IsTrue(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).All(r => r.forceRenderingOff));
+            var drawn = layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).ToList();
+            Assert.IsNotEmpty(drawn); Assert.IsTrue(drawn.All(r => !r.forceRenderingOff), "and the models draw");
 
-            Statecraft.Game.Map.Collection.CampTentModels.Request = (id, d, done) => done(null);
+            Far(); layer.Choose(default, cam);
+            Assert.AreEqual(1, released, "leaving releases the lease, so the bundle can unload");
+            Assert.AreEqual(0, layer.ModelCount, "and the models go");
+            Assert.IsEmpty(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit));
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "far off the kit's tents are back");
+
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(2, acquired, "coming back asks again"); Assert.AreEqual(tents.Length, layer.ModelCount);
+            layer.enabled = false;
+            Assert.AreEqual(2, released, "disabling releases it"); Assert.AreEqual(0, layer.ModelCount);
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff);
+            layer.enabled = true;
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(3, acquired); Assert.AreEqual(tents.Length, layer.ModelCount);
+            Object.DestroyImmediate(layer);
+            Assert.AreEqual(3, released, "destroying releases it");
+            Assert.IsEmpty(kit.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit), "and destroys the models");
+
+            // An answer that arrives after leave places nothing.
+            answerNow = false;
+            var slow = Kit("slow model");
+            var later = Statecraft.Game.Map.Collection.CampTentModels.Attach(slow, tents, policy);
+            Near(); later.Choose(default, cam);
+            Far(); later.Choose(default, cam);
+            Assert.AreEqual(4, released);
+            late!(prefab);
+            Assert.AreEqual(0, later.ModelCount, "the departed view is not rebuilt");
+
+            // A model that does not stream: the kit's tents stay, close or far.
+            answerNow = true; answer = null;
             var bare = Kit("missing model");
             LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^CAMPS: .* did not stream"));
-            var failed = Statecraft.Game.Map.Collection.CampTentModels.Attach(bare, tents);
-            camGo.transform.position = new Vector3(0f, 10000f, 0f); failed.Choose(default, cam);
+            var failed = Statecraft.Game.Map.Collection.CampTentModels.Attach(bare, tents, policy);
+            Near(); failed.Choose(default, cam);
             Assert.AreEqual(0, failed.ModelCount);
-            Assert.IsFalse(bare.GetComponent<Renderer>().forceRenderingOff, "no model: the kit's tents stay, close or far");
+            Assert.IsFalse(bare.GetComponent<Renderer>().forceRenderingOff, "no model: the kit's tents stay");
         }
         finally
         {
-            Statecraft.Game.Map.Collection.CampTentModels.Request = saved;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
             Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
         }
     }
