@@ -169,12 +169,12 @@ namespace Statecraft.Game.EditorTools
         /// <summary>Where a target's bundles are built (incremental, git-ignored).</summary>
         public static string BundleCache(BuildTarget target) => Path.Combine("Library", "CollectionBundles", target.ToString());
 
-        /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs; their meshes, clips,
-        /// controllers, materials and colour maps come in as dependencies.</summary>
+        /// <summary>The bundles: each catalog bundle carries its models' far and near prefabs and source model files
+        /// (CollectionCatalog.SourceModelPath); their meshes, clips, controllers, materials and colour maps come in as dependencies.</summary>
         public static AssetBundleBuild[] Builds() => CollectionCatalog.Bundles.Select(b => new AssetBundleBuild
         {
             assetBundleName = b.Bundle,
-            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id, CollectionDetail.Near) }).Distinct().ToArray(),
+            assetNames = b.Ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct().ToArray(),
         }).ToArray();
 
         /// <summary>Writes <see cref="CollectionCatalog.ChecksFile"/> into <paramref name="folder"/> for the built

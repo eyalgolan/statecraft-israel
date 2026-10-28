@@ -333,6 +333,37 @@ public class CollectionImportTests
         CollectionAssert.IsEmpty(AssetDatabase.GetAllAssetBundleNames(), "asset bundle labels");
     }
 
+    /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder.</summary>
+    static string[] FilesOf(string id, IEnumerable<string> closure) => closure.Where(p => p.StartsWith(Dir(id) + "/", StringComparison.Ordinal)).ToArray();
+
+    /// <summary>Every placed generated model (Tal Heuberger's figures and props, #756) reaches the player only through its own
+    /// streamed bundle: no enabled build scene and no asset under any Resources folder (nested ones too) depends on a file of
+    /// its folder, its own bundle's build entry pulls in its model, and no other bundle pulls in any of its files.</summary>
+    [Test]
+    public void PlacedGeneratedModelsReachThePlayerOnlyThroughTheirOwnBundles()
+    {
+        var t = Type.GetType("Statecraft.Game.EditorTools.CollectionImport, Assembly-CSharp-Editor");
+        var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
+        var closures = builds.ToDictionary(b => b.assetBundleName, b => AssetDatabase.GetDependencies(b.assetNames, true));
+        var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
+        var resources = AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
+            .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
+        var placed = CollectionCatalog.Ids.Where(CollectionCatalog.IsGenerated).ToList();
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, placed);
+        foreach (var id in placed)
+        {
+            CollectionAssert.IsEmpty(FilesOf(id, scenes), id + " in a player scene's closure");
+            CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
+            string own = CollectionCatalog.BundleOf(id)!;
+            CollectionAssert.Contains(closures[own], CollectionCatalog.SourceModelPath(id), id + " in its own bundle");
+            foreach (var other in closures.Where(c => c.Key != own))
+                CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
+        }
+        // The check sees a reference: a closure holding the tent's prefab, as a Resources prefab that placed it would have.
+        CollectionAssert.IsNotEmpty(FilesOf(CollectionCatalog.BedouinTent,
+            new[] { "Assets/Resources/Probe.prefab", CollectionCatalog.PrefabPath(CollectionCatalog.BedouinTent, CollectionDetail.Near) }));
+    }
+
     [Test]
     public void TheBundleBuildMapIsTheCatalog()
     {
@@ -341,7 +372,13 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct(),
                 b.assetNames, bundle);
+        // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
+        var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();
+        CollectionAssert.IsEmpty(missing, "bundle asset names with no asset");
+        // The R35 is imported from the vehicle delivery's compatibility FBX, not from an <id>.fbx.
+        var r35 = builds.Single(b => b.assetBundleName == CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35));
+        CollectionAssert.Contains(r35.assetNames, $"{CollectionCatalog.Folder}/{CollectionCatalog.SyrianR35}/{CollectionCatalog.SyrianR35}-compatibility.fbx");
     }
 }

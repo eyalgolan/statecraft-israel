@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Review;
 using UnityEditor;
@@ -62,6 +63,33 @@ public class Generated1948AssetTests
             Assert.AreEqual(TextureImporterCompression.Compressed, ti.textureCompression, image);
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(Generated1948BuildingsPropsReview.PrefabOf(receipt.id)), receipt.id);
+        }
+    }
+
+    /// <summary>A placed generated prop (#756) keeps its source in its streamed prefab: every part of the prop's own FBX, each
+    /// drawn with the prop's own material, whose map is the prop's own colour map, imported sRGB with mipmaps and not readable
+    /// on the CPU.</summary>
+    [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
+    {
+        var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, props);
+        foreach (string id in props)
+        {
+            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
+            var sourceMeshes = AssetDatabase.LoadAssetAtPath<GameObject>(fbx).GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
+            var filters = prefab.GetComponentsInChildren<MeshFilter>(true);
+            Assert.Greater(sourceMeshes.Length, 0, fbx);
+            CollectionAssert.AreEquivalent(sourceMeshes, filters.Select(f => f.sharedMesh), id + " draws its FBX's own meshes, every one");
+            var material = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat");
+            var renderers = prefab.GetComponentsInChildren<Renderer>(true);
+            Assert.AreEqual(filters.Length, renderers.Length, id + " one renderer per part");
+            Assert.IsTrue(renderers.All(r => r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m == material)), id + " its own material");
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(map);
+            Assert.AreEqual(texture, material.mainTexture, id + " its own colour map");
+            var ti = (TextureImporter)AssetImporter.GetAtPath(map);
+            Assert.IsTrue(ti.sRGBTexture, map); Assert.IsTrue(ti.mipmapEnabled, map); Assert.IsFalse(ti.isReadable, map);
+            Assert.Greater(texture.mipmapCount, 1, map + " imported mipmaps");
         }
     }
 
