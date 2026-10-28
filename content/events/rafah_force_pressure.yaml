@@ -3,7 +3,7 @@
 # Approved draft: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6369861430
 # Owner acceptance: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388
 # Historical source passages re-opened by an AI agent on 24 October 2026, not human fact-checking.
-# No person review or native Hebrew approval is asserted; shareable builds remain gated by R-ALT-011.
+# Signed off by the owner on 28 October 2026 (reviewed_by below). Native Hebrew approval is not asserted.
 id: rafah_force_pressure
 kind: consequence
 anchor: soft
@@ -44,3 +44,5 @@ sources:
   - { url: "https://history.state.gov/historicaldocuments/frus1949v06/d354", checked: 2026-10-24 }
   - { url: "https://www.idf.il/media/emxjtczk/%D7%A7%D7%95%D7%91%D7%A5-%D7%9E%D7%91%D7%A6%D7%A2-%D7%97%D7%95%D7%A8%D7%91.pdf", checked: 2026-10-24 }
 status: draft
+reviewed_by: eyalgolan
+reviewed_on: 2026-10-28
