@@ -71,6 +71,7 @@ public class Generated1948CharacterTests
     [TestCase("figure-iraqi-infantry-1948-v1")]
     [TestCase("figure-egyptian-infantry-1948-v1")]
     [TestCase("figure-ala-infantry-1948-v1")]
+    [TestCase("figure-bedouin-civilian-1948-v1")]
     [TestCase("figure-lebanese-regular-1948-v1")]
     public void FullQualityFigureKeepsOneModelWithoutTheLegacyLodSwitcher(string id)
     {
@@ -241,6 +242,7 @@ public class Generated1948CharacterTests
     [TestCase("figure-iraqi-infantry-1948-v1", CollectionCatalog.ArabArmies)]
     [TestCase("figure-egyptian-infantry-1948-v1", "collection-figure-egyptian-infantry-1948-v1")]
     [TestCase("figure-ala-infantry-1948-v1", "collection-figure-ala-infantry-1948-v1")]
+    [TestCase("figure-bedouin-civilian-1948-v1", "collection-figure-bedouin-civilian-1948-v1")]
     [TestCase("figure-lebanese-regular-1948-v1", "collection-figure-lebanese-regular-1948-v1")]
     public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id, string bundle)
     {

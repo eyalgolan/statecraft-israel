@@ -43,6 +43,10 @@ namespace Statecraft.Game.Map.Collection
             ImmigrantWoman = "figure-immigrant-woman-v1", KibbutzWoman = "figure-kibbutz-woman-v1",
             YemeniteImmigrant = "figure-yemenite-immigrant-v1", PioneerFarmer = "figure-pioneer-farmer-v1-tpose";
 
+        /// <summary>Tal Heuberger's generated Bedouin civilian, at the Bedouin camp areas where RuralLife draws the camels (owner,
+        /// 27 October 2026, #756: "Sign off all 19"). Added last, so it moves no figure that was already standing.</summary>
+        public const string BedouinCivilian = CollectionCatalog.BedouinCivilian;
+
         public static readonly string[] SettledModels = { Townsman, Craftsman, Nurse };
         public static readonly string[] CampModels = { ArrivingMan, Woman };
         /// <summary>The immigrants who stand beside C01 and C10 at a transit camp; the Yemenite immigrant joins them in his window.</summary>
@@ -50,7 +54,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every model this layer places (a test aid for the catalog's "every model is used" check).</summary>
         public static IEnumerable<string> Models => SettledModels.Concat(CampModels).Concat(ImmigrantModels)
-            .Concat(new[] { YemeniteImmigrant, ArabVillager, KibbutzWoman, PioneerFarmer, Builder });
+            .Concat(new[] { YemeniteImmigrant, ArabVillager, KibbutzWoman, PioneerFarmer, Builder, BedouinCivilian });
 
         /// <summary>The Yemenite immigrant stands at the transit camps only while Operation Magic Carpet flew Yemenite Jews in:
         /// the same sourced window as the C-54 at Lod (SeaAirCollection: the main wave from July 1949, the last two aircraft
@@ -100,9 +104,11 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Builds the deterministic presentation plan. Every group is outside its settlement or camp footprint,
         /// which also keeps it clear of the name pill anchored there, and clear of route corridors, water, unit tokens and
-        /// all earlier groups. Settlement and placement order are their stable source-file/state order.</summary>
+        /// all earlier groups. Settlement and placement order are their stable source-file/state order. <paramref name="blocked"/>
+        /// is further ground no group may take, besides the footprints (the tests block a camp area with it).</summary>
         public static List<Want> Wants(MapScene map, DateTime date, IEnumerable<Placement> placements, Content content,
-            IReadOnlyDictionary<string, SettlementControl>? control = null, IEnumerable<CityProject>? projects = null)
+            IReadOnlyDictionary<string, SettlementControl>? control = null, IEnumerable<CityProject>? projects = null,
+            IEnumerable<(Vector2 centre, float radius)>? blocked = null)
         {
             var projectList = (projects ?? Enumerable.Empty<CityProject>()).ToList();
             // The camps the player has built: the legacy loop's placements and, in the GDD loop, the built transit-camp
@@ -114,6 +120,7 @@ namespace Statecraft.Game.Map.Collection
             var radii = new Dictionary<string, float>(StringComparer.Ordinal);
             foreach (var (_, radius, id) in map.KitFootprints) if (!radii.ContainsKey(id)) radii[id] = radius;
             var reserved = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            if (blocked != null) reserved.AddRange(blocked);
             var taken = new List<(Vector2 centre, float radius)>();
 
             foreach (var settlement in map.Settlements)
@@ -167,6 +174,11 @@ namespace Statecraft.Game.Map.Collection
                 AddGroup($"project_{project.Id}:builder", new Vector2(world.x, world.z), hexM, new[] { Builder }, date,
                     ground, reserved, taken, wants);
             }
+
+            // The Bedouin civilian at up to three served camp areas, those of the camels (the sub-districts' sourced Bedouin totals,
+            // content/map/localities_1948.yaml encampments; #667's "camels at Bedouin areas"), undated like the camps.
+            foreach (var camp in Served(rural, RuralLife.Camel))
+                AddGroup(camp.Key + ":bedouin", camp.Anchor, camp.AnchorRadius, new[] { BedouinCivilian }, date, ground, reserved, taken, wants);
             return wants;
 
             Vector2 Anchor(Settlement settlement)
