@@ -104,9 +104,11 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Builds the deterministic presentation plan. Every group is outside its settlement or camp footprint,
         /// which also keeps it clear of the name pill anchored there, and clear of route corridors, water, unit tokens and
-        /// all earlier groups. Settlement and placement order are their stable source-file/state order.</summary>
+        /// all earlier groups. Settlement and placement order are their stable source-file/state order. <paramref name="blocked"/>
+        /// is further ground no group may take, besides the footprints (the tests block a camp area with it).</summary>
         public static List<Want> Wants(MapScene map, DateTime date, IEnumerable<Placement> placements, Content content,
-            IReadOnlyDictionary<string, SettlementControl>? control = null, IEnumerable<CityProject>? projects = null)
+            IReadOnlyDictionary<string, SettlementControl>? control = null, IEnumerable<CityProject>? projects = null,
+            IEnumerable<(Vector2 centre, float radius)>? blocked = null)
         {
             var projectList = (projects ?? Enumerable.Empty<CityProject>()).ToList();
             // The camps the player has built: the legacy loop's placements and, in the GDD loop, the built transit-camp
@@ -118,6 +120,7 @@ namespace Statecraft.Game.Map.Collection
             var radii = new Dictionary<string, float>(StringComparer.Ordinal);
             foreach (var (_, radius, id) in map.KitFootprints) if (!radii.ContainsKey(id)) radii[id] = radius;
             var reserved = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
+            if (blocked != null) reserved.AddRange(blocked);
             var taken = new List<(Vector2 centre, float radius)>();
 
             foreach (var settlement in map.Settlements)
@@ -172,7 +175,7 @@ namespace Statecraft.Game.Map.Collection
                     ground, reserved, taken, wants);
             }
 
-            // The Bedouin civilian at the Bedouin camp areas where the camels stand (the sub-districts' sourced Bedouin totals,
+            // The Bedouin civilian at up to three served camp areas, those of the camels (the sub-districts' sourced Bedouin totals,
             // content/map/localities_1948.yaml encampments; #667's "camels at Bedouin areas"), undated like the camps.
             foreach (var camp in Served(rural, RuralLife.Camel))
                 AddGroup(camp.Key + ":bedouin", camp.Anchor, camp.AnchorRadius, new[] { BedouinCivilian }, date, ground, reserved, taken, wants);

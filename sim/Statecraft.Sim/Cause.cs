@@ -72,7 +72,7 @@ namespace Statecraft.Sim
         /// <summary>Prisoner exchange rows. Args: the displayed people count (invariant), then the front id.</summary>
         public const string PrisonersReturned = "prisoners_returned", SoldiersReturned = "soldiers_returned";
 
-        // C136: event context Args begin with the shown English and sourced Hebrew title (empty for a preview).
+        // #1680: event context Args begin with the shown English and sourced Hebrew title (empty for a preview).
         public const string EventNew = "event_new", EventChosen = "event_chosen", EventDelegated = "event_delegated",
             EventDelegatedPartial = "event_delegated_partial";
         // Chosen/delegated Args: filled English option, filled Hebrew option, English minister, Hebrew minister (empty: cabinet).
