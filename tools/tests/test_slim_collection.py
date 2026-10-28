@@ -20,6 +20,7 @@ GENERATED_PEOPLE = [
 # Generated figures signed off later, each streamed in a bundle of its own (owner, 27 October 2026, "Sign off all 19").
 GENERATED_FIGURES = [
     "figure-egyptian-infantry-1948-v1",
+    "figure-ala-infantry-1948-v1",
 ]
 
 

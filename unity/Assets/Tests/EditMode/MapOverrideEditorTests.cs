@@ -229,4 +229,42 @@ public sealed class MapOverrideEditorTests
         foreach (var directory in Directory.GetDirectories(source))
             CopyDirectory(directory, Path.Combine(destination, Path.GetFileName(directory)));
     }
+    // R-MEDIT-002, R-MEDIT-003: SYNTHETIC fixture-only authoring state; no files are written.
+    [Test]
+    public void InfrastructureDocumentKeepsEditsAndRawFailedInputAcrossReloadAndUndo()
+    {
+        const string source = "version: map-editor-0.3\nruleset: gdd-0.3\ndraft: true\n"
+            + "base_revision: fixture-only\nbase_digest: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+            + "overlay: { terrain: [], control: [], locations: [] }\nworkable: []\nregions: []\ninfrastructure: []\n";
+        var document = ScriptableObject.CreateInstance<MapOverrideEditorDocument>();
+        try
+        {
+            Assert.IsTrue(document.TryReplaceInfrastructure(source, SaveGame.Gdd03Ruleset, out var error), error);
+            var saved = document.InfrastructureSource;
+            Undo.RegisterCompleteObjectUndo(document, "fixture-only edit");
+            Assert.IsTrue(document.TryReplaceInfrastructure(source.Replace("workable: []",
+                "workable: [{ hex: { q: 1, r: -2 }, value: false }]"), SaveGame.Gdd03Ruleset, out error), error);
+            Undo.FlushUndoRecordObjects();
+            var edited = document.InfrastructureSource;
+            Assert.IsFalse(document.TryReplaceInfrastructure("unreadable: [", SaveGame.Gdd03Ruleset, out error));
+            Assert.AreEqual(edited, document.InfrastructureSource);
+            Assert.AreEqual("unreadable: [", document.RejectedInfrastructureSource);
+            var clone = ScriptableObject.CreateInstance<MapOverrideEditorDocument>();
+            try
+            {
+                EditorJsonUtility.FromJsonOverwrite(EditorJsonUtility.ToJson(document), clone);
+                Assert.AreEqual(edited, clone.InfrastructureSource);
+                Assert.AreEqual(document.RejectedInfrastructureSource, clone.RejectedInfrastructureSource);
+                Assert.IsFalse(clone.InfrastructureCandidate().CanExport);
+                Assert.IsNotEmpty(clone.InfrastructureCandidate().Diagnostics("fixture-only", new string('a', 64)));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(clone); }
+            Undo.PerformUndo();
+            Assert.AreEqual(saved, document.InfrastructureSource);
+            Undo.PerformRedo();
+            Assert.AreEqual(edited, document.InfrastructureSource);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(document); }
+    }
+
 }
