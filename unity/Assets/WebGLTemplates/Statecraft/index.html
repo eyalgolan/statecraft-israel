@@ -14,12 +14,37 @@
       #fill { width: 0; height: 100%; background: #c4a05c; }
       #error { display: none; position: fixed; left: 10%; right: 10%; top: 40%; color: #de7868; background: #0e1626;
                border: 1px solid #c4a05c; padding: 16px; font: 16px Georgia, serif; white-space: pre-wrap; }
+      /* Issue #1119: the read-only companion is in the page from load, so its status region exists before the first
+         announcement; it stays out of sight (but in the accessibility tree) until the game fills it. WebCompanion.jslib
+         styles it once the game publishes. */
+      body:not(.has-companion) #companion { position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip-path: inset(50%); white-space: nowrap; }
     </style>
   </head>
   <body>
     <canvas id="unity-canvas" tabindex="-1"></canvas>
     <div id="loading">Statecraft: Israel<div id="bar"><div id="fill"></div></div></div>
     <div id="error"></div>
+    <aside id="companion" aria-labelledby="companion-heading" tabindex="-1" dir="auto">
+      <h2 id="companion-heading" dir="auto"></h2>
+      <p id="companion-help" dir="auto"></p>
+      <section id="companion-event" dir="auto">
+        <h3 id="companion-title" dir="auto"></h3>
+        <div id="companion-body" dir="auto"></div>
+        <div id="companion-choice-group" dir="auto">
+          <h3 id="companion-choice-heading" dir="auto"></h3>
+          <ol id="companion-choices" dir="auto"></ol>
+        </div>
+      </section>
+      <h3 id="companion-focus-heading" dir="auto"></h3>
+      <p id="companion-focus" dir="auto"></p>
+      <h3 id="companion-status-heading" dir="auto"></h3>
+      <p id="companion-status" role="status" aria-atomic="true" dir="auto"></p>
+      <section id="companion-report" dir="auto">
+        <h3 id="companion-report-title" dir="auto"></h3>
+        <div id="companion-report-rows" dir="auto"></div>
+      </section>
+    </aside>
     <script>
       // Full-window canvas: Unity keeps the render size matched to the canvas's CSS size, so the UI Toolkit panel
       // (ScaleWithScreenSize, 1920x1080, match 0.5) rescales on every browser resize.

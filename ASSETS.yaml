@@ -1612,6 +1612,11 @@ rules:
     licence: CC-BY-SA-4.0
     source: "The map editor's override file (#1009; owner rulings of 18 October 2026): this project's own authored edits (terrain, dated control, location hexes), applied after the generated map data. Ships empty; no facts and no third-party data"
     status: verified
+  - glob: "content/map/region_names_he.yaml"
+    licence: CC-BY-SA-4.0
+    source: "Own presentation-name compilation (#1219 item 4), checked 2026-10-26: the Hebrew Palestine Gazette No. 1415, Supplement 2, 7 June 1945, pp. 493-499 (ISA segment 86cb028b55c3baa9_7ded851a300df5a6_2, https://journaliststudio.google.com/pinpoint/document-view?collection=7ded851a300df5a6&docid=86cb028b55c3baa9_7ded851a300df5a6_2&p=122); Government of Israel Hebrew treaty scans/index (https://www.gov.il/BlobFolder/dynamiccollectorresultitem/15032017/he/translation-of-international-treaties-db_15032017.pdf, PDF pp. 1-2); Jordanian treaty Hebrew text republished by ECF. Per-field exact URLs, fresh dates and page/section citations are in the file and docs/map-region-names.md. Facts and short names only; no scan, map geometry, image or PDF file copied."
+    status: verified
+    note: "Provenance of this project's own compilation; not human historical or Hebrew sign-off. 61 fields are supplied: 59 are native-review-pending and 2 carry the owner's approved wording (27 October 2026). Eleven compound geographic captions remain NEEDS-RESEARCH with per-field English fallback, following the ruling not to invent unsourced historical forms. Geometry, dates and simulation inputs are unchanged."
   # --- Baked map textures (derived from the heightmap) ---
   - glob: "unity/Assets/Textures/Map/landuse.png"
     licence: CC-BY-SA-4.0

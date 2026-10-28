@@ -71,6 +71,17 @@ public class TranslationsTests
     }
 
     [Fact]
+    public void RegionCatalogPendingReviewSurvivesTheTranslationContractWithoutExtendingOtherRecords()
+    {
+        const string key="map/region_names_he.yaml#names.0.name";
+        string Body(string k,string flag)=>k+":\n  text: בדיקה\n  review: "+flag+"\n";
+        var set=Translations.Parse("he",null,null,Body(key,"native-review-pending"));
+        Assert.Equal("native-review-pending",Assert.Single(ParseBack(set).Content).Review);
+        Assert.Throws<ContentException>(()=>Translations.Parse("he",null,null,Body("people.yaml#people.example.name","native-review-pending")));
+        Assert.Throws<ContentException>(()=>Translations.Parse("he",null,null,Body(key,"reviewed")));
+    }
+
+    [Fact]
     public void NoHebrewFieldIsMissedOrCountedTwice()
     {
         // A plain scan, independent of Fields(): every non-empty *_he / *_he_f text in content/*.yaml and

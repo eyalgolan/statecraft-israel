@@ -625,10 +625,14 @@ namespace Statecraft.Game.UI
             if (control != "" && !(zone != null && regions.Control?.At(q, r, date).side == Control1948.Side.Dmz)) parts.Add(control);
             // the sub-district only while the map draws the sub-district bands (before the first sourced line, or with no side data)
             var sub = regions.Subdistricts.ShowsOn(date) && regions.ControlPeriod(date) == null ? regions.Subdistricts.SubdistrictAt(q, r) : null;
-            if (zone != null) parts.Add(text.Format("info.armistice_zone", zone.Name, zone.Agreement, DateText(zone.Signed)));
-            else if (sub != null) parts.Add(text.Format("info.region", sub.Name, sub.District));
+            string N(string key, string english) => regions.Names.Pick(key, english, text["ui.lang"] == UiLanguage.Hebrew);
+            if (zone != null) parts.Add(text.Format("info.armistice_zone", N("zone." + zone.Key + ".name", zone.Name),
+                N("zone." + zone.Key + ".agreement", zone.Agreement), DateText(zone.Signed)));
+            else if (sub != null) parts.Add(text.Format("info.region", N("subdistrict." + sub.Key + ".name", sub.Name),
+                N("subdistrict." + sub.Key + ".district", sub.District)));
             foreach (var l in regions.LinesAt(q, r, date))
-                    parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", l.Name, l.Agreement, DateText(l.Signed)));
+                parts.Add(text.Format(l.LowAccuracy ? "info.armistice_line_low" : "info.armistice_line", N("line." + l.Key + ".name", l.Name),
+                    N("line." + l.Key + ".agreement", l.Agreement), DateText(l.Signed)));
             return string.Join("\n", parts);
         }
 
