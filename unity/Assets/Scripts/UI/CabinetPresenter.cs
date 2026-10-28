@@ -28,6 +28,7 @@ namespace Statecraft.Game.UI
         /// <summary>The seat colours: coalition blue and opposition grey, each at least 3:1 against the screen's navy.</summary>
         public static readonly Color CoalitionColour = new Color32(92, 138, 200, 255), OppositionColour = new Color32(186, 180, 168, 255);
 
+        readonly VisualElement house;
         readonly VisualElement screen; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly Button pmCard; readonly System.Action onPm; readonly EventCallback<GeometryChangedEvent> onPmGeometry;
         string? pmId; VisualElement? pmPortrait;
@@ -44,6 +45,7 @@ namespace Statecraft.Game.UI
         public CabinetPresenter(VisualElement root, SimBridge bridge, UiText text, PortraitCatalog? portraits)
         {
             screen = root.Q<VisualElement>("screen-cabinet"); this.bridge = bridge; this.text = text; this.portraits = portraits;
+            house = screen.Q("cabinet-house");
             pmCard = screen.Q<Button>("seat-" + PrimeMinister);
             list = screen.Q<ScrollView>("cabinet-seats"); candidates = screen.Q<ScrollView>("cabinet-candidates");
             FocusScroll.BarsAreNotTabStops(list, candidates);   // #41: each bar was an extra Tab stop after the last row
@@ -70,6 +72,7 @@ namespace Statecraft.Game.UI
             pmPortrait?.UnregisterCallback(onPmGeometry); pmPortrait = null;
             foreach (var e in new[] { side, pmOffices, status }) e.UnregisterCallback(onSideGeometry);
             if (screen.userData is System.Action) screen.userData = null;
+            screen.Q("cabinet-main").Insert(0, house);
             list.Clear(); candidates.Clear(); pmOffices.Clear(); chips.Clear(); PersonCard.Clear(pmCard);
             cards.Clear(); rows.Clear(); cardOrder.Clear(); pmOrder.Clear(); pickFor = null; chipsFor = "";
             hemicycle.Set(new Hemicycle.Group[0], 0);
@@ -163,6 +166,8 @@ namespace Statecraft.Game.UI
             var grid = Cards(lineup.Where(x => x.Office.Id != PrimeMinister && !HeldByPm(x)));
             if (!grid.Select(x => x.key).SequenceEqual(cardOrder))
             {
+                // The house may be the last item in this ScrollView. Keep it across a lineup rebuild.
+                screen.Q("cabinet-main").Insert(0, house);
                 list.Clear(); cards.Clear();
                 foreach (var (key, seat, _) in grid)
                 {
@@ -190,6 +195,7 @@ namespace Statecraft.Game.UI
                 return text.Format("cabinet.queued", ContentNames.Of(text, person), ContentNames.Of(text, c.Offices.First(o => o.Id == a.Office), person, s.Date));
             });
             screen.Q<Label>("cabinet-status").text = string.Join("\n", queued);
+            HudPresenter.FitCabinet(screen.parent);
         }
 
         /// <summary>The candidate list's floor (#41 M7): PickFloor where the side column has room; on a shorter one (32:9 is

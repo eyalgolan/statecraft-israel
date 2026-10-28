@@ -46,7 +46,10 @@ namespace Statecraft.Game.UI
         readonly bool hiddenInCapture;
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
-        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly VisualElement band, head, options, layer, hudRoot; readonly Label credit, delegateLine;
+        /// <summary>The body: the text and the options with their effect lines, which scroll together only when they overflow
+        /// the card (#1853); the head above it and the foot with Hide below it stay pinned.</summary>
+        readonly ScrollView scroll;
         readonly Button? endTurn;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
@@ -72,6 +75,9 @@ namespace Statecraft.Game.UI
         string? focusedFor;
         /// <summary>The event whose card last raised Opened, so a card already in view never raises it again.</summary>
         string? openedFor;
+        /// <summary>The event the body was last put back to its top for: a new event opens at its text, never part way down
+        /// the last card's options (#1853).</summary>
+        string? scrolledFor;
         float appliedWidth = float.NaN;
 
         /// <param name="video">The illustration loop's player, or null when video is off (CardVideo.ForcedOff): then the
@@ -95,7 +101,7 @@ namespace Statecraft.Game.UI
             // photograph back when the window grows. A hidden element keeps its old layout, so a band shown again at the
             // size it was dropped at gets no geometry event of its own; the head below it always moves, so it checks too.
             head = card.Q<VisualElement>(className: "event-head");
-            scroll = card.Q<VisualElement>("event-scroll"); options = card.Q<VisualElement>("event-options");
+            scroll = card.Q<ScrollView>("event-scroll"); options = card.Q<VisualElement>("event-options");
             delegateLine = card.Q<Label>("event-delegate");
             layer = card.parent; hudRoot = root.Q("root") ?? root;
             endTurn = hudRoot.Q<Button>("end-turn");
@@ -223,8 +229,8 @@ namespace Statecraft.Game.UI
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
             var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null).ToList();
             Shown = open.FirstOrDefault();
-            if (Shown == null) { collapsedFor = null; openedFor = null; }
-            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; }
+            if (Shown == null) { collapsedFor = null; openedFor = null; scrolledFor = null; }
+            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; scrolledFor = null; }
             var shown = !hiddenInCapture && Shown != null && !Collapsed;
             ScreenNav.Show(card, shown);   // #1106: grows in, shrinks away
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
@@ -302,6 +308,7 @@ namespace Statecraft.Game.UI
                 rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
                 options.Add(rejoin);
             }
+            if (scrolledFor != e.Id) { scrolledFor = e.Id; scroll.scrollOffset = UnityEngine.Vector2.zero; }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
@@ -403,6 +410,10 @@ namespace Statecraft.Game.UI
             var photo = shown ? current : null;
             var display = photo != null ? DisplayStyle.Flex : DisplayStyle.None;
             band.style.display = display; credit.style.display = display;
+            // While the photograph shows it alone gives way (flex-shrink 1000): with the body's own flex-shrink 1 beside it,
+            // the body took a sliver of the shortfall, and once rounded that was a device pixel of scroll on a card that fits
+            // (1366x657 at 100%, #1853). Dropped, the body shrinks and scrolls as the stylesheet says.
+            scroll.style.flexShrink = photo != null ? 0f : (StyleFloat)StyleKeyword.Null;
             band.style.backgroundImage = photo == null ? (StyleBackground)StyleKeyword.None : new StyleBackground(photo.Value.image);
             band.tooltip = photo?.alt ?? "";
             PhotoAlt = photo?.alt;
