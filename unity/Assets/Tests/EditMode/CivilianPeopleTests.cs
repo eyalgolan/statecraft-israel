@@ -294,6 +294,22 @@ public sealed class CivilianPeopleTests
             CollectionAssert.DoesNotContain(plan.Select(w => w.Model), id, id + ": no camp or project built yet");
     }
 
+    /// <summary>Tal Heuberger's Bedouin civilian stands beside the camels RuralLife draws at the Bedouin camp areas (owner, 27
+    /// October 2026, #756: "Sign off all 19"), one figure per camp, and nowhere else.</summary>
+    [Test]
+    public void TheBedouinCivilianStandsAtTheCamelsCampAreas()
+    {
+        var map = OpenMap();
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var plan = CivilianPeople.Wants(map, new DateTime(1948, 5, 15), Array.Empty<Placement>(), content);
+        var camps = CivilianPeople.Served(RuralLife.Wants(map), RuralLife.Camel).Select(w => w.Key).ToList();
+        Assert.AreEqual(RuralLife.MaxAnchorsPerModel, camps.Count, "the camels' camps");
+        Assert.IsTrue(camps.All(k => k.StartsWith("camp:", StringComparison.Ordinal)), "Bedouin camp areas only");
+        foreach (var camp in camps)
+            CollectionAssert.AreEqual(new[] { CivilianPeople.BedouinCivilian }, ModelsAt(plan, camp + ":bedouin"), camp);
+        Assert.AreEqual(camps.Count, plan.Count(w => w.Model == CivilianPeople.BedouinCivilian));
+    }
+
     /// <summary>The villager stands only where the sim has residents (docs/gdd/settlement-control.md: residents are a state,
     /// inhabited by default): a captured town still awaiting its outcome keeps him; a place the sim records as depopulated
     /// shows none, a town or a village alike, and the rest stay.</summary>

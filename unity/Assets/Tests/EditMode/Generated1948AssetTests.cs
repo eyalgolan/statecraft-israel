@@ -28,7 +28,7 @@ public class Generated1948AssetTests
 
     [Test] public void OriginalDeliveriesAndExactMapsMatchReceiptsWithLosslessImport()
     {
-        var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder })
+        var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder, Statecraft.Game.Map.Collection.CollectionCatalog.Folder })
             .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
             // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
             .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal)).ToArray();

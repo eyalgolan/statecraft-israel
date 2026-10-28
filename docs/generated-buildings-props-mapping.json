@@ -45,7 +45,8 @@
       "number": 6,
       "id": "generated-1948-06-bedouin-b-enclosed-striped-tent",
       "prepared_role": "Existing Bedouin encampment tent plots",
-      "active_in_campaign": false,
+      "active_in_campaign": true,
+      "campaign_placement": "Beside the camels at the Bedouin camp areas (RuralLife), the camp's code-built tents unchanged; owner sign-off 27 October 2026 (#756)",
       "source_visual_ready": false,
       "known_source_defect": false
     },

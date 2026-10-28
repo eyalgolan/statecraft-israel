@@ -43,6 +43,10 @@ namespace Statecraft.Game.Map.Collection
             ImmigrantWoman = "figure-immigrant-woman-v1", KibbutzWoman = "figure-kibbutz-woman-v1",
             YemeniteImmigrant = "figure-yemenite-immigrant-v1", PioneerFarmer = "figure-pioneer-farmer-v1-tpose";
 
+        /// <summary>Tal Heuberger's generated Bedouin civilian, beside the camels at the Bedouin camp areas RuralLife draws (owner,
+        /// 27 October 2026, #756: "Sign off all 19"). Added last, so it moves no figure that was already standing.</summary>
+        public const string BedouinCivilian = CollectionCatalog.BedouinCivilian;
+
         public static readonly string[] SettledModels = { Townsman, Craftsman, Nurse };
         public static readonly string[] CampModels = { ArrivingMan, Woman };
         /// <summary>The immigrants who stand beside C01 and C10 at a transit camp; the Yemenite immigrant joins them in his window.</summary>
@@ -50,7 +54,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>Every model this layer places (a test aid for the catalog's "every model is used" check).</summary>
         public static IEnumerable<string> Models => SettledModels.Concat(CampModels).Concat(ImmigrantModels)
-            .Concat(new[] { YemeniteImmigrant, ArabVillager, KibbutzWoman, PioneerFarmer, Builder });
+            .Concat(new[] { YemeniteImmigrant, ArabVillager, KibbutzWoman, PioneerFarmer, Builder, BedouinCivilian });
 
         /// <summary>The Yemenite immigrant stands at the transit camps only while Operation Magic Carpet flew Yemenite Jews in:
         /// the same sourced window as the C-54 at Lod (SeaAirCollection: the main wave from July 1949, the last two aircraft
@@ -167,6 +171,11 @@ namespace Statecraft.Game.Map.Collection
                 AddGroup($"project_{project.Id}:builder", new Vector2(world.x, world.z), hexM, new[] { Builder }, date,
                     ground, reserved, taken, wants);
             }
+
+            // The Bedouin civilian beside the camels at the Bedouin camp areas (the sub-districts' sourced Bedouin totals,
+            // content/map/localities_1948.yaml encampments; #667's "camels at Bedouin areas"), undated like the camps.
+            foreach (var camp in Served(rural, RuralLife.Camel))
+                AddGroup(camp.Key + ":bedouin", camp.Anchor, camp.AnchorRadius, new[] { BedouinCivilian }, date, ground, reserved, taken, wants);
             return wants;
 
             Vector2 Anchor(Settlement settlement)

@@ -62,15 +62,15 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(77, ids.Count);
+        Assert.AreEqual(79, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(76, CollectionCatalog.Bundles.Count,
-            "73 independent originals, #1763's shared generated bundle and the Egyptian and ALA infantry's own bundles");
+        Assert.AreEqual(78, CollectionCatalog.Bundles.Count,
+            "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 2 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 3, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
-        Assert.AreEqual(25, CollectionCatalog.Animated.Count);
+        Assert.AreEqual(26, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
@@ -161,9 +161,9 @@ public class CollectionImportTests
                 Model(id), $"{Dir(id)}/{id}.mat", ColourMap(id),
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
-            if (CollectionCatalog.IsFullQualityGeneratedInfantry(id))
-                return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id),
-                    $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/{id}.controller", $"{Dir(id)}/provenance.json" };
+            if (CollectionCatalog.IsGenerated(id))
+                return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
+                    .Concat(CollectionCatalog.IsGeneratedProp(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
             {
@@ -208,7 +208,7 @@ public class CollectionImportTests
     [Test]
     public void BothPlacementDetailsUseOnlyTheOriginalGeometry()
     {
-        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsGenerated(id)))
         {
             var path = Model(id); var imp = Importer(path);
             var meshes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Mesh>().ToArray();
@@ -228,7 +228,7 @@ public class CollectionImportTests
     [Test]
     public void OriginalModelsRetainAllSourceTakesAndBonesWithoutReduction()
     {
-        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsGenerated(id)))
         {
             var path = Model(id); var imp = Importer(path);
             Assert.AreEqual(ModelImporterAnimationType.Generic, imp.animationType, path + " source rig");
@@ -250,7 +250,7 @@ public class CollectionImportTests
     [Test]
     public void EveryColourMapKeepsItsSourceSizeAndMipmapsWithoutCrunch()
     {
-        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsGenerated(id)))
         {
             var path = ColourMap(id); var imp = AssetImporter.GetAtPath(path) as TextureImporter;
             Assert.IsNotNull(imp, path); imp!.GetSourceTextureWidthAndHeight(out int width, out int height);
@@ -273,7 +273,7 @@ public class CollectionImportTests
     [Test]
     public void BothPlacementAliasesKeepTheOriginalMaterialRigAndController()
     {
-        foreach (var id in Ids.Where(id => !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+        foreach (var id in Ids.Where(id => !CollectionCatalog.IsGenerated(id)))
         {
             var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat");
             Assert.IsNotNull(mat, id);
