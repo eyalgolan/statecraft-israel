@@ -256,7 +256,7 @@ public class Gdd03EventRulesTests
         Assert.All(new[] { "hard_a", "hard_b", "soft_a" }, id => Assert.Equal("ok", next.ChosenOptions[id]));
     }
 
-    // Inventory from the approved C244 plan, pinned to ef35703; includes valid sibling fields.
+    // Inventory from the approved plan for #1772, pinned to ef35703; includes valid sibling fields.
     // reparations_vote (#1575) joined after the main merge, excluded for the same reason as reparations_claim.
     static readonly string[] Inventory =
     {
