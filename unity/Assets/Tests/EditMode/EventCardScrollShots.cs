@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>Writes the before and after stills for #1853's card scroll to `.superpowers/card-scroll-1853/` (local, not
 /// committed): one long card (forex_crisis_1951, with the real portraits and photographs) on a 1920x1080 window at 150%
-/// and at 100%, and at 150% in Hebrew. The "before" state moves the options and the Attention line back out of the body,
+/// and at 125% and 100%, and at 150% in Hebrew. The "before" state moves the options and the Attention line back out of the body,
 /// where they were before the change (Game.uxml), on the same card, state and window; "after" is the change as it ships,
 /// and "after-scrolled" is the body scrolled to its last option. Explicit, so it does not run with the checks.</summary>
 [Explicit("writes stills for a pull request, not a check")]
@@ -97,6 +97,7 @@ public class EventCardScrollShots
     }
 
     [UnityTest] public IEnumerator English150() { yield return Shots(150, false); }
+    [UnityTest] public IEnumerator English125() { yield return Shots(125, false); }
     [UnityTest] public IEnumerator English100() { yield return Shots(100, false); }
     [UnityTest] public IEnumerator Hebrew150() { yield return Shots(150, true); }
 }
