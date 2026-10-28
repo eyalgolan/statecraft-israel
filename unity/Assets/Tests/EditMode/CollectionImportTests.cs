@@ -62,6 +62,7 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
+<<<<<<< HEAD
         Assert.AreEqual(77, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
         Assert.AreEqual(76, CollectionCatalog.Bundles.Count,
@@ -71,6 +72,17 @@ public class CollectionImportTests
         CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 2 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(25, CollectionCatalog.Animated.Count);
+=======
+        Assert.AreEqual(76, ids.Count);
+        Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
+        Assert.AreEqual(75, CollectionCatalog.Bundles.Count,
+            "73 independent originals, #1763's shared generated bundle and the Egyptian infantry's own bundle");
+        Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
+            .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
+        Assert.AreEqual(24, CollectionCatalog.Animated.Count);
+>>>>>>> origin/main
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
         CollectionAssert.DoesNotContain(CollectionCatalog.Animated, "figure-c05-pioneer-veteran-v2", "C05's only idle is a walk");
         Assert.AreEqual("collection-vehicle-altalena-lst-1948-v2wl", CollectionCatalog.BundleOf("vehicle-altalena-lst-1948-v2wl"));
