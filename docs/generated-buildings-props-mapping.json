@@ -1,5 +1,5 @@
 {
-  "status": "Prepared mapping only; no runtime loader/catalog references. Await #1273 or maintainer-owned own-stream bundle interface, then matched screenshots and Eyal sign-off.",
+  "status": "Signed off by the owner on 27 October 2026 (#756). The entries with active_in_campaign true are in the game, each streamed in its own bundle after the first frame (the houses 01 to 05 and the tent 06); the others await their own placement PR with matched screenshots.",
   "models": [
     {
       "number": 1,

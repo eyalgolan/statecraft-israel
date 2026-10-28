@@ -375,21 +375,26 @@ public class CollectionImportTests
     [Test]
     public void TheResourcesCheckSeesANestedResourcesPrefabThatPlacesAGeneratedModel()
     {
-        string root = "Assets/TalClosureProbe" + Guid.NewGuid().ToString("N");
-        try
+        // The tent (a collection prop) and a house (a town building), each placed by its own probe.
+        foreach (var id in new[] { CollectionCatalog.BedouinTent, "generated-1948-01-netanya-tiled-house-original" })
         {
-            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
-            AssetDatabase.CreateFolder(root, "Deep");
-            AssetDatabase.CreateFolder(root + "/Deep", "Resources");
-            CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "no Resources reference before the probe");
-            var tent = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(CollectionCatalog.BedouinTent, CollectionDetail.Near));
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(tent);
-            try { PrefabUtility.SaveAsPrefabAsset(go, root + "/Deep/Resources/Probe.prefab"); }
-            finally { UnityEngine.Object.DestroyImmediate(go); }
-            CollectionAssert.IsNotEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe's reference reaches the tent's files");
+            string root = "Assets/TalClosureProbe" + Guid.NewGuid().ToString("N");
+            try
+            {
+                AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+                AssetDatabase.CreateFolder(root, "Deep");
+                AssetDatabase.CreateFolder(root + "/Deep", "Resources");
+                CollectionAssert.IsEmpty(FilesOf(id, ResourcesClosure()), id + ": no Resources reference before the probe");
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
+                Assert.IsNotNull(model, id);
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try { PrefabUtility.SaveAsPrefabAsset(go, root + "/Deep/Resources/Probe.prefab"); }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+                CollectionAssert.IsNotEmpty(FilesOf(id, ResourcesClosure()), id + ": the probe's reference reaches its files");
+            }
+            finally { AssetDatabase.DeleteAsset(root); }
+            CollectionAssert.IsEmpty(FilesOf(id, ResourcesClosure()), id + ": the probe is gone");
         }
-        finally { AssetDatabase.DeleteAsset(root); }
-        CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe is gone");
     }
 
     [Test]
