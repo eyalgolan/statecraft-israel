@@ -10,7 +10,7 @@ namespace Statecraft.Game.Map.Collection
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
     /// The independently generated Syrian and Iraqi infantry retain their own shared bundle, full-quality rigs and clips;
-    /// each later generated model (the Egyptian and ALA infantry, the Bedouin civilian and tent) streams in a bundle of its own.
+    /// each later generated model (the Egyptian and ALA infantry, the Lebanese regular, the Bedouin civilian and tent) streams in a bundle of its own.
     /// Each has one CRC/SHA-checked bundle and one full-quality prefab outside Resources. Map requests wait
     /// for a drawable view; the shared loader waits until the first game frame has rendered (#1273).</summary>
     public static class CollectionCatalog
