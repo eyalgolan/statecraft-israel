@@ -77,8 +77,9 @@ public class EventCardScrollShots
             Shot(rt, dir, tag + "-after", root);
             var body = root.Q<ScrollView>("event-scroll");
             var options = root.Q("event-options");
-            var last = options.Query<Button>().ToList().Last();
-            body.ScrollTo(last);
+            // To the end of the body: ScrollTo(last option) left the Hebrew body unmoved in this capture (the Tab test proves
+            // focus does scroll it), so set the offset to the scroller's range directly.
+            body.scrollOffset = new Vector2(0f, body.verticalScroller.highValue);
             yield return Frames(4);
             Shot(rt, dir, tag + "-after-scrolled", root);
             body.scrollOffset = Vector2.zero;
