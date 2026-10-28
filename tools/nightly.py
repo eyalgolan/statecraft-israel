@@ -220,28 +220,68 @@ def _step(night: Night, runner: Runner, name: str, cmd: list[str], minutes: floa
 
 
 def run_gates(night: Night, runner: Runner) -> None:
-    clone = night.cfg.clone
-    code, _ = _step(night, runner, "build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
-    if code != 0:
-        raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}")
-    code, text = _step(night, runner, "check", ["bash", "scripts/check.sh", "origin/main"], 45)
-    why = nightly_checks.check_sh_verdict(text, code)
-    if why:
-        raise Refused("check", "timed out" if code == 124 else why)
-    code, text = _step(night, runner, "release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
-    why = nightly_checks.release_gate_verdict(text, code)
-    if why:
-        raise Refused("release-gate", "timed out" if code == 124 else why)
-    for locale in ("he_IL", "en_US"):
-        lang = f"{locale}.UTF-8"
-        env = {**os.environ, "LANG": lang, "LC_ALL": lang}
-        code, text = _step(night, runner, f"sim-{locale}",
-                           ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"], 30, env)
-        failed, total = nightly_checks.dotnet_totals(text)
-        if code == 124:
-            raise Refused(f"sim-{locale}", "timed out")
-        if code != 0 or failed or total == 0:
-            raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+    base_env = {**os.environ, "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0",
+                "UseSharedCompilation": "false"}
+
+    def admitted():
+        check_window(night)
+        if time.monotonic() >= night.deadline:
+            raise Refused("managed-deadline", "work deadline expired before a managed command could start")
+
+    def step(name, cmd, minutes, env=None):
+        admitted()
+        return _step(night, runner, name, cmd, minutes, base_env if env is None else env)
+
+    check_window(night)
+    with unity_postmerge.machine_lock.hold():
+        # A long acquisition must drain normally; expired work starts no child after it gets the lock.
+        admitted()
+        try:
+            clone = night.cfg.clone
+            code, _ = step("build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
+            if code != 0:
+                raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}")
+            code, text = step("check", ["bash", "scripts/check.sh", "origin/main"], 45)
+            why = nightly_checks.check_sh_verdict(text, code)
+            if why:
+                raise Refused("check", "timed out" if code == 124 else why)
+            code, text = step("release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
+            why = nightly_checks.release_gate_verdict(text, code)
+            if why:
+                raise Refused("release-gate", "timed out" if code == 124 else why)
+            for locale in ("he_IL", "en_US"):
+                lang = f"{locale}.UTF-8"
+                env = {**base_env, "LANG": lang, "LC_ALL": lang}
+                code, text = step(f"sim-{locale}",
+                                   ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+                                    "-nodeReuse:false", "-p:UseSharedCompilation=false"], 30, env)
+                failed, total = nightly_checks.dotnet_totals(text)
+                if code == 124:
+                    raise Refused(f"sim-{locale}", "timed out")
+                if code != 0 or failed or total == 0:
+                    raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+        finally:
+            # Preserve the primary refusal/interrupt; secondary cleanup failure must still be visible.
+            pending = sys.exc_info()[1]
+            shutdown_failure = None
+            try:
+                code = runner.run(["dotnet", "build-server", "shutdown"], cwd=night.cfg.clone,
+                                  log=night.run_dir / "build-server-shutdown.log",
+                                  deadline=time.monotonic() + 120, env=base_env)
+                if code != 0:
+                    shutdown_failure = f"compiler server shutdown exited {code}"
+            except BaseException as error:
+                if pending is None and not isinstance(error, (OSError, subprocess.SubprocessError)):
+                    raise
+                shutdown_failure = f"compiler server shutdown raised {type(error).__name__}: {error}"
+            if shutdown_failure is not None:
+                if pending is None:
+                    raise Refused("build-server-shutdown", shutdown_failure)
+                night.notes.append(shutdown_failure)
+                try:
+                    (night.run_dir / "build-server-shutdown.note").write_text(shutdown_failure + "\n", encoding="utf-8")
+                except OSError:
+                    print(shutdown_failure, file=sys.stderr)
 
 
 def unity_argv(night: Night, unity_args: list[str], *, webgl: bool) -> list[str]:

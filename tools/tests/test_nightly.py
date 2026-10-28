@@ -165,9 +165,13 @@ class Env:
 
 @pytest.fixture
 def env(tmp_path, monkeypatch, no_processes):
+    original_lock = nightly.unity_postmerge.machine_lock.LOCK
+    original_gate = nightly.unity_postmerge.machine_lock.GATE
     # Real managed-lock contexts stay on test-local files, never the machine-wide runtime gate.
     monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "LOCK", tmp_path / "machine.lock")
     monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "GATE", tmp_path / "machine.lock.gate")
+    assert nightly.unity_postmerge.machine_lock.LOCK != original_lock
+    assert nightly.unity_postmerge.machine_lock.GATE != original_gate
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: env_notes.append(a))
     env_notes.clear()
     return Env(tmp_path, monkeypatch)
@@ -505,6 +509,7 @@ def gates_runner(night, env, *, check=(0, OK_CHECK), rg=(0, "RELEASE GATE OK\n")
     r.add(["uv", "run", f"{clone}/tools/build_sim_for_unity.py"], 0, "")
     r.add(["bash", "scripts/check.sh", "origin/main"], *check)
     r.add(["bash", "scripts/oss/release_gate.sh"], *rg)
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     return r
 
 
@@ -515,10 +520,13 @@ def test_gates_run_in_order_with_both_locales(night, env):
         ["uv", "run", f"{night.cfg.clone}/tools/build_sim_for_unity.py"],
         ["bash", "scripts/check.sh", "origin/main"],
         ["bash", "scripts/oss/release_gate.sh"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "build-server", "shutdown"],
     ]
-    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[0] == "dotnet"]
+    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[:2] == ["dotnet", "test"]]
     assert langs == [("he_IL.UTF-8", "he_IL.UTF-8"), ("en_US.UTF-8", "en_US.UTF-8")]
 
 
@@ -546,7 +554,7 @@ def test_a_later_gate_does_not_run_after_a_refusal(night, env):
     r = gates_runner(night, env, check=(1, OK_CHECK))
     with pytest.raises(Refused):
         nightly.run_gates(night, r)
-    assert not any(c[0] == "dotnet" or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
+    assert not any(c[:2] == ["dotnet", "test"] or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
 
 
 WARM_OK = "UnityMcpGuard warm-up: gate defines in place\n"
@@ -2119,7 +2127,6 @@ def test_a_corrupt_config_on_the_savetest_path_is_recorded_not_an_attribute_erro
 def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env, monkeypatch):
     import fcntl
     r = gates_runner(night, env)
-    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     original = r.run
     seen = []
 
@@ -2132,22 +2139,34 @@ def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env,
             else:
                 fcntl.flock(other, fcntl.LOCK_UN)
                 pytest.fail("managed stage escaped the canonical shared lock")
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as shared:
+            fcntl.flock(shared, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            fcntl.flock(shared, fcntl.LOCK_UN)
+        with open(nightly.unity_postmerge.machine_lock.GATE, "a+") as gate:
+            fcntl.flock(gate, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(gate, fcntl.LOCK_UN)
         seen.append(cmd[:2])
         return original(cmd, **kwargs)
 
     monkeypatch.setattr(r, "run", probe)
     nightly.run_gates(night, r)
-    assert seen[-1] == ["dotnet", "build-server"]
+    assert seen == [["uv", "run"], ["bash", "scripts/check.sh"],
+                    ["bash", "scripts/oss/release_gate.sh"], ["dotnet", "test"],
+                    ["dotnet", "test"], ["dotnet", "build-server"]]
+    with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as released:
+        fcntl.flock(released, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(released, fcntl.LOCK_UN)
+
 
 
 def test_managed_gates_disable_reuse_and_shut_down_before_return(night, env):
     r = gates_runner(night, env)
-    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     nightly.run_gates(night, r)
     tests = [cmd for cmd in r.calls if cmd[:2] == ["dotnet", "test"]]
     assert len(tests) == 2
     for cmd in tests:
         assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert len(r.envs) == 6 and all(passed_env is not None for _, passed_env, _ in r.envs)
     for _, passed_env, _ in r.envs:
         assert passed_env["MSBUILDDISABLENODEREUSE"] == "1"
         assert passed_env["DOTNET_CLI_USE_MSBUILD_SERVER"] == "0"
@@ -2157,8 +2176,99 @@ def test_managed_gates_disable_reuse_and_shut_down_before_return(night, env):
 
 def test_managed_gate_refusal_still_shuts_down_servers(night, env):
     r = gates_runner(night, env, check=(1, OK_CHECK))
-    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     with pytest.raises(Refused) as error:
         nightly.run_gates(night, r)
     assert error.value.gate == "check"
     assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_expired_managed_work_after_lock_acquisition_starts_no_command(night, env, monkeypatch):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def acquired_after_deadline():
+        night.deadline = time.monotonic() - 1
+        yield
+
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", acquired_after_deadline)
+    r = gates_runner(night, env)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == []
+
+
+@pytest.mark.parametrize("check_failed", [False, True])
+def test_compiler_shutdown_failure_refuses_instead_of_passing(night, env, check_failed):
+    r = gates_runner(night, env, check=(1 if check_failed else 0, OK_CHECK))
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == ("check" if check_failed else "build-server-shutdown")
+    assert r.calls.count(["dotnet", "build-server", "shutdown"]) == 1
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+    if check_failed:
+        assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+    else:
+        assert len(r.calls) == 6
+
+
+def test_sim_publisher_explicitly_disables_node_and_compiler_reuse(monkeypatch, no_processes, tmp_path):
+    import build_sim_for_unity
+    monkeypatch.setattr(build_sim_for_unity, "REPO", tmp_path)
+    output = tmp_path / "unity/Assets/Plugins/Statecraft"
+    output.mkdir(parents=True)
+    for name in ("Statecraft.Sim.dll", "YamlDotNet.dll"):
+        (output / name).write_bytes(b"fixture")
+    calls = []
+    monkeypatch.setattr(build_sim_for_unity.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)))
+    assert build_sim_for_unity.main() == 0
+    assert len(calls) == 1
+    cmd, kwargs = calls[0]
+    assert cmd[:2] == ["dotnet", "publish"]
+    assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert kwargs["check"] is True
+    assert kwargs["cwd"] == tmp_path and cmd[cmd.index("-o") + 1] == str(output)
+
+
+@pytest.mark.parametrize("primary", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("cleanup_raises", [False, True])
+def test_shutdown_never_replaces_a_primary_interrupt(night, env, monkeypatch, primary, cleanup_raises):
+    r = gates_runner(night, env)
+    original = r.run
+    interruption = primary()
+
+    def run(cmd, **kwargs):
+        if cmd[:2] == ["bash", "scripts/check.sh"]:
+            raise interruption
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            if cleanup_raises:
+                raise OSError("cleanup failed")
+            return 1
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(primary) as error:
+        nightly.run_gates(night, r)
+    assert error.value is interruption
+    assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+
+
+def test_mid_sequence_deadline_stops_work_but_keeps_shutdown_budget(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    r.rules[0] = (*r.rules[0][:3], lambda cmd: setattr(night, "deadline", time.monotonic() - 1))
+    original = r.run
+    cleanup_deadlines = []
+
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            cleanup_deadlines.append(kwargs["deadline"])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == [["uv", "run", str(night.cfg.clone / "tools/build_sim_for_unity.py")],
+                       ["dotnet", "build-server", "shutdown"]]
+    assert len(cleanup_deadlines) == 1 and cleanup_deadlines[0] > time.monotonic()
