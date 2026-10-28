@@ -233,8 +233,10 @@ namespace Statecraft.Game.Map.Units
             if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);
             if (cam == null) return;
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
-            bool moving = motions.Any(m => m != null && m.Moving);
-            if (moving) { facedFor = null; turnedFor = null; }
+            bool moving = false;
+            for (int i = 0; i < motions.Count; i++)
+                if (motions[i] != null && motions[i].Moving) { moving = true; break; }
+            if (moving) facedFor = null;   // child pieces translate with the token; its draped yaw is still valid
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
             facedFor = (eye, rotation);
             var away = cam.transform.forward; away.y = 0f;
@@ -619,7 +621,7 @@ namespace Statecraft.Game.Map.Units
                     motions.Add(motion);
                     var stateUnit = placed[i].Token.StateUnit;
                     motion.Identity = stateUnit != null ? "sim:" + stateUnit.Id : "row:" + token.name;
-                    motion.Changed = () => { facedFor = null; turnedFor = null; };
+                    motion.Changed = () => facedFor = null;
                     if (previous.TryGetValue(motion.Identity, out var old)) motion.Begin(old - trios[i].Item1);
                 }
         }

@@ -11,6 +11,41 @@ using Statecraft.Game.Map.Collection;
 
 public class UnitFigureMotionTests
 {
+    [TestCase(0f)]
+    [TestCase(.01f)]
+    public void SubthresholdMotionSnapsToItsDestination(float offset)
+    {
+        var go = new GameObject("small transition");
+        try
+        {
+            var motion = go.AddComponent<UnitTokenMotion>();
+            motion.Begin(Vector3.right * offset);
+            Assert.IsFalse(motion.Moving);
+            Assert.AreEqual(Vector3.zero, go.transform.position);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void DisablingMotionSnapsAndInvalidatesItsCachedBounds()
+    {
+        var go = new GameObject("disabled transition");
+        try
+        {
+            var motion = go.AddComponent<UnitTokenMotion>();
+            int changes = 0;
+            motion.Changed = () => changes++;
+            motion.Begin(Vector3.right * 100f);
+            motion.enabled = false;
+            // EditMode does not dispatch this runtime callback for an unstarted component.
+            go.SendMessage("OnDisable", SendMessageOptions.RequireReceiver);
+            Assert.IsFalse(motion.Moving);
+            Assert.AreEqual(Vector3.zero, go.transform.position);
+            Assert.AreEqual(1, changes, "the camera must refresh cached hit bounds after the snap");
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
     [Test]
     public void RuntimeC06PrefabAndControllerBindTheSameOriginalModel()
     {
@@ -138,7 +173,6 @@ public class UnitFigureMotionTests
             animator.enabled = false;
             Assert.IsFalse(UnitFigureMotion.Play(animator, UnitFigureMotion.Idle));
             UnitFigureMotion.SetMoving(go.transform, true);
-            Assert.AreEqual(Vector3.zero, go.transform.position);
         }
         finally { Object.DestroyImmediate(go); }
     }

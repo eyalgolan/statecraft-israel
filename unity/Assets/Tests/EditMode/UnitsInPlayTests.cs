@@ -820,6 +820,54 @@ public class UnitsInPlayTests
         finally { UnityEngine.Object.DestroyImmediate(other.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    [Test]
+    public void MovingPreviewKeepsTheMainCamerasTurn()
+    {
+        var map = BuildMap();
+        var preview = new GameObject("MovingPreview").AddComponent<Camera>();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            var camera = Camera.main;
+            camera.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 90f, 0f);
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(0);
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            motion.Begin(Vector3.right * 10000f);
+            layer.FaceCamera(camera);
+            preview.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
+            layer.FaceCamera(preview);
+            var turn = typeof(UnitLayer).GetField("turnedFor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.AreEqual(90f, turn.GetValue(layer), "a preview must keep the game camera's draped yaw while moving");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(preview.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void FacingAMovingTokenDoesNotAllocateManagedMemory()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(0);
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            motion.Begin(Vector3.right * 10000f);
+            var camera = Camera.main;
+            for (int i = 0; i < 20; i++) layer.FaceCamera(camera);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 100; i++) layer.FaceCamera(camera);
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0L, allocated, "FaceCamera runs on every camera and pointer hover");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     [TestCase(UnitData.Army)]
     [TestCase(UnitData.Navy)]
     public void MovingTokenHitBoundsFollowVisiblePiecesInsteadOfEmptyDestinationOrPath(string service)

@@ -14,7 +14,7 @@ Finish current assets before expanding the batch. Parallel hex-polish work belon
 
 For each reference and delivered asset, record the exact source, creator, licence or permission, checked date, and generation/edit provenance where applicable. Follow [CONTRIBUTING.md](../../CONTRIBUTING.md), [LICENSING.md](../../LICENSING.md), [the content policy](../CONTENT_POLICY.md) and the asset manifest requirements. Do not infer reuse rights from an image being accessible online.
 
-Preserve original models, textures and concept images. Keep derived edits identifiable: record the source hash, derived hash, transformation/export settings and destination asset identifier. Do not overwrite an original with a decimation or describe an edited file as untouched. Follow repository storage rules for source masters; preservation does not mean committing prohibited or oversized files. Do not slim an approved original merely to satisfy an assumed budget—raise the budget or design question through the existing process.
+Preserve original models, textures and concept images. Keep derived edits identifiable: record the source hash, derived hash, transformation/export settings and destination asset identifier. Do not overwrite an original with a decimation or describe an edited file as untouched. Follow repository storage rules for source masters; preservation does not mean committing prohibited or oversized files. Do not slim an approved original merely to satisfy an assumed budget; raise the budget or design question through the existing process.
 
 ## 3. Deliver a designed hex, not a model on a pedestal
 
@@ -32,7 +32,7 @@ Larger buildings must still respect the hex inset, neighbouring bounds, reserved
 
 ## 4. Approve one pilot before broad rollout
 
-Use Tiberias as the first comparison for the larger-building, lower-density treatment. Keep its existing model integration and improve the actual registered hex composition rather than starting a competing town asset.
+Use Tiberias as the first comparison for the larger-building, lower-density treatment. Keep its existing hex prototype and improve the actual registered hex composition rather than starting a competing town asset.
 
 Capture the current and proposed versions at matching camera, zoom, lighting and game state. Show the ground/edge design, building silhouette, unit clearance and neighbouring transitions. Include both a one-hex view and the actual-map gameplay view. Ask the art owner to approve the density and composition before repeating the treatment across the board.
 

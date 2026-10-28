@@ -142,8 +142,11 @@ namespace Statecraft.Game.EditorTools
             return ctrl;
         }
 
-        /// <summary>Only adds existing army animation states; does not reimport models, textures or prefabs.</summary>
-        public static void PrepareArmyControllers()
+        /// <summary>Manual preparation for the original army figures and generated figures, including civilians.
+        /// Run from the menu or with -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareFigureControllers.
+        /// Adds only existing source states; does not reimport models, textures or prefabs.</summary>
+        [MenuItem("Statecraft/Collection/Prepare Figure Controllers")]
+        public static void PrepareFigureControllers()
         {
             var originals = new[] { "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2",
                 "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2", "figure-c08-arab-legion-v2",

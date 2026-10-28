@@ -13,7 +13,12 @@ namespace Statecraft.Game.Map.Units
         public string Identity = "";
         public System.Action? Changed;
         public bool Moving { get; private set; }
-        public void Begin(Vector3 offset) { start = offset; elapsed = 0f; Moving = offset.sqrMagnitude > .001f; transform.position = offset; }
+        public void Begin(Vector3 offset)
+        {
+            elapsed = 0f; Moving = offset.sqrMagnitude > .001f;
+            start = Moving ? offset : Vector3.zero;
+            transform.position = start;
+        }
         public void Advance(float seconds)
         {
             if (!Moving) return;
@@ -51,6 +56,11 @@ namespace Statecraft.Game.Map.Units
             RefreshPose();
         }
         void LateUpdate() { Advance(Time.deltaTime); AdvanceAttack(Time.deltaTime); }
-        void OnDisable() { attackRemaining = 0f; Moving = false; transform.position = Vector3.zero; UnitFigureMotion.SetMoving(transform, false); }
+        void OnDisable()
+        {
+            attackRemaining = 0f; Moving = false; transform.position = Vector3.zero;
+            UnitFigureMotion.SetMoving(transform, false);
+            Changed?.Invoke();
+        }
     }
 }
