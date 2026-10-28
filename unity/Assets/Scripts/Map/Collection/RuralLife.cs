@@ -28,7 +28,11 @@ namespace Statecraft.Game.Map.Collection
         public const string Sheep = "figure-sheep-idle-1948-v1";
         public const string Donkey = "figure-donkey-1948-v1";
         public const string Camel = "figure-dromedary-camel-1948-v1";
-        public static readonly string[] Models = { Tractor, Wagon, Horse, Sheep, Donkey, Camel };
+        /// <summary>Tal Heuberger's enclosed striped Bedouin tent, at the same Bedouin camp areas as the camel (owner, 27 October 2026,
+        /// #756: "Sign off all 19"; the prepared role in docs/generated-buildings-props-mapping.json, "Existing Bedouin encampment
+        /// tent plots"). It stands on clear ground outside the code-built camps' footprints; their tents stay as they are.</summary>
+        public const string BedouinTent = CollectionCatalog.BedouinTent;
+        public static readonly string[] Models = { Tractor, Wagon, Horse, Sheep, Donkey, Camel, BedouinTent };
 
         // Design values (#667): sparse scenery, not a population statement or simulation rule.
         public const int MaxAnchorsPerModel = 3;
@@ -41,6 +45,8 @@ namespace Statecraft.Game.Map.Collection
         public static float RealLengthM(string model) => model switch
         {
             Tractor => 3f, Wagon => 5f, Horse => 2.5f, Sheep => 1.3f, Donkey => 1.8f, Camel => 3f,
+            // Design value, not a sourced measurement: the middle of the camp kit's 7 to 12 m goat-hair tents (SettlementKits.Encampments).
+            BedouinTent => 10f,
             _ => throw new ArgumentException($"'{model}' is not one of #667's models", nameof(model)),
         };
         /// <summary>The model's long side on the map (m).</summary>
@@ -108,6 +114,7 @@ namespace Statecraft.Game.Map.Collection
             var villages = anchors.Where(a => a.Type == "village").ToList();   // #667: "at the villages", not the towns
             AddModel(Sheep, villages); AddModel(Donkey, villages);
             AddModel(Camel, anchors.Where(a => a.Type == "bedouin_area"));
+            AddModel(BedouinTent, anchors.Where(a => a.Type == "bedouin_area"));
             return result;
 
             void AddModel(string model, IEnumerable<Anchor> eligible)

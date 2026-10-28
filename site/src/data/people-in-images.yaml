@@ -21,8 +21,8 @@ images:
     portraits: [ben_gurion, kaplan, sharett, shapira]
     unidentified: 4
     note: "The Cabinet screen: named cards for Ben-Gurion, Kaplan, Sharett and Shapira (twice), and four more portraits cut off below their names. Hidden: the four cut-off portraits cannot be named from the picture."
-  docs/images/build-gameplay.mp4: { checked: 2026-10-15, photos: [idf_founding], note: "Real play, 22 to 29 May 1948: the map, the One Army card with its archival photograph, the hex panel. No minister portrait (frames checked at 1 per second)." }
-  docs/images/build-gameplay.webm: { checked: 2026-10-15, photos: [idf_founding], note: "The same clip as the MP4." }
+  docs/images/build-gameplay.mp4: { checked: 2026-10-27, photos: [idf_founding, degania_defence, first_truce], note: "Real play, 15 May to 15 June 1948: the map, Tel Aviv's city panel, the One Army, Defence of Degania and First Truce cards with their archival photographs, the unit cards, the turn report. No minister or advisor portrait (frames checked at 2 per second)." }
+  docs/images/build-gameplay.webm: { checked: 2026-10-27, photos: [idf_founding, degania_defence, first_truce], note: "The same clip as the MP4." }
   promo/final/10-m2-topdown.png: { checked: 2026-10-15, note: "The M2 map from above: map only." }
   site/src/assets/media/flythrough-m2-poster.jpg: { checked: 2026-10-15, note: "The M2 flythrough's first frame: map only." }
   site/public/media/flythrough-m2-720p.mp4: { checked: 2026-10-15, note: "Eight seconds over the M2 map, no interface: map only (frames checked at 1 per second)." }

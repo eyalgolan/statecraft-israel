@@ -33,7 +33,7 @@ namespace Statecraft.Game.EditorTools
             prefabs.arraySize = materials.arraySize = labels.arraySize = Ids.Length;
             for (int i = 0; i < Ids.Length; i++)
             {
-                string stem = Generated1948BuildingsPropsReview.AssetFolder + "/" + Ids[i] + "/" + Ids[i];
+                string stem = Generated1948BuildingsPropsReview.DirOf(Ids[i]) + "/" + Ids[i];
                 var source = AssetDatabase.LoadAssetAtPath<GameObject>(stem + ".fbx");
                 var material = AssetDatabase.LoadAssetAtPath<Material>(stem + ".mat");
                 var importer = AssetImporter.GetAtPath(stem + ".fbx") as ModelImporter;
