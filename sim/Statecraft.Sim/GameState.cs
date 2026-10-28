@@ -31,6 +31,17 @@ namespace Statecraft.Sim
         readonly bool usesAttention = true;
         public bool UsesPopulationLedger => Ruleset == SaveGame.Gdd03Ruleset;
         public PopulationLedger PopulationLedger { get; private set; } = new PopulationLedger(false);
+        SortedDictionary<string, PlayerRegionPool> playerRegions = new SortedDictionary<string, PlayerRegionPool>(StringComparer.Ordinal);
+        PlayerRegionCatalogue playerGeography = PlayerRegionCatalogue.Empty;
+        public IReadOnlyDictionary<string, PlayerRegionPool> PlayerRegions =>
+            new System.Collections.ObjectModel.ReadOnlyDictionary<string, PlayerRegionPool>(playerRegions);
+        internal void InitializePlayerRegions(PlayerRegionCatalogue geography, SortedDictionary<string, PlayerRegionPool> pools)
+        {
+            if (!UsesPopulationLedger || !PopulationLedger.IsInitialized || playerRegions.Count != 0)
+                throw new InvalidOperationException("Regional state needs an initialized gdd-0.3 fixture ledger.");
+            playerGeography = geography;
+            playerRegions = new SortedDictionary<string, PlayerRegionPool>(pools, StringComparer.Ordinal);
+        }
         public GameState() { }
         internal GameState(Content c)
         {
@@ -136,6 +147,8 @@ namespace Statecraft.Sim
             c.Budget = new Dictionary<string, double>(Budget);
             c.Population = new Dictionary<string, double>(Population);
             c.PopulationLedger = PopulationLedger.Clone();
+            // Pool records, facilities and geography are immutable; only the owning collection needs a copy.
+            c.playerRegions = new SortedDictionary<string, PlayerRegionPool>(playerRegions, StringComparer.Ordinal);
             c.FiredEvents = new SortedSet<string>(FiredEvents, StringComparer.Ordinal);
             c.PendingEvents = new List<string>(PendingEvents);
             c.ChosenOptions = new Dictionary<string, string>(ChosenOptions);
@@ -270,6 +283,11 @@ namespace Statecraft.Sim
             if (SoldiersHeld.Count > 0) Section("ownheld", '{', '}', Counts(SoldiersHeld));
             if (DisplacedByPlayer != 0) { Sep(); Nl(); sb.Append("displaced=").Append(DisplacedByPlayer.ToString(CultureInfo.InvariantCulture)); }   // R-CTRL-019: only after a Deport
             if (UsesPopulationLedger) Section("population-ledger", '{', '}', PopulationLedger.Canonical());
+            if (UsesPopulationLedger && playerRegions.Count > 0)
+            {
+                Section("player-geography", '{', '}', playerGeography.Regions.Values.SelectMany(r => r.Canonical()));
+                Section("player-regions", '{', '}', playerRegions.Values.Select(r => r.Canonical()));
+            }
             return sb.ToString();
         }
     }
