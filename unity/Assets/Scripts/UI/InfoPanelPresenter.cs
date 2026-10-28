@@ -106,6 +106,10 @@ namespace Statecraft.Game.UI
             System.Action<IReadOnlyList<(int q, int r, int turn)>>? showRoute = null, System.Action? clearSelection = null, System.Action<int>? selectPioneer = null)
         {
             panel = root.Q<VisualElement>("info-panel"); this.bridge = bridge; this.text = text;
+            // #40: the panel is a ScrollView, so Game.uxml's filigree frame lands in its scrolled content, inside the padding
+            // and clipped by the viewport. Framing the panel needs it on the ScrollView itself, as on the panel before.
+            if (panel is ScrollView scroll)
+                foreach (var frame in scroll.contentContainer.Children().OfType<UiFrame>().ToList()) scroll.hierarchy.Add(frame);
             orders = panel.Q<VisualElement>("info-orders");
             confirmMove = new Button(ConfirmMove) { name = "info-confirm-move" };
             confirmMove.RegisterCallback<KeyDownEvent>(OnConfirmKey);

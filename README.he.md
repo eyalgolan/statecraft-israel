@@ -29,7 +29,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 <img src="docs/images/build-m3-map.jpg" width="820" alt="הגרסה הנוכחית: כרטיס האירוע &quot;צבא אחד&quot; עם צילום ארכיון, מעל מפת החוף, עם הסרגל העליון והמפה הקטנה.">
 <br>
 <img src="docs/images/build-m3-start.jpg" width="405" alt="הגרסה הנוכחית: מסך הפתיחה עם שתי שורות ממגילת העצמאות, על רקע ציור שנוצר בבינה מלאכותית.">
-<img src="docs/images/build-m3-city.jpg" width="405" alt="הגרסה הנוכחית: מבט קרוב על תל אביב, יפו, לוד, רמלה ורחובות, ולוח העיר של תל אביב עם הדיור, התעסוקה והאימון.">
+<img src="docs/images/build-m3-city.jpg" width="405" alt="הגרסה הנוכחית: מבט קרוב על תל אביב, יפו, לוד, פתח תקווה וראשון לציון, ולוח העיר של תל אביב עם הדיור, התעסוקה והאימון.">
 <br>
 <img src="docs/images/build-m3-cabinet.jpg" width="405" alt="הגרסה הנוכחית: מסך הקבינט.">
 <img src="docs/images/build-m3-why.jpg" width="405" alt="הגרסה הנוכחית: לוח 'למה זה קרה?' אחרי התור הראשון.">
@@ -38,7 +38,7 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <div dir="rtl">
 
-<p align="center"><em>צילומי מסך אמיתיים, main בקומיט <span dir="ltr">8dae186</span>, 2026-10-20; מסך הפתיחה, שלא השתנה מאז, main בקומיט <span dir="ltr">6c54c95</span>, 2026-10-18. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
+<p align="center"><em>צילומי מסך אמיתיים, main בקומיט <span dir="ltr">1dca7e0</span>, 2026-10-27. הציור במסך הפתיחה נוצר בבינה מלאכותית.</em></p>
 
 </div>
 
@@ -57,9 +57,9 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 ## מה המצב היום?
 
-***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.2.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.2.1), גרסת טרום־הפצה); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
+***אב־טיפוס מוקדם: אבן הדרך M3 הושלמה, והשנים 1948 עד 1951 ניתנות למשחק כשבונים מקוד המקור.*** אפשר לשחק בדפדפן ב־[itch.io](https://eyalgolan.itch.io/statecraft-israel). בכל [הפצה](https://github.com/eyalgolan/statecraft-israel/releases) יש קובץ zip של גרסת הדפדפן (האחרונה היא [v0.3.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.3.1)); איך מריצים אותו כתוב ב־[<span dir="ltr">docs/m3-release.md</span>](docs/m3-release.md) (באנגלית). המשחק זמין באנגלית ובעברית, ובהגדרות אפשר לעבור בין השפות; כרטיסי האירועים בעברית עוד ממתינים לבדיקה של דובר עברית. הוראות ההרצה המקומית (באנגלית): [<span dir="ltr">BUILDING.md</span>](BUILDING.md). הבנייה דורשת Unity בגרסה 6000.3.25f1.
 
-מסמך התכנון המחייב הוא עכשיו [<span dir="ltr">docs/GDD.md</span>](docs/GDD.md) (גרסה 0.2, 17 באוקטובר 2026, באנגלית): תורות של חודש, שבהם בונים ומגינים על ישראל בשנים 1948 עד 1951 בעזרת יחידות, ערים ובנייה, ובוחרים שרים. המשחק שאפשר לשחק היום הוא המשחק שמתואר למעלה. התורות החודשיים, תשומת הלב, הערים, האימון, הבנייה בידי החלוצים והפקודות ליחידות, כולל התקפה, כבר בפנים. השליטה ביישובים נכנסה רק בחלקה: היחידות שלכם יכולות לכבוש עיר יעד, אבל הבחירה מה יקרה בה אחר כך עוד לא ניתנת למשחק, ולכן בסוף המשחק כיבוש נחשב לפשיטה ונסיגה (Raid and withdraw). [תוכנית הבנייה](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) מכניסה את השאר בשלבים.
+מסמך התכנון המחייב הוא עכשיו [<span dir="ltr">docs/GDD.md</span>](docs/GDD.md) (גרסה 0.2, 17 באוקטובר 2026, באנגלית): תורות של חודש, שבהם בונים ומגינים על ישראל בשנים 1948 עד 1951 בעזרת יחידות, ערים ובנייה, ובוחרים שרים. המשחק שאפשר לשחק היום הוא המשחק שמתואר למעלה. התורות החודשיים, תשומת הלב, הערים, האימון, הבנייה בידי החלוצים והפקודות ליחידות, כולל התקפה, כבר בפנים. השליטה ביישובים נכנסה רק בחלקה: היחידות שלכם יכולות לכבוש עיר יעד, ואז מופיע חלון שמציע פשיטה ונסיגה או שחרור; בסוף תקופת השחרור בוחרים בין סיפוח לנסיגה. [תוכנית הבנייה](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) מכניסה את השאר בשלבים.
 
 ## מפת דרכים
 
@@ -89,8 +89,8 @@ flowchart RL
 | 2 | תורות חודשיים במשחק האמיתי, וחמשת המשאבים | בתהליך: הכול מלבד הסרגל העליון של חמשת המשאבים | [#382](https://github.com/eyalgolan/statecraft-israel/issues/382) |
 | 3 | כל הערים, עם דיור, תעסוקה וקליטת עלייה | הושלם: 8 מתוך 8 PRs מוזגו | [#383](https://github.com/eyalgolan/statecraft-israel/issues/383) |
 | 4 | חלוצים, אתרי בנייה, כבישים ומסילות ברזל | בתהליך: 6 מתוך 8 PRs מוזגו | [#384](https://github.com/eyalgolan/statecraft-israel/issues/384) |
-| 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 8 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
-| 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בתהליך: 5 מתוך 12 PRs מוזגו | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
+| 5 | יחידות צבאיות, תנועה וקרב | בתהליך: 13 מתוך 18 PRs מוזגו | [#385](https://github.com/eyalgolan/statecraft-israel/issues/385) |
+| 6 | שליטה ביישובים, לפי [מדיניות התוכן](docs/CONTENT_POLICY.md) | בתהליך: 7 מתוך 12 PRs מוזגו | [#386](https://github.com/eyalgolan/statecraft-israel/issues/386) |
 | 7 | שרים, אירועים והמשחק המלא בן 44 תורות | בתהליך: 5 מתוך 13 PRs מוזגו | [#387](https://github.com/eyalgolan/statecraft-israel/issues/387) |
 
 ### מסלולים נוספים
@@ -147,7 +147,7 @@ flowchart RL
 
 ## רישיון
 
-קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
+קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. מודלים בתלת־ממד של <span dir="ltr">Tal Heuberger</span>: <span dir="ltr">CC BY-NC-ND 4.0</span>. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
 
 על בעיות אבטחה מדווחים באופן פרטי, ראו [<span dir="ltr">SECURITY.md</span>](SECURITY.md). קוד ההתנהגות: [<span dir="ltr">CODE_OF_CONDUCT.md</span>](CODE_OF_CONDUCT.md).
 

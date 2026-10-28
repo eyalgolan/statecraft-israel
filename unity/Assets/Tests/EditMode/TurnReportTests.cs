@@ -307,7 +307,7 @@ public class TurnReportTests
         Assert.IsFalse(k.Report.IsOpen);
     }
 
-    /// <summary>C148: four arrivals stay visible without covering the report's heading or first causes, even while
+    /// <summary>#1680: four arrivals stay visible without covering the report's heading or first causes, even while
     /// the next decision card waits underneath. Closing the report restores the card's own toast placement.</summary>
     [UnityTest]
     public IEnumerator FourArrivalsClearTheReportWhileTheNextCardWaits()

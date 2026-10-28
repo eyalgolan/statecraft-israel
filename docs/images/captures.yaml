@@ -13,8 +13,8 @@
 #     build: main abc1234      # optional; defaults to the build above
 #     date: 2026-10-13         # optional; defaults to the date above
 # A build-*.mp4 or .webm that is not listed there fails the site's build.
-build: main 8dae186
-date: 2026-10-20
+build: main 1dca7e0
+date: 2026-10-27
 video:
   files: [build-gameplay.webm, build-gameplay.mp4]
   build: main 8dae186
@@ -41,8 +41,8 @@ images:
   - file: build-m3-city.jpg
     title: { en: "Tel Aviv and its city panel", he: "תל אביב ולוח העיר שלה" }
     alt:
-      en: "The current build, 15 May 1948: a closer look at Tel Aviv, Jaffa, Lydda, Ramle and Rehovot, with groves, villages, railways and roads, the front lines and the top bar, and Tel Aviv's city panel with its housing, jobs, refugees and training."
-      he: "הגרסה הנוכחית, 15 במאי 1948: מבט קרוב על תל אביב, יפו, לוד, רמלה ורחובות, עם מטעים, כפרים, מסילות ודרכים, קווי החזית והסרגל העליון, ולוח העיר של תל אביב עם הדיור, התעסוקה, הפליטים והאימון."
+      en: "The current build, 15 May 1948: a closer look at Tel Aviv, Jaffa, Lydda, Petah Tikva and Rishon LeZion, with groves, villages, railways and roads, the front lines and the top bar, and Tel Aviv's city panel with its housing, jobs, refugees and training."
+      he: "הגרסה הנוכחית, 15 במאי 1948: מבט קרוב על תל אביב, יפו, לוד, פתח תקווה וראשון לציון, עם מטעים, כפרים, מסילות ודרכים, קווי החזית והסרגל העליון, ולוח העיר של תל אביב עם הדיור, התעסוקה, הפליטים והאימון."
   - file: build-m3-map.jpg
     title: { en: "The map, the top bar and an event card", he: "המפה, הסרגל העליון וכרטיס אירוע" }
     alt:
