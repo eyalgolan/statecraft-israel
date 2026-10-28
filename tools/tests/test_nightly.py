@@ -1783,7 +1783,8 @@ def test_an_unusable_client_is_a_recorded_github_client_refusal_not_internal(env
 
 # --- Task 8: the two-upload itch save test ----------------------------------------------------------------------------
 
-PAGE_URL = "https://example.invalid/statecraft-israel"
+PAGE_URL = "https://example.invalid/statecraft-israel-savetest"
+TEST_TARGET = "eyalgolan/statecraft-israel-savetest:html5"
 ITCH_HOST = "https://html-classic.itch.zone"
 SAVED = "PERSISTENCE saved 1948-05-16 turn 1 hash ab12\n"
 
@@ -1852,11 +1853,13 @@ def page_for(itch, *, same=False, frame=True):
 class Saved:
     """A save test: a config file, a published release and the fakes."""
 
-    def __init__(self, tmp_path, monkeypatch, *, release="published", page_url=PAGE_URL, **runner_kw):
+    def __init__(self, tmp_path, monkeypatch, *, release="published", page_url=PAGE_URL, target=TEST_TARGET,
+                 public_page=None, **runner_kw):
         self.job = tmp_path / "job"
         self.job.mkdir()
         self.config = self.job / "config.json"
-        self.config.write_text('{"itch_page_url": "%s"}\n' % page_url)
+        config = {"savetest_itch_page_url": page_url, "savetest_itch_target": target, "itch_page_url": public_page}
+        self.config.write_text(json.dumps({k: v for k, v in config.items() if v is not None}) + "\n")
         self.cfg = ns.load_config(self.config)
         self.cfg = dataclasses.replace(self.cfg, handoff=tmp_path / "HANDOFF.md")
         self.gh = FakeGH(release=release)
@@ -1963,6 +1966,49 @@ def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
             return Page('<div class="html_embed_widget">Embed({"load_url":"https:\\/\\/x.itch.io\\/g\\/html_url\\/1"})')
         return framed(url, timeout)
     assert t.run(fetch) == "PASS" and t.enabled()
+
+
+@pytest.mark.parametrize("kw", [{"target": None}, {"target": "eyalgolan/statecraft-israel:html5"},
+                                {"target": "eyalgolan/statecraft-israel:savetest"},   # another channel, same page
+                                {"target": "EyalGolan/Statecraft-Israel:html5"},
+                                {"target": "eyalgolan/statecraft-israel"},   # no channel: still the public project
+                                {"page_url": None}, {"public_page": PAGE_URL},
+                                {"public_page": PAGE_URL.upper() + "/#game"},
+                                {"page_url": "http://["}])   # a malformed URL refuses instead of raising
+def test_savetest_runs_only_against_a_separate_test_page(saved, kw):
+    t = saved(**kw)   # 28 Oct 2026: each upload hid the public game while itch unpacked it, for up to an hour
+    assert t.run() == "INCONCLUSIVE" and not t.enabled() and "test page" in t.log()
+    assert not any(c[0].startswith("itch.") or c[0] == "download" for c in t.gh.calls) and t.runner.runs == []
+
+
+def test_savetest_reads_the_test_page_and_records_it_in_the_evidence(saved):
+    t = saved()
+    assert t.run() == "PASS"
+    assert t.evidence()["page_url"] == PAGE_URL and t.evidence()["target"] == TEST_TARGET
+
+
+def test_the_savetest_command_refuses_before_any_client_without_a_test_target(tmp_path, monkeypatch, capsys):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    built = []
+    monkeypatch.setattr(nightly, "Itch", lambda *a: built.append(a))
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md")
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 1
+    assert built == [] and "savetest_itch_target" in capsys.readouterr().err
+
+
+def test_the_savetest_command_builds_its_itch_client_on_the_test_target(tmp_path, monkeypatch):
+    butler = tmp_path / "butler"
+    butler.write_text("")
+    monkeypatch.setattr(nightly.shutil, "which", lambda name: "/usr/bin/" + name)
+    built = []
+    monkeypatch.setattr(nightly, "Itch", lambda runner, path, target: built.append(target) or "itch")
+    monkeypatch.setattr(nightly, "savetest", lambda cfg, config, job, runner, gh, itch, *, tag: "PASS")
+    cfg = dataclasses.replace(ns.Config(), butler=butler, handoff=tmp_path / "HANDOFF.md",
+                              itch_page_url="https://eyalgolan.itch.io/statecraft-israel",
+                              savetest_itch_target=TEST_TARGET, savetest_itch_page_url=PAGE_URL)
+    assert nightly.run_savetest(cfg, tmp_path, TAG) == 0 and built == [TEST_TARGET]
 
 
 def too_many_requests(retry_after=None):
