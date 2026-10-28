@@ -156,7 +156,7 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0m, r.SurchargeMoney);
         Assert.Equal(0m, Formula().Evaluate(Input(due: 4m, paid: 4m)).UnpaidConditionLoss);
         Assert.Equal(0.075m, Formula().Evaluate(Input(due: 4m, paid: 1m)).UnpaidConditionLoss);
-        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, population: 0,
+        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, cohesion: 0, population: 0,
             condition: 0m)).CohesionLossPoints);
     }
 
