@@ -410,6 +410,10 @@ namespace Statecraft.Game.UI
             var photo = shown ? current : null;
             var display = photo != null ? DisplayStyle.Flex : DisplayStyle.None;
             band.style.display = display; credit.style.display = display;
+            // While the photograph shows it alone gives way (flex-shrink 1000): with the body's own flex-shrink 1 beside it,
+            // the body took a sliver of the shortfall, and once rounded that was a device pixel of scroll on a card that fits
+            // (1366x657 at 100%, #1853). Dropped, the body shrinks and scrolls as the stylesheet says.
+            scroll.style.flexShrink = photo != null ? 0f : (StyleFloat)StyleKeyword.Null;
             band.style.backgroundImage = photo == null ? (StyleBackground)StyleKeyword.None : new StyleBackground(photo.Value.image);
             band.tooltip = photo?.alt ?? "";
             PhotoAlt = photo?.alt;
