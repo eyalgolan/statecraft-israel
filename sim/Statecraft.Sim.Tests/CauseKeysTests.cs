@@ -196,7 +196,7 @@ public class CauseKeysTests
         Assert.All(why, w => { Assert.Equal("events", w.System); Assert.Contains(w.Key, CauseKeys.All); });
     }
 
-    /// <summary>C136: check the producers on every state of a full reference game, not only a renderer's filtered set.</summary>
+    /// <summary>#1680: check the producers on every state of a full reference game, not only a renderer's filtered set.</summary>
     [Fact]
     public void EveryEventAndMilitaryUpkeepProducerLineHasAKey()
     {

@@ -90,7 +90,19 @@ public class TalModelsShots
         var people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
         var tent = rural.Placed.First(p => p.Model == RuralLife.BedouinTent);
         var figure = people.Placed.First(p => p.Model == CivilianPeople.BedouinCivilian);
-        var frames = new[] { ("tent", tent.Key, tent.At), ("figure", figure.Key, figure.At) };
+        // The tent's frame holds the tent and the nearest code-built camp (coordinator decision on #1893: the tent stands in the
+        // camp area, apart from the camps' plots): the midpoint of the tent and that camp's footprint, from the closest zoom the
+        // player can reach or as far as needed to hold both. Every placed tent's distance to its nearest camp is logged.
+        Vector2 Flat(Vector3 v) => new Vector2(v.x, v.z);
+        var camps = map.KitFootprints.Where(f => f.id.StartsWith("camp:", StringComparison.Ordinal)).ToList();
+        (Vector2 centre, float radius, float edge) Nearest(Vector3 at) => camps.Select(f => (f.centre, f.radius, Vector2.Distance(Flat(at), f.centre) - f.radius)).OrderBy(c => c.Item3).First();
+        foreach (var placed in rural.Placed.Where(p => p.Model == RuralLife.BedouinTent && p.Detail == CollectionDetail.Near))
+            Debug.Log($"SHOT bedouin tent {placed.Key}: nearest code-built camp footprint edge {Nearest(placed.At).edge:F0} m away");
+        var camp = Nearest(tent.At);
+        var campAt = new Vector3(camp.centre.x, 0f, camp.centre.y);
+        float span = Vector2.Distance(Flat(tent.At), camp.centre) + camp.radius;
+        var frames = new[] { ("tent", tent.Key, (tent.At + campAt) * 0.5f, Mathf.Max(CameraController.MinDistance, 2.5f * span)),
+                             ("figure", figure.Key, figure.At, CameraController.MinDistance) };
         if (!after)
         {
             Layers(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian });
@@ -99,15 +111,14 @@ public class TalModelsShots
         }
         Debug.Log($"SHOT bedouin {(after ? "after" : "before")}: rural tents {rural.Placed.Count(p => p.Model == RuralLife.BedouinTent)}, " +
                   $"figures {people.Placed.Count(p => p.Model == CivilianPeople.BedouinCivilian)}, tent size {RuralLife.SizeOf(RuralLife.BedouinTent)} m");
-        foreach (var (what, key, flat) in frames)
+        foreach (var (what, key, flat, distance) in frames)
         {
             var at = new Vector3(flat.x, 0f, flat.z);
             at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
-            // The closest the player's camera comes (CameraController.MinDistance).
-            Look(at, CameraController.MinDistance);
+            Look(at, distance);
             for (int i = 0; i < 5; i++) yield return null;
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-            Debug.Log($"SHOT bedouin {what} at {key} {at}");
+            Debug.Log($"SHOT bedouin {what} at {key} {at} from {distance:F0} m");
         }
     }
 
