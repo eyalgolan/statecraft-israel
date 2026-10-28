@@ -165,6 +165,9 @@ class Env:
 
 @pytest.fixture
 def env(tmp_path, monkeypatch, no_processes):
+    # Real managed-lock contexts stay on test-local files, never the machine-wide runtime gate.
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "LOCK", tmp_path / "machine.lock")
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "GATE", tmp_path / "machine.lock.gate")
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: env_notes.append(a))
     env_notes.clear()
     return Env(tmp_path, monkeypatch)
@@ -2111,3 +2114,51 @@ def test_a_corrupt_config_on_the_savetest_path_is_recorded_not_an_attribute_erro
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
     assert nightly.main(["savetest", "--tag", "v0.3.1-nightly.20261028"]) == 1
     assert "gate=config" in (job / "LOG.md").read_text()
+
+
+def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env, monkeypatch):
+    import fcntl
+    r = gates_runner(night, env)
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
+    original = r.run
+    seen = []
+
+    def probe(cmd, **kwargs):
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as other:
+            try:
+                fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                pass
+            else:
+                fcntl.flock(other, fcntl.LOCK_UN)
+                pytest.fail("managed stage escaped the canonical shared lock")
+        seen.append(cmd[:2])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", probe)
+    nightly.run_gates(night, r)
+    assert seen[-1] == ["dotnet", "build-server"]
+
+
+def test_managed_gates_disable_reuse_and_shut_down_before_return(night, env):
+    r = gates_runner(night, env)
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
+    nightly.run_gates(night, r)
+    tests = [cmd for cmd in r.calls if cmd[:2] == ["dotnet", "test"]]
+    assert len(tests) == 2
+    for cmd in tests:
+        assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    for _, passed_env, _ in r.envs:
+        assert passed_env["MSBUILDDISABLENODEREUSE"] == "1"
+        assert passed_env["DOTNET_CLI_USE_MSBUILD_SERVER"] == "0"
+        assert passed_env["UseSharedCompilation"] == "false"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_managed_gate_refusal_still_shuts_down_servers(night, env):
+    r = gates_runner(night, env, check=(1, OK_CHECK))
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "check"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
