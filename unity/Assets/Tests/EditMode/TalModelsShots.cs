@@ -99,12 +99,20 @@ public class TalModelsShots
         if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
         for (int i = 0; i < 3; i++) yield return null;
         var map = Object.FindFirstObjectByType<MapScene>();
-        SpecialBuildingModels.Request = Answer(after ? new string[0] : new[] { CollectionCatalog.SyrianR35 });
-        Drop(map, SpecialBuildingModels.Name);
-        var layer = CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
-        var point = map.Frame.ToWorld(35.5747, 32.7081, 0);
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
+        }
+        // The frame is where the tank stands on this date with the model answered, the same before and after.
+        var layer = Layer(Array.Empty<string>());
+        var tank = layer.Placed.First(p => p.Model == CollectionCatalog.SyrianR35);
+        if (!after) layer = Layer(new[] { CollectionCatalog.SyrianR35 });
+        var point = tank.At;
         point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
-        Look(point, 6000f);
+        // The closest the player's camera comes (CameraController.MinDistance).
+        Look(point, CameraController.MinDistance);
         for (int i = 0; i < 5; i++) yield return null;
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
