@@ -329,7 +329,7 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:62c43ba683f4981951829a72c0cae97b1ac8f11663472cccf73b46cefc1c60f5",
         "israel_bonds:b8f95f2ab683a4b88ca36b8a375d168a4bf5921ccb864e5504c45d66821bea08",
         "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
-        "jerusalem_demilitarisation_guard:97cc99fc9054ded329be4550248b7cc8d46826581e14f8d1b4554fbd3af4cece",
+        "jerusalem_demilitarisation_guard:c653ccecb5ad2a545c7d29ecb9af9688617264504a9118bcb2b691e3867aa646",
         "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
         "latrun_proposal:f7612a99e1e6f378e6b9a91f36bb4c31e16de465e8bccb2785fea70bfe4e6932",
         "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
@@ -338,7 +338,7 @@ public class Gdd03EventRulesTests
         "operation_hiram:77657ee082201710acf8d1ab25979ddb5571261452e3a8c9ccc5d33e783177b7",
         "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
         "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
-        "rafah_force_pressure:ab01fc670aadbb410928c22eccc23f66e785be775dea26a3644c1317b1edb82b",
+        "rafah_force_pressure:353f3cd16452c30d6d2aebf3d45629d8c93cb314e969f99495476116ee3dc9a4",
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",
