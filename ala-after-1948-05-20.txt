@@ -1,0 +1,1 @@
+ala on 1948-05-20: row=arab_liberation_army; lookAt=(121243.90, 3124.75, 401223.20); distance=24000; pitch=50; fov=35; legacy roster, rung 5, mobilization 0.8; every requested model answered
