@@ -864,10 +864,11 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     """The two-upload save test of docs/m3-release.md: upload A, play a turn and let the autosave commit; upload B
     (the same content, a new upload URL on the same frame origin); B must load that date, turn and state hash twice.
     "PASS" turns the itch push on (enable_itch); "INCONCLUSIVE" (the test could not be run or proves nothing) and
-    "FAIL" leave it off. It pushes to the PUBLIC itch page twice, so only the owner starts it."""
+    "FAIL" leave it off. It pushes twice to the separate test page in savetest_itch_target, never to the public page:
+    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
-    evidence: dict = {"tag": tag, "page_url": cfg.itch_page_url, "target": cfg.itch_target}
+    evidence: dict = {"tag": tag, "page_url": cfg.savetest_itch_page_url, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
     try:
         result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
@@ -884,11 +885,21 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     return result
 
 
+def _test_page_problem(cfg: Config) -> str | None:
+    """Why the save test may not push, or None: it needs its own test page, distinct from the public one."""
+    if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
+        return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
+    if cfg.savetest_itch_target == cfg.itch_target or cfg.savetest_itch_page_url == cfg.itch_page_url:
+        return "the save test's test page must not be the public itch page"
+    return None
+
+
 def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, tag: str, evidence: dict, fetch,
               sleep) -> tuple[str, str]:
     """(result, detail) of the test; a Refused or OSError out of it is the caller's INCONCLUSIVE."""
-    if not cfg.itch_page_url:
-        return "INCONCLUSIVE", "itch_page_url is not set in the job's config"
+    reason = _test_page_problem(cfg)
+    if reason:
+        return "INCONCLUSIVE", reason
     state = gh.release_state(tag)
     if state != "published":
         return "INCONCLUSIVE", f"{tag} is {state or 'not a release'}, the save test needs a published nightly"
@@ -902,7 +913,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-a")
     itch.wait_live(f"{version}-savetest-a", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_a = _frame_url(fetch, sleep, cfg.itch_page_url)
+    frame_a = _frame_url(fetch, sleep, cfg.savetest_itch_page_url)
     evidence.update(upload_a={"build_id": itch.live_build_id(), "frame_url": frame_a})
     if frame_a is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload A"
@@ -915,7 +926,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-b")
     itch.wait_live(f"{version}-savetest-b", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_b = _frame_url(fetch, sleep, cfg.itch_page_url, other=frame_a)
+    frame_b = _frame_url(fetch, sleep, cfg.savetest_itch_page_url, other=frame_a)
     evidence.update(upload_b={"build_id": itch.live_build_id(), "frame_url": frame_b})
     if frame_b is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload B"
@@ -962,8 +973,11 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
             raise Refused("github-client", "gh is not on PATH")
         if not Path(cfg.butler).is_file():
             raise Refused("itch-client", f"{cfg.butler} is missing")
+        problem = _test_page_problem(cfg)
+        if problem:
+            raise Refused("savetest", problem)
         runner = ProcRunner()
-        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.itch_target)
+        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.savetest_itch_target)
     except Refused as e:
         print(e, file=sys.stderr)
         return 1
@@ -978,7 +992,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("run")
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
-    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes to the PUBLIC itch page twice")
+    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
     job = JOB
