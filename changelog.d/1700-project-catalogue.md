@@ -1,0 +1,1 @@
+- Add a typed GDD 0.3 catalogue view for settled city project costs, work, effects and upkeep, isolated from gameplay.
