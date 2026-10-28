@@ -294,7 +294,7 @@ public sealed class CivilianPeopleTests
             CollectionAssert.DoesNotContain(plan.Select(w => w.Model), id, id + ": no camp or project built yet");
     }
 
-    /// <summary>Tal Heuberger's Bedouin civilian stands beside the camels RuralLife draws at the Bedouin camp areas (owner, 27
+    /// <summary>Tal Heuberger's Bedouin civilian stands at the Bedouin camp areas where RuralLife draws the camels (owner, 27
     /// October 2026, #756: "Sign off all 19"), one figure per camp, and nowhere else.</summary>
     [Test]
     public void TheBedouinCivilianStandsAtTheCamelsCampAreas()
