@@ -1312,8 +1312,8 @@ units:
   service: army
   side: lebanon
   echelon: force
-  sector: "Lebanon's army. On 15 May 1948 it stood at the frontier (the CIA's summary for the week to 26 May: on the frontier and in no hurry to attack). The fighting at al-Malikiyya on 15 May was the Arab Liberation Army's (owner ruling, #226). On 5-6 June its 3rd Battalion, with the ALA and a Syrian battalion, retook al-Malikiyya and Qadas."
-  sector_he: "הצבא של לבנון. ב-15 במאי 1948 עמד על הגבול (הסיכום של ה-CIA לשבוע שעד 26 במאי: על הגבול ובלי חיפזון לתקוף). הלחימה באל-מאלכיה ב-15 במאי הייתה של צבא ההצלה (פסיקת הבעלים, #226). ב-5-6 ביוני כבש הגדוד השלישי שלו מחדש, עם צבא ההצלה וגדוד סורי, את אל-מאלכיה ואת קדס."
+  sector: "Lebanon's army. On 15 May 1948 it stood at the frontier (the CIA's summary for the week to 26 May: on the frontier and in no hurry to attack). The fighting at al-Malikiyya on 15 May was the Arab Liberation Army's. On 5-6 June its 3rd Battalion, with the ALA and a Syrian battalion, retook al-Malikiyya and Qadas."
+  sector_he: "הצבא של לבנון. ב-15 במאי 1948 עמד על הגבול (הסיכום של ה-CIA לשבוע שעד 26 במאי: על הגבול ובלי חיפזון לתקוף). הלחימה באל-מאלכיה ב-15 במאי הייתה של צבא ההצלה. ב-5-6 ביוני כבש הגדוד השלישי שלו מחדש, עם צבא ההצלה וגדוד סורי, את אל-מאלכיה ואת קדס."
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%9C%D7%91%D7%A0%D7%95%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/CIA', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%9C%D7%9B%D7%99%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%94%D7%94%D7%A6%D7%9C%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A9%D7%91%D7%A2%D7%AA_%D7%94%D7%9B%D7%A4%D7%A8%D7%99%D7%9D', checked: '2026-10-22'}]
   wikipedia_only: false
