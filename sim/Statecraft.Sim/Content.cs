@@ -1330,6 +1330,8 @@ namespace Statecraft.Sim
         public List<AliyahPeriod> Aliyah = new List<AliyahPeriod>();
         /// <summary>Origin groups of the aliyah series, with display names (aliyah.yaml regions).</summary>
         public List<Region> Regions = new List<Region>();
+        /// <summary>Authored gameplay geography, separate from immigrant origins and historical overlays.</summary>
+        public PlayerRegionCatalogue PlayerRegions { get; internal set; } = PlayerRegionCatalogue.Empty;
         /// <summary>Display names and currency prefixes of the treasury, debt and foreign currency reserves (model.yaml money).</summary>
         public List<MoneyAccount> Money = new List<MoneyAccount>();
         public List<PopulationAnchor> PopulationAnchors = new List<PopulationAnchor>();
