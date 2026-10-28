@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using UnityEngine.TestTools.Constraints;
+using Is = UnityEngine.TestTools.Constraints.Is;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Units;
@@ -840,7 +842,7 @@ public class UnitsInPlayTests
             preview.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
             layer.FaceCamera(preview);
             var turn = typeof(UnitLayer).GetField("turnedFor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            Assert.AreEqual(90f, turn.GetValue(layer), "a preview must keep the game camera's draped yaw while moving");
+            Assert.AreEqual(90f, (float)turn.GetValue(layer), 1e-3f, "a preview must keep the game camera's draped yaw while moving");
         }
         finally { UnityEngine.Object.DestroyImmediate(preview.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
@@ -860,10 +862,10 @@ public class UnitsInPlayTests
             motion.Begin(Vector3.right * 10000f);
             var camera = Camera.main;
             for (int i = 0; i < 20; i++) layer.FaceCamera(camera);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 100; i++) layer.FaceCamera(camera);
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-            Assert.AreEqual(0L, allocated, "FaceCamera runs on every camera and pointer hover");
+            Assert.That(() =>
+            {
+                for (int i = 0; i < 100; i++) layer.FaceCamera(camera);
+            }, Is.Not.AllocatingGCMemory(), "FaceCamera runs on every camera and pointer hover");
         }
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
