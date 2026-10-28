@@ -30,7 +30,7 @@ namespace Statecraft.Game.Map.Collection
         public const string Camel = "figure-dromedary-camel-1948-v1";
         /// <summary>Tal Heuberger's enclosed striped Bedouin tent, at the same Bedouin camp areas as the camel (owner, 27 October 2026,
         /// #756: "Sign off all 19"; the prepared role in docs/generated-buildings-props-mapping.json, "Existing Bedouin encampment
-        /// tent plots"). It stands beside the camp's code-built tents, which stay as they are.</summary>
+        /// tent plots"). It stands on clear ground outside the code-built camps' footprints; their tents stay as they are.</summary>
         public const string BedouinTent = CollectionCatalog.BedouinTent;
         public static readonly string[] Models = { Tractor, Wagon, Horse, Sheep, Donkey, Camel, BedouinTent };
 
