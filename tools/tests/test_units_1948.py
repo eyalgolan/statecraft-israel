@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml12
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 UNITS = yaml12.load((ROOT / 'content/map/units_1948.yaml').read_text(encoding='utf-8'))['units']
@@ -335,3 +336,10 @@ def test_the_egyptian_force_has_its_forward_and_its_rear_base_at_the_truce():
         if u['side'] == 'israel':
             ends = [(day(a['from']), day(a['to'])) for a in u['anchors']]
             assert all(ends[i - 1][1] <= ends[i][0] for i in range(1, len(ends))), f"{u['id']}: an Israeli row is at one place at a time"
+
+
+@pytest.mark.parametrize("field", ["sector", "sector_he"])
+def test_lebanese_unit_card_sector_keeps_workflow_references_out_of_player_text(field):
+    # UnitCard displays these fields directly; authority belongs in sources/to_verify.
+    row = next(u for u in UNITS if u['id'] == 'lebanese_army')
+    assert not re.search(r"owner ruling|פסיקת הבעלים|#\d+", row[field]), field
