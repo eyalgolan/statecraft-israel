@@ -59,8 +59,8 @@ jobs:
           set -euo pipefail
           # Lookup failures (auth, network, rate limit) must fail the step, not deploy without the demo: no
           # error swallowing. Only two quiet skips: no releases at all, and a latest release without the zip.
-          # `gh release view/download` without a tag resolve the latest non-prerelease, and every release is a
-          # prerelease (docs/RELEASING.md step 6), so read the tag from the list and pass it to both calls.
+          # Historic prereleases and normal nightly releases can both carry the demo, so read the newest
+          # published tag from the list and pass it explicitly to both view and download.
           tag="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // empty')"
           if [ -z "$tag" ]; then
             echo "No releases yet: deploying without the demo."

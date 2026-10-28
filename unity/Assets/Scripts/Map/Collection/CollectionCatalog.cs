@@ -10,7 +10,7 @@ namespace Statecraft.Game.Map.Collection
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
     /// The independently generated Syrian and Iraqi infantry retain their own shared bundle, full-quality rigs and clips;
-    /// each later generated figure (the Egyptian and ALA infantry) streams in a bundle of its own.
+    /// each later generated model (the Egyptian and ALA infantry, the Bedouin civilian and tent) streams in a bundle of its own.
     /// Each has one CRC/SHA-checked bundle and one full-quality prefab outside Resources. Map requests wait
     /// for a drawable view; the shared loader waits until the first game frame has rendered (#1273).</summary>
     public static class CollectionCatalog
@@ -66,7 +66,9 @@ namespace Statecraft.Game.Map.Collection
             // Generated figures signed off later (owner, 27 October 2026, #756: "Sign off all 19"), each streamed in a bundle
             // of its own, "collection-" + id, opened after the people's (coordinator, 27 October 2026: the smallest first
             // download). This is a group name only, like People; no bundle carries it.
-            GeneratedFigures = "collection-generated-figures";
+            GeneratedFigures = "collection-generated-figures",
+            // Generated static props signed off the same day, each in a bundle of its own, "collection-" + id (a group name only).
+            GeneratedProps = "collection-generated-props";
 
         /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
         /// "Sign off all 19" and, for Egypt, "One token").</summary>
@@ -75,6 +77,10 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Tal Heuberger's ALA infantry candidate, the third figure on the ALA's token beside two C09 (owner, 27 October
         /// 2026: "Third figure (Recommended)").</summary>
         public const string AlaInfantry = "figure-ala-infantry-1948-v1";
+
+        /// <summary>Tal Heuberger's Bedouin civilian and enclosed striped Bedouin tent, at the Bedouin camp areas (owner, 27 October
+        /// 2026, #756: "Sign off all 19").</summary>
+        public const string BedouinCivilian = "figure-bedouin-civilian-1948-v1", BedouinTent = "generated-1948-06-bedouin-b-enclosed-striped-tent";
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
@@ -128,6 +134,11 @@ namespace Statecraft.Game.Map.Collection
             {
                 "figure-egyptian-infantry-1948-v1",
                 "figure-ala-infantry-1948-v1",
+                "figure-bedouin-civilian-1948-v1",
+            }),
+            (GeneratedProps, new[]
+            {
+                "generated-1948-06-bedouin-b-enclosed-striped-tent",
             }),
         };
 
@@ -139,6 +150,7 @@ namespace Statecraft.Game.Map.Collection
             [ArabArmies] = People,
             ["collection-" + EgyptianInfantry] = People,
             ["collection-" + AlaInfantry] = People,
+            ["collection-" + BedouinCivilian] = People,
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -155,12 +167,20 @@ namespace Statecraft.Game.Map.Collection
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
             AlaInfantry,
+            BedouinCivilian,
         };
 
         /// <summary>The generated figures (#1377 and later): full-quality rigs that keep playing their idle at every zoom, each
         /// with one prefab beside its FBX.</summary>
         public static bool IsFullQualityGeneratedInfantry(string id) =>
-            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry;
+            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry
+            || id == BedouinCivilian;
+
+        /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
+        public static bool IsGeneratedProp(string id) => id == BedouinTent;
+
+        /// <summary>Every generated model (figure or prop): imported by its own lossless importer, not the original Collection's.</summary>
+        public static bool IsGenerated(string id) => IsFullQualityGeneratedInfantry(id) || IsGeneratedProp(id);
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
@@ -184,7 +204,7 @@ namespace Statecraft.Game.Map.Collection
 
         /// <summary>The prefab's project path, which is also its name inside the bundle (lower case there).</summary>
         public static string PrefabPath(string id, CollectionDetail detail) =>
-            IsFullQualityGeneratedInfantry(id) ? $"{Folder}/{id}/{id}.prefab" :
+            IsGenerated(id) ? $"{Folder}/{id}/{id}.prefab" :
             IsBuilding(id)
                 ? $"{BuildingsFolder}/{id}/{id}-stream.prefab"
                 : $"{Folder}/{id}/{id}-stream.prefab";
