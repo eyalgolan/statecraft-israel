@@ -281,7 +281,7 @@ namespace Statecraft.Sim
             return rows;
         }
 
-        // C136: presentation snapshots only. No parsing of English Message and no decision/RNG/state change.
+        // #1680: presentation snapshots only. No parsing of English Message and no decision/RNG/state change.
         // Resolve content placeholders at the same historical date before later appointments can change their names.
         static string LocalName(Person p) => p.NameHe != "" ? p.NameHe : p.Name;
         static string SnapshotText(Content c, GameState s, DateTime date, string english, string hebrew) =>

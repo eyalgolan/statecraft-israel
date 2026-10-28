@@ -204,7 +204,7 @@ public class AdvisorOpeningParityTests
         Assert.AreEqual(hex, game.Info!.Selected, "closing puts back the player's hex");
     }
 
-    /// <summary>A pioneer group's card is a selection of its own (#1549, review C288 S1): closing the advisor's city step puts
+    /// <summary>A pioneer group's card is a selection of its own (#1549, review of #1788): closing the advisor's city step puts
     /// back the pioneer card it found, not an empty panel; a pioneer the player opens meanwhile stays.</summary>
     [Test]
     public void ClosingPutsBackAnOpenPioneerCard()
