@@ -7,6 +7,7 @@ using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
 using UnityEditor;
@@ -27,20 +28,20 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedUnits;
 
     [SetUp]
     public void Prepare()
     {
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
-        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request;
+        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedUnits = UnitFigures.Source;
     }
 
     [TearDown]
     public void DiscardScene()
     {
-        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!;
+        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; UnitFigures.Source = savedUnits;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -121,6 +122,38 @@ public class TalModelsShots
             Debug.Log($"SHOT bedouin {what} at {key} {at} from {distance:F0} m");
         }
     }
+
+    /// <summary>Al-Malikiyya's hex (unit_anchor_hexes.yaml: the Lebanese army's anchor, q 12, r 4) after the first turn (15 June
+    /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are
+    /// answered with the editor's prefabs, as the player's stream would answer them. The same code runs on main for the before.</summary>
+    IEnumerator Malikiyya(bool hebrew)
+    {
+        UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
+        yield return Boot(hebrew);
+        root.Bridge!.EndTurn();
+        for (int i = 0; i < 3; i++) yield return null;
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        var close = ui.Q<Button>("turn-report-close");
+        if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
+        // The new turn opens a decision card over the map; the player's Hide button puts it away, and the card shrinks away.
+        var card = ui.Q("event-card");
+        Assert.IsNotNull(card, "the event card");
+        if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
+        for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
+        Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
+        const int q = 12, r = 4;
+        var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
+        foreach (var (what, distance) in new[] { ("unit", 40000f), ("close", CameraController.MinDistance) })
+        {
+            CivMovementShots.Aim(q, r, distance);
+            for (int i = 0; i < 5; i++) yield return null;
+            CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
+            Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
+        }
+    }
+
+    [UnityTest] public IEnumerator MalikiyyaEnglish() { yield return Malikiyya(false); }
+    [UnityTest] public IEnumerator MalikiyyaHebrew() { yield return Malikiyya(true); }
 
     [UnityTest] public IEnumerator BedouinBeforeEnglish() { yield return Bedouin(false, false); }
     [UnityTest] public IEnumerator BedouinAfterEnglish() { yield return Bedouin(false, true); }
