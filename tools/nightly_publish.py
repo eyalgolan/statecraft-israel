@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""GitHub and the site for the nightly release job: the draft-first pre-release, the site deploy and the /demo/ check.
+"""GitHub and the site for the nightly release job: the draft-first release, the site deploy and the /demo/ check.
 
 Every call goes through the job's Runner, so tests script gh's JSON and no test touches the network. Anything gh says
 that this module cannot parse or does not expect is a Refused, never a pass. Stdlib only."""
@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Callable
 
 import nightly_checks
-from nightly_state import Refused, Runner
+from nightly_state import Refused, Runner, next_version
 
 SHA_SHOWN = 12
 PR_LIMIT = 500   # `gh pr list` returns at most this many rows; a full page may be a truncated one
@@ -47,7 +47,7 @@ def sha256_lines(files: list[Path]) -> list[str]:
 
 def release_notes(*, version: str, sha: str, since: str, subjects: list[str], sha256_lines: list[str]) -> str:
     shown = since[:SHA_SHOWN] if len(since) == 40 and all(c in "0123456789abcdef" for c in since) else since
-    lines = [f"Automated nightly build of `main` at {sha[:SHA_SHOWN]}. A pre-release, not a versioned release.", "",
+    lines = [f"Automated nightly build of `main` at {sha[:SHA_SHOWN]}.", "",
              f"Version {version}.", "", f"Changes since {shown}:", ""]
     lines += [f"- {s}" for s in subjects] or ["- (no commits)"]
     lines += ["", "SHA-256:", "", "```", *sha256_lines, "```", ""]
@@ -221,6 +221,25 @@ class GitHub:
 
     # --- release state ---------------------------------------------------------------------------------------------
 
+    def next_version(self) -> str:
+        """Read every release page through gh; drafts and non-version tags cannot choose the version."""
+        pages = self._json("version", ["gh", "api", f"repos/{self.slug}/releases?per_page=100",
+                                       "--paginate", "--slurp"], list)
+        if not all(isinstance(page, list) for page in pages):
+            raise Refused("version", "gh returned release pages of the wrong shape")
+        return next_version([row for page in pages for row in page])
+
+    def ensure_tag_available(self, tag: str) -> None:
+        """Refuse every remaining release or local/remote tag after owned-draft cleanup."""
+        release = self.release_state(tag)
+        if release is not None:
+            raise Refused("tag-exists", f"a {release} release already has the tag {tag}")
+        local = self._run("tag-exists", ["git", "-C", str(self.cwd), "tag", "--list", tag]).strip()
+        remote = self._run("tag-exists", ["git", "-C", str(self.cwd), "ls-remote", "origin",
+                                          f"refs/tags/{tag}", f"refs/tags/{tag}^{{}}"]).strip()
+        if local or remote:
+            raise Refused("tag-exists", f"the git tag {tag} already exists; never reused or overwritten")
+
     def release_state(self, tag: str) -> str | None:
         """'draft', 'published', or None when no release has this tag."""
         try:
@@ -233,6 +252,32 @@ class GitHub:
         if not isinstance(flag, bool):
             raise Refused("github-state", f"gh did not say whether {tag} is a draft")
         return "draft" if flag else "published"
+
+    def latest_tag(self) -> str | None:
+        """The current public Latest, independently of the previous nightly asset baseline."""
+        try:
+            tag = self._run("github-latest", ["gh", "api", f"repos/{self.slug}/releases/latest", "--jq",
+                                              ".tag_name"]).strip()
+        except Refused as e:
+            if "HTTP 404" in e.detail:
+                return None
+            raise
+        if not tag or tag == "null":
+            raise Refused("github-latest", "gh returned no usable Latest tag")
+        return tag
+
+    def restore_latest(self, previous: str | None, failed: str) -> str | None:
+        """Only while the failed release is still Latest: restore and verify the saved Latest (without one, remove the
+        failed release's explicit Latest mark). Otherwise returns the current Latest, which is left untouched."""
+        current = self.latest_tag()
+        if current != failed:
+            return current
+        self._run("github-latest", ["gh", "release", "edit", previous if previous is not None else failed,
+                                    "--repo", self.slug, "--latest" if previous is not None else "--latest=false"])
+        latest = self.latest_tag()
+        if (previous is not None and latest != previous) or (previous is None and latest == failed):
+            raise Refused("github-latest", f"Latest recovery did not take effect (Latest is {latest})")
+        return None
 
     def previous_build_tag(self, state_tag: str | None) -> str:
         """The last published nightly, or on the first night the newest release that carries a web zip."""
@@ -271,15 +316,15 @@ class GitHub:
     # --- the draft, its check, publishing --------------------------------------------------------------------------
 
     def create_draft(self, tag: str, sha: str, notes: Path, assets: list[Path]) -> None:
-        """A draft pre-release, never Latest, whose tag will be created at exactly `sha` when it is published."""
-        self._run("github-draft", ["gh", "release", "create", tag, "--repo", self.slug, "--draft", "--prerelease",
-                                   "--latest=false", "--target", sha, "--title", f"{tag} (nightly)",
+        """A normal draft marked Latest, whose tag will be created at exactly `sha` when it is published."""
+        self._run("github-draft", ["gh", "release", "create", tag, "--repo", self.slug, "--draft",
+                                   "--latest", "--target", sha, "--title", f"{tag} (nightly)",
                                    "--notes-file", str(notes), *[str(a) for a in assets]], UPLOAD_TIMEOUT)
 
     def verify_draft(self, tag: str, local: list[Path], dest: Path) -> None:
         data = self._view("github-draft", tag, "isDraft,isPrerelease,assets")
-        if data.get("isDraft") is not True or data.get("isPrerelease") is not True:
-            raise Refused("github-draft", f"{tag} is not a draft pre-release")
+        if data.get("isDraft") is not True or data.get("isPrerelease") is not False:
+            raise Refused("github-draft", f"{tag} is not a normal draft release")
         names = sorted(self._asset_names("github-draft", data))
         want = sorted(Path(p).name for p in local)
         if names != want:
@@ -296,7 +341,7 @@ class GitHub:
                 raise Refused("github-draft", f"{got.name} on the draft lacks {', '.join(missing)}")
 
     def publish(self, tag: str, sha: str) -> None:
-        """Make the draft public, then check it is a pre-release, not Latest, and that its tag points at `sha`."""
+        """Make the draft public, then check it is normal, Latest, and its tag points at `sha`."""
         try:
             self._publish(tag, sha)
         except Refused as e:
@@ -304,15 +349,14 @@ class GitHub:
 
     def _publish(self, tag: str, sha: str) -> None:
         self._run("github-publish", ["gh", "release", "edit", tag, "--repo", self.slug, "--draft=false",
-                                     "--latest=false"])
+                                     "--latest"])
         data = self._view("github-publish", tag, "isDraft,isPrerelease")
-        if data.get("isDraft") is not False or data.get("isPrerelease") is not True:
-            raise Refused("github-publish", f"{tag} is not a public pre-release after publishing")
+        if data.get("isDraft") is not False or data.get("isPrerelease") is not False:
+            raise Refused("github-publish", f"{tag} is not a public normal release after publishing")
         latest = self._run("github-publish", ["gh", "api", f"repos/{self.slug}/releases/latest", "--jq",
                                               ".tag_name"]).strip()
-        if latest == tag:
-            raise Refused("github-publish", f"{tag} is now the Latest release and needs a manual fix: set the "
-                                            "real release as Latest again")
+        if latest != tag:
+            raise Refused("github-publish", f"{tag} is not the Latest release after publishing (Latest is {latest})")
         refs: dict[str, str] = {}
         for line in self._run("github-publish", ["git", "-C", str(self.cwd), "ls-remote", "origin",
                                                  f"refs/tags/{tag}"]).splitlines():

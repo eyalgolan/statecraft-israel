@@ -18,7 +18,7 @@ from conftest import FakeRunner
 SHA = "a" * 40
 OLD = "b" * 40
 NOW = datetime(2026, 10, 28, 3, 0, tzinfo=ns.TZ)
-TAG = "v0.3.1-nightly.20261028"
+TAG = "v0.3.2"
 
 
 class FakeGH:
@@ -29,6 +29,7 @@ class FakeGH:
         self.release = release
         self.fail = fail or {}
         self.previous_tag = previous_tag
+        self.latest = "v0.3.1"   # deliberately different from the previous nightly asset tag
         self.calls = []
         self.baseline = None   # a zip the download hands out
 
@@ -42,6 +43,15 @@ class FakeGH:
     def release_state(self, tag):
         self.calls.append(("release_state", tag))
         return self.release
+
+    def next_version(self):
+        self.calls.append(("next_version",))
+        return "0.3.2"
+
+    def ensure_tag_available(self, tag):
+        self.calls.append(("ensure_tag_available", tag))
+        if self.release is not None:
+            raise ns.Refused("tag-exists", f"a {self.release} release already has the tag {tag}")
 
     def delete_draft(self, tag):
         self.calls.append(("delete_draft", tag))
@@ -62,8 +72,8 @@ class FakeGH:
 
     def create_draft(self, tag, sha, notes, assets):
         self.calls.append(("create_draft", tag, sha, notes, list(assets)))
-        self.release = "draft"
         self._maybe_fail("create_draft")
+        self.release = "draft"
 
     def verify_draft(self, tag, local, dest):
         self.calls.append(("verify_draft", tag, list(local), dest))
@@ -71,8 +81,22 @@ class FakeGH:
 
     def publish(self, tag, sha):
         self.calls.append(("publish", tag, sha))
+        self.latest = tag   # the edit may succeed before verification fails
         self._maybe_fail("publish")
         self.release = "published"
+
+    def latest_tag(self):
+        self.calls.append(("latest_tag",))
+        self._maybe_fail("latest_tag")
+        return self.latest
+
+    def restore_latest(self, previous, failed):
+        self.calls.append(("restore_latest", previous, failed))
+        self._maybe_fail("restore_latest")
+        if self.latest != failed:
+            return self.latest
+        self.latest = previous
+        return None
 
     def merged_pr_bodies(self, shas):
         self.calls.append(("merged_pr_bodies", set(shas)))
@@ -157,10 +181,27 @@ def gate_of(env, **kw):
 
 def test_a_clean_preflight_builds_the_night(env):
     n = env.pre()
-    assert (n.sha, n.version, n.tag, n.day) == (SHA, "0.3.1-nightly.20261028", TAG, date(2026, 10, 28))
+    assert (n.sha, n.version, n.tag, n.day) == (SHA, "0.3.2", TAG, date(2026, 10, 28))
     assert n.manifest.strip() == "golden-manifest"
     assert n.run_dir == env.job / "runs" / "20261028-030000" and n.job == env.job
     assert n.deadline > time.monotonic()
+
+
+def test_preflight_selects_the_numeric_max_across_scripted_release_pages(env):
+    from nightly_publish import GitHub
+    cmd = ["gh", "api", f"repos/{env.cfg.repo_slug}/releases?per_page=100", "--paginate", "--slurp"]
+    env.runner.add(cmd, out=json.dumps([
+        [{"tag_name": "v0.9.9", "draft": False}, {"tag_name": "v99.0.0", "draft": True}],
+        [{"tag_name": "v0.10.0", "draft": False}, {"tag_name": "v99.0.0-nightly.20261028", "draft": False}],
+    ]))
+    env.runner.add(["gh", "release", "view"], code=1,
+                   effect=lambda cmd: (_ for _ in ()).throw(ns.Refused("command", "release not found")))
+    env.runner.add(["git", "-C", str(env.cfg.clone), "tag", "--list", "v0.10.1"])
+    env.runner.add(["git", "-C", str(env.cfg.clone), "ls-remote", "origin", "refs/tags/v0.10.1",
+                    "refs/tags/v0.10.1^{}"])
+    gh = GitHub(env.runner, env.cfg.repo_slug, env.cfg.clone)
+    n = env.pre(gh=gh)
+    assert (n.version, n.tag) == ("0.10.1", "v0.10.1") and cmd in env.runner.calls
 
 
 def test_an_unchanged_main_is_skipped(env):
@@ -169,6 +210,23 @@ def test_an_unchanged_main_is_skipped(env):
     assert "SKIPPED" in env.log()
     assert all(c[0] == "git" for c in env.runner.calls)   # no Unity, no gh write
     assert env.state_path.exists() and ns.load_state(env.state_path).last_run_day == "2026-10-28"
+
+
+@pytest.mark.parametrize("tag", ["v0.3.1-nightly.20261027", "v0.3.2", "unrelated"])
+def test_skip_uses_the_saved_sha_before_looking_up_a_version(env, tag):
+    gh = FakeGH()
+    st = ns.State(last_published=ns.Published(tag, SHA, "0.3.2", {}, None))
+    ns.save_state(env.state_path, st)
+    with pytest.raises(ns.Skipped):
+        env.pre(ns.load_state(env.state_path), gh)
+    assert gh.calls == []
+
+
+def test_changed_sha_builds_even_when_the_saved_tag_matches(env):
+    gh = FakeGH()
+    st = ns.State(last_published=ns.Published(TAG, OLD, "0.3.2", {}, None))
+    assert env.pre(st, gh).sha == SHA
+    assert gh.calls == [("next_version",), ("release_state", TAG), ("ensure_tag_available", TAG)]
 
 
 def test_a_late_start_is_missed_and_earlier_gaps_are_reported(env):
@@ -223,6 +281,27 @@ def test_same_day_rerun_cleans_its_draft_and_refuses_a_published_tag(env):
     with pytest.raises(ns.Refused) as e:
         env.pre(ns.State(), gh)
     assert e.value.gate == "tag-exists" and ("delete_draft", TAG) not in gh.calls
+
+
+def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
+    class Releases(FakeGH):
+        def next_version(self):
+            self.calls.append(("next_version",))
+            return ns.next_version([{"tag_name": "v0.3.1", "draft": False},
+                                    {"tag_name": TAG, "draft": True}])
+    gh, st = Releases("draft"), ns.State(open_draft=TAG)
+    assert env.pre(st, gh).tag == TAG
+    assert gh.calls == [("next_version",), ("release_state", TAG), ("delete_draft", TAG),
+                        ("ensure_tag_available", TAG)]
+    assert st.open_draft is None
+
+
+def test_a_foreign_draft_with_the_next_tag_refuses_without_deletion(env):
+    gh, st = FakeGH("draft"), ns.State(open_draft="v0.3.0")
+    with pytest.raises(ns.Refused) as e:
+        env.pre(st, gh)
+    assert e.value.gate == "tag-exists" and "delete_draft" not in gh.names()
+    assert st.open_draft == "v0.3.0"
 
 
 def test_a_missing_tool_is_refused_and_recorded(env):
@@ -296,7 +375,9 @@ def test_no_publish_never_retries_the_site(env, monkeypatch):
 def test_no_publish_leaves_its_own_draft_alone(env):
     gh = FakeGH("draft")
     st = ns.State(open_draft=TAG)
-    env.pre(st, gh, no_publish=True)
+    with pytest.raises(ns.Refused) as e:
+        env.pre(st, gh, no_publish=True)
+    assert e.value.gate == "tag-exists"
     assert ("delete_draft", TAG) not in gh.calls and st.open_draft == TAG
 
 
@@ -617,7 +698,7 @@ def test_a_restore_only_failure_is_not_swallowed_inside_a_caller_except_block(ni
 
 # --- the stamp, the two web builds and packaging ----------------------------------------------------------------
 
-STAMPED = "0.3.1-nightly.20261028"
+STAMPED = "0.3.2"
 RESTORE_CMD = nightly.RESTORE_ARGV
 
 
@@ -1012,7 +1093,9 @@ def test_release_targets_the_preflight_commit(night, env, pub, served):
     assert not any("ls-remote" in c and "refs/heads/main" in c for c in env.runner.calls)
     notes = (night.run_dir / "release-notes.md").read_text()
     assert "- Fix a thing" in notes and "- Add a thing" in notes and night.sha[:12] in notes
-    assert gh.names() == ["create_draft", "verify_draft", "publish", "dispatch_site"]
+    assert gh.names() == ["ensure_tag_available", "create_draft", "verify_draft", "latest_tag", "publish", "dispatch_site"]
+    assert gh.latest == TAG and "restore_latest" not in gh.names()
+    assert (night.run_dir / "latest-before-publish.txt").read_text() == "v0.3.1\n"
 
 
 def test_the_first_night_fetches_the_release_tag_before_resolving_it(night, env):
@@ -1043,15 +1126,48 @@ def test_the_notes_log_runs_from_the_previous_commit_or_tag(night, env, pub, ser
     assert ["git", "-C", clone, "log", "--format=%s", f"v0.3.1..{night.sha}"] in env.runner.calls
 
 
-@pytest.mark.parametrize("which", ["verify_draft", "create_draft"])
-def test_a_failed_draft_check_deletes_the_draft_and_refuses(night, env, pub, served, which):
-    gh = FakeGH(fail={which: ns.Refused("github-draft", "hash differs")})
+def test_a_failed_draft_check_deletes_the_draft_and_refuses(night, env, pub, served):
+    gh = FakeGH(fail={"verify_draft": ns.Refused("github-draft", "hash differs")})
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
     assert e.value.gate == "github-draft" and "hash differs" in e.value.detail
     assert ("delete_draft", TAG) in gh.calls and "publish" not in gh.names() and "dispatch_site" not in gh.names()
     assert st.open_draft is None and st.last_published.sha == OLD and served == []
+
+
+@pytest.mark.parametrize("open_draft", [None, TAG, "v0.3.0"])
+def test_a_release_made_after_preflight_refuses_before_create_and_is_never_deleted(night, env, pub, served, open_draft):
+    gh = FakeGH("draft")
+    st = ns.State(last_published=last_published(), open_draft=open_draft)
+    with pytest.raises(ns.Refused) as e:
+        publish(night, st, gh, pub, env)
+    assert e.value.gate == "tag-exists"
+    assert gh.names() == ["ensure_tag_available"] and gh.release == "draft"
+    assert st.open_draft == open_draft and st.last_published.sha == OLD
+
+
+def test_a_create_that_fails_after_leaving_a_draft_cleans_that_draft(night, env, pub, served):
+    class HalfMade(FakeGH):
+        def create_draft(self, tag, sha, notes, assets):
+            self.calls.append(("create_draft", tag, sha, notes, list(assets)))
+            self.release = "draft"   # gh made the release, then an asset upload failed
+            raise ns.Refused("github-draft", "upload timed out")
+    gh = HalfMade()
+    st = ns.State(last_published=last_published())
+    with pytest.raises(ns.Refused, match="upload timed out"):
+        publish(night, st, gh, pub, env)
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert gh.release is None and st.open_draft is None and st.last_published.sha == OLD
+
+
+def test_rollback_after_create_deletes_only_the_created_tag(night, env, pub, served):
+    gh = FakeGH(fail={"verify_draft": ns.Refused("github-draft", "hash differs")})
+    st = ns.State(open_draft="v0.3.0", last_published=last_published())
+    with pytest.raises(ns.Refused):
+        publish(night, st, gh, pub, env)
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert st.open_draft is None
 
 
 def test_a_non_refusal_error_in_the_draft_check_still_deletes_the_draft(night, env, pub, served):
@@ -1083,13 +1199,32 @@ def test_a_failed_publish_check_on_a_public_release_is_never_deleted(night, env,
     class Public(FakeGH):
         def publish(self, tag, sha):
             self.release = "published"
-            raise ns.Refused("github-publish", f"{tag} became the Latest release")
+            self.latest = tag
+            raise ns.Refused("github-publish", f"{tag} points at the wrong commit")
     gh = Public()
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
     assert e.value.gate == "github-publish" and "by hand" in e.value.detail
     assert "delete_draft" not in gh.names() and st.open_draft == TAG
+    assert gh.latest == "v0.3.1" and ("restore_latest", "v0.3.1", TAG) in gh.calls
+    assert "restored previous Latest v0.3.1" in e.value.detail
+    assert "v0.3.1" in (night.run_dir / "latest-rollback.log").read_text()
+
+
+def test_a_newer_latest_published_meanwhile_is_never_overwritten_by_the_recovery(night, env, pub, served):
+    err = ns.Refused("site", "run failed")
+    gh = FakeGH(fail={"dispatch_site": [err, err]})
+    real_dispatch = gh.dispatch_site
+
+    def dispatch(deadline):
+        gh.latest = "v0.4.0"   # the owner publishes a release while the site deploy runs
+        real_dispatch(deadline)
+    gh.dispatch_site = dispatch
+    with pytest.raises(ns.Refused) as e:
+        publish(night, ns.State(last_published=last_published()), gh, pub, env)
+    assert e.value.gate == "site" and gh.latest == "v0.4.0"
+    assert "Latest is now v0.4.0, not " + TAG + ": left alone" in e.value.detail
 
 
 def test_a_site_failure_after_publish_retries_once_then_refuses_and_marks_site_pending(night, env, pub, served):
@@ -1102,6 +1237,76 @@ def test_a_site_failure_after_publish_retries_once_then_refuses_and_marks_site_p
     assert gh.names().count("dispatch_site") == 2 and "delete_draft" not in gh.names()
     assert st.last_published.tag == TAG and st.last_published.sha == night.sha   # the release is public
     assert st.site_pending == night.version and st.open_draft is None
+    assert gh.latest == "v0.3.1" and ("restore_latest", "v0.3.1", TAG) in gh.calls
+    assert "restored previous Latest v0.3.1" in e.value.detail
+
+
+def test_a_site_refusal_records_the_restored_latest_in_the_nightly_log(env, pub, served, monkeypatch):
+    err = ns.Refused("site", "run failed")
+    gh = FakeGH(fail={"dispatch_site": [err, err]})
+    def stages(night, state, runner, client, itch, **kw):
+        night.run_dir.mkdir(parents=True, exist_ok=True)
+        publish(night, state, client, pub, env, save=kw["save"])
+    monkeypatch.setattr(nightly, "run_stages", stages)
+    assert env.night(ns.State(last_published=last_published()), gh) == "REFUSED"
+    assert "REFUSED" in env.log() and "restored previous Latest v0.3.1" in env.log()
+
+
+def test_no_previous_latest_is_explicit_in_the_refusal_and_log(night, env, pub, served):
+    gh = FakeGH(fail={"publish": ns.Refused("github-publish", "wrong commit")})
+    gh.latest = None
+    with pytest.raises(ns.Refused) as e:
+        publish(night, ns.State(), gh, pub, env)
+    assert ("restore_latest", None, TAG) in gh.calls and gh.latest is None
+    assert "no previous Latest" in e.value.detail
+    assert "no previous Latest" in (night.run_dir / "latest-rollback.log").read_text()
+
+
+def test_a_latest_recovery_failure_names_the_previous_latest(night, env, pub, served):
+    gh = FakeGH(fail={"publish": ns.Refused("github-publish", "wrong commit"),
+                      "restore_latest": OSError("offline")})
+    with pytest.raises(ns.Refused) as e:
+        publish(night, ns.State(), gh, pub, env)
+    assert "wrong commit" in e.value.detail and "Latest recovery failed (previous Latest v0.3.1)" in e.value.detail
+    assert "offline" in (night.run_dir / "latest-rollback.log").read_text()
+
+
+def test_an_interrupt_after_publish_restores_latest_and_records_the_result(night, env, pub, served):
+    gh = FakeGH(fail={"dispatch_site": KeyboardInterrupt()})
+    with pytest.raises(KeyboardInterrupt):
+        publish(night, ns.State(), gh, pub, env)
+    assert gh.latest == "v0.3.1" and "delete_draft" not in gh.names()
+    assert any("restored previous Latest v0.3.1" in note for note in night.notes)
+
+
+def test_a_failed_latest_lookup_refuses_before_the_public_edit(night, env, pub, served):
+    gh = FakeGH(fail={"latest_tag": ns.Refused("github-latest", "offline")})
+    with pytest.raises(ns.Refused, match="offline"):
+        publish(night, ns.State(), gh, pub, env)
+    assert "publish" not in gh.names() and "restore_latest" not in gh.names()
+    assert ("delete_draft", TAG) in gh.calls
+
+
+def test_a_failed_save_after_publish_restores_latest(night, env, pub, served):
+    gh = FakeGH()
+    saves = []
+    def save():
+        saves.append(True)
+        if len(saves) == 2:   # the save right after publish; _try_save swallows only OSError, so this one escapes
+            raise TypeError("Object of type Path is not JSON serializable")
+    with pytest.raises(ns.Refused, match="restored previous Latest v0.3.1"):
+        publish(night, ns.State(), gh, pub, env, save=save)
+    assert gh.latest == "v0.3.1" and "delete_draft" not in gh.names()
+
+
+def test_a_disk_error_saving_state_after_publish_keeps_the_good_release_latest(night, env, pub, served, tmp_path,
+                                                                              monkeypatch):
+    monkeypatch.setattr(nightly, "notify", lambda *a: None)
+    blocked = tmp_path / "state.json"
+    blocked.mkdir()   # writing the state file fails with an OSError, which production's _try_save reports and absorbs
+    gh, st = FakeGH(), ns.State(last_published=last_published())
+    publish(night, st, gh, pub, env, save=lambda: nightly._try_save(blocked, st))
+    assert gh.latest == TAG and "restore_latest" not in gh.names() and st.last_published.tag == TAG
 
 
 @pytest.mark.parametrize("how", ["incomplete-read", "key-error"])
@@ -1270,7 +1475,7 @@ def test_itch_disabled_is_logged_and_never_calls_the_client(night, env, pub, ser
     gh = FakeGH()
     publish(night, ns.State(last_published=last_published()), gh, pub, env, itch=FakeItch(gh.calls))
     assert "itch: skipped (save test not passed)" in capsys.readouterr().out
-    assert gh.names() == ["create_draft", "verify_draft", "publish", "dispatch_site"]
+    assert gh.names() == ["ensure_tag_available", "create_draft", "verify_draft", "latest_tag", "publish", "dispatch_site"]
 
 
 def test_itch_enabled_without_a_client_refuses_before_any_store_change(itch_night, env):
@@ -1281,9 +1486,9 @@ def test_itch_enabled_without_a_client_refuses_before_any_store_change(itch_nigh
 def test_the_itch_push_sits_between_verify_and_publish_and_the_rollback_is_ready_first(itch_night, env):
     gh, st = run_itch(itch_night, env)
     version = itch_night[0].version
-    assert gh.calls[2][:3] == ("download", PREV_TAG, "*-web.zip")   # after create_draft, verify_draft, before the push
+    assert gh.calls[3][:3] == ("download", PREV_TAG, "*-web.zip")   # after the tag check, create_draft, verify_draft, before the push
     assert [c[0] for c in gh.calls if c[0] not in ("release_state",)] == [
-        "create_draft", "verify_draft", "download", "itch.push", "itch.wait_live", "itch.matches", "publish",
+        "ensure_tag_available", "create_draft", "verify_draft", "download", "itch.push", "itch.wait_live", "itch.matches", "latest_tag", "publish",
         "dispatch_site"]
     assert ("itch.push", "itch-push", version) in gh.calls and st.last_published.tag == TAG
     night = itch_night[0]
@@ -1436,7 +1641,7 @@ def test_no_publish_stops_before_any_store_call(night, env, stages, capsys):
     st = ns.State(last_published=last_published())
     assert nightly.run_stages(night, st, env.runner, stages.gh, None, no_publish=True,
                               free_gb=lambda p: 100.0) is False
-    assert "publish_night" not in stages.names() and "NO-PUBLISH: all gates passed for v0.3.1-nightly.20261028\n" in \
+    assert "publish_night" not in stages.names() and f"NO-PUBLISH: all gates passed for {TAG}\n" in \
         capsys.readouterr().out
     assert stages.gh.names() == ["previous_build_tag", "download"]   # reads only
 
