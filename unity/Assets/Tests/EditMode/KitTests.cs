@@ -876,16 +876,24 @@ public class KitTests
         }
     }
 
-    /// <summary>The khaki tent's bundle really unloads: through a collection stream (with a stand-in source), two camps that a
-    /// camera comes close to share one open bundle; one camp's leave keeps it, the last one's unloads it, with no owner and
-    /// no pin left. While admitted, the residency diagnostics count the camps' live models and leases in the special
+    /// <summary>The khaki tent's bundle really unloads: through the production acquisition (CampTentModels' default Acquire, the
+    /// shared collection stream's owned leases) on a stream with a stand-in source, two camps that a camera comes close to
+    /// share one open bundle; one camp's leave keeps it, the last one's unloads it, with no owner and no pin left. While admitted, the residency diagnostics count the camps' live models and leases in the special
     /// category; after leave they count none.</summary>
     [Test]
     public void TheKhakiTentsBundleUnloadsWhenTheLastCampLeaves()
     {
         var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        // The production acquisition: CampTentModels.Acquire stays its default (CollectionStream.Acquire), and the shared stream
+        // the game would make is this one, with a stand-in source; an inert host keeps the stream from starting its own runner,
+        // so the test runs it.
+        var streamType = typeof(Statecraft.Game.Map.Collection.CollectionStream);
+        var sharedField = streamType.GetField("shared", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var hostField = streamType.GetField("host", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var savedShared = sharedField.GetValue(null); var savedHost = hostField.GetValue(null);
         var root = new GameObject("camp tents unload fixture");
         var camGo = new GameObject("camp tents unload camera", typeof(Camera));
+        var hostGo = new GameObject("inert collection stream host");
         try
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
@@ -893,7 +901,9 @@ public class KitTests
             var source = new TentSource { Prefab = prefab };
             var stream = new Statecraft.Game.Map.Collection.CollectionStream(source);
             var run = new Stack<IEnumerator>(); run.Push(stream.Run());
-            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => stream.Retain(id, d, done);
+            sharedField.SetValue(null, stream); hostField.SetValue(null, hostGo.AddComponent<Statecraft.Game.Map.Collection.CollectionStreamHost>());
+            Assert.AreEqual(streamType.GetMethod("Acquire", new[] { typeof(string), typeof(Statecraft.Game.Map.Collection.CollectionDetail), typeof(System.Action<GameObject?>) }),
+                Statecraft.Game.Map.Collection.CampTentModels.Acquire.Method, "the production acquisition, CollectionStream.Acquire, not a test stand-in");
             string bundle = Statecraft.Game.Map.Collection.CollectionCatalog.BundleOf(Statecraft.Game.Map.Collection.CampTentModels.Model)!;
             var policy = Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special;
             var tents = new[] { new SettlementKits.KhakiTent(new Vector2(100f, 200f), 5f, 30f, 60f, 40f) };
@@ -912,7 +922,8 @@ public class KitTests
             bool Open() => ((System.Collections.IDictionary)Field("bundles")).Contains(bundle);
             int Cached() => ((Dictionary<string, string>)Field("paths")).Count(kv => kv.Value == bundle);
             int Queued() => ((System.Collections.ICollection)Field("pending")).Count;
-            bool ModelsIn(GameObject kit) => kit.GetComponentsInChildren<Transform>(true).Any(x => x.name == Statecraft.Game.Map.Collection.CampTentModels.Model);
+            int Loaded() => ((System.Collections.ICollection)Field("loaded")).Count;
+            int PendingEvictions() => ((System.Collections.ICollection)Field("pendingEvictions")).Count;
 
             camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam); b.Choose(default, cam);
             Pump(run, 20);
@@ -923,13 +934,15 @@ public class KitTests
             Assert.AreEqual(2, live.ownedLeases, "and their leases");
             Assert.AreEqual(1, Owners(), "one owned bundle"); Assert.AreEqual(2, Leases(), "held by both camps' leases");
             Assert.IsFalse(Pinned(), "never pinned"); Assert.IsFalse(Inflight()); Assert.AreEqual(1, Cached(), "its prefab cached"); Assert.AreEqual(0, Queued());
+            var aModels = a.Instances.ToList(); var bModels = b.Instances.ToList();
 
             camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
             Assert.AreEqual(1, Leases(), "one camp's leave drops its lease");
-            Assert.IsFalse(ModelsIn(a.gameObject), "and destroys its models");
+            Assert.IsTrue(aModels.All(m => m == null), "and destroys its models");
             CollectionAssert.IsEmpty(source.Unloaded, "the other camp still owns the bundle"); Assert.IsTrue(Open());
+            source.BeforeUnload = () => Assert.IsTrue(bModels.All(m => m == null), "no model instance is left when the bundle unloads");
             b.Choose(default, cam);
-            Assert.IsFalse(ModelsIn(b.gameObject), "the last camp's models are destroyed too");
+            source.BeforeUnload = null;
             Assert.AreEqual(new[] { bundle }, source.Unloaded.ToArray(), "the last leave unloads it: no owner, no pin");
             var after = Special();
             Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
@@ -952,18 +965,19 @@ public class KitTests
             camGo.transform.position = new Vector3(100f, 10000f, 200f); b.Choose(default, cam);
             Pump(run, 20);
             Assert.AreEqual(tents.Length, b.ModelCount);
-            var bKit = b.gameObject;
-            source.BeforeUnload = () => Assert.IsFalse(bKit.GetComponentsInChildren<Transform>(true).Any(t => t.name == Statecraft.Game.Map.Collection.CampTentModels.Model),
-                "no model instance is left when the bundle unloads");
+            var standing = b.Instances.ToList();
+            source.BeforeUnload = () => Assert.IsTrue(standing.All(m => m == null), "no model instance is left when the bundle unloads");
             Object.DestroyImmediate(b);
+            source.BeforeUnload = null;
             Assert.AreEqual(3, source.Unloaded.Count, "destroying the last owner unloads it");
             Assert.AreEqual(0, Owners()); Assert.IsFalse(Pinned());
-            source.BeforeUnload = null;
+            Assert.AreEqual(0, Loaded(), "nothing loaded is left"); Assert.AreEqual(0, PendingEvictions(), "and no eviction waits");
         }
         finally
         {
             Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
-            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+            sharedField.SetValue(null, savedShared); hostField.SetValue(null, savedHost);
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo); Object.DestroyImmediate(hostGo);
         }
     }
 

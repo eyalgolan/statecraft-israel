@@ -43,6 +43,8 @@ namespace Statecraft.Game.Map.Collection
         public bool HasModels => instances.Count > 0;
         /// <summary>The model instances, one per khaki tent (empty until the model arrives, and again after leave).</summary>
         public int ModelCount => instances.Count;
+        /// <summary>The model instances (test seam: the tests check they are destroyed before the bundle unloads).</summary>
+        internal IReadOnlyList<GameObject> Instances => instances;
         /// <summary>Whether a game camera is close to this camp now, so the model is demanded and its lease held.</summary>
         public bool Demanded => view != null && view.Keys.Count > 0;
         public bool LastClose { get; private set; }
