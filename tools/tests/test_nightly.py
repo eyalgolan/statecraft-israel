@@ -1646,9 +1646,9 @@ class Saved:
         self.runner = SaveRunner(**runner_kw)
         monkeypatch.setattr(nightly, "find_chrome", lambda: Path("/fake/chrome"))
 
-    def run(self, fetch=None, tag=TAG):
+    def run(self, fetch=None, tag=TAG, sleep=lambda s: None):
         return nightly.savetest(self.cfg, self.config, self.job, self.runner, self.gh, self.itch, tag=tag,
-                                fetch=fetch or page_for(self.itch), sleep=lambda s: None)
+                                fetch=fetch or page_for(self.itch), sleep=sleep)
 
     def evidence(self):
         return json.loads(next((self.job / "savetest").glob("*/evidence.json")).read_text())
@@ -1744,6 +1744,41 @@ def test_savetest_waits_while_itch_is_still_unpacking_the_upload(saved):
             return Page('<div class="html_embed_widget">Embed({"load_url":"https:\\/\\/x.itch.io\\/g\\/html_url\\/1"})')
         return framed(url, timeout)
     assert t.run(fetch) == "PASS" and t.enabled()
+
+
+def too_many_requests(retry_after=None):
+    import email.message
+    import urllib.error
+    headers = email.message.Message()
+    if retry_after is not None:
+        headers["Retry-After"] = retry_after
+    return urllib.error.HTTPError(PAGE_URL, 429, "Too Many Requests", headers, None)
+
+
+@pytest.mark.parametrize("retry_after,pause", [("90", 90), (None, nightly.SAVETEST_RATE_LIMIT_SLEEP), ("soon",
+                                               nightly.SAVETEST_RATE_LIMIT_SLEEP), ("5", nightly.SAVETEST_FRAME_SLEEP)])
+def test_savetest_backs_off_and_keeps_waiting_when_itch_rate_limits_the_page(saved, retry_after, pause):
+    t = saved()   # 28 Oct 2026: itch answered 429 Too Many Requests while the test waited for upload B's frame
+    framed, calls, sleeps = page_for(t.itch), {"n": 0}, []
+
+    def fetch(url, timeout=30):
+        calls["n"] += 1
+        if t.itch.pushes == 2 and calls["n"] <= 6:
+            raise too_many_requests(retry_after)
+        return framed(url, timeout)
+    assert t.run(fetch, sleep=sleeps.append) == "PASS" and t.enabled()
+    assert pause in sleeps
+
+
+def test_savetest_a_rate_limit_that_never_lifts_ends_inconclusive_within_the_wait_budget(saved):
+    t = saved()
+    sleeps = []
+
+    def fetch(url, timeout=30):
+        raise too_many_requests("99999")
+    assert t.run(fetch, sleep=sleeps.append) == "INCONCLUSIVE" and not t.enabled() and t.runner.runs == []
+    assert sum(sleeps) <= nightly.SAVETEST_FRAME_TRIES * nightly.SAVETEST_FRAME_SLEEP
+    assert sleeps and max(sleeps) == nightly.SAVETEST_RATE_LIMIT_MAX and "429" in t.log()
 
 
 def test_savetest_a_page_without_a_frame_is_inconclusive(saved):

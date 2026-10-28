@@ -19,6 +19,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -754,8 +755,12 @@ PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) h
 # The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
 # ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
 # 10-minute wait, so the save test now waits up to 40 minutes.
+# While it waited for the second upload that day, itch answered 429 Too Many Requests; a 429 now slows the polling
+# down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
 SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
+SAVETEST_RATE_LIMIT_SLEEP = 120   # after an HTTP 429 without a usable Retry-After
+SAVETEST_RATE_LIMIT_MAX = 300   # a longer Retry-After is capped; the total wait stays within the frame budget
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent
 
@@ -768,17 +773,43 @@ def _page_text(fetch, url: str) -> str:
         raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
 
 
+def _rate_limit_pause(e: Refused) -> int | None:
+    """Seconds to wait after itch answered HTTP 429 (its Retry-After, kept within bounds), or None for any other error."""
+    cause = e.__cause__
+    if not isinstance(cause, urllib.error.HTTPError) or cause.code != 429:
+        return None
+    try:
+        asked = int((cause.headers or {}).get("Retry-After", ""))
+    except ValueError:
+        asked = SAVETEST_RATE_LIMIT_SLEEP
+    return min(max(asked, SAVETEST_FRAME_SLEEP), SAVETEST_RATE_LIMIT_MAX)
+
+
 def _frame_url(fetch, sleep, page_url: str, other: str | None = None) -> str | None:
     """The game-frame URL the itch page embeds. With `other` it waits for a frame that is not that one; the last
-    frame seen (or None) comes back when the tries run out."""
-    found = None
-    for attempt in range(SAVETEST_FRAME_TRIES):
-        found = itch_frame_url(_page_text(fetch, page_url))
-        if found is not None and found != other:
+    frame seen (or None) comes back when the wait budget runs out. A 429 from itch only slows the polling down; if
+    itch still refuses when the budget runs out, that refusal is raised."""
+    found, limited = None, None
+    waited, budget = 0, SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP
+    while True:
+        try:
+            found, limited = itch_frame_url(_page_text(fetch, page_url)), None
+            pause = SAVETEST_FRAME_SLEEP
+        except Refused as e:
+            pause = _rate_limit_pause(e)
+            if pause is None:
+                raise
+            limited = e
+            print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
+        else:
+            if found is not None and found != other:
+                return found
+        if waited + pause > budget:
+            if limited is not None:
+                raise limited
             return found
-        if attempt + 1 < SAVETEST_FRAME_TRIES:
-            sleep(SAVETEST_FRAME_SLEEP)
-    return found
+        sleep(pause)
+        waited += pause
 
 
 def _frame_parts(url: str) -> tuple[str, str, str]:
