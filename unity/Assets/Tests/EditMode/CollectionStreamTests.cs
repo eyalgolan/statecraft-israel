@@ -494,6 +494,40 @@ public class CollectionStreamTests
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
 
+    /// <summary>The Egyptian infantry (owner, 27 October 2026, "Sign off all 19") stream in a bundle of their own, opened after
+    /// the people's like the Arab armies' bundle, and they never wait for that bundle or make it larger.</summary>
+    [Test]
+    public void TheEgyptianFigureHasItsOwnBundleOpenedAfterThePeoples()
+    {
+        const string egyptian = CollectionCatalog.EgyptianInfantry;
+        Assert.AreEqual("collection-" + egyptian, CollectionCatalog.BundleOf(egyptian));
+        Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.After["collection-" + egyptian]);
+        CollectionAssert.DoesNotContain(CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids, egyptian);
+        var go = new GameObject("prefab");
+        try
+        {
+            var source = new OrderSource { Prefab = go };
+            var stream = new CollectionStream(source);
+            var answered = new List<string>();
+            stream.Enqueue(egyptian, CollectionDetail.Far, _ => answered.Add(egyptian));
+            stream.Enqueue(Syrian, CollectionDetail.Far, _ => answered.Add(Syrian));
+            stream.Enqueue(Villager, CollectionDetail.Far, _ => answered.Add(Villager));
+            Step(stream.Run(), 30);
+            CollectionAssert.AreEqual(new[] { CollectionCatalog.BundleOf(Villager)!, "collection-" + egyptian, CollectionCatalog.ArabArmies },
+                source.Opened, "the people first, then the two generated bundles in the order asked");
+            CollectionAssert.AreEqual(new[] { Villager, egyptian, Syrian }, answered);
+
+            var alone = new OrderSource { Prefab = go };
+            var only = new CollectionStream(alone);
+            bool served = false;
+            only.Enqueue(egyptian, CollectionDetail.Far, _ => served = true);
+            Step(only.Run(), 20);
+            CollectionAssert.AreEqual(new[] { "collection-" + egyptian }, alone.Opened, "nothing asked of the people's bundle: no wait");
+            Assert.IsTrue(served);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
     [Test]
     public void EveryQueuedPeopleOriginalPrecedesTheSharedArabBundle()
     {

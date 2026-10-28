@@ -1253,7 +1253,7 @@ public class MapLabelTests
         finally { labels.Dispose(); hd.Dispose(); }
     }
 
-    /// <summary>C130 / #322: moving the camera projects each active marker once and transforms each box corner at most
+    /// <summary>#1680 / #322: moving the camera projects each active marker once and transforms each box corner at most
     /// once, plus one marker-box fallback. Count real work instead of scheduler-dependent microseconds; the existing
     /// profiler tests above still enforce zero allocations. This is an operation bound, not an absolute timing claim.</summary>
     [UnityTest]
@@ -1328,7 +1328,7 @@ public class MapLabelTests
     /// <summary>Keeping clear of the unit tokens (#197) costs little next to placing the pills: one presenter, whose
     /// keep-clear list is switched between the units in play and none, runs interleaved sweeps (off, on, off, on, ...) of
     /// 240 refreshes along the same camera path; the median refresh with the units is at most 1.25 times the median without,
-    /// both taken from the same run. This separate relative timing check is unchanged by C130; the test above bounds work, not time.</summary>
+    /// both taken from the same run. This separate relative timing check is unchanged by #1680; the test above bounds work, not time.</summary>
     [UnityTest]
     public IEnumerator KeepingClearOfTheUnitsIsCheap()
     {

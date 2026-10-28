@@ -22,6 +22,8 @@ recording and waits for RECORDING playing; then End turn must log TURN 1, pressi
 turn selects while units still need orders (EndTurn; --persistence ends its turns so too); any console Exception, RECORDING failed or
 BOOT FAIL fails the run; add --query lang=he for the Hebrew layout). Both runs add ?navlog and click the start screen's
 buttons where its "start buttons" line says they are (StartButtons).
+--url URL opens that page (the itch.io game frame) instead of serving a build; --profile DIR keeps that Chrome profile
+between runs; --first-save drives --persistence only to its first durable autosave and prints PERSISTENCE saved <date> turn <n> hash <h>.
 The page is opened over the DevTools protocol with its viewport fixed to 1920x1080 at the DPR before it loads
 (Emulation.setDeviceMetricsOverride: --window-size alone gives a 1920x937 viewport in --headless=new), and the run
 fails on any "res=" line, or any screenshot, of another size. --viewport WxH checks another window - 390x844 is the
@@ -603,8 +605,9 @@ class PersistenceCheck:
     browser); a reload keeps the page's profile and origin, so its IndexedDB autosave. Each turn ends through EndTurn."""
 
     def __init__(self, action, buttons: StartButtons, tail: ConsoleTail, settle=time.sleep, now=time.monotonic,
-                 save_timeout=15.0):
+                 save_timeout=15.0, first_save_only=False):
         self.action, self.buttons, self.settle, self.now, self.save_timeout = action, buttons, settle, now, save_timeout
+        self.first_save_only = first_save_only   # stop, with the saved line printed, at the first durable commit
         self.end_turn = EndTurn(action, tail, hebrew=False, settle=settle)
         self.stage, self.saved, self._done = "first_boot", None, False
         self.pending, self.acknowledged, self.deadline = None, None, None
@@ -624,6 +627,11 @@ class PersistenceCheck:
             return
         first = self.stage == "first_commit"
         self.deadline = None
+        if first and self.first_save_only:
+            date, turn, digest = self.saved
+            print(f"PERSISTENCE saved {date} turn {turn} hash {digest}")
+            self.stage, self._done = "saved", True
+            return
         self.stage = "settled_reload" if first else "immediate_reload"
         self.buttons.clear()
         self.action("reload")
@@ -818,7 +826,7 @@ DRIVER_GRACE = 3.0
 def page_query(a) -> str:
     """The page's query: --query, plus ?navlog for the runs that click the start screen (StartButtons). navlog only logs:
     it skips nothing, so the start screen is still the one a player meets."""
-    if not (a.startscreen or a.persistence) or query_value(a.query, NAVLOG) is not None:
+    if not (a.startscreen or a.persistence or a.first_save) or query_value(a.query, NAVLOG) is not None:
         return a.query
     return f"{a.query}&{NAVLOG}" if a.query else NAVLOG
 
@@ -826,13 +834,14 @@ def page_query(a) -> str:
 def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail):
     """What a run drives and fails on: (driver or None, the failure regex, watch's keyword arguments). `command` is
     Page.command; `buttons` and `tail` are fed the console by the caller."""
-    if a.persistence and a.startscreen:
+    if (a.persistence or a.first_save) and a.startscreen:
         raise ValueError("--persistence and --startscreen are separate runs")
     if a.startscreen:
         driver = StartScreenCheck(command, a.startscreen == "recording", query_value(a.query, "lang") == "he", buttons, tail)
         fail, what = f"(?:{a.fail})|{START_SCREEN_FAILS}", f"the end of the --startscreen {a.startscreen} run"
-    elif a.persistence:
-        driver, fail, what = PersistenceCheck(command, buttons, tail), a.fail, "the end of the --persistence run"
+    elif a.persistence or a.first_save:
+        driver = PersistenceCheck(command, buttons, tail, first_save_only=a.first_save)
+        fail, what = a.fail, "the end of the --first-save run" if a.first_save else "the end of the --persistence run"
     else:
         return None, re.compile(a.fail), {}
     return driver, re.compile(fail), {"complete": lambda: driver.done, "complete_what": what, "grace": DRIVER_GRACE}
@@ -840,7 +849,13 @@ def run_plan(a, command, buttons: StartButtons, tail: ConsoleTail):
 
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
-    ap.add_argument("build", type=Path)
+    ap.add_argument("build", type=Path, nargs="?", help="a Unity WebGL build folder, served on localhost (or use --url)")
+    ap.add_argument("--url", help="open this page instead of serving a build (the itch.io game frame); no server starts")
+    ap.add_argument("--profile", type=Path,
+                    help="use and keep this Chrome profile folder (default: a new temporary one, deleted at the end)")
+    ap.add_argument("--first-save", action="store_true",
+                    help="drive the persistence run to the first durable autosave, print PERSISTENCE saved <date> turn <n> "
+                         "hash <h> and pass, without reloading")
     ap.add_argument("--query", default="")
     ap.add_argument("--expect", action="append", default=[])
     ap.add_argument("--fail", default=r"GOLDEN FAIL|SMOKE FAIL|BOOT FAIL")
@@ -857,15 +872,39 @@ def parser() -> argparse.ArgumentParser:
     return ap
 
 
+def check_source(ap: argparse.ArgumentParser, a) -> None:
+    """Exactly one of the build folder and --url names the page."""
+    if (a.build is None) == (a.url is None):
+        ap.error("give exactly one of build and --url")
+
+
+def with_query(url: str, query: str) -> str:
+    """`url` with `query` added: after ? or, when the URL already has a query, after &."""
+    if not query:
+        return url
+    return f"{url}{'&' if '?' in url else '?'}{query}"
+
+
+def pick_profile(a) -> tuple[str, bool]:
+    """(the Chrome profile folder, whether the run owns it). --profile is made if missing and is never deleted."""
+    if a.profile is not None:
+        Path(a.profile).mkdir(parents=True, exist_ok=True)
+        return str(a.profile), False
+    return tempfile.mkdtemp(prefix="web-check-"), True
+
+
 def main() -> int:
-    a = parser().parse_args()
-    if not (a.build / "index.html").exists():
+    ap = parser()
+    a = ap.parse_args()
+    check_source(ap, a)
+    if a.build is not None and not (a.build / "index.html").exists():
         sys.exit(f"{a.build}/index.html not found")
-    server, proc, page, profile = None, None, None, tempfile.mkdtemp(prefix="web-check-")
+    server, proc, page = None, None, None
     try:
         w, h = parse_viewport(a.viewport)
     except ValueError as e:
         sys.exit(str(e))
+    profile, own_profile = pick_profile(a)
     res = expected_res(w, h, a.dpr)
     shots = ShotCollector(a.shots, size=(round(w * a.dpr), round(h * a.dpr)))
     buttons, tail = StartButtons((w, h)), ConsoleTail()
@@ -877,9 +916,12 @@ def main() -> int:
         return shots.feed(text)
     try:
         chrome = find_chrome()
-        server = serve(a.build)
         query = page_query(a)
-        url = f"http://localhost:{server.server_address[1]}/index.html" + (f"?{query}" if query else "")
+        if a.url:
+            url = with_query(a.url, query)
+        else:
+            server = serve(a.build)
+            url = with_query(f"http://localhost:{server.server_address[1]}/index.html", query)
         proc = subprocess.Popen([str(chrome), *chrome_flags(profile, a.swiftshader, a.dpr), "about:blank"],
                                 stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True, errors="replace")
         inbox: queue.Queue = queue.Queue()
@@ -924,7 +966,8 @@ def main() -> int:
                 proc.kill(); proc.wait()
         if server is not None:
             server.shutdown(); server.server_close()
-        shutil.rmtree(profile, ignore_errors=True)
+        if own_profile:
+            shutil.rmtree(profile, ignore_errors=True)
 
 
 if __name__ == "__main__":

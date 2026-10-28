@@ -3,7 +3,7 @@
 # Approved draft: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6369861430
 # Owner acceptance: https://github.com/eyalgolan/statecraft-israel/issues/939#issuecomment-6372987388
 # Historical source passages re-opened by an AI agent on 24 October 2026, not human fact-checking.
-# No person review or native Hebrew approval is asserted; shareable builds remain gated by R-ALT-011.
+# Signed off by the owner on 28 October 2026 (reviewed_by below). Native Hebrew approval is not asserted.
 id: jerusalem_demilitarisation_guard
 kind: consequence
 anchor: soft
@@ -43,3 +43,5 @@ sources:
   - { url: "https://history.state.gov/historicaldocuments/frus1948v05p2/d428", checked: 2026-10-24 }
   - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-24 }
 status: draft
+reviewed_by: eyalgolan
+reviewed_on: 2026-10-28

@@ -474,7 +474,8 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
         var units = Statecraft.Game.Map.Units.UnitFigures.ByHeadgear.Values.Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdFigure.Values)
-            .Concat(Statecraft.Game.Map.Units.UnitFigures.BySide.Values).Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
+            .Concat(Statecraft.Game.Map.Units.UnitFigures.BySide.Values).Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdBySide.Values)
+            .Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: the 18 kit originals are now catalogued and requested by TownModelLayer

@@ -16,7 +16,7 @@ public class Generated1948RigTests
         "figure-iraqi-infantry-1948-v1", "figure-lebanese-regular-1948-v1", "figure-bedouin-civilian-1948-v1",
         "figure-local-arab-irregular-1948-v1"
     };
-    static string Dir(string id) => (Array.IndexOf(Ids, id) == 1 || Array.IndexOf(Ids, id) == 3
+    static string Dir(string id) => (Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry(id)
         ? "Assets/Art/Collection/" : "Assets/Editor/Generated1948Review/") + id;
     static AnimationClip Clip(string id, string level) => AssetDatabase.LoadAllAssetsAtPath($"{Dir(id)}/{id}.fbx")
         .OfType<AnimationClip>().Single(c => c.name == (level == "walk" ? "walk" : "idle"));

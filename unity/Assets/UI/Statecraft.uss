@@ -286,8 +286,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 }
 .event-reopen:hover { border-color: var(--gold-light); }
 /* Up to 1040 px wide, its 960 px content holding the 16:9 media header at 960x540 (the photographs' and the clips' size);
-   the layer bounds its height. When the window is short the media header gives way first, then the text (it scrolls),
-   never the option buttons. */
+   the layer bounds its height. When the window is short the media header gives way first, then the body: the text and
+   the options scroll together (event-scroll, #1853), while the head and the foot with Hide stay in the card. */
 .event-card { width: 1040px; max-width: 100%; max-height: 100%; flex-shrink: 1; min-height: 0; overflow: hidden; padding: 16px 40px 10px 40px; }
 .hud-two-row .event-card { padding-left: 16px; padding-right: 16px; }
 /* The card takes the keyboard focus when an event opens (EventCardPresenter.FocusCard): a lighter gold edge says so. */
@@ -352,12 +352,12 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* An objective card's line under its text (#380): when it was completed against history. */
 .event-objective { white-space: normal; margin-bottom: 8px; }
 /* A consequence card's banner (#954): which road it follows and the record beside it, above the text; sober, in the muted
-   ink, set off by a thin gold rule at its start edge. The rejoin line under an option is in the same muted ink,
-   indented 46 px to line up with the option's text after its round sign (.event-option padding). */
+   ink, set off by a thin gold rule at its start edge. The rejoin line and the effect lines (#1125) under an
+   option are in the same muted ink, indented 46 px to line up with the option's text after its round sign (.event-option padding). */
 .event-alt-banner { display: none; white-space: normal; margin: 0 0 8px 0; padding: 2px 0 2px 10px; border-left-width: 2px; border-color: var(--gold); }
 .lang-he .event-alt-banner { border-left-width: 0; border-right-width: 2px; padding: 2px 10px 2px 0; }
-.event-rejoin { white-space: normal; margin: -1px 0 4px 46px; }
-.lang-he .event-rejoin { margin: -1px 46px 4px 0; }
+.event-rejoin, .event-effect { white-space: normal; margin: -1px 0 4px 46px; }
+.lang-he .event-rejoin, .lang-he .event-effect { margin: -1px 46px 4px 0; }
 /* The line over the greyed-out options when the Attention left cannot pay for an answer (#1034). */
 .event-delegate { display: none; white-space: normal; margin: 4px 0; color: var(--gold-light); }
 /* The capture dialog (CaptureDialogPresenter): under each option its plain description, then the sim's preview of what
@@ -1023,6 +1023,104 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .hud-two-row .info-panel.info-gdd-shown { width: 452px; flex-wrap: wrap; }
 .hud-two-row .info-gdd { width: 100%; margin: 8px 0 0 0; padding: 8px 0 0 0; border-left-width: 0; border-right-width: 0; border-top-width: 1px; }
 
+/* The tight HUD (#40, the UI scale's 125% and 150% - HudPresenter.TightClass): a window at 125% or 150% has a logical
+   size smaller than any the 100% layout is tested at, in both directions at once (1920x1080 at 150% is 1280x720
+   logical). The stacked bar, the icon column, the decision layer and the panels take their tight sizes below, so the
+   HUD holds at those sizes. The bounds (HudPresenter.TightBelowHeightPx and friends) sit between the smallest sizes the
+   100% suites pin and the sizes only a scale choice reaches. At 100% only a phone held upright (narrower than
+   TightBelowWidthPx, 390x844 is about 790 logical px) is tight. */
+/* The bar keeps its tier shapes, tightened: the rows the tiers wrap, at sizes the small logical height can pay. The
+   three-row height is a floor the rows can outgrow (HudPresenter.PlaceUnderBar, TightThreeRowBarPx). */
+.hud-tight.hud-narrow .top-bar { height: 96px; }
+.hud-tight.hud-two-row .top-bar { height: 172px; }
+/* The tight two-row bar's meters take 79% of it, not 78%: at 960x600 on 125% (1455 logical px) the plate, 78% and New Game
+   still fitted the first row, and End Turn wrapped alone under the plate, out of the bar (TopBarTests). At 79% New Game
+   and End Turn share the second row on every tight two-row width, 1213 to 1455 px, as on the two-row bar at 100%; at
+   80% the meters no longer fit beside the plate at 1213 px. Its rows grow it past 172 px when the text floor raises the
+   plate (HudPresenter.PlaceUnderBar, TightTwoRowBarPx). */
+.hud-tight.hud-two-row .meters { width: 79%; }
+.hud-tight.hud-three-row .meters { width: 100%; }   /* the three-row bar is two-row too: its meters keep their own row */
+.hud-tight.hud-three-row .top-bar { height: 200px; }
+.hud-tight .top-bar { padding-top: 4px; padding-bottom: 3px; }
+.hud-tight .meter { min-width: 0; padding: 0 4px; }
+.hud-tight .meter-value { font-size: 16px; }
+.hud-tight .meter-delta { font-size: 12px; }
+/* The tight three-row bar keeps the narrow bar's values (22 px, deltas 15 px): a phone held upright at 100% is tight too,
+   and at its 0.49 scale 16 px values were 8 screen px, smaller than the floored captions above them. Its rows grow the
+   bar (PlaceUnderBar). */
+.hud-tight.hud-three-row .meter-value { font-size: 22px; }
+.hud-tight.hud-three-row .meter-delta { font-size: 15px; }
+.hud-tight.hud-narrow .right-column, .hud-tight.hud-narrow .left-column, .hud-tight.hud-narrow .event-gutter, .hud-tight.hud-narrow .event-layer, .hud-tight.hud-narrow .screen, .hud-tight.hud-narrow .toast { top: 108px; }
+.hud-tight.hud-two-row .right-column, .hud-tight.hud-two-row .left-column, .hud-tight.hud-two-row .event-gutter, .hud-tight.hud-two-row .event-layer, .hud-tight.hud-two-row .screen, .hud-tight.hud-two-row .toast { top: 184px; }
+.hud-tight.hud-three-row .right-column, .hud-tight.hud-three-row .left-column, .hud-tight.hud-three-row .event-gutter, .hud-tight.hud-three-row .event-layer, .hud-tight.hud-three-row .screen, .hud-tight.hud-three-row .toast { top: 212px; }
+/* The icon column: 40 px discs, 4 px apart, so six of them end at 372 px under the tight narrow bar and 448 px under
+   the tight two-row one, and the info panel caps below them. On the tight three-row window they become a row instead
+   (below). */
+.hud-tight .left-column { width: 46px; }
+.hud-tight .left-column .rail-button { width: 40px; height: 40px; margin: 0 0 4px 0; }
+.hud-tight .left-column .rail-button .nav-disc { width: 40px; height: 40px; padding: 9px; border-radius: 20px; }
+/* On the tight three-row bar the column is a ROW under it: the upright discs would not fit between the bar and the
+   window's foot on a short window, while a row takes only one disc's height. The discs keep the phone's 60 px (the
+   three-row column's above): a phone held upright at 100% is tight too, and its panel scale falls to about 0.41
+   (375x667), where 60 px is still 24 screen px (LeftColumnTests). In Hebrew the row mirrors and stays at the left, as
+   the column does (#550). The panels below it start under the row (top 276 px: the row's 212, its 60 and a 4 px gap).
+   The row spans the window less 8 px each side (the full-window screen's inset) and the discs stand 2 px apart (the
+   column's own gap at 100%), so the eight of them (494 px) fit the narrowest tight phone, 360x800 at 150% (517 logical
+   px wide; LeftColumnTests), with the row's left edge inside the column test's 3% of the window. */
+.hud-tight.hud-three-row .left-column { left: 8px; right: 8px; top: 212px; width: auto; flex-direction: row; align-items: flex-start; }
+.hud-tight.hud-three-row .left-column > .rail-button { width: 60px; height: 60px; margin: 0 2px 0 0; }
+.lang-he.hud-tight.hud-three-row .left-column { flex-direction: row-reverse; justify-content: flex-end; }
+.hud-tight.hud-three-row .left-column > .rail-button .nav-disc { width: 60px; height: 60px; padding: 14px; border-radius: 30px; }
+.hud-tight.hud-three-row .right-column, .hud-tight.hud-three-row .event-layer, .hud-tight.hud-three-row .toast { top: 276px; }
+/* A screen on the tight three-row window takes the window (the mobile-modal pattern): the tight bar and the rail row
+   leave no usable strip for one at 853x480 logical (150% on 1280x720). The rail and the bar wait under it; the screen's
+   own X closes it (ScreenNav). The two-row rule already hides the right column and the info panel while one is open.
+   The toast keeps the two-row rule's place at the window's foot, over the screen's bottom edge, clear of its header. */
+.hud-tight.hud-three-row .screen { top: 8px; left: 8px; right: 8px; bottom: 8px; }
+.hud-tight.hud-three-row.screen-open .toast { top: auto; }
+/* The backdrop's strip and its scrim start at the tight column's right edge; the band over the bar-to-layer gap narrows
+   to the tight gap (12 px). On the tight three-row window the column is the rail row: the band stays the 12 px from the
+   bar to the row's top, the strip takes over across the window's width from there to the layer's top (the row's 60 px
+   and its 4 px gap), still under the buttons, and the scrim spans the window from the layer's top. */
+.hud-tight .event-gutter { width: 62px; }
+.hud-tight .event-scrim { left: 46px; }
+.hud-tight .event-scrim-top { top: -12px; height: 12px; }
+.hud-tight.hud-three-row .event-gutter { top: 212px; bottom: auto; left: 0; right: 0; width: auto; height: 64px; }
+.hud-tight.hud-three-row .event-scrim { left: -16px; }
+.hud-tight.hud-three-row .event-scrim-top { top: -76px; height: 12px; }
+/* The decision card starts right of the tight column (the three-row rule's reason, now at every tight tier): the
+   column's 46 px at the layer's 16 px, so a narrow window never lays the card over it. */
+.hud-tight .event-layer { padding-left: 54px; }
+.hud-tight.hud-three-row .event-layer { padding-left: 0; }
+/* The info panel never rises into the bar or the side menu: on a tight window HudPresenter.FitInfoPanel caps its height
+   below the lower of them (the column, or the rail row on the three-row bar), and on the tight three-row window its
+   width clear of the minimap (222 px; it keeps its size there, so its 50 px buttons stay at least 24 screen px on a
+   phone held upright, MinimapReliefTests), or, where that leaves the panel too narrow (a phone at 125% or 150%), it
+   stands above the minimap and its caption at the window's width. The caps are set in code from laid-out bounds: Unity's USS has no
+   calc(). Content taller than the cap scrolls: the panel is a ScrollView now (Game.uxml), its rows laid out by the
+   scroll content container. */
+.info-panel .unity-scroll-view__content-container { flex-direction: row; align-items: flex-start; }
+/* The ScrollView itself lays out its viewport and scroller, not the rows: a column that stretches them, as a ScrollView's
+   own default. With the panel's row and flex-start (and Hebrew's row-reverse) the viewport took its content's measured
+   width, which varied between layout passes: in a busy run the content was laid out 341 px wide and 1200 px tall at
+   390x844, and the panel grew into the border caption (ControlTests, 2 of 5 full runs). */
+.info-panel.unity-scroll-view, .lang-he .info-panel.unity-scroll-view { flex-direction: column; align-items: stretch; }
+/* In Hebrew the rows mirror as on the row-reversed panel before (#550): the ScrollView's own row-reverse does not reach the
+   content container, which lays the rows out (owner decision on #1135, 22 Oct 2026). */
+.lang-he .info-panel .unity-scroll-view__content-container { flex-direction: row-reverse; }
+.hud-two-row .info-panel.info-gdd-shown .unity-scroll-view__content-container { flex-wrap: wrap; }
+/* The pioneer list (#1788) is a ScrollView inside the panel: the three rules above reach its content container too, and
+   laid its entries out in one row (InfoPanelLayoutTests' pioneer tests). Its own content stays a list. */
+.info-panel .pioneer-list .unity-scroll-view__content-container,
+.lang-he .info-panel .pioneer-list .unity-scroll-view__content-container,
+.hud-two-row .info-panel.info-gdd-shown .pioneer-list .unity-scroll-view__content-container { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+/* The Cabinet on a tight window: a slimmer side column and a smaller half circle, so the seats list keeps its room. */
+.hud-tight .cabinet-side { width: 220px; }
+.hud-tight .pm-card .card-plate { height: 180px; }
+.hud-tight .cabinet-house { padding: 6px 10px; margin-bottom: 6px; }
+.hud-tight .screen { padding: 10px; }
+.hud-tight .screen-header { margin-bottom: 6px; padding-bottom: 2px; }
+
 /* #955: paired answers remain side by side, wrapping within equal columns. */
 .timeline-columns { flex-direction: row; align-items: stretch; }
 .timeline-columns > Label { flex-basis: 0; flex-grow: 1; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: normal; }
@@ -1089,6 +1187,38 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .info-primary-orders { flex-wrap: wrap; max-width: 100%; flex-shrink: 0; }
 /* Playtest B6: the city's name over its block on a hex that holds two cities (GddHexPanel.CityNameClass). */
 .city-part-name { -unity-font-style: bold; color: var(--gold-light); margin-top: 6px; }
+
+/* Owner 26 Oct: cards first at 150% on short windows. HudPresenter moves the house after the cards in the same scroll.
+   The base row/wrap (including Hebrew row-reverse) still lays out cards; the house starts its own final row. */
+.hud-tight.hud-scale-150.cabinet-cards-first #cabinet-seats .cabinet-house {
+    width: 100%; margin-left: 0; margin-right: 0;
+}
+/* Only the existing phone tier at 150% gives up the 320x168 pin. Height follows width in FitCabinet, at 168/320. */
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .cabinet-house .hemicycle-box {
+    width: 100%; max-width: 320px; margin-left: 0; margin-right: 0;
+}
+/* The phone column (about 246 px) has no room for the half circle and the legend side by side: the house stacks them, the
+   half circle centred over the legend. In one wrapping row the legend shrank to 0 px beside the box and ran 14000 px tall. */
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .cabinet-house,
+.lang-he.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .cabinet-house { flex-direction: column; align-items: stretch; }
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .cabinet-house .hemicycle-box { align-self: center; }
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .cabinet-house .house-legend { min-width: 0; flex-shrink: 0; }
+/* The legend's lines and party chips wrap in the narrow column rather than run past it. */
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .house-legend > Label,
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .party-chip > Label { white-space: normal; }
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .party-chip,
+.hud-tight.hud-three-row.hud-scale-150.cabinet-phone-150 .party-chip > Label { flex-shrink: 1; min-width: 0; }
+
+/* Owner ruling, 27 October: "Compact card + allow scroll (Recommended)" (#1135). At 150% on a tight window the head is compact, so the
+   longest cards (#1545's Jerusalem and Rafah follow-ups) keep Hide and the options inside the card. Same 3:4 portrait
+   (EventCardPresenter frames it by aspect), smaller; the title one step down. 100% and 125% are unchanged. */
+.hud-tight.hud-scale-150 .event-card { padding-top: 8px; padding-bottom: 4px; }
+.hud-tight.hud-scale-150 .event-hide { margin-top: 0; padding-top: 1px; padding-bottom: 1px; }
+.hud-tight.hud-scale-150 .event-head { padding: 2px; margin-bottom: 0; }
+.hud-tight.hud-scale-150 .event-option { margin: 2px 0; }
+.hud-tight.hud-scale-150 .event-image { width: 60px; height: 80px; margin-right: 8px; }
+.lang-he.hud-tight.hud-scale-150 .event-image { margin-right: 0; margin-left: 8px; }
+.hud-tight.hud-scale-150 .event-title { font-size: 24px; margin-bottom: 2px; }
 
 /* #731: purchase controls remain inside Defence's scroll view; entered numbers must stay visible. */
 .arms-actions { flex-wrap: wrap; }
