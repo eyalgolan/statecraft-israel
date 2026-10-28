@@ -8,8 +8,9 @@ namespace Statecraft.Game.UI
 
     /// <summary>Where the advisor popup goes (spec 7.1), in panel px. One and two rows: the right column's upper part,
     /// 400 px wide, its top under the "Decision waiting" row whether or not it shows (so it never jumps), its foot 12 px
-    /// above the minimap. An upright phone (three rows): a sheet from the left column's edge to the window's right edge,
-    /// under "Decision waiting" and the toast, its foot 12 px above the higher of the info panel and the minimap's label.
+    /// above the minimap. An upright phone (three rows): a sheet from the left column's edge (from the side menu's left
+    /// edge and under it, where the tight HUD makes the menu a row under the bar) to the window's right edge, under
+    /// "Decision waiting" and the toast, its foot 12 px above the higher of the info panel and the minimap's label.
     /// Hebrew: the same place (the HUD does not mirror its panels, Statecraft.uss:943-946).</summary>
     public static class AdvisorLayout
     {
@@ -26,12 +27,16 @@ namespace Statecraft.Game.UI
             if (tier != HudTier.ThreeRow)
                 return Rect.MinMaxRect(right - Width, rightColumn.yMin + DecisionRowPx + BelowPx, right, minimap.yMin - GapPx);
             float top = rightColumn.yMin;
+            // On the tight three-row HUD (#40, HudPresenter.TightClass: every phone held upright) the side menu is a row
+            // under the bar, not a column: the sheet starts at the row's left edge, under it, not right of it.
+            bool menuIsARow = leftColumn.width > leftColumn.height;
+            if (menuIsARow) top = Mathf.Max(top, leftColumn.yMax + BelowPx);
             if (decisionWaiting is Rect d) top = Mathf.Max(top, d.yMax + BelowPx);
             if (toast is Rect t) top = Mathf.Max(top, t.yMax + BelowPx);
             float floor = minimap.yMin;
             if (mapLabel is Rect m) floor = Mathf.Min(floor, m.yMin);
             if (infoPanel is Rect i) floor = Mathf.Min(floor, i.yMin);
-            return Rect.MinMaxRect(leftColumn.xMax + GapPx, top, right, floor - GapPx);
+            return Rect.MinMaxRect(menuIsARow ? leftColumn.xMin : leftColumn.xMax + GapPx, top, right, floor - GapPx);
         }
 
         /// <summary>The popup's rectangle in its slot: at the top, or at the foot when that keeps it off

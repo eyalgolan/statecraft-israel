@@ -132,7 +132,7 @@
                 <Statecraft.Game.UI.UiFrame filigree="true" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="info-panel" class="panel info-panel">
+        <ui:ScrollView name="info-panel" class="panel info-panel">
             <!-- The selected hex's terrain sign on its map colour, beside its real facts (no tile yields: owner ruling). -->
             <Statecraft.Game.UI.UiIcon name="info-thumb" class="info-thumb" />
             <ui:VisualElement class="info-body">
@@ -176,10 +176,13 @@
                 <ui:VisualElement name="info-projects" class="info-projects" />
             </ui:VisualElement>
             <!-- The GDD loop's city counts and orders, or the designated site's state and Build/Stop (GddHexPanel, #381): a
-                 second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd). -->
-            <ui:VisualElement name="info-gdd" class="info-gdd" />
+                 second column beside the hex's facts, under them on the two- and three-row HUD (Statecraft.uss .info-gdd).
+                 Hidden until GddHexPanel fills it (it sets the display on every render): shown empty on the two- and
+                 three-row HUD, its 100% width took the whole unwrapped row and left the facts column 0 px wide, so their
+                 text wrapped a word a line and the panel's height swung by over 1000 px between runs (#40). -->
+            <ui:VisualElement name="info-gdd" class="info-gdd" style="display: none;" />
             <Statecraft.Game.UI.UiFrame filigree="true" />
-        </ui:VisualElement>
+        </ui:ScrollView>
         <!-- Star, Report and Share (#1236, CommunityIconsPresenter): three round icons at the foot of the side menu's lane, at
              the bottom left (the info panel starts right of the lane). Icon-only as the side menu: each one's name is its text,
              drawn clear, and its tooltip (HoverTip). After the info panel in the tree, so Tab reaches them after its actions. -->
@@ -213,12 +216,18 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="gold-rule" />
-                <!-- event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card;
-                     inside the scroll, so on a short window it scrolls with the text and never pushes the options away. -->
-                <ui:ScrollView name="event-scroll" class="event-scroll"><ui:Label name="event-alt-banner" class="muted event-alt-banner" /><ui:Label name="event-text" class="event-text" /><ui:Label name="event-objective" class="muted event-objective" /></ui:ScrollView>
-                <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
-                <ui:Label name="event-delegate" class="event-delegate" />
-                <ui:VisualElement name="event-options" />
+                <!-- The body: the text and the options with their effect lines scroll together, between the pinned head
+                     above and the pinned foot below, only when they overflow the card's height (#1853, as the Cabinet's
+                     cards and house scroll together, 26 Oct). Tab on an option scrolls it into view (FocusScroll).
+                     event-alt-banner: a consequence card's road and the record beside it (#954), hidden on every other card. -->
+                <ui:ScrollView name="event-scroll" class="event-scroll">
+                    <ui:Label name="event-alt-banner" class="muted event-alt-banner" />
+                    <ui:Label name="event-text" class="event-text" />
+                    <ui:Label name="event-objective" class="muted event-objective" />
+                    <!-- Shown only when the turn's Attention cannot pay for an answer (#1034): End Turn hands the card to its minister. -->
+                    <ui:Label name="event-delegate" class="event-delegate" />
+                    <ui:VisualElement name="event-options" />
+                </ui:ScrollView>
                 <!-- The count of other open decisions, and Hide: the card collapses to "Decision waiting" so the map can be
                      inspected (EventCardPresenter.Collapse); focus order: the options, then Hide. -->
                 <ui:VisualElement name="event-foot" class="event-foot">
@@ -270,6 +279,8 @@
                     </ui:VisualElement>
                     <ui:Label name="cabinet-status" class="muted" />
                 </ui:VisualElement>
+                <!-- Default order stays house, then seats. HudPresenter.FitCabinet moves the house to the end of
+                     cabinet-seats only under hud-tight.hud-scale-150.cabinet-cards-first. -->
                 <ui:VisualElement name="cabinet-main" class="cabinet-main grow">
                     <ui:VisualElement name="cabinet-house" class="cabinet-house">
                         <ui:VisualElement class="hemicycle-box">

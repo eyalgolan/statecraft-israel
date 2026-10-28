@@ -171,6 +171,64 @@ macOS IL2CPP parity check is not an MVP release gate.
    `tar -tzf <archive> | grep -E '^(\./)?(LICENSE|NOTICE|THIRD-PARTY-NOTICES.md|OFL-EBGaramond.txt|OFL-FrankRuhlLibre.txt)$'`.
    It must print five lines for each archive.
 
+## Nightly builds
+
+Every night at 03:00 (Israel time) the newest `main` is built and, only if every gate passes, becomes the public web
+game: a GitHub **pre-release** tagged `vX.Y.Z-nightly.YYYYMMDD` (X.Y.Z from `sim/Statecraft.Sim/SimInfo.cs`, the date
+that of the night), which the website's `/demo/` serves, and, once itch pushes are enabled, the itch.io page. The job is
+`tools/nightly.py` under launchd; the install steps are in `tools/README.md`, "Nightly release". Nothing here changes
+the versioned releases above (steps 1-7): those stay owner-run, and a nightly is never marked Latest and never deleted.
+
+The gates, in order. The first one that fails ends the night as REFUSED, and nothing public changes:
+1. Preflight: `origin/main` differs from the last published nightly (otherwise the night is SKIPPED), at least 40 GB
+   free, no `EXCLUSIVE-WINDOW` file, the Unity licence, editor and slot script present, and no release already holding
+   tonight's tag.
+2. `build-sim`, then `scripts/check.sh origin/main` (`check`) and `scripts/oss/release_gate.sh` (`release-gate`), the
+   same bar as a release.
+3. The sim tests under `he_IL` and `en_US` (`sim-he_IL`, `sim-en_US`).
+4. The Unity warm-up and the full EditMode run (`editmode`), with at least one test and no failure.
+5. The two WebGL builds, the gzip one and the Pages one (`build-web`), with the nightly version stamped in after the
+   gates; the tree must be clean afterwards, and the stamp is never committed. Then both zips (`package`).
+6. `web_check.py` on both builds (`web-check`).
+7. Download size (`sizes`): the data, wasm and framework files may grow at most 2% over the build that is live.
+8. Headless boot time (`boot`): the median of three boots. The first 5 published nights set the baseline; after
+   that a boot slower than the slowest baseline night plus the spread of the baseline is refused.
+
+A nightly never moves a golden: golden moves arrive through reviewed pull requests, and the nightly only needs the
+golden tests of the full run to pass.
+
+**Size budget.** A pull request that adds download size on purpose puts this line in its body, with the megabytes
+(1 MB = 1,000,000 bytes) it adds:
+
+```
+Nightly size budget: +N MB
+```
+
+The next nightly allows the growth of the 2% plus the lines of every pull request merged since the last published
+nightly; without the line, an increase beyond 2% refuses the night. The new size is the baseline from then on.
+
+**Publishing** (only after every gate): a draft pre-release with both zips and notes listing the commits since the
+last nightly (the tag points at the commit the night started from, even if `main` moves during the build), the assets
+checked against the local zips, the itch push when enabled (checked by build id and a fetch of the live files, and
+rolled back to the previous build if anything later fails), the release made public, then `site.yml` started and the
+demo checked for the new version. A failed night leaves no public change. A draft it stranded is deleted only by a rerun on the
+same date; a draft left from an earlier date stays until someone removes it (it never reaches `/demo/`, because
+`site.yml` skips drafts). An unknown draft or an already published release with tonight's tag refuses the night.
+
+**The record.** One line per night in `~/israel-game/.superpowers/nightly/LOG.md` (and a `NIGHTLY:` line in `~/israel-game/.superpowers/HANDOFF.md`),
+`<date time> <OUTCOME> tag=... sha=... gate=... log=<run folder>`:
+- `PUBLISHED`: every gate passed and the stores serve the new build.
+- `SKIPPED`: `main` has not moved since the last published nightly (an unfinished site deploy is retried).
+- `REFUSED`: `gate=` names the step that stopped it, and `log=` the folder holding every step's log. A desktop
+  notification is shown too.
+- `MISSED`: no run started on that date (the Mac was asleep or logged out); the next run adds the line.
+
+A night that starts after 03:30 is MISSED unless it was started by hand with `--manual`.
+
+**itch.io.** Pushes stay off until the owner runs `uv run tools/nightly.py savetest --tag <a published nightly>` once
+and it prints `PASS` (the two-upload save test of `docs/m3-release.md`, "Upload to itch.io"); the nightly then logs
+that itch was skipped.
+
 ## Refreshing the README screenshots
 
 The README's screenshots are claims about the current build. Re-take them whenever the build looks different, and

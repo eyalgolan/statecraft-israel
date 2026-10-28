@@ -249,6 +249,34 @@ namespace Statecraft.Game.Map
             control = value.Control.Select(x => new MapEditorControlEdit { q = x.Hex.Q, r = x.Hex.R, period = x.Period, value = x.Value }).ToList();
             locations = value.Locations.Select(x => new MapEditorLocationEdit { id = x.Id, q = x.Hex.Q, r = x.Hex.R }).ToList();
         }
+
+        // Isolated 0.3 authoring state; no window hookup or disk writer in this infrastructure slice.
+        // Serialize exact source for Undo/domain reload. Caller owns the Undo transaction.
+        [SerializeField] string infrastructureSource = "";
+        [SerializeField] string rejectedInfrastructureSource = "";
+        public string InfrastructureSource => infrastructureSource;
+        public string RejectedInfrastructureSource => rejectedInfrastructureSource;
+
+        public bool TryReplaceInfrastructure(string candidate, string selectedRuleset, out string error)
+        {
+            try
+            {
+                MapEditorOverlay.Parse(candidate, selectedRuleset);
+                infrastructureSource = candidate;
+                rejectedInfrastructureSource = "";
+                error = "";
+                return true;
+            }
+            catch (ContentException exception)
+            {
+                rejectedInfrastructureSource = candidate;
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        // Return a fresh snapshot; callers cannot mutate the serialized document through this model.
+        public MapEditorOverlay InfrastructureCandidate() => MapEditorOverlay.Parse(infrastructureSource, SaveGame.Gdd03Ruleset);
     }
 }
 #endif

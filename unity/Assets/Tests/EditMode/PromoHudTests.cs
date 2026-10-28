@@ -296,7 +296,11 @@ public class PromoHudTests
                 var screen = root.Q("screen-why");
                 screen.style.display = DisplayStyle.Flex;                // opened, as ScreenNav does
                 for (int i = 0; i < 2; i++) yield return null;
-                Assert.GreaterOrEqual(screen.worldBound.yMin, barRect.yMax, where + ": the screens start under the bar");
+                if (root.Q("root").ClassListContains(HudPresenter.TightClass) && root.Q("root").ClassListContains(HudPresenter.ThreeRowClass))
+                    // #40, the owner's ruling on #1135 (22 Oct 2026): on a phone held upright a screen takes the window, over the bar.
+                    Assert.LessOrEqual(screen.worldBound.yMin, root.worldBound.yMin + 12f, where + ": the screen takes the window");
+                else
+                    Assert.GreaterOrEqual(screen.worldBound.yMin, barRect.yMax, where + ": the screens start under the bar");
                 screen.style.display = DisplayStyle.None;
                 // The badge keeps its width for a short date line, so nothing shifts when the month changes.
                 var wide = badge.worldBound.width;

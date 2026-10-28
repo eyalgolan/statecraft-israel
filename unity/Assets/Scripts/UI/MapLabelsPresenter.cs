@@ -138,7 +138,7 @@ namespace Statecraft.Game.UI
         bool lastKitsShown;
         int lastOccluderMask = -1; float lastLabelSizes = float.NaN; bool sizesKnown, geometryDirty = true;
 #if UNITY_EDITOR
-        // C130: observe real projection work without a clock. No callbacks, allocations or player-build instrumentation.
+        // #1680: observe real projection work without a clock. No callbacks, allocations or player-build instrumentation.
         internal long ProjectedMarkersForTests { get; private set; }
         internal long PlacementVisitsForTests { get; private set; }
         // ProjectBoxes is static. Tests sample this only around a synchronous main-thread Refresh, with no yield.

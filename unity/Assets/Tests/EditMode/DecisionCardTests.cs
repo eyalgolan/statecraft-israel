@@ -26,12 +26,15 @@ public class DecisionCardTests
         public readonly VisualElement Root; public readonly SimBridge Bridge; public readonly ScreenNav Nav; public readonly EventCardPresenter Card;
         readonly GameObject go; readonly PanelSettings ps; readonly RenderTexture rt; readonly List<System.IDisposable> owned = new List<System.IDisposable>();
 
-        public Rig(int w, int h, string eventId, bool photos = false, UiText? text = null, string? second = null)
+        /// <param name="portraits">The real minister portraits, as the game has them (the tallest cards are portrait cards).</param>
+        /// <param name="uiScale">The Settings UI scale, set on the panel as UiLayoutTests sets it (#40).</param>
+        public Rig(int w, int h, string eventId, bool photos = false, UiText? text = null, string? second = null, bool portraits = false, int uiScale = 100)
         {
             var t = text ?? Text;
             rt = new RenderTexture(w, h, 0);
             ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));
             go = new GameObject("DecisionCardTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -45,7 +48,8 @@ public class DecisionCardTests
             owned.Add(new HudPresenter(Root, Bridge, t));
             Nav = new ScreenNav(Root); owned.Add(Nav);
             owned.Add(new InfoPanelPresenter(Root, Bridge, t, C.SettlementHexes.ToDictionary(x => x.Id, x => x.Id)));
-            Card = new EventCardPresenter(Root, Bridge, t, null,
+            Card = new EventCardPresenter(Root, Bridge, t,
+                portraits ? AssetDatabase.LoadAssetAtPath<PortraitCatalog>("Assets/UI/Portraits/PortraitCatalog.asset") : null,
                 photos ? AssetDatabase.LoadAssetAtPath<EventImageCatalog>("Assets/Resources/EventImageCatalog.asset") : null); owned.Add(Card);
         }
 
@@ -59,6 +63,8 @@ public class DecisionCardTests
         public Button FirstOption => Root.Q("event-options").Q<Button>();
         public VisualElement CardElement => Root.Q("event-card");
         public Button Hide => Root.Q<Button>("event-hide");
+        public ScrollView Body => Root.Q<ScrollView>("event-scroll");
+        public List<Button> Options => Root.Q("event-options").Query<Button>().ToList();
         public Button Waiting => Root.Q<Button>("event-reopen");
         public Focusable? Focused => Root.panel.focusController.focusedElement;
         public bool Shows(string name) => Root.Q(name).resolvedStyle.display == DisplayStyle.Flex;
@@ -514,5 +520,85 @@ public class DecisionCardTests
             Expect(true, "once the event is answered");
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    // #1853, layout decided by the coordinator overnight (owner asleep), as the Cabinet's cards and house scroll together
+    // (26 Oct): the card's body (its text and its options with their effect lines) is one ScrollView between the pinned
+    // head and the pinned foot with Hide, and it scrolls only when the body overflows the card's height cap.
+
+    static UiText He => UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
+
+    static bool InView(VisualElement e, ScrollView view)
+    {
+        Rect r = e.worldBound, v = view.contentViewport.worldBound;
+        return r.yMin >= v.yMin - 0.5f && r.yMax <= v.yMax + 0.5f;
+    }
+
+    static bool ScrollerShown(Scroller s) =>
+        s.resolvedStyle.display == DisplayStyle.Flex && s.resolvedStyle.visibility == Visibility.Visible && s.worldBound.height > 0f;
+
+    /// <summary>#1853, no change for a normal card: at 100% on a 1080p window a short card's body fits, so it shows no
+    /// scroll bar, has no scroll range and sits at its top, and every option shows whole, in English and in Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator AShortCardDoesNotScrollAt100([Values(false, true)] bool hebrew)
+    {
+        using var r = new Rig(1920, 1080, "law_of_return", photos: true, text: hebrew ? He : Text, portraits: true);
+        yield return Frames(5);
+        var where = hebrew ? "he" : "en";
+        var body = r.Body;
+        Assert.LessOrEqual(body.contentContainer.layout.height, body.contentViewport.layout.height + 1f, $"{where}: the body fits its view");
+        Assert.AreEqual(0f, body.verticalScroller.highValue, 0.5f, $"{where}: the body has no scroll range");
+        Assert.AreEqual(0f, body.scrollOffset.y, 0.5f, $"{where}: the body is at its top");
+        Assert.IsFalse(ScrollerShown(body.verticalScroller), $"{where}: no scroll bar shows");
+        Assert.Greater(r.Options.Count, 1, $"{where}: precondition, the options are shown");
+        foreach (var b in r.Options) Assert.IsTrue(InView(b, body), $"{where}: {b.name} {b.worldBound} shows whole in the body {body.contentViewport.worldBound}");
+        Assert.LessOrEqual(r.Hide.worldBound.yMax, r.CardElement.worldBound.yMax + 0.5f, $"{where}: Hide is inside the card");
+    }
+
+    /// <summary>#1853: Tab (the NavigationMoveEvent that the keyboard and a gamepad raise) onto an option below the visible
+    /// part of a long card's body scrolls the body to it (FocusScroll, at the UI root as in GameRoot), at 150% on a short
+    /// window where the body overflows, in English and in Hebrew. Hide stays inside the card throughout.</summary>
+    [UnityTest]
+    public IEnumerator TabOntoAnOptionBelowTheBodyScrollsItIntoView([Values(false, true)] bool hebrew)
+    {
+        using var r = new Rig(1920, 900, "forex_crisis_1951", photos: true, text: hebrew ? He : Text, portraits: true, uiScale: 150);
+        using var follow = new FocusScroll(r.Root);
+        yield return Frames(5);
+        var where = hebrew ? "he" : "en";
+        var body = r.Body;
+        var options = r.Options;
+        int k = options.FindIndex(b => !InView(b, body));
+        Assert.GreaterOrEqual(k, 0, $"{where}: precondition, an option is below the body's visible part ({body.contentViewport.worldBound})");
+        Assert.Greater(body.verticalScroller.highValue, 0f, $"{where}: precondition, the body overflows and scrolls");
+        Assert.AreSame(r.CardElement, r.Focused, $"{where}: precondition, the new card has the focus");
+        for (int i = 0; i < options.Count + 2 && r.Focused != options[k]; i++)
+        {
+            var at = (VisualElement)r.Focused!;
+            using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = at; at.SendEvent(e); }
+            yield return Frames(2);
+            if (r.Focused is Button b && options.Contains(b)) Assert.IsTrue(InView(b, body), $"{where}: {b.name} {b.worldBound} is in view once focused ({body.contentViewport.worldBound})");
+        }
+        Assert.AreSame(options[k], r.Focused, $"{where}: Tab reached {options[k].name}");
+        Assert.IsTrue(InView(options[k], body), $"{where}: {options[k].name} {options[k].worldBound} was scrolled into view ({body.contentViewport.worldBound})");
+        Assert.Greater(body.scrollOffset.y, 0f, $"{where}: the body scrolled");
+        Assert.LessOrEqual(r.Hide.worldBound.yMax, r.CardElement.worldBound.yMax + 0.5f, $"{where}: Hide stays inside the card");
+    }
+
+    /// <summary>#1853: a body scrolled down on one card does not carry over: the next card opens at the top of its text.</summary>
+    [UnityTest]
+    public IEnumerator TheNextCardOpensAtTheTopOfItsBody()
+    {
+        using var r = new Rig(1920, 900, "forex_crisis_1951", photos: true, second: "maabarot_policy", portraits: true, uiScale: 150);
+        yield return Frames(5);
+        var body = r.Body;
+        Assert.Greater(body.verticalScroller.highValue, 0f, "precondition: the first card's body scrolls");
+        body.scrollOffset = new Vector2(0f, body.verticalScroller.highValue);
+        yield return Frames(2);
+        Assert.Greater(body.scrollOffset.y, 0f, "precondition: scrolled down");
+        Press(r.Options.Last());
+        yield return Frames(5);
+        Assert.AreEqual("maabarot_policy", r.Card.Shown?.Id, "precondition: the second card shows");
+        Assert.Greater(body.verticalScroller.highValue, 0f, "precondition: the second card's body scrolls too, so an offset could carry over");
+        Assert.AreEqual(0f, body.scrollOffset.y, 0.5f, "the second card opens at its top");
     }
 }

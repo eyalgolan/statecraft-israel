@@ -541,7 +541,7 @@ namespace Statecraft.Game.UI
             Func<Action> keepSelection = () =>
             {
                 // A pioneer card has no token (ShowPioneer clears it), so it is a selection of its own, kept with its game
-                // (review C288 S1 of #1788): a language switch keeps the session, a load or new game does not.
+                // (review of #1788): a language switch keeps the session, a load or new game does not.
                 var pioneer = info.Pioneer; var pioneerSession = bridge.Session;
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
@@ -736,7 +736,7 @@ namespace Statecraft.Game.UI
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
             // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
-            // bypassing Covered: End turn must show the unit whose orders it asks for (C137).
+            // bypassing Covered: End turn must show the unit whose orders it asks for (#1680).
             if (info?.Covered == true) nav?.Open(null);
             int? current = units.Selected is string row
                 ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
