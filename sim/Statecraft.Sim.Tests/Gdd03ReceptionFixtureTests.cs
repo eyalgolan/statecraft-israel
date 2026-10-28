@@ -43,6 +43,11 @@ public class Gdd03ReceptionFixtureTests
         Assert.Throws<ContentException>(() => Gdd03ReceptionFixture.ResolveWholeTurn(
             content, state, new[] { Camp() }));
         Assert.Equal(before, state.Hash());
+        var completed = State(Person(4, status: PopulationStatus.FreeCivilian));
+        Assert.Throws<ContentException>(() => Gdd03ReceptionFixture.CanStartCivilianActivity(
+            content, completed.PopulationLedger, completed.PopulationLedger.Get(0)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(
+            Catalogue(), completed.PopulationLedger, completed.PopulationLedger.Get(0)));
     }
 
     [Fact] public void SixthWholeBedTurnCompletesSamePersonWithoutCompletionTurnWork()
@@ -138,14 +143,14 @@ public class Gdd03ReceptionFixtureTests
     {
         foreach (var ticks in new[] { 0, 5 })
         {
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(ticks)));
-            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(ticks, status: PopulationStatus.FreeCivilian)));
+            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(ticks)));
+            Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(ticks, status: PopulationStatus.FreeCivilian)));
         }
-        Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(6, status: PopulationStatus.FreeCivilian)));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), Person(6)));
+        Assert.True(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(6, status: PopulationStatus.FreeCivilian)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, Person(6)));
         var s = State(Person(6, status: PopulationStatus.FreeCivilian));
         s.PopulationLedger.ChangeAssignment(0, new(PopulationAssignmentKind.Work, "synthetic-work"));
-        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), s.PopulationLedger.Get(0)));
+        Assert.False(Gdd03ReceptionFixture.CanStartCivilianActivity(Catalogue(), State().PopulationLedger, s.PopulationLedger.Get(0)));
         // This tests the proposed shared predicate; job/farm/build/course entry points are deliberately unwired.
     }
 
