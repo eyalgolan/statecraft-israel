@@ -187,7 +187,7 @@ def test_zombie_only_group_eperm_on_cleanup_signal_counts_as_retired(monkeypatch
 @pytest.mark.parametrize('sig', [signal.SIGTERM, signal.SIGHUP, signal.SIGINT])
 def test_holder_signal_with_default_action_child_exits_128_plus_sig(tmp_path, sig):
     # A plain child dies from the forwarded signal before cleanup runs; on Darwin its unreaped zombie made the
-    # cleanup killpg raise EPERM, so the holder crashed with exit 1 (review of the C210 draft, 12 of 12 runs).
+    # cleanup killpg raise EPERM, so the holder crashed with exit 1 (review of the draft for #1731, 12 of 12 runs).
     ready = tmp_path / 'ready'
     env = {**os.environ, 'STATECRAFT_MACHINE_LOCK': str(tmp_path / 'machine.lock'), ml.HOLDER_ENV: str(ready)}
     p = subprocess.Popen([sys.executable, ml.__file__, '--exclusive', '--', 'sleep', '30'],

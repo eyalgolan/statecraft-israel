@@ -10,7 +10,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-/// <summary>C217a: the base compiles these fixtures too; reflection is confined to the new, absent-on-base API.</summary>
+/// <summary>#1800: the base compiles these fixtures too; reflection is confined to the new, absent-on-base API.</summary>
 public class CollectionLeaveTests
 {
     Action<string, CollectionDetail, Action<GameObject?>> people = null!, rural = null!;

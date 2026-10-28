@@ -245,7 +245,7 @@ namespace Statecraft.Game.UI
         static string Local(string english, string hebrew, UiText text) =>
             text["ui.lang"] == UiLanguage.Hebrew && hebrew != "" ? hebrew : english;
 
-        /// <summary>C136: event changes and previews share keys; only an applied change has a title context. The sim
+        /// <summary>#1680: event changes and previews share keys; only an applied change has a title context. The sim
         /// already supplied its applied Delta and historical text snapshots; this formats no game rule or outcome.</summary>
         static string Event(Cause cause, Content c, UiText text, IReadOnlyDictionary<string, string>? namesHe)
         {

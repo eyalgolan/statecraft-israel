@@ -314,14 +314,16 @@ MAJDAL = (34.56667, 31.66667)
 
 def test_the_egyptian_force_has_its_forward_and_its_rear_base_at_the_truce():
     """Owner, 17 October 2026, on #860 (question 4): "both places. Isdud is the forward base and Majdal the rear base."
-    At the first truce the Egyptian row stands at both, each anchor with at least two sources. The two may overlap in
-    time only on a row the map does not draw (UnitRoster.OnMap)."""
+    At the first truce the Egyptian row stands at both, each anchor with at least two sources. The two overlap in time;
+    the map draws the row as one token, at the first anchor whose window holds the date (owner, 27 October 2026: "One
+    token"; UnitRoster.AnchorAt), so the forward base comes first in the file."""
     egypt = next(u for u in UNITS if u['id'] == 'egyptian_expeditionary_force')
     truce = [a for a in egypt['anchors'] if covers(a, date(1948, 6, 11))]
     assert any(near(a, *ISDUD) for a in truce), 'Isdud, the forward base, at the truce'
     assert any(near(a, *MAJDAL) for a in truce), 'Majdal, the rear base, at the truce'
     for a in truce:
         assert len(books(a['sources'])) >= 2, a['place']
+    assert near(truce[0], *ISDUD), 'the forward base first: it is the one token the map draws at the truce'
     for u in UNITS:
         if u['side'] == 'israel':
             ends = [(day(a['from']), day(a['to'])) for a in u['anchors']]

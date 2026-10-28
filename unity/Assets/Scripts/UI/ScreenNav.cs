@@ -47,14 +47,15 @@ namespace Statecraft.Game.UI
             bool start = r.ClassListContains(StartScreenPresenter.OpenClass);
             bool screen = r.ClassListContains(ScreenOpenClass);
             bool full = screen && r.ClassListContains(HudPresenter.TwoRowClass);
+            bool fullWindow = screen && r.ClassListContains(HudPresenter.TightClass) && r.ClassListContains(HudPresenter.ThreeRowClass);
             bool outcome = r.ClassListContains(OutcomePresenter.OpenClass) || r.ClassListContains(AdvisorPresenter.OverlayOpenClass);   // an End Turn outcome clip covers all but itself
             bool end = r.ClassListContains(EndScreenPresenter.OpenClass);   // the end screen (#812) covers the HUD and the report
             bool report = r.ClassListContains(TurnReportPresenter.OpenClass) || end;   // the turn report covers the HUD under it
             bool modal = (r.ClassListContains(EventCardPresenter.OpenClass) || r.ClassListContains(CaptureDialogPresenter.OpenClass)) && !start && !screen && !outcome && !report;
             r.EnableInClassList(EventCardPresenter.ModalClass, modal);
-            r.Q("top-bar")?.SetEnabled(!(start || outcome || report));
-            r.Q("left-column")?.SetEnabled(!(start || outcome || report));   // the screens' buttons: usable wherever the top bar is
-            r.Q(CommunityIconsPresenter.ColumnName)?.SetEnabled(!(start || outcome || report));   // Star, Report, Share (#1236): in the same lane
+            r.Q("top-bar")?.SetEnabled(!(start || outcome || report || fullWindow));
+            r.Q("left-column")?.SetEnabled(!(start || outcome || report || fullWindow));   // the screens' buttons: usable wherever the top bar is
+            r.Q(CommunityIconsPresenter.ColumnName)?.SetEnabled(!(start || outcome || report || fullWindow));   // Star, Report, Share (#1236): in the same lane
             r.Q("right-column")?.SetEnabled(!(start || full || modal || outcome || report));
             bool infoCovered = start || full || modal || outcome || report || r.ClassListContains(WideOpenClass);
             r.Q("info-panel")?.SetEnabled(!infoCovered);

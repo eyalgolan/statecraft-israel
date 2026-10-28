@@ -139,15 +139,15 @@ public class ScrollBarTabStopTests
         Assert.IsEmpty(found, $"the Cabinet's bars stay out of the order, but one lap stopped on: {string.Join(", ", found)}");
     }
 
-    /// <summary>Every ScrollView in the tree has both of its bars out of the order, except the three whose bar is the
+    /// <summary>Every ScrollView in the tree has both of its bars out of the order, except the four whose bar is the
     /// only way a keyboard player can scroll them. `KeyScroll` has no target for `turn-report-rows`,
-    /// `end-screen-rows` or `capture-scroll`, and `GameRoot` switches PageUp, PageDown, Home and End off entirely
+    /// `end-screen-rows`, `capture-scroll` or `info-panel` (its facts are labels, #40), and `GameRoot` switches PageUp, PageDown, Home and End off entirely
     /// while the report or the end screen is open, so taking their bar out would leave no keyboard route at all.</summary>
     [UnityTest]
     public IEnumerator NoScrollViewInTheTreeKeepsAFocusableBar()
     {
         yield return BootShort();
-        var exempt = new[] { "turn-report-rows", "end-screen-rows", "capture-scroll" };
+        var exempt = new[] { "turn-report-rows", "end-screen-rows", "capture-scroll", "info-panel" };
         var bad = new List<string>();
         foreach (var sv in ui.Query<ScrollView>().Build())
         {
@@ -166,14 +166,14 @@ public class ScrollBarTabStopTests
         Assert.IsEmpty(bad, $"these scroll bars can still take the focus: {string.Join(", ", bad)}");
     }
 
-    /// <summary>The exclusion is deliberate, so it is pinned: the three views the keyboard cannot otherwise scroll
+    /// <summary>The exclusion is deliberate, so it is pinned: the four views the keyboard cannot otherwise scroll
     /// keep a focusable bar. If `KeyScroll` is ever given a route to them, this test should be deleted along with the
     /// exclusion in `FocusScroll.OnlyReachableByTheirBar` (#41 K6, the owner's review).</summary>
     [UnityTest]
     public IEnumerator TheViewsTheKeyboardCannotOtherwiseScrollKeepTheirBar()
     {
         yield return BootShort();
-        foreach (var name in new[] { "turn-report-rows", "end-screen-rows", "capture-scroll" })
+        foreach (var name in new[] { "turn-report-rows", "end-screen-rows", "capture-scroll", "info-panel" })
         {
             var sv = ui.Q<ScrollView>(name);
             Assert.IsNotNull(sv, $"precondition: {name} is in the tree");
