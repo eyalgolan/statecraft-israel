@@ -84,6 +84,8 @@ class Config:
     site_demo_url: str = "https://eyalgolan.github.io/statecraft-israel/demo/"
     itch_target: str = "eyalgolan/statecraft-israel:html5"
     itch_page_url: str | None = None
+    savetest_itch_target: str | None = None   # a separate test page: the save test never pushes to the public one
+    savetest_itch_page_url: str | None = None
     itch_enabled: bool = False
     itch_evidence: str | None = None
     butler: Path = HOME / ".local/bin/butler"
@@ -234,15 +236,20 @@ def save_state(path: Path, state: State) -> None:
 
 # --- naming and dates -------------------------------------------------------------------------------------------
 
-def base_version(siminfo_text: str) -> str:
-    m = re.search(r'Version\s*=\s*"(\d+\.\d+\.\d+)"', siminfo_text)
-    if not m:
-        raise ValueError("no Version = \"X.Y.Z\" found")
-    return m.group(1)
-
-
-def nightly_version(base: str, day: date) -> str:
-    return f"{base}-nightly.{day:%Y%m%d}"
+def next_version(releases: list[dict]) -> str:
+    """One patch above the numerically highest published exact vX.Y.Z tag, regardless of release type."""
+    versions = []
+    for row in releases:
+        if (not isinstance(row, dict) or not isinstance(row.get("tag_name"), str)
+                or not isinstance(row.get("draft"), bool)):
+            raise Refused("version", "gh returned a release without a tag or draft flag")
+        match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", row["tag_name"])
+        if match and not row["draft"]:
+            versions.append(tuple(int(part) for part in match.groups()))
+    if not versions:
+        raise Refused("version", "no published vX.Y.Z release to increment")
+    major, minor, patch = max(versions)
+    return f"{major}.{minor}.{patch + 1}"
 
 
 def tag_for(version: str) -> str:
