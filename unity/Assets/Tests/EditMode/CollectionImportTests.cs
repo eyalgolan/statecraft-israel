@@ -341,7 +341,13 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct(),
                 b.assetNames, bundle);
+        // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
+        var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();
+        CollectionAssert.IsEmpty(missing, "bundle asset names with no asset");
+        // The R35 is imported from the vehicle delivery's compatibility FBX, not from an <id>.fbx.
+        var r35 = builds.Single(b => b.assetBundleName == CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35));
+        CollectionAssert.Contains(r35.assetNames, $"{CollectionCatalog.Folder}/{CollectionCatalog.SyrianR35}/{CollectionCatalog.SyrianR35}-compatibility.fbx");
     }
 }
