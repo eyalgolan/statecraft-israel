@@ -10,11 +10,7 @@ namespace Statecraft.Game.Map.Collection
 
     /// <summary>Tal Heuberger's 73 originals from #507 and #336, pinned by docs/original-models.json.
     /// The independently generated Syrian and Iraqi infantry retain their own shared bundle, full-quality rigs and clips;
-<<<<<<< HEAD
     /// each later generated figure (the Egyptian and ALA infantry) streams in a bundle of its own.
-=======
-    /// each later generated figure (the Egyptian infantry) streams in a bundle of its own.
->>>>>>> origin/main
     /// Each has one CRC/SHA-checked bundle and one full-quality prefab outside Resources. Map requests wait
     /// for a drawable view; the shared loader waits until the first game frame has rendered (#1273).</summary>
     public static class CollectionCatalog
@@ -75,13 +71,10 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>The Egyptian infantry, Tal Heuberger's figure for the Egyptian Expeditionary Force (owner, 27 October 2026,
         /// "Sign off all 19" and, for Egypt, "One token").</summary>
         public const string EgyptianInfantry = "figure-egyptian-infantry-1948-v1";
-<<<<<<< HEAD
 
         /// <summary>Tal Heuberger's ALA infantry candidate, the third figure on the ALA's token beside two C09 (owner, 27 October
         /// 2026: "Third figure (Recommended)").</summary>
         public const string AlaInfantry = "figure-ala-infantry-1948-v1";
-=======
->>>>>>> origin/main
 
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
@@ -134,10 +127,7 @@ namespace Statecraft.Game.Map.Collection
             (GeneratedFigures, new[]
             {
                 "figure-egyptian-infantry-1948-v1",
-<<<<<<< HEAD
                 "figure-ala-infantry-1948-v1",
-=======
->>>>>>> origin/main
             }),
         };
 
@@ -148,10 +138,7 @@ namespace Statecraft.Game.Map.Collection
         {
             [ArabArmies] = People,
             ["collection-" + EgyptianInfantry] = People,
-<<<<<<< HEAD
             ["collection-" + AlaInfantry] = People,
-=======
->>>>>>> origin/main
         };
 
         /// <summary>The models whose near prefab is skinned and plays its idle clip: every person but C05 (his only idle is
@@ -167,20 +154,13 @@ namespace Statecraft.Game.Map.Collection
             "figure-syrian-infantry-1948-v1",
             "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry,
-<<<<<<< HEAD
             AlaInfantry,
-=======
->>>>>>> origin/main
         };
 
         /// <summary>The generated figures (#1377 and later): full-quality rigs that keep playing their idle at every zoom, each
         /// with one prefab beside its FBX.</summary>
         public static bool IsFullQualityGeneratedInfantry(string id) =>
-<<<<<<< HEAD
             id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry || id == AlaInfantry;
-=======
-            id == "figure-syrian-infantry-1948-v1" || id == "figure-iraqi-infantry-1948-v1" || id == EgyptianInfantry;
->>>>>>> origin/main
 
         // Categories describe placement; every model streams in a bundle of its own, except #1763's two figures, which share theirs.
         public static IEnumerable<string> Ids => Groups.SelectMany(b => b.Ids).Concat(Kits.TownModels.Ids);
