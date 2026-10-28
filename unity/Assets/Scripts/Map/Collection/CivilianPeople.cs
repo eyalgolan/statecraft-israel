@@ -43,7 +43,7 @@ namespace Statecraft.Game.Map.Collection
             ImmigrantWoman = "figure-immigrant-woman-v1", KibbutzWoman = "figure-kibbutz-woman-v1",
             YemeniteImmigrant = "figure-yemenite-immigrant-v1", PioneerFarmer = "figure-pioneer-farmer-v1-tpose";
 
-        /// <summary>Tal Heuberger's generated Bedouin civilian, beside the camels at the Bedouin camp areas RuralLife draws (owner,
+        /// <summary>Tal Heuberger's generated Bedouin civilian, at the Bedouin camp areas where RuralLife draws the camels (owner,
         /// 27 October 2026, #756: "Sign off all 19"). Added last, so it moves no figure that was already standing.</summary>
         public const string BedouinCivilian = CollectionCatalog.BedouinCivilian;
 
@@ -172,7 +172,7 @@ namespace Statecraft.Game.Map.Collection
                     ground, reserved, taken, wants);
             }
 
-            // The Bedouin civilian beside the camels at the Bedouin camp areas (the sub-districts' sourced Bedouin totals,
+            // The Bedouin civilian at the Bedouin camp areas where the camels stand (the sub-districts' sourced Bedouin totals,
             // content/map/localities_1948.yaml encampments; #667's "camels at Bedouin areas"), undated like the camps.
             foreach (var camp in Served(rural, RuralLife.Camel))
                 AddGroup(camp.Key + ":bedouin", camp.Anchor, camp.AnchorRadius, new[] { BedouinCivilian }, date, ground, reserved, taken, wants);

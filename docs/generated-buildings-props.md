@@ -11,7 +11,7 @@ The [admission receipt](generated-buildings-props-admission.json) identifies eve
 |03 porch house|9261|In the game since the owner's sign-off of 27 October 2026: Netanya's houses, a town building streamed after the first frame|
 |04 lighter basalt variant|5624|In the game since the owner's sign-off of 27 October 2026: Tiberias's houses, a town building streamed after the first frame|
 |05 courtyard house|8193|In the game since the owner's sign-off of 27 October 2026: the stone-village houses of the Arab towns and villages, a town building streamed after the first frame|
-|06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: beside the camels at the Bedouin camp areas, in its own streamed bundle|
+|06 enclosed Bedouin tent|3184|In the game since the owner's sign-off of 27 October 2026: at the Bedouin camp areas where the camels stand, in its own streamed bundle|
 |08 khaki canvas tent|3988|Full-source editor review captured; activation/sign-off held|
 |09 well|3992|Editor-only; no sourced map role|
 |10 sandbags|4074|Editor-only; no sourced map role|
