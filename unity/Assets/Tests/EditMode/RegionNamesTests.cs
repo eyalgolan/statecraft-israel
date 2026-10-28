@@ -94,7 +94,7 @@ public class RegionNamesTests
     }
 
     static readonly string[] Gaps = {
-        "zone.syria_dmz_north.name", "zone.syria_dmz_central.name", "zone.syria_dmz_south.name", "line.egypt_adl_gaza.name",
+        "zone.syria_dmz_north.name", "zone.syria_dmz_south.name",
         "line.egypt_mv1950_demarcation.name",
         "line.egypt_mv1950_zone_lines.name",
         "line.jordan_adl_iraqi_c_east.name", "line.jordan_adl_iraqi_b_wadi_ara.name", "line.jordan_adl_iraqi_a_triangle.name",
@@ -105,7 +105,10 @@ public class RegionNamesTests
         {"subdistrict.label", "הגלילות האדמיניסטרטיביים"}, {"armistice.label", "קווי שביתת הנשק, 1949"},
         {"front.egypt.name", "מצרים"}, {"front.lebanon.name", "לבנון"}, {"front.jordan.name", "ירדן"}, {"front.syria.name", "סוריה"},
         {"zone.egypt_el_auja_dmz.name", "שטח הכפר אל־עוג'ה וסביבתו"},
-        {"line.lebanon_adl.name", "קו שביתת הנשק: הגבול הבין־לאומי"}, {"line.syria_adl.name", "קו שביתת הנשק"}
+        {"line.lebanon_adl.name", "קו שביתת הנשק: הגבול הבין־לאומי"}, {"line.syria_adl.name", "קו שביתת הנשק"},
+        // Owner-approved captions, 27 Oct 2026 (signed-map reconciliation still open).
+        {"zone.syria_dmz_central.name", "האזור המפורז (ישראל–סוריה), החלק המרכזי: דרדרה, הירדן ומשמר־הירדן"},
+        {"line.egypt_adl_gaza.name", "קו שביתת הנשק (מצרים–ישראל) של 1949, גזרת עזה־רפיח: מוצא ודי חזי עד עזה"}
     };
     static string Agreement(string front) => front switch {
         "egypt" => "הסכם מצרים-ישראל על שביתת נשק כללית",
