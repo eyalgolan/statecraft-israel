@@ -156,7 +156,7 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0m, r.SurchargeMoney);
         Assert.Equal(0m, Formula().Evaluate(Input(due: 4m, paid: 4m)).UnpaidConditionLoss);
         Assert.Equal(0.075m, Formula().Evaluate(Input(due: 4m, paid: 1m)).UnpaidConditionLoss);
-        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, population: 0,
+        Assert.Equal(0m, Formula().Evaluate(Input(beforeArrival: 0, cohesion: 0, population: 0,
             condition: 0m)).CohesionLossPoints);
     }
 
@@ -169,6 +169,16 @@ public class Gdd03HousingFormulaTests
         Assert.Equal(0m, f.ApplyConditionEffect(0.04m, -0.10m));
         Assert.Equal(0.90m, f.ApplyConditionEffect(f.RepairCondition(0.95m), -0.10m));
         Assert.Equal(0.14m, f.RepairCondition(0.04m));
+    }
+
+    [Theory]
+    [InlineData(40, 20)]
+    [InlineData(1, 0)]
+    public void RegionalCohesionResidentsCannotExceedOwnPopulation(int residents, int population)
+    {
+        // R-HOUSE-002: a region's ordinary residents are part of total own population.
+        Assert.Throws<ArgumentOutOfRangeException>(() => Formula().Evaluate(
+            Input(cohesion: residents, population: population, condition: 0m, due: 0m, paid: 0m)));
     }
 
     [Fact] public void InvalidExplicitInputsAreRejectedWithoutState()
