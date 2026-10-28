@@ -44,6 +44,9 @@ namespace Statecraft.HexTiles.Prototypes
         // Explicit house ids for the newer houses: kit_jerusalem_4 is the mosque-like b17 mesh.
         static readonly string[] NewHouses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3", "sandbox:kit_stone_village_2" };
         static readonly string[] People = { "proto:figure-townsman-c02-1948-v2", "proto:figure-woman-blue-dress-c10-1948-v2" };
+        // The old-town houses stay on their stand-ins until a lighter level of Tal Heuberger's basalt house (04) exists (#1901): its
+        // full mesh is 5,624 triangles, so 16 houses would come to about 90,000 against this tile's 75,000 budget. The default
+        // map's Tiberias plots draw house 04 itself (TownModels.Tiberias).
         const string BasaltHouse = "tiles:tiberias_town/basalt_house", Wall = "tiles:tiberias_town/wall", Tower = "tiles:tiberias_town/round_tower",
             Bathhouse = "tiles:tiberias_town/bathhouse", BathDome = "tiles:tiberias_town/bathhouse_dome",
             Boat = "proto:vehicle-fishing-boat-1948-v2", Palm = "sandbox:date_palm", Olive = "sandbox:olive_lite";
