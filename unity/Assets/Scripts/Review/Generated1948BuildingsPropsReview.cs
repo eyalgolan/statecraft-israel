@@ -15,6 +15,11 @@ namespace Statecraft.Game.Review
         public const string Flag = "buildingpropsreview", SceneName = "GeneratedBuildingsPropsReview";
         public const string AssetFolder = "Assets/Editor/Generated1948Review";
         public const string ScenePath = AssetFolder + "/GeneratedBuildingsPropsReview.unity";
+
+        /// <summary>The folder of model <paramref name="id"/>: the 1948 Collection's once the model is placed in the game
+        /// (<see cref="Map.Collection.CollectionCatalog.IsGeneratedProp"/>), else this review's folder.</summary>
+        public static string DirOf(string id) => Map.Collection.CollectionCatalog.IsGeneratedProp(id)
+            ? $"{Map.Collection.CollectionCatalog.Folder}/{id}" : $"{AssetFolder}/{id}";
         public const float Spacing = 1000f, DisplayWidth = 600f;
         [SerializeField] GameObject[] prefabs = Array.Empty<GameObject>();
         [SerializeField] Material[] materials = Array.Empty<Material>();

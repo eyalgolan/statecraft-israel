@@ -112,6 +112,12 @@ R-CITY-005: The cities' employed share (employed over civilians and craftsmen, s
 
 R-CITY-006: The cities are the `city` and `town` rows of `map/settlements_1948.yaml`, in that file's order, and their start values are `cities.yaml`'s. Each of a city's values (`people`, `employed_share`, `housing_capacity`, `job_slots`) is required and has a status: `sourced` (read from the source named), `derived` (computed from sourced values), `wikipedia-only` (an owner-accepted Wikipedia figure) or `design` (a labelled design value, R-LOOP-005). A `sourced`, `derived` or `wikipedia-only` value has at least one source, each with a url and a checked date, and the day (YYYY-MM-DD) or month (YYYY-MM) it describes; the loader refuses a value without them, naming the file and field (GDD Phase 3 plan, review focus 3).
 
+The regional foundation under exact `gdd-0.3` identity reads optional `regions.yaml` (`schema/regions.schema.json`), separate from aliyah origins. Each explicit region has a stable id, one capital, land member hexes and member place ids from settlements or named map locations. Validation uses effective placements after overrides; inconsistent dual identities, repeated members and overlapping ownership are errors. Different place ids may share one hex within a region. No contiguity or complete-map coverage is required. Unknown opening control stays null and never grants access. Geography approval is separate from evidence status and human historical review.
+
+The approved region associations and capital choices are recorded in `research_notes/gdd03-regions-capitals-fields.md` and its evidence ledger. All nine full extents remain unresolved, so the runtime catalogue is explicitly empty and regional activation stays off. Inactive schema inputs retain every member id; the shared strict loader rejects their empty member-hex lists. Named-place acceptance projections do not stand in for complete regions. Reception-camp design association does not establish its footprint, operation or control; historical rows still require a person's check.
+
+Regional state is currently initialized only by explicit internal fixtures, through the existing population ledger. Immutable pools keep base ordinary housing, condition fractions, Industry/workshop slots and uniquely owned facility contributions separate; reception/training beds do not add ordinary housing. Population and assignment summaries come from the ledger. Canonical geography/capacity sections are limited to initialized `gdd-0.3` regional fixtures, and clones share only immutable records. No shipped era selects regional initialization, no nonempty production regional roster or allocations are supplied, and the aggregate-city guards remain. The city behavior above remains the production path; capital-addressed commands, replay, capacity reservation policy and the production cutover are later increments of #1690 and its consumers.
+
 R-CITY-007: A city starts with `civilians` = `people / people_per_unit` to the nearest unit (a half rounds up), and at least 1 when `people` is above 0 (Q-START-2, owner, 15 October 2026); `employed` = `people * employed_share / people_per_unit` to the nearest unit; `housing_capacity` and `job_slots` as written, in units. The loader refuses a city whose start employed is above its job slots. The arithmetic is decimal, so it is exact on every runtime.
 
 R-HOUSE-001: Each city has a housing condition from 0 to 1, an average over the city (D-D2, Q-HOUSE-2, owner, 15 October 2026). Every city starts at `mvp.housing_start_condition` (Q-START-3: one design value for all the cities, 0.35, `model.yaml`'s `housing` base). The condition is per city: one city's counts never change another's. It is in the state hash (R-LOOP-002).
@@ -526,6 +532,10 @@ R-ALT-011: A shareable build refuses while any consequence card, or any event wi
 
 R-ALT-012: The historical run (the reference player's orders from 15 May 1948 to 15 January 1952) raises no consequence card and diverges nowhere.
 
+
+## Gameplay camera (gdd-0.3 only)
+
+R-CAMERA-001: Only exact `gdd-0.3` fixes gameplay yaw at zero (north), including entry, input frames and minimap settling. Orbit input has no effect. Legacy and gdd-0.1 retain orbit. Pan, the 30 px drag onset, fixed pitch and view-axis zoom retain their existing behavior, rates and 6 to 250 km distance range. Explicit promo poses remain separate. Heading and zoom: owner ruling, 27 October 2026, #1720. Camp marker and label dimensions remain subject to measurement and owner approval.
 
 ## Population identity foundation (gdd-0.3 only)
 
