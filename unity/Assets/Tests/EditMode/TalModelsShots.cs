@@ -137,10 +137,13 @@ public class TalModelsShots
         var close = ui.Q<Button>("turn-report-close");
         if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
         for (int i = 0; i < 3; i++) yield return null;
-        // The new turn opens a decision card over the map; the player's Hide button puts it away.
-        var hide = ui.Q<Button>("event-hide");
-        if (hide != null && hide.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(hide);
-        for (int i = 0; i < 3; i++) yield return null;
+        // The new turn opens a decision card over the map; the player's Hide button puts it away, and the card shrinks away
+        // (ScreenNav.Show). The frame is taken only once the card itself is undisplayed.
+        var card = ui.Q("event-card");
+        Assert.IsNotNull(card, "the event card");
+        if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
+        for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
+        Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
         var map = Object.FindFirstObjectByType<MapScene>();
         SpecialBuildingModels Layer(ICollection<string> withheld)
         {
@@ -158,7 +161,7 @@ public class TalModelsShots
         Look(point, CameraController.MinDistance);
         for (int i = 0; i < 5; i++) yield return null;
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, card hidden {hide == null || hide.resolvedStyle.display != DisplayStyle.Flex}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, event card display {card.resolvedStyle.display}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
     }
 
     sealed class NoLease : IDisposable { public void Dispose() { } }
