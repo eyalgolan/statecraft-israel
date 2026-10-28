@@ -1,0 +1,1 @@
+- A fast one finger swipe now pans the map once by its travel past the tap threshold, even if it ends before the next frame. Ella's tap fix already keeps the swipe from selecting anything.

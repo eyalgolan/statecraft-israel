@@ -800,6 +800,235 @@ public class PressOriginCameraInputTests : InputTestFixture
         public void Dispose() { Send(Pointer, "OnDisable"); Send(Camera, "OnDisable"); Object.DestroyImmediate(Go); Game.Dispose(); }
     }
 
+    void Flick(int id, Vector2 from, Vector2 travel)
+    {
+        BeginTouch(id, from, queueEventOnly: true);
+        MoveTouch(id, from + travel, queueEventOnly: true);
+        EndTouch(id, from + travel);
+    }
+
+    static void PanIs(Rig rig, float pixels)
+    {
+        TestContext.WriteLine(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+            "pan trace: excess={0} px; expected x={1}; actual x={2}; z={3}; distance={4}",
+            pixels, 500000 - pixels * 120, rig.View.LookAt.x, rig.View.LookAt.z, rig.View.Distance));
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - pixels * 120).Within(0.1f));
+        Assert.That(rig.View.LookAt.z, Is.EqualTo(500000).Within(0.1f));
+    }
+
+    [TestCase(0)]
+    [TestCase(20)]
+    [TestCase(30)]
+    [TestCase(31)]
+    [TestCase(200)]
+    public void ACompletedFlickPansOnlyItsExcessOnce(int travel)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig();
+        rig.Frame(); // Ella's warming frame is required to see the press edge.
+        var clicks = 0;
+        rig.Pointer.HexClicked += (_, __, ___) => clicks++;
+        Flick(1, new Vector2(600, 400), new Vector2(travel, 0));
+        rig.Frame(); PanIs(rig, Mathf.Max(0, travel - 30));
+        rig.Frame(); PanIs(rig, Mathf.Max(0, travel - 30));
+        Assert.AreEqual(travel <= 30 ? 1 : 0, rig.Orders.Count, "short presses keep their tap semantics");
+        Assert.AreEqual(travel <= 30 ? 1 : 0, clicks, "a touch tap selects; it does not issue a right-click order");
+        Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [Test]
+    public void LiftKeepsOnlyTravelNotAlreadyConsumedByADragFrame()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        BeginTouch(1, new Vector2(600, 400)); rig.Frame();
+        MoveTouch(1, new Vector2(700, 400)); rig.Frame(); PanIs(rig, 70);
+        MoveTouch(1, new Vector2(800, 400), queueEventOnly: true);
+        EndTouch(1, new Vector2(800, 400));
+        rig.Frame(); PanIs(rig, 170);
+        rig.Frame(); PanIs(rig, 170);
+        Assert.IsEmpty(rig.Orders);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ANewShortPressCannotEraseThePreviousFlick(bool overUi)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        rig.Camera.IsOverUi = p => overUi && p.x < 500;
+        rig.Pointer.IsOverUi = p => overUi && p.x < 500;
+        var clicks = 0;
+        rig.Pointer.HexClicked += (_, __, ___) => clicks++;
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        BeginTouch(2, new Vector2(400, 400), queueEventOnly: true);
+        MoveTouch(2, new Vector2(410, 400));
+        rig.Frame(); PanIs(rig, 170);
+        EndTouch(2, new Vector2(410, 400));
+        rig.Frame(); rig.Frame(); PanIs(rig, 170);
+        Assert.AreEqual(overUi ? 0 : 1, clicks);
+        Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [TestCase(200, 340)]
+    [TestCase(-100, 100)]
+    public void TwoCompletedFlicksEachPayTheirOwnSlop(int secondTravel, int total)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        Flick(2, new Vector2(600, 400), new Vector2(secondTravel, 0));
+        rig.Frame(); PanIs(rig, total);
+        rig.Frame(); PanIs(rig, total);
+        Assert.IsEmpty(rig.Orders); Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [Test]
+    public void AUiOriginFlickCannotLeakIntoTheNextMapPress()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        rig.Camera.IsOverUi = p => p.x < 500;
+        Flick(1, new Vector2(400, 400), new Vector2(200, 0));
+        rig.Frame(); PanIs(rig, 0);
+        BeginTouch(2, new Vector2(600, 400)); rig.Frame(); PanIs(rig, 0);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void DisablingOrUngatedTouchDoesNotReplayACompletedFlick(bool ungated)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        if (ungated) rig.Camera.HoldsTouchDrag = null;
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        if (!ungated) { Send(rig.Camera, "OnDisable"); Send(rig.Camera, "OnEnable"); }
+        rig.Frame(); rig.Frame(); PanIs(rig, 0);
+    }
+
+    [Test]
+    public void RemovingTheTouchscreenDoesNotLoseOrRepeatAnApprovedFlick()
+    {
+        var screen = InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        InputSystem.RemoveDevice(screen);
+        rig.Frame(); PanIs(rig, 170);
+        rig.Frame(); PanIs(rig, 170);
+    }
+
+    void EndedPinch(bool oneUpdate, int movementStage, bool primaryFirst)
+    {
+        BeginTouch(1, new Vector2(600, 400), queueEventOnly: oneUpdate);
+        if (movementStage == 0) MoveTouch(1, new Vector2(800, 400), queueEventOnly: oneUpdate);
+        BeginTouch(2, new Vector2(900, 400), queueEventOnly: oneUpdate);
+        if (movementStage == 1) MoveTouch(1, new Vector2(800, 400), queueEventOnly: oneUpdate);
+        if (primaryFirst) EndTouch(1, new Vector2(800, 400), queueEventOnly: oneUpdate);
+        EndTouch(2, new Vector2(900, 400), queueEventOnly: oneUpdate);
+        if (!primaryFirst)
+        {
+            if (movementStage == 2) MoveTouch(1, new Vector2(800, 400), queueEventOnly: oneUpdate);
+            EndTouch(1, new Vector2(800, 400), queueEventOnly: oneUpdate);
+        }
+        if (oneUpdate) InputSystem.Update();
+    }
+
+    [TestCase(true, 0, false)]
+    [TestCase(true, 1, false)]
+    [TestCase(true, 2, false)]
+    [TestCase(false, 0, false)]
+    [TestCase(false, 1, false)]
+    [TestCase(false, 2, false)]
+    [TestCase(true, 1, true)]
+    [TestCase(false, 1, true)]
+    public void AnEndedPinchNeverBecomesALiftedPan(bool oneUpdate, int movementStage, bool primaryFirst)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        EndedPinch(oneUpdate, movementStage, primaryFirst);
+        rig.Frame(); PanIs(rig, 0);
+        rig.Frame(); PanIs(rig, 0);
+        Assert.AreEqual(100000, rig.View.Distance, "an ended pair invents no pinch zoom");
+        Assert.IsEmpty(rig.Orders); Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void APinchCannotDeleteAnUnrelatedValidFlick(bool pinchFirst)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        if (pinchFirst) EndedPinch(false, 2, false);
+        Flick(3, new Vector2(600, 400), new Vector2(200, 0));
+        if (!pinchFirst) EndedPinch(false, 2, false);
+        rig.Frame(); PanIs(rig, 170);
+        rig.Frame(); PanIs(rig, 170);
+        Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [TestCase(0.05f)]
+    [TestCase(-0.05f)]
+    public void ATrackpadMagnifyStillZoomsWithALiftedFlick(float magnification)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        var pending = magnification;
+        rig.Camera.TrackpadMagnification = () => { var value = pending; pending = 0; return value; };
+        rig.Frame();
+        Assert.AreEqual(100000 / (1 + magnification), rig.View.Distance, 1f);
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(500000 - 170 * 0.0012f * rig.View.Distance).Within(0.1f));
+        var at = rig.View.LookAt;
+        rig.Frame(); Assert.AreEqual(at, rig.View.LookAt);
+        Assert.AreEqual(100000 / (1 + magnification), rig.View.Distance, 1f);
+    }
+
+    [Test]
+    public void ASampledPinchKeepsTheRemainingFingersLivePan()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        BeginTouch(1, new Vector2(600, 400)); rig.Frame();
+        MoveTouch(1, new Vector2(700, 400)); rig.Frame(); PanIs(rig, 70);
+        BeginTouch(2, new Vector2(900, 400)); rig.Frame(); PanIs(rig, 70);
+        EndTouch(2, new Vector2(900, 400)); rig.Frame(); PanIs(rig, 70);
+        MoveTouch(1, new Vector2(750, 400)); rig.Frame(); PanIs(rig, 120);
+        rig.Frame(); PanIs(rig, 120);
+        EndTouch(1, new Vector2(800, 400)); // a pinched press must not save even its final movement
+        rig.Frame(); rig.Frame(); PanIs(rig, 120);
+        Assert.AreEqual(100000, rig.View.Distance);
+        Assert.IsEmpty(rig.Orders); Assert.IsEmpty(rig.Game.Bridge.Session.Committed);
+    }
+
+    [Test]
+    public void ALiveTouchscreenPinchStillZoomsWithoutPanning()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        BeginTouch(1, new Vector2(600, 400));
+        BeginTouch(2, new Vector2(900, 400)); rig.Frame();
+        MoveTouch(2, new Vector2(1000, 400)); rig.Frame();
+        PanIs(rig, 0);
+        Assert.AreEqual(90000, rig.View.Distance, 1f, "one hundred pixels of live pinch is one notch");
+    }
+
+    [Test]
+    public void EnableDrainsMagnifyAndANewUiPressStillBlocksZoom()
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        using var rig = new Rig(); rig.Frame();
+        Send(rig.Camera, "OnDisable");
+        var pending = 0.05f;
+        rig.Camera.TrackpadMagnification = () => { var value = pending; pending = 0; return value; };
+        Send(rig.Camera, "OnEnable"); rig.Frame();
+        Assert.AreEqual(100000, rig.View.Distance);
+        Flick(1, new Vector2(600, 400), new Vector2(200, 0));
+        rig.Camera.IsOverUi = p => p.x < 500;
+        BeginTouch(2, new Vector2(400, 400)); pending = 0.05f;
+        rig.Frame(); PanIs(rig, 170);
+        Assert.AreEqual(100000, rig.View.Distance, "the retained pan exception must not clear OverUi");
+    }
+
     [TestCase(10)]
     [TestCase(31)]
     public void AReleaseAndNewPressBeforeTheCameraFrameStartsANewGesture(int travel)

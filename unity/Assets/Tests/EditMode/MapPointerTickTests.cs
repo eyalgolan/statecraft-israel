@@ -120,10 +120,13 @@ public class MapPointerTickTests : InputTestFixture
         rig.Frame();
         rig.SettleFrame();
         Assert.IsEmpty(rig.Asked, "a fast swipe selects nothing: the travel is inside the frame, and the slop sees it");
-        // The pan is not asserted here, and deliberately. In this extreme the finger is already up when the frame
-        // runs, so CameraController's FingersDown sees none and never reads its delta; panning it would mean changing
-        // the camera, which is ruling 2's file. A swipe the camera sees a finger during is the next test.
-        Assert.AreEqual(start, rig.View.LookAt, "today it also does not pan, because the finger is gone by the frame");
+        // Deliberately inverted for ruling 3's camera half ("the map pans by the swipe", #1661). This assertion used to
+        // pin that the map stayed put, because the finger is up before the camera's frame. The camera now keeps the
+        // travel beyond the 30 px slop and pans by it once. Ella's no-selection assertion and warming frame are unchanged.
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x - 170 * 120).Within(0.1f));
+        Assert.AreEqual(start.z, rig.View.LookAt.z);
+        rig.Frame();
+        Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x - 170 * 120).Within(0.1f), "the lift pans once");
     }
 
     /// <summary>The same ruling for a swipe the camera can actually see: fast, but with the finger down across a

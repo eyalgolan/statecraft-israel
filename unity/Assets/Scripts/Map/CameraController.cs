@@ -108,6 +108,7 @@ namespace Statecraft.Game.Map
 
         InputAction? pan, dragPan, zoom, zoomKeys, orbit;
         InputAction? mousePress, mousePosition, touchPress, touchPosition;
+        InputAction? fingerPress;
 
         void Awake() => rig = GetComponent<CameraRig>();
 
@@ -121,10 +122,30 @@ namespace Statecraft.Game.Map
             mousePosition = new InputAction("camera-drag-position", InputActionType.PassThrough, "<Mouse>/position");
             mousePosition.performed += ctx => mouseDrag.Move(ctx.ReadValue<Vector2>());
             touchPress = new InputAction("camera-touch-press", InputActionType.Button, "<Touchscreen>/primaryTouch/press");
-            touchPress.performed += ctx => touchDrag.Begin(((Touchscreen)ctx.control.device).primaryTouch.position.ReadValue(), IsOverUi);
-            touchPress.canceled += _ => touchDrag.End();
+            touchPress.performed += ctx =>
+            {
+                var ts = (Touchscreen)ctx.control.device;
+                touchDrag.Begin(ts.primaryTouch.position.ReadValue(), IsOverUi);
+                ClassifyTouch(ts);
+            };
+            touchPress.canceled += ctx =>
+            {
+                var ts = (Touchscreen)ctx.control.device;
+                touchDrag.Move(ts.primaryTouch.position.ReadValue());
+                ClassifyTouch(ts);
+                if (HoldsTouchDrag != null) touchDrag.Lift(); else touchDrag.End();
+            };
             touchPosition = new InputAction("camera-touch-position", InputActionType.PassThrough, "<Touchscreen>/primaryTouch/position");
-            touchPosition.performed += ctx => touchDrag.Move(ctx.ReadValue<Vector2>());
+            touchPosition.performed += ctx =>
+            {
+                touchDrag.Move(ctx.ReadValue<Vector2>());
+                // Drop pair motion after recording its position; later one-finger movement stays live.
+                ClassifyTouch((Touchscreen)ctx.control.device);
+            };
+            // Observe secondary fingers even when the primary position never changes during their lifetime.
+            fingerPress = new InputAction("camera-finger-press", InputActionType.PassThrough, "<Touchscreen>/touch*/press");
+            fingerPress.performed += ctx => ClassifyTouch((Touchscreen)ctx.control.device);
+            fingerPress.Enable();
             mousePress.Enable(); mousePosition.Enable(); touchPress.Enable(); touchPosition.Enable();
             DrainWheel();   // events from while the camera was off (a menu) are not a zoom
             TrackpadMagnification();   // nor is a pinch from then
@@ -141,12 +162,19 @@ namespace Statecraft.Game.Map
             InputSystem.actions?.FindActionMap("Camera")?.Disable();
             mousePress?.Dispose(); mousePress = null; mousePosition?.Dispose(); mousePosition = null;
             touchPress?.Dispose(); touchPress = null; touchPosition?.Dispose(); touchPosition = null;
+            fingerPress?.Dispose(); fingerPress = null;
             mouseDrag.End(); touchDrag.End();
+            touchDrag.TakeLifted(); // disabling discards completed motion as well as the current press
             dragFromUi = dragWasDown = false;
         }
 
         bool dragFromUi, dragWasDown;
         readonly PressDrag mouseDrag = new PressDrag(), touchDrag = new PressDrag();
+
+        void ClassifyTouch(Touchscreen ts)
+        {
+            if (FingersDown(ts, out _, out _) == 2) touchDrag.Discard();
+        }
 
         void Update() => Tick(Time.unscaledDeltaTime);
 
@@ -199,24 +227,38 @@ namespace Statecraft.Game.Map
             var modifier = ModifierHeld(Keyboard.current);
             var input = Gather(pan.ReadValue<Vector2>(), drag, zoomRaw, orbit.ReadValue<float>(), down, pointer, zoomKeys.ReadValue<float>(), modifier);
             if (down) input.DragFromUi = fromUi; // latched at the actual press, even between camera frames
+            // Classify and filter the current gesture before draining earlier, already-approved motion.
+            // A new UI press owns only its own drag; OverUi must still block its wheel/magnify zoom.
+            input.DragPan = (input.DragFromUi ? Vector2.zero : input.DragPan) + touchDrag.TakeLifted();
+            input.DragFromUi = false;
             Step(rig, input, ClampDt(dt), Bounds, Ground, GroundTop, FixedNorth);
         }
 
         /// <summary>Position history scoped to one press. Begin resets even if release/repress happens between
         /// camera ticks. Event positions, rather than Mouse/delta, exclude pre-press movement and retain multiple
-        /// input updates. Released gestures are not replayed here (Ella owns ruling 3).</summary>
+        /// input updates. Completed touch travel is kept separately from the next press (ruling 3's camera half).</summary>
         internal sealed class PressDrag
         {
-            Vector2 origin, previous, pending;
-            bool down, panning;
+            Vector2 origin, previous, pending, lifted;
+            bool down, panning, replayBlocked;
             internal bool FromUi { get; private set; }
             internal void Begin(Vector2 at, Func<Vector2, bool>? overUi = null)
             {
                 origin = previous = at; pending = Vector2.zero;
-                down = true; panning = false; FromUi = overUi?.Invoke(at) == true;
+                down = true; panning = replayBlocked = false; FromUi = overUi?.Invoke(at) == true;
             }
             internal void End() { down = panning = false; pending = Vector2.zero; }
-            internal void Discard() { pending = Vector2.zero; }
+            internal void Lift()
+            {
+                if (down && !replayBlocked && !FromUi) lifted += pending;
+                End();
+            }
+            internal Vector2 TakeLifted()
+            {
+                var result = lifted; lifted = Vector2.zero; return result;
+            }
+            // A pinch rejects completed replay, not the remaining finger's live movement.
+            internal void Discard() { pending = Vector2.zero; replayBlocked = true; }
             internal void Move(Vector2 at)
             {
                 if (!down) return;
@@ -251,9 +293,9 @@ namespace Statecraft.Game.Map
             t.press.isPressed || t.press.wasPressedThisFrame;
 
         /// <summary>The first two touches down <em>now</em> (2 stands for two or more), or fewer. Level state on
-        /// purpose: a finger that has already lifted contributes no ongoing drag, so counting it here would turn a
-        /// one-update flick into a pan. Whether a finger merely touched during the update is a separate question,
-        /// asked by <see cref="DownThisUpdate"/> at the call site (#1792).</summary>
+        /// purpose: ended fingers contribute no live drag or pinch. Approved completed one-finger travel is replayed
+        /// separately by PressDrag.TakeLifted; <see cref="DownThisUpdate"/> detects a finger that merely touched during
+        /// this update (#1792).</summary>
         static int FingersDown(Touchscreen ts, out UnityEngine.InputSystem.Controls.TouchControl a,
             out UnityEngine.InputSystem.Controls.TouchControl b)
         {
