@@ -87,6 +87,9 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
+        /// the focus once, instead of every cover change (a resize, a meter's width) moving it.</summary>
+        bool focusNextWhenUncovered;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
@@ -170,8 +173,22 @@ namespace Statecraft.Game.UI
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
+                // A rebuild (a language switch) resumes the chain with Settings still open over it (#1036 reopens the
+                // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
+                // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
+                // reopens the screen only after Begin returns, so at construction no screen is open yet.
+                if (InChain)
+                    layer.schedule.Execute(() =>
+                    {
+                        if (disposed || !InChain) return;
+                        if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
+                    });
             }
         }
+
+        /// <summary>A screen is open over the tour. On the one-row HUD a side screen does not mark the HUD covered, so
+        /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
+        bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
         /// <summary>A modal layer is open (spec 4.2): the start screen, the open decision card, the capture dialog, the turn
         /// report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
@@ -348,7 +365,12 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             if (Media?.Playing == true && (HardMediaCover() || CurrentScreens() != watchScreens)) StopWatching();
             if (hudRoot.ClassListContains(OverlayOpenClass)) return;
-            if (session.Chain.Step >= 0) { RenderChain(); return; }
+            if (session.Chain.Step >= 0)
+            {
+                RenderChain();
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; TakeFocusFromTheCard(); }   // a screen closed over a resumed tour (#1915)
+                return;
+            }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
             {
