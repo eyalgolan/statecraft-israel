@@ -1271,20 +1271,20 @@ rules:
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
     note: "In the game at the Bedouin camp areas, streamed in its own bundle after the first frame; the owner signed off all 19 generated models on 27 October 2026 (#756). 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true

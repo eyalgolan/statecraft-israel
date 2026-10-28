@@ -677,6 +677,77 @@ public class KitTests
         foreach (var k in new[] { mixed, tents, huts }) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
     }
 
+    /// <summary>Owner, 27 October 2026 (#756: "Sign off all 19"): a camp's khaki ridge tents can be built into a mesh of their
+    /// own (MaabarotSplit), for Tal Heuberger's khaki canvas tent to stand in for them up close. Nothing else moves: the two
+    /// meshes hold exactly Maabarot's vertices, and the counts and the census are the same.</summary>
+    [Test]
+    public void TheSplitCampHoldsTheSameKitWithItsKhakiTentsApart()
+    {
+        var map = OpenMap();
+        var camps = new List<(string id, Vector2 at, System.DateTime from)> { ("a", Spot(map, "revivim"), System.DateTime.MinValue) };
+        var whole = SettlementKits.Maabarot(camps, PlacementLayer.CampGround(map), out var placedWhole);
+        var split = SettlementKits.MaabarotSplit(camps, PlacementLayer.CampGround(map), out var placedSplit);
+        try
+        {
+            Assert.IsNotNull(whole[0].mesh); Assert.IsNotNull(split[0].mesh); Assert.IsNotNull(split[0].khaki, "the camp has khaki ridge tents");
+            Assert.AreEqual((whole[0].tents, whole[0].huts, whole[0].at), (split[0].tents, split[0].huts, split[0].at));
+            Assert.AreEqual(whole[0].mesh!.vertexCount, split[0].mesh!.vertexCount + split[0].khaki!.vertexCount, "the vertices are only partitioned");
+            CollectionAssert.AreEqual(placedWhole.Select(p => (p.Kind, p.C, p.W, p.D)), placedSplit.Select(p => (p.Kind, p.C, p.W, p.D)));
+            Assert.IsNotEmpty(split[0].khakiTents);
+            foreach (var t in split[0].khakiTents)
+                Assert.IsTrue(placedSplit.Any(p => p.Kind == "tent" && p.C == t.C && p.W == t.W && p.D == t.D), $"{t.C}: a census tent");
+        }
+        finally
+        {
+            foreach (var k in whole) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
+            foreach (var k in split) { if (k.mesh != null) Object.DestroyImmediate(k.mesh); if (k.khaki != null) Object.DestroyImmediate(k.khaki); }
+        }
+    }
+
+    /// <summary>The khaki tent model takes the kit's khaki tents' place up close once it has streamed, and the kit's tents
+    /// come back beyond the switch distance; a model that never arrives leaves the kit's tents (fail open).</summary>
+    [Test]
+    public void TheKhakiTentModelStandsInForTheKitsKhakiTentsUpClose()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Request;
+        var root = new GameObject("camp tents fixture");
+        var camGo = new GameObject("camp tents camera", typeof(Camera));
+        try
+        {
+            var tents = new[] { new SettlementKits.KhakiTent(new Vector2(100f, 200f), 5f, 30f, 60f, 40f),
+                new SettlementKits.KhakiTent(new Vector2(300f, 200f), 6f, 30f, 55f, 40f) };
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Assert.IsNotNull(prefab, "the khaki tent's prefab is in the 1948 Collection's folder");
+            GameObject Kit(string name) { var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root.transform, false); return go; }
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
+            Statecraft.Game.Map.Collection.CampTentModels.Request = (id, d, done) => done(prefab);
+            var kit = Kit("with model");
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents);
+            Assert.AreEqual(tents.Length, layer.ModelCount, "one model per khaki tent");
+            camGo.transform.position = new Vector3(0f, 10000f, 0f); layer.Choose(default, cam);
+            Assert.IsTrue(kit.GetComponent<Renderer>().forceRenderingOff, "up close the kit's khaki tents give way");
+            Assert.IsTrue(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).All(r => !r.forceRenderingOff), "and the models draw");
+            camGo.transform.position = new Vector3(0f, 60000f, 0f); layer.Choose(default, cam);
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "far off the kit's tents are back");
+            Assert.IsTrue(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).All(r => r.forceRenderingOff));
+
+            Statecraft.Game.Map.Collection.CampTentModels.Request = (id, d, done) => done(null);
+            var bare = Kit("missing model");
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^CAMPS: .* did not stream"));
+            var failed = Statecraft.Game.Map.Collection.CampTentModels.Attach(bare, tents);
+            camGo.transform.position = new Vector3(0f, 10000f, 0f); failed.Choose(default, cam);
+            Assert.AreEqual(0, failed.ModelCount);
+            Assert.IsFalse(bare.GetComponent<Renderer>().forceRenderingOff, "no model: the kit's tents stay, close or far");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Request = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
     /// <summary>Issue #32: ma'abarot are seeded (two builds, the same camps), stand on dry land clear of every town's plots,
     /// the 1948 localities and the Bedouin camps, keep off the routes, and two camps asked for on the same ground keep
     /// apart: a camp stands in its own hex (review #557), so the second finds none left there (the first camp's lots) and

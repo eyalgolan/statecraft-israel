@@ -87,6 +87,9 @@ namespace Statecraft.Game.Map.Collection
         /// (<see cref="SourceModelPath"/>).</summary>
         public const string SyrianR35 = "generated-1948-14-syrian-renault-r35";
 
+        /// <summary>Tal Heuberger's khaki canvas tent, in place of a transit camp's khaki ridge tents up close (CampTentModels).</summary>
+        public const string KhakiTent = "generated-1948-08-khaki-canvas-tent";
+
         /// <summary>Every bundle, with its models in a fixed order.</summary>
         public static readonly IReadOnlyList<(string Bundle, string[] Ids)> Groups = new (string, string[])[]
         {
@@ -145,6 +148,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 "generated-1948-06-bedouin-b-enclosed-striped-tent",
                 "generated-1948-14-syrian-renault-r35",
+                "generated-1948-08-khaki-canvas-tent",
             }),
         };
 
@@ -183,7 +187,7 @@ namespace Statecraft.Game.Map.Collection
             || id == BedouinCivilian;
 
         /// <summary>The generated static props: full-quality originals with one prefab beside the FBX, like the generated figures.</summary>
-        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == SyrianR35;
+        public static bool IsGeneratedProp(string id) => id == BedouinTent || id == SyrianR35 || id == KhakiTent;
 
         /// <summary>The model file a catalogued id is imported from: <c>&lt;id&gt;.fbx</c> beside its prefab, except the vehicle
         /// delivery's documented <c>&lt;id&gt;-compatibility.fbx</c> (docs/vehicle-review-2026-10-22.md).</summary>

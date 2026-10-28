@@ -16,7 +16,7 @@
   "compatibility_fbx": "Local GLB-to-FBX export, never provider-original FBX",
   "decimation": false,
   "local_geometry_repairs": false,
-  "campaign_status": "Held: #1273/own-streamed bundle interface and maintainer art/sensitivity sign-off pending",
+  "campaign_status": "In the game in place of a transit camp's khaki ridge tents up close (CampTentModels), streamed in its own bundle; signed off by the owner 27 October 2026 (#756)",
   "source_caveats": "Original source review pending at full quality",
   "fbx_sha256": "180d2007bef274313b9c4899570b4552cc408ccdec8c210ddcc9a6df6b904fe2",
   "compatibility_export_triangles": 3988,

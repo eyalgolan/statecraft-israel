@@ -49,11 +49,17 @@ namespace Statecraft.Game.Map
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject;
-                // A camp's kit mesh is its own (the boxes share the built-in cube): it goes with its object.
-                var filter = old.GetComponent<MeshFilter>();
-                var own = filter != null && filter.sharedMesh != cube ? filter.sharedMesh : null;
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); if (own != null) Destroy(own); }
-                else { DestroyImmediate(old); if (own != null) DestroyImmediate(own); }
+                // A camp's kit meshes are its own (the boxes share the built-in cube): the camp's and its khaki tents' go with
+                // its object. The khaki tent models under CampTentModels are the streamed prefab's and stay.
+                var own = new List<Mesh>();
+                foreach (var filter in old.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (filter.sharedMesh == null || filter.sharedMesh == cube) continue;
+                    bool kitMesh = filter.GetComponent<Collection.CampTentModels>() != null || filter.GetComponentInParent<Collection.CampTentModels>() == null;
+                    if (kitMesh) own.Add(filter.sharedMesh);
+                }
+                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); foreach (var m in own) Destroy(m); }
+                else { DestroyImmediate(old); foreach (var m in own) DestroyImmediate(m); }
             }
             var list = new List<Placement>(placements);
             lastPlacements = list; lastContent = content; lastMap = map; kitsShown = map.KitsShown;
@@ -95,7 +101,7 @@ namespace Statecraft.Game.Map
             }
             var drawn = new HashSet<string>();
             if (camps.Count == 0) return drawn;
-            var built = SettlementKits.Maabarot(camps, CampGround(map), out var placed);
+            var built = SettlementKits.MaabarotSplit(camps, CampGround(map), out var placed);
             foreach (var p in placed) holes.Add((p.C, 0.5f * new Vector2(p.W, p.D).magnitude));
             for (int i = 0; i < camps.Count; i++)
             {
@@ -108,6 +114,18 @@ namespace Statecraft.Game.Map
                 var r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = map.KitMaterial;
                 r.shadowCastingMode = ShadowCastingMode.On;
+                // The camp's khaki ridge tents, in a mesh of their own under the camp: Tal Heuberger's khaki canvas tent takes
+                // their place up close once it has streamed (Collection.CampTentModels); until then, or if it never does, they stay.
+                if (built[i].khaki is Mesh khaki)
+                {
+                    var tents = new GameObject(camps[i].id + "_khaki");
+                    tents.transform.SetParent(go.transform, false);
+                    tents.AddComponent<MeshFilter>().sharedMesh = khaki;
+                    var kr = tents.AddComponent<MeshRenderer>();
+                    kr.sharedMaterial = map.KitMaterial;
+                    kr.shadowCastingMode = ShadowCastingMode.On;
+                    Collection.CampTentModels.Attach(tents, built[i].khakiTents);
+                }
                 drawn.Add(camps[i].id);
             }
             return drawn;

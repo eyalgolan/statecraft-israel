@@ -59,9 +59,10 @@
       "number": 8,
       "id": "generated-1948-08-khaki-canvas-tent",
       "prepared_role": "Existing non-white transit-camp ridge tents",
-      "active_in_campaign": false,
+      "active_in_campaign": true,
       "source_visual_ready": false,
-      "known_source_defect": false
+      "known_source_defect": false,
+      "campaign_placement": "In place of a transit camp's khaki ridge tents up close (CampTentModels; the kit's tents beyond the switch distance and whenever the model is missing); owner sign-off 27 October 2026 (#756)"
     },
     {
       "number": 9,
