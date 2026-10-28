@@ -32,6 +32,19 @@ public class Gdd03ReceptionFixtureTests
             new PopulationInventoryRow("synthetic-start", i, p)));
     }
 
+    // R-POP-002: the hashed ledger duration and the caller catalogue must agree.
+    [Theory] [InlineData(4)] [InlineData(8)]
+    public void DifferentAgreedDurationRefusesBeforeProgressOrEligibility(int turns)
+    {
+        var state = State(Person(3, "synthetic-a"));
+        var before = state.Hash();
+        var content = Catalogue();
+        content.Gdd03Balance!.Values["reception.turns"].Values = new() { turns };
+        Assert.Throws<ContentException>(() => Gdd03ReceptionFixture.ResolveWholeTurn(
+            content, state, new[] { Camp() }));
+        Assert.Equal(before, state.Hash());
+    }
+
     [Fact] public void SixthWholeBedTurnCompletesSamePersonWithoutCompletionTurnWork()
     {
         var refugee = Person(bed: "synthetic-a");
