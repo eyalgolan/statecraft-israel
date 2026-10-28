@@ -41,6 +41,7 @@ and for each: the founding date (and what it marks), coordinates from a named so
 - **Coordinates:** 5 rows have a coordinate from two or three sources that agree to under 2 km (rows 1, 3, 5, 7, 15); 2
   rows have two sources that do not agree (rows 6 and 10); 10 rows have one source only; 3 rows have none ([GAP]: rows
   12, 14, 20). No coordinate comes from a map I opened, and none is a survey of the founding site.
+- **Second pass (27 Oct 2026), added after the first pass and not replacing it:** rows 12 and 14 now have a coordinate ([S], Wikidata and Hebrew WP GeoData); the Sinai site of row 20 and the founding day of row 15 stay [GAP]; JTA and United Nations Special Committee reports add dated press for rows 15, 19, 20 and 14, and a [C] on row 20. See "Second pass (27 Oct 2026)".
 
 ## Conventions and tags
 
@@ -54,6 +55,7 @@ and for each: the founding date (and what it marks), coordinates from a named so
 - **Derived** marks a number this note computed; the arithmetic or the tool is named.
 - Hebrew quotes from Gvati and Wikipedia are given without vowel signs; translations are mine. English quotes from JTA
   are copied from the archive page text. Each quoted string was checked by script against the page text I fetched.
+- **Second pass (27 Oct 2026), added line, the tags above are unchanged:** no verified tag was added. A United Nations Special Committee report that quotes a newspaper is [S], and the newspaper is named in each line (Jerusalem Post, Ha'aretz, Ma'ariv, Radio Israel); I read the report, not the paper. Wikidata is [S]. "[GAP]" lines of the first pass are kept as written and corrected only in a bracket that starts "(second pass, 27 Oct".
 
 ## How it was done
 
@@ -120,15 +122,15 @@ date: [C] sources disagree, [S] they agree on the year (the day, where given, is
 | 9 | Sufa (Nahal Sukkot) | kibbutz, from a Nahal outpost | "סופה", Rafah approaches, 1975 | 1974 | 1974 (Gvati text, he WP, en WP); 1975 (appendix); 17 Jan 1977 civil | 31.23639, 34.18944 (en WP) | [C] |
 | 10 | Holit (Nahal Holit) | kibbutz, from a Nahal outpost | "נחל חולית", Rafah approaches, 1977 | 1974 | 1974 (Gvati text, inferred from "the same"); Jul 1977 (he WP); 1978 (en WP, Nahal settlement); civilian turnover about 12 Jan 1978 (JTA via #1647, derived) or 17 Jan 1978 (he WP) | 31.22624, 34.16380 (he WP); 31.23000, 34.32667 (en WP), 15.49 km; the en WP point is 0.12 km from the CBS point of present Holit, 31.23068, 34.32573 (derived) | [C] |
 | 11 | Haruvit (Tarsag) | Nahal outpost, then moshav | "תרסג (חרובית)", North Sinai, 1976 | 1975 | Dec 1975 outpost; 1976 (appendix); summer 1977 civil | 31.17000, 33.94600 (he WP) | [C] |
-| 12 | Nir Avraham | moshav | "ניר אברהם", Rafah approaches, 10.77 | 1977 | 1977 (he WP); Oct 1977 (Gvati) | none: [GAP] | [S] |
+| 12 | Nir Avraham | moshav | "ניר אברהם", Rafah approaches, 10.77 | 1977 | 1977 (he WP); Oct 1977 (Gvati) | none: [GAP] (second pass, 27 Oct: 31.18711, 34.19464, Hebrew WP GeoData and Wikidata, [S]; see "Second pass") | [S] |
 | 13 | Talmei Yosef (Sinai) | moshav | - | 1977, in stages | 1977; cornerstone 27 Jul 1977 (he WP) | 31.21056, 34.24278 (en WP) | [S] |
-| 14 | Pri'el | moshav | - | 1977, in stages | 1977 (Gvati text); Sep 1978 families in (he WP); early 1978 (en WP) | none: [GAP] | [C] |
-| 15 | Ofira (Sharm el-Sheikh) | town | - | no date | 1969 (he WP, en WP); Apr 1971 housing being built; Aug 1971 name published (JTA) | 27.85380, 34.30816 (he WP); 27.86750, 34.29528 (en WP), 1.98 km | [GAP] |
+| 14 | Pri'el | moshav | - | 1977, in stages | 1977 (Gvati text); Sep 1978 families in (he WP); early 1978 (en WP) | none: [GAP] (second pass, 27 Oct: 31.20533, 34.25914, Wikidata, [S]; see "Second pass") | [C] |
+| 15 | Ofira (Sharm el-Sheikh) | town | - | no date | 1969 (he WP, en WP); Apr 1971 housing being built; Aug 1971 name published (JTA) | 27.85380, 34.30816 (he WP); 27.86750, 34.29528 (en WP), 1.98 km (second pass, 27 Oct: day still [GAP]; dated press added, see "Second pass") | [GAP] |
 | 16 | Neviot | moshav | "נביעות", Gulf coast, 10.5.71 | 1971 | Feb 1971 first attempt; Aug 1971 second; Jan 1972 cooperative (he WP); 10 May 1971 (Gvati) | 29.03333, 34.66667 (he WP) | [C] |
 | 17 | Di Zahav | moshav shitufi | "די-זהב", Gulf coast, 13.9.71 | 1971 | 13 Sep 1971 (he WP and Gvati) | 28.48139, 34.49861 (he WP) | [S] |
 | 18 | Zaharon | moshav | - | - | 1977 (he WP) | 28.99856, 34.67622 (he WP) | [S] |
 | 19 | Shalhevet | settlement, Gulf of Suez | - | - | 1971-1975 (he WP) | 28.89158, 33.18420 (he WP) | [S] |
-| 20 | Kadesh Barnea (Nitzanei Sinai) | Nahal outpost | - | - | 1977 (he WP) | none: [GAP] | [S] |
+| 20 | Kadesh Barnea (Nitzanei Sinai) | Nahal outpost | - | - | 1977 (he WP) | none: [GAP] (second pass, 27 Oct: the Sinai site still [GAP]; a JTA item of 2 Mar 1978 describes settlers barred from occupying the site on 1 Mar 1978, see "Second pass") | [S] |
 
 Rows 18 to 20 and the day of every row marked "he WP" only rest on one source. Rows 12 and 14 have no coordinate in any
 source read; rows 15 and 19 have a coordinate but no date from a source that gives a day.
@@ -244,6 +246,7 @@ where a source says. "Bulletin" is the JTA archive date.
     Gvati's text lists it among three localities "בשלבי הקמה שונים ב־1977". Hebrew WP (oldid 43737991): land preparation in
     the second half of 1976, founded 1977 (cites Davar, 31 May 1981, not opened). No coordinate in either Wikipedia, in
     GeoNames, or anywhere I read: [GAP].
+    (Second pass, 27 Oct 2026: the coordinate is no longer [GAP]. Hebrew WP's GeoData for the same revision (oldid 43737991) gives 31.187106, 34.19464 and Wikidata Q12040954 gives the same point, so the two are one source in effect: [S]. It lies 2.35 km from Ugda's point in row 8 (**derived**, haversine). Wikidata also gives inception 1977 and dissolved 1982. The date is unchanged: [S]. See "Second pass".)
 
 13. **Talmei Yosef, Sinai [S].** Gvati's text: one of three localities in various stages in 1977; no appendix row
     (searched the page text, see Searches). Hebrew WP (oldid 43738234): "המושב הוקם בשנת 1977"; "ב-27 ביולי 1977 נערך טקס הנחה אבן פינה ליישוב". English WP (oldid 1379995738): infobox 1977. JTA, bulletin 2 Jun 1977, dateline "JERUSALEM
@@ -256,6 +259,7 @@ where a source says. "Bulletin" is the JTA archive date.
     from the Soviet Union". It has no coordinate in the fields I read. The English "Pri Gan" article (oldid 1376006385) says the present Peri Gan "was founded in 1981 by former residents of Pri'el, an Israeli settlement in Sinai" (see "Later localities of Sinai origin" below). **[C]:** 1977 (Gvati, a stage of building) against
     1978 (both Wikipedias). No coordinate: [GAP]. The date is at the edge of the window
     and the row is kept because Gvati counts it among the 11.
+    (Second pass, 27 Oct 2026: the coordinate is no longer [GAP]. Wikidata Q12046985 gives 31.205333, 34.259139 and inception 1978; Hebrew WP's GeoData for oldid 43738223 has none. [S], one source. The point lies 1.66 km from Talmei Yosef's point in row 13 and 6.46 km from Nir Avraham's in row 12 (**derived**, haversine). JTA now adds two dated items: work "underway at Pri'el and Talmei Yosef, near Sadot, where it was begun some months ago" (dateline Jerusalem, 9 Jan 1978) and 28 Soviet immigrant families taking over homes at "Priel" (dateline Yamit, 26 Sep 1978, "yesterday", so 25 Sep 1978). That agrees with Hebrew WP's September 1978. The row stays [C]: 1977 (Gvati) against 1978. See "Second pass".)
 
 15. **Ofira (Sharm el-Sheikh) [GAP on the day].** Gvati's text: "בשארם־א־שייח הוקמה העיר אופירה ... העיר נבנתה על־ידי
     המינהל האזרחי של מרחב שלמה וכמה מאות משפחות מצפון הארץ עברו לגור בה" (no date). No appendix row. Hebrew WP (oldid
@@ -265,6 +269,8 @@ where a source says. "Bulletin" is the JTA archive date.
     Eilat road; bulletin 12 Aug 1971, dateline "JERUSALEM, Aug. 11 (JTA)": "The urban settlement at Sharm el-Sheikh has been named
     Ophira after Ophir", names "to be published tomorrow in the official law journal" (so 12 Aug 1971, derived); bulletin 27 Feb 1973, dateline "JERUSALEM, Feb. 26 (JTA)": "Sharm el-Sheikh now appears on Israeli maps as Ofira". No source read gives a founding day. The
     Official Gazette notice itself was not opened. English WP (oldid 1376952553): "Ofira was settled from 1969" and an airfield opened in 1968.
+    (Second pass, 27 Oct 2026: the day is still [GAP], and no source opened gives one. What was added is dated press, listed in "Second pass": JTA 19 Apr 1971 (Housing Minister: civilian housing is being built at Sharm el-Sheikh) and four United Nations Special Committee reports quoting the Jerusalem Post, Ha'aretz and Radio Israel between July 1972 and May 1977. One of them, A/10272 para. 93, quotes Radio Israel of 20 Feb 1975 on "the inauguration of a permanent settlement near Sharm El-Sheikh"; Hebrew WP's 1969-1975 span is a settlement period, not a day.)
+    (Correction after review, 27 Oct 2026: "four" and "Ha'aretz" in the parenthesis above are wrong. Six United Nations Special Committee reports carry row 15 items (A/8828, A/9148, A/9817, A/10272, A/31/218, A/32/284, see the table in "United Nations Special Committee reports"). They quote the Jerusalem Post, Ma'ariv and Radio Israel, plus one Housing Minister statement with no paper named (A/31/218 para. 75). None of them quotes Ha'aretz on these places; Ha'aretz appears in that table only on rows 5, 6 and 8.)
 
 16. **Neviot [C].** Gvati's text: "ב־1971 הוקמו שני ישובים באזור: מושב נביעות – 68 ק״מ דרומה מאילת ודי־זהב". Appendix:
     "נביעות", "חוף מפרץ אילת", "10.5.71", Moshavim movement. Hebrew WP (oldid 42301992): first settlers came "באמצע
@@ -287,10 +293,12 @@ where a source says. "Bulletin" is the JTA archive date.
     The two JTA items my search returned for "Shalhevet" (bulletins 20 Jun and 9 Jul 1974) are about a scientist
     named Shalhevet Freier, not the place. I found no source that dates the founding or the end. [GAP] beyond the one
     article.
+    (Second pass, 27 Oct 2026: a second source now shows the place existed by mid-1973. UN document A/9148 para. 71 (25 Oct 1973, page image viewed) quotes the Jerusalem Post of 25 July 1973: "about 550 persons already live in a new settlement, Shalhevet, near the Abu Rodeis oil centre". Wikidata Q6970460 gives inception 1971 and a point 28.905347, 33.187047, 1.56 km from the Hebrew WP point in this row (**derived**, haversine). The founding day and the end are still [GAP]; the tag [S] is unchanged because the Jerusalem Post is reached through a UN report, not read. See "Second pass".)
 
 20. **Kadesh Barnea (Nitzanei Sinai) [S, single source].** Hebrew WP (oldid 43790225): "היישוב המקורי הוקם בשנת 1977
     כהיאחזות נח"ל"; after the peace treaty the residents were moved to the Nitzana area and in 1986 to the present site (CBS 2024 row Nitzanei Sinai: year 1986, form 310; see "The CBS file"). One article only; no day, no coordinate, not in Gvati's text or appendix (searched). The same
     article's category says 1986 for the present moshav.
+    (Second pass, 27 Oct 2026: the Sinai site's coordinate is still [GAP]. The Hebrew WP and Wikidata points for "Nitzanei Sinai" (30.904649, 34.397345 and 30.903653, 34.396519) are the present moshav, the CBS row of Ramat Negev, not the Sinai site. New: JTA, bulletin 3 Mar 1978, dateline "JERUSALEM, March 2 (JTA)", says Defense Minister Weizman barred "a group of 50 settlers" from "establishing themselves at Kadesh Barnea in Sinai, about 40 miles southeast of El Arish", on the night before, and that "an advance party has been preparing the land in the area for the past seven months". Sharon, in the archive page text, "contended that Kadesh Barnea was not a new settlement but an existing one"; the item calls the settler group "members of a Labor-oriented moshav movement", not a Nahal outpost. This is [C] with Hebrew WP's "Nahal outpost founded 1977": 1977 may mark the land preparation, and the arrival of settlers was blocked on 1 Mar 1978. See "Second pass".)
 
 ## JTA items and their datelines
 
@@ -320,6 +328,8 @@ The 26 Apr 1976 item adds (not a founding date): ten new settlements, "eight mos
 Raffah approaches in the Gaza Strip"; Dulzin said work is going on building large packing houses, and the item says they are being built at Dikla, Saddot, Kerem Shalom and Sdeh-Nitzha, "described as veteran settlements of the region" (the last two are inside the pre-1967 lines). That line is overstruck on the page; the PDF image reads "Dikla" and "Kerem Shalom" (the archive's text transcribes them "Dikia" and "Kerem Shelom"). The 17 Jan 1975 item also names "Dekel and
 Eshel, sited near Ogda and at present only army camps"; neither name appears among Gvati's 11, so they are [GAP] and
 not rows.
+
+(Second pass, 27 Oct 2026: still [GAP]. JTA searches `Dekel Eshel Ogda` (1 Jan 1974 to 30 Jun 1978: 1 returned, 1 contains "Dekel", the same 17 Jan 1975 item) and `Eshel` (1 Jan 1975 to 31 Dec 1977: 59 returned, 56 contain the string, mostly the name Meshel; the first six snippets read, only the 17 Jan 1975 item is about the place) found nothing else.)
 
 ## Searches
 
@@ -441,6 +451,100 @@ Other negative searches, all on 2026-10-25:
   surveys, and for the Nahal outposts that later moved (Nahal Sinai, Holit, Sufa) the first site is not given by any
   source I read. Rows 12, 14 and 20 have no coordinate. Row 6's coordinate is doubtful (see its row).
 - **No row was settled between [C] values.** The note does not choose one date.
+- (Second pass, 27 Oct 2026, added after review of the list above: Ha'aretz, Davar and Ma'ariv were still not opened, and the Israeli archives still answer 403 from this box, none was tried with changed headers. The Special Committee reports are a new secondary route to the Jerusalem Post, Ha'aretz and Ma'ariv items of 1971-1977; see "Second pass".)
+
+## Second pass (27 Oct 2026)
+
+Status: research only, added after the first pass; nothing above is deleted or reworded. The note on origin/main (`2c6a604d`) has 15 lines that contain "[GAP]" (`grep -c`), in table rows 12, 14, 15 and 20 and in the notes that explain them (rows 12, 14, 15, 19, 20, the Dekel and Eshel sentence, the summary and the legend). Every page below was opened on **27 October 2026** (UTC) by an agent; a person's check is pending. No verified tag was added. (Correction after review, 27 Oct 2026: `grep -c '\[GAP\]'` on `2c6a604d` gives 14 lines; 15 is the count of lines containing `[GAP`, which also catches "[GAP on the day]" in row 15. Both were re-run on that commit.)
+
+### Outcome
+
+| Item | First pass | Second pass | Tag |
+|---|---|---|---|
+| Row 12 Nir Avraham, coordinate | [GAP] | 31.187106, 34.19464 (Hebrew WP GeoData for oldid 43737991; Wikidata Q12040954 gives the same point) | [S] closed |
+| Row 14 Pri'el, coordinate | [GAP] | 31.205333, 34.259139 (Wikidata Q12046985, one source) | [S] closed |
+| Row 15 Ofira, founding day | [GAP] | still [GAP]; dated press added (below) | [GAP] narrowed |
+| Row 19 Shalhevet, existence | one Hebrew WP article | a second source: it existed by 25 Jul 1973 (UN A/9148 para. 71, quoting the Jerusalem Post) | [S] |
+| Row 20 Kadesh Barnea, date | Hebrew WP "Nahal outpost 1977" | JTA of 2 Mar 1978 describes a moshav-movement group barred from occupying the site | [C] with Hebrew WP |
+| Row 20 Kadesh Barnea, coordinate | [GAP] | still [GAP]; the "Nitzanei Sinai" points on Hebrew WP and Wikidata are the present moshav | [GAP] |
+| Dekel and Eshel (not rows) | [GAP] | still [GAP], searched again | [GAP] |
+| The main gap: no primary record | open | still open; the United Nations reports below are a second secondary route to the Israeli press | [GAP] |
+
+### Coordinates read
+
+| Row | Source | Point (lat, lon) | Revision or time | Note |
+|---|---|---|---|---|
+| 12 Nir Avraham | Hebrew WP GeoData, `https://he.wikipedia.org/w/api.php?action=query&titles=ניר אברהם&prop=coordinates` | 31.187106, 34.19464 | oldid 43737991 | the first pass read the infobox fields and found none; GeoData returns this point |
+| 12 Nir Avraham | Wikidata Q12040954 `https://www.wikidata.org/wiki/Special:EntityData/Q12040954.json` | 31.187106, 34.19464 | lastrevid 1993398120 | inception 1977, dissolved 1982 |
+| 14 Pri'el | Wikidata Q12046985 | 31.205333, 34.259139 | lastrevid 2525223423 | inception 1978; Hebrew WP GeoData for oldid 43738223: none |
+| 19 Shalhevet | Wikidata Q6970460 | 28.905347, 33.187047 | lastrevid 2331452554 | inception 1971; 1.56 km from the Hebrew WP point of row 19 (**derived**, haversine, R = 6371.0088 km) |
+| 20 | Hebrew WP GeoData "ניצני סיני" (oldid 43790225) and Wikidata Q2777586 | 30.904649, 34.397345 and 30.903653, 34.396519 | read 27 Oct | the present moshav (CBS row Nitzanei Sinai, Ramat Negev, 1986), not the Sinai site |
+| 15 Ofira | Hebrew WP GeoData (oldid 43417313) | 27.853799, 34.308157 | read 27 Oct | the same point as the first pass (he WP) |
+
+All are [S]: Wikipedia and Wikidata coordinates are not surveys.
+
+### United Nations Special Committee reports (secondary: each quotes a newspaper or radio, named)
+
+Documents fetched through `https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf` on 27 Oct 2026. A/8089 (1970), A/8389 (1971), A/8828 (1972), A/9817 (1974), A/10272 (1975), A/31/218 (1976) and A/32/284 (1977) have a text layer, read with `pdftotext -layout` (OCR errors in it are possible, so the quoted strings are short); A/9148 (25 Oct 1973) has none, so its 50 pages were rendered at 150 dpi and read with tesseract, and **page 27 was viewed as an image**. The press item is [S] and is not counted as read. A/8089 has no Sinai settlement item; A/8389 names "Northern Sinai and Sharm El-Sheikh" only in a general sentence.
+
+| Document and paragraph | Press quoted and its date | What it says (my wording unless in quotes) | Rows |
+|---|---|---|---|
+| A/8828 (9 Oct 1972) para. 28(c) | Jerusalem Post, 20 Jul 1972, on a Knesset statement of 19 Jul 1972 | 14 settlements "in Gaza and Sinai" since June 1967; the list for "Gaza Strip and Sinai" reads: "Nahal Netzarim, Nahal Kfar Darom, Sadot, Dikla, Nahal Sinai, Nahal Yam, Neot Hakikar, Ein Hatzeva, Nahal Tzofar, Nahal Ketura, Neviot, Di-Zahav, Ophira (Sharm el-Sheikh) and Nahal Morag" (Neot Hakikar, Ein Hatzeva, Tzofar and Ketura are in the Arava, inside the pre-1967 lines) | 1-4, 15-17 existed by 19 Jul 1972 |
+| A/8828 para. 37(b)-(e) | Jerusalem Post, 28 Dec 1971, 19 Jan 1972, 16 Jun 1972, 10 Jul 1972 | JNF chairman: 8 to 10 settlements planned between Gaza and El Arish; Dayan visited "the three Nahal settlements in Sinai" and conversion of Nahal Sinai and Dikla to civilian status was discussed; decision that Nahal Sinai becomes civilian (16 Jun 1972); the Prime Minister: 300 families registered for Sharm el-Sheikh, 100 houses under construction | 2, 3, 15 |
+| A/9148 (25 Oct 1973) para. 66 | Jerusalem Post, 8 Sep 1972 | three new settlements to be located on land near Rafah formerly used by Arabs | Rafah approaches |
+| A/9148 para. 68 | Ha'aretz, 24 Oct 1972 and 26 Dec 1972 | plan for a city in the southern Gaza Strip, then a "regional centre" of 300 housing units | 5, 6 |
+| A/9148 para. 70 | Jerusalem Post, 4 Feb 1973 | four-stage housing plan for Sharm el-Sheikh: 90 families in 1973, 225 units in 1974, then 370 and 320 | 15 |
+| A/9148 para. 71 (page image viewed) | Jerusalem Post, 25 Jul 1973 | "about 550 persons already live in a new settlement, Shalhevet, near the Abu Rodeis oil centre"; Di-Zahav "(Dahab)" and Neviot "(Nuweibeh)" are called new settlements where more families would be settled | 19, 16, 17 |
+| A/9817 (4 Nov 1974) paras. 42-43 | Jerusalem Post, 14 Mar 1974; Ma'ariv, 20 Mar 1974 | JNF had prepared land on 200 of 600 dunams for "Yamit"; "the foundation stone of the first house in 'Yamit' had been laid", 1.5 km from the coast and 8 km west of the Northern Road in Sinai | 5 (not a [GAP] row; a further date next to row 5's Dec 1975 cornerstone) |
+| A/9817 paras. 62-64 | Ma'ariv, 28 Mar 1974; Radio Israel, 30 Jul 1974; Jerusalem Post, 15 Sep 1974 | extra money for houses at Sharm el-Sheikh; Ophira to be an industrial city within 10 years; 15 families living in a new housing project, 44 more to receive keys | 15 |
+| A/10272 (27 Oct 1975) para. 40 | Ha'aretz, 24 Nov 1974 | "the establishment of a new settlement in the Gaza Strip called 'Ugda'" | 8 (not a [GAP] row; Gvati's date is 3 Jun 1975) |
+| A/10272 paras. 93-96 | Radio Israel, 20 Feb 1975, 8 Apr 1975 and 10 May 1975; Jerusalem Post, 11 and 18 May 1975 | "the inauguration of a permanent settlement near Sharm El-Sheikh"; 46 houses completed; a dispute between the Housing Minister and the head of the Southern Sinai Civil Authority over whether a plan for 1,000 units exists; Radio Israel of 10 May: the Housing Minister said the Government had only voted money and housing would be built only for persons employed at Sharm El-Sheikh | 15 |
+| A/31/218 (1976) paras. 74-75 | Ma'ariv, 19 Dec 1975 | "the establishment of a settlement near El-Arish, known as Nahal Haruvit"; para. 75 adds, from the Housing Minister (no paper named), 500 families expected at Ophira by 1977 | 11 (not a [GAP] row), 15 |
+| A/32/284 (27 Oct 1977) paras. 36, 74 | Ma'ariv, 14 Jan 1977 and 8 May 1977 | plan for 15 settlements in the Rafah Salient; 500 flats at Sharm el-Sheikh by the beginning of 1978 | 15 |
+
+Corrections after review (27 Oct 2026), each checked against the page image at 200 dpi: A/8828 p. 17 prints "Neot Hakikar" (the text layer reads "Neat"); A/9148 para. 66 prints "The Jerusalem Post on 8 September 1972" (this note first said 9 Sep); A/9817 paras. 43 and 62 print "Ma'ariv" (the text layer reads "Ha'ariv"); the rows above are corrected in place. A/10272 para. 96 (page 18) prints "On 10 May, Radio Israel reported a statement by the Minister of Housing", which is now in the A/10272 paras. 93-96 row.
+
+The six reports with a text layer and the OCR of A/9148 were searched for the names Nir Avraham, Priel, Zaharon, Kadesh, Nitzanei, Talmei and Haruvit: only Haruvit matched (A/31/218). Nothing in them dates a founding day of Ofira.
+
+### JTA items opened (PDFs, 27 Oct 2026; tesseract OCR at 200 dpi, dateline as read)
+
+| Bulletin | PDF | Item | Dateline read | Event date |
+|---|---|---|---|---|
+| 20 Apr 1971 | pdfs.jta.org/1971/1971-04-20_076.pdf | Civilian housing slated for Sharm el-Sheikh (crop of the page viewed as an image) | JERUSALEM, April 19 (JTA) | 19 Apr 1971; the Housing Minister "disclosed today that civilian housing is being built at Sharm el-Sheikh"; the housing was in an "advanced stage" and "open to anyone who wanted to settle there", the likely candidates "Army officers and workers employed at Sharm el-Sheikh" |
+| 19 May 1975 | pdfs.jta.org/1975/1975-05-19_096.pdf | Rabin on 200 civilian housing units at Ophira | JERUSALEM, May 18 (the agency tag is garbled in the OCR) | 18 May 1975; "complete 200 civilian housing units at Ophira" by April 1977 |
+| 10 Jan 1978 | pdfs.jta.org/1978/1978-01-10_006.pdf | JNF to continue work in the Rafah salient | JERUSALEM, Jan. 9 (JTA) | 9 Jan 1978; work "at Pri'el and Talmei Yosef, near Sadot, where it was begun some months ago" |
+| 3 Mar 1978 | pdfs.jta.org/1978/1978-03-03_043.pdf | Weizman bars a group of 50 from settling at Kadesh Barnea | JERUSALEM, March 2 (JTA) | 2 Mar 1978; the order was given "last night", so 1 Mar 1978 (derived) |
+| 27 Sep 1978 | pdfs.jta.org/1978/1978-09-27_188.pdf | Behind the Headlines: the fate of Yamit, page 4 | YAMIT, Sept. 26 (JTA) | 26 Sep 1978; "two groups of new settlers took over their homes yesterday", among them "28 families of immigrants from the Soviet Union who are settling in Priel", so 25 Sep 1978 (derived) |
+
+### Searches run on 27 Oct 2026
+
+Endpoint as in "How it was done"; `per_page=100`, `page=1`; "contain" counts returned items whose text matches the pattern in brackets. The first-pass queries `Ofira` and `Ophira` (1 Jun 1967 to 30 Jun 1978) were run again and returned the same 15 (4 contain) and 103 (100 returned, 6 contain).
+
+| Query | Date range | Total | Returned | Contain (pattern) |
+|---|---|---|---|---|
+| `Kadesh Barnea` | 1967-06-01 to 1978-06-30 | 3 | 3 | 1 (Kadesh): the 3 Mar 1978 item |
+| `Priel` | 1977-01-01 to 1978-12-31 | 113 | 100 | 2 (`Pri.?el`): 10 Jan 1978 and 27 Sep 1978 |
+| `Pri-el` | 1977-01-01 to 1978-12-31 | 51 | 51 | 1 (`Pri.?el`): 10 Jan 1978 |
+| `Nir Avraham` | 1976-01-01 to 1978-12-31 | 44 | 44 | 0 (`Nir Avraham\|Nir Abraham`) |
+| `Nir Abraham` | 1976-01-01 to 1978-12-31 | 52 | 52 | 0 (`Nir Abra`) |
+| `Zaharon` | 1977-01-01 to 1978-12-31 | 255 | 100 | 0 (`Zahar\|Zahron`) |
+| `Zahron` | 1977-01-01 to 1978-12-31 | 270 | 100 | 0 (`Zahr`) |
+| `Shalhevet` | 1971-01-01 to 1975-12-31 | 2 | 2 | 2: both about the scientist Shalhevet Freier (20 Jun and 9 Jul 1974) |
+| `Abu Rodeis` | 1971-01-01 to 1975-12-31 | 96 | 96 | 95 (`Rod?eis`): the first six snippets are about the oil fields; the rest were not read |
+| `Abu Zneima` | 1971-01-01 to 1975-12-31 | 7 | 7 | 2 (`Zneima\|Rudeis\|Rodeis`): neither is about a settlement |
+| `Ofira` | 1969-01-01 to 1971-12-31 | 0 | 0 | 0 |
+| `Sharm el-Sheikh civilian settlement` | 1969-01-01 to 1972-12-31 | 4 | 4 | 4 (`civilian\|settle`, a loose pattern): one item is about Sharm el-Sheikh housing (20 Apr 1971) |
+| `Dekel Eshel Ogda` | 1974-01-01 to 1978-06-30 | 1 | 1 | 1 (Dekel): the 17 Jan 1975 item already read |
+| `Eshel` | 1975-01-01 to 1977-12-31 | 59 | 59 | 56 (`Eshel`, which also matches "Meshel"): the first six snippets read |
+
+URL form: `https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<from>T00%3A00%3A00&before=<to>T23%3A59%3A59&per_page=100&page=1`. Other: Wikidata `https://www.wikidata.org/wiki/Special:EntityData/<Q>.json` for Q12040954, Q12046985, Q2777586, Q6970460; Hebrew WP API `prop=coordinates` for ניר אברהם, פריאל (יישוב), ניצני סיני, אופירה, שלהבת (יישוב).
+
+### Still [GAP] after the second pass
+
+- Row 15 Ofira: the founding day, and a record from the state (Yalkut Hapirsumim) for the name of Aug 1971; Hebrew-language Israeli papers.
+- Row 20 Kadesh Barnea: the Sinai site's coordinate; what Hebrew WP's "Nahal outpost 1977" rests on, since the JTA item of 2 Mar 1978 describes a moshav-movement group and a site "under preparation".
+- Rows 12 and 14: a coordinate from a map. The two above are Wikipedia-family points, not surveys.
+- Dekel and Eshel; the days of Hebrew-WP-only rows; every Israeli archive (State Archives, Knesset, NLI, JPress), which answer 403 from this box and were not tried with changed headers.
 
 ## Sources and revisions
 
@@ -452,5 +556,9 @@ Other negative searches, all on 2026-10-25:
 | JTA Daily News Bulletin | https://www.jta.org/archive/ and http://pdfs.jta.org/ (items in the datelines table) | 2026-10-25 | press dates, datelines |
 | Hebrew Wikipedia, oldids | חבל ימית 43082391; פתחת רפיח 41586408; מרחב שלמה 43791984; אבשלום (סיני) 41169976; אוגדה (יישוב) 43737869; דקלה (יישוב) 43737895; חולית (סיני) 41170009; חרובית (יישוב) 43737904; ימית 43845355; נאות סיני 43737905; ניר אברהם 43737991; נתיב העשרה (סיני) 43738008; פריאל (יישוב) 43738223; סופה (סיני) 42404279; שדות 43738231; תלמי יוסף (סיני) 43738234; אופירה 43417313; די זהב 43737890; נביעות (יישוב) 42301992; שלהבת (יישוב) 42301995; זהרון (יישוב) 43737898; ניצני סיני 43790225; נח"ל ים 44108692; נח"ל תרשיש 42404149; בסיס איתם 43678026; עצמונה (סיני) 43279026; חצר אדר 42805245; מעוז הים (סיני) 43365334 | 2026-10-25 | dates, civil dates, coordinates |
 | English Wikipedia, oldids | Yamit 1378290812; Dikla 1304841200; Netiv HaAsara, Sinai 1318255352; Sufa, Sinai 1302520256; Holit 1375608090; Talmei Yosef, Sinai 1379995738; Pri'el 1303822827; Ofira 1376952553; Nahal Yam 1376881599; Pri Gan 1376006385 | 2026-10-25 | coordinates, Holit infobox |
+| Second pass (27 Oct 2026): United Nations Special Committee reports | https://documents.un.org/api/symbol/access?s=A/8828&l=en&t=pdf and the same with A/8089, A/8389, A/9148, A/9817, A/10272, A/31/218, A/32/284 | 2026-10-27 | press items on rows 15, 19, 14, 5, 8, 11 |
+| Second pass: Wikidata | https://www.wikidata.org/wiki/Special:EntityData/Q12040954.json (also Q12046985, Q2777586, Q6970460) | 2026-10-27 | coordinates of rows 12, 14, 19, 20 |
+| Second pass: Hebrew Wikipedia GeoData | https://he.wikipedia.org/w/api.php?action=query&prop=coordinates (oldids 43737991, 43738223, 43790225, 43417313, 42301995) | 2026-10-27 | coordinates |
+| Second pass: JTA Daily News Bulletin | pdfs.jta.org/1971/1971-04-20_076.pdf, 1975/1975-05-19_096.pdf, 1978/1978-01-10_006.pdf, 1978/1978-03-03_043.pdf, 1978/1978-09-27_188.pdf | 2026-10-27 | datelines of rows 15, 14, 20 |
 
 URL form for a revision: `https://he.wikipedia.org/w/index.php?oldid=<n>` and `https://en.wikipedia.org/w/index.php?oldid=<n>`.

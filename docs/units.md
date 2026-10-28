@@ -139,15 +139,19 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   Nothing is invented"). The Syrian, Iraqi and Lebanese figures rest on Glubb's figures alone (Rogan and Shlaim
   reproduce them), merged as data only and marked `to_verify` (owner, 17 October 2026, on #860).
 - **Two places at once.** At the first truce the Egyptian row stands at both its forward base (Isdud) and its rear base
-  (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time. Only a row the map does not draw may do
-  that: a drawn row has one token, at one place at a time. How PR 17 draws such a row is its decision.
+  (Majdal) (owner, 17 October 2026, on #860). Its two anchors overlap in time, the only drawn row whose do. It is drawn as
+  one token (owner, 27 October 2026: "One token"): in the GDD loop the row's one sim unit, from Gaza; in the legacy loop
+  the first anchor whose window holds the date (`UnitRoster.AnchorAt`), so the forward base. Majdal stays in the row and
+  in the card's sector text.
 - **Drawn only with their own figures** (owner, 17 October 2026, #740): "Data only. PR 1 adds the sourced Arab rows to
   `units_1948.yaml` and filters them off the map in `UnitRoster` until Phase 5 PR 17's figures land, after its
   sensitivity review. Nothing is drawn with IDF figures, and there is no placeholder art." Tal Heuberger's 1948 Collection has
   figures for two forces, and Tal Heuberger's unit models count as reviewed and approved (owner, 17 October 2026, #756), so
   those two are drawn (issue #665; see "The 1948 Collection on the tokens"): the Arab Legion and the Arab Liberation
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
-  those rows; the Egyptian, Syrian, Iraqi and Lebanese rows give no token, take no spot and clear no ground for the kits.
+  those rows. Tal Heuberger's generated figures have since joined them (owner, 27 October 2026, #756: "Sign off all 19"):
+  the Syrian, Iraqi and Egyptian infantry on their forces' tokens. The Lebanese row (hidden) gives no token, takes no spot
+  and clears no ground for the kits.
   A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
   bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
   strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
@@ -263,6 +267,7 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 | C12F Palmach scout | Harel's third figure, at Sha'ar HaGai on the convoy road | Harel's row (a Palmach brigade escorting the convoys, Izkor); en.wiki Netiva Ben-Yehuda (a Palmach woman's duties included "escorting convoys") | always |
 | C08 Arab Legion | the Arab Legion's three figures | the row; owner, #756 (Tal Heuberger's models approved) | the row's windows |
 | C09 irregular | the Arab Liberation Army's three figures | en.wiki Arab Liberation Army: "an irregular army" of volunteers | the row's windows |
+| Egyptian infantry (Tal Heuberger, generated) | the Egyptian Expeditionary Force's three figures, one token (in the legacy loop the first anchor whose window holds the date) | the row; owner, 27 October 2026 (#756: "Sign off all 19"; "One token") | the row's windows |
 | H02 65 mm gun ("Napoleonchik") | on the base behind the trio: Carmeli, Givati, Harel, Yiftach, Negev | Ben-Gurion's diary, 11 July 1948 (the cannon distribution) | 11 July 1948 |
 | H01 sandwich armoured car | on the base behind the trio: Givati | Wikimedia Commons, "Givati force" (GPO, Zoltan Kluger, 12 June 1948): a jeep leading an armoured unit of the Givati Brigade; the type is read from the picture (#1536) | 12 June 1948 |
 | H03 Willys jeep | on the base behind the trio: Harel, Negev | Harel: the Burma Road jeep convoy (Isseroff); Negev: the Negev Beasts' jeep unit at Negba (en.wiki Battles of Negba) | 1 June and 2 June 1948 |

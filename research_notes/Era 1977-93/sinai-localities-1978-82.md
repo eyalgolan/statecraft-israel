@@ -47,6 +47,10 @@ The question: which Israeli localities and Nahal outposts were founded in Sinai 
   localities lie between the 13 and the 15 (**derived**: 15 - 13 = 2); that is [GAP].
 - **Coordinates:** 2 of the 4 section A rows have a point from one source (Wikidata, [S]); 2 have none ([GAP]). No
   coordinate comes from a map I opened.
+- **Second pass (27 Oct 2026):** one of the open questions is narrowed (a place JTA calls "the Kadesh Barnes settlement" existed
+  by 3 Feb 1982, read as Kadesh Barnea (**derived**); when it was settled is still [GAP]); two counts and the 8 Jan 1978 Cabinet decision text are added from a
+  US record and UN reports; the other open questions stay [GAP] with the search record. See "Second pass (27 Oct 2026)"
+  below. Nothing above this line was changed.
 
 ## Conventions and tags
 
@@ -63,6 +67,10 @@ The question: which Israeli localities and Nahal outposts were founded in Sinai 
   there the printed words are quoted and any difference in the archive text is given in a bracket. Hebrew quotes are
   given without vowel signs; translations are mine. Each quoted string was checked by script against the page text I
   fetched.
+- **Second pass, 27 Oct 2026 (added line, the legend above is unchanged):** what an official published record prints and
+  an agent read on 27 Oct 2026 is **[V, agent read 2026-10-27; a person's check pending]**; a UN Special Committee report
+  that relays a newspaper is **[S]** and names the paper; JTA stays **[S]**. Every page below tagged "second pass" was
+  opened on 27 October 2026 (UTC).
 
 ## How it was done
 
@@ -178,7 +186,7 @@ The page prints "Maoz Hayam"; the archive text of the item reads "Maoz Hayom" (a
 which is OCR. That is why the search "Maoz Hayam" (row 4 of "Searches") returned 1 item but 0 containing the term: the
 archive text says Hayom, so the string "Maoz Hayam" is not in it; "Maoz Hayom" (row 19) returned the same item, 1
 containing, and "Maoz Ha-Yam" returned 0. No founding date or day from any source read; the Hebrew WP values are
-secondary. No coordinate (Wikidata Q140470160 has none): [GAP].
+secondary. No coordinate (Wikidata Q140470160 has none): [GAP]. (Second pass, 27 Oct: still [GAP], search record in "Second pass (27 Oct 2026)" below.)
 
 **A4. Pri Gan (original, Sinai) [GAP].** The Hebrew WP navigation template and the article `חבל ימית` (oldid 43082391)
 list "פרי גן" among the localities of the Yamit region. The Hebrew article on the present moshav of that name (oldid
@@ -191,7 +199,7 @@ permanent site). The Hebrew article on the original place is a red link (title `
 page on 2026-10-25). JTA bulletin 19 Jan 1982 lists "Pri Gan" among moshavim in the western Negev whose first settlers have
 moved in: that is read here, **derived**, as the later locality, since it lists Suffa and Holit, which also moved, beside it. The present moshav Pri Gan is row 50 of `research_notes/Era 1977-93/localities-1977-93-pre67.md`. No founding date and no coordinate for a Sinai Pri Gan: [GAP]. Tried: the two
 Wikipedias, Wikidata (Q2890191 is the present moshav, 31.2211, 34.3545), GeoNames, JTA ("Pri Gan", 1978-01-01 to
-1982-04-30, 661 total, first 100 read, 1 containing the term, the 19 Jan 1982 item).
+1982-04-30, 661 total, first 100 read, 1 containing the term, the 19 Jan 1982 item). (Second pass, 27 Oct: still [GAP], search record in "Second pass (27 Oct 2026)" below.)
 
 ### Section B: earlier rows with a window event
 
@@ -209,7 +217,7 @@ decided on Sunday (26 Feb 1978, **derived**) that "there would be no new settlem
 **[C]:** a 1977 Nahal outpost (Hebrew WP) against a site that on 2 March 1978 had a land-preparation party and a moshav group
 of 50 not yet permitted to settle (JTA); JTA names a moshav movement, Hebrew WP a Nahal outpost. Whether and when the group
 settled is [GAP]: JTA "Kadesh Barnea", 1978-01-01 to 1982-04-30, returned 5 of 5, 1 containing the term (this item);
-"Kadesh-Barnea" returned 5, 0 containing; "Nitzanei Sinai" returned 2, 0 containing the string.
+"Kadesh-Barnea" returned 5, 0 containing; "Nitzanei Sinai" returned 2, 0 containing the string. (Second pass, 27 Oct: narrowed, found that a "Kadesh Barnes settlement" existed by 3 Feb 1982, see "Second pass (27 Oct 2026)" below; when it was settled is still [GAP].)
 
 **B2. Holit.** JTA bulletin 16 Jan 1978, a news brief with dateline "TEL AVIV (JTA)" and no day (image): "Nahal Holit, a
 para-military settlement in the Rafah salient of northern Sinai, was turned over to civilian control Thursday. It has
@@ -266,7 +274,7 @@ localities of the Israeli period in the Shalom Region (Ofira, Neviot, Di Zahav, 
   land reclamation. He said most consisted of a water tower surrounded by a fence." The "13 outposts" (Sharon, as JTA
   reports it) and Hebrew WP's "ישובי הדמי" are the same class of site on the reading of Hebrew WP's Atzmona article, which
   says Atzmona was set up on one of them; no source read names the 13 or gives their dates: [GAP]. They are not localities
-  and are outside this note.
+  and are outside this note. (Second pass, 27 Oct: still [GAP]; one more mention of the outposts and a new count are in "Second pass (27 Oct 2026)" below.)
 - **Regional body, 1978 (State Comptroller, [V, agent read 2026-10-25; a person's check pending]).** Annual Report 30,
   printed p. 802: "במחצית השנייה של 1978 הקימו המתיישבים בפיתחת רפיח ובצפון סיני אגודה שיתופית בשם "איתם", כמינהל
   אזורי, שבמסגרתו מאוגדים 11 יישובים. משרד הפנים רואה באגודה מעין מועצה אזורית. שלושה יישובים לא הצטרפו לאגודה."
@@ -292,6 +300,143 @@ localities of the Israeli period in the Shalom Region (Ofira, Neviot, Di Zahav, 
   [as printed] from the Atzmona settlement, which was established illegally in Sinai one year ago. Soldiers evicted the
   settlers." It cites Yediot Aharonot of 18, 19, 24 and 25 March 1980 and Ha'aretz of 25 March 1980 (none opened). The two
   differ on the number (33 detained; some 80 members) and on the distance; this note does not choose. Outside this note.
+
+## Second pass (27 Oct 2026)
+
+A second pass on the open ([GAP]) questions of this note, run on 27 October 2026 (UTC). The text above is unchanged;
+this section is added after it and the first-pass lines point here. Result, counted by question (**derived**: my
+count of the open questions named in the first pass): 7 open questions, 1 narrowed (B1, whether the place existed), 6 still
+[GAP]. The questions: (1) Pri Gan in Sinai, founding date and point (A4); (2) Maoz HaYam, founding day and point (A3);
+(3) whether and when the Kadesh Barnea group settled (B1); (4) which two localities lie between the counts of 13 and
+15; (5) the names of the 13 outposts of 1978; (6) localities of the window that no list read mentions; (7) any
+coordinate from a map.
+
+Sources used, all opened on 27 October 2026 (UTC): the UN Special Committee reports A/33/356, A/34/631, A/35/425,
+A/36/579 and A/37/485 (`https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf`; downloaded 2,639,242, 6,762,152,
+4,475,171, 8,540,129 and 5,645,981 bytes; text layer searched, the two paragraphs quoted below read on the page image);
+the Foreign Relations of the United States volume VIII (FRUS 1977-80 vol. VIII, TEI file
+`https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1977-80v08.xml`, 7,440,837 bytes, read as text,
+not on a page image); and the JTA Daily News Bulletin (archive wp-json endpoint as in "How it was done"; the PDF read
+on a page image).
+
+**B1. Kadesh Barnea: narrowed.** JTA bulletin 5 Feb 1982, page 3, dateline "TEL AVIV, Feb. 4 (JTA)" (image), headline
+"ARMY DISPERSES SINAI SETTLERS TRYING TO HALT DISMANTLING OF WATER PIPELINE" (PDF
+`http://pdfs.jta.org/1982/1982-02-05_025.pdf`, 4 pages, no text layer; the PDF was found by trying
+`_022` to `_030`, of which only `_025` answered 200, and the item by OCR of the 4 pages; page 3 read on the 200 dpi image). It prints: "Some 50
+Jewish Sinai settlers who had been trying to disrupt the dismantling of a water pipeline in the Kadesh Barnes settlement
+were dispersed by the army yesterday", so on 3 Feb 1982 (**derived**: "yesterday" against the dateline of 4 Feb), and
+"The pipeline being dismantled is part of a central line connecting the Kadesh Barnes settlement with Yamit and the
+southern Gaza Strip." The page prints "Barnes" (not "Barnea"). **[S]** (press). What this gives: a place JTA calls "the
+Kadesh Barnes settlement" existed in early February 1982 and was linked by a water line to Yamit. That it is the site of
+the 2 March 1978 item (B1 above) is **derived** from the name; the item gives no founding date and no number of
+residents. Still [GAP]: when and by whom it was settled. The [C] of the first pass stands. Searches: "Kadesh Barnes",
+1978-01-01 to 1982-04-30, total 29, returned 29, 1 containing the term (this item); "Kadesh", same range, total 70,
+returned 70, 2 containing (this item and the 3 Mar 1978 item); "Kadesh" 1982-04-01 to 1982-04-30, total 5, returned 5, 0
+containing.
+
+**The 8 January 1978 Cabinet decision, in a US record.** The first pass says the decision is known only from JTA ("What
+was not done"). FRUS 1977-80 vol. VIII, document 188, a telegram from the Department of State to the Embassy in Israel,
+"Washington, January 9, 1978, 2154Z" (p. 922), prints the text of a message from the Prime Minister to the President
+that the Israeli Ambassador handed to the Secretary of State "today, January 9": "The Government of Israel took
+yesterday the following decision: 3. 'To strengthen the existing settlements in Pithat Rafiah (the area between Rafiah
+and El-Arish), and alongside the Gulf of Eilat by adding arable land for cultivation and increasing the civilian
+population both urban and rural.' 4. The Cabinet Secretary was instructed, if asked whether this means the
+establishment of new settlements in the two areas, to answer no." **[V, agent read 2026-10-27; a person's check
+pending]** for what the telegram prints. "Yesterday" is 8 Jan 1978 (**derived**: the message is described as handed over
+on 9 Jan; the telegram does not print the day the message was written), which agrees with the dateline of the JTA
+bulletin of 9 Jan 1978 ("Jerusalem, Jan. 8").
+
+**Counts and one more mention of the outposts (the two localities between 13 and 15 stay unnamed: [GAP]).**
+
+- **FRUS 1977-80 vol. VIII, document 194, Memorandum of Conversation, Jerusalem, 16 Jan 1978, 9:35 to 10:50 p.m. (p.
+  941), [V, agent read 2026-10-27; a person's check pending]** for what the memorandum prints: "Secretary Vance asked how
+  many settlements there are in the Sinai. He asked about the relationship of Israeli law to the settlements. The Prime
+  Minister said that Israeli law does cover the settlements. He referred to Yamit, and 8 to 10 other agricultural
+  settlements. The total population was 3000. The Secretary asked if this included those in Rafah and those on the coast
+  toward Sharm al-Shaikh as well. Foreign Minister Dayan said it included both places, that there are settlements in the
+  north and some on the gulf." Yamit plus 8 to 10 is 9 to 11 localities (**derived**), for the north and the Gulf coast
+  together, against "Holit is the 13th settlement in the Rafah area" in the JTA bulletin of 16 Jan 1978 (first pass, B2)
+  and the 13 of the State Comptroller (first pass). The memorandum is a note-taker's record of a spoken answer, not a
+  list; this note does not reconcile the figures and does not choose.
+- **UN A/36/579, page 24, paragraph 82 (read on the page image), [S]:** "Another source gave the following figures: 122
+  settlements had been established since 1967 in the occupied territories; 68 of those had been established on the West
+  Bank, 5 in the Gaza Strip, 20 in the Sinai and Rafah area and 29 on the Golan Heights." The paragraph's sources are
+  "Ha'aretz, 10 September; Asha'b, 11 September; Al Ittihad, 19 September 1980" as printed. The report relays a
+  newspaper; the paper itself was not opened, and the figure is for 1967 to about September 1980, not for the window.
+  68 + 5 + 20 + 29 = 122 (**derived**).
+- **UN A/33/356, page 21, paragraph 78 (read on the page image), [S]:** the Ministry of Housing's provisional-construction
+  budget, of which "The rest of the budget is to be spent on maintenance of the outposts established in the Rafah
+  Salient" (the report's citation: "Ha'aretz, 6 June 1978"). No number and no name of an outpost. The 13 outposts of the JTA bulletin of 7 Apr 1978 are still not named by any source
+  read: [GAP].
+
+**Questions that stay [GAP], with what was tried on 27 Oct 2026.**
+
+- **Pri Gan in Sinai (A4).** JTA, range 1978-01-01 to 1982-04-30: "Peri Gan" total 747, returned 100, 0 containing the
+  term; "Pri Gan" total 661, returned 100, 1 containing (the 19 Jan 1982 item of the first pass, no new item). The UN
+  reports A/33/356, A/34/631, A/35/425, A/36/579 and A/37/485 (text layer, which is noisy OCR, so this is not a proof for
+  the page images) were searched for "pri gan" and "priel": no match. FRUS vol. VIII was searched for "pri gan": no match.
+  The Hebrew Wikipedia title the first pass tried was not retried. No founding date, no point.
+- **Maoz HaYam (A3).** JTA "Maoz", same range, total 12, returned 12, 5 containing the string: the 5 Mar 1982 item of the
+  first pass; an item of 4 Mar 1982 whose archive text (not read on the image) says the removed squatters "were
+  identified as members of two ultranationalist groups, Maoz and Kach", a group named Maoz, which the item does not
+  connect to the place; two items on kibbutz Maoz Haim (1 Apr 1981, 17 Mar 1978); one on Prof. Moshe Maoz (11 Jun 1979).
+  The UN reports and FRUS vol. VIII: no match for "maoz". No founding day, no point.
+- **Localities no list mentions (6) and the two between 13 and 15 (4).** JTA, range 1978-01-01 to 1982-04-30, single
+  words: "Diklah" total 19, returned 19, 0 containing; "Dikla" total 0; "Avshalom" total 116, returned 100, 0 containing;
+  "Haasara" total 4, returned 4, 0 containing; "Netiv" total 134, returned 100, 0 containing; "Ugda" total 4, returned 4, 2
+  containing (20 Apr 1982 and 17 Mar 1982, both after the founding, not lists); "Sadot" total 1356, returned 100, 2
+  containing (27 and 20 Apr 1982); "Neot Sinai" total 441, returned 100, 1 containing (30 Dec 1981, the border
+  terminal); "Haruvit" total 7, returned 7, 1 containing (14 Jan 1982); "Eitam" total 128, returned 100, 5 containing (all
+  five concern the Eitam air base, not the cooperative society of the Comptroller); "outposts" total 168, returned 100, 11
+  containing (none on Sinai); "salient" total 470, returned 100, 6 containing; "Rafiah" total 294, returned 100, 3
+  containing; "Nitzanei" total 8, returned 8, 0 containing. None gives a list of the Sinai localities or the two missing
+  names. The FRUS volume IX file (`frus1977-80v09.xml`) answered 200 but is a 12,281-byte header with no document text, so
+  it was not searched; the other FRUS volume IX files were not looked for.
+- **No map (7).** No map was opened in this pass. Israeli sources: the National Library newspaper pages answered HTTP 403
+  again (`https://www.nli.org.il/he/newspapers/dav/1982/01/21/01/article/1`, 6,732 bytes, and
+  `https://www.nli.org.il/en/newspapers/davar/1982/01/21`, 6,678 bytes, 27 Oct 2026); the JPress address answered 301
+  and was not followed further. No header was changed to get past a 403.
+
+### Second-pass searches, run 2026-10-27
+
+Same endpoint and method as "Searches" above (page 1 only; "Containing" is my script's count of returned items whose text
+or title contains the query string). All range 1978-01-01 to 1982-04-30 unless the row says otherwise.
+
+| # | Query | Range | Total | Returned | Containing |
+|---|---|---|---|---|---|
+| 49 | `Kadesh Barnes` | 1978-01-01 to 1982-04-30 | 29 | 29 | 1 |
+| 50 | `Barnes` | 1978-01-01 to 1982-04-30 | 2834 | 100 | 0 |
+| 51 | `Kadesh` | 1978-01-01 to 1982-04-30 | 70 | 70 | 2 |
+| 52 | `Kadesh` | 1982-04-01 to 1982-04-30 | 5 | 5 | 0 |
+| 53 | `Kadesh Barnea` | 1978-01-01 to 1982-04-30 | 5 | 5 | 1 |
+| 54 | `Kadesh-Barnea` | 1978-01-01 to 1982-04-30 | 5 | 5 | 0 |
+| 55 | `Nitzanei` | 1978-01-01 to 1982-04-30 | 8 | 8 | 0 |
+| 56 | `Peri Gan` | 1978-01-01 to 1982-04-30 | 747 | 100 | 0 |
+| 57 | `Pri Gan` | 1978-01-01 to 1982-04-30 | 661 | 100 | 1 |
+| 58 | `Maoz` | 1978-01-01 to 1982-04-30 | 12 | 12 | 5 |
+| 59 | `Dikla` | 1978-01-01 to 1982-04-30 | 0 | 0 | 0 |
+| 60 | `Diklah` | 1978-01-01 to 1982-04-30 | 19 | 19 | 0 |
+| 61 | `Avshalom` | 1978-01-01 to 1982-04-30 | 116 | 100 | 0 |
+| 62 | `Eitam` | 1978-01-01 to 1982-04-30 | 128 | 100 | 5 |
+| 63 | `Haruvit` | 1978-01-01 to 1982-04-30 | 7 | 7 | 1 |
+| 64 | `Netiv` | 1978-01-01 to 1982-04-30 | 134 | 100 | 0 |
+| 65 | `Haasara` | 1978-01-01 to 1982-04-30 | 4 | 4 | 0 |
+| 66 | `Ha'asara` | 1978-01-01 to 1982-04-30 | 0 | 0 | 0 |
+| 67 | `outposts` | 1978-01-01 to 1982-04-30 | 168 | 100 | 11 |
+| 68 | `salient` | 1978-01-01 to 1982-04-30 | 470 | 100 | 6 |
+| 69 | `Rafiah` | 1978-01-01 to 1982-04-30 | 294 | 100 | 3 |
+| 70 | `Sadot` | 1978-01-01 to 1982-04-30 | 1356 | 100 | 2 |
+| 71 | `Ugda` | 1978-01-01 to 1982-04-30 | 4 | 4 | 2 |
+| 72 | `Neot Sinai` | 1978-01-01 to 1982-04-30 | 441 | 100 | 1 |
+
+### Second-pass sources
+
+| Source | URL or identifier | Day read | Used for |
+|---|---|---|---|
+| JTA Daily News Bulletin, 5 Feb 1982, p. 3 | http://pdfs.jta.org/1982/1982-02-05_025.pdf | 2026-10-27 | Kadesh Barnes settlement, dateline Feb. 4 (image) |
+| FRUS 1977-80 vol. VIII, documents 188 (p. 922) and 194 (p. 941) | https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1977-80v08.xml | 2026-10-27 | Cabinet decision of 8 Jan 1978; Begin's count of 16 Jan 1978 |
+| UN A/36/579, p. 24, para 82; A/33/356, p. 21, para 78 | `https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf` | 2026-10-27 | counts, outposts (pages read as images) |
+| UN A/34/631, A/35/425, A/37/485 | same URL form | 2026-10-27 | text-layer search, no new row |
 
 ## Outside the window and the boundary with the Gaza Strip note
 

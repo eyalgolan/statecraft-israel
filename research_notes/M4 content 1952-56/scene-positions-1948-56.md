@@ -4,6 +4,11 @@ Researched 2026-10-26 (every page below was opened by an agent on that day; a pe
 issue #106 (decision scenes, the research part only, opened by the owner's comment of 24 October 2026). Research only: no
 game code and nothing under `content/`. The scene screen, the proposal and the scene content stay paused until after the MVP.
 
+**Second pass, 2026-10-27** (same issue; Refs #106). The first-pass text below is kept as written. Where the second pass found
+something it is added in a "second pass" subsection at the end of the scene, with a dated line after the first-pass row it
+bears on. Sources opened on 27 Oct are listed at the end of section 1. Every verified row of the second pass carries the tag
+"[V, agent read 2026-10-27; a person's check pending]".
+
 **Purpose.** For each candidate scene on the issue's list, say who argued what, when, and from which record. This note
 adds only that. Dates, vote counts and the setting of each scene are already sourced in `reparations-vote-1952.md`,
 `new-economic-policy-1952.md`, `road-to-suez-1956.md`, `events-1952-56.md` and `defence-1948-56.md` (sections 1.5 and 2; merged
@@ -22,6 +27,9 @@ memoir read for that passage. Where no such record was reached, the row is [GAP]
 - Quotes are short and as the page gives them. Paraphrase otherwise. No quote, page, date or URL is invented.
 - "Book p. N" is the printed page of the English edition named in section 1; the printed page numbers are in the text file
   the agent read.
+- (Second pass, 27 Oct.) A telegram of the US embassy that reports what an Israeli minister said to it is tagged verified only for
+  what the telegram records; it is the embassy's account, not a cabinet or Knesset protocol. A statement of opinion by the
+  embassy about Israeli politics is tagged [S].
 
 ## 1. Sources opened (agent read 2026-10-26; a person's check pending)
 
@@ -34,6 +42,9 @@ memoir read for that passage. Where no such record was reached, the row is [GAP]
 | DIARY | Moshe Dayan, *Diary of the Sinai Campaign* (1966), Internet Archive scan, full text: https://archive.org/details/diary-of-the-sinai-campaign | Same remark. Its page numbers are the scan's running numbers; where one is not certain the row says "entry of <date>" |
 | JTA-A | JTA Daily News Bulletin, Friday 30 Sep 1955, p. 1, "Sharett Warns Soviet Envoy Against Supplying Arms to Egypt": scan http://pdfs.jta.org/1955/1955-09-30_188.pdf , item datelined "JERUSALEM, Sept. 29. (JTA)" (read on the page image); web text https://www.jta.org/archive/sharett-warns-soviet-envoy-against-supplying-arms-to-egypt | Event date from the dateline, not the bulletin date |
 | JTA-B | JTA Daily News Bulletin, 4 Jan 1956, p. 2, "Sharett Scores Khruschev for His Ant Israel Allegations in Moscow": scan http://pdfs.jta.org/1956/1956-01-04_002.pdf , item datelined "JERUSALEM, Jan. 3. (JTA)" (read on the page image); web text https://www.jta.org/archive/sharett-scores-khruschev-for-his-ant-israel-allegations-in-moscow | The item says "last night", so the Knesset speeches are of the evening of 2 Jan 1956 by the dateline rule |
+| FRUS-14 (second pass) | *Foreign Relations of the United States, 1955-1957, Arab-Israeli Dispute, 1955*, vol. XIV, TEI text of the Office of the Historian volume, `https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1955-57v14.xml` (5.7 MB, opened and parsed whole; documents 333, 338, 339 and 316 read); page of doc. 339: https://history.state.gov/historicaldocuments/frus1955-57v14/d339 | Opened 2026-10-27. US embassy and Department of State records, not Israeli ones |
+| FRUS-9 (second pass) | *Foreign Relations of the United States, 1952-1954, The Near and Middle East*, vol. IX, TEI text `https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1952-54v09p1.xml` (9.9 MB, opened and parsed whole; documents 694, 778, 858 and 912 read). The Office of the Historian page https://history.state.gov/historicaldocuments/frus1952-54v09p1/d778 opened (HTTP 200); the same site returned HTTP 404 for the d912 page under `v09p1` and under `v09p2`, so doc. 912 is cited from the TEI text | Opened 2026-10-27. US embassy records |
+| JTA-C (second pass) | JTA Daily News Bulletin, Friday 15 Feb 1952, p. 1, "Israel's New Economic Policy Clarified by Finance Minister": scan http://pdfs.jta.org/1952/1952-02-15_033.pdf (page 1 rendered with `pdftoppm -r 200` and the top of the page viewed as an image), item datelined "JERUSALEM, Feb. 14. (JTA)"; web text https://www.jta.org/archive/israels-new-economic-policy-clarified-by-finance-minister | Opened 2026-10-27. Event date 14 Feb 1952 from the dateline, not the bulletin date |
 
 ## 2. Scene 1: the reparations vote (Knesset, 7 to 9 Jan 1952)
 
@@ -102,6 +113,14 @@ Setting, dates and vote counts: `new-economic-policy-1952.md`.
 | Any minister's argument for or against the policy inside the cabinet | No cabinet protocol was reached (section 8) | [GAP] |
 | Ministers' speeches in the 18 to 20 Feb Knesset debate | The records of those sittings were not reached (section 8) | [GAP] |
 
+(Second pass, 27 Oct: the Kaplan row above is narrowed, see 3.1. His part in the sitting-53 exchange, the cabinet row and the Knesset speeches stay [GAP].)
+
+### 3.1 Second pass
+
+| Who | Position | When and record | Tag |
+|---|---|---|---|
+| Finance Minister Kaplan | To the press, the day after the government announced the new rates: the government is seeking a balanced budget for submission to the Knesset at the end of the month; that is not possible without more efficiency and production and would require limiting, or even completely suspending, "certain items of expenditure such as non-productive public works"; this might create some unemployment but would raise output and exports. Replying to questions, he said the new rate of $1.40 to the pound for organisations raising funds abroad would let them "double the scope of their work" (the printed words are "will greatly benefit organizations raising funds abroad ... since they will be able to double the scope of their work") | Press conference, event date 14 Feb 1952 (dateline "Jerusalem, Feb. 14"; the item says "today" and "announced yesterday"); JTA-C | [S] reported public statement (a news-agency report, kept apart from cabinet positions) |
+
 ## 4. Scene 3: a 1950s reprisal-policy decision (policy and doctrine only)
 
 Nothing here describes any raid, its targets or its casualties. Setting: `defence-1948-56.md` section 1.5 (stances) and
@@ -119,6 +138,17 @@ Nothing here describes any raid, its targets or its casualties. Setting: `defenc
 [C] The meeting date: the DIARY entry is dated 24 Sep 1956 and says Ben-Gurion called a special cabinet meeting "today"; SOL
 says he called it "for September 25". Both are Dayan's; the protocol is not read.
 
+(Second pass, 27 Oct: the last row above, ministers' positions on reprisals, is narrowed by 4.1 to what two US embassy
+telegrams record. The cabinet protocols and Sharett's diary were still not reached, so that row stays [GAP].)
+
+### 4.1 Second pass (policy and stance only; no incident is described)
+
+| Who | Position (policy or stance) | When and record | Tag |
+|---|---|---|---|
+| Foreign Minister Sharett (also Prime Minister in Nov 1954: Wikipedia, [S]), through the Foreign Ministry Director-General Eytan | Eytan called on Russell of the US embassy (the telegram gives no office for him) "on instructions from Sharett" and said the Israeli Government "for some time had followed moderate policy" on the Egyptian border, in line with the US recommendation of restraint; that Egyptian activity was rising; and that Sharett "wanted us to know that his position (moderation) was becoming very difficult under the circumstances". The embassy added its own judgement that Israel was unlikely to stay out of organised retaliatory action unless the activity fell | Telegram of 3 Nov 1954, 9 p.m., Tel Aviv, FRUS-9 doc. 912 | [V, agent read 2026-10-27; a person's check pending] for what the telegram records |
+| Head of the US division of the Foreign Ministry (Bendor), as reported by the chargé | Said "could be regarded in nature of official statement": the Government and public were "fundamentally divided between policy of forcefully demonstrating Israel strength and determination at this time and policy of restraint enunciated by Sharett in speech three days ago" | Telegram of 19 Mar 1954, 5 p.m., Tel Aviv, FRUS-9 doc. 778 | [V, agent read 2026-10-27; a person's check pending] for what the telegram records |
+| The embassy's reading of the Lavon, Dayan and Ben-Gurion side | The same telegram says a "Lavon-Dayan element (undoubtedly in close touch with Ben Gurion)" would use the event to support "greater use of reprisals" and a "present show of strength". This is the embassy's inference, not a statement by any of them | Same telegram, FRUS-9 doc. 778 | [S] single source, an embassy opinion |
+
 ## 5. Scene 4: the arms race after the Czech-Egyptian deal (1955)
 
 Setting and procurement dates: `defence-1948-56.md` section 2. Dayan dates Nasser's announcement of the deal to 27 Sep
@@ -133,6 +163,16 @@ Setting and procurement dates: `defence-1948-56.md` section 2. Dayan dates Nasse
 | Ben-Gurion, as inferred by Dayan | After Dayan's memorandum of 10 Nov and talk of 13 Nov urging action, Ben-Gurion told him to hold up action on Sharm el-Sheikh until the end of Jan 1956; Dayan writes "I gathered ... that he tended to favor a political rather than a military solution". This is Dayan's inference of a private talk, not a statement by Ben-Gurion | SOL p. 181 | [V, agent read 2026-10-26; a person's check pending] |
 | Dayan's recommendations (Chief of Staff) | Sharp reprisal actions against Egyptian-directed hostility, capture of the Gaza Strip, preparation to take Sharm el-Sheikh | 10 Nov 1955; SOL p. 181 | [V, agent read 2026-10-26; a person's check pending] |
 | Ministers' positions in cabinet on how to answer the arms deal | Cabinet protocols not reached; FRUS volume XIV (what Israeli ministers told US officials) was started and could not be finished (section 8) | Sep-Dec 1955 | [GAP] |
+
+(Second pass, 27 Oct: the last row above is narrowed by 5.1 for Prime Minister Sharett only. Other ministers' positions in cabinet on the arms question stay [GAP].)
+
+### 5.1 Second pass
+
+| Who | Position | When and record | Tag |
+|---|---|---|---|
+| Prime Minister Sharett, to Ambassador Johnston | Asked on the evening of 13 Oct 1955 how Soviet arms to Egypt should be met, Sharett "said Nasser must go" and "must be destroyed". He listed four possible means: (1) the US deals with the Soviet Union to make it drop the programme; (2) "although he did not necessarily agree", many in Israel advocated a preventive war against Egypt, destroying the arms "either en route or upon arrival"; (3) the US gives Israel arms equal to Egypt's; (4) a US security guarantee treaty with Israel. Johnston answered each, and declined to give his own view. The telegram says "yesterday evening" and is dated 14 Oct 1955, 8 p.m., so the conversation was on 13 Oct | Telegram of 14 Oct 1955 from the US Embassy in Tel Aviv (signed Lawson), FRUS-14 doc. 339 | [V, agent read 2026-10-27; a person's check pending] for what the telegram records (the embassy's account of a private talk) |
+| Ben-Gurion (office not printed in the footnote; reported in a footnote of the same document) | The editor's footnote says the embassy's despatch 259 of 8 Oct 1955 reported that, in an off-the-record interview with a New York Times correspondent, Ben-Gurion answered, on what Israel would do if Egypt received large-scale Soviet arms including MIG fighters, that "we would have to smash them". The despatch itself was not read | FRUS-14 doc. 339, footnote | [S] a footnote's account of a despatch not opened |
+| Prime Minister Sharett and Finance Minister Eshkol, same talks (13 Oct) | On the Jordan water plan, both said Israel should regard itself as free to proceed at Bnat Yaacov and then agreed to defer resumption of work, Eshkol first speaking of two or three months, then Sharett assuring Johnston it would not resume before 1 March. Not part of the arms question; recorded only as the other position of the same two ministers in those talks | Telegram of 14 Oct 1955, 7 p.m., FRUS-14 doc. 338 | [V, agent read 2026-10-27; a person's check pending] for what the telegram records |
 
 ## 6. Scene 5: the decision to go to war (Oct 1956)
 
@@ -162,12 +202,25 @@ Negative rows follow the rule: exact query or URL, tool, what came back, day run
 - **1948 session.** WebSearch `Minhelet HaAm 12 May 1948 protocol vote truce Marshall proposal 6 to 4 Ben-Gurion Sharett Shertok Shapira Zisling Kaplan minutes` (9 links) and WebSearch `פרוטוקול מנהלת העם 12 במאי 1948 הצבעה הכרזת המדינה הפוגה 6 נגד 4` (8 links): none was a protocol and none was used as a fact. `https://in.bgu.ac.il/bgi/iyunim/8/16.pdf` returned an HTML block page, not a PDF. https://www.washingtoninstitute.org/pdf/view/2348/en gave only the teaser of Martin Kramer's essay, and the Mosaic page returned no text to `curl`. Hebrew Wikisource API search `he.wikisource.org/w/api.php?action=query&list=search&srsearch=מנהלת העם 12 במאי 1948 פרוטוקול` (27 hits, titles of the first 8 were laws and regulations) and `srsearch=מועצת העם ישיבה 12.5.1948` (85 hits, first 8 likewise); Internet Archive `advancedsearch` for `(מנהלת העם) AND mediatype:texts` returned 0 items.
 - **Not opened, and why.** Sharett's 1956 diary volume (JSTOR, needs an account). Lahav, "A Small Nation Goes to War", SSRN 1702886 (secondary, and the issue rule bars naming a position from a secondary summary). Golani, *Israel in Search of War*, and Morris, *Israel's Border Wars* (both secondary; Morris is already cited in `defence-1948-56.md`). The Hebrew edition of the reparations book beyond the 31 Dec 1951 protocol. The Sharett Archive pages numbered 2204 (cabinet 4 Nov 1951), 2207 (16 Dec 1951) and 2210 (Foreign Affairs and Defence Committee 7 Jan 1952) were found but not read for this note.
 
+### 8.1 Second-pass search record (all run 2026-10-27 from the project server)
+
+- **Divrei HaKnesset, sitting 40 (9 Jan 1952) and the NEP sittings of 18 to 20 Feb 1952.** `curl` of `https://web.archive.org/web/2022/https://fs.knesset.gov.il/2/Plenum/2_ptm_250287.pdf` returned no response (HTTP code 000) in 100 s, and a Python `urllib` fetch of the same URL (4 attempts, 60 s timeout each) timed out every time; ids 250288 and 250292 to 250294 were requested in a background loop and no file came back. Nothing from those sittings was read. The roll call by minister of 9 Jan 1952 stays [GAP]. (Added after review, 27 Oct 2026: the Wayback availability API returns no snapshot for any of 2_ptm_250287, 250288, 250292, 250293 and 250294, and the CDX index returns no rows for any of them. They are not archived there, so a retry through Wayback will not help.)
+- **JTA, reparations vote.** `https://www.jta.org/wp-json/wp/v2/archive?search=reparations&after=1952-01-05T00:00:00&before=1952-01-12T00:00:00&per_page=30` returned 16 items (titles read). The item "Knesset Votes Authorization for Israel Negotiations with Germany" (bulletin of 10 Jan 1952, `https://www.jta.org/archive/knesset-votes-authorization-for-israel-negotiations-with-germany`) was opened for its first part: it gives 61 for, 50 against, five abstaining and four absent, and Sharett's speech, and in the part read no list of how each minister voted. The vote count is already in `reparations-vote-1952.md`; no new position is taken from it. (Correction after review, 27 Oct 2026: page 2 of the same scan (http://pdfs.jta.org/1952/1952-01-10_007.pdf, viewed as an image at 400 dpi) carries a breakdown of the vote under the heading "Breakdown of Vote Shows Arabs Voted for the ...". The breakdown is by party, as in `reparations-vote-1952.md`, and names one minister, Rabbi I. M. Levin, among the abstainers ([S], one source, a news report). "In the part read no list of how each minister voted" is withdrawn.)
+- **JTA, NEP.** `.../archive?search=Kaplan&after=1952-02-10T00:00:00&before=1952-02-22T00:00:00&per_page=40` returned 8 items; the one opened and used is JTA-C.
+- **JTA, reprisal policy.** `.../archive?search=retaliation&after=1953-10-10T00:00:00&before=1953-11-30T00:00:00&per_page=40` returned 38 items (titles only). None was opened: the titles concern specific incidents and diplomacy, and the note keeps to policy.
+- **JTA, 28 Oct 1956.** `.../archive?search=cabinet&after=1956-10-28T00:00:00&before=1956-11-02T00:00:00&per_page=40` returned 8 items and `search=mobilization` over the same dates 8 items (titles only). Two titles name a cabinet ("Israel Cabinet Discusses Anglo-French Plan to Land Troops in Suez", bulletin of 31 Oct 1956; "Israel Government Warns Nation Against Panic and False Rumors", bulletin of 29 Oct 1956); neither was opened, so no position from them is used. The doubters of 28 Oct 1956 stay [GAP]. (Correction after review, 27 Oct 2026: re-run on 27 Oct, `search=mobilization` over the same dates returns 9 items, `x-wp-total` 9, not 8. The ninth is "Israel City Workers to Replace Mobilized Farmers During Crisis", bulletin of 1 Nov 1956. Its title names no minister and it was not opened.)
+- **FRUS 1955-57 vol. XIV.** The TEI text was parsed and the documents with three or more mentions of Israeli ministers' names in the range 246 to 340 were listed; documents 316, 333, 338 and 339 were read. Doc. 333 (11 Oct 1955, the Israeli ambassador with Assistant Secretary Allen) records Ambassador Eban, who was not a minister, and is not used. Doc. 316 is a State Department telegram on a talk with Eban and also records no minister's cabinet position. Documents 247 to 315 other than 316 and 322 to 332 were not read.
+- **FRUS 1952-54 vol. IX.** The two TEI files `frus1952-54v09p1.xml` and `frus1952-54v09p2.xml` were fetched; documents mentioning a named Israeli minister together with "retaliat" or "reprisal" and "policy" were listed (19 documents; 4 read, see FRUS-9). The other 15 were not read.
+- **1948 session (12 May 1948).** Not searched again in the second pass; the first-pass record in section 8 stands. It stays [GAP].
+
 ## 9. Gaps a person should close
 
 1. How each minister voted on 31 Dec 1951 (the protocol gives only "eleven votes") and in the Knesset roll call of 9 Jan 1952: Divrei HaKnesset sitting 40.
 2. Ministers' positions on the NEP, in cabinet and in the Knesset debate of 18 to 20 Feb 1952.
 3. Cabinet protocols on reprisal policy, the arms request after the Czech deal (autumn 1955) and the war decision of 28 Oct 1956, from the State Archives.
 4. The 12 May 1948 Minhelet HaAm protocol.
+
+(Second pass, 27 Oct: items 2 and 3 are narrowed by 3.1, 4.1 and 5.1 and stay open for the rest; items 1 and 4 are unchanged.)
 
 ## 10. What this feeds (design questions, not decided here)
 
