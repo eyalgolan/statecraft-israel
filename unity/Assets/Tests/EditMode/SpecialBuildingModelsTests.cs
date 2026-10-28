@@ -41,7 +41,7 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(35.5747, tank.Lon, 1e-9, "Degania Alef's row in settlements_1948.yaml");
             Assert.AreEqual(32.7081, tank.Lat, 1e-9);
             StringAssert.Contains("degania_defence.yaml", tank.Source);
-            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's sourced length");
+            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's length, en.wiki Renault R35 (research_notes/Map/degania-r35.md)");
         }
 
         [Test]

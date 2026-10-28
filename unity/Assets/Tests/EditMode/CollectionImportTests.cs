@@ -349,13 +349,13 @@ public class CollectionImportTests
         var resources = AssetDatabase.GetDependencies(AssetDatabase.GetAllAssetPaths()
             .Where(p => p.Contains("/Resources/", StringComparison.Ordinal) && !AssetDatabase.IsValidFolder(p)).ToArray(), true);
         var placed = CollectionCatalog.Ids.Where(CollectionCatalog.IsGenerated).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent }, placed);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, placed);
         foreach (var id in placed)
         {
             CollectionAssert.IsEmpty(FilesOf(id, scenes), id + " in a player scene's closure");
             CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
             string own = CollectionCatalog.BundleOf(id)!;
-            CollectionAssert.Contains(closures[own], Model(id), id + " in its own bundle");
+            CollectionAssert.Contains(closures[own], CollectionCatalog.SourceModelPath(id), id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
         }

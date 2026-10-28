@@ -486,7 +486,7 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(new[] { Statecraft.Game.Map.Routes.ServiceTrain.ModelId, Statecraft.Game.Map.Routes.RoadVehicles.CitrusTruck,
             Statecraft.Game.Map.Routes.RoadVehicles.CanvasLorry, Statecraft.Game.Map.Routes.RoadVehicles.SandwichConvoy,
             Statecraft.Game.Map.Routes.RoadVehicles.IntercityBus });
-        placed.UnionWith(new[] { SpecialBuildingModels.Shikun, SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.SyrianR35 });
+        placed.UnionWith(SpecialBuildingModels.Placements(DateTime.MaxValue).Select(w => w.Model)); // every dated single-building placement, the R35 among them
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
         var units = Statecraft.Game.Map.Units.UnitFigures.ByHeadgear.Values.Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdFigure.Values)

@@ -72,10 +72,10 @@ public class Generated1948AssetTests
     [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
     {
         var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
-        CollectionAssert.Contains(props, CollectionCatalog.BedouinTent);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, props);
         foreach (string id in props)
         {
-            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = $"{dir}/{id}.fbx", map = $"{dir}/{id}_basecolor.jpg";
+            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
             var sourceMeshes = AssetDatabase.LoadAssetAtPath<GameObject>(fbx).GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
             var filters = prefab.GetComponentsInChildren<MeshFilter>(true);

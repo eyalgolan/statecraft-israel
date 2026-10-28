@@ -29,7 +29,7 @@ namespace Statecraft.Game.Map.Collection
         {
             Tegart => 30f, Barracks => 25f, Factory => 30f, Shikun => 30f, Workshop => 12f,
             // Sourced, unlike the buildings' design values: the Renault R35's length, 4.02 m (en.wiki Renault R35, infobox,
-            // checked 2026-10-28).
+            // checked 2026-10-28; excerpt in research_notes/Map/degania-r35.md).
             SyrianR35 => 4.02f,
             _ => throw new ArgumentException($"'{model}' is not one of #707's models", nameof(model)),
         };
@@ -65,7 +65,8 @@ namespace Statecraft.Game.Map.Collection
         /// fence and was stopped (it stands there today)" (JVL, credited to the IDF, in content/events/degania_defence.yaml),
         /// and en.wiki Renault R35 ("five R35s took part in an unsuccessful Syrian Army attack on the Jewish kibbutz Degania
         /// Alef" on 20 May 1948; one disabled R35 still stands near the kibbutz as a memorial; checked 2026-10-28). Its point
-        /// is Degania Alef's row in content/map/settlements_1948.yaml (en.wiki Degania Alef).</summary>
+        /// is Degania Alef's row in content/map/settlements_1948.yaml (en.wiki Degania Alef). The excerpts are in
+        /// research_notes/Map/degania-r35.md.</summary>
         static readonly Want[] All =
         {
             new Want("latrun_tegart", Tegart, new DateTime(1948, 5, 15), 34.98139, 31.83194,
