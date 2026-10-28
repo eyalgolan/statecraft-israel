@@ -50,6 +50,22 @@ public class Gdd03ReceptionFixtureTests
             Catalogue(), completed.PopulationLedger, completed.PopulationLedger.Get(0)));
     }
 
+    // R-POP-002: eligibility reads the current record of this ledger only.
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void ForeignOrStalePersonCannotBorrowAnotherLedgerEligibility(bool stale)
+    {
+        var state = State(Person(6, status: PopulationStatus.FreeCivilian));
+        var person = state.PopulationLedger.Get(0);
+        if (stale)
+            state.PopulationLedger.ChangeAssignment(0, new(PopulationAssignmentKind.Work, "synthetic-work"));
+        else
+            state = State(Person());
+        var before = state.Hash();
+        Assert.Throws<ArgumentException>(() => Gdd03ReceptionFixture.CanStartCivilianActivity(
+            Catalogue(), state.PopulationLedger, person));
+        Assert.Equal(before, state.Hash());
+    }
+
     [Fact] public void SixthWholeBedTurnCompletesSamePersonWithoutCompletionTurnWork()
     {
         var refugee = Person(bed: "synthetic-a");
