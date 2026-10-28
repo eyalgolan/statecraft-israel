@@ -1217,8 +1217,11 @@ D-C (owner-verify).
   whole periods only, so the Yoav period shows Huleiqat's hex Israeli from 15 October, four days before its capture.
 - *Drawing:* `MapRegions` draws `Control1948`'s layer from 15 May 1948 (#674): Israel Primary, the other side Secondary,
   contested, no-man's land and zones the new Neutral style (`BorderStyle.Neutral`, the shader's third style, dashed along
-  its edge every 2 km, 65% drawn: a cue that is not colour), the land beyond the frontier style none, no colour left out (no
-  band, so the edge of the sourced data is not drawn as a front). Before a first period (none with today's data) the
+  its edge every 2 km, 65% drawn: a cue that is not colour), the land beyond the frontier style none, no colour also style
+  none (owner ruling of 27 October 2026, "Close the borders"; was left out of the layer, which left one-edge bands such
+  as Shoval's in mid-air): it draws no band of its own and each side's band runs one-sided along it, as along the frontier,
+  so every pinned settlement hex is ringed and no front ends in mid-air (`ControlTests.NoBorderEndsInMidAirInAnyPeriod`,
+  every period). Before a first period (none with today's data) the
   sub-districts would be drawn in Neutral, since blue means the Israeli side. Colours: Primary pre-grade sRGB 0.29, 0.40, 0.56 (was 0.40, 0.50, 0.80), measured on
   screen at deltaE76 0.6 from 89,119,156; Neutral 0.46, 0.46, 0.44 with a pale stripe 0.98, 0.97, 0.93.
 - *Label* (`map-layer`, `MapRegions.ControlLabel`): the legend names each side before its colour, and grey as dashed:

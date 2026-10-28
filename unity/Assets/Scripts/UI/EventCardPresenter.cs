@@ -32,6 +32,8 @@ namespace Statecraft.Game.UI
         public const string EndTurnWaitingClass = "end-turn-waiting";
         /// <summary>The line under an option that returns the course to the record (EventOption.Rejoin, #954; Statecraft.uss).</summary>
         public const string RejoinClass = "event-rejoin";
+        /// <summary>One line under an option for one of its effects, from the sim's preview (#1125, R-EVT-005; Statecraft.uss).</summary>
+        public const string EffectClass = "event-effect";
 
         readonly VisualElement card; readonly SimBridge bridge; readonly UiText text; readonly PortraitCatalog? portraits;
         readonly EventImageCatalog? photos;
@@ -44,7 +46,10 @@ namespace Statecraft.Game.UI
         readonly bool hiddenInCapture;
         /// <summary>Tests: the card is waiting for the start screen to close before it looks up its photograph.</summary>
         internal bool PhotoWaits => photoWaits;
-        readonly VisualElement band, head, scroll, options, layer, hudRoot; readonly Label credit, delegateLine;
+        readonly VisualElement band, head, options, layer, hudRoot; readonly Label credit, delegateLine;
+        /// <summary>The body: the text and the options with their effect lines, which scroll together only when they overflow
+        /// the card (#1853); the head above it and the foot with Hide below it stay pinned.</summary>
+        readonly ScrollView scroll;
         readonly Button? endTurn;
         readonly Button hide, reopen, illustrationSwitch;
         readonly System.Action onHide, onReopen, onUncovered;
@@ -70,6 +75,9 @@ namespace Statecraft.Game.UI
         string? focusedFor;
         /// <summary>The event whose card last raised Opened, so a card already in view never raises it again.</summary>
         string? openedFor;
+        /// <summary>The event the body was last put back to its top for: a new event opens at its text, never part way down
+        /// the last card's options (#1853).</summary>
+        string? scrolledFor;
         float appliedWidth = float.NaN;
 
         /// <param name="video">The illustration loop's player, or null when video is off (CardVideo.ForcedOff): then the
@@ -93,7 +101,7 @@ namespace Statecraft.Game.UI
             // photograph back when the window grows. A hidden element keeps its old layout, so a band shown again at the
             // size it was dropped at gets no geometry event of its own; the head below it always moves, so it checks too.
             head = card.Q<VisualElement>(className: "event-head");
-            scroll = card.Q<VisualElement>("event-scroll"); options = card.Q<VisualElement>("event-options");
+            scroll = card.Q<ScrollView>("event-scroll"); options = card.Q<VisualElement>("event-options");
             delegateLine = card.Q<Label>("event-delegate");
             layer = card.parent; hudRoot = root.Q("root") ?? root;
             endTurn = hudRoot.Q<Button>("end-turn");
@@ -221,8 +229,8 @@ namespace Statecraft.Game.UI
             var pending = s.PendingEvents.Select(id => c.Events.First(e => e.Id == id)).ToList();
             var open = pending.Where(e => bridge.QueuedLike(new ChooseEventOption(e.Id, "")) == null).ToList();
             Shown = open.FirstOrDefault();
-            if (Shown == null) { collapsedFor = null; openedFor = null; }
-            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; }
+            if (Shown == null) { collapsedFor = null; openedFor = null; scrolledFor = null; }
+            if (bridge.Session != session) { session = bridge.Session; collapsedFor = null; focusedFor = null; openedFor = null; scrolledFor = null; }
             var shown = !hiddenInCapture && Shown != null && !Collapsed;
             ScreenNav.Show(card, shown);   // #1106: grows in, shrinks away
             card.SetEnabled(shown);   // a child of an undisplayed element can still take the focus (#400): a collapsed card's options must not
@@ -285,16 +293,44 @@ namespace Statecraft.Game.UI
                 b.AddToClassList(OptionClass);
                 b.SetEnabled(!unpaid);
                 options.Add(b);
+                // What the option does, one line per effect, from the sim's preview (#1125, R-EVT-005): Unity only words it. Under
+                // the option like the rejoin line, so a Label takes no Tab stop. The rejoin effect has that line already, below.
+                foreach (var preview in EventSystem.OptionEffectPreviews(c, s, o))
+                {
+                    if (preview.Kind == OptionEffectPreviewKind.Rejoin) continue;
+                    var effect = new Label(EffectLine(c, preview, text));
+                    effect.AddToClassList("muted"); effect.AddToClassList(EffectClass);
+                    options.Add(effect);
+                }
                 if (o.Rejoin == "") continue;
                 // Under the option, not in it: the button's label stays the choice itself, and a Label takes no Tab stop.
                 var rejoin = new Label(text["event.rejoin"]);
                 rejoin.AddToClassList("muted"); rejoin.AddToClassList(RejoinClass);
                 options.Add(rejoin);
             }
+            if (scrolledFor != e.Id) { scrolledFor = e.Id; scroll.scrollOffset = UnityEngine.Vector2.zero; }
             card.Q<Label>("event-count").text = open.Count > 1 ? text.Format(open.Count == 2 ? "event.more_one" : "event.more", open.Count - 1) : "";
             if (shown && !photoWaits && layer.enabledInHierarchy && openedFor != e.Id) { openedFor = e.Id; Opened?.Invoke(e.Id); }
             if (shown && focusedFor != e.Id) FocusCard(e.Id, force: false);
         }
+
+        /// <summary>One option-effect row in the UI's language. An indicator, money or policy is named as the top bar and the Why
+        /// panel name it (why.name.&lt;id&gt;, Hebrew in Hebrew), the sim's English name where the strings have none; a project
+        /// unlock takes the kind's own Hebrew name (ContentNames).</summary>
+        public static string EffectLine(Content c, OptionEffectPreview row, UiText text)
+        {
+            var key = "why.name." + row.ContextId;
+            var name = row.Kind switch
+            {
+                OptionEffectPreviewKind.Amount or OptionEffectPreviewKind.SetPolicy => text.Has(key) ? text[key] : null,
+                OptionEffectPreviewKind.ProjectUnlock => HebrewKindName(text, c.ProjectKinds.First(k => k.Id == row.ContextId)),
+                _ => null,
+            };
+            return EventEffectText.Format(row, text, name);
+        }
+
+        /// <summary>The kind's Hebrew name in Hebrew; null otherwise, so the sim's capitalised English row stands.</summary>
+        static string? HebrewKindName(UiText text, ProjectKind k) { var n = ContentNames.Of(text, k); return n == k.Name ? null : n; }
 
         /// <summary>An objective card's line under its text (#380; the owner's wording, #379): completed early, "Completed on
         /// {date}; historically {date}; n months early."; in the same calendar month, "Completed on time, as in history.";
@@ -374,6 +410,10 @@ namespace Statecraft.Game.UI
             var photo = shown ? current : null;
             var display = photo != null ? DisplayStyle.Flex : DisplayStyle.None;
             band.style.display = display; credit.style.display = display;
+            // While the photograph shows it alone gives way (flex-shrink 1000): with the body's own flex-shrink 1 beside it,
+            // the body took a sliver of the shortfall, and once rounded that was a device pixel of scroll on a card that fits
+            // (1366x657 at 100%, #1853). Dropped, the body shrinks and scrolls as the stylesheet says.
+            scroll.style.flexShrink = photo != null ? 0f : (StyleFloat)StyleKeyword.Null;
             band.style.backgroundImage = photo == null ? (StyleBackground)StyleKeyword.None : new StyleBackground(photo.Value.image);
             band.tooltip = photo?.alt ?? "";
             PhotoAlt = photo?.alt;

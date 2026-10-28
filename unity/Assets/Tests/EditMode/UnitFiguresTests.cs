@@ -19,7 +19,7 @@ using UnityEngine.TestTools;
 /// <summary>Issue #665: the 1948 Collection (Tal Heuberger, #507) on the army tokens, streamed after the first frame. Every one of
 /// the original unit models retains its identity (owner, 17 October 2026, #663: every model is used): the Israeli figures,
 /// the Arab Legion and C09 on the ALA, and the 65 mm gun and the jeep where a source puts them. New Syrian and
-/// Iraqi figures join their existing formations; the Egyptian figure awaits an approved map representation. Until a model
+/// Iraqi figures join their existing formations, the Egyptian figure its force's one token and the ALA infantry the ALA token as its third figure. Until a model
 /// arrives, and when its bundle is missing or damaged, an Israeli token keeps its code-built figures (fail open); an Arab
 /// force's token is not drawn at all (#740: no IDF figures, no placeholder).</summary>
 public class UnitFiguresTests
@@ -38,7 +38,8 @@ public class UnitFiguresTests
     {
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
-        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1",
+        "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
+        "figure-ala-infantry-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",
@@ -167,7 +168,8 @@ public class UnitFiguresTests
         var helmeted = new UnitEntry { Id = "negev", Side = UnitData.Israel, Headgear = new List<string> { UnitData.WoolCap, UnitData.SteelHelmet, UnitData.SteelHelmet } };
         Assert.AreEqual(UnitFigures.YoungRecruit, UnitFigures.FigureFor(helmeted, 2, UnitData.SteelHelmet), "a source's steel helmet is never swapped for his cap");
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
-        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3), Trio("arab_liberation_army"));
+        CollectionAssert.AreEqual(new[] { UnitFigures.Irregular, UnitFigures.Irregular, UnitFigures.AlaInfantry }, Trio("arab_liberation_army"),
+            "two C09 and Tal Heuberger's ALA infantry third (owner, 27 October 2026: \"Third figure (Recommended)\")");
         Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
@@ -188,6 +190,29 @@ public class UnitFiguresTests
         var before = UnitRoster.Build(Units, C.Rules, new DateTime(1948, 5, 31), 5, 0.8);
         var after = UnitRoster.Build(Units, C.Rules, new DateTime(1948, 6, 1), 5, 0.8);
         Assert.IsFalse(before.SequenceEqual(after), "Harel's jeep arrives on 1 June 1948");
+    }
+
+    /// <summary>The order the stream opens bundles for <paramref name="requests"/> queued at once (CollectionStream.Next): a request
+    /// whose bundle comes <see cref="CollectionCatalog.After"/> a group waits behind any queued request of that group.</summary>
+    static List<string> ServedOrder(IEnumerable<string> requests)
+    {
+        bool InGroup(string id, string group) => CollectionCatalog.BundleOf(id) == group
+            || CollectionCatalog.Groups.Any(g => g.Bundle == group && Array.IndexOf(g.Ids, id) >= 0);
+        var queue = new Queue<string>(requests);
+        var served = new List<string>();
+        while (queue.Count > 0)
+        {
+            string next = null;
+            for (int n = queue.Count; n > 0 && next == null; n--)
+            {
+                var id = queue.Dequeue();
+                if (!CollectionCatalog.After.TryGetValue(CollectionCatalog.BundleOf(id)!, out var first) || !queue.Any(q => InGroup(q, first)))
+                    next = id;
+                else queue.Enqueue(id);
+            }
+            served.Add(next ?? queue.Dequeue());
+        }
+        return served;
     }
 
     /// <summary>Every figure on a token stands with its arms down in its far prefab, the one the tokens draw (C05 shipped in
@@ -574,9 +599,9 @@ public class UnitFiguresTests
                 var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
                 layer.Show(C, StateAt(May20, 0.8));
                 layer.Show(C, StateAt(July12, 0.8));
-                // Original people requests precede the shared Arab bundle (#1763), even when its request was queued first.
-                var expectedBundles = requested.Distinct().OrderBy(id => CollectionCatalog.IsFullQualityGeneratedInfantry(id) ? 1 : 0)
-                    .Select(CollectionCatalog.BundleOf).Distinct();
+                // A generated figure's bundle waits while a people's request is queued (#1763, CollectionCatalog.After), even when
+                // its own request was queued first; otherwise the stream serves requests in order.
+                var expectedBundles = ServedOrder(requested).Select(CollectionCatalog.BundleOf).Distinct();
                 foreach (var b in expectedBundles)
                     LogAssert.Expect(LogType.Warning, new Regex("^Collection: bundle " + b + " did not load \\(" + (damaged ? "not an AssetBundle" : "no file")));
                 Step(stream.Run(), 80);

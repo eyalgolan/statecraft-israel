@@ -1,0 +1,1 @@
+- Add an isolated synthetic captivity identity and surrender-provenance record contract.

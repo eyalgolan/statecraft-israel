@@ -1,3 +1,6 @@
+from collections import Counter
+from pathlib import Path
+
 import check_repo
 
 RULES = """rules:
@@ -136,3 +139,12 @@ def test_elevenlabs_owner_permission_is_allowed_but_owner_verify_blocks_release(
     assert run(root) == 0
     assert run(root, "--release") == 1
     assert "owner-verify img/*.png" in capsys.readouterr().out
+
+
+def test_no_exact_glob_has_two_rows():
+    """One glob, one provenance record: two rows for the same glob give a file two different sources, and the Unity
+    EditMode test EventImageMappingTests reads ASSETS.yaml into a dictionary keyed by glob (it fails on a duplicate)."""
+    root = Path(__file__).resolve().parents[3]
+    rules, _ = check_repo.load_asset_rules(root)
+    seen = Counter(r["glob"] for r in rules)
+    assert sorted(g for g, n in seen.items() if n > 1) == []
