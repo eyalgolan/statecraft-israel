@@ -221,25 +221,7 @@ namespace Statecraft.Game.EditorTools
             Statecraft.Game.Map.Units.UnitFigures.Source = (id, detail, done) => pending.Add((id, done));
             try
             {
-                EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-                var map = new GameObject("MapScene").AddComponent<Statecraft.Game.Map.MapScene>();
-                UnityEngine.Material Load(string name) => AssetDatabase.LoadAssetAtPath<UnityEngine.Material>($"Assets/Materials/{name}.mat");
-                map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
-                Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
-                    File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
-                map.Build();
-                var events = Directory.GetFiles(Path.Combine(Statecraft.Game.Paths.Content, "events"), "*.yaml")
-                    .Select(f => "events/" + Path.GetFileName(f)).ToList();
-                var content = Statecraft.Sim.ContentLoader.Load(rel => {
-                    string path = Path.Combine(Statecraft.Game.Paths.Content, rel);
-                    if (!File.Exists(path)) return null;
-                    string text = File.ReadAllText(path);
-                    return rel == "eras.yaml" ? text.Replace("    systems: { loop: gdd }\n", "") : text;
-                }, events);
-                var state = Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical).Clone();
-                state.Date = new DateTime(1948, 6, 20); state.Rung = 5; state.Mobilization = 0.8;
-                var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, map.UnitEntries, content.Hexes, true);
-                layer.Show(content, state);
+                var (map, layer, state) = CampaignStage(new DateTime(1948, 6, 20));
                 foreach (var request in pending.ToArray().Where(r => !Statecraft.Game.Map.Collection.CollectionCatalog.IsFullQualityGeneratedInfantry(r.id)))
                     request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(request.id,
                         Statecraft.Game.Map.Collection.CollectionDetail.Far)));
@@ -276,6 +258,74 @@ namespace Statecraft.Game.EditorTools
                 if (previous.Any(s => s.isLoaded) && previous.Any(s => s.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous);
             }
         }
+        /// <summary>The real map and the dated legacy roster on <paramref name="date"/> (rung 5, mobilization 0.8), in a new scene.</summary>
+        static (Statecraft.Game.Map.MapScene map, Statecraft.Game.Map.Units.UnitLayer layer, Statecraft.Sim.GameState state) CampaignStage(DateTime date)
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+            var map = new GameObject("MapScene").AddComponent<Statecraft.Game.Map.MapScene>();
+            UnityEngine.Material Load(string name) => AssetDatabase.LoadAssetAtPath<UnityEngine.Material>($"Assets/Materials/{name}.mat");
+            map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+            Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+                File.ReadAllText(Path.Combine(Statecraft.Game.Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+            map.Build();
+            var events = Directory.GetFiles(Path.Combine(Statecraft.Game.Paths.Content, "events"), "*.yaml")
+                .Select(f => "events/" + Path.GetFileName(f)).ToList();
+            var content = Statecraft.Sim.ContentLoader.Load(rel => {
+                string path = Path.Combine(Statecraft.Game.Paths.Content, rel);
+                if (!File.Exists(path)) return null;
+                string text = File.ReadAllText(path);
+                return rel == "eras.yaml" ? text.Replace("    systems: { loop: gdd }\n", "") : text;
+            }, events);
+            var state = Statecraft.Sim.Simulation.NewGame(content, Statecraft.Sim.GoldenRun.Seed, Statecraft.Sim.Mode.Historical).Clone();
+            state.Date = date; state.Rung = 5; state.Mobilization = 0.8;
+            var layer = Statecraft.Game.Map.Units.UnitLayer.Create(map, map.UnitEntries, content.Hexes, true);
+            layer.Show(content, state);
+            return (map, layer, state);
+        }
+
+        /// <summary>One editor render of a side's token on a date with every requested model arrived, for a before/after pair
+        /// made on two checkouts: -captureSide ala -captureDate 1948-05-20 -captureOut path.jpg. Same camera as
+        /// <see cref="CaptureCampaign"/> (24 km, yaw 0, the game's pitch).</summary>
+        public static void CaptureToken()
+        {
+            string Arg(string name) { var a = Environment.GetCommandLineArgs(); int i = Array.IndexOf(a, name); return i >= 0 && i + 1 < a.Length ? a[i + 1] : throw new ArgumentException(name + " is required"); }
+            string side = Arg("-captureSide"), output = Path.GetFullPath(Arg("-captureOut"));
+            var date = DateTime.ParseExact(Arg("-captureDate"), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            Directory.CreateDirectory(Path.GetDirectoryName(output));
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            var pending = new List<(string id, Action<GameObject> done)>();
+            Statecraft.Game.Map.Units.UnitFigures.Forget();
+            Statecraft.Game.Map.Units.UnitFigures.Source = (id, detail, done) => pending.Add((id, done));
+            try
+            {
+                var (map, layer, state) = CampaignStage(date);
+                for (int round = 0; round < 4 && pending.Count > 0; round++)
+                {
+                    var answer = pending.ToArray(); pending.Clear();
+                    foreach (var request in answer)
+                        request.done(AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(request.id,
+                            Statecraft.Game.Map.Collection.CollectionDetail.Far)));
+                }
+                var camera = Object.FindFirstObjectByType<Statecraft.Game.Map.CameraRig>().GetComponent<Camera>();
+                var rig = camera.GetComponent<Statecraft.Game.Map.CameraRig>();
+                camera.aspect = 16f / 9f;
+                var row = map.UnitEntries.First(u => u.Side == side && u.Anchors.Count > 0);
+                var spot = layer.Spots[Statecraft.Game.Map.Units.UnitRoster.AnchorAt(row, state.Date)];
+                rig.LookAt = Statecraft.Game.Map.Units.UnitShowcase.Ground(map, new Vector3((float)spot.X, 0, (float)spot.Z));
+                rig.Distance = 24000f; rig.Yaw = 0; rig.TopInset = 0; rig.Apply();
+                foreach (var animator in layer.GetComponentsInChildren<Animator>(true)) { animator.cullingMode = AnimatorCullingMode.AlwaysAnimate; animator.Update(0f); }
+                layer.FaceCamera(camera);
+                RenderMap(camera, output);
+                File.WriteAllText(output + ".txt", $"{side} on {date:yyyy-MM-dd}: row={row.Id}; lookAt={rig.LookAt}; distance={rig.Distance}; pitch={Statecraft.Game.Map.CameraRig.Pitch}; fov={camera.fieldOfView}; legacy roster, rung 5, mobilization 0.8; every requested model answered\n");
+            }
+            finally
+            {
+                Statecraft.Game.Map.Units.UnitFigures.Source = null;
+                Statecraft.Game.Map.Units.UnitFigures.Forget();
+                if (previous.Any(s => s.isLoaded) && previous.Any(s => s.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous);
+            }
+        }
+
         static void RenderMap(Camera camera, string path)
         {
             var old = camera.targetTexture; var active = RenderTexture.active;

@@ -33,7 +33,7 @@ namespace Statecraft.Game.Map.Units
             SandwichArmouredCar = "figure-vehicle-sandwich-convoy-1948-v2";
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
-            AlaInfantry = "figure-ala-infantry-1948-v1", IraqiInfantry = "figure-iraqi-infantry-1948-v1",
+            AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
             EgyptianInfantry = CollectionCatalog.EgyptianInfantry;
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
@@ -69,8 +69,9 @@ namespace Statecraft.Game.Map.Units
         };
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
-        /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens. The new ALA candidate is review-only: no local-force
-        /// row is authored here. Lebanon's hidden row remains off the map (<see cref="UnitRoster.OnMap"/>).
+        /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens, with the new ALA infantry as their third figure
+        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's hidden row remains off the map
+        /// (<see cref="UnitRoster.OnMap"/>).
         /// Egypt is drawn as one token (owner, 27 October 2026: "One token"): in the GDD loop the one sim unit of its row,
         /// in the legacy loop its row's first anchor whose window holds the date (<see cref="UnitRoster.AnchorAt"/>), so at
         /// the first truce the forward base at Isdud; the rear base at Majdal stays in the row and on the unit card.
@@ -80,6 +81,14 @@ namespace Statecraft.Game.Map.Units
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
             ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry,
+        };
+
+        /// <summary>The third figure of an Arab force's token, by side, in place of its side figure: the ALA's is Tal Heuberger's ALA
+        /// infantry beside two C09 (owner, 27 October 2026: "Third figure (Recommended)"). The token waits only for its side figure
+        /// (<see cref="SideFigure"/>); the third figure joins when its own bundle arrives, and fails open (the token keeps two).</summary>
+        public static readonly IReadOnlyDictionary<string, string> ThirdBySide = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["ala"] = AlaInfantry,
         };
 
         /// <summary>A vehicle's model by its type (<see cref="UnitVehicle"/>): the 65 mm gun is H02, the "Napoleonchik"
@@ -97,7 +106,8 @@ namespace Statecraft.Game.Map.Units
         /// <paramref name="headgear"/> on an Israeli token (ignored on another side's).</summary>
         public static string? FigureFor(UnitEntry u, int index, string? headgear)
         {
-            if (u.Side != UnitData.Israel) return SideFigure(u.Side);
+            if (u.Side != UnitData.Israel)
+                return index == 2 && ThirdBySide.TryGetValue(u.Side, out var sideThird) ? sideThird : SideFigure(u.Side);
             if (index == 2 && ThirdFigure.TryGetValue(u.Id, out var third)
                 && (u.Headgear == null || ThirdOverHeadgear.TryGetValue(third, out var cap) && cap == headgear)) return third;
             if (index == 2 && u.Headgear == null) return PioneerVeteran;

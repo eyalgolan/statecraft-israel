@@ -18,16 +18,19 @@ public class Generated1948CharacterTests
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static List<UnitEntry> Units => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
 
+    /// <summary>Owner, 27 October 2026: "Third figure (Recommended)". Tal Heuberger's ALA infantry streams in a bundle of its own,
+    /// after the people's, and stands third on the ALA token; it never enlarges the people's bundle.</summary>
     [Test]
-    public void ReviewOnlyAlaIsNotInAnyPlayerBundleOrAnimationCatalog()
+    public void AlaInfantryStreamsInItsOwnBundleAsTheAlaTokensThirdFigure()
     {
         const string id = "figure-ala-infantry-1948-v1";
-        Assert.IsNull(CollectionCatalog.BundleOf(id), "review-only ALA must not enlarge the People download");
-        CollectionAssert.DoesNotContain(CollectionCatalog.Animated, id);
+        Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id));
+        Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.After["collection-" + id]);
+        CollectionAssert.Contains(CollectionCatalog.Animated, id);
+        Assert.AreEqual(id, UnitFigures.ThirdBySide["ala"]);
         var models = AssetDatabase.FindAssets(id).Select(AssetDatabase.GUIDToAssetPath)
             .Where(p => p.EndsWith(".fbx", StringComparison.Ordinal)).ToArray();
-        Assert.IsNotEmpty(models);
-        Assert.IsTrue(models.All(p => p.StartsWith("Assets/Editor/", StringComparison.Ordinal)));
+        CollectionAssert.AreEqual(new[] { $"{CollectionCatalog.Folder}/{id}/{id}.fbx" }, models);
     }
 
     static readonly string[] AllGenerated = {
@@ -67,6 +70,7 @@ public class Generated1948CharacterTests
     [TestCase("figure-syrian-infantry-1948-v1")]
     [TestCase("figure-iraqi-infantry-1948-v1")]
     [TestCase("figure-egyptian-infantry-1948-v1")]
+    [TestCase("figure-ala-infantry-1948-v1")]
     public void FullQualityFigureKeepsOneModelWithoutTheLegacyLodSwitcher(string id)
     {
         var root = new GameObject("Full quality figure fixture");
@@ -112,10 +116,10 @@ public class Generated1948CharacterTests
             id => id == UnitFigures.Irregular, Unmoved);
         var ala = tokens.Single(t => t.Unit.Id == "arab_liberation_army");
         Assert.AreEqual(UnitFigures.Irregular, ala.ArtType);
-        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.Irregular, 3),
-            Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(ala.Unit, i, null)));
+        CollectionAssert.AreEqual(new[] { UnitFigures.Irregular, UnitFigures.Irregular, UnitFigures.AlaInfantry },
+            Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(ala.Unit, i, null)), "two C09, the ALA infantry third");
         Assert.IsFalse(UnitFigures.BySide.Values.Contains(UnitFigures.AlaInfantry),
-            "the new ALA candidate remains in the explicit review scene");
+            "the token still waits only for C09, its side figure");
     }
 
     [TestCase("syria", "syrian_army", "syrian_army", "figure-syrian-infantry-1948-v1")]
@@ -140,7 +144,8 @@ public class Generated1948CharacterTests
         Assert.AreEqual(3, token.Figures);
         Assert.IsEmpty(token.Headgear, "no Israeli headgear substitution");
         Assert.IsEmpty(token.Vehicles, "infantry art does not introduce equipment");
-        CollectionAssert.AreEqual(Enumerable.Repeat(model, 3), Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(token.Unit, i, null)));
+        var third = UnitFigures.ThirdBySide.TryGetValue(side, out var t3) ? t3 : model;
+        CollectionAssert.AreEqual(new[] { model, model, third }, Enumerable.Range(0, 3).Select(i => UnitFigures.FigureFor(token.Unit, i, null)));
         CollectionAssert.AreEqual(new[] { rowId }, arrived.Where(t => t.Unit.Side != UnitData.Israel).Select(t => t.Unit.Id),
             "another side cannot borrow the arrived figure");
     }
@@ -200,6 +205,7 @@ public class Generated1948CharacterTests
     [TestCase("figure-syrian-infantry-1948-v1", CollectionCatalog.ArabArmies)]
     [TestCase("figure-iraqi-infantry-1948-v1", CollectionCatalog.ArabArmies)]
     [TestCase("figure-egyptian-infantry-1948-v1", "collection-figure-egyptian-infantry-1948-v1")]
+    [TestCase("figure-ala-infantry-1948-v1", "collection-figure-ala-infantry-1948-v1")]
     public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id, string bundle)
     {
         Assert.AreEqual(bundle, CollectionCatalog.BundleOf(id), "a bundle of its own, not the opening people's (#1763)");

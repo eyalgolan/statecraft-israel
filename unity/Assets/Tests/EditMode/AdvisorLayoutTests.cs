@@ -42,6 +42,22 @@ public class AdvisorLayoutTests
         Assert.AreEqual(1688f, slot.yMax, "12 px above the higher of the info panel and the minimap's label");
     }
 
+    /// <summary>#40 (#1135): on the tight three-row HUD the side menu is a row under the bar (Statecraft.uss .hud-tight
+    /// .hud-three-row .left-column). The sheet starts at the row's left edge and under it, not right of the row, which would
+    /// leave it a strip at the window's right edge.</summary>
+    [Test]
+    public void OnTheTightPhoneTheSheetStartsUnderTheMenuRow()
+    {
+        var window = R(0, 0, 792, 1714);   // 390x844 at 100%
+        var column = R(296, 276, 480, 1422); var row = R(8, 212, 776, 60);
+        var minimap = R(554, 1318, 222, 380);
+        var slot = AdvisorLayout.Slot(HudTier.ThreeRow, window, column, row, minimap, null, null, null, null);
+        Assert.AreEqual(8f, slot.xMin, "from the row's left edge");
+        Assert.AreEqual(776f, slot.xMax, "right: 16px");
+        Assert.AreEqual(280f, slot.yMin, "8 px under the row (lower than the right column's top)");
+        Assert.AreEqual(1306f, slot.yMax, "12 px above the minimap");
+    }
+
     [Test]
     public void PlaceKeepsThePopupInItsSlotAndOffATarget()
     {

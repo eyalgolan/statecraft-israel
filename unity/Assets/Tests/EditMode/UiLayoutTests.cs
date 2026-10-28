@@ -273,11 +273,12 @@ public class UiLayoutTests
 
     /// <summary>The real Game.uxml on the real PanelSettings (and so the real theme), rendered at <paramref name="w"/> x
     /// <paramref name="h"/>, with the HUD and the Cabinet screen filled from the opening of the historical game.</summary>
-    static IEnumerator Filled(int w, int h, string? screen, System.Action<VisualElement> check)
+    static IEnumerator Filled(int w, int h, string? screen, System.Action<VisualElement> check, int uiScale = 100)
     {
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("LayoutTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -336,7 +337,7 @@ public class UiLayoutTests
     /// <summary>Playtest 1, item 2: the Cabinet lineup is a list inside the screen panel, below its header, filling the
     /// panel; rows that do not fit scroll instead of spilling over the top bar.</summary>
     [UnityTest]
-    public IEnumerator TheCabinetListStaysInsideItsPanel()
+    public IEnumerator TheCabinetListStaysInsideItsPanel([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         foreach (var (w, h) in Windows)
             yield return Filled(w, h, "cabinet", root =>
@@ -351,6 +352,20 @@ public class UiLayoutTests
                 Assert.GreaterOrEqual(view.yMax, root.Q("cabinet-status").worldBound.yMin - 16f, $"{w}x{h}: the list leaves the panel empty below it");
                 var rows = list.Query<Button>(className: "seat").ToList();
                 Assert.Greater(rows.Count, 5, "the lineup was rendered");
+                // Red on BASE: the house is pinned above the list, consuming its viewport at 150% on short windows.
+                var house = root.Q("cabinet-house");
+                var cardsFirst = uiScale == 150 && root.worldBound.height < 800f;
+                Assert.AreEqual(cardsFirst, house.hierarchy.parent == list.contentContainer, $"{w}x{h}: house shares the cards' scroll only on short 150% windows");
+                if (cardsFirst)
+                {
+                    Assert.AreSame(house, list.contentContainer.Children().Last(), "the house and legend follow every seat card");
+                    Assert.GreaterOrEqual(house.worldBound.yMin, rows.Max(x => x.worldBound.yMax) - 0.5f, "the house starts below all card rows");
+                    Assert.Less(rows[0].worldBound.yMin, view.yMax - 100f, "a card row is visible before scrolling");
+                    if (house.worldBound.yMax > view.yMax + 0.5f)
+                        Assert.Greater(list.verticalScroller.highValue, 0f, "the house can be reached by scrolling");
+                }
+                else
+                    Assert.LessOrEqual(house.worldBound.yMax, view.yMin + 0.5f, "100%/125% and tall 150% keep the pinned house above the list");
                 foreach (var r in rows)
                 {
                     Assert.GreaterOrEqual(r.worldBound.yMin, view.yMin - 0.5f, $"{w}x{h}: {r.name} sits above the list");
@@ -359,7 +374,7 @@ public class UiLayoutTests
                     if (r.worldBound.yMax > view.yMax + 0.5f)
                         Assert.Greater(list.verticalScroller.highValue, 0f, $"{w}x{h}: {r.name} runs past the panel and the list does not scroll");
                 }
-            });
+            }, uiScale);
     }
 
     /// <summary>Playtest 1, item 3: the camera learns how much of the window the top bar covers, at every window shape,
@@ -393,7 +408,7 @@ public class UiLayoutTests
     // screen at every size; the Cabinet list grew out of its screen over the top bar. Checked with every screen filled by
     // its presenter (an event open on the card), at 16:9 and at the wider viewports a browser window leaves.
     [UnityTest]
-    public IEnumerator FilledScreensStayInsideTheirPanelsAndTheTopBarFits()
+    public IEnumerator FilledScreensStayInsideTheirPanelsAndTheTopBarFits([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var c = ContentLoader.Load(Paths.Content);
         var text = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text);
@@ -416,6 +431,7 @@ public class UiLayoutTests
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40
             var go = new GameObject("LayoutTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -494,7 +510,7 @@ public class UiLayoutTests
     /// 1040 px wide, below the top bar and inside the layer; its option buttons stay inside it with their text; and its
     /// media header is 16:9 whenever the card has the height for it (on a full card it gives way first, as before).</summary>
     [UnityTest]
-    public IEnumerator EveryEventCardFitsTheDecisionLayer()
+    public IEnumerator EveryEventCardFitsTheDecisionLayer([Values(100, 125, 150)] int uiScale)   // #40: at the Settings scale choices
     {
         var problems = new List<string>();
         foreach (var (w, h) in CardWindows)
@@ -502,6 +518,7 @@ public class UiLayoutTests
             var rt = new RenderTexture(w, h, 0);
             var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
             ps.targetTexture = rt;
+            if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40
             var go = new GameObject("LayoutTest");
             go.SetActive(false);
             var doc = go.AddComponent<UIDocument>();
@@ -535,19 +552,32 @@ public class UiLayoutTests
                     CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
                     if (c.height > tallest) { tallest = c.height; tallestId = e.Id; }
+                    var scroll = root.Q<ScrollView>("event-scroll");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
                     {
+                        // #1853: the options scroll with the text, so one past the body's visible part is first brought into
+                        // view, as Tab brings it (FocusScroll); then it must lie inside the card and the body's viewport.
+                        if (!Inside(b.worldBound, c))
+                        {
+                            scroll.ScrollTo(b);
+                            yield return null;
+                            if (!Inside(b.worldBound, scroll.contentViewport.worldBound))
+                                problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {scroll.contentViewport.worldBound}");
+                        }
                         if (b.worldBound.yMax > c.yMax + 0.5f || b.worldBound.yMin < c.yMin - 0.5f || b.worldBound.xMax > c.xMax + 0.5f || b.worldBound.xMin < c.xMin - 0.5f)
                             problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
                         // Playtest 2, P2-2: the option's text lies inside its button (it wraps; it is never cut at the edge).
                         if (!TextFits(b))
                             problems.Add($"{w}x{h}: {e.Id}: option text '{b.text}' does not fit its button {b.contentRect}");
                     }
+                    scroll.scrollOffset = Vector2.zero;
                     // Playtest 2, P2-3: in a window at least as tall (logically) as 1366x657, the body and the options fit
                     // without scrolling; shorter windows may scroll the body as the fallback.
-                    var scroll = root.Q<ScrollView>("event-scroll");
                     var logicalHeight = root.panel.visualTree.layout.height;
-                    if (logicalHeight >= EventCardPresenter.ScrollFallbackHeight && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
+                    // Owner ruling, 27 October: "Compact card + allow scroll (Recommended)" (#1135).
+                    // The narrow-card fallback is at 150% only; Hide and the options are still checked above at every size.
+                    if (CardBodyScrollsTooMuch(uiScale, root.Q("event-card").worldBound.width, logicalHeight,
+                                              scroll.contentContainer.layout.height, scroll.contentViewport.layout.height))
                         problems.Add($"{w}x{h} (logical height {logicalHeight:0}): {e.Id}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px)");
                 }
                 Debug.Log($"I2 {w}x{h}: tallest card {tallestId} {tallest:0} px");
@@ -560,6 +590,37 @@ public class UiLayoutTests
             }
         }
         Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    static bool CardBodyScrollsTooMuch(int uiScale, float width, float logicalHeight, float contentHeight, float viewportHeight)
+    {
+        var narrowAt150 = uiScale == 150 && width < CardMaxWidth - 1f;
+        return !narrowAt150 && logicalHeight >= EventCardPresenter.ScrollFallbackHeight && contentHeight > viewportHeight + 1f;
+    }
+
+    [TestCase(150, 1038f, false)]
+    [TestCase(150, 1039f, true)]
+    [TestCase(150, 1040f, true)]
+    [TestCase(150, 1041f, true)]
+    [TestCase(125, 1038f, true)]
+    [TestCase(125, 1039f, true)]
+    [TestCase(125, 1040f, true)]
+    [TestCase(125, 1041f, true)]
+    [TestCase(100, 1038f, true)]
+    [TestCase(100, 1039f, true)]
+    [TestCase(100, 1040f, true)]
+    [TestCase(100, 1041f, true)]
+    public void TheBodyScrollCheckKeepsItsWidthAndScaleBoundary(int uiScale, float width, bool expectedProblem)
+    {
+        Assert.AreEqual(expectedProblem, CardBodyScrollsTooMuch(uiScale, width, EventCardPresenter.ScrollFallbackHeight, 200f, 100f));
+    }
+
+    [TestCase(100, 1039f)]
+    [TestCase(125, 1040f)]
+    [TestCase(150, 1041f)]
+    public void ShortWindowsKeepTheBodyScrollFallback(int uiScale, float width)
+    {
+        Assert.IsFalse(CardBodyScrollsTooMuch(uiScale, width, EventCardPresenter.ScrollFallbackHeight - 1f, 200f, 100f));
     }
 
     /// <summary>The decision card's place: in the decision layer, centred across it, at most CardMaxWidth logical px wide and
@@ -579,9 +640,12 @@ public class UiLayoutTests
         if (c.yMin < bar.worldBound.yMax - 0.5f) problems.Add($"{where}: the card {c} starts over the top bar {bar.worldBound}");
         var hide = root.Q("event-hide").worldBound;
         if (!Inside(hide, c)) problems.Add($"{where}: Hide {hide} is cut off by the card {c}");
-        // The header gives way before the text on every window: while a photograph shows, the body never scrolls.
+        // The header gives way before the text on every window: while a photograph shows, the body never scrolls. Layout
+        // rounds each edge to the device pixel grid, so the viewport may come out one device pixel short of its text: at a
+        // scale under 1 that is more than one panel px (1.06 at 125% on 1568x752, #40), and it is not a scroll.
         var scroll = root.Q<ScrollView>("event-scroll");
-        if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + 1f)
+        var devicePixel = Mathf.Max(1f, 1f / root.panel.scaledPixelsPerPoint) + 0.01f;
+        if (root.Q("event-photo").resolvedStyle.display == DisplayStyle.Flex && scroll.contentContainer.layout.height > scroll.contentViewport.layout.height + devicePixel)
             problems.Add($"{where}: the body scrolls ({scroll.contentContainer.layout.height:0} px of text in {scroll.contentViewport.layout.height:0} px) while the photograph shows");
         var band = root.Q("event-photo");
         // The layer's padding is reserved space, so only its content rectangle can leave room for a full header.
@@ -666,8 +730,20 @@ public class UiLayoutTests
                     if (card.PhotoAlt == null) dropped++; else shown++;
                     CheckCard($"{w}x{h}: {e.Id}", root, problems);
                     var c = root.Q("event-card").worldBound;
+                    var body = root.Q<ScrollView>("event-scroll");
                     foreach (var b in root.Q("event-options").Query<Button>().ToList())
+                    {
+                        // #1853: an option past the body's visible part is brought into view first, as Tab brings it.
+                        if (!Inside(b.worldBound, c))
+                        {
+                            body.ScrollTo(b);
+                            yield return null;
+                            if (!Inside(b.worldBound, body.contentViewport.worldBound))
+                                problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} cannot be scrolled whole into the body {body.contentViewport.worldBound}");
+                        }
                         if (!Inside(b.worldBound, c)) problems.Add($"{w}x{h}: {e.Id}: option '{b.text}' {b.worldBound} is cut off by the card {c}");
+                    }
+                    body.scrollOffset = Vector2.zero;
                 }
                 Debug.Log($"I6 {w}x{h}: {shown} photographs shown, {dropped} dropped");
                 Assert.Greater(shown, 0, $"{w}x{h}: photographs show on this window");
