@@ -17,12 +17,17 @@ GENERATED_PEOPLE = [
     "figure-syrian-infantry-1948-v1",
     "figure-iraqi-infantry-1948-v1",
 ]
+# Generated figures signed off later, each streamed in a bundle of its own (owner, 27 October 2026, "Sign off all 19").
+GENERATED_FIGURES = [
+    "figure-egyptian-infantry-1948-v1",
+    "figure-ala-infantry-1948-v1",
+]
 
 
 def catalog_bundles() -> dict[str, list[str]]:
     text = CATALOG.read_text(encoding="utf-8")
     bundles = {}
-    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies), new\[\]\s*\{(.*?)\}\)", text, re.S):
+    for name, body in re.findall(r"\((People|Vehicles|Animals|Towns|ArabArmies|GeneratedFigures), new\[\]\s*\{(.*?)\}\)", text, re.S):
         bundles[name] = re.findall(r'"([a-z0-9-]+)"', body)
     return bundles
 
@@ -36,11 +41,10 @@ def test_the_original_50_slim_inputs_and_generated_infantry_partition_the_catalo
         "Towns": slim.TOWNS,
         # The generated infantry stream from a bundle of their own (owner ruling, 26 October 2026, #1763).
         "ArabArmies": GENERATED_PEOPLE,
+        "GeneratedFigures": GENERATED_FIGURES,
     }
     assert len(slim.IDS) == len(set(slim.IDS)) == 50
-    assert not set(GENERATED_PEOPLE) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
-    assert "figure-egyptian-infantry-1948-v1" not in sum(bundles.values(), []), "Egyptian art stays in review"
-    assert "figure-egyptian-infantry-1948-v1" not in slim.IDS
+    assert not set(GENERATED_PEOPLE + GENERATED_FIGURES) & set(slim.IDS), "new generated sources must not enter the original FBX converter"
     assert all(not i.startswith("b") for i in slim.IDS), "the buildings are #659's"
 
 

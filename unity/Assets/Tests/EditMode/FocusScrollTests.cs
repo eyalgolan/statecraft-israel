@@ -75,6 +75,53 @@ public class FocusScrollTests
         using (var e = NavigationMoveEvent.GetPooled(NavigationMoveEvent.Direction.Next)) { e.target = from; from.SendEvent(e); }
     }
 
+    [UnityTest]
+    public IEnumerator TheInfoPanelsLabelOnlyOverflowIsKeyboardReachableUntilCovered()
+    {
+        using var r = new Rig(1568, 752);
+        r.Own(new NavigationGuard(r.Root));
+        var nav = r.Own(new ScreenNav(r.Root));
+        var view = r.Root.Q<ScrollView>("info-panel");
+        view.Clear();
+        view.style.display = DisplayStyle.Flex;
+        view.style.width = 400f; view.style.maxWidth = 400f;
+        view.style.height = 120f; view.style.minHeight = 120f; view.style.maxHeight = 120f;
+        view.contentContainer.style.flexDirection = FlexDirection.Column;
+        Label last = null!;
+        for (int i = 0; i < 20; i++)
+        {
+            last = new Label("Fact") { style = { height = 40f, flexShrink = 0f } };
+            view.Add(last);
+        }
+        var before = new Button { text = "Before facts" };
+        view.parent.Insert(view.parent.IndexOf(view), before);
+        FocusScroll.NoScrollBarIsATabStop(r.Root); // The policy GameRoot applies after constructing the views.
+        yield return Frames(4);
+        var slider = view.verticalScroller.slider;
+        Assert.IsTrue(slider.focusable, "label-only facts retain a keyboard scroll stop");
+        Assert.Greater(view.verticalScroller.highValue, 0f, "precondition: the facts overflow");
+        Assert.IsFalse(Inside(last, view), "precondition: the bottom fact is below the viewport");
+        before.Focus();
+        for (int i = 0; i < 8 && r.Focused != slider; i++)
+        {
+            Tab((VisualElement)r.Focused!);
+            yield return Frames(1);
+        }
+        Assert.AreSame(slider, r.Focused, "Tab reaches the info panel's slider with no card or screen open");
+        using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.End }))
+        { key.target = slider; slider.SendEvent(key); }
+        yield return Frames(3);
+        Assert.IsTrue(Inside(last, view), "End on the slider reaches the bottom label");
+        nav.Open("cabinet");
+        before.Focus();
+        Assert.IsFalse(slider.canGrabFocus, "the covered slider cannot take keyboard focus");
+        float coveredOffset = view.scrollOffset.y;
+        using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Home }))
+        { key.target = slider; slider.SendEvent(key); }
+        yield return Frames(2);
+        Assert.AreEqual(coveredOffset, view.scrollOffset.y, "keys cannot scroll the covered facts");
+    }
+
     /// <summary>The Cabinet open in the playtest window (1568x752), its cards laid out, and the first card below the view.</summary>
     static IEnumerator OpenCabinet(Rig r, List<Button> cards, Action<int> below)
     {

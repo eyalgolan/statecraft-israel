@@ -149,7 +149,7 @@ def test_every_cabinet_refusal_has_both_strings_and_the_english_is_the_sims_word
 
 def test_the_cause_line_names_are_contents_names_in_english_and_hebrew_without_latin():
     """B1: CauseText names indicators, policies, money, effects, situations and origin groups from
-    why.name/effect/situation/region (policies since C136's event_policy line, as PlayerText.Target names them).
+    why.name/effect/situation/region (policies since the event_policy line in #1680, as PlayerText.Target names them).
     English must be content's own name (the line is the sim's Message word for word), every content row has one, and the
     Hebrew has no Latin letters."""
     en, he = strings('strings.en.yaml'), strings('strings.he.yaml')
