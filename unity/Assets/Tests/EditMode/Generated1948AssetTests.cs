@@ -1,10 +1,12 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using NUnit.Framework;
 using Statecraft.Game;
+using Statecraft.Game.Map.Collection;
 using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Review;
 using UnityEditor;
@@ -31,7 +33,9 @@ public class Generated1948AssetTests
         var files = AssetDatabase.FindAssets("t:Model", new[] { Generated1948BuildingsPropsReview.AssetFolder, Statecraft.Game.Map.Collection.CollectionCatalog.Folder, TownModels.Folder })
             .Select(AssetDatabase.GUIDToAssetPath).Where(p => p.EndsWith(".fbx", StringComparison.Ordinal))
             // The folder also holds #1377's review-only characters (figure-*); the buildings and props are generated-1948-*.
-            .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal)).ToArray();
+            .Where(p => Path.GetFileName(p).StartsWith("generated-1948-", StringComparison.Ordinal))
+            // The vehicle delivery's compatibility FBXs (the placed R35) have their own receipts (VehicleReviewTests).
+            .Where(p => !p.EndsWith("-compatibility.fbx", StringComparison.Ordinal)).ToArray();
         Assert.AreEqual(11, files.Length);
         foreach (string fbx in files)
         {
@@ -63,6 +67,82 @@ public class Generated1948AssetTests
             Assert.GreaterOrEqual(ti.maxTextureSize, Math.Max(receipt.embedded_dimensions[0], receipt.embedded_dimensions[1]));
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(Generated1948BuildingsPropsReview.PrefabOf(receipt.id)), receipt.id);
         }
+    }
+
+    /// <summary>A placed generated prop (#756) keeps its source in its streamed prefab: every part of the prop's own FBX, each
+    /// drawn with the prop's own material, whose map is the prop's own colour map, imported sRGB with mipmaps and not readable
+    /// on the CPU.</summary>
+    /// <summary>What is wrong with a placed prop's prefab: it must draw every one of <paramref name="sourceMeshes"/>, one
+    /// renderer per part, each with <paramref name="material"/>, whose map is <paramref name="map"/>.</summary>
+    static List<string> PrefabProblems(GameObject prefab, Mesh[] sourceMeshes, Material material, Texture map)
+    {
+        var problems = new List<string>();
+        var filters = prefab.GetComponentsInChildren<MeshFilter>(true);
+        if (sourceMeshes.Length == 0) problems.Add("no source mesh");
+        var drawn = filters.Select(f => f.sharedMesh).ToList();
+        if (sourceMeshes.Length != drawn.Count || sourceMeshes.Except(drawn).Any() || drawn.Except(sourceMeshes).Any()) problems.Add("not its FBX's own meshes, every one");
+        var renderers = prefab.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length != filters.Length) problems.Add("not one renderer per part");
+        if (!renderers.All(r => r.sharedMaterials.Length > 0 && r.sharedMaterials.All(m => m == material))) problems.Add("not its own material");
+        if (material.mainTexture != map) problems.Add("not its own colour map");
+        return problems;
+    }
+
+    /// <summary>What is wrong with a placed prop's colour map import: sRGB, mipmaps imported, not readable on the CPU.</summary>
+    static List<string> MapProblems(bool sRGB, bool mipmaps, bool readable, int mipmapCount)
+    {
+        var problems = new List<string>();
+        if (!sRGB) problems.Add("not sRGB");
+        if (!mipmaps || mipmapCount <= 1) problems.Add("no mipmaps");
+        if (readable) problems.Add("readable on the CPU");
+        return problems;
+    }
+
+    /// <summary>A placed generated prop (#756) keeps its source in its streamed prefab: every part of the prop's own FBX, each
+    /// drawn with the prop's own material, whose map is the prop's own colour map, imported sRGB with mipmaps and not readable
+    /// on the CPU. The checks reject a wrong material and a map without mipmaps.</summary>
+    [Test] public void PlacedGeneratedPropsKeepTheirSourceMeshMaterialAndMap()
+    {
+        var props = CollectionCatalog.Ids.Where(CollectionCatalog.IsGeneratedProp).ToList();
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, props);
+        foreach (string id in props)
+        {
+            string dir = $"{CollectionCatalog.Folder}/{id}", fbx = CollectionCatalog.SourceModelPath(id), map = $"{dir}/{id}_basecolor.jpg";
+            var sourceMeshes = AssetDatabase.LoadAssetAtPath<GameObject>(fbx).GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
+            var material = AssetDatabase.LoadAssetAtPath<Material>($"{dir}/{id}.mat");
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(map);
+            CollectionAssert.IsEmpty(PrefabProblems(prefab, sourceMeshes, material, texture), id);
+            var ti = (TextureImporter)AssetImporter.GetAtPath(map);
+            CollectionAssert.IsEmpty(MapProblems(ti.sRGBTexture, ti.mipmapEnabled, ti.isReadable, texture.mipmapCount), map);
+        }
+        // The checks see a wrong material on a copy of the tent and a colour map imported without mipmaps.
+        string tent = CollectionCatalog.BedouinTent, tentDir = $"{CollectionCatalog.Folder}/{tent}";
+        var tentMeshes = AssetDatabase.LoadAssetAtPath<GameObject>($"{tentDir}/{tent}.fbx").GetComponentsInChildren<MeshFilter>(true).Select(f => f.sharedMesh).ToArray();
+        var tentMaterial = AssetDatabase.LoadAssetAtPath<Material>($"{tentDir}/{tent}.mat");
+        var copy = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(tent, CollectionDetail.Near)));
+        var other = new Material(tentMaterial);
+        try
+        {
+            foreach (var r in copy.GetComponentsInChildren<Renderer>(true)) r.sharedMaterial = other;
+            CollectionAssert.Contains(PrefabProblems(copy, tentMeshes, tentMaterial, tentMaterial.mainTexture), "not its own material");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(copy); UnityEngine.Object.DestroyImmediate(other); }
+        // A real colour map imported without mipmaps (a temporary texture, deleted afterwards) is rejected the same way.
+        string root = "Assets/TalMipProbe" + Guid.NewGuid().ToString("N"), png = root + "/probe.png";
+        try
+        {
+            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+            var source = new Texture2D(8, 8, TextureFormat.RGBA32, false);
+            try { File.WriteAllBytes(Disk(png), source.EncodeToPNG()); } finally { UnityEngine.Object.DestroyImmediate(source); }
+            AssetDatabase.ImportAsset(png, ImportAssetOptions.ForceSynchronousImport);
+            var probe = (TextureImporter)AssetImporter.GetAtPath(png);
+            probe.sRGBTexture = true; probe.isReadable = false; probe.mipmapEnabled = false; probe.SaveAndReimport();
+            var imported = AssetDatabase.LoadAssetAtPath<Texture2D>(png);
+            Assert.AreEqual(1, imported.mipmapCount, "the probe imported without mipmaps");
+            CollectionAssert.AreEqual(new[] { "no mipmaps" }, MapProblems(probe.sRGBTexture, probe.mipmapEnabled, probe.isReadable, imported.mipmapCount));
+        }
+        finally { AssetDatabase.DeleteAsset(root); }
     }
 
     /// <summary>The five houses placed in the town kits (owner, 27 October 2026, #756) stream after the first frame like the other

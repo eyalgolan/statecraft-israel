@@ -15,7 +15,7 @@ mergeInto(LibraryManager.library, {
   $StatecraftCopySharePicture: function (text, serial, site) {
     var done = function (result) { if (serial === window.statecraftShareCopySerial) window.statecraftShareCopied = result; };
     var file = window.statecraftShareFile;
-    // Site links cannot carry a PNG. If copying it is blocked, request the kept PNG download instead (C149).
+    // Site links cannot carry a PNG. If copying it is blocked, request the kept PNG download instead (#1680).
     // Called synchronously from the release, before window.open. A promise rejection also retains the picture.
     var download = function () {
       if (serial !== window.statecraftShareCopySerial) return;

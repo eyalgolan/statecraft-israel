@@ -27,13 +27,16 @@ public class Generated1948BuildingsPropsTests
         var review = scene.GetRootGameObjects().SelectMany(g => g.GetComponentsInChildren<Generated1948BuildingsPropsReview>()).Single();
         Assert.AreEqual(11, review.Prefabs.Count); Assert.AreEqual(11, review.Materials.Count); Assert.AreEqual(11, review.Labels.Count);
         CollectionAssert.AllItemsAreUnique(review.Labels);
+        // Each slot holds its own model's prefab and material, wherever the model lives now (review folder, or the collection's once placed).
+        var ids = (string[])System.Type.GetType("Statecraft.Game.EditorTools.Generated1948BuildingsPropsAssets, Assembly-CSharp-Editor")!
+            .GetField("Ids")!.GetValue(null)!;
+        Assert.AreEqual(review.Prefabs.Count, ids.Length);
         for (int i = 0; i < review.Prefabs.Count; i++)
         {
             Assert.IsNotNull(review.Prefabs[i]); Assert.IsNotNull(review.Materials[i]);
-            var path = AssetDatabase.GetAssetPath(review.Prefabs[i]);
-            Assert.IsTrue(path.StartsWith(Generated1948BuildingsPropsReview.AssetFolder + "/", System.StringComparison.Ordinal)
-                || path.StartsWith(Statecraft.Game.Map.Collection.CollectionCatalog.Folder + "/", System.StringComparison.Ordinal)
-                || path.StartsWith(Statecraft.Game.Map.Kits.TownModels.Folder + "/", System.StringComparison.Ordinal), path);
+            string stem = Generated1948BuildingsPropsReview.DirOf(ids[i]) + "/" + ids[i];
+            Assert.AreEqual(Generated1948BuildingsPropsReview.PrefabOf(ids[i]), AssetDatabase.GetAssetPath(review.Prefabs[i]), ids[i] + " prefab");
+            Assert.AreEqual(stem + ".mat", AssetDatabase.GetAssetPath(review.Materials[i]), ids[i] + " material");
         }
         // 01, 03 and 05 were regenerated on #1379; no label may still mark a roof gap or rear opening.
         Assert.IsFalse(review.Labels.Any(s => s.Contains("roof gaps") || s.Contains("rear opening")));

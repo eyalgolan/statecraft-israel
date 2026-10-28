@@ -205,6 +205,10 @@ namespace Statecraft.Game.Map.Collection
         public static bool IsBuilding(string id) => Kits.TownModels.Ids.Contains(id)
             || Groups.Single(b => b.Bundle == Buildings).Ids.Contains(id);
 
+        /// <summary>Tal Heuberger's generated houses (01 to 05, #756), placed among the town buildings: they keep their delivered
+        /// import settings (CollectionImport.MakeBuildingPrefabs builds only their prefabs).</summary>
+        public static bool IsGeneratedHouse(string id) => IsBuilding(id) && id.StartsWith("generated-1948-", StringComparison.Ordinal);
+
         /// <summary>The bundle that carries <paramref name="id"/>, or null for an id the collection does not have.</summary>
         public static string? BundleOf(string id)
         {

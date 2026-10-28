@@ -41,7 +41,7 @@ namespace Statecraft.Game.Tests
             Assert.AreEqual(35.5747, tank.Lon, 1e-9, "Degania Alef's row in settlements_1948.yaml");
             Assert.AreEqual(32.7081, tank.Lat, 1e-9);
             StringAssert.Contains("degania_defence.yaml", tank.Source);
-            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's sourced length");
+            Assert.AreEqual(4.02f, SpecialBuildingModels.RealLengthM(SpecialBuildingModels.SyrianR35), 1e-6f, "the R35's length, en.wiki Renault R35 (research_notes/Map/degania-r35.md)");
         }
 
         [Test]
@@ -132,10 +132,10 @@ namespace Statecraft.Game.Tests
             var props = people.Wanted.Select(w => (new Vector2(w.At.x, w.At.z), CivilianPeople.FigureClearanceM))
                 .Concat(WildlifeLayer.Wants(map).Select(w => (w.At, 0.5f * WildlifeLayer.SizeM))).ToList();
             var layer = CollectionGeometryFixture.Special(map, After)!;
-            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun },
-                asked.Select(a => a.id), "one request per placed model");
+            CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Tegart, SpecialBuildingModels.Barracks, SpecialBuildingModels.Factory, SpecialBuildingModels.Shikun,
+                SpecialBuildingModels.SyrianR35 }, asked.Select(a => a.id), "one request per placed model");
             AnswerAll();
-            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun" }, layer.Placed.Select(p => p.Key));
+            CollectionAssert.AreEquivalent(new[] { "latrun_tegart", "tzrifin_barracks", "camp_80_barracks", "netanya_factory", "ramat_hahayal_shikun", "degania_r35" }, layer.Placed.Select(p => p.Key));
             var ground = PlacementLayer.CampGround(map);
             var footprints = map.KitFootprints.Select(f => (f.centre, f.radius)).ToList();
             var wants = SpecialBuildingModels.Placements(After).ToDictionary(w => w.Key);
@@ -203,8 +203,10 @@ namespace Statecraft.Game.Tests
             {
                 [SpecialBuildingModels.Tegart] = (3f, 4f), [SpecialBuildingModels.Factory] = (3f, 4f), [SpecialBuildingModels.Barracks] = (2.5f, 3.25f),
                 [SpecialBuildingModels.Shikun] = (3f, 4f),
+                // The R35, 4.02 m at the same world scale: about 96 m, under half a locomotive car.
+                [SpecialBuildingModels.SyrianR35] = (0.42f, 0.52f),
             };
-            Assert.AreEqual(5, layer.Placed.Count);
+            Assert.AreEqual(6, layer.Placed.Count);
             foreach (var p in layer.Placed)
             {
                 var b = layer.transform.Find(p.Key)!.GetComponentsInChildren<Renderer>(true).Select(x => x.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
@@ -231,7 +233,7 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(fort != null && fort.transform.parent == layer.transform, "the same date keeps the same models");
             CollectionGeometryFixture.Special(map, After);
             AnswerAll();
-            Assert.AreEqual(5, layer.Placed.Count);
+            Assert.AreEqual(6, layer.Placed.Count);
             CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 16));
             AnswerAll(); // Earlier-date retirement reacquires its still-needed original through the fake source.
             CollectionAssert.AreEqual(new[] { "latrun_tegart" }, layer.Placed.Select(p => p.Key), "an earlier date shows only what stood then");

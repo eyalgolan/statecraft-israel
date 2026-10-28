@@ -110,13 +110,9 @@ public class VehicleReviewTests
         // The placed R35 streams compressed like the other placed generated models (no Crunch, full size); review candidates stay uncompressed.
         Assert.AreEqual(CollectionCatalog.IsGeneratedProp(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed,
             texture.textureCompression); Assert.IsFalse(texture.crunchedCompression);
-        foreach (string platform in new[] { "Android", "iPhone" })
+        if (CollectionCatalog.IsGeneratedProp(id)) Assert.AreEqual(4096, texture.maxTextureSize, "the placed R35's colour map stays at its full 4096 px");
+        foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" })
             Assert.IsFalse(texture.GetPlatformTextureSettings(platform).overridden, platform);
-        foreach (string platform in new[] { "Standalone", "WebGL" })
-        {
-            var settings = texture.GetPlatformTextureSettings(platform);
-            Assert.IsTrue(!settings.overridden || (settings.maxTextureSize >= 4096 && !settings.crunchedCompression), platform);
-        }
         var image = AssetDatabase.LoadAssetAtPath<Texture2D>(map); Assert.AreEqual(width, image.width); Assert.AreEqual(height, image.height);
         Assert.IsFalse(System.IO.Directory.GetFiles(AssetFile(folder)).Any(p => p.Contains("-near.") || p.Contains("-far.")));
         var provenance = JsonUtility.FromJson<SourceProof>(System.IO.File.ReadAllText(AssetFile(folder + "/provenance.json")));
