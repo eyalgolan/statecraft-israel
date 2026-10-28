@@ -25,6 +25,32 @@ public class UnitPlinthTests
     [SetUp] public void Readable() => UnitPlinth.KeepMeshesReadable = true;   // the tests read the built meshes back
     [TearDown] public void Released() => UnitPlinth.KeepMeshesReadable = false;
 
+    // Simulates a retained render entry; it does not establish why OnDisable missed unsubscription.
+    [Test]
+    public void DestroyedFlagDoesNotRunACapturedCameraCallback()
+    {
+        var flagObject = new GameObject("flag");
+        var cameraObject = new GameObject("camera");
+        try
+        {
+            var flag = flagObject.AddComponent<UnitFlagFacing>();
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.transform.position = new Vector3(8f, 3f, 11f);
+            var method = typeof(UnitFlagFacing).GetMethod("Turn", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+            var callback = (Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>)Delegate.CreateDelegate(
+                typeof(Action<UnityEngine.Rendering.ScriptableRenderContext, Camera>), flag, method!);
+            UnityEngine.Object.DestroyImmediate(flagObject);
+            Assert.IsTrue(flag == null, "precondition: DestroyImmediate should leave the component Unity-null");
+            Assert.DoesNotThrow(() => callback(default, camera));
+        }
+        finally
+        {
+            if (flagObject != null) UnityEngine.Object.DestroyImmediate(flagObject);
+            UnityEngine.Object.DestroyImmediate(cameraObject);
+        }
+    }
+
     static GameState StateAt(DateTime date)
     {
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical).Clone();
