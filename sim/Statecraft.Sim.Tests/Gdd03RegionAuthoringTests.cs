@@ -33,6 +33,34 @@ public class Gdd03RegionAuthoringTests
         Assert.IsType<YamlSequenceNode>(Get(row, key)).Children.Select(n => Assert.IsType<YamlScalarNode>(n).Value!).ToArray();
     static bool Unknown(YamlNode node) => string.IsNullOrEmpty(Assert.IsType<YamlScalarNode>(node).Value)
         || Assert.IsType<YamlScalarNode>(node).Value == "null";
+    /// <summary>Every opening_control under node with its path, in document order; a list item's segment is its id, else
+    /// "q,r" for a hex, else its index (as tools/regions_draft_reference.py writes the approved draft's).</summary>
+    static IEnumerable<(string Path, YamlMappingNode Control)> PathControls(YamlNode node, string path)
+    {
+        if (node is YamlMappingNode map)
+            foreach (var pair in map.Children)
+            {
+                var key = Assert.IsType<YamlScalarNode>(pair.Key).Value!;
+                if (key == "opening_control") yield return (path, Assert.IsType<YamlMappingNode>(pair.Value));
+                foreach (var child in PathControls(pair.Value, path == "" ? key : path + "/" + key)) yield return child;
+            }
+        else if (node is YamlSequenceNode sequence)
+            for (var i = 0; i < sequence.Children.Count; i++)
+            {
+                var item = sequence.Children[i];
+                var segment = i.ToString(CultureInfo.InvariantCulture);
+                if (item is YamlMappingNode m)
+                {
+                    // A string id, as YAML reads it: a plain null or a plain number is not one.
+                    if (Value(m, "id") is string id && !(((YamlScalarNode)m.Children[new YamlScalarNode("id")]).Style == ScalarStyle.Plain
+                        && long.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out _)))
+                        segment = id;
+                    else if (m.Children.ContainsKey(new YamlScalarNode("q")) && m.Children.ContainsKey(new YamlScalarNode("r")))
+                        segment = Text(m, "q") + "," + Text(m, "r");
+                }
+                foreach (var child in PathControls(item, path + "/" + segment)) yield return child;
+            }
+    }
     static IEnumerable<YamlMappingNode> Controls(YamlNode node)
     {
         if (node is YamlMappingNode map)
@@ -113,7 +141,7 @@ public class Gdd03RegionAuthoringTests
     {
         var approved = Parse(Approved);
         var source = Map(approved, "source");
-        Assert.Equal("1691-c274-r1", Text(source, "draft"));
+        Assert.Equal("docs/drafts/regions-1691.draft.yaml", Text(source, "file"));
         Assert.Equal("69e0586f6805bf97b49b64c4ee3fd6732afd128594939a9f92e8f5aa3113f125", Text(source, "sha256"));
         var draft = Rows(approved, "regions");
         var evidence = Rows(Parse(Evidence), "regions");
@@ -134,6 +162,13 @@ public class Gdd03RegionAuthoringTests
                     (Value(g, "id"), Value(g, "region_id"), Value(g, "binding_status"), Value(c, "status"), Value(c, "value"), Value(c, "date")));
             }
         }
+        // #1852 review: the reception site, hexes and facilities carry their own opening controls; compare each by path.
+        var others = PathControls(Parse(Evidence), "")
+            .Where(x => !(x.Path.Split('/') is var p && p[0] == "regions" && (p.Length == 2 || p[2] == "members"))).ToArray();
+        var wantOthers = Rows(approved, "ancillary_controls");
+        Assert.Equal(50, wantOthers.Length);
+        Assert.Equal(wantOthers.Select(r => (Value(r, "path"), Value(r, "status"), Value(r, "value"), Value(r, "date"))),
+            others.Select(x => ((string?)x.Path, Value(x.Control, "status"), Value(x.Control, "value"), Value(x.Control, "date"))));
     }
 
     [Theory]
