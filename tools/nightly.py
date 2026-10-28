@@ -19,6 +19,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -31,9 +32,9 @@ import nightly_checks
 import unity_postmerge
 from nightly_publish import (GitHub, Itch, demo_serves, itch_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
-from nightly_state import (JOB, TZ, Config, Missed, Published, Refused, Runner, Skipped, State, Stop, base_version,
+from nightly_state import (JOB, TZ, Config, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
-                           nightly_version, notify, record, run_lock, save_state, tag_for)
+                           notify, record, run_lock, save_state, tag_for)
 from web_check import find_chrome
 
 HOLDER_ENV = unity_postmerge.machine_lock.HOLDER_ENV
@@ -189,16 +190,13 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
         raise Refused("unity-editor", f"{editor} is missing")
     if not cfg.unity_slots.is_file():
         raise Refused("unity-slots", f"{cfg.unity_slots} is missing")
-    base = base_version((clone / "sim/Statecraft.Sim/SimInfo.cs").read_text(encoding="utf-8"))
-    version = nightly_version(base, day)
+    version = gh.next_version()
     tag = tag_for(version)
-    release = gh.release_state(tag)
-    if release == "draft" and state.open_draft == tag:
+    if gh.release_state(tag) == "draft" and state.open_draft == tag:
         if not no_publish:   # --no-publish makes no store write, not even this cleanup
-            gh.delete_draft(tag)   # this job's own draft from an earlier run tonight
+            gh.delete_draft(tag)   # this job's own draft from an earlier run
             state.open_draft = None
-    elif release is not None:
-        raise Refused("tag-exists", f"a {release} release already has the tag {tag}")
+    gh.ensure_tag_available(tag)
     run_dir = job / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
     manifest = (clone / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text(encoding="utf-8")
     return Night(now, day, sha, version, tag, run_dir, time.monotonic() + cfg.deadline_hours * 3600, job, cfg,
@@ -516,6 +514,8 @@ def previous_build(night: Night, state: State, gh: GitHub, runner: Runner) -> tu
 
 def _drop_draft(night: Night, state: State, gh: GitHub) -> None:
     """Delete tonight's draft if it is still one. A failure here never replaces the refusal that caused it."""
+    if state.open_draft != night.tag:
+        return
     try:
         present = gh.release_state(night.tag)
         if present == "draft":
@@ -548,6 +548,29 @@ def _itch_rollback(night: Night, itch, folder: Path, version: str) -> str:
         return note
 
 
+def _restore_latest(night: Night, gh: GitHub, previous: str | None) -> str:
+    target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
+    try:
+        acted, current = gh.restore_latest(previous, night.tag)
+        if acted:
+            note = (f"restored {target}" if previous is not None else
+                    "no previous Latest; removed the failed release's Latest mark")
+        elif current is None:
+            note = f"there is no Latest now, so {night.tag} is not Latest: left alone"
+        elif current == previous:
+            note = f"{target} still stands; nothing to restore"
+        else:
+            note = f"Latest is now {current}, not {night.tag}: left alone"
+    except Exception as e:
+        note = f"Latest recovery failed ({target}): {_detail(e)}; check by hand"
+    print(note, file=sys.stderr)
+    try:
+        (night.run_dir / "latest-rollback.log").write_text(note + "\n", encoding="utf-8")
+    except OSError as e:
+        print(f"could not write Latest recovery log: {e}", file=sys.stderr)
+    return "; " + note
+
+
 def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path, Path], sizes: dict[str, int],
                   boot: float, *, previous: tuple[str, str | None], save: Callable[[], None],
                   runner: Runner) -> None:
@@ -564,10 +587,11 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     notes = night.run_dir / "release-notes.md"
     notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, subjects=subjects,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")
-    state.open_draft = night.tag   # set first: a half-made draft is then recognised and cleaned by a rerun
+    gh.ensure_tag_available(night.tag)   # again just before create: a release made since preflight is never ours
+    state.open_draft = night.tag   # set before create: a draft a failed upload leaves behind is then cleaned
+    save()
     try:
         gh.create_draft(night.tag, night.sha, notes, list(zips))
-        save()
         gh.verify_draft(night.tag, list(zips), night.run_dir / "draft-download")
     except Exception as e:
         _drop_draft(night, state, gh)
@@ -605,46 +629,54 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
                 _itch_rollback(night, itch, rollback_folder, rollback_version)
             _drop_draft(night, state, gh)
             raise
+    previous_latest = None
+    publish_started = verified = False
     try:
+        previous_latest = gh.latest_tag()
+        (night.run_dir / "latest-before-publish.txt").write_text(
+            previous_latest + "\n" if previous_latest is not None else "no previous Latest\n", encoding="utf-8")
+        publish_started = True   # an edit can reach GitHub even if the command then fails
         gh.publish(night.tag, night.sha)
-    except Exception as e:
+        verified = True
+        state.open_draft = None
+        state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
+        if len(state.boot_baseline) < BASELINE_NIGHTS:
+            state.boot_baseline.append(boot)
+        state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
+        save()
+        if not use_itch:
+            skip = "itch: skipped (save test not passed)"
+            print(skip)
+            night.notes.append(skip)
+        failure = "no attempt"
+        for _ in range(2):   # the release is public already, so retry the site once before restoring Latest
+            try:
+                gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
+                demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
+                state.site_pending = None
+                return
+            except Exception as e:
+                failure = _detail(e)
+        raise Refused("site", f"{night.tag} is public and the demo is unchanged: {failure}")
+    except BaseException as e:
         detail = _detail(e)
-        if rollback_folder is not None:   # itch must not keep a build the release does not have
-            detail += _itch_rollback(night, itch, rollback_folder, rollback_version)
-        try:
-            now_state = gh.release_state(night.tag)
-        except Exception:
-            now_state = "unknown"
-        if now_state == "draft":
-            _drop_draft(night, state, gh)
-        elif now_state in ("published", "unknown"):
-            detail += f" (the release may be public: check {night.tag} by hand)"
-        raise Refused("github-publish", detail) from e
-    except BaseException:   # an interrupt: the same cleanup, then on with the interrupt
-        if rollback_folder is not None:
-            _itch_rollback(night, itch, rollback_folder, rollback_version)
-        _drop_draft(night, state, gh)
+        if publish_started:
+            detail += _restore_latest(night, gh, previous_latest)
+        if not verified:
+            if rollback_folder is not None:   # itch must not keep a build the release does not have
+                detail += _itch_rollback(night, itch, rollback_folder, rollback_version)
+            try:
+                now_state = gh.release_state(night.tag)
+            except Exception:
+                now_state = "unknown"
+            if now_state == "draft":
+                _drop_draft(night, state, gh)
+            elif now_state in ("published", "unknown"):
+                detail += f" (the release may be public: check {night.tag} by hand)"
+        if isinstance(e, Exception):
+            raise Refused(e.gate if isinstance(e, Stop) else "github-publish", detail) from e
+        night.notes.append(detail)   # run_night records recovery even when it re-raises an interrupt
         raise
-    state.open_draft = None
-    state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
-    if len(state.boot_baseline) < BASELINE_NIGHTS:
-        state.boot_baseline.append(boot)
-    state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
-    save()
-    if not use_itch:
-        skip = "itch: skipped (save test not passed)"
-        print(skip)
-        night.notes.append(skip)
-    failure = "no attempt"
-    for _ in range(2):   # the release is public already, so one more try before the demo is left on the old build
-        try:
-            gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
-            demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
-            state.site_pending = None
-            return
-        except Exception as e:   # any error here leaves the release public, so it must end as a site refusal
-            failure = e.detail if isinstance(e, Stop) else f"{type(e).__name__}: {e}"
-    raise Refused("site", f"{night.tag} is public and the demo is unchanged: {failure}")
 
 
 # --- the night --------------------------------------------------------------------------------------------------
@@ -751,8 +783,15 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
 # --- the itch.io save test --------------------------------------------------------------------------------------------
 
 PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$", re.M)
-SAVETEST_FRAME_TRIES = 20      # the page names a new upload's frame a little after butler shows the build live
+# The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
+# ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
+# 10-minute wait, so the save test now waits up to 40 minutes.
+# While it waited for the second upload that day, itch answered 429 Too Many Requests; a 429 now slows the polling
+# down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
+SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
+SAVETEST_RATE_LIMIT_SLEEP = 120   # after an HTTP 429 without a usable Retry-After
+SAVETEST_RATE_LIMIT_MAX = 300   # a longer Retry-After is capped; the total wait stays within the frame budget
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent
 
@@ -765,17 +804,43 @@ def _page_text(fetch, url: str) -> str:
         raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
 
 
+def _rate_limit_pause(e: Refused) -> int | None:
+    """Seconds to wait after itch answered HTTP 429 (its Retry-After, kept within bounds), or None for any other error."""
+    cause = e.__cause__
+    if not isinstance(cause, urllib.error.HTTPError) or cause.code != 429:
+        return None
+    try:
+        asked = int((cause.headers or {}).get("Retry-After", ""))
+    except ValueError:
+        asked = SAVETEST_RATE_LIMIT_SLEEP
+    return min(max(asked, SAVETEST_FRAME_SLEEP), SAVETEST_RATE_LIMIT_MAX)
+
+
 def _frame_url(fetch, sleep, page_url: str, other: str | None = None) -> str | None:
     """The game-frame URL the itch page embeds. With `other` it waits for a frame that is not that one; the last
-    frame seen (or None) comes back when the tries run out."""
-    found = None
-    for attempt in range(SAVETEST_FRAME_TRIES):
-        found = itch_frame_url(_page_text(fetch, page_url))
-        if found is not None and found != other:
+    frame seen (or None) comes back when the wait budget runs out. A 429 from itch only slows the polling down; if
+    itch still refuses when the budget runs out, that refusal is raised."""
+    found, limited = None, None
+    waited, budget = 0, SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP
+    while True:
+        try:
+            found, limited = itch_frame_url(_page_text(fetch, page_url)), None
+            pause = SAVETEST_FRAME_SLEEP
+        except Refused as e:
+            pause = _rate_limit_pause(e)
+            if pause is None:
+                raise
+            limited = e
+            print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
+        else:
+            if found is not None and found != other:
+                return found
+        if waited + pause > budget:
+            if limited is not None:
+                raise limited
             return found
-        if attempt + 1 < SAVETEST_FRAME_TRIES:
-            sleep(SAVETEST_FRAME_SLEEP)
-    return found
+        sleep(pause)
+        waited += pause
 
 
 def _frame_parts(url: str) -> tuple[str, str, str]:
@@ -799,10 +864,11 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     """The two-upload save test of docs/m3-release.md: upload A, play a turn and let the autosave commit; upload B
     (the same content, a new upload URL on the same frame origin); B must load that date, turn and state hash twice.
     "PASS" turns the itch push on (enable_itch); "INCONCLUSIVE" (the test could not be run or proves nothing) and
-    "FAIL" leave it off. It pushes to the PUBLIC itch page twice, so only the owner starts it."""
+    "FAIL" leave it off. It pushes twice to the separate test page in savetest_itch_target, never to the public page:
+    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
-    evidence: dict = {"tag": tag, "page_url": cfg.itch_page_url, "target": cfg.itch_target}
+    evidence: dict = {"tag": tag, "page_url": cfg.savetest_itch_page_url, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
     try:
         result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
@@ -819,11 +885,38 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     return result
 
 
+def _itch_project(target: str) -> str:
+    """`user/project` of a butler target, without its channel: every channel of a project uploads to its one page."""
+    return target.partition(":")[0].lower()
+
+
+def _page_key(url: str) -> tuple[str, str]:
+    parts = urllib.parse.urlsplit(url.strip())
+    return parts.netloc.lower(), parts.path.rstrip("/").lower()
+
+
+def _test_page_problem(cfg: Config) -> str | None:
+    """Why the save test may not push, or None: it needs its own test project, distinct from the public one."""
+    if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
+        return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
+    if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
+        return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
+    try:
+        test_page = _page_key(cfg.savetest_itch_page_url)
+        public_page = _page_key(cfg.itch_page_url) if cfg.itch_page_url else None
+    except ValueError as e:
+        return f"the save test's test page URL or the public page URL is not usable: {e}"
+    if test_page == public_page:
+        return "the save test's test page must not be the public itch page"
+    return None
+
+
 def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, tag: str, evidence: dict, fetch,
               sleep) -> tuple[str, str]:
     """(result, detail) of the test; a Refused or OSError out of it is the caller's INCONCLUSIVE."""
-    if not cfg.itch_page_url:
-        return "INCONCLUSIVE", "itch_page_url is not set in the job's config"
+    reason = _test_page_problem(cfg)
+    if reason:
+        return "INCONCLUSIVE", reason
     state = gh.release_state(tag)
     if state != "published":
         return "INCONCLUSIVE", f"{tag} is {state or 'not a release'}, the save test needs a published nightly"
@@ -837,7 +930,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-a")
     itch.wait_live(f"{version}-savetest-a", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_a = _frame_url(fetch, sleep, cfg.itch_page_url)
+    frame_a = _frame_url(fetch, sleep, cfg.savetest_itch_page_url)
     evidence.update(upload_a={"build_id": itch.live_build_id(), "frame_url": frame_a})
     if frame_a is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload A"
@@ -850,7 +943,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-b")
     itch.wait_live(f"{version}-savetest-b", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_b = _frame_url(fetch, sleep, cfg.itch_page_url, other=frame_a)
+    frame_b = _frame_url(fetch, sleep, cfg.savetest_itch_page_url, other=frame_a)
     evidence.update(upload_b={"build_id": itch.live_build_id(), "frame_url": frame_b})
     if frame_b is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload B"
@@ -897,8 +990,11 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
             raise Refused("github-client", "gh is not on PATH")
         if not Path(cfg.butler).is_file():
             raise Refused("itch-client", f"{cfg.butler} is missing")
+        problem = _test_page_problem(cfg)
+        if problem:
+            raise Refused("savetest", problem)
         runner = ProcRunner()
-        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.itch_target)
+        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.savetest_itch_target)
     except Refused as e:
         print(e, file=sys.stderr)
         return 1
@@ -913,7 +1009,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("run")
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
-    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes to the PUBLIC itch page twice")
+    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
     job = JOB
