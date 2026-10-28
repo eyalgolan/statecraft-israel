@@ -74,24 +74,40 @@ public class TalModelsShots
     {
         yield return Boot(hebrew);
         var map = Object.FindFirstObjectByType<MapScene>();
-        var withheld = after ? new string[0] : new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian };
-        RuralLife.Request = CivilianPeople.Request = Answer(withheld);
-        Drop(map, RuralLife.Name); Drop(map, CivilianPeople.Name);
-        CollectionGeometryFixture.Rural(map);
-        CollectionGeometryFixture.People(map, root.Bridge!.State.Date, Array.Empty<Placement>(), root.Bridge.Content);
-        // The camps come from the layers' pure plans, so the frames are the same before and after: the first camp the tent
-        // stands at, and the first camp of the camels, where the Bedouin civilian stands.
-        var plan = RuralLife.Wants(map);
-        var tentCamp = plan.First(w => w.Model == RuralLife.BedouinTent);
-        var figureCamp = CivilianPeople.Served(plan, RuralLife.Camel).First();
-        foreach (var (what, camp) in new[] { ("tent", tentCamp), ("figure", figureCamp) })
+        var state = root.Bridge!.State; var content = root.Bridge.Content;
+        void Layers(ICollection<string> withheld)
         {
-            var at = new Vector3(camp.Anchor.x, 0f, camp.Anchor.y);
+            RuralLife.Request = CivilianPeople.Request = Answer(withheld);
+            Drop(map, RuralLife.Name); Drop(map, CivilianPeople.Name);
+            // GameRoot's order and inputs: the figures first, then the rural scenes, which keep clear of them.
+            CollectionGeometryFixture.People(map, state.Date, state.Placements, content, state.Settlements, state.CityProjects.Values);
+            CollectionGeometryFixture.Rural(map);
+        }
+        // The frames come from the map with the new models, so they are the same before and after: where the tent and the
+        // figure stand. Both layers add them last, so nothing else moves when they are withheld.
+        Layers(Array.Empty<string>());
+        var rural = map.Terrain.transform.Find(RuralLife.Name).GetComponent<RuralLife>();
+        var people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
+        var tent = rural.Placed.First(p => p.Model == RuralLife.BedouinTent);
+        var figure = people.Placed.First(p => p.Model == CivilianPeople.BedouinCivilian);
+        var frames = new[] { ("tent", tent.Key, tent.At), ("figure", figure.Key, figure.At) };
+        if (!after)
+        {
+            Layers(new[] { CollectionCatalog.BedouinTent, CollectionCatalog.BedouinCivilian });
+            rural = map.Terrain.transform.Find(RuralLife.Name).GetComponent<RuralLife>();
+            people = map.Terrain.transform.Find(CivilianPeople.Name).GetComponent<CivilianPeople>();
+        }
+        Debug.Log($"SHOT bedouin {(after ? "after" : "before")}: rural tents {rural.Placed.Count(p => p.Model == RuralLife.BedouinTent)}, " +
+                  $"figures {people.Placed.Count(p => p.Model == CivilianPeople.BedouinCivilian)}, tent size {RuralLife.SizeOf(RuralLife.BedouinTent)} m");
+        foreach (var (what, key, flat) in frames)
+        {
+            var at = new Vector3(flat.x, 0f, flat.z);
             at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
-            Look(at, 2500f);
+            // The closest the player's camera comes (CameraController.MinDistance).
+            Look(at, CameraController.MinDistance);
             for (int i = 0; i < 5; i++) yield return null;
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{what}-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
-            Debug.Log($"SHOT bedouin {what} camp {camp.Key} at {at}");
+            Debug.Log($"SHOT bedouin {what} at {key} {at}");
         }
     }
 
