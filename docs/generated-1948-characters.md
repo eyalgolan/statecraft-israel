@@ -10,9 +10,9 @@ The Syrian and Iraqi characters share their own bundle after the first frame; th
 
 ## Import and review
 
-`Generated1948Characters.Run` explicitly imports the seven named characters with mesh and animation compression Off, no Crunch, original-size maps and all available clips. Runtime prefabs use idle only; walk is available for review. `CollectionImport` delegates the five runtime generated characters to this full-quality importer and preserves older import settings. Original C09 model files and metadata remain unchanged.
+`Generated1948Characters.Run` explicitly imports the seven named characters with mesh and animation compression Off, no Crunch, original-size maps and all available clips. Runtime prefabs use idle only; walk is available for review. `CollectionImport` delegates the six runtime generated characters to this full-quality importer and preserves older import settings. Original C09 model files and metadata remain unchanged.
 
-Open `Assets/Editor/Generated1948CharacterReview.unity`, or use Statecraft → Character review → Play seven generated characters. The stage is isolated, not a historical map or player capture. Camera angle, idle/walk, orientation and floor-contact checks remain available. The two review-only characters cannot become build dependencies merely by opening this scene.
+Open `Assets/Editor/Generated1948CharacterReview.unity`, or use Statecraft → Character review → Play seven generated characters. The stage is isolated, not a historical map or player capture. Camera angle, idle/walk, orientation and floor-contact checks remain available. The one review-only character cannot become a build dependency merely by opening this scene.
 
 ## Evidence
 
