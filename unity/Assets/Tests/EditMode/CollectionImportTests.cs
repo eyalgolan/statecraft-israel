@@ -353,7 +353,7 @@ public class CollectionImportTests
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
         var resources = ResourcesClosure();
         var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35 }, placed);
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent }, placed);
         Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
