@@ -89,13 +89,13 @@ namespace Statecraft.Game.UI
 
         /// <summary>The views whose bar is the only way a keyboard player can scroll them, so it stays in the Tab
         /// order. `KeyScroll` gives PageUp, PageDown, Home and End to the open screen's main view and to the decision
-        /// card's text, but it has no target for these three (`KeyScroll.MainViews`), and `GameRoot` turns those keys
+        /// card's text, but it has no target for these views (`KeyScroll.MainViews`), and `GameRoot` turns those keys
         /// off entirely while the turn report or the end screen is open (`GameRoot`, the `report?.IsOpen != true &&
         /// end?.IsOpen != true` guard). Their rows are plain labels, so Tab reaches nothing inside them either. Taking
         /// their bar out would leave no way at all to scroll them once they overflow, which is worse than the stray
         /// stop. Giving `KeyScroll` a route to these is the better answer and is its own change; until then they stay
         /// out of the sweep (#41 K6, the owner's review).</summary>
-        static readonly string[] OnlyReachableByTheirBar = { "turn-report-rows", "end-screen-rows", "capture-scroll" };
+        static readonly string[] OnlyReachableByTheirBar = { "turn-report-rows", "end-screen-rows", "capture-scroll", "info-panel" };
 
         /// <summary>Takes every scroll bar under <paramref name="root"/> out of the Tab order (accessibility audit, #41,
         /// K3 widened), except the few in <see cref="OnlyReachableByTheirBar"/>. #1453 did the Cabinet's two views,
