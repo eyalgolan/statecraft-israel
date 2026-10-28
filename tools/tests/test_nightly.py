@@ -94,9 +94,9 @@ class FakeGH:
         self.calls.append(("restore_latest", previous, failed))
         self._maybe_fail("restore_latest")
         if self.latest != failed:
-            return self.latest
+            return False, self.latest
         self.latest = previous
-        return None
+        return True, previous
 
     def merged_pr_bodies(self, shas):
         self.calls.append(("merged_pr_bodies", set(shas)))
@@ -1210,6 +1210,20 @@ def test_a_failed_publish_check_on_a_public_release_is_never_deleted(night, env,
     assert gh.latest == "v0.3.1" and ("restore_latest", "v0.3.1", TAG) in gh.calls
     assert "restored previous Latest v0.3.1" in e.value.detail
     assert "v0.3.1" in (night.run_dir / "latest-rollback.log").read_text()
+
+
+def test_with_no_latest_at_all_the_recovery_reports_it_left_latest_alone(night, env, pub, served):
+    class NoLatest(FakeGH):
+        def publish(self, tag, sha):   # the edit never reached GitHub, and the repository has no Latest
+            self.calls.append(("publish", tag, sha))
+            raise ns.Refused("github-publish", "gh release edit failed")
+    gh = NoLatest()
+    gh.latest = None
+    with pytest.raises(ns.Refused) as e:
+        publish(night, ns.State(last_published=last_published()), gh, pub, env)
+    assert ("restore_latest", None, TAG) in gh.calls and gh.latest is None
+    assert "there is no Latest now" in e.value.detail and "left alone" in e.value.detail
+    assert "restored" not in e.value.detail and "removed the failed release's Latest mark" not in e.value.detail
 
 
 def test_a_newer_latest_published_meanwhile_is_never_overwritten_by_the_recovery(night, env, pub, served):

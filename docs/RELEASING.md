@@ -221,9 +221,11 @@ checked against the local zips, the itch push when enabled (checked by build id 
 rolled back to the previous build if publication or its verification fails), the release made public with `--latest` and checked for
 `isPrerelease: false` and Latest, then `site.yml` started and the demo checked for the new version. Creation also uses
 `--latest`, without `--prerelease`. Right before create, the tag is checked again (no release, no local or remote git
-tag), so a release made during the build is refused and never touched; only then is ownership recorded and saved. A
+tag), so a release made during the build is refused and not touched; only then is ownership recorded and saved. A
 create that fails after leaving a draft (an asset upload failing) has that draft cleaned; rollback deletes only that
-run's owned unpublished draft, and only while it is still a draft. A saved stranded draft is cleaned before the next
+run's unpublished draft, and only while GitHub shows it as a draft. Ownership is by tag: a draft someone else creates
+with the same tag in the second between that check and create would be treated as this run's. Owning a draft by its
+release ID, and retrying a failed Latest restore on the next run, are tracked in #1917. A saved stranded draft is cleaned before the next
 attempt; it never reaches `/demo/`, because `site.yml` skips drafts.
 Before publishing, read the current Latest separately from the previous nightly asset baseline and record it in
 `latest-before-publish.txt`. On any later failure, including publication verification or both site attempts, and only

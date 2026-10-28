@@ -266,18 +266,19 @@ class GitHub:
             raise Refused("github-latest", "gh returned no usable Latest tag")
         return tag
 
-    def restore_latest(self, previous: str | None, failed: str) -> str | None:
+    def restore_latest(self, previous: str | None, failed: str) -> tuple[bool, str | None]:
         """Only while the failed release is still Latest: restore and verify the saved Latest (without one, remove the
-        failed release's explicit Latest mark). Otherwise returns the current Latest, which is left untouched."""
+        failed release's explicit Latest mark). Returns (acted, the Latest now); a Latest that is not the failed
+        release, or no Latest at all, is left untouched."""
         current = self.latest_tag()
         if current != failed:
-            return current
+            return False, current
         self._run("github-latest", ["gh", "release", "edit", previous if previous is not None else failed,
                                     "--repo", self.slug, "--latest" if previous is not None else "--latest=false"])
         latest = self.latest_tag()
         if (previous is not None and latest != previous) or (previous is None and latest == failed):
             raise Refused("github-latest", f"Latest recovery did not take effect (Latest is {latest})")
-        return None
+        return True, latest
 
     def previous_build_tag(self, state_tag: str | None) -> str:
         """The last published nightly, or on the first night the newest release that carries a web zip."""

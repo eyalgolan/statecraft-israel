@@ -550,10 +550,12 @@ def _itch_rollback(night: Night, itch, folder: Path, version: str) -> str:
 def _restore_latest(night: Night, gh: GitHub, previous: str | None) -> str:
     target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
     try:
-        current = gh.restore_latest(previous, night.tag)
-        if current is None:
+        acted, current = gh.restore_latest(previous, night.tag)
+        if acted:
             note = (f"restored {target}" if previous is not None else
                     "no previous Latest; removed the failed release's Latest mark")
+        elif current is None:
+            note = f"there is no Latest now, so {night.tag} is not Latest: left alone"
         elif current == previous:
             note = f"{target} still stands; nothing to restore"
         else:

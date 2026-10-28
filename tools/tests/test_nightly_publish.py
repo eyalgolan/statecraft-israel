@@ -241,14 +241,14 @@ def test_restore_latest_edits_the_saved_tag_and_verifies_it(gh, runner, previous
     latest = ["gh", "api", f"repos/{SLUG}/releases/latest", "--jq", ".tag_name"]
     runner.on(cmd, "")
     runner.on(["gh", "api"], TAG + "\n", observed + "\n")
-    assert gh.restore_latest(previous, TAG) is None
+    assert gh.restore_latest(previous, TAG) == (True, observed)
     assert runner.calls == [latest, cmd, latest]
 
 
 @pytest.mark.parametrize("current", ["v0.4.0", "v0.3.1"])
 def test_restore_latest_leaves_a_latest_that_is_not_the_failed_release_alone(gh, runner, current):
     runner.on(["gh", "api"], current + "\n")
-    assert gh.restore_latest("v0.3.1", TAG) == current
+    assert gh.restore_latest("v0.3.1", TAG) == (False, current)
     assert not any(c[:3] == ["gh", "release", "edit"] for c in runner.calls)
 
 
