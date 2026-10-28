@@ -27,20 +27,20 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial;
 
     [SetUp]
     public void Prepare()
     {
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
-        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request;
+        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
     }
 
     [TearDown]
     public void DiscardScene()
     {
-        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!;
+        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -86,6 +86,34 @@ public class TalModelsShots
         CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"bedouin-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
         Debug.Log($"SHOT bedouin camp {camel.Key} at {camel.At}");
     }
+
+    /// <summary>Degania Alef after the first turn (15 June 1948: the tank stands from 20 May), the camera on the kibbutz's own point,
+    /// so the frame is the same with and without the tank.</summary>
+    IEnumerator Degania(bool hebrew, bool after)
+    {
+        yield return Boot(hebrew);
+        root.Bridge!.EndTurn();
+        for (int i = 0; i < 3; i++) yield return null;
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        var close = ui.Q<Button>("turn-report-close");
+        if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
+        for (int i = 0; i < 3; i++) yield return null;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        SpecialBuildingModels.Request = Answer(after ? new string[0] : new[] { CollectionCatalog.SyrianR35 });
+        Drop(map, SpecialBuildingModels.Name);
+        var layer = CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
+        var point = map.Frame.ToWorld(35.5747, 32.7081, 0);
+        point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
+        Look(point, 6000f);
+        for (int i = 0; i < 5; i++) yield return null;
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+    }
+
+    [UnityTest] public IEnumerator DeganiaBeforeEnglish() { yield return Degania(false, false); }
+    [UnityTest] public IEnumerator DeganiaAfterEnglish() { yield return Degania(false, true); }
+    [UnityTest] public IEnumerator DeganiaBeforeHebrew() { yield return Degania(true, false); }
+    [UnityTest] public IEnumerator DeganiaAfterHebrew() { yield return Degania(true, true); }
 
     [UnityTest] public IEnumerator BedouinBeforeEnglish() { yield return Bedouin(false, false); }
     [UnityTest] public IEnumerator BedouinAfterEnglish() { yield return Bedouin(false, true); }
