@@ -822,8 +822,20 @@ public class KitTests
             var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
                 .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
             Assert.AreEqual(tents.Length, models.Count);
+            // The premise of the turn: the model's long side seen from above lies along its own z once it stands up.
+            var alone = Object.Instantiate(prefab);
+            try
+            {
+                var own = alone.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.Greater(own.size.z, own.size.x, "the model's long side lies along z");
+            }
+            finally { Object.DestroyImmediate(alone); }
             for (int i = 0; i < models.Count; i++)
             {
+                // Its long side runs along the kit tent's ridge: (cos yaw, sin yaw) in x-z.
+                var ridge = (models[i].rotation * Quaternion.Inverse(prefab!.transform.localRotation)) * Vector3.forward;
+                float yawRad = yaws[i] * Mathf.Deg2Rad;
+                Assert.AreEqual(Mathf.Cos(yawRad), ridge.x, 1e-3f, $"yaw {yaws[i]}: along the ridge"); Assert.AreEqual(Mathf.Sin(yawRad), ridge.z, 1e-3f, $"yaw {yaws[i]}");
                 Assert.AreEqual(models[0].localScale.x, models[i].localScale.x, 1e-4f, $"yaw {yaws[i]}: the same scale");
                 // A pure turn about y by the yaw difference, signed: the kit's yaw is counter-clockwise in x-z, Unity's y turn clockwise.
                 float turn = Mathf.DeltaAngle(0f, (models[i].rotation * Quaternion.Inverse(models[0].rotation)).eulerAngles.y);
@@ -889,6 +901,11 @@ public class KitTests
             var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Category Special() =>
                 Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Capture().categories.Single(c => c.category == "special");
+            object Field(string name) => typeof(Statecraft.Game.Map.Collection.CollectionStream)
+                .GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(stream)!;
+            int Owners() => ((System.Collections.IDictionary)Field("owners")).Count;
+            bool Pinned() => ((ICollection<string>)Field("pinned")).Contains(bundle);
+            bool Inflight() => ((ICollection<string>)Field("inflight")).Contains(bundle);
 
             camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam); b.Choose(default, cam);
             Pump(run, 20);
@@ -897,6 +914,7 @@ public class KitTests
             var live = Special();
             Assert.AreEqual(2 * tents.Length, live.liveInstances, "the diagnostics count the camps' models");
             Assert.AreEqual(2, live.ownedLeases, "and their leases");
+            Assert.AreEqual(1, Owners(), "one owned bundle"); Assert.IsFalse(Pinned(), "never pinned"); Assert.IsFalse(Inflight());
 
             camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
             CollectionAssert.IsEmpty(source.Unloaded, "the other camp still owns the bundle");
@@ -904,18 +922,19 @@ public class KitTests
             Assert.AreEqual(new[] { bundle }, source.Unloaded.ToArray(), "the last leave unloads it: no owner, no pin");
             var after = Special();
             Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
-            var owners = (System.Collections.IDictionary)typeof(Statecraft.Game.Map.Collection.CollectionStream)
-                .GetField("owners", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(stream)!;
-            Assert.AreEqual(0, owners.Count, "the stream holds no owner");
+            Assert.AreEqual(0, Owners(), "the stream holds no owner"); Assert.IsFalse(Pinned(), "and no pin"); Assert.IsFalse(Inflight());
 
             // A load still in flight when the camera leaves: nothing is placed, and the bundle unloads once the load ends.
             camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam);
             Pump(run, 2);
             Assert.AreEqual(2, source.Opened.Count, "the bundle is opening again");
+            Assert.IsTrue(Inflight(), "its load is in flight");
             camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
+            Assert.AreEqual(0, Owners(), "leaving drops the owner at once"); Assert.AreEqual(1, source.Unloaded.Count, "but the load in flight holds the bundle");
             Pump(run, 20);
             Assert.AreEqual(0, a.ModelCount, "the cancelled load places nothing");
             Assert.AreEqual(2, source.Unloaded.Count, "and the bundle unloads after it");
+            Assert.IsFalse(Inflight()); Assert.IsFalse(Pinned());
 
             // Destroying a camp while its models stand destroys them before the bundle unloads.
             camGo.transform.position = new Vector3(100f, 10000f, 200f); b.Choose(default, cam);
@@ -926,6 +945,7 @@ public class KitTests
                 "no model instance is left when the bundle unloads");
             Object.DestroyImmediate(b);
             Assert.AreEqual(3, source.Unloaded.Count, "destroying the last owner unloads it");
+            Assert.AreEqual(0, Owners()); Assert.IsFalse(Pinned());
             source.BeforeUnload = null;
         }
         finally
