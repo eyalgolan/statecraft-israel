@@ -12,11 +12,38 @@ from conftest import FakeRunner  # noqa: E402
 
 
 def test_version_and_tag_follow_the_spec():
-    assert ns.base_version('public const string Version = "0.3.1";') == "0.3.1"
-    assert ns.nightly_version("0.3.1", date(2026, 10, 28)) == "0.3.1-nightly.20261028"
-    assert ns.tag_for("0.3.1-nightly.20261028") == "v0.3.1-nightly.20261028"
-    with pytest.raises(ValueError):
-        ns.base_version('Version = "0.3"')
+    assert ns.next_version([{"tag_name": "v0.3.1", "draft": False}]) == "0.3.2"
+    assert ns.tag_for("0.3.2") == "v0.3.2"
+
+
+@pytest.mark.parametrize("tags,expected", [
+    (["v0.3.9", "v0.3.1"], "0.3.10"),
+    (["v0.9.9", "v0.10.0"], "0.10.1"),
+    (["v0.03.1"], "0.3.2"),
+    (["v0.03.1", "v0.3.1"], "0.3.2"),
+    (["v0.3.1", "v0.03.1"], "0.3.2"),
+    (["v9.99.99", "v10.12.19"], "10.12.20"),
+    (["v0.3.1", "v99.0.0-nightly.20261028", "0.9.9", "v1.2.3-extra", "v9.9.9\n"], "0.3.2"),
+])
+def test_next_version_compares_only_exact_release_tags_numerically(tags, expected):
+    rows = [{"tag_name": tag, "draft": False} for tag in tags]
+    rows.append({"tag_name": "v99.99.99", "draft": True})
+    assert ns.next_version(rows) == expected
+
+
+@pytest.mark.parametrize("rows", [[], [{"tag_name": "v0.3.1-nightly.20261028", "draft": False}],
+                                   [{"tag_name": "v0.3.1", "draft": True}]])
+def test_next_version_refuses_without_a_published_exact_tag(rows):
+    with pytest.raises(ns.Refused, match="no published vX.Y.Z release"):
+        ns.next_version(rows)
+
+
+@pytest.mark.parametrize("row", [{}, {"draft": False}, {"tag_name": 3, "draft": False},
+                                 {"tag_name": "v0.3.1", "draft": "false"}, None])
+def test_next_version_refuses_malformed_release_rows(row):
+    with pytest.raises(ns.Refused) as e:
+        ns.next_version([row])
+    assert e.value.gate == "version"
 
 
 def test_the_night_is_the_jerusalem_date():
