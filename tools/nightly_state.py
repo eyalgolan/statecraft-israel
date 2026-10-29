@@ -65,7 +65,8 @@ class Runner(Protocol):
     at the deadline. `capture` raises Refused("command", ...) on a non-zero exit."""
 
     def run(self, cmd: list[str], *, cwd: Path, log: Path, deadline: float,
-            env: dict[str, str] | None = None, holder: Path | None = None) -> int: ...
+            env: dict[str, str] | None = None, holder: Path | None = None,
+            stop_on_interrupt: bool = False) -> int: ...
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str: ...
 

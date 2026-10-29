@@ -1,9 +1,11 @@
 import dataclasses
 import json
+import signal
 import subprocess
 import sys
 import time
 import zipfile
+from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
 
@@ -14,6 +16,8 @@ pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks wi
 import nightly
 import nightly_state as ns
 from conftest import FakeRunner
+
+REAL_POPEN = subprocess.Popen
 
 SHA = "a" * 40
 OLD = "b" * 40
@@ -457,7 +461,7 @@ class EnvRunner(FakeRunner):
         super().__init__()
         self.envs = []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
 
@@ -491,7 +495,7 @@ class LocaleRunner(EnvRunner):
         super().__init__()
         self.by_lang = {"he_IL.UTF-8": he, "en_US.UTF-8": en}
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         if cmd[:2] == ["dotnet", "test"]:
             self.calls.append(list(cmd))
             self.envs.append((list(cmd), env, holder))
@@ -568,7 +572,7 @@ class EditRunner(EnvRunner):
         self.night, self.xml, self.code, self.warm_code = night, xml, code, warm_code
         self.warm_log, self.restore_code = warm_log, restore_code
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         d = self.night.run_dir
@@ -740,7 +744,7 @@ class WebRunner(EnvRunner):
         self.stamped_at_build = []
         self.restores = 0
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         if cmd[0] == "git" and cmd[1:3] == ["checkout", "--"]:
@@ -901,7 +905,7 @@ class CheckRunner(EnvRunner):
         super().__init__()
         self.ok, self.answers, self.cwds = ok, answers or {}, []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         self.cwds.append(cwd)
@@ -1829,7 +1833,7 @@ class SaveRunner(FakeRunner):
         super().__init__()
         self.saved, self.loads, self.runs = saved, list(loads), []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.runs.append(list(cmd))
         code, text = self.saved if "--first-save" in cmd else self.loads.pop(0)
         Path(log).parent.mkdir(parents=True, exist_ok=True)
@@ -2274,18 +2278,6 @@ def test_mid_sequence_deadline_stops_work_but_keeps_shutdown_budget(night, env, 
     assert len(cleanup_deadlines) == 1 and cleanup_deadlines[0] > time.monotonic()
 
 
-import os
-import signal
-import subprocess
-import sys
-import time
-from contextlib import contextmanager
-from pathlib import Path
-
-import pytest
-REAL_POPEN = subprocess.Popen
-import nightly
-from nightly_state import Refused
 
 
 def test_shutdown_refuses_inside_a_callers_except(night, env):
@@ -2374,3 +2366,60 @@ def test_managed_child_is_reaped_before_shared_hold_releases(night, env, tmp_pat
                 except ProcessLookupError:
                     pass
                 real_popen.wait(proc, timeout=5)
+
+
+def test_interrupt_cleanup_is_opt_in_for_managed_commands(tmp_path, monkeypatch):
+    calls = []
+    interruption = KeyboardInterrupt()
+    class Child:
+        def wait(self, timeout):
+            raise interruption
+    monkeypatch.setattr(nightly.subprocess, "Popen", lambda *args, **kwargs: Child())
+    runner = nightly.ProcRunner()
+    monkeypatch.setattr(runner, "_stop_group", lambda child: calls.append(child))
+    with pytest.raises(KeyboardInterrupt) as error:
+        runner.run(["possible-lock-wait"], cwd=tmp_path, log=tmp_path / "log", deadline=time.monotonic() + 5)
+    assert error.value is interruption and calls == []
+
+
+def test_every_managed_command_opts_into_interrupt_cleanup(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    original = r.run
+    flags = []
+    def run(cmd, **kwargs):
+        flags.append(kwargs.get("stop_on_interrupt", False))
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    nightly.run_gates(night, r)
+    assert flags == [True] * 6
+
+
+def test_second_interrupt_during_grace_still_kills_and_reaps_own_group(tmp_path, monkeypatch):
+    marker = tmp_path / "term-resistant-started"
+    argv = [sys.executable, "-c", "import os,pathlib,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()));time.sleep(120)"]
+    proc = REAL_POPEN(argv, start_new_session=True)
+    original_wait = proc.wait
+    injected = False
+    def interrupted_wait(timeout=None):
+        nonlocal injected
+        if not injected:
+            injected = True
+            raise KeyboardInterrupt()
+        return original_wait(timeout=timeout)
+    try:
+        end = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < end:
+            time.sleep(.02)
+        assert marker.exists(), "infrastructure: owned TERM-resistant child did not start"
+        monkeypatch.setattr(proc, "wait", interrupted_wait)
+        with pytest.raises(KeyboardInterrupt):
+            nightly.ProcRunner(grace=.2)._stop_group(proc)
+        assert proc.poll() is not None
+        with pytest.raises(ProcessLookupError):
+            os.killpg(proc.pid, 0)
+    finally:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        original_wait(timeout=5)

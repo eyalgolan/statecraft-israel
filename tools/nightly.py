@@ -50,7 +50,8 @@ class ProcRunner(Runner):
         self.grace = grace
 
     def run(self, cmd: list[str], *, cwd: Path, log: Path, deadline: float,
-            env: dict[str, str] | None = None, holder: Path | None = None) -> int:
+            env: dict[str, str] | None = None, holder: Path | None = None,
+            stop_on_interrupt: bool = False) -> int:
         full = dict(os.environ if env is None else env)
         if holder is not None:
             holder.unlink(missing_ok=True)
@@ -63,6 +64,14 @@ class ProcRunner(Runner):
                 return proc.wait(timeout=max(0.0, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 pass
+            except BaseException as primary:
+                # Managed phases already hold the lock. Default callers may still be waiting for one.
+                if stop_on_interrupt:
+                    try:
+                        self._stop_group(proc)
+                    except BaseException as cleanup:
+                        primary.add_note(f"managed child cleanup raised {type(cleanup).__name__}: {cleanup}")
+                raise
             if holder is not None:
                 self._stop_holder(holder)
             self._stop_group(proc)
@@ -87,18 +96,20 @@ class ProcRunner(Runner):
 
     def _stop_group(self, proc: subprocess.Popen) -> None:
         try:
-            os.killpg(proc.pid, signal.SIGTERM)
-            proc.wait(timeout=self.grace)
-        except (ProcessLookupError, subprocess.TimeoutExpired):
-            pass
-        try:   # always: a member that ignores SIGTERM (a build's grandchild) must not outlive the deadline
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        try:
-            proc.wait(timeout=self.grace + 5)
-        except subprocess.TimeoutExpired:
-            pass
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+                proc.wait(timeout=self.grace)
+            except (ProcessLookupError, subprocess.TimeoutExpired):
+                pass
+        finally:   # a second interrupt during the grace period must not skip the final kill and reap
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.wait(timeout=self.grace + 5)
+            except subprocess.TimeoutExpired:
+                pass
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str:
         try:
@@ -213,9 +224,10 @@ def _limit(night: Night, minutes: float) -> float:
 
 
 def _step(night: Night, runner: Runner, name: str, cmd: list[str], minutes: float,
-          env: dict[str, str] | None = None) -> tuple[int, str]:
+          env: dict[str, str] | None = None, *, stop_on_interrupt: bool = False) -> tuple[int, str]:
     log = night.run_dir / f"{name}.log"
-    code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env)
+    kwargs = {"stop_on_interrupt": True} if stop_on_interrupt else {}
+    code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env, **kwargs)
     return code, log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
 
 
@@ -230,12 +242,13 @@ def run_gates(night: Night, runner: Runner) -> None:
 
     def step(name, cmd, minutes, env=None):
         admitted()
-        return _step(night, runner, name, cmd, minutes, base_env if env is None else env)
+        return _step(night, runner, name, cmd, minutes, base_env if env is None else env, stop_on_interrupt=True)
 
     check_window(night)
     with unity_postmerge.machine_lock.hold():
         # A long acquisition must drain normally; expired work starts no child after it gets the lock.
         admitted()
+        pending = None
         try:
             clone = night.cfg.clone
             code, _ = step("build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
@@ -260,14 +273,16 @@ def run_gates(night: Night, runner: Runner) -> None:
                     raise Refused(f"sim-{locale}", "timed out")
                 if code != 0 or failed or total == 0:
                     raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+        except BaseException as primary:
+            pending = primary
+            raise
         finally:
-            # Preserve the primary refusal/interrupt; secondary cleanup failure must still be visible.
-            pending = sys.exc_info()[1]
+            # Preserve only this invocation's primary failure, never an exception handled by its caller.
             shutdown_failure = None
             try:
                 code = runner.run(["dotnet", "build-server", "shutdown"], cwd=night.cfg.clone,
                                   log=night.run_dir / "build-server-shutdown.log",
-                                  deadline=time.monotonic() + 120, env=base_env)
+                                  deadline=time.monotonic() + 120, env=base_env, stop_on_interrupt=True)
                 if code != 0:
                     shutdown_failure = f"compiler server shutdown exited {code}"
             except BaseException as error:
