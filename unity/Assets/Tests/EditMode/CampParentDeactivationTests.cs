@@ -11,9 +11,25 @@ using UnityEngine.TestTools;
 
 public sealed class CampParentDeactivationTests
 {
+    static System.Func<string, Statecraft.Game.Map.Collection.CollectionDetail, System.Action<GameObject?>, System.IDisposable>? savedAcquire;
+    static GameObject? ownedLayer, ownedCamera, ownedPrefab;
+    static Mesh? ownedMesh;
+
+    static void ReleaseOwnedFixture()
+    {
+        if (savedAcquire != null) Statecraft.Game.Map.Collection.CampTentModels.Acquire = savedAcquire;
+        savedAcquire = null;
+        if (ownedLayer != null) Object.DestroyImmediate(ownedLayer);
+        if (ownedCamera != null) Object.DestroyImmediate(ownedCamera);
+        if (ownedPrefab != null) Object.DestroyImmediate(ownedPrefab);
+        if (ownedMesh != null) Object.DestroyImmediate(ownedMesh);
+        ownedLayer = ownedCamera = ownedPrefab = null; ownedMesh = null;
+    }
     [UnityTearDown]
     public IEnumerator RestoreScene()
     {
+        // The runner may abandon a nested iterator without disposing its finally.
+        ReleaseOwnedFixture();
         if (Application.isPlaying) yield return new ExitPlayMode();
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         ShadowFit.Restore(); VisualToggles.Clear(); KitScale.Reset();
@@ -35,6 +51,8 @@ public sealed class CampParentDeactivationTests
     static IEnumerator VerifyDeactivatedCampRedraw()
     {
         var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        Assert.IsNotNull(saved, "the fixture must begin with a valid acquisition service");
+        savedAcquire = saved;
         GameObject? camGo = null, prefab = null, layerGo = null;
         Mesh? shared = null;
         try
@@ -43,14 +61,14 @@ public sealed class CampParentDeactivationTests
             Assert.IsNotNull(map); map.Build();
             var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
             var hex = c.SettlementHexes.Single(s => s.Id == "revivim");
-            prefab = new GameObject("owned streamed tent fixture", typeof(MeshFilter), typeof(MeshRenderer));
-            shared = Object.Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
+            prefab = ownedPrefab = new GameObject("owned streamed tent fixture", typeof(MeshFilter), typeof(MeshRenderer));
+            shared = ownedMesh = Object.Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
             prefab.GetComponent<MeshFilter>().sharedMesh = shared;
             prefab.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Kit.mat");
             prefab.transform.position = Vector3.down * 1000000f;
             int released = 0;
             Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, detail, done) => { done(prefab); return new FakeLease(() => released++); };
-            layerGo = new GameObject("owned camp redraw fixture");
+            layerGo = ownedLayer = new GameObject("owned camp redraw fixture");
             var layer = layerGo.AddComponent<PlacementLayer>();
             layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.TransitCamp, hex.Q, hex.R,
                 new System.DateTime(1950, 8, 26)) }, c, map);
@@ -59,8 +77,9 @@ public sealed class CampParentDeactivationTests
             Assert.IsNotNull(khaki);
             var campMesh = camp.GetComponent<MeshFilter>().sharedMesh;
             var khakiMesh = khaki.GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(campMesh); Assert.IsNotNull(khakiMesh);
             var tents = khaki.GetComponent<Statecraft.Game.Map.Collection.CampTentModels>();
-            camGo = new GameObject("owned camp redraw camera", typeof(Camera));
+            camGo = ownedCamera = new GameObject("owned camp redraw camera", typeof(Camera));
             camGo.transform.SetPositionAndRotation(khaki.GetComponent<MeshRenderer>().bounds.center + Vector3.up * 10000f,
                 Quaternion.Euler(90f, 0f, 0f));
             tents.Choose(default, camGo.GetComponent<Camera>());
@@ -80,11 +99,7 @@ public sealed class CampParentDeactivationTests
         }
         finally
         {
-            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
-            if (layerGo != null) Object.DestroyImmediate(layerGo);
-            if (camGo != null) Object.DestroyImmediate(camGo);
-            if (prefab != null) Object.DestroyImmediate(prefab);
-            if (shared != null) Object.DestroyImmediate(shared);
+            ReleaseOwnedFixture();
         }
     }
 
