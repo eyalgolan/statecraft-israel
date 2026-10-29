@@ -123,7 +123,7 @@ public class TalModelsShots
         }
     }
 
-    /// <summary>Al-Malikiyya's hex (unit_anchor_hexes.yaml: the Lebanese army's anchor, q 12, r 4) after the first turn (15 June
+    /// <summary>The Lebanese token's actual placed spot near Al-Malikiyya after the first turn (15 June
     /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are
     /// answered with the editor's prefabs, as the player's stream would answer them. The same code runs on main for the before.</summary>
     IEnumerator Malikiyya(bool hebrew)
@@ -141,18 +141,21 @@ public class TalModelsShots
         if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
         for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
         Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
-        const int q = 12, r = 4;
-        Assert.IsTrue(root.Units!.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army" && t.Q == q && t.R == r),
-            "capture precondition: the Lebanese army must actually be present at Malikiyya; original arrived="
-            + UnitFigures.Arrived(UnitFigures.LebaneseRegular) + "; roster="
-            + string.Join(", ", root.Units.Tokens.Select(t => $"{t.Token.Unit.Id}@{t.Q},{t.R}")));
+        var subjects = root.Units!.Tokens.Where(t => t.Token.Unit.Id == "lebanese_army").ToArray();
+        Assert.AreEqual(1, subjects.Length, "capture precondition: exactly one actual Lebanese army token");
+        Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "capture precondition: the Lebanese original has arrived");
+        var subject = subjects[0];
+        int q = subject.Q, r = subject.R;
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var target = new Vector3((float)subject.Spot.X, 0f, (float)subject.Spot.Z);
+        target.y = map.Terrain.SampleHeight(target) + map.Terrain.transform.position.y;
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
         foreach (var (what, distance) in new[] { ("unit", 40000f), ("close", CameraController.MinDistance) })
         {
-            CivMovementShots.Aim(q, r, distance);
+            Look(target, distance);
             for (int i = 0; i < 5; i++) yield return null;
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
-            Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
+            Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, target {target.ToString("R")} camera {Camera.main.transform.position.ToString("R")} rotation {Camera.main.transform.rotation.ToString("R")}, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
         }
     }
 
