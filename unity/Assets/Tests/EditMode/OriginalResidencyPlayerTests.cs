@@ -23,6 +23,18 @@ public sealed class OriginalResidencyPlayerTests
     readonly Dictionary<FieldInfo, object?> originals = new Dictionary<FieldInfo, object?>();
     readonly List<Object> owned = new List<Object>();
     CollectionStreamHost? host;
+    readonly List<string> timeline = new List<string>();
+    int observedFrames;
+    void Mark(string stage) => timeline.Add($"f{Time.frameCount}: {stage}; camera observations={observedFrames}");
+    IEnumerator ObserveCamera(TownLandmarks towns, Camera camera)
+    {
+        while (true)
+        {
+            yield return null;
+            if (towns == null || camera == null || !towns.isActiveAndEnabled || !camera.isActiveAndEnabled) yield break;
+            towns.Choose(default, camera); observedFrames++;
+        }
+    }
     static object? Call(object? owner, Type type, string name, params object?[] args)
     {
         var method = type.GetMethod(name, Flags); Assert.IsNotNull(method, name);
@@ -52,6 +64,7 @@ public sealed class OriginalResidencyPlayerTests
     [UnityTearDown]
     public IEnumerator LeavePlayerBranch()
     {
+        Debug.Log("RESIDENCY TIMELINE\n" + string.Join("\n", timeline));
         foreach (var pair in originals) pair.Key.SetValue(null, pair.Value); originals.Clear();
         foreach (var item in owned) if (item != null) Object.Destroy(item); owned.Clear();
         // Let the destruction acknowledgement hosts finish before stopping the observed stream.
@@ -130,7 +143,9 @@ public sealed class OriginalResidencyPlayerTests
         });
         var camera = new GameObject("controlled residency camera").AddComponent<Camera>(); owned.Add(camera.gameObject);
         camera.tag = "MainCamera";
-        camera.cullingMask = 0; // begin/end lifecycle still runs; unrelated scene geometry never renders
+        camera.cullingMask = 0; // unrelated scene geometry never renders
+        // The batch fixture must observe this camera every player frame, including nested coroutine waits.
+        host!.StartCoroutine(ObserveCamera(towns, camera));
         return (map, layer, towns, focus, camera);
     }
     static void Choose(TownLandmarks towns, Camera camera, Vector2 at, bool close)
@@ -148,9 +163,12 @@ public sealed class OriginalResidencyPlayerTests
         Assert.IsTrue(asks.Any(a => a.detail == CollectionDetail.Near), "Map.Build player path must acquire Near originals");
         Assert.IsFalse(asks.Any(a => a.id == focus.Model), "no duplicate whole-town acquisition while Near loads");
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
+        Mark("before Near readiness wait");
         yield return Until(() => { towns.Choose(default, camera); return (bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!; }, "near ready: " + focus.Key);
+        Mark("resumed after Near readiness wait");
         Assert.IsNotNull(asks, "request witness survives Near readiness");
         var near = asks.Where(a => a.detail == CollectionDetail.Near).Select(a => CollectionCatalog.BundleOf(a.id)!).ToHashSet();
+        Mark("Near request snapshot taken");
         Choose(towns, camera, focus.At, false);
         var activeNear = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("models", Flags)!.GetValue(layer)!;
         yield return Until(() => activeNear.Count == 0, "near references retired");
@@ -168,6 +186,7 @@ public sealed class OriginalResidencyPlayerTests
             }
             return ready;
         }, "whole ready and near unloaded: " + focus.Key);
+        Mark("resumed after whole readiness wait");
         string phase = $"whole witness frame {witnessFrame}, resumed {Time.frameCount}, seats {towns.Seats.Count}";
         Assert.IsTrue(witnessed != null, "whole instance survives coroutine resume: " + phase);
         Assert.AreSame(towns.transform, witnessed!.transform.parent, "whole instance remains owned: " + phase);
@@ -201,9 +220,11 @@ public sealed class OriginalResidencyPlayerTests
         Assert.IsNotEmpty(nearIds, "failure proof requires actual Near requests");
         var models = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("models", Flags)!.GetValue(layer)!;
         // Source completion precedes the stream's warning and callback; wait for the actual null replies too.
+        Mark("before null Near reply wait");
         yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!))
             && models.Count > 0 && models.Values.Cast<object>().All(model =>
                 (bool)model.GetType().GetField("answered", Flags)!.GetValue(model)!), "null Near replies answered");
+        Mark("resumed after null Near reply wait");
         Assert.IsTrue((bool)Call(layer, typeof(TownModelLayer), "WantsTown", focus.Key, camera)!,
             "null-reply proof requires the actual focus town to be admitted");
         var required = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("required", Flags)!.GetValue(layer)!;
