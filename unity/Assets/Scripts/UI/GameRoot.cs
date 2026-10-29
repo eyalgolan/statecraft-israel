@@ -233,6 +233,9 @@ namespace Statecraft.Game.UI
                 : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
+            var oldFixedNorth = cameraController.FixedNorth;
+            ConfigureCameraHeading(cameraController, bridge.Content.Ruleset);
+            owned.Add(new Undo(() => cameraController.SetFixedNorth(oldFixedNorth)));
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
             if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
@@ -541,7 +544,7 @@ namespace Statecraft.Game.UI
             Func<Action> keepSelection = () =>
             {
                 // A pioneer card has no token (ShowPioneer clears it), so it is a selection of its own, kept with its game
-                // (review C288 S1 of #1788): a language switch keeps the session, a load or new game does not.
+                // (review of #1788): a language switch keeps the session, a load or new game does not.
                 var pioneer = info.Pioneer; var pioneerSession = bridge.Session;
                 var hex = info.ShowsUnit ? null : info.Selected;
                 var unit = info.ShowsUnit ? unitLayer.Selected : null;
@@ -736,7 +739,7 @@ namespace Statecraft.Game.UI
             // could take no order: the card waits behind "Decision waiting", as its Hide button does.
             card?.Collapse(takeFocus: false);
             // A side screen can still cover the card (#210). Reveal it through normal navigation, not by
-            // bypassing Covered: End turn must show the unit whose orders it asks for (C137).
+            // bypassing Covered: End turn must show the unit whose orders it asks for (#1680).
             if (info?.Covered == true) nav?.Open(null);
             int? current = units.Selected is string row
                 ? units.Tokens.Where(t => t.Token.Unit.Id == row).Select(t => UnitCard.SimUnit(Bridge.Content, Bridge.State, t.Token)).FirstOrDefault()
@@ -779,6 +782,10 @@ namespace Statecraft.Game.UI
 #else
         static void HandCursor(bool on) { }   // the game ships as the browser build; the editor keeps its own cursor
 #endif
+
+        // R-CAMERA-001: exact ruleset identity; gdd-0.1 retains orbit.
+        internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
+            controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         void Shutdown()

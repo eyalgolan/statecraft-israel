@@ -54,7 +54,7 @@ public class PlayerRegionsTests
         Assert.Equal(3, s.PlayerRegions[B].IndustrySlots); Assert.Equal(2, s.PlayerRegions[B].WorkshopSlots);
         Assert.Equal(0, s.PlayerRegions[B].ReceptionBeds); Assert.Equal(0, s.PlayerRegions[B].TrainingBeds);
         Assert.Equal(1, PlayerRegions.PresentPopulation(s, A)); // Two places and four facilities add no people.
-        var changed = State(c, new[] { Pool(A, housing: 19), Pool(B) });
+        var changed = State(c, new[] { Pool(A, housing: 19, facilities: a.Facilities), Pool(B) }); // only housing differs
         Assert.NotEqual(s.Hash(), changed.Hash());
         Assert.Equal(s.PlayerRegions[B].Canonical(), changed.PlayerRegions[B].Canonical());
     }
@@ -66,9 +66,10 @@ public class PlayerRegionsTests
         l.ChangeAssignment(0, new PopulationAssignment(PopulationAssignmentKind.Work, "fixture-a-job"));
         Assert.Equal(1, PlayerRegions.Assigned(s, A, PopulationAssignmentKind.Work));
         Assert.Equal(0, PlayerRegions.Assigned(s, B, PopulationAssignmentKind.Work));
+        l.ChangeAssignment(0, PopulationAssignment.Unassigned); // released, so only the cross-region check can refuse the B job
         var before = s.Describe();
         Assert.Throws<ArgumentException>(() => l.ChangeAssignment(0, new PopulationAssignment(PopulationAssignmentKind.Work, "fixture-b-job")));
-        Assert.Equal(before, s.Describe()); l.Reconcile();
+        Assert.Equal(before, s.Describe()); Assert.Equal(0, PlayerRegions.Assigned(s, B, PopulationAssignmentKind.Work)); l.Reconcile();
         Assert.Equal(0, l.Get(0).Id); Assert.Equal(2, l.Units.Count);
         // This exercises existing ledger region validation, not a new reservation command or slot-capacity policy.
     }
@@ -110,7 +111,10 @@ public class PlayerRegionsTests
         var c = Content();
         var f = new PlayerRegionFacility("fixture-facility", "tel_aviv", PlayerRegionFacilityKind.Industry, 1);
         Assert.Throws<ArgumentException>(() => Pool(A, facilities: new[] { f, f }));
-        Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A, facilities: new[] { f }), Pool(B, facilities: new[] { f }) }));
+        // Same id in two pools, each at a valid location of its own pool: only national facility uniqueness can refuse it.
+        var twin = new PlayerRegionFacility("fixture-facility", "rishon_lezion", PlayerRegionFacilityKind.Industry, 1);
+        Assert.Equal("Facility must have one owning region and a member location.",
+            Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A, facilities: new[] { f }), Pool(B, facilities: new[] { twin }) })).Message);
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A) }));
         Assert.Throws<ArgumentException>(() => State(c, new[] { Pool(A), Pool(B), Pool(B) }));
         var outside = new PlayerRegionFacility("fixture-facility", "tiberias", PlayerRegionFacilityKind.Industry, 1);

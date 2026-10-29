@@ -13,19 +13,19 @@
 #     build: main abc1234      # optional; defaults to the build above
 #     date: 2026-10-13         # optional; defaults to the date above
 # A build-*.mp4 or .webm that is not listed there fails the site's build.
-build: main 8dae186
-date: 2026-10-20
+build: main 1dca7e0
+date: 2026-10-27
 video:
   files: [build-gameplay.webm, build-gameplay.mp4]
-  build: main 8dae186
-  date: 2026-10-20
+  build: main 230042c
+  date: 2026-10-27
   title: { en: "Real gameplay: 15 May to 15 June 1948", he: "משחק אמיתי: 15 במאי עד 15 ביוני 1948" }
   description:
-    en: "About 15 seconds of real play, recorded from the game's own browser build: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army decision, and End Turn."
-    he: "כ־15 שניות של משחק אמיתי, שהוקלטו מגרסת הדפדפן של המשחק עצמו: התקרבות ומעבר על תל אביב, יפו ומישור החוף, לחיצה על תל אביב שפותחת את לוח העיר, ההחלטה על צבא אחד, וסיום תור."
+    en: "About 19 seconds of real play, recorded from the game's own browser build: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army and Defence of Degania decisions, and End Turn, which first selects each unit that needs orders. One hard cut leaves out five of the eight units."
+    he: "כ־19 שניות של משחק אמיתי, שהוקלטו מגרסת הדפדפן של המשחק עצמו: התקרבות ומעבר על תל אביב, יפו ומישור החוף, לחיצה על תל אביב שפותחת את לוח העיר, ההחלטות על צבא אחד ועל ההגנה על דגניה, וסיום תור, שבוחר קודם כל יחידה שממתינה להוראות. חיתוך אחד משמיט חמש מתוך שמונה היחידות."
   alt:
-    en: "15 May to 15 June 1948: the camera zooms in and pans across Tel Aviv, Jaffa and the coastal plain; a click on Tel Aviv opens its city panel; the player answers the One Army event card and ends the turn, the date moves to 15 June, the turn report lists what changed, and the First Truce card opens."
-    he: "15 במאי עד 15 ביוני 1948: המצלמה מתקרבת ועוברת על תל אביב, על יפו ועל מישור החוף; לחיצה על תל אביב פותחת את לוח העיר; השחקן עונה על כרטיס האירוע \"צבא אחד\" ומסיים את התור, התאריך מתקדם ל־15 ביוני, סיכום התור מפרט מה השתנה, וכרטיס ההפוגה הראשונה נפתח."
+    en: "15 May to 15 June 1948: the camera zooms in and pans across Tel Aviv, Jaffa and the coastal plain; a click on Tel Aviv opens its city panel; the player answers the One Army and Defence of Degania event cards and presses End turn, which selects each unit that needs orders and moves the camera to it, and the player skips it (the Golani and Carmeli Brigades, then after a cut the Negev Brigade); End turn then moves the date to 15 June, the turn report lists what changed, and the First Truce card opens."
+    he: "15 במאי עד 15 ביוני 1948: המצלמה מתקרבת ועוברת על תל אביב, על יפו ועל מישור החוף; לחיצה על תל אביב פותחת את לוח העיר; השחקן עונה על כרטיסי האירוע \"צבא אחד\" ו\"ההגנה על דגניה\" ולוחץ על סיום התור, שבוחר כל יחידה שממתינה להוראות ומעביר אליה את המצלמה, והשחקן מדלג עליה (חטיבת גולני וחטיבת כרמלי, ואחרי חיתוך חטיבת הנגב); אחר כך סיום התור מקדם את התאריך ל־15 ביוני, סיכום התור מפרט מה השתנה, וכרטיס ההפוגה הראשונה נפתח."
 # `hero` is the home page's hero still: a clean in-engine render with no interface, composed for the title, with its
 # own build and date (it is not a README screenshot, so it is not in the gallery). tools/: MapCapture.Promo with
 # -extraPose, on the Mobile tier, which is the WebGL tier (docs/visual-v1.md).
@@ -41,8 +41,8 @@ images:
   - file: build-m3-city.jpg
     title: { en: "Tel Aviv and its city panel", he: "תל אביב ולוח העיר שלה" }
     alt:
-      en: "The current build, 15 May 1948: a closer look at Tel Aviv, Jaffa, Lydda, Ramle and Rehovot, with groves, villages, railways and roads, the front lines and the top bar, and Tel Aviv's city panel with its housing, jobs, refugees and training."
-      he: "הגרסה הנוכחית, 15 במאי 1948: מבט קרוב על תל אביב, יפו, לוד, רמלה ורחובות, עם מטעים, כפרים, מסילות ודרכים, קווי החזית והסרגל העליון, ולוח העיר של תל אביב עם הדיור, התעסוקה, הפליטים והאימון."
+      en: "The current build, 15 May 1948: a closer look at Tel Aviv, Jaffa, Lydda, Petah Tikva and Rishon LeZion, with groves, villages, railways and roads, the front lines and the top bar, and Tel Aviv's city panel with its housing, jobs, refugees and training."
+      he: "הגרסה הנוכחית, 15 במאי 1948: מבט קרוב על תל אביב, יפו, לוד, פתח תקווה וראשון לציון, עם מטעים, כפרים, מסילות ודרכים, קווי החזית והסרגל העליון, ולוח העיר של תל אביב עם הדיור, התעסוקה, הפליטים והאימון."
   - file: build-m3-map.jpg
     title: { en: "The map, the top bar and an event card", he: "המפה, הסרגל העליון וכרטיס אירוע" }
     alt:

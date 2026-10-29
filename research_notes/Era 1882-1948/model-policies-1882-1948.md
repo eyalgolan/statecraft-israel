@@ -33,6 +33,7 @@ sections 4, 6 and 8.
   quotation from a web page is therefore marked "as extracted" and needs a person's check against the live page. The
   scans (Survey, Mandate reports, Peel Report, Shafir) were read as text and, where marked "image", as page images.
 - **Every page opened for this note was opened by an agent on 24 October 2026; a person's check is pending.**
+- (Second pass, 27 October 2026, added line; the line above stays as written.) Every page opened in the second pass (section 13) was opened by an agent on 27 October 2026. Every [V] added then reads `[V, agent read 27 October; a person's check pending]`.
 
 ## Sources
 
@@ -112,6 +113,8 @@ The design's wording is "the 1926-27 crisis, when emigration passed immigration 
 - **[C] The scale of the unemployment.** AR 1927 says "not less than 5,000" Jews unemployed out of 26,500 workers
   (derived: about 19 per cent of that workforce, if all 5,000 were workers). No second count was found. [GAP] for a
   peak month, and for the Jewish Agency's or the Histadrut's own count.
+  (Second pass, 27 October 2026: narrowed, see section 13, item 1. No count of the unemployed was found; the peak month and the Jewish Agency count stay [GAP].)
+  (Correction, 27 October 2026, after review: the line above is wrong. A count was found, the Zionist Executive's own, in a JTA item of 23 June 1927; see section 13, item 1. The 1927 peak month and a Histadrut count stay [GAP].)
 - **My reading, for the design:** "emigration passed immigration" is true of the calendar year 1927 for Jews and for all
   races, and of 1926 only in the sense that Jewish emigration was high (7,365 against 13,081). The two-year average of
   Bachi (6,218 a year against 15,794 Jewish immigrants over the two years, derived) does not show emigration above
@@ -151,6 +154,7 @@ Transfers from Arabs to non-Arabs that the High Commissioner approved, in dunums
   purchase was is the JNF series on main and the land-held table. [GAP] for private-purchase flows by year, for the
   Land Transfer Ordinance of 1920 and its 1933 amendment (named in Survey I, ch. VIII, but not read for this note), and
   for the Hope-Simpson Report's land findings.
+  (Second pass, 27 October 2026: the Land Transfer Ordinance of 1920 and the Hope Simpson findings as the Peel Report reports them are now read; the "1933 amendment" is a separate Ordinance. See section 13, item 2. Private-purchase flows by year stay [GAP].)
 - [GAP] JNF land in 1948 (also a gap in the national-funds note; open under #91).
 
 ## 3. `settlement_drive`
@@ -165,6 +169,8 @@ Transfers from Arabs to non-Arabs that the High Commissioner approved, in dunums
 | Method and permission | built in one night, on JNF land, on the Ottoman rule that "buildings erected in one night didn't require a building permit"; "the British generally gave their tacit accord" | [S] | en.wiki Tower and Stockade (as extracted; the legal claim is the page's, not checked against a statute) |
 | Cost and who paid | [GAP] no source read says | | |
 | The eleven points | the night of 5 to 6 October 1946, after the Morrison-Grady plan would have put the Negev in an Arab state | [S] | web-search summary of en.wiki "11 points in the Negev" (page not opened); the dating is worked through in the Negev settlements note |
+
+(Second pass, 27 October 2026, on the "Cost and who paid" row: searched again in the JTA archive and not found, see section 13, item 3. The row stays [GAP].)
 
 - **[C] Mandate counts against the later count.** The Mandate reports count 29 new agricultural settlements for January 1936 to
   December 1938 and 17 settlements in 1937 alone; the "57" is a count of tower-and-stockade settlements to 1939. The two
@@ -196,6 +202,7 @@ wording.
   guess, not a finding. Both values stay.
 - [GAP] primary text of the Vaad Leumi's decision, the Mandate's own mention of the 1940 and 1942 direct taxes, and any
   yield after 5700 (open under #91).
+  (Second pass, 27 October 2026: searched again, see section 13, item 4. The primary text of the decision and the 1940 and 1942 taxes stay [GAP]; amounts stay with the national-funds note, #91.)
 
 ## 5. `hebrew_labour`
 
@@ -225,6 +232,7 @@ quoted as they stand.
   statements. [GAP] a Histadrut or Jewish Agency policy text from the 1920s or 1930s, any series of Jewish-labour share
   in agriculture by year, and Shafir's coverage of 1914 to 1948 (the book ends in 1914). Hope-Simpson (1930) and Peel's
   Chapter X were not read for this section.
+  (Second pass, 27 October 2026: Peel Chapter X, paragraphs 22 to 31, is now read; Hope Simpson is read only as the Peel Report quotes him. See section 13, item 5. A Histadrut or Jewish Agency policy text and a share series stay [GAP].)
 - [C] none found on the dates; the sources agree on 1905 and 1920.
 
 ## 6. `havlagah`
@@ -253,6 +261,7 @@ Neutral wording: a policy of restraint by the Yishuv's institutions, and a split
   page was read that states it).
 - [GAP] a primary Yishuv-side text (a Jewish Agency or Haganah order or speech) for the policy; Kessler 2023 and Slutsky
   were not opened.
+  (Second pass, 27 October 2026: two dated statements by Jewish Agency leaders found in the JTA archive, see section 13, item 6. The term itself and a Haganah order stay [GAP].)
 
 ## 7. `cooperation_with_britain` (1939 and 1945)
 
@@ -276,6 +285,7 @@ Neutral wording: a policy of restraint by the Yishuv's institutions, and a split
   sources is 31 October 1945 (Survey) (the founding date of the joint Resistance Movement is [GAP]; no page read dates it).
 - [GAP] the primary text of the October 1945 agreement, the date the Jewish Resistance Movement ended (the search
   summaries gave July and August 1946), and Ben-Gurion's slogan.
+  (Second pass, 27 October 2026: narrowed, see section 13, item 7. Ben-Gurion's slogan, the agreement text and the end date stay [GAP].)
 
 ## 8. `aliyah_bet`
 
@@ -317,6 +327,7 @@ The owner's frame is: from 1934, the 1942-44 pause, the 1945-48 surge.
     lost at sea" [S, as extracted].
 - [GAP] by-year sea arrivals for 1942, 1943 and 1944. The Survey's Table 1 (p. 185) has Jewish immigrant totals by year
   but its 1942 to 1944 rows do not sum in the text layer, so they are not used here.
+  (Second pass, 27 October 2026: searched again, section 13, item 8. Still [GAP].)
 - [C] the legal-immigration table of the Survey against the Jewish count: the Survey's account is of the Government's
   count; the Jewish Agency's own count is only "37,000" for the stock at April 1939.
 
@@ -359,6 +370,7 @@ The owner's frame is: from 1934, the 1942-44 pause, the 1945-48 surge.
 - The design's phrase "share of labour certificates kept for trained pioneers, against family and rescue cases" has a
   sourced frame in three parts: Category C (labour) against Category D (dependants) and the 25,000 refugees of 1939.
   The *share* of C that went to pioneers, as opposed to other labour immigrants, is [GAP].
+  (Second pass, 27 October 2026: the selection chain and the Halutz training centres are now read in the Peel Report, section 13, item 9. The share of C that went to pioneers stays [GAP].)
 
 ## 10. `hebrew_schools`
 
@@ -383,6 +395,7 @@ The owner's frame is: from 1934, the 1942-44 pause, the 1945-48 surge.
   recognition of Hebrew as an official language, neither read for this note; the Peel Report mentions an official-
   language grievance (Chapter XIX, para 8) but that passage does not date the decision.
 - [GAP] pupil series by year for 1920 to 1940 (only 1925/26 and July 1944 were read).
+  (Second pass, 27 October 2026: the Mandate-period recognition of Hebrew and four more points of the pupil series are now read, section 13, items 10 and 11. The Ottoman-period decision and the other years stay [GAP].)
 
 ## 11. What the design can take, and what it cannot yet
 
@@ -412,3 +425,195 @@ The owner's frame is: from 1934, the 1942-44 pause, the 1945-48 surge.
    rules have no source read.
 5. Hope-Simpson (1930) and Peel's Chapter X were not read; they are the likely primary sources for land and Hebrew
    labour.
+
+## 13. Second pass on the [GAP] rows, 27 October 2026
+
+Added on 27 October 2026 (issue #92, second pass on the [GAP] rows). Everything above is the first pass, kept as it was
+written; where this section found something, the first-pass line carries a dated pointer to the item number here. Every
+page below was opened by an agent on 27 October 2026. Every [V] added in this section reads exactly
+`[V, agent read 27 October; a person's check pending]`. Amounts of the voluntary levy and of land purchase are not re-sourced here: they stay in the national-funds
+note (`research_notes/Era 1882-1948/national-funds-1882-1948.md`), and its [GAP] rows stay open under #91.
+
+Sources opened in the second pass (day opened: 27 October 2026):
+
+| Key | Source | Where read |
+|---|---|---|
+| Peel (again) | Palestine Royal Commission Report, Cmd. 5479; PDF p. = printed p. + 11 in Chapters IX and X, + 13 in Chapter III | https://unispal.un.org/pdfs/Cmd5479.pdf, text layer PDF p. 85, 234, 298 and 299; page images PDF p. 84, 233 and 300 |
+| Survey I, II (again) | A Survey of Palestine, Vol. I (printed p. = PDF p. - 5) and Vol. II | the two bjpa.org files named in the Sources table above; Vol. II page images PDF p. 406 |
+| AR 1927, 1936, 1937, 1938 (text layer) | Mandate reports to the League of Nations; text from the `_djvu.txt` file | https://archive.org/details/report-admin-palestine-1927 (and `-1936`, `-1937`, `-1938`), file names `ReportAdminPalestine<year>_djvu.txt` from the item's file list |
+| JTA wp-json | Jewish Telegraphic Agency archive, text served by the site's search interface | `https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=<date>&before=<date>&per_page=50&orderby=date&order=asc` |
+| JTA bulletins | Daily bulletin page images, read with OCR and, where marked "image", viewed as a rendered page | http://pdfs.jta.org/1939/1939-09-10_033.pdf ; http://pdfs.jta.org/1946/1946-07-25_170.pdf ; http://pdfs.jta.org/1936/1936-04-24_214.pdf ; http://pdfs.jta.org/1938/1938-07-10_083.pdf |
+
+Dates rule: a JTA archive page carries the bulletin date. Where the bulletin was opened, the dateline of the item gives
+the event date and is quoted here. Where it was not opened, the item says "dateline not resolved".
+
+### Item 1. `employment`: the unemployment of 1926-27
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| Relief programme, January 1927 | the Palestine Zionist Executive's Labour Department (head: Sprinzak) had asked for "£76,000 over the regular labor budget" for loans for public works; "The General Council voted a labor budget of £60,000" and told the Executive "to secure by means of a loan the necessary funds for the execution of public works by the Labor Department in order to enable it to carry through its program and to relieve unemployment" (the page prints the pound sign as "Â£"; shown here as £) | [V, agent read 27 October; a person's check pending] | JTA Mail Service item of 11 January 1927, https://www.jta.org/archive/zionist-executive-reports-on-measures-to-relieve-palestine-unemployment (dateline not resolved) |
+| Workers' conference, February 1927 | an extraordinary conference of the General Jewish Labor Federation; Ben-Gurion "reported on the situation", and the figures below come from reports by members of the Zionist Executive (named in the item as Hartzfeld, Sprinzak and Kaplanscky): the Executive's labour budget "has been increased from £E. 35,000 to £E. 110,000"; "During February about 1.400 workers will be engaged and 1,500 more workers will be engaged after the £E. 50,000 loan will have been concluded" (as printed, including "1.400"; pound signs shown as £) | [V, agent read 27 October; a person's check pending] | JTA Mail Service item of 28 February 1927, https://www.jta.org/archive/palestine-workers-urge-immediate-steps-to-solve-unemployment-situation (dateline not resolved) |
+| The Zionist Executive's own count of the unemployed, to 31 December 1926 | the Zionist Executive's annual report to the Permanent Mandates Commission, "covering the period ending December 31, 1926", as the JTA summarises it: "In October, 1925. the number of unemployed was about 1,000; in November it rose to 3,000, in April, 1926. it was 5,000, and in July, 6,000. In the next two months it dropped to about 4,000, but then rose again, and at the end of the year was about 6.500" (as printed, including "6.500"); "About half the unemployed were in the building trade and were in Tel Aviv"; "On November 21. 1926. the registered unemployed were distributed as follows: Jerusalem. 769; Tel Aviv. 3,221; Haifa, 1,206; Tiberias. 100; Afuleh, 250; Petach-Tikvah, 700;" (the text served ends the list there, after a semicolon; the six towns sum to 6,246, derived, so the list may be cut) | [V, agent read 27 October; a person's check pending] | JTA item of 23 June 1927, "Zionist Executive Reports to League on Palestine Conditions", https://www.jta.org/archive/zionist-executive-reports-to-league-on-palestine-conditions (web text; dateline not resolved; the count is the Zionist Executive's own, as its report to the Commission gives it) |
+
+- The `unemployed` list's Palestine items of 1 June to 25 July 1927 were first read as snippets and this item, in the window, was missed (a review agent found it, 27 October 2026). Corrected 27 October 2026 after review: the Zionist Executive's own count of the unemployed is now in the table above, for October 1925 to the end of 1926. The wording "no count was found" in the next bullet is superseded by it, and the AR 1927 figure of "not less than 5,000" in section 1 is a different date and source (calendar year 1927) from the Executive's 6,000 in July 1926 and about 6,500 at the end of 1926; the two are not reconciled here.
+- Neither item above (11 January and 28 February 1927) gives a number of unemployed workers, so, for these two items, the peak month and a Jewish Agency or Histadrut count are still
+  [GAP]. After the correction above the Zionist Executive's count for 1925-26 is read (about 6,000 in July 1926, about 6,500 at the end of 1926); the 1927 months and a Histadrut count stay [GAP]. Search record: query `unemployment`, 1 January to 31 December 1927, 271 items, the first 50 returned, by date;
+  the items matching "Palestine", from 7 January to 2 March 1927, were read as snippets; query `unemployed`, 1 June 1927 to 31 March 1928, 213 items, the
+  first 50 returned, the Palestine items running from 1 June to 25 July 1927, read as snippets. The later items of both lists were not read.
+- Same search, bulletin of 8 July 1927, which says the conference opened "yesterday": the Histadrut conference opened in Tel Aviv with 201 delegates "representing a membership of
+  22,837", and "the unemployment situation" on its agenda (JTA, https://www.jta.org/archive/palestinian-labor-organization-opens-sessions-in-tel-aviv, [V, agent read 27 October; a person's check pending], dateline not resolved).
+
+### Item 2. `land_purchase`: the 1920 Ordinance and the Hope Simpson findings
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| Transfer of Land Ordinance, 1920 | "required that the consent of the Government should be obtained to all dispositions of immovable property; it prohibited the transfer of land to 'others than residents in Palestine'" | [V, agent read 27 October; a person's check pending] | Peel, ch. IX para 14, p. 222 (PDF p. 233) (page image viewed) |
+| Land Transfer Ordinance, 1921 | repeated the need for consent and added, in Section 8 (1), that consent should be given only when the Director of Lands was "satisfied that any tenant in occupation will retain sufficient land in the district or elsewhere for the maintenance of himself and his family"; Peel's verdict: "These Ordinances failed to achieve their purpose ... They proved in fact to be unworkable" | [V, agent read 27 October; a person's check pending] | Peel, ch. IX para 14, p. 222 (page image viewed) |
+| The same Ordinance, as a registration law | "legislation was passed ... establishing a land registry and providing that no disposition of immovable property should be valid unless recorded in the Land Registry, (the Land Transfer Ordinance, 1920)"; the registries opened on 1 October 1920 | [V, agent read 27 October; a person's check pending] | Survey I, ch. VIII para 40, p. 239 (PDF p. 244) (text layer) |
+| Protection of Cultivators, 1929 to 1934 | replaced the earlier rules in 1929; amended by Ordinance No. 1 of 1932; a new Ordinance, No. 37 of 1933, "in a further endeavour to check the process of displacement of Arab cultivators"; amended again in 1934 | [V, agent read 27 October; a person's check pending] | Peel, ch. IX paras 15-16, p. 223 (PDF p. 234) (text layer) |
+| The same, as the Mandate's Survey tells it | the 1931 amending Ordinance restored the subsistence-area rule "mainly by reason of the recrudescence at that time of large scale land sales by Arabs to Jews"; "In 1933 a committee of enquiry found that some 664 Arab families who had been displaced by land sales had been unable to obtain other holdings"; the Cultivators (Protection) Ordinance of 1933 repealed the 1929 Ordinance and "is substantially the law as it exists to-day" | [V, agent read 27 October; a person's check pending] | Survey I, ch. VIII paras 129-130, p. 290 (PDF p. 295) (text layer) |
+| Hope Simpson, land | cultivable land put at 6,544,000 dunums (the estimates exclude the Beersheba Sub-District), against 10,592,000 by the Commissioner of Lands and "as high as 16,000,000 dunums or more" by some Zionists; his conclusion, in Peel's words: "there is no room for a single additional settler if the standard of life of the fellaheen is to remain at its present level" | [V, agent read 27 October; a person's check pending] | Peel, ch. III para 58, p. 71 (PDF p. 84) (page image viewed; this is the Peel Report's account, the Hope Simpson Report, Cmd. 3686, was not opened) |
+| Hope Simpson, his own belief | "that with thorough development of the country there will be room, not only for all the present agricultural population on a higher standard of life than it as present enjoys, but for not less than 20,000 families of settlers from outside" | [V, agent read 27 October; a person's check pending] | Peel, ch. III para 58, p. 72 (PDF p. 85) (text layer) |
+
+- **Not a conflict, but not reconciled:** Peel dates the amending Ordinance to 1932 and says it defined a tenant to include
+  a sub-tenant; the Survey dates an amending Ordinance to 1931 and says it restored the subsistence rule. They may be two
+  amendments; neither page says so.
+- The first-pass line spoke of "its 1933 amendment". The 1933 Ordinance is a new Ordinance on tenants, not an
+  amendment of the Land Transfer Ordinance; later amendments of the Land Transfer Ordinance itself were not found in
+  these pages and stay [GAP], as do private-purchase flows by year.
+
+### Item 3. `settlement_drive`: cost and who paid
+
+Searched again, not found. Query `stockade`, JTA wp-json, 1 December 1936 to 31 December 1939: 115 items, the first 50
+returned, by date. The search is fuzzy (it matched "stock" in unrelated items). A filter for cost words (cost, pound,
+dollar) was applied and the listing was read down to 3 June 1938: 11 matching items, all read as snippets, none about the
+cost of a tower-and-stockade settlement. The rest of the 50 and the other 65 items were not read. The row stays [GAP].
+
+### Item 4. `voluntary_levy`: the Vaad Leumi's decision
+
+Searched again, not found. Queries (JTA wp-json): `Vaad Leumi`, 15 July to 10 August 1938, 0 items; `Jewish National
+Council`, 10 July to 15 August 1938, 17 items, all returned, the six that matched a filter for fund, tax or defence read
+as snippets, none reports a levy decision; `Kofer`, 1 June 1938 to 31 December 1939, 11 items returned, the titles of the
+first four read (20 September, 14 October, 26 October and 28 October 1938), none about the decision. A lead, not read in full: the unread result of 2 March 1939 (JTA, https://www.jta.org/archive/mystery-broadcast-urges-jews-to-revolt-strike-call-authorized-as-unity-is-effected, [V, agent read 27 October; a person's check pending], dateline not resolved) reports a meeting of Jewish leaders convoked by the Jewish National Council whose first resolution called for "renewing the Kofer Hayishub, Jewish defense and redemption fund". It dates a renewal, not the decision of 1938. One item gives the
+setting: in the bulletin of 28 July 1938, "After an appeal by the Jewish National Council to strengthen defense, 100 Tel Aviv youths
+presented themselves at City Hall as volunteers" (JTA, https://www.jta.org/archive/defense-hinders-colonies-work,
+[V, agent read 27 October; a person's check pending], dateline not resolved). It names no levy. The decision text and the
+1940 and 1942 taxes stay [GAP].
+
+### Item 5. `hebrew_labour`: the Government's labour rule
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| The Government's rule for the labour schedule | "No demand for additional Jewish labour is accepted when the intention of the prospective employers is to displace Arab labour already employed"; "Deviations from this rule have taken place in a few cases where, as the result of a shortage of Jewish labour, Hauran and Trans-Jordan workers displaced Jewish workers who left branches of work at low rates of wages for pursuits in which wages were higher" | [V, agent read 27 October; a person's check pending] | Peel, ch. X para 24(c), p. 287 (PDF p. 298) (text layer) |
+| Hope Simpson, as Peel quotes him | "Jewish capital will not be brought into Palestine in order to employ Arab labour. It will come in with the definite object of the employment of Jewish labour and not otherwise"; the "principle of 'derived demand'" would justify Jewish labour immigration "even when there are Arab unemployed" if the work is permanent and comes with Jewish capital | [V, agent read 27 October; a person's check pending] | Peel, ch. III para 59, p. 72 (PDF p. 85) (text layer; Peel's quotation, not the Hope Simpson Report itself) |
+
+- Still [GAP]: a Histadrut or Jewish Agency policy text from the 1920s or 1930s, and a share series of Jewish labour by
+  year. Peel's Chapter X is headed "Immigration" and only its paragraphs 22 to 31 were read; the first-pass sentence stays
+  as written.
+
+### Item 6. `havlagah`: two dated statements
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| 23 April 1936 | the Zionist Organization of America announced that David Ben-Gurion, chairman of the executive of the Jewish Agency, had given assurances by telephone from Jerusalem; he was quoted "declaring that the heroism, self-restraint and discipline of the Jewish community under attack was a source of pride to the executive". Dateline of the item in the bulletin: "NEW YORK, April 23. (JTA)" | [V, agent read 27 October; a person's check pending] | JTA bulletin of 24 April 1936, pp. 6-7, http://pdfs.jta.org/1936/1936-04-24_214.pdf ; page https://www.jta.org/archive/ben-gurion-phones-assurances-special-aid-body-formed-here (bulletin page viewed) |
+| 8 July 1938 | "Dr. Chaim Weizmann, president of the Jewish Agency for Palestine, today associated the Agency's executive with the appeal of the Palestine Jewish National Council for self-restraint and condemned any outburst of reprisals"; "The overwhelming majority of Palestine Jewry is determined to maintain a policy of non-retaliation, he said". Dateline: "LONDON, July 8. (JTA)" (the OCR of the all-capitals bulletin reads the month as "Jwy"; the day and the sentence were read in the web text) | [V, agent read 27 October; a person's check pending] | JTA bulletin of 10 July 1938, p. 2, http://pdfs.jta.org/1938/1938-07-10_083.pdf ; page https://www.jta.org/archive/weizmann-appeals-for-self-restraint |
+
+- The word "havlagah" is not in either item. They show Jewish Agency leaders using the language of restraint at the
+  start of the revolt (April 1936) and again in July 1938, two days after the Haifa market bomb of 6 July 1938 (date from
+  section 6 above); they are not the first public statement of a policy, which stays [GAP], nor a Haganah order.
+- Search record: query `restraint`, JTA wp-json, 15 April to 31 December 1936, 124 items, the first 50 returned, by date;
+  ten matched the filter `restraint|havlag`, the latest dated 6 July 1936, and were read as snippets (including a High
+  Commissioner's praise of the "restraint and self-control" of the Jews, 23 April 1936, bulletin date; and Berl Katznelson
+  on 8 June 1936, "There is a limit to self-restraint", bulletin date).
+
+### Item 7. `cooperation_with_britain`: September 1939 and the autumn of 1945
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| Ben-Gurion, September 1939 | Shertok said the Jewish Agency would keep an "armistice" with Britain on "unenforced phases of the White Paper"; Ben-Gurion, chairman of the Agency's Palestine Executive: "Our political weight is now increased. It is impossible that England will not recognize and utilize the strength of the Jews", and "we have no right to weaken our powers of resistance against the White Paper". Dateline: "JERUSALEM, Sept. 8. (JTA)" | [V, agent read 27 October; a person's check pending] | JTA bulletin of 10 September 1939, p. 1, http://pdfs.jta.org/1939/1939-09-10_033.pdf (bulletin page viewed) |
+| The British allegation of 24 July 1946 | the British Government's White Paper on violence said the Irgun and the Stern Group "have been working since last Autumn in cooperation with the high command of the Haganah and have carried out several joint operations", and that the Haganah and Palmach acted "under the guise of the Jewish Resistance Movement". Dateline: "LONDON, July 24. (JTA)" | [V, agent read 27 October; a person's check pending] | JTA bulletin of 25 July 1946, p. 1, http://pdfs.jta.org/1946/1946-07-25_170.pdf (bulletin page 1 viewed) |
+| The alleged telegram | the White Paper quotes a telegram "allegedly from Dr. Sneh, dated September 23, 1945": "The Stern Group have expressed their willingness to join us completely on the basis of our program of activity. This time the intention seems serious. If there is such a union we may assume that we can prevent independent action even by the IZL." Another quoted telegram, "to London from Sneh in Jerusalem October 12, 1945", is about the renewed broadcasts of the "Voice of Israel" | [V, agent read 27 October; a person's check pending] | the same bulletin, p. 2 (text of pp. 1-2 read by OCR; the bulletin quotes four telegrams in all; the quotation is the British Government's, as the bulletin says "alleged") |
+| The Jewish Agency's answer | "Not a single one of the alleged telegrams emanated from the Jewish Agency in Palestine" | [V, agent read 27 October; a person's check pending] | JTA page of 26 July 1946, https://www.jta.org/archive/agency-challenges-white-paper-evidence-imprisoned-leaders-face-trial-for-terrorism (web text; dateline not resolved) |
+
+- **[C] the British Government and the Jewish Agency disagree about the telegrams:** the British Government says it had evidence of cooperation "since last Autumn" and a telegram
+  of 23 September 1945; the Jewish Agency denies the telegrams. This note does not decide it. The founding date of the
+  Jewish Resistance Movement and the text of the agreement stay [GAP]; the earliest dated trace read is the 23 September
+  1945 telegram as the British Government quoted it, which is earlier than the 31 October 1945 railway attacks used in
+  section 7.
+- The date the movement ended is still [GAP]: a JTA page of 24 July 1946 (bulletin date) has the Haganah, "Jewish
+  resistance movement" in the JTA's words, telling the agency by telephone that the King David Hotel explosion "was not the work of its organization"; it does not say the movement
+  ended. Query `Haganah`, 20 July to 20 August 1946: 21 items returned, the nine that matched the filter for Irgun, joint,
+  dissociate or cooperate read as snippets.
+- Ben-Gurion's slogan of September 1939 is not found. Searches, JTA wp-json: `Ben-Gurion` 1 September to 31 December 1939,
+  12 items; `Ben Gurion`, the same range, 12; `Gurion`, the same range, 15; `White Paper`, 1 September to 31 October 1939,
+  14. The text of every returned item was filtered for "as if there", "no White Paper" and "fight the war" (and "help the
+  British" in the three Ben-Gurion queries); apart from the 10 September item above, no item matched. The row stays [GAP].
+
+### Item 8. `aliyah_bet`: sea arrivals in 1942, 1943 and 1944
+
+Searched again, not found. The Survey I text layer was searched for "illegal"; the list of matching lines was cut at the first 80, which
+were read as snippets, and none gives a by-year sea count for 1942, 1943 or 1944 beyond what section 8 above already
+holds (paragraph 36, 6,027 immigrants through Turkey; the account to 31 March 1944). The row stays [GAP].
+
+### Item 9. `pioneer_selection`: the Zionist side of the selection
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| The advisory step | the Jewish Agency "is advised by what is called the Immigration Advisory Committee", whose members "are appointed by the Executive of the Va'ad Leumi and they give advice to the Jewish Agency as to the sort of distribution of certificates they would like as between different classes" | [V, agent read 27 October; a person's check pending] | Peel, ch. X para 29, p. 288 (PDF p. 299) (text layer) |
+| The Palestine Offices | the Agency forwards the certificates to "the 12 major Palestine Offices in Europe, America and Aden", the largest at Warsaw and Berlin; "the Jewish Agency ... determines the character and quality of immigrants coming in under the Labour Schedule" | [V, agent read 27 October; a person's check pending] | Peel, ch. X para 30, pp. 288-289 (PDF p. 299-300) (the second quotation on the page image, which was viewed) |
+| The training centres | "The immigrants selected by the various Palestine Offices come from training centres, which, as Dr. Senator, the Director of Immigration in the Jewish Agency, informed us, are the result of a movement which originated during the War and was called 'Halutz.' i.e. 'Pioneer.'"; three stages by age (12 to 17, 17 to 19, 19 and over, when "they enter the training camps"); "the Jewish Organization has 24,000 Jews in training"; "The training usually lasts for two or three years and is mainly directed towards agriculture. There are also institutions for learning crafts." | [V, agent read 27 October; a person's check pending] | Peel, ch. X para 31, p. 289 (PDF p. 300) (page image viewed) |
+
+- This is evidence given to the Royal Commission (Dr. Senator's statement), recorded in a government report, not a
+  Zionist-side text; the Hehalutz movement's own rules, hachshara as a route to a certificate by name, and the share of
+  Category C that went to pioneers stay [GAP]. The page does not date the statement.
+
+### Item 10. `hebrew_schools`: official language
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| The Mandate | "English, Arabic and Hebrew shall be the official languages of Palestine" (Article 22 of the Mandate, as the Survey prints it) | [V, agent read 27 October; a person's check pending] | Survey II, ch. XXII para 121, p. 930 (PDF p. 406) (page image viewed) |
+| The Order in Council | Article 82 of the Palestine Order-in-Council, 1922, "as amended in 1939": Ordinances and official notices are "published in English, Arabic and Hebrew"; "In the case of any discrepancy between the English text ... and the Arabic text or Hebrew text thereof, the English text shall prevail" | [V, agent read 27 October; a person's check pending] | Survey II, para 122, p. 930 (page image viewed) |
+| Before the Mandate | a public notice in the Palestine Gazette of 1 October 1920: "English, Arabic and Hebrew are recognised as the official languages of Palestine" | [V, agent read 27 October; a person's check pending] | Survey II, para 123, p. 930 (page image viewed) |
+
+- The dates of the Mandate's confirmation and of the Order in Council are not on the page and are not given here.
+- The Ottoman-period decision (the language dispute of 1913 to 1914) stays [GAP]. Search record: the text layers of Peel,
+  Survey I and Survey II were searched for "Technikum", "Technion", "language war" and "language dispute": 0 hits in each.
+
+### Item 11. `hebrew_schools`: more points of the pupil series
+
+| Item | Value | Tag | Source |
+|---|---|---|---|
+| School year 1926-27 | "the number of schools under the control of the Palestine Zionist Executive was 191 with 17,700 pupils, that is, 66.7 per cent. of all Jewish pupils" | [V, agent read 27 October; a person's check pending] | AR 1927, p. 36 (the OCR's page-number line) (text layer) |
+| January or July 1935 | Jewish schools 492, pupils 51,314: Va'ad Leumi schools 317 with 34,071, other schools 175 with 17,243 | [V, agent read 27 October; a person's check pending] | AR 1936, p. 150 (the OCR's page-number line) (text layer; sums redone) |
+| March 1936 | Jewish schools 554, pupils 60,211: Va'ad Leumi 354 with 41,147, other 200 with 19,064 | [V, agent read 27 October; a person's check pending] | AR 1936, p. 150 (text layer; sums redone) |
+| 1936-37 | Jewish schools 581, pupils 67,273: Va'ad Leumi 373 with 47,288, other 208 with 19,985 | [V, agent read 27 October; a person's check pending] | AR 1937, p. 136 (the OCR's page-number line) (text layer; sums redone) |
+| The 1938 report | "The 71,376 pupils in Jewish schools (36,474 boys and 34,902 girls)"; the table is garbled in the text layer; the report's text says the roll rose "during the year ending the 30th September, 1938, from 67,273 to 71,376", so this is the 1937-38 year | [V, agent read 27 October; a person's check pending] | AR 1938, p. 143 and the text at line 5165 of the text layer (the OCR's page-number line) (text layer) |
+
+- The table of AR 1936 labels its columns "January or July, 1935" and "March, 1936"; AR 1937 labels the same 60,211 "1935-36".
+  They are one series, not two.
+- Check, derived: 34,071 + 17,243 = 51,314; 317 + 175 = 492; 41,147 + 19,064 = 60,211; 354 + 200 = 554; 47,288 + 19,985 =
+  67,273; 373 + 208 = 581; 36,474 + 34,902 = 71,376.
+- The first-pass note has 17,174 Jewish pupils for 1925/26 (Survey II p. 644). The 17,700 above is a different count (the
+  Zionist Executive's schools only, 66.7 per cent of the Jewish pupils), so the two are not compared here. The years 1920 to 1925, 1927/28 to 1934 and 1939 to 1940 stay [GAP]; the page images of the AR pages
+  were not viewed.
+
+### Rows of the first pass, after the second pass
+
+| First-pass row | After the second pass |
+|---|---|
+| `employment`: peak month, Jewish Agency or Histadrut count | narrowed (item 1); the Zionist Executive's own count to the end of 1926 found, the 1927 months still [GAP] |
+| `land_purchase`: Land Transfer Ordinance 1920, Hope Simpson findings | closed as to the 1920 Ordinance and Peel's account of Hope Simpson (item 2); private-purchase flows and later amendments still [GAP] |
+| `land_purchase`: JNF land in 1948 | not touched, #91 |
+| `settlement_drive`: cost and who paid | still [GAP], search recorded (item 3) |
+| `voluntary_levy`: primary text, 1940 and 1942 taxes | still [GAP], search recorded (item 4) |
+| `hebrew_labour`: policy text, share series | narrowed (item 5) |
+| `havlagah`: first statement, Yishuv-side primary text | narrowed (item 6) |
+| `cooperation_with_britain`: slogan | still [GAP], search recorded (item 7) |
+| `cooperation_with_britain`: founding date and agreement text, end date | narrowed (item 7); end date still [GAP] |
+| `aliyah_bet`: sea arrivals 1942 to 1944 | still [GAP], search recorded (item 8) |
+| `aliyah_bet`: a scholarly count | not touched |
+| `pioneer_selection`: Hehalutz role, hachshara | narrowed (item 9); share of Category C still [GAP] |
+| `hebrew_schools`: Mandate-period recognition of Hebrew | closed (item 10); Ottoman-period decision still [GAP] |
+| `hebrew_schools`: pupil series | narrowed (item 11) |
+
+Corrections of 27 October 2026 after review, to rows of this section as first written: (a) item 1, the 28 February 1927 row now says Ben-Gurion "reported on the situation" and that the figures came from members of the Zionist Executive; (b) item 5, the para 24(c) quotation now runs to the end of the sentence ("...for pursuits in which wages were higher"; page image of p. 287 viewed, the tail is in the text layer); (c) item 7, "A second quoted telegram" is now "Another quoted telegram" (the bulletin quotes four, read from the OCR of its page 2), and the "..." inside the Sneh telegram of 23 September 1945 is removed, since the OCR prints "serious. If there is" with nothing left out; (d) item 9, the printed text of Peel p. 289 is `"Halutz."` with a full stop (page image viewed), where this section had a comma.

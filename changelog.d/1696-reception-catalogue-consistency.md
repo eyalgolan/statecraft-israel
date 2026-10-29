@@ -1,0 +1,1 @@
+- Refuse synthetic reception evaluation when the supplied duration differs from the initialized population ledger, including civilian eligibility checks.

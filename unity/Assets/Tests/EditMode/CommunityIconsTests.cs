@@ -53,12 +53,13 @@ public class CommunityIconsTests
 
     /// <summary>The real Game.uxml on the real PanelSettings at w x h, with the top bar, the side menu, the decision card (open
     /// when the session has an event), the info panel on the hex given, the minimap and the border caption.</summary>
-    static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, (int q, int r)? hex, System.Action<VisualElement> check)
+    static IEnumerator Rendered(int w, int h, bool hebrew, GameSession g, (int q, int r)? hex, System.Action<VisualElement> check, int uiScale = 100)
     {
         var text = hebrew ? He : En;
         var rt = new RenderTexture(w, h, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
         ps.targetTexture = rt;
+        if (uiScale != 100) ps.referenceResolution = new Vector2Int(Mathf.RoundToInt(1920f * 100f / uiScale), Mathf.RoundToInt(1080f * 100f / uiScale));   // #40: the panel as the Settings scale choice sets it
         var go = new GameObject("CommunityIconsTest");
         go.SetActive(false);
         var doc = go.AddComponent<UIDocument>();
@@ -138,6 +139,28 @@ public class CommunityIconsTests
                             if (other.Overlaps(hull)) problems.Add($"{at}: the icons {hull} overlap {name} {other}");
                         if (root.Q("info-panel").worldBound.Overlaps(column)) problems.Add($"{at}: the info panel {root.Q("info-panel").worldBound} overlaps the side menu {column}");
                     });
+        Assert.IsEmpty(problems, string.Join("\n", problems));
+    }
+
+    /// <summary>#40, owner decision of 22 Oct 2026 (a condition on #1135): at 150% on a 1280x720 or 1920x1080 window (the tight
+    /// HUD) the three icons stay clear of the tightened side menu above them, with a gap, in English and Hebrew.</summary>
+    [UnityTest]
+    public IEnumerator AtOneHundredFiftyPercentTheIconsClearTheTightSideMenu()
+    {
+        var problems = new List<string>();
+        var g = WithAnEventOpen();
+        var lod = C.SettlementHexes.Single(s => s.Id == "lod");
+        foreach (var hebrew in new[] { false, true })
+            foreach (var (w, h) in new[] { (1280, 720), (1920, 1080) })
+                yield return Rendered(w, h, hebrew, g, (lod.Q, lod.R), root =>
+                {
+                    string at = $"{(hebrew ? "he" : "en")} {w}x{h} at 150%";
+                    if (!root.Q("root").ClassListContains(HudPresenter.TightClass)) problems.Add($"{at}: precondition: the HUD is tight");
+                    var icons = Hull(Icons.Select(i => root.Q<Button>(i.name)));
+                    var column = Hull(root.Q("left-column").Query<Button>().ToList());
+                    TestContext.WriteLine($"{at}: side menu {column}, icons {icons}, gap {icons.yMin - column.yMax:0.0} px");
+                    if (column.Overlaps(icons) || icons.yMin < column.yMax) problems.Add($"{at}: the icons {icons} overlap the side menu {column}");
+                }, 150);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 

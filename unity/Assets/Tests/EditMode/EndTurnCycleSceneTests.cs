@@ -101,7 +101,7 @@ public class EndTurnCycleSceneTests
         Assert.AreEqual(expectedTitle, ui.Q<Label>("info-title").text, "the visible card names that unit");
         Assert.AreEqual(date, bridge.State.Date, "blocked End turn did not advance time");
         Assert.AreEqual(needs, bridge.NeedsOrders.Count, "selection did not submit an order");
-        // C152: covering the selected unit again must reveal the NEXT one, not restart or select twice.
+        // #1680: covering the selected unit again must reveal the NEXT one, not restart or select twice.
         var second = bridge.NeedsOrders[1];
         var secondToken = root.Units.Tokens.First(t => UnitCard.SimUnit(bridge.Content, bridge.State, t.Token) == second);
         UiTestKit.Press(ui.Q<Button>("nav-" + screen));

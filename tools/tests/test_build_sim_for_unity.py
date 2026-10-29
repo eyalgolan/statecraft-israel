@@ -17,7 +17,8 @@ class BuildSimForUnityTests(unittest.TestCase):
 
             def publish(command, **kwargs):
                 self.assertEqual(command, ["dotnet", "publish", str(repo / "sim/Statecraft.Sim"),
-                                           "-c", "Release", "-o", str(output)])
+                                           "-c", "Release", "-o", str(output),
+                                           "-nodeReuse:false", "-p:UseSharedCompilation=false"])
                 self.assertEqual(kwargs, {"cwd": repo, "check": True})
                 output.mkdir(parents=True)
                 for name in ("Statecraft.Sim.dll", "YamlDotNet.dll"):

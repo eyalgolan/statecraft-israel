@@ -180,7 +180,7 @@ public class CauseTextTests
             Assert.AreEqual(UnitNames.Line(w, C, NoRows, He), CauseText.Line(w, C, NoRows, He));
     }
 
-    /// <summary>C136: a positive producer set prevents missing keys from being silently skipped by the existing tests.</summary>
+    /// <summary>#1680: a positive producer set prevents missing keys from being silently skipped by the existing tests.</summary>
     [Test]
     public void EveryEventAndUpkeepLineUsesATemplateAndKeepsItsEnglish()
     {

@@ -83,7 +83,7 @@ player_regions:
   - ashdot_yaakov
   - gesher
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys', 'owner 27 Oct 2026: APPROVED "Tiberias"; all six regions approved as proposed (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys', 'owner 27 Oct 2026: APPROVED "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: haifa_sharon
@@ -144,7 +144,7 @@ player_regions:
   - camp_80
   - mishmar_haemek
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: haifa_sharon', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six regions approved as proposed (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: haifa_sharon', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: tel_aviv_jaffa
@@ -180,7 +180,7 @@ player_regions:
   - al_jammasin_al_gharbi
   - rosh_haayin_camp
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"; all six regions approved as proposed (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: central_plain
@@ -225,7 +225,7 @@ player_regions:
   - hulda
   - latrun_fort
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"; all six regions approved as proposed (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: jerusalem_hills
@@ -295,7 +295,7 @@ player_regions:
   - beit_shemesh
   - beit_shemesh_field
   design_note: 'design value, not a historical boundary'
-  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: jerusalem_hills', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six regions approved as proposed (owner ruling, 27 October 2026)']
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: jerusalem_hills', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
   binding_status: NEEDS-RESEARCH
   opening_control: { status: NEEDS-RESEARCH, value: null }
 - id: northern_hills

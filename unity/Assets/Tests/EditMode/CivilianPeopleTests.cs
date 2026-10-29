@@ -294,6 +294,41 @@ public sealed class CivilianPeopleTests
             CollectionAssert.DoesNotContain(plan.Select(w => w.Model), id, id + ": no camp or project built yet");
     }
 
+    /// <summary>Tal Heuberger's Bedouin civilian stands at up to three served camp areas, those of the camels (owner, 27 October
+    /// 2026, #756: "Sign off all 19"), one figure at each, and nowhere else.</summary>
+    [Test]
+    public void TheBedouinCivilianStandsAtTheCamelsCampAreas()
+    {
+        var map = OpenMap();
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var plan = CivilianPeople.Wants(map, new DateTime(1948, 5, 15), Array.Empty<Placement>(), content);
+        var camps = CivilianPeople.Served(RuralLife.Wants(map), RuralLife.Camel).Select(w => w.Key).ToList();
+        Assert.AreEqual(RuralLife.MaxAnchorsPerModel, camps.Count, "the camels' camps");
+        Assert.IsTrue(camps.All(k => k.StartsWith("camp:", StringComparison.Ordinal)), "Bedouin camp areas only");
+        foreach (var camp in camps)
+            CollectionAssert.AreEqual(new[] { CivilianPeople.BedouinCivilian }, ModelsAt(plan, camp + ":bedouin"), camp);
+        Assert.AreEqual(camps.Count, plan.Count(w => w.Model == CivilianPeople.BedouinCivilian));
+    }
+
+    /// <summary>When the first served camp area has no clear ground for the Bedouin civilian, it stands at the second and third
+    /// and takes no other camel candidate in its place: it follows the served areas only (#1893 review).</summary>
+    [Test]
+    public void ABlockedFirstServedCampAreaLeavesTheOtherTwoAndTakesNoOtherCandidate()
+    {
+        var map = OpenMap();
+        var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+        var served = CivilianPeople.Served(RuralLife.Wants(map), RuralLife.Camel);
+        Assert.AreEqual(RuralLife.MaxAnchorsPerModel, served.Count);
+        var first = served[0];
+        // Beyond the farthest spot its search tries: the anchor's radius, the label clearance, every ring and the group's own disc.
+        float reach = first.AnchorRadius + CivilianPeople.LabelClearanceM + 2f * CivilianPeople.FigureClearanceM
+            + CivilianPeople.SearchRings * CivilianPeople.SearchStepM;
+        var plan = CivilianPeople.Wants(map, new DateTime(1948, 5, 15), Array.Empty<Placement>(), content, blocked: new[] { (first.Anchor, reach) });
+        var at = plan.Where(w => w.Model == CivilianPeople.BedouinCivilian).Select(w => w.Key.Split('/')[0]).ToList();
+        CollectionAssert.AreEquivalent(new[] { served[1].Key + ":bedouin", served[2].Key + ":bedouin" }, at,
+            "the second and third served areas, none at the blocked one and none at any other camel candidate");
+    }
+
     /// <summary>The villager stands only where the sim has residents (docs/gdd/settlement-control.md: residents are a state,
     /// inhabited by default): a captured town still awaiting its outcome keeps him; a place the sim records as depopulated
     /// shows none, a town or a village alike, and the rest stay.</summary>
@@ -474,7 +509,8 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
         var units = Statecraft.Game.Map.Units.UnitFigures.ByHeadgear.Values.Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdFigure.Values)
-            .Concat(Statecraft.Game.Map.Units.UnitFigures.BySide.Values).Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
+            .Concat(Statecraft.Game.Map.Units.UnitFigures.BySide.Values).Concat(Statecraft.Game.Map.Units.UnitFigures.ThirdBySide.Values)
+            .Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
         placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: the 18 kit originals are now catalogued and requested by TownModelLayer
