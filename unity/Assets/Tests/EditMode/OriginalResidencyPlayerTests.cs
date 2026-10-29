@@ -65,10 +65,21 @@ public sealed class OriginalResidencyPlayerTests
         public GameObject Prefab = null!;
         public bool FailNear;
         public readonly HashSet<string> Opened = new HashSet<string>(), Unloaded = new HashSet<string>(), CompletedLoads = new HashSet<string>();
+        public readonly HashSet<string> NullPaths = new HashSet<string>(StringComparer.Ordinal);
         public Action<string>? BeforeUnload;
         public IEnumerator Open(string bundle, Action<string?> done) { Opened.Add(bundle); yield return null; done(null); }
         public IEnumerator Load(string bundle, string path, Action<GameObject?> done)
-        { yield return null; CompletedLoads.Add(bundle); done(FailNear && path.Contains("/Settlements/Prototype/", StringComparison.Ordinal) ? null : Prefab); }
+        {
+            yield return null; CompletedLoads.Add(bundle);
+            bool fail = FailNear && path.Contains("/Settlements/Prototype/", StringComparison.Ordinal);
+            if (fail)
+            {
+                // Arm the exact warning before this uncached null reply, not after a coroutine wait.
+                LogAssert.Expect(LogType.Warning, $"Collection: bundle {bundle} has no {path}; nothing is drawn for it.");
+                NullPaths.Add(path);
+            }
+            done(fail ? null : Prefab);
+        }
         public void Unload(string bundle) { BeforeUnload?.Invoke(bundle); Unloaded.Add(bundle); }
     }
     (CollectionStream stream, Source source, List<(string id, CollectionDetail detail)> asks) Stream()
@@ -138,14 +149,32 @@ public sealed class OriginalResidencyPlayerTests
         Assert.IsFalse(asks.Any(a => a.id == focus.Model), "no duplicate whole-town acquisition while Near loads");
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
         yield return Until(() => { towns.Choose(default, camera); return (bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!; }, "near ready: " + focus.Key);
+        Assert.IsNotNull(asks, "request witness survives Near readiness");
         var near = asks.Where(a => a.detail == CollectionDetail.Near).Select(a => CollectionCatalog.BundleOf(a.id)!).ToHashSet();
         Choose(towns, camera, focus.At, false);
         var activeNear = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("models", Flags)!.GetValue(layer)!;
         yield return Until(() => activeNear.Count == 0, "near references retired");
         Assert.IsEmpty(activeNear, "Near consumer references are retired on overview handoff; leases await safe release");
-        yield return Until(() => { towns.Choose(default, camera); return towns.Seats.ContainsKey(focus.Key) && near.All(source.Unloaded.Contains); }, "whole ready and near unloaded: " + focus.Key);
+        GameObject? witnessed = null; int witnessFrame = -1;
+        yield return Until(() =>
+        {
+            towns.Choose(default, camera);
+            bool ready = towns.Seats.ContainsKey(focus.Key) && near.All(source.Unloaded.Contains);
+            if (ready)
+            {
+                var found = towns.transform.Find(focus.Key);
+                Assert.IsNotNull(found, "a ready seat must have its whole instance in the same frame");
+                witnessed = found!.gameObject; witnessFrame = Time.frameCount;
+            }
+            return ready;
+        }, "whole ready and near unloaded: " + focus.Key);
+        string phase = $"whole witness frame {witnessFrame}, resumed {Time.frameCount}, seats {towns.Seats.Count}";
+        Assert.IsTrue(witnessed != null, "whole instance survives coroutine resume: " + phase);
+        Assert.AreSame(towns.transform, witnessed!.transform.parent, "whole instance remains owned: " + phase);
+        Assert.IsTrue(towns.Seats.ContainsKey(focus.Key), "whole seat survives coroutine resume: " + phase);
+        Assert.AreSame(witnessed!.transform, towns.transform.Find(focus.Key), "same whole generation survives: " + phase);
         Assert.IsTrue(asks.Any(a => a.id == focus.Model && a.detail == CollectionDetail.Far));
-        var instance = towns.transform.Find(focus.Key).gameObject;
+        var instance = witnessed!;
         var detached = instance.GetComponentsInChildren<Transform>(true).Select(t => t.gameObject).ToArray();
         var renderers = instance.GetComponentsInChildren<Renderer>(true); Assert.IsNotEmpty(renderers);
         string whole = CollectionCatalog.BundleOf(focus.Model)!;
@@ -170,12 +199,6 @@ public sealed class OriginalResidencyPlayerTests
         yield return Until(() => asks.Any(a => a.detail == CollectionDetail.Near), "near requested");
         var nearIds = asks.Where(a => a.detail == CollectionDetail.Near).Select(a => a.id).Distinct().ToArray();
         Assert.IsNotEmpty(nearIds, "failure proof requires actual Near requests");
-        foreach (var id in nearIds)
-        {
-            StringAssert.Contains("/Settlements/Prototype/", CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
-                "each expected warning must exercise the source's null-prefab path: " + id);
-            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Collection: bundle .* has no .*"));
-        }
         var models = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("models", Flags)!.GetValue(layer)!;
         // Source completion precedes the stream's warning and callback; wait for the actual null replies too.
         yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!))
@@ -187,8 +210,14 @@ public sealed class OriginalResidencyPlayerTests
         Assert.IsTrue(required.Contains(focus.Key), "the focus town must require original models");
         var kinds = ((System.Collections.IEnumerable)required[focus.Key]!).Cast<object>().ToArray();
         Assert.IsNotEmpty(kinds);
+        Assert.IsNotEmpty(source.NullPaths, "the source must actually answer a Near path with null");
         foreach (var kind in kinds)
         {
+            string id = TownModels.Ids[(int)(TownModel)kind];
+            string path = CollectionCatalog.PrefabPath(id, CollectionDetail.Near);
+            StringAssert.Contains("/Settlements/Prototype/", path, "required kind must exercise the null route: " + id);
+            Assert.IsTrue(asks.Contains((id, CollectionDetail.Near)), "required kind acquired at Near: " + id);
+            Assert.IsTrue(source.NullPaths.Contains(path), "required kind was actually answered null: " + id);
             Assert.IsTrue(models.Contains(kind), "every required focus-town kind must have a response");
             var model = models[kind]!;
             Assert.IsTrue((bool)model.GetType().GetField("answered", Flags)!.GetValue(model)!);
