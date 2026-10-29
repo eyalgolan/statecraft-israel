@@ -1,1 +1,3 @@
-Builds report invalid translation layouts with the ContentSync error prefix. Translation tests always exercise refusal of an event without inline Hebrew. Translation reads now report I/O and access failures with their file instead of escaping or being treated as missing.
+### Fixed
+
+- Builds report invalid translation layouts with the ContentSync error prefix. Translation tests always exercise refusal of an event without inline Hebrew. Translation reads now report I/O and access failures with their file instead of escaping or being treated as missing.
