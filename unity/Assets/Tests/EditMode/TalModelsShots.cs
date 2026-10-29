@@ -133,6 +133,8 @@ public class TalModelsShots
         bool ground = CollectionResidencyView.TryGroundFocus(camera, out var focus);
         var token = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
         Debug.Log($"MODEL-OBS {stage} frame={Time.frameCount} token={token != null} active={units.gameObject.activeInHierarchy} arrived={UnitFigures.Arrived(UnitFigures.LebaneseRegular)} version={UnitFigures.AvailabilityVersion} targetVP={camera.WorldToViewportPoint(target).ToString("R")} ground={ground}:{focus.ToString("R")} view={Statecraft.Game.Map.Kits.TownModelLayer.ViewDistance(camera)} policy={policy.EnterM}/{policy.ExitM}/{policy.ViewEnterM}/{policy.ViewExitM} mask={camera.cullingMask} clip={camera.nearClipPlane}/{camera.farClipPlane}");
+        foreach (var demand in units.GetComponentsInChildren<UnitFigureResidency>(true).Where(o => o.name.StartsWith("Original demand lebanese_army|", StringComparison.Ordinal)))
+            Debug.Log($"MODEL-OBS {stage} prefetch={demand.name} position={demand.transform.position.ToString("R")} focusDistance={Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(demand.transform.position.x, demand.transform.position.z))} snapshot={JsonUtility.ToJson(demand.ResidencySnapshot())}");
         if (token == null) return;
         var planes = GeometryUtility.CalculateFrustumPlanes(camera);
         foreach (var owner in token.GetComponentsInChildren<UnitFigureResidency>(true))
@@ -170,13 +172,29 @@ public class TalModelsShots
         var target = new Vector3((float)subject.Spot.X, 0f, (float)subject.Spot.Z);
         target.y = map.Terrain.SampleHeight(target) + map.Terrain.transform.position.y;
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
-        foreach (var (what, distance) in new[] { ("unit", 40000f), ("close", CameraController.MinDistance) })
+        foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 18000f), ("close", CameraController.MinDistance) })
         {
             Look(target, distance);
             for (int i = 0; i < 5; i++) yield return null;
+            if (what == "admitted")
+            {
+                Assert.Less(Statecraft.Game.Map.Kits.TownModelLayer.ViewDistance(Camera.main), map.Residency.Units.ViewEnterM,
+                    "capture control requires a view inside the approved enter band");
+                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var focus));
+                Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(target.x, target.z)), map.Residency.Units.EnterM,
+                    "capture control requires the actual placed subject inside the approved enter radius");
+            }
             ObserveSubject(map, root.Units, what + " before", target);
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
             ObserveSubject(map, root.Units, what + " after", target);
+            if (what == "admitted")
+            {
+                var live = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+                Assert.IsNotNull(live, "admitted model capture must retain its actual Lebanese token after render");
+                var models = live!.GetComponentsInChildren<UnitFigureResidency>(true)
+                    .Where(o => o.transform.Find(UnitFigures.ModelName) != null).ToArray();
+                Assert.GreaterOrEqual(models.Length, 3, "admitted model capture must retain all three original figures after render");
+            }
             Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, target {target.ToString("R")} camera {Camera.main.transform.position.ToString("R")} rotation {Camera.main.transform.rotation.ToString("R")}, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
         }
     }
