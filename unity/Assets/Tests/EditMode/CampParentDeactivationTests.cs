@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
+using Statecraft.Game.Map.Kits;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
