@@ -44,6 +44,8 @@ namespace Statecraft.Game.Map.Units
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
         bool updatingPrefetch;
         int seenAvailability = -1;
+        int seenGeometry = -1;
+        static readonly Predicate<MeshFilter> MissingMesh = mesh => mesh == null;
         void PrefetchFigures(IReadOnlyList<UnitToken> candidates)
         {
             updatingPrefetch = true;
@@ -224,6 +226,18 @@ namespace Statecraft.Game.Map.Units
         {
             if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);
             if (cam == null) return;
+            bool geometryChanged = seenGeometry != UnitFigures.GeometryVersion;
+            seenGeometry = UnitFigures.GeometryVersion;
+            for (int i = 0; i < trios.Count; i++)
+            {
+                var trio = trios[i];
+                if (!geometryChanged && !Array.Exists(trio.meshes, MissingMesh)) continue;
+                // The holder survives residency; its imported children do not. Never retain their old filters.
+                trio.meshes = trio.figures.Where(f => f.figure != null)
+                    .SelectMany(f => f.figure.GetComponentsInChildren<MeshFilter>(true)).ToArray();
+                trios[i] = trio;
+                facedFor = null;
+            }
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
             facedFor = (eye, rotation);
@@ -276,7 +290,7 @@ namespace Statecraft.Game.Map.Units
                         UnitFlagFacing.Face(flag.transform, eye);   // as it will turn for this camera
                         s.Encapsulate(WorldBox(flag));
                     }
-                    foreach (var m in meshes) s.Encapsulate(WorldBox(m));   // the figures as turned
+                    foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m));   // the figures as turned
                     boxes[1] = s;
                 }
             }
@@ -585,7 +599,7 @@ namespace Statecraft.Game.Map.Units
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
-                if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) s.Encapsulate(WorldBox(m)); pieces = s; }
+                if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m)); pieces = s; }
                 keepClear.Add(pieces is Bounds p2 ? new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM), p2 }
                     : new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM) });
             }

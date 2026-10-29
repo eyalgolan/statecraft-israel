@@ -74,6 +74,7 @@ namespace Statecraft.Game.Map.Units
                 UnitFigureDetail.Of(transform).Remove(holder);
                 var original = holder.gameObject; gone.Add(original);
                 if (Application.isPlaying) { holder.SetParent(null); Destroy(original); } else DestroyImmediate(original);
+                UnitFigures.GeometryChanged();
             }
             // The mesh, plate, badge, flag and every other child are owned by the token, never by this source lease.
             if (TryGetComponent<MeshRenderer>(out var code)) code.enabled = true;

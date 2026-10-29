@@ -148,6 +148,9 @@ namespace Statecraft.Game.Map.Units
         public static event Action<string>? ModelArrived;
 
         internal static int AvailabilityVersion { get; private set; }
+        // Per-consumer model children can change while the roster and shared availability stay the same.
+        internal static int GeometryVersion { get; private set; }
+        internal static void GeometryChanged() => GeometryVersion++;
         static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
         static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
         internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
@@ -338,6 +341,7 @@ namespace Statecraft.Game.Map.Units
             }
             if (code != null) code.enabled = false;
             if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            GeometryChanged();
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own
