@@ -2566,7 +2566,7 @@ def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback,
     # Mutation: omit or pass the wrong saved ID to the fake's ownership check.
     # The real-client DELETE-address test covers deleting by tag after a successful check.
     gh = FakeGH()
-    gh.releases = [(TAG, 101, "draft"), (TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    gh.releases = [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
     st = ns.State(open_draft=TAG)
     st.open_draft_id = 101
     refusal = ""
@@ -2577,7 +2577,7 @@ def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback,
             env.pre(st, gh)
         except ns.Refused as e:
             refusal = e.detail
-    assert gh.releases == [(TAG, 101, "draft"), (TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    assert gh.releases == [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
     if rollback:
         assert "check by hand" in capsys.readouterr().err
     else:

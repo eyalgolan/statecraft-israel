@@ -797,12 +797,14 @@ def test_delete_by_id_preserves_same_tag_replacement_after_the_check(gh, runner)
     releases = [(TAG, 101, True), ("v0.4.0", 303, False)]
 
     def view(cmd):
-        releases.append((TAG, 202, True))   # the tag changes hands after GitHub answered the check
+        # Another actor retargets the owned draft, then creates the replacement at our tag.
+        releases[0] = (TAG + "-replaced", 101, True)
+        releases.append((TAG, 202, True))
         return json.dumps({"databaseId": 101, "isDraft": True})
 
     def delete(cmd):
-        row = (next(r for r in reversed(releases) if r[0] == TAG)
-               if cmd[:3] == ["gh", "release", "delete"] else (TAG, 101, True))
+        row = (next(r for r in releases if r[0] == TAG)
+               if cmd[:3] == ["gh", "release", "delete"] else next(r for r in releases if r[1] == 101))
         releases.remove(row)
         return ""
     runner.on(["gh", "release", "view"], view)
