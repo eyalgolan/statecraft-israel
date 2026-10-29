@@ -322,6 +322,7 @@ public class UnitsFromStateTests
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         UnitFigures.ResetSession();
         Action answerLebanese = null!;
+        bool holdLebanese = delayedOriginal;
         var map = new GameObject("MapScene").AddComponent<MapScene>();
         try
         {
@@ -329,7 +330,7 @@ public class UnitsFromStateTests
             {
                 Action answer = () => done(AssetDatabase.LoadAssetAtPath<GameObject>(
                     Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
-                if (delayedOriginal && id == UnitFigures.LebaneseRegular) answerLebanese = answer;
+                if (holdLebanese && id == UnitFigures.LebaneseRegular) answerLebanese = answer;
                 else answer();
             };
             map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
@@ -351,6 +352,7 @@ public class UnitsFromStateTests
             {
                 Assert.IsNotNull(answerLebanese, "the actual Lebanese original was requested");
                 Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army"), "no placeholder before the delayed original");
+                holdLebanese = false; // Only the first arrival is delayed; later lease reacquisitions answer normally.
                 answerLebanese!();
                 layer.Show(C, game.State);
             }
