@@ -248,6 +248,8 @@ success and leaving Latest alone. `--no-publish` leaves pending recovery and sta
 publishing run can handle it. Old state files without the pending field load with no recovery pending. Published
 releases and tags are preserved. A site-only failure retains the new itch build and the public release, records
 the site deploy as pending, and restores the previous Latest after the second attempt.
+If the ownership checkpoint cannot be saved, refuse before upload and attempt only guarded cleanup of the known draft ID. If recovery state cannot be saved, still attempt the guarded Latest repair, then refuse before site dispatch or publication and report "check by hand". An unwritable state file cannot promise a durable retry record; preserve the saved file and report the unsaved-state error.
+
 Numeric tag components accept leading zeros: `v0.03.1` ties with `v0.3.1` and yields the normalized next tag `v0.3.2`.
 The no-change skip compares `state.json`'s last published SHA with `origin/main`, regardless of its saved tag name.
 

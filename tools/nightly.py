@@ -606,11 +606,11 @@ def _itch_rollback(night: Night, itch, folder: Path, version: str) -> str:
 
 
 def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
-                    save: Callable[[], None]) -> tuple[bool, str]:
+                    save: Callable[[], bool | None]) -> tuple[bool, str]:
     """Checkpoint recovery before trying it. Only a verified result clears it; every outcome is reported."""
     target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
     state.latest_recovery_pending = LatestRecovery(failed, previous)
-    save()
+    checkpoint_saved = save() is not False
     recovered = False
     try:
         acted, current = gh.restore_latest(previous, failed)
@@ -627,7 +627,10 @@ def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
         recovered = True
     except Exception as e:
         note = f"Latest recovery failed ({target}): {_detail(e)}; check by hand"
-    save()
+    result_saved = save() is not False
+    if not checkpoint_saved or not result_saved:
+        note += "; recovery state could not be saved; check by hand"
+        recovered = False
     note = f"{failed} ({target}): {note}"
     print(note, file=sys.stderr)
     notify("Nightly Latest recovery", note[:200])
@@ -635,7 +638,7 @@ def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
 
 
 def _restore_latest(night: Night, state: State, gh: GitHub, previous: str | None,
-                    save: Callable[[], None]) -> str:
+                    save: Callable[[], bool | None]) -> str:
     _, note = _recover_latest(state, gh, night.tag, previous, save)
     try:
         (night.run_dir / "latest-rollback.log").write_text(note + "\n", encoding="utf-8")
@@ -645,7 +648,7 @@ def _restore_latest(night: Night, state: State, gh: GitHub, previous: str | None
 
 
 def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path, Path], sizes: dict[str, int],
-                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], None],
+                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], bool | None],
                   runner: Runner) -> None:
     """Draft first, so nothing public changes until the draft's bytes match: draft, verify, publish, then the site.
     `save` persists the state; it runs right after the draft exists and right after the release is public, so a
@@ -664,7 +667,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     def created(release_id: int) -> None:
         state.open_draft = night.tag
         state.open_draft_id = release_id
-        save()   # before upload: its failure must leave a draft we can identify on rerun
+        if save() is False:
+            raise Refused("github-draft", f"could not persist ownership of {night.tag} (release ID {release_id}) before upload; check by hand")
 
     try:
         gh.create_draft(night.tag, night.sha, notes, list(zips), created=created)
@@ -782,7 +786,7 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
 
 def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, no_publish: bool,
                free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-               save: Callable[[], None] = lambda: None) -> bool:
+               save: Callable[[], bool | None] = lambda: None) -> bool:
     """Every gate, then (unless no_publish) the publish. True when published, False when stopped before any store."""
     run_gates(night, runner)
     run_editmode(night, runner)
@@ -806,12 +810,14 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
     return True
 
 
-def _try_save(state_path: Path, state: State) -> None:
+def _try_save(state_path: Path, state: State) -> bool:
     try:
         save_state(state_path, state)
+        return True
     except OSError as e:   # never costs the night its record, and the final save tries again
         print(f"could not save state: {e}", file=sys.stderr)
         notify("Nightly state not saved", f"{e}"[:200])   # a published release with unsaved state must not be silent
+        return False
 
 
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
