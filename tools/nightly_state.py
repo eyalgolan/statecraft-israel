@@ -167,12 +167,20 @@ class Published:
 
 
 @dataclass
+class LatestRecovery:
+    failed: str
+    previous: str | None
+
+
+@dataclass
 class State:
     last_published: Published | None = None
     boot_baseline: list[float] = field(default_factory=list)
     last_run_day: str | None = None
     open_draft: str | None = None
     site_pending: str | None = None
+    open_draft_id: int | None = None
+    latest_recovery_pending: LatestRecovery | None = None
 
 
 def _number(value: object) -> bool:
@@ -217,8 +225,22 @@ def _state_from(raw: dict) -> State:
     baseline = raw.get("boot_baseline", [])
     if not isinstance(baseline, list) or not all(_number(x) for x in baseline):
         raise TypeError("boot_baseline must be a list of numbers")
+    release_id = raw.get("open_draft_id")
+    if release_id is not None and (type(release_id) is not int or release_id <= 0):
+        raise TypeError("open_draft_id must be a positive integer or null")
+    pending = raw.get("latest_recovery_pending")
+    recovery = None
+    if pending is not None:
+        if (not isinstance(pending, dict) or set(pending) != {"failed", "previous"}
+                or not isinstance(pending["failed"], str) or not pending["failed"]):
+            raise TypeError("latest_recovery_pending has the wrong shape")
+        previous = _opt_str(pending["previous"], "previous")
+        if previous == "":
+            raise TypeError("previous Latest must be a nonempty tag or null")
+        recovery = LatestRecovery(pending["failed"], previous)
     return State(published, list(baseline), _day(raw.get("last_run_day")),
-                 _opt_str(raw.get("open_draft"), "open_draft"), _opt_str(raw.get("site_pending"), "site_pending"))
+                 _opt_str(raw.get("open_draft"), "open_draft"), _opt_str(raw.get("site_pending"), "site_pending"),
+                 release_id, recovery)
 
 
 def load_state(path: Path) -> State:
