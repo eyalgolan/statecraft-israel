@@ -505,6 +505,7 @@ public sealed class CivilianPeopleTests
         placed.UnionWith(new[] { Statecraft.Game.Map.Routes.ServiceTrain.ModelId, Statecraft.Game.Map.Routes.RoadVehicles.CitrusTruck,
             Statecraft.Game.Map.Routes.RoadVehicles.CanvasLorry, Statecraft.Game.Map.Routes.RoadVehicles.SandwichConvoy,
             Statecraft.Game.Map.Routes.RoadVehicles.IntercityBus });
+        placed.Add(CampTentModels.Model); // the camp-tent layer requests this model for placed transit camps
         placed.UnionWith(SpecialBuildingModels.Placements(DateTime.MaxValue).Select(w => w.Model)); // every dated single-building placement, the R35 among them
         placed.UnionWith(TownLandmarks.ById.Values.Concat(TownLandmarks.ByType.Values).Concat(TownLandmarks.ByAction.Values.Select(v => v.Model))
 );
@@ -513,7 +514,7 @@ public sealed class CivilianPeopleTests
             .Concat(Statecraft.Game.Map.Units.UnitFigures.ByVehicle.Values)
             .Append(Statecraft.Game.Map.Units.UnitFigures.PioneerVeteran);
         placed.UnionWith(units);
-        placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: the 18 kit originals are now catalogued and requested by TownModelLayer
+        placed.UnionWith(Statecraft.Game.Map.Kits.TownModels.Ids); // #1273: the 23 kit originals are now catalogued and requested by TownModelLayer
         CollectionAssert.AreEquivalent(new[] { SpecialBuildingModels.Workshop, TownLandmarks.Jerusalem }, CollectionCatalog.Ids.Where(id => !placed.Contains(id)).ToList(),
             "every catalogued model has a place but b21 and the first Jerusalem, each held back by an owner ruling");
         CollectionAssert.IsSubsetOf(placed.ToList(), CollectionCatalog.Ids.ToList(), "every placed id is a catalogued model");

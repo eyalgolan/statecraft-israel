@@ -341,7 +341,7 @@ public class TownModelTests
             probe.meshes[(int)M.B17CourtyardHouse] = null!;
             StringAssert.Contains("B17CourtyardHouse has no mesh", probe.Missing());
             var empty = ScriptableObject.CreateInstance<TownModelSet>();
-            StringAssert.Contains("want 18", empty.Missing());
+            StringAssert.Contains("want 23", empty.Missing());
             UnityEngine.Object.DestroyImmediate(empty);
         }
         finally { UnityEngine.Object.DestroyImmediate(probe); }
