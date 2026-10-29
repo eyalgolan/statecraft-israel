@@ -383,8 +383,8 @@ public class QualificationTests
     public void QualificationOrdersEmitTheirLocalizationKeysAndArguments()
     {
         var c = Town();
-        var s = WithCity(c, new City("town_a", 12, 8, 6, 0, 0, craftsmen: 2, jobsDefault: false,
-            qualified: new Qualified(2, 1, new[] { 1 })), new Unit(7, "halutz", 1, 0, 2));
+        var s = WithCity(c, new City("town_a", 12, 8, 6, 0, 0, craftsmen: 3, jobsDefault: false,
+            qualified: new Qualified(3, 2, new[] { 1 })), new Unit(7, "halutz", 1, 0, 2));
         s.Attention = 100;
         var returned = Step(c, s, new ReturnCraftsmen("town_a", 2), new UnitOrder(7, Qualification.ReturnOrder));
         Assert.Empty(returned.Rejected);
@@ -394,5 +394,8 @@ public class QualificationTests
         Assert.Empty(reassigned.Rejected);
         Assert.Equal(new[] { "1" }, Assert.Single(reassigned.Why, x => x.Key == "craftsmen_reassigned").Args);
         Assert.Equal(new[] { "1", "veteran" }, Assert.Single(reassigned.Why, x => x.Key == "pioneers_reassigned").Args);
+        var halutz = Step(c, s, new ReassignPioneers("town_a", "halutz", 1));
+        Assert.Empty(halutz.Rejected);
+        Assert.Equal(new[] { "1", "halutz" }, Assert.Single(halutz.Why, x => x.Key == "pioneers_reassigned").Args);
     }
 }
