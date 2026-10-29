@@ -231,15 +231,6 @@ public class TranslationLoaderTests
     [Fact]
     public void AHebrewSetWithMoreThanTheInlineHebrewIsRefused()
     {
-        var c = ContentLoader.Load(Root, null);
-        var plain = c.Events.FirstOrDefault(e => e.TitleHe == "");
-        var extra = Copy(InlineHe.Value);
-        if (plain != null)
-        {
-            extra.Events.Add(new EventTranslation { Id = plain.Id, Title = "א", Text = "ב",
-                Options = plain.Options.Select(o => new KeyValuePair<string, string>(o.Id, "ג")).ToList() });
-            Assert.Contains("no inline Hebrew to match", Bad(Hebrew(extra)).Message);
-        }
         // A content field offered for translation that has no Hebrew yet.
         var empty = Directory.GetFiles(Root, "*.yaml").Concat(Directory.GetFiles(Path.Combine(Root, "map"), "*.yaml"))
             .SelectMany(f =>
@@ -254,5 +245,20 @@ public class TranslationLoaderTests
         var e = Bad(Hebrew(field));
         Assert.Contains("no inline Hebrew to match", e.Message);
         Assert.Equal(empty.Key.ToString(), e.Field);
+    }
+
+    [Fact]
+    public void AHebrewEventWithoutInlineHebrewIsRefused()
+    {
+        // Explicit fixture: the real catalogue may translate every event, so it cannot supply this missing-Hebrew case.
+        var plain = new GameEvent { Id = "synthetic_plain" };
+        var files = new Dictionary<string, string> {
+            ["he/ui.yaml"] = "ui.lang: \"he\"\n",
+            ["he/events.yaml"] = "synthetic_plain:\n  title: \"א\"\n  text: \"ב\"\n  options: {}\n" };
+        var e = Assert.Throws<ContentException>(() => TranslationLoader.Load(new Content(), new[] { plain }, _ => null,
+            name => files.TryGetValue(name, out var text) ? text : null, files.Keys));
+        Assert.Contains("no inline Hebrew to match", e.Message);
+        Assert.Equal("translations/he/events.yaml", e.File);
+        Assert.Equal(plain.Id, e.Field);
     }
 }
