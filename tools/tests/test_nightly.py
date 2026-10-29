@@ -2744,3 +2744,45 @@ def test_publish_failure_cannot_clean_a_foreign_replacement_after_create(night, 
     assert gh.releases == [(TAG + "-replaced", 101, "draft"), (TAG, 202, "draft")]
     assert st.open_draft == TAG and getattr(st, "open_draft_id", None) == 101
     assert "publish" not in gh.names() and served == []
+
+
+def test_failed_ownership_checkpoint_prevents_upload(night, env, pub, served, monkeypatch):
+    gh = FakeGH()
+    st = ns.State(last_published=last_published())
+    ns.save_state(env.state_path, st)
+    before = env.state_path.read_bytes()
+    stages_seen = []
+    original = gh._maybe_fail
+    def stage(name):
+        stages_seen.append(name)
+        return original(name)
+    gh._maybe_fail = stage
+    def cannot_save(*a, **k):
+        raise OSError("checkpoint disk failure")
+    monkeypatch.setattr(nightly, "save_state", cannot_save)
+    err = None
+    try:
+        publish(night, st, gh, pub, env, save=lambda: nightly._try_save(env.state_path, st))
+    except ns.Refused as e:
+        err = e
+    assert "upload" not in stages_seen
+    assert err is not None and err.gate == "github-draft" and "persist" in err.detail
+    assert "verify_draft" not in gh.names() and "publish" not in gh.names() and served == []
+    assert env.state_path.read_bytes() == before
+
+
+def test_failed_recovery_checkpoint_stops_site_after_best_effort_repair(env, monkeypatch, served):
+    st = ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2",
+                  latest_recovery_pending=ns.LatestRecovery(TAG, None))
+    ns.save_state(env.state_path, st)
+    before = env.state_path.read_bytes()
+    def cannot_save(*a, **k):
+        raise OSError("checkpoint disk failure")
+    monkeypatch.setattr(nightly, "save_state", cannot_save)
+    gh = FakeGH()
+    gh.latest = TAG
+    outcome = env.night(gh=gh)
+    assert "dispatch_site" not in gh.names() and "publish" not in gh.names()
+    assert outcome == "REFUSED" and gh.calls == [("restore_latest", None, TAG)]
+    assert gh.latest is None and env.state_path.read_bytes() == before and served == []
+    assert "could not be saved" in env.log() and "check by hand" in env.log()
