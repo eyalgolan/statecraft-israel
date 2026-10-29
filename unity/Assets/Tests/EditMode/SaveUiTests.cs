@@ -127,6 +127,44 @@ public class SaveUiTests
         finally { Application.logMessageReceived -= Logged; }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void ASecondRejectedFilePreservesBothSetsOfBytes(bool lingeringTmp)
+    {
+        var store = TempStore();
+        Directory.CreateDirectory(store.Directory);
+        var first = new byte[] { 0, 13, 10, 255, 65 };
+        var second = new byte[] { 66, 0, 254 };
+        File.WriteAllBytes(store.AutosavePath, first);
+        store.SetAsideAutosave();
+        var source = store.AutosavePath + (lingeringTmp ? ".tmp" : "");
+        File.WriteAllBytes(source, second);
+        store.SetAsideAutosave();
+        var original = Path.Combine(store.Directory, "autosave.bad.txt");
+        CollectionAssert.AreEqual(first, File.ReadAllBytes(original));
+        var later = Directory.GetFiles(store.Directory).Where(path => path != original).ToArray();
+        Assert.AreEqual(1, later.Length);
+        CollectionAssert.AreEqual(second, File.ReadAllBytes(later[0]));
+        Assert.IsFalse(File.Exists(source));
+    }
+
+    [Test]
+    public void AStartThatRejectsASavePreservesAnEarlierBadFile()
+    {
+        var store = TempStore();
+        Directory.CreateDirectory(store.Directory);
+        var original = Path.Combine(store.Directory, "autosave.bad.txt");
+        var first = new byte[] { 0, 13, 10, 255, 65 };
+        File.WriteAllBytes(original, first);
+        store.WriteAutosave("statecraft-save 9\ncontent x\nseed 1\nmode Historical\nend x\n");
+        var notes = new List<string>();
+        Assert.AreEqual(0, GameStart.Begin(C, store, () => 5UL, notes, Text).State.Turn);
+        Assert.AreEqual(Text["save.refused." + SaveException.NewerVersion], notes[0]);
+        CollectionAssert.AreEqual(first, File.ReadAllBytes(original));
+        Assert.AreEqual(2, Directory.GetFiles(store.Directory).Length);
+        Assert.IsFalse(File.Exists(store.AutosavePath));
+    }
+
     [Test]
     public void AnUnreadableAutosaveIsSetAsideAndANewGameStarts()
     {
