@@ -126,6 +126,26 @@ public class TalModelsShots
     /// <summary>The Lebanese token's actual placed spot near Al-Malikiyya after the first turn (15 June
     /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are
     /// answered with the editor's prefabs, as the player's stream would answer them. The same code runs on main for the before.</summary>
+    static void ObserveSubject(MapScene map, UnitLayer units, string stage, Vector3 target)
+    {
+        var camera = Camera.main;
+        var policy = map.Residency.Units;
+        bool ground = CollectionResidencyView.TryGroundFocus(camera, out var focus);
+        var token = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+        Debug.Log($"MODEL-OBS {stage} frame={Time.frameCount} token={token != null} active={units.gameObject.activeInHierarchy} arrived={UnitFigures.Arrived(UnitFigures.LebaneseRegular)} version={UnitFigures.AvailabilityVersion} targetVP={camera.WorldToViewportPoint(target).ToString("R")} ground={ground}:{focus.ToString("R")} view={Statecraft.Game.Map.Kits.TownModelLayer.ViewDistance(camera)} policy={policy.EnterM}/{policy.ExitM}/{policy.ViewEnterM}/{policy.ViewExitM} mask={camera.cullingMask} clip={camera.nearClipPlane}/{camera.farClipPlane}");
+        if (token == null) return;
+        var planes = GeometryUtility.CalculateFrustumPlanes(camera);
+        foreach (var owner in token.GetComponentsInChildren<UnitFigureResidency>(true))
+        {
+            var piece = owner.transform;
+            var model = piece.Find(UnitFigures.ModelName);
+            Debug.Log($"MODEL-OBS {stage} piece={piece.name} position={piece.position.ToString("R")} scale={piece.lossyScale.ToString("R")} dressed={UnitFigures.Dressed(piece)} model={model != null}");
+            if (model == null) continue;
+            foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
+                Debug.Log($"MODEL-OBS {stage} renderer={renderer.name} enabled={renderer.enabled} off={renderer.forceRenderingOff} active={renderer.gameObject.activeInHierarchy} layer={renderer.gameObject.layer} inMask={(camera.cullingMask & (1 << renderer.gameObject.layer)) != 0} bounds={renderer.bounds.center.ToString("R")}/{renderer.bounds.size.ToString("R")} frustum={GeometryUtility.TestPlanesAABB(planes, renderer.bounds)} visible={renderer.isVisible} materials={string.Join(",", renderer.sharedMaterials.Select(m => m == null ? "null" : m.name + ":" + m.shader.name))}");
+        }
+    }
+
     IEnumerator Malikiyya(bool hebrew)
     {
         UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
@@ -154,7 +174,9 @@ public class TalModelsShots
         {
             Look(target, distance);
             for (int i = 0; i < 5; i++) yield return null;
+            ObserveSubject(map, root.Units, what + " before", target);
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
+            ObserveSubject(map, root.Units, what + " after", target);
             Debug.Log($"SHOT malikiyya {what} on {root.Bridge.State.Date:yyyy-MM-dd} hex {q},{r} from {distance:F0} m, target {target.ToString("R")} camera {Camera.main.transform.position.ToString("R")} rotation {Camera.main.transform.rotation.ToString("R")}, event card display {card.resolvedStyle.display}: tokens [{string.Join(", ", here)}]");
         }
     }
