@@ -803,8 +803,11 @@ def test_delete_by_id_preserves_same_tag_replacement_after_the_check(gh, runner)
         return json.dumps({"databaseId": 101, "isDraft": True})
 
     def delete(cmd):
-        row = (next(r for r in releases if r[0] == TAG)
-               if cmd[:3] == ["gh", "release", "delete"] else next(r for r in releases if r[1] == 101))
+        if cmd[:3] == ["gh", "release", "delete"]:
+            row = next(r for r in releases if r[0] == TAG)
+        else:
+            assert cmd == ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]
+            row = next(r for r in releases if r[1] == int(cmd[2].rsplit("/", 1)[1]))
         releases.remove(row)
         return ""
     runner.on(["gh", "release", "view"], view)

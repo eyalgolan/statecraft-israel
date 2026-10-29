@@ -338,11 +338,11 @@ def test_same_day_rerun_cleans_its_draft_and_refuses_a_published_tag(env):
         st.open_draft = TAG
         st.open_draft_id = 101
         env.pre(st, gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG, 101) not in gh.calls
+    assert e.value.gate == "tag-exists" and "delete_draft" not in gh.names()
     gh = FakeGH("draft")   # a draft this job did not leave
     with pytest.raises(ns.Refused) as e:
         env.pre(ns.State(), gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG, 101) not in gh.calls
+    assert e.value.gate == "tag-exists" and "delete_draft" not in gh.names()
 
 
 def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
@@ -442,7 +442,7 @@ def test_no_publish_leaves_its_own_draft_alone(env):
     with pytest.raises(ns.Refused) as e:
         env.pre(st, gh, no_publish=True)
     assert e.value.gate == "tag-exists"
-    assert ("delete_draft", TAG, 101) not in gh.calls and st.open_draft == TAG
+    assert "delete_draft" not in gh.names() and st.open_draft == TAG
 
 
 def test_no_release_means_the_tag_is_free_and_any_release_refuses(env):
@@ -2562,11 +2562,14 @@ def test_a_partial_gzip_copy_cannot_reach_any_consumer_or_publication(night, env
 
 
 @pytest.mark.parametrize("rollback", [False, True])
-def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback, capsys):
+@pytest.mark.parametrize("record_owned_row", [False, True])
+def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback, record_owned_row, capsys):
     # Mutation: omit or pass the wrong saved ID to the fake's ownership check.
     # The real-client DELETE-address test covers deleting by tag after a successful check.
     gh = FakeGH()
-    gh.releases = [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    # Two logical same-tag records also cover the issue's defensive fixture contract; no live API capability is assumed.
+    expected = ([(TAG, 101, "draft")] if record_owned_row else []) + [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    gh.releases = list(expected)
     st = ns.State(open_draft=TAG)
     st.open_draft_id = 101
     refusal = ""
@@ -2577,7 +2580,7 @@ def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback,
             env.pre(st, gh)
         except ns.Refused as e:
             refusal = e.detail
-    assert gh.releases == [(TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    assert gh.releases == expected
     if rollback:
         assert "check by hand" in capsys.readouterr().err
     else:
@@ -2727,3 +2730,17 @@ def test_no_publish_leaves_pending_recovery_untouched(env, monkeypatch):
     assert env.night(gh=gh, no_publish=True) == "REFUSED"
     assert gh.calls == []
     assert env.state_path.read_bytes() == before
+
+
+def test_publish_failure_cannot_clean_a_foreign_replacement_after_create(night, env, pub, served):
+    gh = FakeGH()
+    st = ns.State(last_published=last_published())
+    def replaced(tag, local, dest):
+        gh.releases[:] = [(TAG + "-replaced", 101, "draft"), (TAG, 202, "draft")]
+        raise ns.Refused("github-draft", "verification failed after replacement")
+    gh.verify_draft = replaced
+    with pytest.raises(ns.Refused, match="verification failed after replacement"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    assert gh.releases == [(TAG + "-replaced", 101, "draft"), (TAG, 202, "draft")]
+    assert st.open_draft == TAG and getattr(st, "open_draft_id", None) == 101
+    assert "publish" not in gh.names() and served == []
