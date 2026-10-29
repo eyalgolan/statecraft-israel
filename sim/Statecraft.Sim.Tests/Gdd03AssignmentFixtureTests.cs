@@ -49,7 +49,7 @@ public class Gdd03AssignmentFixtureTests
             var before = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, target)); Assert.Equal(before, s.Describe());
         }
         var same = s.Describe();
-        Assert.Equal(Gdd03FixtureAssignmentResult.DeferredSameSlot, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
         s.PopulationLedger.Replace(s.PopulationLedger.Get(1).WithReception(0));
         same = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, Slots[2].Id)); Assert.Equal(same, s.Describe());
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots.Concat(new[] { Slots[0] })));
@@ -66,7 +66,7 @@ public class Gdd03AssignmentFixtureTests
             var invalid = target == "missing" || (target != null && model.Where((_, i) => i != id).Contains(target));
             if (invalid) { Assert.Throws<ArgumentException>(() => f.Assign(id, target)); Assert.Equal(before, s.Describe()); }
             else if (target != null && model[id] == target) {
-                Assert.Equal(Gdd03FixtureAssignmentResult.DeferredSameSlot, f.Assign(id, target)); Assert.Equal(before, s.Describe());
+                Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(id, target)); Assert.Equal(before, s.Describe());
             } else { Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(id, target)); model[id] = target; }
             Assert.Equal(model, s.PopulationLedger.Units.Select(p => p.Assignment.Target).ToArray());
             Assert.Equal(new[] { 0, 1, 2 }, s.PopulationLedger.Units.Select(p => p.Id)); s.PopulationLedger.Reconcile();
