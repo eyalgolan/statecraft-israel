@@ -9,6 +9,7 @@ import zipfile
 from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -27,16 +28,35 @@ TAG = "v0.3.2"
 
 
 class FakeGH:
-    """The GitHub client as the night uses it. `release` is what release_state answers (None: no release); `fail`
-    maps a method name to an exception raised by it (a list raises one per call, then succeeds)."""
+    """The GitHub client as the night uses it. `releases` holds (tag, ID, state) rows, including same-tag replacements;
+    the last matching row is the tag lookup. `release` keeps older single-release tests readable. `fail` maps a
+    method name to an exception raised by it (a list raises one per call, then succeeds)."""
 
     def __init__(self, release=None, *, fail=None, previous_tag="v0.3.1"):
+        self.releases = []
         self.release = release
         self.fail = fail or {}
         self.previous_tag = previous_tag
         self.latest = "v0.3.1"   # deliberately different from the previous nightly asset tag
         self.calls = []
         self.baseline = None   # a zip the download hands out
+
+    @property
+    def release(self):
+        return self.releases[-1][2] if self.releases else None
+
+    @release.setter
+    def release(self, value):
+        if value is None:
+            self.releases.clear()
+        elif self.releases:
+            tag, release_id, _ = self.releases[-1]
+            self.releases[-1] = (tag, release_id, value)
+        else:
+            self.releases.append((TAG, 101, value))
+
+    def at_tag(self, tag):
+        return next((r for r in reversed(self.releases) if r[0] == tag), None)
 
     def _maybe_fail(self, name):
         err = self.fail.get(name)
@@ -47,7 +67,8 @@ class FakeGH:
 
     def release_state(self, tag):
         self.calls.append(("release_state", tag))
-        return self.release
+        row = self.at_tag(tag)
+        return row[2] if row else None
 
     def next_version(self):
         self.calls.append(("next_version",))
@@ -55,12 +76,18 @@ class FakeGH:
 
     def ensure_tag_available(self, tag):
         self.calls.append(("ensure_tag_available", tag))
-        if self.release is not None:
+        if self.at_tag(tag) is not None:
             raise ns.Refused("tag-exists", f"a {self.release} release already has the tag {tag}")
 
-    def delete_draft(self, tag):
-        self.calls.append(("delete_draft", tag))
-        self.release = None
+    def delete_draft(self, tag, release_id=...):
+        # Main calls by tag alone; model that deletion rather than failing on the signature.
+        row = self.at_tag(tag)
+        if release_id is ...:
+            release_id = row[1] if row else None
+        self.calls.append(("delete_draft", tag, release_id))
+        if release_id is None or row != (tag, release_id, "draft"):
+            raise ns.Refused("github-delete", f"{tag} has no matching owned draft ID; check by hand")
+        self.releases.remove(row)
 
     def dispatch_site(self, deadline):
         self.calls.append(("dispatch_site", deadline))
@@ -75,10 +102,14 @@ class FakeGH:
         self._maybe_fail("download")
         return self.baseline
 
-    def create_draft(self, tag, sha, notes, assets):
+    def create_draft(self, tag, sha, notes, assets, *, created=None):
         self.calls.append(("create_draft", tag, sha, notes, list(assets)))
         self._maybe_fail("create_draft")
-        self.release = "draft"
+        self.releases.append((tag, 101, "draft"))
+        if created is not None:
+            created(101)
+        self._maybe_fail("upload")
+        return 101
 
     def verify_draft(self, tag, local, dest):
         self.calls.append(("verify_draft", tag, list(local), dest))
@@ -191,6 +222,22 @@ def gate_of(env, **kw):
     return e.value
 
 
+def read_pending_with_old_state(monkeypatch):
+    # Adapt only deserialization for baseline behavior tests. Main's State and run_night still do the work;
+    # raw JSON assertions below must detect missing persistence, not unknown-key rejection.
+    load = ns.load_state
+
+    def read(path):
+        if "latest_recovery_pending" in {f.name for f in dataclasses.fields(ns.State)}:
+            return load(path)
+        raw = json.loads(path.read_text())
+        pending = raw.pop("latest_recovery_pending", None)
+        state = ns._state_from(raw)
+        state.latest_recovery_pending = SimpleNamespace(**pending) if pending is not None else None
+        return state
+    monkeypatch.setattr(nightly, "load_state", read)
+
+
 def test_a_clean_preflight_builds_the_night(env):
     n = env.pre()
     assert (n.sha, n.version, n.tag, n.day) == (SHA, "0.3.2", TAG, date(2026, 10, 28))
@@ -282,17 +329,20 @@ def test_the_clone_must_be_main_at_origin_main_and_clean(env, change):
 def test_same_day_rerun_cleans_its_draft_and_refuses_a_published_tag(env):
     gh = FakeGH("draft")
     st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     env.pre(st, gh)
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
     assert st.open_draft is None
     gh = FakeGH("published")
     with pytest.raises(ns.Refused) as e:
-        env.pre(ns.State(open_draft=TAG), gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG) not in gh.calls
+        st.open_draft = TAG
+        st.open_draft_id = 101
+        env.pre(st, gh)
+    assert e.value.gate == "tag-exists" and ("delete_draft", TAG, 101) not in gh.calls
     gh = FakeGH("draft")   # a draft this job did not leave
     with pytest.raises(ns.Refused) as e:
         env.pre(ns.State(), gh)
-    assert e.value.gate == "tag-exists" and ("delete_draft", TAG) not in gh.calls
+    assert e.value.gate == "tag-exists" and ("delete_draft", TAG, 101) not in gh.calls
 
 
 def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
@@ -302,8 +352,9 @@ def test_a_stranded_own_draft_is_cleaned_and_the_night_proceeds(env):
             return ns.next_version([{"tag_name": "v0.3.1", "draft": False},
                                     {"tag_name": TAG, "draft": True}])
     gh, st = Releases("draft"), ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     assert env.pre(st, gh).tag == TAG
-    assert gh.calls == [("next_version",), ("release_state", TAG), ("delete_draft", TAG),
+    assert gh.calls == [("next_version",), ("release_state", TAG), ("delete_draft", TAG, 101),
                         ("ensure_tag_available", TAG)]
     assert st.open_draft is None
 
@@ -387,10 +438,11 @@ def test_no_publish_never_retries_the_site(env, monkeypatch):
 def test_no_publish_leaves_its_own_draft_alone(env):
     gh = FakeGH("draft")
     st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
     with pytest.raises(ns.Refused) as e:
         env.pre(st, gh, no_publish=True)
     assert e.value.gate == "tag-exists"
-    assert ("delete_draft", TAG) not in gh.calls and st.open_draft == TAG
+    assert ("delete_draft", TAG, 101) not in gh.calls and st.open_draft == TAG
 
 
 def test_no_release_means_the_tag_is_free_and_any_release_refuses(env):
@@ -1148,7 +1200,7 @@ def test_a_failed_draft_check_deletes_the_draft_and_refuses(night, env, pub, ser
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
     assert e.value.gate == "github-draft" and "hash differs" in e.value.detail
-    assert ("delete_draft", TAG) in gh.calls and "publish" not in gh.names() and "dispatch_site" not in gh.names()
+    assert ("delete_draft", TAG, 101) in gh.calls and "publish" not in gh.names() and "dispatch_site" not in gh.names()
     assert st.open_draft is None and st.last_published.sha == OLD and served == []
 
 
@@ -1164,17 +1216,31 @@ def test_a_release_made_after_preflight_refuses_before_create_and_is_never_delet
 
 
 def test_a_create_that_fails_after_leaving_a_draft_cleans_that_draft(night, env, pub, served):
-    class HalfMade(FakeGH):
-        def create_draft(self, tag, sha, notes, assets):
-            self.calls.append(("create_draft", tag, sha, notes, list(assets)))
-            self.release = "draft"   # gh made the release, then an asset upload failed
-            raise ns.Refused("github-draft", "upload timed out")
-    gh = HalfMade()
+    gh = FakeGH(fail={"upload": ns.Refused("github-draft", "upload timed out")})
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused, match="upload timed out"):
         publish(night, st, gh, pub, env)
-    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG, 101)]
     assert gh.release is None and st.open_draft is None and st.last_published.sha == OLD
+
+
+def test_upload_failure_has_a_persisted_owned_id_before_cleanup(night, env, pub, served):
+    # Mutation: save ownership only after upload, leaving a surviving draft unowned on disk.
+    gh = FakeGH(fail={"upload": ns.Refused("github-draft", "upload timed out")})
+    gh.delete_draft = lambda tag, release_id=None: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
+    st = ns.State(last_published=last_published())
+    checkpoints = []
+
+    def save():
+        ns.save_state(env.state_path, st)
+        checkpoints.append(json.loads(env.state_path.read_text()))
+    with pytest.raises(ns.Refused, match="upload timed out"):
+        publish(night, st, gh, pub, env, save=save)
+    assert checkpoints[0].get("open_draft_id") == 101
+    assert checkpoints[0]["open_draft"] == TAG
+    assert gh.releases == [(TAG, 101, "draft")]
+    assert json.loads(env.state_path.read_text())["open_draft_id"] == 101
+    assert "verify_draft" not in gh.names() and "publish" not in gh.names()
 
 
 def test_rollback_after_create_deletes_only_the_created_tag(night, env, pub, served):
@@ -1182,7 +1248,7 @@ def test_rollback_after_create_deletes_only_the_created_tag(night, env, pub, ser
     st = ns.State(open_draft="v0.3.0", last_published=last_published())
     with pytest.raises(ns.Refused):
         publish(night, st, gh, pub, env)
-    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG)]
+    assert [c for c in gh.calls if c[0] == "delete_draft"] == [("delete_draft", TAG, 101)]
     assert st.open_draft is None
 
 
@@ -1190,12 +1256,12 @@ def test_a_non_refusal_error_in_the_draft_check_still_deletes_the_draft(night, e
     gh = FakeGH(fail={"verify_draft": OSError("disk")})
     with pytest.raises(ns.Refused) as e:
         publish(night, ns.State(last_published=last_published()), gh, pub, env)
-    assert e.value.gate == "github-draft" and "OSError" in e.value.detail and ("delete_draft", TAG) in gh.calls
+    assert e.value.gate == "github-draft" and "OSError" in e.value.detail and ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_cleanup_keeps_the_original_refusal_and_the_open_draft(night, env, pub, served, capsys):
     gh = FakeGH(fail={"verify_draft": ns.Refused("github-draft", "hash differs")})
-    gh.delete_draft = lambda tag: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
+    gh.delete_draft = lambda tag, release_id=None: (_ for _ in ()).throw(ns.Refused("github-delete", "offline"))
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
@@ -1207,7 +1273,7 @@ def test_a_failed_publish_deletes_a_draft_that_is_still_one(night, env, pub, ser
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
-    assert e.value.gate == "github-publish" and ("delete_draft", TAG) in gh.calls
+    assert e.value.gate == "github-publish" and ("delete_draft", TAG, 101) in gh.calls
     assert st.last_published.sha == OLD and served == []
 
 
@@ -1314,7 +1380,7 @@ def test_a_failed_latest_lookup_refuses_before_the_public_edit(night, env, pub, 
     with pytest.raises(ns.Refused, match="offline"):
         publish(night, ns.State(), gh, pub, env)
     assert "publish" not in gh.names() and "restore_latest" not in gh.names()
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_save_after_publish_restores_latest(night, env, pub, served):
@@ -1382,6 +1448,7 @@ def test_state_is_saved_right_after_create_draft_and_right_after_publish(night, 
     st = ns.State(last_published=last_published())
     with pytest.raises(Crash):
         publish(night, st, FakeGH(), pub, env, save=save(1))   # killed right after create_draft
+    assert json.loads(path.read_text()).get("open_draft_id") == 101
     assert ns.load_state(path).open_draft == TAG and saves[0] == (TAG, last_published().tag)
     saves.clear()
     st = ns.State(last_published=last_published())
@@ -1536,7 +1603,7 @@ def test_an_unusable_rollback_target_refuses_before_any_push(itch_night, env, ho
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "itch-rollback"
     assert not [c for c in gh.calls if c[0].startswith("itch.")] and "publish" not in gh.names()
-    assert ("delete_draft", TAG) in gh.calls and st.open_draft is None
+    assert ("delete_draft", TAG, 101) in gh.calls and st.open_draft is None
 
 
 @pytest.mark.parametrize("step", ["push", "wait_live", "matches"])
@@ -1560,7 +1627,7 @@ def test_a_failed_rollback_is_named_in_the_refusal_and_notified(itch_night, env)
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "itch" and "never live" in err.detail
     assert "rollback" in err.detail and "butler push exited 1" in err.detail and "by hand" in err.detail
-    assert ("delete_draft", TAG) in gh.calls   # the draft is still cleaned up
+    assert ("delete_draft", TAG, 101) in gh.calls   # the draft is still cleaned up
     assert any("itch" in a[0].lower() and "rollback" in a[1].lower() for a in env_notes)
 
 
@@ -1570,7 +1637,7 @@ def test_a_github_publish_failure_after_itch_rolls_itch_back(itch_night, env):
     err, gh, st = refused_itch(itch_night, env)
     assert err.gate == "github-publish"
     assert ("itch.push", "itch-rollback", PREV_VERSION) in gh.calls and ("itch.wait_live", PREV_VERSION) in gh.calls
-    assert ("delete_draft", TAG) in gh.calls
+    assert ("delete_draft", TAG, 101) in gh.calls
 
 
 def test_a_failed_rollback_after_a_publish_failure_is_named_and_notified(itch_night, env):
@@ -1590,7 +1657,7 @@ def test_an_interrupt_during_publish_rolls_itch_back_and_cleans_the_draft(itch_n
     with pytest.raises(KeyboardInterrupt):
         run_itch(itch_night, env, st=st)
     assert ("itch.push", "itch-rollback", PREV_VERSION) in gh.calls and ("itch.wait_live", PREV_VERSION) in gh.calls
-    assert ("delete_draft", TAG) in gh.calls and st.open_draft is None
+    assert ("delete_draft", TAG, 101) in gh.calls and st.open_draft is None
 
 
 def test_the_itch_skip_reason_is_noted_on_the_night(night, env, pub, served):
@@ -2492,3 +2559,171 @@ def test_a_partial_gzip_copy_cannot_reach_any_consumer_or_publication(night, env
                            no_publish=False, free_gb=lambda p: 100.0)
     assert stages.names() == ["run_gates", "run_editmode", "build_web", "assert_clean_tree"]
     assert (stages.gz / "index.html").read_text() == "incomplete evidence"
+
+
+@pytest.mark.parametrize("rollback", [False, True])
+def test_same_tag_foreign_id_survives_cleanup_and_rollback(env, night, rollback, capsys):
+    # Mutation: omit or pass the wrong saved ID to the fake's ownership check.
+    # The real-client DELETE-address test covers deleting by tag after a successful check.
+    gh = FakeGH()
+    gh.releases = [(TAG, 101, "draft"), (TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    st = ns.State(open_draft=TAG)
+    st.open_draft_id = 101
+    refusal = ""
+    if rollback:
+        nightly._drop_draft(night, st, gh)
+    else:
+        try:
+            env.pre(st, gh)
+        except ns.Refused as e:
+            refusal = e.detail
+    assert gh.releases == [(TAG, 101, "draft"), (TAG, 202, "draft"), ("v0.4.0", 303, "published")]
+    if rollback:
+        assert "check by hand" in capsys.readouterr().err
+    else:
+        assert "check by hand" in refusal
+    assert st.open_draft == TAG and st.open_draft_id == 101
+
+
+def test_matching_persisted_id_cleans_our_stranded_draft_on_rerun(env):
+    # Mutation: refuse every stranded draft, or lose the ID while loading saved state.
+    gh = FakeGH()
+    gh.releases = [("v0.4.0", 202, "draft"), (TAG, 101, "draft")]
+    st = ns.State(open_draft=TAG, open_draft_id=101)   # new-schema persistence contract
+    ns.save_state(env.state_path, st)
+    st = ns.load_state(env.state_path)
+    assert env.pre(st, gh).tag == TAG
+    assert gh.releases == [("v0.4.0", 202, "draft")]
+    assert st.open_draft is None and st.open_draft_id is None
+
+
+def test_legacy_open_draft_without_id_refuses_and_survives(env):
+    # Mutation: treat a missing ID as permission to delete a same-tag draft.
+    env.state_path.write_text(json.dumps({"open_draft": TAG}))
+    st = ns.load_state(env.state_path)
+    gh = FakeGH("draft")
+    refusal = ""
+    try:
+        env.pre(st, gh)
+    except ns.Refused as e:
+        refusal = e.detail
+    assert gh.releases == [(TAG, 101, "draft")]
+    assert "check by hand" in refusal
+    assert st.open_draft == TAG and getattr(st, "open_draft_id", None) is None
+
+
+def test_failed_recovery_is_persisted_then_retried_before_next_preflight(night, env, pub, served):
+    # Mutation: only report a recovery failure, or retry after preflight's no-change/site-pending path.
+    gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "site unavailable"),
+                      "restore_latest": ns.Refused("github-latest", "cannot verify")})
+    st = ns.State(last_published=last_published())
+    with pytest.raises(ns.Refused, match="check by hand"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    pending = {"failed": TAG, "previous": "v0.3.1"}
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") == pending
+    gh.fail.clear()
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.names() == ["restore_latest", "dispatch_site"]
+    assert gh.latest == "v0.3.1"
+    assert ns.load_state(env.state_path).latest_recovery_pending is None
+    assert "restored previous Latest v0.3.1" in env.log()
+    assert any("restored previous Latest v0.3.1" in note[1] for note in env_notes)
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert "restore_latest" not in gh.names()
+
+
+def test_unverified_restore_persists_even_if_latest_edit_reached_github(night, env, pub, served):
+    # Mutation: clear recovery on an edit that has not been verified.
+    gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "site unavailable")})
+    st = ns.State(last_published=last_published())
+
+    def unverified(previous, failed):
+        gh.calls.append(("restore_latest", previous, failed))
+        gh.latest = previous   # the edit reached GitHub, but verification failed
+        raise ns.Refused("github-latest", "cannot verify")
+    gh.restore_latest = unverified
+    with pytest.raises(ns.Refused, match="cannot verify"):
+        publish(night, st, gh, pub, env, save=lambda: ns.save_state(env.state_path, st))
+    assert gh.latest == "v0.3.1"
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") == {
+        "failed": TAG, "previous": "v0.3.1"}
+
+
+@pytest.mark.parametrize("site_pending", [None, "0.3.2"])
+def test_pending_recovery_precedes_unchanged_main_and_site_retry(env, monkeypatch, site_pending):
+    # Mutation: run real preflight's skip or site deploy before retrying pending recovery.
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None),
+                                    site_pending=site_pending))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": "v0.3.1"}
+    env.state_path.write_text(json.dumps(raw))
+    gh = FakeGH()
+    gh.latest = TAG
+
+    observations = []
+    def dispatch(deadline):
+        gh.calls.append(("dispatch_site", deadline))
+        observations.append((gh.latest, json.loads(env.state_path.read_text()).get("latest_recovery_pending")))
+    gh.dispatch_site = dispatch
+    monkeypatch.setattr(nightly, "demo_serves", lambda *a, **k: None)
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.names() == ["restore_latest"] + (["dispatch_site"] if site_pending else [])
+    assert observations == ([("v0.3.1", None)] if site_pending else [])
+    assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") is None
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.calls == []
+
+
+@pytest.mark.parametrize("current", ["v0.4.0", None, "v0.3.1"])
+def test_pending_recovery_with_moved_latest_is_cleared_and_left_alone(env, monkeypatch, current):
+    # Mutation: disregard restore_latest's acted=False result or keep retrying an obsolete recovery.
+    gh = FakeGH()
+    gh.latest = current
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None)))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": "v0.3.1"}
+    env.state_path.write_text(json.dumps(raw))
+    assert env.night(gh=gh) == "SKIPPED"
+    assert gh.calls == [("restore_latest", "v0.3.1", TAG)]
+    assert gh.latest == current
+    assert json.loads(env.state_path.read_text())["latest_recovery_pending"] is None
+    assert "left alone" in env.log()
+    assert any("left alone" in note[1] for note in env_notes)
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED"
+    assert "restore_latest" not in gh.names()
+
+
+def test_pending_recovery_failure_stops_publication_and_keeps_record(env, monkeypatch, served):
+    # Mutation: clear pending on an unverified recovery or continue into publishing after it fails.
+    read_pending_with_old_state(monkeypatch)
+    pending = {"failed": TAG, "previous": None}
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None),
+                                    site_pending="0.3.2"))
+    raw["latest_recovery_pending"] = pending
+    env.state_path.write_text(json.dumps(raw))
+    gh = FakeGH(fail={"restore_latest": OSError("offline")})
+    gh.latest = TAG
+    outcome = env.night(gh=gh)
+    assert "dispatch_site" not in gh.names() and "publish" not in gh.names()
+    assert json.loads(env.state_path.read_text())["latest_recovery_pending"] == pending
+    assert outcome == "REFUSED"
+    assert gh.calls == [("restore_latest", None, TAG)] and served == []
+    assert "check by hand" in env.log()
+    assert any("offline" in note[1] for note in env_notes)
+
+
+def test_no_publish_leaves_pending_recovery_untouched(env, monkeypatch):
+    # Mutation: let a dry run edit Latest or clear its persisted recovery.
+    read_pending_with_old_state(monkeypatch)
+    raw = dataclasses.asdict(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None)))
+    raw["latest_recovery_pending"] = {"failed": TAG, "previous": None}
+    env.state_path.write_text(json.dumps(raw))
+    before = env.state_path.read_bytes()
+    gh = FakeGH()
+    assert env.night(gh=gh, no_publish=True) == "REFUSED"
+    assert gh.calls == []
+    assert env.state_path.read_bytes() == before

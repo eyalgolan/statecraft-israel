@@ -197,3 +197,37 @@ def test_notify_default_run_is_looked_up_when_called(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda a, **k: calls.append(a))
     ns.notify("Statecraft nightly", "msg")
     assert calls and calls[0][:2] == ["osascript", "-e"]
+
+
+def test_old_state_without_ownership_or_recovery_fields_loads(tmp_path):
+    # Mutation: require the new fields in state files written before this change.
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps({"open_draft": "v0.3.2", "site_pending": "0.3.1", "boot_baseline": []}))
+    state = ns.load_state(path)
+    assert state.open_draft == "v0.3.2" and getattr(state, "open_draft_id", None) is None
+    assert state.site_pending == "0.3.1" and getattr(state, "latest_recovery_pending", None) is None
+
+
+def test_ownership_and_pending_recovery_round_trip(tmp_path):
+    # Mutation: omit the ID or pending record from serialization, including a null previous Latest.
+    state = ns.State(open_draft="v0.3.2", open_draft_id=101,
+                     latest_recovery_pending=ns.LatestRecovery("v0.3.2", None))
+    path = tmp_path / "state.json"
+    ns.save_state(path, state)
+    assert ns.load_state(path) == state
+
+
+@pytest.mark.parametrize("extra", [{"open_draft_id": True}, {"open_draft_id": "101"}, {"open_draft_id": 0},
+                                   {"latest_recovery_pending": {}},
+                                   {"latest_recovery_pending": {"failed": 1, "previous": None}},
+                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": False}}])
+def test_invalid_ownership_or_pending_record_refuses(tmp_path, extra):
+    # Mutation: accept a malformed ownership ID or recovery target and guess a public action.
+    # Value-validation guard: first prove the same keys are supported with valid values.
+    path = tmp_path / "state.json"
+    valid = {"open_draft_id": 101, "latest_recovery_pending": {"failed": "v0.3.2", "previous": None}}
+    path.write_text(json.dumps(valid))
+    assert ns.load_state(path).open_draft_id == 101
+    path.write_text(json.dumps({**valid, **extra}))
+    with pytest.raises(ns.Refused):
+        ns.load_state(path)
