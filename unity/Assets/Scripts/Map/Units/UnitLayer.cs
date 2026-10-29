@@ -368,13 +368,12 @@ namespace Statecraft.Game.Map.Units
                             if (!candidates.TryGetValue(anchor, out var candidate)) break;
                             if (!candidate.InTown && !others.Any(other => DisplayOverlap(candidate, other)))
                             {
-                                fixedGddSpots[anchor] = candidate; found = true; break;
+                                fixedGddSpots[anchor] = candidate; reservedMapOnlySpots.Add(candidate); found = true; break;
                             }
                             taken.Add((candidate.Q, candidate.R));
                         }
                         if (!found) Debug.LogWarning($"UNITS {row.Id}: no safe fixed map-only display spot; overlapping source spot retained");
                     }
-                    reservedMapOnlySpots.Add(fixedGddSpots[anchor]);
                 }
         }
 

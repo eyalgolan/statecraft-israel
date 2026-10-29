@@ -328,6 +328,13 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 **Placement** (`UnitPlacer.PlaceAll`). Every anchor is placed once, from the data alone, so a token never moves because
 another unit appears. Its spot is at most one hex step from the sourced place (about 8.7 km between hex centres on 5 km
 hexes). It is the nearest such spot to the place, or to the anchor's sourced `toward` point when it has one (see below).
+In the GDD loop a simulated starting force can persist after its source anchor's window ends. A map-only army whose
+cached spot overlaps that starting spot gets a fixed display override, computed once from the same data before date or
+model-arrival filtering. It follows the same one-hex, source-offset, land and road constraints and must clear other cached
+spots. Overrides cannot stand in a town: the map's original spots and kit clearings stay unchanged. Only relocated display
+spots are reserved against later moved-token placement. Source anchors, their dates, sim units and legacy placement do not
+change. If no safe override exists, the token remains drawn at its original spot with an overlap warning.
+
 The candidates are tried in three rounds:
 1. The centres of the anchor's own hex and its six neighbours, with the token at full size.
 2. If none is clear, those centres plus six points inside each hex, with the token **compact**: half the ring and half

@@ -314,30 +314,49 @@ public class UnitsFromStateTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
-    [Test]
-    public void MapOnlyArmyKeepsADistinctFixedSpotBesidePersistentStartingForces()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void MapOnlyArmyKeepsADistinctFixedSpotBesidePersistentStartingForces(bool delayedOriginal)
     {
         var savedSource = UnitFigures.Source;
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        UnitFigures.ResetSession();
+        Action? answerLebanese = null;
         var map = new GameObject("MapScene").AddComponent<MapScene>();
         try
         {
-            UnitFigures.Source = (id, detail, done) => done(AssetDatabase.LoadAssetAtPath<GameObject>(
-                Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+            UnitFigures.Source = (id, detail, done) =>
+            {
+                Action answer = () => done(AssetDatabase.LoadAssetAtPath<GameObject>(
+                    Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, detail)));
+                if (delayedOriginal && id == UnitFigures.LebaneseRegular) answerLebanese = answer;
+                else answer();
+            };
             map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
             Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
                 File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
             map.Build();
             var rows = map.UnitEntries;
+            var sourceSpots = map.UnitSpots.ToDictionary(kv => kv.Key, kv => kv.Value);
             var windows = rows.SelectMany(u => u.Anchors.Select(a => (u.Id, a.From, a.To))).ToArray();
             var game = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
             game.EndTurn(Array.Empty<Command>());
             Assert.AreEqual(new DateTime(1948, 6, 15), game.State.Date);
             var hash = game.State.Hash();
             var layer = UnitLayer.Create(map, rows, C.Hexes, still: true);
-            Assert.IsTrue(layer.Show(C, game.State));
+            Assert.IsTrue(layer.Show(C, NewGame()));
+            Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army"), "first Show precedes the dated window");
+            layer.Show(C, game.State);
+            if (delayedOriginal)
+            {
+                Assert.IsNotNull(answerLebanese, "the actual Lebanese original was requested");
+                Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army"), "no placeholder before the delayed original");
+                answerLebanese!();
+                layer.Show(C, game.State);
+            }
             var ala = layer.Tokens.Single(t => t.Token.Unit.Id == "arab_liberation_army");
             var lebanese = layer.Tokens.Single(t => t.Token.Unit.Id == "lebanese_army");
+            Assert.Less(UnitData.Day(ala.Token.Anchor.To), game.State.Date, "the ALA persists past its sourced display window");
             Assert.IsNotNull(ala.Token.StateUnit, "the existing ALA remains a real sim unit");
             Assert.IsNull(lebanese.Token.StateUnit, "the Lebanese token remains map-only");
             var alaPlinth = layer.transform.Find("Tokens/arab_liberation_army/Plinth").GetComponent<Renderer>();
@@ -350,14 +369,14 @@ public class UnitsFromStateTests
                 + Mathf.Max(lebanesePlinth.bounds.extents.x, lebanesePlinth.bounds.extents.z);
             Assert.GreaterOrEqual(separation, required, "Lebanese map-only token must not overlay the persistent ALA display token");
             Assert.AreEqual(layer.Spots[ala.Token.Anchor], ala.Spot, "the simulated starting force never shifts");
-            Assert.AreNotEqual(layer.Spots[lebanese.Token.Anchor], lebanese.Spot, "shared map spots remain the original sourced placement");
-            Assert.AreEqual(layer.Spots[lebanese.Token.Anchor], map.UnitSpots[lebanese.Token.Anchor]);
+            Assert.AreNotEqual(layer.Spots[lebanese.Token.Anchor], lebanese.Spot, "the Lebanese token uses a separate display spot");
             Assert.IsFalse(layer.Show(C, game.State), "unchanged roster does not rebuild");
             layer.Show(C, NewGame());
             Assert.IsFalse(layer.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army"), "dated map-only token is absent before its window");
             layer.Show(C, game.State);
             Assert.AreEqual(lebanese.Spot, layer.Tokens.Single(t => t.Token.Unit.Id == "lebanese_army").Spot,
                 "reappearing dated token keeps its fixed display spot");
+            foreach (var kv in sourceSpots) Assert.AreEqual(kv.Value, map.UnitSpots[kv.Key], "cached source spot unchanged");
             Assert.AreEqual(hash, game.State.Hash(), "presentation does not change the sim state");
             CollectionAssert.AreEqual(windows, rows.SelectMany(u => u.Anchors.Select(a => (u.Id, a.From, a.To))).ToArray(),
                 "source windows remain unchanged");
