@@ -152,6 +152,8 @@ public class TalModelsShots
     {
         UnitFigures.Source = (id, detail, done) => done(Prefab(id, detail));
         yield return Boot(hebrew);
+        // Keep the real rig's projection and the saved RenderTexture on the same aspect throughout these frames.
+        Camera.main.aspect = (float)CivMovementShots.Width / CivMovementShots.Height;
         root.Bridge!.EndTurn();
         for (int i = 0; i < 3; i++) yield return null;
         var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
