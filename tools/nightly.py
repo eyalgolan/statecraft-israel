@@ -32,7 +32,7 @@ import nightly_checks
 import unity_postmerge
 from nightly_publish import (GitHub, Itch, demo_serves, itch_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
-from nightly_state import (JOB, TZ, Config, Missed, Published, Refused, Runner, Skipped, State, Stop,
+from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
                            notify, record, run_lock, save_state, tag_for)
 from web_check import find_chrome
@@ -205,8 +205,9 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
     tag = tag_for(version)
     if gh.release_state(tag) == "draft" and state.open_draft == tag:
         if not no_publish:   # --no-publish makes no store write, not even this cleanup
-            gh.delete_draft(tag)   # this job's own draft from an earlier run
+            gh.delete_draft(tag, state.open_draft_id)   # refuses old state with no ID, or a replacement draft
             state.open_draft = None
+            state.open_draft_id = None
     gh.ensure_tag_available(tag)
     run_dir = job / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
     manifest = (clone / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text(encoding="utf-8")
@@ -574,9 +575,10 @@ def _drop_draft(night: Night, state: State, gh: GitHub) -> None:
     try:
         present = gh.release_state(night.tag)
         if present == "draft":
-            gh.delete_draft(night.tag)
+            gh.delete_draft(night.tag, state.open_draft_id)
         if present != "published":
             state.open_draft = None
+            state.open_draft_id = None
     except Exception as e:
         print(f"could not delete the draft {night.tag}: {e}", file=sys.stderr)   # open_draft stays, so a rerun cleans it
 
@@ -603,22 +605,49 @@ def _itch_rollback(night: Night, itch, folder: Path, version: str) -> str:
         return note
 
 
-def _restore_latest(night: Night, gh: GitHub, previous: str | None) -> str:
+def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
+                    save: Callable[[], bool | None]) -> tuple[bool, str]:
+    """Checkpoint recovery before trying it. Only a verified result clears it; every outcome is reported."""
     target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
+    state.latest_recovery_pending = LatestRecovery(failed, previous)
     try:
-        acted, current = gh.restore_latest(previous, night.tag)
+        checkpoint_saved = save() is not False
+    except Exception as e:
+        checkpoint_saved = False
+        print(f"could not checkpoint Latest recovery: {_detail(e)}", file=sys.stderr)
+    recovered = False
+    try:
+        acted, current = gh.restore_latest(previous, failed)
         if acted:
             note = (f"restored {target}" if previous is not None else
                     "no previous Latest; removed the failed release's Latest mark")
         elif current is None:
-            note = f"there is no Latest now, so {night.tag} is not Latest: left alone"
+            note = f"there is no Latest now, so {failed} is not Latest: left alone"
         elif current == previous:
-            note = f"{target} still stands; nothing to restore"
+            note = f"{target} still stands; left alone"
         else:
-            note = f"Latest is now {current}, not {night.tag}: left alone"
+            note = f"Latest is now {current}, not {failed}: left alone"
+        state.latest_recovery_pending = None
+        recovered = True
     except Exception as e:
         note = f"Latest recovery failed ({target}): {_detail(e)}; check by hand"
+    try:
+        result_saved = save() is not False
+    except Exception as e:
+        result_saved = False
+        print(f"could not save Latest recovery result: {_detail(e)}", file=sys.stderr)
+    if not checkpoint_saved or not result_saved:
+        note += "; recovery state could not be saved; check by hand"
+        recovered = False
+    note = f"{failed} ({target}): {note}"
     print(note, file=sys.stderr)
+    notify("Nightly Latest recovery", note[:200])
+    return recovered, note
+
+
+def _restore_latest(night: Night, state: State, gh: GitHub, previous: str | None,
+                    save: Callable[[], bool | None]) -> str:
+    _, note = _recover_latest(state, gh, night.tag, previous, save)
     try:
         (night.run_dir / "latest-rollback.log").write_text(note + "\n", encoding="utf-8")
     except OSError as e:
@@ -627,7 +656,7 @@ def _restore_latest(night: Night, gh: GitHub, previous: str | None) -> str:
 
 
 def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path, Path], sizes: dict[str, int],
-                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], None],
+                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], bool | None],
                   runner: Runner) -> None:
     """Draft first, so nothing public changes until the draft's bytes match: draft, verify, publish, then the site.
     `save` persists the state; it runs right after the draft exists and right after the release is public, so a
@@ -643,10 +672,14 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, subjects=subjects,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")
     gh.ensure_tag_available(night.tag)   # again just before create: a release made since preflight is never ours
-    state.open_draft = night.tag   # set before create: a draft a failed upload leaves behind is then cleaned
-    save()
+    def created(release_id: int) -> None:
+        state.open_draft = night.tag
+        state.open_draft_id = release_id
+        if save() is False:
+            raise Refused("github-draft", f"could not persist ownership of {night.tag} (release ID {release_id}) before upload; check by hand")
+
     try:
-        gh.create_draft(night.tag, night.sha, notes, list(zips))
+        gh.create_draft(night.tag, night.sha, notes, list(zips), created=created)
         gh.verify_draft(night.tag, list(zips), night.run_dir / "draft-download")
     except Exception as e:
         _drop_draft(night, state, gh)
@@ -694,6 +727,7 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
         gh.publish(night.tag, night.sha)
         verified = True
         state.open_draft = None
+        state.open_draft_id = None
         state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
         if len(state.boot_baseline) < BASELINE_NIGHTS:
             state.boot_baseline.append(boot)
@@ -716,7 +750,7 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     except BaseException as e:
         detail = _detail(e)
         if publish_started:
-            detail += _restore_latest(night, gh, previous_latest)
+            detail += _restore_latest(night, state, gh, previous_latest, save)
         if not verified:
             if rollback_folder is not None:   # itch must not keep a build the release does not have
                 detail += _itch_rollback(night, itch, rollback_folder, rollback_version)
@@ -741,6 +775,10 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
     whether the settings came back."""
     try:
         gz = build_web(night, runner, pages=False, free_gb=free_gb)
+        # Bee may retire the previous player's files while building Pages. Keep the exact first player outside its outputs.
+        saved_gz = night.run_dir / "Web-gzip"
+        shutil.copytree(gz, saved_gz)   # refuse a collision or incomplete copy; never reuse older run evidence
+        gz = saved_gz
         pages = build_web(night, runner, pages=True, free_gb=free_gb)
     except BaseException:
         try:
@@ -756,7 +794,7 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
 
 def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, no_publish: bool,
                free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-               save: Callable[[], None] = lambda: None) -> bool:
+               save: Callable[[], bool | None] = lambda: None) -> bool:
     """Every gate, then (unless no_publish) the publish. True when published, False when stopped before any store."""
     run_gates(night, runner)
     run_editmode(night, runner)
@@ -780,12 +818,14 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
     return True
 
 
-def _try_save(state_path: Path, state: State) -> None:
+def _try_save(state_path: Path, state: State) -> bool:
     try:
         save_state(state_path, state)
+        return True
     except OSError as e:   # never costs the night its record, and the final save tries again
         print(f"could not save state: {e}", file=sys.stderr)
         notify("Nightly state not saved", f"{e}"[:200])   # a published release with unsaved state must not be silent
+        return False
 
 
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
@@ -794,6 +834,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
+    recovery_note = ""
     day = night_of(now)
     try:
         try:
@@ -805,6 +846,14 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
                            log_line(stamp, "MISSED", tag=None, sha=None, gate="-", log=None))
             if client_error is not None or gh is None:   # the record names the step, not "internal"
                 raise client_error or Refused("github-client", "no GitHub client")
+            pending = state.latest_recovery_pending
+            if pending is not None:
+                if no_publish:
+                    raise Refused("github-latest", "Latest recovery is pending; --no-publish leaves it alone")
+                recovered, recovery_note = _recover_latest(state, gh, pending.failed, pending.previous,
+                                                            lambda: _try_save(state_path, state))
+                if not recovered:
+                    raise Refused("github-latest", recovery_note)
             night = preflight(cfg, state, runner, gh, job=job, now=now, manual=manual, free_gb=free_gb,
                               no_publish=no_publish)
             published = run_stages(night, state, runner, gh, itch, no_publish=no_publish, free_gb=free_gb,
@@ -822,6 +871,8 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
             outcome, gate, detail = "REFUSED", "internal", f"{type(e).__name__}: {e}"
     finally:
         if not no_publish:
+            if recovery_note and recovery_note not in detail:
+                detail = " ".join(filter(None, [detail, recovery_note]))
             if night is not None and night.notes:
                 detail = " ".join(filter(None, [detail, *night.notes]))
             line = log_line(now, outcome, tag=night.tag if night else None, sha=night.sha if night else None,

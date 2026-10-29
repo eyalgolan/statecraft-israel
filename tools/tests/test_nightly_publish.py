@@ -1,5 +1,6 @@
 import hashlib
 import io
+import inspect
 import json
 import zipfile
 from pathlib import Path
@@ -71,6 +72,18 @@ def view_json(*, draft=True, pre=False, names=()):
 
 def not_found():
     return Refused("command", "gh release view exited 1: release not found")
+
+
+def create_draft(gh, notes, zips, saved):
+    # Exercise main's create path too; do not turn a missing callback into the regression signal.
+    kwargs = {"created": saved.append} if "created" in inspect.signature(gh.create_draft).parameters else {}
+    return gh.create_draft(TAG, SHA, notes, zips, **kwargs)
+
+
+def delete_draft(gh, release_id):
+    # Only adapt the call shape. The real client still chooses the lookup and DELETE commands.
+    args = (release_id,) if "release_id" in inspect.signature(gh.delete_draft).parameters else ()
+    return gh.delete_draft(TAG, *args)
 
 
 # --- release state ---------------------------------------------------------------------------------------------------
@@ -152,11 +165,22 @@ def test_tag_lookup_error_refuses_instead_of_assuming_absence(gh, runner):
 
 
 def test_the_draft_is_normal_latest_targeting_the_commit(gh, runner, tmp_path, zips):
+    # Mutation: recover an ID by tag instead of using the response to this run's create.
+    runner.on(["gh", "api"], json.dumps({"id": 101, "tag_name": TAG, "draft": True}))
     runner.on(["gh", "release", "create"], "")
-    gh.create_draft(TAG, SHA, tmp_path / "notes.md", zips)
-    assert runner.calls[-1] == ["gh", "release", "create", TAG, "--repo", SLUG, "--draft",
-                                "--latest", "--target", SHA, "--title", f"{TAG} (nightly)",
-                                "--notes-file", str(tmp_path / "notes.md"), str(zips[0]), str(zips[1])]
+    saved = []
+
+    def upload(cmd):
+        assert saved == [101]   # a failed upload must already have an ownership checkpoint
+        return ""
+    runner.on(["gh", "release", "upload"], upload)
+    assert gh.create_draft(TAG, SHA, tmp_path / "notes.md", zips, created=saved.append) == 101
+    assert runner.calls[0] == ["gh", "api", f"repos/{SLUG}/releases", "--method", "POST",
+                               "--raw-field", f"tag_name={TAG}", "--raw-field", f"target_commitish={SHA}",
+                               "--raw-field", f"name={TAG} (nightly)", "--field", f"body=@{tmp_path / 'notes.md'}",
+                               "--field", "draft=true", "--field", "prerelease=false",
+                               "--raw-field", "make_latest=true"]
+    assert runner.calls[1] == ["gh", "release", "upload", TAG, "--repo", SLUG, str(zips[0]), str(zips[1])]
 
 
 def draft_script(runner, zips, tmp_path, *, view=None, downloaded=None):
@@ -324,26 +348,29 @@ def test_a_failing_gh_edit_is_a_publish_refusal(gh, runner):
 
 
 def test_delete_draft_removes_a_draft_and_never_cleans_tags(gh, runner):
-    runner.on(["gh", "release", "view"], '{"isDraft": true}')
+    # Mutation: use a tag-addressed DELETE after an ownership check, risking a replacement release.
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": true}')
+    runner.on(["gh", "api"], "")
     runner.on(["gh", "release", "delete"], "")
-    gh.delete_draft(TAG)
-    assert runner.calls[-1] == ["gh", "release", "delete", TAG, "--repo", SLUG, "--yes"]
+    delete_draft(gh, 101)
+    assert runner.calls == [["gh", "release", "view", TAG, "--repo", SLUG, "--json", "databaseId,isDraft"],
+                            ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]]
     assert all("--cleanup-tag" not in c for c in runner.calls)
 
 
 def test_delete_draft_refuses_a_published_release_and_never_cleans_tags(gh, runner):
-    runner.on(["gh", "release", "view"], '{"isDraft": false}')
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": false}')
     with pytest.raises(Refused):
-        gh.delete_draft(TAG)
-    assert not any(c[:3] == ["gh", "release", "delete"] for c in runner.calls)
+        delete_draft(gh, 101)
+    assert len(runner.calls) == 1
     assert all("--cleanup-tag" not in c for c in runner.calls)
 
 
 def test_delete_draft_refuses_when_the_state_is_unknown(gh, runner):
     runner.on(["gh", "release", "view"], "garbage")
     with pytest.raises(Refused):
-        gh.delete_draft(TAG)
-    assert not any(c[:3] == ["gh", "release", "delete"] for c in runner.calls)
+        delete_draft(gh, 101)
+    assert len(runner.calls) == 1
 
 
 # --- previous build, download -----------------------------------------------------------------------------------------
@@ -753,3 +780,63 @@ def test_the_frame_url_is_read_from_the_page():
 
 def test_a_frame_of_another_host_is_not_a_game_frame():
     assert gp.itch_frame_url('data-iframe="&lt;iframe src=&quot;https://evil.example/html/1-2/index.html&quot;') is None
+
+
+@pytest.mark.parametrize("release_id", [None, 202, True, "101"])
+def test_delete_refuses_missing_or_foreign_id(gh, runner, release_id):
+    # Mutation: skip ID validation or compare only the tag and draft flag.
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": true}')
+    runner.on(["gh", "release", "delete"], "")
+    with pytest.raises(Refused, match="check by hand"):
+        delete_draft(gh, release_id)
+    assert all("DELETE" not in c and c[:3] != ["gh", "release", "delete"] for c in runner.calls)
+
+
+def test_delete_by_id_preserves_same_tag_replacement_after_the_check(gh, runner):
+    # Mutation: delete by tag after checking the ID, which would delete the new same-tag draft.
+    releases = [(TAG, 101, True), ("v0.4.0", 303, False)]
+
+    def view(cmd):
+        # Another actor retargets the owned draft, then creates the replacement at our tag.
+        releases[0] = (TAG + "-replaced", 101, True)
+        releases.append((TAG, 202, True))
+        return json.dumps({"databaseId": 101, "isDraft": True})
+
+    def delete(cmd):
+        if cmd[:3] == ["gh", "release", "delete"]:
+            row = next(r for r in releases if r[0] == TAG)
+        else:
+            assert cmd == ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]
+            row = next(r for r in releases if r[1] == int(cmd[2].rsplit("/", 1)[1]))
+        releases.remove(row)
+        return ""
+    runner.on(["gh", "release", "view"], view)
+    runner.on(["gh", "api"], delete)
+    runner.on(["gh", "release", "delete"], delete)
+    delete_draft(gh, 101)
+    assert releases == [("v0.4.0", 303, False), (TAG, 202, True)]
+    assert runner.calls[-1] == ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]
+
+
+@pytest.mark.parametrize("response", [{"id": True, "tag_name": TAG, "draft": True},
+                                      {"id": 101, "tag_name": "v0.4.0", "draft": True},
+                                      {"id": 101, "tag_name": TAG, "draft": False}, {}])
+def test_create_with_unusable_response_never_claims_or_uploads(gh, runner, tmp_path, zips, response):
+    # Mutation: guess an owned ID after create returned unknown data or a release for another tag.
+    runner.on(["gh", "api"], json.dumps(response))
+    runner.on(["gh", "release", "create"], "")
+    saved = []
+    with pytest.raises(Refused, match="check by hand"):
+        create_draft(gh, tmp_path / "notes.md", zips, saved)
+    assert saved == [] and len(runner.calls) == 1
+
+
+def test_failed_upload_has_already_checkpointed_create_id(gh, runner, tmp_path, zips):
+    # Mutation: checkpoint only after uploads, losing ownership when an upload fails.
+    runner.on(["gh", "api"], json.dumps({"id": 101, "tag_name": TAG, "draft": True}))
+    runner.on(["gh", "release", "upload"], Refused("command", "upload failed"))
+    runner.on(["gh", "release", "create"], Refused("command", "upload failed"))
+    saved = []
+    with pytest.raises(Refused, match="upload failed"):
+        create_draft(gh, tmp_path / "notes.md", zips, saved)
+    assert saved == [101]
