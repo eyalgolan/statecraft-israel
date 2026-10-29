@@ -220,7 +220,8 @@ def test_ownership_and_pending_recovery_round_trip(tmp_path):
 @pytest.mark.parametrize("extra", [{"open_draft_id": True}, {"open_draft_id": "101"}, {"open_draft_id": 0},
                                    {"latest_recovery_pending": {}},
                                    {"latest_recovery_pending": {"failed": 1, "previous": None}},
-                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": False}}])
+                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": False}},
+                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": ""}}])
 def test_invalid_ownership_or_pending_record_refuses(tmp_path, extra):
     # Mutation: accept a malformed ownership ID or recovery target and guess a public action.
     # Value-validation guard: first prove the same keys are supported with valid values.
