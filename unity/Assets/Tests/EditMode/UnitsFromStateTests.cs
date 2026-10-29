@@ -321,7 +321,7 @@ public class UnitsFromStateTests
         var savedSource = UnitFigures.Source;
         EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
         UnitFigures.ResetSession();
-        Action? answerLebanese = null;
+        Action answerLebanese = null!;
         var map = new GameObject("MapScene").AddComponent<MapScene>();
         try
         {
