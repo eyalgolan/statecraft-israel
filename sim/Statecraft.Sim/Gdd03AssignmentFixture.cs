@@ -68,6 +68,9 @@ namespace Statecraft.Sim
             this.state = state;
             rates = Gdd03IndustryRates.Read(content);
             receptionTurns = content.RequirePopulationInteger("reception.turns");
+            if (receptionTurns != state.PopulationLedger.ReceptionLimit)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
+                    "must match the initialized population ledger");
             slots = new SortedDictionary<string, Gdd03FixtureSlot>(StringComparer.Ordinal);
             foreach (var slot in inventory) slots.Add(slot.Id, slot); // duplicate aliases cannot add capacity
             ValidateInventory();
