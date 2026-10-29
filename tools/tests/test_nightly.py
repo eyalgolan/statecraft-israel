@@ -2423,3 +2423,49 @@ def test_second_interrupt_during_grace_still_kills_and_reaps_own_group(tmp_path,
         except ProcessLookupError:
             pass
         original_wait(timeout=5)
+
+
+def test_gzip_player_survives_second_build_deleting_its_bee_artifacts(night, env, monkeypatch):
+    import shutil
+    gz = night.cfg.clone / "unity/Builds/Web-gzip"
+    pages = night.cfg.clone / "unity/Builds/Web-pages"
+    (gz / "Build").mkdir(parents=True)
+    (gz / "Build/player.data.gz").write_bytes(b"first-player-exact-bytes")
+    (gz / "index.html").write_text('dataUrl: "Build/player.data.gz"')
+    (gz / "StreamingAssets/content").mkdir(parents=True)
+    (gz / "StreamingAssets/content/policy.yaml").write_bytes(b"owner-records: unchanged")
+    checks = []
+    def build(n, r, *, pages: bool, free_gb):
+        if pages:
+            assert (gz / "Build/player.data.gz").read_bytes() == b"first-player-exact-bytes"
+            shutil.rmtree(gz / "Build")  # Unity Bee retires the previous target's outputs.
+            return night.cfg.clone / "unity/Builds/Web-pages"
+        return gz
+    monkeypatch.setattr(nightly, "build_web", build)
+    monkeypatch.setattr(nightly, "assert_clean_tree", lambda n, r: checks.append("clean"))
+    saved, second = nightly._build_both(night, env.runner, lambda p: 100.0)
+    assert not (gz / "Build").exists(), "the test must actually retire the first output"
+    assert saved != gz and second == pages
+    assert (saved / "Build/player.data.gz").read_bytes() == b"first-player-exact-bytes"
+    assert (saved / "index.html").read_bytes() == (gz / "index.html").read_bytes()
+    assert (saved / "StreamingAssets/content/policy.yaml").read_bytes() == b"owner-records: unchanged"
+    assert checks == ["clean"]
+
+
+def test_gzip_snapshot_collision_refuses_without_second_build_or_overwrite(night, env, monkeypatch):
+    source = night.cfg.clone / "unity/Builds/Web-gzip"
+    source.mkdir(parents=True)
+    (source / "index.html").write_text("new artifact")
+    existing = night.run_dir / "Web-gzip"
+    existing.mkdir()
+    (existing / "index.html").write_text("prior evidence")
+    builds, checks = [], []
+    def build(n, r, *, pages, free_gb):
+        builds.append(pages)
+        return source
+    monkeypatch.setattr(nightly, "build_web", build)
+    monkeypatch.setattr(nightly, "assert_clean_tree", lambda n, r: checks.append("clean"))
+    with pytest.raises(FileExistsError):
+        nightly._build_both(night, env.runner, lambda p: 100.0)
+    assert builds == [False] and checks == ["clean"]
+    assert (existing / "index.html").read_text() == "prior evidence"
