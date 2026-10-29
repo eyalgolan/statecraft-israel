@@ -2793,3 +2793,26 @@ def test_failed_recovery_checkpoint_stops_site_after_best_effort_repair(env, mon
     assert outcome == "REFUSED" and gh.calls == [("restore_latest", None, TAG)]
     assert gh.latest is None and env.state_path.read_bytes() == before and served == []
     assert "could not be saved" in env.log() and "check by hand" in env.log()
+
+
+@pytest.mark.parametrize("failing_save", ["checkpoint", "result", "both"])
+def test_raising_recovery_save_still_repairs_latest_and_returns_refusal(env, failing_save):
+    gh = FakeGH()
+    gh.latest = TAG
+    st = ns.State()
+    saves = []
+    def save():
+        stage = "checkpoint" if not saves else "result"
+        saves.append(stage)
+        if failing_save in (stage, "both"):
+            raise ValueError("cannot serialize recovery state")
+    err = None
+    recovered, detail = True, ""
+    try:
+        recovered, detail = nightly._recover_latest(st, gh, TAG, "v0.3.1", save)
+    except ValueError as e:
+        err = e
+    assert gh.calls == [("restore_latest", "v0.3.1", TAG)] and gh.latest == "v0.3.1"
+    assert err is None
+    assert saves == ["checkpoint", "result"] and not recovered
+    assert "could not be saved" in detail and "check by hand" in detail
