@@ -45,6 +45,42 @@ public class UnitFiguresTests
         "figure-soldier-1948-v1",
     };
 
+    [Test]
+    public void SwapAndResidencyClearRefreshBoundsAtTheSameCameraPose()
+    {
+        var map = BuildMap();
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        prefab.transform.position = Vector3.down * 1000000f;
+        prefab.transform.localScale = new Vector3(50f, 1f, 1f);
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, StateAt(May20, 0.8));
+            var figure = Tokens(map).Find("kiryati").Find("Rifleman0");
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "no original before the actual Swap");
+            var owner = figure.GetComponent<UnitFigureResidency>();
+            Assert.IsNotNull(owner, "actual per-consumer residency owns the model child");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
+            var camera = Camera.main;
+            layer.FaceCamera(camera);
+            var before = layer.KeepClear[index][1];
+            UnitFigures.Swap(figure, UnitFigures.PioneerVeteran, prefab);
+            var model = figure.Find(UnitFigures.ModelName).GetComponentInChildren<MeshRenderer>();
+            Assert.IsNotNull(model, "actual Swap instantiates the replacement");
+            var tip = model.bounds.center + Vector3.right * model.bounds.extents.x * 0.9f;
+            Assert.IsFalse(before.Contains(tip), "replacement extends past the old keep-clear box");
+            layer.FaceCamera(camera);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(tip), "same-pose Swap refreshes bounds without a dead cached filter");
+            owner.enabled = false;   // actual OnDisable -> Refresh(false) -> Clear
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "actual residency Clear retires the model");
+            layer.FaceCamera(camera);
+            Assert.IsFalse(layer.KeepClear[index][1].Contains(tip), "same-pose retirement removes the old bounds");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(prefab); }
+    }
+
     [SetUp] public void Fresh() { UnitFigures.Source = null; UnitFigures.Forget(); }
     [TearDown] public void Restore() { UnitFigures.Source = null; UnitFigures.Forget(); }
 
