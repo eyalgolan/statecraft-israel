@@ -55,7 +55,7 @@ namespace Statecraft.Game.Map
                 foreach (var filter in old.GetComponentsInChildren<MeshFilter>(true))
                 {
                     if (filter.sharedMesh == null || filter.sharedMesh == cube) continue;
-                    bool kitMesh = filter.GetComponent<Collection.CampTentModels>() != null || filter.GetComponentInParent<Collection.CampTentModels>() == null;
+                    bool kitMesh = filter.GetComponent<Collection.CampTentModels>() != null || filter.GetComponentInParent<Collection.CampTentModels>(true) == null;
                     if (kitMesh) own.Add(filter.sharedMesh);
                 }
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); foreach (var m in own) Destroy(m); }
