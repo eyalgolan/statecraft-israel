@@ -24,6 +24,20 @@ public class Gdd03AssignmentFixtureTests
         new PopulationBindings(new[] { Place }, Slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, Place.Region)),
             Array.Empty<string>(), Array.Empty<string>()), people.Select((p, i) => new PopulationInventoryRow("synthetic", i, p)));
 
+    // R-CITY-001, R-POP-002: assignment and reception share the initialized ledger's completion limit.
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void ReceptionLimitMustMatchTheInitializedLedger(int delta)
+    {
+        var c = Content(); var s = State(c, Person());
+        var before = s.Describe();
+        c.Gdd03Balance!.Values["reception.turns"].Values = new() { s.PopulationLedger.ReceptionLimit + delta };
+        var error = Assert.Throws<ContentException>(() => new Gdd03AssignmentFixture(c, s, Slots));
+        Assert.Contains("values.reception.turns", error.Message);
+        Assert.Equal(before, s.Describe());
+    }
+
     // R-CITY-001, R-CITY-002: destination validation must precede any release or resource mutation.
     [Fact] public void FullMissingAndIneligibleDestinationsPreserveWholeState()
     {
