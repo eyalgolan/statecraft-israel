@@ -1,2 +1,2 @@
 ### Tests
-- Cover invariant economic and political cause arguments and map-editor digest validation boundaries.
+- Cover invariant economic cause arguments, political cause argument ordering and IDs, and map-editor digest validation boundaries.

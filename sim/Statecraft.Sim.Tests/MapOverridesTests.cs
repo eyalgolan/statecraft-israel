@@ -331,25 +331,28 @@ public class MapOverridesTests
         }
     }
 
-// R-MEDIT-002: base_digest is exactly 64 lowercase hex characters; parse and object serialization agree.
-[Theory]
-[InlineData('A', 64)]   // uppercase hex: right length, wrong alphabet
-[InlineData('a', 63)]   // one short
-[InlineData('a', 65)]   // one long
-public void BaseDigestMustBeSixtyFourLowercaseHexOnParseAndSerialize(char c, int length)
-{
-    var digest = new string(c, length);
-    var yaml = EditorFixture.Replace(new string('a', 64), digest);
-    var parsed = Assert.Throws<ContentException>(() => MapEditorOverlay.Parse(yaml, SaveGame.Gdd03Ruleset));
-    Assert.Contains("MAPEDIT_BASE", parsed.Message);
-    Assert.Equal("base", parsed.Field);
-    Assert.Equal(MapOverrides.FileName, parsed.File);
+    // R-MEDIT-002: base_digest is exactly 64 lowercase hex characters; parse and object serialization agree.
+    [Theory]
+    [InlineData('A', 64)]   // uppercase hex: right length, wrong alphabet
+    [InlineData('g', 64)]   // lowercase non-hex letter
+    [InlineData('٣', 64)]   // non-ASCII digit
+    [InlineData('a', 63)]   // one short
+    [InlineData('a', 65)]   // one long
+    public void BaseDigestMustBeSixtyFourLowercaseHexOnParseAndSerialize(char c, int length)
+    {
+        var digest = new string(c, length);
+        var yaml = EditorFixture.Replace(new string('a', 64), digest);
+        var parsed = Assert.Throws<ContentException>(() => MapEditorOverlay.Parse(yaml, SaveGame.Gdd03Ruleset));
+        Assert.Contains("MAPEDIT_BASE", parsed.Message);
+        Assert.Equal("base", parsed.Field);
+        Assert.Equal(MapOverrides.FileName, parsed.File);
 
-    var value = MapEditorOverlay.Parse(EditorFixture, SaveGame.Gdd03Ruleset);
-    value.BaseDigest = digest;
-    var written = Assert.Throws<ContentException>(() => MapEditorOverlay.Serialize(value));
-    Assert.Contains("MAPEDIT_BASE", written.Message);
-    Assert.Equal("base", written.Field);
-}
+        var value = MapEditorOverlay.Parse(EditorFixture, SaveGame.Gdd03Ruleset);
+        value.BaseDigest = digest;
+        var written = Assert.Throws<ContentException>(() => MapEditorOverlay.Serialize(value));
+        Assert.Contains("MAPEDIT_BASE", written.Message);
+        Assert.Equal("base", written.Field);
+        Assert.Equal(MapOverrides.FileName, written.File);
+    }
 
 }

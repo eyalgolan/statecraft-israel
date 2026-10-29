@@ -322,39 +322,47 @@ public class PoolsTests
         Assert.Equal(Real.Rules.Mvp!.ArmsStart!.Value + 25, loaded.Arms);
     }
 
-// R-ARMS-002, R-FOOD-002: the keyed lines carry the values the UI words, as invariant text whatever the culture.
-[Fact]
-public void TheArmsAndFoodLinesCarryTheirKeyedValuesInvariantly()
-{
-    var culture = Thread.CurrentThread.CurrentCulture;
-    try
+    // R-ARMS-002, R-FOOD-002: the keyed lines carry the values the UI words, as invariant text whatever the culture.
+    [Fact]
+    public void TheArmsAndFoodLinesCarryTheirKeyedValuesInvariantly()
     {
-        Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
-        var c = Gdd();
+        var culture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("de-DE");
+            var c = Gdd();
 
-        var s = Simulation.NewGame(c, 1, Mode.Historical);
-        var why = new List<Cause>();
-        Assert.Null(Pools.BuyArms(c, s, 3, why));                 // fixture arms_price 0.25: cost 0.75
-        var bought = Assert.Single(why, w => w.Key == CauseKeys.ArmsBought);
-        Assert.Equal(("economy", "arms", 3.0), (bought.System, bought.Target, bought.Delta));
-        Assert.Equal(new[] { "0.75" }, bought.Args);               // the cost, not the count; never "0,75"
+            var s = Simulation.NewGame(c, 1, Mode.Historical);
+            var why = new List<Cause>();
+            Assert.Null(Pools.BuyArms(c, s, 3, why));                 // fixture arms_price 0.25: cost 0.75
+            var bought = Assert.Single(why, w => w.Key == CauseKeys.ArmsBought);
+            Assert.Equal(("economy", "arms", 3.0), (bought.System, bought.Target, bought.Delta));
+            Assert.Equal(new[] { "0.75" }, bought.Args);               // the cost, not the count; never "0,75"
 
-        var f = Simulation.NewGame(c, 1, Mode.Historical);
-        f.ActiveSituations.Add(EconomySystem.FxCrisis);
-        f.Food = 40;                                               // need is 100 (1000 people / 10)
-        why = new List<Cause>();
-        Pools.Consume(c, f, c.RulesAt(f.Date).Mvp!, why);
-        var keyed = why.Where(w => w.Key != "").ToList();
-        Assert.Equal(new[] { CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports }, keyed.Select(w => w.Key));
-        Assert.Equal(-60.0, keyed[0].Delta);
-        Assert.Equal(new[] { "100" }, keyed[0].Args);              // the need; unmet is -Delta
-        Assert.Equal("Food ran out: 60 of 100 units of the month's need went unmet", keyed[0].Message);
-        Assert.Equal(-40.0, keyed[1].Delta);
-        Assert.Equal(new[] { "0" }, keyed[1].Args);                // the stock after eating
-        Assert.Equal("No Food imported (foreign currency crisis): the stock fell to 0 units", keyed[1].Message);
-        Assert.Equal(0, f.Food);                                   // no import in the crisis
+            var f = Simulation.NewGame(c, 1, Mode.Historical);
+            f.ActiveSituations.Add(EconomySystem.FxCrisis);
+            f.Food = 40;                                               // need is 100 (1000 people / 10)
+            why = new List<Cause>();
+            Pools.Consume(c, f, c.RulesAt(f.Date).Mvp!, why);
+            var keyed = why.Where(w => w.Key != "").ToList();
+            Assert.Equal(new[] { CauseKeys.FoodShortage, CauseKeys.FoodWithoutImports }, keyed.Select(w => w.Key));
+            Assert.Equal(-60.0, keyed[0].Delta);
+            Assert.Equal(new[] { "100" }, keyed[0].Args);              // the need; unmet is -Delta
+            Assert.Equal("Food ran out: 60 of 100 units of the month's need went unmet", keyed[0].Message);
+            Assert.Equal(-40.0, keyed[1].Delta);
+            Assert.Equal(new[] { "0" }, keyed[1].Args);                // the stock after eating
+            Assert.Equal("No Food imported (foreign currency crisis): the stock fell to 0 units", keyed[1].Message);
+            Assert.Equal(0, f.Food);                                   // no import in the crisis
+
+            var stocked = Simulation.NewGame(c, 1, Mode.Historical);
+            stocked.ActiveSituations.Add(EconomySystem.FxCrisis);
+            stocked.Food = 150;
+            why = new List<Cause>();
+            Pools.Consume(c, stocked, c.RulesAt(stocked.Date).Mvp!, why);
+            var withoutImports = Assert.Single(why, w => w.Key == CauseKeys.FoodWithoutImports);
+            Assert.Equal(new[] { "50" }, withoutImports.Args);         // the remaining stock, not the zero import quantity
+        }
+        finally { Thread.CurrentThread.CurrentCulture = culture; }
     }
-    finally { Thread.CurrentThread.CurrentCulture = culture; }
-}
 
 }
