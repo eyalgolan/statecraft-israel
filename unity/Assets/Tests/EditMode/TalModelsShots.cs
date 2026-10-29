@@ -125,7 +125,7 @@ public class TalModelsShots
 
     /// <summary>The Lebanese token's actual placed spot near Al-Malikiyya after the first turn (15 June
     /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are
-    /// answered with the editor's prefabs, as the player's stream would answer them. The same code runs on main for the before.</summary>
+    /// answered with the editor's prefabs, as the player's stream would answer them. The admitted frame is a candidate-only diagnostic; a matched before requires this identical fixture and state.</summary>
     static void ObserveSubject(MapScene map, UnitLayer units, string stage, Vector3 target)
     {
         var camera = Camera.main;
@@ -185,7 +185,7 @@ public class TalModelsShots
                     2f * map.Residency.Units.EnterM, "one real focus must be able to admit both anchors");
                 var middle = new Vector3((anchor.x + target.x) * .5f, 0f, (anchor.z + target.z) * .5f);
                 Look(middle, distance);
-                // Face south so the displaced token sits below its source anchor, clear of the top bar.
+                // This south-facing admitted frame is checked against all original figure corners below the top bar.
                 Camera.main.GetComponent<CameraRig>().Yaw = 180f;
                 Camera.main.GetComponent<CameraRig>().Apply();
                 Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var measured));
@@ -232,12 +232,26 @@ public class TalModelsShots
                 Assert.IsTrue(viewport.z > 0f && viewport.x > 0f && viewport.x < 1f && viewport.y > 0f
                     && viewport.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
                     "the admitted subject is inside the map viewport below the top bar");
+                Assert.AreEqual((float)CivMovementShots.Width / CivMovementShots.Height, camera.aspect, 0.0001f,
+                    "viewport checks and saved capture must use the same aspect ratio");
                 var live = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
-                var visible = live.GetComponentsInChildren<UnitFigureResidency>(true)
-                    .Select(o => o.transform.Find(UnitFigures.ModelName)).Where(m => m != null)
+                Assert.IsNotNull(live, "the admitted token remains live before whole-model projection");
+                var owners = live.GetComponentsInChildren<UnitFigureResidency>(true);
+                Assert.GreaterOrEqual(owners.Length, 3, "three distinct original figure owners must be framed");
+                foreach (var owner in owners)
+                {
+                    Assert.Greater(owner.ResidencySnapshot().ownedLeases, 0, "each visible figure owns its admitted original lease");
+                    var model = owner.transform.Find(UnitFigures.ModelName);
+                    Assert.IsNotNull(model, "each original is dressed");
+                    Assert.Greater(model.childCount, 0);
+                    StringAssert.StartsWith(UnitFigures.LebaneseRegular, model.GetChild(0).name, "the actual Lebanese original");
+                    Assert.IsTrue(model.GetComponentsInChildren<Renderer>(true)
+                        .Any(r => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy),
+                        "each distinct figure has a live visible original renderer");
+                }
+                var visible = owners.Select(o => o.transform.Find(UnitFigures.ModelName))
                     .SelectMany(m => m.GetComponentsInChildren<Renderer>(true))
                     .Where(r => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy).ToArray();
-                Assert.GreaterOrEqual(visible.Length, 3, "three live original figure renderers must be framed");
                 foreach (var renderer in visible)
                 {
                     var box = renderer.bounds;
