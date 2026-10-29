@@ -178,7 +178,7 @@ public class TalModelsShots
         Assert.AreEqual(1, demands.Length, "capture precondition: one real Lebanese source-prefetch holder");
         var prefetch = demands[0];
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
-        foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 18000f), ("close", CameraController.MinDistance) })
+        foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 24000f), ("close", CameraController.MinDistance) })
         {
             if (what == "admitted")
             {
