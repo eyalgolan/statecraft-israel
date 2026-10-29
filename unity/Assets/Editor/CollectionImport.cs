@@ -25,13 +25,13 @@ namespace Statecraft.Game.EditorTools
 
         public static void Run()
         {
-            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id)))
             {
                 ImportModel(Model(id, CollectionDetail.Far), animated: false);
                 ImportModel(Model(id, CollectionDetail.Near), animated: CollectionCatalog.Animated.Contains(id));
                 ImportColourMap($"{Dir(id)}/{id}_basecolor.jpg");
             }
-            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)))
+            foreach (var id in CollectionCatalog.Ids.Where(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id)))
             {
                 var mat = AssetDatabase.LoadAssetAtPath<Material>($"{Dir(id)}/{id}.mat")
                     ?? throw new InvalidOperationException($"{id}: no material");
@@ -41,7 +41,7 @@ namespace Statecraft.Game.EditorTools
             AssetDatabase.SaveAssets();
             Generated1948Characters.ImportRuntime();
             MakeBuildingPrefabs();
-            Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id))} collection models"));
+            Debug.Log(FormattableString.Invariant($"CollectionImport: {CollectionCatalog.Ids.Count(id => !CollectionCatalog.IsBuilding(id) && !CollectionCatalog.IsGenerated(id))} collection models"));
         }
 
         /// <summary>Issue #707: the special-buildings bundle's prefabs, one per model, beside #675's imported model in its own

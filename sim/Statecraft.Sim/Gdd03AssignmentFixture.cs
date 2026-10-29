@@ -6,7 +6,7 @@ namespace Statecraft.Sim
 {
     // All entry points are internal. Only synthetic tests opt in; no command, loader or turn hookup.
     internal enum Gdd03FixtureWork { Industry, Builder, Farm, Workshop }
-    internal enum Gdd03FixtureAssignmentResult { Applied, DeferredSameSlot }
+    internal enum Gdd03FixtureAssignmentResult { Applied, NoOp }
 
     internal sealed class Gdd03FixtureSlot
     {
@@ -53,7 +53,7 @@ namespace Statecraft.Sim
 
     /// <summary>R-CITY-001/002: frozen synthetic capacity overlay, never a second population ledger.
     /// Only explicit reception-complete free civilians moving among generic Work targets are supported.
-    /// Feature-owned course/teaching/service transitions and same-slot policy remain outside this fixture.
+    /// Feature-owned course/teaching/service transitions remain outside this fixture. Reassigning the same Work slot is a no-op.
     /// Single-threaded like the ledger; callers cannot reuse this overlay as a production authority.</summary>
     internal sealed class Gdd03AssignmentFixture
     {
@@ -68,6 +68,9 @@ namespace Statecraft.Sim
             this.state = state;
             rates = Gdd03IndustryRates.Read(content);
             receptionTurns = content.RequirePopulationInteger("reception.turns");
+            if (receptionTurns != state.PopulationLedger.ReceptionLimit)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
+                    "must match the initialized population ledger");
             slots = new SortedDictionary<string, Gdd03FixtureSlot>(StringComparer.Ordinal);
             foreach (var slot in inventory) slots.Add(slot.Id, slot); // duplicate aliases cannot add capacity
             ValidateInventory();
@@ -92,8 +95,8 @@ namespace Statecraft.Sim
             if (target != null)
             {
                 if (!slots.TryGetValue(target, out var slot)) throw new ArgumentException("Unknown fixture slot.");
-                // This is a refusal/deferred result, not a chosen shipped idempotency policy.
-                if (person.Assignment.Target == target) return Gdd03FixtureAssignmentResult.DeferredSameSlot;
+                // Owner, 28 October 2026 (#1668 Q34): assigning the same job is a no-op.
+                if (person.Assignment.Target == target) return Gdd03FixtureAssignmentResult.NoOp;
                 if (ledger.Units.Count(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Assignment.Target == target) >= slot.Capacity)
                     throw new ArgumentException("Fixture destination is full.");
             }

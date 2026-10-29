@@ -22,9 +22,9 @@ https://github.com/user-attachments/assets/56571db8-446b-444b-8db9-fce57dac53a7
 
 <div align="center">
 
-<img src="docs/images/build-gameplay.webp" width="820" alt="משחק אמיתי, 15 במאי עד 15 ביוני 1948: התקרבות ומעבר על תל אביב, יפו ומישור החוף, לחיצה על תל אביב שפותחת את לוח העיר, ההחלטה על צבא אחד, וסיום תור שמקדם את התאריך ל־15 ביוני ומציג את סיכום התור.">
+<img src="docs/images/build-gameplay.webp" width="820" alt="משחק אמיתי, 15 במאי עד 15 ביוני 1948: התקרבות ומעבר על תל אביב, יפו ומישור החוף, לחיצה על תל אביב שפותחת את לוח העיר, ההחלטות &quot;צבא אחד&quot; ו&quot;ההגנה על דגניה&quot;, סיום תור שבוחר כל יחידה שממתינה להוראות לדילוג על התור (חטיבת גולני וחטיבת כרמלי, ואחרי חיתוך חטיבת הנגב), והתאריך שמתקדם ל־15 ביוני, עם סיכום התור וכרטיס ההפוגה הראשונה.">
 
-<p dir="rtl" align="center"><em>משחק אמיתי, main בקומיט <span dir="ltr">8dae186</span>, 2026-10-20.</em></p>
+<p dir="rtl" align="center"><em>משחק אמיתי, main בקומיט <span dir="ltr">230042c</span>, 2026-10-27. חיתוך אחד משמיט חמש מתוך שמונה היחידות שסיום התור בוחר.</em></p>
 
 <img src="docs/images/build-m3-map.jpg" width="820" alt="הגרסה הנוכחית: כרטיס האירוע &quot;צבא אחד&quot; עם צילום ארכיון, מעל מפת החוף, עם הסרגל העליון והמפה הקטנה.">
 <br>
@@ -147,7 +147,7 @@ flowchart RL
 
 ## רישיון
 
-קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
+קוד: <span dir="ltr">PolyForm Noncommercial 1.0.0</span>, מותר לכל שימוש לא מסחרי; שימוש מסחרי דורש אישור בכתב (מבקשים ב־issue). קוד שפורסם עד גרסה <span dir="ltr">v0.2.1</span> כולל נשאר ב־MIT. תוכן המשחק (`content`): CC BY-SA 4.0. מסמכים, נתונים ואמנות מקוריים: CC BY 4.0. תמונות שנוצרו בבינה מלאכותית: CC0, ללא טענת זכויות. מודלים בתלת־ממד של <span dir="ltr">Tal Heuberger</span>: <span dir="ltr">CC BY-NC-ND 4.0</span>. הפירוט: [<span dir="ltr">LICENSING.md</span>](LICENSING.md).
 
 על בעיות אבטחה מדווחים באופן פרטי, ראו [<span dir="ltr">SECURITY.md</span>](SECURITY.md). קוד ההתנהגות: [<span dir="ltr">CODE_OF_CONDUCT.md</span>](CODE_OF_CONDUCT.md).
 

@@ -24,6 +24,20 @@ public class Gdd03AssignmentFixtureTests
         new PopulationBindings(new[] { Place }, Slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, Place.Region)),
             Array.Empty<string>(), Array.Empty<string>()), people.Select((p, i) => new PopulationInventoryRow("synthetic", i, p)));
 
+    // R-CITY-001, R-POP-002: assignment and reception share the initialized ledger's completion limit.
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void ReceptionLimitMustMatchTheInitializedLedger(int delta)
+    {
+        var c = Content(); var s = State(c, Person());
+        var before = s.Describe();
+        c.Gdd03Balance!.Values["reception.turns"].Values = new() { s.PopulationLedger.ReceptionLimit + delta };
+        var error = Assert.Throws<ContentException>(() => new Gdd03AssignmentFixture(c, s, Slots));
+        Assert.Contains("values.reception.turns", error.Message);
+        Assert.Equal(before, s.Describe());
+    }
+
     // R-CITY-001, R-CITY-002: destination validation must precede any release or resource mutation.
     [Fact] public void FullMissingAndIneligibleDestinationsPreserveWholeState()
     {
@@ -35,7 +49,7 @@ public class Gdd03AssignmentFixtureTests
             var before = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, target)); Assert.Equal(before, s.Describe());
         }
         var same = s.Describe();
-        Assert.Equal(Gdd03FixtureAssignmentResult.DeferredSameSlot, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(0, Slots[0].Id)); Assert.Equal(same, s.Describe());
         s.PopulationLedger.Replace(s.PopulationLedger.Get(1).WithReception(0));
         same = s.Describe(); Assert.Throws<ArgumentException>(() => f.Assign(1, Slots[2].Id)); Assert.Equal(same, s.Describe());
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots.Concat(new[] { Slots[0] })));
@@ -52,7 +66,7 @@ public class Gdd03AssignmentFixtureTests
             var invalid = target == "missing" || (target != null && model.Where((_, i) => i != id).Contains(target));
             if (invalid) { Assert.Throws<ArgumentException>(() => f.Assign(id, target)); Assert.Equal(before, s.Describe()); }
             else if (target != null && model[id] == target) {
-                Assert.Equal(Gdd03FixtureAssignmentResult.DeferredSameSlot, f.Assign(id, target)); Assert.Equal(before, s.Describe());
+                Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(id, target)); Assert.Equal(before, s.Describe());
             } else { Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(id, target)); model[id] = target; }
             Assert.Equal(model, s.PopulationLedger.Units.Select(p => p.Assignment.Target).ToArray());
             Assert.Equal(new[] { 0, 1, 2 }, s.PopulationLedger.Units.Select(p => p.Id)); s.PopulationLedger.Reconcile();
@@ -83,6 +97,31 @@ public class Gdd03AssignmentFixtureTests
                 Assert.Same(before.Equipment, after.Equipment); Assert.Equal(before.Tier, after.Tier);
             }
         } finally { CultureInfo.CurrentCulture = previous; }
+    }
+
+    // R-CITY-001, R-POP-002: an assigned worker's reassignment to a bound, non-full, same-kind slot in a
+    // foreign region is refused at the ledger region check inside the no-release-first Replace path.
+    [Fact] public void AssignedWorkerForeignRegionReassignmentKeepsOriginalJob()
+    {
+        var c = Content();
+        var own = new PopulationLocation("synthetic-own"); var foreign = new PopulationLocation("synthetic-foreign");
+        var ownIndustry = new Gdd03FixtureSlot("synthetic-own-industry", Gdd03FixtureWork.Industry, 1, "generic");
+        var foreignFarm = new Gdd03FixtureSlot("synthetic-foreign-farm", Gdd03FixtureWork.Farm, 1, "generic");
+        var bindings = new PopulationBindings(new[] { own, foreign }, new[] {
+                new PopulationTarget(ownIndustry.Id, PopulationAssignmentKind.Work, own.Region),
+                new PopulationTarget(foreignFarm.Id, PopulationAssignmentKind.Work, foreign.Region) },
+            Array.Empty<string>(), Array.Empty<string>());
+        var worker = new PopulationUnit(0, PopulationStatus.FreeCivilian, 6, own, PopulationAssignment.Unassigned,
+            CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None);
+        var s = PopulationLedger.CreateFixture(c, bindings, new[] { new PopulationInventoryRow("synthetic", 0, worker) });
+        var f = new Gdd03AssignmentFixture(c, s, new[] { ownIndustry, foreignFarm });
+
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, ownIndustry.Id));
+        var before = s.Describe();
+        var error = Assert.Throws<ArgumentException>(() => f.Assign(0, foreignFarm.Id));
+        Assert.Contains("Assignment region/progress is inconsistent", error.Message); // region branch, not unknown/full/unbound
+        Assert.Equal(before, s.Describe());
+        Assert.Equal(ownIndustry.Id, s.PopulationLedger.Get(0).Assignment.Target);
     }
 
     // R-CITY-001, R-POP-002: foundation refusal rolls back a valid-capacity destination too.

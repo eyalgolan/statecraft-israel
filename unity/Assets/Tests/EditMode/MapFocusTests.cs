@@ -319,16 +319,19 @@ public class MapFocusTests
         finally { pointer.HexClicked -= onPick; root.Language = null; }
     }
 
-    /// <summary>The hint names the keyboard way in both languages and keeps the mouse's right-drag.</summary>
+    /// <summary>The hint names the keyboard way in both languages and keeps drag panning without naming a mouse button:
+    /// either button pans (#998, #1791). The Hebrew clause is the owner's approved wording (27 Oct 2026).</summary>
     [Test]
-    public void TheHintNamesTabAndEnterAndKeepsRightDrag()
+    public void TheHintNamesTabAndEnterAndKeepsDrag()
     {
         StringAssert.Contains("Tab", Text["info.hint"]);
         StringAssert.Contains("Enter", Text["info.hint"]);
-        StringAssert.Contains("right-drag", Text["info.hint"]);
+        Assert.GreaterOrEqual(Text["info.hint"].IndexOf("; drag to move the map", StringComparison.Ordinal), 0, Text["info.hint"]);
+        Assert.Less(Text["info.hint"].IndexOf("right", StringComparison.Ordinal), 0, Text["info.hint"]);
         StringAssert.Contains("Tab", TextHe["info.hint"]);
         StringAssert.Contains("Enter", TextHe["info.hint"]);
-        StringAssert.Contains("גרירה", TextHe["info.hint"]);
+        Assert.GreaterOrEqual(TextHe["info.hint"].IndexOf("; גרירה מזיזה את המפה", StringComparison.Ordinal), 0, TextHe["info.hint"]);
+        Assert.Less(TextHe["info.hint"].IndexOf("לחצן", StringComparison.Ordinal), 0, TextHe["info.hint"]);
     }
 
     static float Luminance(Color c) => 0.2126f * c.linear.r + 0.7152f * c.linear.g + 0.0722f * c.linear.b;
@@ -379,7 +382,7 @@ public class MapFocusTests
 /// <summary>#41 B1b: the camera keys through the Input System's own path (a virtual keyboard from its test fixture and the
 /// project-wide Camera actions), with the map stop focused and its presenter listening: the same keys reach the stop as
 /// UI key events, the camera still pans, the focus stays on the stop and nothing is picked. Synchronous, as InputTestFixture allows in edit mode.</summary>
-public class MapFocusCameraKeysTests : InputTestFixture
+public class MapFocusCameraKeysTests : SharedCameraActionsFixture
 {
     static void Send(MonoBehaviour c, string message) =>
         c.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
@@ -387,7 +390,8 @@ public class MapFocusCameraKeysTests : InputTestFixture
     [Test]
     public void TheCameraKeysStillPanWithTheStopFocused()
     {
-        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        InputSystem.actions = actions;
         var keyboard = InputSystem.AddDevice<Keyboard>();
         using var kit = new UiTestKit();
         kit.Q<VisualElement>("root").RemoveFromClassList("loading");

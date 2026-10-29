@@ -1,0 +1,30 @@
+# Named-place projections for loader acceptance, never full region boundaries.
+# Every coordinate is an existing candidate marker in the evidence ledger.
+player_regions:
+- id: tel_aviv_jaffa
+  capital_location: tel_aviv
+  capital_approval: APPROVED
+  member_hexes: [{ q: -3, r: 19 }]
+  member_locations: [tel_aviv, jaffa]
+  design_note: 'design value, not a historical boundary; named-place projection only'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa members tel_aviv and jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: central_plain
+  capital_location: rishon_lezion
+  capital_approval: APPROVED
+  member_hexes: [{ q: -4, r: 21 }]
+  member_locations: [rishon_lezion, rehovot]
+  design_note: 'design value, not a historical boundary; named-place projection only'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain members rishon_lezion and rehovot', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: valleys
+  capital_location: tiberias
+  capital_approval: APPROVED
+  member_hexes: [{ q: 10, r: 8 }]
+  member_locations: [tiberias]
+  design_note: 'design value, not a historical boundary; named-place projection only'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys member tiberias', 'owner 27 Oct 2026: APPROVED "Tiberias"']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }

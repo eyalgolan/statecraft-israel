@@ -45,8 +45,8 @@ The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 20
 ## What it looks like today
 
 <p align="center">
-  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army decision, and End turn moving the date to 15 June, with the turn report" width="820">
-  <br><em>Real gameplay, main at 8dae186, 2026-10-20.</em>
+  <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army and Defence of Degania decisions, End turn selecting each unit that needs orders for a Skip (the Golani and Carmeli Brigades, then after a cut the Negev Brigade), and the date moving to 15 June, with the turn report and the First Truce card" width="820">
+  <br><em>Real gameplay, main at 230042c, 2026-10-27. One hard cut leaves out five of the eight units End turn selects.</em>
 </p>
 <p align="center">
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
@@ -194,6 +194,7 @@ Nothing is generated live while you play.
 - **Original art, docs and data:** [CC BY 4.0](LICENSES/CC-BY-4.0.txt).
 - **Game content text** (`content/`, which paraphrases its sources, many from Wikipedia): [CC BY-SA 4.0](LICENSES/CC-BY-SA-4.0.txt).
 - **AI-generated images:** marked [CC0](LICENSES/CC0-1.0.txt), with no rights claimed.
+- **3D models by Tal Heuberger:** [CC BY-NC-ND 4.0](LICENSES/CC-BY-NC-ND-4.0.txt).
 - **Third-party material:** fonts, public-domain, CC0, CC BY 4.0 and CC BY-SA 4.0 portraits, the archival event photographs, Ben-Gurion's 1948 recording, and the Unity engine and packages are under their own terms.
 
 Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and every image's source is in [ASSETS.yaml](ASSETS.yaml).
