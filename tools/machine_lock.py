@@ -38,7 +38,7 @@ import signal
 import subprocess
 import sys
 import time
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 
 LOCK = Path(os.environ.get("STATECRAFT_MACHINE_LOCK", str(Path.home() / ".cache" / "statecraft" / "machine.lock")))
@@ -153,14 +153,25 @@ def stop_command_group(child: subprocess.Popen, grace: float = 1.0) -> None:
         time.sleep(0.02)
 
 
+@contextmanager
+def hold(*, exclusive: bool = False):
+    """Hold the canonical fair gate while cooperating Python tools run several related commands.
+
+    Acquisition has no deadline: a waiting holder is never cancelled merely because its work deadline expired.
+    Callers must check that deadline after acquisition, before starting their commands.
+    """
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with open(GATE, "a+") as gate, open(LOCK, "a+") as lock:
+        print(f"machine_lock: taking the machine lock ({'exclusive' if exclusive else 'shared'})", flush=True)
+        fcntl.flock(gate, fcntl.LOCK_EX)
+        fcntl.flock(lock, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+        fcntl.flock(gate, fcntl.LOCK_UN)
+        yield
+
+
 def main(argv: list[str] | None = None) -> int:
     a = parse(sys.argv[1:] if argv is None else argv)
-    LOCK.parent.mkdir(parents=True, exist_ok=True)
-    with open(GATE, "a+") as gate, open(LOCK, "a+") as f, ExitStack() as reservations:
-        print(f"machine_lock: taking the machine lock ({'exclusive' if a.exclusive else 'shared'})", flush=True)
-        fcntl.flock(gate, fcntl.LOCK_EX)
-        fcntl.flock(f, fcntl.LOCK_EX if a.exclusive else fcntl.LOCK_SH)
-        fcntl.flock(gate, fcntl.LOCK_UN)
+    with hold(exclusive=a.exclusive), ExitStack() as reservations:
         if a.shared and a.wait_unity:
             unity_lock = reservations.enter_context(open(UNITY_LOCK, "a+"))
             fcntl.flock(unity_lock, fcntl.LOCK_EX)
