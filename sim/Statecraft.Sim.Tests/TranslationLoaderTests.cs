@@ -178,6 +178,39 @@ public class TranslationLoaderTests
         Assert.Equal("ro", ContentLoader.Load(Disk, events, rel => files[rel], files.Keys).Translations.Single().Lang);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ReadFailuresAreReportedWithTheirFileInsteadOfBeingMissing(bool translationRead, bool accessDenied)
+    {
+        var events = Directory.GetFiles(Path.Combine(Root, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
+        var files = new Dictionary<string, string> { ["ro/ui.yaml"] = RoUi,
+            ["ro/content.yaml"] = "\"map/units_1948.yaml#units.golani.name\":\n  text: \"Brigada Golani\"\n" };
+        bool readingTranslations = false;
+        void Fail()
+        {
+            if (accessDenied) throw new UnauthorizedAccessException("read denied");
+            throw new IOException("read denied");
+        }
+        string? Content(string rel)
+        {
+            if (!translationRead && readingTranslations && rel == "map/units_1948.yaml") Fail();
+            return File.Exists(Path.Combine(Root, rel)) ? File.ReadAllText(Path.Combine(Root, rel)) : null;
+        }
+        string? Translation(string rel)
+        {
+            readingTranslations = true;
+            if (translationRead && rel == "ro/ui.yaml") Fail();
+            return files.TryGetValue(rel, out var text) ? text : null;
+        }
+        var error = Assert.Throws<ContentException>(() => ContentLoader.Load(Content, events, Translation, files.Keys));
+        Assert.Equal(translationRead ? "translations/ro/ui.yaml" : "map/units_1948.yaml", error.File);
+        Assert.Equal("(file)", error.Field);
+        Assert.Contains("read denied", error.Message);
+    }
+
     // ---- translations/he/ must match the inline Hebrew ----
 
     [Fact]

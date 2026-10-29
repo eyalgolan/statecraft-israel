@@ -332,7 +332,8 @@ namespace Statecraft.Sim
             {
                 string? text;
                 try { text = inner(rel); }
-                catch (IOException) { return null; }
+                catch (IOException e) { throw new ContentException(rel, "(file)", e.Message); }
+                catch (UnauthorizedAccessException e) { throw new ContentException(rel, "(file)", e.Message); }
                 return text != null && text.Length > 0 && text[0] == '\uFEFF' ? text.Substring(1) : text;
             };
             readFile = rel =>

@@ -94,8 +94,13 @@ namespace Statecraft.Sim
                 string? Text(string name)
                 {
                     if (!kv.Value.Contains(name)) return null;
-                    return readTranslation(lang + "/" + name)
-                        ?? throw new ContentException($"{Folder}/{lang}/{name}", "(file)", "listed but missing");
+                    try
+                    {
+                        return readTranslation(lang + "/" + name)
+                            ?? throw new ContentException($"{Folder}/{lang}/{name}", "(file)", "listed but missing");
+                    }
+                    catch (IOException e) { throw new ContentException($"{Folder}/{lang}/{name}", "(file)", e.Message); }
+                    catch (UnauthorizedAccessException e) { throw new ContentException($"{Folder}/{lang}/{name}", "(file)", e.Message); }
                 }
                 var set = Translations.Parse(lang, Text(Translations.UiFile), Text(Translations.EventsFile), Text(Translations.ContentFile));
                 Translations.CheckDeclaredLanguage(set);
