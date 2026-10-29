@@ -142,6 +142,10 @@ public class TalModelsShots
         for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
         Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
         const int q = 12, r = 4;
+        Assert.IsTrue(root.Units!.Tokens.Any(t => t.Token.Unit.Id == "lebanese_army" && t.Q == q && t.R == r),
+            "capture precondition: the Lebanese army must actually be present at Malikiyya; original arrived="
+            + UnitFigures.Arrived(UnitFigures.LebaneseRegular) + "; roster="
+            + string.Join(", ", root.Units.Tokens.Select(t => $"{t.Token.Unit.Id}@{t.Q},{t.R}")));
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
         foreach (var (what, distance) in new[] { ("unit", 40000f), ("close", CameraController.MinDistance) })
         {
