@@ -412,9 +412,9 @@ def test_a_failing_site_retry_stays_pending_and_the_night_stays_skipped(env, mon
             raise ns.Refused("site", "still serves 0.3.0")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "run failed")} if where == "dispatch" else None)
-    gh.latest = "v0.3.0-nightly.20261027"
+    gh.latest = "v0.3.1"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
+    assert ns.load_state(env.state_path).site_pending == "0.3.1"
     assert "SKIPPED" in env.log() and "still failed" in env.log() and env_notes == []
 
 
@@ -425,9 +425,9 @@ def test_a_non_refusal_error_in_the_site_retry_keeps_the_night_skipped_and_pendi
             raise KeyError("databaseId")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": KeyError("databaseId")} if where == "dispatch" else None)
-    gh.latest = "v0.3.0-nightly.20261027"
+    gh.latest = "v0.3.1"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
+    assert ns.load_state(env.state_path).site_pending == "0.3.1"
     assert "KeyError" in env.log() and "still failed" in env.log()
 
 
