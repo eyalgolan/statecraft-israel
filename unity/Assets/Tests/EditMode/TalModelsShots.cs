@@ -229,6 +229,24 @@ public class TalModelsShots
                 Assert.IsTrue(viewport.z > 0f && viewport.x > 0f && viewport.x < 1f && viewport.y > 0f
                     && viewport.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
                     "the admitted subject is inside the map viewport below the top bar");
+                var live = map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army");
+                var visible = live.GetComponentsInChildren<UnitFigureResidency>(true)
+                    .Select(o => o.transform.Find(UnitFigures.ModelName)).Where(m => m != null)
+                    .SelectMany(m => m.GetComponentsInChildren<Renderer>(true))
+                    .Where(r => r.enabled && !r.forceRenderingOff && r.gameObject.activeInHierarchy).ToArray();
+                Assert.GreaterOrEqual(visible.Length, 3, "three live original figure renderers must be framed");
+                foreach (var renderer in visible)
+                {
+                    var box = renderer.bounds;
+                    for (int corner = 0; corner < 8; corner++)
+                    {
+                        var point = camera.WorldToViewportPoint(new Vector3((corner & 1) == 0 ? box.min.x : box.max.x,
+                            (corner & 2) == 0 ? box.min.y : box.max.y, (corner & 4) == 0 ? box.min.z : box.max.z));
+                        Assert.IsTrue(point.z > 0f && point.x > 0f && point.x < 1f && point.y > 0f
+                            && point.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
+                            $"whole original figure {renderer.name} corner {corner} must be visible below the top bar: {point}");
+                    }
+                }
                 Debug.Log($"MODEL-OBS admitted readiness renders={renders + 2} viewport={viewport.ToString("R")}");
                 Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "the admitted source is ready before the frame");
                 Assert.Greater(prefetch.ResidencySnapshot().ownedLeases, 0, "the source-prefetch holder owns its admitted lease");
