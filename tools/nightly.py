@@ -741,6 +741,10 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
     whether the settings came back."""
     try:
         gz = build_web(night, runner, pages=False, free_gb=free_gb)
+        # Bee may retire the previous player's files while building Pages. Keep the exact first player outside its outputs.
+        saved_gz = night.run_dir / "Web-gzip"
+        shutil.copytree(gz, saved_gz)   # refuse a collision or incomplete copy; never reuse older run evidence
+        gz = saved_gz
         pages = build_web(night, runner, pages=True, free_gb=free_gb)
     except BaseException:
         try:
