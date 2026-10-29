@@ -610,7 +610,11 @@ def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
     """Checkpoint recovery before trying it. Only a verified result clears it; every outcome is reported."""
     target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
     state.latest_recovery_pending = LatestRecovery(failed, previous)
-    checkpoint_saved = save() is not False
+    try:
+        checkpoint_saved = save() is not False
+    except Exception as e:
+        checkpoint_saved = False
+        print(f"could not checkpoint Latest recovery: {_detail(e)}", file=sys.stderr)
     recovered = False
     try:
         acted, current = gh.restore_latest(previous, failed)
@@ -627,7 +631,11 @@ def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
         recovered = True
     except Exception as e:
         note = f"Latest recovery failed ({target}): {_detail(e)}; check by hand"
-    result_saved = save() is not False
+    try:
+        result_saved = save() is not False
+    except Exception as e:
+        result_saved = False
+        print(f"could not save Latest recovery result: {_detail(e)}", file=sys.stderr)
     if not checkpoint_saved or not result_saved:
         note += "; recovery state could not be saved; check by hand"
         recovered = False
