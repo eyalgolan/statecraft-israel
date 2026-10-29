@@ -315,7 +315,7 @@ Sources used, all opened on 27 October 2026 (UTC): the UN Special Committee repo
 A/36/579 and A/37/485 (`https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf`; downloaded 2,639,242, 6,762,152,
 4,475,171, 8,540,129 and 5,645,981 bytes; text layer searched, the two paragraphs quoted below read on the page image);
 the Foreign Relations of the United States volume VIII (FRUS 1977-80 vol. VIII, TEI file
-`https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1977-80v08.xml`, 7,440,837 bytes, read as text,
+`https://raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1977-80v08.xml`, 7,440,837 bytes, read as text,
 not on a page image); and the JTA Daily News Bulletin (archive wp-json endpoint as in "How it was done"; the PDF read
 on a page image).
 
@@ -434,7 +434,7 @@ or title contains the query string). All range 1978-01-01 to 1982-04-30 unless t
 | Source | URL or identifier | Day read | Used for |
 |---|---|---|---|
 | JTA Daily News Bulletin, 5 Feb 1982, p. 3 | http://pdfs.jta.org/1982/1982-02-05_025.pdf | 2026-10-27 | Kadesh Barnes settlement, dateline Feb. 4 (image) |
-| FRUS 1977-80 vol. VIII, documents 188 (p. 922) and 194 (p. 941) | https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1977-80v08.xml | 2026-10-27 | Cabinet decision of 8 Jan 1978; Begin's count of 16 Jan 1978 |
+| FRUS 1977-80 vol. VIII, documents 188 (p. 922) and 194 (p. 941) | https://raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1977-80v08.xml | 2026-10-27 | Cabinet decision of 8 Jan 1978; Begin's count of 16 Jan 1978 |
 | UN A/36/579, p. 24, para 82; A/33/356, p. 21, para 78 | `https://documents.un.org/api/symbol/access?s=<symbol>&l=en&t=pdf` | 2026-10-27 | counts, outposts (pages read as images) |
 | UN A/34/631, A/35/425, A/37/485 | same URL form | 2026-10-27 | text-layer search, no new row |
 

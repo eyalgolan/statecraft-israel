@@ -418,4 +418,18 @@ public class Gdd03TrainingCentreFixtureTests
         Assert.Equal(cloned, clone.Describe());
         Assert.NotEqual(cloned, a.Describe());
     }
+
+    // R-TRAIN-005: the initialized ledger owns completion; consistent content is required before any course action.
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void ReceptionLimitMustMatchTheInitializedLedger(int delta)
+    {
+        var c = Catalogue(); var state = State(c); var before = state.Describe();
+        c.Gdd03Balance!.Values["reception.turns"] = Agreed(6 + delta);
+        var error = Assert.Throws<ContentException>(() => new Gdd03TrainingCentreFixture(c, state, Centres()));
+        Assert.Equal(Gdd03BalanceCatalogue.FileName, error.File);
+        Assert.Equal("values.reception.turns", error.Field);
+        Assert.Equal(before, state.Describe());
+    }
 }

@@ -4,17 +4,17 @@ Region review index: inclusive physical lines in `gdd03-regions-capitals-fields.
 
 | Region | Ledger lines |
 | --- | --- |
-| galilee | 167–6163 |
-| valleys | 6164–9699 |
-| haifa_sharon | 9700–16719 |
-| tel_aviv_jaffa | 16720–20215 |
-| central_plain | 20216–26472 |
-| jerusalem_hills | 26473–35029 |
-| northern_hills | 35030–40396 |
-| southern_coast | 40397–49115 |
-| negev | 49116–50727 |
-| Shared provenance, camp and loader context | 20–166 |
-| Shared gaps, retained roster, counts and source-layer notes | 50728–51109 |
+| galilee | 171–6232 |
+| valleys | 6233–9833 |
+| haifa_sharon | 9834–16918 |
+| tel_aviv_jaffa | 16919–20479 |
+| central_plain | 20480–26801 |
+| jerusalem_hills | 26802–35423 |
+| northern_hills | 35424–40855 |
+| southern_coast | 40856–49639 |
+| negev | 49640–51316 |
+| Shared provenance, camp and loader context | 20–170 |
+| Shared gaps, retained roster, counts and source-layer notes | 51317–51699 |
 
 Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026). This is approval of the supplied design content by name. Historical rows still need a person's check. SOURCED means the inherited narrow assertion has cited evidence; it does not mean a person has checked this adaptation.
 
@@ -26,6 +26,7 @@ Owner decision, 27 Oct 2026, relayed by the coordinator: **APPROVED**: all six c
 | Kiryat Shmuel camp design region | "Haifa-Sharon" | haifa_sharon |
 | Haifa-Sharon extent | "Keep as proposed" | Existing associations retained |
 | Jerusalem extent | "Keep as proposed" | Existing associations retained |
+| Opening fields, housing and Industry per region (#1691) | "Approve as proposed" | Each region's opening allocation rows; see [gdd03-region-allocation.md](gdd03-region-allocation.md) |
 
 The evidence ledger is [gdd03-regions-capitals-fields.yaml](gdd03-regions-capitals-fields.yaml). It preserves all 326 member rows, shared candidate hexes, source citations, control objects, field/facility caveats and the retained roster from the approved revision. The design decisions above are separate from `capital_status`, `boundary_status`, `binding_status`, control and human-review fields. Safed, Haifa, Jerusalem, Nablus, Gaza and Beersheba retain their individual capital status; none is newly designated APPROVED.
 
@@ -45,7 +46,7 @@ The follow-up `research_notes/gdd03-regions.projections.yaml` supplies only the 
 
 The 385 control objects retain 33 SOURCED, 255 PARTIAL-EVIDENCE and 97 NEEDS-RESEARCH statuses. Every unconfirmed value stays null. Historical, shared-hex and facility control are not inferred from associations or member control. Same-day captures remain partial, including Tamra, Umm ez Zinat, Fajja and Mughar. The Old City ruling changes no extent or control row here.
 
-No approved set of opening prepared-field coordinates/workability/control/staffing bindings is supplied. Existing future field markers and symbolic regional allocations remain evidence only, not opening slots. No `gdd03-fields.yaml`, new allocation, balance key, owner/Amir number, army value or population is added. `A` remains Deferred and free civilians remain `34 - A` in the inherited ledger. Staffing belongs to #1717 and farming mechanics to their existing owners.
+No approved set of opening prepared-field coordinates/workability/control/staffing bindings is supplied. Existing future field markers remain evidence only, not opening slots. The per-region opening counts of prepared fields, housing projects (places) and Industry slots are recorded in each region's `opening_field_allocation`, `opening_housing_allocation` and `opening_industry_allocation` rows by owner ruling ("Approve as proposed", owner ruling, 27 October 2026, #1691); every row is PARTIAL-EVIDENCE, and source, method and limits are in [gdd03-region-allocation.md](gdd03-region-allocation.md). By that ruling the housing and Industry counts follow Jewish population, for this opening allocation only; no facility inventory is inferred from population. Field hexes stay empty and the farmer tier mix by region stays Deferred. No `gdd03-fields.yaml`, balance key, Amir number, army value or population is added, and nothing reaches the runtime catalogue. `A` remains Deferred and free civilians remain `34 - A` in the inherited ledger. Staffing belongs to #1717 and farming mechanics to their existing owners.
 
 Historical row review, schema/runtime acceptance, all managed and Unity gates, and legacy/gdd-0.1 byte identity remain PENDING. Test source exercises the shared strict loader and existing golden manifest; it is not evidence of a run. No human review sign-off is supplied by this document or by design approval.
 

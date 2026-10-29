@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // R-CAMERA-001: owner ruling, 27 October 2026, #1720.
-public class FixedNorthCameraTests : InputTestFixture
+public class FixedNorthCameraTests : SharedCameraActionsFixture
 {
     GameObject go = null!;
     CameraRig rig = null!;

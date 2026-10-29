@@ -58,9 +58,9 @@ Wikipedia (pointers; footnotes followed where they could be):
 
 | Short name | URL |
 |---|---|
-| he.wiki משרד העלייה והקליטה | https://he.wikipedia.org/wiki/משרד_העלייה_והקליטה |
-| he.wiki חיים משה שפירא | https://he.wikipedia.org/wiki/חיים_משה_שפירא |
-| en.wiki Ministry of Aliyah and Integration | https://en.wikipedia.org/wiki/Ministry_of_Aliyah_and_Integration |
+| he.wiki משרד העלייה והקליטה | https://he.wikipedia.org/w/index.php?title=משרד_העלייה_והקליטה&oldid=43976404 |
+| he.wiki חיים משה שפירא | https://he.wikipedia.org/w/index.php?title=חיים_משה_שפירא&oldid=43239310 |
+| en.wiki Ministry of Aliyah and Integration | https://en.wikipedia.org/w/index.php?title=Ministry_of_Aliyah_and_Integration&oldid=1372756786 |
 | he.wiki מבצע בלק | https://he.wikipedia.org/wiki/מבצע_בלק |
 | he.wiki אוויה S-199 | https://he.wikipedia.org/wiki/אוויה_S-199 |
 | he.wiki מבצע ולווטה | https://he.wikipedia.org/wiki/מבצע_ולווטה |

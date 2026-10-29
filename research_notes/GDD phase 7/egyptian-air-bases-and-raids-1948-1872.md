@@ -36,7 +36,7 @@ Tal Heuberger's Egyptian Spitfire and Dakota C-47 models need map positions and 
 | JTA 20 Oct 1948 | archive page only; no "original bulletin" link on the page and none found by probing numbers 180 to 260 on pdfs.jta.org | web page: https://www.jta.org/archive/israeli-planes-control-skies-over-negev-two-egyptian-planes-downed-in-mediterranean |
 | UN cable of 16 May | Jewish Agency cable to the UN Secretary-General quoting Shertok's telegram of 15 May, 9:20 p.m. | page image: https://digitallibrary.un.org/record/649823/files/S_746-EN.pdf (file name `S_746-EN.pdf`; the document number is partly obscured by a stamp on the image) |
 | UN cable of 19 May | Cablegram dated 19 May 1948 from the Palestine Truce Commission to the President of the Security Council, quoting Shertok to Kohn | web page: https://www.un.org/unispal/document/auto-insert-211382/ (page shows document symbol S/757) |
-| FRUS 1948 V | *Foreign Relations of the United States, 1948, Volume V, Part 2* (TEI, HistoryAtState) | raw XML: https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1948v05p2.xml, documents d194, d853, d857; page = nearest `pb` before the quote |
+| FRUS 1948 V | *Foreign Relations of the United States, 1948, Volume V, Part 2* (TEI, HistoryAtState) | raw XML: https://raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1948v05p2.xml, documents d194, d853, d857; page = nearest `pb` before the quote |
 
 ## A. Airfields
 
