@@ -178,7 +178,20 @@ public class TalModelsShots
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
         foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 18000f), ("close", CameraController.MinDistance) })
         {
-            Look(target, distance);
+            if (what == "admitted")
+            {
+                var anchor = prefetch.transform.position;
+                Assert.Less(Vector2.Distance(new Vector2(anchor.x, anchor.z), new Vector2(target.x, target.z)),
+                    2f * map.Residency.Units.EnterM, "one real focus must be able to admit both anchors");
+                var middle = new Vector3((anchor.x + target.x) * .5f, 0f, (anchor.z + target.z) * .5f);
+                Look(middle, distance);
+                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var measured));
+                var rig = Camera.main.GetComponent<CameraRig>();
+                // The UI inset shifts the centre ray. Pan the real rig so its ground focus, not just LookAt, is the midpoint.
+                rig.LookAt += new Vector3(middle.x - measured.x, 0f, middle.z - measured.z);
+                rig.Apply();
+            }
+            else Look(target, distance);
             for (int i = 0; i < 5; i++) yield return null;
             if (what == "admitted")
             {
@@ -189,6 +202,34 @@ public class TalModelsShots
                     "capture control requires the actual placed subject inside the approved enter radius");
                 Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(prefetch.transform.position.x, prefetch.transform.position.z)), map.Residency.Units.EnterM,
                     "capture control requires the source-prefetch anchor inside the approved enter radius");
+                var camera = Camera.main;
+                var frame = new RenderTexture(CivMovementShots.Width, CivMovementShots.Height, 24, RenderTextureFormat.ARGB32);
+                var previous = camera.targetTexture;
+                bool Ready() => prefetch != null && prefetch.ResidencySnapshot().ownedLeases > 0
+                    && UnitFigures.Arrived(UnitFigures.LebaneseRegular)
+                    && map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army") != null;
+                int renders = 0;
+                try
+                {
+                    // Use the real render callbacks to re-admit the original after the deliberately out-of-band frame.
+                    for (; renders < 30; renders++)
+                    {
+                        camera.targetTexture = frame; camera.Render(); camera.targetTexture = previous;
+                        yield return null;
+                        if (Ready()) break;
+                    }
+                    ObserveSubject(map, root.Units, "admitted primed", target);
+                    Assert.IsTrue(Ready(), $"source, lease and token must be ready after at most 30 real renders ({renders + 1})");
+                    camera.targetTexture = frame; camera.Render(); camera.targetTexture = previous;
+                    yield return null;
+                    Assert.IsTrue(Ready(), "admitted readiness must survive another real render");
+                }
+                finally { camera.targetTexture = previous; frame.Release(); Object.DestroyImmediate(frame); }
+                var viewport = camera.WorldToViewportPoint(target);
+                Assert.IsTrue(viewport.z > 0f && viewport.x > 0f && viewport.x < 1f && viewport.y > 0f
+                    && viewport.y < 1f - Mathf.Clamp(camera.GetComponent<CameraRig>().TopInset, 0f, CameraRig.MaxTopInset),
+                    "the admitted subject is inside the map viewport below the top bar");
+                Debug.Log($"MODEL-OBS admitted readiness renders={renders + 2} viewport={viewport.ToString("R")}");
                 Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "the admitted source is ready before the frame");
                 Assert.Greater(prefetch.ResidencySnapshot().ownedLeases, 0, "the source-prefetch holder owns its admitted lease");
                 Assert.IsNotNull(map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army"),
