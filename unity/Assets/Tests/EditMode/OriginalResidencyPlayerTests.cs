@@ -181,6 +181,20 @@ public sealed class OriginalResidencyPlayerTests
         yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!))
             && models.Count > 0 && models.Values.Cast<object>().All(model =>
                 (bool)model.GetType().GetField("answered", Flags)!.GetValue(model)!), "null Near replies answered");
+        Assert.IsTrue((bool)Call(layer, typeof(TownModelLayer), "WantsTown", focus.Key, camera)!,
+            "null-reply proof requires the actual focus town to be admitted");
+        var required = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("required", Flags)!.GetValue(layer)!;
+        Assert.IsTrue(required.Contains(focus.Key), "the focus town must require original models");
+        var kinds = ((System.Collections.IEnumerable)required[focus.Key]!).Cast<object>().ToArray();
+        Assert.IsNotEmpty(kinds);
+        foreach (var kind in kinds)
+        {
+            Assert.IsTrue(models.Contains(kind), "every required focus-town kind must have a response");
+            var model = models[kind]!;
+            Assert.IsTrue((bool)model.GetType().GetField("answered", Flags)!.GetValue(model)!);
+            Assert.IsNull(model.GetType().GetField("mesh", Flags)!.GetValue(model));
+            Assert.IsNull(model.GetType().GetField("material", Flags)!.GetValue(model));
+        }
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "WantsWholeTown", focus.Key, camera)!);
         Assert.IsFalse(asks.Any(a => a.id == focus.Model));
