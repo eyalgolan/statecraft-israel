@@ -42,6 +42,9 @@ namespace Statecraft.Sim
             pupilsPerTeacher = content.RequirePopulationInteger("profession.trainees_per_teacher");
             bedsPerCamp = content.RequirePopulationInteger("reception.capacity");
             receptionTurns = content.RequirePopulationInteger("reception.turns");
+            if (receptionTurns != state.PopulationLedger.ReceptionLimit)
+                throw new ContentException(Gdd03BalanceCatalogue.FileName, "values.reception.turns",
+                    "must match the initialized population ledger");
             this.centres = new SortedDictionary<string, Gdd03FixtureTrainingCentre>(StringComparer.Ordinal);
             var parents = new HashSet<string>(StringComparer.Ordinal);
             foreach (var centre in centres)
