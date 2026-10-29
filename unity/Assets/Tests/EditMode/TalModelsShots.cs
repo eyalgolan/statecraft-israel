@@ -171,6 +171,10 @@ public class TalModelsShots
         var map = Object.FindFirstObjectByType<MapScene>();
         var target = new Vector3((float)subject.Spot.X, 0f, (float)subject.Spot.Z);
         target.y = map.Terrain.SampleHeight(target) + map.Terrain.transform.position.y;
+        var demands = root.Units!.GetComponentsInChildren<UnitFigureResidency>(true)
+            .Where(o => o.name.StartsWith("Original demand lebanese_army|", StringComparison.Ordinal)).ToArray();
+        Assert.AreEqual(1, demands.Length, "capture precondition: one real Lebanese source-prefetch holder");
+        var prefetch = demands[0];
         var here = root.Units!.Tokens.Where(t => t.Q == q && t.R == r).Select(t => $"{t.Token.Unit.Id} ({t.Token.ArtType})").ToList();
         foreach (var (what, distance) in new[] { ("unit", 40000f), ("admitted", 18000f), ("close", CameraController.MinDistance) })
         {
@@ -183,6 +187,12 @@ public class TalModelsShots
                 Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var focus));
                 Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(target.x, target.z)), map.Residency.Units.EnterM,
                     "capture control requires the actual placed subject inside the approved enter radius");
+                Assert.Less(Vector2.Distance(new Vector2(focus.x, focus.z), new Vector2(prefetch.transform.position.x, prefetch.transform.position.z)), map.Residency.Units.EnterM,
+                    "capture control requires the source-prefetch anchor inside the approved enter radius");
+                Assert.IsTrue(UnitFigures.Arrived(UnitFigures.LebaneseRegular), "the admitted source is ready before the frame");
+                Assert.Greater(prefetch.ResidencySnapshot().ownedLeases, 0, "the source-prefetch holder owns its admitted lease");
+                Assert.IsNotNull(map.Terrain.transform.Find(UnitLayer.RootName + "/Tokens/lebanese_army"),
+                    "the admitted token exists before the frame");
             }
             ObserveSubject(map, root.Units, what + " before", target);
             CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"malikiyya-{what}-{(hebrew ? "he" : "en")}"));
