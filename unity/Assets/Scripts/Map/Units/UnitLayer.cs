@@ -221,7 +221,7 @@ namespace Statecraft.Game.Map.Units
         /// <summary>As the render callback does: for a still render (the editor's promo captures, the tests), and for the map's
         /// names before they are placed (GameRoot), so the keep-clear boxes hold each badge and flag where this camera draws
         /// them: the badge's box is its own cube, not a box round every place the camera's yaw could take it (that box, about
-        /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation.</summary>
+        /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation while model geometry is unchanged.</summary>
         public void FaceCamera(Camera cam)
         {
             if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);

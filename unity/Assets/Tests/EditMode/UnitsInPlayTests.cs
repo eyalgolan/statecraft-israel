@@ -825,6 +825,9 @@ public class UnitsInPlayTests
     public void RetiredFigureMeshesRefreshKeepClearEvenAtTheSameCameraPose(bool moveCamera)
     {
         var map = BuildMap();
+        var originalCamera = Camera.main;
+        var originalPosition = originalCamera.transform.position;
+        var originalRotation = originalCamera.transform.rotation;
         var replacement = new Mesh { name = "Replacement figure bounds" };
         try
         {
@@ -847,10 +850,15 @@ public class UnitsInPlayTests
             Assert.DoesNotThrow(() => layer.FaceCamera(cam), "retired meshes are no longer live bounds sources");
             int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
             Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
             Assert.IsTrue(layer.KeepClear[index][1].Contains(child.transform.TransformPoint(replacement.bounds.center)),
                 "keep-clear must include the live replacement, including when the camera did not move");
         }
-        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement); }
+        finally
+        {
+            if (originalCamera != null) originalCamera.transform.SetPositionAndRotation(originalPosition, originalRotation);
+            UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement);
+        }
     }
 
     [Test]

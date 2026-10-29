@@ -185,6 +185,9 @@ public class TalModelsShots
                     2f * map.Residency.Units.EnterM, "one real focus must be able to admit both anchors");
                 var middle = new Vector3((anchor.x + target.x) * .5f, 0f, (anchor.z + target.z) * .5f);
                 Look(middle, distance);
+                // Face south so the displaced token sits below its source anchor, clear of the top bar.
+                Camera.main.GetComponent<CameraRig>().Yaw = 180f;
+                Camera.main.GetComponent<CameraRig>().Apply();
                 Assert.IsTrue(CollectionResidencyView.TryGroundFocus(Camera.main, out var measured));
                 var rig = Camera.main.GetComponent<CameraRig>();
                 // The UI inset shifts the centre ray. Pan the real rig so its ground focus, not just LookAt, is the midpoint.
