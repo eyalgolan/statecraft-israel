@@ -99,6 +99,31 @@ public class Gdd03AssignmentFixtureTests
         } finally { CultureInfo.CurrentCulture = previous; }
     }
 
+    // R-CITY-001, R-POP-002: an assigned worker's reassignment to a bound, non-full, same-kind slot in a
+    // foreign region is refused at the ledger region check inside the no-release-first Replace path.
+    [Fact] public void AssignedWorkerForeignRegionReassignmentKeepsOriginalJob()
+    {
+        var c = Content();
+        var own = new PopulationLocation("synthetic-own"); var foreign = new PopulationLocation("synthetic-foreign");
+        var ownIndustry = new Gdd03FixtureSlot("synthetic-own-industry", Gdd03FixtureWork.Industry, 1, "generic");
+        var foreignFarm = new Gdd03FixtureSlot("synthetic-foreign-farm", Gdd03FixtureWork.Farm, 1, "generic");
+        var bindings = new PopulationBindings(new[] { own, foreign }, new[] {
+                new PopulationTarget(ownIndustry.Id, PopulationAssignmentKind.Work, own.Region),
+                new PopulationTarget(foreignFarm.Id, PopulationAssignmentKind.Work, foreign.Region) },
+            Array.Empty<string>(), Array.Empty<string>());
+        var worker = new PopulationUnit(0, PopulationStatus.FreeCivilian, 6, own, PopulationAssignment.Unassigned,
+            CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None);
+        var s = PopulationLedger.CreateFixture(c, bindings, new[] { new PopulationInventoryRow("synthetic", 0, worker) });
+        var f = new Gdd03AssignmentFixture(c, s, new[] { ownIndustry, foreignFarm });
+
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, ownIndustry.Id));
+        var before = s.Describe();
+        var error = Assert.Throws<ArgumentException>(() => f.Assign(0, foreignFarm.Id));
+        Assert.Contains("Assignment region/progress is inconsistent", error.Message); // region branch, not unknown/full/unbound
+        Assert.Equal(before, s.Describe());
+        Assert.Equal(ownIndustry.Id, s.PopulationLedger.Get(0).Assignment.Target);
+    }
+
     // R-CITY-001, R-POP-002: foundation refusal rolls back a valid-capacity destination too.
     [Fact] public void FoundationRefusalAndAggregateGuardsRemainAtomic()
     {
