@@ -397,8 +397,9 @@ def test_site_pending_is_retried_before_skipping(env, monkeypatch):
     served = []
     monkeypatch.setattr(nightly, "demo_serves", lambda url, version, *, deadline: served.append((url, version, deadline)))
     gh = FakeGH()
+    gh.latest = "v0.3.0-nightly.20261027"
     assert env.night(pending_state(), gh) == "SKIPPED"
-    assert gh.names() == ["dispatch_site"] and gh.calls[0][1] > time.monotonic()
+    assert gh.names() == ["latest_tag", "dispatch_site"] and gh.calls[1][1] > time.monotonic()
     assert [s[:2] for s in served] == [(env.cfg.site_demo_url, "0.3.0-nightly.20261027")]
     assert ns.load_state(env.state_path).site_pending is None   # the retry worked, so nothing is pending
     assert "SKIPPED" in env.log() and "now serves" in env.log()
@@ -411,6 +412,7 @@ def test_a_failing_site_retry_stays_pending_and_the_night_stays_skipped(env, mon
             raise ns.Refused("site", "still serves 0.3.0")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": ns.Refused("site", "run failed")} if where == "dispatch" else None)
+    gh.latest = "v0.3.0-nightly.20261027"
     assert env.night(pending_state(), gh) == "SKIPPED"
     assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
     assert "SKIPPED" in env.log() and "still failed" in env.log() and env_notes == []
@@ -423,6 +425,7 @@ def test_a_non_refusal_error_in_the_site_retry_keeps_the_night_skipped_and_pendi
             raise KeyError("databaseId")
     monkeypatch.setattr(nightly, "demo_serves", demo)
     gh = FakeGH(fail={"dispatch_site": KeyError("databaseId")} if where == "dispatch" else None)
+    gh.latest = "v0.3.0-nightly.20261027"
     assert env.night(pending_state(), gh) == "SKIPPED"
     assert ns.load_state(env.state_path).site_pending == "0.3.0-nightly.20261027"
     assert "KeyError" in env.log() and "still failed" in env.log()
@@ -1329,7 +1332,9 @@ def test_a_site_failure_after_publish_retries_once_then_refuses_and_marks_site_p
     st = ns.State(last_published=last_published())
     with pytest.raises(ns.Refused) as e:
         publish(night, st, gh, pub, env)
-    assert e.value.gate == "site" and "public" in e.value.detail and "unchanged" in e.value.detail
+    assert e.value.gate == "site" and "public" in e.value.detail
+    assert "unchanged" not in e.value.detail
+    assert "unverified" in e.value.detail and "may have changed" in e.value.detail
     assert gh.names().count("dispatch_site") == 2 and "delete_draft" not in gh.names()
     assert st.last_published.tag == TAG and st.last_published.sha == night.sha   # the release is public
     assert st.site_pending == night.version and st.open_draft is None
@@ -2634,7 +2639,7 @@ def test_failed_recovery_is_persisted_then_retried_before_next_preflight(night, 
     gh.fail.clear()
     gh.calls.clear()
     assert env.night(gh=gh) == "SKIPPED"
-    assert gh.names() == ["restore_latest", "dispatch_site"]
+    assert gh.names() == ["restore_latest", "latest_tag", "dispatch_site"]
     assert gh.latest == "v0.3.1"
     assert ns.load_state(env.state_path).latest_recovery_pending is None
     assert "restored previous Latest v0.3.1" in env.log()
@@ -2679,7 +2684,7 @@ def test_pending_recovery_precedes_unchanged_main_and_site_retry(env, monkeypatc
     gh.dispatch_site = dispatch
     monkeypatch.setattr(nightly, "demo_serves", lambda *a, **k: None)
     assert env.night(gh=gh) == "SKIPPED"
-    assert gh.names() == ["restore_latest"] + (["dispatch_site"] if site_pending else [])
+    assert gh.names() == ["restore_latest"] + (["latest_tag", "dispatch_site"] if site_pending else [])
     assert observations == ([("v0.3.1", None)] if site_pending else [])
     assert json.loads(env.state_path.read_text()).get("latest_recovery_pending") is None
     gh.calls.clear()
@@ -2816,3 +2821,24 @@ def test_raising_recovery_save_still_repairs_latest_and_returns_refusal(env, fai
     assert err is None
     assert saves == ["checkpoint", "result"] and not recovered
     assert "could not be saved" in detail and "check by hand" in detail
+
+@pytest.mark.parametrize("latest", ["v0.3.1", "v0.4.0"])
+def test_pending_demo_verifies_current_latest_after_rollback(env, monkeypatch, latest):
+    gh = FakeGH(); gh.latest = latest
+    served = []
+    monkeypatch.setattr(nightly, "demo_serves", lambda url, version, *, deadline: served.append(version))
+    assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
+    assert served == [latest[1:]]
+    assert gh.latest == latest and gh.names() == ["latest_tag", "dispatch_site"]
+    assert ns.load_state(env.state_path).site_pending is None
+    gh.calls.clear()
+    assert env.night(gh=gh) == "SKIPPED" and gh.calls == []
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_pending_demo_without_verified_latest_preserves_hold_and_never_dispatches(env, monkeypatch, missing):
+    gh = FakeGH(fail={} if missing else {"latest_tag": OSError("offline")})
+    if missing: gh.latest = None
+    monkeypatch.setattr(nightly, "demo_serves", lambda *a, **k: pytest.fail("unverified Latest must not be served"))
+    assert env.night(ns.State(last_published=ns.Published(TAG, SHA, "0.3.2", {}, None), site_pending="0.3.2"), gh) == "SKIPPED"
+    assert gh.names() == ["latest_tag"]
+    assert ns.load_state(env.state_path).site_pending == "0.3.2"

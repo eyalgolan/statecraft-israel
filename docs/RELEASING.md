@@ -173,6 +173,8 @@ macOS IL2CPP parity check is not an MVP release gate.
 
 ## Nightly builds
 
+The site selects GitHub Latest for `/demo/`, matching the release chosen by nightly recovery. Only when the Latest lookup returns HTTP 404 does it fall back to the newest published prerelease. Other lookup failures stop deployment. A post-publication site failure leaves the served demo unverified; it must not be reported as unchanged without readback.
+
 Every night at 03:00 (Israel time) the newest `main` is built and, only if every gate passes, becomes the public web
 game: a normal GitHub release marked **Latest**, tagged `vX.Y.Z`, which the website's `/demo/` serves, and, once itch
 pushes are enabled, the itch.io page. X.Y.Z is one patch above the numerically highest published release tag matching
