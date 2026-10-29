@@ -1,9 +1,11 @@
 import dataclasses
 import json
+import signal
 import subprocess
 import sys
 import time
 import zipfile
+from contextlib import contextmanager
 from datetime import date, datetime
 from pathlib import Path
 
@@ -14,6 +16,8 @@ pytest.importorskip("fcntl")   # nightly imports unity_postmerge, which locks wi
 import nightly
 import nightly_state as ns
 from conftest import FakeRunner
+
+REAL_POPEN = subprocess.Popen
 
 SHA = "a" * 40
 OLD = "b" * 40
@@ -165,6 +169,13 @@ class Env:
 
 @pytest.fixture
 def env(tmp_path, monkeypatch, no_processes):
+    original_lock = nightly.unity_postmerge.machine_lock.LOCK
+    original_gate = nightly.unity_postmerge.machine_lock.GATE
+    # Real managed-lock contexts stay on test-local files, never the machine-wide runtime gate.
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "LOCK", tmp_path / "machine.lock")
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "GATE", tmp_path / "machine.lock.gate")
+    assert nightly.unity_postmerge.machine_lock.LOCK != original_lock
+    assert nightly.unity_postmerge.machine_lock.GATE != original_gate
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: env_notes.append(a))
     env_notes.clear()
     return Env(tmp_path, monkeypatch)
@@ -450,7 +461,7 @@ class EnvRunner(FakeRunner):
         super().__init__()
         self.envs = []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         return super().run(cmd, cwd=cwd, log=log, deadline=deadline, env=env, holder=holder)
 
@@ -484,7 +495,7 @@ class LocaleRunner(EnvRunner):
         super().__init__()
         self.by_lang = {"he_IL.UTF-8": he, "en_US.UTF-8": en}
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         if cmd[:2] == ["dotnet", "test"]:
             self.calls.append(list(cmd))
             self.envs.append((list(cmd), env, holder))
@@ -502,6 +513,7 @@ def gates_runner(night, env, *, check=(0, OK_CHECK), rg=(0, "RELEASE GATE OK\n")
     r.add(["uv", "run", f"{clone}/tools/build_sim_for_unity.py"], 0, "")
     r.add(["bash", "scripts/check.sh", "origin/main"], *check)
     r.add(["bash", "scripts/oss/release_gate.sh"], *rg)
+    r.add(["dotnet", "build-server", "shutdown"], out="servers stopped")
     return r
 
 
@@ -512,10 +524,13 @@ def test_gates_run_in_order_with_both_locales(night, env):
         ["uv", "run", f"{night.cfg.clone}/tools/build_sim_for_unity.py"],
         ["bash", "scripts/check.sh", "origin/main"],
         ["bash", "scripts/oss/release_gate.sh"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
-        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+         "-nodeReuse:false", "-p:UseSharedCompilation=false"],
+        ["dotnet", "build-server", "shutdown"],
     ]
-    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[0] == "dotnet"]
+    langs = [(e["LANG"], e["LC_ALL"]) for c, e, _ in r.envs if c[:2] == ["dotnet", "test"]]
     assert langs == [("he_IL.UTF-8", "he_IL.UTF-8"), ("en_US.UTF-8", "en_US.UTF-8")]
 
 
@@ -543,7 +558,7 @@ def test_a_later_gate_does_not_run_after_a_refusal(night, env):
     r = gates_runner(night, env, check=(1, OK_CHECK))
     with pytest.raises(Refused):
         nightly.run_gates(night, r)
-    assert not any(c[0] == "dotnet" or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
+    assert not any(c[:2] == ["dotnet", "test"] or c[:2] == ["bash", "scripts/oss/release_gate.sh"] for c in r.calls)
 
 
 WARM_OK = "UnityMcpGuard warm-up: gate defines in place\n"
@@ -557,7 +572,7 @@ class EditRunner(EnvRunner):
         self.night, self.xml, self.code, self.warm_code = night, xml, code, warm_code
         self.warm_log, self.restore_code = warm_log, restore_code
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         d = self.night.run_dir
@@ -729,7 +744,7 @@ class WebRunner(EnvRunner):
         self.stamped_at_build = []
         self.restores = 0
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         if cmd[0] == "git" and cmd[1:3] == ["checkout", "--"]:
@@ -890,7 +905,7 @@ class CheckRunner(EnvRunner):
         super().__init__()
         self.ok, self.answers, self.cwds = ok, answers or {}, []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.envs.append((list(cmd), env, holder))
         self.calls.append(list(cmd))
         self.cwds.append(cwd)
@@ -1818,7 +1833,7 @@ class SaveRunner(FakeRunner):
         super().__init__()
         self.saved, self.loads, self.runs = saved, list(loads), []
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         self.runs.append(list(cmd))
         code, text = self.saved if "--first-save" in cmd else self.loads.pop(0)
         Path(log).parent.mkdir(parents=True, exist_ok=True)
@@ -2111,3 +2126,300 @@ def test_a_corrupt_config_on_the_savetest_path_is_recorded_not_an_attribute_erro
     monkeypatch.setattr(nightly, "notify", lambda *a, **k: None)
     assert nightly.main(["savetest", "--tag", "v0.3.1-nightly.20261028"]) == 1
     assert "gate=config" in (job / "LOG.md").read_text()
+
+
+def test_managed_gates_hold_the_canonical_shared_lock_until_shutdown(night, env, monkeypatch):
+    import fcntl
+    r = gates_runner(night, env)
+    original = r.run
+    seen = []
+
+    def probe(cmd, **kwargs):
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as other:
+            try:
+                fcntl.flock(other, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                pass
+            else:
+                fcntl.flock(other, fcntl.LOCK_UN)
+                pytest.fail("managed stage escaped the canonical shared lock")
+        with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as shared:
+            fcntl.flock(shared, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            fcntl.flock(shared, fcntl.LOCK_UN)
+        with open(nightly.unity_postmerge.machine_lock.GATE, "a+") as gate:
+            fcntl.flock(gate, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(gate, fcntl.LOCK_UN)
+        seen.append(cmd[:2])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", probe)
+    nightly.run_gates(night, r)
+    assert seen == [["uv", "run"], ["bash", "scripts/check.sh"],
+                    ["bash", "scripts/oss/release_gate.sh"], ["dotnet", "test"],
+                    ["dotnet", "test"], ["dotnet", "build-server"]]
+    with open(nightly.unity_postmerge.machine_lock.LOCK, "a+") as released:
+        fcntl.flock(released, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(released, fcntl.LOCK_UN)
+
+
+
+def test_managed_gates_disable_reuse_and_shut_down_before_return(night, env):
+    r = gates_runner(night, env)
+    nightly.run_gates(night, r)
+    tests = [cmd for cmd in r.calls if cmd[:2] == ["dotnet", "test"]]
+    assert len(tests) == 2
+    for cmd in tests:
+        assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert len(r.envs) == 6 and all(passed_env is not None for _, passed_env, _ in r.envs)
+    for _, passed_env, _ in r.envs:
+        assert passed_env["MSBUILDDISABLENODEREUSE"] == "1"
+        assert passed_env["DOTNET_CLI_USE_MSBUILD_SERVER"] == "0"
+        assert passed_env["UseSharedCompilation"] == "false"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_managed_gate_refusal_still_shuts_down_servers(night, env):
+    r = gates_runner(night, env, check=(1, OK_CHECK))
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "check"
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+
+
+def test_expired_managed_work_after_lock_acquisition_starts_no_command(night, env, monkeypatch):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def acquired_after_deadline():
+        night.deadline = time.monotonic() - 1
+        yield
+
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", acquired_after_deadline)
+    r = gates_runner(night, env)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == []
+
+
+@pytest.mark.parametrize("check_failed", [False, True])
+def test_compiler_shutdown_failure_refuses_instead_of_passing(night, env, check_failed):
+    r = gates_runner(night, env, check=(1 if check_failed else 0, OK_CHECK))
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == ("check" if check_failed else "build-server-shutdown")
+    assert r.calls.count(["dotnet", "build-server", "shutdown"]) == 1
+    assert r.calls[-1] == ["dotnet", "build-server", "shutdown"]
+    if check_failed:
+        assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+    else:
+        assert len(r.calls) == 6
+
+
+def test_sim_publisher_explicitly_disables_node_and_compiler_reuse(monkeypatch, no_processes, tmp_path):
+    import build_sim_for_unity
+    monkeypatch.setattr(build_sim_for_unity, "REPO", tmp_path)
+    output = tmp_path / "unity/Assets/Plugins/Statecraft"
+    output.mkdir(parents=True)
+    for name in ("Statecraft.Sim.dll", "YamlDotNet.dll"):
+        (output / name).write_bytes(b"fixture")
+    calls = []
+    monkeypatch.setattr(build_sim_for_unity.subprocess, "run", lambda cmd, **kw: calls.append((cmd, kw)))
+    assert build_sim_for_unity.main() == 0
+    assert len(calls) == 1
+    cmd, kwargs = calls[0]
+    assert cmd[:2] == ["dotnet", "publish"]
+    assert "-nodeReuse:false" in cmd and "-p:UseSharedCompilation=false" in cmd
+    assert kwargs["check"] is True
+    assert kwargs["cwd"] == tmp_path and cmd[cmd.index("-o") + 1] == str(output)
+
+
+@pytest.mark.parametrize("primary", [KeyboardInterrupt, SystemExit])
+@pytest.mark.parametrize("cleanup_raises", [False, True])
+def test_shutdown_never_replaces_a_primary_interrupt(night, env, monkeypatch, primary, cleanup_raises):
+    r = gates_runner(night, env)
+    original = r.run
+    interruption = primary()
+
+    def run(cmd, **kwargs):
+        if cmd[:2] == ["bash", "scripts/check.sh"]:
+            raise interruption
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            if cleanup_raises:
+                raise OSError("cleanup failed")
+            return 1
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(primary) as error:
+        nightly.run_gates(night, r)
+    assert error.value is interruption
+    assert "shutdown" in (night.run_dir / "build-server-shutdown.note").read_text()
+
+
+def test_mid_sequence_deadline_stops_work_but_keeps_shutdown_budget(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    r.rules[0] = (*r.rules[0][:3], lambda cmd: setattr(night, "deadline", time.monotonic() - 1))
+    original = r.run
+    cleanup_deadlines = []
+
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            cleanup_deadlines.append(kwargs["deadline"])
+        return original(cmd, **kwargs)
+
+    monkeypatch.setattr(r, "run", run)
+    with pytest.raises(Refused) as error:
+        nightly.run_gates(night, r)
+    assert error.value.gate == "managed-deadline"
+    assert r.calls == [["uv", "run", str(night.cfg.clone / "tools/build_sim_for_unity.py")],
+                       ["dotnet", "build-server", "shutdown"]]
+    assert len(cleanup_deadlines) == 1 and cleanup_deadlines[0] > time.monotonic()
+
+
+
+
+def test_shutdown_refuses_inside_a_callers_except(night, env):
+    r = gates_runner(night, env)
+    r.rules.insert(0, (("dotnet", "build-server", "shutdown"), 1, "shutdown failed", None))
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(Refused) as error:
+            nightly.run_gates(night, r)
+    assert error.value.gate == "build-server-shutdown"
+    assert len(r.calls) == 6
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_shutdown_interrupt_propagates_inside_a_callers_except(night, env, monkeypatch, kind):
+    r = gates_runner(night, env)
+    original = r.run
+    raised = kind()
+    def run(cmd, **kwargs):
+        if cmd == ["dotnet", "build-server", "shutdown"]:
+            raise raised
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    try:
+        raise ValueError("handled by caller")
+    except ValueError:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, r)
+    assert error.value is raised
+
+
+@pytest.mark.parametrize("kind", [KeyboardInterrupt, SystemExit])
+def test_managed_child_is_reaped_before_shared_hold_releases(night, env, tmp_path, monkeypatch, kind):
+    marker = tmp_path / "child-started"
+    instances = []
+    real_popen = REAL_POPEN
+    interruption = kind()
+    class InterruptingPopen(real_popen):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.injected = False
+            instances.append(self)
+        def wait(self, timeout=None):
+            if not self.injected:
+                self.injected = True
+                end = time.monotonic() + 10
+                while not marker.exists() and time.monotonic() < end:
+                    time.sleep(.02)
+                assert marker.exists(), "infrastructure: owned child never started"
+                raise interruption
+            return super().wait(timeout)
+    argv = [sys.executable, "-c", "import os,pathlib,time;pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid())+' '+str(os.getpgid(0)));time.sleep(120)"]
+    real = nightly.ProcRunner(grace=.2)
+    class R:
+        def run(self, cmd, **kwargs):
+            if cmd == ["dotnet", "build-server", "shutdown"]:
+                return 0
+            return real.run(argv, **kwargs)
+    old_hold = nightly.unity_postmerge.machine_lock.hold
+    reaped_at_release = []
+    @contextmanager
+    def checked_hold():
+        with old_hold():
+            try:
+                yield
+            finally:
+                reaped_at_release.append(bool(instances) and instances[0].poll() is not None)
+    monkeypatch.setattr(nightly.unity_postmerge.machine_lock, "hold", checked_hold)
+    monkeypatch.setattr(nightly.subprocess, "Popen", InterruptingPopen)
+    try:
+        with pytest.raises(kind) as error:
+            nightly.run_gates(night, R())
+        assert error.value is interruption
+        assert marker.exists(), "infrastructure: no positive child start proof"
+        pid, pgid = map(int, marker.read_text().split())
+        assert pid == pgid and pgid != os.getpgid(0)
+        assert reaped_at_release == [True], "managed child still running when the shared hold releases"
+        with pytest.raises(ProcessLookupError):
+            os.killpg(pgid, 0)
+    finally:
+        for proc in instances:
+            if proc.pid != os.getpgid(0):
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                real_popen.wait(proc, timeout=5)
+
+
+def test_interrupt_cleanup_is_opt_in_for_managed_commands(tmp_path, monkeypatch):
+    calls = []
+    interruption = KeyboardInterrupt()
+    class Child:
+        def wait(self, timeout):
+            raise interruption
+    monkeypatch.setattr(nightly.subprocess, "Popen", lambda *args, **kwargs: Child())
+    runner = nightly.ProcRunner()
+    monkeypatch.setattr(runner, "_stop_group", lambda child: calls.append(child))
+    with pytest.raises(KeyboardInterrupt) as error:
+        runner.run(["possible-lock-wait"], cwd=tmp_path, log=tmp_path / "log", deadline=time.monotonic() + 5)
+    assert error.value is interruption and calls == []
+
+
+def test_every_managed_command_opts_into_interrupt_cleanup(night, env, monkeypatch):
+    r = gates_runner(night, env)
+    original = r.run
+    flags = []
+    def run(cmd, **kwargs):
+        flags.append(kwargs.get("stop_on_interrupt", False))
+        return original(cmd, **kwargs)
+    monkeypatch.setattr(r, "run", run)
+    nightly.run_gates(night, r)
+    assert flags == [True] * 6
+
+
+def test_second_interrupt_during_grace_still_kills_and_reaps_own_group(tmp_path, monkeypatch):
+    marker = tmp_path / "term-resistant-started"
+    argv = [sys.executable, "-c", "import os,pathlib,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);pathlib.Path(" + repr(str(marker)) + ").write_text(str(os.getpid()));time.sleep(120)"]
+    proc = REAL_POPEN(argv, start_new_session=True)
+    original_wait = proc.wait
+    injected = False
+    def interrupted_wait(timeout=None):
+        nonlocal injected
+        if not injected:
+            injected = True
+            raise KeyboardInterrupt()
+        return original_wait(timeout=timeout)
+    try:
+        end = time.monotonic() + 10
+        while not marker.exists() and time.monotonic() < end:
+            time.sleep(.02)
+        assert marker.exists(), "infrastructure: owned TERM-resistant child did not start"
+        monkeypatch.setattr(proc, "wait", interrupted_wait)
+        with pytest.raises(KeyboardInterrupt):
+            nightly.ProcRunner(grace=.2)._stop_group(proc)
+        assert proc.poll() is not None
+        with pytest.raises(ProcessLookupError):
+            os.killpg(proc.pid, 0)
+    finally:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        original_wait(timeout=5)

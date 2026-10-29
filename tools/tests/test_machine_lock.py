@@ -219,3 +219,34 @@ def test_a_shared_wait_timeout_does_not_launch_and_releases_its_locks(tmp_path):
     assert not marker.exists(), "a command started after the Unity wait timed out"
     assert run("idle", "raise SystemExit(7)").returncode == 7
     assert run("idle", command).returncode == 0 and marker.exists()
+
+
+@pytest.mark.parametrize("raises", [False, True])
+def test_python_hold_uses_the_same_shared_lock_and_releases_on_exit(tmp_path, monkeypatch, raises):
+    lock, gate = tmp_path / "machine.lock", tmp_path / "machine.lock.gate"
+    monkeypatch.setattr(ml, "LOCK", lock)
+    monkeypatch.setattr(ml, "GATE", gate)
+
+    def held():
+        with ml.hold():
+            with open(lock, "a+") as exclusive:
+                with pytest.raises(BlockingIOError):
+                    fcntl.flock(exclusive, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with open(lock, "a+") as shared:
+                fcntl.flock(shared, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                fcntl.flock(shared, fcntl.LOCK_UN)
+            with open(gate, "a+") as fairness:
+                fcntl.flock(fairness, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(fairness, fcntl.LOCK_UN)
+            if raises:
+                raise ValueError("fixture")
+
+    if raises:
+        with pytest.raises(ValueError, match="fixture"):
+            held()
+    else:
+        held()
+    for path in (lock, gate):
+        with open(path, "a+") as released:
+            fcntl.flock(released, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(released, fcntl.LOCK_UN)
