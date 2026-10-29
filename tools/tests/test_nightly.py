@@ -1399,9 +1399,16 @@ def test_a_disk_error_saving_state_after_publish_keeps_the_good_release_latest(n
                                                                               monkeypatch):
     monkeypatch.setattr(nightly, "notify", lambda *a: None)
     blocked = tmp_path / "state.json"
-    blocked.mkdir()   # writing the state file fails with an OSError, which production's _try_save reports and absorbs
     gh, st = FakeGH(), ns.State(last_published=last_published())
-    publish(night, st, gh, pub, env, save=lambda: nightly._try_save(blocked, st))
+    saved_ids = []
+    def save():
+        if gh.release == "published" and not blocked.is_dir():
+            saved_ids.append(json.loads(blocked.read_text())["open_draft_id"])
+            blocked.unlink()
+            blocked.mkdir()   # fail only after publication; the ownership checkpoint must have succeeded
+        return nightly._try_save(blocked, st)
+    publish(night, st, gh, pub, env, save=save)
+    assert saved_ids == [101] and blocked.is_dir()
     assert gh.latest == TAG and "restore_latest" not in gh.names() and st.last_published.tag == TAG
 
 
