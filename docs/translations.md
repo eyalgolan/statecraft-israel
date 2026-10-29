@@ -111,7 +111,7 @@ the later steps of #1618.
   the bundle against the source, file by file and byte for byte.
 - **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`; any other file or folder
   there, or a folder that is not a language code, is an error rather than something skipped. Files at the top
-  (`README.md`) are not languages.
+  (`README.md`) are not languages. Dot-prefixed files and folders (such as `.DS_Store` and `.cache`) are ignored.
 - **The checks:** every language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
   How to play unless it is Hebrew, translates only events that exist and every option of each, and keys only fields
   `Fields` offers. An event that a ruleset leaves out still counts as existing.

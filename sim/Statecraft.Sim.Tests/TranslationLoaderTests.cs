@@ -104,6 +104,26 @@ public class TranslationLoaderTests
         finally { Directory.Delete(dir, true); }
     }
 
+    [Theory]
+    [InlineData(".DS_Store")]
+    [InlineData(".cache/ignored")]
+    [InlineData("ro/.DS_Store")]
+    [InlineData("ro/.cache/ignored")]
+    public void CollectIgnoresHiddenFilesAndFolders(string hidden)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "statecraft-hidden-translations-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(dir, "ro"));
+            File.WriteAllText(Path.Combine(dir, "ro", "ui.yaml"), RoUi);
+            var path = Path.Combine(dir, hidden);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, "operating-system metadata, not a translation");
+            Assert.Equal(new[] { "ro/ui.yaml" }, TranslationLoader.Collect(dir));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
     // ---- every language is checked against the content ----
 
     [Theory]

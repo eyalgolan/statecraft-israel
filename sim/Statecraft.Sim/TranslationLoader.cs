@@ -34,7 +34,7 @@ namespace Statecraft.Sim
         /// <summary>The language files under <paramref name="translationsRoot"/> as "&lt;lang&gt;/&lt;file&gt;", ordinal order;
         /// none when the folder is missing. Files at the top (README.md) are not languages. A folder that is not a language
         /// code, or a file in a language folder that is not ui.yaml, events.yaml or content.yaml, is an error: it would
-        /// otherwise be skipped silently.</summary>
+        /// otherwise be skipped silently. Dot-prefixed files and folders are operating-system/editor metadata and ignored.</summary>
         public static List<string> Collect(string? translationsRoot)
         {
             var files = new List<string>();
@@ -42,16 +42,18 @@ namespace Statecraft.Sim
             foreach (var dir in Directory.GetDirectories(translationsRoot))
             {
                 var lang = Path.GetFileName(dir);
+                if (lang.StartsWith(".", StringComparison.Ordinal)) continue;
                 if (!Translations.IsLanguage(lang))
                     throw new ContentException($"{Folder}/{lang}", "(folder)", "not a language code (lowercase ISO 639: fr, ar, pt-BR)");
                 foreach (var f in Directory.GetFiles(dir))
                 {
+                    if (Path.GetFileName(f).StartsWith(".", StringComparison.Ordinal)) continue;
                     var rel = lang + "/" + Path.GetFileName(f);
                     if (!FileShape.IsMatch(rel))
                         throw new ContentException($"{Folder}/{rel}", "(file)", $"a language has only {Translations.UiFile}, {Translations.EventsFile} and {Translations.ContentFile}");
                     files.Add(rel);
                 }
-                if (Directory.GetDirectories(dir).Length > 0)
+                if (Directory.GetDirectories(dir).Any(d => !Path.GetFileName(d).StartsWith(".", StringComparison.Ordinal)))
                     throw new ContentException($"{Folder}/{lang}", "(folder)", "a language folder has no sub-folders");
             }
             return files.OrderBy(f => f, StringComparer.Ordinal).ToList();
