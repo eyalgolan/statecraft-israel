@@ -234,7 +234,10 @@ def _state_from(raw: dict) -> State:
         if (not isinstance(pending, dict) or set(pending) != {"failed", "previous"}
                 or not isinstance(pending["failed"], str) or not pending["failed"]):
             raise TypeError("latest_recovery_pending has the wrong shape")
-        recovery = LatestRecovery(pending["failed"], _opt_str(pending["previous"], "previous"))
+        previous = _opt_str(pending["previous"], "previous")
+        if previous == "":
+            raise TypeError("previous Latest must be a nonempty tag or null")
+        recovery = LatestRecovery(pending["failed"], previous)
     return State(published, list(baseline), _day(raw.get("last_run_day")),
                  _opt_str(raw.get("open_draft"), "open_draft"), _opt_str(raw.get("site_pending"), "site_pending"),
                  release_id, recovery)
