@@ -820,6 +820,39 @@ public class UnitsInPlayTests
         finally { UnityEngine.Object.DestroyImmediate(other.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RetiredFigureMeshesRefreshKeepClearEvenAtTheSameCameraPose(bool moveCamera)
+    {
+        var map = BuildMap();
+        var replacement = new Mesh { name = "Replacement figure bounds" };
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var token = tokens.Find("kiryati");
+            var figure = token.Find("Rifleman0");
+            Assert.IsNotNull(figure, "a real token figure holder");
+            var retired = figure.GetComponentsInChildren<MeshFilter>(true);
+            Assert.Greater(retired.Length, 0, "the layer cached a real figure mesh");
+            var cam = Camera.main;
+            layer.FaceCamera(cam);   // establish the cached pose before the residency child changes
+            UnityEngine.Object.DestroyImmediate(retired[0]);
+            replacement.bounds = new Bounds(Vector3.one * 100000f, Vector3.one * 100f);
+            var child = new GameObject("Replacement figure");
+            child.transform.SetParent(figure, false);
+            child.AddComponent<MeshFilter>().sharedMesh = replacement;
+            if (moveCamera) cam.transform.position += Vector3.right * 100f;
+            Assert.DoesNotThrow(() => layer.FaceCamera(cam), "retired meshes are no longer live bounds sources");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(child.transform.TransformPoint(replacement.bounds.center)),
+                "keep-clear must include the live replacement, including when the camera did not move");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement); }
+    }
+
     [Test]
     public void ScreenshotsShowUnitsOnlyWhenAsked()
     {
