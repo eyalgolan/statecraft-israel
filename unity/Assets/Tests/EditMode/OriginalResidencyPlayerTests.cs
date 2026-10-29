@@ -170,9 +170,17 @@ public sealed class OriginalResidencyPlayerTests
         yield return Until(() => asks.Any(a => a.detail == CollectionDetail.Near), "near requested");
         var nearIds = asks.Where(a => a.detail == CollectionDetail.Near).Select(a => a.id).Distinct().ToArray();
         Assert.IsNotEmpty(nearIds, "failure proof requires actual Near requests");
-        foreach (var _ in nearIds)
+        foreach (var id in nearIds)
+        {
+            StringAssert.Contains("/Settlements/Prototype/", CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
+                "each expected warning must exercise the source's null-prefab path: " + id);
             LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Collection: bundle .* has no .*"));
-        yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!)));
+        }
+        var models = (System.Collections.IDictionary)typeof(TownModelLayer).GetField("models", Flags)!.GetValue(layer)!;
+        // Source completion precedes the stream's warning and callback; wait for the actual null replies too.
+        yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!))
+            && models.Count > 0 && models.Values.Cast<object>().All(model =>
+                (bool)model.GetType().GetField("answered", Flags)!.GetValue(model)!), "null Near replies answered");
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "WantsWholeTown", focus.Key, camera)!);
         Assert.IsFalse(asks.Any(a => a.id == focus.Model));
