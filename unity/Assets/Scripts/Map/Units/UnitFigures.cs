@@ -229,13 +229,13 @@ namespace Statecraft.Game.Map.Units
         /// scaled by <see cref="UnitShowcase.FigureScale"/>): at once when it has arrived, else when it arrives. Nothing for a
         /// null id.</summary>
         internal static void Dress(Transform piece, string? id, CollectionResidencyPolicy policy,
-            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null)
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null, bool retainFar = false)
         {
             if (policy == null) throw new ArgumentNullException(nameof(policy));
             if (id == null || piece == null) return;
             // The sandwich original remains explicitly pinned by the road consumer in this first production slice.
             var owner = piece.GetComponent<UnitFigureResidency>() ?? piece.gameObject.AddComponent<UnitFigureResidency>();
-            owner.Initialize(id, policy, acquire);
+            owner.Initialize(id, policy, acquire, retainFar: retainFar);
         }
 
         public static void Dress(Transform piece, string? id)

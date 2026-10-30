@@ -14,18 +14,24 @@ namespace Statecraft.Game.Map.Units
         string id = "";
         CollectionResidency? residency;
         CollectionResidencyView? view;
-        bool nearWanted, initialized, draws = true;
+        bool nearWanted, initialized, draws = true, retainFar;
         Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire;
         internal void Initialize(string model, CollectionResidencyPolicy policy,
-            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source, bool draw = true)
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source, bool draw = true, bool retainFar = false)
         {
             if (initialized) { if (model != id) throw new InvalidOperationException("A live holder cannot change its original id."); return; }
-            initialized = true; draws = draw; id = model; view = new CollectionResidencyView(policy); acquire = source;
+            initialized = true; draws = draw; this.retainFar = retainFar; id = model;
+            view = new CollectionResidencyView(policy); acquire = source;
             residency = new CollectionResidency(Acquire, Clear, Answer,
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("units", instances, owners, complete,
                     Application.isPlaying && acquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
-            // The already-visible live token is its first demand. Camera observations subsequently bound spatial residency.
-            if (isActiveAndEnabled && !Application.isPlaying) Refresh(true);
+            // The already-visible holder is its first demand. Roster holders keep Far for their whole lifetime; camera
+            // observations subsequently bound only Near. Other consumers retain the original spatial residency behaviour.
+            if (isActiveAndEnabled)
+            {
+                if (!Application.isPlaying) Refresh(true);
+                else if (retainFar) Schedule(false);
+            }
         }
         IDisposable Acquire(string model, CollectionDetail detail, Action<GameObject?> answer) =>
             UnitFigures.AcquireOwned(model, detail, answer, acquire);
@@ -37,14 +43,15 @@ namespace Statecraft.Game.Map.Units
             if (detail == CollectionDetail.Near) UnitFigureDetail.Of(transform).OwnedArrived(model);
         }
         internal CollectionResidencyMetrics.Category ResidencySnapshot() => CollectionResidencyMetrics.Row("units",
-            initialized && isActiveAndEnabled && (!observed || view!.Keys.Contains(id)) ? 1 : 0,
+            initialized && (retainFar || (isActiveAndEnabled && (!observed || view!.Keys.Contains(id)))) ? 1 : 0,
             transform.Find(UnitFigures.ModelName)?.childCount ?? 0, initialized ? new[] { id } : Array.Empty<string>(),
             residency?.OwnerCount ?? 0, residency?.PendingCount ?? 0, 0, 0, 0, 0, nearWanted ? new[] { id + "|Far", id + "|Near" } : new[] { id + "|Far" });
-        void Refresh(bool admitted)
+        void Refresh(bool nearAdmitted, bool releaseFar = false)
         {
             if (residency == null) return;
             var keys = new List<(string, CollectionDetail)>();
-            if (admitted) { keys.Add((id, CollectionDetail.Far)); if (nearWanted) keys.Add((id, CollectionDetail.Near)); }
+            if ((!releaseFar && retainFar) || (isActiveAndEnabled && nearAdmitted)) keys.Add((id, CollectionDetail.Far));
+            if (isActiveAndEnabled && nearAdmitted && nearWanted) keys.Add((id, CollectionDetail.Near));
             residency.Replace(keys);
         }
         bool refreshPending, pendingAdmitted;
@@ -88,7 +95,7 @@ namespace Statecraft.Game.Map.Units
         void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= Choose;
-            refreshPending = false; view?.Clear(); Refresh(false);
+            refreshPending = false; view?.Clear(); Refresh(false, releaseFar: !enabled);
         }
         void OnDestroy() { residency?.Dispose(); residency = null; }
     }

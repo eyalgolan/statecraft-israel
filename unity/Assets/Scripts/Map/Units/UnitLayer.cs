@@ -65,7 +65,7 @@ namespace Statecraft.Game.Map.Units
                             var holder = new GameObject("Original demand " + key); holder.transform.SetParent(transform, false);
                             owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[key] = owner;
                             holder.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
-                            owner.Initialize(id!, map.Residency.Units, null, draw: false);
+                            owner.Initialize(id!, map.Residency.Units, null, draw: false, retainFar: true);
                         }
                         owner.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
                     }
@@ -612,7 +612,8 @@ namespace Statecraft.Game.Map.Units
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
-                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null), map.Residency.Units);   // the Collection's figure, once streamed (#665)
+                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null),
+                                map.Residency.Units, retainFar: true);   // the Collection's figure, held while its roster token lives (#665)
                             figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
                         }
                         for (int j = 0; j < vehicles; j++)
@@ -622,7 +623,8 @@ namespace Statecraft.Game.Map.Units
                             var at = centre + offset;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
-                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units);   // the gun or the jeep: drawn only once streamed (#665)
+                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units,
+                                retainFar: true);   // the gun or the jeep: held while its roster token lives (#665)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;
