@@ -53,13 +53,14 @@ namespace Statecraft.Game
 
         /// <summary>Moves an unreadable autosave aside (autosave.bad.txt) so it is kept for a bug report. With no autosave.txt it
         /// sets aside a lingering .tmp instead (a .tmp that could not be promoted or read would otherwise be rejected, with a
-        /// note, on every start).</summary>
+        /// note, on every start). Existing rejected files are kept; later rejections use unique filenames. The Guid names
+        /// disk evidence only and never enters simulation state. File.Move does not overwrite an existing destination.</summary>
         public virtual void SetAsideAutosave()
         {
             var source = File.Exists(AutosavePath) ? AutosavePath : File.Exists(AutosavePath + ".tmp") ? AutosavePath + ".tmp" : null;
             if (source == null) return;
             var bad = Path.Combine(Directory, "autosave.bad.txt");
-            if (File.Exists(bad)) File.Delete(bad);
+            if (File.Exists(bad)) bad = Path.Combine(Directory, "autosave.bad." + System.Guid.NewGuid().ToString("N") + ".txt");
             File.Move(source, bad);
         }
 

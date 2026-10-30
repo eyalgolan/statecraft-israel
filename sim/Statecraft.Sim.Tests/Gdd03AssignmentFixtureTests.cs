@@ -24,6 +24,32 @@ public class Gdd03AssignmentFixtureTests
         new PopulationBindings(new[] { Place }, Slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, Place.Region)),
             Array.Empty<string>(), Array.Empty<string>()), people.Select((p, i) => new PopulationInventoryRow("synthetic", i, p)));
 
+    // R-CITY-001/002/006: synthetic composition of the existing regional pool and assignment fixture: occupancy, not a second inventory.
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void RegionalPoolRefusesAThirdWorkerWithoutReleasingTheirAssignment(bool workshop)
+    {
+        const string region = "tel_aviv_jaffa";
+        var c = PlayerRegionsContentTests.Load();
+        c.Gdd03Balance!.Values["industry.income"] = new Gdd03DesignValue {
+            Basis = "Agreed", Note = "synthetic regional fixture rates", Values = new() { 1m, 2m, 3m } };
+        var work = workshop ? Gdd03FixtureWork.Workshop : Gdd03FixtureWork.Industry;
+        var slots = Enumerable.Range(0, 3).Select(i => new Gdd03FixtureSlot("synthetic-regional-" + i, work, 1, "job")).ToArray();
+        var place = new PopulationLocation(region, -3, 19);
+        var people = Enumerable.Range(0, 3).Select(i => new PopulationInventoryRow("synthetic", i,
+            new PopulationUnit(0, PopulationStatus.FreeCivilian, c.RequirePopulationInteger("reception.turns"), place,
+                PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+        var state = PlayerRegions.CreateFixture(c,
+            new[] { new PlayerRegionPool(region, 3, 1m, 2, 2, Array.Empty<PlayerRegionFacility>()) }, people,
+            slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, region)), Array.Empty<string>(), Array.Empty<string>());
+        var fixture = new Gdd03AssignmentFixture(c, state, slots);
+        fixture.Assign(0, slots[0].Id); fixture.Assign(1, slots[1].Id);
+        var before = state.Describe();
+        Assert.Throws<ArgumentException>(() => fixture.Assign(2, slots[2].Id));
+        Assert.Equal(before, state.Describe());
+        Assert.Equal(2, PlayerRegions.Assigned(state, region, PopulationAssignmentKind.Work));
+        state.PopulationLedger.Reconcile();
+    }
+
     // R-CITY-001, R-POP-002: assignment and reception share the initialized ledger's completion limit.
     [Theory]
     [InlineData(-1)]
@@ -192,4 +218,103 @@ public class Gdd03AssignmentFixtureTests
         Assert.Throws<ArgumentException>(() => f.Assign(1, Slots[1].Id)); Assert.Equal(before, s.Describe());
         Assert.Throws<ArgumentException>(() => new Gdd03AssignmentFixture(c, s, Slots)); Assert.Equal(before, s.Describe());
     }
+    // R-CITY-001: actual-region pool occupancy over existing ledger locations and slot kinds. Synthetic quantities.
+    const string RegionA = "tel_aviv_jaffa", RegionB = "central_plain";
+    static Content RegionalContent()
+    {
+        var c = PlayerRegionsContentTests.Load("player_regions:\n" + PlayerRegionsContentTests.TelAviv + PlayerRegionsContentTests.Central);
+        c.Gdd03Balance!.Values["industry.income"] = new Gdd03DesignValue {
+            Basis = "Agreed", Note = "synthetic", Values = new() { 1m, 2m, 3m } };
+        return c;
+    }
+    static (GameState, Gdd03AssignmentFixture) Regional(int industry, int workshop, Gdd03FixtureSlot[] slots, int people)
+    {
+        var c = RegionalContent(); var ticks = c.RequirePopulationInteger("reception.turns");
+        var at = new PopulationLocation(RegionA, -3, 19);
+        var rows = Enumerable.Range(0, people).Select(i => new PopulationInventoryRow("synthetic", i,
+            new PopulationUnit(0, PopulationStatus.FreeCivilian, ticks, at, PopulationAssignment.Unassigned,
+                CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+        var s = PlayerRegions.CreateFixture(c, new[] {
+                new PlayerRegionPool(RegionA, 0, 0m, industry, workshop, Array.Empty<PlayerRegionFacility>()),
+                new PlayerRegionPool(RegionB, 0, 0m, 0, 0, Array.Empty<PlayerRegionFacility>()) },
+            rows, slots.Select(x => new PopulationTarget(x.Id, PopulationAssignmentKind.Work, RegionA)),
+            Array.Empty<string>(), Array.Empty<string>());
+        return (s, new Gdd03AssignmentFixture(c, s, slots));
+    }
+    static Gdd03FixtureSlot S(string id, Gdd03FixtureWork w) => new(id, w, 1, "generic");
+    static void Refused(GameState s, Action a) { var b = s.Describe(); Assert.Throws<ArgumentException>(a); Assert.Equal(b, s.Describe()); }
+
+    [Fact] public void IndustryAndWorkshopGroupsAreIndependentWithMoveOutAndNoOp()
+    {
+        var slots = new[] { S("i1", Gdd03FixtureWork.Industry), S("i2", Gdd03FixtureWork.Industry),
+            S("w1", Gdd03FixtureWork.Workshop), S("w2", Gdd03FixtureWork.Workshop), S("farm", Gdd03FixtureWork.Farm) };
+        var (s, f) = Regional(1, 1, slots, 3);
+        f.Assign(0, "i1");
+        Refused(s, () => f.Assign(1, "i2"));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(1, "w1"));   // other group unaffected
+        Refused(s, () => f.Assign(0, "w2"));
+        var same = s.Describe();
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, f.Assign(0, "i1")); Assert.Equal(same, s.Describe());
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, "i2"));   // mover excluded from its own group
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(2, "farm")); // Farm not pooled
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, null));   // move-out frees the group
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(2, "i1"));
+    }
+
+    [Fact] public void ZeroRegionalCapacityRefusesPooledKindsOnly()
+    {
+        var slots = new[] { S("i1", Gdd03FixtureWork.Industry), S("w1", Gdd03FixtureWork.Workshop),
+            S("farm", Gdd03FixtureWork.Farm), S("builder", Gdd03FixtureWork.Builder) };
+        var (s, f) = Regional(0, 0, slots, 2);
+        Refused(s, () => f.Assign(0, "i1")); Refused(s, () => f.Assign(0, "w1"));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(0, "farm"));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, f.Assign(1, "builder"));
+    }
+
+    [Fact] public void ExistingRegionalOverfillIsRefusedAndClonesStayIndependent()
+    {
+        var slots = new[] { S("i1", Gdd03FixtureWork.Industry), S("i2", Gdd03FixtureWork.Industry), S("farm", Gdd03FixtureWork.Farm) };
+        var (s, f) = Regional(1, 0, slots, 2);
+        f.Assign(0, "i1");
+        var clone = s.Clone(); var cf = new Gdd03AssignmentFixture(RegionalContent(), clone, slots);
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, cf.Assign(0, null));
+        Assert.Equal("i1", s.PopulationLedger.Get(0).Assignment.Target);
+        // Direct ledger write bypasses the fixture; the region now holds two Industry occupants.
+        s.PopulationLedger.ChangeAssignment(1, new PopulationAssignment(PopulationAssignmentKind.Work, "i2"));
+        Refused(s, () => f.IndustryRate("i1"));
+        Refused(s, () => f.Assign(1, "farm"));
+        Refused(s, () => new Gdd03AssignmentFixture(RegionalContent(), s, slots));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, cf.Assign(1, "i2")); // clone unaffected
+    }
+
+    [Theory] [InlineData(false)] [InlineData(true)]
+    public void RegionalOccupancySeparatesRegionsAndUsesFacilityContributions(bool workshop)
+    {
+        var content = RegionalContent();
+        var kind = workshop ? Gdd03FixtureWork.Workshop : Gdd03FixtureWork.Industry;
+        var facilityKind = workshop ? PlayerRegionFacilityKind.Workshop : PlayerRegionFacilityKind.Industry;
+        var slots = Enumerable.Range(0, 4).Select(i => S("synthetic-regional-boundary-" + i, kind)).ToArray();
+        var locations = new[] { new PopulationLocation(RegionA, -3, 19), new PopulationLocation(RegionB, -4, 21) };
+        var rows = Enumerable.Range(0, 4).Select(i => new PopulationInventoryRow("synthetic", i,
+            new PopulationUnit(0, PopulationStatus.FreeCivilian, content.RequirePopulationInteger("reception.turns"), locations[i / 2],
+                PopulationAssignment.Unassigned, CivilianProfession.None, CivilianTier.None, 0, "", 0, PopulationEquipment.None)));
+        var state = PlayerRegions.CreateFixture(content, new[] {
+            new PlayerRegionPool(RegionA, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-a-facility", "tel_aviv", facilityKind, 1) }),
+            new PlayerRegionPool(RegionB, 2, 0m, 0, 0, new[] { new PlayerRegionFacility("synthetic-b-facility", "rishon_lezion", facilityKind, 1) }) },
+            rows, slots.Select((slot, i) => new PopulationTarget(slot.Id, PopulationAssignmentKind.Work, i < 2 ? RegionA : RegionB)),
+            Array.Empty<string>(), Array.Empty<string>());
+        var fixture = new Gdd03AssignmentFixture(content, state, slots);
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, fixture.Assign(0, slots[0].Id));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, fixture.Assign(2, slots[2].Id));
+        var before = state.Describe();
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, fixture.Assign(0, slots[0].Id));
+        Assert.Equal(Gdd03FixtureAssignmentResult.NoOp, fixture.Assign(2, slots[2].Id));
+        Refused(state, () => fixture.Assign(1, slots[1].Id)); Refused(state, () => fixture.Assign(3, slots[3].Id));
+        Assert.Equal(workshop ? 0m : 1m, fixture.IndustryRate(slots[0].Id));
+        Assert.Equal(before, state.Describe());
+        Assert.Equal(1, PlayerRegions.Assigned(state, RegionA, PopulationAssignmentKind.Work));
+        Assert.Equal(1, PlayerRegions.Assigned(state, RegionB, PopulationAssignmentKind.Work));
+        state.PopulationLedger.Reconcile();
+    }
+
 }

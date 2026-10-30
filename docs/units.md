@@ -130,7 +130,7 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
 | Arab Legion | jordan | Ramallah (to 11 June) | Latrun | 5,000 |
 | Syrian Army | syria | south of Lake Tiberias, before Samakh (to 18 May) | the Mishmar HaYarden bridgehead | 3,000 |
 | Iraqi Expeditionary Force | iraq | the high ground over Gesher (15 May only, by the owner's decision) | Jenin | 3,000 |
-| Lebanese Army | lebanon | hidden: no place two sources agree on | | 1,000 |
+| Lebanese Army | lebanon | no place two sources agree on: no window | al-Malikiyya, 6 June to 8 July (owner, 28 October 2026: "6 Jun to 8 Jul (Recommended)"); a map-only token | 1,000 |
 | Arab Liberation Army | ala | al-Malikiyya (to 29 May) | | 4,000 |
 
 - **One value per strength** (CONTENT_POLICY section 1; Q-START-3): from an Israeli source where one gives it, else the
@@ -150,8 +150,10 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   those two are drawn (issue #665; see "The 1948 Collection on the tokens"): the Arab Legion and the Arab Liberation
   Army. `UnitRoster.OnMap` (not hidden, and `side: israel` or a side with a figure) keeps the roster and the placer to
   those rows. Tal Heuberger's generated figures have since joined them (owner, 27 October 2026, #756: "Sign off all 19"):
-  the Syrian, Iraqi and Egyptian infantry on their forces' tokens. The Lebanese row (hidden) gives no token, takes no spot
-  and clears no ground for the kits.
+  the Syrian, Iraqi and Egyptian infantry on their forces' tokens, and the Lebanese regular on the Lebanese army's token.
+  The Lebanese army has no sim unit, so its token is map-only (owner, 27 October 2026: "Map-only token (Recommended)"):
+  in both loops it stands at its dated anchor, al-Malikiyya from 6 June to 8 July 1948, and never moves or fights
+  (`UnitRoster.MapOnly`; it is the only Arab army row with no starting force).
   A drawn force's token has no code-built figure: it is drawn only once its figure has arrived, so a missing or damaged
   bundle draws nothing. In the legacy loop, three figures (Q-UI-3 at full strength: the rows give only the sourced 15 May
   strength; owner, 17 October 2026, #226); in the GDD loop, Q-UI-3 by the sim unit's strength ("Tokens from the state"); under the neutral pennant (Q-ART-1). Its spot never stands on ground Israel held on its
@@ -159,8 +161,9 @@ ruled (al-Malikiyya on 15 May is the ALA's, #226 ruling 2).
   goldens do not move. Tests: `UnitsInPlayTests.OnlyTheForcesWithAFigureAreDrawnAndOnlyOnceItHasArrived`,
   `UnitFiguresTests.TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive`.
 - **Not in the file yet:** the local Arab forces (the note places them only beside places its "Conventions" lists as
-  sensitive and does not describe), the Legion's Jerusalem battalions, the Egyptian eastern force, the ALA and
-  the Lebanese Army on 11 June (al-Malikiyya's holder is contested), and the Saudi, Sudanese and Yemeni contingents (not
+  sensitive and does not describe), the Legion's Jerusalem battalions, the Egyptian eastern force, the ALA on
+  11 June (al-Malikiyya's holder is contested; the Lebanese row stands there from 6 June by the owner's ruling of 28
+  October 2026), and the Saudi, Sudanese and Yemeni contingents (not
   units of their own, Q-START-4). The side `local_arab_forces` is known to the loader for them.
 - The Python tests check the same rules in CI (`tools/tests/test_units_1948.py`: `test_every_side_is_known`,
   `test_strength_has_one_value_and_a_source`, `test_no_anchor_rests_on_one_source_where_the_note_says_contested`,
@@ -216,7 +219,7 @@ defaults"). The unit stands on the hex holding the anchor's coordinates, by the 
 - **Strength** is the row's people in 1,000-person population units, the nearest unit with a half up, never below 1.
 - **Who starts:** Golani 4, Carmeli 2 (at Haifa, its sector seat), Alexandroni 4, Kiryati 3, Givati 3, Harel 1,
   Etzioni 3 (Jerusalem), Negev 1 (#1240, #1241); Egypt 10, the Arab Legion 5, Syria 3, Iraq 3, the ALA 4. Nothing starts
-  for Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (hidden), or the squadron and the two ships
+  for Yiftach (no window on 15 May), Oded, the 8th and the Lebanese row (no window on 15 May; a map-only token), or the squadron and the two ships
   (tokens only, Q-UNIT-5).
 - **Arrivals (R-UNIT-009, #1241):** a row whose strength is dated after 15 May, with an anchor window covering that day,
   arrives on that day: in the resolution of the monthly turn that reaches it, on that anchor's hex, with that strength. Its
@@ -325,6 +328,13 @@ own root rotation kept (the FBX axis turn, -90 degrees about X), so the camera's
 **Placement** (`UnitPlacer.PlaceAll`). Every anchor is placed once, from the data alone, so a token never moves because
 another unit appears. Its spot is at most one hex step from the sourced place (about 8.7 km between hex centres on 5 km
 hexes). It is the nearest such spot to the place, or to the anchor's sourced `toward` point when it has one (see below).
+In the GDD loop a simulated starting force can persist after its source anchor's window ends. A map-only army whose
+cached spot overlaps that starting spot gets a fixed display override, computed once from the same data before date or
+model-arrival filtering. It follows the same one-hex, source-offset, land and road constraints and must clear other cached
+spots. Overrides cannot stand in a town: the map's original spots and kit clearings stay unchanged. Only relocated display
+spots are reserved against later moved-token placement. Source anchors, their dates, sim units and legacy placement do not
+change. If no safe override exists, the token remains drawn at its original spot with an overlap warning.
+
 The candidates are tried in three rounds:
 1. The centres of the anchor's own hex and its six neighbours, with the token at full size.
 2. If none is clear, those centres plus six points inside each hex, with the token **compact**: half the ring and half

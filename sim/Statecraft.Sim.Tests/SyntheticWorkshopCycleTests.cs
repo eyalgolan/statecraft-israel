@@ -142,4 +142,25 @@ public class SyntheticWorkshopCycleTests
         c = Catalogue(); c.Ruleset = SaveGame.GddRuleset;
         Assert.Throws<ArgumentException>(() => SyntheticWorkshopRules.FromCatalogue(c));
     }
+
+    // R-LOOP-005: completing a fixture cycle keeps its staffed identity for the next explicit reservation.
+    [Fact]
+    public void CompletionKeepsTheWorkerForTheNextPaidCycle()
+    {
+        var cycle = Empty().WithWorker("fixture-a", SyntheticWorkshopTier.Apprentice).ReserveExplicitly(4m);
+        cycle = cycle.StaffedTurn().StaffedTurn().StaffedTurn();
+        Assert.Equal(1, cycle.CompletedArms);
+        Assert.Null(cycle.PaidCost);
+        Assert.Equal("fixture-workshop", cycle.FixtureFacilityId);
+        Assert.Equal("fixture-a", cycle.WorkerId);
+        Assert.Equal(SyntheticWorkshopTier.Apprentice, cycle.WorkerTier);
+        cycle = cycle.ReserveExplicitly(4m);
+        var next = cycle.StaffedTurn();
+        Assert.NotSame(cycle, next);
+        Assert.Equal(1, next.Progress);
+        Assert.Equal(4m, next.PaidCost);
+        Assert.Equal("fixture-workshop", next.FixtureFacilityId);
+        Assert.Equal("fixture-a", next.WorkerId);
+        Assert.Equal(2, next.StaffedTurn().StaffedTurn().CompletedArms);
+    }
 }

@@ -163,9 +163,18 @@ namespace Statecraft.Game.Map.Units
                 var hats = (row.Headgear ?? (IReadOnlyList<string>)UnitData.DefaultHeadgear).Take(figures).ToList();
                 list.Add(new UnitToken(row, anchor, figures, RiflemanType(hats[0]), false, hats, UnitFigures.VehiclesAt(row, state.Date), unit));
             }
-            list.AddRange(Build(units, content, state, arrived).Where(t => t.Unit.Service != UnitData.Army));
+            // The squadron and the ships, as tokens only (Q-UNIT-5), and an Arab army row with no starting force, drawn as a
+            // map-only token at its dated anchor (owner, 27 October 2026, for the Lebanese army: "Map-only token (Recommended)"):
+            // the sim has no unit for it, so it never moves or fights.
+            var simRows = new HashSet<string>(content.StartingForces.Select(f => f.Row), StringComparer.Ordinal);
+            list.AddRange(Build(units, content, state, arrived).Where(t => t.Unit.Service != UnitData.Army || MapOnly(t.Unit, simRows)));
             return list;
         }
+
+        /// <summary>Whether <paramref name="u"/> is drawn as a map-only token in the GDD loop: an Arab army row with no starting
+        /// force (<paramref name="simRows"/>: the rows the sim's units start from), which the sim never moves.</summary>
+        public static bool MapOnly(UnitEntry u, ISet<string> simRows) =>
+            u.Service == UnitData.Army && u.Side != UnitData.Israel && !simRows.Contains(u.Id);
 
         /// <summary>A raised Israeli military unit's presentation-only token. The first Israeli starting army row is the
         /// existing neutral figure default and its sourced strength (currently four) is Q-UI-3's full-strength denominator.
