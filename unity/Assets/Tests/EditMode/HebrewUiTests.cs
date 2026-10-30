@@ -303,7 +303,7 @@ public class HebrewUiTests
             Assert.IsTrue(texts.Any(t => UiDirection.HasRightToLeft(t.text)), "the column mixes Hebrew with numbers");
             Directed(texts, "the city panel's lines in a game started in Hebrew");
             var buttons = Ui.Q<VisualElement>(GddHexPanel.ProjectsHostName).Query<Button>().ToList();
-            Assert.IsTrue(buttons.Any(b => b.name.StartsWith("city-project-") && b.name != GddHexPanel.ToggleName), "the city in the #1915 capture shows its project buttons");
+            Assert.IsTrue(buttons.Any(b => b.name.StartsWith("city-project-", StringComparison.Ordinal) && b.name != GddHexPanel.ToggleName), "the city in the #1915 capture shows its project buttons");
             Directed(buttons, "the city panel's project buttons in a game started in Hebrew");
         }
         finally { restore(); }
