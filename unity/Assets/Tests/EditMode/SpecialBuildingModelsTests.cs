@@ -215,6 +215,7 @@ namespace Statecraft.Game.Tests
                 }
             Assert.Greater(Vector2.Dot(new Vector2(at.x, at.z) - footprint.centre, nearest - footprint.centre), 0f,
                 "the chosen village edge is on the side facing the nearest mapped transport segment");
+            LogAssert.NoUnexpectedReceived();
         }
 
         /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The #707

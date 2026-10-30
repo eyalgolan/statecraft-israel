@@ -1186,7 +1186,7 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: verified
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used. Decision D-D decided (owner, 2026-10-14, docs/oss/DECISIONS.md): approved for free, non-commercial distribution and CC0 marking; before any paid release the owner confirms commercial rights for the plan used or replaces the image."
-  # Generated buildings and props: original source review only (PR1379).
+  # Generated buildings and props: shipped in the game (PR1379).
   - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true

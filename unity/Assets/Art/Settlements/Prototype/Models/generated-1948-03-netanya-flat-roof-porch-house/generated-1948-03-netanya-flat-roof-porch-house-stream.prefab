@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: f814cd69f13ed41789ef3e5cb1874061, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 9136f969b8fc4481597f6904381a5462, type: 2}
     - target: {fileID: 919132149155446097, guid: f814cd69f13ed41789ef3e5cb1874061, type: 3}
       propertyPath: m_Name
@@ -79,5 +79,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e77a9d0471f794527b4c41799be6b978, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Statecraft.Game::Statecraft.Game.Map.Collection.OriginalModelDistance
