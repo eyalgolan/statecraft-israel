@@ -1,7 +1,5 @@
 # Open-source owner decisions
 
-**Historical record:** preserve dated owner decisions in context. [The GDD](../GDD.md) and current feature owners supersede older gameplay definitions; this remains evidence, not another active numerical catalogue.
-
 Each line is an owner decision from the open-source plan (`docs/superpowers/plans/2026-10-11-statecraft-open-source.md`,
 "Owner decisions"). Tick a line (`- [x]`) and write the choice after "Decided:" when you have made it.
 `scripts/oss/check_repo.py --release`, run by `scripts/oss/release_gate.sh` before every release, refuses while any

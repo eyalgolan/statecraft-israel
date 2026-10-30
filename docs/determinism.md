@@ -1,7 +1,5 @@
 # Determinism
 
-**Ruleset status:** hashes and runs below describe their producing implementation. [The GDD](GDD.md) and [loop owner](gdd/loop-switch.md) define revised population, economy and save semantics. This documentation claims no new hashes; implementation must migrate content, code and tests together and explain deliberate changes.
-
 The simulation must produce the same state, bit for bit, on .NET, Unity Mono and IL2CPP. Saves, replays and the
 "Why did this happen?" report depend on this.
 

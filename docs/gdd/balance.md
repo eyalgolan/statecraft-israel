@@ -6,18 +6,16 @@ The player sees consistent prices, capacities and progress. This is the sole num
 
 ## Rules
 
-Every value below is a game design value, not a historical estimate. **Agreed** records the design interview or a retained approved baseline; **Default** records assistant-supplied balance under Amir's numerical delegation. Derived quantities are labelled. Implement with exact decimal or integer arithmetic and stable iteration order.
+Every value below is a game design value, not a historical estimate. **Agreed** records Amir's design interview or a retained approved baseline. Derived quantities are labelled. Unresolved values remain `open (owner)`; this catalogue does not supply defaults. Implement with exact decimal or integer arithmetic and stable iteration order.
 
 ### Campaign and indicators
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
 | `campaign.play_minutes` | `120` | minutes per campaign target | Owner ruling [S3], 30 Oct 2026 (`"120 (data wins)"`, #1687) |
-| `money.il_millions` | `1` | IL million per Money | Default; existing Treasury display scale |
 | `indicator.display_max` | `100` | points, displayed maximum | Agreed |
 | `indicator.storage_max` | `1` | unitless, stored maximum | Retained baseline |
 | `indicator.low_on` / `indicator.low_off` | `30 / 45` | points, low-indicator hysteresis | Retained baseline |
-| `start.cohesion` / `start.support` | `65 / 60` | displayed points | Default |
 | `event.max_gap_peace` / `event.max_gap_war` | `6 / 2` | months between historical-run cards | Retained baseline |
 
 ### Population and starting state
@@ -30,17 +28,9 @@ Every value below is a game design value, not a historical estimate. **Agreed** 
 | `start.army` | `A` | military population units; explicitly deferred | Deferred, not a chosen number |
 | `start.farmers` | `5 / 10 / 5` | novice / trained / veteran units | Agreed |
 | `start.prepared_fields` | `20` | staffed farming slots, across multiple friendly regions | Derived from agreed farmers |
-| `start.trained_pioneers` | `2` | units, excluding the teacher | Default |
-| `start.apprentices` / `start.experts` | `6 / 2` | craftsman units, initially in Industry jobs | Default |
 | `start.pioneer_teachers` | `1` | veteran pioneer unit, included in population total | Agreed |
 | `start.military_camps` | `2` | operating camps at the already approved locations | Retained owner ruling, historical `Q-CAMP-2` |
-| `start.reception_camps` | `1` | operating parent camp for initial centre; historical host binding deferred | Default count, not a claim about a named camp's opening date |
 | `start.training_centres` | `1` | operating centre, with that teacher | Agreed |
-| `start.free_civilians` | `34 - A` | otherwise unassigned units | Derived, not extra population |
-| `start.industry_slots` | `8` | staffed job slots | Default |
-| `start.permanent_housing_projects` | `24` | existing completed housing projects | Default |
-| `start.housing_capacity` | `72` | ordinary resident places, pooled by region | Derived |
-| `start.housing_condition` | `70` | condition percentage points in each starting region | Default |
 | `start.food_production` / `start.food_consumption` | `65 / 65` | Food per turn, initially breaking even | Derived from agreed farmer mix and population |
 
 All starting roles partition the population total; army, teachers and farmers are not added on top. Starting professions, tools and completed buildings are already owned: do not deduct their entry/construction costs again from starting Money. Starting army equipment is issued inventory, separate from starting spare Arms. `A` must be an integer compatible with the remaining allocation. Final location bindings distribute the farmers over multiple regions with enough prepared slots. They are authored scenario data, not census rounding. Food break-even applies only at the start; it does not scale automatically with arrivals.
@@ -75,13 +65,12 @@ Construction work is a requirement, not a fixed timer. The city variant uses bui
 
 | Project key | Cost (Money) | Required work units | Completion effect | Upkeep (Money/turn) | Basis |
 | --- | --- | --- | --- | --- | --- |
-| `maabara` | `5` | `1` | ordinary housing `+1` place; condition `-10` pp | `0.10` | Agreed; upkeep Default |
-| `permanent_housing` | `15` | `3` | ordinary housing `+3` places; condition `+10` pp | `0.25` | Agreed; upkeep Default |
-| `industry` | `10` | `3` | `+1` Industry job slot | `0.25` | Agreed; upkeep Default |
-| `reception_camp` | `10` | `3` | dedicated reception beds per reception capacity key | `0.25` | Agreed city baseline; standalone application Default |
-| `training_centre` | `10` | `3` | matching-teacher course slot and separate teacher housing | `0.50` | Agreed city baseline; standalone application Default |
-| `arms_workshop` | `15` | `3` | `+1` workshop worker slot | `0.50` | Agreed; upkeep Default |
-| `military_camp` | `12` | `3` | trainee capacity per military key | `0.50` | Construction Default; upkeep Default |
+| `maabara` | `5` | `1` | ordinary housing `+1` place; condition `-10` pp | `open (owner)` | Agreed except upkeep |
+| `permanent_housing` | `15` | `3` | ordinary housing `+3` places; condition `+10` pp | `open (owner)` | Agreed except upkeep |
+| `industry` | `10` | `3` | `+1` Industry job slot | `open (owner)` | Agreed except upkeep |
+| `reception_camp` | `10` | `3` | dedicated reception beds per reception capacity key | `open (owner)` | Agreed city baseline; standalone application and upkeep open (owner) |
+| `training_centre` | `10` | `3` | matching-teacher course slot and separate teacher housing | `open (owner)` | Agreed city baseline; standalone application and upkeep open (owner) |
+| `arms_workshop` | `15` | `3` | `+1` workshop worker slot | `open (owner)` | Agreed except upkeep |
 | `housing_repair` | `2 * current regional housing upkeep` | `1` | condition `+10` pp; no additional capacity or upkeep | `0` | Agreed |
 | `designated_yishuv` | `2` | `6` pioneer work units | authored site built; no automatic city/population grant | `0` | Retained approved baseline |
 | `hula_drainage` | `4` | `12` pioneer work units | unlock field-preparation site; no unstaffed Food yield | `0` | Retained approved baseline, adapted to staffed fields |
@@ -101,10 +90,9 @@ Centre upkeep adds to its parent reception camp. No per-hex field, road or railw
 | `housing.money_threshold` / `housing.money_slope` | `0.50 / 1` | condition fraction / Money per resident per fraction below threshold | Agreed linear rule |
 | `housing.cohesion_threshold` | `0.25` | condition fraction below which cohesion declines | Agreed |
 | `housing.max_cohesion_loss` | `2` | national displayed points per turn at maximal weighted severity | Agreed |
-| `housing.overflow_deterioration` | `5` | condition pp per turn multiplied by ordinary resident overflow share | Default rate; retained overcrowding principle |
 | `housing.max_deterioration` | `10` | condition pp per turn with all housing upkeep unpaid | Agreed |
 | `transit.cost` | `0.50` | Money per civilian population unit ending turn in transit | Agreed |
-| `reception.queue_cohesion_loss` | `1` | national displayed point per turn with any port reception queue | Agreed amount; cadence and non-stacking Default |
+| `reception.queue_cohesion_loss` | `1` | national displayed point with a port reception queue | Agreed amount; cadence and stacking open (owner) |
 | `food.shortage_cohesion_max` | `10` | national points per turn multiplied by unmet share | Agreed |
 | `food.shortage_combat_slope` | `1` | next-turn own strength reduction multiplied by unmet share | Agreed |
 
@@ -116,7 +104,6 @@ Centre upkeep adds to its parent reception camp. No per-hex field, road or railw
 | `import.food_per_money` | `3` | Food per Money | Agreed |
 | `import.delivery_turns` | `1` | turns after purchase, by ship | Agreed |
 | `immigration.ship_interval` / `immigration.units_per_ship` | `2 / 3` | turns / population units, average | Agreed |
-| `immigration.mix` | `75 / 10 / 10 / 5` | percent refugee / free civilian / craftsman / trained soldier | Default |
 | `workshop.staffed_turns` | `3` | staffed turns per Arms at every worker tier | Agreed |
 | `workshop.cost` | `5 / 4 / 3` | Money per Arms: novice or ordinary / apprentice / expert | Agreed latest correction |
 
@@ -138,52 +125,19 @@ The immigration mix is a deterministic design schedule, not a historical composi
 | `military.strength` | `1 / 2 / 3` | strength units: untrained / trained / veteran | Agreed |
 | `military.combat_xp_gain` / `military.combat_xp_full` | `1 / 5` | XP ticks per survived engagement / ticks to veteran | Agreed |
 | `military.refugee_multiplier` | `0.75` | unitless strength multiplier until reception complete | Agreed |
-| `military.fort_bonus` | `50` | percent defence, whichever army occupies permanent fort | Default |
-| `military.fortify_turns` / `military.fortify_bonus` | `1 / 25` | turns / percent defence for Fortify order | Retained turn; bonus Default |
-| `military.stack_limit` | `3` | units of a side per hex | Default |
-| `military.move_infantry` / `military.move_armoured` | `2 / 3` | movement points per turn | Default |
-| `military.move_road` / `military.move_rail` | `1 / 1` | movement points per built corridor hex, capped at biome cost | Default |
-| `military.armistice_quiet_turns` | `2` | consecutive quiet turns before eligible early armistice offer | Default |
-| `occupation.garrison` / `occupation.turns` | `1 / 6` | military unit / turns before annex-or-withdraw choice | Garrison Default; duration retained owner ruling |
-| `annex.tax_town` / `annex.tax_city` | `1 / 2` | Money per controlled settlement per turn | Default |
-| `annex.support_cost` | `10` | displayed International Support points once on annexation | Default |
-| `occupation.tax` | `0` | Money per occupied settlement per turn before regime | Default |
-| `prisoner.food` / `prisoner.return_points` | `1 / 5` | Food per held enemy combatant cohort per turn / points per returned cohort | Default; return-only scoring retained |
+| `military.fortify_turns` | `1` | turns for Fortify order; defence bonus open (owner) | Retained turn |
+| `occupation.turns` | `6` | turns before annex-or-withdraw choice; garrison requirement open (owner) | Retained owner ruling |
 
 Biome movement costs use the existing approved eight-biome framework; this catalogue does not invent the pending terrain taxonomy. Arms are not spent on attacks or artillery fire. No equipment refund occurs automatically on destruction or surrender. Hold grants no combat bonus beyond hex/fort effects and no interception.
 
-### Movement and engagement defaults
-
-These are initial balance defaults within the retained movement/combat framework, not a new terrain catalogue.
-
-| Existing biome id | Infantry / armoured movement cost (points per hex) | Defence bonus (percent) | Basis |
-| --- | --- | --- | --- |
-| `coastal_plain` | `1 / 1` | `0` | Default |
-| `lowland` | `1 / 1` | `0` | Default |
-| `valley` | `1 / 1` | `0` | Default |
-| `hills` | `2 / 2` | `25` | Default |
-| `mountains` | `2 / 3` | `50` | Default |
-| `desert` | `2 / 2` | `0` | Default |
-| `lake` / `sea` | impassable | not applicable | Retained baseline |
+### Movement and engagement
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `combat.draw_count` | `1` | RNG draw per engagement, integer band `0..99` | Retained single draw; band Default |
-| `combat.enemy_attack_ratio` | `1.50` | unitless minimum ratio for goal-driven enemy attack | Default |
+| `combat.draw_count` | `1` | RNG draw per engagement; result bands open (owner) | Retained single draw |
 | `combat.retreat_hexes` | `1` | hex after retreat result | Retained baseline |
-| `combat.armoured_factor` | `1.50` | unitless role multiplier | Default |
-| `combat.artillery_range` | `2` | hex support range; cannot attack alone or hold ground | Default range; retained role |
-| `combat.artillery_factor` | `1` | unitless role multiplier | Default |
-| `combat.loss_cohorts` | `1` | combatant population cohort removed on loss result | Default abstract loss granularity |
 
-| Adjusted attacker/defender strength ratio | Attacker loss; defender holds | Both hold | Defender retreats | Defender loss | Basis |
-| --- | --- | --- | --- | --- | --- |
-| below `0.5` | `0..59` | `60..89` | `90..99` | none | Default draw bands |
-| `0.5` to below `1` | `0..29` | `30..69` | `70..94` | `95..99` | Default draw bands |
-| `1` to below `2` | `0..9` | `10..39` | `40..84` | `85..99` | Default draw bands |
-| at least `2` | none | `0..9` | `10..69` | `70..99` | Default draw bands |
-
-A loss removes the weakest participating combatant cohort of the losing side, with stable-id tie breaking. It is a game abstraction, not a sourced casualty count; resident civilians are excluded and no points are awarded. Retreat without a legal destination becomes surrender. The initial table requires playtesting before release.
+Retreat without a legal destination becomes surrender. Result bands and loss granularity remain open (owner).
 
 ### Objectives
 
@@ -199,13 +153,13 @@ A loss removes the weakest participating combatant cohort of the losing side, wi
 
 - Target keys are mapped to validated scenario/rules fields during implementation. This file does not edit `content/rules.yaml` or claim its legacy values are current.
 - Starting population roles, facility inventory, field bindings and unresolved army parameter must be validated together.
-- Historical values retain their content/research sources; defaults must be labelled design values.
+- Historical values retain their content/research sources; unresolved values remain open (owner).
 
 ## Done when
 
 - Each active numerical design constant has one catalogue key here and a semantic owner in the feature index.
 - Starting roles sum to total population and staffed farming exactly covers initial own Food consumption.
-- Implementation tests distinguish agreed values, defaults and deferred parameters; the army count is not guessed.
+- Implementation tests distinguish agreed values and deferred parameters; the army count is not guessed.
 
 ## Out of scope
 
@@ -219,4 +173,4 @@ Historical census estimates, real camp opening dates, authored region borders, a
 
 ## Open questions
 
-No additional balance decisions are required. Remaining principle and authoring decisions are listed only in [the GDD](../GDD.md#deferred-decisions).
+Values marked open (owner), plus the remaining principle and authoring decisions, require owner rulings before implementation; the central register is [the GDD](../GDD.md#deferred-decisions).

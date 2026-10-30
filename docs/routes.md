@@ -1,7 +1,5 @@
 # Railways and roads of 1948 (issue #35)
 
-**Evidence and implementation record:** [the GDD](GDD.md), [corridor owner](gdd/corridors.md) and [balance catalogue](gdd/balance.md) own revised gameplay semantics and values. Keep the sourced geometry and dated implementation observations below.
-
 The map draws the railways and main roads of 1948, each from its sourced date, after the promo (`promo/final/03-gameplay-1936.png`,
 `02-map-diorama.png`, and the 0:21 close-up of `promo/demo/out/demo-16x9.mp4`). Civilian boats are out of scope (owner).
 On 2026-10-14 the owner reversed that for civilian boats ("Keep civilian boats"); they are map art in #536, not routes.

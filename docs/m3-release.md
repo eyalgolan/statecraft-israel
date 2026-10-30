@@ -1,7 +1,5 @@
 # M3 release: the browser build
 
-**Historical record:** preserve dated rulings and release observations in context. [The GDD](GDD.md) and current feature owners supersede older gameplay definitions; this remains evidence, not another active numerical catalogue.
-
 **Status:** M3 ships as the local browser build. The itch.io upload and the cross-upload save test are deferred to the
 start of M4, as a private Draft (owner ruling, 2026-10-10); their sections below are kept, marked "Deferred to M4".
 

@@ -1,8 +1,6 @@
 # Rule IDs
 
-Implemented rules receive stable IDs and tests. Proposed semantics stay with their feature owner until implemented; the [MVP migration index](mvp.md) preserves citations without becoming another active rulebook.
-
-Every implemented rule gets a stable ID, like `R-ECON-014`: `R-`, a 2 to 6 letter area, a three digit number.
+Every rule in the game design gets a stable ID, like `R-ECON-014`: `R-`, a 2 to 6 letter area, a three digit number.
 Rewording a rule keeps its ID. A removed rule's ID is not reused.
 
 **Where an ID is written.** A rule is defined in a Markdown file in this folder (`docs/rules/*.md`, not this README), on a line that

@@ -1,7 +1,5 @@
 # Visual v1: measurements, budgets and checkpoints
 
-**Visual implementation record:** [the GDD](GDD.md), current feature owners and [balance catalogue](gdd/balance.md) own gameplay semantics and values. Preserve the visual measurements and dated observations below in context.
-
 Plan: `docs/superpowers/plans/2026-10-11-statecraft-visual-v1.md`. Promo targets: `promo/final/03-gameplay-1936.png`,
 `promo/final/02-map-diorama.png`. Poses: `PromoPose.Gameplay03` (34.86 E, 32.00 N, 60 km, yaw 10) and
 `PromoPose.Diorama02` (35.05 E, 31.55 N, 250 km, yaw 0). Since #174 the camera keeps its view on the map, and centres

@@ -1,7 +1,5 @@
 # Unit miniatures: the art slice
 
-**Evidence and implementation record:** [the GDD](GDD.md), [population/training owner](gdd/training.md), [military owner](gdd/military-combat.md) and [balance catalogue](gdd/balance.md) own revised gameplay semantics and values. Historical anchors and art evidence below do not create additional population units.
-
 The owner's target for units (2026-10-11) is the promo: `promo/final/03-gameplay-1936.png` and the demo trailer
 (`promo/demo/out/demo-16x9.mp4`, 0:06–0:30). It shows Civ-style miniatures standing on hexes at symbolic scale: a trio of
 era-correct riflemen with a selection ring, a mounted rider, and aircraft with Israeli roundels flying low with a shadow.
