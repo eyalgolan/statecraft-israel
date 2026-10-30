@@ -36,6 +36,8 @@ def memberships(evidence: dict[str, Any], subdistricts: dict[str, Any]):
         region_order.append(region_id)
         for name in region["reference_subdistricts"]:
             key = name.casefold()
+            if key not in number_to_key.values():
+                raise ValueError(f"unknown sub-district {name!r} in {region_id}")
             if key in owner:
                 raise ValueError(f"sub-district {name!r} is claimed by {owner[key]} and {region_id}")
             owner[key] = region_id
@@ -108,7 +110,11 @@ def replace_member_hex_fields(text: str, by_region: dict[str, list[tuple[int, in
         match = re.fullmatch(r"- id: ([a-z0-9_]+)\r?\n?", line)
         if match:
             current = match.group(1)
-        if re.fullmatch(r"  member_hexes:(?: \[\])?\r?\n?", line):
+        if re.fullmatch(r"  member_hexes:\r?\n?", line):  # already populated (e.g. adjusted by hand): keep as is
+            seen.add(current)
+            out.append(line)
+            i += 1
+        elif re.fullmatch(r"  member_hexes: \[\]\r?\n?", line):
             if current not in by_region:
                 raise ValueError(f"member_hexes has no approved region at {current!r}")
             newline = "\r\n" if line.endswith("\r\n") else "\n"

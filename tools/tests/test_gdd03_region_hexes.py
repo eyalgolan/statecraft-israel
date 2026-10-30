@@ -50,3 +50,23 @@ def test_placed_member_mismatch_is_reported_not_reassigned():
     assert regions.placed_member_mismatches(evidence, by_region) == [
         ("north", "border_place", 0, 0, "south"),
     ]
+
+
+def test_an_adjusted_member_hex_list_is_kept_not_regenerated():
+    # Owner ruling C (30 Oct 2026): generated from sub-districts, then Amir adjusts; a rerun must not undo the adjustment.
+    evidence, subdistricts = sample()
+    by_region, _, _ = regions.memberships(evidence, subdistricts)
+    adjusted = """player_regions:\n- id: north\n  member_hexes:\n  - { q: 3, r: 1 }\n  - { q: 5, r: 5 }\n- id: south\n  member_hexes: []\n"""
+    assert regions.replace_member_hex_fields(adjusted, by_region) == (
+        """player_regions:\n- id: north\n  member_hexes:\n  - { q: 3, r: 1 }\n  - { q: 5, r: 5 }\n- id: south\n  member_hexes:\n  - { q: 0, r: 0 }\n""")
+
+
+def test_an_unknown_reference_subdistrict_is_rejected():
+    evidence, subdistricts = sample()
+    evidence["regions"][0]["reference_subdistricts"] = ["Akko"]
+    try:
+        regions.memberships(evidence, subdistricts)
+    except ValueError as error:
+        assert "Akko" in str(error)
+    else:
+        raise AssertionError("an unknown sub-district name was silently dropped")
