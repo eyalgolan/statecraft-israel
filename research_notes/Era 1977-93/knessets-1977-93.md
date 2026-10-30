@@ -373,6 +373,7 @@ the government in October 1977 (24 Oct 1977, K-HIST-9).
 - Moves inside a term are dated from OD-P, the Knesset's record of each member's faction terms. Names were looked up
   in KNS_Person. Members who left the Knesset and were replaced are not listed as moves.
 - Founding dates of Shas, Meretz (as an alliance), Moledet, Degel Hatorah and Tzomet in a primary source.
+  Third pass, 30 Oct 2026: Mapam's decision to join the joint list is dated 2 Feb 1992 and Eitan's leaving Tehiya 16 Nov 1987 by JTA bulletins read as page images; the Meretz agreement itself, the Ratz and Shinui decisions, Tzomet's founding, Shas, Degel Hatorah and the registration dates stay [GAP]. See the follow-up, "Third pass, 30 October 2026".
 - The date of the committee's decision against Kach (C4): dated 5 Oct 1988 by the JTA bulletin on the second pass, 25 Oct 2026; the committee's own record is still [GAP]. The reading voted on 22 Mar 1984 (10th Knesset) remains [GAP].
 - Whether 1 Nov 1988 was the end-of-term date fixed by law: answered provisionally on the second pass, 25 Oct 2026 (derived from the archived Basic Law text and calendar arithmetic, not printed in any source; amendments between 27 May 1987 and 1 Nov 1988 not checked, so still open; see the paragraph after the law table above and the follow-up).
 

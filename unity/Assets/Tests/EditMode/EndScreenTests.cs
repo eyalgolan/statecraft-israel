@@ -132,6 +132,21 @@ public class EndScreenTests
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
     }
 
+    // Q-END-3: the prisoners returned, worded as Defence words them, only when some went home (no zero row).
+    [Test]
+    public void ShowsThePrisonersReturnedOnlyWhenSomeWentHome()
+    {
+        using (var none = new Kit(En, Ended))
+            CollectionAssert.DoesNotContain(none.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-prisoners");
+        using var k = new Kit(En, s => { Ended(s); s.PrisonersReturned["lebanon"] = 4; });
+        Assert.AreEqual("Prisoners returned: 4,000", k.Line("prisoners"));
+        Assert.AreEqual("שבויים שהוחזרו: \u200e4,000\u200e", EndScreenPresenter.Lines(C, k.Bridge.State, He).Single(l => l.Name == "prisoners").Text);
+        // The same count as the Defence screen shows over the same state.
+        k.Q("screen-defence").style.display = DisplayStyle.Flex;   // open, as ScreenNav opens it (a hidden screen does not re-render)
+        using (new DefencePresenter(k.Ui.Root, k.Bridge, En))
+            Assert.AreEqual(k.Ui.Q<Label>("prisoners-returned").text, k.Line("prisoners"));
+    }
+
     [Test]
     public void CloseRebuildAndTheFirstNewGamePressKeepTheStateAndTheSave()
     {
