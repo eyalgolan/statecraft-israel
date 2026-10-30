@@ -130,6 +130,54 @@ public class TownModelResidencyTests
     }
 
     [Test]
+    public void PanningFromEveryNestedDetailedTownToItsNeighboursLabelAdmitsTheNeighbour()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0)
+                .OrderBy(f => f.id, StringComparer.Ordinal).ToList();
+            var nestedPairs = new List<((Vector2 centre, float radius, string id) from,
+                (Vector2 centre, float radius, string id) to)>();
+            for (int i = 0; i < detailed.Count; i++) for (int j = i + 1; j < detailed.Count; j++)
+            {
+                var first = detailed[i]; var second = detailed[j];
+                if (Vector2.Distance(first.centre, second.centre) >= Mathf.Max(first.radius, second.radius)) continue;
+                if (second.radius > first.radius) (first, second) = (second, first);
+                nestedPairs.Add((first, second));
+            }
+            Assert.IsNotEmpty(nestedPairs, "the real-map census must retain a nested detailed-town pair for this regression");
+
+            foreach (var pair in nestedPairs)
+            {
+                var camera = GroundCamera(pair.from.centre, ReportedCameraDistanceM,
+                    pair.from.id + " to " + pair.to.id + " sequential pan camera");
+                try
+                {
+                    layer.PrepareCamera(camera);
+                    Assert.IsTrue(layer.WantsTown(pair.from.id, camera), pair.from.id + ": admitted at its own label before the pan");
+                    camera.transform.position = new Vector3(pair.to.centre.x, ReportedCameraDistanceM, pair.to.centre.y);
+                    layer.PrepareCamera(camera);
+                    Assert.IsTrue(layer.WantsTown(pair.to.id, camera),
+                        pair.from.id + " -> " + pair.to.id + ": the normalized-distance owner is admitted at its label");
+                    Assert.IsFalse(layer.WantsTown(pair.from.id, camera),
+                        pair.from.id + " -> " + pair.to.id + ": the previous town cannot retain on its whole disc");
+                }
+                finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
+            }
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    [Test]
     public void FocusOutsideEveryFootprintAndInstanceBoundsAdmitsNothing()
     {
         const float FootprintRadiusM = 500f;
@@ -221,12 +269,10 @@ public class TownModelResidencyTests
     }
 
     [Test]
-    public void OneCameraKeepsItsPreviousTownAcrossTheJaffaTelAvivSeamUntilItLeavesThatFootprint()
+    public void OneCameraTraversesTheJaffaTelAvivSeamInBothDirectionsDeterministically()
     {
         const float ReportedCameraDistanceM = 11_800f;
         const float SeamSampleShareOfCentreDistance = 0.02f;
-        const float BeyondFootprintM = 1f;
-        const float ExitSearchStepM = 50f;
         EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
         try
         {
@@ -241,7 +287,6 @@ public class TownModelResidencyTests
             var jaffa = footprints.Single(f => f.id == "jaffa");
             var telAviv = footprints.Single(f => f.id == "tel_aviv");
             var between = telAviv.centre - jaffa.centre;
-            var direction = between.normalized;
             var seam = jaffa.centre + between * (jaffa.radius / (jaffa.radius + telAviv.radius));
             var offset = between * SeamSampleShareOfCentreDistance;
             var jaffaSide = seam - offset;
@@ -251,36 +296,25 @@ public class TownModelResidencyTests
                 var point3 = new Vector3(point.x, bounds.center.y, point.y);
                 return Mathf.Sqrt(bounds.SqrDistance(point3));
             }
-            Vector2 FirstPointAfterExit((Vector2 centre, float radius, string id) previous, Bounds previousBounds,
-                (Vector2 centre, float radius, string id) next, Vector2 towardNext)
+            bool Owns((Vector2 centre, float radius, string id) footprint, Vector2 point) =>
+                SettlementKits.NormalizedFootprintDistance(point, footprint.centre, footprint.radius)
+                    <= SettlementKits.FootprintBoundary
+                && SettlementKits.OwnsFootprint(point, footprint.id, footprint.centre, footprint.radius, footprints,
+                    ignored: ignoredLocalities);
+            void AssertOwnershipMechanism((Vector2 centre, float radius, string id) owner,
+                (Vector2 centre, float radius, string id) previous, Bounds previousBounds, Vector2 point)
             {
-                float lastDistance = Vector2.Distance(previous.centre, next.centre) + next.radius;
-                for (float distance = previous.radius + BeyondFootprintM; distance <= lastDistance; distance += ExitSearchStepM)
-                {
-                    var point = previous.centre + towardNext * distance;
-                    if (BoundsDistance(previousBounds, point) > focusExitM
-                        && Vector2.Distance(point, next.centre) <= next.radius
-                        && SettlementKits.OwnsFootprint(point, next.id, next.centre, next.radius, footprints,
-                            ignored: ignoredLocalities)) return point;
-                }
-                Assert.Fail($"No {next.id}-owned point leaves both {previous.id}'s footprint and instance bounds.");
-                return default;
+                Assert.IsTrue(Owns(owner, point), owner.id + ": normalized-distance ownership admits this seam sample");
+                Assert.IsFalse(Owns(previous, point), previous.id + ": normalized-distance ownership does not retain this sample");
+                Assert.LessOrEqual(SettlementKits.NormalizedFootprintDistance(point, previous.centre, previous.radius),
+                    SettlementKits.FootprintBoundary, previous.id + ": sample remains inside the previous whole disc");
+                Assert.Greater(BoundsDistance(previousBounds, point), focusExitM,
+                    previous.id + ": previous instance-bounds exit band does not retain this sample");
             }
             var jaffaBounds = PlaceBounds(layer, "jaffa");
             var telAvivBounds = PlaceBounds(layer, "tel_aviv");
-            var beyondJaffa = FirstPointAfterExit(jaffa, jaffaBounds, telAviv, direction);
-            var beyondTelAviv = FirstPointAfterExit(telAviv, telAvivBounds, jaffa, -direction);
-            void AssertOwner(string id, (Vector2 centre, float radius, string id) footprint, Vector2 point)
-            {
-                Assert.LessOrEqual(Vector2.Distance(point, footprint.centre), footprint.radius, id + ": point is inside its footprint");
-                Assert.IsTrue(SettlementKits.OwnsFootprint(point, id, footprint.centre, footprint.radius, footprints,
-                    ignored: ignoredLocalities),
-                    id + ": full kit partition owns the point");
-            }
-            AssertOwner("jaffa", jaffa, jaffaSide); AssertOwner("tel_aviv", telAviv, telAvivSide);
-            AssertOwner("tel_aviv", telAviv, beyondJaffa); AssertOwner("jaffa", jaffa, beyondTelAviv);
-            Assert.Greater(BoundsDistance(jaffaBounds, beyondJaffa), focusExitM, "Jaffa exit leaves its admitted place bounds and exit band");
-            Assert.Greater(BoundsDistance(telAvivBounds, beyondTelAviv), focusExitM, "Tel Aviv exit leaves its admitted place bounds and exit band");
+            AssertOwnershipMechanism(jaffa, telAviv, telAvivBounds, jaffaSide);
+            AssertOwnershipMechanism(telAviv, jaffa, jaffaBounds, telAvivSide);
 
             var camera = GroundCamera(jaffaSide, ReportedCameraDistanceM, "Jaffa Tel Aviv seam camera");
             void Move(Vector2 point)
@@ -293,14 +327,8 @@ public class TownModelResidencyTests
                 Move(jaffaSide);
                 Assert.IsTrue(layer.WantsTown("jaffa", camera)); Assert.IsFalse(layer.WantsTown("tel_aviv", camera));
                 Move(telAvivSide);
-                Assert.IsTrue(layer.WantsTown("jaffa", camera), "crossing the seam retains Jaffa inside Jaffa's footprint");
-                Assert.IsFalse(layer.WantsTown("tel_aviv", camera));
-                Move(beyondJaffa);
                 Assert.IsFalse(layer.WantsTown("jaffa", camera)); Assert.IsTrue(layer.WantsTown("tel_aviv", camera));
                 Move(jaffaSide);
-                Assert.IsTrue(layer.WantsTown("tel_aviv", camera), "crossing back retains Tel Aviv inside Tel Aviv's footprint");
-                Assert.IsFalse(layer.WantsTown("jaffa", camera));
-                Move(beyondTelAviv);
                 Assert.IsFalse(layer.WantsTown("tel_aviv", camera)); Assert.IsTrue(layer.WantsTown("jaffa", camera));
             }
             finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
@@ -529,8 +557,33 @@ public class TownModelResidencyTests
         LogAssert.Expect(LogType.Error,
             "Detailed town footprint id 'a' occurs more than once; dropping its footprint and using instance bounds.");
         Assert.DoesNotThrow(() => fixture.layer.ConfigureTownFootprints(duplicate));
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>()));
+        Assert.DoesNotThrow(() => fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>()));
+        LogAssert.NoUnexpectedReceived();
         var camera = fixture.Camera(); fixture.Prepare(camera);
         Assert.IsTrue(fixture.layer.WantsTown("a", camera), "the dropped footprint falls back to the detailed instance bounds");
+    }
+
+    [Test]
+    public void ConfigureWholeTownsPreservesAPrimaryThatRemainsConfigured()
+    {
+        const float FootprintRadiusM = 1000f;
+        const float OtherTownXM = 800f;
+        const float OtherOwnedFocusXM = 600f;
+        using var fixture = new Fixture(otherX: OtherTownXM);
+        fixture.layer.ConfigureTownFootprints(new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "a"),
+            (centre: new Vector2(OtherTownXM, 0f), radius: FootprintRadiusM, id: "b") });
+        var camera = fixture.Camera(); fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera));
+
+        camera.transform.position = new Vector3(OtherOwnedFocusXM, camera.transform.position.y, camera.transform.position.z);
+        camera.transform.LookAt(new Vector3(OtherOwnedFocusXM, 0f, 0f));
+        fixture.layer.ConfigureWholeTowns(Array.Empty<(string id, Bounds bounds)>());
+        fixture.Prepare(camera);
+        Assert.IsTrue(fixture.layer.WantsTown("a", camera),
+            "whole-town streaming must preserve valid instance-bounds hysteresis");
+        Assert.IsFalse(fixture.layer.WantsTown("b", camera));
     }
 
     [Test]
