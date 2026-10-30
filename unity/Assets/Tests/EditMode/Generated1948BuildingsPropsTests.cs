@@ -35,7 +35,7 @@ public class Generated1948BuildingsPropsTests
         {
             Assert.IsNotNull(review.Prefabs[i]); Assert.IsNotNull(review.Materials[i]);
             string stem = Generated1948BuildingsPropsReview.DirOf(ids[i]) + "/" + ids[i];
-            Assert.AreEqual(stem + ".prefab", AssetDatabase.GetAssetPath(review.Prefabs[i]), ids[i] + " prefab");
+            Assert.AreEqual(Generated1948BuildingsPropsReview.PrefabOf(ids[i]), AssetDatabase.GetAssetPath(review.Prefabs[i]), ids[i] + " prefab");
             Assert.AreEqual(stem + ".mat", AssetDatabase.GetAssetPath(review.Materials[i]), ids[i] + " material");
         }
         // 01, 03 and 05 were regenerated on #1379; no label may still mark a roof gap or rear opening.

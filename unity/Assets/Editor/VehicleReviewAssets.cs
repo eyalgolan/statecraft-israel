@@ -28,7 +28,9 @@ namespace Statecraft.Game.EditorTools
             catalog.entries = new VehicleReviewCatalog.Entry[VehicleReviewCatalog.Ids.Length];
             for (int i = 0; i < VehicleReviewCatalog.Ids.Length; i++)
             {
-                var id = VehicleReviewCatalog.Ids[i]; var dir = Folder + "/" + id; var file = dir + "/" + id + "-compatibility.fbx";
+                var id = VehicleReviewCatalog.Ids[i]; var dir = VehicleReviewCatalog.DirOf(id); var file = dir + "/" + id + "-compatibility.fbx";
+                // A candidate placed in the game streams like the other placed generated models: compressed, no Crunch, full size.
+                bool placed = Statecraft.Game.Map.Collection.CollectionCatalog.IsGeneratedProp(id);
                 var importer = AssetImporter.GetAtPath(file) as ModelImporter ?? throw new FileNotFoundException("Documented compatibility FBX missing", file);
                 importer.useFileScale = true; importer.importAnimation = true; importer.animationType = ModelImporterAnimationType.Generic;
                 importer.animationCompression = ModelImporterAnimationCompression.Off; importer.clipAnimations = Array.Empty<ModelImporterClipAnimation>();
@@ -41,7 +43,7 @@ namespace Statecraft.Game.EditorTools
                 var texture = (TextureImporter)AssetImporter.GetAtPath(texturePath); texture.mipmapEnabled = true; texture.sRGBTexture = true;
                 texture.GetSourceTextureWidthAndHeight(out int width, out int height);
                 texture.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(width, height));
-                texture.textureCompression = TextureImporterCompression.Uncompressed; texture.crunchedCompression = false;
+                texture.textureCompression = placed ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed; texture.crunchedCompression = false;
                 foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" }) texture.ClearPlatformTextureSettings(platform);
                 texture.assetBundleName = ""; texture.SaveAndReimport();
                 var material = AssetDatabase.LoadAssetAtPath<Material>(dir + "/" + id + ".mat");

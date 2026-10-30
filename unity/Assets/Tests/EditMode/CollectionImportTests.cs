@@ -62,13 +62,13 @@ public class CollectionImportTests
     public void TheCatalogKeeps73IndependentOriginalsAndTheGeneratedInfantryBundle()
     {
         var ids = CollectionCatalog.Ids.ToList();
-        Assert.AreEqual(80, ids.Count);
+        Assert.AreEqual(87, ids.Count);
         Assert.AreEqual(ids.Count, ids.Distinct().Count(), "an id in two bundles");
-        Assert.AreEqual(79, CollectionCatalog.Bundles.Count,
+        Assert.AreEqual(86, CollectionCatalog.Bundles.Count,
             "73 independent originals, #1763's shared generated bundle and one bundle for each later generated model");
         Assert.IsTrue(CollectionCatalog.Bundles.Where(b => b.Bundle != CollectionCatalog.ArabArmies)
             .All(b => b.Ids.Length == 1 && b.Bundle == "collection-" + b.Ids[0]));
-        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 1 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
+        CollectionAssert.AreEqual(new[] { 21, 13, 6, 10, 5, 2, 4, 3 }, CollectionCatalog.Groups.Select(g => g.Ids.Length));
         CollectionAssert.AreEqual(GeneratedInfantry, CollectionCatalog.Bundles.Single(b => b.Bundle == CollectionCatalog.ArabArmies).Ids);
         Assert.AreEqual(27, CollectionCatalog.Animated.Count);
         CollectionAssert.IsSubsetOf(CollectionCatalog.Animated, ids);
@@ -162,7 +162,7 @@ public class CollectionImportTests
                 CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near),
             };
             if (CollectionCatalog.IsGenerated(id))
-                return new[] { $"{Dir(id)}/{id}.fbx", $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
+                return new[] { CollectionCatalog.SourceModelPath(id), $"{Dir(id)}/{id}.mat", ColourMap(id), $"{Dir(id)}/{id}.prefab", $"{Dir(id)}/provenance.json" }
                     .Concat(CollectionCatalog.IsGeneratedProp(id) ? Array.Empty<string>() : new[] { $"{Dir(id)}/{id}.controller" }).ToArray();
             if (Animated(id) || OriginalModelPose.Required(id)) files.Add($"{Dir(id)}/{id}-near.controller");
             foreach (var suffix in new[] { "-far.fbx", "-near.fbx", "-far.prefab", "-near.prefab" })
@@ -333,10 +333,15 @@ public class CollectionImportTests
         CollectionAssert.IsEmpty(AssetDatabase.GetAllAssetBundleNames(), "asset bundle labels");
     }
 
-    /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder.</summary>
-    static string[] FilesOf(string id, IEnumerable<string> closure) => closure.Where(p => p.StartsWith(Dir(id) + "/", StringComparison.Ordinal)).ToArray();
+    /// <summary>The paths of <paramref name="closure"/> that belong to the model <paramref name="id"/>: the files of its folder
+    /// (the collection's, or the town buildings' for a house).</summary>
+    static string[] FilesOf(string id, IEnumerable<string> closure)
+    {
+        string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
+        return closure.Where(p => p.StartsWith(folder, StringComparison.Ordinal)).ToArray();
+    }
 
-    /// <summary>Every placed generated model (Tal Heuberger's figures and props, #756) reaches the player only through its own
+    /// <summary>Every placed generated model (Tal Heuberger's figures, props and houses, #756) reaches the player only through its own
     /// streamed bundle: no enabled build scene and no asset under any Resources folder (nested ones too) depends on a file of
     /// its folder, its own bundle's build entry pulls in its model, and no other bundle pulls in any of its files.</summary>
     [Test]
@@ -347,14 +352,18 @@ public class CollectionImportTests
         var closures = builds.ToDictionary(b => b.assetBundleName, b => AssetDatabase.GetDependencies(b.assetNames, true));
         var scenes = AssetDatabase.GetDependencies(EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray(), true);
         var resources = ResourcesClosure();
-        var placed = CollectionCatalog.Ids.Where(CollectionCatalog.IsGenerated).ToList();
-        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent }, placed);
+        var placed = CollectionCatalog.Ids.Where(id => CollectionCatalog.IsGenerated(id) || CollectionCatalog.IsGeneratedHouse(id)).ToList();
+        CollectionAssert.IsSubsetOf(new[] { CollectionCatalog.BedouinCivilian, CollectionCatalog.BedouinTent, CollectionCatalog.SyrianR35, CollectionCatalog.KhakiTent }, placed);
+        Assert.AreEqual(5, placed.Count(CollectionCatalog.IsGeneratedHouse), "the five generated houses");
         foreach (var id in placed)
         {
             CollectionAssert.IsEmpty(FilesOf(id, scenes), id + " in a player scene's closure");
             CollectionAssert.IsEmpty(FilesOf(id, resources), id + " in a Resources asset's closure");
             string own = CollectionCatalog.BundleOf(id)!;
-            CollectionAssert.Contains(closures[own], Model(id), id + " in its own bundle");
+            string source = CollectionCatalog.SourceModelPath(id), folder = source.Substring(0, source.LastIndexOf('/') + 1);
+            // Its model, streamed prefab, material and colour map are all in its own bundle's closure.
+            foreach (var file in new[] { source, CollectionCatalog.PrefabPath(id, CollectionDetail.Near), folder + id + ".mat", folder + id + "_basecolor.jpg" })
+                CollectionAssert.Contains(closures[own], file, id + " in its own bundle");
             foreach (var other in closures.Where(c => c.Key != own))
                 CollectionAssert.IsEmpty(FilesOf(id, other.Value), id + " pulled into " + other.Key);
         }
@@ -369,21 +378,26 @@ public class CollectionImportTests
     [Test]
     public void TheResourcesCheckSeesANestedResourcesPrefabThatPlacesAGeneratedModel()
     {
-        string root = "Assets/TalClosureProbe" + Guid.NewGuid().ToString("N");
-        try
+        // The tent (a collection prop) and a house (a town building), each placed by its own probe.
+        foreach (var id in new[] { CollectionCatalog.BedouinTent, "generated-1948-01-netanya-tiled-house-original" })
         {
-            AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
-            AssetDatabase.CreateFolder(root, "Deep");
-            AssetDatabase.CreateFolder(root + "/Deep", "Resources");
-            CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "no Resources reference before the probe");
-            var tent = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(CollectionCatalog.BedouinTent, CollectionDetail.Near));
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(tent);
-            try { PrefabUtility.SaveAsPrefabAsset(go, root + "/Deep/Resources/Probe.prefab"); }
-            finally { UnityEngine.Object.DestroyImmediate(go); }
-            CollectionAssert.IsNotEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe's reference reaches the tent's files");
+            string root = "Assets/TalClosureProbe" + Guid.NewGuid().ToString("N");
+            try
+            {
+                AssetDatabase.CreateFolder("Assets", root.Substring("Assets/".Length));
+                AssetDatabase.CreateFolder(root, "Deep");
+                AssetDatabase.CreateFolder(root + "/Deep", "Resources");
+                CollectionAssert.IsEmpty(FilesOf(id, ResourcesClosure()), id + ": no Resources reference before the probe");
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(CollectionCatalog.PrefabPath(id, CollectionDetail.Near));
+                Assert.IsNotNull(model, id);
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                try { PrefabUtility.SaveAsPrefabAsset(go, root + "/Deep/Resources/Probe.prefab"); }
+                finally { UnityEngine.Object.DestroyImmediate(go); }
+                CollectionAssert.IsNotEmpty(FilesOf(id, ResourcesClosure()), id + ": the probe's reference reaches its files");
+            }
+            finally { AssetDatabase.DeleteAsset(root); }
+            CollectionAssert.IsEmpty(FilesOf(id, ResourcesClosure()), id + ": the probe is gone");
         }
-        finally { AssetDatabase.DeleteAsset(root); }
-        CollectionAssert.IsEmpty(FilesOf(CollectionCatalog.BedouinTent, ResourcesClosure()), "the probe is gone");
     }
 
     [Test]
@@ -394,7 +408,13 @@ public class CollectionImportTests
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx" : Model(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct(),
                 b.assetNames, bundle);
+        // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
+        var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();
+        CollectionAssert.IsEmpty(missing, "bundle asset names with no asset");
+        // The R35 is imported from the vehicle delivery's compatibility FBX, not from an <id>.fbx.
+        var r35 = builds.Single(b => b.assetBundleName == CollectionCatalog.BundleOf(CollectionCatalog.SyrianR35));
+        CollectionAssert.Contains(r35.assetNames, $"{CollectionCatalog.Folder}/{CollectionCatalog.SyrianR35}/{CollectionCatalog.SyrianR35}-compatibility.fbx");
     }
 }

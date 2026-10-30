@@ -7,6 +7,7 @@ using System.Linq;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Units;
 using Statecraft.Game.UI;
 using Statecraft.Sim;
@@ -28,20 +29,23 @@ public class TalModelsShots
     string saveDir = "";
     RenderTexture? rt; PanelSettings? ps;
     GameRoot root = null!;
-    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedUnits;
+    Action<string, CollectionDetail, Action<GameObject?>>? savedRural, savedPeople, savedSpecial, savedUnits;
+    Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? savedTown;
 
     [SetUp]
     public void Prepare()
     {
         saveDir = Path.Combine(Path.GetTempPath(), "statecraft-tal-shots-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(ShotDir); Directory.CreateDirectory(CivMovementShots.ShotDir);
-        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedUnits = UnitFigures.Source;
+        savedRural = RuralLife.Request; savedPeople = CivilianPeople.Request; savedSpecial = SpecialBuildingModels.Request;
+        savedUnits = UnitFigures.Source; savedTown = TownModelLayer.ModelAcquire;
     }
 
     [TearDown]
     public void DiscardScene()
     {
-        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; UnitFigures.Source = savedUnits;
+        RuralLife.Request = savedRural!; CivilianPeople.Request = savedPeople!; SpecialBuildingModels.Request = savedSpecial!;
+        UnitFigures.Source = savedUnits; TownModelLayer.ModelAcquire = savedTown!;
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         if (ps != null) Object.DestroyImmediate(ps);
         if (rt != null) { rt.Release(); Object.DestroyImmediate(rt); }
@@ -122,6 +126,86 @@ public class TalModelsShots
             Debug.Log($"SHOT bedouin {what} at {key} {at} from {distance:F0} m");
         }
     }
+
+    /// <summary>Degania Alef after the first turn (15 June 1948: the tank stands from 20 May), the camera on the kibbutz's own point,
+    /// so the frame is the same with and without the tank.</summary>
+    IEnumerator Degania(bool hebrew, bool after)
+    {
+        yield return Boot(hebrew);
+        root.Bridge!.EndTurn();
+        for (int i = 0; i < 3; i++) yield return null;
+        var ui = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
+        var close = ui.Q<Button>("turn-report-close");
+        if (close != null && close.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(close);
+        for (int i = 0; i < 3; i++) yield return null;
+        // The new turn opens a decision card over the map; the player's Hide button puts it away, and the card shrinks away
+        // (ScreenNav.Show). The frame is taken only once the card itself is undisplayed.
+        var card = ui.Q("event-card");
+        Assert.IsNotNull(card, "the event card");
+        if (card.resolvedStyle.display == DisplayStyle.Flex) UiTestKit.Press(ui.Q<Button>("event-hide"));
+        for (int i = 0; i < 120 && card.resolvedStyle.display != DisplayStyle.None; i++) yield return null;
+        Assert.AreEqual(DisplayStyle.None, card.resolvedStyle.display, "the decision card is hidden before the frame");
+        var map = Object.FindFirstObjectByType<MapScene>();
+        SpecialBuildingModels Layer(ICollection<string> withheld)
+        {
+            SpecialBuildingModels.Request = Answer(withheld);
+            Drop(map, SpecialBuildingModels.Name);
+            return CollectionGeometryFixture.Special(map, root.Bridge.State.Date)!;
+        }
+        // The frame is where the tank stands on this date with the model answered, the same before and after.
+        var layer = Layer(Array.Empty<string>());
+        var tank = layer.Placed.First(p => p.Model == CollectionCatalog.SyrianR35);
+        if (!after) layer = Layer(new[] { CollectionCatalog.SyrianR35 });
+        var point = tank.At;
+        point.y = map.Terrain.SampleHeight(point) + map.Terrain.transform.position.y;
+        // The closest the player's camera comes (CameraController.MinDistance).
+        Look(point, CameraController.MinDistance);
+        for (int i = 0; i < 5; i++) yield return null;
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"degania-{(after ? "after" : "before")}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT degania on {root.Bridge.State.Date:yyyy-MM-dd} at {point} from {CameraController.MinDistance:F0} m, event card display {card.resolvedStyle.display}: {string.Join(", ", layer.Placed.Select(p => p.Key))}");
+    }
+
+    sealed class NoLease : IDisposable { public void Dispose() { } }
+
+    /// <summary>A town's houses from the closest zoom the player can reach, the camera on the centre of the town's placed
+    /// houses (the plots are the same on main and on this branch: the model choice draws no random number). The town layer's
+    /// building requests are answered with the editor's prefabs, as the player's stream would answer them. Run on main and on
+    /// this branch for the before and after.</summary>
+    IEnumerator Houses(bool hebrew, string? town)
+    {
+        yield return Boot(hebrew);
+        TownModelLayer.ModelAcquire = (id, detail, done) => { done(Prefab(id, detail)); return new NoLease(); };
+        var layer = Object.FindFirstObjectByType<TownModelLayer>();
+        Assert.IsNotNull(layer, "the town layer");
+        // The village: the first locality (by id) on the stone-village lattice whose houses include the plastered courtyard house.
+        town ??= ((IEnumerable<(string id, Bounds bounds)>)typeof(TownModelLayer)
+                .GetField("buildingPlaces", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(layer)!)
+            .Select(p => p.id).Where(id => layer.InstancesOf(id).Any(i => i.Model == TownModel.G05CourtyardHouse))
+            .OrderBy(id => id, StringComparer.Ordinal).First();
+        var placed = layer.InstancesOf(town);
+        Assert.IsNotEmpty(placed, town);
+        var map = Object.FindFirstObjectByType<MapScene>();
+        var sum = Vector3.zero; foreach (var i in placed) sum += (Vector3)i.M.GetColumn(3);
+        var at = sum / placed.Count;
+        at.y = map.Terrain.SampleHeight(at) + map.Terrain.transform.position.y;
+        Look(at, CameraController.MinDistance);
+        for (int i = 0; i < 3; i++) { Camera.main.Render(); yield return null; }
+        string models = string.Join(", ", placed.GroupBy(i => i.Model).OrderBy(g => g.Key).Select(g => $"{g.Key} x{g.Count()}"));
+        CivMovementShots.Shot(rt!, Path.Combine("..", "tal-models-shots", $"houses-{town}-{(hebrew ? "he" : "en")}"));
+        Debug.Log($"SHOT houses {town} at {at} from {CameraController.MinDistance:F0} m: {models}");
+    }
+
+    [UnityTest] public IEnumerator HousesNetanyaEnglish() { yield return Houses(false, "netanya"); }
+    [UnityTest] public IEnumerator HousesNetanyaHebrew() { yield return Houses(true, "netanya"); }
+    [UnityTest] public IEnumerator HousesTiberiasEnglish() { yield return Houses(false, "tiberias"); }
+    [UnityTest] public IEnumerator HousesTiberiasHebrew() { yield return Houses(true, "tiberias"); }
+    [UnityTest] public IEnumerator HousesVillageEnglish() { yield return Houses(false, null); }
+    [UnityTest] public IEnumerator HousesVillageHebrew() { yield return Houses(true, null); }
+
+    [UnityTest] public IEnumerator DeganiaBeforeEnglish() { yield return Degania(false, false); }
+    [UnityTest] public IEnumerator DeganiaAfterEnglish() { yield return Degania(false, true); }
+    [UnityTest] public IEnumerator DeganiaBeforeHebrew() { yield return Degania(true, false); }
+    [UnityTest] public IEnumerator DeganiaAfterHebrew() { yield return Degania(true, true); }
 
     /// <summary>The Lebanese token's actual placed spot near Al-Malikiyya after the first turn (15 June
     /// 1948, inside the token's 6 June to 8 July window), from the unit zoom and from the closest zoom. The unit figures are

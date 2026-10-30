@@ -1186,77 +1186,77 @@ rules:
     source: "Dreamina (dreamina.capcut.com), model GPT Image 2.5, 2026-10-12, 1536x864 as downloaded, with promo/final/03-gameplay-1936.png as the style reference; prompts in promo/start-screen/prompt-b.txt and -c.txt"
     status: verified
     note: "Decision D1: AI-only images CC0 / no rights claimed. Two options for the start screen; C is used. Decision D-D decided (owner, 2026-10-14, docs/oss/DECISIONS.md): approved for free, non-commercial distribution and CC0 marking; before any paid release the owner confirms commercial rights for the plan used or replaces the image."
-  # Generated buildings and props: original source review only (PR1379).
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*.fbx"
+  # Generated buildings and props: shipped in the game (PR1379).
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-01-netanya-tiled-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-03-netanya-flat-roof-porch-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*.fbx"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Netanya's houses, beside #507's two-storey house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Tiberias's houses (the old town was built of basalt blocks, en.wiki Tiberias), streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*.fbx"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): Tiberias's houses (the old town was built of basalt blocks, en.wiki Tiberias), streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): the stone-village houses of the Arab towns and villages, beside #507's courtyard house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Settlements/Prototype/Models/generated-1948-05-plastered-courtyard-house-original/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, regenerated 24 October 2026 (#1379). Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): the stone-village houses of the Arab towns and villages, beside #507's courtyard house, streamed like the other town buildings after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   - glob: "unity/Assets/Art/Collection/generated-1948-06-bedouin-b-enclosed-striped-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1271,20 +1271,20 @@ rules:
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
     note: "In the game at the Bedouin camp areas, streamed in its own bundle after the first frame; the owner signed off all 19 generated models on 27 October 2026 (#756). 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
-  - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+  - glob: "unity/Assets/Art/Collection/generated-1948-08-khaki-canvas-tent/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tal Heuberger, Tripo Studio generated source, 22 October 2026. Provider-original GLB and exact embedded 4096px colour-map bytes preserved; provenance.json records hashes. FBX is a local compatibility conversion with no decimation, repair or atlas; verified source triangle positions/connectivity, UVs and stored normals. This is not a provider-original FBX."
     status: verified
-    note: "Editor review only; all campaign activation held pending streaming and Eyal's art/sensitivity sign-off after screenshots. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
+    note: "In the game since the owner's sign-off of 27 October 2026 (#756): in place of a transit camp's khaki ridge tents up close, streamed in its own bundle after the first frame. 01, 03 and 05 were regenerated on 24 October 2026 at the owner's request on #1379, replacing provider originals with roof gaps or a rear opening. No rights change to older assets."
   - glob: "unity/Assets/Editor/Generated1948Review/generated-1948-09-stone-village-well/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
@@ -1450,20 +1450,20 @@ rules:
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
     status: verified
     note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*.fbx"
+  - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
-  - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+  - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
-    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour map is extracted byte-for-byte; no LOD, decimation or texture re-encoding."
+    source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). Editor-only review art; no sourced deployment, player dependency, Resources catalog or streamed bundle. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
   - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true

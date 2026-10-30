@@ -677,6 +677,402 @@ public class KitTests
         foreach (var k in new[] { mixed, tents, huts }) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
     }
 
+    /// <summary>Owner, 27 October 2026 (#756: "Sign off all 19"): a camp's khaki ridge tents can be built into a mesh of their
+    /// own (MaabarotSplit), for Tal Heuberger's khaki canvas tent to stand in for them up close. Nothing else moves: the two
+    /// meshes hold Maabarot's vertex positions, split between them, and the counts and the census are the same.</summary>
+    [Test]
+    public void TheSplitCampHoldsTheSameKitWithItsKhakiTentsApart()
+    {
+        var map = OpenMap();
+        var camps = new List<(string id, Vector2 at, System.DateTime from)> { ("a", Spot(map, "revivim"), System.DateTime.MinValue) };
+        var whole = SettlementKits.Maabarot(camps, PlacementLayer.CampGround(map), out var placedWhole);
+        var split = SettlementKits.MaabarotSplit(camps, PlacementLayer.CampGround(map), out var placedSplit);
+        try
+        {
+            Assert.IsNotNull(whole[0].mesh); Assert.IsNotNull(split[0].mesh); Assert.IsNotNull(split[0].khaki, "the camp has khaki ridge tents");
+            Assert.AreEqual((whole[0].tents, whole[0].huts, whole[0].at), (split[0].tents, split[0].huts, split[0].at));
+            Assert.AreEqual(whole[0].mesh!.vertexCount, split[0].mesh!.vertexCount + split[0].khaki!.vertexCount, "the vertices are only partitioned");
+            static Vector3[] Sorted(IEnumerable<Vector3> v) => v.OrderBy(p => p.x).ThenBy(p => p.y).ThenBy(p => p.z).ToArray();
+            CollectionAssert.AreEqual(Sorted(whole[0].mesh!.vertices), Sorted(split[0].mesh!.vertices.Concat(split[0].khaki!.vertices)),
+                "the same vertex positions, split between the two meshes");
+            CollectionAssert.AreEqual(placedWhole.Select(p => (p.Kind, p.C, p.W, p.D)), placedSplit.Select(p => (p.Kind, p.C, p.W, p.D)));
+            Assert.IsNotEmpty(split[0].khakiTents);
+            foreach (var t in split[0].khakiTents)
+                Assert.IsTrue(placedSplit.Any(p => p.Kind == "tent" && p.C == t.C && p.W == t.W && p.D == t.D), $"{t.C}: a census tent");
+            // The partition is white against khaki: the census records each tent's canvas (Placed.Wall). White canvas
+            // (0.88 base, jitter 0.04) never reads below r 211, khaki (0.72, 0.05) never above 198, grey-olive lower still.
+            // A ridge tent has W != D (5-6 x 3.6-4.2), a bell tent W == D (2r); bell tents are never split.
+            const byte WhiteFloor = 205;
+            var ridge = placedSplit.Where(p => p.Kind == "tent" && p.W != p.D).ToList();
+            var khakiRidge = ridge.Where(p => p.Wall.r < WhiteFloor).ToList();
+            var whiteRidge = ridge.Where(p => p.Wall.r >= WhiteFloor).ToList();
+            Assert.IsNotEmpty(whiteRidge, "the camp also has white ridge tents, so the partition is tested");
+            Assert.AreEqual(khakiRidge.Count, split[0].khakiTents.Count, "every non-white ridge tent, and only those, is split");
+            foreach (var t in khakiRidge)
+                Assert.IsTrue(split[0].khakiTents.Any(k => k.C == t.C && k.W == t.W && k.D == t.D && k.Yaw == t.Yaw), $"{t.C}: a khaki ridge tent left in the camp's mesh");
+            foreach (var t in whiteRidge)
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a white ridge tent split off as khaki");
+            foreach (var t in placedSplit.Where(p => p.Kind == "tent" && p.W == p.D))
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a bell tent split off");
+            foreach (var t in placedSplit.Where(p => p.Kind == "hut"))
+                Assert.IsFalse(split[0].khakiTents.Any(k => k.C == t.C), $"{t.C}: a hut split off");
+        }
+        finally
+        {
+            foreach (var k in whole) if (k.mesh != null) Object.DestroyImmediate(k.mesh);
+            foreach (var k in split) { if (k.mesh != null) Object.DestroyImmediate(k.mesh); if (k.khaki != null) Object.DestroyImmediate(k.khaki); }
+        }
+    }
+
+    sealed class FakeLease : System.IDisposable
+    {
+        readonly System.Action release; bool done;
+        public FakeLease(System.Action release) { this.release = release; }
+        public void Dispose() { if (!done) { done = true; release(); } }
+    }
+
+    /// <summary>Tal Heuberger's khaki canvas tent (#756) stands in for a camp's khaki ridge tents up close, and is owned like the
+    /// single-building models (#1273's residency): nothing is asked for until a game camera comes close to the camp; leaving,
+    /// disabling or destroying the camp destroys the models, brings the kit's tents back and releases the lease; coming back
+    /// asks again; an answer that arrives after leave places nothing; a model that does not stream leaves the kit's tents.</summary>
+    [Test]
+    public void TheKhakiTentModelIsOwnedUpCloseAndReleasedOnLeave()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var policy = Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special;
+        var root = new GameObject("camp tents fixture");
+        var camGo = new GameObject("camp tents camera", typeof(Camera));
+        try
+        {
+            var tents = new[] { new SettlementKits.KhakiTent(new Vector2(100f, 200f), 5f, 30f, 60f, 40f),
+                new SettlementKits.KhakiTent(new Vector2(300f, 200f), 6f, 30f, 55f, 40f) };
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Assert.IsNotNull(prefab, "the khaki tent's prefab is in the 1948 Collection's folder");
+            GameObject Kit(string name) { var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root.transform, false); return go; }
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            void Near() => camGo.transform.position = new Vector3(200f, 10000f, 200f);
+            void Far() => camGo.transform.position = new Vector3(200f, 60000f, 200f);
+
+            int acquired = 0, released = 0;
+            System.Action<GameObject?>? late = null; bool answerNow = true; GameObject? answer = prefab;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) =>
+            {
+                acquired++;
+                Assert.AreEqual(Statecraft.Game.Map.Collection.CampTentModels.Model, id);
+                if (answerNow) done(answer); else late = done;
+                return new FakeLease(() => released++);
+            };
+
+            var kit = Kit("with model");
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, policy);
+            Assert.AreEqual(0, acquired, "nothing is asked for before a camera comes close");
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(1, acquired); Assert.AreEqual(tents.Length, layer.ModelCount, "one model per khaki tent");
+            Assert.IsTrue(kit.GetComponent<Renderer>().forceRenderingOff, "up close the kit's khaki tents give way");
+            var drawn = layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit).ToList();
+            Assert.IsNotEmpty(drawn); Assert.IsTrue(drawn.All(r => !r.forceRenderingOff), "and the models draw");
+
+            Far(); layer.Choose(default, cam);
+            Assert.AreEqual(1, released, "leaving releases the lease, so the bundle can unload");
+            Assert.AreEqual(0, layer.ModelCount, "and the models go");
+            Assert.IsEmpty(layer.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit));
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "far off the kit's tents are back");
+
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(2, acquired, "coming back asks again"); Assert.AreEqual(tents.Length, layer.ModelCount);
+            layer.enabled = false;
+            Assert.AreEqual(2, released, "disabling releases it"); Assert.AreEqual(0, layer.ModelCount);
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff);
+            layer.enabled = true;
+            Near(); layer.Choose(default, cam);
+            Assert.AreEqual(3, acquired); Assert.AreEqual(tents.Length, layer.ModelCount);
+            Object.DestroyImmediate(layer);
+            Assert.AreEqual(3, released, "destroying releases it");
+            Assert.IsEmpty(kit.GetComponentsInChildren<Renderer>().Where(r => r.gameObject != kit), "and destroys the models");
+
+            // An answer that arrives after leave places nothing.
+            answerNow = false;
+            var slow = Kit("slow model");
+            var later = Statecraft.Game.Map.Collection.CampTentModels.Attach(slow, tents, policy);
+            Near(); later.Choose(default, cam);
+            Far(); later.Choose(default, cam);
+            Assert.AreEqual(4, released);
+            late!(prefab);
+            Assert.AreEqual(0, later.ModelCount, "the departed view is not rebuilt");
+
+            // A model that does not stream: the kit's tents stay, close or far.
+            answerNow = true; answer = null;
+            var bare = Kit("missing model");
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("^CAMPS: .* did not stream"));
+            var failed = Statecraft.Game.Map.Collection.CampTentModels.Attach(bare, tents, policy);
+            Near(); failed.Choose(default, cam);
+            Assert.AreEqual(0, failed.ModelCount);
+            Assert.IsFalse(bare.GetComponent<Renderer>().forceRenderingOff, "no model: the kit's tents stay");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
+    [Test]
+    public void AnInactiveStreamedTentRootIsActivatedBeforeItReplacesTheKit()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("inactive streamed tent fixture");
+        var camGo = new GameObject("inactive streamed tent camera", typeof(Camera));
+        GameObject? inactive = null;
+        try
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            inactive = Object.Instantiate(asset); inactive.SetActive(false);
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (_, __, done) => { done(inactive); return new FakeLease(() => { }); };
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var tents = new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) };
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            camGo.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, camGo.GetComponent<Camera>());
+            Assert.IsTrue(layer.HasModels); Assert.IsTrue(kit.GetComponent<Renderer>().forceRenderingOff);
+            Assert.IsTrue(layer.Instances.All(i => i.activeInHierarchy), "the replacement that hides the fallback must itself be drawable");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo); if (inactive != null) Object.DestroyImmediate(inactive);
+        }
+    }
+
+    [Test]
+    public void ADeadTentCameraIsPrunedWhileAnotherCameraKeepsTheCampResident()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("tent camera pruning fixture");
+        var a = new GameObject("departed tent camera", typeof(Camera)); var b = new GameObject("resident tent camera", typeof(Camera));
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (_, __, done) => { done(prefab); return new FakeLease(() => { }); };
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit,
+                new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) }, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            foreach (var go in new[] { a, b }) go.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, a.GetComponent<Camera>()); layer.Choose(default, b.GetComponent<Camera>());
+            Assert.AreEqual(2, layer.DiagnosticsSnapshot.ObservedCameras);
+            a.SetActive(false);
+            layer.AdvanceCameraFrame(Time.frameCount);
+            Assert.IsTrue(layer.Demanded, "the other camera keeps the camp resident");
+            Assert.AreEqual(1, layer.DiagnosticsSnapshot.ObservedCameras, "the inactive camera's hysteresis entry is released");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(a); Object.DestroyImmediate(b);
+        }
+    }
+
+    /// <summary>The khaki tent model keeps its size whatever the tent's yaw: tents of one length at 0, 45 and 90 degrees get the
+    /// same scale, turn by their yaw differences, and stand centred on their plots on the ground.</summary>
+    [Test]
+    public void TheKhakiTentModelKeepsItsSizeAtEveryYaw()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("camp tents yaw fixture");
+        var camGo = new GameObject("camp tents yaw camera", typeof(Camera));
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => { done(prefab); return new FakeLease(() => { }); };
+            var yaws = new[] { 0f, 45f, 90f };
+            var tents = yaws.Select((yaw, i) => new SettlementKits.KhakiTent(new Vector2(200f * i, 0f), 5f, yaw, 60f, 40f)).ToArray();
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.SetPositionAndRotation(new Vector3(200f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, cam);
+            var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
+                .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
+            Assert.AreEqual(tents.Length, models.Count);
+            Assert.AreEqual(60.0293f, models[0].localScale.x, 1e-3f,
+                "the shipped 60 m kit tent divided by the prefab's 0.999512 m top-down edge");
+            // The premise of the turn: the model's long side seen from above lies along its own z once it stands up.
+            var alone = Object.Instantiate(prefab);
+            try
+            {
+                var own = alone.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.Greater(own.size.z, own.size.x, "the model's long side lies along z");
+            }
+            finally { Object.DestroyImmediate(alone); }
+            for (int i = 0; i < models.Count; i++)
+            {
+                // Its long side runs along the kit tent's ridge: (cos yaw, sin yaw) in x-z.
+                var ridge = (models[i].rotation * Quaternion.Inverse(prefab!.transform.localRotation)) * Vector3.forward;
+                float yawRad = yaws[i] * Mathf.Deg2Rad;
+                Assert.AreEqual(Mathf.Cos(yawRad), ridge.x, 1e-3f, $"yaw {yaws[i]}: along the ridge"); Assert.AreEqual(Mathf.Sin(yawRad), ridge.z, 1e-3f, $"yaw {yaws[i]}");
+                Assert.AreEqual(models[0].localScale.x, models[i].localScale.x, 1e-4f, $"yaw {yaws[i]}: the same scale");
+                Assert.AreEqual(models[0].localScale.y, models[i].localScale.y, 1e-4f, $"yaw {yaws[i]}: the same height scale");
+                Assert.AreEqual(models[0].localScale.z, models[i].localScale.z, 1e-4f, $"yaw {yaws[i]}: the same depth scale");
+                // A pure turn about y by the yaw difference, signed: the kit's yaw is counter-clockwise in x-z, Unity's y turn clockwise.
+                float turn = Mathf.DeltaAngle(0f, (models[i].rotation * Quaternion.Inverse(models[0].rotation)).eulerAngles.y);
+                Assert.AreEqual(-(yaws[i] - yaws[0]), turn, 0.01f, $"yaw {yaws[i]}: turned by its yaw, the right way");
+                var b = models[i].GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.AreEqual(tents[i].C.x, b.center.x, 0.01f, $"yaw {yaws[i]}: centred"); Assert.AreEqual(tents[i].C.y, b.center.z, 0.01f);
+                Assert.AreEqual(tents[i].Y, b.min.y, 0.01f, $"yaw {yaws[i]}: on the ground");
+            }
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
+    sealed class TentSource : Statecraft.Game.Map.Collection.CollectionStream.ISource
+    {
+        public readonly List<string> Opened = new List<string>(), Unloaded = new List<string>();
+        public GameObject? Prefab;
+        public System.Action? BeforeUnload;
+        public IEnumerator Open(string bundle, System.Action<string?> done) { Opened.Add(bundle); yield return null; done(null); }
+        public IEnumerator Load(string bundle, string path, System.Action<GameObject?> done) { yield return null; yield return null; done(Prefab); }
+        public void Unload(string bundle) { BeforeUnload?.Invoke(); Unloaded.Add(bundle); }
+    }
+
+    static void Pump(Stack<IEnumerator> stack, int frames)
+    {
+        int seen = 0;
+        while (stack.Count != 0 && seen < frames)
+        {
+            var top = stack.Peek();
+            if (!top.MoveNext()) stack.Pop();
+            else if (top.Current is IEnumerator nested) stack.Push(nested);
+            else seen++;
+        }
+    }
+
+    /// <summary>The khaki tent's bundle really unloads: through the production acquisition (CampTentModels' default Acquire, the
+    /// shared collection stream's owned leases) on a stream with a stand-in source, two camps that a camera comes close to
+    /// share one open bundle; one camp's leave keeps it, the last one's unloads it, with no owner and no pin left. While admitted, the residency diagnostics count the camps' live models and leases in the special
+    /// category; after leave they count none.</summary>
+    [Test]
+    public void TheKhakiTentsBundleUnloadsWhenTheLastCampLeaves()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        // The production acquisition: CampTentModels.Acquire stays its default (CollectionStream.Acquire), and the shared stream
+        // the game would make is this one, with a stand-in source; an inert host keeps the stream from starting its own runner,
+        // so the test runs it.
+        var streamType = typeof(Statecraft.Game.Map.Collection.CollectionStream);
+        var sharedField = streamType.GetField("shared", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var hostField = streamType.GetField("host", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+        var savedShared = sharedField.GetValue(null); var savedHost = hostField.GetValue(null);
+        var root = new GameObject("camp tents unload fixture");
+        var camGo = new GameObject("camp tents unload camera", typeof(Camera));
+        var hostGo = new GameObject("inert collection stream host");
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            var source = new TentSource { Prefab = prefab };
+            var stream = new Statecraft.Game.Map.Collection.CollectionStream(source);
+            var run = new Stack<IEnumerator>(); run.Push(stream.Run());
+            sharedField.SetValue(null, stream); hostField.SetValue(null, hostGo.AddComponent<Statecraft.Game.Map.Collection.CollectionStreamHost>());
+            Assert.AreEqual(streamType.GetMethod("Acquire", new[] { typeof(string), typeof(Statecraft.Game.Map.Collection.CollectionDetail), typeof(System.Action<GameObject?>) }),
+                Statecraft.Game.Map.Collection.CampTentModels.Acquire.Method, "the production acquisition, CollectionStream.Acquire, not a test stand-in");
+            string bundle = Statecraft.Game.Map.Collection.CollectionCatalog.BundleOf(Statecraft.Game.Map.Collection.CampTentModels.Model)!;
+            var policy = Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special;
+            var tents = new[] { new SettlementKits.KhakiTent(new Vector2(100f, 200f), 5f, 30f, 60f, 40f) };
+            GameObject Kit(string name) { var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.SetParent(root.transform, false); return go; }
+            var a = Statecraft.Game.Map.Collection.CampTentModels.Attach(Kit("camp a"), tents, policy);
+            var b = Statecraft.Game.Map.Collection.CampTentModels.Attach(Kit("camp b"), tents, policy);
+            var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Category Special() =>
+                Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Capture().categories.Single(c => c.category == "special");
+            object Field(string name) => typeof(Statecraft.Game.Map.Collection.CollectionStream)
+                .GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(stream)!;
+            int Owners() => ((System.Collections.IDictionary)Field("owners")).Count;
+            bool Pinned() => ((ICollection<string>)Field("pinned")).Contains(bundle);
+            bool Inflight() => ((ICollection<string>)Field("inflight")).Contains(bundle);
+            int Leases() { var d = (System.Collections.IDictionary)Field("owners"); return d.Contains(bundle) ? (int)d[bundle]! : 0; }
+            bool Open() => ((System.Collections.IDictionary)Field("bundles")).Contains(bundle);
+            int Cached() => ((Dictionary<string, string>)Field("paths")).Count(kv => kv.Value == bundle);
+            int Queued() => ((System.Collections.ICollection)Field("pending")).Count;
+            int Loaded() => ((System.Collections.ICollection)Field("loaded")).Count;
+            int PendingEvictions() => ((ICollection<string>)Field("pendingEvictions")).Count;
+            // The whole stream back to empty, not only this bundle's entries: no owner, pin, load in flight, open bundle, cached
+            // prefab, queued request, loaded model or waiting eviction.
+            void StreamEmpty(string when)
+            {
+                Assert.AreEqual(0, Owners(), $"{when}: no owner");
+                Assert.AreEqual(0, ((ICollection<string>)Field("pinned")).Count, $"{when}: no pin");
+                Assert.AreEqual(0, ((ICollection<string>)Field("inflight")).Count, $"{when}: no load in flight");
+                Assert.AreEqual(0, ((System.Collections.IDictionary)Field("bundles")).Count, $"{when}: no open bundle");
+                Assert.AreEqual(0, ((Dictionary<string, string>)Field("paths")).Count, $"{when}: no cached prefab");
+                Assert.AreEqual(0, Queued(), $"{when}: nothing queued");
+                Assert.AreEqual(0, Loaded(), $"{when}: nothing loaded");
+                Assert.AreEqual(0, PendingEvictions(), $"{when}: no eviction waits");
+            }
+
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam); b.Choose(default, cam);
+            Pump(run, 20);
+            Assert.AreEqual(new[] { bundle }, source.Opened.ToArray(), "one open bundle for both camps");
+            Assert.AreEqual(tents.Length, a.ModelCount); Assert.AreEqual(tents.Length, b.ModelCount);
+            var live = Special();
+            Assert.AreEqual(2 * tents.Length, live.liveInstances, "the diagnostics count the camps' models");
+            Assert.AreEqual(2, live.ownedLeases, "and their leases");
+            Assert.AreEqual(1, Owners(), "one owned bundle"); Assert.AreEqual(2, Leases(), "held by both camps' leases");
+            Assert.IsFalse(Pinned(), "never pinned"); Assert.IsFalse(Inflight()); Assert.AreEqual(1, Cached(), "its prefab cached"); Assert.AreEqual(0, Queued());
+            var aModels = a.Instances.ToList(); var bModels = b.Instances.ToList();
+
+            camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
+            Assert.AreEqual(1, Leases(), "one camp's leave drops its lease");
+            Assert.IsTrue(aModels.All(m => m == null), "and destroys its models");
+            CollectionAssert.IsEmpty(source.Unloaded, "the other camp still owns the bundle"); Assert.IsTrue(Open());
+            source.BeforeUnload = () => Assert.IsTrue(bModels.All(m => m == null), "no model instance is left when the bundle unloads");
+            b.Choose(default, cam);
+            source.BeforeUnload = null;
+            Assert.AreEqual(new[] { bundle }, source.Unloaded.ToArray(), "the last leave unloads it: no owner, no pin");
+            var after = Special();
+            Assert.AreEqual(0, after.liveInstances); Assert.AreEqual(0, after.ownedLeases);
+            Assert.AreEqual(0, Owners(), "the stream holds no owner"); Assert.AreEqual(0, Leases()); Assert.IsFalse(Pinned(), "and no pin"); Assert.IsFalse(Inflight());
+            Assert.IsFalse(Open(), "the bundle is gone"); Assert.AreEqual(0, Cached(), "and its cached prefab"); Assert.AreEqual(0, Queued(), "nothing queued");
+            StreamEmpty("after the last leave");
+
+            // A load still in flight when the camera leaves: nothing is placed, and the bundle unloads once the load ends.
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); a.Choose(default, cam);
+            Pump(run, 2);
+            Assert.AreEqual(2, source.Opened.Count, "the bundle is opening again");
+            Assert.IsTrue(Inflight(), "its load is in flight");
+            camGo.transform.position = new Vector3(100f, 60000f, 200f); a.Choose(default, cam);
+            Assert.AreEqual(0, Owners(), "leaving drops the owner at once"); Assert.AreEqual(1, source.Unloaded.Count, "but the load in flight holds the bundle");
+            Pump(run, 20);
+            Assert.AreEqual(0, a.ModelCount, "the cancelled load places nothing");
+            Assert.AreEqual(2, source.Unloaded.Count, "and the bundle unloads after it");
+            Assert.IsFalse(Inflight()); Assert.IsFalse(Pinned());
+            StreamEmpty("after the cancelled load");
+
+            // Destroying a camp while its models stand destroys them before the bundle unloads.
+            camGo.transform.position = new Vector3(100f, 10000f, 200f); b.Choose(default, cam);
+            Pump(run, 20);
+            Assert.AreEqual(tents.Length, b.ModelCount);
+            var standing = b.Instances.ToList();
+            source.BeforeUnload = () => Assert.IsTrue(standing.All(m => m == null), "no model instance is left when the bundle unloads");
+            Object.DestroyImmediate(b);
+            source.BeforeUnload = null;
+            Assert.AreEqual(3, source.Unloaded.Count, "destroying the last owner unloads it");
+            Assert.AreEqual(0, Owners()); Assert.IsFalse(Pinned());
+            Assert.AreEqual(0, Loaded(), "nothing loaded is left"); Assert.AreEqual(0, PendingEvictions(), "and no eviction waits");
+            StreamEmpty("after the destroy");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            sharedField.SetValue(null, savedShared); hostField.SetValue(null, savedHost);
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo); Object.DestroyImmediate(hostGo);
+        }
+    }
+
     /// <summary>Issue #32: ma'abarot are seeded (two builds, the same camps), stand on dry land clear of every town's plots,
     /// the 1948 localities and the Bedouin camps, keep off the routes, and two camps asked for on the same ground keep
     /// apart: a camp stands in its own hex (review #557), so the second finds none left there (the first camp's lots) and
@@ -739,6 +1135,70 @@ public class KitTests
         Assert.IsTrue(mesh == null, "the camp's mesh goes with it");
         Assert.AreEqual(1, layer.transform.childCount);
         Assert.AreSame(map.MarkerMaterial, layer.transform.GetChild(0).GetComponent<MeshRenderer>().sharedMaterial, "housing keeps its box");
+    }
+
+    /// <summary>#756 through PlacementLayer: a transit camp's khaki ridge tents get a child of their own carrying
+    /// CampTentModels; up close the streamed tent models stand under it. Redrawing (housing in the camp's place) destroys
+    /// the camp's and the khaki child's own meshes, destroys the models and releases the lease, and leaves the streamed
+    /// prefab's shared meshes alive.</summary>
+    [Test]
+    public void APlacedCampsKhakiTentModelsRetireWithItAndKeepThePrefabsMeshes()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        GameObject? camGo = null, prefabFixture = null;
+        Mesh? sharedFixture = null;
+        try
+        {
+            var map = OpenMap();
+            camGo = new GameObject("placed camp tents camera", typeof(Camera));
+            var c = Statecraft.Sim.ContentLoader.Load(Statecraft.Game.Paths.Content);
+            var hex = c.SettlementHexes.Single(s => s.Id == "revivim");
+            var date = new System.DateTime(1950, 8, 26);
+            // Owned transient geometry makes the cleanup control safe even when it intentionally collects a model mesh.
+            // Import tests separately verify the shipped tent's original mesh, material and texture.
+            var prefab = prefabFixture = new GameObject("camp model source fixture", typeof(MeshFilter), typeof(MeshRenderer));
+            sharedFixture = Object.Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
+            prefab.GetComponent<MeshFilter>().sharedMesh = sharedFixture;
+            prefab.GetComponent<MeshRenderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Kit.mat");
+            prefab.SetActive(false);
+            var prefabMeshes = new List<Mesh> { sharedFixture };
+            int acquired = 0, released = 0;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => { acquired++; done(prefab); return new FakeLease(() => released++); };
+
+            var layer = new GameObject("Placements").AddComponent<PlacementLayer>();
+            layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.TransitCamp, hex.Q, hex.R, date) }, c, map);
+            var camp = layer.transform.GetChild(0);
+            var campMesh = camp.GetComponent<MeshFilter>().sharedMesh;
+            var khaki = camp.Find(camp.name + "_khaki");
+            Assert.IsNotNull(khaki, "the camp's khaki ridge tents are a child of their own");
+            var khakiMesh = khaki.GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(khakiMesh); Assert.AreNotSame(campMesh, khakiMesh);
+            var tents = khaki.GetComponent<Statecraft.Game.Map.Collection.CampTentModels>();
+            Assert.IsNotNull(tents, "PlacementLayer attaches CampTentModels to the khaki child");
+            Assert.AreEqual(0, acquired, "nothing asked for before a camera comes close");
+
+            var cam = camGo.GetComponent<Camera>();
+            camGo.transform.SetPositionAndRotation(khaki.GetComponent<MeshRenderer>().bounds.center + Vector3.up * 10000f, Quaternion.Euler(90f, 0f, 0f));
+            tents.Choose(default, cam);
+            Assert.AreEqual(1, acquired); Assert.Greater(tents.ModelCount, 0, "up close the models stand under the khaki child");
+            var models = tents.Instances.ToList();
+            CollectionAssert.IsSubsetOf(models.SelectMany(m => m.GetComponentsInChildren<MeshFilter>(true)).Select(f => f.sharedMesh).Where(m => m != null).Distinct().ToList(),
+                prefabMeshes, "the models share the prefab's meshes");
+
+            layer.Render(new[] { new Statecraft.Sim.Placement(Statecraft.Sim.MapActions.Housing, hex.Q, hex.R, date) }, c, map);
+            Assert.IsTrue(campMesh == null, "the camp's own mesh goes with it");
+            Assert.IsTrue(khakiMesh == null, "the khaki tents' own mesh goes with it");
+            Assert.IsTrue(models.All(m => m == null), "the tent models go");
+            Assert.AreEqual(1, released, "and the lease is released");
+            Assert.IsTrue(prefabMeshes.All(m => m != null), "the streamed prefab's shared meshes stay");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            if (camGo != null) Object.DestroyImmediate(camGo);
+            if (prefabFixture != null) Object.DestroyImmediate(prefabFixture);
+            if (sharedFixture != null) Object.DestroyImmediate(sharedFixture);
+        }
     }
 
     /// <summary>Review (issue #32): with the "kits" toggle off a transit camp is drawn as its marker box, as the settlements

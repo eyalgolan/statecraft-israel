@@ -23,5 +23,5 @@
   "decimation": false,
   "welding": false,
   "conversion": "Standard glTF Y-up / FBX Y-up compatibility export; no pivot, mesh or UV rewrite; all zero source clips retained; map extracted byte-for-byte",
-  "historical_status": "Candidate paint/markings/subtype are unverified; no historical deployment represented"
+  "historical_status": "Candidate paint/markings/subtype are unverified. Placed as the tank stopped at Degania Alef from 20 May 1948 (JVL; en.wiki Renault R35); owner sign-off 27 October 2026 (#756)"
 }
