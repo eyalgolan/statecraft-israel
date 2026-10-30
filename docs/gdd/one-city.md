@@ -3,7 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want to put Tel Aviv's people to work and house the immigrants who arrive, so that the city earns Money and its people hold together (GDD objective 2, "Absorb immigrants" [S1]; decisions D-A4, D-A5 [S2]).
-I inspect a regional capital and assign people under the same rules as the complete design.
+I inspect a retained managed city and assign people under its existing rules.
 
 ## Rules
 
@@ -14,11 +14,11 @@ I inspect a regional capital and assign people under the same rules as the compl
 - Arrivals: the CBS series in `content/aliyah.yaml` arrives as refugees, in whole units, counted cumulatively so that no unit is lost or counted twice (R-CITY-003, D-A5 [S2]). With twelve cities they are spread over all of them: see `cities.md`.
 - Housing: every refugee becomes a civilian, without a job, on the housing step, with no hard cap; the people beyond the city's housing capacity are its overflow and lower its housing condition (R-CITY-004, R-HOUSE-001 to R-HOUSE-004, D-D1 decided 15 October 2026 [S2]). With twelve cities: see `cities.md`.
 - Social cohesion: a share from 0% to 100%, the weighted housed share and employed share over all cities (R-CITY-005). At first no other system read it; the top bar shows it as a resource meter, in the GDD loop only (the owner's ruling of 15 October 2026 [S4]). It is now the `morale` indicator (R-NAT-001), which approval and the `low_cohesion` situation read; the employed share is one of its effect-web sources and housing reaches it through the `housing` indicator.
-This is a handoff, not another city rulebook. [Cities](cities.md) owns assignments, housing/builders/workshops; [training](training.md) owns people/reception/conversion; [resources](cutover-resource-layer.md) owns stocks/upkeep; [balance](balance.md) owns amounts.
+This is a handoff, not another city rulebook. [Cities](cities.md) owns assignments, housing and retained projects [S6]; [training](training.md) owns people and conversion; [resources](cutover-resource-layer.md) owns stocks; [balance](balance.md) owns accepted amounts.
 
-A fixture can use a single region, but the playable start distributes farmers across multiple regions. Do not independently round every town or create an urban-only population total. Explicit fixture overrides are not production balance.
+Do not independently round every town or create an urban-only population total. Explicit fixture overrides are not production balance. **Amir's proposal, declined by the owner on 30 October 2026 [S5]:** the playable start would distribute farmers across multiple regions.
 
-The old city recruit counts, housing-only refugee conversion, passive city tax and Attention refunds need migration. Existing tests describe older code until deliberately updated, not authority to keep obsolete mechanics.
+The retained next-housing-step refugee conversion remains authoritative. **Amir's proposal to replace city recruit counts, passive city tax and Attention behavior was declined by the owner on 30 October 2026 [S5].**
 
 ## Data touched
 
@@ -26,7 +26,7 @@ The old city recruit counts, housing-only refugee conversion, passive city tax a
 - `GameState`: `Cities` (counts), `Cohesion` (hashed as `coh=` when the state has cities; since removed: folded into `morale`, R-NAT-001), `Treasury`.
 - Save files: the `work CITY ROLE N` line. Scenarios: `assign_workers` (and `content: mvp` until the cutover).
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` was new.
-- Regional fixtures, assignment commands, capacity summaries and migration tests.
+- Assignment commands, capacity summaries and migration tests. Proposed regional fixtures are non-operative [S5].
 - No independent constants belong here.
 
 ## Done when
@@ -48,8 +48,8 @@ A second city ruleset, hidden fixture balance and another population ledger.
 - [S2] GDD v0.1 impact analysis and phased plan, section 5, docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md
 - [S3] GDD Phase 1 implementation plan, PR 3, docs/superpowers/plans/2026-10-12-gdd-phase-1.md
 - [S4] The owner's ruling on showing Social cohesion, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/380, checked 2026-10-16
-- [S1] Authority, docs/GDD.md.
-- [S2] City owner, docs/gdd/cities.md.
+- [S5] Authority, docs/GDD.md.
+- [S6] City owner, docs/gdd/cities.md.
 
 ## Open questions
 

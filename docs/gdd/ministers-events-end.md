@@ -13,18 +13,20 @@ I read historical choices/national conditions and reach an ending explaining my 
 - The war-survival objective completes on the last armistice event, the Syria-Israel agreement of 20 July 1949 (D-B2 [S2]; [S3]). The four signings were Egypt on 24 February 1949, Lebanon on 23 March 1949, Jordan on 3 April 1949 and Syria on 20 July 1949 [S3].
 - The existing cabinet and Attention stay (D-C5 [S2]). Minister roles, candidates and effects are D-H3 [S2]: the first slice is decided and built - each office's competence scales the GDD systems in its remit (`Q-MIN-1` to `Q-MIN-3`, owner, 17 October and 18 October 2026; R-MIN-001 to R-MIN-003, `docs/rules/mvp.md`). The owner declared that slice the complete MVP minister mechanic on 23 October 2026 [S7].
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing Attention from cabinet, events and map actions while retaining the existing office-competence slice without another minister mechanic.* [S1]
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing Attention from cabinet, events and map actions.* [S1]
+
+The retained existing office-competence slice remains the complete MVP minister mechanic [S7].
 - Events (D-H1): the owner took the recommendations for `Q-EVT-1` to `Q-EVT-4` on 17 October 2026 [S5]. Windows, hard anchors and a cap of three soft events a turn stay; an unanswered event is delegated to its office's holder; no effect is delayed; the card shows every effect of every option from the sim (`R-EVT-001` to `R-EVT-005`, `docs/rules/mvp.md`). An early armistice's place ahead of the other soft events comes with `front_quiet`, in the war-objective PR of the military phase (#752).
 - Event effects (D-H2): the owner took the recommendations for `Q-HFX-1` to `Q-HFX-3` on 17 October 2026 [S5]. An option can grant units, free, at the military camp or a named city (a site once sites carry a date), and change a city's housing capacity or job slots; a sensitive option gains nothing from them; each is checked at load (`R-EFX-003` to `R-EFX-006`, `docs/rules/mvp.md`). Housing condition is part of R-EFX-004 and project unlock is R-EFX-008, built beside R-EFX-003, R-EFX-005 and R-EFX-006 (#959, #1002, #1072; #806 closed).
-[GDD scope](../GDD.md#mvp-scope) owns the end boundary; final scoring precedes ending. Show score, achieved/pending objective groups, historical comparisons and national/resource state. All goals are not required merely to finish.
+[GDD scope](../GDD.md#mvp-scope-1948-to-1951) owns the end boundary [S1]; final scoring precedes ending. Show score, achieved/pending objective groups, historical comparisons and national/resource state. All goals are not required merely to finish.
 
-Region loss, Money shortfall and coalition instability are not standalone defeat triggers. Do not restore any-city loss or exhausted-resource countdown through event code. Final terminal defeat remains explicitly deferred; a missing principle cannot be filled by choosing a number.
+**Amir's proposal, declined by the owner on 30 October 2026 [S8]:** Money/Food exhaustion and any-city war loss would cease to be defeat triggers. The retained Money/Food exhaustion and any-city war-loss rules in [Rules](#rules) remain authoritative; generic region loss and coalition instability are not additional triggers.
 
-Under Amir's proposal, historical offices, people and event roles remain while Attention is removed. The existing office-competence rules (`R-MIN-001` to `R-MIN-003`) and `Cabinet.Appoint` remain the complete MVP minister mechanic; do not add new minister-specific perks.
+Historical offices, people and event roles remain, and the complete MVP minister mechanic is the existing office-competence slice under [owner ruling #1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178) [S7]. **Amir's proposal to remove Attention was declined by the owner on 30 October 2026 [S1].**
 
-Social cohesion retains `morale` compatibility; support retains `intl_standing`. [Balance](balance.md#campaign-and-indicators) owns scale/hysteresis. Keep the independent employment-to-cohesion link using the same regional employment aggregate as the objective helper. Disable legacy Food/housing links duplicating explicit new penalties. Low situations expose state to reviewed events without secret extra penalties or defeat.
+Social cohesion retains `morale` compatibility; support retains `intl_standing`. [Balance](balance.md#campaign-and-indicators) owns scale/hysteresis. Low situations expose state to reviewed events without secret extra penalties or defeat. Amir's proposed regional employment aggregate and replacement Food/housing penalties are non-operative [S1].
 
-Events may affect approved indicators or explicit stocks. Population/facility effects use sim validation/accounting rather than UI mutation. Costs cannot silently borrow and grants cannot duplicate arrivals. Keep hard/soft windows and sensitivity restrictions under [WRITING_EVENTS](../WRITING_EVENTS.md)/[CONTENT_POLICY](../CONTENT_POLICY.md).
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the proposed event-accounting restatement prohibited borrowing. The retained borrowing rule remains authoritative; hard/soft windows and sensitivity restrictions still apply.
 
 [Objective-card](objective-card.md) owns completion/images/dates/points and [combat](military-combat.md) owns armistices/prisoner return. Do not duplicate their tables. Changed historical/sensitive content still requires human factual, licence and sensitivity review.
 
@@ -43,8 +45,8 @@ Events may affect approved indicators or explicit stocks. Population/facility ef
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, the plan, or a sourced historical date.
 - A normal ending is reachable with unfinished goals and reports actual results.
-- Region loss/unpaid Money cannot call retired defeat triggers.
-- Attention is absent across government and event interactions.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** exhausted resources and any-city war loss would not call the retained defeat triggers.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** Attention would be absent across government and event interactions.
 - Effects apply once under the existing release gates.
 
 ## Out of scope
@@ -53,7 +55,7 @@ Events may affect approved indicators or explicit stocks. Population/facility ef
 - The objectives panel UI and the score's presentation in Phase 1.
 - The exact completion conditions of each objective (GDD "MVP completion rules" [S1]): open.
 - Objective 1's bonus for capturing enemy soldiers lands at the prisoners' return (the plan, section 4.3 [S2]): Phase 5/6.
-Invented minister perks, a new final defeat principle, unreviewed event rewrites and old passive budget restoration.
+Invented minister perks, a new final defeat principle, unreviewed event rewrites and removal or replacement of the retained passive budget behavior.
 
 ## Sources
 
@@ -64,7 +66,7 @@ Invented minister perks, a new final defeat principle, unreviewed event rewrites
 - [S5] The owner's Phase 7 decision on #784, 17 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6232838937, checked 2026-10-17
 - [S6] The owner's decision on #784, 17 October 2026 (D-H2, D-H3, D-H4 as recommended), https://github.com/eyalgolan/statecraft-israel/issues/784#issuecomment-6231517464, checked 2026-10-21
 - [S7] The owner's decision on #1513, 23 October 2026 ("Yes, complete (Recommended)"), https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178, checked 2026-10-23
-- [S5] Later decisions/deferred principles, docs/GDD.md.
+- [S8] Later decisions/deferred principles, docs/GDD.md.
 
 ## Open questions
 

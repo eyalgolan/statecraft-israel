@@ -14,12 +14,12 @@ supported places remain supported even when additional authoring is optional.
 | Owner | Responsibility |
 | --- | --- |
 | [Balance](balance.md) | Numerical values, provenance, start inventory |
-| [Training](training.md) | Identity, professions/XP, reception, courses, conversion/demobilisation |
-| [Cities](cities.md) | Regions, work assignments, housing, builders, workshops |
-| [Resources](cutover-resource-layer.md) | Ledger, imports, arrivals, shortages and upkeep |
-| [Military combat](military-combat.md) | Movement, combat XP, forts, AI, truces and prisoners |
-| [Settlement control](settlement-control.md) | Region loss/evacuation and individual enemy-town governance |
-| [Build yishuv](build-yishuv.md) | On-site work, fields, founding, standalone facilities |
+| [Training](training.md) | Identity, retained qualifications/courses and conversion/demobilisation |
+| [Cities](cities.md) | Per-city work, housing and worker-free projects |
+| [Resources](cutover-resource-layer.md) | Retained pools, borrowing, imports and shortages |
+| [Military combat](military-combat.md) | Movement, time-served veterancy, forts, AI, truces and prisoners |
+| [Settlement control](settlement-control.md) | Individual settlement control, annexation and civilian protections |
+| [Build yishuv](build-yishuv.md) | Designated-site founding under fixed-time work rules |
 | [Corridors](corridors.md) | Segment work/completion |
 | [Objectives](objective-card.md) | Membership, cards and scoring |
 | [Monthly turns](monthly-turns.md) | Calendar/windows |

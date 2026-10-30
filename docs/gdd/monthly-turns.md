@@ -11,7 +11,7 @@ I plan against a consistent monthly calendar and receive historical decisions in
 - Without the key, the first three rungs have quarter turns, the fourth month turns and the fifth week turns.
 - The MVP sets month on every rung. Turns from the start on 15 May 1948 then end on the 15th of each month, to the game's end on 15 January 1952, 44 turns (D-E5, R-LOOP-004) [S2].
 - A turn that reaches an era boundary ends on it, and a turn that would end fewer than 14 days before it is lengthened to it (`SimTime.AdvanceTo`, D-E5, unchanged).
-Only [GDD scope](../GDD.md#mvp-scope) defines campaign start/end/count. Advance one calendar month on the start-date day. Final resolution reaches the boundary exactly, then no further events/turns. Security changes do not change time length.
+Only [GDD scope](../GDD.md#mvp-scope-1948-to-1951) defines campaign start/end/count [S1]. Advance one calendar month on the start-date day. Final resolution reaches the boundary exactly, then no further events/turns. Security changes do not change time length.
 
 Align decision windows to the grid boundary on/before their historical decision. Preserve sourced exceptions and during/after-the-fact choices rather than inventing earlier decisions. Hard anchors remain fixed; soft cards retain eligibility. [Balance](balance.md#campaign-and-indicators) owns maximum card gaps.
 

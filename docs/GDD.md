@@ -1,11 +1,13 @@
 # Statecraft Israel Game Design
 
 Core systems and player choices
+Current version 0.3 | 30 October 2026 (consolidated design proposal)
+Previous published baseline metadata:
 Version 0.2 | 17 October 2026 (version 0.1: 12 October 2026)
 Map and location specifications updated 17 October 2026.
 The owner's game design of record, based on the original document ([GDD-v0.1.pdf](GDD-v0.1.pdf)) with the additions dated above. The owner's rulings of 12 and 17 October 2026 are at the end. Where an older spec or ruling disagrees, this document wins (`AGENTS.md`).
 
-**Version 0.3 · consolidated design proposal, 25 October 2026.** This revision adds Amir's subsequent design decisions to the current design of record. It describes intended changes; it does not claim the existing simulation implements them or that they supersede recorded owner rulings.
+This 0.3 revision adds Amir's subsequent design decisions to the current design of record and records the owner's 30 October 2026 conflict decisions. It describes intended changes; it does not claim the existing simulation implements them or that they supersede recorded owner rulings.
 
 ## MVP scope 1948 to 1951
 
@@ -121,6 +123,8 @@ For the MVP the terrain types are the eight biomes in `hexes.json`, each with an
 No new terrain catalogue or numerical terrain modifiers are selected in this specification. Existing sourced map data is retained while these decisions remain open.
 **Then decided (owner, 23 Oct 2026, "Freeze for MVP (Recommended)"; [#1512](https://github.com/eyalgolan/statecraft-israel/issues/1512#issuecomment-6372356819)):** the eight biomes are the complete MVP terrain catalogue, with no terrain conversions; projects such as Dry swamp change project or site state, not a hex's biome. New types, overlays and conversions are deferred beyond the MVP.
 
+The MVP terrain catalogue is therefore frozen at the existing eight biomes, with no new types or terrain conversions. Editable properties beyond the existing biome fields and final tile/hex presentation remain **TBD**. Workable land, prepared fields, roads, forts and authored location placement can be represented as explicit properties without inventing a replacement terrain taxonomy.
+
 ### Map editor tool
 
 Provide an internal authoring tool that lets designers inspect and change tiles/hexes and move named locations by dragging or entering hex coordinates. It must support undo/redo, show unsaved changes, and save and reload version-controlled map data with consistent logical and rendered placement.
@@ -201,10 +205,10 @@ The player responds to events by selecting an outcome that produces a bonus, a p
 The campaign runs from **15 May 1948 to 15 January 1952: 44 monthly turns**. The calendar boundary follows the [owner's latest PR ruling](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6233776804) (checked 2026-10-17). The real-time play target is in [balance.md](gdd/balance.md#campaign-and-indicators).
 
 Each event needs a trigger, readable context, available options and their consequences. Open: event frequency, mandatory versus optional events, delayed effects, and how much the player can see before choosing.
-The player manages the establishment of the state through population, work, settlement, infrastructure, immigration and war. The map supports direct hex-to-hex orders and regional civilian management. Historical events explain the period and react to the player's situation; they must follow the existing [content policy](CONTENT_POLICY.md), [writing guide](WRITING_GUIDE.md) and review gates.
+The player manages the establishment of the state through population, work, settlement, infrastructure, immigration and war. The map supports direct hex-to-hex orders and the retained per-city civilian management rules. Historical events explain the period and react to the player's situation; they must follow the existing [content policy](CONTENT_POLICY.md), [writing guide](WRITING_GUIDE.md) and review gates.
 
 Historical dates, unit identities, named places and claims in event text require sources. Game balance values and hypothetical alternatives must be identified as design assumptions.
-The core objectives are to establish the designated new settlements, complete the designated transport corridors, absorb immigration, and reach the armistices. Their exact completion tests, grouping and score ownership are in [objective-card.md](gdd/objective-card.md). A campaign can reach its end without completing every objective. Losing a region does not itself end the campaign.
+The core objectives are to establish the designated new settlements, complete the designated transport corridors, absorb immigration, and reach the armistices. Their exact completion tests, grouping and score ownership are in [objective-card.md](gdd/objective-card.md). A campaign can reach its end without completing every objective. The retained defeat triggers are authoritative in [ministers-events-end.md](gdd/ministers-events-end.md); Amir's proposal to remove them was declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)).
 
 ## Production decisions to resolve
 
@@ -226,6 +230,8 @@ Designated building sites and transport corridors bound the locations and routes
 
 This document owns scope, the authority map and deferred decisions. The linked feature file owns the corresponding rules. [balance.md](gdd/balance.md) is the only active catalogue of numerical design values; feature files reference its keys rather than maintaining their own cost tables. Historical dates and factual evidence remain with the relevant feature or content record.
 
+[The feature index](gdd/README.md) explains the file structure. [The rule-ID index](rules/mvp.md) preserves links from existing tests and identifies implementation contracts requiring migration. Old plans are implementation history, not additional rule owners. The original [GDD v0.1 PDF](GDD-v0.1.pdf) is a historical reference; it is not a second active GDD.
+
 |Subject|Authoritative document|
 |-|-|
 |Numerical values, prices, rates, capacity, starting state|[Balance](gdd/balance.md)|
@@ -246,24 +252,25 @@ This document owns scope, the authority map and deferred decisions. The linked f
 |Unit artwork and historical placement anchors|[Units](units.md)|
 
 ## MVP completion rules
-[The feature index](gdd/README.md) explains the file structure. [The rule-ID index](rules/mvp.md) preserves links from existing tests and identifies implementation contracts requiring migration. Old plans are implementation history, not additional rule owners. The original [GDD v0.1 PDF](GDD-v0.1.pdf) is a historical reference; it is not a second active GDD.
 
 The MVP years, monthly turns and three objectives are fixed above. These remain to decide:
 - the map extent, starting unit counts, event count and the session's target play time (asked of Amir, [#856](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231565826)); the span is 15 May 1948 to 15 January 1952, as above;
   **Then decided (owner, 18 Oct 2026, "60-90 minutes"; [#813](https://github.com/eyalgolan/statecraft-israel/issues/813#issuecomment-6249771314)):** a full session targets 60 to 90 minutes, about 2 minutes a turn.
   **Then changed (owner, 30 Oct 2026, "120 (data wins)"; [#1687](https://github.com/eyalgolan/statecraft-israel/issues/1687#issuecomment-6511461164)):** a full session targets 120 minutes, matching `gdd03-balance.yaml`.
+  **Then decided (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)):** Historical mode keeps the sourced `content/map/units_1948.yaml` seed (`Q-START-1`); parameter `A` applies only to non-Historical modes.
 - when the war-survival objective is complete, which immigrants must have housing and employment, and which new yishuvim are required.
 
 Each objective needs a specific historical event and reference date for the completion card. For ongoing processes such as immigrant absorption, choose a defined milestone with a sourced date. Bonus amounts, the timing formula, defeat conditions and whether all objectives are required to finish the MVP remain open.
+**Then decided (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)):** keep the retained defeat rules: Money and Food exhausted, and any-city war loss (see [Final defeat conditions](#final-defeat-conditions)).
 
 Minister selection is a planned TBD mechanic with player-chosen ministers. The role of coalition, Attention, diplomacy and national policy systems in this core loop remains open.
 **Then decided (owner, 23 Oct 2026, "Yes, complete (Recommended)"; [#1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)):** R-MIN-001 to R-MIN-003 and `Cabinet.Appoint` are the complete MVP minister mechanic.
 
 ## Population and management direction
 
-The player selects and assigns individual population units through regional capitals, rather than managing each kibbutz separately. The same population unit retains its identity across civilian work, reception, training, military service and demobilisation. Civilian profession and military experience are separate attributes. Map anchors for historical formations do not create additional population units.
+The same population unit retains its identity across civilian work, training, military service and demobilisation. Civilian profession and military experience are separate attributes. Map anchors for historical formations do not create additional population units. **Amir's proposal, declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)):** population units would be assigned through regional capitals.
 
-Player regions pool civilian housing and employment. Farming capacity comes from actual prepared, workable tiles in the region. Enemy towns and cities use individual control and tax relationships; their residents do not join the player's assignable workforce. The linked feature owners define these systems.
+**Amir's proposal, declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)):** player regions would pool civilian housing and employment and use prepared regional farmland. The retained per-city rules and the sourced annexation-resident rules remain authoritative.
 
 ## Relationship to the existing design
 *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing Attention, automatic borrowing and automatic Food refill while making Money and workers the construction constraints.*
@@ -280,14 +287,14 @@ Reference files from the repository snapshot reviewed on 12 October 2026:
 
 The complete must-have and optional roster is maintained only in [locations.md](locations.md). Inclusion does not automatically create a managed city, a capturable target, a new population unit, or an operating facility. Military camps are distinct selectable locations, highlighted and enlarged for readability; reception camps are a separate facility category.
 
----
 The camera has a fixed viewing direction and pitch, supports pan and **dolly in/out**, and does not orbit. Unit movement is turn-based between hexes. The internal editor changes tiles and moves locations while preserving identifiers, source coordinates and regeneration-safe overrides; see [map-editor.md](gdd/map-editor.md).
+
+---
 
 ## Owner rulings, 2026-10-12
 
 1. **Deport outcome: honest cost, no reward.** It stays as a historical possibility but never pays. It carries large Social cohesion and International Support penalties, creates refugees, has permanent consequences, and is shown soberly through sourced event cards. CONTENT_POLICY §4 is updated to say how this is handled ("no mechanic may reward violence against civilians, from any side").
 2. **Adoption: spec and impact plan first.** The GDD is committed as the design of record and analysed against the current code. The phased build plan and open decisions are proposed, and the owner approves before any code changes. Visual and promo work continues meanwhile.
-The MVP terrain catalogue is frozen at the existing eight biomes, with no new types or terrain conversions. Editable properties beyond the existing biome fields and final tile/hex presentation remain **TBD**. Workable land, prepared fields, roads, forts and authored location placement can be represented as explicit properties without inventing a replacement terrain taxonomy.
 
 ## Owner rulings, 2026-10-17
 
@@ -318,15 +325,15 @@ These are recorded once here. Feature files link here instead of maintaining com
 
 |Decision|Status / boundary|
 |-|-|
-|Starting army size|**Deferred explicitly by Amir.** It remains the parameter `A`; no previously proposed count is accepted.|
-|Regional boundaries and capital roster|Authoring work pending. Bind real prepared fields and existing places to regions; do not invent historical administrative boundaries as facts.|
-|Founding-date verification|Keep the approved required-site membership; resolve Kiryat Shmona's conflicting day and Beit Shemesh's second-source requirement before releasing their content. Evidence stays with the objective owner.|
+|Starting army size outside Historical mode|Historical mode keeps the sourced seed from `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026). Parameter `A` applies only to non-Historical modes and remains deferred; no previously proposed count is accepted (owner, 30 Oct 2026).|
+|Regional-capital model|**Amir's proposal, declined by the owner on 30 October 2026:** create a regional-capital roster and shared regional administration. The retained per-city rules remain authoritative.|
+|Founding dates|The owner set Kiryat Shmona to 18 July 1949 and Beit Shemesh to 15 December 1950 under the monthly turn ([#785](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6237624501)).|
 |Facility availability and starting training-centre host|The existing owner ruling already starts Schneller and Tel HaShomer as military facilities; the other military camps are approved build sites. Verify reception-camp availability and choose the starting reception/centre host without assuming every roster entry operates on the opening turn. Centre and teacher counts are decided.|
-|Final defeat conditions|*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed that region loss, unpaid Money and coalition collapse not independently end the campaign, with the remaining terminal defeat rule TBD.*|
-|Minister-specific gameplay|The existing office-competence slice (`R-MIN-001` to `R-MIN-003` and `Cabinet.Appoint`) is the complete MVP minister mechanic. Historical offices and event references remain; Attention is not restored through cabinet mechanics.|
+|Final defeat conditions|The retained rules are exhausted Money/Food and any-city war loss; [the retained end rules](gdd/ministers-events-end.md#rules) add neither coalition collapse nor generic region loss. *Considered and declined (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing those retained triggers and returning terminal defeat to TBD.*|
+|Minister-specific gameplay|The existing office-competence slice (`R-MIN-001` to `R-MIN-003` and `Cabinet.Appoint`) is the complete MVP minister mechanic ([owner ruling #1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)). Historical offices and event references remain, and the existing cabinet and Attention stay.|
 |Terrain presentation|**TBD**. The MVP catalogue itself remains frozen at the existing eight biomes.|
-|Novice profession lock-in|Trained professions are permanent and professions cannot be held simultaneously. The precise lock-in point before formal qualification is **TBD**; do not add a retraining UI.|
-|Sensitive capture outcomes|Raid/deport/raze outcomes require the existing content-policy and review decisions before implementation. Do not infer displacement, rewards or civilian labour from occupation or tax rules.|
-|Specialised military equipment and operation-card orders|Specific gun/vehicle models and unsourced operation orders remain evidence/review work; ordinary recruitment and reusable Arms rules are settled.|
+|Novice profession lock-in|Trained civilian roles can return and be reassigned while keeping their qualification ([owner ruling #1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)). Amir's conflicting permanent, mutually exclusive profession proposal was declined on 30 October 2026.|
+|Sensitive capture outcomes|Raid and Deport remain subject to the existing [content policy](CONTENT_POLICY.md), owner rulings and review gates; do not infer displacement, rewards or civilian labour.|
+|Specialised military equipment and operation-card orders|Specific gun/vehicle models and unsourced operation orders remain evidence/review work; ordinary recruitment and the retained Arms-expenditure rules are settled.|
 
 Reception-camp growth into permanent towns, an individually managed economy for every rural settlement, and a detailed enemy supply/reinforcement economy are outside the MVP. They are not unresolved numerical values.

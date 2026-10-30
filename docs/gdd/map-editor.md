@@ -19,32 +19,38 @@ A designer edits existing hex properties and moves locations, inspects affected 
 - Report validation failures against the affected hex, location or dependent record. A failed save must leave the last valid saved map intact [S1].
 - The host is a Unity editor window. It saves edits to one override file, `content/map/overrides.yaml`, which map generation applies last so regeneration keeps the edits. The editable properties are a hex's terrain and control and a location's position; a location's id and sources stay unchanged. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592))** [S4].
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing workable-land flags, region membership and supported static infrastructure while retaining `content/map/overrides.yaml`.* [S1]
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing workable-land flags, region membership and supported static infrastructure.* [S1]
+
+The retained owner ruling keeps `content/map/overrides.yaml` as the override file [S4].
 ### Camera and editing surface
 
-The gameplay camera has fixed direction/pitch, pan and dolly in/out along its view, with no yaw/orbit/tilt control. Close views retain readable labels/selections. Military camps use enlarged highlighted markers without moving logical hexes or evidence positions.
+The gameplay camera has fixed direction/pitch, pan and dolly in/out along its view, with no yaw/orbit/tilt control [S5]. Close views retain readable labels/selections. Military camps use enlarged highlighted markers without moving logical hexes or evidence positions.
 
 Use the existing internal map/Unity authoring workflow as the first host. This is a designer tool, not campaign commands or running-save editing. Open generated inputs plus authored overrides.
 
 ### Tile and location operations
 
-Under Amir's declined proposal, select a hex to edit supported existing biome/land fields, workable-land flags, authored region membership and supported static infrastructure. Show generated/override values and validation. The [GDD](../GDD.md#terrain-type-tilehex-type-new-types-tbd) owns the deferred expanded catalogue; the editor cannot invent it.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the editor would add workable-land flags, region membership and static infrastructure to the retained terrain/control/location-position fields. Those additions are non-operative.
 
-Select a location by marker/id/search, move by drag or explicit hex/coordinate entry, and rebind authored logical hex/visual placement together. Preserve id, aliases, historical coordinates, sources, review state and period names. Separately record visual offsets for shared-hex readability. Moving a marker never merges identities or edits source evidence.
+The [GDD](../GDD.md#terrain-type-tilehex-type-new-types-tbd) owns the deferred expanded catalogue; the editor cannot invent it.
 
-Keep military/reception camps, founding sites, capitals and ordinary towns separately bound. Moves cannot create capacity, regions or people. Explain affected authored assignments before removing a field's eligibility.
+Select a location by marker/id/search, move by drag or explicit hex/coordinate entry, and rebind authored logical hex/visual placement together. Preserve id, aliases, historical coordinates, sources, review state and period names [S6]. Separately record visual offsets for shared-hex readability. Moving a marker never merges identities or edits source evidence.
+
+Keep military/reception camps, founding sites and ordinary towns separately bound. Moves cannot create capacity, regions or people. Proposed regional assignments and field-eligibility dependencies are non-operative [S1].
 
 ### Persistence and regeneration
 
 Save versioned overrides keyed by stable hex/location ids with base revision/hash in the owner-ruled `content/map/overrides.yaml` path.
 
-Pipeline order is import, deterministic generation, overrides, dependency validation, bake/export. Generated outputs are not the persistence layer. Applying the same overlay reproduces authored placement. Missing ids, base conflicts or unsupported schemas fail explicitly rather than dropping edits.
+Pipeline order is import, deterministic generation, overrides, dependency validation, bake/export [S7]. Generated outputs are not the persistence layer. Applying the same overlay reproduces authored placement. Missing ids, base conflicts or unsupported schemas fail explicitly rather than dropping edits.
 
 Save atomically after validation; failure preserves the prior usable overlay. Support undo/redo, selected reversion and diff preview. Designer changes are distinct from source/review metadata; source coordinates require an explicit evidence edit rather than dragging.
 
 ### Dependency validation and review
 
-Validate bounds, land/passability, biome ids, duplicate identities, missing capitals/regions, invalid facility parents, unworkable prepared fields and broken references. Inspect affected corridor geometry/endpoints, force anchors, targets, objectives, regional slots, shared-hex markers and label offsets.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** validation would include proposed region, facility, prepared-field and regional-slot dependencies. Retained editor validation remains limited to the approved editable fields and their existing dependencies.
+
+Validate bounds, land/passability, biome ids, duplicate identities and broken references. Inspect affected corridor geometry/endpoints, force anchors, targets, objectives, shared-hex markers and label offsets.
 
 Report impacts and required regeneration/manual changes. Do not silently reroute sourced railways, move historical anchors, change membership, delete places or alter target eligibility to pass validation. Invalid bindings block canonical export; a clearly marked separate draft overlay may save without being baked.
 
@@ -53,6 +59,7 @@ Historical edits retain content/sensitivity review gates. The editor never marks
 ## Data touched
 
 - Existing map inputs and derived data: `content/map/hexes.json`, `content/map/settlements_1948.yaml`, `content/map/settlement_hexes.yaml` and `content/map/localities_1948.yaml`. The implementation must document which inputs or authored overrides are saved and which outputs are regenerated; a storage schema has not been selected [S1][S2].
+- The map evidence/input records are catalogued in [S8].
 - Related designated-site, city and corridor records: validate their identity and hex references when the authored placement changes. Their gameplay fields and historical evidence are retained [S2][S3].
 - Transport authoring and bake inputs/outputs described in `docs/routes.md`: surface dependencies without treating a marker move as a new historical route [S3].
 - Editor session state: selection, edit history, unsaved-change state and validation messages. No campaign save or simulation state is edited by this workflow [S1].
@@ -69,7 +76,7 @@ Historical edits retain content/sensitivity review gates. The editor never marks
 - Invalid coordinates, unknown identities and unresolved broken references fail clearly without replacing the last valid saved map.
 - Editing a hex and moving a location survives save, reload and regeneration.
 - Undo/redo restores binding/placement without modifying identity/evidence.
-- Broken route, regional-slot or parent-facility dependencies surface before export.
+- Broken retained route bindings surface before export. Proposed regional-slot and parent-facility validation is non-operative [S1].
 - Shared-hex markers stay individually selectable and retain ids.
 - Failed save/export preserves prior usable data.
 - Fixed-direction pan/dolly keeps enlarged camp markers readable.
@@ -88,10 +95,10 @@ Public player editing, runtime save editing, a replacement terrain catalogue, au
 - [S2] MVP location roster and location-record requirements, docs/locations.md
 - [S3] Route authoring, tracing and bake pipeline, docs/routes.md; designated corridors, docs/gdd/corridors.md
 - [S4] [Owner decision on host, override file and editable properties](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592), 18 October 2026, checked 2026-10-18.
-- [S1] Authoring/camera decisions and deferred terrain, docs/GDD.md.
-- [S2] Location contract, docs/locations.md.
-- [S3] Route pipeline, docs/routes.md.
-- [S4] Map evidence/input records, content/map/hexes.json; content/map/settlements_1948.yaml; content/map/localities_1948.yaml.
+- [S5] Authoring/camera decisions and deferred terrain, docs/GDD.md.
+- [S6] Location contract, docs/locations.md.
+- [S7] Route pipeline, docs/routes.md.
+- [S8] Map evidence/input records, content/map/hexes.json; content/map/settlements_1948.yaml; content/map/localities_1948.yaml.
 
 ## Open questions
 

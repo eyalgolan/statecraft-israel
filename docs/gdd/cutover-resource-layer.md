@@ -27,51 +27,45 @@ I can see where Money, Food and Arms come from, what is committed, and why housi
 *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing Attention, requiring full Money upfront without borrowing, and removing automatic monthly Food import/refill.* (unitless) [S1]
 ### Resource ownership
 
-Under Amir's proposal, Money is Treasury, Food and spare Arms are national stocks, and cohesion/support use bounded displayed points with compatible fractional storage. Stocks cannot become negative.
+**Amir's proposal, declined by the owner on 30 October 2026 [S9]:** the resource layer would be restated around the proposal catalogue [S10]. Conflicting catalogue mechanics are non-operative; the retained rules above control.
 
-Only staffed job income, explicit event effects and [settlement-control](settlement-control.md) taxes create recurring Money. Disable passive national per-capita tax/spending and automatic borrowing. Migrate events assuming them; do not collect old and new income together. Historical cabinet labels do not create another budget model.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** only staffed job income, explicit event effects and settlement-control taxes would create recurring Money, while automatic borrowing would be disabled. The retained borrowing rule remains authoritative.
 
 ### Money and upkeep
 
-Under Amir's proposal, construction, tools/courses, imports and workshop inputs require full uncommitted Money upfront and reject atomically when unaffordable. Paid work does not buy inputs twice.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** construction, tools/courses, imports and workshop inputs would require full uncommitted Money upfront. The retained borrowing rule remains authoritative.
 
-At settlement collect permitted income/effects, then total active-army upkeep, civilian transit, facility upkeep and condition costs. Finished facilities owe upkeep from completion, even vacant. Teachers/basic trainees still eat; basic trainees owe no active-army Money upkeep.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the proposed settlement ordering, facility upkeep, transit cost and active-army upkeep restatement is non-operative.
 
-Automatically pay non-housing mandatory expenses first, limited by Money; prorate remaining Money across regional housing upkeep due. No funding-priority UI is added. If even non-housing expenses exceed Money, Money floors and no extra penalty or arrears ledger appears. Housing deterioration is the only upkeep-shortfall consequence.
+The proposed non-housing-first payment and regional housing-proration rule is part of that declined proposal and is non-operative.
 
-For regional housing upkeep due `H_r` and paid `h_r`, lose `housing.max_deterioration * (H_r - h_r) / H_r` condition pp, clamped. No due upkeep means no maintenance deterioration. Do not automatically charge repairs or create repayment obligations. Price condition Money costs from pre-deterioration condition, then deteriorate and apply condition-to-cohesion once.
+The proposed regional housing-upkeep formula and its settlement ordering are part of that declined proposal and are non-operative.
 
-Unpaid Money adds no military effectiveness loss, shutdown or direct cohesion hit. The existing [housing chain](cities.md#housing-and-condition) and separate Food/queue effects remain.
+Money and Food exhaustion remain defeat triggers under [the retained end rules](ministers-events-end.md#rules). Amir's proposal to limit unpaid Money to housing effects was declined [S1].
 
 ### Food
 
-Every own unit consumes `population.food_per_turn` regardless of status/work/service/transit. Count once nationally; camp/city subcounts add no extra meal. Enemy residents are outside demand. Held enemy combatants add separately accounted provisions under [combat](military-combat.md#prisoners).
+Every own unit consumes Food under the retained national-pool rule. Enemy residents remain separate from player demand. Prisoner provisions and shortfall effects retain their existing owner-decided/open boundaries in [combat](military-combat.md#prisoners).
 
-Fields produce before consumption. Initial break-even is specific to the authored start; arrivals/role changes do not create automatic Food or refill. Purchases and reviewed explicit effects are the only import/grant sources.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** arrivals and role changes would not create automatic Food or refill, and purchases/reviewed effects would be the only import/grant sources. The retained automatic monthly import rule remains authoritative.
 
-Let `need` be own Food plus held-enemy-combatant provisions and `available` stock after due deliveries/production. Allocate proportionally so demands have the same unmet share; own captured units already belong to own demand and are not added again. Consume available stock to its floor and set `q = max(0, need - available) / need`, zero for no need. Cohesion loss is `food.shortage_cohesion_max * q` points; next-turn own strength multiplier is `max(0, 1 - food.shortage_combat_slope * q)`. Replace the previous shortage modifier rather than permanently stacking. No automatic deaths or worker-output penalty occurs.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** own and prisoner Food would be allocated proportionally under a new shortage formula. The retained prisoner rule keeps its provision and shortfall amounts open (owner).
 
-Legacy `food_supply`/effects interfaces may be readouts during migration but cannot refill stocks or duplicate penalties. [Event/indicator integration](ministers-events-end.md) owns compatibility.
+Legacy `food_supply`/effects interfaces may be readouts during migration. The retained automatic monthly import rule remains authoritative, and migration must not duplicate its refill or penalties. [Event/indicator integration](ministers-events-end.md) owns compatibility.
 
 ### Purchases and equipment
 
-Buy Arms/Food at [catalogue](balance.md#imports-immigration-and-arms-production) price/yield and delivery delay. Pay on ordering; delivery is at the next turn's opening after the ordered turn resolves, never current consumption. Show pending arrival and an authored friendly port. No naval-interception/blockade system is added.
+`BuyArms(count)` adds the ordered whole Arms units immediately, with no delivery delay, at IL 1m per Arms; it pays on ordering and borrows a short Treasury (`R-ARMS-002`) [S7]. Food continues to follow the retained automatic monthly import rule above. Amir's proposed catalogue Arms price, next-turn delivery, pending shipment and authored-port requirement are non-operative [S1]. No naval-interception/blockade system is added.
 
-An Arms item is the reusable equipment package for a population-unit military cohort, not an individual rifle or ammunition. Issue removes spare stock; valid demobilisation returns equipment once. Attacks/artillery spend none. Already equipped units pay no second issue. An arriving trained soldier's accompanying equipment is explicitly declared and goes onto that unit, never also into spare stock. Destruction/surrender gives no automatic refund.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** Arms would be reusable equipment, and attacks/artillery would spend none. The retained rule that training, attacks and artillery firing consume Arms remains authoritative.
 
 ### Immigration and arrival queues
 
-Use [balance](balance.md#imports-immigration-and-arms-production) ship cadence, cohort size and mix. Initial schedule places ships on interval boundaries; a stable repeating manifest expresses the mix across passenger slots with ordinal ids and no new RNG. It is a game schedule, not a replacement claim about the CBS series; the latter remains reference data and must not also add the same people.
-
-A ship adds people once per manifest id at a friendly port. Most are refugees; other entries are free civilians, apprentice craftsmen or trained soldiers. Refugees cannot work until [reception](training.md#reception-camps). Qualified non-refugee entries explicitly have completed reception in their manifests.
-
-Assign available reception beds in stable unit/camp order. Without a bed, refugees wait in port without reception credit, retaining the military-training alternative. Free arrivals may move to friendly regional housing; arrival creates no houses/jobs.
-
-Every civilian ending a turn in transit pays `transit.cost` plus normal Food, counted once. This includes port queues and destinationless travel/evacuation. If any refugee awaits a reception bed at any port, lose `reception.queue_cohesion_loss` once nationally, not per unit or port. New arrivals start reception/ordinary consumption on the next resolved turn, without retroactive work or meals.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** immigration would use the proposed manifest, reception-bed/port-queue pipeline, regional destinations and a per-unit transit charge. Those mechanics are non-operative; retained arrivals become civilians on the next housing step.
 
 ### Sensitive effects and accounting
 
-Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rewards for civilian suffering. Validate allowed event targets/tags and apply each effect once. Governance taxes are not loot or a labour mechanic. This documentation does not fact-check or sensitivity-approve changed content.
+Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rewards for civilian suffering [S11]. Validate allowed event targets/tags and apply each effect once. Governance taxes are not loot or a labour mechanic. This documentation does not fact-check or sensitivity-approve changed content.
 
 ## Data touched
 
@@ -81,9 +75,9 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - `model.yaml`: player names and the effects web for the two national indicators (the plan, PR 4 [S2]).
 - The event-effect loader: the five allowed targets (proposed R-EFX-001 [S2]).
 - The HUD: the existing meters stay (`Q-HUD-1`, decided 15 October 2026 [S3]); the five resources are shown, and approval appears as Public support (`Q-HUD-2`, decided 15 October 2026 [S3]). The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית (`Q-HUD-3` and `Q-MONEY-4`, decided 15 October 2026 [S4]).
-- Rules/scenario stock inventory, purchase shipments, manifests and one-time delivery ids.
+- Rules/scenario stock inventory, purchase shipments and one-time delivery ids.
 - Economy, resolver and effects/UI adapters require migration.
-- Remove Attention, automatic debt, passive budget and refill paths from the revised ruleset; preserve source records.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** remove Attention, automatic debt, passive budget and refill paths. This migration item is non-operative.
 - Convert indicator points using the catalogue scale before clamping.
 
 ## Done when
@@ -91,10 +85,10 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, or the phase's plan.
 - The ledger reconciles starting stocks, income/deliveries, production, expenditure and ending stocks.
-- Start Food breaks even without refill; subsequent shortages use only approved effects.
-- Cash shortfall changes only housing condition and its existing downstream effects.
-- Imports have a pending turn and no delivery/manifest duplicates after reload.
-- Transit charges once per unit and port-queue cohesion once nationally.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** start Food would break even without refill and subsequent shortages would use only proposed effects.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** cash shortfall would change only housing condition and its downstream effects.
+- Arms purchases arrive at once (`R-ARMS-002`) and the Food import refills in the same turn (`R-FOOD-002`); a reload duplicates no delivery. Amir's proposed pending import turn is non-operative [S1].
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** transit would charge once per unit and port queues would reduce cohesion once nationally. This criterion is non-operative.
 
 ## Out of scope
 
@@ -103,7 +97,7 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - D-B3 and D-B4: moved to Phases 3 and 4 (owner, 15 October 2026 [S5]).
 - The war objective, prisoners and the ceasefire clock (Phase 5).
 - Defeat: built in the final phase, with the counter set then (`Q-GOV-2`, decided 15 October 2026 [S3]); what "Money exhausted" means now that borrowing is allowed stays open.
-Automatic borrowing, passive national budget simulation, enemy supply economy, funding-priority UI, naval interception and arrears repayment.
+Enemy supply economy, funding-priority UI, naval interception and arrears repayment. Automatic borrowing and the retained budget behavior remain in scope under the owner rulings above.
 
 ## Sources
 
@@ -115,9 +109,9 @@ Automatic borrowing, passive national budget simulation, enemy supply economy, f
 - [S6] The maintainer's food rule on #382, 16 October 2026 (option (b)), https://github.com/eyalgolan/statecraft-israel/issues/382#issuecomment-6213237277, checked 2026-10-16
 - [S7] The owner's decision on #781, 18 October 2026, "Approve as drafted", https://github.com/eyalgolan/statecraft-israel/issues/781#issuecomment-6251995002, checked 2026-10-18
 - [S8] The owner's decision on #782, 17 October 2026 (the railway and its card date, and the required yishuvim of D-B4), https://github.com/eyalgolan/statecraft-israel/issues/782#issuecomment-6231352128, checked 2026-10-21
-- [S1] Economic decisions/provenance, docs/GDD.md.
-- [S2] Numerical catalogue, docs/gdd/balance.md.
-- [S3] Sensitive content constraints, docs/CONTENT_POLICY.md.
+- [S9] Economic decisions/provenance, docs/GDD.md.
+- [S10] Numerical catalogue, docs/gdd/balance.md.
+- [S11] Sensitive content constraints, docs/CONTENT_POLICY.md.
 
 ## Open questions
 

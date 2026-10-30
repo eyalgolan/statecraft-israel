@@ -3,7 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want to send a group of halutzim to build a new yishuv at a designated site, so that the place is founded under its historical name (GDD "Pioneer work" [S1]; decisions D-A3, D-A4, D-D6 [S2]).
-I choose sites to develop and send a pioneer there, with rural production managed through regional capitals.
+I choose designated sites to develop and send a pioneer to work under the retained site rules.
 
 ## Rules
 
@@ -24,21 +24,21 @@ I choose sites to develop and send a pioneer there, with rural production manage
 
 Sites have stable ids, authored hexes, allowed project kinds and source/availability metadata. The [location roster](../locations.md) owns names/aliases. Reference founding dates are not unlocks; approved designated build sites are available from scenario start.
 
-An eligible pioneer must reach the target hex. Allow one active project per pioneer and one pioneer per target. Validate availability, kind, control, prior completion and full upfront cost; no remote work, borrowing or Attention.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** a pioneer would have to reach the target hex and pay full upfront without borrowing. The retained rule lets the unit work from where it stands and borrow a short Treasury.
 
-Under Amir's proposal, staffed turns add `pioneer.work_rate` toward the [catalogue](balance.md#project-catalogue) requirement. Movement/stopping pauses paid progress; explicit cancellation discards it without refund. Completion marks built and releases the worker. [Training](training.md#population-identity-and-civilian-professions) owns working-turn XP.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** staffed-turn rates, paused progress on movement/stopping, and working-turn XP are non-operative. The retained fixed-turn, StopWork and service rules remain authoritative.
 
-Prepare only authored workable land in friendly regions, paying `field.cost` and completing `field.work` for `field.slots`. It produces nothing until a farmer is assigned through the capital; [cities](cities.md#regional-management) owns staffing/tile loss/retaking. Field work is outside city-start limits.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** prepared regional field slots would be staffed through a regional capital and use the proposal catalogue's cost/work values. This regional field model is non-operative.
 
 ### Founding and facility projects
 
 A yishuv completion marks its site built, without spawning people, housing, jobs, capitals or extra cohesion. [Objectives](objective-card.md) owns required membership, grouping, dates and points. Preserve founding-only sensitivity framing without rewards from displacement.
 
-Standalone reception/military camps and training centres use on-site pioneer work and their catalogue cost/work. Centres require operating parent camps. City variants use [builders](cities.md#city-projects-and-builders), the same catalogue and national city-start allowance. Never build the same facility id through both interfaces. [Training](training.md) owns operation/capacity.
+The retained camp-site construction rules above remain authoritative. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** reception camps, training centres and city variants would use the proposal catalogue's on-site pioneer/builder work and national city-start allowance.
 
-[Corridors](corridors.md) owns road/rail projects. Retain the approved Hula drainage site and drainage-only sensitivity treatment at `hula_drainage` cost/work. Completion unlocks a field-preparation opportunity, not free Food; prepare and staff it under current rules. The existing event retains sources/window and fires only while works are in progress [S7]. No new terrain class or unsourced claims are introduced.
+[Corridors](corridors.md) owns road/rail projects. Retain the approved Hula drainage site and drainage-only sensitivity treatment [S7]. Drained, the swamp site does nothing else; the Hula field site becomes ready to plow under the retained [field and swamp rules](fields-and-swamps.md) [S13]. The existing event retains sources/window and fires only while works are in progress [S7]. No new terrain class or unsourced claims are introduced.
 
-A built required yishuv also exposes a field-preparation opportunity in its hex, not an already staffed farm. Different site kinds can share a hex; duplicate yishuv sites on a hex are refused under the retained authoring rule [S7].
+A field is ready only once the yishuv in its hex is built; plowing then follows the retained [field rules](fields-and-swamps.md) [S13]. Different site kinds can share a hex; duplicate yishuv sites on a hex are refused under the retained authoring rule [S7].
 
 ## Data touched
 
@@ -46,17 +46,17 @@ A built required yishuv also exposes a field-preparation opportunity in its hex,
 - `rules.yaml` `mvp.build_yishuv_turns` and `mvp.build_yishuv_cost`, and `attention_cost.pioneer_work` and `stop_work`: supplied by `MvpSlice.Overlay`, never under `content/` (ruling 2 [S3]).
 - `GameState.Sites`, hashed as `site{...}` when there are some; `Treasury`.
 - Save files: the `pioneer UNIT ACTION SITE` and `stop UNIT` lines. Scenarios: `pioneer_work` and `stop_work`.
-- Designated sites, allowed project kinds, paid work state and stable region/hex/facility bindings.
-- Movement/project commands share validation and exact work arithmetic.
-- Prepared fields expose capacity, not an automatic Food event effect.
+- Designated sites, allowed project kinds, fixed-turn progress and stable hex/facility bindings.
+- Movement/project commands share validation; the retained project uses fixed turns rather than the declined staffed-work arithmetic.
+- Field readiness and plowing follow the retained field rules; the declined prepared regional-capacity model is not encoded.
 
 ## Done when
 
 - `dotnet test sim/Statecraft.sln` passes, including `ProjectsTests`, `SitesContentTests`, `GddStateTests` and `ReferencePlayerTests`.
 - `hash1950`, `hash1952`, `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move.
-- Work requires physical arrival, correct eligibility and upfront affordability.
-- Staffing pauses retain progress; explicit cancellation discards it.
-- Fields produce only through staffed accessible regional slots.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** work would require physical arrival and full upfront affordability.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** staffing pauses would retain progress while explicit cancellation discarded it.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** fields would produce through staffed regional slots. This criterion is non-operative.
 - Founding creates no duplicate people/economy, and facilities cannot be built twice.
 
 ## Out of scope
@@ -76,8 +76,7 @@ Camp-to-town progression, per-rural-place workforce screens, automatic historica
 - [S8] MVP location roster and historical-reference versus site-availability rules, docs/locations.md
 - [S9] Internal map-authoring workflow, docs/gdd/map-editor.md
 - [S10] Owner decision on the founding days of Kiryat Shmona and Beit Shemesh, with the research note, https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6237624501, checked 2026-10-17
-- [S8] Later work/regional decisions, docs/GDD.md.
-- [S9] Catalogue, docs/gdd/balance.md.
+- [S13] Retained field and swamp rules, docs/gdd/fields-and-swamps.md.
 
 ## Open questions
 

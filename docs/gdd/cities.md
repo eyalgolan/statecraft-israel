@@ -3,7 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want the twelve Jewish cities and towns to start at their real 1948 sizes and to absorb the arriving immigrants through housing, jobs and city projects, so that absorbing the immigration wave is the heart of the game (GDD "Cities and construction" and objective two [S1]; the Phase 3 plan [S2]).
-I send a population unit to a regional capital and assign work there, while the map explains which fields and facilities make it possible.
+I assign population units to the retained city economy while the map explains which fields and facilities make it possible.
 
 ## Rules
 
@@ -18,6 +18,8 @@ I send a population unit to a regional capital and assign work there, while the 
 - `GameState.Population` stays the one record of the nation's people; the cities are the part placed in towns, and an invariant test checks they never exceed it (`Q-ARRV-2`, decided 15 October 2026 [S3]).
 - Housing has per-city capacity and an average condition on a zero-to-one scale (`Q-START-3`). One capacity point houses one unit, and every refugee becomes a civilian on the next housing step (`Q-HOUSE-1`, decided 15 October 2026 [S3]). There is no hard cap: people above capacity are the city's overflow, and overflow lowers condition and Social cohesion (`Q-HOUSE-1` and `Q-HOUSE-2`, decided 15 October 2026 [S3]; D-D1, D-D2). The start condition and the size of the overflow effect are labelled design values taken from the plan's PR zero table (the plan's table merged by #604).
 
+The later owner decisions recorded in [S7] do not replace this retained per-city housing rule.
+
 *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed six reception turns before refugees can do civilian work instead of conversion on the next housing step.* [S1]
 - Two housing types: permanent housing adds capacity and condition from the game's start; the transit camp is cheap, adds capacity and lowers condition, and keeps the ma'abarot policy gate in 1950 (`Q-HOUSE-3`, decided 15 October 2026 [S3]). Residents are assigned automatically, and people in training and recruits count against their city's housing while halutz units do not (`Q-HOUSE-4` and `Q-HOUSE-5`, decided 15 October 2026 [S3]).
 - City projects (housing and industry) are paid in full at the start and borrowed if the Treasury is short, need no workers, take a free land hex within one hex of the settlement hex that holds no other placement, and at most two start per turn nationally (`Q-PROJ-1` to `Q-PROJ-4`, decided 15 October 2026 [S3]). Starting a project costs Attention and cancelling costs half as much, both labelled design values (`Q-PROJ-5`, decided 15 October 2026 [S3]). Their costs, times and capacities are labelled design values taken from the plan's PR zero table (the plan's table merged by #604; `Q-PROJ-1`).
@@ -29,49 +31,37 @@ I send a population unit to a regional capital and assign work there, while the 
 - The on-screen Hebrew words: craftsman בעל מלאכה, housing condition מצב הדיור, housing project מיזם דיור, industry תעשייה, winery יקב (`Q-UI-2`, all five approved, decided 15 October 2026 [S11]).
 ### Regional management
 
-Each player region has an authored capital and member tiles/locations. The capital is the civilian interface. Housing and Industry/workshop jobs are pooled regionally. A map marker does not automatically create another managed city. Small rural places retain map identity without separate population-management screens.
+**Amir's proposal, declined by the owner on 30 October 2026 [S17]:** each player region would pool housing, farms and Industry/workshop jobs through an authored capital. The retained per-city capacity rule remains authoritative.
 
-Farm assignments link a unit based at the capital to an available prepared field tile in that region. The tile must be workable, prepared, friendly controlled and have a free slot. [Site projects](build-yishuv.md) own preparation. Only staffed fields produce Food at [balance](balance.md#work-professions-and-training) tier rates; farming creates no Money. Farmers need not individually commute between each kibbutz and capital every turn.
-
-Enemy control disables a field slot and makes its farmer idle at the capital. Retaking restores access without automatic rebuilding. [Settlement control](settlement-control.md) owns capital/region loss and evacuation. Enemy towns use its separate tax model, not this workforce pool.
+The proposed regional farm-assignment, field-slot and tier-rate rules are part of that declined proposal and are non-operative. Existing field and site rules remain authoritative.
 
 ### Assignments and income
 
-A unit has one active assignment. Eligible free civilians may take Industry jobs or generic builder slots; trained farmers/pioneers may use generic assignments without learning another profession. Craftsmen modify Industry income and builder rates. Industry produces only when staffed; courses use [training](training.md) course income.
+A unit has one active assignment. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** eligible civilians would take proposed generic builder slots and Industry would use proposed staffed tier rates. The retained qualification-reassignment rule still permits a qualified civilian to return to a role without retraining [S19].
 
 Farm work, Industry, building, teaching, courses and active service cannot run simultaneously for the same unit. Reassignment releases old capacity atomically. Invalid capacity/eligibility refuses before Money or state changes.
 
 ### Housing and condition
 
-Ordinary regional capacity is limited. A civilian resident without dedicated reception, teacher or military-training housing uses ordinary housing. Overflow does not create beds, delete population or convert refugees. Free arrivals/evacuated free civilians may become overcrowded residents; incomplete-reception refugees use camp/port queues. Deployed active army units are not ordinary civilian residents.
-
-Let `R_r` be ordinary civilian residents, `c_r` condition fraction, and `P` total own population. Project capacity/condition effects live in [balance](balance.md#project-catalogue), clamped to condition bounds. No separate household simulation is introduced.
-
-Additional Money per turn is `R_r * max(0, housing.money_threshold - c_r) * housing.money_slope`. It rises smoothly; crossing the threshold never adds a flat fee to every resident.
-
-Housing cohesion loss is `housing.max_cohesion_loss * sum((R_r / P) * max(0, (housing.cohesion_threshold - c_r) / housing.cohesion_threshold))`. With no own population it is zero. Camp residents do not receive a second ordinary-housing penalty. Food and port queue penalties have separate owners; do not also charge legacy effects for the same housing loss.
-
-Overflow lowers condition by `housing.overflow_deterioration * max(0, R_r - capacity_r) / R_r` pp per turn, zero with no residents. Apply once alongside maintenance deterioration, then use the condition-to-cohesion rule without a second direct overflow penalty.
-
-Unpaid upkeep lowers housing condition proportionally; [resources](cutover-resource-layer.md#money-and-upkeep) owns cash-shortfall allocation. Repairs pay the catalogue cost/work, improve condition and add no capacity. Only houses deteriorate from unpaid upkeep; no facility shutdown, army penalty or direct cash-shortage cohesion hit is added.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the regional-capacity model, regional resident formula, proportional housing upkeep and housing-only shortfall effects are non-operative. The retained per-city housing, refugee-conversion and exhausted-resource defeat rules control.
 
 ### City projects and builders
 
-Under Amir's proposal, city projects include housing, Industry, reception camps, centres, military camps, workshops and repairs. Start requires full upfront Money and a national city-project start. Decided amounts are catalogued in [balance](balance.md); upkeep remains open (owner) where Amir did not set it.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** city projects would require full upfront Money, assigned builders and one national start. The retained borrowing, worker-free construction and two-start rule remains authoritative.
 
-Advance by assigned builder work rates up to `builder.slots_per_project`. No workers means pause, not timer completion. Ongoing projects may coexist while the nationwide new-start cap applies. Discard excess work on completion and release workers. Builders earn no simultaneous Industry income. Completed projects begin upkeep that turn but provide no second production pass.
+The assigned-builder, paused-progress, one-start and completed-upkeep rules are non-operative under that declined proposal.
 
-Winery Industry uses these shared job/production rules; place/theme binding belongs to [locations](../locations.md). The maabara retains its existing reviewed ma'abarot-policy availability gate in 1950 [S4]; reception beds are separate, and the gate is not a fixed construction timer.
+The retained winery is in Rishon LeZion under the existing city-project ruling [S16][S20]; Amir's shared regional winery-job model was declined [S1]. The maabara retains its existing reviewed ma'abarot-policy availability gate in 1950 [S20].
 
-Stopping/moving workers pauses paid progress. Explicit cancellation discards unfinished work without refund. Field/road/rail/standalone pioneer work is outside the city-start cap.
+The proposed worker pause/cancellation semantics are non-operative. Retained city projects need no workers and use their existing cancellation rule.
 
 ### Arms workshops
 
-A workshop has its own worker slot. Reserve the full cycle cost upfront at the worker's tier. Each staffed turn advances it; no worker means pause. Completion adds spare Arms nationally. All tiers share cycle duration; expertise lowers Money cost. Pause or worker change retains progress and paid cost; the next cycle uses the new tier. Refuse an unaffordable new cycle. The workshop pays no simultaneous Industry income.
+A workshop has its own worker slot. Each staffed turn advances it; no worker means pause. Completion adds spare Arms nationally. All tiers share cycle duration; expertise lowers Money cost. Pause or worker change retains progress; the next cycle uses the new tier. The workshop pays no simultaneous Industry income [S18]. Affordability follows the retained borrowing rule; Amir's full-upfront, no-borrowing workshop-input rule is non-operative [S1].
 
 ### Initial authoring
 
-[Starting inventory](balance.md#population-and-starting-state) binds population/facilities to authored friendly regions. Initial prepared fields must support the agreed staffed farmer mix across multiple regions. Census records remain evidence; do not round each small location into another whole game unit.
+**Amir's proposal, declined by the owner on 30 October 2026 [S17]:** starting inventory would bind population and facilities to authored friendly regions and distribute prepared fields across multiple regions. Census records remain evidence; do not round each small location into another whole game unit.
 
 ## Data touched
 
@@ -80,19 +70,15 @@ A workshop has its own worker slot. Reserve the full cycle cost upfront at the w
 - `Cities.cs`, `PopulationSystem.cs`, `Projects.cs` (new, the first phase): arrivals, housing and projects (the plan [S2]).
 - `objectives.yaml` (new, the first phase): the absorb objective's completion rule and card (the plan [S2]).
 - The city panel (Unity) at twelve cities (the plan [S2]).
-- Region id, capital, member hexes, housing/condition, facilities and jobs.
-- Per-unit assignments reference regions and specific fields, projects, facilities and jobs.
-- Legacy cities data and map classifications need migration rather than automatically instantiating regional economies.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** add region/capital membership and regional housing, facilities, jobs and per-unit assignment references. These data changes are non-operative.
 - Commands and UI previews use shared sim validation.
 
 ## Done when
 
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, or the phase's plan.
-- A unit cannot occupy multiple jobs, builder slots, farm slots or training places simultaneously.
-- Farm loss/retaking does not delete farmers or automatically destroy fields.
-- Condition costs are continuous and national housing cohesion is population weighted.
-- City construction requires actual work and the national start allowance.
+- A unit cannot occupy multiple retained jobs or training places simultaneously.
+- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** regional farm-slot state, continuous regional condition costs, builder slots and one national construction start would be required. These acceptance criteria are non-operative.
 - Workshops produce equipment without duplicate people or job income.
 
 ## Out of scope
@@ -104,6 +90,7 @@ A workshop has its own worker slot. Reserve the full cycle cost upfront at the w
   transit camps, military camps and Hakhsharot each have IL 0m annual upkeep in the MVP; the values are labelled design
   values, not historical claims. Step 7 pays a kind only when its configured rate is non-zero (R-MONEY-002). The MVP
   keeps the per-head tax and spending alongside job income at the accepted calibrated values. Phase 5 owns unit upkeep.
+  The earlier Phase 2 boundary is recorded in [S12].
 Individual workforce screens per kibbutz, enemy resident workforce, mothballing, non-housing deterioration and automatically granting a city economy on founding completion.
 
 ## Sources
@@ -124,10 +111,10 @@ Individual workforce screens per kibbutz, enemy resident workforce, mothballing,
 - [S14] The winery's city: a dated 1948-51 source for its vineyards, research note merged by #823, research_notes/GDD phase 3/winery-vineyards-1948-51.md
 - [S15] The owner's ruling on #737, 18 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6249501060, checked 2026-10-18
 - [S16] The owner's ruling on #737, 20 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/737#issuecomment-6296386086, checked 2026-10-20
-- [S1] Regional/housing decisions, docs/GDD.md.
-- [S2] Numerical catalogue, docs/gdd/balance.md.
-- [S3] Population eligibility, docs/gdd/training.md.
-- [S4] Retained availability/winery decisions, docs/superpowers/plans/2026-10-15-gdd-phase-3.md, historical Q-HOUSE-3 and Q-SPEC-1/2.
+- [S17] Regional/housing decisions, docs/GDD.md.
+- [S18] Numerical catalogue, docs/gdd/balance.md.
+- [S19] Population eligibility, docs/gdd/training.md.
+- [S20] Retained availability/winery decisions, docs/superpowers/plans/2026-10-15-gdd-phase-3.md, historical Q-HOUSE-3 and Q-SPEC-1/2.
 
 ## Open questions
 

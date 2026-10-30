@@ -19,13 +19,13 @@ I build transport links segment by segment, with visible map progress and source
 - The Burma Road corridor to Jerusalem is the Burma Road part of the third objective: the owner decided on 14 October 2026 that it is in the MVP (G1 [S5], GDD "MVP scope" [S1]). Its completion card's reference date is the opening of the Road of Valour, which replaced the Burma Road track, on 7 December 1948 [S4].
 - Nir Am's infrastructure-protection rule is part of the third objective: the Negev water line that began there must stay in Israeli hands until the armistice with Egypt on 24 February 1949. Its card tells the pipeline's 1947–48 history from sources, with `checked:` dates and a person's fact check. Its points are a labelled design value for the balance pass; no value is selected here. **Then decided (owner, 18 Oct 2026, "Part of objective 3"; [#1006](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583))** [S11]. (unitless)
 - One military camp and one Hakhshara exist at the start, and pioneers build further camps (D-D5 [S2]); building a camp is one of the GDD's pioneer actions (GDD "Pioneer work" [S1]).
-The simulation registry owns corridor ids, kind and ordered segments; [routes](../routes.md) owns evidence, waypoints and drawing geometry. A line is not automatically buildable. Charge a segment between consecutive sourced waypoints, not per crossed hex.
+The simulation registry owns corridor ids, kind and ordered segments; [routes](../routes.md) owns evidence, waypoints and drawing geometry [S12]. A line is not automatically buildable. Charge a segment between consecutive sourced waypoints, not per crossed hex.
 
-Approved rail construction is the Haifa–Tel Aviv link via Rosh HaAyin: the Yarkon link and west-of-Tulkarm bypass only with sourced alignment. Existing track remains existing. The historical card describes restored service on 20 September 1949, not the later coastal line [S3]. Without bypass evidence, only the Yarkon link is buildable.
+Approved rail construction is the Haifa–Tel Aviv link via Rosh HaAyin: the Yarkon link and west-of-Tulkarm bypass only with sourced alignment [S13]. Existing track remains existing. The historical card describes restored service on 20 September 1949, not the later coastal line [S3]. Without bypass evidence, only the Yarkon link is buildable.
 
 Approved roads are Burma Road and Tel Aviv–Netanya coastal road. Burma uses existing `burma_road` waypoints; its card describes the separate Road of Valour opening on 7 December 1948 without identifying them as the same road [S4]. Coastal-road dates remain in research. [Objectives](objective-card.md) alone defines required group membership.
 
-On-site pioneers may start unbuilt segments in any order, one worker per segment and parallel work on separate segments. [Balance](balance.md#project-catalogue) owns cost/work/rate. [Common site rules](build-yishuv.md) own payment, pause/cancel, arrival and validation. No city-start allowance is consumed.
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** corridor work would require on-site pioneers and use the proposed payment/pause/cancel rules in the catalogue [S14]. The retained work-from-where-it-stands, borrowing and StopWork rules remain authoritative.
 
 Complete a corridor when all segments are built. Completed segments reduce [movement cost](military-combat.md#movement-and-orders) before the whole link is finished, without directly granting resources. A route touching a locality does not capture it. Geometry and ids survive editor moves/regeneration.
 
@@ -66,9 +66,9 @@ Later coastal railway, invented alignments, per-hex upkeep and revenue merely fr
 - [S9] Research note, the 1949 rail link and the Tulkarm bypass, research_notes/gdd-phase-4-sourcing.md, section 2
 - [S10] Owner decision of 18 October 2026, Q-COR-3 (b): "the Tel Aviv–Netanya line is drawn as straight draft lines between the five sourced places", https://github.com/eyalgolan/statecraft-israel/issues/786#issuecomment-6249500143 , checked 2026-10-18; its waypoints, research_notes/gdd-phase-4-sourcing.md, section 3
 - [S11] [Owner decision on Nir Am's objective](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583), 18 October 2026, checked 2026-10-18.
-- [S6] Corridor evidence, research_notes/GDD phase 4/corridors-1948-51.md.
-- [S7] Approved historical answers, docs/superpowers/plans/2026-10-15-gdd-phase-4.md.
-- [S8] Catalogue, docs/gdd/balance.md.
+- [S12] Corridor evidence, research_notes/GDD phase 4/corridors-1948-51.md.
+- [S13] Approved historical answers, docs/superpowers/plans/2026-10-15-gdd-phase-4.md.
+- [S14] Catalogue, docs/gdd/balance.md.
 
 ## Open questions
 
