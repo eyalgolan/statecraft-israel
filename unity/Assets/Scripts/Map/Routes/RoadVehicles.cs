@@ -137,6 +137,7 @@ namespace Statecraft.Game.Map.Routes
         IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer)
         {
             if (Request != null) { Request(id, detail, answer); return RequestOwner?.Invoke() ?? new TestSeamLease(); }
+            if (!Application.isPlaying) return new TestSeamLease();
             return CollectionStream.Acquire(id, detail, answer);
         }
         void RefreshResidency()
@@ -162,7 +163,14 @@ namespace Statecraft.Game.Map.Routes
                     var ownedRenderers = new HashSet<Renderer>(go.GetComponentsInChildren<Renderer>(true));
                     renderers.RemoveAll(ownedRenderers.Contains);
                     removed.Add(go);
-                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                    if (Application.isPlaying)
+                    {
+                        // Unity forbids hierarchy changes while a parent is being deactivated. In that path the child can
+                        // be destroyed in place; detach only while this layer is still active, as CampTentModels does.
+                        if (gameObject.activeInHierarchy) go.transform.SetParent(null);
+                        Destroy(go);
+                    }
+                    else DestroyImmediate(go);
                 }
                 originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
             }

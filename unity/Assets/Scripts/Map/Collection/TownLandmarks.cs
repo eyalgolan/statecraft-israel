@@ -383,7 +383,7 @@ namespace Statecraft.Game.Map.Collection
             if (old.Count > 0 && retiring.Count > 0)
             {
                 // Retiring one model must not destroy/recreate surviving town instances (the visible panning/date blink).
-                ClearInstances(old); dirty = keep.Except(asked).Any();
+                ClearInstances(old); dirty |= townsChanged || keep.Except(asked).Any();
                 if (Application.isPlaying && !retirementScheduled) { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
                 else if (!Application.isPlaying) RetireLeases();
                 return;

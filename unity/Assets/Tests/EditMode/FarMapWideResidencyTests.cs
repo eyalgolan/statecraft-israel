@@ -222,6 +222,75 @@ public sealed class FarMapWideResidencyTests
         Assert.AreEqual(acquired, released, "road layer teardown releases every acquired model lease");
     }
 
+    /// <summary>The documented edit-mode default is inert: building the layer without a request seam must not touch the
+    /// shared collection stream.</summary>
+    [Test]
+    public void EditModeRoadBuildWithNullRequestAcquiresNothing()
+    {
+        RoadVehicles.Request = null;
+        int before = CollectionStream.SharedDiagnostics().Sum(row => row.Owners);
+        MapScene? map = null;
+        try
+        {
+            map = RouteTests.BuildMap();
+            Assert.AreEqual(before, CollectionStream.SharedDiagnostics().Sum(row => row.Owners),
+                "an editor map build does not acquire road-vehicle bundles");
+        }
+        finally { if (map != null) Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>A retiring model and a surviving model's town-set change can share one Show call; completion must redraw
+    /// the survivor at its new town without leaving either departed town behind.</summary>
+    [Test]
+    public void TownRetirementPreservesThePendingSurvivorTownChange()
+    {
+        const BindingFlags flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic;
+        var savedRequest = TownLandmarks.Request;
+        var savedAcquire = TownLandmarks.Acquire;
+        var defaultRequest = (Action<string, CollectionDetail, Action<GameObject?>>)typeof(TownLandmarks)
+            .GetField("DefaultRequest", flags)!.GetValue(null)!;
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        MapScene? map = null;
+        try
+        {
+            TownLandmarks.Request = defaultRequest;
+            TownLandmarks.Acquire = (_, detail, answer) =>
+            {
+                Assert.AreEqual(CollectionDetail.Far, detail);
+                answer(prefab);
+                return new Lease(() => { });
+            };
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            map = Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+            var all = TownLandmarks.Wants(map, DateTime.MinValue, Array.Empty<Placement>(), content)
+                .Where(w => w.OnTown).ToList();
+            var survivorTowns = all.GroupBy(w => w.Model).First(group => group.Count() >= 2).Take(2).ToArray();
+            var retiredTown = all.First(w => w.Model != survivorTowns[0].Model);
+            var root = new GameObject(TownLandmarks.Name); root.transform.SetParent(map.Terrain.transform, false);
+            var towns = root.AddComponent<TownLandmarks>();
+            typeof(TownLandmarks).GetField("map", flags)!.SetValue(towns, map);
+            var show = typeof(TownLandmarks).GetMethod("Show", flags)!;
+
+            show.Invoke(towns, new object[] { new List<TownLandmarks.Want> { retiredTown, survivorTowns[0] }, DateTime.MinValue });
+            Assert.IsNotNull(towns.transform.Find(retiredTown.Key));
+            Assert.IsNotNull(towns.transform.Find(survivorTowns[0].Key));
+
+            show.Invoke(towns, new object[] { new List<TownLandmarks.Want> { survivorTowns[1] }, DateTime.MinValue });
+
+            Assert.IsNull(towns.transform.Find(retiredTown.Key), "the retired model's town instance is gone");
+            Assert.IsNull(towns.transform.Find(survivorTowns[0].Key), "the surviving model's departed town is gone");
+            Assert.IsNotNull(towns.transform.Find(survivorTowns[1].Key), "the surviving model draws at its new town");
+        }
+        finally
+        {
+            TownLandmarks.Request = savedRequest;
+            TownLandmarks.Acquire = savedAcquire;
+            if (map != null) Object.DestroyImmediate(map.gameObject);
+            Object.DestroyImmediate(prefab);
+        }
+    }
+
     [Test]
     public void WholeTownsAreRequestedAndDrawnMapWideThenOnlyTheDetailedTownHides()
     {

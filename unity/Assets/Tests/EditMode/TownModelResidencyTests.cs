@@ -365,6 +365,7 @@ public class TownModelResidencyTests
         var places = new[] { Place("far", 6000), Place("edge-c", 800), Place("focus", 0), Place("edge-b", 500), Place("edge-a", 300) };
         CollectionAssert.AreEqual(new[] { "focus", "edge-a", "edge-b" }, Focus(places, Vector3.zero, allowance: (_, __) => true));
     }
+    /// <summary>Regression guard: a malformed negative edge allowance is clamped to the primary town only.</summary>
     [Test]
     public void NegativeMaximumEdgesSafelyKeepsOnlyThePrimary()
     {

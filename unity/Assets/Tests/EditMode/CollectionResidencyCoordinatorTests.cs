@@ -53,6 +53,7 @@ public class CollectionResidencyCoordinatorTests
         r.Replace(new[] { ("a", CollectionDetail.Far) }); r.Replace(new[] { ("b", CollectionDetail.Far) });
         r.Dispose(); r.Dispose(); retire!(); Assert.AreEqual(1, acquired);
     }
+    /// <summary>Regression guard: disposal permanently invalidates a source callback that arrives late.</summary>
     [Test]
     public void LateAnswerAfterDisposeIsANoOp()
     {

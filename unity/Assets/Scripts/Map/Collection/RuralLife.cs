@@ -381,6 +381,11 @@ namespace Statecraft.Game.Map.Collection
             var nearKeys = residencyView?.Keys;
             foreach (var want in wants)
             {
+                bool hasFar = prefabs.TryGetValue((want.Model, CollectionDetail.Far), out var farPrefab) && farPrefab != null;
+                bool hasNear = prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var nearPrefab) && nearPrefab != null;
+                // A streamed representation is what makes this a real scene. Until then it owns no anchor, clearance,
+                // tree hole or Near demand; a failed Far answer therefore cannot leave an empty permanent clearing.
+                if (!hasFar && !hasNear) continue;
                 used.TryGetValue(want.Model, out int n);
                 if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
@@ -434,8 +439,8 @@ namespace Statecraft.Game.Map.Collection
             }
             Units.UnitShowcase.HideTrees(map, Name, holes);
             foreach (var model in wants.Select(w => w.Model).Distinct())
-                if (prefabs.ContainsKey((model, CollectionDetail.Far))
-                    && (!used.TryGetValue(model, out int got) || got < MaxAnchorsPerModel)) Missing.Add(model);
+                if (prefabs.TryGetValue((model, CollectionDetail.Far), out var far)
+                    && (far == null || !used.TryGetValue(model, out int got) || got < MaxAnchorsPerModel)) Missing.Add(model);
             Debug.Log($"RURAL: {Scenes.Count} rural scenes placed ({Placed.Count} models); {Missing.Count} models short of {MaxAnchorsPerModel} scenes");
         }
 
