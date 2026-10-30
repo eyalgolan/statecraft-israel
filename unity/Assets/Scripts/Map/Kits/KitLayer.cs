@@ -104,7 +104,9 @@ namespace Statecraft.Game.Map.Kits
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
             towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds);
-            towns.ConfigureTownFootprints(stats.Footprints);
+            var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var locality in localities) localityIds.Add(locality.Id);
+            towns.ConfigureTownFootprints(stats.Footprints, localityIds);
             stats.Models = built.Models.Count;
             stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
             stats.Buildings += built.LocalityBuildings + built.Tents;

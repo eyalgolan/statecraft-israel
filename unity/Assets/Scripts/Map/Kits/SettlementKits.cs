@@ -80,20 +80,6 @@ namespace Statecraft.Game.Map.Kits
             return true;
         }
 
-        internal delegate bool FootprintOwnership(Vector2 point, string id, Vector2 centre, float radius,
-            IReadOnlyList<(Vector2 centre, float radius, string id)> footprints, IReadOnlyList<int>? candidates,
-            HashSet<string>? ignored);
-        [System.ThreadStatic] static FootprintOwnership? footprintOwnershipOverride;
-        static bool ClaimsFootprint(Vector2 point, string id, Vector2 centre, float radius,
-            IReadOnlyList<(Vector2 centre, float radius, string id)> footprints, IReadOnlyList<int>? candidates,
-            HashSet<string>? ignored)
-        {
-            var ownership = footprintOwnershipOverride;
-            return ownership == null
-                ? OwnsFootprint(point, id, centre, radius, footprints, candidates, ignored)
-                : ownership(point, id, centre, radius, footprints, candidates, ignored);
-        }
-
         /// <summary>Claims every settlement's footprint on <paramref name="ground"/> (largest first, so a big town's disc is
         /// whole and its small neighbour fits around it) and returns one mesh per settlement, keyed by id.</summary>
         public static List<(Settlement s, Mesh mesh, int buildings)> Build(IReadOnlyList<Settlement> list, KitGround ground) =>
@@ -141,18 +127,6 @@ namespace Statecraft.Game.Map.Kits
             census = placed = new List<Placed>();
             try { return Build(towns, localities, camps, ground, columns); }
             finally { census = null; }
-        }
-
-        /// <summary>Test seam for proving that extracting the footprint-owner rule does not change a complete build. Production
-        /// always uses <see cref="OwnsFootprint"/>; a test can supply the former inline rule and compare both outputs.</summary>
-        internal static Result BuildWithFootprintOwnership(IReadOnlyList<Settlement> towns, IReadOnlyList<Settlement> localities,
-            IReadOnlyList<Localities.Area> camps, KitGround ground, FootprintOwnership ownership, out List<Placed> placed,
-            Dictionary<string, Bounds[]>? columns = null)
-        {
-            var previous = footprintOwnershipOverride;
-            footprintOwnershipOverride = ownership;
-            try { return Build(towns, localities, camps, ground, out placed, columns); }
-            finally { footprintOwnershipOverride = previous; }
         }
 
         /// <summary>What <see cref="Build(IReadOnlyList{Settlement}, IReadOnlyList{Settlement}, IReadOnlyList{Localities.Area}, KitGround)"/>
@@ -560,7 +534,7 @@ namespace Statecraft.Game.Map.Kits
             bool Mine(Vector2 p)
             {
                 var fp = ground.Footprints;
-                return ClaimsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
+                return OwnsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
             }
 
             // Only a town with water near its footprint tests the beach setback per plot (eight samples each: the boot budget).
@@ -1163,7 +1137,7 @@ namespace Statecraft.Game.Map.Kits
             bool Mine(Vector2 p)
             {
                 var fp = ground.Footprints;
-                return ClaimsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
+                return OwnsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
             }
             bool Free(Vector2 p, float r) => FreeAt(lots, p, r);
 

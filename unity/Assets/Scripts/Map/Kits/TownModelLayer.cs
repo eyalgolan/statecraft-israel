@@ -53,9 +53,8 @@ namespace Statecraft.Game.Map.Kits
         // The full kit partition includes settlements without detailed models: those settlements must still be able to own
         // ground against a detailed neighbour.
         readonly List<(Vector2 centre, float radius, string id)> townFootprints = new List<(Vector2, float, string)>();
-        readonly Dictionary<string, (Vector2 centre, float radius, string id)> configuredFootprintsById =
-            new Dictionary<string, (Vector2, float, string)>(System.StringComparer.Ordinal);
-        readonly HashSet<string> duplicateFootprintIds = new HashSet<string>(System.StringComparer.Ordinal);
+        readonly List<(Vector2 centre, float radius, string id)> configuredTownFootprints = new List<(Vector2, float, string)>();
+        readonly HashSet<string> ignoredTownFootprintIds = new HashSet<string>(System.StringComparer.Ordinal);
         readonly Dictionary<string, (Vector2 centre, float radius, string id)> admissionFootprintsById =
             new Dictionary<string, (Vector2, float, string)>(System.StringComparer.Ordinal);
         static readonly IReadOnlyDictionary<string, (Vector2 centre, float radius, string id)> NoFootprintsById =
@@ -148,6 +147,7 @@ namespace Statecraft.Game.Map.Kits
             IReadOnlyList<(Vector2 centre, float radius, string id)> allFootprints, Vector3 focus, string? previous,
             System.Func<IReadOnlyList<string>, string, bool>? edgeAllowance, float enterM, float exitM, float edgeM, int maxEdges)
         {
+            maxEdges = Mathf.Max(0, maxEdges);
             int primary = -1; float best = float.PositiveInfinity, bestCentre = float.PositiveInfinity;
             var groundFocus = new Vector2(focus.x, focus.z);
             bool insideFootprintPartition = false;
@@ -229,7 +229,7 @@ namespace Statecraft.Game.Map.Kits
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null)
         {
             RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear();
-            townFootprints.Clear(); configuredFootprintsById.Clear(); duplicateFootprintIds.Clear();
+            townFootprints.Clear(); configuredTownFootprints.Clear(); ignoredTownFootprintIds.Clear();
             admissionFootprintsById.Clear(); required.Clear();
             string? why = models == null ? "the map scene has no model list" : models.Missing();
             streaming = models == null && Application.isPlaying;
@@ -421,42 +421,77 @@ namespace Statecraft.Game.Map.Kits
                 if (!models.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
             return true;
         }
-        void RebuildAdmissionFootprints()
+        static void BuildAdmissionFootprints(IReadOnlyList<(string id, Bounds bounds)> proposedPlaces,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> configured,
+            HashSet<string> ignored, List<(Vector2 centre, float radius, string id)> partition,
+            Dictionary<string, (Vector2 centre, float radius, string id)> byTownId)
         {
-            admissionFootprintsById.Clear();
-            foreach (var town in places)
+            var detailedIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var town in proposedPlaces) detailedIds.Add(town.id);
+            var counts = new Dictionary<string, int>(System.StringComparer.Ordinal);
+            foreach (var footprint in configured)
             {
-                if (duplicateFootprintIds.Contains(town.id))
-                    throw new System.ArgumentException($"Detailed town footprint id '{town.id}' occurs more than once.");
-                if (configuredFootprintsById.TryGetValue(town.id, out var footprint)) admissionFootprintsById.Add(town.id, footprint);
+                counts.TryGetValue(footprint.id, out int count);
+                counts[footprint.id] = count + 1;
+            }
+            var invalid = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var town in proposedPlaces)
+                if (counts.TryGetValue(town.id, out int count) && count > 1 && invalid.Add(town.id))
+                    Debug.LogError($"Detailed town footprint id '{town.id}' occurs more than once; dropping its footprint and using instance bounds.");
+            foreach (var footprint in configured)
+            {
+                if (invalid.Contains(footprint.id) || ignored.Contains(footprint.id)) continue;
+                partition.Add(footprint);
+                if (detailedIds.Contains(footprint.id)) byTownId.Add(footprint.id, footprint);
             }
         }
 
-        /// <summary>Stores the full authoritative kit footprint partition separately from detailed-instance and whole-town
-        /// bounds. Camera focus and town labels use a footprint centre, which need not fall among surviving model placements;
-        /// a non-detailed settlement's owned ground admits no detailed neighbour. Repeated non-detailed ids (the separate
-        /// camps in one subdistrict) remain separate partition discs; a detailed town id must identify exactly one disc.</summary>
-        internal void ConfigureTownFootprints(IReadOnlyList<(Vector2 centre, float radius, string id)> footprints)
+        void CommitAdmissionFootprints(List<(Vector2 centre, float radius, string id)> partition,
+            Dictionary<string, (Vector2 centre, float radius, string id)> byTownId)
         {
-            townFootprints.Clear(); configuredFootprintsById.Clear(); duplicateFootprintIds.Clear();
-            foreach (var footprint in footprints)
-            {
-                townFootprints.Add(footprint);
-                if (!configuredFootprintsById.ContainsKey(footprint.id)) configuredFootprintsById.Add(footprint.id, footprint);
-                else duplicateFootprintIds.Add(footprint.id);
-            }
-            RebuildAdmissionFootprints();
-            foreach (var choice in choices.Values) choice.hadFocus = false;
+            townFootprints.Clear(); townFootprints.AddRange(partition);
+            admissionFootprintsById.Clear();
+            foreach (var pair in byTownId) admissionFootprintsById.Add(pair.Key, pair.Value);
+        }
+
+        void ClearFocusChoices()
+        {
+            foreach (var choice in choices.Values) { choice.hadFocus = false; choice.primary = null; }
+        }
+
+        /// <summary>Stores the game-settlement footprint partition separately from detailed-instance and whole-town bounds.
+        /// Camera focus and town labels use a footprint centre, which need not fall among surviving model placements. The
+        /// caller excludes the same 1948 locality ids that game-town generation ignores; non-detailed game settlements and
+        /// camps still block detailed neighbours. Repeated non-detailed camp ids remain separate discs. A duplicate detailed
+        /// id is logged and dropped so that town safely falls back to its instance bounds.</summary>
+        internal void ConfigureTownFootprints(IReadOnlyList<(Vector2 centre, float radius, string id)> footprints,
+            IReadOnlyCollection<string>? ignoredForGameSettlements = null)
+        {
+            var proposedConfigured = new List<(Vector2 centre, float radius, string id)>(footprints);
+            var proposedIgnored = ignoredForGameSettlements == null
+                ? new HashSet<string>(System.StringComparer.Ordinal)
+                : new HashSet<string>(ignoredForGameSettlements, System.StringComparer.Ordinal);
+            var partition = new List<(Vector2 centre, float radius, string id)>();
+            var byTownId = new Dictionary<string, (Vector2 centre, float radius, string id)>(System.StringComparer.Ordinal);
+            BuildAdmissionFootprints(places, proposedConfigured, proposedIgnored, partition, byTownId);
+            configuredTownFootprints.Clear(); configuredTownFootprints.AddRange(proposedConfigured);
+            ignoredTownFootprintIds.Clear(); ignoredTownFootprintIds.UnionWith(proposedIgnored);
+            CommitAdmissionFootprints(partition, byTownId);
+            ClearFocusChoices();
         }
         internal void ConfigureWholeTowns(IReadOnlyList<(string id, Bounds bounds)> towns)
         {
-            places.Clear(); places.AddRange(buildingPlaces);
+            var proposedPlaces = new List<(string id, Bounds bounds)>(buildingPlaces);
             var ids = new HashSet<string>(System.StringComparer.Ordinal);
-            foreach (var town in places) ids.Add(town.id);
-            foreach (var town in towns) if (ids.Add(town.id)) places.Add(town);
-            places.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
-            RebuildAdmissionFootprints();
-            foreach (var choice in choices.Values) choice.hadFocus = false;
+            foreach (var town in proposedPlaces) ids.Add(town.id);
+            foreach (var town in towns) if (ids.Add(town.id)) proposedPlaces.Add(town);
+            proposedPlaces.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+            var partition = new List<(Vector2 centre, float radius, string id)>();
+            var byTownId = new Dictionary<string, (Vector2 centre, float radius, string id)>(System.StringComparer.Ordinal);
+            BuildAdmissionFootprints(proposedPlaces, configuredTownFootprints, ignoredTownFootprintIds, partition, byTownId);
+            places.Clear(); places.AddRange(proposedPlaces);
+            CommitAdmissionFootprints(partition, byTownId);
+            ClearFocusChoices();
         }
         internal bool WantsWholeTown(string id, Camera camera) =>
             Draw && choices.TryGetValue(camera.GetInstanceID(), out var c) && c.towns.Contains(id) && (!c.close || !required.ContainsKey(id) || (!streaming && set == null));
