@@ -13,6 +13,7 @@ using Statecraft.Sim;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 /// <summary>Regression R1: a roster token owns the strategic Far originals for its full lifetime. Camera residency still
@@ -149,6 +150,9 @@ public class UnitRosterResidencyTests
 
             AnswerAll(pending);
 
+            Assert.Greater(layer.FigurePrefetchCount, NoOwners,
+                "answers defer roster-gate destruction until the layer's frame-boundary flush");
+            layer.FlushPrefetchRetirement();
             Assert.AreEqual(NoOwners, layer.FigurePrefetchCount, "every answered model transfers from prefetch to its drawn holders");
             var holders = Tokens(layer).GetComponentsInChildren<UnitFigureResidency>(true);
             Assert.IsNotEmpty(holders, "fixture has drawn figure holders");
@@ -195,6 +199,10 @@ public class UnitRosterResidencyTests
             AnswerAll(pending);
             layer.gameObject.SetActive(true);
             var holders = Tokens(layer).GetComponentsInChildren<UnitFigureResidency>(true);
+            Assert.Greater(layer.FigurePrefetchCount, NoOwners,
+                "reactivation marks the handoff without destroying a child inside the activation callback");
+            LogAssert.NoUnexpectedReceived();
+            layer.FlushPrefetchRetirement();
             Assert.AreEqual(NoOwners, layer.FigurePrefetchCount,
                 "reactivated holders retire the temporary gate owner after acquiring answered Far");
             Assert.AreEqual(holders.Length, UnitFigures.OwnedRefCount,
@@ -329,6 +337,51 @@ public class UnitRosterResidencyTests
         {
             Object.DestroyImmediate(camera.gameObject);
             if (piece != null) Object.DestroyImmediate(piece);
+            Object.DestroyImmediate(prefab);
+        }
+    }
+
+    [Test]
+    public void NearCloneReturnsAfterEnterLeaveRetireAndEnterAgain()
+    {
+        var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var retirement = new DeferredRetirement();
+        IDisposable Acquire(string _, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            answer(prefab);
+            return new Lease(() => { });
+        }
+        var camera = TopDownCamera(DisplacedViewM, Vector3.zero);
+        try
+        {
+            var owner = piece.AddComponent<UnitFigureResidency>();
+            owner.Initialize(UnitFigures.YoungRecruit, ProductionResidency.Approved().Units, Acquire,
+                retainFar: true, retirement: retirement.Retire);
+            Assert.IsTrue(piece.TryGetComponent<UnitFigureDetail>(out var detail), "the Far answer registers close detail");
+            owner.Choose(default, camera);
+            detail.Choose(default, camera);
+            Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName),
+                "enter creates the Near clone");
+
+            camera.transform.position = new Vector3(0f, StartViewM, 0f);
+            owner.Choose(default, camera);
+            detail.Choose(default, camera);
+            Assert.IsNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName),
+                "leave removes the Near clone before its lease retires");
+            while (retirement.Pending) retirement.Step();
+
+            camera.transform.position = new Vector3(0f, DisplacedViewM, 0f);
+            owner.Choose(default, camera);
+            detail.Choose(default, camera);
+            Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName),
+                "a fresh Near answer recreates the clone after retirement");
+        }
+        finally
+        {
+            Object.DestroyImmediate(camera.gameObject);
+            if (piece != null) Object.DestroyImmediate(piece);
+            while (retirement.Pending) retirement.Step();
             Object.DestroyImmediate(prefab);
         }
     }

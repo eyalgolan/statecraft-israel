@@ -42,8 +42,10 @@ namespace Statecraft.Game.Map.Units
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
+        readonly HashSet<string> wantedFigurePrefetch = new HashSet<string>(StringComparer.Ordinal);
         internal int FigurePrefetchCount => figurePrefetch.Count;
-        bool updatingPrefetch;
+        bool updatingPrefetch, prefetchRetirementDirty;
+        string? prefetchRetirementId;
         int seenAvailability = -1;
         int seenGeometry = -1;
         static readonly Predicate<MeshFilter> MissingMesh = mesh => mesh == null;
@@ -55,6 +57,7 @@ namespace Statecraft.Game.Map.Units
                 var rosterGateModels = new HashSet<string>(candidates.Where(token => token.Unit.Side != UnitData.Israel)
                     .Select(token => UnitFigures.SideFigure(token.Unit.Side)).Where(id => id != null)
                     .Select(id => id!), StringComparer.Ordinal);
+                wantedFigurePrefetch.Clear(); wantedFigurePrefetch.UnionWith(rosterGateModels);
                 foreach (var id in rosterGateModels)
                 {
                     // A foreign token cannot create its own figure holders until this side model passes Show's roster
@@ -67,26 +70,43 @@ namespace Statecraft.Game.Map.Units
                         owner.Initialize(id, map.Residency.Units, null, draw: false, retainFar: true);
                     }
                 }
-                foreach (string key in figurePrefetch.Keys.ToArray()) if (!rosterGateModels.Contains(key))
-                {
-                    var old = figurePrefetch[key]; figurePrefetch.Remove(key);
-                    old.gameObject.SetActive(false);
-                    if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
-                }
+                if (figurePrefetch.Keys.Any(key => !rosterGateModels.Contains(key))) ScheduleSatisfiedPrefetchRetirement();
             }
             finally { updatingPrefetch = false; }
         }
-        internal void RetireSatisfiedPrefetch()
+        internal void ScheduleSatisfiedPrefetchRetirement(string id)
         {
+            if (figurePrefetch.Count == 0 || !figurePrefetch.ContainsKey(id)) return;
+            if (!prefetchRetirementDirty) prefetchRetirementId = id;
+            else if (prefetchRetirementId != id) prefetchRetirementId = null;
+            prefetchRetirementDirty = true;
+        }
+        void ScheduleSatisfiedPrefetchRetirement()
+        {
+            if (figurePrefetch.Count == 0) return;
+            prefetchRetirementId = null; prefetchRetirementDirty = true;
+        }
+        void RetireSatisfiedPrefetch(string? onlyId = null)
+        {
+            if (figurePrefetch.Count == 0) { prefetchRetirementDirty = false; prefetchRetirementId = null; return; }
+            if (onlyId != null && !figurePrefetch.ContainsKey(onlyId))
+            { prefetchRetirementDirty = false; prefetchRetirementId = null; return; }
             var heldByFigures = new HashSet<string>(tokensRoot.GetComponentsInChildren<UnitFigureResidency>(true)
                 .Where(owner => owner.ActiveAnsweredFar).Select(owner => owner.ModelId), StringComparer.Ordinal);
-            foreach (string id in figurePrefetch.Keys.Where(id => heldByFigures.Contains(id)).ToArray())
+            var candidates = onlyId == null ? figurePrefetch.Keys.ToArray() : new[] { onlyId };
+            foreach (string id in candidates.Where(id => !wantedFigurePrefetch.Contains(id) || heldByFigures.Contains(id)))
             {
                 var old = figurePrefetch[id]; figurePrefetch.Remove(id);
                 old.gameObject.SetActive(false);
                 if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
             }
+            prefetchRetirementDirty = false; prefetchRetirementId = null;
         }
+        /// <summary>Runs the deferred roster-gate ownership handoff. Production calls it from <see cref="LateUpdate"/>;
+        /// EditMode tests call it explicitly because they do not advance a player frame.</summary>
+        internal void FlushPrefetchRetirement()
+        { if (prefetchRetirementDirty) RetireSatisfiedPrefetch(prefetchRetirementId); }
+        void LateUpdate() => FlushPrefetchRetirement();
         /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
         /// it (an Arab force's, issue #665).</summary>
         Content? shownContent;
@@ -326,7 +346,7 @@ namespace Statecraft.Game.Map.Units
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
             Rebuild();
-            RetireSatisfiedPrefetch();
+            ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
             return true;

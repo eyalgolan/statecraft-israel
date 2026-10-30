@@ -9,7 +9,8 @@ namespace Statecraft.Game.Map.Units
 {
     /// <summary>Per-consumer ownership: one live token holder, with imported children retired before its original leases.
     /// A roster holder keeps Far once acquired while its token object lives, including while an ancestor is inactive. Destroying the token
-    /// releases Far in <see cref="OnDestroy"/>; disabling this component explicitly releases it in <see cref="OnDisable"/>.</summary>
+    /// releases Far in <see cref="OnDestroy"/>; disabling this component explicitly releases it in <see cref="OnDisable"/>. Disabling the
+    /// component while its GameObject is already inactive does not invoke OnDisable, so that Far lease remains until destruction.</summary>
     [ExecuteAlways]
     public sealed class UnitFigureResidency : MonoBehaviour
     {
@@ -51,10 +52,10 @@ namespace Statecraft.Game.Map.Units
             if (!draws) return;
             if (detail == CollectionDetail.Far && prefab != null) UnitFigures.Swap(transform, model, prefab);
             if (detail == CollectionDetail.Near) UnitFigureDetail.Of(transform).OwnedArrived(model);
-            // A holder dressed below an inactive layer acquires its cached Far only when the layer is reactivated. That
-            // answer is the handoff point too; do not leave the roster-gate owner waiting for an unrelated rebuild.
+            // A holder dressed below an inactive layer acquires its cached Far only when the layer is reactivated. Mark
+            // that handoff for UnitLayer.LateUpdate: never destroy the gate holder inside this answer/lifecycle stack.
             if (detail == CollectionDetail.Far && ActiveAnsweredFar)
-                GetComponentInParent<UnitLayer>()?.RetireSatisfiedPrefetch();
+                GetComponentInParent<UnitLayer>()?.ScheduleSatisfiedPrefetchRetirement(model);
         }
         IEnumerable<(string id, CollectionDetail detail)> ActiveKeys() =>
             (residency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>())
