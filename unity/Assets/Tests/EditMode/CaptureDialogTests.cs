@@ -415,7 +415,7 @@ public class CaptureDialogTests
         using var r = new Rig(Awaiting(C, "ramla", "lod"));
         yield return Frames(4);
         Assert.AreEqual("lod", r.Dialog.Shown, "the first in the sim's order");
-        Assert.AreEqual(En.Format("event.more", 1), r.Root.Q<Label>("capture-count").text);
+        Assert.AreEqual(En.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "one more waiting is the singular line (#2023)");
         Press(r.Root.Q<Button>("capture-option-raid"));
         yield return Frames(3);
         var queued = r.Bridge.Queued.OfType<ResolveCapture>().ToList();
@@ -431,6 +431,27 @@ public class CaptureDialogTests
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is ResolveCapture), "the sim takes both");
         Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("lod") || r.Bridge.State.Settlements.ContainsKey("ramla"), "Raid ended both records");
+    }
+
+    /// <summary>#2023: exactly one more decision waiting is the singular line in both languages (event.more_one, the pick
+    /// the decision card already makes); two or more is the plural. Red-first: the dialog always used the plural form.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator TheCountLineIsSingularForOneMoreAndPluralAfter()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            using (var r = new Rig(Awaiting(C, "ramla", "lod"), text))
+            {
+                yield return Frames(4);
+                Assert.AreEqual(text.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "one more waiting (" + text["ui.lang"] + ")");
+            }
+            using (var r = new Rig(Awaiting(C, "ramla", "lod", "jaffa"), text))
+            {
+                yield return Frames(4);
+                Assert.AreEqual(text.Format("event.more", 2), r.Root.Q<Label>("capture-count").text, "two more waiting (" + text["ui.lang"] + ")");
+            }
+        }
     }
 
     // ---- Escape does not choose ----
@@ -757,7 +778,7 @@ public class CaptureDialogTests
             using var r = new Rig(g, options: Helper(new[] { "raid", "occupy" }), endOptions: Helper(EndOrder));
             yield return Frames(4);
             Assert.AreEqual(("lod", lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "Lydda first (ordinal), with its own decision");
-            Assert.AreEqual(En.Format("event.more", 1), r.Root.Q<Label>("capture-count").text, "both kinds count");
+            Assert.AreEqual(En.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "both kinds count, one more waiting is the singular line (#2023)");
             Press(r.Options[0]);
             yield return Frames(3);
             Assert.AreEqual(("ramla", !lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "then Ramle, with its own");
