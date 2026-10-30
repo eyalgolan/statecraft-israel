@@ -140,6 +140,44 @@ public sealed class HexCollectionFiguresTests
         Assert.That(requests, Is.EqualTo(1));
     }
 
+    /// <summary>A Collection vehicle's prefab root carries its import fix (the FBX Z-up to Y-up -90 degrees about X, as on
+    /// the Willys jeep, #2006). Placement must turn that root about the vertical only, never replace it, or the model lies
+    /// on its side.</summary>
+    static readonly Quaternion ImportFix = Quaternion.Euler(-90f, 0f, 0f);
+
+    static void AssertKeepsImportFix(Transform t, float yaw, string what)
+    {
+        var want = Quaternion.Euler(0f, yaw, 0f) * ImportFix;
+        Assert.That(Quaternion.Angle(t.localRotation, want), Is.LessThan(0.1f), $"{what}: {t.localRotation.eulerAngles} wanted {want.eulerAngles}");
+    }
+
+    [Test] public void UnitTurnsAboutTheVerticalAndKeepsThePrefabRootRotation()
+    {
+        var prefab = Model(); prefab.transform.localRotation = ImportFix;
+        HexCollectionFigures.Source = (_, _, done) => done(prefab);
+        foreach (var heading in new[] { 30f, 120f })
+        {
+            var unit = new HexUnit { Members = new List<HexUnitMember> { new HexUnitMember { Model = Scout, StandIn = StandIn.Box, YawOffset = 90f } } };
+            var motion = new HexUnitMotion(unit, new[] { (0, 0) }, new FlatSurface(), Root().transform, facingDeg: heading);
+            motion.Pose(0f, false);
+            AssertKeepsImportFix(motion.Objects.Single().transform, heading + 90f, $"unit heading {heading}");
+        }
+    }
+
+    [Test] public void SkinnedPlacementTurnsAboutTheVerticalAndKeepsThePrefabRootRotation()
+    {
+        var prefab = Model(); prefab.transform.localRotation = ImportFix;
+        var skin = new GameObject("skin"); skin.transform.SetParent(prefab.transform, false);
+        skin.AddComponent<SkinnedMeshRenderer>().sharedMesh = prefab.GetComponent<MeshFilter>().sharedMesh;
+        foreach (var heading in new[] { 30f, 120f })
+        {
+            var root = Root(); var assets = root.AddComponent<HexBoardAssets>();
+            var p = new HexPlacement("probe", StandIn.Box, Fit.Height, Color.white, Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, heading, 0f), Vector3.one * 20), 0, 0);
+            var layer = HexBoardRenderer.Emit(root.transform, new[] { p }, assets, "probe", _ => prefab);
+            AssertKeepsImportFix(layer.GetChild(0), heading, $"placement heading {heading}");
+        }
+    }
+
     [Test] public void UnitTeardownIgnoresLateArrival()
     {
         var root = Root(); var assets = root.AddComponent<HexBoardAssets>();

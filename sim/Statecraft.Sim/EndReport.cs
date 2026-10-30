@@ -31,12 +31,16 @@ namespace Statecraft.Sim
         /// <summary>The one comparison with history (Q-END-2, R-END-006): the latest CBS anchor (population.yaml) dated on or
         /// before <see cref="Date"/>, with its sources; null when the game ended before the first anchor.</summary>
         public PopulationAnchor? PopulationHistory { get; }
+        /// <summary>The prisoners returned in the exchanges (Q-END-3, R-POW-004), in people as Defence shows them
+        /// (<see cref="GameState.PrisonersReturned"/> units times the people per unit); 0 when none went home.</summary>
+        public int PrisonersReturned { get; }
 
         EndReport(string outcome, DateTime date, int score, ScoreParts scoreParts, IReadOnlyList<EndObjective> objectives, double cohesion, double support,
-            double population, PopulationAnchor? history)
+            double population, PopulationAnchor? history, int prisonersReturned)
         {
             Outcome = outcome; Date = date; Score = score; ScoreParts = scoreParts; Objectives = objectives; SocialCohesion = cohesion;
             InternationalSupport = support; Population = population; PopulationHistory = history;
+            PrisonersReturned = prisonersReturned;
         }
 
         /// <summary>The report of a game that has ended; a game still on has none.</summary>
@@ -51,7 +55,7 @@ namespace Statecraft.Sim
             // The anchors are few and dated; the latest one not after the end is the comparison (ties cannot happen: dates are unique).
             var history = c.PopulationAnchors.Where(a => a.Date <= s.Date).OrderBy(a => a.Date).LastOrDefault();
             return new EndReport(s.GameOver, s.Date, s.Score, Sim.ScoreParts.For(s), objectives, s.Indicators["morale"], s.Indicators["intl_standing"],
-                s.TotalPopulation, history);
+                s.TotalPopulation, history, s.PrisonersReturned.Values.Sum() * (c.RulesAt(s.Date).Mvp?.PeoplePerUnit ?? 0));   // no prisoners without the GDD rules
         }
     }
 

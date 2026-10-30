@@ -122,6 +122,18 @@ public class EndReportTests
         Assert.Null(EndReport.For(Real, early).PopulationHistory);
     }
 
+    // R-POW-004, Q-END-3: the prisoners returned, in people as Defence shows them, over every front's exchange.
+    [Fact]
+    public void TheReportCarriesThePrisonersReturned()
+    {
+        var s = Ended();
+        Assert.Equal(0, EndReport.For(Real, s).PrisonersReturned);
+        s.PrisonersReturned["lebanon"] = 4; s.PrisonersReturned["egypt"] = 2;
+        // What the Defence screen shows for these six units (DefencePresenter: units times rules.yaml's 1,000 people a unit).
+        Assert.Equal(1000, Real.RulesAt(s.Date).Mvp!.PeoplePerUnit);
+        Assert.Equal(6000, EndReport.For(Real, s).PrisonersReturned);
+    }
+
     [Fact]
     public void AGameStillOnHasNoReport()
     {
