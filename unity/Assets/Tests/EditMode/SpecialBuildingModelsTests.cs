@@ -201,7 +201,8 @@ namespace Statecraft.Game.Tests
             foreach (var b in bounds) Assert.Greater(b.SqrDistance(at), 0f, "the R35 centre lies outside " + b);
             var village = bounds[0]; for (int i = 1; i < bounds.Length; i++) village.Encapsulate(bounds[i]);
             float edgeDistance = Mathf.Sqrt(village.SqrDistance(at));
-            Assert.That(edgeDistance, Is.InRange(0.01f, clearance + 1f), "the R35 is only its own clearance beyond the village edge");
+            const float FloatSlackM = 1e-3f;   // the spot is computed on the expanded bounds' edge; 1 mm absorbs float rounding
+            Assert.That(edgeDistance, Is.InRange(clearance - FloatSlackM, clearance + 1f), "the R35 is its own clearance beyond the village edge");
             var footprint = map.KitFootprints.Single(f => f.id == "degania_alef");
             Vector2 nearest = Vector2.zero; float best = float.MaxValue;
             foreach (var (line, _) in map.KitRouteCorridors)

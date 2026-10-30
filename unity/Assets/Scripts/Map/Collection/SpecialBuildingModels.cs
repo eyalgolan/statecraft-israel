@@ -128,14 +128,18 @@ namespace Statecraft.Game.Map.Collection
                     if (d < nearest && d > 1e-4f) { nearest = d; toward = (q - centre).normalized; }
                 }
             if (toward == Vector2.zero) return null;
-            for (int i = 0; i < SpotAttempts; i++)
+            int halfPlaneCandidateCount = SpotAttempts / 2 + 1; // Facing half-plane: the route bearing, then both sides through +/-90 degrees.
+            var exitBounds = villageBounds;
+            float boundsSizeExpansion = 2f * clearance; // Bounds.Expand takes total size growth, so 2x adds one clearance on each side.
+            exitBounds.Expand(new Vector3(boundsSizeExpansion, 0f, boundsSizeExpansion));
+            for (int i = 0; i < halfPlaneCandidateCount; i++)
             {
                 int step = i == 0 ? 0 : (i + 1) / 2 * (i % 2 == 1 ? 1 : -1);
                 float a = 2f * Mathf.PI * step / SpotAttempts, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
                 var dir = new Vector2(toward.x * ca - toward.y * sa, toward.x * sa + toward.y * ca);
-                float tx = Mathf.Abs(dir.x) > 1e-5f ? (dir.x > 0f ? villageBounds.max.x - centre.x : centre.x - villageBounds.min.x) / Mathf.Abs(dir.x) : float.MaxValue;
-                float tz = Mathf.Abs(dir.y) > 1e-5f ? (dir.y > 0f ? villageBounds.max.z - centre.y : centre.y - villageBounds.min.z) / Mathf.Abs(dir.y) : float.MaxValue;
-                var p = centre + dir * (Mathf.Min(tx, tz) + clearance);
+                float tx = Mathf.Abs(dir.x) > 1e-5f ? (dir.x > 0f ? exitBounds.max.x - centre.x : centre.x - exitBounds.min.x) / Mathf.Abs(dir.x) : float.MaxValue;
+                float tz = Mathf.Abs(dir.y) > 1e-5f ? (dir.y > 0f ? exitBounds.max.z - centre.y : centre.y - exitBounds.min.z) / Mathf.Abs(dir.y) : float.MaxValue;
+                var p = centre + dir * Mathf.Min(tx, tz);
                 if (free(p, clearance)) return p;
             }
             return null;
@@ -292,7 +296,12 @@ namespace Statecraft.Game.Map.Collection
                         at = RouteFacingEdgeSpot(footprint.centre, village, clearance, map.KitRouteCorridors, Free);
                     }
                 }
-                at ??= SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
+                if (at == null)
+                {
+                    if (w.Key == "degania_r35")
+                        Debug.LogWarning("BUILDINGS: route-facing spot unavailable for degania_r35; falling back to the seeded spot.");
+                    at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
+                }
                 if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
                 holes.Add((at.Value, clearance));

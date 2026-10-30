@@ -1456,14 +1456,14 @@ rules:
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
   - glob: "unity/Assets/Art/Collection/generated-1948-14-syrian-renault-r35/*_basecolor.jpg"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
     artist: "Tal Heuberger"
     source: "Tripo Studio textured GLB delivered 22 October 2026, preserved byte-for-byte in asset-sources/generated-1948/vehicles/ original archives. sources.json and per-model provenance.json identify the archive/member SHA-256 and provider model ID. The Unity FBX is a documented full-geometry compatibility conversion, not a provider FBX. The 4096px colour-map source bytes are extracted without re-encoding; Unity separately imports them with configured GPU compression. No LOD or decimation."
     status: verified
-    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame."
+    note: "Credit Tal Heuberger. CC BY-NC-ND 4.0 authorized for these new models on 23 October 2026 (#1177/#1378). In the game since the owner's sign-off of 27 October 2026 (#756, Degania landmark): the tank stopped at Degania Alef from 20 May 1948, streamed in its own bundle after the first frame. Paint, markings and exact subtype remain candidate art; historical art/sensitivity sign-off follows matched screenshots (#756)."
   - glob: "unity/Assets/Editor/Generated1948VehicleReview/generated-1948-16-egyptian-dakota-c47/*.fbx"
     licence: CC-BY-NC-ND-4.0
     ai_generated: true
