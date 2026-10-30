@@ -145,12 +145,17 @@ namespace Statecraft.Game.EditorTools
             var clip = Clip(id, "near");
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
             if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
-            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Any(s => s.state.name != "idle" && s.state.name != "walk" && s.state.name != "attack"))
-                throw new InvalidOperationException(id + ": expected one owned layer with only idle, walk or attack states");
-            controller.layers[0].stateMachine.defaultState.motion = clip;
-            CollectionImport.AddWalkState(controller, Model(id, "original"));
-            EditorUtility.SetDirty(controller);
+            ConfigureController(controller, clip, Model(id, "original"));
             return controller;
+        }
+
+        internal static void ConfigureController(AnimatorController controller, AnimationClip clip, string model)
+        {
+            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Any(s => s.state.name != "idle" && s.state.name != "walk" && s.state.name != "attack"))
+                throw new InvalidOperationException("Expected one owned layer with only idle, walk or attack states");
+            controller.layers[0].stateMachine.defaultState.motion = clip;
+            CollectionImport.AddWalkState(controller, model);
+            EditorUtility.SetDirty(controller);
         }
 
         static void MakePrefab(string id, string level, Material mat, AnimatorController controller)
