@@ -24,6 +24,8 @@ namespace Statecraft.Game.Map.Kits
         /// <summary>How far past its footprint radius a town's plots reach (UnitGround.FootprintMargin: the units assume no
         /// building beyond it; PaintGround tints the same disc).</summary>
         public const float PlotReach = 1.1f;
+        /// <summary>The normalized centre distance at a circular footprint's boundary.</summary>
+        internal const float FootprintBoundary = 1f;
 
         public static Archetype ArchetypeOf(Settlement s)
         {
@@ -47,6 +49,35 @@ namespace Statecraft.Game.Map.Kits
             float hexArea = 1.5f * 1.7320508f * hexSizeM * hexSizeM;   // a pointy hex of circumradius hexSizeM
             float hexes = Mathf.Max(MinHexes, KitPopulation.Of(s.Id) / PeoplePerHex);
             return Mathf.Sqrt(hexes * hexArea / Mathf.PI);
+        }
+
+        /// <summary>Distance from a point to a settlement centre as a share of that settlement's footprint radius. The
+        /// smallest value owns points where footprints overlap.</summary>
+        internal static float NormalizedFootprintDistance(Vector2 point, Vector2 centre, float radius) =>
+            (point - centre).magnitude / radius;
+
+        /// <summary>Whether <paramref name="id"/> owns <paramref name="point"/> under the kit generator's normalized-distance
+        /// partition. <paramref name="candidates"/> may restrict the scan to a spatial index's nearby entries.</summary>
+        internal static bool OwnsFootprint(Vector2 point, string id, Vector2 centre, float radius,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> footprints, IReadOnlyList<int>? candidates = null,
+            HashSet<string>? ignored = null)
+        {
+            float mine = NormalizedFootprintDistance(point, centre, radius);
+            bool Closer(int i)
+            {
+                var footprint = footprints[i];
+                return footprint.id != id && (ignored == null || !ignored.Contains(footprint.id))
+                    && NormalizedFootprintDistance(point, footprint.centre, footprint.radius) < mine;
+            }
+            if (candidates == null)
+            {
+                for (int i = 0; i < footprints.Count; i++) if (Closer(i)) return false;
+            }
+            else
+            {
+                for (int i = 0; i < candidates.Count; i++) if (Closer(candidates[i])) return false;
+            }
+            return true;
         }
 
         /// <summary>Claims every settlement's footprint on <paramref name="ground"/> (largest first, so a big town's disc is
@@ -502,16 +533,8 @@ namespace Statecraft.Game.Map.Kits
             // not count: a game settlement keeps the ground it had before the villages came (their landmarks' lots still stand).
             bool Mine(Vector2 p)
             {
-                float mine = (p - centre).magnitude / R;
                 var fp = ground.Footprints;
-                var near = fp.Near(p);
-                for (int k = 0; k < near.Count; k++)
-                {
-                    int i = near[k];
-                    if (fp[i].id != s.Id && (ignoreCellsOf == null || !ignoreCellsOf.Contains(fp[i].id))
-                        && (p - fp[i].centre).magnitude / fp[i].radius < mine) return false;
-                }
-                return true;
+                return OwnsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
             }
 
             // Only a town with water near its footprint tests the beach setback per plot (eight samples each: the boot budget).
@@ -1113,16 +1136,8 @@ namespace Statecraft.Game.Map.Kits
             // radius), so Jaffa and Tel Aviv, or Lod and Ramla, meet along a seam instead of overlapping.
             bool Mine(Vector2 p)
             {
-                float mine = (p - centre).magnitude / R;
                 var fp = ground.Footprints;
-                var near = fp.Near(p);
-                for (int k = 0; k < near.Count; k++)
-                {
-                    int i = near[k];
-                    if (fp[i].id != s.Id && (ignoreCellsOf == null || !ignoreCellsOf.Contains(fp[i].id))
-                        && (p - fp[i].centre).magnitude / fp[i].radius < mine) return false;
-                }
-                return true;
+                return OwnsFootprint(p, s.Id, centre, R, fp.Items, fp.Near(p), ignoreCellsOf);
             }
             bool Free(Vector2 p, float r) => FreeAt(lots, p, r);
 

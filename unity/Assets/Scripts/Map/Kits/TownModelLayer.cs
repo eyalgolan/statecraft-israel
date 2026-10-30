@@ -50,6 +50,22 @@ namespace Statecraft.Game.Map.Kits
         }
         internal System.Func<string, Camera, bool>? WholeTownReady;
         readonly List<(string id, Bounds bounds)> buildingPlaces = new List<(string, Bounds)>();
+        // The full kit partition includes settlements without detailed models: those settlements must still be able to own
+        // ground against a detailed neighbour.
+        readonly List<(Vector2 centre, float radius, string id)> townFootprints = new List<(Vector2, float, string)>();
+        readonly List<(Vector2 centre, float radius, string id)> configuredTownFootprints = new List<(Vector2, float, string)>();
+        readonly HashSet<string> ignoredTownFootprintIds = new HashSet<string>(System.StringComparer.Ordinal);
+        readonly Dictionary<string, (Vector2 centre, float radius, string id)> admissionFootprintsById =
+            new Dictionary<string, (Vector2, float, string)>(System.StringComparer.Ordinal);
+        readonly HashSet<string> loggedDuplicateTownFootprintIds = new HashSet<string>(System.StringComparer.Ordinal);
+        static readonly IReadOnlyDictionary<string, (Vector2 centre, float radius, string id)> NoFootprintsById =
+            new Dictionary<string, (Vector2, float, string)>(System.StringComparer.Ordinal);
+        sealed class EdgeDistanceComparer : IComparer<(string id, float distance)>
+        {
+            public static readonly EdgeDistanceComparer Instance = new EdgeDistanceComparer();
+            public int Compare((string id, float distance) a, (string id, float distance) b)
+            { int c = a.distance.CompareTo(b.distance); return c != 0 ? c : string.CompareOrdinal(a.id, b.id); }
+        }
         internal static System.Func<string, Collection.CollectionDetail, System.Action<GameObject?>, System.IDisposable> ModelAcquire = Collection.CollectionStream.Acquire;
         sealed class Choice
         {
@@ -122,12 +138,48 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>C89: one town near camera focus and at most two immediate edge neighbours; no map-wide Near load.</summary>
         internal static string[] FocusedTowns(IReadOnlyList<(string id, Bounds bounds)> towns, Vector3 focus, string? previous, System.Func<IReadOnlyList<string>, string, bool>? edgeAllowance, float enterM, float exitM, float edgeM, int maxEdges)
+            => FocusedTownsWithFootprints(towns, NoFootprintsById, System.Array.Empty<(Vector2, float, string)>(), focus, previous,
+                edgeAllowance, enterM, exitM, edgeM, maxEdges);
+
+        /// <summary>As <see cref="FocusedTowns"/>, with detailed towns found in a precomputed id-to-footprint lookup and
+        /// ownership decided against the full kit footprint partition, including settlements without detailed models.</summary>
+        internal static string[] FocusedTownsWithFootprints(IReadOnlyList<(string id, Bounds bounds)> towns,
+            IReadOnlyDictionary<string, (Vector2 centre, float radius, string id)> footprintsByTownId,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> allFootprints, Vector3 focus, string? previous,
+            System.Func<IReadOnlyList<string>, string, bool>? edgeAllowance, float enterM, float exitM, float edgeM, int maxEdges)
         {
+            maxEdges = Mathf.Max(0, maxEdges);
             int primary = -1; float best = float.PositiveInfinity, bestCentre = float.PositiveInfinity;
-            for (int i = 0; i < towns.Count; i++)
+            var groundFocus = new Vector2(focus.x, focus.z);
+            bool insideFootprintPartition = false;
+            for (int i = 0; i < allFootprints.Count && !insideFootprintPartition; i++)
+                insideFootprintPartition = SettlementKits.NormalizedFootprintDistance(groundFocus,
+                    allFootprints[i].centre, allFootprints[i].radius) <= SettlementKits.FootprintBoundary;
+            // Seam ownership is subordinate to hysteresis only while the previous town still owns the focus under the same
+            // normalized-distance partition as admission, or while the focus remains in its instance-bounds exit band.
+            if (previous != null) for (int i = 0; i < towns.Count; i++)
+            {
+                if (towns[i].id != previous) continue;
+                bool ownsFootprint = footprintsByTownId.TryGetValue(previous, out var footprint)
+                    && SettlementKits.NormalizedFootprintDistance(groundFocus, footprint.centre, footprint.radius)
+                        <= SettlementKits.FootprintBoundary
+                    && SettlementKits.OwnsFootprint(groundFocus, footprint.id, footprint.centre, footprint.radius, allFootprints);
+                if (ownsFootprint || GroundDistance(towns[i].bounds, focus) <= exitM) primary = i;
+                break;
+            }
+            if (primary < 0) for (int i = 0; i < towns.Count; i++)
+            {
+                if (!footprintsByTownId.TryGetValue(towns[i].id, out var footprint)) continue;
+                float normalized = SettlementKits.NormalizedFootprintDistance(groundFocus, footprint.centre, footprint.radius);
+                if (normalized <= SettlementKits.FootprintBoundary && SettlementKits.OwnsFootprint(groundFocus, footprint.id, footprint.centre,
+                    footprint.radius, allFootprints) && (normalized < best || (normalized == best &&
+                    (primary < 0 || string.CompareOrdinal(towns[i].id, towns[primary].id) < 0))))
+                { primary = i; best = normalized; }
+            }
+            if (primary < 0 && insideFootprintPartition) return System.Array.Empty<string>();
+            if (primary < 0) for (int i = 0; i < towns.Count; i++)
             {
                 float distance = GroundDistance(towns[i].bounds, focus);
-                if (towns[i].id == previous && distance <= exitM) { primary = i; break; }
                 var centreDelta = towns[i].bounds.center - focus; centreDelta.y = 0;
                 float centre = centreDelta.sqrMagnitude;
                 if (distance <= enterM && (distance < best || (distance == best &&
@@ -135,19 +187,22 @@ namespace Statecraft.Game.Map.Kits
                 { primary = i; best = distance; bestCentre = centre; }
             }
             if (primary < 0) return System.Array.Empty<string>();
-            var edge = new List<(string id, float distance)>();
+            if (edgeAllowance == null || maxEdges == 0) return new[] { towns[primary].id };
+            var edge = new (string id, float distance)[towns.Count - 1]; int edgeCount = 0;
             var box = towns[primary].bounds; box.Expand(new Vector3(edgeM * 2, 0, edgeM * 2));
             for (int i = 0; i < towns.Count; i++)
             {
                 if (i == primary) continue;
                 var b = towns[i].bounds; b.center = new Vector3(b.center.x, box.center.y, b.center.z);
-                if (box.Intersects(b)) edge.Add((towns[i].id, GroundDistance(b, focus)));
+                if (box.Intersects(b)) edge[edgeCount++] = (towns[i].id, GroundDistance(b, focus));
             }
-            edge.Sort((a, b) => { int c = a.distance.CompareTo(b.distance); return c != 0 ? c : string.CompareOrdinal(a.id, b.id); });
-            var result = new List<string> { towns[primary].id };
-            for (int i = 0; i < edge.Count && result.Count <= maxEdges; i++)
-                if (edgeAllowance != null && edgeAllowance(result, edge[i].id)) result.Add(edge[i].id);
-            return result.ToArray();
+            System.Array.Sort(edge, 0, edgeCount, EdgeDistanceComparer.Instance);
+            int capacity = maxEdges >= towns.Count ? towns.Count : maxEdges + 1;
+            var result = new string[capacity]; result[0] = towns[primary].id; int resultCount = 1;
+            for (int i = 0; i < edgeCount && resultCount <= maxEdges; i++)
+                if (edgeAllowance(new System.ArraySegment<string>(result, 0, resultCount), edge[i].id)) result[resultCount++] = edge[i].id;
+            if (resultCount != result.Length) System.Array.Resize(ref result, resultCount);
+            return result;
         }
         public bool Draw { get; set; } = true;
         /// <summary>Whether the layer has a complete model list (else the towns keep their kits at every zoom).</summary>
@@ -175,7 +230,9 @@ namespace Statecraft.Game.Map.Kits
         /// while incomplete/missing replies keep fallback. No tile or unrelated town swaps on a partial global set.</summary>
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null)
         {
-            RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear(); required.Clear();
+            RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear();
+            townFootprints.Clear(); configuredTownFootprints.Clear(); ignoredTownFootprintIds.Clear();
+            admissionFootprintsById.Clear(); loggedDuplicateTownFootprintIds.Clear(); required.Clear();
             string? why = models == null ? "the map scene has no model list" : models.Missing();
             streaming = models == null && Application.isPlaying;
             if (why != null && !streaming && !suppressMissingLog) Debug.LogError($"town models: {why}; the towns keep their kits at every zoom (issue #659)");
@@ -316,7 +373,8 @@ namespace Statecraft.Game.Map.Kits
             {
                 if (Collection.CollectionResidencyView.TryGroundFocus(cam, out var focus))
                 {
-                    next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTowns(places, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
+                    next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTownsWithFootprints(
+                        places, admissionFootprintsById, townFootprints, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
                     {
                         var admitted = new List<string>();
                         foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
@@ -365,14 +423,94 @@ namespace Statecraft.Game.Map.Kits
                 if (!models.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
             return true;
         }
+        static void BuildAdmissionFootprints(IReadOnlyList<(string id, Bounds bounds)> proposedPlaces,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> configured,
+            HashSet<string> ignored, List<(Vector2 centre, float radius, string id)> partition,
+            Dictionary<string, (Vector2 centre, float radius, string id)> byTownId, HashSet<string> loggedDuplicateIds)
+        {
+            var detailedIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var town in proposedPlaces) detailedIds.Add(town.id);
+            var counts = new Dictionary<string, int>(System.StringComparer.Ordinal);
+            foreach (var footprint in configured)
+            {
+                counts.TryGetValue(footprint.id, out int count);
+                counts[footprint.id] = count + 1;
+            }
+            var invalid = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var town in proposedPlaces)
+                if (counts.TryGetValue(town.id, out int count) && count > 1 && invalid.Add(town.id)
+                    && loggedDuplicateIds.Add(town.id))
+                    Debug.LogError($"Detailed town footprint id '{town.id}' occurs more than once; dropping its footprint and using instance bounds.");
+            foreach (var footprint in configured)
+            {
+                if (invalid.Contains(footprint.id) || ignored.Contains(footprint.id)) continue;
+                partition.Add(footprint);
+                if (detailedIds.Contains(footprint.id)) byTownId.Add(footprint.id, footprint);
+            }
+        }
+
+        void CommitAdmissionFootprints(List<(Vector2 centre, float radius, string id)> partition,
+            Dictionary<string, (Vector2 centre, float radius, string id)> byTownId)
+        {
+            townFootprints.Clear(); townFootprints.AddRange(partition);
+            admissionFootprintsById.Clear();
+            foreach (var pair in byTownId) admissionFootprintsById.Add(pair.Key, pair.Value);
+        }
+
+        void ClearFocusChoices()
+        {
+            foreach (var choice in choices.Values) { choice.hadFocus = false; choice.primary = null; }
+        }
+
+        void ClearMissingFocusChoices()
+        {
+            var present = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var place in places) present.Add(place.id);
+            foreach (var choice in choices.Values)
+            {
+                choice.hadFocus = false;
+                if (choice.primary != null && !present.Contains(choice.primary)
+                    && !admissionFootprintsById.ContainsKey(choice.primary)) choice.primary = null;
+            }
+        }
+
+        /// <summary>Stores the game-settlement footprint partition separately from detailed-instance and whole-town bounds.
+        /// Camera focus and town labels use a footprint centre, which need not fall among surviving model placements. The
+        /// caller excludes the same 1948 locality ids that game-town generation ignores; non-detailed game settlements and
+        /// camps still block detailed neighbours. Repeated non-detailed camp ids remain separate discs. A duplicate detailed
+        /// id is logged and dropped so that town safely falls back to its instance bounds.</summary>
+        internal void ConfigureTownFootprints(IReadOnlyList<(Vector2 centre, float radius, string id)> footprints,
+            IReadOnlyCollection<string>? ignoredForGameSettlements = null)
+        {
+            var proposedConfigured = new List<(Vector2 centre, float radius, string id)>(footprints);
+            var proposedIgnored = ignoredForGameSettlements == null
+                ? new HashSet<string>(System.StringComparer.Ordinal)
+                : new HashSet<string>(ignoredForGameSettlements, System.StringComparer.Ordinal);
+            var partition = new List<(Vector2 centre, float radius, string id)>();
+            var byTownId = new Dictionary<string, (Vector2 centre, float radius, string id)>(System.StringComparer.Ordinal);
+            var proposedLoggedDuplicates = new HashSet<string>(System.StringComparer.Ordinal);
+            BuildAdmissionFootprints(places, proposedConfigured, proposedIgnored, partition, byTownId, proposedLoggedDuplicates);
+            configuredTownFootprints.Clear(); configuredTownFootprints.AddRange(proposedConfigured);
+            ignoredTownFootprintIds.Clear(); ignoredTownFootprintIds.UnionWith(proposedIgnored);
+            loggedDuplicateTownFootprintIds.Clear(); loggedDuplicateTownFootprintIds.UnionWith(proposedLoggedDuplicates);
+            CommitAdmissionFootprints(partition, byTownId);
+            ClearFocusChoices();
+        }
         internal void ConfigureWholeTowns(IReadOnlyList<(string id, Bounds bounds)> towns)
         {
-            places.Clear(); places.AddRange(buildingPlaces);
+            var proposedPlaces = new List<(string id, Bounds bounds)>(buildingPlaces);
             var ids = new HashSet<string>(System.StringComparer.Ordinal);
-            foreach (var town in places) ids.Add(town.id);
-            foreach (var town in towns) if (ids.Add(town.id)) places.Add(town);
-            places.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
-            foreach (var choice in choices.Values) choice.hadFocus = false;
+            foreach (var town in proposedPlaces) ids.Add(town.id);
+            foreach (var town in towns) if (ids.Add(town.id)) proposedPlaces.Add(town);
+            proposedPlaces.Sort((a, b) => string.CompareOrdinal(a.id, b.id));
+            var partition = new List<(Vector2 centre, float radius, string id)>();
+            var byTownId = new Dictionary<string, (Vector2 centre, float radius, string id)>(System.StringComparer.Ordinal);
+            var proposedLoggedDuplicates = new HashSet<string>(loggedDuplicateTownFootprintIds, System.StringComparer.Ordinal);
+            BuildAdmissionFootprints(proposedPlaces, configuredTownFootprints, ignoredTownFootprintIds, partition, byTownId, proposedLoggedDuplicates);
+            places.Clear(); places.AddRange(proposedPlaces);
+            loggedDuplicateTownFootprintIds.Clear(); loggedDuplicateTownFootprintIds.UnionWith(proposedLoggedDuplicates);
+            CommitAdmissionFootprints(partition, byTownId);
+            ClearMissingFocusChoices();
         }
         internal bool WantsWholeTown(string id, Camera camera) =>
             Draw && choices.TryGetValue(camera.GetInstanceID(), out var c) && c.towns.Contains(id) && (!c.close || !required.ContainsKey(id) || (!streaming && set == null));
