@@ -6,7 +6,7 @@ The player sees consistent prices, capacities and progress. This is Amir's #1668
 
 ## Rules
 
-Every value below is a game design value, not a historical estimate. **Agreed** means an explicit interview decision or a retained approved baseline. **Amir's proposal, declined by the owner on 30 October 2026 [S1]** is non-operative and must not be implemented. Derived quantities are labelled. Any value not retained by a recorded ruling is `open (owner)`; this catalogue does not supply operative defaults. Implement active values with exact decimal or integer arithmetic and stable iteration order.
+Every value below is a game design value, not a historical estimate. **Agreed** means an explicit interview decision or a retained approved baseline. **Amir's proposal, declined by the owner on 30 October 2026 [S1]** marks option B of one of the thirteen conflicts and is non-operative and must not be implemented. A row the 30 October 2026 conflict review did not rule on says so and names the operative rule or the matching `content/gdd03-balance.yaml` entry [S11]. Derived quantities are labelled. Any value not retained by a recorded ruling is `open (owner)`; this catalogue does not supply operative defaults. Implement active values with exact decimal or integer arithmetic and stable iteration order.
 
 ### Campaign and indicators
 
@@ -41,7 +41,7 @@ All operative starting roles partition the retained census-derived population to
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
 | `population.food_per_turn` | `1` | Food per own population unit, every status | Agreed |
-| `industry.income` | `1 / 2 / 3` | Money per staffed turn: ordinary or novice / apprentice / expert | Amir's proposed staffed-tier model, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `industry.income` | `1 / 2 / 3` | Money per staffed turn: ordinary or novice / apprentice / expert | Amir's staffed-tier model; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `industry.income` as `1 / 2 / 3` (basis Agreed, transcribed from #1668); live job income follows `R-CITY-002` and `R-CRAFT-002` (`docs/rules/mvp.md:95`, `docs/rules/mvp.md:179`) |
 | `farmer.output` | `2 / 3 / 5` | Food per staffed turn: novice / trained / veteran | The tier rates agree with main's `gdd-0.3` rule (`R-VET-002`) and are Agreed in `content/gdd03-balance.yaml` [S11]; the regional field model belongs to the declined regional-pooling proposal [S1] |
 | `profession.farmer_tools` / `profession.pioneer_tools` | `3 / 5` | Money once on entering matching profession | Agreed |
 | `pioneer.training_turns` | `4` | turns for retained pioneer training | Retained placeholder in `R-TRAIN-003` [S5]; Amir's proposed combined three-turn farmer/pioneer course is non-operative [S1] |
@@ -49,12 +49,12 @@ All operative starting roles partition the retained census-derived population to
 | `profession.work_to_veteran` | `9` | actual working turns for novice or trained farmer/pioneer | Agrees with main's `gdd-0.3` rule (`R-VET-001`) and is Agreed in `content/gdd03-balance.yaml`; the 30 October 2026 review lists it as not a conflict [S11] |
 | `pioneer.work_rate` | `0.75 / 1 / 1.5` | trained-equivalent work units per turn: novice / trained / veteran | Agrees with main's `gdd-0.3` rule (`R-VET-002`) and is Agreed in `content/gdd03-balance.yaml`; the 30 October 2026 review lists it as not a conflict [S11]; fixed pioneer progress with veteran doubling applies to `legacy` and `gdd-0.1` |
 | `craft.course_cost` / `craft.course_turns` | `0.5 / 3` | Money / turns; initial Industry apprenticeship course | Owner-set values ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
-| `craft.course_cost` / `craft.course_turns` (proposal) | `5 / 6` | Money / turns; initial Industry apprenticeship course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
+| `craft.course_cost` / `craft.course_turns` (proposal) | `5 / 6` | Money / turns; initial Industry apprenticeship course | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `craft.course_cost` / `craft.course_turns` as `5 / 6` (basis Agreed, transcribed from #1668) |
 | `craft.course_income` | `1` | Money per staffed course turn | Agreed |
 | `craft.expert_work_turns` | `36` | actual apprentice working turns to expert | Agreed |
-| `builder.slots_per_project` | `3` | simultaneous builders | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `builder.work_rate` | `1 / 1.5 / 3` | work units per turn: ordinary or novice / apprentice / expert | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `construction.starts_per_turn` | `2` | new city projects nationwide per turn | Retained `R-PROJ-001` limit, configured by `map_actions_per_turn` [S10]; Amir's proposed `1` was declined by the owner on 30 October 2026 [S1] |
+| `builder.slots_per_project` | `3` | simultaneous builders | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `3` (basis Agreed, transcribed from #1668); live city projects need no workers (`R-PROJ-001`, `docs/rules/mvp.md:145`) |
+| `builder.work_rate` | `1 / 1.5 / 3` | work units per turn: ordinary or novice / apprentice / expert | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1 / 1.5 / 3` (basis Agreed, transcribed from #1668); live city projects advance one turn a turn (`R-PROJ-003`, `docs/rules/mvp.md:149`) |
+| `construction.starts_per_turn` | `2` | new city projects nationwide per turn | Retained `R-PROJ-001` limit, configured by `map_actions_per_turn` [S10]; Amir's proposed `1`: the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1` (basis Agreed, transcribed from #1668) |
 | `field.slots` | `1` | farmer per prepared field | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model) |
 | `field.cost` / `field.work` | `5 / 9` | Money / trained-equivalent pioneer work units | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model) |
 | `field.nominal_turns` | `12 / 9 / 6` | turns at constant novice / trained / veteran tier | Derived only from declined proposal values; non-operative |
@@ -63,16 +63,16 @@ Amir's farmer/pioneer work XP, counting actual qualifying turns and allowing pro
 
 ### Project catalogue
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** city construction would use assigned builders and work rather than the retained worker-free fixed-time rule; standalone facilities would use on-site pioneer work; and completed facilities could have upkeep. This proposal is non-operative.
+**Amir's proposal, declined by the owner on 30 October 2026 (Upkeep conflict, option A) [S11]:** completed facilities could have upkeep. For his assigned builders and work in city construction and on-site pioneer work for standalone facilities, the owner's 30 October 2026 conflict review did not rule on this; the worker-free fixed-time `R-PROJ-001` to `R-PROJ-003` (`docs/rules/mvp.md:145`) and `R-CAMP-001` (`docs/rules/mvp.md:231`) stay operative.
 
 | Project key | Cost (Money) | Retained duration / proposed work | Completion effect | Upkeep (Money/turn) | Basis |
 | --- | --- | --- | --- | --- | --- |
 | `housing` | `6` | `6` turns | housing capacity `+5`; condition `+0.03` | `0` | Retained `content/projects.yaml` value [S10]; proposed permanent-housing cost `15` is non-operative [S1] |
 | `transit_camp` | `1.5` | `1` turn | housing capacity `+5`; condition `-0.02` | `0` | Retained `content/projects.yaml` value [S10]; proposed maabara cost `5` is non-operative [S1] |
 | `industry` | `2` | `6` turns | `+5` Industry job slots | `0` | Retained `content/projects.yaml` value [S10]; proposed cost `10` is non-operative [S1] |
-| `reception_camp` | `10` | non-operative proposed `3` work units | dedicated reception beds per reception capacity key | non-operative | Proposed reception construction and capacity model declined [S1] |
-| `training_centre` | `10` | non-operative proposed `3` work units | matching-teacher course slot and separate teacher housing | non-operative | Proposed centre/reception construction model declined [S1] |
-| `arms_workshop` | `15` | non-operative proposed `3` builder work units | `+1` workshop worker slot | non-operative | Proposed assigned-builder construction model declined [S1] |
+| `reception_camp` | `10` | non-operative proposed `3` work units | dedicated reception beds per reception capacity key | non-operative | Proposed reception construction and capacity model: the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `reception_camp` with basis Agreed |
+| `training_centre` | `10` | non-operative proposed `3` work units | matching-teacher course slot and separate teacher housing | non-operative | Proposed centre/reception construction model: the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `training_centre` with basis Agreed |
+| `arms_workshop` | `15` | non-operative proposed `3` builder work units | `+1` workshop worker slot | non-operative | Proposed assigned-builder construction model: the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `arms_workshop` with basis Agreed |
 | `military_camp` | `2` | `6` turns | operating military camp at its approved site | `0` | Retained `build_camp_cost` / `build_camp_turns` values [S10] |
 | `plough_field` | `0.5` | `3` turns | prepared field produces `1` Food per turn | `0` | Retained `plow_fields_cost` / `plow_fields_turns` / `field_food_per_turn` values [S10] |
 | `housing_repair` | `2 * current regional housing upkeep` | `1` | condition `+10` pp; no additional capacity or upkeep | `0` | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-upkeep rule) |
@@ -81,7 +81,7 @@ Amir's farmer/pioneer work XP, counting actual qualifying turns and allowing pro
 | `road_segment` | `2` | `6` turns | built corridor segment | `0` | Retained approved baseline [S8] |
 | `rail_segment` | `4` | `6` turns | built corridor segment | `0` | Retained approved baseline [S8] |
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** centre/camp upkeep, repair access through regional housing upkeep and one-start construction would use the proposed catalogue. These mechanics are non-operative.
+**Amir's proposal, declined by the owner on 30 October 2026 (Upkeep conflict, option A) [S11]:** centre/camp upkeep and repair access through regional housing upkeep would use the proposed catalogue. These mechanics are non-operative. For one-start construction, the owner's 30 October 2026 conflict review did not rule on this; `R-PROJ-001` (`docs/rules/mvp.md:145`) stays operative.
 
 ### Reception, housing and shortages
 
@@ -89,17 +89,17 @@ Amir's farmer/pioneer work XP, counting actual qualifying turns and allowing pro
 | --- | --- | --- | --- |
 | `reception.capacity` | `3` | refugee or course-trainee beds per camp | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; Agreed in `content/gdd03-balance.yaml` for the inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`) |
 | `reception.turns` | `6` | actual reception turns before free-civilian status | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; Agreed in `content/gdd03-balance.yaml` for the inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`), while live conversion follows `R-CITY-004` (`docs/rules/mvp.md:105`) |
-| `reception.basic_credit` | `3` | reception turns credited by completed basic military training | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `reception.basic_credit` | `3` | reception turns credited by completed basic military training | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `3` (basis Agreed, transcribed from #1668); live conversion follows `R-CITY-004` (`docs/rules/mvp.md:105`) |
 | `housing.condition_max` | `1` | unitless fraction; display as percent | Agreed |
-| `housing.money_threshold` / `housing.money_slope` | `0.50 / 1` | condition fraction / Money per resident per fraction below threshold | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `housing.cohesion_threshold` | `0.25` | condition fraction below which cohesion declines | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `housing.max_cohesion_loss` | `2` | national displayed points per turn at maximal weighted severity | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `housing.money_threshold` / `housing.money_slope` | `0.50 / 1` | condition fraction / Money per resident per fraction below threshold | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `housing.money_threshold` / `housing.money_slope` as `0.50 / 1` (basis Agreed, transcribed from #1668) for the inactive `gdd-0.3` housing arithmetic (`docs/rules/mvp.md:133`); live housing follows `R-HOUSE-001` to `R-HOUSE-004` |
+| `housing.cohesion_threshold` | `0.25` | condition fraction below which cohesion declines | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `housing.cohesion_threshold` as `0.25` (basis Agreed, transcribed from #1668) for the inactive `gdd-0.3` housing arithmetic (`docs/rules/mvp.md:133`); live housing follows `R-HOUSE-001` to `R-HOUSE-004` |
+| `housing.max_cohesion_loss` | `2` | national displayed points per turn at maximal weighted severity | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `housing.max_cohesion_loss` as `2` (basis Agreed, transcribed from #1668) for the inactive `gdd-0.3` housing arithmetic (`docs/rules/mvp.md:133`); live housing follows `R-HOUSE-001` to `R-HOUSE-004` |
 | `housing.overflow_deterioration` | `5` | condition pp per turn multiplied by ordinary-resident overflow share | Default (non-operative; not an owner ruling) |
 | `housing.max_deterioration` | `10` | condition pp per turn with all housing upkeep unpaid | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `transit.cost` | `0.50` | Money per civilian population unit ending turn in transit | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `reception.queue_cohesion_loss` | `1` | national displayed point with a port reception queue | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative reception model) |
-| `food.shortage_cohesion_max` | `10` | national points per turn multiplied by unmet share | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `food.shortage_combat_slope` | `1` | next-turn own strength reduction multiplied by unmet share | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `transit.cost` | `0.50` | Money per civilian population unit ending turn in transit | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `transit.cost` as `0.50` (basis Agreed, transcribed from #1668); main has no live transit charge, so it is `open (owner)` |
+| `reception.queue_cohesion_loss` | `1` | national displayed point with a port reception queue | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `reception.queue_cohesion_loss` as `1` (basis Agreed, transcribed from #1668); main has no live port queue, so it is `open (owner)` |
+| `food.shortage_cohesion_max` | `10` | national points per turn multiplied by unmet share | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `food.shortage_cohesion_max` as `10` (basis Agreed, transcribed from #1668); live shortage effects follow `R-FOOD-002` and `R-FOOD-003` (`docs/rules/mvp.md:409`) |
+| `food.shortage_combat_slope` | `1` | next-turn own strength reduction multiplied by unmet share | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `food.shortage_combat_slope` as `1` (basis Agreed, transcribed from #1668); live shortage effects follow `R-FOOD-002` and `R-FOOD-003` (`docs/rules/mvp.md:409`) |
 
 ### Imports, immigration and Arms production
 
@@ -127,18 +127,18 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `military.camp_capacity` | no separate limit | simultaneous trainees per camp | Retained `R-TRAIN-001` applies no separate simultaneous-trainee cap [S10]; proposed `5` is non-operative [S1] |
 | `military.basic_turns` | `3` | training turns | Agreed |
 | `military.issue_arms` | `1` | Arms consumed per recruit group when training starts | Retained `R-ARMS-003` value [S9] |
-| `military.draft_money` / `military.draft_wait` | non-operative proposed `0 / 0` | Money / waiting turns for immediate draft | Declined with Amir's proposal [S1]; retained `R-TRAIN-001` uses a paid training course rather than immediate draft [S10] |
-| `military.demobilise_money` / `military.demobilise_wait` | non-operative proposed `0 / 0` | Money / waiting turns for demobilisation at a camp | Declined with Amir's proposal [S1]; retained `R-UNIT-005` makes Send home the only way home [S10] |
+| `military.draft_money` / `military.draft_wait` | non-operative proposed `0 / 0` | Money / waiting turns for immediate draft | The owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists them as `0 / 0` (basis Agreed, transcribed from #1668); retained `R-TRAIN-001` (`docs/rules/mvp.md:159`) uses a paid training course rather than immediate draft [S10] |
+| `military.demobilise_money` / `military.demobilise_wait` | non-operative proposed `0 / 0` | Money / waiting turns for demobilisation at a camp | The owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists them as `0 / 0` (basis Agreed, transcribed from #1668); retained `R-UNIT-005` (`docs/rules/mvp.md:247`) makes Send home the only way home [S10] |
 | `military.demobilise_return` | `1` | issued Arms returned once on valid demobilisation | Amir's reusable-equipment proposal, which the 30 October 2026 review lists as not a conflict [S11]; Agreed in `content/gdd03-balance.yaml` |
 | `military.repeat_issue` | `0` | additional Arms under Amir's reusable-equipment model | Amir's reusable-equipment proposal, which the 30 October 2026 review lists as not a conflict [S11]; Agreed in `content/gdd03-balance.yaml` |
 | `military.attack_arms` / `military.artillery_arms` | `0` under `gdd-0.3` (`1 / 2` under `gdd-0.1`) | Arms per player attack / artillery firing | `R-COMBAT-004` (owner ruling, 25 October 2026): `gdd-0.3` attacks and artillery fire spend no Arms; `R-COMBAT-004` and `R-COMBAT-007` keep 1 unit of Arms per attack and 2 units per artillery firing for `gdd-0.1` [S9] |
 | `military.training_money` | `0.5` | Money per basic course | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
-| `military.training_money` (proposal) | `0` | Money per basic course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
+| `military.training_money` (proposal) | `0` | Money per basic course | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `0` (basis Agreed, transcribed from #1668) |
 | `military.active_money` | `0.05` | Money per active army unit per turn, excluding basic trainees | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
-| `military.active_money` (proposal) | `1` | Money per active army unit per turn, excluding basic trainees | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
-| `military.strength` | `1 / 2 / 3` | proposed strength units: untrained / trained / veteran | Amir's proposed qualification-factor model, declined by the owner on 30 October 2026 [S1] (non-operative); retained Strength counts population units [S6] |
+| `military.active_money` (proposal) | `1` | Money per active army unit per turn, excluding basic trainees | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1` (basis Agreed, transcribed from #1668) |
+| `military.strength` | `1 / 2 / 3` | proposed strength units: untrained / trained / veteran | Amir's qualification-factor model; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists it as `1 / 2 / 3` (basis Agreed, transcribed from #1668); live Strength counts population units (`R-UNIT-001`, `docs/rules/mvp.md:239`) [S6] |
 | `military.combat_xp_gain` / `military.combat_xp_full` | `1 / 5` | XP ticks per survived engagement / ticks to veteran | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; time-served `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative |
-| `military.refugee_multiplier` | `0.75` | unitless strength multiplier until reception complete | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `military.refugee_multiplier` | `0.75` | unitless strength multiplier until reception complete | Amir's proposal; the owner's 30 October 2026 conflict review did not rule on this [S11]; `content/gdd03-balance.yaml` lists `military.refugee_multiplier` as `0.75` (basis Agreed, transcribed from #1668); live Strength counts population units (`R-UNIT-001`, `docs/rules/mvp.md:239`) |
 | `military.fortify_turns` | `1` | turns for Fortify order; defence bonus open (owner) | Retained turn |
 | `occupation.turns` | `6` | turns before annex-or-withdraw choice | Retained owner ruling |
 
@@ -176,7 +176,7 @@ Retreat without a legal destination becomes surrender. Result bands and loss gra
 ## Done when
 
 - Each active numerical design constant has one catalogue key here and a semantic owner in the feature index.
-- Starting roles sum to total population; the declined staffed-field/no-refill break-even calculation is not an acceptance criterion.
+- Starting roles sum to total population; the staffed-field break-even calculation (declined with regional pooling) and the no-refill derivation (not ruled on by the 30 October 2026 conflict review; `R-FOOD-002` stays operative) are not acceptance criteria [S11].
 - Implementation tests distinguish agreed values and deferred parameters; the army count is not guessed.
 
 ## Out of scope

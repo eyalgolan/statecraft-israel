@@ -32,7 +32,7 @@ Railway completes after every authored buildable segment; reference is restored 
 
 The "absorb immigrants" objective completes when represented own population is above `absorption.population_target`, no refugees wait for housing, city overflow is no higher than `absorption.max_overflow`, and city employment is no lower than `absorption.min_employment`. The retained milestone reference date is **20 December 1949**, chosen in `Q-ABS-1` [S8][S12].
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the absorption test would instead adapt the approved goal to the proposed reception-bed and port/transit queue system. That adaptation is non-operative.
+Amir's refugee-awaiting-legal-bed absorption predicate agrees with main's `gdd-0.3` rule (`R-OBJ-004`, inactive synthetic boundary at `docs/rules/mvp.md:379`); the 30 October 2026 review lists Absorption as not a conflict [S1]. For his port/transit queue system, the review did not rule, and main has no live port queue (`open (owner)`).
 
 War completes when the required armistices are accepted. Fronts are Egypt, Lebanon, Syria and Jordan including the Iraqi sector; ALA/local forces do not add a front [S13]. Reference is Syria's 20 July 1949 agreement [S13]. [Combat](military-combat.md#enemy-actions-and-truces) owns quiet-front/truce rules.
 
@@ -61,7 +61,7 @@ Retain cleared imagery only with correct licence/attribution/caption scope. Gene
 - `hash1952` and `mvp-end` are re-pinned: the reference player completes the yishuvim part when Re'im, the last required site, is built on 15 July 1951. The old standalone objective's 100 points are removed; neither corridor completes, so the shared base is not paid. `hash1950`, `smoke5` and the scenarios do not move [S9].
 - Membership matches the latest owner ruling and unverified founding references remain gated.
 - Infrastructure has part cards/bonuses and only one base award.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** proposed reception housing and port-bed queues would affect absorption. This criterion is non-operative.
+- Reception housing affects absorption through the refugee-awaiting-legal-bed flag of `R-OBJ-004`, as main and Amir's proposal agree [S1]; port-bed queues were not ruled on by the 30 October 2026 conflict review and are `open (owner)`.
 - Scoring/cards/save reload are deterministic and cannot double-pay.
 - Campaign ending remains possible with incomplete objectives.
 

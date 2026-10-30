@@ -315,7 +315,7 @@ The camera has a fixed viewing direction and pitch, supports pan and **dolly in/
 
 ### 30 October 2026 conflict decisions
 
-On 30 October 2026 the owner reviewed all 13 conflicts between the recorded design and Amir's #1668 proposal and chose to keep every recorded ruling. Each declined note in this additive design links here; it preserves the adjacent ruling rather than reopening or replacing it.
+On 30 October 2026 the owner reviewed all 13 conflicts between the recorded design and Amir's #1668 proposal and chose to keep every recorded ruling. Each declined note in this additive design links here and covers only a proposal that is option B of one of those 13 conflicts; it preserves the adjacent ruling rather than reopening or replacing it. A #1668 proposal outside the 13 conflicts is not declined: its note says the review did not rule on it and names the operative main rule or catalogue entry, or says `open (owner)` where main has none.
 
 Conflicting #1668 mechanics and catalogue entries retained for traceability are non-operative. The recorded ruling beside each declined note remains authoritative; an unresolved value is `open (owner)` and must not be inferred from the declined proposal.
 

@@ -33,7 +33,7 @@ Amir's replacement of founding/service progression and veteran double progress b
 
 - `dotnet test sim/Statecraft.sln` passes, including `VeteranTests`, `ProjectsTests`, `GddStateTests` and `DesignValuesTests`.
 - `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move; `hash1950`, `hash1952` and `mvp-end` have a row in docs/determinism.md.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** every pioneer project would call the proposed shared advancement logic.
+- Every pioneer project calls the shared advancement logic under `gdd-0.3` (`R-VET-001`, `R-VET-002`), as Amir's proposal and main agree; the 30 October 2026 review lists Veteran pioneer as not a conflict [S1].
 - The retained service threshold and veteran-progress rules remain the current rules.
 
 ## Out of scope

@@ -19,7 +19,7 @@ A designer edits existing hex properties and moves locations, inspects affected 
 - Report validation failures against the affected hex, location or dependent record. A failed save must leave the last valid saved map intact [S1].
 - The host is a Unity editor window. It saves edits to one override file, `content/map/overrides.yaml`, which map generation applies last so regeneration keeps the edits. The editable properties are a hex's terrain and control and a location's position; a location's id and sources stay unchanged. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592))** [S4].
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing workable-land flags, region membership and supported static infrastructure.* [S1]
+*Considered and declined (owner, 30 Oct 2026; Regional pooling conflict, option A; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing region membership. For his workable-land flags and supported static infrastructure, the review did not rule; main's `R-MEDIT-001` to `R-MEDIT-003` (`docs/rules/mvp.md:558`) cover only the authoring envelope, so these fields are `open (owner)`.* [S1]
 
 The retained owner ruling keeps `content/map/overrides.yaml` as the override file [S4].
 ### Camera and editing surface
@@ -30,7 +30,7 @@ Use the existing internal map/Unity authoring workflow as the first host. This i
 
 ### Tile and location operations
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the editor would add workable-land flags, region membership and static infrastructure to the retained terrain/control/location-position fields. Those additions are non-operative.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** the editor would add region membership to the retained terrain/control/location-position fields. That addition is non-operative. Workable-land flags and static infrastructure were not ruled on by the 30 October 2026 conflict review and are `open (owner)` (`R-MEDIT-001`, `docs/rules/mvp.md:558`).
 
 The [GDD](../GDD.md#terrain-type-tilehex-type-new-types-tbd) owns the deferred expanded catalogue; the editor cannot invent it.
 
@@ -48,7 +48,7 @@ Save atomically after validation; failure preserves the prior usable overlay. Su
 
 ### Dependency validation and review
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** validation would include proposed region, facility, prepared-field and regional-slot dependencies. Retained editor validation remains limited to the approved editable fields and their existing dependencies.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** validation would include proposed region, prepared-field and regional-slot dependencies. Facility dependencies were not ruled on by the 30 October 2026 conflict review; `R-MEDIT-003` (`docs/rules/mvp.md:562`) names them as a missing adapter, so they are `open (owner)`. Retained editor validation remains limited to the approved editable fields and their existing dependencies.
 
 Validate bounds, land/passability, biome ids, duplicate identities and broken references. Inspect affected corridor geometry/endpoints, force anchors, targets, objectives, shared-hex markers and label offsets.
 

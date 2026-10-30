@@ -14,7 +14,7 @@ I plan standing orders, resolve the month predictably and reload under the rules
 - Before the cutover, balance values the owner had not set lived only in the overlay or in test fixtures [S3]; since it they are labelled design values in `content/` (R-LOOP-005).
 ### Ruleset boundary
 
-This design targets `gdd-0.3`. Existing `legacy`/`gdd-0.1` code/saves are implementation history, not alternative rules within a new run. Save ruleset, content hash and schema. Refuse incompatible earlier rulesets with the earlier-rules reason and unknown later rulesets/schemas with the newer-version reason. Never replay old commands through changed scales or economics. A schema number remains implementation work; declined regional/reception state from the catalogue is not encoded [S6].
+This design targets `gdd-0.3`. Existing `legacy`/`gdd-0.1` code/saves are implementation history, not alternative rules within a new run. Save ruleset, content hash and schema. Refuse incompatible earlier rulesets with the earlier-rules reason and unknown later rulesets/schemas with the newer-version reason. Never replay old commands through changed scales or economics. A schema number remains implementation work; declined regional state (Regional pooling conflict) is not encoded, and for reception state the 30 October 2026 conflict review did not rule (main has only an inactive `gdd-0.3` reception fixture, `docs/rules/mvp.md:107`) [S6].
 
 Amir's proposal that commands and standing orders operate without Attention agrees with the retained `gdd-0.3` rule: there is no Attention resource (`R-GOV-002`, owner ruling, 25 October 2026; [rules](../rules/mvp.md#government)). It was not one of the 30 October 2026 conflicts [S4].
 
@@ -64,7 +64,7 @@ Do not claim old goldens hold under revised rules. Implementation must migrate v
 - Replay/save round trips match state/draw count under identical rules/content.
 - Earlier incompatible saves refuse clearly.
 - Course completion, new facilities and arrivals cannot receive another month's output in one resolution.
-- Final retained expenses and conditions commit once; the declined transit charge is not applied.
+- Final retained expenses and conditions commit once; Amir's transit charge is not applied: the 30 October 2026 conflict review did not rule on it, and main has no live transit charge (`open (owner)`) [S4].
 
 ## Out of scope
 

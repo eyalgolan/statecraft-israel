@@ -24,7 +24,7 @@ I can recover from losing a region and understand controlling an enemy town with
 
 The owner answers for plan #1520 are catalogued in [S11].
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed keeping residents outside the player workforce/reception pipeline and using tax, garrison, upkeep and International Support values for occupation and annexation.* [S1]
+*Considered and declined (owner, 30 Oct 2026; Regional pooling conflict, option A; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed keeping annexed residents outside the player workforce. For his tax, garrison, upkeep and International Support values for occupation and annexation, the review did not rule; `R-CTRL-011` to `R-CTRL-016` (`docs/rules/mvp.md:55`) stay operative.* [S1]
 - After Deport, the depopulated place offers neither puppet regime nor annexation; Deport ends the occupation permanently (`Q-ANNEX-2`; planned R-CTRL-017; owner ruling [S6]).
 - Deport follows impact-plan §4.1 items 1, 2, 3, 5 and 6 as written, with the two clerical fixes. It affects every resident the state holds and records only `DisplacedByPlayer`, with no destination on the board (`Q-DEP-1` to `Q-DEP-3`; owner ruling [S8]). (unitless)
 - Deportation and razing are separate rules, with no razing option in the MVP (`Q-DEP-4` / `D-F3`; owner ruling [S8]).
@@ -40,7 +40,7 @@ The owner answers for plan #1520 are catalogued in [S11].
 - The planned rule-ID areas are R-CTRL for settlement control, R-GATE for the release gate and the existing R-EFX area for the `displacement` no-gain rule. These IDs remain planned until their implementation PR defines each one with its citing test (`Q-TECH-6`; owner ruling [S3]).
 ### Player regions and automatic evacuation
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S13]:** capturing a regional capital would transfer pooled regional capacity and trigger automatic evacuation through reception, port queues and transit. These regional mechanics are non-operative. Civilians are not automatically casualties, captives or enemy workers; the existing content-policy and review protections remain authoritative. Campaign defeat follows the retained exhausted-resource (economic) rule; under `gdd-0.3` losing a city or region alone does not end the game, and there is no generic region-loss rule.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** capturing a regional capital would transfer pooled regional capacity. These regional mechanics are non-operative. Automatic evacuation through reception, port queues and transit was not ruled on by the 30 October 2026 conflict review; main has no such rule, so it is `open (owner)`. Civilians are not automatically casualties, captives or enemy workers; the existing content-policy and review protections remain authoritative. Campaign defeat follows the retained exhausted-resource (economic) rule; under `gdd-0.3` losing a city or region alone does not end the game, and there is no generic region-loss rule.
 
 ### Enemy towns and cities
 
@@ -50,9 +50,9 @@ Capture requires a curated target, friendly ground unit at its hex and no defend
 
 ### Occupation and annexation proposal
 
-The retained `R-CTRL-011` rule requires an Israeli military unit on the place's hex for Occupy—the one unit that stays—and moves no unit [S14]. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** occupation would add proposed tax rules. That addition is non-operative.
+The retained `R-CTRL-011` rule requires an Israeli military unit on the place's hex for Occupy—the one unit that stays—and moves no unit [S14]. **Amir's proposal [S1]:** occupation would add proposed tax rules. The owner's 30 October 2026 conflict review did not rule on this; `R-CTRL-011` to `R-CTRL-013` (`docs/rules/mvp.md:55`) stay operative and add no tax.
 
-The retained ruling has no puppet-regime outcome [S6]. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** annexation cost and town/city taxes would be added; those additions are non-operative.
+The retained ruling has no puppet-regime outcome [S6]. **Amir's proposal, declined by the owner on 30 October 2026 (Annexation conflict, option A) [S1]:** town/city regime taxes would be added; that addition is non-operative. For an annexation cost, the 30 October 2026 conflict review did not rule; `R-CTRL-016` (`docs/rules/mvp.md:65`) stays operative.
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** enemy recapture would clear annexation. The retained ruling says an annexed town stays Israeli for good [S11].
 
@@ -70,7 +70,7 @@ Old references to Raid, Occupy and Deport do not approve every sensitive outcome
 - `content/events/*.yaml` and the event schema — cards tagged `displacement` and their no-gain rule (`Q-DEP-6`, owner ruling [S4]).
 - Unity — the capture and end-of-occupation dialogs, plus map-state labels and tooltips; rules remain in the simulation (`Q-GATE-1`, `Q-TECH-5`, owner rulings [S3], [S4]).
 - `docs/rules/mvp.md` — planned R-CTRL, R-GATE and R-EFX definitions land only with their implementation and citing tests (`Q-TECH-6`, owner ruling [S3]).
-- **Amir's proposal, declined by the owner on 30 October 2026 [S13]:** region/capital membership and automatic evacuation state would be added. Those data changes are non-operative. Per-locality control, target allow-list, occupation progress and annexation remain.
+- **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** region/capital membership would be added. That data change is non-operative. Automatic evacuation state was not ruled on by the 30 October 2026 conflict review and is `open (owner)`. Per-locality control, target allow-list, occupation progress and annexation remain.
 - Capture commands/events require migration and review; this edit does not add capture targets or change review status.
 
 ## Done when
@@ -81,7 +81,7 @@ Old references to Raid, Occupy and Deport do not approve every sensitive outcome
 - The dominance test clones each sampled capture state for every offered outcome, compares every resource, parameter, score and objective at turn end and MVP end, and covers the MVP goldens plus full-strength and minimum-strength fixture states (`Q-TECH-4`, owner ruling [S3]).
 - `uv run scripts/oss/rule_ids.py` passes without defining any planned Phase six ID in this docs-only change.
 - `uv run scripts/oss/check_repo.py` passes.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S13]:** capital capture would disable a region and route-blocked evacuation would preserve people/state. These criteria are non-operative.
+- **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** capital capture would disable a region. That criterion is non-operative. Route-blocked evacuation was not ruled on by the 30 October 2026 conflict review and is `open (owner)`.
 - Pre-annexation withdrawal becomes a Raid; after annexation the town stays Israeli for good, with no unit that has to stay [S11].
 - The proposal's resident treatment is not implemented unless the owner supersedes R-CTRL-016.
 - Unreviewed outcomes remain unavailable and shared-hex identities stay distinct.

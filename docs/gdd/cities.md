@@ -33,23 +33,23 @@ The later owner decisions recorded in [S7] do not replace this retained per-city
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S17]:** each player region would pool housing, farms and Industry/workshop jobs through an authored capital. The retained per-city capacity rule remains authoritative.
 
-The proposed regional farm-assignment, field-slot and tier-rate rules are part of that declined proposal and are non-operative. Existing field and site rules remain authoritative.
+The proposed regional farm-assignment and field-slot rules are part of that declined proposal and are non-operative; the farmer tier rates agree with main's `gdd-0.3` rule (`R-VET-002`). Existing field and site rules remain authoritative.
 
 ### Assignments and income
 
-A unit has one active assignment. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** eligible civilians would take proposed generic builder slots and Industry would use proposed staffed tier rates. The retained qualification-reassignment rule still permits a qualified civilian to return to a role without retraining [S19].
+A unit has one active assignment. **Amir's proposal [S1]:** eligible civilians would take proposed generic builder slots and Industry would use proposed staffed tier rates. The owner's 30 October 2026 conflict review did not rule on this; `R-PROJ-001` and `R-CITY-002` (`docs/rules/mvp.md:145`, `docs/rules/mvp.md:95`) stay operative. The retained qualification-reassignment rule still permits a qualified civilian to return to a role without retraining [S19].
 
 Farm work, Industry, building, teaching, courses and active service cannot run simultaneously for the same unit. Reassignment releases old capacity atomically. Invalid capacity/eligibility refuses before Money or state changes.
 
 ### Housing and condition
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the regional-capacity model, regional resident formula, proportional housing upkeep and housing-only shortfall effects are non-operative. The retained per-city housing, refugee-conversion and exhausted-resource defeat rules control.
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling and Upkeep conflicts, option A) [S1]:** the regional-capacity model, regional resident formula and proportional housing upkeep are non-operative. For housing-only shortfall effects, the owner's 30 October 2026 conflict review did not rule; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative. The retained per-city housing, refugee-conversion and exhausted-resource defeat rules control.
 
 ### City projects and builders
 
 **Amir's proposal [S1]:** city projects would require full upfront Money, assigned builders and one national start. The owner's 30 October 2026 conflict review did not rule on this; `R-PROJ-001` and `R-MONEY-003` (`docs/rules/mvp.md:145` and `:399`) stay operative, with borrowing, worker-free construction and two starts a turn.
 
-The assigned-builder, paused-progress, one-start and completed-upkeep rules are non-operative under that declined proposal.
+The completed-upkeep rule is non-operative (Upkeep conflict, option A). For the assigned-builder, paused-progress and one-start rules, the 30 October 2026 conflict review did not rule; `R-PROJ-001` to `R-PROJ-003` stay operative [S1].
 
 The retained winery is in Rishon LeZion under the existing city-project ruling [S16][S20]; Amir's shared regional winery-job model was declined [S1]. The maabara retains its existing reviewed ma'abarot-policy availability gate in 1950 [S20].
 
@@ -78,7 +78,7 @@ A workshop has its own worker slot. Each staffed turn advances it; no worker mea
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, or the phase's plan.
 - A unit cannot occupy multiple retained jobs or training places simultaneously.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** regional farm-slot state, continuous regional condition costs, builder slots and one national construction start would be required. These acceptance criteria are non-operative.
+- **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S1]:** regional farm-slot state and continuous regional condition costs would be required. These acceptance criteria are non-operative. For builder slots and one national construction start, the 30 October 2026 conflict review did not rule; `R-PROJ-001` stays operative.
 - Workshops produce equipment without duplicate people or job income.
 
 ## Out of scope

@@ -34,7 +34,7 @@ I command identifiable units between hexes, preview strength, and earn combat ex
 
 Military units are the same people managed by [training](training.md), not additional starting formations [S18]. Historical art/brigade anchors are placement evidence, not another manpower ledger. Infantry, artillery and armoured roles are distinct from qualification. Specific equipment models stay in the GDD's evidence queue.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** Strength would use proposed qualification, reception and Food-shortage factors. This restatement is non-operative.
+**Amir's proposal [S1]:** Strength would use proposed qualification, reception and Food-shortage factors. The owner's 30 October 2026 conflict review did not rule on this; live Strength counts population units (`R-UNIT-001`, `docs/rules/mvp.md:239`), and `content/gdd03-balance.yaml` lists `military.strength` (basis Agreed, transcribed from #1668).
 
 Historical mode keeps the sourced starting-unit seed from `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026), binding those units without duplicating people. Parameter `A` applies only to non-Historical modes, including Open mode, and remains deferred (owner, 30 Oct 2026) [S19]. Enemy names/dated positions retain source records and per-row fact checks. No playable air/naval units are introduced; delivery ships are presentation.
 

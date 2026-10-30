@@ -17,7 +17,7 @@ I choose designated sites to develop and send a pioneer to work under the retain
 - It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed pausing paid progress when moving or stopping and discarding progress without refund only on explicit cancellation.* [S1]
+*Amir's #1668 proposed pausing paid progress when moving or stopping and discarding progress without refund only on explicit cancellation; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). `R-SITE-002` (`docs/rules/mvp.md:187`) stays operative.* [S1]
 - Construction resolves after training and before production in each turn (D-A6). A build ordered this turn counts this turn: it takes 6 turns, a placeholder (R-SITE-003).
 - When the build finishes, the site is marked built on the turn's end date and the unit is idle again. It stays a halutz unit until it has worked `veteran_halutz_service` turns (docs/gdd/veteran-pioneer.md). Nothing else changes yet: no city, housing, jobs, population or Social cohesion. The objective and its card come with the objective PR (R-SITE-003).
 ### Sites and field work
@@ -34,7 +34,7 @@ Amir's staffed-turn tier rates and working-turn XP agree with main's `gdd-0.3` s
 
 A yishuv completion marks its site built, without spawning people, housing, jobs, capitals or extra cohesion. [Objectives](objective-card.md) owns required membership, grouping, dates and points. Preserve founding-only sensitivity framing without rewards from displacement.
 
-The retained camp-site construction rules above remain authoritative. **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** reception camps, training centres and city variants would use the proposal catalogue's on-site pioneer/builder work and national city-start allowance.
+The retained camp-site construction rules above remain authoritative. **Amir's proposal [S1]:** reception camps, training centres and city variants would use the proposal catalogue's on-site pioneer/builder work and national city-start allowance. The owner's 30 October 2026 conflict review did not rule on this; `R-CAMP-001` and `R-PROJ-001` (`docs/rules/mvp.md:231`, `docs/rules/mvp.md:145`) stay operative.
 
 [Corridors](corridors.md) owns road/rail projects. Retain the approved Hula drainage site and drainage-only sensitivity treatment [S7]. Drained, the swamp site does nothing else; the Hula field site becomes ready to plow under the retained [field and swamp rules](fields-and-swamps.md) [S13]. The existing event retains sources/window and fires only while works are in progress [S7]. No new terrain class or unsourced claims are introduced.
 
@@ -47,7 +47,7 @@ A field is ready only once the yishuv in its hex is built; plowing then follows 
 - `GameState.Sites`, hashed as `site{...}` when there are some; `Treasury`.
 - Save files: the `pioneer UNIT ACTION SITE` and `stop UNIT` lines. Scenarios: `pioneer_work` and `stop_work`.
 - Designated sites, allowed project kinds, fixed-turn progress and stable hex/facility bindings.
-- Movement/project commands share validation; the retained project uses fixed turns rather than the declined staffed-work arithmetic.
+- Movement/project commands share validation; the retained project uses fixed turns rather than Amir's staffed-work arithmetic, which the 30 October 2026 conflict review did not rule on (`R-SITE-003`, `docs/rules/mvp.md:189`) [S1].
 - Field readiness and plowing follow the retained field rules; the declined prepared regional-capacity model is not encoded.
 
 ## Done when
@@ -55,7 +55,7 @@ A field is ready only once the yishuv in its hex is built; plowing then follows 
 - `dotnet test sim/Statecraft.sln` passes, including `ProjectsTests`, `SitesContentTests`, `GddStateTests` and `ReferencePlayerTests`.
 - `hash1950`, `hash1952`, `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move.
 - **Amir's proposal [S1]:** work would require physical arrival and full upfront affordability; the owner's 30 October 2026 conflict review did not rule on this, and `R-SITE-001` and `R-MONEY-003` stay operative.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** staffing pauses would retain progress while explicit cancellation discarded it.
+- **Amir's proposal [S1]:** staffing pauses would retain progress while explicit cancellation discarded it; the owner's 30 October 2026 conflict review did not rule on this, and `R-SITE-002` stays operative.
 - **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** fields would produce through staffed regional slots. This criterion is non-operative.
 - Founding creates no duplicate people/economy, and facilities cannot be built twice.
 

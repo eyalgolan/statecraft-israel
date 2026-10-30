@@ -27,7 +27,7 @@ I can see where Money, Food and Arms come from, what is committed, and why housi
 *Amir's #1668 proposed requiring full Money upfront without borrowing and removing automatic monthly Food import/refill; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The operative main rules are `R-MONEY-003` and `R-FOOD-002` (`docs/rules/mvp.md:399` and `:409`). Its removal of Attention is not declined: under `gdd-0.3` there is no Attention resource (`R-GOV-002`).* (unitless) [S1]
 ### Resource ownership
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S9]:** the resource layer would be restated around the proposal catalogue [S10]. Conflicting catalogue mechanics are non-operative; the retained rules above control.
+**Amir's proposal [S9]:** the resource layer would be restated around the proposal catalogue [S10]. Catalogue mechanics that are option B of a 30 October 2026 conflict (Upkeep, Immigration source, Regional pooling) are declined and non-operative; for the others the review did not rule, and each note below names the operative rule.
 
 **Amir's proposal [S1]:** only staffed job income, explicit event effects and settlement-control taxes would create recurring Money, while automatic borrowing would be disabled. The owner's 30 October 2026 conflict review did not rule on borrowing or recurring income; the operative main rules are `R-CITY-002` and `R-MONEY-003` (`docs/rules/mvp.md:95` and `:399`).
 
@@ -35,13 +35,13 @@ I can see where Money, Food and Arms come from, what is committed, and why housi
 
 **Amir's proposal [S1]:** construction, tools/courses, imports and workshop inputs would require full uncommitted Money upfront. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`).
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the proposed settlement ordering, facility upkeep, transit cost and active-army upkeep restatement is non-operative.
+**Amir's proposal, declined by the owner on 30 October 2026 (Upkeep conflict, option A) [S1]:** proposed facility upkeep is non-operative. For his settlement ordering, transit cost and active-army upkeep, the owner's 30 October 2026 conflict review did not rule on this; `R-MONEY-002` (`docs/rules/mvp.md:397`) stays operative, `transit.cost` and `military.active_money` are listed in `content/gdd03-balance.yaml` (basis Agreed, transcribed from #1668), and main has no live transit charge (`open (owner)`).
 
 The proposed non-housing-first payment and regional housing-proration rule is part of that declined proposal and is non-operative.
 
 The proposed regional housing-upkeep formula and its settlement ordering are part of that declined proposal and are non-operative.
 
-Money and Food exhaustion remain defeat triggers under [the retained end rules](ministers-events-end.md#rules). Amir's proposal to limit unpaid Money to housing effects was declined [S1].
+Money and Food exhaustion remain defeat triggers under [the retained end rules](ministers-events-end.md#rules). For Amir's proposal to limit unpaid Money to housing effects, the owner's 30 October 2026 conflict review did not rule on this [S1]; borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`) stays operative.
 
 ### Food
 
@@ -49,7 +49,7 @@ Every own unit consumes Food under the retained national-pool rule. Enemy reside
 
 **Amir's proposal [S1]:** arrivals and role changes would not create automatic Food or refill, and purchases/reviewed effects would be the only import/grant sources. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is the automatic monthly import of `R-FOOD-002` (`docs/rules/mvp.md:409`).
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** own and prisoner Food would be allocated proportionally under a new shortage formula. The retained prisoner rule keeps its provision and shortfall amounts open (owner).
+**Amir's proposal [S1]:** own and prisoner Food would be allocated proportionally under a new shortage formula. The owner's 30 October 2026 conflict review did not rule on this; `R-FOOD-002` and `R-POW-002` (`docs/rules/mvp.md:409`, `docs/rules/mvp.md:361`) stay operative. The retained prisoner rule keeps its provision and shortfall amounts open (owner).
 
 Legacy `food_supply`/effects interfaces may be readouts during migration. The retained automatic monthly import rule remains authoritative, and migration must not duplicate its refill or penalties. [Event/indicator integration](ministers-events-end.md) owns compatibility.
 
@@ -61,7 +61,7 @@ Amir's proposal that Arms be reusable equipment, with attacks and artillery spen
 
 ### Immigration and arrival queues
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** immigration would use the proposed manifest, reception-bed/port-queue pipeline, regional destinations and a per-unit transit charge. Those mechanics are non-operative; retained arrivals become civilians on the next housing step.
+**Amir's proposal, declined by the owner on 30 October 2026 (Immigration source and Regional pooling conflicts, option A) [S1]:** immigration would use the proposed manifest and regional destinations. Those mechanics are non-operative; retained arrivals come from the CBS series and become civilians on the next housing step (`R-CITY-003`, `R-CITY-004`). For his reception-bed/port-queue pipeline and per-unit transit charge, the 30 October 2026 conflict review did not rule; main has only an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`) and no transit charge (`open (owner)`).
 
 ### Sensitive effects and accounting
 
@@ -86,9 +86,9 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - Every rule above names its source: a decided row of #375, the GDD, or the phase's plan.
 - The ledger reconciles starting stocks, income/deliveries, production, expenditure and ending stocks.
 - **Amir's proposal [S1]:** start Food would break even without refill and subsequent shortages would use only proposed effects. The owner's 30 October 2026 conflict review did not rule on this; `R-FOOD-002` (`docs/rules/mvp.md:409`) stays operative.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** cash shortfall would change only housing condition and its downstream effects.
+- **Amir's proposal [S1]:** cash shortfall would change only housing condition and its downstream effects; the owner's 30 October 2026 conflict review did not rule on this, and `R-MONEY-003` stays operative.
 - Arms purchases arrive at once (`R-ARMS-002`) and the Food import refills in the same turn (`R-FOOD-002`); a reload duplicates no delivery. Amir's proposed pending import turn is non-operative [S1].
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** transit would charge once per unit and port queues would reduce cohesion once nationally. This criterion is non-operative.
+- **Amir's proposal [S1]:** transit would charge once per unit and port queues would reduce cohesion once nationally. The owner's 30 October 2026 conflict review did not rule on this; `content/gdd03-balance.yaml` lists `transit.cost` and `reception.queue_cohesion_loss` (basis Agreed, transcribed from #1668), and main has no live transit charge or port queue (`open (owner)`).
 
 ## Out of scope
 

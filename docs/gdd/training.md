@@ -29,7 +29,7 @@ Each population unit has a stable id, location, retained civilian qualification 
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** farmer, pioneer and craftsman would be mutually exclusive, and a trained civilian profession could not be replaced. The retained rule permits qualified civilians to return and be reassigned without retraining.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S6]:** a novice could pay a one-time tool cost and start farmer or pioneer work immediately. The retained `PioneerWork` rule requires a halutz, and pioneer training takes four turns. Under the retained [owner ruling #1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482), qualified civilians may return and be reassigned while keeping their qualification.
+**Amir's proposal [S6]:** a novice could pay a one-time tool cost and start farmer or pioneer work immediately. The owner's 30 October 2026 conflict review did not rule on this; live `PioneerWork` requires a halutz (`R-SITE-001`, `docs/rules/mvp.md:185`) and pioneer training takes four turns, while `content/gdd03-balance.yaml` lists `profession.farmer_tools` / `profession.pioneer_tools` (basis Agreed) for the inactive `gdd-0.3` helpers (`R-QUAL-008`, `docs/rules/mvp.md:215`). Under the retained [owner ruling #1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482), qualified civilians may return and be reassigned while keeping their qualification.
 
 Amir's rule that farmers and pioneers earn working-turn XP and can promote through a self-taught route agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists it as not a conflict [S6]. Six service turns and veteran double progress apply to `legacy` and `gdd-0.1`.
 
@@ -39,7 +39,7 @@ The named facility roster is in [locations](../locations.md#facility-roster) [S8
 
 **Amir's proposal [S6]:** refugees would need six reception turns before civilian work. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-CITY-004` (`docs/rules/mvp.md:105`), with an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`).
 
-The proposed basic-training reception credit, combat-veterancy completion, demobilisation queue, port queue and reception combat penalty are part of Amir's declined reception model [S6] and are non-operative. Under the retained city rule, every refugee becomes a civilian on the next housing step.
+The proposed basic-training reception credit, combat-veterancy completion, demobilisation queue, port queue and reception combat penalty are part of Amir's reception model, which the 30 October 2026 conflict review did not rule on [S6]; main has only an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`). Under the retained city rule, every refugee becomes a civilian on the next housing step.
 
 ### Farmer and pioneer courses
 
@@ -57,11 +57,11 @@ Apprentices become experts after `craft.expert_work_turns` actual turns in Indus
 
 ### Military conversion
 
-Under retained `R-TRAIN-001`, `Train(city, track, n)` takes civilians without a job into a military course when the city has the matching camp; the course charges its retained Money and Arms costs [S9]. **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** an eligible civilian at an operating camp could instead take up arms immediately without a wait. Proposed reusable-equipment and reception exceptions are also non-operative [S6][S7].
+Under retained `R-TRAIN-001`, `Train(city, track, n)` takes civilians without a job into a military course when the city has the matching camp; the course charges its retained Money and Arms costs [S9]. **Amir's proposal [S6]:** an eligible civilian at an operating camp could instead take up arms immediately without a wait. The owner's 30 October 2026 conflict review did not rule on this; `R-TRAIN-001` stays operative, and `content/gdd03-balance.yaml` lists `military.draft_money` / `military.draft_wait` (basis Agreed). His reusable equipment agrees with main (the review lists Arms as not a conflict); for his reception exceptions the review did not rule [S6][S7].
 
 Retained training, teaching and active service are exclusive assignments. Active service costs 0.05 per active army unit per turn in Money, excluding basic trainees ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S10]. Under `gdd-0.3` there is no Attention resource (`R-GOV-002`), as Amir's proposal also has; it was not one of the 30 October 2026 conflicts [S10].
 
-Under retained `R-UNIT-005`, Send home is the only way home: no automatic demobilisation happens, and the order is unavailable until its armistice condition is met; when it runs, the unit leaves the map and its strength joins the nearest city as civilians without a job [S9]. **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** demobilisation at an operating camp would be immediate/free, preserve the proposal's military state, return issued Arms to a reusable pool and route incomplete-reception units through the proposed queue.
+Under retained `R-UNIT-005`, Send home is the only way home: no automatic demobilisation happens, and the order is unavailable until its armistice condition is met; when it runs, the unit leaves the map and its strength joins the nearest city as civilians without a job [S9]. **Amir's proposal [S6]:** demobilisation at an operating camp would be immediate/free, preserve the proposal's military state and route incomplete-reception units through the proposed queue. The owner's 30 October 2026 conflict review did not rule on this; `R-UNIT-005` (`docs/rules/mvp.md:247`) stays operative, and `content/gdd03-balance.yaml` lists `military.demobilise_money` / `military.demobilise_wait` (basis Agreed). His return of issued Arms to a reusable pool agrees with main (`military.demobilise_return`; the review lists Arms as not a conflict).
 
 Cancelled retained courses award no unfinished qualification. Proposed reception credit and reusable-equipment cancellation rules are non-operative [S6]. [Resources](cutover-resource-layer.md) owns retained affordability rules.
 
@@ -74,7 +74,7 @@ Cancelled retained courses award no unfinished qualification. Proposed reception
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` did not. Phase 4 PR 3 moves `hash1950`, `hash1952` and `mvp-end`: the reference player builds the two camps once the yishuv sites are taken (docs/determinism.md).
 - Finished recruit cohorts remain city recruit counts until soldiers become units; Amir's proposal to replace those counts during training is non-operative [S6].
 - Unit types, scenario inventory, facilities and training commands require coordinated migration.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** reception beds, teacher housing and proposed military trainee slots would be distinct capacity fields.
+- **Amir's proposal [S6]:** reception beds, teacher housing and proposed military trainee slots would be distinct capacity fields; the owner's 30 October 2026 conflict review did not rule on this, and main has only inactive `gdd-0.3` fixtures for them (`docs/rules/mvp.md:107`, `docs/rules/mvp.md:167`).
 - Historical army size comes from the sourced `content/map/units_1948.yaml` seed (`Q-START-1`, decided 15 October 2026); only the non-Historical parameter `A` and real reception-facility availability stay deferred in the GDD (owner, 30 Oct 2026) [S6].
 
 ## Done when
