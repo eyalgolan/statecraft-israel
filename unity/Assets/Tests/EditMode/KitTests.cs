@@ -66,6 +66,121 @@ public class KitTests
     }
 
     [Test]
+    public void ExtractedFootprintOwnershipProducesTheSameShippedMapBuildAsTheFormerInlineRule()
+    {
+        var map = OpenMap();
+        var doc = LoadLocalities(map);
+        var localities = doc.Places.Select(p => p.Settlement).ToList();
+        KitGround ShippedGround()
+        {
+            var ground = Ground(map);
+            foreach (var (line, halfWidth) in map.KitRouteCorridors) ground.AddCorridor(line, halfWidth);
+            foreach (var clearing in map.UnitClearings)
+                ground.AddCorridor(new List<Vector2> { clearing.centre, clearing.centre + Vector2.right }, clearing.radius);
+            foreach (var token in map.UnitTokens) ground.Tokens.Add((token.centre, token.radius));
+            return ground;
+        }
+        bool FormerInlineRule(Vector2 point, string id, Vector2 centre, float radius,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> footprints, IReadOnlyList<int>? candidates,
+            HashSet<string>? ignored)
+        {
+            float mine = (point - centre).magnitude / radius;
+            bool Closer(int index)
+            {
+                var footprint = footprints[index];
+                return footprint.id != id && (ignored == null || !ignored.Contains(footprint.id))
+                    && (point - footprint.centre).magnitude / footprint.radius < mine;
+            }
+            if (candidates == null)
+            {
+                for (int i = 0; i < footprints.Count; i++) if (Closer(i)) return false;
+            }
+            else
+            {
+                for (int i = 0; i < candidates.Count; i++) if (Closer(candidates[i])) return false;
+            }
+            return true;
+        }
+
+        var extracted = SettlementKits.Build(map.Settlements, localities, doc.Encampments, ShippedGround(), out var extractedPlaced);
+        var inline = SettlementKits.BuildWithFootprintOwnership(map.Settlements, localities, doc.Encampments, ShippedGround(),
+            FormerInlineRule, out var inlinePlaced);
+        try
+        {
+            Assert.AreEqual(BuildHash(inline, inlinePlaced), BuildHash(extracted, extractedPlaced),
+                "SettlementKits.Build output changed when the former inline ownership rule was extracted");
+        }
+        finally
+        {
+            DestroyBuild(extracted); DestroyBuild(inline);
+        }
+    }
+
+    static string BuildHash(SettlementKits.Result result, IReadOnlyList<SettlementKits.Placed> placed)
+    {
+        const int MatrixElementCount = 16;
+        using var bytes = new System.IO.MemoryStream();
+        using (var writer = new System.IO.BinaryWriter(bytes, System.Text.Encoding.UTF8, leaveOpen: true))
+        {
+            void Text(string value) { writer.Write(value); }
+            void V2(Vector2 value) { writer.Write(value.x); writer.Write(value.y); }
+            void V3(Vector3 value) { writer.Write(value.x); writer.Write(value.y); writer.Write(value.z); }
+            void Box(Bounds value) { V3(value.center); V3(value.size); }
+            void MeshSummary(Mesh mesh)
+            {
+                Text(mesh.name); writer.Write(mesh.vertexCount); writer.Write(mesh.subMeshCount);
+                for (int i = 0; i < mesh.subMeshCount; i++) writer.Write(mesh.GetIndexCount(i));
+                Box(mesh.bounds);
+            }
+            writer.Write(result.LocalityBuildings); writer.Write(result.Camps); writer.Write(result.Tents);
+            writer.Write(result.KibbutzHalls); writer.Write(result.FarmSheds);
+            writer.Write(result.Towns.Count);
+            foreach (var town in result.Towns) { Text(town.s.Id); writer.Write(town.buildings); MeshSummary(town.mesh); }
+            writer.Write(result.Tiles.Count);
+            foreach (var tile in result.Tiles) { Text(tile.name); MeshSummary(tile.mesh); }
+            writer.Write(result.Claimed.Count);
+            foreach (var lot in result.Claimed) { Text(lot.id); V2(lot.centre); writer.Write(lot.radius); }
+            writer.Write(placed.Count);
+            foreach (var item in placed)
+            {
+                Text(item.Id); Text(item.Kind); V2(item.C); writer.Write(item.Yaw); writer.Write(item.W); writer.Write(item.D);
+                writer.Write(item.H); writer.Write(item.Y); writer.Write(item.Wall.r); writer.Write(item.Wall.g);
+                writer.Write(item.Wall.b); writer.Write(item.Wall.a);
+            }
+            writer.Write(result.Models.Count);
+            foreach (var model in result.Models)
+            {
+                Text(model.Id); writer.Write((int)model.Model);
+                for (int i = 0; i < MatrixElementCount; i++) writer.Write(model.M[i]);
+                V2(model.C); V2(model.Plot); writer.Write(model.Yaw); writer.Write(model.W); writer.Write(model.D);
+                writer.Write(model.Ground); writer.Write(model.H);
+            }
+            writer.Write(result.TownLandmarks.Count);
+            foreach (var pair in result.TownLandmarks.OrderBy(p => p.Key, System.StringComparer.Ordinal))
+            { Text(pair.Key); writer.Write(pair.Value); }
+            writer.Write(result.Close.Count);
+            foreach (var pair in result.Close.OrderBy(p => p.Key, System.StringComparer.Ordinal))
+            { Text(pair.Key); MeshSummary(pair.Value); }
+            writer.Write(result.CloseLandmarks.Count);
+            foreach (var item in result.CloseLandmarks)
+            {
+                Text(item.Id); Text(item.Kind); V2(item.C); writer.Write(item.Yaw); writer.Write(item.W); writer.Write(item.D);
+                writer.Write(item.H); writer.Write(item.Y); writer.Write(item.Wall.r); writer.Write(item.Wall.g);
+                writer.Write(item.Wall.b); writer.Write(item.Wall.a);
+            }
+        }
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return System.BitConverter.ToString(sha.ComputeHash(bytes.ToArray())).Replace("-", "").ToLowerInvariant();
+    }
+
+    static void DestroyBuild(SettlementKits.Result result)
+    {
+        foreach (var town in result.Towns) Object.DestroyImmediate(town.mesh);
+        foreach (var tile in result.Tiles) Object.DestroyImmediate(tile.mesh);
+        foreach (var mesh in result.Close.Values) Object.DestroyImmediate(mesh);
+    }
+
+    [Test]
     public void TownsSpreadInProportionToTheirPeople()
     {
         var map = OpenMap();
