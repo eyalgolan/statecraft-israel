@@ -1,11 +1,15 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using Statecraft.Game.Map;
 using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.UI;
 
 /// <summary>C89/C91: original artwork near the camera focus, with fallback elsewhere. Reflection keeps the test-only
 /// revision compilable on the pre-change tree so the requested deferred red run can fail on behavior/API assertions.</summary>
@@ -22,6 +26,74 @@ public class TownModelResidencyTests
         (id, new Bounds(new Vector3(x, 0, z), new Vector3(100, 100, 100)));
     static string[] Focus(IReadOnlyList<(string id, Bounds bounds)> places, Vector3 point, string? previous = null, Func<IReadOnlyList<string>, string, bool>? allowance = null) =>
         (string[])Call(null, "FocusedTowns", places, point, previous, allowance, 1000f, 2000f, 1000f, 2)!;
+
+    static Bounds InstanceBounds(TownModelLayer layer, string id)
+    {
+        var corners = new List<Vector3>();
+        foreach (var instance in layer.InstancesOf(id)) instance.Corners(corners);
+        Assert.IsNotEmpty(corners, id + ": detailed-model instances");
+        var bounds = new Bounds(corners[0], Vector3.zero);
+        foreach (var corner in corners) bounds.Encapsulate(corner);
+        return bounds;
+    }
+
+    /// <summary>R2: the production camera centres a town on its sourced label point, also the kit-footprint centre. Some
+    /// detailed instances do not cover that point; admission must therefore use the authoritative footprint union rather
+    /// than treating the detailed-instance rectangle as the town itself.</summary>
+    [Test]
+    public void EveryDetailedTownIsAdmittedAtItsLabelAndKitFootprintCentre()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            var rig = UnityEngine.Object.FindFirstObjectByType<CameraRig>();
+            var camera = rig.GetComponent<Camera>();
+            var detailed = map.Settlements.Where(s => layer.CountFor(s.Id) > 0).OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
+            CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, detailed.Select(s => s.Id).ToArray(),
+                "the three reported towns must remain in the mapped detailed-model census");
+
+            var outsideInstances = new List<string>();
+            var notAdmitted = new List<string>();
+            var notReady = new List<string>();
+            foreach (var town in detailed)
+            {
+                var footprint = map.KitFootprints.Single(f => f.id == town.Id);
+                var label = MapLabelsPresenter.MarkerTop(map, town);
+                Assert.AreEqual(footprint.centre.x, label.x, 0.01f, town.Id + ": label and kit centre x");
+                Assert.AreEqual(footprint.centre.y, label.z, 0.01f, town.Id + ": label and kit centre z");
+
+                rig.LookAt = new Vector3(label.x, 0f, label.z); rig.Distance = ReportedCameraDistanceM;
+                rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
+                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), town.Id + ": production ground focus");
+                var instances = InstanceBounds(layer, town.Id);
+                var instancePoint = focus; instancePoint.y = instances.center.y;
+                float instanceDistance = Mathf.Sqrt(instances.SqrDistance(instancePoint));
+                if (instanceDistance > 0f) outsideInstances.Add(town.Id);
+                float kitDistance = Mathf.Max(0f, Vector2.Distance(new Vector2(focus.x, focus.z), footprint.centre) - footprint.radius);
+                TestContext.WriteLine($"R2 {town.Id}: focus={focus}; instance_bounds={instances}; " +
+                    $"instance_distance={instanceDistance:0.###}m; " +
+                    $"kit_centre={footprint.centre}; kit_radius={footprint.radius:0.###}m; kit_distance={kitDistance:0.###}m");
+
+                Call(layer, "PrepareCamera", camera);
+                if (!(bool)Call(layer, "WantsTown", town.Id, camera)!) notAdmitted.Add(town.Id);
+                if (!(bool)Call(layer, "ReadyForTown", town.Id, camera)!) notReady.Add(town.Id);
+            }
+            CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, outsideInstances,
+                "the regression evidence must keep covering the three reported focus points outside their instance rectangles");
+            CollectionAssert.IsEmpty(notAdmitted,
+                "a camera focused on each authoritative town footprint must admit that town's detailed models");
+            CollectionAssert.IsEmpty(notReady,
+                "every admitted production town must have every required detailed-model kind");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
 
     [TestCase("FocusEnterM", 0f)]
     [TestCase("FocusExitM", 0f)]

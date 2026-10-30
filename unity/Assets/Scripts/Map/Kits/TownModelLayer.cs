@@ -365,6 +365,25 @@ namespace Statecraft.Game.Map.Kits
                 if (!models.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
             return true;
         }
+        /// <summary>Expands each detailed town's instance rectangle to include its authoritative kit footprint. Camera
+        /// focus and town labels use the footprint centre, which need not fall among the surviving model placements.</summary>
+        internal void ConfigureTownFootprints(IReadOnlyList<(Vector2 centre, float radius, string id)> footprints)
+        {
+            var byTown = new Dictionary<string, (Vector2 centre, float radius)>(System.StringComparer.Ordinal);
+            foreach (var footprint in footprints) byTown[footprint.id] = (footprint.centre, footprint.radius);
+            for (int i = 0; i < places.Count; i++)
+            {
+                var place = places[i];
+                if (!byTown.TryGetValue(place.id, out var footprint)) continue;
+                var bounds = place.bounds;
+                float y = bounds.center.y;
+                bounds.Encapsulate(new Vector3(footprint.centre.x - footprint.radius, y, footprint.centre.y - footprint.radius));
+                bounds.Encapsulate(new Vector3(footprint.centre.x + footprint.radius, y, footprint.centre.y + footprint.radius));
+                places[i] = (place.id, bounds);
+            }
+            buildingPlaces.Clear(); buildingPlaces.AddRange(places);
+            foreach (var choice in choices.Values) choice.hadFocus = false;
+        }
         internal void ConfigureWholeTowns(IReadOnlyList<(string id, Bounds bounds)> towns)
         {
             places.Clear(); places.AddRange(buildingPlaces);
