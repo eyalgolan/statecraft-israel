@@ -416,6 +416,9 @@ public class UnitRosterResidencyTests
             Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName));
             Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName));
 
+            // Admission is per camera, and an edit-mode frame never advances to expire the close camera's grace: the close
+            // camera stops rendering (as when the player's view zooms out), so the strategic view is the only demand left.
+            close.enabled = false;
             owner.Choose(default, strategic);
 
             Assert.IsTrue(retirement.Pending, "Near uses the deferred multi-step retirement seam");

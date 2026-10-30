@@ -115,8 +115,11 @@ public class TownModelResidencyTests
                 }
                 finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
             }
-            CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, outsideInstances,
-                "the regression evidence must keep covering the three reported focus points outside their instance rectangles");
+            // QA reported Jaffa, Jerusalem and Nazareth; the measured label foci outside their instance rectangles are Acre,
+            // Jaffa and Tel Aviv (Jerusalem and Nazareth lie inside theirs, instance_distance=0). The three reported towns are
+            // still checked below with every other detailed town.
+            CollectionAssert.IsSubsetOf(new[] { "acre", "jaffa", "tel_aviv" }, outsideInstances,
+                "the regression evidence must keep covering the measured focus points outside their instance rectangles");
             CollectionAssert.IsEmpty(notAdmitted,
                 "a camera focused on each authoritative town footprint must admit that town's detailed models");
             CollectionAssert.IsEmpty(notReady,
@@ -139,7 +142,12 @@ public class TownModelResidencyTests
             var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
             var layer = map.GetComponentInChildren<TownModelLayer>(true);
             layer.EdgeAllowance = null;
-            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0)
+            // Admission chooses among the layer's detailed towns (its places). 1948 localities also have model instances
+            // (CountFor > 0) but stand in merged locality tiles and are never admitted as a town (#1800 design; see
+            // TownLandmarksTests.ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown), so they are not pan targets.
+            var admissible = ((IReadOnlyList<(string id, Bounds bounds)>)typeof(TownModelLayer).GetField("places", Flags)!.GetValue(layer)!)
+                .Select(place => place.id).ToHashSet(StringComparer.Ordinal);
+            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0 && admissible.Contains(f.id))
                 .OrderBy(f => f.id, StringComparer.Ordinal).ToList();
             var nestedPairs = new List<((Vector2 centre, float radius, string id) from,
                 (Vector2 centre, float radius, string id) to)>();

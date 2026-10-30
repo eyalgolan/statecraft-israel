@@ -249,7 +249,7 @@ public sealed class FarMapWideResidencyTests
         var savedAcquire = TownLandmarks.Acquire;
         var defaultRequest = (Action<string, CollectionDetail, Action<GameObject?>>)typeof(TownLandmarks)
             .GetField("DefaultRequest", flags)!.GetValue(null)!;
-        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject? prefab = null;
         MapScene? map = null;
         try
         {
@@ -261,6 +261,8 @@ public sealed class FarMapWideResidencyTests
                 return new Lease(() => { });
             };
             EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            // Made after OpenScene(Single), which destroys every object of the scene it replaces.
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
             map = Object.FindFirstObjectByType<MapScene>(); map.Build();
             var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
             var all = TownLandmarks.Wants(map, DateTime.MinValue, Array.Empty<Placement>(), content)
@@ -287,7 +289,7 @@ public sealed class FarMapWideResidencyTests
             TownLandmarks.Request = savedRequest;
             TownLandmarks.Acquire = savedAcquire;
             if (map != null) Object.DestroyImmediate(map.gameObject);
-            Object.DestroyImmediate(prefab);
+            if (prefab != null) Object.DestroyImmediate(prefab);
         }
     }
 
@@ -295,7 +297,7 @@ public sealed class FarMapWideResidencyTests
     public void WholeTownsAreRequestedAndDrawnMapWideThenOnlyTheDetailedTownHides()
     {
         var old = TownLandmarks.Request;
-        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        GameObject? prefab = null;
         try
         {
             var requested = new List<string>();
@@ -304,6 +306,8 @@ public sealed class FarMapWideResidencyTests
                 Assert.AreEqual(CollectionDetail.Far, detail); requested.Add(id); answer(prefab);
             };
             EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            // Made after OpenScene(Single), which destroys every object of the scene it replaces.
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
             var map = Object.FindFirstObjectByType<MapScene>(); map.Build();
             var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
             var towns = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
@@ -334,7 +338,7 @@ public sealed class FarMapWideResidencyTests
             }
             Object.DestroyImmediate(camera.gameObject);
         }
-        finally { TownLandmarks.Request = old; Object.DestroyImmediate(prefab); }
+        finally { TownLandmarks.Request = old; if (prefab != null) Object.DestroyImmediate(prefab); }
     }
 
     [Test]

@@ -168,7 +168,7 @@ namespace Statecraft.Game.Map.Collection
                     var ownedRenderers = new HashSet<Renderer>(go.GetComponentsInChildren<Renderer>(true));
                     renderers.RemoveAll(ownedRenderers.Contains);
                     removed.Add(go);
-                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                    if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
                 }
                 originals.Remove(key.id);
                 Placed.RemoveAll(p => p.Model == key.id);
@@ -186,7 +186,7 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             renderers.Clear(); Placed.Clear();
             originals.Clear();

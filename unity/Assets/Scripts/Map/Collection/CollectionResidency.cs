@@ -165,6 +165,9 @@ namespace Statecraft.Game.Map.Collection
             foreach (var key in keys.OrderBy(k => k.id, StringComparer.Ordinal).ThenBy(k => k.detail).ToArray())
             {
                 if (disposed) return;
+                // A synchronous answer can re-enter Replace and retire or re-acquire later keys of this snapshot. Acquire a
+                // key only while it is still active and unowned: a second lease would overwrite (and leak) the first.
+                if (!active.Contains(key) || owners.ContainsKey(key)) continue;
                 int version = ++nextRequestVersion;
                 requestVersions[key] = version;
                 var lease = acquire(key.id, key.detail, prefab =>

@@ -118,7 +118,7 @@ namespace Statecraft.Game.Map.Units
             var holder = transform.Find(UnitFigures.ModelName);
             if (holder != null)
             {
-                UnitFigureDetail.Of(transform).Remove(holder);
+                UnitFigureDetail.Existing(transform)?.Remove(holder);   // never add a switch to a token being destroyed
                 var original = holder.gameObject; gone.Add(original);
                 if (Application.isPlaying) { holder.SetParent(null); Destroy(original); } else DestroyImmediate(original);
                 UnitFigures.GeometryChanged();
@@ -127,7 +127,7 @@ namespace Statecraft.Game.Map.Units
             if (TryGetComponent<MeshRenderer>(out var code)) code.enabled = true;
             return gone;
         }
-        IReadOnlyList<UnityEngine.Object> ClearNear() => UnitFigureDetail.Of(transform).RetireNear(transform);
+        IReadOnlyList<UnityEngine.Object> ClearNear() => UnitFigureDetail.RetireNear(transform);
         void OnEnable()
         {
             RenderPipelineManager.beginCameraRendering += Choose;

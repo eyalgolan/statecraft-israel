@@ -75,7 +75,9 @@ namespace Statecraft.Game.Map.Collection
         /// prefab's own rotation, whichever lays its longer side along x.</summary>
         public const float Heading = 0f;
 
-        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = CollectionStream.Request;
+        static readonly Action<string, CollectionDetail, Action<GameObject?>> DefaultRequest = CollectionStream.Request;
+        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
+        sealed class TestSeamLease : IDisposable { public void Dispose() { } }
 
         /// <summary>One craft to draw: its key, its model, and the place it belongs to (a SeaCraft coast's place, or "lod").</summary>
         public readonly struct Want : IEquatable<Want>
@@ -145,8 +147,13 @@ namespace Statecraft.Game.Map.Collection
             // Construction configures before first Show; injected acquisition is a test seam.
             ClearForRetirement();
         }
-        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer) =>
-            ownedAcquire != null ? ownedAcquire(id, detail, answer) : CollectionStream.Acquire(id, detail, answer);
+        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            if (ownedAcquire != null) return ownedAcquire(id, detail, answer);
+            // The editor/fake-source seam owns its own assets, as before residency (and as CivilianPeople/RuralLife do).
+            if (Request != DefaultRequest) { Request(id, detail, answer); return new TestSeamLease(); }
+            return CollectionStream.Acquire(id, detail, answer);
+        }
         IEnumerable<Want> Admitted()
         {
             var keys = residencyView?.Keys;
@@ -167,7 +174,7 @@ namespace Statecraft.Game.Map.Collection
             if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) => OnModel(id, prefab),
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("craft", instances, owners, complete,
-                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+                    Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
             // v0.3.1 Show requested every wanted craft as Far with no camera or 60 km residency gate.
             residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Far)));
             if (redraw) Rebuild();
@@ -182,7 +189,7 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var go in list) if (go != null)
                 {
                     removed.Add(go);
-                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                    if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
                 }
                 originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
             }
@@ -201,7 +208,7 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>();
             originals.Clear();

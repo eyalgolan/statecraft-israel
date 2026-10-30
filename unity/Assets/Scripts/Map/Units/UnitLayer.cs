@@ -590,6 +590,7 @@ namespace Statecraft.Game.Map.Units
 
         void Rebuild()
         {
+            var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
                 var old = tokensRoot.GetChild(i).gameObject;
@@ -597,8 +598,17 @@ namespace Statecraft.Game.Map.Units
                 // deferred Destroy so these outgoing holders are never considered a live prefetch handoff target.
                 old.SetActive(false);
                 old.transform.SetParent(null);
-                if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
+                outgoing.Add(old);
             }
+            // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
+            // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
+            // source again for a request still in flight (or release an arrived model) only to re-acquire it.
+            try { BuildTokens(); }
+            finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
+        }
+
+        void BuildTokens()
+        {
             FreeTokenMeshes();
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0

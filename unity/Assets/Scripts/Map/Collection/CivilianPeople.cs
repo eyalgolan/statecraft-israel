@@ -345,7 +345,7 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var go in list) if (go != null)
                 {
                     removed.Add(go);
-                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                    if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
                 }
                 originals.Remove((key.id, key.detail));
             }
@@ -376,7 +376,7 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject; destroyedOriginals.Add(old);
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             destroyedOriginals.RemoveAll(o => o == null);
             originals.Clear();
@@ -485,7 +485,7 @@ namespace Statecraft.Game.Map.Collection
                 if (!wantsNear && near != null)
                 {
                     if (originals.TryGetValue((want.Model, CollectionDetail.Near), out var owned)) owned.Remove(near.gameObject);
-                    if (Application.isPlaying) { near.SetParent(null); Destroy(near.gameObject); } else DestroyImmediate(near.gameObject);
+                    if (Application.isPlaying) { if (gameObject.activeInHierarchy) near.SetParent(null); Destroy(near.gameObject); } else DestroyImmediate(near.gameObject);
                 }
                 else if (wantsNear && near == null
                     && prefabs.TryGetValue((want.Model, CollectionDetail.Near), out var prefab) && prefab != null)

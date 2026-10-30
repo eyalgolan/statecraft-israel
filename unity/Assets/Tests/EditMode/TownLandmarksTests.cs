@@ -661,11 +661,13 @@ public class TownLandmarksTests
             // original: an original stands in (kit houses hidden); buildings: it is the building models (else the whole town).
             var steps = new (float d, bool original, bool buildings, string why)[]
             {
-                (125000f, false, false, "in: outside the 120 km view band, fallback"), (119000f, true, false, "in: inside the view band"),
+                // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+                // The whole-town original therefore stands in beyond the 120/160 km view band too.
+                (125000f, true, false, "in: outside the 120 km view band, map-wide whole town"), (119000f, true, false, "in: inside the view band"),
                 (60000f, true, false, "in: the gameplay view"), (44000f, true, false, "in: above the 40 km close threshold, whole town"),
                 (39000f, true, true, "in: below 40 km, building models"), (CameraController.MinDistance, true, true, "in: the closest zoom"),
                 (44000f, true, true, "out: below the 45 km close exit, still buildings"), (46000f, true, false, "out: above 45 km, whole town again"),
-                (150000f, true, false, "out: inside the 160 km view exit"), (165000f, false, false, "out: beyond 160 km, fallback restored"),
+                (150000f, true, false, "out: inside the 160 km view exit"), (165000f, true, false, "out: beyond 160 km, map-wide whole town"),
             };
             foreach (var (d, original, buildings, why) in steps)
             {
@@ -676,7 +678,11 @@ public class TownLandmarksTests
                 if (f.acquired.Count > arrived) { f.Arrive(); arrived = f.acquired.Count; f.towns.Choose(default, f.camera); }
                 string at = FormattableString.Invariant($"{f.focus.Key} at {d / 1000f} km ({why})");
                 Assert.AreEqual(buildings, f.buildings.ReadyForTown(f.focus.Key, f.camera), "building models: " + at);
-                Assert.AreEqual(original && !buildings, f.buildings.WantsWholeTown(f.focus.Key, f.camera), "whole-town original: " + at);
+                // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+                // The drawn whole-town instance (not the camera admission) is what stands in above the close band.
+                var whole = f.towns.transform.Find(f.focus.Key);
+                Assert.IsNotNull(whole, "whole-town instance: " + at);
+                Assert.AreEqual(original && !buildings, !whole.GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff), "whole-town original: " + at);
                 foreach (var r in kit) Assert.AreEqual(original, r.forceRenderingOff, "kit houses: " + at);
                 Assert.AreEqual(!original, closeR!.forceRenderingOff, "close mesh: " + at);
             }
@@ -689,12 +695,14 @@ public class TownLandmarksTests
     {
         using (var f = new ResidencyFixture(saved))
         {
-            CollectionAssert.IsEmpty(f.acquired, "no camera has admitted a town yet");
-            f.Choose(); CollectionAssert.AreEqual(new[] { f.focus.Model }, f.acquired);
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            var mapWide = f.towns.Wanted.Select(w => w.Model).Distinct().ToList();
+            CollectionAssert.AreEquivalent(mapWide, f.acquired, "every wanted whole-town model is acquired before any camera");
+            f.Choose(); CollectionAssert.AreEquivalent(mapWide, f.acquired, "a camera adds no second whole-town request");
             Assert.IsFalse(f.buildings.Suppressed(f.focus.Key), "pending original cannot hide fallback");
             f.Arrive(); Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
             Assert.AreEqual(1, f.towns.Placed.Count(p => p.Key == f.focus.Key));
-            Assert.AreEqual(1, f.source.Opens);
+            Assert.AreEqual(mapWide.Count, f.source.Opens, "one bundle open per map-wide model, none twice");
             f.Choose();
             var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
             foreach (var pair in identity) if (pair.Value == f.focus.Key) Assert.IsTrue(pair.Key.forceRenderingOff);
@@ -705,12 +713,19 @@ public class TownLandmarksTests
     {
         using (var f = new ResidencyFixture(saved))
         {
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            // The whole-town lease is held map-wide; up close only the individual Near buildings may draw.
+            var mapWide = f.towns.Wanted.Select(w => w.Model).Distinct().ToList();
             f.Choose(close: true);
-            CollectionAssert.IsEmpty(f.acquired, "individual Near buildings are the only admitted representation");
+            CollectionAssert.AreEquivalent(mapWide, f.acquired, "a close camera adds no whole-town request");
             Assert.IsTrue((bool)ResidencyCall(f.buildings, typeof(TownModelLayer), "ReadyForTown", f.focus.Key, f.camera)!);
             f.Choose(); f.Arrive(); Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
-            f.Choose(close: true); Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
-            Assert.AreEqual(1, f.source.Unloads, "whole lease retires when near representation takes over");
+            var whole = f.towns.transform.Find(f.focus.Key).GetComponentsInChildren<Renderer>(true);
+            Assert.IsFalse(whole.All(r => r.forceRenderingOff), "the overview draws the whole town");
+            f.Choose(close: true);
+            Assert.IsTrue((bool)ResidencyCall(f.buildings, typeof(TownModelLayer), "ReadyForTown", f.focus.Key, f.camera)!);
+            Assert.IsTrue(whole.All(r => r != null && r.forceRenderingOff), "individual Near buildings are the only drawn representation");
+            Assert.AreEqual(0, f.source.Unloads, "the map-wide whole-town lease stays while its town shows Near buildings");
         }
     }
     [Test]
@@ -719,11 +734,17 @@ public class TownLandmarksTests
         using (var f = new ResidencyFixture(saved))
         {
             f.Choose(); f.Arrive();
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            // Leaving focus no longer unloads; layer teardown (LayerDisable...) keeps the clear-before-unload order.
+            var instance = f.towns.transform.Find(f.focus.Key);
             f.source.BeforeUnload = f.AssertConsumerCleared;
             f.Choose(outside: true);
-            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+            Assert.AreEqual(0, f.source.Unloads, "leaving focus keeps the map-wide whole town");
+            Assert.AreSame(instance, f.towns.transform.Find(f.focus.Key), "the drawn whole town is not rebuilt");
+            Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
             var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
-            foreach (var pair in identity) Assert.IsFalse(pair.Key.forceRenderingOff, "outside focus is code-built fallback");
+            foreach (var pair in identity) if (pair.Value == f.focus.Key)
+                Assert.IsTrue(pair.Key.forceRenderingOff, "outside focus the whole-town original still replaces the kit houses");
         }
     }
     [Test]
@@ -731,11 +752,16 @@ public class TownLandmarksTests
     {
         using (var f = new ResidencyFixture(saved))
         {
-            f.Choose(); var late = f.callbacks.Single(); f.Choose(outside: true);
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            // A camera leaving no longer evicts a town; disabling the layer is the remaining eviction.
+            var late = f.callbacks[f.acquired.IndexOf(f.focus.Model)];
+            f.towns.enabled = false; f.towns.enabled = true;   // evict, then the re-enabled layer asks again
+            Assert.Greater(f.acquired.LastIndexOf(f.focus.Model), f.acquired.IndexOf(f.focus.Model), "the re-enabled layer asks again");
             late(null); // stale reply must not create a warning, asset reference or instance
             Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
-            f.Choose(); LogAssert.Expect(LogType.Warning, new Regex("LANDMARKS: the town model .* did not stream"));
-            f.callbacks.Last()(null);
+            Assert.IsFalse(f.buildings.Suppressed(f.focus.Key), "a stale reply cannot hide the fallback");
+            LogAssert.Expect(LogType.Warning, new Regex("LANDMARKS: the town model .* did not stream"));
+            f.callbacks[f.acquired.LastIndexOf(f.focus.Model)](null);
             Assert.IsFalse(f.buildings.Suppressed(f.focus.Key)); Assert.IsFalse(f.towns.Seats.ContainsKey(f.focus.Key));
         }
     }
@@ -746,7 +772,9 @@ public class TownLandmarksTests
         {
             f.Choose(); f.Arrive(); f.source.BeforeUnload = f.AssertConsumerCleared;
             f.towns.enabled = false;
-            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            Assert.AreEqual(f.towns.Wanted.Select(w => w.Model).Distinct().Count(), f.source.Unloads,
+                "disable retires every map-wide whole-town lease, each after its consumers"); f.AssertConsumerCleared();
         }
     }
     [Test]
@@ -775,7 +803,10 @@ public class TownLandmarksTests
             f.Choose(); f.Arrive(); f.source.BeforeUnload = f.AssertConsumerCleared;
             ResidencyCall(f.buildings, typeof(TownModelLayer), "AdvanceCameraFrame", Time.frameCount + 3);
             ResidencyCall(f.towns, typeof(TownLandmarks), "RefreshWanted");
-            Assert.AreEqual(1, f.source.Unloads); f.AssertConsumerCleared();
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            Assert.AreEqual(0, f.source.Unloads, "a quiet camera expiring keeps the map-wide whole town");
+            Assert.IsTrue(f.towns.Seats.ContainsKey(f.focus.Key));
+            Assert.IsNotNull(f.towns.transform.Find(f.focus.Key));
         }
     }
 
@@ -788,7 +819,9 @@ public class TownLandmarksTests
             var towns = root.AddComponent<TownLandmarks>();
             var whole = new TownLandmarks.Want("town", TownLandmarks.TelAviv, Vector2.zero, 100, true);
             var placement = new TownLandmarks.Want("placement", TownLandmarks.Kibbutz, Vector2.zero, 100, false);
-            Assert.IsFalse((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", whole)!);
+            // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
+            // Without a map there is no Towns.Enabled kill switch to consult: whole towns are allowed as placements are.
+            Assert.IsTrue((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", whole)!);
             Assert.IsTrue((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", placement)!);
         }
         finally { Object.DestroyImmediate(root); }

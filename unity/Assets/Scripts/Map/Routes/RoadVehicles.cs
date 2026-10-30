@@ -15,7 +15,9 @@ namespace Statecraft.Game.Map.Routes
     /// towns (their labels), the unit tokens and the other vehicles, and stands only on ground Israel held on the game date
     /// (<see cref="Control1948"/>, the map's own sourced control layer). It is sized against the steam locomotive the map
     /// runs (<see cref="ServiceTrain"/>): <see cref="LengthShare"/> of the locomotive's car. A model that does not stream
-    /// removes only its own vehicles.</summary>
+    /// removes only its own vehicles. It runs in edit mode as every other Collection consumer does, so a layer destroyed
+    /// there still retires the model leases it took (OnDisable/OnDestroy).</summary>
+    [ExecuteAlways]
     public sealed class RoadVehicles : MonoBehaviour
     {
         public const string Name = "RoadVehicles";

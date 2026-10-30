@@ -73,17 +73,27 @@ public class CollectionOtherLeaveTests
     {
         var layer = MapLayer(special); View(layer, 10000);
         Assert.Greater(layer.transform.childCount, 0); int before = acquired;
-        View(layer, 250000); Assert.AreEqual(0, layer.transform.childCount, "forceRenderingOff is not release");
-        Assert.AreEqual(acquired, released);
-        if (!special) Assert.AreEqual(0, ((SeaAirCollection)layer).KeepClear.Count, "labels must forget retired hulls");
-        View(layer, 10000); Assert.Greater(layer.transform.childCount, 0); Assert.Greater(acquired, before);
+        // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": craft and special buildings keep their v0.3.1 map-wide originals.
+        // Leaving neither destroys nor releases them; only teardown does.
+        int children = layer.transform.childCount; var first = layer.transform.GetChild(0);
+        View(layer, 250000); Assert.AreEqual(children, layer.transform.childCount, "leaving keeps every map-wide original");
+        Assert.AreSame(first, layer.transform.GetChild(0), "the originals are not rebuilt");
+        Assert.AreEqual(0, released, "no lease retires on leave");
+        if (!special) Assert.AreEqual(((SeaAirCollection)layer).Placed.Count, ((SeaAirCollection)layer).KeepClear.Count, "labels keep clear of every drawn hull");
+        View(layer, 10000); Assert.AreEqual(children, layer.transform.childCount); Assert.AreEqual(before, acquired, "revisit re-acquires nothing");
         Object.DestroyImmediate(layer.gameObject); Assert.AreEqual(acquired, released);
     }
     [TestCase(false)] [TestCase(true)] public void LateAnswerDoesNotRebuildDepartedCraftOrBuilding(bool special)
     {
         delayed = true; var layer = MapLayer(special); View(layer, 10000); View(layer, 250000);
         foreach (var done in pending.ToArray()) done(prefab);
-        Assert.AreEqual(0, layer.transform.childCount); Assert.AreEqual(acquired, released);
+        // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": craft and special buildings keep their v0.3.1 map-wide originals.
+        // The camera leaving departs nothing, so the late answers draw; teardown is the departure that releases them.
+        Assert.Greater(acquired, 0); Assert.AreEqual(0, released, "no lease retires on leave");
+        Assert.Greater(layer.transform.childCount, 0, "the late answers of a map-wide demand draw");
+        Object.DestroyImmediate(layer.gameObject);
+        foreach (var done in pending.ToArray()) done(prefab);   // answers after teardown rebuild nothing and throw nothing
+        Assert.AreEqual(acquired, released);
     }
     GameObject Piece(string name)
     {

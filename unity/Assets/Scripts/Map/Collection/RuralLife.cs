@@ -456,7 +456,7 @@ namespace Statecraft.Game.Map.Collection
         void DestroyNow(GameObject go)
         {
             destroyedOriginals.Add(go); destroyedOriginals.RemoveAll(o => o == null);
-            if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); }
+            if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); }
             else DestroyImmediate(go);
         }
 

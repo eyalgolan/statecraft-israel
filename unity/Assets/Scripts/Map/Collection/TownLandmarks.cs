@@ -614,7 +614,14 @@ namespace Statecraft.Game.Map.Collection
             retiredInstances.RemoveAll(instance => instance == null); retiredInstances.Add(old);
             retiredInstances.AddRange(old.GetComponentsInChildren<Renderer>(true));
             retiredInstances.AddRange(old.GetComponentsInChildren<MeshFilter>(true));
-            if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+            if (Application.isPlaying)
+            {
+                // Unity forbids hierarchy changes while this layer is being deactivated (OnDisable -> ReleaseOwned). The
+                // inactive instance is then destroyed in place; detach only while the layer is active, as RoadVehicles does.
+                if (gameObject.activeInHierarchy) old.transform.SetParent(null);
+                Destroy(old);
+            }
+            else DestroyImmediate(old);
         }
         void ReleaseOwned()
         {
