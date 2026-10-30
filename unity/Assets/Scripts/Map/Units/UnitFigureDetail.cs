@@ -131,6 +131,7 @@ namespace Statecraft.Game.Map.Units
                 r.lightProbeUsage = LightProbeUsage.Off; r.reflectionProbeUsage = ReflectionProbeUsage.Off;
             }
             f.Animators = near.GetComponentsInChildren<Animator>(true);
+            UnitFigures.GeometryChanged();
             if (!logged && Application.isPlaying) { logged = true; Debug.Log("UNITS figures: the skinned near figures streamed in (close zoom)"); }
         }
 

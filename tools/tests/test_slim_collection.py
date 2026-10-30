@@ -22,6 +22,7 @@ GENERATED_FIGURES = [
     "figure-egyptian-infantry-1948-v1",
     "figure-ala-infantry-1948-v1",
     "figure-bedouin-civilian-1948-v1",
+    "figure-lebanese-regular-1948-v1",
 ]
 GENERATED_PROPS = [
     "generated-1948-06-bedouin-b-enclosed-striped-tent",

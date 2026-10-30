@@ -276,7 +276,7 @@ public class UnitsInPlayTests
 
     /// <summary>Owner, 17 October 2026 (#740): "Data only. PR 1 adds the sourced Arab rows to units_1948.yaml and filters
     /// them off the map in UnitRoster until Phase 5 PR 17's figures land ... Nothing is drawn with IDF figures, and there is
-    /// no placeholder art." Each deployed force has its own figure (Egypt's as one token: owner, 27 October 2026); Lebanon's hidden row and local forces without a row
+    /// no placeholder art." Each deployed force has its own figure (Egypt's as one token, Lebanon's as a map-only token: owner, 27 October 2026); local forces without a row
     /// stay off the map. The forces are drawn only once their own figure has arrived, with three of it and nothing else: until then the
     /// 15 May roster is exactly Israel's tokens.</summary>
     [Test]
@@ -285,7 +285,7 @@ public class UnitsInPlayTests
         var units = Units;
         var others = units.Where(u => u.Side != UnitData.Israel).ToList();
         Assert.IsNotEmpty(others.Where(u => u.Hidden == null && u.Anchors.Count > 0), "the file holds Arab rows with anchors (#740)");
-        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force", "egyptian_expeditionary_force" };
+        var drawn = new[] { "arab_legion", "arab_liberation_army", "syrian_army", "iraqi_expeditionary_force", "egyptian_expeditionary_force", "lebanese_army" };
         CollectionAssert.AreEquivalent(drawn, others.Where(UnitRoster.OnMap).Select(u => u.Id), "the forces with a Collection figure");
         var israelOnly = units.Where(u => u.Side == UnitData.Israel).ToList();
         var s = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
@@ -308,7 +308,7 @@ public class UnitsInPlayTests
             var legionOnly = UnitRoster.Build(units, C.Rules, d, 5, 0.8, id => id == UnitFigures.ArabLegion);
             Assert.IsFalse(legionOnly.Any(t => t.Unit.Id == "arab_liberation_army"), $"{d:yyyy-MM-dd}: the ALA waits for its own figure");
         }
-        CollectionAssert.AreEquivalent(drawn, seen, "the five forces stand on the map on their sourced days");
+        CollectionAssert.AreEquivalent(drawn, seen, "the six forces stand on the map on their sourced days");
         var hexes = C.Hexes;
         var spots = UnitPlacer.PlaceAll(units, hexes, 5000, (lon, lat) => (lon * 1e5, lat * 1e5), (sv, x, z, c, t, ax, az) => true, (x, z) => 0.0);
         var dataOnly = others.Where(u => !drawn.Contains(u.Id)).ToList();
@@ -818,6 +818,47 @@ public class UnitsInPlayTests
             AssertStill(at90, "after a pan and a zoom");
         }
         finally { UnityEngine.Object.DestroyImmediate(other.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void RetiredFigureMeshesRefreshKeepClearEvenAtTheSameCameraPose(bool moveCamera)
+    {
+        var map = BuildMap();
+        var originalCamera = Camera.main;
+        var originalPosition = originalCamera.transform.position;
+        var originalRotation = originalCamera.transform.rotation;
+        var replacement = new Mesh { name = "Replacement figure bounds" };
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            var tokens = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var token = tokens.Find("kiryati");
+            var figure = token.Find("Rifleman0");
+            Assert.IsNotNull(figure, "a real token figure holder");
+            var retired = figure.GetComponentsInChildren<MeshFilter>(true);
+            Assert.Greater(retired.Length, 0, "the layer cached a real figure mesh");
+            var cam = Camera.main;
+            layer.FaceCamera(cam);   // establish the cached pose before the residency child changes
+            UnityEngine.Object.DestroyImmediate(retired[0]);
+            replacement.bounds = new Bounds(Vector3.one * 100000f, Vector3.one * 100f);
+            var child = new GameObject("Replacement figure");
+            child.transform.SetParent(figure, false);
+            child.AddComponent<MeshFilter>().sharedMesh = replacement;
+            if (moveCamera) cam.transform.position += Vector3.right * 100f;
+            Assert.DoesNotThrow(() => layer.FaceCamera(cam), "retired meshes are no longer live bounds sources");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(child.transform.TransformPoint(replacement.bounds.center)),
+                "keep-clear must include the live replacement, including when the camera did not move");
+        }
+        finally
+        {
+            if (originalCamera != null) originalCamera.transform.SetPositionAndRotation(originalPosition, originalRotation);
+            UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement);
+        }
     }
 
     [Test]

@@ -58,15 +58,15 @@ Wikipedia (pointers; footnotes followed where they could be):
 
 | Short name | URL |
 |---|---|
-| he.wiki משרד העלייה והקליטה | https://he.wikipedia.org/wiki/משרד_העלייה_והקליטה |
-| he.wiki חיים משה שפירא | https://he.wikipedia.org/wiki/חיים_משה_שפירא |
-| en.wiki Ministry of Aliyah and Integration | https://en.wikipedia.org/wiki/Ministry_of_Aliyah_and_Integration |
-| he.wiki מבצע בלק | https://he.wikipedia.org/wiki/מבצע_בלק |
-| he.wiki אוויה S-199 | https://he.wikipedia.org/wiki/אוויה_S-199 |
-| he.wiki מבצע ולווטה | https://he.wikipedia.org/wiki/מבצע_ולווטה |
-| he.wiki נפוליאונצ'יק (title: תותח הרים קליבר 65 מ"מ דגם 1906) | https://he.wikipedia.org/wiki/תותח_הרים_קליבר_65_מ%22מ_דגם_1906 |
-| en.wiki Battles of the Kinarot Valley | https://en.wikipedia.org/wiki/Battles_of_the_Kinarot_Valley |
-| en.wiki Hotchkiss H35 | https://en.wikipedia.org/wiki/Hotchkiss_H35 |
+| he.wiki משרד העלייה והקליטה | https://he.wikipedia.org/w/index.php?title=משרד_העלייה_והקליטה&oldid=43976404 |
+| he.wiki חיים משה שפירא | https://he.wikipedia.org/w/index.php?title=חיים_משה_שפירא&oldid=43239310 |
+| en.wiki Ministry of Aliyah and Integration | https://en.wikipedia.org/w/index.php?title=Ministry_of_Aliyah_and_Integration&oldid=1372756786 |
+| he.wiki מבצע בלק | https://he.wikipedia.org/w/index.php?title=מבצע_בלק&oldid=42832374 |
+| he.wiki אוויה S-199 | https://he.wikipedia.org/w/index.php?title=אוויה_S-199&oldid=42807398 |
+| he.wiki מבצע ולווטה | https://he.wikipedia.org/w/index.php?title=מבצע_ולווטה&oldid=43693801 |
+| he.wiki נפוליאונצ'יק (title: תותח הרים קליבר 65 מ"מ דגם 1906) | https://he.wikipedia.org/w/index.php?title=תותח_הרים_קליבר_65_מ%22מ_דגם_1906&oldid=41398090 |
+| en.wiki Battles of the Kinarot Valley | https://en.wikipedia.org/w/index.php?title=Battles_of_the_Kinarot_Valley&oldid=1373488223 |
+| en.wiki Hotchkiss H35 | https://en.wikipedia.org/w/index.php?title=Hotchkiss_H35&oldid=1380585757 |
 
 ## 1. Q-MIN-3: the Ministry of Immigration ends on 8 October 1951
 

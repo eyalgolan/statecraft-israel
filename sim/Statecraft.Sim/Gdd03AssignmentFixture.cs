@@ -84,6 +84,17 @@ namespace Statecraft.Sim
             foreach (var slot in slots.Values)
                 if (state.PopulationLedger.Units.Count(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Assignment.Target == slot.Id) > slot.Capacity)
                     throw new ArgumentException("Fixture inventory is over capacity.");
+            // Synthetic composition only: the ledger owns workers; immutable regional pools bound pooled job occupancy.
+            if (state.PlayerRegions.Count == 0) return;
+            foreach (var group in state.PopulationLedger.Units.Where(p => p.Assignment.Kind == PopulationAssignmentKind.Work)
+                .Where(p => slots[p.Assignment.Target!].Work == Gdd03FixtureWork.Industry || slots[p.Assignment.Target!].Work == Gdd03FixtureWork.Workshop)
+                .GroupBy(p => (Region: p.Location!.Region, Work: slots[p.Assignment.Target!].Work)))
+            {
+                if (!state.PlayerRegions.TryGetValue(group.Key.Region, out var pool))
+                    throw new ArgumentException("Fixture worker has no initialized regional pool.");
+                var capacity = group.Key.Work == Gdd03FixtureWork.Industry ? pool.IndustrySlots : pool.WorkshopSlots;
+                if (group.Count() > capacity) throw new ArgumentException("Fixture regional job occupancy is over capacity.");
+            }
         }
         bool Eligible(PopulationUnit p) => p.Status == PopulationStatus.FreeCivilian && p.ReceptionTicks == receptionTurns;
         internal Gdd03FixtureAssignmentResult Assign(int id, string? target)
@@ -99,6 +110,15 @@ namespace Statecraft.Sim
                 if (person.Assignment.Target == target) return Gdd03FixtureAssignmentResult.NoOp;
                 if (ledger.Units.Count(p => p.Assignment.Kind == PopulationAssignmentKind.Work && p.Assignment.Target == target) >= slot.Capacity)
                     throw new ArgumentException("Fixture destination is full.");
+                if (state.PlayerRegions.Count > 0 && (slot.Work == Gdd03FixtureWork.Industry || slot.Work == Gdd03FixtureWork.Workshop))
+                {
+                    if (person.Location == null || !state.PlayerRegions.TryGetValue(person.Location.Region, out var pool))
+                        throw new ArgumentException("Fixture worker has no initialized regional pool.");
+                    var used = ledger.Units.Count(p => p.Id != id && p.Assignment.Kind == PopulationAssignmentKind.Work
+                        && p.Location?.Region == person.Location.Region && slots[p.Assignment.Target!].Work == slot.Work);
+                    var capacity = slot.Work == Gdd03FixtureWork.Industry ? pool.IndustrySlots : pool.WorkshopSlots;
+                    if (used >= capacity) throw new ArgumentException("Fixture regional destination is full.");
+                }
             }
             var assignment = target == null ? PopulationAssignment.Unassigned : new PopulationAssignment(PopulationAssignmentKind.Work, target);
             // Replace validates the complete candidate before publishing it. Never release first.

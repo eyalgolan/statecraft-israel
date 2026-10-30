@@ -92,7 +92,7 @@ note.
   center of and occupying one third of the white stripe is a green Cedar tree with its top touching the upper red
   stripe and its base touching the lower red stripe."
 - **[C]** WIPO's text is the consolidated constitution with later amendments. English Wikipedia's "Flag of Lebanon"
-  (https://en.wikipedia.org/wiki/Flag_of_Lebanon) says that before the amendment of 21 September 1990 the article
+  (https://en.wikipedia.org/w/index.php?title=Flag_of_Lebanon&oldid=1374326069) says that before the amendment of 21 September 1990 the article
   "did not specify the color of the cedar tree", and that the cedar was "commonly depicted with a brown trunk" before
   then. So the 1943 wording of the cedar's colour is not verified here, and a 1948 token should not claim an
   all-green cedar on this text alone. The text gives no overall length to height.
@@ -107,7 +107,7 @@ note.
   bands of equal dimensions, the upper band being green, the middle band white, and the lower band black. The white
   portion shall bear three red stars in line, having five points each." The *Official Journal* itself was not
   opened. Upgrade: read p. 1113.
-- **[S]** English Wikipedia's "Flag of Syria" (https://en.wikipedia.org/wiki/Flag_of_Syria) gives this flag's use as
+- **[S]** English Wikipedia's "Flag of Syria" (https://en.wikipedia.org/w/index.php?title=Flag_of_Syria&oldid=1378283205) gives this flag's use as
   1930-1958 (and 1961-63). It also cites a first use in 1932 ([C] with 1930); the design is the same either
   way.
 
@@ -115,7 +115,7 @@ note.
 
 - **[G]** The legal text of the 1923 flag was not reached. No primary scan of the Egyptian gazette was found.
 - **[C]** What made the flag law: English Wikipedia's "List of Egyptian flags"
-  (https://en.wikipedia.org/wiki/List_of_Egyptian_flags) says "Law No. 47 of 1923", citing el Ansary (2001), p. 144.
+  (https://en.wikipedia.org/w/index.php?title=List_of_Egyptian_flags&oldid=1378108246) says "Law No. 47 of 1923", citing el Ansary (2001), p. 144.
   The State Information Service, as quoted on Flags of the World (https://www.crwflags.com/fotw/flags/eg.html), says
   "a Royal Decree". Flags of the World's page on the kingdom (https://crwflags.com/fotw/flags/eg-kingd.html) dates
   it to 10 December 1923, citing Whitney Smith.
