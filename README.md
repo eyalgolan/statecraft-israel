@@ -40,7 +40,7 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (current revision and authority index): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The new design is not playable yet; the [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings it in phases.
 
 ## What it looks like today
 
@@ -91,7 +91,7 @@ It is an early, honest prototype.
 
 ## Roadmap
 
-The live tracker is [#374](https://github.com/eyalgolan/statecraft-israel/issues/374). The plan behind it is the [GDD v0.1 build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md). The roadmap sets no dates.
+The live tracker is [#374](https://github.com/eyalgolan/statecraft-israel/issues/374). The plan behind it is the [GDD implementation-plan index](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md). The roadmap sets no dates.
 
 ### Main track: the 1948 to 1951 MVP
 
@@ -204,4 +204,3 @@ Details are in [LICENSING.md](LICENSING.md); attributions are in [NOTICE](NOTICE
 Questions and ideas go in [Discussions](https://github.com/eyalgolan/statecraft-israel/discussions); bugs and historical errors go in the [issue tracker](https://github.com/eyalgolan/statecraft-israel/issues). Report security problems privately ([SECURITY.md](SECURITY.md)). [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) applies everywhere.
 
 Created by Eyal Golan. Original models by Tal Heuberger (#507, #336). Source credits live with each fact in `content/`, the portrait credits are in `content/people.yaml`, and third-party credits are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-

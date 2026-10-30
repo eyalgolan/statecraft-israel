@@ -1,5 +1,7 @@
 # M3 decisions log (rulings)
 
+**Historical record:** preserve dated rulings in context. [The GDD](GDD.md) and current feature owners supersede older gameplay definitions; this remains evidence, not another active numerical catalogue.
+
 These are the decisions made while building M3 where the spec or plan was silent, wrong, or in conflict with itself. Each entry gives what was decided, why, and what it costs if the decision is wrong. The full ledger (`.superpowers/sdd/2026-10-10-statecraft-m3/progress.md`) was kept during the build. This digest keeps the ones that shape the game or the codebase and drops task bookkeeping. Hash prefixes quoted here are the values recorded in the ledger at the time. The code and the golden tests are authoritative.
 
 ## Simulation and determinism

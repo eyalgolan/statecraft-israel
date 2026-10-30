@@ -1,5 +1,7 @@
 # Rules of the GDD v0.1 MVP
 
+**v0.3 migration status:** existing citations and tested IDs remain stable while [the GDD](../GDD.md) and feature owners define revised rules. This file records implemented contracts and migration evidence, not a competing rulebook; passing an existing test does not prove the revised design is implemented. [Balance](../gdd/balance.md) is the numerical owner.
+
 The rules of the 1948–1951 MVP in [docs/GDD.md](../GDD.md), as Phase 1 built them behind the `systems.loop` switch
 ([the approved plan](../superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md), §6). Since the cutover (Phase 2 PR 1)
 the real game runs them. Balance values are the owner's.
