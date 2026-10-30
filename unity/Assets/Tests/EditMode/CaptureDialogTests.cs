@@ -25,10 +25,10 @@ public class CaptureDialogTests
 {
     const string Operation = "Fixture operation (a test value, not a source)";
 
-    /// <summary>The real content with Lydda and Ramle as targets; <paramref name="price"/> sets attention_cost.resolve_capture
-    /// and <paramref name="endPrice"/> attention_cost.end_occupation (0 in the content), so the sim's Attention preview has a
-    /// number to show.</summary>
-    static Content Targets(double price = 0, double endPrice = 0)
+    /// <summary>The real content with Lydda and Ramle as targets, plus each of <paramref name="extra"/> as a further target;
+    /// <paramref name="price"/> sets attention_cost.resolve_capture and <paramref name="endPrice"/> attention_cost.end_occupation
+    /// (0 in the content), so the sim's Attention preview has a number to show.</summary>
+    static Content Targets(double price = 0, double endPrice = 0, params string[] extra)
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
@@ -38,7 +38,7 @@ public class CaptureDialogTests
             var path = Path.Combine(dir, rel);
             if (!File.Exists(path)) return null;
             var text = File.ReadAllText(path);
-            if (rel == "settlement_targets.yaml") return "targets:\n" + Row("lod") + Row("ramla");
+            if (rel == "settlement_targets.yaml") return "targets:\n" + Row("lod") + Row("ramla") + string.Concat(extra.Select(Row));
             if (rel == "rules.yaml" && price != 0)
             {
                 Assert.IsTrue(text.Contains("  resolve_capture: 0 "), "rules.yaml prices resolve_capture at 0");
@@ -446,7 +446,7 @@ public class CaptureDialogTests
                 yield return Frames(4);
                 Assert.AreEqual(text.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "one more waiting (" + text["ui.lang"] + ")");
             }
-            using (var r = new Rig(Awaiting(C, "ramla", "lod", "jaffa"), text))
+            using (var r = new Rig(Awaiting(Targets(extra: new[] { "jaffa" }), "ramla", "lod", "jaffa"), text))   // a waiting place must be a capture target: CaptureOptions reads SettlementTargets
             {
                 yield return Frames(4);
                 Assert.AreEqual(text.Format("event.more", 2), r.Root.Q<Label>("capture-count").text, "two more waiting (" + text["ui.lang"] + ")");
