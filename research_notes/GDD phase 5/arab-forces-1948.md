@@ -680,7 +680,7 @@ US records:
   https://history.state.gov/historicaldocuments/frus1948v05p2/d270 ; document 486 (CIA report, 27 July 1948),
   https://history.state.gov/historicaldocuments/frus1948v05p2/d486
 - (Second pass, 28 Oct, after review) FRUS 1948, vol. V, part 2, the full TEI text of the volume, searched on 2026-10-28:
-  https://raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1948v05p2.xml
+  https://raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1948v05p2.xml
 - CIA, Near East/Africa Branch Intelligence Summary, vol. III, nos. 19 to 23 (weeks ending 19 May to 16 June 1948),
   Internet Archive copies of the CIA reading room, e.g. week ending 16 June:
   https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010007-2 ; 19 May:

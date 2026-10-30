@@ -151,3 +151,5 @@ Not worked this pass: `events-1952-56.md` lines 202, 261, 307, 595-596, 637, 756
 Nahalin, the Qibya and Shafrir decisions); `election-1955.md` lines 33, 98, 99, 116 (coalition dates, party platforms, Sharett-Ben-Gurion on
 Mapai leadership, the allocation method); `road-to-suez-1956.md` lines 76, 81, 85 (the cabinet vote and doubters, which are
 ministers' positions and belong to #106). `reparations-vote-1952.md` has no other [GAP] row.
+
+(second pass, 29 Oct 2026: the `events-1952-56.md` rows named above were worked, see `gap-pass-1952-56-followup-2.md`.)

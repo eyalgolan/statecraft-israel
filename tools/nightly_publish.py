@@ -316,11 +316,23 @@ class GitHub:
 
     # --- the draft, its check, publishing --------------------------------------------------------------------------
 
-    def create_draft(self, tag: str, sha: str, notes: Path, assets: list[Path]) -> None:
-        """A normal draft marked Latest, whose tag will be created at exactly `sha` when it is published."""
-        self._run("github-draft", ["gh", "release", "create", tag, "--repo", self.slug, "--draft",
-                                   "--latest", "--target", sha, "--title", f"{tag} (nightly)",
-                                   "--notes-file", str(notes), *[str(a) for a in assets]], UPLOAD_TIMEOUT)
+    def create_draft(self, tag: str, sha: str, notes: Path, assets: list[Path], *,
+                     created: Callable[[int], None]) -> int:
+        """Create a normal draft marked Latest and checkpoint its returned ID before uploading assets. An unreadable
+        create response never grants ownership by tag; a possibly stranded draft then needs a check by hand."""
+        data = self._json("github-draft", ["gh", "api", f"repos/{self.slug}/releases", "--method", "POST",
+                                          "--raw-field", f"tag_name={tag}", "--raw-field", f"target_commitish={sha}",
+                                          "--raw-field", f"name={tag} (nightly)", "--field", f"body=@{notes}",
+                                          "--field", "draft=true", "--field", "prerelease=false",
+                                          "--raw-field", "make_latest=true"], dict, UPLOAD_TIMEOUT)
+        release_id = data.get("id")
+        if (type(release_id) is not int or release_id <= 0 or data.get("tag_name") != tag
+                or data.get("draft") is not True):
+            raise Refused("github-draft", f"create returned no usable draft ID for {tag}; check by hand")
+        created(release_id)
+        self._run("github-draft", ["gh", "release", "upload", tag, "--repo", self.slug,
+                                   *[str(a) for a in assets]], UPLOAD_TIMEOUT)
+        return release_id
 
     def verify_draft(self, tag: str, local: list[Path], dest: Path) -> None:
         data = self._view("github-draft", tag, "isDraft,isPrerelease,assets")
@@ -368,12 +380,16 @@ class GitHub:
         if at != sha:
             raise Refused("github-publish", f"the tag {tag} points at {at}, not at {sha}")
 
-    def delete_draft(self, tag: str) -> None:
-        """Delete a release only while gh shows it as a draft; never touches a tag."""
-        data = self._view("github-delete", tag, "isDraft")
+    def delete_draft(self, tag: str, release_id: int | None) -> None:
+        """Check the tag's ID and draft flag, then delete by that ID; never touches a tag or a replacement release."""
+        if type(release_id) is not int or release_id <= 0:
+            raise Refused("github-delete", f"{tag} has no saved draft ID, so it is not deleted; check by hand")
+        data = self._view("github-delete", tag, "databaseId,isDraft")
+        if type(data.get("databaseId")) is not int or data["databaseId"] != release_id:
+            raise Refused("github-delete", f"{tag} has a different or unknown release ID, so it is not deleted; check by hand")
         if data.get("isDraft") is not True:
-            raise Refused("github-delete", f"{tag} is not a draft, so it is not deleted")
-        self._run("github-delete", ["gh", "release", "delete", tag, "--repo", self.slug, "--yes"])
+            raise Refused("github-delete", f"{tag} is not a draft, so it is not deleted; check by hand")
+        self._run("github-delete", ["gh", "api", f"repos/{self.slug}/releases/{release_id}", "--method", "DELETE"])
 
     # --- the size budget -------------------------------------------------------------------------------------------
 

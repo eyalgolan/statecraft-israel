@@ -471,7 +471,7 @@ Each section below gives the dated facts. A value that only Wikipedia gives is [
 | English and Hebrew Wikipedia articles listed in "Conventions", wikitext by `oldid` | 2026-10-25 | years, plans, coordinates |
 | English Wikipedia "East Jerusalem" oldid 1378661048 | 2026-10-25 | one context sentence |
 | `lines-1967-74.md` in this folder | 2026-10-25 | boundary, resolution 252 |
-| FRUS 1964-68 vol. XX doc. 44, `raw.githubusercontent.com/HistoryAtState/frus/master/volumes/frus1964-68v20.xml` | 2026-10-27 | 12 Jan 1968 report of 838 acres |
+| FRUS 1964-68 vol. XX doc. 44, `raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1964-68v20.xml` | 2026-10-27 | 12 Jan 1968 report of 838 acres |
 | UN A/8389 (page images 33 and 34) and S/RES/252(1968), `documents.un.org/api/symbol/access` | 2026-10-27 | Official Gazette No. 1656 of 30 Aug 1970 as relayed; resolution 252 wording |
 | UN A/8089, A/8389/Add.1, A/8828, A/9148, A/9817, A/10272, A/31/218 (text layers) | 2026-10-27 | searched for neighbourhood names and dunams; one A/10272 sentence cited |
 | JTA bulletins 1969-05-16 (No. 94), 1974-02-27 (No. 40), 1974-11-19 (No. 218), 1975-01-31 (No. 22), 1975-10-02 (No. 188), 1977-08-16 (No. 156), `pdfs.jta.org` page images; and the web text of the 3 February 1975 item "Bomb on Jerusalem Bus" (`jta.org/archive/bomb-on-jerusalem-bus`, not read on a page image) | 2026-10-27 | datelines and quoted items above |

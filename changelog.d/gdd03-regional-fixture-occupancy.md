@@ -1,0 +1,3 @@
+### Fixed
+
+- Bound synthetic GDD 0.3 Industry and Workshop assignments by their initialized regional job pools, preserving atomic refusals and independent work kinds. The fixture remains internal with no playable or production hookup.
