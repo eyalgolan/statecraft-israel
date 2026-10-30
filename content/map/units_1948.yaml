@@ -1312,14 +1312,15 @@ units:
   service: army
   side: lebanon
   echelon: force
-  sector: "Lebanon's army. On 15 May 1948 it stood at the frontier (the CIA's summary for the week to 26 May: on the frontier and in no hurry to attack). The fighting at al-Malikiyya on 15 May was the Arab Liberation Army's (owner ruling, #226). On 5-6 June its 3rd Battalion, with the ALA and a Syrian battalion, retook al-Malikiyya and Qadas."
-  sector_he: "הצבא של לבנון. ב-15 במאי 1948 עמד על הגבול (הסיכום של ה-CIA לשבוע שעד 26 במאי: על הגבול ובלי חיפזון לתקוף). הלחימה באל-מאלכיה ב-15 במאי הייתה של צבא ההצלה (פסיקת הבעלים, #226). ב-5-6 ביוני כבש הגדוד השלישי שלו מחדש, עם צבא ההצלה וגדוד סורי, את אל-מאלכיה ואת קדס."
+  sector: "Lebanon's army. On 15 May 1948 it stood at the frontier (the CIA's summary for the week to 26 May: on the frontier and in no hurry to attack). The fighting at al-Malikiyya on 15 May was the Arab Liberation Army's. On 5-6 June its 3rd Battalion, with the ALA and a Syrian battalion, retook al-Malikiyya and Qadas."
+  sector_he: "הצבא של לבנון. ב-15 במאי 1948 עמד על הגבול (הסיכום של ה-CIA לשבוע שעד 26 במאי: על הגבול ובלי חיפזון לתקוף). הלחימה באל-מאלכיה ב-15 במאי הייתה של צבא ההצלה. ב-5-6 ביוני כבש הגדוד השלישי שלו מחדש, עם צבא ההצלה וגדוד סורי, את אל-מאלכיה ואת קדס."
   sector_he_review: agent-checked
   sector_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%9C%D7%91%D7%A0%D7%95%D7%9F', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/CIA', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%9C%D7%9B%D7%99%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A6%D7%91%D7%90_%D7%94%D7%94%D7%A6%D7%9C%D7%94', checked: '2026-10-22'}, {url: 'https://he.wikipedia.org/wiki/%D7%A9%D7%91%D7%A2%D7%AA_%D7%94%D7%9B%D7%A4%D7%A8%D7%99%D7%9D', checked: '2026-10-22'}]
-  hidden: "No place two sources agree on for 15 May or 11 June 1948: on 15 May the sources put it only at the frontier, and who held al-Malikiyya on 11 June is contested (the note, section 8, item 12)."
   wikipedia_only: false
   status: draft
   to_verify:
+  - "The al-Malikiyya window, 6 June to 8 July 1948, is the owner's ruling of 28 October 2026 (\"6 Jun to 8 Jul (Recommended)\"), on Dupuy p. 47 and the JTA bulletins of 7 June (p. 1) and 8 June (p. 3). Dupuy names the Lebanese; the JTA items name Syrian units (7 June) and \"the Arabs\" opening \"an offensive from Lebanon\" (8 June), not the Lebanese army. Who held al-Malikiyya on 11 June stays contested in the sources (the note, section 8, item 13; research_notes/Map/lebanese-army-15-may-1948-1871.md). The JTA pages were agent-read on 28 October 2026 for that note; a person's check of the page images is pending."
+  - "No source places the army on 15 May beyond \"the frontier\" (the CIA's week to 26 May; the JTA of 17 May, \"approximately one mile\" inside the border, no place), so the row has no window before 6 June, and the sim has no Lebanese unit: the map draws the row's dated token only (owner, 27 October 2026: \"Map-only token (Recommended)\")."
   - "The 15 May strength rests on two full-text search snippets that give the same figures, Glubb (1957) and Rogan and Shlaim (2007, chapter not identified), and the second reproduces Glubb's figures and total (review of #860), so the figure rests on Glubb alone, merged as data only (owner, 17 October 2026, on #860). O'Ballance (p. 82) and Morris (p. 258, carried) count the whole army instead, in a larger figure. Check the printed pages (the note, section 9)."
   strength:
     value: 1000
@@ -1330,7 +1331,27 @@ units:
     - {url: 'https://archive.org/details/soldierwitharabs0000glub', checked: '2026-10-13'}
     # Rogan and Shlaim (eds., 2007), snippet: "... and 1,000 Lebanese".
     - {url: 'https://archive.org/details/warforpalestiner0000unse_t0u0', checked: '2026-10-13'}
-  anchors: []
+  anchors:
+  - place: al-Malikiyya
+    place_he: "אל-מאלכיה"
+    place_he_review: agent-checked
+    place_he_sources: [{url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%9C%D7%9B%D7%99%D7%94', checked: '2026-10-22'}]
+    lon: 35.50806
+    lat: 33.10528
+    from: '1948-06-06'
+    to: '1948-07-08'
+    end_basis: source
+    end_note: "en.wiki 1948 Arab-Israeli War: the Lebanese 3rd Battalion handed the villages over to the ALA and withdrew on 8 July (citing Hughes, 2005, and Morris, 2008, p. 260)."
+    note: "Owner, 28 October 2026 (\"6 Jun to 8 Jul (Recommended)\"). Dupuy p. 47: a combined Lebanese, ALA and Syrian attack retook al-Malikiyya, the Lebanese capturing it by the evening of 6 June. JTA, 7 June p. 1 (dateline 6 June): Syrian units attacked \"the Jewish-held Arab village of Malakieh\". JTA, 8 June p. 3 (dateline 7 June): \"the Arabs\" opened \"an offensive from Lebanon\" forcing the Israelis out of Malakieh. The point is the ALA row's al-Malikiyya (en.wiki Al-Malkiyya)."
+    sources:
+    # Dupuy, Elusive Victory (1978), p. 47.
+    - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
+    # JTA Daily News Bulletin, 7 June 1948, p. 1 (as read in research_notes/Map/lebanese-army-15-may-1948-1871.md).
+    - {url: 'https://pdfs.jta.org/1948/1948-06-07_131.pdf', checked: '2026-10-28'}
+    # JTA Daily News Bulletin, 8 June 1948, p. 3 (as read in the same note).
+    - {url: 'https://pdfs.jta.org/1948/1948-06-08_132.pdf', checked: '2026-10-28'}
+    # en.wiki: the 8 July withdrawal (citing Hughes 2005; Morris 2008, p. 260).
+    - {url: 'https://en.wikipedia.org/wiki/1948_Arab%E2%80%93Israeli_War', checked: '2026-10-28'}
   sources:
   # CIA Intelligence Summary, week ending 26 May 1948.
   - {url: 'https://archive.org/details/cia-readingroom-document-cia-rdp78-01617a004700010004-5', checked: '2026-10-13'}

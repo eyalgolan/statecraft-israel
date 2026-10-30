@@ -34,6 +34,8 @@ Committee, second and third readings) that this note does not repeat.
 - Dates are written 3 November 1959 style. Hebrew faction names are copied from the Knesset's faction table (OD-F) and
   glossed in English. Quotations are short and verbatim; a Hebrew quotation is followed by this note's translation.
 
+Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+
 ## Sources and how they were read
 
 Every request used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.

@@ -71,6 +71,8 @@ public class Generated1948CharacterTests
     [TestCase("figure-iraqi-infantry-1948-v1")]
     [TestCase("figure-egyptian-infantry-1948-v1")]
     [TestCase("figure-ala-infantry-1948-v1")]
+    [TestCase("figure-bedouin-civilian-1948-v1")]
+    [TestCase("figure-lebanese-regular-1948-v1")]
     public void FullQualityFigureKeepsOneModelWithoutTheLegacyLodSwitcher(string id)
     {
         var root = new GameObject("Full quality figure fixture");
@@ -156,13 +158,9 @@ public class Generated1948CharacterTests
         Assert.AreEqual("figure-c08-arab-legion-v2", UnitFigures.SideFigure("jordan"));
         Assert.IsNull(UnitFigures.SideFigure("local_arab_forces"), "no undeployed alias masks loss of the original campaign role");
         Assert.AreEqual("figure-c09-irregular-v2", UnitFigures.SideFigure("ala"));
-        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "the Lebanese row is hidden and has no figure yet");
         var rows = Units;
         Assert.IsFalse(rows.Any(r => r.Side == "local_arab_forces"), "art does not author a local-force deployment");
-        var lebanon = rows.Single(r => r.Id == "lebanese_army");
-        Assert.IsNotNull(lebanon.Hidden);
-        Assert.IsEmpty(lebanon.Anchors);
-        Assert.IsFalse(UnitRoster.OnMap(lebanon));
+        // The Lebanese row is a map-only token (LebanonIsAMapOnlyTokenAtAlMalikiyya): still no sim unit for it, nor for local forces.
         CollectionAssert.IsEmpty(C.StartingForces.Where(f => f.Side == "lebanon" || f.Side == "local_arab_forces"));
     }
 
@@ -202,10 +200,50 @@ public class Generated1948CharacterTests
             "no sourced anchor after the truce: no token");
     }
 
+    /// <summary>Owner, 27 October 2026: "Sign off all 19" and, for Lebanon, "Map-only token (Recommended)"; 28 October 2026:
+    /// "6 Jun to 8 Jul (Recommended)". The Lebanese army has no sim unit; its row is drawn with Tal Heuberger's Lebanese regular as a
+    /// map-only token at al-Malikiyya from 6 June to 8 July 1948, in both loops, and it is the only Arab army row drawn so.</summary>
+    [Test]
+    public void LebanonIsAMapOnlyTokenAtAlMalikiyyaFrom6JuneTo8July()
+    {
+        const string id = "figure-lebanese-regular-1948-v1", rowId = "lebanese_army";
+        Assert.AreEqual(id, UnitFigures.SideFigure("lebanon"));
+        Assert.AreEqual("collection-" + id, CollectionCatalog.BundleOf(id), "its own bundle");
+        Assert.AreEqual(CollectionCatalog.People, CollectionCatalog.After["collection-" + id], "opened after the people's");
+        CollectionAssert.Contains(CollectionCatalog.Animated, id);
+        var rows = Units;
+        var lebanon = rows.Single(r => r.Id == rowId);
+        Assert.IsNull(lebanon.Hidden);
+        Assert.IsTrue(UnitRoster.OnMap(lebanon));
+        var simRows = new HashSet<string>(C.StartingForces.Select(f => f.Row), StringComparer.Ordinal);
+        CollectionAssert.AreEqual(new[] { rowId }, rows.Where(r => UnitRoster.OnMap(r) && UnitRoster.MapOnly(r, simRows)).Select(r => r.Id),
+            "the only map-only army row");
+        UnitAnchor Unmoved(UnitEntry row, UnitAnchor start, int q, int r) => start;
+        var legacy = SimBridgeGddTests.Legacy;
+        foreach (var (day, shown) in new[] { (new DateTime(1948, 6, 5), false), (new DateTime(1948, 6, 6), true), (new DateTime(1948, 7, 7), true), (new DateTime(1948, 7, 8), false) })
+        {
+            var state = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical); state.Date = day;
+            var gdd = UnitRoster.FromState(rows, C, state, _ => true, Unmoved).Where(t => t.Unit.Id == rowId).ToList();
+            var old = UnitRoster.Build(rows, legacy.Rules, day, 5, 0.8, _ => true).Where(t => t.Unit.Id == rowId).ToList();
+            foreach (var (loop, tokens) in new[] { ("GDD", gdd), ("legacy", old) })
+            {
+                Assert.AreEqual(shown ? 1 : 0, tokens.Count, $"{loop} {day:yyyy-MM-dd}");
+                if (!shown) continue;
+                Assert.AreEqual("al-Malikiyya", tokens[0].Anchor.Place, $"{loop} {day:yyyy-MM-dd}");
+                Assert.AreEqual(id, tokens[0].ArtType); Assert.AreEqual(UnitRoster.SideFigures, tokens[0].Figures);
+                Assert.IsNull(tokens[0].StateUnit, $"{loop}: no sim unit, never moved or fought");
+            }
+            var waiting = UnitRoster.FromState(rows, C, state, f => f != id, Unmoved);
+            Assert.IsFalse(waiting.Any(t => t.Unit.Id == rowId), $"{day:yyyy-MM-dd}: it waits for its own figure");
+        }
+    }
+
     [TestCase("figure-syrian-infantry-1948-v1", CollectionCatalog.ArabArmies)]
     [TestCase("figure-iraqi-infantry-1948-v1", CollectionCatalog.ArabArmies)]
     [TestCase("figure-egyptian-infantry-1948-v1", "collection-figure-egyptian-infantry-1948-v1")]
     [TestCase("figure-ala-infantry-1948-v1", "collection-figure-ala-infantry-1948-v1")]
+    [TestCase("figure-bedouin-civilian-1948-v1", "collection-figure-bedouin-civilian-1948-v1")]
+    [TestCase("figure-lebanese-regular-1948-v1", "collection-figure-lebanese-regular-1948-v1")]
     public void NearPrefabUsesItsOwnSkinnedMeshAndIdleClip(string id, string bundle)
     {
         Assert.AreEqual(bundle, CollectionCatalog.BundleOf(id), "a bundle of its own, not the opening people's (#1763)");

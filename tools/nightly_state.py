@@ -65,7 +65,8 @@ class Runner(Protocol):
     at the deadline. `capture` raises Refused("command", ...) on a non-zero exit."""
 
     def run(self, cmd: list[str], *, cwd: Path, log: Path, deadline: float,
-            env: dict[str, str] | None = None, holder: Path | None = None) -> int: ...
+            env: dict[str, str] | None = None, holder: Path | None = None,
+            stop_on_interrupt: bool = False) -> int: ...
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str: ...
 
@@ -84,6 +85,8 @@ class Config:
     site_demo_url: str = "https://eyalgolan.github.io/statecraft-israel/demo/"
     itch_target: str = "eyalgolan/statecraft-israel:html5"
     itch_page_url: str | None = None
+    savetest_itch_target: str | None = None   # a separate test page: the save test never pushes to the public one
+    savetest_itch_page_url: str | None = None
     itch_enabled: bool = False
     itch_evidence: str | None = None
     butler: Path = HOME / ".local/bin/butler"
@@ -164,12 +167,20 @@ class Published:
 
 
 @dataclass
+class LatestRecovery:
+    failed: str
+    previous: str | None
+
+
+@dataclass
 class State:
     last_published: Published | None = None
     boot_baseline: list[float] = field(default_factory=list)
     last_run_day: str | None = None
     open_draft: str | None = None
     site_pending: str | None = None
+    open_draft_id: int | None = None
+    latest_recovery_pending: LatestRecovery | None = None
 
 
 def _number(value: object) -> bool:
@@ -214,8 +225,22 @@ def _state_from(raw: dict) -> State:
     baseline = raw.get("boot_baseline", [])
     if not isinstance(baseline, list) or not all(_number(x) for x in baseline):
         raise TypeError("boot_baseline must be a list of numbers")
+    release_id = raw.get("open_draft_id")
+    if release_id is not None and (type(release_id) is not int or release_id <= 0):
+        raise TypeError("open_draft_id must be a positive integer or null")
+    pending = raw.get("latest_recovery_pending")
+    recovery = None
+    if pending is not None:
+        if (not isinstance(pending, dict) or set(pending) != {"failed", "previous"}
+                or not isinstance(pending["failed"], str) or not pending["failed"]):
+            raise TypeError("latest_recovery_pending has the wrong shape")
+        previous = _opt_str(pending["previous"], "previous")
+        if previous == "":
+            raise TypeError("previous Latest must be a nonempty tag or null")
+        recovery = LatestRecovery(pending["failed"], previous)
     return State(published, list(baseline), _day(raw.get("last_run_day")),
-                 _opt_str(raw.get("open_draft"), "open_draft"), _opt_str(raw.get("site_pending"), "site_pending"))
+                 _opt_str(raw.get("open_draft"), "open_draft"), _opt_str(raw.get("site_pending"), "site_pending"),
+                 release_id, recovery)
 
 
 def load_state(path: Path) -> State:
@@ -234,15 +259,20 @@ def save_state(path: Path, state: State) -> None:
 
 # --- naming and dates -------------------------------------------------------------------------------------------
 
-def base_version(siminfo_text: str) -> str:
-    m = re.search(r'Version\s*=\s*"(\d+\.\d+\.\d+)"', siminfo_text)
-    if not m:
-        raise ValueError("no Version = \"X.Y.Z\" found")
-    return m.group(1)
-
-
-def nightly_version(base: str, day: date) -> str:
-    return f"{base}-nightly.{day:%Y%m%d}"
+def next_version(releases: list[dict]) -> str:
+    """One patch above the numerically highest published exact vX.Y.Z tag, regardless of release type."""
+    versions = []
+    for row in releases:
+        if (not isinstance(row, dict) or not isinstance(row.get("tag_name"), str)
+                or not isinstance(row.get("draft"), bool)):
+            raise Refused("version", "gh returned a release without a tag or draft flag")
+        match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", row["tag_name"])
+        if match and not row["draft"]:
+            versions.append(tuple(int(part) for part in match.groups()))
+    if not versions:
+        raise Refused("version", "no published vX.Y.Z release to increment")
+    major, minor, patch = max(versions)
+    return f"{major}.{minor}.{patch + 1}"
 
 
 def tag_for(version: str) -> str:

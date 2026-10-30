@@ -1,0 +1,1 @@
+- Record the approved regional design associations and capital choices separately from historical evidence. Retain unresolved geometry, control and camp-footprint checks; stage schema adaptation and named-place acceptance fixtures while regional activation remains off under gdd-0.3.

@@ -71,13 +71,13 @@ public class RuralLifeTests
         AnswerAll();
         foreach (var id in RuralLife.Models)
             Assert.AreEqual(RuralLife.MaxAnchorsPerModel, layer.Scenes.Count(w => w.Model == id), id + " sparse placement count");
-        Assert.AreEqual(RuralLife.Models.Length * RuralLife.MaxAnchorsPerModel, layer.Scenes.Count, "18 sparse rural scenes");
+        Assert.AreEqual(RuralLife.Models.Length * RuralLife.MaxAnchorsPerModel, layer.Scenes.Count, "21 sparse rural scenes");
         CollectionAssert.IsEmpty(layer.Missing);
         var types = map.Settlements.Concat(map.Localities.Select(p => p.Settlement))
             .GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First().Type);
         foreach (var want in layer.Scenes)
         {
-            if (want.Model == RuralLife.Camel) StringAssert.StartsWith("camp:", want.Key, want.Model + " uses a Bedouin-area camp");
+            if (want.Model == RuralLife.Camel || want.Model == RuralLife.BedouinTent) StringAssert.StartsWith("camp:", want.Key, want.Model + " uses a Bedouin-area camp");
             else if (want.Model == RuralLife.Tractor) Assert.AreEqual("kibbutz", types[want.Key], want.Key);
             else if (want.Model == RuralLife.Wagon || want.Model == RuralLife.Horse)
                 Assert.IsTrue(types[want.Key] == "moshav" ||
@@ -224,6 +224,8 @@ public class RuralLifeTests
         {
             [RuralLife.Tractor] = (0.25f, 0.5f), [RuralLife.Wagon] = (0.3f, 0.85f), [RuralLife.Horse] = (0.2f, 0.4f),
             [RuralLife.Sheep] = (0.1f, 0.2f), [RuralLife.Donkey] = (0.13f, 0.3f), [RuralLife.Camel] = (0.25f, 0.5f),
+            // The Bedouin tent: the camp kit's 7 to 12 m goat-hair tent at the camel's world scale (10 m against its 3 m).
+            [RuralLife.BedouinTent] = (0.8f, 1.7f),
         };
         var bad = new List<string>();
         var sizes = new Dictionary<(string, string, CollectionDetail), float>();

@@ -1,0 +1,1 @@
+- Keep internal decision references out of the Lebanese unit card in English and Hebrew; retain the source and unresolved checks in its data record.

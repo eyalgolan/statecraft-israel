@@ -60,6 +60,8 @@ Update 2026-10-27: a third pass on the [GAP] rows by an agent (Claude Code) for 
 - **computed here** is arithmetic or a conversion done for this note, not a printed figure.
 - **our reading** marks an interpretation and is not attributed to a source.
 
+Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+
 ## What counts as the Galilee here
 
 There is no single boundary, so this note states its rule.

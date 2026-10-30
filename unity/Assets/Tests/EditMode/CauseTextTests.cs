@@ -423,13 +423,13 @@ public class CauseTextTests
         var countdown = new Cause("map", "town", 3, "Town: 3 turns of occupation left", key: CauseKeys.OccupationCountdown);
         var raid = new Cause("map", "town", 0,
             "Town: no decision was made before the game ended, so it counts as a raid", key: CauseKeys.PendingBecameRaid);
-        Assert.IsTrue(string.Equals("{0}: תורות שחרור שנותרו: {1}", he["why.cause.occupation_countdown"], StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals("{0}: מוחזק, תורות שנותרו: {1}", he["why.cause.occupation_countdown"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("{0}: {1} turns of occupation left", en["why.cause.occupation_countdown"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("{0}: לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה", he["why.cause.pending_became_raid"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("{0}: no decision was made before the game ended, so it counts as a raid", en["why.cause.pending_became_raid"], StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("Town: 3 turns of occupation left", CauseText.Line(countdown, c, NoRows, en), StringComparison.Ordinal));
         Assert.IsTrue(string.Equals("Town: no decision was made before the game ended, so it counts as a raid", CauseText.Line(raid, c, NoRows, en), StringComparison.Ordinal));
-        Assert.IsTrue(string.Equals(place + ": תורות שחרור שנותרו: \u200E3\u200E", CauseText.Line(countdown, c, NoRows, he, names), StringComparison.Ordinal));
+        Assert.IsTrue(string.Equals(place + ": מוחזק, תורות שנותרו: \u200E3\u200E", CauseText.Line(countdown, c, NoRows, he, names), StringComparison.Ordinal));
         Assert.IsTrue(string.Equals(place + ": לא התקבלה החלטה עד סוף המשחק, ולכן הדבר נחשב לפשיטה", CauseText.Line(raid, c, NoRows, he, names), StringComparison.Ordinal));
     }
 

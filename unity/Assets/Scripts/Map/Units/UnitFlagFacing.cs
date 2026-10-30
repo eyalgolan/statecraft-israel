@@ -28,7 +28,7 @@ namespace Statecraft.Game.Map.Units
 
         void Turn(ScriptableRenderContext _, Camera cam)
         {
-            if (cam == null) return;
+            if (this == null || cam == null) return;
             var at = cam.transform.position;
             if (at == lastCamera) return;
             lastCamera = at;

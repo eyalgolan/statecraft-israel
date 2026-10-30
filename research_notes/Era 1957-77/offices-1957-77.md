@@ -38,6 +38,8 @@ person in §8.
   sources are this note's translation; the Hebrew is given beside them where the wording carries the fact.
 - "en.wiki *title*" and "he.wiki *title*" mean the raw wikitext of that page at the revision (oldid) given in Sources.
 
+Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+
 ## Sources
 
 Primary:

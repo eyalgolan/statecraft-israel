@@ -382,7 +382,7 @@ public class MapFocusTests
 /// <summary>#41 B1b: the camera keys through the Input System's own path (a virtual keyboard from its test fixture and the
 /// project-wide Camera actions), with the map stop focused and its presenter listening: the same keys reach the stop as
 /// UI key events, the camera still pans, the focus stays on the stop and nothing is picked. Synchronous, as InputTestFixture allows in edit mode.</summary>
-public class MapFocusCameraKeysTests : InputTestFixture
+public class MapFocusCameraKeysTests : SharedCameraActionsFixture
 {
     static void Send(MonoBehaviour c, string message) =>
         c.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
@@ -390,7 +390,8 @@ public class MapFocusCameraKeysTests : InputTestFixture
     [Test]
     public void TheCameraKeysStillPanWithTheStopFocused()
     {
-        InputSystem.actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        InputSystem.actions = actions;
         var keyboard = InputSystem.AddDevice<Keyboard>();
         using var kit = new UiTestKit();
         kit.Q<VisualElement>("root").RemoveFromClassList("loading");

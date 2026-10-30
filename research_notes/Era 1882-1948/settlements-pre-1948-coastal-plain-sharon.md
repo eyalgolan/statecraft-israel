@@ -64,6 +64,8 @@ section 2 item 6: a [V] an agent added is written `[V, agent read 2026-10-24; a 
 - **computed here** is arithmetic or a conversion done for this note, not a printed figure.
 - **our reading** marks an interpretation and is not attributed to a source.
 
+Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+
 ## What counts as the coastal plain and the Sharon here
 
 There is no single boundary, so this note states its rule.
