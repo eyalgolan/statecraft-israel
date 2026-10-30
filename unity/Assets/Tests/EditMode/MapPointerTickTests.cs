@@ -169,6 +169,43 @@ public class MapPointerTickTests : SharedCameraActionsFixture
         Assert.AreEqual(start, rig.View.LookAt, "and a tap never pans");
     }
 
+    /// <summary>#1929 review: a finger that goes out past the slop and comes back, then lifts, all inside one input
+    /// update, is a click or a pan, never both. The frame sees no net travel (the release is where the press was), so
+    /// before the fix the pointer queued a tap while the camera's lifted replay kept the excursion and panned. The
+    /// pointer now latches the slop at each touch event, as the camera does and as the mouse's left and right
+    /// buttons already did (MapPressTests' out-and-back cases): coming back helps not, so it is a pan and nothing is
+    /// selected. The pan is the camera's rule, the travel beyond the slop: 10 px out, then 40 px back, so 30 px back.
+    /// <para>Run with merging on and with the game's setting (InputConfig, merging off), and with the press already
+    /// down before the update. The still-press control is the test above.</para></summary>
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(true, true)]
+    public void AnOutAndBackInsideOneInputUpdateIsAPanNotAlsoATap(bool gameMerging, bool pressedEarlier)
+    {
+        var old = InputSystem.settings.disableRedundantEventsMerging;
+        try
+        {
+            if (gameMerging) Statecraft.Game.Boot.InputConfig.Apply();
+            using var rig = new Rig();
+            var start = rig.View.LookAt;
+            var from = new Vector2(600, 400);
+            rig.Frame();   // warms press.wasPressedThisFrame, as in the flick test above
+            if (pressedEarlier) { BeginTouch(1, from); rig.Frame(); }
+            else BeginTouch(1, from, queueEventOnly: true);
+            MoveTouch(1, from + new Vector2(40, 0), queueEventOnly: true);   // 10 px past the 30 px slop
+            MoveTouch(1, from, queueEventOnly: true);
+            EndTouch(1, from);
+            rig.Frame();
+            rig.SettleFrame();
+            Assert.IsEmpty(rig.Asked, "the excursion past the slop makes it a drag: no tap");
+            Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x + 30 * 120).Within(0.1f), "and the drag pans by its travel beyond the slop");
+            Assert.AreEqual(start.z, rig.View.LookAt.z);
+            rig.Frame();
+            Assert.That(rig.View.LookAt.x, Is.EqualTo(start.x + 30 * 120).Within(0.1f), "the lift pans once");
+        }
+        finally { InputSystem.settings.disableRedundantEventsMerging = old; }
+    }
+
     // --- item 5: the order, now declared ------------------------------------------------------------------------
 
     /// <summary>Item 5's fix, pinned at its cause: the pointer's frame must run before the camera's, because the camera
