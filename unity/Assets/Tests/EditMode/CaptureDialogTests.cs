@@ -32,7 +32,15 @@ public class CaptureDialogTests
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
-        string Row(string id) => $"  - {{ id: {id}, q: -3, r: 21, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
+        // Each target at its own hex in the map (ContentLoader.ValidateSettlementTargets checks it): Lydda and Ramle share
+        // (-3, 21), Jaffa is (-3, 19); read from the owning file so a re-grid (#1796) cannot stale the fixture.
+        var hexes = File.ReadAllText(Path.Combine(dir, "map", "settlement_hexes.yaml"));
+        string Row(string id)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(hexes, @"\{ id: " + id + @", q: (-?\d+), r: (-?\d+) \}");
+            Assert.IsTrue(m.Success, id + " has a hex in map/settlement_hexes.yaml");
+            return $"  - {{ id: {id}, q: {m.Groups[1].Value}, r: {m.Groups[2].Value}, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
+        }
         return ContentLoader.Load(rel =>
         {
             var path = Path.Combine(dir, rel);
