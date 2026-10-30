@@ -16,6 +16,7 @@ namespace Statecraft.Game.Map
     {
         public const string FileName = "region_names_he.yaml";
         readonly Dictionary<string, string> names = new Dictionary<string, string>(StringComparer.Ordinal);
+        readonly Dictionary<string, string> englishNames = new Dictionary<string, string>(StringComparer.Ordinal);
         public string Pick(string key, string english, bool hebrew) =>
             hebrew && names.TryGetValue(key, out var value) ? value : english;
 
@@ -66,16 +67,33 @@ namespace Statecraft.Game.Map
                         || string.IsNullOrWhiteSpace(source.Cite))
                         throw new InvalidDataException($"{field}: name_he_sources needs an https URL, checked date and page/section citation");
                 result.names.Add(e.Key, e.NameHe);
+                result.englishNames.Add(e.Key, e.Name);
             }
             return result;
         }
 
-        /// <summary>Reject a misspelt or stale target rather than silently dropping its name.</summary>
-        public void Validate(IEnumerable<string> keys)
+        readonly List<string> stale = new List<string>();
+        /// <summary>Targets whose English companion no longer equals the live English field: they show that English instead.</summary>
+        public IReadOnlyList<string> Stale => stale;
+
+        /// <summary>Reject a misspelt target rather than silently dropping its name. A target under one of
+        /// <paramref name="absentPrefixes"/> belongs to a dataset this boot does not have (no armistice data): it is never shown, so it is not checked.
+        /// A target whose English companion no longer matches the live English is dropped, so the Hebrew never pairs with an outdated
+        /// English meaning; it shows the live English and is listed in <see cref="Stale"/>.</summary>
+        public void Validate(IEnumerable<KeyValuePair<string, string>> fields, params string[] absentPrefixes)
         {
-            var allowed = new HashSet<string>(keys, StringComparer.Ordinal);
-            foreach (var key in names.Keys)
-                if (!allowed.Contains(key)) throw new InvalidDataException($"{FileName}: unknown target '{key}'");
+            var allowed = new Dictionary<string, string>(fields, StringComparer.Ordinal);
+            foreach (var key in names.Keys.ToList())
+            {
+                if (!allowed.TryGetValue(key, out var english))
+                {
+                    if (absentPrefixes.Any(p => key.StartsWith(p, StringComparison.Ordinal))) continue;
+                    throw new InvalidDataException($"{FileName}: unknown target '{key}'");
+                }
+                if (string.Equals(englishNames[key], english, StringComparison.Ordinal)) continue;
+                names.Remove(key);
+                stale.Add(key);
+            }
         }
     }
 }

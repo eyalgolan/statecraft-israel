@@ -331,6 +331,8 @@ namespace Statecraft.Game.UI
             var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
                 map.Control, MapRegionNames.Parse(inputs.Map.RegionNamesYaml));   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+            if (regions.Names.Stale.Count > 0)
+                Debug.LogWarning($"{MapRegionNames.FileName}: English changed since the Hebrew was supplied, showing English for: {string.Join(", ", regions.Names.Stale)}");
             Regions = regions;
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>

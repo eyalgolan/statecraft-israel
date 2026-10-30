@@ -40,18 +40,31 @@ namespace Statecraft.Game.Map
             Armistice = armistice;
             Control = control;
             Names = names ?? MapRegionNames.Parse("");
-            var keys = new List<string> { "subdistrict.label", "armistice.label" };
+            var fields = new Dictionary<string, string>(StringComparer.Ordinal) { { "subdistrict.label", subdistricts.Label } };
             foreach (var r in subdistricts.Regions)
-                foreach (var field in new[] { "name", "district" }) keys.Add("subdistrict." + r.Key + "." + field);
+            {
+                fields.Add("subdistrict." + r.Key + ".name", r.Name);
+                fields.Add("subdistrict." + r.Key + ".district", r.District);
+            }
             if (armistice != null)
             {
-                foreach (var f in armistice.Fronts) keys.Add("front." + f.Key + ".name");
+                fields.Add("armistice.label", armistice.Label);
+                foreach (var f in armistice.Fronts) fields.Add("front." + f.Key + ".name", f.Name);
                 foreach (var i in armistice.Zones)
-                    foreach (var field in new[] { "name", "agreement", "label_note" }) keys.Add("zone." + i.Key + "." + field);
+                {
+                    fields.Add("zone." + i.Key + ".name", i.Name);
+                    fields.Add("zone." + i.Key + ".agreement", i.Agreement);
+                    fields.Add("zone." + i.Key + ".label_note", i.LabelNote);
+                }
                 foreach (var i in armistice.Lines)
-                    foreach (var field in new[] { "name", "agreement", "label_note" }) keys.Add("line." + i.Key + "." + field);
+                {
+                    fields.Add("line." + i.Key + ".name", i.Name);
+                    fields.Add("line." + i.Key + ".agreement", i.Agreement);
+                    fields.Add("line." + i.Key + ".label_note", i.LabelNote);
+                }
             }
-            Names.Validate(keys);
+            // Without armistice data (a supported boot path) its names are never shown, so the catalogue's rows for it are not checked.
+            Names.Validate(fields, armistice == null ? new[] { "armistice.", "front.", "zone.", "line." } : new string[0]);
             if (control != null)
             {
                 var layer = subdistricts.Layer;
