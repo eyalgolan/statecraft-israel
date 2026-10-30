@@ -40,7 +40,7 @@ The owner answers for plan #1520 are catalogued in [S11].
 - The planned rule-ID areas are R-CTRL for settlement control, R-GATE for the release gate and the existing R-EFX area for the `displacement` no-gain rule. These IDs remain planned until their implementation PR defines each one with its citing test (`Q-TECH-6`; owner ruling [S3]).
 ### Player regions and automatic evacuation
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S13]:** capturing a regional capital would transfer pooled regional capacity and trigger automatic evacuation through reception, port queues and transit. These regional mechanics are non-operative. Civilians are not automatically casualties, captives or enemy workers; the existing content-policy and review protections remain authoritative. Campaign defeat follows the retained any-city and exhausted-resource rules, not a generic region-loss rule.
+**Amir's proposal, declined by the owner on 30 October 2026 [S13]:** capturing a regional capital would transfer pooled regional capacity and trigger automatic evacuation through reception, port queues and transit. These regional mechanics are non-operative. Civilians are not automatically casualties, captives or enemy workers; the existing content-policy and review protections remain authoritative. Campaign defeat follows the retained exhausted-resource (economic) rule; under `gdd-0.3` losing a city or region alone does not end the game, and there is no generic region-loss rule.
 
 ### Enemy towns and cities
 

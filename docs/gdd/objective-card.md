@@ -22,7 +22,7 @@ The retained `Q-ABS-2` condition is stricter than that shorthand: **no refugees 
 - Objectives and score are the last step of the GDD turn, in the order the owner approved (D-A6 [S2][S3]).
 ### Core objective groups
 
-There are three core groups (unitless): armistice survival, immigrant absorption, and infrastructure/yishuvim. A normal campaign ending does not require every group to be complete [S1]. Amir's proposal to remove the retained exhausted-resource and any-city defeat triggers was declined by the owner on 30 October 2026 [S1].
+There are three core groups (unitless): armistice survival, immigrant absorption, and infrastructure/yishuvim. A normal campaign ending does not require every group to be complete [S1]. Amir's proposal to defer every terminal defeat was declined by the owner on 30 October 2026 [S1]; under `gdd-0.3` the exhausted-resource (economic) defeat remains, and losing a city or region alone does not end the game.
 
 Infrastructure has `railway`, `burma_road` and `yishuvim` parts, each with a card/timing bonus. Grant `objective.base_points` only once when all parts complete. Tel Aviv–Netanya remains buildable without silently adding another required part/base-score group. Migrate `first_new_yishuv` into `yishuvim` without duplicate awards.
 

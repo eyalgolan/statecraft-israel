@@ -208,7 +208,7 @@ Each event needs a trigger, readable context, available options and their conseq
 The player manages the establishment of the state through population, work, settlement, infrastructure, immigration and war. The map supports direct hex-to-hex orders and the retained per-city civilian management rules. Historical events explain the period and react to the player's situation; they must follow the existing [content policy](CONTENT_POLICY.md), [writing guide](WRITING_GUIDE.md) and review gates.
 
 Historical dates, unit identities, named places and claims in event text require sources. Game balance values and hypothetical alternatives must be identified as design assumptions.
-The core objectives are to establish the designated new settlements, complete the designated transport corridors, absorb immigration, and reach the armistices. Their exact completion tests, grouping and score ownership are in [objective-card.md](gdd/objective-card.md). A campaign can reach its end without completing every objective. The retained defeat triggers are authoritative in [ministers-events-end.md](gdd/ministers-events-end.md); Amir's proposal to remove them was declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)).
+The core objectives are to establish the designated new settlements, complete the designated transport corridors, absorb immigration, and reach the armistices. Their exact completion tests, grouping and score ownership are in [objective-card.md](gdd/objective-card.md). A campaign can reach its end without completing every objective. Under `gdd-0.3` the retained defeat is the economic one (Money and Food exhausted), and losing a city or region alone does not end the game ([rules](rules/mvp.md#defeat); [ministers-events-end.md](gdd/ministers-events-end.md)). Amir's proposal to make every terminal defeat TBD was declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)).
 
 ## Production decisions to resolve
 
@@ -261,7 +261,7 @@ The MVP years, monthly turns and three objectives are fixed above. These remain 
 - when the war-survival objective is complete, which immigrants must have housing and employment, and which new yishuvim are required.
 
 Each objective needs a specific historical event and reference date for the completion card. For ongoing processes such as immigrant absorption, choose a defined milestone with a sourced date. Bonus amounts, the timing formula, defeat conditions and whether all objectives are required to finish the MVP remain open.
-**Then decided (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)):** keep the retained defeat rules: Money and Food exhausted, and any-city war loss (see [Final defeat conditions](#final-defeat-conditions)).
+**Then decided (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)):** keep the recorded defeat rules: under `gdd-0.3` the economic defeat (Money and Food exhausted) stays, and losing a city or region alone does not end the game ([rules](rules/mvp.md#defeat); see [Final defeat conditions](#final-defeat-conditions)).
 
 Minister selection is a planned TBD mechanic with player-chosen ministers. The role of coalition, Attention, diplomacy and national policy systems in this core loop remains open.
 **Then decided (owner, 23 Oct 2026, "Yes, complete (Recommended)"; [#1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)):** R-MIN-001 to R-MIN-003 and `Cabinet.Appoint` are the complete MVP minister mechanic.
@@ -273,7 +273,7 @@ The same population unit retains its identity across civilian work, training, mi
 **Amir's proposal, declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)):** player regions would pool civilian housing and employment and use prepared regional farmland. The retained per-city rules and the sourced annexation-resident rules remain authoritative.
 
 ## Relationship to the existing design
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing Attention, automatic borrowing and automatic Food refill while making Money and workers the construction constraints.*
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing automatic borrowing and automatic Food refill while making Money and workers the construction constraints.*
 
 The existing units-in-play design describes units as a presentation layer with no individual orders. This GDD calls for units, jobs, training, construction and settlement control to affect gameplay. Those rules must become simulation state and actions under the existing deterministic simulation architecture.
 
@@ -309,7 +309,7 @@ The camera has a fixed viewing direction and pitch, supports pan and **dolly in/
 ## Decision provenance and implementation status
 
 * The [Arms request](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231351946) and [real-time play request](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231565826), checked 2026-10-17, are addressed by the balance catalogue and population/training rules.
-* *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed housing-only upkeep deterioration, working-turn farmer/pioneer advancement, reception before civilian work, and removing Attention and combat Arms expenditure.*
+* *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed housing-only upkeep deterioration and reception before civilian work.*
 * **Agreed** in the balance catalogue means an explicit interview decision or a retained approved baseline. Unresolved numbers remain TBD rather than receiving assistant-supplied defaults.
 * Existing `content/` values, tests, saves and code still describe the earlier implementation where they conflict. Implementation work must migrate them together, update rule-ID coverage and deliberately review hash changes. This documentation revision does not silently change that code or its data.
 
@@ -318,15 +318,6 @@ The camera has a fixed viewing direction and pitch, supports pan and **dolly in/
 On 30 October 2026 the owner reviewed all 13 conflicts between the recorded design and Amir's #1668 proposal and chose to keep every recorded ruling. Each declined note in this additive design links here; it preserves the adjacent ruling rather than reopening or replacing it.
 
 Conflicting #1668 mechanics and catalogue entries retained for traceability are non-operative. The recorded ruling beside each declined note remains authoritative; an unresolved value is `open (owner)` and must not be inferred from the declined proposal.
-
-#### Implementation gap after the 30 October 2026 rulings
-
-|Gap|Current code behaviour|Ruled target|Status|
-|-|-|-|-|
-|Attention|The `gdd-0.3` code has no Attention ([`docs/rules/mvp.md` line 23](rules/mvp.md#the-loop-switch); also lines 29 and 449).|Keep Attention; the proposal to remove it was declined ([GDD line 276](#relationship-to-the-existing-design)).|to change in code|
-|Combat Arms expenditure|Player attacks and artillery fire do not read or spend Arms under `gdd-0.3` ([`docs/rules/mvp.md` line 313](rules/mvp.md#combat); also lines 315 and 321).|Attacks and artillery fire spend Arms; the proposal to remove that expenditure was declined ([GDD line 312](#decision-provenance-and-implementation-status)).|to change in code|
-|City-loss defeat|The `gdd-0.3` city-loss defeat check is skipped ([`docs/rules/mvp.md` line 433](rules/mvp.md#defeat)).|Keep any-city war loss as a defeat condition ([GDD line 264](#mvp-completion-rules)).|to change in code|
-|Population scale|The `gdd-0.3` population ledger uses 10,000 people per unit ([`docs/rules/mvp.md` line 548](rules/mvp.md#population-identity-foundation-gdd-03-only)).|Use 1,000 people per population unit ([GDD line 58](#resources-and-national-parameters)).|to change in code|
 
 ## Deferred decisions
 
@@ -338,8 +329,8 @@ These are recorded once here. Feature files link here instead of maintaining com
 |Regional-capital model|**Amir's proposal, declined by the owner on 30 October 2026:** create a regional-capital roster and shared regional administration. The retained per-city rules remain authoritative.|
 |Founding dates|The owner set Kiryat Shmona to 18 July 1949 and Beit Shemesh to 15 December 1950 under the monthly turn ([#785](https://github.com/eyalgolan/statecraft-israel/issues/785#issuecomment-6237624501)).|
 |Facility availability and starting training-centre host|The existing owner ruling already starts Schneller and Tel HaShomer as military facilities; the other military camps are approved build sites. Verify reception-camp availability and choose the starting reception/centre host without assuming every roster entry operates on the opening turn. Centre and teacher counts are decided.|
-|Final defeat conditions|The retained rules are exhausted Money/Food and any-city war loss; [the retained end rules](gdd/ministers-events-end.md#rules) add neither coalition collapse nor generic region loss. *Considered and declined (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing those retained triggers and returning terminal defeat to TBD.*|
-|Minister-specific gameplay|The existing office-competence slice (`R-MIN-001` to `R-MIN-003` and `Cabinet.Appoint`) is the complete MVP minister mechanic ([owner ruling #1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)). Historical offices and event references remain, and the existing cabinet and Attention stay.|
+|Final defeat conditions|Under `gdd-0.3` the retained defeat is the economic one (Money and Food exhausted); losing a city or region alone does not end the game ([rules](rules/mvp.md#defeat)), and [the retained end rules](gdd/ministers-events-end.md#rules) add no coalition collapse. *Considered and declined (owner, 30 Oct 2026; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed making every terminal defeat TBD.*|
+|Minister-specific gameplay|The existing office-competence slice (`R-MIN-001` to `R-MIN-003` and `Cabinet.Appoint`) is the complete MVP minister mechanic ([owner ruling #1513](https://github.com/eyalgolan/statecraft-israel/issues/1513#issuecomment-6372357178)). Historical offices and event references remain, and the existing cabinet stays; under `gdd-0.3` there is no Attention resource ([rules](rules/mvp.md#government)).|
 |Terrain presentation|**TBD**. The MVP catalogue itself remains frozen at the existing eight biomes.|
 |Novice profession lock-in|Trained civilian roles can return and be reassigned while keeping their qualification ([owner ruling #1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482)). Amir's conflicting permanent, mutually exclusive profession proposal was declined on 30 October 2026.|
 |Sensitive capture outcomes|Raid and Deport remain subject to the existing [content policy](CONTENT_POLICY.md), owner rulings and review gates; do not infer displacement, rewards or civilian labour.|

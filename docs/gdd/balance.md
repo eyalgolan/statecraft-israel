@@ -22,12 +22,12 @@ Every value below is a game design value, not a historical estimate. **Agreed** 
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `population.people_per_unit` | `1000` | people represented by a population unit | Retained `Q-START-2` ruling [S4] |
-| `start.population` | derived per city | total player population units, all statuses included | Retained census-city rule at 1,000 people per unit [S4]; the proposed `65` from the declined scale of 10,000 people per unit is non-operative [S1] |
-| `start.money` / `start.food` | `open (owner)` | Money / Food | Proposed `25 / 10` was sized for the declined scale of 10,000 people per population unit and is non-operative [S1] |
+| `population.people_per_unit` | `10000` (current `gdd-0.3` catalogue) | people represented by a population unit | Not decided by the 30 October 2026 rulings [S11]; `content/gdd03-balance.yaml` reads 10,000 people (`R-POP-001`), while the `Q-START-2` scale of 1,000 people [S4] governs `legacy` and `gdd-0.1` |
+| `start.population` | derived per city | total player population units, all statuses included | Census-city rule [S4] at the `population.people_per_unit` scale; Amir's proposed `65` at 10,000 people per unit is not decided by the 30 October 2026 rulings [S11] |
+| `start.money` / `start.food` | `open (owner)` | Money / Food | Proposed `25 / 10` was sized for Amir's scale of 10,000 people per population unit; the 30 October 2026 rulings do not decide these values [S11] |
 | `start.arms` | `12` | Arms in the national pool | Retained `arms_start` value [S10]; Amir's proposed `3` spare Arms was declined by the owner on 30 October 2026 [S1] |
 | `start.army` | sourced seed in Historical mode; `A` otherwise | military population units | Historical mode keeps `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026); `A` applies only to non-Historical modes and remains deferred (owner, 30 Oct 2026) [S1] |
-| `start.farmers` | `open (owner)` | novice / trained / veteran units | Proposed `5 / 10 / 5` came from the declined scale of 10,000 people per unit and is non-operative [S1] |
+| `start.farmers` | `open (owner)` | novice / trained / veteran units | Proposed `5 / 10 / 5` came from Amir's scale of 10,000 people per unit; the 30 October 2026 rulings do not decide these values [S11] |
 | `start.prepared_fields` | `20` | staffed farming slots, across multiple friendly regions | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field derivation) |
 | `start.pioneer_teachers` | `1` | veteran pioneer unit, included in population total | Retained owner-decided inventory [S1] |
 | `start.military_camps` | `2` | operating camps at the already approved locations | Retained owner ruling, historical `Q-CAMP-2` |
@@ -129,9 +129,9 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `military.issue_arms` | `1` | Arms consumed per recruit group when training starts | Retained `R-ARMS-003` value [S9] |
 | `military.draft_money` / `military.draft_wait` | non-operative proposed `0 / 0` | Money / waiting turns for immediate draft | Declined with Amir's proposal [S1]; retained `R-TRAIN-001` uses a paid training course rather than immediate draft [S10] |
 | `military.demobilise_money` / `military.demobilise_wait` | non-operative proposed `0 / 0` | Money / waiting turns for demobilisation at a camp | Declined with Amir's proposal [S1]; retained `R-UNIT-005` makes Send home the only way home [S10] |
-| `military.demobilise_return` | `1` | issued Arms returned once on valid demobilisation | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `military.repeat_issue` | `0` | additional Arms under Amir's reusable-equipment model | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `military.attack_arms` / `military.artillery_arms` | `1 / 2` | Arms per player attack / artillery firing | Retained `R-COMBAT-004` and `R-COMBAT-007` values [S9] |
+| `military.demobilise_return` | `1` | issued Arms returned once on valid demobilisation | Amir's reusable-equipment proposal, which the 30 October 2026 review lists as not a conflict [S11]; Agreed in `content/gdd03-balance.yaml` |
+| `military.repeat_issue` | `0` | additional Arms under Amir's reusable-equipment model | Amir's reusable-equipment proposal, which the 30 October 2026 review lists as not a conflict [S11]; Agreed in `content/gdd03-balance.yaml` |
+| `military.attack_arms` / `military.artillery_arms` | `0` under `gdd-0.3` (`1 / 2` under `gdd-0.1`) | Arms per player attack / artillery firing | `R-COMBAT-004` (owner ruling, 25 October 2026): `gdd-0.3` attacks and artillery fire spend no Arms; `R-COMBAT-004` and `R-COMBAT-007` keep 1 unit of Arms per attack and 2 units per artillery firing for `gdd-0.1` [S9] |
 | `military.training_money` | `0.5` | Money per basic course | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `military.training_money` (proposal) | `0` | Money per basic course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
 | `military.active_money` | `0.05` | Money per active army unit per turn, excluding basic trainees | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
@@ -142,7 +142,7 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `military.fortify_turns` | `1` | turns for Fortify order; defence bonus open (owner) | Retained turn |
 | `occupation.turns` | `6` | turns before annex-or-withdraw choice | Retained owner ruling |
 
-Biome movement costs use the existing approved eight-biome framework; this catalogue does not invent the pending terrain taxonomy. Training, attacks and artillery fire consume Arms under the retained D-G6 ruling. No equipment refund occurs automatically on destruction or surrender. Hold grants no combat bonus beyond hex/fort effects and no interception.
+Biome movement costs use the existing approved eight-biome framework; this catalogue does not invent the pending terrain taxonomy. Training consumes Arms (`R-ARMS-003`); under `gdd-0.3` attacks and artillery fire do not (`R-COMBAT-004`, owner ruling, 25 October 2026) [S9]. No equipment refund occurs automatically on destruction or surrender. Hold grants no combat bonus beyond hex/fort effects and no interception.
 
 ### Movement and engagement
 
@@ -192,7 +192,7 @@ Historical census estimates, real camp opening dates, authored region borders, a
 - [S6] Retained military-unit Strength rule, docs/gdd/military-combat.md.
 - [S7] Retained CBS arrivals rule, docs/gdd/one-city.md.
 - [S8] Retained site, swamp and corridor durations, docs/gdd/build-yishuv.md, docs/gdd/fields-and-swamps.md and docs/gdd/corridors.md.
-- [S9] Retained Arms purchase, training and combat values, `docs/rules/mvp.md` (`R-ARMS-002`, `R-ARMS-003`, `R-COMBAT-004` and `R-COMBAT-007`; attack 1 Arms, artillery 2 Arms).
+- [S9] Retained Arms purchase, training and combat values, `docs/rules/mvp.md` (`R-ARMS-002`, `R-ARMS-003`, `R-COMBAT-004` and `R-COMBAT-007`; under `gdd-0.1` attack 1 Arms and artillery 2 Arms, under `gdd-0.3` none).
 - [S10] Retained numerical and rule catalogue, `content/projects.yaml`, `content/rules.yaml` and `docs/rules/mvp.md` (`R-PROJ-001`, `R-TRAIN-001` and `R-UNIT-005`).
 - [S11] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 

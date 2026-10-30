@@ -16,7 +16,7 @@ I plan standing orders, resolve the month predictably and reload under the rules
 
 This design targets `gdd-0.3`. Existing `legacy`/`gdd-0.1` code/saves are implementation history, not alternative rules within a new run. Save ruleset, content hash and schema. Refuse incompatible earlier rulesets with the earlier-rules reason and unknown later rulesets/schemas with the newer-version reason. Never replay old commands through changed scales or economics. A schema number remains implementation work; declined regional/reception state from the catalogue is not encoded [S6].
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S4]:** commands and standing orders would operate without Attention. The retained Attention rules remain authoritative.
+Amir's proposal that commands and standing orders operate without Attention agrees with the retained `gdd-0.3` rule: there is no Attention resource (`R-GOV-002`, owner ruling, 25 October 2026; [rules](../rules/mvp.md#government)). It was not one of the 30 October 2026 conflicts [S4].
 
 ### Turn boundaries and resolution
 
