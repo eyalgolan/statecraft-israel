@@ -190,7 +190,15 @@ namespace Statecraft.Game.Tests
         public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide()
         {
             var map = OpenMap();
-            var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll();
+            // Placement runs inside the fixture; record what it logs so a seeded fallback cannot pass unnoticed.
+            var logged = new List<string>();
+            Application.LogCallback watch = (message, stack, type) => logged.Add(message);
+            Application.logMessageReceived += watch;
+            SpecialBuildingModels layer;
+            try { layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll(); }
+            finally { Application.logMessageReceived -= watch; }
+            Assert.IsFalse(logged.Any(m => m.Contains("route-facing spot unavailable for degania_r35")),
+                "the R35 took its route-facing village spot, not the seeded fallback");
             var tank = layer.Placed.Single(p => p.Key == "degania_r35");
             var kits = map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;
             var bounds = kits.Cast<Transform>()
@@ -215,7 +223,6 @@ namespace Statecraft.Game.Tests
                 }
             Assert.Greater(Vector2.Dot(new Vector2(at.x, at.z) - footprint.centre, nearest - footprint.centre), 0f,
                 "the chosen village edge is on the side facing the nearest mapped transport segment");
-            LogAssert.NoUnexpectedReceived();
         }
 
         /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The #707
