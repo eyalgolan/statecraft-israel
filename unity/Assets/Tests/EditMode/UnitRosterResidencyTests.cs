@@ -155,6 +155,7 @@ public class UnitRosterResidencyTests
             foreach (var holder in holders)
                 Assert.AreEqual(OneOwnerPerFarKey, holder.ResidencySnapshot().ownedLeases,
                     $"{holder.transform.parent.name}/{holder.name}: one owner for its one retained (model, Far) key");
+            // These holder-count equalities assume the fixture's 90 km start view, where no Near lease is requested.
             Assert.AreEqual(holders.Length, UnitFigures.OwnedRefCount, "no extra model owner remains beside the drawn holders");
             Assert.AreEqual(holders.Length, UnitFigures.OwnedDetailRefCount, "no extra detail owner remains beside the drawn holders");
 
@@ -179,6 +180,7 @@ public class UnitRosterResidencyTests
             layer.Show(C, state);
             string model = UnitFigures.LebaneseRegular;
             Assert.IsTrue(pending.TryGetValue(model, out var answer), "fixture has an unanswered foreign roster gate");
+            pending.Remove(model);
             layer.gameObject.SetActive(false);
 
             answer!(Prefab(model, CollectionDetail.Far));
@@ -189,6 +191,14 @@ public class UnitRosterResidencyTests
             Assert.IsFalse(layer.Show(C, state), "the unchanged roster does not rebuild");
             Assert.IsNotNull(Tokens(layer).Find("lebanese_army"), "the roster gate cannot flicker the shown token away");
             Assert.IsTrue(UnitFigures.Arrived(model), "a shown roster token never loses its side model during handoff");
+
+            AnswerAll(pending);
+            layer.gameObject.SetActive(true);
+            var holders = Tokens(layer).GetComponentsInChildren<UnitFigureResidency>(true);
+            Assert.AreEqual(NoOwners, layer.FigurePrefetchCount,
+                "reactivated holders retire the temporary gate owner after acquiring answered Far");
+            Assert.AreEqual(holders.Length, UnitFigures.OwnedRefCount,
+                "reactivation leaves exactly the drawn holders owning their Far models");
 
             Object.DestroyImmediate(map.gameObject);
             AssertNoOwnedOriginals("inactive layer teardown releases retained gate and holder owners");
@@ -423,6 +433,40 @@ public class UnitRosterResidencyTests
         {
             if (inactivePiece != null) Object.DestroyImmediate(inactivePiece);
             if (disabledPiece != null) Object.DestroyImmediate(disabledPiece);
+            Object.DestroyImmediate(prefab);
+        }
+    }
+
+    [Test]
+    public void ComponentReenableReacquiresAndRedressesAnsweredFar()
+    {
+        var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var live = new List<string>();
+        IDisposable Acquire(string model, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            Assert.AreEqual(CollectionDetail.Far, detail);
+            live.Add(model);
+            answer(prefab);
+            return new Lease(() => live.Remove(model));
+        }
+        try
+        {
+            var owner = piece.AddComponent<UnitFigureResidency>();
+            owner.Initialize(UnitFigures.VeteranFighter, ProductionResidency.Approved().Units, Acquire, retainFar: true);
+            owner.enabled = false;
+            CollectionAssert.DoesNotContain(live, UnitFigures.VeteranFighter, "component disable releases Far");
+            Assert.IsNull(piece.transform.Find(UnitFigures.ModelName), "component disable removes the released Far model");
+
+            owner.enabled = true;
+
+            CollectionAssert.Contains(live, UnitFigures.VeteranFighter, "component re-enable reacquires Far");
+            Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName), "the reacquired Far answer re-dresses CollectionModel");
+            Assert.IsTrue(owner.ActiveAnsweredFar, "the re-enabled, re-dressed holder counts as ActiveAnsweredFar");
+        }
+        finally
+        {
+            if (piece != null) Object.DestroyImmediate(piece);
             Object.DestroyImmediate(prefab);
         }
     }

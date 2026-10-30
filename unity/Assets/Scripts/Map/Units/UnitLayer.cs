@@ -76,7 +76,7 @@ namespace Statecraft.Game.Map.Units
             }
             finally { updatingPrefetch = false; }
         }
-        void RetireSatisfiedPrefetch()
+        internal void RetireSatisfiedPrefetch()
         {
             var heldByFigures = new HashSet<string>(tokensRoot.GetComponentsInChildren<UnitFigureResidency>(true)
                 .Where(owner => owner.ActiveAnsweredFar).Select(owner => owner.ModelId), StringComparer.Ordinal);

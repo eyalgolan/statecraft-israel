@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 namespace Statecraft.Game.Map.Units
 {
     /// <summary>Per-consumer ownership: one live token holder, with imported children retired before its original leases.
-    /// A roster holder keeps Far while its token object lives, including while an ancestor is inactive. Destroying the token
+    /// A roster holder keeps Far once acquired while its token object lives, including while an ancestor is inactive. Destroying the token
     /// releases Far in <see cref="OnDestroy"/>; disabling this component explicitly releases it in <see cref="OnDisable"/>.</summary>
     [ExecuteAlways]
     public sealed class UnitFigureResidency : MonoBehaviour
@@ -47,14 +47,21 @@ namespace Statecraft.Game.Map.Units
         void Answer(string model, CollectionDetail detail, GameObject? prefab)
         {
             UnitFigures.AnswerOwned(model, detail, prefab);
+            // A gate answer can synchronously rebuild the layer and destroy this draw:false prefetch holder.
             if (!draws) return;
             if (detail == CollectionDetail.Far && prefab != null) UnitFigures.Swap(transform, model, prefab);
             if (detail == CollectionDetail.Near) UnitFigureDetail.Of(transform).OwnedArrived(model);
+            // A holder dressed below an inactive layer acquires its cached Far only when the layer is reactivated. That
+            // answer is the handoff point too; do not leave the roster-gate owner waiting for an unrelated rebuild.
+            if (detail == CollectionDetail.Far && ActiveAnsweredFar)
+                GetComponentInParent<UnitLayer>()?.RetireSatisfiedPrefetch();
         }
         IEnumerable<(string id, CollectionDetail detail)> ActiveKeys() =>
             (residency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>())
                 .Concat(retainedFarResidency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>())
                 .Concat(retainedNearResidency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>());
+        /// <summary>The ownership snapshot. Its demanded anchor is any active retained/detail key, including a retained Far
+        /// that is not currently camera-demanded; <see cref="CameraResident"/> reports camera demand separately.</summary>
         internal CollectionResidencyMetrics.Category ResidencySnapshot()
         {
             var keys = ActiveKeys().Distinct().ToArray();
