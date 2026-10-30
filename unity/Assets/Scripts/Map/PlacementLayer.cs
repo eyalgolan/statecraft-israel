@@ -7,6 +7,9 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map
 {
+    /// <summary>Marks a runtime mesh created for one placement redraw, and therefore owned by that placement.</summary>
+    sealed class PlacementMesh : MonoBehaviour { }
+
     /// <summary>Draws the player's transit camps and housing projects as marker boxes on their hex centres (placeholder art
     /// like the M2 settlement markers; per-era prefabs are M4). Uses the editor-made marker material with a per-kind
     /// colour through a MaterialPropertyBlock (no runtime Shader.Find). Render replaces what it drew before.
@@ -49,16 +52,10 @@ namespace Statecraft.Game.Map
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject;
-                // A camp's kit meshes are its own (the boxes share the built-in cube): the camp's and its khaki tents' go with
-                // its object. The khaki tent models under CampTentModels are the streamed prefab's and stay.
                 var own = new List<Mesh>();
-                foreach (var filter in old.GetComponentsInChildren<MeshFilter>(true))
-                {
-                    if (filter.sharedMesh == null || filter.sharedMesh == cube) continue;
-                    bool kitMesh = filter.GetComponent<Collection.CampTentModels>() != null || filter.GetComponentInParent<Collection.CampTentModels>(true) == null;
-                    if (kitMesh) own.Add(filter.sharedMesh);
-                }
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); foreach (var m in own) Destroy(m); }
+                foreach (var marker in old.GetComponentsInChildren<PlacementMesh>(true))
+                    if (marker.TryGetComponent(out MeshFilter filter) && filter.sharedMesh != null) own.Add(filter.sharedMesh);
+                if (Application.isPlaying) { old.SetActive(false); old.transform.SetParent(null); Destroy(old); foreach (var m in own) Destroy(m); }
                 else { DestroyImmediate(old); foreach (var m in own) DestroyImmediate(m); }
             }
             var list = new List<Placement>(placements);
@@ -111,6 +108,7 @@ namespace Statecraft.Game.Map
                 go.transform.SetParent(transform, false);
                 go.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);   // the kit's vertices are in world space
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<PlacementMesh>();
                 var r = go.AddComponent<MeshRenderer>();
                 r.sharedMaterial = map.KitMaterial;
                 r.shadowCastingMode = ShadowCastingMode.On;
@@ -121,6 +119,7 @@ namespace Statecraft.Game.Map
                     var tents = new GameObject(camps[i].id + "_khaki");
                     tents.transform.SetParent(go.transform, false);
                     tents.AddComponent<MeshFilter>().sharedMesh = khaki;
+                    tents.AddComponent<PlacementMesh>();
                     var kr = tents.AddComponent<MeshRenderer>();
                     kr.sharedMaterial = map.KitMaterial;
                     kr.shadowCastingMode = ShadowCastingMode.On;

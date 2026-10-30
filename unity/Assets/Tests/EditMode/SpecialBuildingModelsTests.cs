@@ -187,22 +187,16 @@ namespace Statecraft.Game.Tests
         }
 
         [Test]
-        public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide()
+        public void DeganiaTankStandsJustOutsideTheVillageFootprintAtTheTransportSide()
         {
             var map = OpenMap();
             var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll();
             var tank = layer.Placed.Single(p => p.Key == "degania_r35");
-            var kits = map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;
-            var bounds = kits.Cast<Transform>()
-                .Where(t => t.name == "degania_alef" || t.name == "degania_alef" + Statecraft.Game.Map.Kits.KitLayer.CloseSuffix)
-                .Select(t => t.GetComponent<Renderer>().bounds).ToArray();
-            Assert.IsNotEmpty(bounds, "Degania's far and close kit meshes define its drawn village bounds");
             var at = tank.At; float clearance = SpecialBuildingModels.ClearanceOf(tank.Model);
-            foreach (var b in bounds) Assert.Greater(b.SqrDistance(at), 0f, "the R35 centre lies outside " + b);
-            var village = bounds[0]; for (int i = 1; i < bounds.Length; i++) village.Encapsulate(bounds[i]);
-            float edgeDistance = Mathf.Sqrt(village.SqrDistance(at));
-            Assert.That(edgeDistance, Is.InRange(0.01f, clearance + 1f), "the R35 is only its own clearance beyond the village edge");
             var footprint = map.KitFootprints.Single(f => f.id == "degania_alef");
+            Assert.AreEqual(footprint.radius + clearance,
+                (new Vector2(at.x, at.z) - footprint.centre).magnitude, 0.01f,
+                "the R35 is one clearance beyond the village footprint");
             Vector2 nearest = Vector2.zero; float best = float.MaxValue;
             foreach (var (line, _) in map.KitRouteCorridors)
                 for (int i = 0; i + 1 < line.Count; i++)

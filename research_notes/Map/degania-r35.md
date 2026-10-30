@@ -16,4 +16,4 @@ Sources for Tal Heuberger's Syrian Renault R35 at Degania Alef (`SpecialBuilding
 
 ## Its point
 
-The model stands at Degania Alef's settlement anchor (`content/map/settlements_1948.yaml`, `degania_alef`, lon 35.5747, lat 32.7081, from en.wiki Degania Alef), on the nearest clear ground around it. It is a schematic placement at the kibbutz, not a surveyed position of the tank or of the fence.
+The model stands one model-clearance beyond Degania Alef's recorded kit footprint, on the side facing the nearest mapped transport segment. If that footprint is absent it uses the stable seeded search around the settlement anchor (`content/map/settlements_1948.yaml`, `degania_alef`, lon 35.5747, lat 32.7081, from en.wiki Degania Alef). It is a schematic placement at the kibbutz, not a surveyed position of the tank or of the fence.

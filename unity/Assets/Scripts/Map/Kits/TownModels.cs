@@ -5,8 +5,7 @@ namespace Statecraft.Game.Map.Kits
 {
     /// <summary>The building models the towns are built from (issue #659): Tal Heuberger's Tripo models from #507,
     /// imported in #675 under Assets/Art/Settlements/Prototype/Models, and Tal Heuberger's five generated houses of October 2026
-    /// beside them. Only the models a town kit places are listed, so only
-    /// these enter a build (through <see cref="TownModelSet"/>, referenced by the map scene: they load with the map). b11
+    /// beside them. Only the models a town kit places are listed. b11
     /// shikun, b21 workshop, b22 factory, b12 Tegart fort and b18 barracks have no plot in today's 1948 town kits and are not
     /// listed.</summary>
     public enum TownModel
@@ -56,7 +55,7 @@ namespace Statecraft.Game.Map.Kits
         };
 
         public const string Folder = "Assets/Art/Settlements/Prototype/Models";
-        /// <summary>The <see cref="TownModelSet"/> the map scene references.</summary>
+        /// <summary>The editor asset containing the town meshes and materials.</summary>
         public const string SetPath = "Assets/Art/Settlements/TownModels.asset";
 
         internal static readonly TownModel[] TelAviv = { TownModel.B01WhiteCity, TownModel.B01WhiteCity, TownModel.B02aCornerBlock, TownModel.B02bNarrowBlock };

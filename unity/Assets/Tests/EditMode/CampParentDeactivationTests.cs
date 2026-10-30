@@ -90,6 +90,8 @@ public sealed class CampParentDeactivationTests
             Assert.IsTrue(models.SelectMany(m => m.GetComponentsInChildren<MeshFilter>()).All(f => f.sharedMesh == shared));
 
             layerGo.SetActive(false);
+            Assert.IsFalse(tents.LastClose, "disable clears the close-view state before any later placement");
+            Assert.AreEqual(0, tents.DiagnosticsSnapshot.ObservedCameras, "disable clears per-camera hysteresis");
             layer.Render(System.Array.Empty<Statecraft.Sim.Placement>(), c, map); // Same frame as OnDisable.
             yield return null; // Deferred instance and kit destruction has now completed.
             Assert.IsTrue(shared != null, "redrawing an inactive camp must never destroy the streamed prefab mesh");

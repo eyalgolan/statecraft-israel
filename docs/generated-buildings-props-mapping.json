@@ -6,8 +6,8 @@
       "id": "generated-1948-01-netanya-tiled-house-original",
       "prepared_role": "Netanya tiled-house variation",
       "active_in_campaign": true,
-      "source_visual_ready": false,
-      "known_source_defect": true,
+      "source_visual_ready": true,
+      "known_source_defect": false,
       "campaign_placement": "Netanya's house pool (TownModels.Netanya); owner sign-off 27 October 2026 (#756)"
     },
     {
@@ -15,7 +15,7 @@
       "id": "generated-1948-02-netanya-two-storey-balcony-house",
       "prepared_role": "Netanya two-storey variation",
       "active_in_campaign": true,
-      "source_visual_ready": false,
+      "source_visual_ready": true,
       "known_source_defect": false,
       "campaign_placement": "Netanya's house pool (TownModels.Netanya); owner sign-off 27 October 2026 (#756)"
     },
@@ -24,8 +24,8 @@
       "id": "generated-1948-03-netanya-flat-roof-porch-house",
       "prepared_role": "Netanya porch-house variation",
       "active_in_campaign": true,
-      "source_visual_ready": false,
-      "known_source_defect": true,
+      "source_visual_ready": true,
+      "known_source_defect": false,
       "campaign_placement": "Netanya's house pool (TownModels.Netanya); owner sign-off 27 October 2026 (#756)"
     },
     {
@@ -33,7 +33,7 @@
       "id": "generated-1948-04-dark-basalt-house",
       "prepared_role": "Tiberias stone-house variation",
       "active_in_campaign": true,
-      "source_visual_ready": false,
+      "source_visual_ready": true,
       "known_source_defect": false,
       "campaign_placement": "Tiberias's house pool (TownModels.Tiberias); owner sign-off 27 October 2026 (#756)"
     },
@@ -42,8 +42,8 @@
       "id": "generated-1948-05-plastered-courtyard-house-original",
       "prepared_role": "Generic existing Village/ArabTown courtyard variation (including existing Jerusalem Village-style plots)",
       "active_in_campaign": true,
-      "source_visual_ready": false,
-      "known_source_defect": true,
+      "source_visual_ready": true,
+      "known_source_defect": false,
       "campaign_placement": "The stone-village pool of Arab towns and villages (TownModels.Stone); owner sign-off 27 October 2026 (#756)"
     },
     {
@@ -60,7 +60,7 @@
       "id": "generated-1948-08-khaki-canvas-tent",
       "prepared_role": "Existing non-white transit-camp ridge tents",
       "active_in_campaign": true,
-      "source_visual_ready": false,
+      "source_visual_ready": true,
       "known_source_defect": false,
       "campaign_placement": "In place of a transit camp's khaki ridge tents up close (CampTentModels; the kit's tents beyond the switch distance and whenever the model is missing); owner sign-off 27 October 2026 (#756)"
     },

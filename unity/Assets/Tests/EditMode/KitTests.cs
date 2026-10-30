@@ -861,15 +861,11 @@ public class KitTests
                 new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) }, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
             foreach (var go in new[] { a, b }) go.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
             layer.Choose(default, a.GetComponent<Camera>()); layer.Choose(default, b.GetComponent<Camera>());
-            var field = typeof(Statecraft.Game.Map.Collection.CampTentModels).GetField("closeFor",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-            var closeFor = (System.Collections.IDictionary)field.GetValue(layer)!;
-            Assert.AreEqual(2, closeFor.Count);
+            Assert.AreEqual(2, layer.DiagnosticsSnapshot.ObservedCameras);
             a.SetActive(false);
-            typeof(Statecraft.Game.Map.Collection.CampTentModels).GetMethod("LateUpdate",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(layer, null);
+            layer.AdvanceCameraFrame(Time.frameCount);
             Assert.IsTrue(layer.Demanded, "the other camera keeps the camp resident");
-            Assert.AreEqual(1, closeFor.Count, "the inactive camera's hysteresis entry is released");
+            Assert.AreEqual(1, layer.DiagnosticsSnapshot.ObservedCameras, "the inactive camera's hysteresis entry is released");
         }
         finally
         {
@@ -900,13 +896,13 @@ public class KitTests
             var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
                 .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
             Assert.AreEqual(tents.Length, models.Count);
-            Assert.AreEqual(60.0293f, models[0].localScale.x, 1e-3f,
-                "the shipped 60 m kit tent divided by the prefab's 0.999512 m top-down edge");
             // The premise of the turn: the model's long side seen from above lies along its own z once it stands up.
             var alone = Object.Instantiate(prefab);
             try
             {
                 var own = alone.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                Assert.AreEqual(60f / Mathf.Max(own.size.x, own.size.z), models[0].localScale.x, 1e-3f,
+                    "the shipped 60 m kit tent divided by the prefab's top-down edge");
                 Assert.Greater(own.size.z, own.size.x, "the model's long side lies along z");
             }
             finally { Object.DestroyImmediate(alone); }
@@ -993,26 +989,25 @@ public class KitTests
             var cam = camGo.GetComponent<Camera>(); camGo.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Category Special() =>
                 Statecraft.Game.Map.Collection.CollectionResidencyMetrics.Capture().categories.Single(c => c.category == "special");
-            object Field(string name) => typeof(Statecraft.Game.Map.Collection.CollectionStream)
-                .GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(stream)!;
-            int Owners() => ((System.Collections.IDictionary)Field("owners")).Count;
-            bool Pinned() => ((ICollection<string>)Field("pinned")).Contains(bundle);
-            bool Inflight() => ((ICollection<string>)Field("inflight")).Contains(bundle);
-            int Leases() { var d = (System.Collections.IDictionary)Field("owners"); return d.Contains(bundle) ? (int)d[bundle]! : 0; }
-            bool Open() => ((System.Collections.IDictionary)Field("bundles")).Contains(bundle);
-            int Cached() => ((Dictionary<string, string>)Field("paths")).Count(kv => kv.Value == bundle);
-            int Queued() => ((System.Collections.ICollection)Field("pending")).Count;
-            int Loaded() => ((System.Collections.ICollection)Field("loaded")).Count;
-            int PendingEvictions() => ((ICollection<string>)Field("pendingEvictions")).Count;
+            Statecraft.Game.Map.Collection.CollectionStream.BundleDiagnostic? Bundle() => stream.Diagnostics().SingleOrDefault(d => d.Bundle == bundle);
+            int Owners() => stream.Diagnostics().Count(d => d.Owners > 0);
+            bool Pinned() => Bundle()?.Pinned ?? false;
+            bool Inflight() => Bundle()?.InFlight ?? false;
+            int Leases() => Bundle()?.Owners ?? 0;
+            bool Open() => Bundle()?.State == "Open";
+            int Cached() => Bundle()?.CachedPaths ?? 0;
+            int Queued() => stream.Diagnostics().Sum(d => d.PendingRequests);
+            int Loaded() => stream.Diagnostics().Sum(d => d.CachedPrefabs);
+            int PendingEvictions() => stream.Diagnostics().Count(d => d.EvictionQueued);
             // The whole stream back to empty, not only this bundle's entries: no owner, pin, load in flight, open bundle, cached
             // prefab, queued request, loaded model or waiting eviction.
             void StreamEmpty(string when)
             {
                 Assert.AreEqual(0, Owners(), $"{when}: no owner");
-                Assert.AreEqual(0, ((ICollection<string>)Field("pinned")).Count, $"{when}: no pin");
-                Assert.AreEqual(0, ((ICollection<string>)Field("inflight")).Count, $"{when}: no load in flight");
-                Assert.AreEqual(0, ((System.Collections.IDictionary)Field("bundles")).Count, $"{when}: no open bundle");
-                Assert.AreEqual(0, ((Dictionary<string, string>)Field("paths")).Count, $"{when}: no cached prefab");
+                Assert.IsFalse(stream.Diagnostics().Any(d => d.Pinned), $"{when}: no pin");
+                Assert.IsFalse(stream.Diagnostics().Any(d => d.InFlight), $"{when}: no load in flight");
+                Assert.IsFalse(stream.Diagnostics().Any(d => d.State == "Open"), $"{when}: no open bundle");
+                Assert.AreEqual(0, stream.Diagnostics().Sum(d => d.CachedPaths), $"{when}: no cached prefab");
                 Assert.AreEqual(0, Queued(), $"{when}: nothing queued");
                 Assert.AreEqual(0, Loaded(), $"{when}: nothing loaded");
                 Assert.AreEqual(0, PendingEvictions(), $"{when}: no eviction waits");

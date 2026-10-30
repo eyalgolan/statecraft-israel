@@ -48,6 +48,12 @@ namespace Statecraft.Game.Map.Collection
         /// <summary>Whether a game camera is close to this camp now, so the model is demanded and its lease held.</summary>
         public bool Demanded => view != null && view.Keys.Count > 0;
         public bool LastClose { get; private set; }
+        internal readonly struct CameraDiagnostics
+        {
+            internal readonly int ObservedCameras;
+            internal CameraDiagnostics(int observedCameras) { ObservedCameras = observedCameras; }
+        }
+        internal CameraDiagnostics DiagnosticsSnapshot => new CameraDiagnostics(closeFor.Count);
         bool missing;
 
         /// <summary>This camp's counters for the residency diagnostics, in the special-buildings category whose policy it uses.</summary>
@@ -147,6 +153,7 @@ namespace Statecraft.Game.Map.Collection
         void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= Choose;
+            closeFor.Clear(); LastClose = false;
             view?.Clear();
             residency?.Replace(Array.Empty<(string, CollectionDetail)>());
         }
