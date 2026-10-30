@@ -166,9 +166,25 @@ namespace Statecraft.Game.Map.Collection
             if (residencyView == null || !isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) => OnModel(id, prefab),
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("craft", instances, owners, complete,
-                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
-            residency.Replace(Admitted().Select(w => (w.Model, CollectionDetail.Far)));
-            Rebuild();
+                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Far)));
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var removed = new List<UnityEngine.Object>();
+            foreach (var key in keys)
+            {
+                prefabs.Remove(key.id); asked.Remove(key.id);
+                if (!originals.TryGetValue(key.id, out var list)) continue;
+                foreach (var go in list) if (go != null)
+                {
+                    removed.Add(go);
+                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                }
+                originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
+            }
+            keepAll = new List<Bounds[]>();
+            return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
         {
@@ -184,6 +200,7 @@ namespace Statecraft.Game.Map.Collection
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>();
+            originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
         bool residencyDirty;
@@ -205,6 +222,7 @@ namespace Statecraft.Game.Map.Collection
         Content? content;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
+        readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
         List<Want> wants = new List<Want>();
         List<(int q, int r)> placements = new List<(int, int)>();
         List<(Vector2 centre, float radius)> taken = new List<(Vector2, float)>();
@@ -271,7 +289,7 @@ namespace Statecraft.Game.Map.Collection
             var ground = PlacementLayer.CampGround(map);
             var works = map.KitStats?.HarbourWorks ?? Array.Empty<SettlementKits.Placed>();
             var boats = new List<SeaCraft.Craft>(map.KitStats?.Crafts ?? Array.Empty<SeaCraft.Craft>());
-            foreach (var w in Admitted())
+            foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
                 Vector2? at = null;
@@ -282,6 +300,8 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (at == null) { Missing.Add(w.Key); continue; }
                 var go = Instantiate(prefab!, transform, false); go.name = w.Key;
+                if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
+                owned.Add(go);
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;

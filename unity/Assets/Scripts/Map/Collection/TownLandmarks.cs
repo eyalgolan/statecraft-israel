@@ -344,11 +344,11 @@ namespace Statecraft.Game.Map.Collection
                 asked.Select(id => id + "|Far"));
             row.retiringLeases = retiring.Count; row.pendingDestroy = retiredInstances.Count(o => o != null && o is GameObject); return row;
         }
-        bool Allowed(Want want) => map != null
-            ? map!.Residency.Towns.Enabled && Layer()?.WantsWholeTownAny(want.Key) == true
-            : !want.OnTown || Layer()?.WantsWholeTownAny(want.Key) == true;
+        // v0.3.1 kept every wanted whole-town and placement landmark resident. Camera focus chooses only
+        // the detailed building representation; it must never evict the far representation.
+        bool Allowed(Want want) => true;
         bool WholeReady(string id, Camera camera) =>
-            Layer()?.WantsWholeTown(id, camera) == true && Seats.ContainsKey(id);
+            Seats.ContainsKey(id) && Layer()?.ReadyForTown(id, camera) != true;
 
         void Show(List<Want> next, DateTime at)
         {
@@ -489,7 +489,7 @@ namespace Statecraft.Game.Map.Collection
             var townCentres = map.KitFootprints.Where(f => gameIds.Contains(f.id)).Select(f => (c: f.centre, id: f.id)).ToList();
             foreach (var w in wants)
             {
-                if (!Allowed(w)) continue; // only towns admitted by an active camera acquire a whole original
+                if (!Allowed(w)) continue;
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
                 if (prefab == null) { Missing.Add(w.Key); continue; }
                 Vector2 at; float edge, baseY; Vector3 normal = Vector3.up;
@@ -533,7 +533,7 @@ namespace Statecraft.Game.Map.Collection
                 foreach (var rr in go.GetComponentsInChildren<Renderer>(true))
                 {
                     rr.shadowCastingMode = ShadowCastingMode.On;
-                    rr.forceRenderingOff = w.OnTown; // a camera enables only its admitted whole-town representation
+                    rr.forceRenderingOff = false;
                     renderers.Add(rr);
                     if (w.OnTown) rendererTowns[rr] = w.Key;
                 }
@@ -625,8 +625,7 @@ namespace Statecraft.Game.Map.Collection
             foreach (var renderer in renderers)
             {
                 if (renderer == null) continue;
-                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer != null &&
-                    (!layer.WantsWholeTown(town, cam) || layer.ReadyForTown(town, cam));
+                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer?.ReadyForTown(town, cam) == true;
                 previous.Add((renderer, renderer.forceRenderingOff)); renderer.forceRenderingOff = hide;
                 LastHidden |= hide;
             }

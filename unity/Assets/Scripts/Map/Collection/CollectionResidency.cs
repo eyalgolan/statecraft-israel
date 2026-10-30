@@ -28,13 +28,17 @@ namespace Statecraft.Game.Map.Collection
         internal delegate void Retire(IReadOnlyList<UnityEngine.Object> instances, IReadOnlyList<IDisposable> owners,
             IReadOnlyList<(string id, CollectionDetail detail)> keys, Action complete);
         readonly Func<string, CollectionDetail, Action<GameObject?>, IDisposable> acquire;
-        readonly Func<IReadOnlyList<UnityEngine.Object>> destroyAndClear;
+        readonly Func<IReadOnlyCollection<(string id, CollectionDetail detail)>, IReadOnlyList<UnityEngine.Object>> destroyAndClear;
         readonly Action<string, CollectionDetail, GameObject?> answer;
         readonly Retire retire;
-        readonly List<IDisposable> owners = new List<IDisposable>();
+        readonly bool keyedRetirement;
+        readonly Dictionary<(string id, CollectionDetail detail), IDisposable> owners =
+            new Dictionary<(string, CollectionDetail), IDisposable>();
+        readonly Dictionary<(string id, CollectionDetail detail), int> requestVersions =
+            new Dictionary<(string, CollectionDetail), int>();
         HashSet<(string id, CollectionDetail detail)> active = new HashSet<(string, CollectionDetail)>(),
             latest = new HashSet<(string, CollectionDetail)>();
-        int generation;
+        int nextRequestVersion;
         bool retiring, disposed;
         readonly HashSet<(string id, CollectionDetail detail)> answered = new HashSet<(string, CollectionDetail)>();
         internal int PendingCount => active.Count(k => !answered.Contains(k));
@@ -45,59 +49,63 @@ namespace Statecraft.Game.Map.Collection
             active.Contains(key) && answered.Contains(key);
         public CollectionResidency(Func<string, CollectionDetail, Action<GameObject?>, IDisposable> acquire,
             Func<IReadOnlyList<UnityEngine.Object>> destroyAndClear, Action<string, CollectionDetail, GameObject?> answer, Retire retire)
-        { this.acquire = acquire; this.destroyAndClear = destroyAndClear; this.answer = answer; this.retire = retire; }
+            : this(acquire, _ => destroyAndClear(), answer, retire, false) { }
+        internal CollectionResidency(Func<string, CollectionDetail, Action<GameObject?>, IDisposable> acquire,
+            Func<IReadOnlyCollection<(string id, CollectionDetail detail)>, IReadOnlyList<UnityEngine.Object>> destroyAndClear,
+            Action<string, CollectionDetail, GameObject?> answer, Retire retire, bool keyedRetirement)
+        { this.acquire = acquire; this.destroyAndClear = destroyAndClear; this.answer = answer; this.retire = retire; this.keyedRetirement = keyedRetirement; }
 
         internal void Replace(IEnumerable<(string id, CollectionDetail detail)> demand)
         {
             if (disposed) return;
             latest = new HashSet<(string, CollectionDetail)>(demand); CollectionResidencyMetrics.MarkDirty();
-            if (retiring || active.SetEquals(latest)) return;
-            // Adding a near alias does not retire a still-needed far consumer.
-            if (active.IsSubsetOf(latest))
-            {
-                var added = latest.Except(active).ToArray();
-                active = new HashSet<(string, CollectionDetail)>(latest);
-                AcquireKeys(added); return;
-            }
-            Leave();
+            if (!retiring) Reconcile();
         }
-        void Leave()
+        void Reconcile()
         {
-            generation++; // No old answer may rebuild the departed view.
-            var oldKeys = active.ToArray(); active.Clear(); answered.Clear();
-            var oldOwners = owners.ToArray(); owners.Clear();
-            var instances = destroyAndClear(); // Must restore fallback/destroy and clear all prefab/renderer references first.
+            var removed = active.Except(latest).ToArray();
+            if (removed.Length != 0) { Leave(keyedRetirement ? removed : active.ToArray()); return; }
+            var added = latest.Except(active).ToArray();
+            active.UnionWith(added);
+            AcquireKeys(added);
+        }
+        void Leave(IReadOnlyCollection<(string id, CollectionDetail detail)> oldKeys)
+        {
+            // Invalidate only the departed callbacks. Still-demanded keys and their instances remain live.
+            foreach (var key in oldKeys) { active.Remove(key); answered.Remove(key); requestVersions.Remove(key); }
+            var oldOwners = oldKeys.Where(owners.ContainsKey).Select(key => owners[key]).ToArray();
+            foreach (var key in oldKeys) owners.Remove(key);
+            var instances = destroyAndClear(oldKeys); // Destroy/clear references before allowing a bundle unload.
             retiring = true;
-            retire(instances, oldOwners, oldKeys, () =>
+            retire(instances, oldOwners, oldKeys.ToArray(), () =>
             {
                 retiring = false;
-                if (!disposed) Admit();
+                Reconcile();
             });
-        }
-        void Admit()
-        {
-            active = new HashSet<(string, CollectionDetail)>(latest);
-            AcquireKeys(active);
         }
         void AcquireKeys(IEnumerable<(string id, CollectionDetail detail)> keys)
         {
-            int version = generation;
             foreach (var key in keys.OrderBy(k => k.id, StringComparer.Ordinal).ThenBy(k => k.detail).ToArray())
             {
-                if (disposed || version != generation) return;
+                if (disposed) return;
+                int version = ++nextRequestVersion;
+                requestVersions[key] = version;
                 var lease = acquire(key.id, key.detail, prefab =>
                 {
-                    if (!disposed && version == generation && active.Contains(key)) { answered.Add(key); answer(key.id, key.detail, prefab); CollectionResidencyMetrics.MarkDirty(); }
+                    if (!disposed && active.Contains(key) && requestVersions.TryGetValue(key, out int current) && current == version)
+                    { answered.Add(key); answer(key.id, key.detail, prefab); CollectionResidencyMetrics.MarkDirty(); }
                 });
                 // Synchronous fake/editor answers may tear down the owner.
-                if (disposed || version != generation) lease.Dispose(); else owners.Add(lease);
+                if (disposed || !active.Contains(key) || !requestVersions.TryGetValue(key, out int current) || current != version)
+                    lease.Dispose();
+                else owners[key] = lease;
             }
         }
         public void Dispose()
         {
             if (disposed) return;
             disposed = true; latest.Clear();
-            if (!retiring) Leave(); else generation++;
+            if (!retiring) Reconcile();
         }
     }
 

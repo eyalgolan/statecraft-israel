@@ -150,9 +150,26 @@ namespace Statecraft.Game.Map.Collection
                     Rebuild();
                 },
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
-                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
-            residency.Replace(Admitted().Select(w => (w.Model, CollectionDetail.Near)));
-            Rebuild();
+                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Near)));
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var removed = new List<UnityEngine.Object>();
+            foreach (var key in keys)
+            {
+                prefabs.Remove(key.id); asked.Remove(key.id);
+                if (!originals.TryGetValue(key.id, out var list)) continue;
+                foreach (var go in list) if (go != null)
+                {
+                    removed.Add(go);
+                    if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                }
+                originals.Remove(key.id);
+                Placed.RemoveAll(p => p.Model == key.id);
+            }
+            renderers.RemoveAll(r => r == null);
+            return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
         {
@@ -168,6 +185,7 @@ namespace Statecraft.Game.Map.Collection
                 if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             renderers.Clear(); Placed.Clear();
+            originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
         bool residencyDirty;
@@ -189,6 +207,7 @@ namespace Statecraft.Game.Map.Collection
         public readonly List<(string Key, string Model, Vector3 At)> Placed = new List<(string, string, Vector3)>();
         public bool FailedOpen { get; private set; }
         public bool LastClose { get; private set; }
+        readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
 
         public static SpecialBuildingModels? ShowAt(MapScene map, DateTime date)
         {
@@ -233,7 +252,7 @@ namespace Statecraft.Game.Map.Collection
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             var holes = new List<(Vector2 centre, float radius)>();
-            foreach (var w in Admitted())
+            foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
@@ -243,6 +262,8 @@ namespace Statecraft.Game.Map.Collection
                 taken.Add((at.Value, clearance));
                 holes.Add((at.Value, clearance));
                 var go = Instantiate(prefab, transform, false); go.name = w.Key;
+                if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
+                owned.Add(go);
                 go.transform.localRotation = Rotation(prefab.transform.localRotation, 0f);
                 var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
                 go.transform.localScale *= edge > 1e-3f ? SizeOf(w.Model) / edge : 1f;
