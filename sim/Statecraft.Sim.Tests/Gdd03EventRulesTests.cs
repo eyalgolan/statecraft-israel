@@ -317,7 +317,7 @@ public class Gdd03EventRulesTests
         "bernadotte_assassination:9263942438c459aad95b51c2569d1aa89cb2255f7278655e244121044e5755c4",
         "burma_road_complete:f48054bb7720b93b582cae4e168f13595a4360ee62e91e12815df08de384e6e3",
         "clothing_rationing_1950:2e33baac62ea7d12e36b9a5fd5237a128139671b8729c4841c967afdfa6dba60",
-        "degania_defence:47233f988033e4a7499e1e3df52a542fe252d2a32a5f1ac8d358887f676d4e23",
+        "degania_defence:735b0daa3b22a23680dbae2fac18944afc92239b5bc6c31dc50fb101d81daaa3", // re-pinned for #2020 (owner-approved Hebrew wording, 30 October 2026)
         "education_registration_1951:cce6e7f6ca42058ed265da888258cce7fc40407710bba98e028ad7801a351e11",
         "elections_1949:959ae7714c1a53a3df6766e6d191bc3490f3fa5b5d2972dd1b965a855106c110",
         "first_new_yishuv:9edf9e0da02c2feefe11eb52aa056ee64af60a41ac3fa2c283ff976f33d0e0c8",
@@ -329,7 +329,7 @@ public class Gdd03EventRulesTests
         "iraqi_exodus:62c43ba683f4981951829a72c0cae97b1ac8f11663472cccf73b46cefc1c60f5",
         "israel_bonds:b8f95f2ab683a4b88ca36b8a375d168a4bf5921ccb864e5504c45d66821bea08",
         "jerusalem_ceasefire:79d875217efb2d614538db27b405d9469d46fb61b5288651766611e5559a4643",
-        "jerusalem_demilitarisation_guard:c653ccecb5ad2a545c7d29ecb9af9688617264504a9118bcb2b691e3867aa646",
+        "jerusalem_demilitarisation_guard:93cec80c25ad328a0382c3178de10e133ea9a506ec78b3e038b7e25b7f6e2d62", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "jerusalem_military_government:322585aeedf0c69b9f81722edebaebbdc0d27ebb4e7b67d275e898607d2cd211",
         "latrun_proposal:f7612a99e1e6f378e6b9a91f36bb4c31e16de465e8bccb2785fea70bfe4e6932",
         "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
@@ -338,7 +338,7 @@ public class Gdd03EventRulesTests
         "operation_hiram:77657ee082201710acf8d1ab25979ddb5571261452e3a8c9ccc5d33e783177b7",
         "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
         "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
-        "rafah_force_pressure:353f3cd16452c30d6d2aebf3d45629d8c93cb314e969f99495476116ee3dc9a4",
+        "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
         "reparations_vote:a79521d61ec59aa72a581b6598ecfade18e8d1e52dc25cef083078b0665a13b3",

@@ -41,6 +41,8 @@ October 2026 the issue had only the owner's two status comments. This note is th
   here, as printed. German quotes are copied from the page, with thousands separators printed as full stops written as
   commas. Page numbers for the Congress volumes are the printed ones (the PDF position is in the Sources table).
 
+Every [V] in this note was an agent's reading on 2026-10-22; a person's check is pending for all of them.
+
 ## Sources
 
 | Key | Source | Where read |

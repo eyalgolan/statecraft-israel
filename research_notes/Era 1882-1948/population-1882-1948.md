@@ -32,6 +32,8 @@ verify* mark on the Jewish Virtual Library (JVL) total of 482,857 for 1919-1948,
 - "Page" is the printed page number of the source; "PDF p." is the page in the PDF file when it differs.
 - No quote is invented. The short quotes below are copied from the cited page.
 
+Every [V] in this note was an agent's reading on 2026-10-22; a person's check is pending for all of them.
+
 ## Sources
 
 | Key | Source | Where read |

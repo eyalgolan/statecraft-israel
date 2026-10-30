@@ -558,6 +558,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The end screen (#812) reuses the report's backdrop and panel: its outcome in the heading face, one line per part. */
 .end-screen-outcome { white-space: normal; margin-bottom: 10px; color: var(--gold-light); -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); }
 .end-screen-line { white-space: normal; margin-bottom: 6px; }
+/* The history note under a defeat line: quieter than the line above it, still above the contrast floor (--ink-dim on --navy). */
+.end-screen-note { white-space: normal; margin-bottom: 14px; color: var(--ink-dim); }
 .turn-report-actions { justify-content: flex-end; margin-top: 8px; flex-shrink: 0; }
 .turn-report-actions > Button { margin-left: 8px; }
 /* How to play's button that opens the opening advice again: under the lines, never squeezed by them. */
