@@ -113,6 +113,34 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
+        /// <summary>The first clear point just outside <paramref name="villageBounds"/>, on the side facing the nearest
+        /// mapped transport segment. Bearings beside that segment are tried symmetrically when the exact bearing is occupied.</summary>
+        internal static Vector2? RouteFacingEdgeSpot(Vector2 centre, Bounds villageBounds, float clearance,
+            IEnumerable<(List<Vector2> line, float halfWidth)> routes, Func<Vector2, float, bool> free)
+        {
+            Vector2 toward = Vector2.zero; float nearest = float.MaxValue;
+            foreach (var (line, _) in routes)
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = line[i]; var ab = line[i + 1] - a;
+                    float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(centre - a, ab) / ab.sqrMagnitude) : 0f;
+                    var q = a + ab * t; float d = (q - centre).sqrMagnitude;
+                    if (d < nearest && d > 1e-4f) { nearest = d; toward = (q - centre).normalized; }
+                }
+            if (toward == Vector2.zero) return null;
+            for (int i = 0; i < SpotAttempts; i++)
+            {
+                int step = i == 0 ? 0 : (i + 1) / 2 * (i % 2 == 1 ? 1 : -1);
+                float a = 2f * Mathf.PI * step / SpotAttempts, ca = Mathf.Cos(a), sa = Mathf.Sin(a);
+                var dir = new Vector2(toward.x * ca - toward.y * sa, toward.x * sa + toward.y * ca);
+                float tx = Mathf.Abs(dir.x) > 1e-5f ? (dir.x > 0f ? villageBounds.max.x - centre.x : centre.x - villageBounds.min.x) / Mathf.Abs(dir.x) : float.MaxValue;
+                float tz = Mathf.Abs(dir.y) > 1e-5f ? (dir.y > 0f ? villageBounds.max.z - centre.y : centre.y - villageBounds.min.z) / Mathf.Abs(dir.y) : float.MaxValue;
+                var p = centre + dir * (Mathf.Min(tx, tz) + clearance);
+                if (free(p, clearance)) return p;
+            }
+            return null;
+        }
+
         public static Quaternion Rotation(Quaternion prefabRotation, float yaw) =>
             Quaternion.AngleAxis(yaw, Vector3.up) * prefabRotation;
 
@@ -246,12 +274,25 @@ namespace Statecraft.Game.Map.Collection
                 && ground.Inside(p.x - r, p.y - r) && ground.Inside(p.x + r, p.y + r)
                 && !ground.Water(p.x, p.y) && !ground.OnRoute(p, r) && !ground.OnToken(p, r, date);
             var holes = new List<(Vector2 centre, float radius)>();
+            var kits = map.transform.Find(Kits.KitLayer.RootName);
             foreach (var w in Admitted())
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab) || prefab == null) continue;
                 var anchor3 = map.Frame.ToWorld(w.Lon, w.Lat, 0); var anchor = new Vector2(anchor3.x, anchor3.z);
                 float clearance = ClearanceOf(w.Model);
-                var at = SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
+                Vector2? at = null;
+                if (w.Key == "degania_r35" && kits != null)
+                {
+                    var rs = kits.Cast<Transform>().Where(t => t.name == "degania_alef" || t.name == "degania_alef" + Kits.KitLayer.CloseSuffix)
+                        .Select(t => t.GetComponent<Renderer>()).OfType<Renderer>().ToArray();
+                    if (rs.Length > 0)
+                    {
+                        var village = rs[0].bounds; for (int i = 1; i < rs.Length; i++) village.Encapsulate(rs[i].bounds);
+                        var footprint = map.KitFootprints.First(f => f.id == "degania_alef");
+                        at = RouteFacingEdgeSpot(footprint.centre, village, clearance, map.KitRouteCorridors, Free);
+                    }
+                }
+                at ??= SeededSpot(w.Key, anchor, clearance, Free, Inside(anchor, footprints));
                 if (at == null) { Debug.LogWarning($"BUILDINGS: no clear ground near {w.Key}; its {w.Model} is not drawn."); continue; }
                 taken.Add((at.Value, clearance));
                 holes.Add((at.Value, clearance));

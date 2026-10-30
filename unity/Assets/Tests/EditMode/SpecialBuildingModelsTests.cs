@@ -186,6 +186,36 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "hidden beyond the close zoom's exit");
         }
 
+        [Test]
+        public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide()
+        {
+            var map = OpenMap();
+            var layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll();
+            var tank = layer.Placed.Single(p => p.Key == "degania_r35");
+            var kits = map.transform.Find(Statecraft.Game.Map.Kits.KitLayer.RootName)!;
+            var bounds = kits.Cast<Transform>()
+                .Where(t => t.name == "degania_alef" || t.name == "degania_alef" + Statecraft.Game.Map.Kits.KitLayer.CloseSuffix)
+                .Select(t => t.GetComponent<Renderer>().bounds).ToArray();
+            Assert.IsNotEmpty(bounds, "Degania's far and close kit meshes define its drawn village bounds");
+            var at = tank.At; float clearance = SpecialBuildingModels.ClearanceOf(tank.Model);
+            foreach (var b in bounds) Assert.Greater(b.SqrDistance(at), 0f, "the R35 centre lies outside " + b);
+            var village = bounds[0]; for (int i = 1; i < bounds.Length; i++) village.Encapsulate(bounds[i]);
+            float edgeDistance = Mathf.Sqrt(village.SqrDistance(at));
+            Assert.That(edgeDistance, Is.InRange(0.01f, clearance + 1f), "the R35 is only its own clearance beyond the village edge");
+            var footprint = map.KitFootprints.Single(f => f.id == "degania_alef");
+            Vector2 nearest = Vector2.zero; float best = float.MaxValue;
+            foreach (var (line, _) in map.KitRouteCorridors)
+                for (int i = 0; i + 1 < line.Count; i++)
+                {
+                    var a = line[i]; var ab = line[i + 1] - a;
+                    float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(footprint.centre - a, ab) / ab.sqrMagnitude) : 0f;
+                    var q = a + ab * t; float d = (q - footprint.centre).sqrMagnitude;
+                    if (d < best) { best = d; nearest = q; }
+                }
+            Assert.Greater(Vector2.Dot(new Vector2(at.x, at.z) - footprint.centre, nearest - footprint.centre), 0f,
+                "the chosen village edge is on the side facing the nearest mapped transport segment");
+        }
+
         /// <summary>The owner on v0.1.1 (18 October 2026): Tal Heuberger's buildings were "way bigger then the train". The #707
         /// buildings stand at the #700 buildings' one world scale (an 8.5 m house as long as the steam train's locomotive car,
         /// about 204 m: 24x real): the fort, the factory and the shikun are 3 to 4 locomotive cars long, the barracks 2.5 to 3.25, and

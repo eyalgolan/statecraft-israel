@@ -112,6 +112,10 @@ namespace Statecraft.Game.Map.Collection
             foreach (var t in tents)
             {
                 var go = Instantiate(prefab, transform, false); go.name = Model; instances.Add(go);
+                // A streamed prefab may be stored inactive. Only its instance must be activated: otherwise HasModels is true
+                // and the fallback kit is hidden even though the replacement tent cannot draw. It is activated before it is
+                // measured because an inactive renderer reports empty bounds; the whole placement runs before the next frame.
+                go.SetActive(true);
                 // Sized in the model's own frame first, so its size does not depend on the yaw: its long side seen from above
                 // becomes the kit tent's length.
                 var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
@@ -147,9 +151,11 @@ namespace Statecraft.Game.Map.Collection
             residency?.Replace(Array.Empty<(string, CollectionDetail)>());
         }
         void OnDestroy() { residency?.Dispose(); residency = null; }
-        void LateUpdate()
+        void LateUpdate() => AdvanceCameraFrame(Time.frameCount);
+        internal void AdvanceCameraFrame(int frame)
         {
-            if (view != null && view.Prune(Time.frameCount)) dirty = true;
+            if (view != null && view.Prune(frame)) dirty = true;
+            foreach (int id in closeFor.Keys.Where(id => !view!.Observes(id)).ToArray()) closeFor.Remove(id);
             if (dirty) { dirty = false; Refresh(); }
         }
 

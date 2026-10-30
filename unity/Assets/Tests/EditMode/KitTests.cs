@@ -817,6 +817,67 @@ public class KitTests
         }
     }
 
+    [Test]
+    public void AnInactiveStreamedTentRootIsActivatedBeforeItReplacesTheKit()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("inactive streamed tent fixture");
+        var camGo = new GameObject("inactive streamed tent camera", typeof(Camera));
+        GameObject? inactive = null;
+        try
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            inactive = Object.Instantiate(asset); inactive.SetActive(false);
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (_, __, done) => { done(inactive); return new FakeLease(() => { }); };
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var tents = new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) };
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit, tents, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            camGo.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, camGo.GetComponent<Camera>());
+            Assert.IsTrue(layer.HasModels); Assert.IsTrue(kit.GetComponent<Renderer>().forceRenderingOff);
+            Assert.IsTrue(layer.Instances.All(i => i.activeInHierarchy), "the replacement that hides the fallback must itself be drawable");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo); if (inactive != null) Object.DestroyImmediate(inactive);
+        }
+    }
+
+    [Test]
+    public void ADeadTentCameraIsPrunedWhileAnotherCameraKeepsTheCampResident()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("tent camera pruning fixture");
+        var a = new GameObject("departed tent camera", typeof(Camera)); var b = new GameObject("resident tent camera", typeof(Camera));
+        try
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (_, __, done) => { done(prefab); return new FakeLease(() => { }); };
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit,
+                new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) }, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            foreach (var go in new[] { a, b }) go.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            layer.Choose(default, a.GetComponent<Camera>()); layer.Choose(default, b.GetComponent<Camera>());
+            var field = typeof(Statecraft.Game.Map.Collection.CampTentModels).GetField("closeFor",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var closeFor = (System.Collections.IDictionary)field.GetValue(layer)!;
+            Assert.AreEqual(2, closeFor.Count);
+            a.SetActive(false);
+            typeof(Statecraft.Game.Map.Collection.CampTentModels).GetMethod("LateUpdate",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(layer, null);
+            Assert.IsTrue(layer.Demanded, "the other camera keeps the camp resident");
+            Assert.AreEqual(1, closeFor.Count, "the inactive camera's hysteresis entry is released");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(a); Object.DestroyImmediate(b);
+        }
+    }
+
     /// <summary>The khaki tent model keeps its size whatever the tent's yaw: tents of one length at 0, 45 and 90 degrees get the
     /// same scale, turn by their yaw differences, and stand centred on their plots on the ground.</summary>
     [Test]
@@ -839,6 +900,8 @@ public class KitTests
             var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
                 .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
             Assert.AreEqual(tents.Length, models.Count);
+            Assert.AreEqual(60.0293f, models[0].localScale.x, 1e-3f,
+                "the shipped 60 m kit tent divided by the prefab's 0.999512 m top-down edge");
             // The premise of the turn: the model's long side seen from above lies along its own z once it stands up.
             var alone = Object.Instantiate(prefab);
             try
