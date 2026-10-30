@@ -217,6 +217,28 @@ public class EndScreenTests
         k.Dispose_End_Reload(En);   // the kit disposes it once more at the end
     }
 
+    /// <summary>#2041: in Hebrew an objective's line titles it as its decision card does - the Hebrew title_he where
+    /// there is no variant title, the English otherwise (EventCardPresenter's pick). English is unchanged, pinned by
+    /// ShowsEveryPartOfTheReportAndNothingElse. Red-first: Lines used the English EventSystem.Title in every language.
+    /// </summary>
+    [Test]
+    public void HebrewTitlesTheObjectivesAsTheirCardsDo()
+    {
+        using var k = new Kit(He, Ended);
+        var s = k.Bridge.State;
+        var lines = EndScreenPresenter.Lines(C, s, He);
+        foreach (var o in C.Objectives)
+        {
+            var card = C.Events.First(e => e.Id == o.Card);
+            var variant = Timeline.Variant(C, s, card);
+            Assert.IsTrue(variant == null || variant.Title == "", o.Id + " precondition: no variant title");
+            Assert.AreNotEqual("", card.TitleHe, o.Id + " precondition: the card has a Hebrew title");
+            var line = lines.Single(l => l.Name == "objective-" + o.Id).Text;
+            StringAssert.Contains(card.TitleHe, line, o.Id + ": the Hebrew line shows the card's Hebrew title");
+            StringAssert.DoesNotContain(EventSystem.Title(C, s, card), line, o.Id + ": not the English title");
+        }
+    }
+
     [Test]
     public void HebrewShowsTheHebrewWords()
     {

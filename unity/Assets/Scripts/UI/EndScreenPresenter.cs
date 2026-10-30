@@ -84,7 +84,11 @@ namespace Statecraft.Game.UI
             };
             foreach (var o in r.Objectives)
             {
-                var title = EventSystem.Title(c, s, c.Events.First(e => e.Id == o.Card));   // as the objective's card shows it
+                var card = c.Events.First(e => e.Id == o.Card);
+                var variant = Timeline.Variant(c, s, card);
+                // As the objective's card shows it (EventCardPresenter), in the UI's language (#2041): the Hebrew title_he
+                // where there is no variant title (a variant has no Hebrew), the English otherwise.
+                var title = ContentNames.Fill(t, c, s, s.Date, EventSystem.Title(c, s, card), variant == null || variant.Title == "" ? card.TitleHe : "");
                 lines.Add(("objective-" + o.Id, o.Completed is DateTime done
                     ? t.Format("end.objective_done", title, Date(done), Date(o.Historical))
                     : t.Format("end.objective_open", title, Date(o.Historical))));
