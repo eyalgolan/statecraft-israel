@@ -99,6 +99,29 @@ namespace Statecraft.Game.Map.Units
             nearAsked.RemoveWhere(id => !figures.Exists(f => f.Id == id));
         }
 
+        /// <summary>Stops using and destroys only a holder's camera-gated near clone. The independently owned far model
+        /// remains registered and visible while the near source lease completes its deferred retirement.</summary>
+        internal IReadOnlyList<UnityEngine.Object> RetireNear(Transform piece)
+        {
+            var holder = piece.Find(UnitFigures.ModelName);
+            if (holder == null) return Array.Empty<UnityEngine.Object>();
+            var figure = figures.Find(f => f.Holder == holder);
+            var near = holder.Find(NearName);
+            if (figure != null)
+            {
+                foreach (var renderer in figure.FarRenderers) if (renderer != null) renderer.forceRenderingOff = false;
+                foreach (var renderer in figure.NearRenderers) if (renderer != null) renderer.forceRenderingOff = true;
+                foreach (var animator in figure.Animators) if (animator != null) animator.enabled = false;
+                figure.NearRenderers = Array.Empty<Renderer>();
+                figure.Animators = Array.Empty<Animator>();
+            }
+            if (near == null) return Array.Empty<UnityEngine.Object>();
+            var original = near.gameObject;
+            if (Application.isPlaying) { near.SetParent(null); Destroy(original); } else DestroyImmediate(original);
+            UnitFigures.GeometryChanged();
+            return new UnityEngine.Object[] { original };
+        }
+
         void Arrived(string id)
         {
             if (this == null) return;   // the layer was rebuilt meanwhile

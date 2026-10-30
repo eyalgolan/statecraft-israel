@@ -152,6 +152,8 @@ namespace Statecraft.Game.Map.Units
         internal static int GeometryVersion { get; private set; }
         internal static void GeometryChanged() => GeometryVersion++;
         static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
+        static readonly Dictionary<(string id, CollectionDetail detail), int> ownedDetails =
+            new Dictionary<(string, CollectionDetail), int>();
         static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
         internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
             arrived.Keys.Concat(near.Keys).Concat(asked).Concat(waiting.Keys).Concat(nearWaiting.Keys), 0, asked.Count + nearWaiting.Count,
@@ -171,7 +173,7 @@ namespace Statecraft.Game.Map.Units
             callbacks.Add(answer);
             if (callbacks.Count == 1) Source(id, detail, prefab =>
             {
-                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !owned.ContainsKey(id)) return;
+                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !ownedDetails.ContainsKey(key)) return;
                 externalPending.Remove(key);
                 AnswerOwned(id, detail, prefab);
                 foreach (var done in callbacks.ToArray()) done(prefab);
@@ -180,25 +182,45 @@ namespace Statecraft.Game.Map.Units
         }
         sealed class Owner : IDisposable
         {
-            readonly string id; IDisposable? lease;
-            internal Owner(string id, IDisposable lease) { this.id = id; this.lease = lease; }
+            readonly string id; readonly CollectionDetail detail; IDisposable? lease;
+            internal Owner(string id, CollectionDetail detail, IDisposable lease) { this.id = id; this.detail = detail; this.lease = lease; }
             public void Dispose()
             {
                 if (lease == null) return;
                 lease.Dispose(); lease = null;
-                if (--owned[id] != 0) return;
-                owned.Remove(id); externalPending.Remove((id, CollectionDetail.Far)); externalPending.Remove((id, CollectionDetail.Near));
+                var key = (id, detail);
+                bool lastDetailOwner = --ownedDetails[key] == 0;
+                if (lastDetailOwner) ownedDetails.Remove(key);
+                bool lastModelOwner = --owned[id] == 0;
+                if (lastModelOwner) owned.Remove(id);
+                if (lastDetailOwner) externalPending.Remove(key);
+                if (lastModelOwner)
+                {
+                    externalPending.Remove((id, CollectionDetail.Far));
+                    externalPending.Remove((id, CollectionDetail.Near));
+                }
                 // A permanent legacy caller is an explicit retained blocker; never erase its still-live source cache.
                 if (legacyPinned.Contains(id)) return;
-                if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); near.Remove(id); nearWaiting.Remove(id);
+                if (lastDetailOwner)
+                {
+                    if (detail == CollectionDetail.Near) { near.Remove(id); nearWaiting.Remove(id); }
+                    else { if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); }
+                }
             }
         }
         internal static IDisposable AcquireOwned(string id, CollectionDetail detail, Action<GameObject?> answer,
             Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
         {
             owned.TryGetValue(id, out int count); owned[id] = count + 1;
-            try { return new Owner(id, (acquire ?? AcquireSource)(id, detail, answer)); }
-            catch { if (--owned[id] == 0) owned.Remove(id); throw; }
+            var key = (id, detail);
+            ownedDetails.TryGetValue(key, out int detailCount); ownedDetails[key] = detailCount + 1;
+            try { return new Owner(id, detail, (acquire ?? AcquireSource)(id, detail, answer)); }
+            catch
+            {
+                if (--owned[id] == 0) owned.Remove(id);
+                if (--ownedDetails[key] == 0) ownedDetails.Remove(key);
+                throw;
+            }
         }
         internal static void AnswerOwned(string id, CollectionDetail detail, GameObject? prefab)
         {
@@ -214,10 +236,14 @@ namespace Statecraft.Game.Map.Units
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetSession()
         {
-            if (owned.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
+            if (owned.Count != 0 || ownedDetails.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
             Forget(); Source = null; ModelArrived = null;
         }
-        public static void Forget() { externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear(); }
+        public static void Forget()
+        {
+            if (owned.Count == 0) ownedDetails.Clear();
+            externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear();
+        }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;

@@ -12,25 +12,32 @@ namespace Statecraft.Game.Map.Units
     public sealed class UnitFigureResidency : MonoBehaviour
     {
         string id = "";
-        CollectionResidency? residency;
+        CollectionResidency? residency, retainedFarResidency, retainedNearResidency;
         CollectionResidencyView? view;
         bool nearWanted, initialized, draws = true, retainFar;
         Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire;
         internal void Initialize(string model, CollectionResidencyPolicy policy,
-            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source, bool draw = true, bool retainFar = false)
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? source, bool draw = true, bool retainFar = false,
+            CollectionResidency.Retire? retirement = null)
         {
             if (initialized) { if (model != id) throw new InvalidOperationException("A live holder cannot change its original id."); return; }
             initialized = true; draws = draw; this.retainFar = retainFar; id = model;
             view = new CollectionResidencyView(policy); acquire = source;
-            residency = new CollectionResidency(Acquire, Clear, Answer,
-                (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("units", instances, owners, complete,
-                    Application.isPlaying && acquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
+            CollectionResidency Make(Func<IReadOnlyList<UnityEngine.Object>> clear) => new CollectionResidency(Acquire, clear, Answer,
+                retirement ?? ((instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("units", instances, owners, complete,
+                    Application.isPlaying && acquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys)));
+            if (retainFar)
+            {
+                retainedFarResidency = Make(Clear);
+                retainedNearResidency = Make(ClearNear);
+            }
+            else residency = Make(Clear);
             // The already-visible holder is its first demand. Roster holders keep Far for their whole lifetime; camera
             // observations subsequently bound only Near. Other consumers retain the original spatial residency behaviour.
             if (isActiveAndEnabled)
             {
-                if (!Application.isPlaying) Refresh(true);
-                else if (retainFar) Schedule(false);
+                if (retainFar) Refresh(false);
+                else if (!Application.isPlaying) Refresh(true);
             }
         }
         IDisposable Acquire(string model, CollectionDetail detail, Action<GameObject?> answer) =>
@@ -42,15 +49,34 @@ namespace Statecraft.Game.Map.Units
             if (detail == CollectionDetail.Far && prefab != null) UnitFigures.Swap(transform, model, prefab);
             if (detail == CollectionDetail.Near) UnitFigureDetail.Of(transform).OwnedArrived(model);
         }
-        internal CollectionResidencyMetrics.Category ResidencySnapshot() => CollectionResidencyMetrics.Row("units",
-            initialized && (retainFar || (isActiveAndEnabled && (!observed || view!.Keys.Contains(id)))) ? 1 : 0,
-            transform.Find(UnitFigures.ModelName)?.childCount ?? 0, initialized ? new[] { id } : Array.Empty<string>(),
-            residency?.OwnerCount ?? 0, residency?.PendingCount ?? 0, 0, 0, 0, 0, nearWanted ? new[] { id + "|Far", id + "|Near" } : new[] { id + "|Far" });
+        IEnumerable<(string id, CollectionDetail detail)> ActiveKeys() =>
+            (residency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>())
+                .Concat(retainedFarResidency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>())
+                .Concat(retainedNearResidency?.ActiveKeys ?? Array.Empty<(string, CollectionDetail)>());
+        internal CollectionResidencyMetrics.Category ResidencySnapshot()
+        {
+            var keys = ActiveKeys().Distinct().ToArray();
+            return CollectionResidencyMetrics.Row("units", keys.Length == 0 ? 0 : 1,
+                transform.Find(UnitFigures.ModelName)?.childCount ?? 0, keys.Select(key => key.id),
+                (residency?.OwnerCount ?? 0) + (retainedFarResidency?.OwnerCount ?? 0) + (retainedNearResidency?.OwnerCount ?? 0),
+                (residency?.PendingCount ?? 0) + (retainedFarResidency?.PendingCount ?? 0) + (retainedNearResidency?.PendingCount ?? 0),
+                0, 0, 0, 0, keys.Select(key => key.id + "|" + key.detail));
+        }
+        internal bool CameraResident => observed && view != null && view.Keys.Contains(id);
+        internal string ModelId => id;
+        internal bool RetainsFar => retainFar;
         void Refresh(bool nearAdmitted, bool releaseFar = false)
         {
+            if (retainFar)
+            {
+                retainedNearResidency?.Replace(isActiveAndEnabled && nearAdmitted && nearWanted
+                    ? new[] { (id, CollectionDetail.Near) } : Array.Empty<(string, CollectionDetail)>());
+                retainedFarResidency?.Replace(releaseFar ? Array.Empty<(string, CollectionDetail)>() : new[] { (id, CollectionDetail.Far) });
+                return;
+            }
             if (residency == null) return;
             var keys = new List<(string, CollectionDetail)>();
-            if ((!releaseFar && retainFar) || (isActiveAndEnabled && nearAdmitted)) keys.Add((id, CollectionDetail.Far));
+            if (isActiveAndEnabled && nearAdmitted) keys.Add((id, CollectionDetail.Far));
             if (isActiveAndEnabled && nearAdmitted && nearWanted) keys.Add((id, CollectionDetail.Near));
             residency.Replace(keys);
         }
@@ -87,16 +113,26 @@ namespace Statecraft.Game.Map.Units
             if (TryGetComponent<MeshRenderer>(out var code)) code.enabled = true;
             return gone;
         }
+        IReadOnlyList<UnityEngine.Object> ClearNear() => UnitFigureDetail.Of(transform).RetireNear(transform);
         void OnEnable()
         {
             RenderPipelineManager.beginCameraRendering += Choose;
-            if (initialized) { observed = false; if (!Application.isPlaying) Refresh(true); }
+            if (initialized)
+            {
+                observed = false;
+                if (retainFar) Refresh(false);
+                else if (!Application.isPlaying) Refresh(true);
+            }
         }
         void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= Choose;
             refreshPending = false; view?.Clear(); Refresh(false, releaseFar: !enabled);
         }
-        void OnDestroy() { residency?.Dispose(); residency = null; }
+        void OnDestroy()
+        {
+            residency?.Dispose(); retainedNearResidency?.Dispose(); retainedFarResidency?.Dispose();
+            residency = retainedNearResidency = retainedFarResidency = null;
+        }
     }
 }

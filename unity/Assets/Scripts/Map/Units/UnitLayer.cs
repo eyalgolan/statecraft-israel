@@ -51,26 +51,22 @@ namespace Statecraft.Game.Map.Units
             updatingPrefetch = true;
             try
             {
-                var needed = new HashSet<string>();
-                foreach (var token in candidates)
+                var rosterGateModels = new HashSet<string>(candidates.Where(token => token.Unit.Side != UnitData.Israel)
+                    .Select(token => UnitFigures.SideFigure(token.Unit.Side)).Where(id => id != null)
+                    .Select(id => id!), StringComparer.Ordinal);
+                foreach (var id in rosterGateModels)
                 {
-                    var ids = Enumerable.Range(0, token.Figures).Select(i => UnitFigures.FigureFor(token.Unit, i,
-                        token.Unit.Side == UnitData.Israel ? token.Headgear[i] : null))
-                        .Concat(token.Vehicles).Where(id => id != null).Distinct();
-                    foreach (var id in ids)
+                    // A foreign token cannot create its own figure holders until this side model passes Show's roster
+                    // gate. Keep one temporary owner per missing side model, never N+1 permanent owners beside the
+                    // roster figures; RetireSatisfiedPrefetch transfers ownership after Rebuild has drawn the token.
+                    if (!UnitFigures.Arrived(id) && !figurePrefetch.TryGetValue(id, out var owner))
                     {
-                        string key = token.Unit.Id + "|" + id; needed.Add(key);
-                        if (!figurePrefetch.TryGetValue(key, out var owner))
-                        {
-                            var holder = new GameObject("Original demand " + key); holder.transform.SetParent(transform, false);
-                            owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[key] = owner;
-                            holder.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
-                            owner.Initialize(id!, map.Residency.Units, null, draw: false, retainFar: true);
-                        }
-                        owner.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                        var holder = new GameObject("Roster gate demand " + id); holder.transform.SetParent(transform, false);
+                        owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[id] = owner;
+                        owner.Initialize(id, map.Residency.Units, null, draw: false, retainFar: true);
                     }
                 }
-                foreach (string key in figurePrefetch.Keys.ToArray()) if (!needed.Contains(key))
+                foreach (string key in figurePrefetch.Keys.ToArray()) if (!rosterGateModels.Contains(key))
                 {
                     var old = figurePrefetch[key]; figurePrefetch.Remove(key);
                     old.gameObject.SetActive(false);
@@ -78,6 +74,17 @@ namespace Statecraft.Game.Map.Units
                 }
             }
             finally { updatingPrefetch = false; }
+        }
+        void RetireSatisfiedPrefetch()
+        {
+            var heldByFigures = new HashSet<string>(tokensRoot.GetComponentsInChildren<UnitFigureResidency>(true)
+                .Where(owner => owner.RetainsFar).Select(owner => owner.ModelId), StringComparer.Ordinal);
+            foreach (string id in figurePrefetch.Keys.Where(id => heldByFigures.Contains(id)).ToArray())
+            {
+                var old = figurePrefetch[id]; figurePrefetch.Remove(id);
+                old.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
+            }
         }
         /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
         /// it (an Arab force's, issue #665).</summary>
@@ -318,6 +325,7 @@ namespace Statecraft.Game.Map.Units
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
             Rebuild();
+            RetireSatisfiedPrefetch();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
             return true;
