@@ -37,6 +37,22 @@ public class TownModelResidencyTests
         return bounds;
     }
 
+    static Camera CopyCamera(Camera source, string name)
+    {
+        var camera = new GameObject(name).AddComponent<Camera>();
+        camera.CopyFrom(source);
+        camera.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+        return camera;
+    }
+
+    static Camera GroundCamera(Vector2 focus, float distanceM, string name)
+    {
+        var camera = new GameObject(name).AddComponent<Camera>();
+        camera.transform.position = new Vector3(focus.x, distanceM, focus.y);
+        camera.transform.rotation = Quaternion.LookRotation(Vector3.down, Vector3.forward);
+        return camera;
+    }
+
     /// <summary>R2: the production camera centres a town on its sourced label point, also the kit-footprint centre. Some
     /// detailed instances do not cover that point; admission must therefore use the authoritative footprint union rather
     /// than treating the detailed-instance rectangle as the town itself.</summary>
@@ -50,7 +66,7 @@ public class TownModelResidencyTests
             var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
             var layer = map.GetComponentInChildren<TownModelLayer>(true);
             var rig = UnityEngine.Object.FindFirstObjectByType<CameraRig>();
-            var camera = rig.GetComponent<Camera>();
+            var rigCamera = rig.GetComponent<Camera>();
             var detailed = map.Settlements.Where(s => layer.CountFor(s.Id) > 0).OrderBy(s => s.Id, StringComparer.Ordinal).ToList();
             CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, detailed.Select(s => s.Id).ToArray(),
                 "the three reported towns must remain in the mapped detailed-model census");
@@ -67,19 +83,24 @@ public class TownModelResidencyTests
 
                 rig.LookAt = new Vector3(label.x, 0f, label.z); rig.Distance = ReportedCameraDistanceM;
                 rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
-                Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), town.Id + ": production ground focus");
-                var instances = InstanceBounds(layer, town.Id);
-                var instancePoint = focus; instancePoint.y = instances.center.y;
-                float instanceDistance = Mathf.Sqrt(instances.SqrDistance(instancePoint));
-                if (instanceDistance > 0f) outsideInstances.Add(town.Id);
-                float kitDistance = Mathf.Max(0f, Vector2.Distance(new Vector2(focus.x, focus.z), footprint.centre) - footprint.radius);
-                TestContext.WriteLine($"R2 {town.Id}: focus={focus}; instance_bounds={instances}; " +
-                    $"instance_distance={instanceDistance:0.###}m; " +
-                    $"kit_centre={footprint.centre}; kit_radius={footprint.radius:0.###}m; kit_distance={kitDistance:0.###}m");
+                var camera = CopyCamera(rigCamera, town.Id + " fresh residency camera");
+                try
+                {
+                    Assert.IsTrue(CollectionResidencyView.TryGroundFocus(camera, out var focus), town.Id + ": production ground focus");
+                    var instances = InstanceBounds(layer, town.Id);
+                    var instancePoint = focus; instancePoint.y = instances.center.y;
+                    float instanceDistance = Mathf.Sqrt(instances.SqrDistance(instancePoint));
+                    if (instanceDistance > 0f) outsideInstances.Add(town.Id);
+                    float kitDistance = Mathf.Max(0f, Vector2.Distance(new Vector2(focus.x, focus.z), footprint.centre) - footprint.radius);
+                    TestContext.WriteLine($"R2 {town.Id}: focus={focus}; instance_bounds={instances}; " +
+                        $"instance_distance={instanceDistance:0.###}m; " +
+                        $"kit_centre={footprint.centre}; kit_radius={footprint.radius:0.###}m; kit_distance={kitDistance:0.###}m");
 
-                Call(layer, "PrepareCamera", camera);
-                if (!(bool)Call(layer, "WantsTown", town.Id, camera)!) notAdmitted.Add(town.Id);
-                if (!(bool)Call(layer, "ReadyForTown", town.Id, camera)!) notReady.Add(town.Id);
+                    Call(layer, "PrepareCamera", camera);
+                    if (!(bool)Call(layer, "WantsTown", town.Id, camera)!) notAdmitted.Add(town.Id);
+                    if (!(bool)Call(layer, "ReadyForTown", town.Id, camera)!) notReady.Add(town.Id);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
             }
             CollectionAssert.IsSubsetOf(new[] { "jaffa", "jerusalem", "nazareth" }, outsideInstances,
                 "the regression evidence must keep covering the three reported focus points outside their instance rectangles");
@@ -87,6 +108,88 @@ public class TownModelResidencyTests
                 "a camera focused on each authoritative town footprint must admit that town's detailed models");
             CollectionAssert.IsEmpty(notReady,
                 "every admitted production town must have every required detailed-model kind");
+        }
+        finally
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    [Test]
+    public void FocusOutsideEveryFootprintAndInstanceBoundsAdmitsNothing()
+    {
+        const float FootprintRadiusM = 500f;
+        const float TownSeparationM = 4000f;
+        const float CircleAabbCornerShare = 0.8f;
+        const float OutsideFocusXM = FootprintRadiusM * CircleAabbCornerShare;
+        const float OutsideFocusZM = FootprintRadiusM * CircleAabbCornerShare;
+        var places = new[] { Place("jaffa", 0f), Place("tel_aviv", TownSeparationM) };
+        var footprints = new[] {
+            (centre: Vector2.zero, radius: FootprintRadiusM, id: "jaffa"),
+            (centre: new Vector2(TownSeparationM, 0f), radius: FootprintRadiusM, id: "tel_aviv") };
+        var selected = (string[])Call(null, "FocusedTownsWithFootprints", places, footprints,
+            new Vector3(OutsideFocusXM, 0f, OutsideFocusZM), null, null, 0f, 0f, 0f, 0)!;
+        CollectionAssert.IsEmpty(selected);
+    }
+
+    [Test]
+    public void InstanceBoundsStillAdmitOutsideTheKitFootprint()
+    {
+        const float InstanceCentreXM = 2000f;
+        const float FootprintRadiusM = 500f;
+        var places = new[] { Place("town", InstanceCentreXM) };
+        var footprints = new[] { (centre: Vector2.zero, radius: FootprintRadiusM, id: "town") };
+        var selected = (string[])Call(null, "FocusedTownsWithFootprints", places, footprints,
+            new Vector3(InstanceCentreXM, 0f, 0f), null, null, 0f, 0f, 0f, 0)!;
+        CollectionAssert.AreEqual(new[] { "town" }, selected);
+    }
+
+    [Test]
+    public void JaffaAndTelAvivSidesOfTheirSeamUseTheKitPartition()
+    {
+        const float ReportedCameraDistanceM = 11_800f;
+        const float SeamSampleShareOfCentreDistance = 0.02f;
+        const float NormalizedFootprintBoundary = 1f;
+        Assert.IsNotNull(typeof(TownModelLayer).GetMethod("ConfigureTownFootprints", Flags),
+            "production must provide the footprint configuration exercised by this seam test");
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        try
+        {
+            var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var layer = map.GetComponentInChildren<TownModelLayer>(true);
+            Assert.Greater(layer.CountFor("jaffa"), 0, "Jaffa remains a detailed town");
+            Assert.Greater(layer.CountFor("tel_aviv"), 0, "Tel Aviv remains a detailed town");
+            var gameTownIds = new HashSet<string>(map.Settlements.Select(s => s.Id), StringComparer.Ordinal);
+            var footprints = map.KitFootprints.Where(f => gameTownIds.Contains(f.id)).ToList();
+            var jaffa = footprints.Single(f => f.id == "jaffa");
+            var telAviv = footprints.Single(f => f.id == "tel_aviv");
+            var between = telAviv.centre - jaffa.centre;
+            var seam = jaffa.centre + between * (jaffa.radius / (jaffa.radius + telAviv.radius));
+            var offset = between * SeamSampleShareOfCentreDistance;
+            var samples = new[] { (id: "jaffa", other: "tel_aviv", point: seam - offset),
+                (id: "tel_aviv", other: "jaffa", point: seam + offset) };
+
+            foreach (var sample in samples)
+            {
+                var own = footprints.Single(f => f.id == sample.id);
+                var other = footprints.Single(f => f.id == sample.other);
+                float ownDistance = Vector2.Distance(sample.point, own.centre) / own.radius;
+                float otherDistance = Vector2.Distance(sample.point, other.centre) / other.radius;
+                Assert.LessOrEqual(ownDistance, NormalizedFootprintBoundary,
+                    sample.id + ": seam sample remains inside its footprint");
+                Assert.LessOrEqual(otherDistance, NormalizedFootprintBoundary,
+                    sample.id + ": seam sample remains in the Jaffa/Tel Aviv overlap");
+                Assert.Less(ownDistance, otherDistance, sample.id + ": kit normalized-distance partition owns this side of the seam");
+                var camera = GroundCamera(sample.point, ReportedCameraDistanceM, sample.id + " seam camera");
+                try
+                {
+                    Call(layer, "PrepareCamera", camera);
+                    Assert.IsTrue((bool)Call(layer, "WantsTown", sample.id, camera)!, sample.id + " side admits " + sample.id);
+                    Assert.IsFalse((bool)Call(layer, "WantsTown", sample.other, camera)!, sample.id + " side rejects " + sample.other);
+                }
+                finally { UnityEngine.Object.DestroyImmediate(camera.gameObject); }
+            }
         }
         finally
         {
@@ -262,6 +365,36 @@ public class TownModelResidencyTests
             field.SetValue(null, previous);
             UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(mesh); UnityEngine.Object.DestroyImmediate(material);
         }
+    }
+
+    static (string id, Bounds bounds)[] ConfiguredPlaces(TownModelLayer layer) =>
+        ((List<(string id, Bounds bounds)>)typeof(TownModelLayer).GetField("places", Flags)!.GetValue(layer)!).ToArray();
+
+    [Test]
+    public void ConfigureWholeTownsBeforeOrAfterFootprintsProducesTheSameCurrentPlaces()
+    {
+        const float FootprintRadiusM = 500f;
+        const float CurrentWholeTownXM = 12_000f;
+        const float StaleWholeTownXM = 16_000f;
+        var footprints = new[] { (centre: Vector2.zero, radius: FootprintRadiusM, id: "a") };
+        var current = new[] { (id: "current", bounds: new Bounds(new Vector3(CurrentWholeTownXM, 0f, 0f), Vector3.one)) };
+        var stale = new[] { (id: "stale", bounds: new Bounds(new Vector3(StaleWholeTownXM, 0f, 0f), Vector3.one)) };
+        using var footprintsFirst = new Fixture();
+        using var wholeTownsFirst = new Fixture();
+
+        Call(footprintsFirst.layer, "ConfigureTownFootprints", footprints);
+        Call(footprintsFirst.layer, "ConfigureWholeTowns", current);
+
+        Call(wholeTownsFirst.layer, "ConfigureWholeTowns", stale);
+        Call(wholeTownsFirst.layer, "ConfigureTownFootprints", footprints);
+        Call(wholeTownsFirst.layer, "ConfigureWholeTowns", current);
+
+        var expected = ConfiguredPlaces(footprintsFirst.layer);
+        var actual = ConfiguredPlaces(wholeTownsFirst.layer);
+        CollectionAssert.AreEqual(expected, actual);
+        CollectionAssert.AllItemsAreUnique(actual.Select(p => p.id).ToArray());
+        CollectionAssert.DoesNotContain(actual.Select(p => p.id).ToArray(), "stale",
+            "a whole-town entry configured before footprints must not be baked into the detailed-building places");
     }
 
     [Test]

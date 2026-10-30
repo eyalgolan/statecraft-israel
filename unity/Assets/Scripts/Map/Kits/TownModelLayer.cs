@@ -50,6 +50,7 @@ namespace Statecraft.Game.Map.Kits
         }
         internal System.Func<string, Camera, bool>? WholeTownReady;
         readonly List<(string id, Bounds bounds)> buildingPlaces = new List<(string, Bounds)>();
+        readonly List<(Vector2 centre, float radius, string id)> townFootprints = new List<(Vector2, float, string)>();
         internal static System.Func<string, Collection.CollectionDetail, System.Action<GameObject?>, System.IDisposable> ModelAcquire = Collection.CollectionStream.Acquire;
         sealed class Choice
         {
@@ -122,9 +123,36 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>C89: one town near camera focus and at most two immediate edge neighbours; no map-wide Near load.</summary>
         internal static string[] FocusedTowns(IReadOnlyList<(string id, Bounds bounds)> towns, Vector3 focus, string? previous, System.Func<IReadOnlyList<string>, string, bool>? edgeAllowance, float enterM, float exitM, float edgeM, int maxEdges)
+            => FocusedTownsWithFootprints(towns, System.Array.Empty<(Vector2, float, string)>(), focus, previous,
+                edgeAllowance, enterM, exitM, edgeM, maxEdges);
+
+        /// <summary>As <see cref="FocusedTowns"/>, with circular kit footprints partitioned by the same normalized-distance
+        /// ownership rule used to generate overlapping settlements.</summary>
+        internal static string[] FocusedTownsWithFootprints(IReadOnlyList<(string id, Bounds bounds)> towns,
+            IReadOnlyList<(Vector2 centre, float radius, string id)> footprints, Vector3 focus, string? previous,
+            System.Func<IReadOnlyList<string>, string, bool>? edgeAllowance, float enterM, float exitM, float edgeM, int maxEdges)
         {
             int primary = -1; float best = float.PositiveInfinity, bestCentre = float.PositiveInfinity;
+            var groundFocus = new Vector2(focus.x, focus.z);
+            var townIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var town in towns) townIds.Add(town.id);
+            var eligibleFootprints = new List<(Vector2 centre, float radius, string id)>();
+            foreach (var footprint in footprints) if (townIds.Contains(footprint.id)) eligibleFootprints.Add(footprint);
             for (int i = 0; i < towns.Count; i++)
+            {
+                for (int j = 0; j < eligibleFootprints.Count; j++)
+                {
+                    var footprint = eligibleFootprints[j];
+                    if (footprint.id != towns[i].id) continue;
+                    float normalized = SettlementKits.NormalizedFootprintDistance(groundFocus, footprint.centre, footprint.radius);
+                    if (normalized <= SettlementKits.FootprintBoundary && SettlementKits.OwnsFootprint(groundFocus, footprint.id, footprint.centre,
+                        footprint.radius, eligibleFootprints) && (normalized < best || (normalized == best &&
+                        (primary < 0 || string.CompareOrdinal(towns[i].id, towns[primary].id) < 0))))
+                    { primary = i; best = normalized; }
+                    break;
+                }
+            }
+            if (primary < 0) for (int i = 0; i < towns.Count; i++)
             {
                 float distance = GroundDistance(towns[i].bounds, focus);
                 if (towns[i].id == previous && distance <= exitM) { primary = i; break; }
@@ -175,7 +203,7 @@ namespace Statecraft.Game.Map.Kits
         /// while incomplete/missing replies keep fallback. No tile or unrelated town swaps on a partial global set.</summary>
         public void Init(IReadOnlyList<SettlementKits.ModelInstance> instances, TownModelSet? models, IReadOnlyList<(Renderer kit, Renderer? close)> swaps, IReadOnlyCollection<string>? townIds = null, IReadOnlyDictionary<Renderer, string>? rendererTownIds = null)
         {
-            RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear(); required.Clear();
+            RestoreRenderers(); ReleaseModels(); choices.Clear(); places.Clear(); buildingPlaces.Clear(); townFootprints.Clear(); required.Clear();
             string? why = models == null ? "the map scene has no model list" : models.Missing();
             streaming = models == null && Application.isPlaying;
             if (why != null && !streaming && !suppressMissingLog) Debug.LogError($"town models: {why}; the towns keep their kits at every zoom (issue #659)");
@@ -316,7 +344,7 @@ namespace Statecraft.Game.Map.Kits
             {
                 if (Collection.CollectionResidencyView.TryGroundFocus(cam, out var focus))
                 {
-                    next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTowns(places, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
+                    next = choice.hadFocus && focus == choice.focus && EdgeAllowance == null ? choice.selected : FocusedTownsWithFootprints(places, townFootprints, focus, choice.primary, EdgeAllowance == null ? null : (local, edge) =>
                     {
                         var admitted = new List<string>();
                         foreach (var c in OrderedChoices()) if (c.primary != null && !admitted.Contains(c.primary)) admitted.Add(c.primary);
@@ -365,23 +393,11 @@ namespace Statecraft.Game.Map.Kits
                 if (!models.TryGetValue(kind, out var model) || model.mesh == null || model.material == null) return false;
             return true;
         }
-        /// <summary>Expands each detailed town's instance rectangle to include its authoritative kit footprint. Camera
-        /// focus and town labels use the footprint centre, which need not fall among the surviving model placements.</summary>
+        /// <summary>Stores authoritative circular kit footprints separately from detailed-instance and whole-town bounds.
+        /// Camera focus and town labels use the footprint centre, which need not fall among surviving model placements.</summary>
         internal void ConfigureTownFootprints(IReadOnlyList<(Vector2 centre, float radius, string id)> footprints)
         {
-            var byTown = new Dictionary<string, (Vector2 centre, float radius)>(System.StringComparer.Ordinal);
-            foreach (var footprint in footprints) byTown[footprint.id] = (footprint.centre, footprint.radius);
-            for (int i = 0; i < places.Count; i++)
-            {
-                var place = places[i];
-                if (!byTown.TryGetValue(place.id, out var footprint)) continue;
-                var bounds = place.bounds;
-                float y = bounds.center.y;
-                bounds.Encapsulate(new Vector3(footprint.centre.x - footprint.radius, y, footprint.centre.y - footprint.radius));
-                bounds.Encapsulate(new Vector3(footprint.centre.x + footprint.radius, y, footprint.centre.y + footprint.radius));
-                places[i] = (place.id, bounds);
-            }
-            buildingPlaces.Clear(); buildingPlaces.AddRange(places);
+            townFootprints.Clear(); townFootprints.AddRange(footprints);
             foreach (var choice in choices.Values) choice.hadFocus = false;
         }
         internal void ConfigureWholeTowns(IReadOnlyList<(string id, Bounds bounds)> towns)
