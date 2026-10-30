@@ -374,6 +374,11 @@ namespace Statecraft.Game.UI
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
             DiagLog.BootPhase("units layer built");
+            // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
+            var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
+            var turnReport = report!;
+            turnReport.Showing += underAttack.Show;
+            owned.Add(new Undo(() => { turnReport.Showing -= underAttack.Show; underAttack.Clear(); }));
             var localitiesAt = LocalitiesAt(map);
             var townNamesHe = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe);
             var info = this.info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,

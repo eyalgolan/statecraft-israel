@@ -69,7 +69,8 @@ namespace Statecraft.Game.UI
         public bool ClosedThisFrame => closedAt == UnityEngine.Time.frameCount;
 
         /// <summary>The screen's lines for an ended game, in order: the outcome, the score, one per objective, Social cohesion,
-        /// International Support and the population with its CBS anchor. Every value is the report's.</summary>
+        /// International Support, the population with its CBS anchor and, when some went home, the prisoners returned. Every
+        /// value is the report's.</summary>
         public static IReadOnlyList<(string Name, string Text)> Lines(Content c, GameState s, UiText t)
         {
             var r = EndReport.For(c, s);
@@ -94,6 +95,7 @@ namespace Statecraft.Game.UI
             lines.Add(("population", r.PopulationHistory is PopulationAnchor a
                 ? t.Format("end.population_history", People(r.Population), Date(a.Date), People(a.Jews))
                 : t.Format("end.population", People(r.Population))));
+            if (r.PrisonersReturned > 0) lines.Add(("prisoners", t.Format("defence.prisoners_returned", r.PrisonersReturned)));   // Q-END-3; Defence's own string
             return lines;
         }
 
