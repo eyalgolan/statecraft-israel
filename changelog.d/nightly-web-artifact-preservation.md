@@ -1,0 +1,1 @@
+Preserve the completed gzip player before Unity builds the Pages variant, so Bee cannot retire files needed by packaging and browser gates. Existing release, source-cleanliness and publication gates remain in place.

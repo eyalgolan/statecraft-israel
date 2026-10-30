@@ -6,6 +6,29 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>Base for every fixture that enables the Camera map of the shared Assets/InputSystem_Actions.inputactions asset
+/// (#1903). The asset is one object for the whole editor session and keeps its resolved state across the Input System's
+/// save, reset and restore, so a fixture could enable the map against controls of devices it does not have (an
+/// IndexOutOfRangeException inside the Input System) or against another fixture's recycled device indices. Each fixture
+/// therefore starts with the asset's state dropped (code outside these fixtures, such as the editor's own input system,
+/// can have resolved it) and ends the same way. NUnit runs this SetUp after InputTestFixture's (the fixture's own input
+/// system is in place) and this TearDown before it (the fixture's devices still exist).</summary>
+public abstract class SharedCameraActionsFixture : InputTestFixture
+{
+    static void DropTheResolvedState()
+    {
+        var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+        Assert.IsNotNull(actions, "the shipped input asset must exist");
+        actions.Disable();
+        // Dispose drops the state all the maps share, so the next enable resolves from scratch against the live devices.
+        foreach (var map in actions.actionMaps) map.Dispose();
+    }
+
+    [SetUp] public void StartWithoutResolvedCameraActions() => DropTheResolvedState();
+
+    [TearDown] public void EndWithoutResolvedCameraActions() => DropTheResolvedState();
+}
+
 public class CameraInputTests
 {
     static CameraRig NewRig()
@@ -661,7 +684,7 @@ public class CameraInputTests
 /// test fixture, the project-wide Camera actions, and CameraController's frame (Tick, which Update calls), so a key that
 /// stops being read or a modifier that stops being passed on goes red. Edit mode sends no Awake/OnEnable/OnDisable, so
 /// the test sends them.</summary>
-public class CameraZoomKeysThroughTheInputSystemTests : InputTestFixture
+public class CameraZoomKeysThroughTheInputSystemTests : SharedCameraActionsFixture
 {
     static void Send(CameraController c, string message) =>
         typeof(CameraController).GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
@@ -760,7 +783,7 @@ public class CameraZoomKeysThroughTheInputSystemTests : InputTestFixture
 }
 
 // #1661 B1/S1/N1: real actions, independent of Ella's pointer fixture.
-public class PressOriginCameraInputTests : InputTestFixture
+public class PressOriginCameraInputTests : SharedCameraActionsFixture
 {
     static void Send(Object o, string method) => o.GetType().GetMethod(method,
         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(o, null);
@@ -1137,7 +1160,7 @@ public class PressOriginCameraInputTests : InputTestFixture
 /// in the macOS player, a stand-in here, since an edit-mode test cannot make a Cocoa magnify event). The owner found
 /// on 27 Oct 2026 that zooming did nothing in the macOS player: the wheel, a two-finger scroll and the keys did zoom
 /// there, but a pinch never reached the Input System at all.</summary>
-public class CameraPointerZoomThroughTheFrameTests : InputTestFixture
+public class CameraPointerZoomThroughTheFrameTests : SharedCameraActionsFixture
 {
     static void Send(Object o, string message) =>
         o.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!

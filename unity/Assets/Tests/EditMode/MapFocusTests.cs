@@ -382,7 +382,7 @@ public class MapFocusTests
 /// <summary>#41 B1b: the camera keys through the Input System's own path (a virtual keyboard from its test fixture and the
 /// project-wide Camera actions), with the map stop focused and its presenter listening: the same keys reach the stop as
 /// UI key events, the camera still pans, the focus stays on the stop and nothing is picked. Synchronous, as InputTestFixture allows in edit mode.</summary>
-public class MapFocusCameraKeysTests : InputTestFixture
+public class MapFocusCameraKeysTests : SharedCameraActionsFixture
 {
     static void Send(MonoBehaviour c, string message) =>
         c.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(c, null);
@@ -393,9 +393,6 @@ public class MapFocusCameraKeysTests : InputTestFixture
         var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
         InputSystem.actions = actions;
         var keyboard = InputSystem.AddDevice<Keyboard>();
-        // Resolve the shared asset against this fixture's own keyboard only. Earlier tests can leave it resolved against
-        // devices this fixture does not have, and enabling the Camera map then fails (a test isolation issue).
-        actions.devices = new InputDevice[] { keyboard };
         using var kit = new UiTestKit();
         kit.Q<VisualElement>("root").RemoveFromClassList("loading");
         var stop = kit.Q<VisualElement>("map-focus");
@@ -427,6 +424,6 @@ public class MapFocusCameraKeysTests : InputTestFixture
             Assert.AreSame(stop, kit.Root.panel.focusController.focusedElement, "the focus stays on the stop");
             Assert.AreEqual(0, picked, "a pan picks nothing");
         }
-        finally { presenter.Dispose(); Send(c, "OnDisable"); Object.DestroyImmediate(go); actions.devices = null; }
+        finally { presenter.Dispose(); Send(c, "OnDisable"); Object.DestroyImmediate(go); }
     }
 }

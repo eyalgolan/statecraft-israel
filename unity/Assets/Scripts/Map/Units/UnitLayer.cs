@@ -44,6 +44,8 @@ namespace Statecraft.Game.Map.Units
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
         bool updatingPrefetch;
         int seenAvailability = -1;
+        int seenGeometry = -1;
+        static readonly Predicate<MeshFilter> MissingMesh = mesh => mesh == null;
         void PrefetchFigures(IReadOnlyList<UnitToken> candidates)
         {
             updatingPrefetch = true;
@@ -121,6 +123,11 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Moved anchors made since the last placement (each is placed once, spot or not).</summary>
         readonly HashSet<UnitAnchor> movedNew = new HashSet<UnitAnchor>();
         Dictionary<UnitAnchor, AnchorSpot>? drawSpots;
+        Dictionary<UnitAnchor, AnchorSpot>? fixedGddSpots;
+        readonly List<AnchorSpot> reservedMapOnlySpots = new List<AnchorSpot>();
+        IReadOnlyDictionary<UnitAnchor, AnchorSpot> DisplaySpots =>
+            shownContent?.IsGdd == true && fixedGddSpots != null ? fixedGddSpots : spots;
+
         /// <summary>How many moved units' anchors the layer has placed (each once; the tests read it).</summary>
         public int MovedSpotsPlaced { get; private set; }
 
@@ -219,11 +226,23 @@ namespace Statecraft.Game.Map.Units
         /// <summary>As the render callback does: for a still render (the editor's promo captures, the tests), and for the map's
         /// names before they are placed (GameRoot), so the keep-clear boxes hold each badge and flag where this camera draws
         /// them: the badge's box is its own cube, not a box round every place the camera's yaw could take it (that box, about
-        /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation.</summary>
+        /// 3.7 km across, pushed Tel Aviv's name off its kit at gameplay03). No allocation while model geometry is unchanged.</summary>
         public void FaceCamera(Camera cam)
         {
             if (seenAvailability != UnitFigures.AvailabilityVersion && shownContent != null && shownState != null) Show(shownContent, shownState);
             if (cam == null) return;
+            bool geometryChanged = seenGeometry != UnitFigures.GeometryVersion;
+            seenGeometry = UnitFigures.GeometryVersion;
+            for (int i = 0; i < trios.Count; i++)
+            {
+                var trio = trios[i];
+                if (!geometryChanged && !Array.Exists(trio.meshes, MissingMesh)) continue;
+                // The holder survives residency; its imported children do not. Never retain their old filters.
+                trio.meshes = trio.figures.Where(f => f.figure != null)
+                    .SelectMany(f => f.figure.GetComponentsInChildren<MeshFilter>(true)).ToArray();
+                trios[i] = trio;
+                facedFor = null;
+            }
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
             facedFor = (eye, rotation);
@@ -276,7 +295,7 @@ namespace Statecraft.Game.Map.Units
                         UnitFlagFacing.Face(flag.transform, eye);   // as it will turn for this camera
                         s.Encapsulate(WorldBox(flag));
                     }
-                    foreach (var m in meshes) s.Encapsulate(WorldBox(m));   // the figures as turned
+                    foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m));   // the figures as turned
                     boxes[1] = s;
                 }
             }
@@ -287,6 +306,7 @@ namespace Statecraft.Game.Map.Units
         public bool Show(Content content, GameState state)
         {
             shownContent = content; shownState = state;
+            PrepareMapOnlySpots(content);
             // The GDD loop draws the army from the sim's units (GDD Phase 5 PR 14); the legacy loop keeps the rows and the call-up.
             var now = content.IsGdd
                 ? UnitRoster.FromState(units, content, state, _ => true, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
@@ -296,11 +316,65 @@ namespace Statecraft.Game.Map.Units
             if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
             roster = now;
             PlaceMoved(now);
-            placed = UnitPlacer.Place(now, drawSpots ?? spots);
+            placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
             Rebuild();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
             return true;
+        }
+
+        float DisplayReach(AnchorSpot spot) => Mathf.Max(ground.RingRadius(spot.Compact),
+            UnitPlinth.Radius(UnitPlinth.TrioWidth(UnitShowcase.FigureOffsets(3),
+                UnitShowcase.DrawSpread * ground.HexSizeM * Scale(spot))) * UnitPlinth.RimOuter);
+
+        bool DisplayOverlap(AnchorSpot a, AnchorSpot b)
+        {
+            double dx = a.X - b.X, dz = a.Z - b.Z;
+            return a.Q == b.Q && a.R == b.R || Math.Sqrt(dx * dx + dz * dz) < DisplayReach(a) + DisplayReach(b);
+        }
+
+        /// <summary>GDD starting forces keep their starting anchors after the source windows end. Reserve a fixed,
+        /// clear display spot for a map-only army that would otherwise share one. Computed once from data, before
+        /// date/model filtering: appearance never moves another token. The map's kit clearings and sourced spots stay intact.</summary>
+        void PrepareMapOnlySpots(Content content)
+        {
+            if (!content.IsGdd || fixedGddSpots != null) return;
+            fixedGddSpots = new Dictionary<UnitAnchor, AnchorSpot>();
+            foreach (var kv in spots) fixedGddSpots[kv.Key] = kv.Value;
+            var simRows = new HashSet<string>(content.StartingForces.Select(f => f.Row), StringComparer.Ordinal);
+            var starts = new List<AnchorSpot>();
+            foreach (var force in content.StartingForces)
+            {
+                var row = units.FirstOrDefault(u => u.Id == force.Row);
+                if (row == null || !UnitRoster.OnMap(row) || row.Service != UnitData.Army) continue;
+                var anchor = UnitRoster.AnchorAt(row, force.Arrives ?? content.Rules.Start);
+                if (anchor != null && spots.TryGetValue(anchor, out var start)) starts.Add(start);
+            }
+            foreach (var row in units.Where(u => UnitRoster.OnMap(u) && UnitRoster.MapOnly(u, simRows)))
+                foreach (var anchor in row.Anchors)
+                {
+                    if (!spots.TryGetValue(anchor, out var original)) continue;
+                    if (starts.Any(start => DisplayOverlap(original, start)))
+                    {
+                        var others = fixedGddSpots.Where(kv => !ReferenceEquals(kv.Key, anchor)).Select(kv => kv.Value).ToList();
+                        var taken = fixedGddSpots.Values.Select(s => (s.Q, s.R)).Distinct().ToList();
+                        var entry = new UnitEntry { Id = row.Id, Side = row.Side, Service = row.Service,
+                            Anchors = new List<UnitAnchor> { anchor } };
+                        bool found = false;
+                        int neighbourhood = 1 + 3 * UnitPlacer.MaxShift * (UnitPlacer.MaxShift + 1);
+                        for (int attempt = 0; attempt < neighbourhood; attempt++)
+                        {
+                            var candidates = ground.Place(new[] { entry }, XZ(map), null, taken);
+                            if (!candidates.TryGetValue(anchor, out var candidate)) break;
+                            if (!candidate.InTown && !others.Any(other => DisplayOverlap(candidate, other)))
+                            {
+                                fixedGddSpots[anchor] = candidate; reservedMapOnlySpots.Add(candidate); found = true; break;
+                            }
+                            taken.Add((candidate.Q, candidate.R));
+                        }
+                        if (!found) Debug.LogWarning($"UNITS {row.Id}: no safe fixed map-only display spot; overlapping source spot retained");
+                    }
+                }
         }
 
         /// <summary>Dims the listed unit rows' badges for this turn (each badge renderer at <see cref="DimShade"/> of its
@@ -344,15 +418,17 @@ namespace Statecraft.Game.Map.Units
         {
             var fresh = tokens.Where(t => movedNew.Remove(t.Anchor)).ToList();
             if (fresh.Count == 0) return;
-            var taken = tokens.Select(t => spots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
-                .Where(s => s != null).Select(s => (s!.Value.Q, s.Value.R)).ToList();
+            var taken = tokens.Select(t => DisplaySpots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
+                .Where(s => s != null).Select(s => (s!.Value.Q, s.Value.R))
+                .Concat(reservedMapOnlySpots.Select(s => (s.Q, s.R))).ToList();
             var entries = fresh.Select(t => new UnitEntry { Id = t.Unit.Id, Side = t.Unit.Side, Service = t.Unit.Service, Anchors = new List<UnitAnchor> { t.Anchor } }).ToList();
             foreach (var kv in ground.Place(entries, XZ(map), Debug.LogWarning, taken)) movedSpots[kv.Key] = kv.Value;
             // A sim unit with no clear spot within a hex is still drawn, compact on its own sim hex: left out, it could not
             // be seen or selected, and End turn waits for it (UnitPlacer.OnOwnHex). The spots are placed in token order.
             var toXZ = XZ(map);
-            var used = tokens.Select(t => spots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
-                .Where(s => s != null).Select(s => (s!.Value.X, s.Value.Z)).ToList();
+            var used = tokens.Select(t => DisplaySpots.TryGetValue(t.Anchor, out var s) ? s : movedSpots.TryGetValue(t.Anchor, out s) ? s : (AnchorSpot?)null)
+                .Where(s => s != null).Select(s => (s!.Value.X, s.Value.Z))
+                .Concat(reservedMapOnlySpots.Select(s => (s.X, s.Z))).ToList();
             foreach (var t in fresh)
             {
                 if (movedSpots.ContainsKey(t.Anchor) || t.StateUnit == null || !(shownContent?.HexAt(t.StateUnit.Q, t.StateUnit.R) is MapHex hex)) continue;
@@ -364,8 +440,8 @@ namespace Statecraft.Game.Map.Units
                 Debug.Log($"UNITS {t.Unit.Id} (unit {t.StateUnit.Id}) drawn compact on its own hex ({hex.Q},{hex.R})");
             }
             MovedSpotsPlaced += fresh.Count;
-            drawSpots = new Dictionary<UnitAnchor, AnchorSpot>(spots.Count + movedSpots.Count);
-            foreach (var kv in spots) drawSpots[kv.Key] = kv.Value;
+            drawSpots = new Dictionary<UnitAnchor, AnchorSpot>(DisplaySpots.Count + movedSpots.Count);
+            foreach (var kv in DisplaySpots) drawSpots[kv.Key] = kv.Value;
             foreach (var kv in movedSpots) drawSpots[kv.Key] = kv.Value;
         }
 
@@ -585,7 +661,7 @@ namespace Statecraft.Game.Map.Units
                 AddRenderer(badge.transform, "Glyph", MeshFor("badge-" + t.Unit.Service, () => UnitBadge.GlyphMesh(t.Unit.Service)), badgeGlyph, -UnitBadge.GlyphLift);
                 // The badge's cube and the pieces (the flag and the figures as they stand now); FaceCamera moves both with the camera.
                 var pieces = standing;
-                if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) s.Encapsulate(WorldBox(m)); pieces = s; }
+                if (pieces is Bounds s) { if (flag != null) s.Encapsulate(WorldBox(flag)); foreach (var m in meshes) if (m != null && m.sharedMesh != null) s.Encapsulate(WorldBox(m)); pieces = s; }
                 keepClear.Add(pieces is Bounds p2 ? new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM), p2 }
                     : new[] { new Bounds(badge.transform.position, Vector3.one * UnitBadge.SizeM) });
             }

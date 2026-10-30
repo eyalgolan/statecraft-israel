@@ -7,8 +7,9 @@ namespace Statecraft.Sim
     /// <summary>The end report (D-H4; GDD Phase 7 PR 7, #810), folding in #19's legacy report: what the end screen reads once
     /// <see cref="GameState.GameOver"/> is set. A pure reading of the final state and content (R-END-005): it computes no
     /// rule and writes nothing, so calling it twice gives the same report and leaves the hash as it was. The score is the
-    /// state's own total; its parts wait for #809, because <see cref="Objectives.Record"/> scores with the turn-start rules,
-    /// which a later reading cannot always recover across an era boundary.</summary>
+    /// state's own total and its parts are <see cref="Sim.ScoreParts.For"/>'s reading of what the state recorded as it scored
+    /// (#809, R-SCORE-001): <see cref="Objectives.Record"/> scores with the turn-start rules, which a later reading cannot
+    /// always recover across an era boundary, so nothing is recomputed here.</summary>
     public sealed class EndReport
     {
         /// <summary>Why the game ended, one of the <see cref="GameOverCodes"/> (PlayerText.GameOver words it).</summary>
@@ -17,6 +18,8 @@ namespace Statecraft.Sim
         public DateTime Date { get; }
         /// <summary><see cref="GameState.Score"/> as the game left it.</summary>
         public int Score { get; }
+        /// <summary>The parts of <see cref="Score"/> (R-SCORE-001); they sum to it.</summary>
+        public ScoreParts ScoreParts { get; }
         /// <summary>Every objective, in objectives.yaml's order (Q-CARD-2), completed or not.</summary>
         public IReadOnlyList<EndObjective> Objectives { get; }
         /// <summary>The GDD's two national parameters (0 to 1: morale shown as Social cohesion, intl_standing as International
@@ -29,10 +32,10 @@ namespace Statecraft.Sim
         /// before <see cref="Date"/>, with its sources; null when the game ended before the first anchor.</summary>
         public PopulationAnchor? PopulationHistory { get; }
 
-        EndReport(string outcome, DateTime date, int score, IReadOnlyList<EndObjective> objectives, double cohesion, double support,
+        EndReport(string outcome, DateTime date, int score, ScoreParts scoreParts, IReadOnlyList<EndObjective> objectives, double cohesion, double support,
             double population, PopulationAnchor? history)
         {
-            Outcome = outcome; Date = date; Score = score; Objectives = objectives; SocialCohesion = cohesion;
+            Outcome = outcome; Date = date; Score = score; ScoreParts = scoreParts; Objectives = objectives; SocialCohesion = cohesion;
             InternationalSupport = support; Population = population; PopulationHistory = history;
         }
 
@@ -47,7 +50,7 @@ namespace Statecraft.Sim
                 : new EndObjective(o.Id, o.Card, o.ReferenceDate, null, null)).ToList();
             // The anchors are few and dated; the latest one not after the end is the comparison (ties cannot happen: dates are unique).
             var history = c.PopulationAnchors.Where(a => a.Date <= s.Date).OrderBy(a => a.Date).LastOrDefault();
-            return new EndReport(s.GameOver, s.Date, s.Score, objectives, s.Indicators["morale"], s.Indicators["intl_standing"],
+            return new EndReport(s.GameOver, s.Date, s.Score, Sim.ScoreParts.For(s), objectives, s.Indicators["morale"], s.Indicators["intl_standing"],
                 s.TotalPopulation, history);
         }
     }

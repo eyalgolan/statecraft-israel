@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=schema/regions.schema.json
+# Exact gdd-0.3 only. Regional activation remains off.
+# Approved associations and unresolved geometry are retained in research_notes/.
+# No incomplete region is admitted to the runtime catalogue.
+player_regions: []

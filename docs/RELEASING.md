@@ -189,7 +189,9 @@ The gates, in order. The first one that fails ends the night as REFUSED, and not
 1. Preflight: `origin/main` differs from the last published nightly (otherwise the night is SKIPPED), at least 40 GB
    free, no `EXCLUSIVE-WINDOW` file, the Unity licence, editor and slot script present, and no release already holding
    tonight's tag, and no local or remote git tag of that name. First delete a stranded draft only when its tag
-   matches this job's saved `open_draft`, then check availability. Foreign drafts and published releases refuse.
+   matches this job's saved `open_draft` and its release ID matches `open_draft_id`, then check availability.
+   Foreign drafts and published releases refuse. Old state with an `open_draft` but no ID still loads; a same-tag
+   draft refuses with "check by hand" and is never deleted without an ID match.
    With `--no-publish`, leave the draft and state alone and refuse the collision.
 2. `build-sim`, then `scripts/check.sh origin/main` (`check`) and `scripts/oss/release_gate.sh` (`release-gate`), the
    same bar as a release.
@@ -219,22 +221,35 @@ nightly; without the line, an increase beyond 2% refuses the night. The new size
 last nightly (the tag points at the commit the night started from, even if `main` moves during the build), the assets
 checked against the local zips, the itch push when enabled (checked by build id and a fetch of the live files, and
 rolled back to the previous build if publication or its verification fails), the release made public with `--latest` and checked for
-`isPrerelease: false` and Latest, then `site.yml` started and the demo checked for the new version. Creation also uses
-`--latest`, without `--prerelease`. Right before create, the tag is checked again (no release, no local or remote git
-tag), so a release made during the build is refused and not touched; only then is ownership recorded and saved. A
-create that fails after leaving a draft (an asset upload failing) has that draft cleaned; rollback deletes only that
-run's unpublished draft, and only while GitHub shows it as a draft. Ownership is by tag: a draft someone else creates
-with the same tag in the second between that check and create would be treated as this run's. Owning a draft by its
-release ID, and retrying a failed Latest restore on the next run, are tracked in #1917. A saved stranded draft is cleaned before the next
-attempt; it never reaches `/demo/`, because `site.yml` skips drafts.
+`isPrerelease: false` and Latest, then `site.yml` started and the demo checked for the new version. Creation uses
+`gh api` through the same job runner, with `draft: true`, `prerelease: false` and `make_latest: "true"`.
+Right before create, the tag is checked again (no release, no local or remote git tag), so a release made during the
+build is refused and not touched. The create response's numeric release ID is saved as `open_draft_id` alongside
+`open_draft` before `gh release upload` starts. A failed upload can therefore clean its own draft. Cleanup and
+rollback first check that the tag still resolves to that ID and is still a draft, then delete through
+`gh api repos/<repo>/releases/<id> --method DELETE`, preserving git tags. A different or unknown ID refuses with
+"check by hand"; a replacement with the same tag is never the deletion target. If creation fails without returning
+a usable ID, ownership is not guessed and any stranded draft requires a check by hand. A saved draft with a matching
+ID is cleaned before the next attempt; it never reaches `/demo/`, because `site.yml` skips drafts. These ID ownership
+and persisted recovery guarantees complete the two hardening steps deferred from #1916 to #1917.
 Before publishing, read the current Latest separately from the previous nightly asset baseline and record it in
 `latest-before-publish.txt`. On any later failure, including publication verification or both site attempts, and only
 while the failed release is still Latest, restore that previous tag with `gh release edit <previous> --latest` and
 verify it; a Latest someone else set in the meantime is left alone and reported. The REFUSED line and
 `latest-rollback.log` name the previous Latest and the recovery result. With no previous Latest, explicitly report
-that fact and remove the failed release's Latest mark; report any failed recovery for manual repair. Published
+that fact and remove the failed release's Latest mark. Before attempting recovery, save
+`latest_recovery_pending: {"failed": "<tag>", "previous": "<previous Latest>"}` in `state.json`; `previous` is null
+when there was no Latest. A failed or unverified recovery keeps this record and reports "check by hand". At the
+start of the next publishing run, before preflight, the no-change skip or a pending site deploy, retry through the
+same guarded `restore_latest`. Only while the failed tag is still Latest may it edit Latest. A different Latest,
+including no Latest, is left alone and the record is cleared; a verified recovery also clears it. A failed retry
+keeps the record and refuses the run before anything publishes. Each outcome is logged and notified, including
+success and leaving Latest alone. `--no-publish` leaves pending recovery and state untouched and refuses until a
+publishing run can handle it. Old state files without the pending field load with no recovery pending. Published
 releases and tags are preserved. A site-only failure retains the new itch build and the public release, records
 the site deploy as pending, and restores the previous Latest after the second attempt.
+If the ownership checkpoint cannot be saved, refuse before upload and attempt only guarded cleanup of the known draft ID. If recovery state cannot be saved, still attempt the guarded Latest repair, then refuse before site dispatch or publication and report "check by hand". An unwritable state file cannot promise a durable retry record; preserve the saved file and report the unsaved-state error.
+
 Numeric tag components accept leading zeros: `v0.03.1` ties with `v0.3.1` and yields the normalized next tag `v0.3.2`.
 The no-change skip compares `state.json`'s last published SHA with `origin/main`, regardless of its saved tag name.
 

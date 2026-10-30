@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 /// default to <c>queueEventOnly: false</c>, so each call runs its own <c>InputSystem.Update</c>. A gesture written as
 /// three plain calls therefore spans three input updates, and the press edge is gone before <c>Tick</c> runs. To put a
 /// whole gesture inside one input update, every call but the last passes <c>queueEventOnly: true</c>.</para></summary>
-public class MapPointerTickTests : InputTestFixture
+public class MapPointerTickTests : SharedCameraActionsFixture
 {
     static void Send(Object o, string message) =>
         o.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(o, null);

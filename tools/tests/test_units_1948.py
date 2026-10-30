@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml12
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 UNITS = yaml12.load((ROOT / 'content/map/units_1948.yaml').read_text(encoding='utf-8'))['units']
@@ -267,8 +268,11 @@ def test_no_anchor_rests_on_one_source_where_the_note_says_contested():
     """arab-forces-1948.md section 8 and section 10. Latrun on 15 May rests on al-Tall alone (item 1), so no Legion
     anchor holds Latrun before 17 May; the Legion in Jerusalem on 15 May is contested (item 2), so none stands there.
     al-Malikiyya on 15 May is contested and ruled the ALA's (item 12; #226 ruling 2): an ALA anchor stands there and no
-    Lebanese one does; who held it on 11 June is contested, so no row stands there then. Every other anchor of an Arab
-    row cites at least two sources."""
+    Lebanese one does then. Who held it on 11 June is contested in the sources (item 13), so the ALA's anchor ends before
+    11 June. The one anchor there in that time is the Lebanese row's, from 6 June to 8 July 1948, by the owner's ruling of
+    28 October 2026 ("6 Jun to 8 Jul (Recommended)"), on Dupuy p. 47 and the JTA bulletins of 7 June (p. 1) and 8 June
+    (p. 3); it replaces, for that window only, ruling 2's "no row stands there then". Every other anchor of an Arab row
+    cites at least two sources."""
     rows = arab_rows()
     anchors = [(u, a) for u in rows for a in u['anchors']]
     assert anchors, 'the Arab forces have anchors (#740)'
@@ -277,9 +281,13 @@ def test_no_anchor_rests_on_one_source_where_the_note_says_contested():
         if u['side'] == 'jordan':
             assert not (near(a, *LATRUN) and day(a['from']) < date(1948, 5, 17)), f'{where}: Latrun on 15 May rests on al-Tall alone'
             assert not (near(a, *JERUSALEM_OLD_CITY, km=5) and covers(a, GAME_START)), f'{where}: the Legion in Jerusalem on 15 May is contested'
-        if near(a, *MALIKIYYA):
+        if near(a, *MALIKIYYA) and u['side'] == 'lebanon':
+            # The owner's ruling of 28 October 2026 ("6 Jun to 8 Jul (Recommended)"): exactly this window, on two sources.
+            assert (a['from'], a['to']) == ('1948-06-06', '1948-07-08'), f'{where}: the ruled window is 6 June to 8 July 1948'
+            assert len(books(a['sources'])) >= 2, f'{where}: rests on one source'
+        elif near(a, *MALIKIYYA):
             assert u['side'] == 'ala' and covers(a, GAME_START) and not covers(a, date(1948, 6, 11)), \
-                f'{where}: al-Malikiyya is the ALA\'s on 15 May (ruling) and nobody\'s row on 11 June (contested)'
+                f'{where}: al-Malikiyya is the ALA\'s on 15 May (ruling) and, but for the ruled Lebanese window, nobody\'s row on 11 June (contested)'
         else:
             assert len(books(a['sources'])) >= 2, f'{where}: rests on one source (a Wikipedia or Wikidata page for the coordinates does not count)'
     assert any(u['side'] == 'ala' and near(a, *MALIKIYYA) and covers(a, GAME_START) for u, a in anchors), 'the ALA at al-Malikiyya on 15 May'
@@ -328,3 +336,10 @@ def test_the_egyptian_force_has_its_forward_and_its_rear_base_at_the_truce():
         if u['side'] == 'israel':
             ends = [(day(a['from']), day(a['to'])) for a in u['anchors']]
             assert all(ends[i - 1][1] <= ends[i][0] for i in range(1, len(ends))), f"{u['id']}: an Israeli row is at one place at a time"
+
+
+@pytest.mark.parametrize("field", ["sector", "sector_he"])
+def test_lebanese_unit_card_sector_keeps_workflow_references_out_of_player_text(field):
+    # UnitCard displays these fields directly; authority belongs in sources/to_verify.
+    row = next(u for u in UNITS if u['id'] == 'lebanese_army')
+    assert not re.search(r"owner ruling|פסיקת הבעלים|#\d+", row[field]), field

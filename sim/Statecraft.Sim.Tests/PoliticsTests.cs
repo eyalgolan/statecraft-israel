@@ -75,4 +75,21 @@ public class PoliticsTests
         PoliticsSystem.ReportChanges(C, new System.DateTime(1949, 3, 1), new System.DateTime(1949, 3, 15), why);
         Assert.Contains(why, w => w.Message == "Government Two took office (Alpha, Beta)");
     }
+
+    [Fact]
+    public void PoliticalProducerArgsKeepSeatOrderAndPartyIds()
+    {
+        var legislature = new List<Cause>();
+        PoliticsSystem.ReportChanges(C, new DateTime(1949, 2, 1), new DateTime(1949, 3, 1), legislature);
+        var convened = Assert.Single(legislature, w => w.Target == "house");
+        Assert.Equal(CauseKeys.LegislatureConvened, convened.Key);
+        Assert.Equal(new[] { "4", "10" }, convened.Args); // unequal fixture counts discriminate a swap
+        var government = new List<Cause>();
+        PoliticsSystem.ReportChanges(C, new DateTime(1949, 3, 1), new DateTime(1949, 3, 15), government);
+        var installed = Assert.Single(government, w => w.Target == "gov2");
+        Assert.Equal(CauseKeys.GovernmentTookOffice, installed.Key);
+        Assert.Equal(new[] { "alpha|beta" }, installed.Args);
+        Assert.Equal("Government Two took office (Alpha, Beta)", installed.Message);
+    }
+
 }

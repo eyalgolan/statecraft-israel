@@ -78,6 +78,15 @@ gives the same day.
   Eyes: Sde Boker, the First 50 Years* (2007).
 - **Localities founded 1952-56 that no longer exist** are not in the CBS file and not in Gvati. They were not searched
   for. **[GAP]**
+  - (third pass, 29 Oct 2026) **Category check only, still [GAP].** I listed the members of the Hebrew Wikipedia
+    categories "יישובים שהוקמו ב-1952" to "יישובים שהוקמו ב-1956" (57, 53, 30, 49 and 35 members, MediaWiki API
+    `list=categorymembers`, run 29 Oct 2026; the same counts came back on a second run the same day. Category membership is a live list, not a page revision, so it has no oldid) and intersected them with "הנגב: יישובים" (224 members), "הנגב המערבי:
+    יישובים" (15) and "הערבה: יישובים" (44). Every locality that fell in the intersection is already a row of this
+    note (the other hits were a regional council, a subcategory and Sde Yoav, which is excluded above). A Negev
+    locality that was founded in 1952-56 and later abandoned would appear in these categories only if someone
+    categorised it, so this does not show that none exists. I also listed the 168 members of "היאחזויות נח"ל" by name;
+    I opened none of them, and none of the names is one I could tie to the Be'er Sheva subdistrict in 1952-56 without
+    opening it. Defunct localities stay **[GAP]**.
 
 ## Second pass on the [GAP] rows (26 Oct 2026)
 
@@ -107,6 +116,39 @@ was found for any row below, so every day stays [GAP].
   Nothing opened; the Kerem Shalom 1956 position stays **[GAP]**.
 - (26 Oct) **Israel Government Year-Book 5719 [1958]** (archive.org item `israelgovernment0000vari`): its metadata
   says `access-restricted-item: true` and the plain-text download returned HTTP 302 (not followed). Not read.
+
+## Third pass on the [GAP] rows (29 Oct 2026)
+
+Opened on 29 October 2026 after #1740 (the second pass above) merged; nothing above is changed, and each row's
+correction sits directly under its first-pass line. JTA was searched through the site's wp-json endpoint, which can
+bound the date range: `https://www.jta.org/wp-json/wp/v2/archive?search=<query>&after=<day>T00:00:00&before=<day>T00:00:00&per_page=100`
+(the `x-wp-total` header is the count below). The search is a loose full-text match, so a hit need not contain the
+word; I read the dates and titles of the hits listed here and opened none of them.
+
+| Query | After | Before | Count | What the hits were |
+|---|---|---|---|---|
+| `Nir Oz` | 1955-09-01 | 1955-12-31 | 0 | none |
+| `Nir-Oz` | 1955-09-01 | 1956-12-31 | 4 | dated 1956-04-11, 1956-05-01, 1956-05-02, 1956-10-31 (the 1956-04-11 item is the one read in the second pass) |
+| `Netivot` | 1956-01-01 | 1957-12-31 | 0 | none |
+| `Azata` | 1955-01-01 | 1957-12-31 | 0 | none |
+| `Eshel Hanasi` | 1951-01-01 | 1953-12-31 | 0 | none |
+| `Eshel` | 1952-01-01 | 1953-01-01 | 7 | titles on Austria and the Rosenberg case; none about Eshel HaNasi |
+| `Kerem Shalom` | 1956-01-01 | 1957-12-31 | 1 | one item dated 1957-06-03, after the outpost's founding |
+| `Dimona` | 1955-08-15 | 1956-01-31 | 7 | titles on other subjects; one dated 1955-12-05 about a new Negev road to Be'er Sheva, not opened |
+| `Ofakim` | 1955-03-01 | 1955-07-31 | 2 | titles on Egypt and on immigration totals; not opened |
+| `Mitzpe Ramon` | 1951-01-01 | 1957-01-01 | 0 | none |
+| `Ein Gedi` | 1952-01-01 | 1957-01-01 | 4 | dated 1954-01-06, 1954-04-20, 1955-10-03, 1956-05-11; titles on archaeology, border incidents and oil; not opened |
+| `Shibolim` | 1952-01-01 | 1952-12-31 | 0 | none |
+
+Result: no founding day was found for any row, so every day that was [GAP] or single-source stays as it was. What the
+pass changed: Giv'olim's first name is narrowed to Sharsheret C or D and tagged [C] (row 4), the 1956 Kerem Shalom
+outpost's place name is recorded (row 23), and the defunct-locality check is written down with its counts (the "Which Negev" section). Rows 5 and 24 were searched again and stay open.
+
+Reached or not on 29 Oct 2026: archive.org `advancedsearch.php` answered but returned 0 for the three queries I tried
+(`Azata Netivot 1956`, `Gvulot Nir-Oz Nahal 1955`, `Kerem Shalom Nahal 1956`); its full-text search endpoint returned
+HTTP 400, so no scanned CBS volume was searched. `https://www.sdotnegev.org.il/22/` and `https://www.eshkol.info/`
+returned HTTP 403 to `curl` with the research User-Agent; I did not change the User-Agent. Israeli archives, NLI and
+Knesset were not tried (known 403 from this box).
 
 ## Summary table
 
@@ -202,6 +244,16 @@ Common sources, cited by short name in every row:
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia, verbatim: "ונקרא בתחילה "שרשרת דג'"". The form "דג'" looks garbled
   (my reading); it may be meant as "Sharsheret D", which Hebrew Wikipedia also gives for Melilot (row 6). Not
   resolved. **[GAP]** for the exact temporary name.
+  - (third pass, 29 Oct 2026) **Narrowed to C or D, now [C].** Two other Hebrew Wikipedia pages number the chain. The
+    page "יישובי השרשרות" (https://he.wikipedia.org/w/index.php?oldid=44038952) says: "מושב שיבולים שהוקם אחריו כונה
+    שרשרת ב', מושב גבעולים כונה שרשרת ג' ומושב מלילות שהוקם אחרון כונה שרשרת ד'" (the page prints bold markup around
+    each name, which is left out here). The page "שרשרת (מושב)" (https://he.wikipedia.org/w/index.php?oldid=44038943)
+    says instead: "מושב שיבולים שהוקם אחריו כונה ”שרשרת ב'”, מושב מלילות כונה ”שרשרת ג'” ומושב גבעולים שהוקם אחרון
+    כונה ”שרשרת ד'”". So Giv'olim was "Sharsheret C" on one page and "Sharsheret D" on the other, and the same two pages
+    swap Melilot between D and C. The Giv'olim page's "דג'" is then most likely a typing slip for one of them (my
+    reading, not stated by any page). The Melilot page (oldid 44116741) says "שרשרת ד'" and the Shibbolim page (oldid
+    43649484) says "שרשרת ב'". Which of C and D the Jewish Agency used for Giv'olim is **[GAP]** (no primary source
+    read). **[C, Wikipedia]** for C versus D; opened 29 Oct 2026.
 - **Coordinates.** CBS 31.39682, 34.59153 (code 2014).
 - **Sources.** CBS; Gvati; https://he.wikipedia.org/w/index.php?oldid=44038960 ;
   https://en.wikipedia.org/w/index.php?oldid=1376015871 . All checked 2026-10-22.
@@ -216,6 +268,12 @@ Common sources, cited by short name in every row:
   that page differs between its two sections. Not in Gvati.
 - **Type.** Agricultural school and youth village (both Wikipedias). It is not a moshav or kibbutz.
 - **Founders. [GAP]** No founding group found; Hebrew Wikipedia names the village's first director.
+  - (third pass, 29 Oct 2026) Searched again and not found: a founding body. Read: Hebrew Wikipedia oldid 44014217 again:
+    the infobox field "מוצא המייסדים" is empty; the text says the school and youth village were set up "במטרה להעניק
+    חינוך חקלאי לנערים ולנערות מהמושבים שהוקמו באותן שנים בנגב הצפוני" and that the school "הוקם בסמוך למועצה אזורית
+    מרחבים ונועד לשרת את אוכלוסייתה" (link markup removed). That is the purpose and the neighbour, not a founding
+    body. JTA wp-json search (queries and counts under the third-pass section below): `Eshel Hanasi`, 1951-01-01 to
+    1953-12-31, 0 results. Founding body stays **[GAP]**.
 - **Renames.** None found. Name: after the tamarisk (eshel) and President Chaim Weizmann (both Wikipedias).
 - **Coordinates.** CBS 31.32592, 34.69744 (code 2021).
 - **Sources.** CBS; https://he.wikipedia.org/w/index.php?oldid=44014217 ;
@@ -470,6 +528,14 @@ Common sources, cited by short name in every row:
   Feinberg.
 - **Coordinates.** CBS 31.2277, 34.28432 (code 1085). This is the permanent site of 1971; the 1956 outpost's position
   is **[GAP]**.
+  - (third pass, 29 Oct 2026) **Place name of the 1956 outpost added; coordinates stay [GAP].** Hebrew Wikipedia
+    (oldid 43852688, opened 29 Oct 2026): "המקום נודע בעבר (במפות אנגליות) בשם "כרם אבו סאלֶם". ב-1956 הוקמה במקום
+    היאחזות נח"ל שנקראה "כרם אבשלום"", and "הקיבוץ עבר לנקודת הקבע שלו בשנת 1971". **[S, Wikipedia]** the 1956 outpost
+    stood at a place called Karm Abu Salem on English-language maps. The page gives no coordinates and does not say how
+    far the 1956 site lay from the 1971 one. English Wikipedia (oldid 1381101693) has no text on the first site. A
+    position would need the Survey of Palestine sheet or the Palestine Open Maps layer: https://palopenmaps.org/
+    answered HTTP 200 on 29 Oct 2026 but is a script-driven map page, I found no search endpoint that answered
+    (`/api/search?q=Karm` returned 404), and I did not search it for "Karm Abu Salem". Position stays **[GAP]**.
 - **Sources.** CBS; Gvati; https://he.wikipedia.org/w/index.php?oldid=43852688 ;
   https://en.wikipedia.org/w/index.php?oldid=1381101693 . All checked 2026-10-22.
 
@@ -477,6 +543,11 @@ Common sources, cited by short name in every row:
 
 - **Founded 1956. [V]** CBS: 1956. Hebrew Wikipedia: "נתיבות הוקמה בשנת 1956 כמעברה בשם "עזתה"" (founded 1956 as a
   ma'abara named Azata). English Wikipedia: "Netivot was founded in 1956". The day is **[GAP]**. Not in Gvati.
+  - (third pass, 29 Oct 2026) Searched again and not found: a day. Read: JTA wp-json search `Netivot`, 1956-01-01 to
+    1957-12-31, 0 results; `Azata`, 1955-01-01 to 1957-12-31, 0 results (URL form under the third-pass section
+    below). Hebrew Wikipedia (oldid 43786905) re-read: it gives the year only ("נתיבות הוקמה בשנת 1956 כמעברה בשם
+    "עזתה"") and lists the first head of the local council as serving 1956 to 1958 (printed with an en dash), which is not a founding day. Day
+    stays **[GAP]**.
 - **Founders. [S, Wikipedia]** Hebrew Wikipedia: immigrants from North Africa.
 - **Renames. [S, Wikipedia]** Hebrew Wikipedia: "בשנת 1957 שונה שמה ל"נתיבות"" (renamed Netivot in 1957); first name
   "Azata".
