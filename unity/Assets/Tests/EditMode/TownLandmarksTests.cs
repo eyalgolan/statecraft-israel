@@ -810,20 +810,35 @@ public class TownLandmarksTests
         }
     }
 
+    /// <summary>Was NoAdmissionLayerCannotFallBackToUnboundedWholeTownRequests: under ruling 29 no camera admission bounds a
+    /// whole town any more; the only bound is the map's Towns.Enabled kill switch.</summary>
     [Test]
-    public void NoAdmissionLayerCannotFallBackToUnboundedWholeTownRequests()
+    public void WholeTownsAndPlacementsAreBoundOnlyByTheTownsKillSwitch()
     {
+        var whole = new TownLandmarks.Want("town", TownLandmarks.TelAviv, Vector2.zero, 100, true);
+        var placement = new TownLandmarks.Want("placement", TownLandmarks.Kibbutz, Vector2.zero, 100, false);
         var root = new GameObject("no town policy");
         try
         {
             var towns = root.AddComponent<TownLandmarks>();
-            var whole = new TownLandmarks.Want("town", TownLandmarks.TelAviv, Vector2.zero, 100, true);
-            var placement = new TownLandmarks.Want("placement", TownLandmarks.Kibbutz, Vector2.zero, 100, false);
             // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns stay map-wide; only near detail is camera-gated.
             // Without a map there is no Towns.Enabled kill switch to consult: whole towns are allowed as placements are.
             Assert.IsTrue((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", whole)!);
             Assert.IsTrue((bool)ResidencyCall(towns, typeof(TownLandmarks), "Allowed", placement)!);
         }
         finally { Object.DestroyImmediate(root); }
+        using (var f = new ResidencyFixture(saved))
+        {
+            Assert.IsTrue((bool)ResidencyCall(f.towns, typeof(TownLandmarks), "Allowed", whole)!, "a map with towns enabled allows a whole town");
+            Assert.IsTrue((bool)ResidencyCall(f.towns, typeof(TownLandmarks), "Allowed", placement)!);
+            var enabled = typeof(ProductionResidency.TownPolicy).GetField("Enabled", ResidencyFlags)!;
+            enabled.SetValue(f.map.Residency.Towns, false);
+            try
+            {
+                Assert.IsFalse((bool)ResidencyCall(f.towns, typeof(TownLandmarks), "Allowed", whole)!, "the kill switch bounds whole towns");
+                Assert.IsFalse((bool)ResidencyCall(f.towns, typeof(TownLandmarks), "Allowed", placement)!, "and placement landmarks");
+            }
+            finally { enabled.SetValue(f.map.Residency.Towns, true); }
+        }
     }
 }

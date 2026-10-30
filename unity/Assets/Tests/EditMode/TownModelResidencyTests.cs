@@ -142,12 +142,11 @@ public class TownModelResidencyTests
             var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
             var layer = map.GetComponentInChildren<TownModelLayer>(true);
             layer.EdgeAllowance = null;
-            // Admission chooses among the layer's detailed towns (its places). 1948 localities also have model instances
+            // Pan targets are the game's towns (map.Settlements, from content). 1948 localities also have model instances
             // (CountFor > 0) but stand in merged locality tiles and are never admitted as a town (#1800 design; see
             // TownLandmarksTests.ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown), so they are not pan targets.
-            var admissible = ((IReadOnlyList<(string id, Bounds bounds)>)typeof(TownModelLayer).GetField("places", Flags)!.GetValue(layer)!)
-                .Select(place => place.id).ToHashSet(StringComparer.Ordinal);
-            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0 && admissible.Contains(f.id))
+            var gameTowns = map.Settlements.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+            var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0 && gameTowns.Contains(f.id))
                 .OrderBy(f => f.id, StringComparer.Ordinal).ToList();
             var nestedPairs = new List<((Vector2 centre, float radius, string id) from,
                 (Vector2 centre, float radius, string id) to)>();

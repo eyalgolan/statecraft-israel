@@ -92,7 +92,10 @@ public class CollectionOtherLeaveTests
         Assert.Greater(acquired, 0); Assert.AreEqual(0, released, "no lease retires on leave");
         Assert.Greater(layer.transform.childCount, 0, "the late answers of a map-wide demand draw");
         Object.DestroyImmediate(layer.gameObject);
+        int objects = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
         foreach (var done in pending.ToArray()) done(prefab);   // answers after teardown rebuild nothing and throw nothing
+        Assert.AreEqual(objects, Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length,
+            "a late answer after teardown creates no instance");
         Assert.AreEqual(acquired, released);
     }
     GameObject Piece(string name)

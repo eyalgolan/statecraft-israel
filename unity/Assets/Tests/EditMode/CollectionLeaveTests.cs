@@ -101,11 +101,12 @@ public class CollectionLeaveTests
         // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": Far stays map-wide; only Near loads/unloads by camera.
         // Leaving keeps every Far original and its lease, and retires (destroys and releases) every Near one.
         int far = FarCount(layer), nearFirst = Acquired(CollectionDetail.Near);
-        if (isRural) Assert.Greater(nearFirst, 0, "the rural scenes took Near leases at 10 km");
+        Assert.Greater(far, 0, "Far originals are drawn at 10 km");
+        Assert.Greater(nearFirst, 0, "the close 10 km camera took Near leases (people and rural)");
         Assert.AreEqual(nearFirst > 0, NearInstances(layer) > 0, "Near leases have Near instances");
         Camera(layer, 250000);
         Assert.AreEqual(far, FarCount(layer), "leaving keeps every map-wide Far original");
-        Assert.IsTrue(first != null, "the Far instances are not rebuilt");
+        Assert.AreSame(first, layer.transform.GetChild(0), "the Far instances are not rebuilt");
         Assert.AreEqual(0, NearInstances(layer), "hiding is not retirement");
         Assert.AreEqual(Acquired(CollectionDetail.Near), Released(CollectionDetail.Near), "every old Near lease retired");
         Assert.AreEqual(0, Released(CollectionDetail.Far), "no Far lease retires on leave");
@@ -124,7 +125,7 @@ public class CollectionLeaveTests
         foreach (var answer in delayed.ToArray()) answer(prefab);
         // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": Far stays map-wide; only Near loads/unloads by camera.
         // A Far demand never left, so its late answer draws; a late Near answer for the departed view cannot.
-        if (isRural) Assert.Greater(Acquired(CollectionDetail.Near), 0, "the rural scenes asked for Near at 10 km");
+        Assert.Greater(Acquired(CollectionDetail.Near), 0, "the close 10 km camera asked for Near (people and rural)");
         Assert.AreEqual(0, NearInstances(layer), "no Near original is resurrected");
         Assert.AreEqual(Acquired(CollectionDetail.Near), Released(CollectionDetail.Near), "every departed Near lease retired");
         Assert.AreEqual(0, Released(CollectionDetail.Far), "the map-wide Far leases are kept");
