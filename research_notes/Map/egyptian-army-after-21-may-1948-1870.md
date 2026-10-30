@@ -145,3 +145,33 @@ not opened as images and are not cited. The 10 June item (bulletin of 11 June) w
 - The Israeli view of the truce line (the IDF history, the State Archives) and the Egyptian official account.
 - Morris, *1948* (lending copy, not opened).
 - The day of the Egyptian arrival at Majdal, and the exact date the force entered Isdud/Ashdod beyond Dupuy's 29 May (en.wiki, via `research_notes/M4 war mode/war-1948.md` line 120: stopped on 28 May at a destroyed bridge north of Isdud) [C].
+
+## Remaining slice (30 October 2026): first-truce positions and the inland column on 11 June and 8 July
+
+Refs #1870. This section adds to the note above; nothing above is changed. Tag for what an agent read on 30 October 2026:
+`[V, agent read 2026-10-30; a person's check pending]`. The UN document was opened from the UN Digital Library (record 703168,
+`https://digitallibrary.un.org/record/703168/files/A_648-EN.pdf`, 57 PDF pages) and the printed pages 38 and 41 were viewed as images.
+The Mediator's report is Supplement No 11 for the Third Session of the General Assembly; its body text mentions 8 and 14 September 1948 (pp. 38, 41), so it is not a first-truce dispatch.
+
+| Position asked for | Result | Source and page | Printed text | Tag |
+|---|---|---|---|---|
+| Egyptian force, first truce (11 June to 8 July): a UN dated line | Narrowed: the Mediator states that the first-truce observers could not establish the front lines as they stood at the start of the truce (the same paragraph says lines were later settled and mapped for the second truce) | United Nations Mediator, Progress Report, UN doc. A/648, printed p. 38, "The operation of the truce supervision", para. 9 | "One of the shortcomings of the first truce was the inability of the observers to establish the status of the front lines as they existed at the time of the commencement of the truce." | [V, agent read 2026-10-30; a person's check pending] |
+| Egyptian force, truce period: the two groups | Narrowed: a UN statement that Egyptian forces were in Gaza and in "the area south of Jerusalem", with "the crossroads near El Faluja" the one neither side had let the other use. The paragraph is in the Mediator's report of September and carries no date inside the truces, and its Negeb problem is said to have been "only recently solved" | A/648, printed p. 41, para. 22 | "The Egyptian supply lines from their forces in Gaza to those in the area south of Jerusalem cut across the Jewish supply lines from Tel-Aviv to the Negeb. Neither side had permitted the other to use the crossroads near El Faluja." | [V, agent read 2026-10-30; a person's check pending] |
+| Truce Supervision Board's rule for that road | Facts, same paragraph: the Board "decided that the Jews and the Egyptians could each use the road exclusively for six hours daily, under United Nations supervision" (the Mediator confirmed the decision on 14 September, in the second-truce period; the Board's own date is not printed) | A/648, printed p. 41, para. 22 | as quoted | [V, agent read 2026-10-30; a person's check pending] |
+| Inland column on 8 July | Not closed. An Israeli representative's report (not a position list): "Egyptian forces had, in fact, attacked Israeli positions south of Tel Aviv before the end of the truce" (US memorandum of conversation, 8 July). It places the Egyptian attack, not the inland column | FRUS 1948 vol. V part 2, doc. 445, p. 1198 for the quoted sentence (document runs on to p. 1199; raw TEI, HistoryAtState/frus, `volumes/frus1948v05p2.xml`) | "he had received word that the Arabs were not willing to accept the extension of the truce, and that Egyptian forces had, in fact, attacked Israeli positions south of Tel Aviv before the end of the truce" | [V, agent read 2026-10-30; a person's check pending] [C] with Dupuy p. 81 (6:00 a.m. on 8 July) and JTA 11 July: one side's claim, the same day, no place named inland |
+| Inland column on 11 June | [GAP] beyond the existing AP 13 June claim and Dupuy p. 80 | none new | none | [GAP] |
+| Inland column on 8 July | [GAP] beyond Dupuy p. 80 (the brigade "held Beersheba and the area north to Hebron and Bethlehem" at the end of the first truce) | none new | none | [GAP] |
+
+### What this changes in "Open gaps"
+
+- (second pass, 30 Oct) The "UN observers' reports" gap: the Mediator's Progress Report A/648 was opened (the earlier note recorded undocs.org as a JavaScript shell; the UN Digital Library serves the PDF). It says the first-truce observers could not establish the front lines as they stood at the start of that truce (p. 38); it does not list Egyptian positions. The separate observer reports of June 1948 (S/ series) were not found: the Digital Library search for `A/648` returned 22 records, and keyword searches in the XML interface returned empty collections (3 queries: "Egyptian Negeb truce 1948 Mediator", "Bernadotte Egyptian forces truce July 1948", "Egyptian positions Palestine truce 1948"). Not reached, so [GAP].
+- (second pass, 30 Oct) The inland column on 11 June and 8 July stays [GAP]. The A/648 sentence above is a September report with no date inside the truces, so it does not date the column on 11 June or 8 July, and the earlier note's only dated source is still the AP 13 June claim.
+
+### Search log for this section (30 October 2026, built-in tools, no Tavily key)
+
+| Query | Site | Count | Read |
+|---|---|---|---|
+| `A/648` | UN Digital Library XML search | 22 records | A/648 record 703168 (EN PDF, 57 pages): searched by text for Egypt, Beersheba, Hebron, Faluja, Majdal, Isdud, Ashdod, Bethlehem, Beit Jibrin, Iraq Suwaydan, Auja, Gaza, Negev: the Faluja and Gaza hits on printed pages 38 and 41 read as images; the Faluja hits at line 1257 and 1260 of the text extraction are Bernadotte's frontier proposals (not read as positions); Hebron 4 and Gaza 14 are observer postings of 8 September 1948 |
+| Egyptian + Beersheba, Hebron, Faluja, Majdal, Isdud, Gaza, Negeb, Bethlehem, lines, positions, front, in documents dated 10 June to 9 July 1948 | FRUS 1948 vol. V part 2, raw TEI | 1 document (doc. 445) | read as the row above |
+| three keyword searches (see above) | UN Digital Library XML search | 0 records each | none |
+| `unispal.un.org/pdfs/A648.pdf`, `un.org/unispal/document/...` | UNISPAL | 404, 403 | none; not tried further |
