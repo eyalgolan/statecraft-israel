@@ -34,9 +34,28 @@ The camp is `kiryat_shmuel_camp_haifa`. Only its design `region_binding` becomes
 
 ## Schema adaptation and activation
 
-The follow-up adaptation supplies `research_notes/gdd03-regions.schema-input.yaml`, mapping each region's id, capital, full member-id list, disclaimer, provenance, capital approval, binding status and opening control to the shared geography schema. All nine original `boundary_hexes` are null. The follow-up schema `member_hexes` lists are empty, an explicit absence of geometry. Candidate marker hexes are preserved only in the evidence ledger; they are not substituted for full extents.
+The follow-up adaptation supplies `research_notes/gdd03-regions.schema-input.yaml`, mapping each region's id, capital, full member-id list, disclaimer, provenance, capital approval, binding status and opening control to the shared geography schema. All nine original `boundary_hexes` remain null historical-evidence fields. Under the owner ruling of 30 October 2026, verbatim choice **“C: sub-district, then Amir adjusts”**, `tools/gdd03_region_hexes.py` now derives the design `member_hexes` from each region's `reference_subdistricts`; these are design regions, not a claim that the Mandate sub-districts were Israeli administrative regions. The lists use runtime canonical order (q, then r). Amir's later named-hex adjustments are not anticipated here.
 
-**All nine rows fail the strict loader** at `player_regions[0].member_hexes` when submitted separately: `galilee`, `valleys`, `haifa_sharon`, `tel_aviv_jaffa`, `central_plain`, `jerusalem_hills`, `northern_hills`, `southern_coast`, `negev`. A combined submission stops at the first row. Later placement/identity/overlap checks are not reached; they are not claimed to pass. Haifa-Sharon's 52 and Jerusalem's 61 named associations do not resolve their boundaries or place bindings.
+The generated partition claims 410 mapped land hexes: Galilee 25; Valleys 22; Haifa-Sharon 31; Tel Aviv-Jaffa 6; Central Plain 14; Jerusalem Hills 68; Northern Hills 36; Southern Coast 18; Negev 190. The other 460 mapped land hexes are the source layer's `outside` sub-district and remain in no player region. No hex is claimed twice. The strict loader now advances from geometry into named-place validation; unresolved place rows below are not silently reassigned.
+
+Owner ruling on farming, 30 October 2026: **“Yes, same region”**. This generator does not change the separately approved opening allocations, capitals or approvals.
+
+### Place-binding exceptions after sub-district generation
+
+The generator derives a place binding only where the evidence supplies one unambiguous sub-district or an already authored candidate hex agrees with the generated region. These exception rows remain unchanged and require human review; absence is not guessed from a nearby place.
+
+| Status | Region | Place(s) | Exception |
+| --- | --- | --- | --- |
+| NEEDS-HUMAN-CHECK | galilee | `acre`, `safed`, `rosh_pinna`, `hanita`, `kiryat_shmona`, `kiryat_shmona_field`, `hula`, `hula_field` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | valleys | `tiberias`, `nazareth`, `degania_alef`, `ein_harod`, `nahalal`, `gesher` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | haifa_sharon | `haifa`, `zikhron_yaakov`, `hadera`, `netanya`, `shaar_haaliyah`, `camp_80` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | tel_aviv_jaffa | `tel_aviv`, `jaffa`, `petah_tikva`, `rosh_haayin_camp` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | central_plain | `lod`, `ramla`, `rishon_lezion`, `rehovot`, `tzrifin` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | jerusalem_hills | `jerusalem`, `shaar_hagai`, `east_jerusalem_old_city`, `beit_shemesh`, `beit_shemesh_field` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | southern_coast | `gaza`, `yad_mordechai`, `negba`, `nir_am`, `iraq_suwaydan_fort`, `ad_halom_bridge`, `mefalsim`, `mefalsim_field`, `nitzanim` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | negev | `beersheba`, `revivim`, `beit_kama`, `beit_kama_field`, `reim`, `reim_field`, `gilat`, `gilat_field`, `umm_rashrash` | No usable sub-district label in the imported place evidence. |
+| NEEDS-HUMAN-CHECK | haifa_sharon | `ijzim` | Imported strings mention both Haifa and Nazareth; the evidence ledger's sourced correction says Haifa, but the generator does not resolve the conflicting strings. |
+| NEEDS-HUMAN-CHECK | central_plain | `tzrifin` | Its authored candidate hex `{-3, 20}` falls in generated Tel Aviv-Jaffa (Jaffa Sub-District), not its retained Central Plain membership. No membership is moved. |
 
 The follow-up adaptation supplies `content/regions.yaml` with an empty `player_regions` list for the existing exact `gdd-0.3` reader; legacy/gdd-0.1 do not read it. This evidence import supplies no runtime content. Regional activation remains off. No incomplete row is loaded, no validator is weakened, and no production initializer changes.
 
