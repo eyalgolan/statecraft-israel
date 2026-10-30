@@ -293,6 +293,7 @@ namespace Statecraft.Game.Map.Collection
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
         readonly Dictionary<string, IDisposable?> leases = new Dictionary<string, IDisposable?>(StringComparer.Ordinal);
         readonly Dictionary<string, int> versions = new Dictionary<string, int>(StringComparer.Ordinal);
+        readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
         readonly List<IDisposable> retiring = new List<IDisposable>();
         readonly List<UnityEngine.Object> retiredInstances = new List<UnityEngine.Object>();
         readonly Dictionary<Renderer, string> rendererTowns = new Dictionary<Renderer, string>();
@@ -344,11 +345,13 @@ namespace Statecraft.Game.Map.Collection
                 asked.Select(id => id + "|Far"));
             row.retiringLeases = retiring.Count; row.pendingDestroy = retiredInstances.Count(o => o != null && o is GameObject); return row;
         }
-        // v0.3.1 kept every wanted whole-town and placement landmark resident. Camera focus chooses only
-        // the detailed building representation; it must never evict the far representation.
-        bool Allowed(Want want) => true;
+        // v0.3.1 requested every wanted Far model map-wide. v0.3.2 R2 deliberately supersedes that for whole towns:
+        // retain its focus admission exactly, including the production Towns.Enabled kill switch and placement fallback.
+        bool Allowed(Want want) => map != null
+            ? map.Residency.Towns.Enabled && Layer()?.WantsWholeTownAny(want.Key) == true
+            : !want.OnTown || Layer()?.WantsWholeTownAny(want.Key) == true;
         bool WholeReady(string id, Camera camera) =>
-            Seats.ContainsKey(id) && Layer()?.ReadyForTown(id, camera) != true;
+            Layer()?.WantsWholeTown(id, camera) == true && Seats.ContainsKey(id);
 
         void Show(List<Want> next, DateTime at)
         {
@@ -382,15 +385,17 @@ namespace Statecraft.Game.Map.Collection
                 leases.Remove(model);
             }
             bool membershipChanged = !keep.SetEquals(asked);
-            if (townsChanged || old.Count > 0 || membershipChanged) { dirty = true; CollectionResidencyMetrics.MarkDirty(); }
+            if (townsChanged || old.Count > 0 || membershipChanged) CollectionResidencyMetrics.MarkDirty();
             // Retire the old generation before rebuilding or acquiring the next batch.
             if (old.Count > 0 && retiring.Count > 0)
             {
-                ClearInstances(); dirty = true;
+                // Retiring one model must not destroy/recreate surviving town instances (the visible panning/date blink).
+                ClearInstances(old); dirty = keep.Except(asked).Any();
                 if (Application.isPlaying && !retirementScheduled) { retirementScheduled = true; StartCoroutine(RetireAfterFrame()); }
                 else if (!Application.isPlaying) RetireLeases();
                 return;
             }
+            if (townsChanged || membershipChanged) dirty = true;
             if (pendingRetirementLeases > 0) return;
             Rebuild(); // stop old instances before retiring their asset ownership
             if (retiring.Count > 0 && !retirementScheduled && Application.isPlaying)
@@ -512,6 +517,8 @@ namespace Statecraft.Game.Map.Collection
                 }
                 var go = Instantiate(prefab, transform, false);
                 go.name = w.Key;
+                if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
+                owned.Add(go);
                 // This owned instance obeys the map's approved town view band and per-camera fallback swap.
                 // The prefab's older strategic cap must not override that policy or hide a ready original early.
                 foreach (var cap in go.GetComponentsInChildren<OriginalModelDistance>(true)) cap.enabled = false;
@@ -574,19 +581,47 @@ namespace Statecraft.Game.Map.Collection
             StopAllCoroutines(); retirementScheduled = false;
             RestoreRenderers(); ReleaseOwned();
         }
-        void ClearInstances()
+        void ClearInstances(IReadOnlyCollection<string>? models = null)
         {
             CollectionResidencyMetrics.MarkDirty();
             RestoreRenderers();
-            for (int i = transform.childCount - 1; i >= 0; i--)
+            if (models != null)
             {
-                var old = transform.GetChild(i).gameObject; old.SetActive(false);
-                retiredInstances.RemoveAll(instance => instance == null); retiredInstances.Add(old);
-                retiredInstances.AddRange(old.GetComponentsInChildren<Renderer>(true));
-                retiredInstances.AddRange(old.GetComponentsInChildren<MeshFilter>(true));
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                var removed = new HashSet<string>(models, StringComparer.Ordinal);
+                var removedTownKeys = new HashSet<string>(Placed.Where(p => removed.Contains(p.Model)).Select(p => p.Key), StringComparer.Ordinal);
+                var removedRenderers = new HashSet<Renderer>();
+                foreach (string model in removed)
+                {
+                    if (!originals.TryGetValue(model, out var instances)) continue;
+                    foreach (var old in instances.Where(go => go != null).ToArray())
+                    {
+                        removedRenderers.UnionWith(old.GetComponentsInChildren<Renderer>(true));
+                        RetireInstance(old);
+                    }
+                    originals.Remove(model);
+                }
+                renderers.RemoveAll(renderer => renderer == null || removedRenderers.Contains(renderer));
+                foreach (var renderer in rendererTowns.Where(pair => pair.Key == null || removedRenderers.Contains(pair.Key)
+                    || removedTownKeys.Contains(pair.Value)).Select(pair => pair.Key).ToArray())
+                    rendererTowns.Remove(renderer);
+                Placed.RemoveAll(p => removed.Contains(p.Model));
+                Missing.RemoveAll(removedTownKeys.Contains);
+                foreach (string key in removedTownKeys) Seats.Remove(key);
+                Layer()?.Suppress(Seats.Keys);
+                return;
             }
+            for (int i = transform.childCount - 1; i >= 0; i--)
+                RetireInstance(transform.GetChild(i).gameObject);
+            originals.Clear();
             renderers.Clear(); rendererTowns.Clear(); Placed.Clear(); Missing.Clear(); Seats.Clear();
+        }
+        void RetireInstance(GameObject old)
+        {
+            old.SetActive(false);
+            retiredInstances.RemoveAll(instance => instance == null); retiredInstances.Add(old);
+            retiredInstances.AddRange(old.GetComponentsInChildren<Renderer>(true));
+            retiredInstances.AddRange(old.GetComponentsInChildren<MeshFilter>(true));
+            if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
         }
         void ReleaseOwned()
         {
@@ -625,7 +660,8 @@ namespace Statecraft.Game.Map.Collection
             foreach (var renderer in renderers)
             {
                 if (renderer == null) continue;
-                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer?.ReadyForTown(town, cam) == true;
+                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer != null &&
+                    (!layer.WantsWholeTown(town, cam) || layer.ReadyForTown(town, cam));
                 previous.Add((renderer, renderer.forceRenderingOff)); renderer.forceRenderingOff = hide;
                 LastHidden |= hide;
             }

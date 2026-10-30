@@ -320,17 +320,20 @@ namespace Statecraft.Game.Map.Collection
             if (Request != DefaultRequest) { Request(id, detail, done); return new TestSeamLease(); }
             return CollectionStream.Acquire(id, detail, done);
         }
-        void RefreshResidency()
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
             if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, OnModel,
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("people", instances, owners, complete,
                     Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            // v0.3.1 Ask(Far) requested every wanted model, while Near was first requested by Choose at close zoom.
             var far = wanted.Select(w => (w.Model, CollectionDetail.Far));
             var near = desiredDetails.Contains(CollectionDetail.Near)
                 ? Admitted().Select(w => (w.Model, CollectionDetail.Near))
                 : Enumerable.Empty<(string, CollectionDetail)>();
             residency.Replace(far.Concat(near));
+            if (redraw) Rebuild();
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
         {
@@ -361,7 +364,7 @@ namespace Statecraft.Game.Map.Collection
         }
         void LateUpdate()
         {
-            if (residencyView != null && residencyView.Prune(Time.frameCount)) { RefreshResidency(); SyncNearVisuals(); }
+            if (residencyView != null && residencyView.Prune(Time.frameCount)) { RefreshResidencyCore(false); SyncNearVisuals(); Apply(lastClose); }
         }
         IEnumerable<Want> Admitted()
         {
@@ -546,7 +549,7 @@ namespace Statecraft.Game.Map.Collection
             {
                 var previousDemand = residencyView.Keys;
                 residencyView.Observe(camera, wanted.Select(w => (w.Key, w.At, FigureClearanceM)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidency(); SyncNearVisuals(); }
+                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); Apply(lastClose); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var previous) ? previous : (bool?)null);

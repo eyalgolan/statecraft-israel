@@ -36,6 +36,10 @@ namespace Statecraft.Game.Map.Collection
             new Dictionary<(string, CollectionDetail), IDisposable>();
         readonly Dictionary<(string id, CollectionDetail detail), int> requestVersions =
             new Dictionary<(string, CollectionDetail), int>();
+        readonly Dictionary<(string id, CollectionDetail detail), GameObject?> answeredPrefabs =
+            new Dictionary<(string, CollectionDetail), GameObject?>();
+        readonly HashSet<(string id, CollectionDetail detail)> retiringKeys =
+            new HashSet<(string, CollectionDetail)>();
         HashSet<(string id, CollectionDetail detail)> active = new HashSet<(string, CollectionDetail)>(),
             latest = new HashSet<(string, CollectionDetail)>();
         int nextRequestVersion;
@@ -43,7 +47,7 @@ namespace Statecraft.Game.Map.Collection
         readonly HashSet<(string id, CollectionDetail detail)> answered = new HashSet<(string, CollectionDetail)>();
         internal int PendingCount => active.Count(k => !answered.Contains(k));
         internal int OwnerCount => owners.Count;
-        internal bool IsRetiring => retiring;
+        internal bool IsRetiring => retiring || retiringKeys.Count != 0;
         internal IReadOnlyCollection<(string id, CollectionDetail detail)> ActiveKeys => active.ToArray();
         internal bool ActiveAndAnswered((string id, CollectionDetail detail) key) =>
             active.Contains(key) && answered.Contains(key);
@@ -59,20 +63,21 @@ namespace Statecraft.Game.Map.Collection
         {
             if (disposed) return;
             latest = new HashSet<(string, CollectionDetail)>(demand); CollectionResidencyMetrics.MarkDirty();
-            if (!retiring) Reconcile();
+            if (keyedRetirement) ReconcileKeyed();
+            else if (!retiring) ReconcileLegacy();
         }
-        void Reconcile()
+        void ReconcileLegacy()
         {
             var removed = active.Except(latest).ToArray();
-            if (removed.Length != 0) { Leave(keyedRetirement ? removed : active.ToArray()); return; }
+            if (removed.Length != 0) { LeaveLegacy(active.ToArray()); return; }
             var added = latest.Except(active).ToArray();
             active.UnionWith(added);
             AcquireKeys(added);
         }
-        void Leave(IReadOnlyCollection<(string id, CollectionDetail detail)> oldKeys)
+        void LeaveLegacy(IReadOnlyCollection<(string id, CollectionDetail detail)> oldKeys)
         {
-            // Invalidate only the departed callbacks. Still-demanded keys and their instances remain live.
-            foreach (var key in oldKeys) { active.Remove(key); answered.Remove(key); requestVersions.Remove(key); }
+            foreach (var key in oldKeys)
+            { active.Remove(key); answered.Remove(key); answeredPrefabs.Remove(key); requestVersions.Remove(key); }
             var oldOwners = oldKeys.Where(owners.ContainsKey).Select(key => owners[key]).ToArray();
             foreach (var key in oldKeys) owners.Remove(key);
             var instances = destroyAndClear(oldKeys); // Destroy/clear references before allowing a bundle unload.
@@ -80,8 +85,80 @@ namespace Statecraft.Game.Map.Collection
             retire(instances, oldOwners, oldKeys.ToArray(), () =>
             {
                 retiring = false;
-                Reconcile();
+                ReconcileLegacy();
             });
+        }
+
+        sealed class HeldLease : IDisposable
+        {
+            // CollectionRetirement calls Dispose only after every instance is gone. The coordinator makes the
+            // final release/reuse decision in the completion callback, when the latest demand is known.
+            public void Dispose() { }
+        }
+        sealed class RetiringKey
+        {
+            internal readonly (string id, CollectionDetail detail) Key;
+            internal readonly IDisposable Owner;
+            internal readonly bool HadAnswer;
+            internal readonly GameObject? Prefab;
+            internal RetiringKey((string id, CollectionDetail detail) key, IDisposable owner, bool hadAnswer, GameObject? prefab)
+            { Key = key; Owner = owner; HadAnswer = hadAnswer; Prefab = prefab; }
+        }
+        void ReconcileKeyed()
+        {
+            var removed = active.Except(latest).ToArray();
+            if (removed.Length != 0) RetireKeys(removed);
+            // An unrelated retirement never freezes admission. A key already retiring waits for its own completion,
+            // where its lease and answered prefab are reused without a bundle refcount 1 -> 0 -> 1 transition.
+            var added = latest.Except(active).Where(key => !retiringKeys.Contains(key)).ToArray();
+            active.UnionWith(added);
+            AcquireKeys(added);
+        }
+        void RetireKeys(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var batch = new List<RetiringKey>();
+            foreach (var key in keys)
+            {
+                active.Remove(key); requestVersions.Remove(key);
+                bool hadAnswer = answered.Remove(key);
+                answeredPrefabs.TryGetValue(key, out var prefab); answeredPrefabs.Remove(key);
+                if (owners.TryGetValue(key, out var owner))
+                {
+                    owners.Remove(key);
+                    batch.Add(new RetiringKey(key, owner, hadAnswer, prefab));
+                    retiringKeys.Add(key);
+                }
+            }
+            var instances = destroyAndClear(keys); // Destroy/clear references before allowing a bundle unload.
+            retire(instances, batch.Select(_ => (IDisposable)new HeldLease()).ToArray(), keys.ToArray(), () => CompleteRetirement(batch));
+        }
+        void CompleteRetirement(IReadOnlyList<RetiringKey> batch)
+        {
+            var reacquire = new List<(string id, CollectionDetail detail)>();
+            foreach (var item in batch)
+            {
+                retiringKeys.Remove(item.Key);
+                if (!disposed && latest.Contains(item.Key))
+                {
+                    active.Add(item.Key);
+                    if (item.HadAnswer)
+                    {
+                        owners[item.Key] = item.Owner;
+                        answered.Add(item.Key); answeredPrefabs[item.Key] = item.Prefab;
+                        answer(item.Key.id, item.Key.detail, item.Prefab);
+                    }
+                    else reacquire.Add(item.Key);
+                }
+                else item.Owner.Dispose();
+            }
+            // A pending source had no prefab to replay. Acquire its replacement before releasing the old lease, so the
+            // bundle remains referenced throughout the hand-off.
+            if (reacquire.Count != 0)
+            {
+                AcquireKeys(reacquire);
+                foreach (var item in batch) if (reacquire.Contains(item.Key)) item.Owner.Dispose();
+            }
+            if (!disposed) ReconcileKeyed();
         }
         void AcquireKeys(IEnumerable<(string id, CollectionDetail detail)> keys)
         {
@@ -93,7 +170,7 @@ namespace Statecraft.Game.Map.Collection
                 var lease = acquire(key.id, key.detail, prefab =>
                 {
                     if (!disposed && active.Contains(key) && requestVersions.TryGetValue(key, out int current) && current == version)
-                    { answered.Add(key); answer(key.id, key.detail, prefab); CollectionResidencyMetrics.MarkDirty(); }
+                    { answered.Add(key); answeredPrefabs[key] = prefab; answer(key.id, key.detail, prefab); CollectionResidencyMetrics.MarkDirty(); }
                 });
                 // Synchronous fake/editor answers may tear down the owner.
                 if (disposed || !active.Contains(key) || !requestVersions.TryGetValue(key, out int current) || current != version)
@@ -105,7 +182,8 @@ namespace Statecraft.Game.Map.Collection
         {
             if (disposed) return;
             disposed = true; latest.Clear();
-            if (!retiring) Reconcile();
+            if (keyedRetirement) ReconcileKeyed();
+            else if (!retiring) ReconcileLegacy();
         }
     }
 

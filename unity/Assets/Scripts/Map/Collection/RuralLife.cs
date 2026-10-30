@@ -186,14 +186,30 @@ namespace Statecraft.Game.Map.Collection
             if (Request != DefaultRequest) { Request(id, detail, done); return new TestSeamLease(); }
             return CollectionStream.Acquire(id, detail, done);
         }
-        void RefreshResidency()
+        IEnumerable<(string id, CollectionDetail detail)> ResidencyDemand()
+        {
+            // v0.3.1 requested Far and Near for every wanted model. The 30 October ruling keeps that Far set map-wide,
+            // but gates Near to the successfully placed v0.3.1 pairings (Scenes), never unplaced/failed/capped wants.
+            var far = wants.Select(w => (w.Model, CollectionDetail.Far));
+            var keys = residencyView?.Keys;
+            var near = Scenes.Where(w => keys == null || keys.Contains(w.Key + "|" + w.Model))
+                .Select(w => (w.Model, CollectionDetail.Near));
+            return far.Concat(near);
+        }
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
             if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, OnModel,
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("rural", instances, owners, complete,
                     Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
-            residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Far)).Concat(
-                Admitted().Select(w => (w.Model, CollectionDetail.Near))));
+            residency.Replace(ResidencyDemand());
+            if (redraw)
+            {
+                Rebuild();
+                // Rebuild is what proves a pairing survived MaxAnchorsPerModel and Spot; admit Near only afterwards.
+                residency.Replace(ResidencyDemand());
+            }
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
         {
@@ -221,7 +237,7 @@ namespace Statecraft.Game.Map.Collection
         }
         void LateUpdate()
         {
-            if (residencyView != null && residencyView.Prune(Time.frameCount)) { RefreshResidency(); SyncNearVisuals(); }
+            if (residencyView != null && residencyView.Prune(Time.frameCount)) { RefreshResidencyCore(false); SyncNearVisuals(); }
         }
         IEnumerable<Want> Admitted()
         {
@@ -302,7 +318,7 @@ namespace Statecraft.Game.Map.Collection
             prefabs[(model, detail)] = prefab;
             if (prefab == null) Debug.LogWarning($"RURAL: {model} {detail.ToString().ToLowerInvariant()} did not stream; that rural detail stays off the map.");
             if (detail == CollectionDetail.Near) SyncNearVisuals();
-            else Rebuild();
+            else { Rebuild(); residency?.Replace(ResidencyDemand()); }
         }
 
         void SyncNearVisuals()
@@ -365,10 +381,8 @@ namespace Statecraft.Game.Map.Collection
             var nearKeys = residencyView?.Keys;
             foreach (var want in wants)
             {
-                if (!prefabs.ContainsKey((want.Model, CollectionDetail.Far))) continue;
-                bool any = prefabs[(want.Model, CollectionDetail.Far)] != null;
                 used.TryGetValue(want.Model, out int n);
-                if (!any || n >= MaxAnchorsPerModel) continue;
+                if (n >= MaxAnchorsPerModel) continue;
                 var at = Spot(want, Free);
                 if (at == null) continue;
                 used[want.Model] = n + 1;
@@ -458,7 +472,7 @@ namespace Statecraft.Game.Map.Collection
                 var previousDemand = residencyView.Keys;
                 residencyView.Observe(camera, wants.Select(w => (w.Key + "|" + w.Model,
                     new Vector3(w.Anchor.x, 0, w.Anchor.y), w.AnchorRadius)), Time.frameCount);
-                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidency(); SyncNearVisuals(); }
+                if (!previousDemand.SetEquals(residencyView.Keys)) { RefreshResidencyCore(false); SyncNearVisuals(); }
             }
             int id = camera.GetInstanceID();
             bool close = CloseAt(TownLandmarks.ViewDistance(camera), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);

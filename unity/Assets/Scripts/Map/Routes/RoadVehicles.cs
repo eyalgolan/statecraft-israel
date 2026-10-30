@@ -81,6 +81,7 @@ namespace Statecraft.Game.Map.Routes
         /// <summary>A test seam: how the layer asks for a model. Null (the default): the game's stream in Play mode, and none
         /// in the editor's edit mode (as UnitFigures), so a map built by an editor tool or another test fetches nothing.</summary>
         internal static Action<string, CollectionDetail, Action<GameObject?>>? Request;
+        internal static Func<IDisposable>? RequestOwner;
         static Action<string, CollectionDetail, Action<GameObject?>>? Stream =>
             Request ?? (Application.isPlaying ? CollectionStream.Request : (Action<string, CollectionDetail, Action<GameObject?>>?)null);
         sealed class TestSeamLease : IDisposable { public void Dispose() { } }
@@ -135,7 +136,7 @@ namespace Statecraft.Game.Map.Routes
 
         IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer)
         {
-            if (Request != null) { Request(id, detail, answer); return new TestSeamLease(); }
+            if (Request != null) { Request(id, detail, answer); return RequestOwner?.Invoke() ?? new TestSeamLease(); }
             return CollectionStream.Acquire(id, detail, answer);
         }
         void RefreshResidency()
@@ -146,7 +147,8 @@ namespace Statecraft.Game.Map.Routes
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("retained_road",
                     instances, owners, complete, Application.isPlaying && Request == null
                         ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
-            residency.Replace(Plans.Where(InForce).Select(plan => (plan.Model, CollectionDetail.Far)));
+            // v0.3.1 ShowAt requested CollectionDetail.Near for every in-force road-vehicle plan.
+            residency.Replace(Plans.Where(InForce).Select(plan => (plan.Model, CollectionDetail.Near)));
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
         {
@@ -157,12 +159,14 @@ namespace Statecraft.Game.Map.Routes
                 if (!originals.TryGetValue(key.id, out var list)) continue;
                 foreach (var go in list) if (go != null)
                 {
+                    var ownedRenderers = new HashSet<Renderer>(go.GetComponentsInChildren<Renderer>(true));
+                    renderers.RemoveAll(ownedRenderers.Contains);
                     removed.Add(go);
                     if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
                 }
                 originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
             }
-            renderers.RemoveAll(r => r == null); drawnKey = null;
+            drawnKey = null;
             return removed;
         }
 

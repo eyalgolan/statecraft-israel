@@ -161,13 +161,16 @@ namespace Statecraft.Game.Map.Collection
                 yield return (w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model));
             }
         }
-        void RefreshResidency()
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
-            if (residencyView == null || !isActiveAndEnabled) return;
+            if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) => OnModel(id, prefab),
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("craft", instances, owners, complete,
                     Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            // v0.3.1 Show requested every wanted craft as Far with no camera or 60 km residency gate.
             residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Far)));
+            if (redraw) Rebuild();
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
         {
@@ -183,7 +186,8 @@ namespace Statecraft.Game.Map.Collection
                 }
                 originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
             }
-            keepAll = new List<Bounds[]>();
+            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null)
+                .Select(go => new[] { Bounds(go) }).ToList();
             return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
@@ -209,12 +213,12 @@ namespace Statecraft.Game.Map.Collection
             var before = residencyView!.Keys;
             residencyView.Observe(camera, Anchors(), Time.frameCount);
             if (!before.SetEquals(residencyView.Keys))
-            { if (Application.isPlaying) residencyDirty = true; else RefreshResidency(); }
+            { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }
         void LateUpdate()
         {
             if (residencyView != null && residencyView.Prune(Time.frameCount)) residencyDirty = true;
-            if (residencyDirty) { residencyDirty = false; RefreshResidency(); }
+            if (residencyDirty) { residencyDirty = false; RefreshResidencyCore(false); }
         }
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
@@ -251,7 +255,6 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<SeaAirCollection>(); layer.map = map;
             }
-            // Not under residency (owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km"): Show asks once in view.
             layer.content = content;
             layer.Show(Wants(date, content), placements.Select(p => (p.Q, p.R)).ToList(), date);
             return layer;
@@ -263,14 +266,7 @@ namespace Statecraft.Game.Map.Collection
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
             if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
             wants = next; placements = placed; taken = others;
-            if (residencyView != null) { RefreshResidency(); return; }
-            OriginalModelRequests.WhenVisible(this, () =>
-            {
-            if (residencyView != null) { RefreshResidency(); return; }
-            foreach (var w in wants)
-                if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
-            });
-            Rebuild();
+            OriginalModelRequests.WhenVisible(this, () => RefreshResidency());
         }
 
         void OnModel(string model, GameObject? prefab)

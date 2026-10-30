@@ -140,7 +140,8 @@ namespace Statecraft.Game.Map.Collection
             if (map == null) yield break;
             foreach (var w in wants) yield return (w.Key, map.Frame.ToWorld(w.Lon, w.Lat, 0), ClearanceOf(w.Model));
         }
-        void RefreshResidency()
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
             if (residencyView == null || !isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) =>
@@ -151,7 +152,9 @@ namespace Statecraft.Game.Map.Collection
                 },
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("special", instances, owners, complete,
                     Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            // v0.3.1 Show requested every wanted special as Near immediately; only its renderers were close-camera gated.
             residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Near)));
+            if (redraw) Rebuild();
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
         {
@@ -162,13 +165,14 @@ namespace Statecraft.Game.Map.Collection
                 if (!originals.TryGetValue(key.id, out var list)) continue;
                 foreach (var go in list) if (go != null)
                 {
+                    var ownedRenderers = new HashSet<Renderer>(go.GetComponentsInChildren<Renderer>(true));
+                    renderers.RemoveAll(ownedRenderers.Contains);
                     removed.Add(go);
                     if (Application.isPlaying) { go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
                 }
                 originals.Remove(key.id);
                 Placed.RemoveAll(p => p.Model == key.id);
             }
-            renderers.RemoveAll(r => r == null);
             return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
@@ -194,12 +198,12 @@ namespace Statecraft.Game.Map.Collection
             var before = residencyView!.Keys;
             residencyView.Observe(camera, Anchors(), Time.frameCount);
             if (!before.SetEquals(residencyView.Keys))
-            { if (Application.isPlaying) residencyDirty = true; else RefreshResidency(); }
+            { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }
         void LateUpdate()
         {
             if (residencyView != null && residencyView.Prune(Time.frameCount)) residencyDirty = true;
-            if (residencyDirty) { residencyDirty = false; RefreshResidency(); }
+            if (residencyDirty) { residencyDirty = false; RefreshResidencyCore(false); }
         }
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
