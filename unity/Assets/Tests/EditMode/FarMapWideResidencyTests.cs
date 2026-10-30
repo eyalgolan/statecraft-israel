@@ -6,7 +6,9 @@ using System.Reflection;
 using NUnit.Framework;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Kits;
 using Statecraft.Game.Map.Routes;
+using Statecraft.Sim;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -221,17 +223,67 @@ public sealed class FarMapWideResidencyTests
     }
 
     [Test]
-    public void PlacementLandmarksRemainAllowedButWholeTownsKeepR2FocusAdmission()
+    public void WholeTownsAreRequestedAndDrawnMapWideThenOnlyTheDetailedTownHides()
     {
-        var go = new GameObject("towns"); var layer = go.AddComponent<TownLandmarks>();
+        var old = TownLandmarks.Request;
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
         try
         {
-            var allowed = typeof(TownLandmarks).GetMethod("Allowed", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            Assert.IsFalse((bool)allowed.Invoke(layer, new object[]
-            { new TownLandmarks.Want("town", TownLandmarks.Moshava, Vector2.zero, 1, true) })!);
-            Assert.IsTrue((bool)allowed.Invoke(layer, new object[]
-            { new TownLandmarks.Want("camp", TownLandmarks.Maabara, Vector2.zero, 1, false) })!);
+            var requested = new List<string>();
+            TownLandmarks.Request = (id, detail, answer) =>
+            {
+                Assert.AreEqual(CollectionDetail.Far, detail); requested.Add(id); answer(prefab);
+            };
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>(); map.Build();
+            var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+            var towns = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), content)!;
+            var mapped = towns.Wanted.Where(w => w.OnTown).ToList();
+            CollectionAssert.AreEquivalent(mapped.Select(w => w.Model).Distinct().ToList(), requested,
+                "the 90 km start view requests every wanted whole-town Far model map-wide");
+            CollectionAssert.AreEquivalent(mapped.Select(w => w.Key).ToList(), towns.Seats.Keys.ToList(),
+                "every mapped town draws even when towns share one requested model");
+
+            var buildings = map.GetComponentInChildren<TownModelLayer>(true);
+            var focus = mapped.First(w => buildings.CountFor(w.Key) > 0);
+            var camera = new GameObject("90 km then close camera").AddComponent<Camera>();
+            camera.transform.SetPositionAndRotation(new Vector3(focus.At.x, 90000f, focus.At.y),
+                Quaternion.LookRotation(Vector3.down, Vector3.forward));
+            towns.Choose(default, camera);
+            foreach (var want in mapped)
+                Assert.IsFalse(towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+                    want.Key + " draws at the 90 km start view");
+
+            camera.transform.position = new Vector3(focus.At.x, 10000f, focus.At.y);
+            towns.Choose(default, camera);
+            Assert.IsTrue(buildings.ReadyForTown(focus.Key, camera), focus.Key + " has its detailed models ready up close");
+            foreach (var want in mapped)
+            {
+                bool hidden = towns.transform.Find(want.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff);
+                Assert.AreEqual(want.Key == focus.Key, hidden,
+                    want.Key + ": only the close camera's detailed town hides its whole-town model");
+            }
+            Object.DestroyImmediate(camera.gameObject);
         }
-        finally { Object.DestroyImmediate(go); }
+        finally { TownLandmarks.Request = old; Object.DestroyImmediate(prefab); }
+    }
+
+    [Test]
+    public void DisabledTownKillSwitchRequestsNoWholeTownOrPlacementLandmarks()
+    {
+        var old = TownLandmarks.Request;
+        try
+        {
+            int requested = 0; TownLandmarks.Request = (_, __, ___) => requested++;
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            var map = Object.FindFirstObjectByType<MapScene>(); map.Build();
+            typeof(ProductionResidency.TownPolicy).GetField("Enabled", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(map.Residency.Towns, false);
+            var content = ContentLoader.Load(Statecraft.Game.Paths.Content);
+            TownLandmarks.ShowAt(map, new DateTime(1951, 1, 1),
+                new[] { new Placement(MapActions.TransitCamp, 0, 0, new DateTime(1951, 1, 1)) }, content);
+            Assert.AreEqual(0, requested, "Towns.Enabled=false is the map-wide Far demand kill switch");
+        }
+        finally { TownLandmarks.Request = old; }
     }
 }

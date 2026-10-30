@@ -19,12 +19,8 @@ namespace Statecraft.Game.Map.Collection
     /// far, buildings near". Far off, a mapped town's whole-town model stands ON its town, on its core (<see cref="CoreOf"/>:
     /// where most of its building models stand, inside its kit footprint, clear of the next town and of the sea), as wide as
     /// that core, tilted to its ground and seated so it never floats (<see cref="SeatOn"/>).
-    /// C89/C93 bounds that representation by each camera's admitted focus. Overview cameras acquire whole-town originals;
-    /// close cameras acquire individual building originals where available, with no duplicate ownership. Only a complete,
-    /// admitted representation hides that camera's procedural houses. Loading, failure and outside-focus views keep code-built
-    /// fallback. Within an admitted layer, absence of an individual-building representation leaves the whole town eligible
-    /// up close; a failed/null streamed Near reply instead keeps the code-built kit, without a second whole-town bundle.
-    /// Without a layer/configured spatial policy, no whole-town original is admitted.
+    /// Whole-town originals and placement landmarks are Far representations requested map-wide. Close cameras show individual
+    /// building originals where available; only a complete detailed representation hides that town's whole-town model.
     /// A placement's landmark (ma'abara or shikun) stands beside its camp/housing project on free ground (Spot).
     /// CollectionDetail.Far now names the same original file, not a generated 4,500-triangle mesh. Requests stream after
     /// the first frame, are shared by acquired lease and retire when the last camera leaves. A failed model warns once;
@@ -345,13 +341,10 @@ namespace Statecraft.Game.Map.Collection
                 asked.Select(id => id + "|Far"));
             row.retiringLeases = retiring.Count; row.pendingDestroy = retiredInstances.Count(o => o != null && o is GameObject); return row;
         }
-        // v0.3.1 requested every wanted Far model map-wide. v0.3.2 R2 deliberately supersedes that for whole towns:
-        // retain its focus admission exactly, including the production Towns.Enabled kill switch and placement fallback.
-        bool Allowed(Want want) => map != null
-            ? map.Residency.Towns.Enabled && Layer()?.WantsWholeTownAny(want.Key) == true
-            : !want.OnTown || Layer()?.WantsWholeTownAny(want.Key) == true;
+        // Owner ruling, 30 October 2026: whole towns and placement landmarks remain v0.3.1 Far demand, map-wide.
+        bool Allowed(Want want) => map != null ? map.Residency.Towns.Enabled : true;
         bool WholeReady(string id, Camera camera) =>
-            Layer()?.WantsWholeTown(id, camera) == true && Seats.ContainsKey(id);
+            Seats.ContainsKey(id) && Layer()?.ReadyForTown(id, camera) != true;
 
         void Show(List<Want> next, DateTime at)
         {
@@ -646,8 +639,7 @@ namespace Statecraft.Game.Map.Collection
             RefreshWanted();
         }
 
-        /// <summary>Admit whole-town originals only for this camera's overview focus; close cameras use individual
-        /// buildings. A whole-town asset owned for another camera never hides this camera's fallback.</summary>
+        /// <summary>Show each map-wide whole-town original unless this camera has that town's detailed buildings ready.</summary>
         internal void Choose(ScriptableRenderContext context, Camera cam)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection) return;
@@ -660,8 +652,7 @@ namespace Statecraft.Game.Map.Collection
             foreach (var renderer in renderers)
             {
                 if (renderer == null) continue;
-                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer != null &&
-                    (!layer.WantsWholeTown(town, cam) || layer.ReadyForTown(town, cam));
+                bool hide = rendererTowns.TryGetValue(renderer, out var town) && layer?.ReadyForTown(town, cam) == true;
                 previous.Add((renderer, renderer.forceRenderingOff)); renderer.forceRenderingOff = hide;
                 LastHidden |= hide;
             }
