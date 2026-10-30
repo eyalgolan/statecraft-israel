@@ -27,7 +27,7 @@ Historical offices, people and event roles remain, and the complete MVP minister
 
 Social cohesion retains `morale` compatibility; support retains `intl_standing`. [Balance](balance.md#campaign-and-indicators) owns scale/hysteresis. Low situations expose state to reviewed events without secret extra penalties or defeat. Amir's proposed regional employment aggregate and replacement Food/housing penalties are non-operative [S1].
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the proposed event-accounting restatement prohibited borrowing. The retained borrowing rule remains authoritative; hard/soft windows and sensitivity restrictions still apply.
+**Amir's proposal [S1]:** the proposed event-accounting restatement prohibited borrowing. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`); hard/soft windows and sensitivity restrictions still apply.
 
 [Objective-card](objective-card.md) owns completion/images/dates/points and [combat](military-combat.md) owns armistices/prisoner return. Do not duplicate their tables. Changed historical/sensitive content still requires human factual, licence and sensitivity review.
 

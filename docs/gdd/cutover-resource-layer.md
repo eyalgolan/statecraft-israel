@@ -17,23 +17,23 @@ I can see where Money, Food and Arms come from, what is committed, and why housi
 - Food supply stays the zero-to-one level the screens and events read. It carries a term from the months of cover: none at a full stock, the most when the stock is empty, and the unmet share lowers it further; rationing and events still act on top (the maintainer's food rule, 16 October 2026 [S6]; R-FOOD-003). The two numbers, `k_food` and `cover_months`, are labelled design values.
 - One unit of Arms is the equipment package for a recruit group of 1,000 people. The stock starts at 12 units, a `BuyArms` order adds units at IL 1m each and borrows a short Treasury, and recruit training takes 1 unit a group (R-ARMS-001 to R-ARMS-003). These numbers and the buy order's cost of 1 attention are labelled design values the owner approved [S7].
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed 3 starting spare Arms and 10 Money per imported Arms.* (unitless) [S1]
+*Amir's #1668 proposed 3 starting spare Arms and 10 Money per imported Arms. Both are Agreed in main's `gdd-0.3` catalogue (`content/gdd03-balance.yaml`: `start.spare_arms`, `import.arms_price`). For the starting stock, the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)); the live rules are `R-ARMS-001` and `R-ARMS-002` (`docs/rules/mvp.md:417` and `:419`).* (unitless) [S1]
 - Social cohesion is the `morale` indicator on its zero-to-one scale, shown to the player as Social cohesion, its thresholds as situations, and International Support is the `intl_standing` indicator on its zero-to-one scale, under its player name (D-C1, decided 15 October 2026 [S2]; proposed R-NAT-001 and R-NAT-003).
 - An event option's effects may target Money, Food, Arms, Social cohesion and International Support; any other target is a load error (proposed R-EFX-001 [S2]). An option tagged `holocaust`, `terror`, `massacre` or `war-casualties` cannot raise any of the five resources or foreign currency unless the same option carries a matching cost (the sensitive-option answer of 15 October 2026 [S2]; proposed R-EFX-002). The owner chose to add a real cost: the check is a net of zero or less across the five resources, with the cost falling on a different resource than the gain (owner, 15 October 2026 [S3]; the plan [S2]).
 - The historical run has at most six months without any event, and at most two months in wartime, the full-war level of the war state counting as wartime (owner, 15 October 2026 [S3] and [S4]; the gap rule, docs/m3-rulings.md). Five war event cards are rewritten as decisions taken during or after the event, and the first truce and Rhodes cards are accepted as arriving late (`Q-CUT-3`, "Mixed" [S2]). The Altalena card opens on 15 June 1948 without the Kfar Vitkin clause, and the Ten Days card is rewritten (the owner on #567, recorded in the plan [S2]). Cards whose text changed go back to `fact-checked` until the owner re-reviews them (`Q-CUT-4`, decided 15 October 2026 [S3]).
 - Every balance number lives in `content/`, tagged on its line as a design value, not a historical figure, and one test lists them all, so no number slips in untagged (the design-values answer of 15 October 2026 [S2]). The numbers themselves stay the owner's to set or accept in review.
 - The cabinet and Attention stay; coalition is optional with no collapse; the budget is optional; policies are internal; diplomacy is deferred (D-C5 [S2]).
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed requiring full Money upfront without borrowing and removing automatic monthly Food import/refill. Its removal of Attention is not declined: under `gdd-0.3` there is no Attention resource (`R-GOV-002`).* (unitless) [S1]
+*Amir's #1668 proposed requiring full Money upfront without borrowing and removing automatic monthly Food import/refill; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The operative main rules are `R-MONEY-003` and `R-FOOD-002` (`docs/rules/mvp.md:399` and `:409`). Its removal of Attention is not declined: under `gdd-0.3` there is no Attention resource (`R-GOV-002`).* (unitless) [S1]
 ### Resource ownership
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S9]:** the resource layer would be restated around the proposal catalogue [S10]. Conflicting catalogue mechanics are non-operative; the retained rules above control.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** only staffed job income, explicit event effects and settlement-control taxes would create recurring Money, while automatic borrowing would be disabled. The retained borrowing rule remains authoritative.
+**Amir's proposal [S1]:** only staffed job income, explicit event effects and settlement-control taxes would create recurring Money, while automatic borrowing would be disabled. The owner's 30 October 2026 conflict review did not rule on borrowing or recurring income; the operative main rules are `R-CITY-002` and `R-MONEY-003` (`docs/rules/mvp.md:95` and `:399`).
 
 ### Money and upkeep
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** construction, tools/courses, imports and workshop inputs would require full uncommitted Money upfront. The retained borrowing rule remains authoritative.
+**Amir's proposal [S1]:** construction, tools/courses, imports and workshop inputs would require full uncommitted Money upfront. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is borrowing under `R-MONEY-003` (`docs/rules/mvp.md:399`).
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** the proposed settlement ordering, facility upkeep, transit cost and active-army upkeep restatement is non-operative.
 
@@ -47,7 +47,7 @@ Money and Food exhaustion remain defeat triggers under [the retained end rules](
 
 Every own unit consumes Food under the retained national-pool rule. Enemy residents remain separate from player demand. Prisoner provisions and shortfall effects retain their existing owner-decided/open boundaries in [combat](military-combat.md#prisoners).
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** arrivals and role changes would not create automatic Food or refill, and purchases/reviewed effects would be the only import/grant sources. The retained automatic monthly import rule remains authoritative.
+**Amir's proposal [S1]:** arrivals and role changes would not create automatic Food or refill, and purchases/reviewed effects would be the only import/grant sources. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is the automatic monthly import of `R-FOOD-002` (`docs/rules/mvp.md:409`).
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** own and prisoner Food would be allocated proportionally under a new shortage formula. The retained prisoner rule keeps its provision and shortfall amounts open (owner).
 
@@ -55,7 +55,7 @@ Legacy `food_supply`/effects interfaces may be readouts during migration. The re
 
 ### Purchases and equipment
 
-`BuyArms(count)` adds the ordered whole Arms units immediately, with no delivery delay, at IL 1m per Arms; it pays on ordering and borrows a short Treasury (`R-ARMS-002`) [S7]. Food continues to follow the retained automatic monthly import rule above. Amir's proposed catalogue Arms price, next-turn delivery, pending shipment and authored-port requirement are non-operative [S1]. No naval-interception/blockade system is added.
+`BuyArms(count)` adds the ordered whole Arms units immediately, with no delivery delay, at IL 1m per Arms; it pays on ordering and borrows a short Treasury (`R-ARMS-002`) [S7]. Food continues to follow the retained automatic monthly import rule above. Amir's catalogue Arms price matches `import.arms_price`, Agreed in `content/gdd03-balance.yaml`; his next-turn delivery, pending shipment and authored-port requirement are non-operative [S1]. No naval-interception/blockade system is added.
 
 Amir's proposal that Arms be reusable equipment, with attacks and artillery spending none, agrees with the retained `gdd-0.3` rule (`R-COMBAT-004`, owner ruling, 25 October 2026); the owner's 30 October 2026 review lists Arms as not a conflict [S1]. Training still consumes Arms (`R-ARMS-003`).
 
@@ -77,7 +77,7 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - The HUD: the existing meters stay (`Q-HUD-1`, decided 15 October 2026 [S3]); the five resources are shown, and approval appears as Public support (`Q-HUD-2`, decided 15 October 2026 [S3]). The Hebrew words are כסף, מזון, נשק and תמיכה בינלאומית, with Social cohesion staying לכידות חברתית (`Q-HUD-3` and `Q-MONEY-4`, decided 15 October 2026 [S4]).
 - Rules/scenario stock inventory, purchase shipments and one-time delivery ids.
 - Economy, resolver and effects/UI adapters require migration.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** remove automatic debt, passive budget and refill paths. This migration item is non-operative.
+- **Amir's proposal [S1]:** remove automatic debt, passive budget and refill paths. The owner's 30 October 2026 conflict review did not rule on this; `R-MONEY-003` and `R-FOOD-002` (`docs/rules/mvp.md:399` and `:409`) stay operative.
 - Convert indicator points using the catalogue scale before clamping.
 
 ## Done when
@@ -85,7 +85,7 @@ Retain [CONTENT_POLICY](../CONTENT_POLICY.md) prohibitions on economic/score rew
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, or the phase's plan.
 - The ledger reconciles starting stocks, income/deliveries, production, expenditure and ending stocks.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** start Food would break even without refill and subsequent shortages would use only proposed effects.
+- **Amir's proposal [S1]:** start Food would break even without refill and subsequent shortages would use only proposed effects. The owner's 30 October 2026 conflict review did not rule on this; `R-FOOD-002` (`docs/rules/mvp.md:409`) stays operative.
 - **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** cash shortfall would change only housing condition and its downstream effects.
 - Arms purchases arrive at once (`R-ARMS-002`) and the Food import refills in the same turn (`R-FOOD-002`); a reload duplicates no delivery. Amir's proposed pending import turn is non-operative [S1].
 - **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** transit would charge once per unit and port queues would reduce cohesion once nationally. This criterion is non-operative.

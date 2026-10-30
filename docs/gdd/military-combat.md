@@ -11,7 +11,7 @@ I command identifiable units between hexes, preview strength, and earn combat ex
 - For the MVP the terrain types are the eight biomes, with the per-biome movement cost below (`Q-MOVE-1`, decided 15 October 2026 [S3]). The owner froze that catalogue for the MVP on 23 October 2026, with no new types and no terrain conversions [S16]; the location/editor update does not select new terrain types, cost values or modifiers [S1][S14].
 - A unit is a formation of hundreds of fighters, never a single soldier (impact spec §2.2 [S8]; `Q-UNIT-1`, decided 15 October 2026 [S3]). A finished recruit cohort becomes one unit at its city's settlement hex. Unit types on screen are Recruit (טירון), Veteran soldier (חייל ותיק), Artillery (ארטילריה) and Armoured car (שריונית) — names approved in English and Hebrew (`Q-UI-2`, decided 15 October 2026 [S7]). A recruit promotes to veteran after a number of turns of service (labelled design value); combat does not count toward it (`Q-UNIT-2`, decided 15 October 2026 [S3]). A unit's Strength counts its population units and drives movement allowance and combat strength (`Q-UNIT-1`); where a side's historical strength is sourced, the record enters the content as one value per CONTENT_POLICY §1 (`Q-UNIT-4`, decided 15 October 2026 [S3]).
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed replacing time-served veterancy with XP from survived engagements, excluding travel, service time and unused support orders.* [S1]
+*Amir's #1668 proposed replacing time-served veterancy with XP from survived engagements, excluding travel, service time and unused support orders; the owner's 30 October 2026 conflict review did not rule on this ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The operative main rule is `R-UNIT-004` (`docs/rules/mvp.md:245`).* [S1]
 - Historical mode seeds the player's starting units from `content/map/units_1948.yaml`, each keyed to a sourced anchor (`Q-START-1`, decided 15 October 2026 [S3]). The Arab armies, the Arab Liberation Army and local Arab forces take part under their own names, with their 15 May 1948 positions seeded from the Phase five research file [S9] (`Q-START-4`, the owner's pick, 15 October 2026 [S4]; `D-G1`). Every row is fact-checked against its source before the `-shareable` tag (`Q-START-3`, decided 15 October 2026 [S3]). There are no air or naval units; where a phase needs them they are presentation-only (`Q-UNIT-5`, decided 15 October 2026 [S3]). Open mode starts with no units (`Q-START-2`, decided 15 October 2026 [S3]).
 
 **Then decided (owner, 30 Oct 2026):** Open mode's starting army is the deferred parameter `A` [S19].
@@ -54,7 +54,7 @@ Under `gdd-0.3` player attacks and artillery fire neither read nor spend Arms (`
 
 Losses affect combatant cohorts only; removed own cohorts leave population/Food demand. Do not infer historical casualties from nominal population scale. Outcomes take losses from the retained table by population units; a losing defender retreats one hex, at strength zero a unit is removed, and a defender with no retreat hex surrenders [S3]. Attackers do not automatically advance [S3]. Civilians are excluded from combat losses, including artillery fights [S4].
 
-Military veterancy follows the retained time-served rule in the Rules section above. **Amir's proposal, declined by the owner on 30 October 2026 [S19]:** survived engagements would grant combat XP and complete the proposed reception obligation.
+Military veterancy follows the retained time-served rule in the Rules section above (`R-UNIT-004` (`docs/rules/mvp.md:245`)). **Amir's proposal [S19]:** survived engagements would grant combat XP and complete the proposed reception obligation; the owner's 30 October 2026 conflict review did not rule on this.
 
 Artillery range remains open (owner); the proposed catalogue default is non-operative and is not an owner ruling. Under `gdd-0.3` artillery fire spends no Arms (`R-COMBAT-004`); the 2 units of Arms per firing apply only under `gdd-0.1` (`R-COMBAT-007`) [S20].
 
@@ -93,7 +93,7 @@ The sim supplies the retained effective ratio, modifiers and outcome bands befor
 - Unity — `UnitRoster`, `UnitCard`, `DefencePresenter`, strings.
 - Military movement/orders, combat table, deterministic goals, truces, captives and return-event ids.
 - Historical starting military allocation must bind the sourced `content/map/units_1948.yaml` seed; only non-Historical modes use the deferred parameter `A` (owner, 30 Oct 2026) [S19].
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** retire time-served veterancy. This migration item is non-operative.
+- **Amir's proposal [S1]:** retire time-served veterancy. The owner's 30 October 2026 conflict review did not rule on this; `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative.
 - Migrate combat/conversion/movement/saves together; defaults require playtesting.
 
 ## Done when
@@ -101,7 +101,7 @@ The sim supplies the retained effective ratio, modifiers and outcome bands befor
 - `gdd_lint` passes on this file, and every rule above cites a decided #375 row, the GDD, the impact plan, or a sourced date.
 - Under `gdd-0.3` attacks and artillery fire spend no Arms, as the retained rule and Amir's proposal agree [S20].
 - Preview/resolver share the table and prescribed draw count.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** survived engagements would fill XP and combat veterancy would complete proposed reception.
+- **Amir's proposal [S1]:** survived engagements would fill XP and combat veterancy would complete proposed reception; the owner's 30 October 2026 conflict review did not rule on this, and `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative.
 - Permanent forts benefit either occupant and persist.
 - Combat never converts residents into casualties, prisoners, workers or score; return bonuses pay once.
 - Defeat follows the retained `gdd-0.3` economic rule; losing a city or region alone does not end the game, and no generic region-loss rule is added.

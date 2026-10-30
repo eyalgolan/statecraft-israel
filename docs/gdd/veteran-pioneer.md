@@ -13,12 +13,12 @@ I see work experience and predict its effect on future projects.
 - A veteran does the same pioneer work as a halutz, with the same cost and the same refusals (R-SITE-001). A veteran gains no more service.
 - Both numbers are labelled design values that an agent proposed and the owner took (owner answer on #782 [S4]); the owner may still change them.
 
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed replacing the six-turn service threshold and veteran double-progress rule with working-turn XP and catalogue tier rates.* (unitless) [S1]
-[Training](training.md#population-identity-and-civilian-professions) owns population identity and qualifications [S5]. The six-turn service threshold and veteran double-progress rules above remain operative.
+*Amir's #1668 working-turn XP and catalogue tier rates agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists them as not a conflict ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)). The six-turn service threshold and veteran double progress above are the `legacy` and `gdd-0.1` rules.* (unitless) [S1]
+[Training](training.md#population-identity-and-civilian-professions) owns population identity and qualifications [S5]. The six-turn service threshold and veteran double-progress rules above remain operative for `legacy` and `gdd-0.1`.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** founding/service progression and veteran double-progress would be replaced by actual work turns and catalogue tier rates [S6]. The retained six-turn service and double-progress rules remain authoritative.
+Amir's replacement of founding/service progression and veteran double progress by actual work turns and catalogue tier rates [S6] agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`) and was not a 30 October 2026 conflict [S1]. The six-turn service and double-progress rules stay for `legacy` and `gdd-0.1`.
 
-[Sites](build-yishuv.md) and [corridors](corridors.md) use the retained service/progress rules above. Amir's proposed shared work/XP logic was declined [S1].
+[Sites](build-yishuv.md) and [corridors](corridors.md) use the retained service/progress rules above. Amir's shared work/XP logic agrees with main's `gdd-0.3` scoping (`R-VET-001`) [S1].
 
 ## Data touched
 
@@ -27,7 +27,7 @@ I see work experience and predict its effect on future projects.
 - `GameState.Units`: a unit's `Service`, written into the state hash as `/N` only when it is not 0, so a unit with none hashes as before. Phase 5 Q-UNIT-2 counts soldiers' service in the same field.
 - `Projects.Start` and `Projects.Advance` (step 5), and the reference player, which sends a veteran to build as it does a halutz.
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `hash1950`, `hash1952` and `mvp-end` move, because the reference player's halutz group becomes a veteran after Beit Kama and builds the other three sites in 3 turns each, so Mefalsim and the first new yishuv come six months sooner.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** legacy service/progress constants would be migrated to profession/tier/work XP.
+- Under `gdd-0.3` service/progress constants give way to profession/tier/work XP (`R-VET-001`, `R-VET-002`), as Amir's proposal and main agree [S1].
 
 ## Done when
 

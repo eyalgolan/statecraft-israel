@@ -24,9 +24,9 @@ I choose designated sites to develop and send a pioneer to work under the retain
 
 Sites have stable ids, authored hexes, allowed project kinds and source/availability metadata. The [location roster](../locations.md) owns names/aliases. Reference founding dates are not unlocks; approved designated build sites are available from scenario start.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** a pioneer would have to reach the target hex and pay full upfront without borrowing. The retained rule lets the unit work from where it stands and borrow a short Treasury.
+**Amir's proposal [S1]:** a pioneer would have to reach the target hex and pay full upfront without borrowing. The owner's 30 October 2026 conflict review did not rule on this; the operative main rules are `R-SITE-001` and `R-MONEY-003` (`docs/rules/mvp.md:185` and `:399`), which let the unit work from where it stands and borrow a short Treasury.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** staffed-turn rates, paused progress on movement/stopping, and working-turn XP are non-operative. The retained fixed-turn, StopWork and service rules remain authoritative.
+Amir's staffed-turn tier rates and working-turn XP agree with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists them as not a conflict [S1]. For paused progress on movement or stopping, the owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-SITE-002` (`docs/rules/mvp.md:187`). The fixed-turn and service rules apply to `legacy` and `gdd-0.1`.
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** prepared regional field slots would be staffed through a regional capital and use the proposal catalogue's cost/work values. This regional field model is non-operative.
 
@@ -54,7 +54,7 @@ A field is ready only once the yishuv in its hex is built; plowing then follows 
 
 - `dotnet test sim/Statecraft.sln` passes, including `ProjectsTests`, `SitesContentTests`, `GddStateTests` and `ReferencePlayerTests`.
 - `hash1950`, `hash1952`, `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** work would require physical arrival and full upfront affordability.
+- **Amir's proposal [S1]:** work would require physical arrival and full upfront affordability; the owner's 30 October 2026 conflict review did not rule on this, and `R-SITE-001` and `R-MONEY-003` stay operative.
 - **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** staffing pauses would retain progress while explicit cancellation discarded it.
 - **Amir's proposal, declined by the owner on 30 October 2026 [S1]:** fields would produce through staffed regional slots. This criterion is non-operative.
 - Founding creates no duplicate people/economy, and facilities cannot be built twice.

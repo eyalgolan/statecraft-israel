@@ -25,14 +25,14 @@ Every value below is a game design value, not a historical estimate. **Agreed** 
 | `population.people_per_unit` | `10000` (current `gdd-0.3` catalogue) | people represented by a population unit | Not decided by the 30 October 2026 rulings [S11]; `content/gdd03-balance.yaml` reads 10,000 people (`R-POP-001`), while the `Q-START-2` scale of 1,000 people [S4] governs `legacy` and `gdd-0.1` |
 | `start.population` | derived per city | total player population units, all statuses included | Census-city rule [S4] at the `population.people_per_unit` scale; Amir's proposed `65` at 10,000 people per unit is not decided by the 30 October 2026 rulings [S11] |
 | `start.money` / `start.food` | `open (owner)` | Money / Food | Proposed `25 / 10` was sized for Amir's scale of 10,000 people per population unit; the 30 October 2026 rulings do not decide these values [S11] |
-| `start.arms` | `12` | Arms in the national pool | Retained `arms_start` value [S10]; Amir's proposed `3` spare Arms was declined by the owner on 30 October 2026 [S1] |
+| `start.arms` | `12` | Arms in the national pool | Retained `arms_start` value (`R-ARMS-001`, `docs/rules/mvp.md:417`) [S10]; Amir's `3` spare Arms is Agreed as `start.spare_arms` in `content/gdd03-balance.yaml`, and the 30 October 2026 conflict review did not rule on it [S11] |
 | `start.army` | sourced seed in Historical mode; `A` otherwise | military population units | Historical mode keeps `content/map/units_1948.yaml` (`Q-START-1`, decided 15 October 2026); `A` applies only to non-Historical modes and remains deferred (owner, 30 Oct 2026) [S1] |
 | `start.farmers` | `open (owner)` | novice / trained / veteran units | Proposed `5 / 10 / 5` came from Amir's scale of 10,000 people per unit; the 30 October 2026 rulings do not decide these values [S11] |
 | `start.prepared_fields` | `20` | staffed farming slots, across multiple friendly regions | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field derivation) |
 | `start.pioneer_teachers` | `1` | veteran pioneer unit, included in population total | Retained owner-decided inventory [S1] |
 | `start.military_camps` | `2` | operating camps at the already approved locations | Retained owner ruling, historical `Q-CAMP-2` |
 | `start.training_centres` | `1` | operating centre, with that teacher | Retained owner-decided inventory [S1] |
-| `start.food_production` / `start.food_consumption` | `65 / 65` | Food per turn, initially breaking even | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative no-refill derivation) |
+| `start.food_production` / `start.food_consumption` | `65 / 65` | Food per turn, initially breaking even | Amir's no-refill derivation; the 30 October 2026 conflict review did not rule on it [S11]; the monthly import of `R-FOOD-002` (`docs/rules/mvp.md:409`) stays operative |
 
 All operative starting roles partition the retained census-derived population total; army, teachers and farmers are not added on top. Starting professions, tools and completed buildings are already owned: do not deduct their entry/construction costs again from starting Money. Historical mode keeps the sourced army seed from `content/map/units_1948.yaml`; starting-army parameter `A` applies only to non-Historical modes and remains an owner question pending (owner, 30 Oct 2026). This catalogue does not choose `A`. Amir's proposed absolute population/farmer counts, spare-equipment inventory, regional prepared-slot allocation and no-refill Food break-even model are non-operative [S1][S4].
 
@@ -42,12 +42,12 @@ All operative starting roles partition the retained census-derived population to
 | --- | --- | --- | --- |
 | `population.food_per_turn` | `1` | Food per own population unit, every status | Agreed |
 | `industry.income` | `1 / 2 / 3` | Money per staffed turn: ordinary or novice / apprentice / expert | Amir's proposed staffed-tier model, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `farmer.output` | `2 / 3 / 5` | Food per staffed turn: novice / trained / veteran | Amir's proposed regional field/tier model, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `farmer.output` | `2 / 3 / 5` | Food per staffed turn: novice / trained / veteran | The tier rates agree with main's `gdd-0.3` rule (`R-VET-002`) and are Agreed in `content/gdd03-balance.yaml` [S11]; the regional field model belongs to the declined regional-pooling proposal [S1] |
 | `profession.farmer_tools` / `profession.pioneer_tools` | `3 / 5` | Money once on entering matching profession | Agreed |
 | `pioneer.training_turns` | `4` | turns for retained pioneer training | Retained placeholder in `R-TRAIN-003` [S5]; Amir's proposed combined three-turn farmer/pioneer course is non-operative [S1] |
 | `profession.trainees_per_teacher` | `1` | trainee at a time per centre and matching veteran teacher | Agreed; replaces the briefly proposed larger class |
-| `profession.work_to_veteran` | `9` | actual working turns for novice or trained farmer/pioneer | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `pioneer.work_rate` | `0.75 / 1 / 1.5` | trained-equivalent work units per turn: novice / trained / veteran | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative; retained pioneer progress is fixed and veterans double it) |
+| `profession.work_to_veteran` | `9` | actual working turns for novice or trained farmer/pioneer | Agrees with main's `gdd-0.3` rule (`R-VET-001`) and is Agreed in `content/gdd03-balance.yaml`; the 30 October 2026 review lists it as not a conflict [S11] |
+| `pioneer.work_rate` | `0.75 / 1 / 1.5` | trained-equivalent work units per turn: novice / trained / veteran | Agrees with main's `gdd-0.3` rule (`R-VET-002`) and is Agreed in `content/gdd03-balance.yaml`; the 30 October 2026 review lists it as not a conflict [S11]; fixed pioneer progress with veteran doubling applies to `legacy` and `gdd-0.1` |
 | `craft.course_cost` / `craft.course_turns` | `0.5 / 3` | Money / turns; initial Industry apprenticeship course | Owner-set values ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `craft.course_cost` / `craft.course_turns` (proposal) | `5 / 6` | Money / turns; initial Industry apprenticeship course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
 | `craft.course_income` | `1` | Money per staffed course turn | Agreed |
@@ -59,7 +59,7 @@ All operative starting roles partition the retained census-derived population to
 | `field.cost` / `field.work` | `5 / 9` | Money / trained-equivalent pioneer work units | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative regional-field model) |
 | `field.nominal_turns` | `12 / 9 / 6` | turns at constant novice / trained / veteran tier | Derived only from declined proposal values; non-operative |
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** farmer/pioneer work XP would count actual qualifying turns and allow promotion to veteran without the formal course. This proposal is non-operative.
+Amir's farmer/pioneer work XP, counting actual qualifying turns and allowing promotion to veteran without the formal course, agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists it as not a conflict [S11].
 
 ### Project catalogue
 
@@ -87,8 +87,8 @@ All operative starting roles partition the retained census-derived population to
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `reception.capacity` | `3` | refugee or course-trainee beds per camp | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
-| `reception.turns` | `6` | actual reception turns before free-civilian status | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
+| `reception.capacity` | `3` | refugee or course-trainee beds per camp | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; Agreed in `content/gdd03-balance.yaml` for the inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`) |
+| `reception.turns` | `6` | actual reception turns before free-civilian status | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; Agreed in `content/gdd03-balance.yaml` for the inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`), while live conversion follows `R-CITY-004` (`docs/rules/mvp.md:105`) |
 | `reception.basic_credit` | `3` | reception turns credited by completed basic military training | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
 | `housing.condition_max` | `1` | unitless fraction; display as percent | Agreed |
 | `housing.money_threshold` / `housing.money_slope` | `0.50 / 1` | condition fraction / Money per resident per fraction below threshold | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
@@ -105,7 +105,7 @@ All operative starting roles partition the retained census-derived population to
 
 | Key | Value | Unit / meaning | Basis |
 | --- | --- | --- | --- |
-| `import.arms_price` | `1` | Money per Arms; IL millions at the display scale | Retained `R-ARMS-002` value [S9]; proposed `10` is non-operative [S1] |
+| `import.arms_price` | `10` | Money per Arms; IL millions at the display scale | Agreed in `content/gdd03-balance.yaml`, matching Amir's value [S11]; the live `R-ARMS-002` purchase charges IL 1m an Arms [S9] |
 | `import.food_per_money` | `3` | Food per Money | Agreed |
 | `import.delivery_turns` | `0` | turns after an Arms purchase | Retained immediate `R-ARMS-002` delivery [S9]; proposed next-turn shipment is non-operative [S1] |
 | `immigration.ship_interval` / `immigration.units_per_ship` | `2 / 3` | turns / population units, average | Amir's proposed manifest schedule, declined by the owner on 30 October 2026 [S1] (non-operative); retained arrivals use the CBS series in `content/aliyah.yaml` [S7] |
@@ -137,7 +137,7 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `military.active_money` | `0.05` | Money per active army unit per turn, excluding basic trainees | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `military.active_money` (proposal) | `1` | Money per active army unit per turn, excluding basic trainees | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
 | `military.strength` | `1 / 2 / 3` | proposed strength units: untrained / trained / veteran | Amir's proposed qualification-factor model, declined by the owner on 30 October 2026 [S1] (non-operative); retained Strength counts population units [S6] |
-| `military.combat_xp_gain` / `military.combat_xp_full` | `1 / 5` | XP ticks per survived engagement / ticks to veteran | Amir's proposal, declined by the owner 30 Oct 2026 [S1] (non-operative; Keep time-served ruling) |
+| `military.combat_xp_gain` / `military.combat_xp_full` | `1 / 5` | XP ticks per survived engagement / ticks to veteran | Amir's proposal; the 30 October 2026 conflict review did not rule on it [S11]; time-served `R-UNIT-004` (`docs/rules/mvp.md:245`) stays operative |
 | `military.refugee_multiplier` | `0.75` | unitless strength multiplier until reception complete | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
 | `military.fortify_turns` | `1` | turns for Fortify order; defence bonus open (owner) | Retained turn |
 | `occupation.turns` | `6` | turns before annex-or-withdraw choice | Retained owner ruling |

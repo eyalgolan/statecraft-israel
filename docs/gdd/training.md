@@ -25,19 +25,19 @@ The owner later decided that craftsmen, halutzim and veteran pioneers may return
 *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed permanent, mutually exclusive trained civilian professions with no switching or retraining UI.* [S1]
 ### Population identity and civilian professions
 
-Each population unit has a stable id, location, retained civilian qualification and retained military service state. Civilian-to-military conversion and demobilisation change the same unit; they do not spawn another group. Amir's proposed regional location, reception progress, working-turn XP, combat XP and reusable-equipment fields are non-operative [S6].
+Each population unit has a stable id, location, retained civilian qualification and retained military service state. Civilian-to-military conversion and demobilisation change the same unit; they do not spawn another group. Amir's proposed regional location, reception progress, combat XP and reusable-equipment fields are non-operative [S6]; his working-turn XP agrees with main's `gdd-0.3` rule (`R-VET-001`).
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** farmer, pioneer and craftsman would be mutually exclusive, and a trained civilian profession could not be replaced. The retained rule permits qualified civilians to return and be reassigned without retraining.
 
 **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** a novice could pay a one-time tool cost and start farmer or pioneer work immediately. The retained `PioneerWork` rule requires a halutz, and pioneer training takes four turns. Under the retained [owner ruling #1511](https://github.com/eyalgolan/statecraft-israel/issues/1511#issuecomment-6372356482), qualified civilians may return and be reassigned while keeping their qualification.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S6]:** farmers and pioneers would earn working-turn XP and promote through a self-taught route. The retained pioneer rule uses six service turns and veteran double progress.
+Amir's rule that farmers and pioneers earn working-turn XP and can promote through a self-taught route agrees with main's `gdd-0.3` scoping (`R-VET-001` and `R-VET-002`, `docs/rules/mvp.md:193` and `:195`); the 30 October 2026 review lists it as not a conflict [S6]. Six service turns and veteran double progress apply to `legacy` and `gdd-0.1`.
 
 ### Reception camps
 
 The named facility roster is in [locations](../locations.md#facility-roster) [S8]. The roster does not make Amir's proposed reception-bed pipeline operative [S6].
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S6]:** refugees would need six reception turns before civilian work. The retained next-housing-step conversion rule remains authoritative.
+**Amir's proposal [S6]:** refugees would need six reception turns before civilian work. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-CITY-004` (`docs/rules/mvp.md:105`), with an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`).
 
 The proposed basic-training reception credit, combat-veterancy completion, demobilisation queue, port queue and reception combat penalty are part of Amir's declined reception model [S6] and are non-operative. Under the retained city rule, every refugee becomes a civilian on the next housing step.
 
@@ -45,13 +45,13 @@ The proposed basic-training reception credit, combat-veterancy completion, demob
 
 A retained training centre uses its matching veteran teacher under the approved course rules. Amir's proposed dependency on an operating reception camp, separate teacher housing and reception-bed capacity is non-operative [S6].
 
-An eligible free civilian may train under the retained course rules. Completion grants the retained qualification; there is no actual-work route to qualification or veteran status. These centres do not train soldiers. The starting centre and veteran pioneer teacher belong to the initial population inventory, not additional people.
+An eligible free civilian may train under the retained course rules. Completion grants the retained qualification; there is no actual-work route to qualification, while under `gdd-0.3` novice and trained farmers/pioneers reach veteran through actual work (`R-VET-001`). These centres do not train soldiers. The starting centre and veteran pioneer teacher belong to the initial population inventory, not additional people.
 
 ### Craftsmen
 
 The initial craftsman course uses an Industry job slot, pays `craft.course_cost` of 0.5 per course in Money upfront and takes `craft.course_turns` of 3 turns ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S10]. It earns only `craft.course_income` during the course, then grants apprentice status. No simultaneous ordinary Industry income or extra mentor population unit is added.
 
-Apprentice-craftsman progression remains separate from the declined farmer/pioneer working-turn proposal. Under the retained #1511 ruling, qualified civilians may return and be reassigned without retraining.
+Apprentice-craftsman progression remains separate from the farmer/pioneer working-turn rule. Under the retained #1511 ruling, qualified civilians may return and be reassigned without retraining.
 
 Apprentices become experts after `craft.expert_work_turns` actual turns in Industry or an arms workshop. Each turn counts once, regardless of output/work rate. Initial course, travel, idle time and worker-free city construction do not count [S6].
 
@@ -82,10 +82,10 @@ Cancelled retained courses award no unfinished qualification. Proposed reception
 - `dotnet test sim/Statecraft.sln` passes, including `TrainingTests`, `CampsTests`, `SitesContentTests`, `CitiesContentTests`, `GddStateTests` and `ReferencePlayerTests`.
 - `smoke5`, `scenario-cautious`, `scenario-reckless` and `scenario-mvp-absorb-first` do not move; `hash1950`, `hash1952` and `mvp-end` have a row for #787 in docs/determinism.md.
 - Population identity reconciles through retained courses, work, service and demobilisation; the proposed reception state is non-operative.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** refugees could not work until proposed reception completed, military credit would offset reception, and combat veterancy would clear it.
+- **Amir's proposal [S6]:** refugees could not work until proposed reception completed, military credit would offset reception, and combat veterancy would clear it. The owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-CITY-004` (`docs/rules/mvp.md:105`), with an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`).
 - Retained teacher/course capacity prevents duplicate pupils; proposed reception-bed substitution rules are non-operative.
 - Conversion/cancellation cannot duplicate people, qualifications or equipment.
-- **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** self-taught and trained farmers/pioneers would use the same actual-work threshold.
+- Under `gdd-0.3` self-taught and trained farmers/pioneers use the same actual-work threshold (`R-VET-001`), as Amir's proposal and main agree [S6].
 
 ## Out of scope
 

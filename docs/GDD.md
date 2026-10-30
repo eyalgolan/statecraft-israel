@@ -273,7 +273,7 @@ The same population unit retains its identity across civilian work, training, mi
 **Amir's proposal, declined by the owner on 30 October 2026 ([conflict decision](#30-october-2026-conflict-decisions)):** player regions would pool civilian housing and employment and use prepared regional farmland. The retained per-city rules and the sourced annexation-resident rules remain authoritative.
 
 ## Relationship to the existing design
-*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed removing automatic borrowing and automatic Food refill while making Money and workers the construction constraints.*
+*Amir's #1668 proposed removing automatic borrowing and automatic Food refill while making Money and workers the construction constraints. The owner's 30 October 2026 conflict review ([conflict decision](#30-october-2026-conflict-decisions)) did not rule on this; the operative main rules are `R-MONEY-003` and `R-FOOD-002` (`docs/rules/mvp.md:399` and `:409`).*
 
 The existing units-in-play design describes units as a presentation layer with no individual orders. This GDD calls for units, jobs, training, construction and settlement control to affect gameplay. Those rules must become simulation state and actions under the existing deterministic simulation architecture.
 
@@ -309,7 +309,7 @@ The camera has a fixed viewing direction and pitch, supports pan and **dolly in/
 ## Decision provenance and implementation status
 
 * The [Arms request](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231351946) and [real-time play request](https://github.com/eyalgolan/statecraft-israel/pull/856#issuecomment-6231565826), checked 2026-10-17, are addressed by the balance catalogue and population/training rules.
-* *Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed housing-only upkeep deterioration and reception before civilian work.*
+* *Considered and declined (owner, 30 Oct 2026; Upkeep conflict, option A; [conflict decision](#30-october-2026-conflict-decisions)): Amir's #1668 proposed housing-only upkeep deterioration. For his reception before civilian work, the review did not rule; the operative main rule is `R-CITY-004` (`docs/rules/mvp.md:105`), with an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`).*
 * **Agreed** in the balance catalogue means an explicit interview decision or a retained approved baseline. Unresolved numbers remain TBD rather than receiving assistant-supplied defaults.
 * Existing `content/` values, tests, saves and code still describe the earlier implementation where they conflict. Implementation work must migrate them together, update rule-ID coverage and deliberately review hash changes. This documentation revision does not silently change that code or its data.
 

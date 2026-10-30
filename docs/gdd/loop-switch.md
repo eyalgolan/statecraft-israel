@@ -37,7 +37,7 @@ Resolve in stable-id order:
 11. Advance retained occupation timers.
 12. Evaluate objectives/cards/score, finalise end date and apply campaign boundary.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S4] ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)):** resolver steps would add reception, staffed regional/city/pioneer work, actual-work XP, manifests, transit charges, housing-only shortfall effects and garrison-dependent occupation. These additions are non-operative.
+**Amir's proposal, declined by the owner on 30 October 2026 [S4] ([conflict decision](../GDD.md#30-october-2026-conflict-decisions)):** resolver steps would add staffed regional/city/pioneer work, manifests, transit charges, housing-only shortfall effects and garrison-dependent occupation. These additions are non-operative. Actual-work XP agrees with main's `gdd-0.3` rule (`R-VET-001`) and was not a 30 October 2026 conflict. For a reception step, the owner's 30 October 2026 conflict review did not rule on this; the operative main rule is `R-CITY-004` (`docs/rules/mvp.md:105`), with an inactive `gdd-0.3` reception fixture (`docs/rules/mvp.md:107`).
 
 Commit retained indicator changes in one bounded final update. Preserve historical hard/soft event windows and established delegation; explicit event resource grants apply once.
 

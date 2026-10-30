@@ -25,7 +25,7 @@ Approved rail construction is the Haifa–Tel Aviv link via Rosh HaAyin: the Yar
 
 Approved roads are Burma Road and Tel Aviv–Netanya coastal road. Burma uses existing `burma_road` waypoints; its card describes the separate Road of Valour opening on 7 December 1948 without identifying them as the same road [S4]. Coastal-road dates remain in research. [Objectives](objective-card.md) alone defines required group membership.
 
-**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** corridor work would require on-site pioneers and use the proposed payment/pause/cancel rules in the catalogue [S14]. The retained work-from-where-it-stands, borrowing and StopWork rules remain authoritative.
+**Amir's proposal [S1]:** corridor work would require on-site pioneers and use the proposed payment/pause/cancel rules in the catalogue [S14]. The owner's 30 October 2026 conflict review did not rule on this; the operative main rules are `R-COR-001`, `R-COR-003` and `R-MONEY-003` (`docs/rules/mvp.md:263`, `:267` and `:399`): work from where the unit stands, borrowing and StopWork.
 
 Complete a corridor when all segments are built. Completed segments reduce [movement cost](military-combat.md#movement-and-orders) before the whole link is finished, without directly granting resources. A route touching a locality does not capture it. Geometry and ids survive editor moves/regeneration.
 

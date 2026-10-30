@@ -18,7 +18,7 @@ This is a handoff, not another city rulebook. [Cities](cities.md) owns assignmen
 
 Do not independently round every town or create an urban-only population total. Explicit fixture overrides are not production balance. **Amir's proposal, declined by the owner on 30 October 2026 [S5]:** the playable start would distribute farmers across multiple regions.
 
-The retained next-housing-step refugee conversion remains authoritative. **Amir's proposal to replace city recruit counts and passive city tax was declined by the owner on 30 October 2026 [S5].** Its removal of Attention agrees with the retained `gdd-0.3` rule (no Attention resource, `R-GOV-002`).
+The retained next-housing-step refugee conversion remains authoritative. Amir's proposal to replace city recruit counts and passive city tax was not ruled on by the owner's 30 October 2026 conflict review; the operative main rules are `R-HOUSE-003` and `R-CITY-002` (`docs/rules/mvp.md:135` and `:95`) [S5]. Its removal of Attention agrees with the retained `gdd-0.3` rule (no Attention resource, `R-GOV-002`).
 
 ## Data touched
 
