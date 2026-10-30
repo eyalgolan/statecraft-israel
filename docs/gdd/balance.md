@@ -48,7 +48,7 @@ All operative starting roles partition the retained census-derived population to
 | `profession.trainees_per_teacher` | `1` | trainee at a time per centre and matching veteran teacher | Agreed; replaces the briefly proposed larger class |
 | `profession.work_to_veteran` | `9` | actual working turns for novice or trained farmer/pioneer | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
 | `pioneer.work_rate` | `0.75 / 1 / 1.5` | trained-equivalent work units per turn: novice / trained / veteran | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative; retained pioneer progress is fixed and veterans double it) |
-| `craft.course_cost` / `craft.course_turns` | `0.5 / 3` | Money / turns; initial Industry apprenticeship course | Owner-set values (owner, 30 Oct 2026) [S1] |
+| `craft.course_cost` / `craft.course_turns` | `0.5 / 3` | Money / turns; initial Industry apprenticeship course | Owner-set values ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `craft.course_cost` / `craft.course_turns` (proposal) | `5 / 6` | Money / turns; initial Industry apprenticeship course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
 | `craft.course_income` | `1` | Money per staffed course turn | Agreed |
 | `craft.expert_work_turns` | `36` | actual apprentice working turns to expert | Agreed |
@@ -132,9 +132,9 @@ The proposed immigration mix and ship schedule are non-operative [S1]. Retained 
 | `military.demobilise_return` | `1` | issued Arms returned once on valid demobilisation | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
 | `military.repeat_issue` | `0` | additional Arms under Amir's reusable-equipment model | Amir's proposal, declined by the owner on 30 October 2026 [S1] (non-operative) |
 | `military.attack_arms` / `military.artillery_arms` | `1 / 2` | Arms per player attack / artillery firing | Retained `R-COMBAT-004` and `R-COMBAT-007` values [S9] |
-| `military.training_money` | `0.5` | Money per basic course | Owner-set value (owner, 30 Oct 2026) [S1] |
+| `military.training_money` | `0.5` | Money per basic course | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `military.training_money` (proposal) | `0` | Money per basic course | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
-| `military.active_money` | `0.05` | Money per active army unit per turn, excluding basic trainees | Owner-set value (owner, 30 Oct 2026) [S1] |
+| `military.active_money` | `0.05` | Money per active army unit per turn, excluding basic trainees | Owner-set value ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S11] |
 | `military.active_money` (proposal) | `1` | Money per active army unit per turn, excluding basic trainees | Amir's proposal, declined (owner, 30 Oct 2026) [S1] |
 | `military.strength` | `1 / 2 / 3` | proposed strength units: untrained / trained / veteran | Amir's proposed qualification-factor model, declined by the owner on 30 October 2026 [S1] (non-operative); retained Strength counts population units [S6] |
 | `military.combat_xp_gain` / `military.combat_xp_full` | `1 / 5` | XP ticks per survived engagement / ticks to veteran | Amir's proposal, declined by the owner 30 Oct 2026 [S1] (non-operative; Keep time-served ruling) |
@@ -194,6 +194,7 @@ Historical census estimates, real camp opening dates, authored region borders, a
 - [S8] Retained site, swamp and corridor durations, docs/gdd/build-yishuv.md, docs/gdd/fields-and-swamps.md and docs/gdd/corridors.md.
 - [S9] Retained Arms purchase, training and combat values, `docs/rules/mvp.md` (`R-ARMS-002`, `R-ARMS-003`, `R-COMBAT-004` and `R-COMBAT-007`; attack 1 Arms, artillery 2 Arms).
 - [S10] Retained numerical and rule catalogue, `content/projects.yaml`, `content/rules.yaml` and `docs/rules/mvp.md` (`R-PROJ-001`, `R-TRAIN-001` and `R-UNIT-005`).
+- [S11] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 
 ## Open questions
 

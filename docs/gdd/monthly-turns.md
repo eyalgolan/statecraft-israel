@@ -3,7 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want every turn to be one month, so that 15 May 1948 to January 1952 plays in about 44 turns (decision D-B1 [S2]; the GDD targets about 48 [S1]).
-I plan against a consistent monthly calendar and receive historical decisions in time to act.
+**Correction:** The current GDD fixes the campaign at 44 turns ([GDD, MVP scope](../GDD.md#mvp-scope-1948-to-1951)) [S1]; the older "about 48" wording above is superseded.
 
 ## Rules
 

@@ -319,6 +319,15 @@ On 30 October 2026 the owner reviewed all 13 conflicts between the recorded desi
 
 Conflicting #1668 mechanics and catalogue entries retained for traceability are non-operative. The recorded ruling beside each declined note remains authoritative; an unresolved value is `open (owner)` and must not be inferred from the declined proposal.
 
+#### Implementation gap after the 30 October 2026 rulings
+
+|Gap|Current code behaviour|Ruled target|Status|
+|-|-|-|-|
+|Attention|The `gdd-0.3` code has no Attention ([`docs/rules/mvp.md` line 23](rules/mvp.md#the-loop-switch); also lines 29 and 449).|Keep Attention; the proposal to remove it was declined ([GDD line 276](#relationship-to-the-existing-design)).|to change in code|
+|Combat Arms expenditure|Player attacks and artillery fire do not read or spend Arms under `gdd-0.3` ([`docs/rules/mvp.md` line 313](rules/mvp.md#combat); also lines 315 and 321).|Attacks and artillery fire spend Arms; the proposal to remove that expenditure was declined ([GDD line 312](#decision-provenance-and-implementation-status)).|to change in code|
+|City-loss defeat|The `gdd-0.3` city-loss defeat check is skipped ([`docs/rules/mvp.md` line 433](rules/mvp.md#defeat)).|Keep any-city war loss as a defeat condition ([GDD line 264](#mvp-completion-rules)).|to change in code|
+|Population scale|The `gdd-0.3` population ledger uses 10,000 people per unit ([`docs/rules/mvp.md` line 548](rules/mvp.md#population-identity-foundation-gdd-03-only)).|Use 1,000 people per population unit ([GDD line 58](#resources-and-national-parameters)).|to change in code|
+
 ## Deferred decisions
 
 These are recorded once here. Feature files link here instead of maintaining competing open-question lists.

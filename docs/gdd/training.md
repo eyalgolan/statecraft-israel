@@ -12,7 +12,7 @@ I can follow a population unit through civilian work, military service and retur
 - The camp sites are `Camp 80` near Pardes Hanna, for Hadera, and Tzrifin, for Rishon LeZion, both military camps (`Q-CAMP-2` [S5]; owner, "Both military", #927). A camp serves the city nearest by hex, and a tie goes to the nearest by km (R-CAMP-002). Both rows are drafts: their sources were read by AI agents for the research note, and Tzrifin's exact position and a GIS clearance are still gaps.
 - `Train(city, track, n)` takes civilians without a job into training as recruits (military camp) or halutzim (Hakhshara). It costs 1 Attention and IL 0.5m per group, both placeholders, paid at once. A short Treasury borrows the rest, as map actions do (owner decision on #468) (R-TRAIN-001).
 
-**Then decided (owner, 30 Oct 2026):** Basic military training costs 0.5 per course in Money; the Money value is no longer a placeholder [S6].
+**Then decided ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)):** Basic military training costs 0.5 per course in Money; the Money value is no longer a placeholder [S10].
 - Basic training takes 1 unit of Arms a group when it starts, a design value the owner approved (#781); too few Arms refuses the order with a reason, and cancelling the group returns its Arms to the pool (owner, #1047). Pioneer training takes no Arms (R-ARMS-003).
 - It is refused, with the state unchanged, for fewer than 1 group (unitless), more than the city's civilians without a job, an unknown city or track, a city without the facility, or the legacy loop (R-TRAIN-001).
 - People in training are neither civilians nor recruits: they hold no job and are not counted by housing or Social cohesion while they train.
@@ -49,7 +49,7 @@ An eligible free civilian may train under the retained course rules. Completion 
 
 ### Craftsmen
 
-The initial craftsman course uses an Industry job slot, pays `craft.course_cost` of 0.5 per course in Money upfront and takes `craft.course_turns` of 3 turns (owner, 30 Oct 2026) [S6]. It earns only `craft.course_income` during the course, then grants apprentice status. No simultaneous ordinary Industry income or extra mentor population unit is added.
+The initial craftsman course uses an Industry job slot, pays `craft.course_cost` of 0.5 per course in Money upfront and takes `craft.course_turns` of 3 turns ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S10]. It earns only `craft.course_income` during the course, then grants apprentice status. No simultaneous ordinary Industry income or extra mentor population unit is added.
 
 Apprentice-craftsman progression remains separate from the declined farmer/pioneer working-turn proposal. Under the retained #1511 ruling, qualified civilians may return and be reassigned without retraining.
 
@@ -59,7 +59,7 @@ Apprentices become experts after `craft.expert_work_turns` actual turns in Indus
 
 Under retained `R-TRAIN-001`, `Train(city, track, n)` takes civilians without a job into a military course when the city has the matching camp; the course charges its retained Money and Arms costs [S9]. **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** an eligible civilian at an operating camp could instead take up arms immediately without a wait. Proposed reusable-equipment and reception exceptions are also non-operative [S6][S7].
 
-Retained training, teaching and active service are exclusive assignments. Active service costs 0.05 per active army unit per turn in Money, excluding basic trainees (owner, 30 Oct 2026) [S6]. The existing Attention system remains; Amir's proposal to remove Attention limits was declined [S6].
+Retained training, teaching and active service are exclusive assignments. Active service costs 0.05 per active army unit per turn in Money, excluding basic trainees ([owner, 30 Oct 2026](../GDD.md#30-october-2026-conflict-decisions)) [S10]. The existing Attention system remains; Amir's proposal to remove Attention limits was declined [S10].
 
 Under retained `R-UNIT-005`, Send home is the only way home: no automatic demobilisation happens, and the order is unavailable until its armistice condition is met; when it runs, the unit leaves the map and its strength joins the nearest city as civilians without a job [S9]. **Amir's proposal, declined by the owner on 30 October 2026 [S6]:** demobilisation at an operating camp would be immediate/free, preserve the proposal's military state, return issued Arms to a reusable pool and route incomplete-reception units through the proposed queue.
 
@@ -103,6 +103,7 @@ Camp growth into permanent towns, soldier training in civilian centres and unsou
 - [S7] Numerical catalogue, docs/gdd/balance.md.
 - [S8] Facility identities and evidence, docs/locations.md.
 - [S9] Retained training and Send home rules, `docs/rules/mvp.md` (`R-TRAIN-001` and `R-UNIT-005`).
+- [S10] Owner's 30 October 2026 rulings, [GDD conflict decisions](../GDD.md#30-october-2026-conflict-decisions).
 
 ## Open questions
 
