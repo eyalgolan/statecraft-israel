@@ -17,7 +17,7 @@ I choose sites to develop and send a pioneer there, with rural production manage
 - It is refused, with the state unchanged, for an unknown unit, a unit that is not a halutz or already has a project (one project per unit, D-D6), an unknown action or site, a site being built or built (one unit per site), or the legacy loop (R-SITE-001).
 - `StopWork(unit)` ends the build. The site is available again; the progress and the Money paid are lost (D-A3) (R-SITE-002).
 
-**Proposal (Amir, #1668), needs owner ruling:** moving or stopping pauses paid progress instead of losing progress and Money; only explicit cancellation discards progress without refund.
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed pausing paid progress when moving or stopping and discarding progress without refund only on explicit cancellation.* [S1]
 - Construction resolves after training and before production in each turn (D-A6). A build ordered this turn counts this turn: it takes 6 turns, a placeholder (R-SITE-003).
 - When the build finishes, the site is marked built on the turn's end date and the unit is idle again. It stays a halutz unit until it has worked `veteran_halutz_service` turns (docs/gdd/veteran-pioneer.md). Nothing else changes yet: no city, housing, jobs, population or Social cohesion. The objective and its card come with the objective PR (R-SITE-003).
 ### Sites and field work

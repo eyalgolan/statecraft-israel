@@ -19,7 +19,7 @@ A designer edits existing hex properties and moves locations, inspects affected 
 - Report validation failures against the affected hex, location or dependent record. A failed save must leave the last valid saved map intact [S1].
 - The host is a Unity editor window. It saves edits to one override file, `content/map/overrides.yaml`, which map generation applies last so regeneration keeps the edits. The editable properties are a hex's terrain and control and a location's position; a location's id and sources stay unchanged. **Then decided (owner, 18 Oct 2026, "Unity editor window"; [#1009](https://github.com/eyalgolan/statecraft-israel/issues/1009#issuecomment-6254354592))** [S4].
 
-**Proposal (Amir, #1668), needs owner ruling:** extend editing to workable-land flags, region membership and supported static infrastructure. Keep `content/map/overrides.yaml`; do not substitute the proposed `authored_overrides.yaml` path or remove control editing without a superseding ruling.
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed editing workable-land flags, region membership and supported static infrastructure while retaining `content/map/overrides.yaml`.* [S1]
 ### Camera and editing surface
 
 The gameplay camera has fixed direction/pitch, pan and dolly in/out along its view, with no yaw/orbit/tilt control. Close views retain readable labels/selections. Military camps use enlarged highlighted markers without moving logical hexes or evidence positions.
@@ -28,7 +28,7 @@ Use the existing internal map/Unity authoring workflow as the first host. This i
 
 ### Tile and location operations
 
-Under Amir's proposal, select a hex to edit supported existing biome/land fields, workable-land flags, authored region membership and supported static infrastructure. Show generated/override values and validation. The [GDD](../GDD.md#terrain--tile--hex-types) owns the deferred expanded catalogue; the editor cannot invent it.
+Under Amir's declined proposal, select a hex to edit supported existing biome/land fields, workable-land flags, authored region membership and supported static infrastructure. Show generated/override values and validation. The [GDD](../GDD.md#terrain-type-tilehex-type-new-types-tbd) owns the deferred expanded catalogue; the editor cannot invent it.
 
 Select a location by marker/id/search, move by drag or explicit hex/coordinate entry, and rebind authored logical hex/visual placement together. Preserve id, aliases, historical coordinates, sources, review state and period names. Separately record visual offsets for shared-hex readability. Moving a marker never merges identities or edits source evidence.
 

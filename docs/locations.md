@@ -10,7 +10,7 @@ Must-have places comprise the core roster, retained places, required founding ma
 
 The MVP map must support the 33 must-have locations below. The 14 optional locations can retain existing markers or shared functionality while additional authoring waits. These are map-production priorities: a fort, pass or bridge does not require a full city-management panel, and map inclusion does not make capture or construction of every location a victory condition.
 
-**Proposal (Amir, #1668), needs owner ruling:** retain the additional existing-place and facility identities below in production scope. Do not treat them as additions to the owner-approved 33 must-have / 14 optional roster unless the owner changes that ruling.
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed retaining additional existing-place and facility identities in production scope beyond the approved 33 must-have / 14 optional roster.*
 A marker does not automatically create a managed city, target, objective, population unit or operating facility. Friendly rural work uses [regional capitals](gdd/cities.md); enemy towns use [individual control/taxes](gdd/settlement-control.md) with no player workforce. Proposed partition, wartime reference control, campaign control and armistice lines remain separate layers.
 
 The roster supplements existing supported map records and approved city, site and objective decisions. It does not remove locations already implemented or replace the existing Mefalsim slice and its objective. In particular, the Zichron Ya'akov entry adds an industry location to the map scope; it does not move the winery already specified for Rishon LeZion in [Cities and absorption](gdd/cities.md). Tel Aviv and Jaffa remain distinct map locations while sharing the approved Tel Aviv–Yafo city economy; the roster does not create a second population or immigrant-allocation pool for Jaffa. City balance remains in that feature section, and designated-site availability and objective rules remain in [Build yishuv](gdd/build-yishuv.md), [Corridors](gdd/corridors.md) and their referenced plans.
@@ -34,7 +34,6 @@ The gameplay-purpose column states the design intent for each place. Exact start
 | Tsfat / Safed | Town | Northern population centre, employment and rebuilding projects. |
 | Zichron Ya'akov | Moshava / town | Location-specific industry: vineyards and a winery (approved by the owner on 17 October 2026). Balance and integration with the existing winery feature remain open. |
 
-**Proposal (Amir, #1668), needs owner ruling:** Zichron Ya'akov would retain a vineyards/winery theme under shared Industry rules, without extra Food or tax bonuses. This conflicts with the 20 October #737 ruling that the winery is in Rishon LeZion and Zichron has no automatic winery implementation.
 | Degania | Kibbutz | Agriculture and defence on the Jordan Valley front. |
 | Negba | Kibbutz | Southern defence, farming and competing manpower needs. |
 | Yad Mordechai | Kibbutz | An exposed southern coastal settlement to supply and defend. |
@@ -60,6 +59,8 @@ The gameplay-purpose column states the design intent for each place. Exact start
 | Hadera | Town (existing managed city, Phase 3) | Managed town on the railway corridor. |
 | Tiberias | Town (existing managed city, Phase 3) | Northern population and development centre. |
 
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed a Zichron Ya'akov vineyards/winery theme under shared Industry rules without extra Food or tax bonuses.*
+
 ## Retained existing must-have places
 
 | Location | Required treatment |
@@ -81,7 +82,7 @@ The gameplay-purpose column states the design intent for each place. Exact start
 
 ## Facility roster
 
-**Proposal (Amir, #1668), needs owner ruling:** treat all facility identities below as must-have and make Rosh HaAyin required rather than optional. Keys are proposed bindings/aliases, not assertions that records already exist or every camp operates on the first day. Reception availability and the starting centre's host remain in the [GDD register](GDD.md#deferred-decisions).
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed making every listed facility must-have and Rosh HaAyin required rather than optional, with proposed keys and unresolved availability/host bindings.*
 
 | Facility | Proposed stable key | Role and identity boundary |
 | --- | --- | --- |
@@ -158,7 +159,7 @@ These anchors/evidence come from [units_1948.yaml](../content/map/units_1948.yam
 - Strategic/reinforcement-route labels create no garrisons, supply, reinforcements or bonus output. Explicit scenario values require evidence or design-value labels.
 - Both winery themes use shared regional Industry jobs; no duplicate passive Money or Food.
 - Reference dates are not automatic unlocks. Site and facility availability have separate owners.
-- [Map editor](gdd/map-editor.md) preserves ids/evidence/regional slot dependencies and generation-safe placement overrides. The pending terrain catalogue stays only in [the GDD](GDD.md#terrain--tile--hex-types).
+- [Map editor](gdd/map-editor.md) preserves ids/evidence/regional slot dependencies and generation-safe placement overrides. The pending terrain catalogue stays only in [the GDD](GDD.md#terrain-type-tilehex-type-new-types-tbd).
 
 ## Historical sources
 

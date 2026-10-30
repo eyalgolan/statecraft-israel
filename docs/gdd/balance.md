@@ -2,11 +2,11 @@
 
 ## Player story
 
-The player sees consistent prices, capacities and progress. This is the sole numerical catalogue for this design; the feature owners define when each value applies.
+The player sees consistent prices, capacities and progress. This is Amir's #1668 proposal catalogue; after the 30 October 2026 owner decision [S1], entries that conflict with a recorded ruling are non-operative and the recorded ruling controls.
 
 ## Rules
 
-Every value below is a game design value, not a historical estimate. **Agreed** records Amir's design interview or a retained approved baseline. Derived quantities are labelled. Unresolved values remain `open (owner)`; this catalogue does not supply defaults. Implement with exact decimal or integer arithmetic and stable iteration order.
+Every value below is a game design value, not a historical estimate. **Agreed** records a value present in Amir's #1668 source or a retained approved baseline; it does not override a declined conflict. Derived quantities are labelled. Any value not present in Amir's #1668 source and not retained by a recorded ruling is `open (owner)`; this catalogue does not supply defaults. Implement active values with exact decimal or integer arithmetic and stable iteration order.
 
 ### Campaign and indicators
 

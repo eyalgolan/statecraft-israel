@@ -10,6 +10,7 @@ For map work, read the location roster together with [Cities and absorption](cit
 and [Corridors](corridors.md). [Settlement control](settlement-control.md) defines which places may become control targets;
 a location's map priority does not add a city economy, replace a founding objective or select such a target. Existing
 supported places remain supported even when additional authoring is optional.
+
 | Owner | Responsibility |
 | --- | --- |
 | [Balance](balance.md) | Numerical values, provenance, start inventory |

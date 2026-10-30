@@ -13,7 +13,7 @@ I see work experience and predict its effect on future projects.
 - A veteran does the same pioneer work as a halutz, with the same cost and the same refusals (R-SITE-001). A veteran gains no more service.
 - Both numbers are labelled design values that an agent proposed and the owner took (owner answer on #782 [S4]); the owner may still change them.
 
-**Proposal (Amir, #1668), needs owner ruling:** replace the Q-VET-1/2 six-turn service threshold and veteran double-progress rule with actual working-turn XP and tier rates from the balance catalogue. (unitless)
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed replacing the six-turn service threshold and veteran double-progress rule with working-turn XP and catalogue tier rates.* (unitless) [S1]
 [Training](training.md#population-identity-and-civilian-professions) owns civilian advancement. [Balance](balance.md#work-professions-and-training) owns thresholds/rates. This existing path stays for compatibility/migration and defines no competing multiplier or threshold.
 
 Under Amir's proposal, replace founding/service shortcuts and veteran double-progress with actual work turns and current tier rate. Novices may become veteran through work without courses. Promotion creates no extra people, tool refunds, progress reset or military-XP change.

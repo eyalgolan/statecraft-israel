@@ -20,7 +20,7 @@ I can follow a population unit from arrival through reception, civilian work, mi
 
 The owner later decided that craftsmen, halutzim and veteran pioneers may return to civilian life and retain their qualification, and qualified civilians may be reassigned without retraining (R-QUAL-001 to R-QUAL-007; #1511).
 
-**Proposal (Amir, #1668), needs owner ruling:** make trained civilian professions permanent and mutually exclusive, with no profession switching or retraining UI. This conflicts with R-QUAL-001 to R-QUAL-007.
+*Considered and declined (owner, 30 Oct 2026; keep the recorded ruling; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed permanent, mutually exclusive trained civilian professions with no switching or retraining UI.* [S1]
 ### Population identity and civilian professions
 
 Each population unit has a stable id, reception progress, location/region, assignment, civilian profession/tier/work XP, military qualification/combat XP and equipment state. Scale and starting allocation are owned by [balance](balance.md#population-and-starting-state). Civilian-to-military conversion and demobilisation change the same unit; they do not spawn another group.
