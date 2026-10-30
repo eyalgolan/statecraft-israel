@@ -41,6 +41,8 @@ namespace Statecraft.Game.Map.Collection
         internal int OwnerCount => owners.Count;
         internal bool IsRetiring => retiring;
         internal IReadOnlyCollection<(string id, CollectionDetail detail)> ActiveKeys => active.ToArray();
+        internal bool ActiveAndAnswered((string id, CollectionDetail detail) key) =>
+            active.Contains(key) && answered.Contains(key);
         public CollectionResidency(Func<string, CollectionDetail, Action<GameObject?>, IDisposable> acquire,
             Func<IReadOnlyList<UnityEngine.Object>> destroyAndClear, Action<string, CollectionDetail, GameObject?> answer, Retire retire)
         { this.acquire = acquire; this.destroyAndClear = destroyAndClear; this.answer = answer; this.retire = retire; }

@@ -154,6 +154,8 @@ namespace Statecraft.Game.Map.Units
         static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
         static readonly Dictionary<(string id, CollectionDetail detail), int> ownedDetails =
             new Dictionary<(string, CollectionDetail), int>();
+        internal static int OwnedRefCount => owned.Values.Sum();
+        internal static int OwnedDetailRefCount => ownedDetails.Values.Sum();
         static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
         internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
             arrived.Keys.Concat(near.Keys).Concat(asked).Concat(waiting.Keys).Concat(nearWaiting.Keys), 0, asked.Count + nearWaiting.Count,

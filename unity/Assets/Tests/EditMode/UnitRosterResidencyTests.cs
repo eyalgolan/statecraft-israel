@@ -22,6 +22,8 @@ public class UnitRosterResidencyTests
     const float StartViewM = 90000f;
     const float DisplacedViewM = 11800f;
     const int DeferredRetirementSteps = 3;
+    const int NoOwners = 0;
+    const int OneOwnerPerFarKey = 1;
     static readonly Content C = ContentLoader.Load(Paths.Content);
     static List<UnitEntry> Rows => UnitData.Parse(File.ReadAllText(Path.Combine(Paths.Content, "map", UnitData.DefaultFileName)));
 
@@ -123,6 +125,77 @@ public class UnitRosterResidencyTests
             var batch = pending.ToArray();
             pending.Clear();
             foreach (var (id, done) in batch) done(Prefab(id, CollectionDetail.Far));
+        }
+    }
+
+    static Transform Tokens(UnitLayer layer) => layer.transform.Find("Tokens");
+
+    static void AssertNoOwnedOriginals(string because)
+    {
+        Assert.AreEqual(NoOwners, UnitFigures.OwnedRefCount, because + ": model refcount");
+        Assert.AreEqual(NoOwners, UnitFigures.OwnedDetailRefCount, because + ": detail refcount");
+    }
+
+    [Test]
+    public void AnsweredDrawnHoldersReplaceEveryRosterGatePrefetchOwner()
+    {
+        var map = BuildMap();
+        var pending = PendingSource();
+        try
+        {
+            var layer = UnitLayer.Create(map, Rows, C.Hexes, still: true);
+            layer.Show(C, JuneState());
+            Assert.Greater(layer.FigurePrefetchCount, NoOwners, "foreign roster gates start with temporary owners");
+
+            AnswerAll(pending);
+
+            Assert.AreEqual(NoOwners, layer.FigurePrefetchCount, "every answered model transfers from prefetch to its drawn holders");
+            var holders = Tokens(layer).GetComponentsInChildren<UnitFigureResidency>(true);
+            Assert.IsNotEmpty(holders, "fixture has drawn figure holders");
+            foreach (var holder in holders)
+                Assert.AreEqual(OneOwnerPerFarKey, holder.ResidencySnapshot().ownedLeases,
+                    $"{holder.transform.parent.name}/{holder.name}: one owner for its one retained (model, Far) key");
+            Assert.AreEqual(holders.Length, UnitFigures.OwnedRefCount, "no extra model owner remains beside the drawn holders");
+            Assert.AreEqual(holders.Length, UnitFigures.OwnedDetailRefCount, "no extra detail owner remains beside the drawn holders");
+
+            Object.DestroyImmediate(map.gameObject);
+            AssertNoOwnedOriginals("layer teardown releases all transferred owners");
+        }
+        finally
+        {
+            if (map != null) Object.DestroyImmediate(map.gameObject);
+        }
+    }
+
+    [Test]
+    public void InactiveDrawnHolderCannotRetireItsGateOrLoseTheRosteredToken()
+    {
+        var map = BuildMap();
+        var pending = PendingSource();
+        try
+        {
+            var layer = UnitLayer.Create(map, Rows, C.Hexes, still: true);
+            var state = JuneState();
+            layer.Show(C, state);
+            string model = UnitFigures.LebaneseRegular;
+            Assert.IsTrue(pending.TryGetValue(model, out var answer), "fixture has an unanswered foreign roster gate");
+            layer.gameObject.SetActive(false);
+
+            answer!(Prefab(model, CollectionDetail.Far));
+
+            Assert.IsTrue(UnitFigures.Arrived(model), "the roster-gate model remains available during inactive dressing");
+            Assert.Greater(layer.FigurePrefetchCount, NoOwners, "an inactive holder cannot retire the live gate owner early");
+            Assert.IsNotNull(Tokens(layer).Find("lebanese_army"), "the rostered token is built under the inactive parent");
+            Assert.IsFalse(layer.Show(C, state), "the unchanged roster does not rebuild");
+            Assert.IsNotNull(Tokens(layer).Find("lebanese_army"), "the roster gate cannot flicker the shown token away");
+            Assert.IsTrue(UnitFigures.Arrived(model), "a shown roster token never loses its side model during handoff");
+
+            Object.DestroyImmediate(map.gameObject);
+            AssertNoOwnedOriginals("inactive layer teardown releases retained gate and holder owners");
+        }
+        finally
+        {
+            if (map != null) Object.DestroyImmediate(map.gameObject);
         }
     }
 
@@ -274,6 +347,9 @@ public class UnitRosterResidencyTests
             owner.RequestNear();
             CollectionAssert.AreEquivalent(new[] { CollectionDetail.Far, CollectionDetail.Near }, live,
                 "close view owns independent Far and Near leases");
+            var closeSnapshot = owner.ResidencySnapshot();
+            CollectionAssert.AreEqual(new[] { UnitFigures.YoungRecruit }, closeSnapshot.originalIds,
+                "one original id is reported once while both Far and Near keys are held");
             Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName));
             Assert.IsNotNull(piece.transform.Find(UnitFigures.ModelName + "/" + UnitFigureDetail.NearName));
 
@@ -308,6 +384,45 @@ public class UnitRosterResidencyTests
             Object.DestroyImmediate(close.gameObject);
             Object.DestroyImmediate(strategic.gameObject);
             if (piece != null) Object.DestroyImmediate(piece);
+            Object.DestroyImmediate(prefab);
+        }
+    }
+
+    [Test]
+    public void DeactivatedRosterHolderKeepsFarUntilDestroyButComponentDisableReleasesIt()
+    {
+        var inactivePiece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var disabledPiece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var live = new List<string>();
+        IDisposable Acquire(string model, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            Assert.AreEqual(CollectionDetail.Far, detail);
+            live.Add(model);
+            answer(prefab);
+            return new Lease(() => live.Remove(model));
+        }
+        try
+        {
+            var inactive = inactivePiece.AddComponent<UnitFigureResidency>();
+            inactive.Initialize(UnitFigures.YoungRecruit, ProductionResidency.Approved().Units, Acquire, retainFar: true);
+            inactivePiece.SetActive(false);
+            CollectionAssert.Contains(live, UnitFigures.YoungRecruit,
+                "ancestor or object deactivation retains Far for the token object's lifetime");
+            Assert.IsNotNull(inactivePiece.transform.Find(UnitFigures.ModelName), "deactivation keeps the dressed Far model");
+            Object.DestroyImmediate(inactivePiece);
+            CollectionAssert.DoesNotContain(live, UnitFigures.YoungRecruit, "destroy releases the deactivated holder's Far lease");
+
+            var disabled = disabledPiece.AddComponent<UnitFigureResidency>();
+            disabled.Initialize(UnitFigures.VeteranFighter, ProductionResidency.Approved().Units, Acquire, retainFar: true);
+            disabled.enabled = false;
+            CollectionAssert.DoesNotContain(live, UnitFigures.VeteranFighter,
+                "explicit component disable releases Far even while its token object lives");
+        }
+        finally
+        {
+            if (inactivePiece != null) Object.DestroyImmediate(inactivePiece);
+            if (disabledPiece != null) Object.DestroyImmediate(disabledPiece);
             Object.DestroyImmediate(prefab);
         }
     }

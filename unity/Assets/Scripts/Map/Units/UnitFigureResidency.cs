@@ -7,7 +7,9 @@ using UnityEngine.Rendering;
 
 namespace Statecraft.Game.Map.Units
 {
-    /// <summary>Per-consumer ownership: one live token holder, with imported children retired before its original leases.</summary>
+    /// <summary>Per-consumer ownership: one live token holder, with imported children retired before its original leases.
+    /// A roster holder keeps Far while its token object lives, including while an ancestor is inactive. Destroying the token
+    /// releases Far in <see cref="OnDestroy"/>; disabling this component explicitly releases it in <see cref="OnDisable"/>.</summary>
     [ExecuteAlways]
     public sealed class UnitFigureResidency : MonoBehaviour
     {
@@ -57,14 +59,17 @@ namespace Statecraft.Game.Map.Units
         {
             var keys = ActiveKeys().Distinct().ToArray();
             return CollectionResidencyMetrics.Row("units", keys.Length == 0 ? 0 : 1,
-                transform.Find(UnitFigures.ModelName)?.childCount ?? 0, keys.Select(key => key.id),
+                transform.Find(UnitFigures.ModelName)?.childCount ?? 0, keys.Select(key => key.id).Distinct(StringComparer.Ordinal),
                 (residency?.OwnerCount ?? 0) + (retainedFarResidency?.OwnerCount ?? 0) + (retainedNearResidency?.OwnerCount ?? 0),
                 (residency?.PendingCount ?? 0) + (retainedFarResidency?.PendingCount ?? 0) + (retainedNearResidency?.PendingCount ?? 0),
                 0, 0, 0, 0, keys.Select(key => key.id + "|" + key.detail));
         }
         internal bool CameraResident => observed && view != null && view.Keys.Contains(id);
         internal string ModelId => id;
-        internal bool RetainsFar => retainFar;
+        /// <summary>True only after this live holder has acquired and answered its retained Far key. An inactive holder cannot
+        /// complete a roster-gate handoff; deactivation also excludes an object during its deferred-destroy frame.</summary>
+        internal bool ActiveAnsweredFar => isActiveAndEnabled && UnitFigures.Arrived(id)
+            && retainedFarResidency?.ActiveAndAnswered((id, CollectionDetail.Far)) == true;
         void Refresh(bool nearAdmitted, bool releaseFar = false)
         {
             if (retainFar)
@@ -127,6 +132,8 @@ namespace Statecraft.Game.Map.Units
         void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= Choose;
+            // GameObject deactivation keeps a roster holder's Far lease until the object is destroyed, so a hidden or
+            // deferred-destroy token cannot open a source-ownership gap. Disabling the component is an explicit release.
             refreshPending = false; view?.Clear(); Refresh(false, releaseFar: !enabled);
         }
         void OnDestroy()

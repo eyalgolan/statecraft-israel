@@ -42,6 +42,7 @@ namespace Statecraft.Game.Map.Units
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
+        internal int FigurePrefetchCount => figurePrefetch.Count;
         bool updatingPrefetch;
         int seenAvailability = -1;
         int seenGeometry = -1;
@@ -78,7 +79,7 @@ namespace Statecraft.Game.Map.Units
         void RetireSatisfiedPrefetch()
         {
             var heldByFigures = new HashSet<string>(tokensRoot.GetComponentsInChildren<UnitFigureResidency>(true)
-                .Where(owner => owner.RetainsFar).Select(owner => owner.ModelId), StringComparer.Ordinal);
+                .Where(owner => owner.ActiveAnsweredFar).Select(owner => owner.ModelId), StringComparer.Ordinal);
             foreach (string id in figurePrefetch.Keys.Where(id => heldByFigures.Contains(id)).ToArray())
             {
                 var old = figurePrefetch[id]; figurePrefetch.Remove(id);
@@ -572,6 +573,9 @@ namespace Statecraft.Game.Map.Units
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
                 var old = tokensRoot.GetChild(i).gameObject;
+                // Roster holders retain Far through deactivation and release it only on destruction. Deactivate before
+                // deferred Destroy so these outgoing holders are never considered a live prefetch handoff target.
+                old.SetActive(false);
                 old.transform.SetParent(null);
                 if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
             }
