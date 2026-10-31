@@ -623,6 +623,88 @@ public class StartScreenTests
         }
     }
 
+    /// <summary>#530: a player build shows "Replay the opening" in the start row between New game and Star on GitHub
+    /// (GameRoot, whenever OpeningContent.MayPresent), a button the Rig and ItFitsEveryWindowSize keep hidden. Shown as
+    /// GameRoot shows it, in English and Hebrew, with and without a save (Continue), at 1920x1080, 1366x768 and 390x844:
+    /// the panel and the row still fit the window and the panel settles (#1168, StartScreenPresenter.Fit); Star on GitHub
+    /// keeps New game's size; and the buttons read Continue, New game, Replay, Star line by line in the row's own direction
+    /// (left to right in English; in Hebrew whatever the row resolves to, so it reads right to left once the row mirrors).</summary>
+    [UnityTest]
+    public IEnumerator WithTheOpeningReplayShownTheStartRowStillFitsAndReadsInOrder()
+    {
+        foreach (var hebrew in new[] { false, true })
+        foreach (var save in new[] { false, true })
+        foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
+        {
+            var text = hebrew ? UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml") : Text;
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("StartReplayRow");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var store = save ? WithSave(TempStore(), 1) : TempStore();
+            var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), text, out var resumed), text);
+            var toast = new ToastPresenter(root, bridge, text);
+            var newGame = new NewGamePresenter(root, bridge, store, toast, text, () => 5UL);
+            var start = new StartScreenPresenter(root, newGame, resumed, text: text);
+            try
+            {
+                root.Q("root").RemoveFromClassList("loading");
+                root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);   // as GameRoot
+                var replay = root.Q<Button>("start-opening-replay");
+                replay.text = text["opening.replay"];                               // as GameRoot when OpeningContent.MayPresent
+                replay.style.display = DisplayStyle.Flex;
+                start.Show();
+                for (int i = 0; i < 20 && (float.IsNaN(root.Q("start-panel").worldBound.width) || root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+                for (int i = 0; i < 4; i++) yield return null;      // the band height is set from the first layout
+                var window = root.panel.visualTree.worldBound;
+                Rect R(string name) => root.Q(name).worldBound;
+                bool Inside(Rect inner, Rect outer) => inner.xMin >= outer.xMin - 0.5f && inner.xMax <= outer.xMax + 0.5f && inner.yMin >= outer.yMin - 0.5f && inner.yMax <= outer.yMax + 0.5f;
+                string at = $"{(hebrew ? "Hebrew" : "English")} {(save ? "with a save" : "no save")} {w}x{h}";
+
+                // Settles (#1168): a fractional row height would make Fit round the panel's top back and forth.
+                var settled = R("start-panel");
+                for (int i = 0; i < 10; i++) yield return null;
+                Assert.AreEqual(settled, R("start-panel"), $"{at}: the panel settles");
+
+                var panel = R("start-panel");
+                Assert.IsTrue(Inside(panel, window), $"{at}: the panel {panel} is inside the window {window}");
+                Assert.IsTrue(Inside(R("start-actions"), panel), $"{at}: the row {R("start-actions")} is inside the panel {panel}");
+                Assert.LessOrEqual(R("start-source").yMax, R("start-actions").yMin + 0.5f, $"{at}: the row is under the source line");
+                Assert.LessOrEqual(R("start-actions").yMax, R("start-community").yMin + 0.5f, $"{at}: the row overlaps Report's row");
+                var order = (save ? new[] { "start-continue" } : new string[0]).Concat(new[] { "start-new-game", "start-opening-replay", "start-star" }).ToArray();
+                foreach (var b in order)
+                {
+                    Assert.AreEqual(DisplayStyle.Flex, root.Q(b).resolvedStyle.display, $"{at}: {b} shows");
+                    Assert.IsTrue(Inside(R(b), R("start-actions")), $"{at}: {b} {R(b)} is inside the row {R("start-actions")}");
+                    Assert.GreaterOrEqual(R(b).height, 40f, $"{at}: {b} is a usable target");
+                }
+                for (int i = 0; i < order.Length; i++)
+                    for (int j = i + 1; j < order.Length; j++)
+                        Assert.IsFalse(R(order[i]).Overlaps(R(order[j])), $"{at}: {order[i]} {R(order[i])} overlaps {order[j]} {R(order[j])}");
+                var onePixel = Mathf.Max(0.5f, window.width / w + 0.01f);   // a scaled panel snaps each edge to a screen pixel
+                Assert.AreEqual(R("start-new-game").width, R("start-star").width, onePixel, $"{at}: Star on GitHub is New game's width");
+                Assert.AreEqual(R("start-new-game").height, R("start-star").height, onePixel, $"{at}: Star on GitHub is New game's height");
+
+                // The reading order: line by line from the top, each line in the row's direction.
+                var direction = root.Q("start-actions").resolvedStyle.flexDirection;
+                if (!hebrew) Assert.AreEqual(FlexDirection.Row, direction, $"{at}: the English row reads left to right");
+                var read = order.OrderBy(b => Mathf.Round(R(b).yMin)).ThenBy(b => direction == FlexDirection.RowReverse ? -R(b).xMin : R(b).xMin).ToArray();
+                CollectionAssert.AreEqual(order, read, $"{at}: the row ({direction}) reads " + string.Join(", ", order.Select(b => $"{b} {R(b)}")));
+            }
+            finally
+            {
+                start.Dispose(); newGame.Dispose(); toast.Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
+    }
+
     /// <summary>The Hebrew screen mirrors like the rest of the Hebrew UI (UI-12; the owner, 31 Oct 2026): New game right of
     /// Star on GitHub, Report right of the language pair and the recording's button right of its credit, the other way
     /// round in English, with the same gap between Report and the pair, and the panel settles. Compared only where the
@@ -731,7 +813,10 @@ public class StartScreenTests
                 var centres = Regex.Matches(line!, @"(\S+)=([0-9.]+),([0-9.]+)").Cast<Match>().ToDictionary(m => m.Groups[1].Value,
                     m => new Vector2(window.xMin + window.width * float.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
                                      window.yMin + window.height * float.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture)));
-                var shown = save ? StartScreenPresenter.Buttons : StartScreenPresenter.Buttons.Where(b => b != "start-continue").ToArray();
+                Assert.AreEqual(DisplayStyle.None, rig.Ui.Q<Button>("start-opening-replay").resolvedStyle.display,
+                    "the standalone Rig has no opening provider; full GameRoot replay is tested by OpeningRoutingTests");
+                var shown = save ? new[] { "start-continue", "start-new-game", "start-star", "start-listen" }
+                    : new[] { "start-new-game", "start-star", "start-listen" };
                 CollectionAssert.AreEqual(shown, centres.Keys, $"save={save}: {line}");
                 foreach (var (name, at) in centres.Select(kv => (kv.Key, kv.Value)))
                 {

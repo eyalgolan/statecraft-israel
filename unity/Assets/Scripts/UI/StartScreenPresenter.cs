@@ -62,10 +62,13 @@ namespace Statecraft.Game.UI
         string? loggedCentres;
 
         /// <summary>The buttons ButtonCentres reports, by name.</summary>
-        public static readonly string[] Buttons = { "start-continue", "start-new-game", "start-star", "start-listen" };
+        public static readonly string[] Buttons = { "start-continue", "start-new-game", "start-opening-replay", "start-star", "start-listen" };
 
         /// <summary>Continue is offered: the session continues the autosave.</summary>
         public bool Resumed { get; private set; }
+
+        /// <summary>The no-save New Game route: its session already exists, so NewGamePresenter.Started does not fire.</summary>
+        public event Action? FreshGameOpened;
 
         readonly DeclarationRecording? recording;
 
@@ -211,7 +214,7 @@ namespace Statecraft.Game.UI
         void NewGame()
         {
             if (!IsOpen) return;
-            if (!Resumed) { Close(); return; }   // nothing to wipe: the session is already a new game
+            if (!Resumed) { Close(); FreshGameOpened?.Invoke(); return; }   // nothing to wipe: the session is already a new game
             newGame.Press();                      // arms on the first press; the second starts the new game (Started closes)
         }
 
