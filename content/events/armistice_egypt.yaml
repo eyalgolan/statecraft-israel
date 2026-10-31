@@ -4,9 +4,8 @@ title: Armistice with Egypt
 text: 'Talks in Rhodes have produced an armistice agreement with Egypt. {prime_minister} must decide whether Israel signs.'
 # For the native reviewer (#564): Hebrew terminology follows he.wiki "הסכמי שביתת הנשק בתום מלחמת העצמאות":
 # https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות
-title_he: שביתת הנשק עם מצרים
-text_he: 'השיחות ברודוס הניבו הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
-text_he_review: agent-checked
+title_he: הסכם הפסקת האש עם מצרים
+text_he: 'השיחות ברודוס הניבו הסכם הפסקת אש עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
 anchor: hard
 office: prime_minister
 from: 1949-02-24
@@ -16,7 +15,7 @@ to: 1950-01-01
 options:
   - id: sign
     text: Sign the armistice
-    text_he: לחתום על הסכם שביתת הנשק
+    text_he: לחתום על הסכם הפסקת האש
     historical: true
     recommended: true
     set_rung: 2
