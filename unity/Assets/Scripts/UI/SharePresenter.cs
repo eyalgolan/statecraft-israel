@@ -39,26 +39,32 @@ namespace Statecraft.Game.UI
         readonly EventCallback<PointerDownEvent> onCopyPointer;
         readonly EventCallback<NavigationSubmitEvent> onCopySubmit;
         readonly EventCallback<NavigationCancelEvent> onCancel;
+        readonly EventCallback<FocusOutEvent> onGoBlur, onInstagramBlur, onCopyBlur;
+        readonly Func<Action, IVisualElementScheduledItem> scheduleSharePoll;
         readonly List<Action> unbindSites = new List<Action>();
         readonly List<(VisualElement part, bool enabled)> covered = new List<(VisualElement, bool)>();
         Button? opener;
         /// <summary>The post as it is shared and copied (ShareShot.Text); the label shows ShareShot.Shown's form of it.</summary>
         string postText = "";
         UnityEngine.Texture2D? picture;   // the preview's, released on Close
-        IVisualElementScheduledItem? copyPoll;
+        IVisualElementScheduledItem? copyPoll, sharePoll;
+        int generation, goTicket, instagramTicket, copyTicket;
         bool capturing, canShareFiles, disposed;
         int closedAt = -1;
 
         /// <param name="capture">Captures the frame at its end and hands over its PNG (GameRoot: ShareShot.Capture as a
         /// coroutine; a test hands over bytes at once).</param>
-        public SharePresenter(VisualElement root, SimBridge bridge, UiText text, Action<Action<byte[]?>> capture)
+        public SharePresenter(VisualElement root, SimBridge bridge, UiText text, Action<Action<byte[]?>> capture,
+            Func<Action, IVisualElementScheduledItem>? scheduleSharePoll = null)
         {
             this.bridge = bridge; this.text = text; this.capture = capture;
             hudRoot = root.Q("root") ?? root;
             layer = root.Q("share-layer");
             fallback = layer.Q("share-fallback");
             preview = layer.Q("share-preview");
-            go = layer.Q<Button>("share-go"); close = layer.Q<Button>("share-close");
+            go = layer.Q<Button>("share-go");
+            this.scheduleSharePoll = scheduleSharePoll ?? (check => go.schedule.Execute(check));
+            close = layer.Q<Button>("share-close");
             post = layer.Q<Label>("share-post");
             copy = layer.Q<Button>("share-copy"); copied = layer.Q<Label>("share-copied");
             copy.text = text["share.copy"];
@@ -77,14 +83,20 @@ namespace Statecraft.Game.UI
             onGoSubmit = _ => Go();
             go.RegisterCallback(onGoPointer, TrickleDown.TrickleDown);
             go.RegisterCallback(onGoSubmit, TrickleDown.TrickleDown);
-            onInstagramPointer = e => { if (e.button == 0) Send(instagramNote); };
-            onInstagramSubmit = _ => Send(instagramNote);
+            onInstagramPointer = e => { if (e.button == 0) InstagramShare(); };
+            onInstagramSubmit = _ => InstagramShare();
             instagram.RegisterCallback(onInstagramPointer, TrickleDown.TrickleDown);
             instagram.RegisterCallback(onInstagramSubmit, TrickleDown.TrickleDown);
             onCopyPointer = e => { if (e.button == 0) Copy(); };
             onCopySubmit = _ => Copy();
             copy.RegisterCallback(onCopyPointer, TrickleDown.TrickleDown);
             copy.RegisterCallback(onCopySubmit, TrickleDown.TrickleDown);
+            onGoBlur = _ => CancelTicket(ref goTicket);
+            onInstagramBlur = _ => CancelTicket(ref instagramTicket);
+            onCopyBlur = _ => CancelTicket(ref copyTicket);
+            go.RegisterCallback(onGoBlur);
+            instagram.RegisterCallback(onInstagramBlur);
+            copy.RegisterCallback(onCopyBlur);
             settingsOpen.clicked += OpenFromSettings;
             reportOpen.clicked += OpenFromReport;
             close.clicked += Close;
@@ -101,12 +113,15 @@ namespace Statecraft.Game.UI
         /// focus back on Close.</summary>
         public void Open(Button? from = null)
         {
-            if (IsOpen || capturing) return;
+            if (disposed || IsOpen || capturing) return;
+            InvalidateAction();
+            var opening = generation;
             capturing = true;
             capture(png =>
             {
+                if (disposed || opening != generation) return;
                 capturing = false;
-                if (png == null || disposed) return;   // no picture (ShareShot.Capture logged why), or the UI was rebuilt meanwhile
+                if (png == null) return;   // no picture (ShareShot.Capture logged why), or the UI was rebuilt meanwhile
                 var shown = HudModel.From(bridge, text);
                 ShareShot.Keep(png, ShareShot.FileName(bridge.State.Date));
                 canShareFiles = ShareShot.CanShareFiles();
@@ -119,7 +134,7 @@ namespace Statecraft.Game.UI
                 ShowPreview(png);
                 foreach (var unbind in unbindSites) unbind();
                 unbindSites.Clear();
-                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, postText), postText, () => PollCopy(site: true)));
+                foreach (var site in ShareShot.Sites.Where(s => s != Instagram)) unbindSites.Add(ExternalLink.Bind(layer.Q<Button>("share-" + site), ShareShot.IntentUrl(site, postText), postText, SiteActivated));
                 opener = from;
                 // Each part's own state comes back on Close. The panel takes every press meanwhile, so no screen opens or
                 // closes under it; a resize may still run ScreenNav.DisableCovered, and Close then puts back the states from before.
@@ -128,23 +143,68 @@ namespace Statecraft.Game.UI
                 hudRoot.AddToClassList(OpenClass);
                 go.Focus();
                 // An element shown this frame may not take the focus yet (TurnReportPresenter does the same).
-                go.schedule.Execute(() => { if (IsOpen && layer.focusController?.focusedElement != go) go.Focus(); });
+                go.schedule.Execute(() => { if (!disposed && opening == generation && IsOpen && layer.focusController?.focusedElement != go) go.Focus(); });
             });
         }
 
         /// <summary>Share: the browser's share sheet, or the download and then the note to attach the picture.</summary>
-        void Go() => Send(fallback);
+        void Go() { if (Send(fallback)) goTicket = ShareShot.ArmTicket(); }
+        void InstagramShare() { if (Send(instagramNote)) instagramTicket = ShareShot.ArmTicket(); }
+
+        static void CancelTicket(ref int ticket)
+        {
+            if (ticket != 0) ShareShot.CancelArm(ticket);
+            ticket = 0;
+        }
+
+        void StopObservers()
+        {
+            generation++;
+            sharePoll?.Pause(); sharePoll = null;
+            copyPoll?.Pause(); copyPoll = null;
+        }
+
+        void InvalidateAction()
+        {
+            StopObservers();
+            ShareShot.Invalidate();
+            goTicket = instagramTicket = copyTicket = 0;
+        }
+
+        void HideNotes()
+        {
+            fallback.style.display = instagramNote.style.display = copied.style.display = DisplayStyle.None;
+        }
+
+        void SiteActivated()
+        {
+            // ExternalLink has ALREADY installed its shared ticket and invalidated the JS attempt.
+            // Only retire C# observers here: lifecycle invalidation here would cancel the new site arm.
+            if (disposed || !IsOpen) return;
+            StopObservers();
+            HideNotes();
+            PollCopy(site: true);
+        }
 
         /// <summary>Share and Instagram: the share sheet where the browser can share files, else the download, and then
         /// <paramref name="note"/> says what to do with the downloaded picture.</summary>
-        void Send(VisualElement note)
+        bool Send(VisualElement note)
         {
-            if (!IsOpen) return;
+            if (disposed || !IsOpen) return false;
+            InvalidateAction();
+            HideNotes();
             ShareShot.Share(postText);
-            if (!canShareFiles) { note.style.display = DisplayStyle.Flex; return; }
-            // The share sheet can still be refused on the release (ShareShot.jslib); then the picture downloads and the
-            // note shows, as where files cannot be shared. A refusal comes at once; a few seconds is enough to wait.
-            go.schedule.Execute(() => { if (IsOpen && ShareShot.Failed()) note.style.display = DisplayStyle.Flex; }).Every(250).ForDuration(3000);
+            if (!canShareFiles) { note.style.display = DisplayStyle.Flex; return true; }
+            var attempt = generation;
+            sharePoll = scheduleSharePoll(() =>
+            {
+                if (disposed || !IsOpen || attempt != generation) return;
+                if (!ShareShot.Failed()) return;
+                note.style.display = DisplayStyle.Flex;
+                StopObservers(); // also invalidate an already queued callback after this failure
+            }).Every(250);
+            // Failed exposes no success/cancel signal. Keep this one observer until failure, new action or panel teardown.
+            return true;
         }
 
         /// <summary>The preview: the PNG that is shared, decoded into a texture of its own (none if it does not decode).</summary>
@@ -175,8 +235,11 @@ namespace Statecraft.Game.UI
         /// for the answer as it looks for a refused share sheet, and then says what was copied, or that nothing was.</summary>
         void Copy()
         {
-            if (!IsOpen) return;
+            if (disposed || !IsOpen) return;
+            InvalidateAction();
+            HideNotes();
             ShareShot.Copy(postText);
+            copyTicket = ShareShot.ArmTicket();
             PollCopy(site: false);
         }
 
@@ -186,9 +249,11 @@ namespace Statecraft.Game.UI
             copied.style.display = DisplayStyle.None;
             // A press whose release never reached the browser (shorter than a frame, or another press first) copies
             // nothing and stays Pending: after a few seconds the panel says so rather than staying silent.
+            var attempt = generation;
             var giveUpAt = UnityEngine.Time.realtimeSinceStartup + 4.5f;
             copyPoll = copy.schedule.Execute(() =>
             {
+                if (disposed || !IsOpen || attempt != generation) return;
                 var result = ShareShot.Copied();
                 if (!site && result == ShareShot.CopyResult.Pending && UnityEngine.Time.realtimeSinceStartup >= giveUpAt) result = ShareShot.CopyResult.Failed;
                 if (!IsOpen || result == ShareShot.CopyResult.Pending) return;
@@ -214,8 +279,10 @@ namespace Statecraft.Game.UI
 
         public void Close()
         {
+            if (disposed) return;
+            InvalidateAction();
+            capturing = false;
             if (!IsOpen) return;
-            copyPoll?.Pause();
             foreach (var unbind in unbindSites) unbind();
             unbindSites.Clear();
             closedAt = UnityEngine.Time.frameCount;
@@ -238,9 +305,13 @@ namespace Statecraft.Game.UI
 
         public void Dispose()
         {
-            disposed = true;
+            if (disposed) return;
             Close();
+            disposed = true;
             foreach (var unbind in unbindSites) unbind();
+            go.UnregisterCallback(onGoBlur);
+            instagram.UnregisterCallback(onInstagramBlur);
+            copy.UnregisterCallback(onCopyBlur);
             go.UnregisterCallback(onGoPointer, TrickleDown.TrickleDown);
             go.UnregisterCallback(onGoSubmit, TrickleDown.TrickleDown);
             instagram.UnregisterCallback(onInstagramPointer, TrickleDown.TrickleDown);
