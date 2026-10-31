@@ -185,3 +185,14 @@ def test_the_bake_refuses_a_field_with_a_tab_and_keeps_every_row():
     assert all(len(r.split("\t")) == (15 if r.startswith("place\t") else 6) for r in rows)
     with pytest.raises(ValueError, match="place 'hebron'"):
         localities_bake.bake(text.replace("  name: Hebron\n", "  name: \"Heb\\tron\"\n", 1))
+
+
+# jish keeps "ג׳ש (גוש חלב)" until a native speaker rules on it (#2042 leaves it out of that fix).
+BRACKET_EXEMPT = {"jish"}
+
+
+def test_name_he_has_no_wikipedia_qualifier_and_no_direction_marks():
+    """#2042: name_he is the 1948 name, not he.wiki's disambiguation ("חממה (יישוב היסטורי)"), and carries no U+200E/U+200F."""
+    bad = [p["id"] for p in PLACES
+           if ("(" in p["name_he"] and p["id"] not in BRACKET_EXEMPT) or "\u200e" in p["name_he"] or "\u200f" in p["name_he"]]
+    assert bad == []

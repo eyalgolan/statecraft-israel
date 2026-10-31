@@ -46,7 +46,7 @@ namespace Statecraft.HexTiles
         /// the set and is not pulled into a build. All take the full mesh (Tal, 19 October 2026): most baked mid levels have lost faces too,
         /// and the generator's in-between levels smear their textures (HexModelMeshTests' report), so the city and village
         /// tiles' budgets were raised to the full meshes (about 6,000 triangles each). A lighter level that keeps its UV
-        /// seams is a follow-up.</summary>
+        /// seams is a follow-up for these; Tal Heuberger's generated town houses have one (<see cref="HouseLevels"/>, #1901).</summary>
         public static readonly (string id, string town, bool same)[] TownAliases =
         {
             ("sandbox:hq_white_city_hero", B01, true),
@@ -118,6 +118,25 @@ namespace Statecraft.HexTiles
         /// after switching.</summary>
         public static bool DrawCollectionFigures = true;
 
+        /// <summary>Hex-tile ids drawn as one of Tal Heuberger's generated town houses at its lighter level (#1901; made in
+        /// the editor by HexHouseLevels from their FBX, which stays as delivered): Tiberias's basalt houses are house 04. The
+        /// houses' bundles carry only their full -stream prefabs (CollectionCatalog), not these lighter levels, so only the
+        /// editor draws them; a player keeps the tile's stand-in.</summary>
+        public static readonly (string id, string prefab)[] HouseLevels =
+        {
+            ("tiles:tiberias_town/basalt_house", "Assets/Art/Settlements/Prototype/Models/generated-1948-04-dark-basalt-house/generated-1948-04-dark-basalt-house-light.prefab"),
+        };
+
+        /// <summary>A house id's lighter level in the editor (AssetDatabase), or null: in a player, or not a house id.</summary>
+        static GameObject? HouseLevel(string id)
+        {
+#if UNITY_EDITOR
+            foreach (var (house, prefab) in HouseLevels)
+                if (house == id) return UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(prefab);
+#endif
+            return null;
+        }
+
         static readonly Dictionary<string, (string figure, string level)> figureOf =
             FigureAliases.ToDictionary(a => a.id, a => (a.figure, a.level), StringComparer.Ordinal);
 
@@ -186,7 +205,7 @@ namespace Statecraft.HexTiles
             bool town = id.StartsWith(TownPrefix, StringComparison.Ordinal), alias = townOf.ContainsKey(id);
             var made = town || alias ? Town(town ? id : townOf[id]) : null;
             if (made != null) return prefabs[id] = made;
-            var figure = CollectionFigure(id) ?? StreamedProp(id);
+            var figure = CollectionFigure(id) ?? StreamedProp(id) ?? HouseLevel(id);
             if (figure != null) return prefabs[id] = figure;
             var prefab = town ? null : Resources.Load<GameObject>(PathOf(id));
             // Without the set (a player before the map scene has loaded it), not remembered, so the set is looked for again.

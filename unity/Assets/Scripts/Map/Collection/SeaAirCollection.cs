@@ -75,7 +75,9 @@ namespace Statecraft.Game.Map.Collection
         /// prefab's own rotation, whichever lays its longer side along x.</summary>
         public const float Heading = 0f;
 
-        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = CollectionStream.Request;
+        static readonly Action<string, CollectionDetail, Action<GameObject?>> DefaultRequest = CollectionStream.Request;
+        internal static Action<string, CollectionDetail, Action<GameObject?>> Request = DefaultRequest;
+        sealed class TestSeamLease : IDisposable { public void Dispose() { } }
 
         /// <summary>One craft to draw: its key, its model, and the place it belongs to (a SeaCraft coast's place, or "lod").</summary>
         public readonly struct Want : IEquatable<Want>
@@ -145,8 +147,13 @@ namespace Statecraft.Game.Map.Collection
             // Construction configures before first Show; injected acquisition is a test seam.
             ClearForRetirement();
         }
-        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer) =>
-            ownedAcquire != null ? ownedAcquire(id, detail, answer) : CollectionStream.Acquire(id, detail, answer);
+        IDisposable AcquireOriginal(string id, CollectionDetail detail, Action<GameObject?> answer)
+        {
+            if (ownedAcquire != null) return ownedAcquire(id, detail, answer);
+            // The editor/fake-source seam owns its own assets, as before residency (and as CivilianPeople/RuralLife do).
+            if (Request != DefaultRequest) { Request(id, detail, answer); return new TestSeamLease(); }
+            return CollectionStream.Acquire(id, detail, answer);
+        }
         IEnumerable<Want> Admitted()
         {
             var keys = residencyView?.Keys;
@@ -161,14 +168,34 @@ namespace Statecraft.Game.Map.Collection
                 yield return (w.Key, w.Model == C54 ? map.Frame.ToWorld(LodLon, LodLat, 0) : map.Frame.ToWorld(c.lon, c.lat, 0), SizeOf(w.Model));
             }
         }
-        void RefreshResidency()
+        void RefreshResidency() => RefreshResidencyCore(true);
+        void RefreshResidencyCore(bool redraw)
         {
-            if (residencyView == null || !isActiveAndEnabled) return;
+            if (!isActiveAndEnabled) return;
             residency ??= new CollectionResidency(AcquireOriginal, ClearForRetirement, (id, detail, prefab) => OnModel(id, prefab),
                 (instances, owners, keys, complete) => CollectionResidencyMetrics.AfterDestroyed("craft", instances, owners, complete,
-                    Application.isPlaying && ownedAcquire == null ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys));
-            residency.Replace(Admitted().Select(w => (w.Model, CollectionDetail.Far)));
-            Rebuild();
+                    Application.isPlaying && ownedAcquire == null && Request == DefaultRequest ? () => CollectionStream.Settled(keys) : (Func<bool>?)null, keys), true);
+            // v0.3.1 Show requested every wanted craft as Far with no camera or 60 km residency gate.
+            residency.Replace(wants.Select(w => (w.Model, CollectionDetail.Far)));
+            if (redraw) Rebuild();
+        }
+        IReadOnlyList<UnityEngine.Object> ClearForRetirement(IReadOnlyCollection<(string id, CollectionDetail detail)> keys)
+        {
+            var removed = new List<UnityEngine.Object>();
+            foreach (var key in keys)
+            {
+                prefabs.Remove(key.id); asked.Remove(key.id);
+                if (!originals.TryGetValue(key.id, out var list)) continue;
+                foreach (var go in list) if (go != null)
+                {
+                    removed.Add(go);
+                    if (Application.isPlaying) { if (gameObject.activeInHierarchy) go.transform.SetParent(null); Destroy(go); } else DestroyImmediate(go);
+                }
+                originals.Remove(key.id); Placed.RemoveAll(p => p.Model == key.id);
+            }
+            keepAll = originals.Values.SelectMany(list => list).Where(go => go != null)
+                .Select(go => new[] { Bounds(go) }).ToList();
+            return removed;
         }
         IReadOnlyList<UnityEngine.Object> ClearForRetirement()
         {
@@ -181,9 +208,10 @@ namespace Statecraft.Game.Map.Collection
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var old = transform.GetChild(i).gameObject; if (residencyView != null) retired.Add(old);
-                if (Application.isPlaying) { old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
+                if (Application.isPlaying) { if (gameObject.activeInHierarchy) old.transform.SetParent(null); Destroy(old); } else DestroyImmediate(old);
             }
             Placed.Clear(); Missing.Clear(); keepAll = new List<Bounds[]>();
+            originals.Clear();
             if (map != null) Statecraft.Game.Map.Units.UnitShowcase.HideTrees(map, Name, Array.Empty<(Vector2, float)>());
         }
         bool residencyDirty;
@@ -192,12 +220,12 @@ namespace Statecraft.Game.Map.Collection
             var before = residencyView!.Keys;
             residencyView.Observe(camera, Anchors(), Time.frameCount);
             if (!before.SetEquals(residencyView.Keys))
-            { if (Application.isPlaying) residencyDirty = true; else RefreshResidency(); }
+            { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
         }
         void LateUpdate()
         {
             if (residencyView != null && residencyView.Prune(Time.frameCount)) residencyDirty = true;
-            if (residencyDirty) { residencyDirty = false; RefreshResidency(); }
+            if (residencyDirty) { residencyDirty = false; RefreshResidencyCore(false); }
         }
         void OnDestroy() { residency?.Dispose(); residency = null; }
 
@@ -205,6 +233,7 @@ namespace Statecraft.Game.Map.Collection
         Content? content;
         readonly Dictionary<string, GameObject?> prefabs = new Dictionary<string, GameObject?>(StringComparer.Ordinal);
         readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
+        readonly Dictionary<string, List<GameObject>> originals = new Dictionary<string, List<GameObject>>(StringComparer.Ordinal);
         List<Want> wants = new List<Want>();
         List<(int q, int r)> placements = new List<(int, int)>();
         List<(Vector2 centre, float radius)> taken = new List<(Vector2, float)>();
@@ -233,7 +262,6 @@ namespace Statecraft.Game.Map.Collection
                 var go = new GameObject(Name); go.transform.SetParent(map.Terrain.transform, false);
                 layer = go.AddComponent<SeaAirCollection>(); layer.map = map;
             }
-            // Not under residency (owner ruling, 26 Oct 2026, #1273: "Craft visible at 60 km"): Show asks once in view.
             layer.content = content;
             layer.Show(Wants(date, content), placements.Select(p => (p.Q, p.R)).ToList(), date);
             return layer;
@@ -245,14 +273,7 @@ namespace Statecraft.Game.Map.Collection
             var others = next.Any(w => w.Model == C54) ? Taken() : new List<(Vector2, float)>();
             if (next.SequenceEqual(wants) && placed.SequenceEqual(placements) && others.SequenceEqual(taken)) return;
             wants = next; placements = placed; taken = others;
-            if (residencyView != null) { RefreshResidency(); return; }
-            OriginalModelRequests.WhenVisible(this, () =>
-            {
-            if (residencyView != null) { RefreshResidency(); return; }
-            foreach (var w in wants)
-                if (asked.Add(w.Model)) { var model = w.Model; Request(model, CollectionDetail.Far, p => OnModel(model, p)); }
-            });
-            Rebuild();
+            OriginalModelRequests.WhenVisible(this, () => RefreshResidency());
         }
 
         void OnModel(string model, GameObject? prefab)
@@ -271,7 +292,7 @@ namespace Statecraft.Game.Map.Collection
             var ground = PlacementLayer.CampGround(map);
             var works = map.KitStats?.HarbourWorks ?? Array.Empty<SettlementKits.Placed>();
             var boats = new List<SeaCraft.Craft>(map.KitStats?.Crafts ?? Array.Empty<SeaCraft.Craft>());
-            foreach (var w in Admitted())
+            foreach (var w in wants)
             {
                 if (!prefabs.TryGetValue(w.Model, out var prefab)) continue;   // still streaming
                 Vector2? at = null;
@@ -282,6 +303,8 @@ namespace Statecraft.Game.Map.Collection
                 }
                 if (at == null) { Missing.Add(w.Key); continue; }
                 var go = Instantiate(prefab!, transform, false); go.name = w.Key;
+                if (!originals.TryGetValue(w.Model, out var owned)) originals[w.Model] = owned = new List<GameObject>();
+                owned.Add(go);
                 // The yaw goes on top of the prefab's own rotation: every Collection Far prefab's root carries the FBX axis
                 // conversion (-90 degrees about X), and setting the yaw alone lays a model on its side (#979).
                 go.transform.localRotation = prefab!.transform.localRotation;

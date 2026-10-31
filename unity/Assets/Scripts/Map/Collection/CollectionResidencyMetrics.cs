@@ -17,7 +17,10 @@ namespace Statecraft.Game.Map.Collection
             public string category = "";
             public int uniqueDetails;
             public string[] detailIds = Array.Empty<string>();
-            public int demandedAnchors, liveInstances, ownedLeases, pendingRequests, retiringLeases, pendingDestroy;
+            /// <summary>Active ownership demand. A category may retain an anchor without current camera demand; its
+            /// category snapshot documents that distinction.</summary>
+            public int demandedAnchors;
+            public int liveInstances, ownedLeases, pendingRequests, retiringLeases, pendingDestroy;
             public int prefabCacheRefs, rendererCacheRefs, waiterCacheRefs, strongCacheRefs, missing, uniqueIds, bundleOwners, pins;
             public string[] originalIds = Array.Empty<string>(), bundleScopeIds = Array.Empty<string>();
         }

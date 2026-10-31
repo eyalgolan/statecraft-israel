@@ -17,6 +17,8 @@ stay empty.
 - How a source was read is said in words: "scan" (a printed book read in a scan, with its printed page; secondary works by aviation historians, not archival records), "snippet only" (archive.org lends the book but shows a guest only a search snippet: the words are verbatim, the page is not), "pointer" (Wikipedia with `oldid`, or a fan site).
 - Quotation marks are verbatim. Times and days are the sources' own.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources
 
 | Short name | What it is | Where read |

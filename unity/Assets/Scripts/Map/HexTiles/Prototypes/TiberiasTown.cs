@@ -13,9 +13,9 @@ namespace Statecraft.HexTiles.Prototypes
     ///   was built of basalt blocks; Daher al-Umar's walls had twelve projecting round towers, and the town was "open to the
     ///   lake and walled on the other three sides" (Pococke, 1737) (https://en.wikipedia.org/wiki/Tiberias, checked
     ///   2026-10-19).
-    /// - The old-town houses are dark basalt stand-ins (tiles:tiberias_town/basalt_house), not the limestone kit, so the
-    ///   basalt reads on every machine; the props team can drop a basalt model in under that id. They stand on a tight grid
-    ///   of lots round a small open square kept for a unit.
+    /// - The old-town houses (tiles:tiberias_town/basalt_house) are Tal Heuberger's basalt house 04 at its lighter level in
+    ///   the editor (HexModels.HouseLevels, #1901), and dark basalt stand-ins in a player, not the limestone kit, so the
+    ///   basalt reads on every machine. They stand on a tight grid of lots round a small open square kept for a unit.
     /// - A lakeside promenade: painted along the shore, with date palms, and up to two fishing boats on the shore, only where
     ///   the lake is near.
     /// - Newer houses (kit) climb the slope west of the landward wall, with olives between.
@@ -24,13 +24,16 @@ namespace Statecraft.HexTiles.Prototypes
     /// - Two townspeople on the square.
     ///
     /// Triangle estimate, at the maximum attempted counts (an upper bound):
-    /// - 6 newer houses (kit, up to 1,400 each) = 8,400. At most 16 basalt houses as stand-ins, about 200.
+    /// - 6 newer houses (kit, up to 1,400 each) = 8,400. At most 16 basalt houses: house 04's lighter level, 3,448 each =
+    ///   55,168 (Tal's full house 04 is 5,624: 89,984, over the budget); as stand-ins about 200.
     /// - At most 10 palms x 280 = 2,800. 3 olives x 1,600 = 4,800. 2 townspeople x 4,000 = 8,000.
     /// - At most 2 fishing boats x 13,437 = 26,874, only where the lake is near (never in the FlatSurface test).
     /// - About 70 wall blocks, 12 round towers, the bathhouse and its dome as stand-ins: about 1,200.
-    /// - Total about 52,300 of 60,000 with the boats, about 25,400 without them.
+    /// - Total, counted as HexPrototypeTests counts it (Tal's #1273 originals exempt, so the kit houses and the
+    ///   townspeople count 0): 57,020 of 75,000 measured on the israel board with the lake (29 October 2026, on a machine
+    ///   without the local palms, olives and boat, which draw stand-ins there); with them about 73,500.
     ///
-    /// The walls, towers, basalt houses, bathhouse and dome have no models (tiles:tiberias_town/...), so they always draw
+    /// The walls, towers, bathhouse and dome have no models (tiles:tiberias_town/...), so they always draw
     /// stand-ins: Rock (a squat round shape) for a round tower, Tree for the dome.</summary>
     [HexPrototype("tiberias_town", Kind = "town", Region = "north")]
     public sealed class TiberiasTown : IHexPrototype
@@ -44,9 +47,9 @@ namespace Statecraft.HexTiles.Prototypes
         // Explicit house ids for the newer houses: kit_jerusalem_4 is the mosque-like b17 mesh.
         static readonly string[] NewHouses = { "sandbox:kit_jerusalem", "sandbox:kit_jerusalem_2", "sandbox:kit_jerusalem_3", "sandbox:kit_stone_village_2" };
         static readonly string[] People = { "proto:figure-townsman-c02-1948-v2", "proto:figure-woman-blue-dress-c10-1948-v2" };
-        // The old-town houses stay on their stand-ins until a lighter level of Tal Heuberger's basalt house (04) exists (#1901): its
-        // full mesh is 5,624 triangles, so 16 houses would come to about 90,000 against this tile's 75,000 budget. The default
-        // map's Tiberias plots draw house 04 itself (TownModels.Tiberias).
+        // The old-town houses draw the lighter level of Tal Heuberger's basalt house (04) in the editor (HexModels.HouseLevels,
+        // #1901): its full mesh is 5,624 triangles, so 16 houses would come to about 90,000 against this tile's 75,000 budget.
+        // The default map's Tiberias plots draw house 04 itself (TownModels.Tiberias).
         const string BasaltHouse = "tiles:tiberias_town/basalt_house", Wall = "tiles:tiberias_town/wall", Tower = "tiles:tiberias_town/round_tower",
             Bathhouse = "tiles:tiberias_town/bathhouse", BathDome = "tiles:tiberias_town/bathhouse_dome",
             Boat = "proto:vehicle-fishing-boat-1948-v2", Palm = "sandbox:date_palm", Olive = "sandbox:olive_lite";

@@ -1,1 +1,0 @@
-- Add an inactive synthetic absorption boundary contract using catalogue thresholds and explicit settled facts.

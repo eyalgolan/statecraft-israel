@@ -79,6 +79,10 @@ namespace Statecraft.Game.UI
             Hide();
         }
 
+        /// <summary>Raised with the turn being reported when the report opens, and with null when it closes (#1878: the map
+        /// shows the under-attack look on the hexes the turn attacked for as long as the report is up).</summary>
+        public event Action<StepResult?>? Showing;
+
         /// <summary>True while the report shows.</summary>
         public bool IsOpen => hudRoot.ClassListContains(OpenClass);
 
@@ -195,6 +199,7 @@ namespace Statecraft.Game.UI
             report.style.display = DisplayStyle.Flex;
             hudRoot.AddToClassList(OpenClass);
             ScreenNav.DisableCovered(hudRoot);   // the report comes out uncovered (or under an outcome clip) and takes the focus then
+            Showing?.Invoke(seen);
         }
 
         void OnClose() => Close();
@@ -209,10 +214,12 @@ namespace Statecraft.Game.UI
 
         void Hide()
         {
-            if (IsOpen) closedAt = UnityEngine.Time.frameCount;
+            bool wasOpen = IsOpen;
+            if (wasOpen) closedAt = UnityEngine.Time.frameCount;
             report.style.display = DisplayStyle.None;
             hudRoot.RemoveFromClassList(OpenClass);
             ScreenNav.DisableCovered(hudRoot);   // the decision layer comes back: an open card takes the focus (OnUncovered)
+            if (wasOpen) Showing?.Invoke(null);
         }
 
         void SeeAll()

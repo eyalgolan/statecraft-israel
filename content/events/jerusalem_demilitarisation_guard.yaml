@@ -20,7 +20,7 @@ title_he: >-
 text: >-
   In the record, a US State Department memorandum of 1 July 1948 assumed that proposed demilitarisation would involve the withdrawal of regular and irregular forces from both sides, with a proposed UN armed guard in their place. In its recorded reply of 28 July, the Provisional Government linked its rejection to the Mediator's proposal to place Jerusalem ultimately under Arab rule. On this branch, {prime_minister} must decide whether to continue demilitarisation or return to Israeli military government.
 text_he: >-
-  בתיעוד ההיסטורי, תזכיר של מחלקת המדינה האמריקנית מ־1 ביולי 1948 העריך שפירוז מוצע יכלול יציאה של כוחות סדירים ובלתי סדירים משני הצדדים, וכוח משמר חמוש מוצע של האו״ם במקומם. בתשובתה המתועדת מ־28 ביולי קשרה הממשלה הזמנית את התנגדותה להצעת המתווך להעביר לבסוף את ירושלים לשלטון ערבי. במסלול הזה, {prime_minister} צריך להחליט אם להמשיך בפירוז או לחזור לממשל צבאי ישראלי.
+  בתיעוד ההיסטורי, תזכיר של מחלקת המדינה האמריקנית מ־1 ביולי 1948 העריך שפירוז מוצע יכלול יציאה של כוחות סדירים ובלתי סדירים משני הצדדים, וכוח משמר חמוש מוצע של האו״ם במקומם. בתשובתה המתועדת מ־28 ביולי קשרה הממשלה הזמנית את התנגדותה להצעת המתווך להעביר לבסוף את ירושלים לשלטון ערבי. במסלול הזה, על {prime_minister} להחליט אם להמשיך בפירוז או לחזור לממשל צבאי ישראלי.
 text_he_review: agent-checked
 options:
   - id: continue_demilitarisation
@@ -44,4 +44,4 @@ sources:
   - { url: "https://unispal.un.org/pdfs/AB14D4AAFC4E1BB985256204004F55FA.pdf", checked: 2026-10-24 }
 status: draft
 reviewed_by: eyalgolan
-reviewed_on: 2026-10-28
+reviewed_on: 2026-10-30

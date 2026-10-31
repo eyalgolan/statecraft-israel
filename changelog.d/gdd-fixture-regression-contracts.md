@@ -1,1 +1,0 @@
-- Add fixture regression coverage for workshop worker identity across paid cycles and the unresolved housing-repair parent gate; live rules stay unchanged.

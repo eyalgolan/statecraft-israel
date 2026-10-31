@@ -34,7 +34,8 @@ public class BuildingModelImportTests
     static bool UnderResources(string path) => path.Split('/').Any(s => s.Equals("Resources", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The 28 buildings, #507's 23 and Tal Heuberger's five generated houses (model, material, colour map, and each
-    /// house's provenance receipt), and beside each the streamed prefab its bundle carries (CollectionImport.MakeBuildingPrefabs).</summary>
+    /// house's provenance receipt and #1901 lighter level), and beside each the streamed prefab its bundle carries
+    /// (CollectionImport.MakeBuildingPrefabs).</summary>
     [Test]
     public void TheFolderHoldsTheTwentyEightBuildingsAndNothingElse()
     {
@@ -44,7 +45,9 @@ public class BuildingModelImportTests
         Assert.AreEqual(28, streamed.Length);
         CollectionAssert.IsSubsetOf(streamed, Ids);
         var expected = Ids.SelectMany(id => new[] { Model(id), $"{Folder}/{id}/{id}.mat", ColourMap(id) }
-                .Concat(Generated(id) ? new[] { $"{Folder}/{id}/provenance.json" } : Array.Empty<string>()))
+                .Concat(Generated(id) ? new[] { $"{Folder}/{id}/provenance.json" } : Array.Empty<string>())
+                // #1901's lighter level of each generated house, for the hex-tile boards in the editor (HexHouseLevels); no bundle carries it.
+                .Concat(Generated(id) ? new[] { ".asset", ".prefab", ".json" }.Select(e => $"{Folder}/{id}/{id}-light{e}") : Array.Empty<string>()))
             .Concat(streamed.Select(id => Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(id, Statecraft.Game.Map.Collection.CollectionDetail.Near)))
             .OrderBy(p => p, StringComparer.Ordinal);
         var found = AssetDatabase.FindAssets("", new[] { Folder }).Select(AssetDatabase.GUIDToAssetPath)

@@ -22,7 +22,7 @@ namespace Statecraft.Game.UI
     /// number of immigrants who arrived during the last turn.</summary>
     public sealed class HudModel
     {
-        public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "", Score = "";
+        public string Year = "", Turn = "", Date = "", Attention = "", SecurityLevel = "", Score = "", Exhausted = "";
         public Meter Treasury, Immigration, Security, Support, Standing, Fx;
         /// <summary>Social cohesion (the morale indicator, R-NAT-001) on the 0-100 scale, shown only in the GDD loop
         /// (ShowsCohesion; the owner's ruling of 15 October 2026, #380). Empty in the legacy loop.</summary>
@@ -123,6 +123,10 @@ namespace Statecraft.Game.UI
                 Attention = c.UsesAttention ? t.Format("hud.attention", b.AttentionLeft!.Value, c.RulesAt(s.Date).AttentionPerTurn) : "",
                 SecurityLevel = t.Format("hud.level", s.Rung),
                 Score = c.IsGdd ? t.Format("hud.score", s.Score) : "",   // the GDD loop only (#380); PR 6 moves it
+                // R-END-002: shown only while the count is above 0 (Q-DEF-2, #784), against the rules' defeat_turns, so the
+                // player sees how close the economic defeat is; the sim owns the count and the limit, nothing is computed here.
+                Exhausted = s.ExhaustedTurns > 0 && c.RulesAt(s.Date).Mvp?.DefeatTurns is int limit
+                    ? t.Format("hud.exhausted", s.ExhaustedTurns, limit) : "",
                 Treasury = Money("treasury", s.Treasury - s.Debt, prev == null ? (double?)null : prev.Treasury - prev.Debt),
                 Immigration = People(Arrivals(b.Session.Last), b.BeforeLast == null ? (double?)null : Arrivals(b.BeforeLast)),
                 Security = Points(s.Indicators["security"], prev?.Indicators["security"]),

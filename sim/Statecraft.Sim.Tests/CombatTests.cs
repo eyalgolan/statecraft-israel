@@ -13,6 +13,7 @@ public class CombatTests
     const string Types = Fixture.GddUnitTypes
         + "  - { id: soldier, kind: unit, side: israel, class: infantry, movement_points: 3 }\n"
         + "  - { id: enemy, kind: unit, side: egypt, class: infantry, movement_points: 3 }\n"
+        + "  - { id: gun, kind: unit, side: israel, class: artillery, movement_points: 2, range: 2, arms_per_fire: 3 }\n"
         + "  - { id: ally, kind: unit, side: jordan, class: infantry, movement_points: 3 }\n";
 
     /// <summary>MovementTests' 6 x 3 coastal plain, with <paramref name="biomes"/> replacing hexes; town_a is on (1, 0).</summary>
@@ -282,6 +283,20 @@ public class CombatTests
         var s = With(c);
         Assert.Equal(new[] { (2, 2, 10, 10, false) }, Combat.Outcomes(c, s, 0));
         Assert.Equal(new[] { (2, 2, 0, 10, true) }, Combat.Outcomes(c, s, 1));
+    }
+
+    // R-COMBAT-007 (#2040): the guns fire from behind the line, so a strike by an artillery unit costs it nothing and its
+    // bands say 0 attackers lose; an infantry unit's bands are the row's as before.
+    [Fact]
+    public void AnArtilleryUnitsBandsShowNoAttackerLosses()
+    {
+        var c = Load();
+        var s = With(c, new Unit(1, "gun", 4, 0, side: "israel", strength: 2), Soldier(3, 1, 1, 5));
+        Assert.Equal(new[] { (2, 2, 0, 10, false) }, Combat.Outcomes(c, s, 0, 1));
+        Assert.Equal(new[] { (2, 2, 0, 10, true) }, Combat.Outcomes(c, s, 1, 1));
+        Assert.Equal(new[] { (2, 2, 10, 10, false) }, Combat.Outcomes(c, s, 0, 3));
+        Assert.Equal(Combat.Outcomes(c, s, 0), Combat.Outcomes(c, s, 0, 3));
+        Assert.Equal(Combat.Outcomes(c, s, 0), Combat.Outcomes(c, s, 0, 999));   // no such unit: the row as it is
     }
 
     // Q-UI-1: on the real table every row's bands cover its faces exactly once, in the order each outcome first appears, and

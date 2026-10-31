@@ -1,0 +1,11 @@
+{
+    "tool": "HexHouseLevels",
+    "source": "Assets/Art/Settlements/Prototype/Models/generated-1948-02-netanya-two-storey-balcony-house/generated-1948-02-netanya-two-storey-balcony-house.fbx",
+    "source_sha256": "ea562007b1a42c37a11031fc22c00e45389e887badd6a13d28ae1a63d69c58a7",
+    "source_triangles": 4798,
+    "triangles": 4432,
+    "uv_tolerance_texels": 1.0,
+    "edge_tolerance": 0.0020000000949949028,
+    "max_error": 0.004999999888241291,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX above) by HexHouseLevels. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994)."
+}

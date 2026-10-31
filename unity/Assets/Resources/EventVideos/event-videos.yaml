@@ -22,11 +22,14 @@
 # take t1, as the card loop and the continue outcome, frames 11-94). burma_road_complete "Add, check headlights first": A02
 # was not added, because its trucks show headlights in every frame and no source was found for lit convoys on the Burma
 # Road track (docs/event-videos.md).
+# Owner decision of 2026-10-31 on #1564 and #1565, "Ship both clips" (chosen over reviewing the clips first): the existing
+# demo 2 shots ship as card loops on degania_defence (D15) and reparations_vote (A10). Both events have sensitive tags, so
+# both rows are sensitive: true, and sensitivity_reviewed: true on that decision to ship them.
 # Rights: owner ruling D-V (docs/oss/DECISIONS.md), "no need to check, just use them"; ai_generated: true on every row.
 # Deport never gets a clip (GDD owner ruling 1): EventVideoMapping refuses a row for an event with a deport option.
 # tools/encode_event_videos.py makes the files from the shots: 960x540 H.264, no audio, no burned-in caption (owner ruling
 # 2026-10-14 above; ai_generated: true stays on every row).
-checked: 2026-10-24
+checked: 2026-10-31
 clips:
   - event: latrun_proposal
     file: latrun_proposal.mp4
@@ -193,6 +196,28 @@ clips:
     ai_generated: true
     sensitive: false
     sensitivity_reviewed: false
+  - event: degania_defence
+    file: degania_defence.mp4
+    shot: D15
+    source: promo/demo2/clips-v2/D15.mp4
+    source_sha256: 25fcc75eada6d7a64da137d1ad556a8e8d3d8477f8309dea848a9e37c0f69731
+    generator: "Veo 3.1 (ElevenLabs), from a GPT Image 2.5 still made in Dreamina; the still's faint AI badge outline is kept"
+    generated: 2026-10-12
+    alt: "Illustration: a small tank halted and smoking just inside a kibbutz gate among eucalyptus trees, defenders in a sandbagged trench seen from behind."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: true   # the owner, 2026-10-31 (#1565: "Ship both clips")
+  - event: reparations_vote
+    file: reparations_vote.mp4
+    shot: A10
+    source: promo/demo2/clips/A10.mp4
+    source_sha256: 909f5a0693f8ebcea570ff537d77129ffcf6fa03fcedd28356192c31051fe694
+    generator: "Seedance 2.0 (Dreamina); the Dreamina AI badge is kept"
+    generated: 2026-10-12
+    alt: "Illustration: a crowd with umbrellas held back by a line of police on a wet street, before a stone building in Jerusalem at night."
+    ai_generated: true
+    sensitive: true
+    sensitivity_reviewed: true   # the owner, 2026-10-31 (#1564: "Ship both clips")
 # Outcome clips (decision videos, phase 3; docs/event-videos.md): played at End Turn, once, when the player queued the
 # event's historical option (historical: true in content) and the turn applied it. 3.5 s, silent, skippable (a click,
 # Esc, Enter or Space; Esc skips them all), captioned as the order ("Your order: ..."), never for a counterfactual option,

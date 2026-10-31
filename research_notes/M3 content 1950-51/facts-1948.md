@@ -11,6 +11,8 @@ Researched 2026-10-10. All URLs were checked on that date.
 - **[GAP]** means not found.
 - No quotes are invented. The few short quotes below are copied from the cited page.
 
+Every [V] in this note was an agent's reading on 2026-10-10, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Schema reminders** (read from `content/` and `sim/Statecraft.Sim/EventRules.cs`)
 - **Effect targets:** only the indicators `morale`, `food_supply`, `housing`, `security` and `intl_standing`, plus `treasury` and `fx_reserves`.
 - **Policies:** only `rationing`, `housing_construction`, `border_settlement` and `maabarot`. None fits these events, so the options below use effects and `set_rung` only.

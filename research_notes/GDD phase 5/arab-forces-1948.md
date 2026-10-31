@@ -36,6 +36,8 @@ map tokens; this note narrows to the two dates and adds strength figures and Ara
   described here. The branch note `arab-armies-1948.md`, "Sensitivity review", lists them for the owner.
 - Dates are given as the source gives them. Where sources give different dates for the same move, both are listed.
 
+Every [V] in this note was an agent's reading on 2026-10-13, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## How it was researched
 
 - **Full text read.** Edgar O'Ballance, *The Arab-Israeli War 1948* (Faber, 1956), from the Digital Library of India

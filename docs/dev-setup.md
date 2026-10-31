@@ -57,8 +57,8 @@ Not possible without Unity and not in CI: the Unity EditMode tests, player build
 - Page flags: `?golden` (golden check), `?smoke=N` (play N turns through the UI; bare `?smoke` = 5, `?smoke=0` = off),
   `?profile` (terrain profile), `?camlog` (log the camera distance), `?bootlog` (each boot phase's timing) and `?navlog`
   (every UI pointer and submit event, screen toggle and map click, with its frame), `?vprofile` (the visual frame-time
-  profile per feature), `?shot` (screenshots at the promo poses as `SHOT` console lines) and `?kitscale=N`, `?housescale=N`, `?treescale=N` (the settlement kits' symbolic scale for city blocks, houses and trees, clamped to 5–200; defaults 60, 100, 100). In the editor, `MapCapture.Kits` takes `-kitScale`, `-houseScale` and `-treeScale`. Desktop players take `-golden`,
-  `-smoke N`, `-profile`, `-camlog`, `-bootlog`, `-navlog`, `-vprofile` and `-shot`. The console also shows `GAME OK <date> turn <n> hash <h>` at start and `TURN <n> <date> hash <h>` per turn.
+  profile per feature), `?shot` (screenshots at the promo poses as `SHOT` console lines) and `?kitscale=N`, `?housescale=N`, `?treescale=N` (the settlement kits' symbolic scale for city blocks, houses and trees, clamped to 5–200; defaults 60, 100, 100), `?armisticelines` (the 1949 armistice lines as true polylines over the hex bands, #237; a release build draws and ships only the signed-off features). In the editor, `MapCapture.Kits` takes `-kitScale`, `-houseScale` and `-treeScale`. Desktop players take `-golden`,
+  `-smoke N`, `-profile`, `-camlog`, `-bootlog`, `-navlog`, `-vprofile`, `-shot` and `-armisticelines`. The console also shows `GAME OK <date> turn <n> hash <h>` at start and `TURN <n> <date> hash <h>` per turn.
 - First card in normal mode (#909): `?firstcard` keeps the start screen and decision video on, presses New Game at once
   and logs `FIRST CARD OK event=<id> media=<photo|portrait fallback> wait=<ms> ms budget=<ms> ms`, or `FIRST CARD FAIL`
   after the budget (10 s, proposed). Run it with `uv run tools/machine_lock.py --shared -- uv run tools/web_check.py <build>

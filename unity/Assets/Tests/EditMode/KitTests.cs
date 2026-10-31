@@ -1795,6 +1795,25 @@ public class KitTests
         Assert.AreEqual(0, km.BadNormals);
     }
 
+    /// <summary>#2025: a crown's last column repeats the first column's angle, so it must sit at the same radius too, or every
+    /// olive, cypress and orchard crown has a vertical slit that light and shadow leak through. Lumps, segments and rings
+    /// as the olive (largest lumps), cypress and orchard crowns in Vegetation.</summary>
+    [Test]
+    public void EveryCrownClosesItsSeam()
+    {
+        foreach (var (lumps, segments, rings) in new[] { (0.18f, 6, 4), (0.16f, 7, 4), (0.15f, 6, 3), (0.08f, 7, 7), (0.10f, 7, 5), (0.12f, 6, 4) })
+        {
+            var km = new KitMesh(); var rnd = new KitRandom("seam");
+            km.Crown(Vector3.zero, new Vector3(2f, 1.5f, 1.9f), new Color32(40, 80, 30, 255), ref rnd, lumps, segments, rings);
+            var p = new List<Vector3>(); km.Positions(0, km.VertexCount, p);
+            for (int j = 0; j <= rings; j++)
+            {
+                Vector3 first = p[j * (segments + 1)], last = p[j * (segments + 1) + segments];
+                Assert.Less(Vector3.Distance(first, last), 1e-4f, $"lumps {lumps}, {segments}x{rings}: ring {j} opens at {first} / {last}");
+            }
+        }
+    }
+
     [Test]
     public void TheKitShaderRunsOnWebGL2()
     {
@@ -1817,7 +1836,9 @@ public class KitTests
         int far = veg.LastDrawn;
         TestContext.WriteLine($"trees {veg.Count}: drawn at gameplay03 {near}, at diorama02 {far}");
         Assert.Greater(near, 1000); Assert.Less(far, veg.Count * 0.6f, "the overview thins the far tiles");
-        VisualToggles.Set("trees", false); RenderSample.Render(cam, 320, 180);
+        // Move to the near pose with the trees off: a layer that still drew would report `near` there, not `far` (#2026).
+        Assert.AreNotEqual(near, far);
+        VisualToggles.Set("trees", false); PromoPose.Gameplay03.Apply(rig, map.Frame); RenderSample.Render(cam, 320, 180);
         Assert.AreEqual(far, veg.LastDrawn, "the trees toggle stops the draws (no new submission)");
     }
 
