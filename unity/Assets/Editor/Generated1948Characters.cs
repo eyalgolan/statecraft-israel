@@ -151,9 +151,17 @@ namespace Statecraft.Game.EditorTools
 
         internal static void ConfigureController(AnimatorController controller, AnimationClip clip, string model)
         {
-            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Any(s => s.state.name != "idle" && s.state.name != "walk" && s.state.name != "attack"))
-                throw new InvalidOperationException("Expected one owned layer with only idle, walk or attack states");
-            controller.layers[0].stateMachine.defaultState.motion = clip;
+            if (controller.layers.Length != 1)
+                throw new InvalidOperationException("Expected one owned layer");
+            var machine = controller.layers[0].stateMachine;
+            var states = machine.states.Select(s => s.state).ToArray();
+            if (states.Length == 0 || states.Any(s => s == null || (s.name != "idle" && s.name != "walk" && s.name != "attack"))
+                || states.Select(s => s.name).Distinct().Count() != states.Length
+                || !states.Any(s => s.name == "idle") || machine.defaultState == null
+                || !states.Contains(machine.defaultState) || machine.defaultState.name != "idle")
+                throw new InvalidOperationException("Expected unique idle, walk or attack states with an owned idle default");
+            // Validate the entire authored graph before changing motions or adding migration states.
+            machine.defaultState.motion = clip;
             CollectionImport.AddWalkState(controller, model);
             EditorUtility.SetDirty(controller);
         }

@@ -13,6 +13,8 @@ The trailer shows seven attributed quotation cards from five speakers. The only 
 - Dates are written 15 May 1948 style. No quote is invented. The short passages in quotation marks are copied from the cited page, and where a source sentence contains a dash, the quotation stops before it and the rest is described in words.
 - Both caption files were read from `upstream/main` (commit `835760f5`). The Hebrew file repeats each English quotation after the words "on the screen, in English" and does not translate the quotations.
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. What the trailer shows
 
 | Card | Time in the caption file | Text as shown | Attribution as shown |

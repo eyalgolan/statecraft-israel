@@ -138,6 +138,28 @@ namespace Statecraft.Game.EditorTools
         public static List<EventVideoMapping.Row> GatedClips(string yaml) =>
             EventVideoMapping.Parse(yaml).Concat(EventVideoMapping.ParseOutcomes(yaml)).ToList();
 
+        const string OpeningCatalogPath = "Assets/Resources/OpeningContent.asset";
+
+        /// <summary>The opening (#530) in a shareable build: its catalog must load, its three photographs must have the
+        /// owner's sensitivity review, as event photographs do, and its text must be reviewed with every source checked
+        /// (owner, "Photos and text"), so a shareable build carries neither draft photographs nor draft text.</summary>
+        public static string? OpeningShareableRefusal(OpeningContent? opening)
+        {
+            if (opening == null) return "the opening catalog is missing or did not load (" + OpeningCatalogPath + ")";
+            try
+            {
+                var data = opening.Read();
+                var reasons = new List<string>();
+                if (!data.PhotosReviewed)
+                    reasons.Add("an opening photograph needs the owner's sensitivity review (" + OpeningContent.SourcePath + ", sensitivity_reviewed)");
+                if (!data.TextReviewed)
+                    reasons.Add("the opening text needs the owner's review and every source checked (" + OpeningContent.SourcePath
+                        + ", status: " + Statecraft.Sim.ReleaseGate.ReviewedStatus + " and checked: on each source)");
+                return reasons.Count == 0 ? null : string.Join("; ", reasons);
+            }
+            catch (InvalidOperationException e) { return "the opening cannot be read: " + e.Message; }
+        }
+
         /// <summary>Logs "BUILD REFUSED ..." and exits 1 when the gate refuses this build; true if it did. The photographs
         /// checked are the catalog the build ships (Resources/EventImageCatalog.asset), cross-checked against the mapping.</summary>
         static bool RefuseUnlessShareable()
@@ -157,6 +179,8 @@ namespace Statecraft.Game.EditorTools
                 var stringRefusal = SettlementControlStringReview.Refusal(review, en, he);
                 refusal = GateRefusal(args, Statecraft.Sim.ContentLoader.Load(Paths.Content), photos,
                     File.Exists(EventImageImport.CatalogPath), mapping, clips, stringRefusal);
+                var opening = OpeningShareableRefusal(AssetDatabase.LoadAssetAtPath<OpeningContent>(OpeningCatalogPath));
+                if (opening != null) refusal = refusal == null ? opening : refusal + "; " + opening;
             }
             catch (Exception e) when (e is IOException || e is InvalidOperationException || e is UnauthorizedAccessException)
             {
@@ -179,12 +203,28 @@ namespace Statecraft.Game.EditorTools
         [Serializable] sealed class PhotoRecord { public string event_id = ""; public bool sensitive; public bool sensitivity_reviewed; }
 
         /// <summary>The manifest's JSON for a build carrying <paramref name="photos"/> (null: none).</summary>
-        public static string PhotoManifestJson(EventImageCatalog? photos, bool shareable)
+        public static string PhotoManifestJson(EventImageCatalog? photos, bool shareable) =>
+            JsonUtility.ToJson(CreatePhotoManifest(photos, shareable), true) + "\n";
+
+        static PhotoManifest CreatePhotoManifest(EventImageCatalog? photos, bool shareable)
         {
             var m = new PhotoManifest { shareable = shareable };
             if (photos != null)
                 foreach (var e in photos.entries.Where(e => e.image != null).OrderBy(e => e.eventId, StringComparer.Ordinal))
                     m.photos.Add(new PhotoRecord { event_id = e.eventId, sensitive = e.sensitive, sensitivity_reviewed = e.sensitivityReviewed });
+            return m;
+        }
+
+        /// <summary>The manifest the builds write: the event photographs and the opening's three (as "opening/&lt;panel&gt;"), so
+        /// the packager's photo check covers them too; never shareable while the opening's gate refuses.</summary>
+        public static string PhotoManifestWithOpeningJson(EventImageCatalog? photos, bool shareable, OpeningContent? opening)
+        {
+            var m = CreatePhotoManifest(photos, shareable);
+            m.shareable = shareable && OpeningShareableRefusal(opening) == null;
+            if (opening != null)
+                foreach (var panel in opening.Read().Panels)
+                    m.photos.Add(new PhotoRecord { event_id = "opening/" + panel.Id,
+                        sensitive = panel.Image.Sensitive, sensitivity_reviewed = panel.Image.SensitivityReviewed });
             return JsonUtility.ToJson(m, true) + "\n";
         }
 
@@ -194,7 +234,8 @@ namespace Statecraft.Game.EditorTools
         {
             Directory.CreateDirectory(folder);
             var photos = AssetDatabase.LoadAssetAtPath<EventImageCatalog>(EventImageImport.CatalogPath);
-            File.WriteAllText(Path.Combine(folder, PhotoManifestName), PhotoManifestJson(photos, Flag("-shareable")));
+            var opening = AssetDatabase.LoadAssetAtPath<OpeningContent>(OpeningCatalogPath);
+            File.WriteAllText(Path.Combine(folder, PhotoManifestName), PhotoManifestWithOpeningJson(photos, Flag("-shareable"), opening));
         }
 
         public static void Web()

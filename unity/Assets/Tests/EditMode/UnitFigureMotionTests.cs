@@ -8,9 +8,115 @@ using System.Reflection;
 using UnityEditor;
 using Object = UnityEngine.Object;
 using Statecraft.Game.Map.Collection;
+using UnityEngine.TestTools.Constraints;
+using Is = UnityEngine.TestTools.Constraints.Is;
 
 public class UnitFigureMotionTests
 {
+    static Action<AnimatorController, AnimationClip, string> ConfigureGeneratedController()
+    {
+        var type = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("Statecraft.Game.EditorTools.Generated1948Characters")).First(t => t != null);
+        return (Action<AnimatorController, AnimationClip, string>)Delegate.CreateDelegate(typeof(Action<AnimatorController, AnimationClip, string>),
+            type.GetMethod("ConfigureController", BindingFlags.Static | BindingFlags.NonPublic));
+    }
+
+    [TestCase("empty")]
+    [TestCase("duplicate-idle")]
+    [TestCase("duplicate-walk")]
+    [TestCase("duplicate-attack")]
+    [TestCase("missing-idle")]
+    [TestCase("walk-default")]
+    [TestCase("unknown-state")]
+    public void InvalidGeneratedControllerIsRejectedBeforeMutation(string layout)
+    {
+        var controller = new AnimatorController(); controller.AddLayer("Base Layer");
+        var before = new AnimationClip { name = "before" }; var idle = new AnimationClip { name = "idle" };
+        AnimatorState foreign = null;
+        try
+        {
+            var sm = controller.layers[0].stateMachine;
+            AnimatorState Add(string name) { var state = sm.AddState(name); state.name = name; state.motion = before; return state; }
+            if (layout != "empty")
+            {
+                if (layout == "missing-idle") sm.defaultState = Add("walk");
+                else sm.defaultState = Add("idle");
+                if (layout.StartsWith("duplicate-"))
+                {
+                    string name = layout.Substring("duplicate-".Length);
+                    if (name != "idle") Add(name);
+                    Add(name);
+                }
+                if (layout == "missing-default") sm.defaultState = null;
+                if (layout == "foreign-default")
+                {
+                    foreign = new AnimatorState(); foreign.name = "idle"; foreign.motion = before; sm.defaultState = foreign;
+                }
+                if (layout == "walk-default") sm.defaultState = Add("walk");
+                if (layout == "unknown-state") Add("unexpected");
+            }
+            var states = sm.states.Select(s => s.state).ToArray();
+            var defaultState = sm.defaultState;
+            Exception error = null;
+            try { ConfigureGeneratedController()(controller, idle, "Assets/Art/Collection/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2.fbx"); }
+            catch (Exception caught) { error = caught; }
+            CollectionAssert.AreEqual(states, sm.states.Select(s => s.state), "reject before adding states");
+            Assert.AreSame(defaultState, sm.defaultState, "reject before changing the default");
+            foreach (var state in states) Assert.AreSame(before, state.motion, "reject before overwriting any authored motion");
+            if (foreign != null) Assert.AreSame(before, foreign.motion);
+            Assert.IsInstanceOf<InvalidOperationException>(error);
+        }
+        finally
+        {
+            Object.DestroyImmediate(controller); Object.DestroyImmediate(before); Object.DestroyImmediate(idle);
+            if (foreign != null) Object.DestroyImmediate(foreign);
+        }
+    }
+
+    [Test]
+    public void IdleOnlyGeneratedControllerMigratesIdempotently()
+    {
+        var controller = new AnimatorController(); controller.AddLayer("Base Layer");
+        var idle = new AnimationClip { name = "idle" };
+        try
+        {
+            var sm = controller.layers[0].stateMachine; var original = sm.AddState("idle"); sm.defaultState = original;
+            var configure = ConfigureGeneratedController();
+            const string model = "Assets/Art/Collection/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2.fbx";
+            configure(controller, idle, model);
+            var states = sm.states.Select(s => s.state).ToArray();
+            CollectionAssert.AreEquivalent(new[] { "idle", "walk", "attack" }, states.Select(s => s.name));
+            Assert.AreSame(original, sm.defaultState); Assert.AreSame(idle, original.motion);
+            configure(controller, idle, model);
+            CollectionAssert.AreEqual(states, sm.states.Select(s => s.state));
+        }
+        finally { Object.DestroyImmediate(controller); Object.DestroyImmediate(idle); }
+    }
+
+    [TestCase("idle")]
+    [TestCase("walk")]
+    [TestCase("attack")]
+    public void BuiltInPlaybackDoesNotAllocateAndCustomStatesStillWork(string state)
+    {
+        var go = new GameObject("cached states");
+        var controller = new AnimatorController(); controller.AddLayer("Base Layer");
+        var clip = new AnimationClip { name = "pose" };
+        try
+        {
+            var sm = controller.layers[0].stateMachine;
+            foreach (string name in new[] { "idle", "walk", "attack", "custom" }) sm.AddState(name).motion = clip;
+            var animator = go.AddComponent<Animator>(); animator.runtimeAnimatorController = controller; animator.Rebind(); animator.Update(0f);
+            for (int i = 0; i < 20; i++) { UnitFigureMotion.Play(animator, state); animator.Update(0f); }
+            Assert.That(() =>
+            {
+                UnitFigureMotion.Play(animator, state);
+            }, Is.Not.AllocatingGCMemory());
+            Assert.IsTrue(UnitFigureMotion.Play(animator, "custom")); animator.Update(0f);
+            Assert.AreEqual(Animator.StringToHash("Base Layer.custom"), animator.GetCurrentAnimatorStateInfo(0).fullPathHash);
+            Assert.IsFalse(UnitFigureMotion.Play(animator, "missing-custom"));
+        }
+        finally { Object.DestroyImmediate(go); Object.DestroyImmediate(controller); Object.DestroyImmediate(clip); }
+    }
+
     [TestCase(0f)]
     [TestCase(.01f)]
     public void SubthresholdMotionSnapsToItsDestination(float offset)

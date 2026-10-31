@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
+using UnityEngine.TestTools;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -427,6 +429,56 @@ public class UnitsInPlayTests
         return map;
     }
 
+    [UnityTest]
+    public IEnumerator ShowRebuildCreatesAndAdvancesLiveMotion()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        yield return new EnterPlayMode();
+        yield return LiveRebuildMotion();
+        yield return new ExitPlayMode();
+    }
+
+    static IEnumerator LiveRebuildMotion()
+    {
+        Assert.IsTrue(Application.isPlaying, "exercise the production play-mode guard");
+        int captureRate = Time.captureFramerate;
+        Time.captureFramerate = 60;
+        var map = new GameObject("LiveMotionMap").AddComponent<MapScene>();
+        try
+        {
+            map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+            Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+                File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+            map.Build();
+            var state = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, state);
+            var root = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var original = root.GetComponentsInChildren<UnitTokenMotion>().First(m => m.Identity == "sim:0");
+            Assert.IsFalse(original.Moving);
+            var next = state.Clone();
+            var unit = next.Units[0];
+            // A presentation fixture only: this known adjacent destination changes the visual clearing.
+            next.Units[unit.Id] = new Unit(unit.Id, unit.Type, 9, 9, unit.Service, unit.Side,
+                unit.Strength, unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full);
+            string hash = next.Hash();
+            Assert.IsTrue(layer.Show(C, next));
+            var motion = root.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.Identity == "sim:0");
+            Assert.AreNotSame(original, motion, "Show rebuilt and wired the new token");
+            Assert.IsTrue(motion.Moving, "Rebuild called Begin using the prior presented centre");
+            float start = motion.transform.position.magnitude;
+            Assert.Greater(start, 1f);
+            for (int frame = 0; frame < 10; frame++) yield return null;
+            Assert.IsTrue(motion.Moving);
+            Assert.Less(motion.transform.position.magnitude, start, "normal LateUpdate advances the offset");
+            for (int frame = 0; frame < 60; frame++) yield return null;
+            Assert.IsFalse(motion.Moving);
+            Assert.AreEqual(Vector3.zero, motion.transform.position);
+            Assert.AreEqual(hash, next.Hash(), "presentation never changes simulation state");
+        }
+        finally { Time.captureFramerate = captureRate; UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
 
     /// <summary>Review I2 and M9: every anchor gets one spot, from the data alone, within one hex step of its sourced
@@ -584,6 +636,28 @@ public class UnitsInPlayTests
             Assert.Greater(pieces, 5, "brigades and ships were checked");
         }
         finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>#2043: selecting, re-selecting and deselecting a unit many times leaves at most one live selection-ring
+    /// mesh (each replaced ring frees its own), and tearing the layer down frees that one too.</summary>
+    [Test]
+    public void SelectingAgainAndAgainKeepsOneRingMesh()
+    {
+        static int Rings() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "UnitSelectionRing");
+        int before = Rings();
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            string id = layer.Tokens[0].Token.Unit.Id;
+            for (int i = 0; i < 10; i++) { layer.Select(id); layer.Select(id); layer.Select(null); }
+            layer.Select(id);
+            Assert.AreEqual(id, layer.Selected);
+            Assert.AreEqual(1, Rings() - before, "one live ring mesh after 21 selections");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+        Assert.AreEqual(0, Rings() - before, "the layer's teardown frees the live ring's mesh");
     }
 
     /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's draped

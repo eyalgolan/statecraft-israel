@@ -39,6 +39,8 @@ note.
   figure references.
 - Commanders are named only where they are the subject or author of a cited file.
 
+Every [V] in this note was an agent's reading on 2026-10-16, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. Flags in force on 15 May 1948
 
 | Side (Q-START-4) | Flag on 15 May 1948 | Best source | Tag |
