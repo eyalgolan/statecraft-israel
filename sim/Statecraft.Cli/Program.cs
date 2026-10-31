@@ -8,13 +8,14 @@ using Statecraft.Sim;
 //       writer preview: the historical run with some rules.yaml values changed in memory, against the real content
 //   dotnet run --project Statecraft.Cli -- --release-gate [--content DIR]   (exit 0 when shareable, 3 when not)
 //   dotnet run --project Statecraft.Cli -- --timeline-report [--content DIR]   (each road not taken and what follows it)
+//   dotnet run --project Statecraft.Cli -- --timeline-course SAVE [--content DIR]   (resolved course from a played save)
 // Interactive commands: c EVENT OPTION | p POLICY LEVEL | m LEVEL | s DELTA | n (end turn) | q
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 string? Arg(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
-foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every" })
+foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every", "--timeline-course" })
 {
     var at = Array.IndexOf(args, flag);
     if (at >= 0 && (at + 1 >= args.Length || args[at + 1].StartsWith("--", StringComparison.Ordinal)))
@@ -22,6 +23,12 @@ foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--unti
 }
 var autoMode = Arg("--auto");
 if (autoMode != null && autoMode != "historical") { Console.Error.WriteLine($"Unknown --auto mode: '{autoMode}'"); return 1; }
+var coursePath = Arg("--timeline-course");
+if (coursePath != null && new[] { "--preview", "--release-gate", "--timeline-report", "--auto" }.Any(flag => Array.IndexOf(args, flag) >= 0))
+{
+    Console.Error.WriteLine("Use --timeline-course separately from --timeline-report, --preview, --release-gate and --auto.");
+    return 1;
+}
 
 string FindContent()
 {
@@ -87,6 +94,36 @@ if (Array.IndexOf(args, "--release-gate") >= 0)
         Console.WriteLine("RELEASE GATE REFUSED: these settlement targets are not sensitivity-reviewed: " + string.Join(", ", targets)
             + " (status: sensitivity-reviewed in content/settlement_targets.yaml; Q-TGT-3, #783)");
     return 3;
+}
+
+// --timeline-course (R-ALT-011): a developer report of the played rows, using the same derivation as TimelinePresenter.
+// Replay retains the existing save compatibility checks and warnings. It adds no state and never rewrites the save.
+if (coursePath != null)
+{
+    string saveText;
+    try { saveText = File.ReadAllText(coursePath); }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
+    {
+        Console.Error.WriteLine("Save error: the file could not be read.");
+        return 1;
+    }
+
+    GameSession played;
+    IReadOnlyList<string> warnings;
+    try { played = GameSession.Load(content, saveText, out warnings); }
+    catch (SaveException e)
+    {
+        Console.Error.WriteLine($"Save error{(e.Code != null ? " (" + e.Code + ")" : "")}: {e.Message}");
+        return 1;
+    }
+
+    var entries = Timeline.Entries(content, played.State);
+    foreach (var warning in warnings) Console.Error.WriteLine("Save warning: " + warning);
+    Console.WriteLine("event\tchosen\thistorical\tdiverged\trejoined_by");
+    foreach (var entry in entries)
+        Console.WriteLine(string.Join("\t", entry.Event, entry.Chosen, entry.Historical == "" ? "-" : entry.Historical,
+            entry.Diverged ? "true" : "false", entry.RejoinedBy == "" ? "-" : entry.RejoinedBy));
+    return 0;
 }
 
 // --timeline-report (R-ALT-011): one line per road not taken, in window order: who proposed it (basis), the consequence

@@ -1,0 +1,1 @@
+- Add `--timeline-course SAVE` to inspect a saved game's resolved choices, departures and rejoining through the same timeline entries used by the game. Keep `--timeline-report` as the authoring coverage report.
