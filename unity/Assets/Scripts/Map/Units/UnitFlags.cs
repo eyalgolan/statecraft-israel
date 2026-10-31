@@ -72,8 +72,8 @@ namespace Statecraft.Game.Map.Units
     ///   cedar is traced from Wikimedia Commons' File:Flag_of_Lebanon.svg (public domain; revision of 21 August 2026; itself
     ///   traced from the CIA World Factbook), its row-by-row outline simplified to 24 levels, the gaps in its foliage left out.
     ///   The cedar's colour in 1948 is in conflict (the 1943 Arabic text and FOTW say green; English Wikipedia says the
-    ///   article named no colour before 1990 and depictions had a brown trunk): it waits on the owner, drawn all green
-    ///   meanwhile (<see cref="LebanonCedarColour"/>).
+    ///   article named no colour before 1990 and depictions had a brown trunk): the owner chose all green on 31 October 2026
+    ///   ("All green (Recommended)"; <see cref="LebanonCedarColour"/>).
     /// - Where a 1948 army flew a separate war flag in the field, no source was found for any of the four, so each flies its
     ///   national flag. A side the map draws without a sourced flag (the Arab Liberation Army, issue #665) flies a neutral
     ///   pennant instead (<see cref="BuildPennant"/>):
@@ -331,9 +331,9 @@ namespace Statecraft.Game.Map.Units
         /// No. 1"), so their cloth shares these.</summary>
         public static readonly Color BlackColour = new Color(0.05f, 0.05f, 0.05f), GreenColour = new Color(0.0f, 0.45f, 0.22f), RedColour = new Color(0.78f, 0.08f, 0.10f);
 
-        /// <summary>The colour of Lebanon's cedar. PENDING THE OWNER: the 1943 Arabic text and FOTW say green, English Wikipedia
-        /// says no colour was fixed before 1990 and depictions had a brown trunk (the class note). Drawn all green until the
-        /// owner rules; a brown trunk would also need its own outline and slot.</summary>
+        /// <summary>The colour of Lebanon's whole cedar: all green, the owner's choice (31 October 2026, "All green
+        /// (Recommended)") where the sources conflict (the 1943 Arabic text and FOTW say green; English Wikipedia says no colour
+        /// was fixed before 1990 and depictions had a brown trunk; the class note).</summary>
         public static readonly Color LebanonCedarColour = GreenColour;
 
         /// <summary>The cloth's colours of <paramref name="side"/>'s flag, one per submesh after the pole's, in drawing order

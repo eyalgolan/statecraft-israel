@@ -599,7 +599,8 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
     research is `.superpowers/coordination/arab-flags-1948-research.md`. Every flag is 0.72 of a figure long with the
     same top; its height is its law's proportion (2:3 for Egypt and Lebanon, 0.48; 1:2 for Transjordan, Iraq and Syria,
     0.36). Lebanon's cedar is traced from Wikimedia Commons' public-domain `File:Flag_of_Lebanon.svg` and drawn all
-    green pending the owner's call on its 1948 colour (`UnitFlags.LebanonCedarColour`). Pinned by
+    green, the owner's choice where the sources on its 1948 colour conflict (31 October 2026, "All green
+    (Recommended)"; `UnitFlags.LebanonCedarColour`). Pinned by
     `EverySourcedFlagHasItsColoursAndItsLawsProportion` and one test per flag; the local forces have no figure, so no
     token and no flag (`TheFlagIsTheSidesAndOnlyASourcedFlagIsDrawn`).
 - **The showcase trio** (`?units`, `-units`) stands at the land hex nearest its old spot whose base keeps off the

@@ -503,13 +503,13 @@ public class UnitPlinthTests
 
     /// <summary>Lebanon's flag as the Constitution's Art. 5 (1943) gives it (UnitFlags' class note), 2:3 (practice), in units
     /// of length 3: red, white, red, the white as broad as both reds; the cedar on the white, touching both reds, a third of
-    /// the length wide, in <see cref="UnitFlags.LebanonCedarColour"/> (all green, pending the owner).</summary>
+    /// the length wide, in <see cref="UnitFlags.LebanonCedarColour"/> (all green: the owner, 31 October 2026, "All green (Recommended)").</summary>
     [Test]
     public void LebanonsFlagFollowsArticle5Of1943()
     {
         var m = UnitFlags.Build(UnitFlags.Lebanon)!;
         var colours = UnitFlags.Colours(UnitFlags.Lebanon).ToList();
-        Assert.AreEqual(UnitFlags.GreenColour, UnitFlags.LebanonCedarColour, "all green until the owner rules on the cedar");
+        Assert.AreEqual(UnitFlags.GreenColour, UnitFlags.LebanonCedarColour, "all green, the owner's choice of 31 October 2026");
         int red = 1 + colours.IndexOf(UnitFlags.RedColour), white = 1 + colours.IndexOf(UnitFlags.WhiteColour), cedar = 1 + colours.IndexOf(UnitFlags.LebanonCedarColour);
         Assert.That(new[] { red, white, cedar }, Is.All.GreaterThan(0), "red, white and the cedar");
         Assert.Greater(cedar, white, "the cedar drawn over the white");
