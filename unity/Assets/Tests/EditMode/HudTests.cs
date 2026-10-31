@@ -189,6 +189,28 @@ public class HudTests
         Assert.AreEqual("Score 150", label.text);
     }
 
+    // ---- The exhausted-turn count (#812, R-END-002): "1 of 3" under the date while Money and Food are both out ----
+
+    [Test]
+    public void TheBarCountsTheExhaustedTurnsAgainstTheDefeatLimit()
+    {
+        using var ui = new UiTestKit();
+        var bridge = GddBridge();
+        using var hud = new HudPresenter(ui.Root, bridge, Text);
+        var label = ui.Q<Label>("exhausted");
+        // Nothing is shown at 0: one exhausted resource alone ends nothing, so there is no count to warn about.
+        Assert.AreEqual("", HudModel.From(bridge, Text).Exhausted);
+        Assert.AreEqual(DisplayStyle.None, label.style.display.value);
+        var limit = bridge.Content.RulesAt(bridge.State.Date).Mvp!.DefeatTurns!.Value;
+        bridge.State.ExhaustedTurns = 1;
+        hud.Render();
+        Assert.AreEqual($"Money and Food ran out: turn 1 of {limit}", label.text);
+        Assert.AreEqual(DisplayStyle.Flex, label.style.display.value);
+        // The value carries left-to-right marks in a Hebrew line (U+200E, #543), as every Hebrew value does.
+        var he = HudModel.From(bridge, He).Exhausted;
+        Assert.AreEqual($"הכסף והמזון אזלו: תור 1 מתוך {limit}", he.Replace("\u200E", ""));
+    }
+
     // ---- Social cohesion (#380): a resource meter, only in the GDD loop, from the morale indicator ----
 
     /// <summary>The owner's ruling of 15 October 2026 (#380): Social cohesion on the top bar as a resource meter, in the GDD
