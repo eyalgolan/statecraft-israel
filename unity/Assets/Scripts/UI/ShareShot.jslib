@@ -11,6 +11,23 @@
 // clipboard-write) it copies the post text instead, then through a hidden textarea (execCommand), which some iframes
 // still allow. StatecraftShareCopied tells the panel which one landed: 1 the picture, 2 the text, 3 neither, 0 not yet.
 mergeInto(LibraryManager.library, {
+  // One release owner across Share, Instagram, Copy and every ExternalLink. IDs also protect late focus/timeout callbacks.
+  $StatecraftInvalidateShareAttempt: function () {
+    if (window.statecraftReleaseArm) window.statecraftReleaseArm.cancel();
+    window.statecraftShareAttempt = (window.statecraftShareAttempt || 0) + 1;
+    window.statecraftShareFailed = false;
+  },
+  $StatecraftBeginReleaseArm__deps: ["$StatecraftInvalidateShareAttempt"],
+  $StatecraftBeginReleaseArm: function () {
+    StatecraftInvalidateShareAttempt(); // cancel the previous ticket BEFORE installing its replacement
+    return window.statecraftReleaseSerial = (window.statecraftReleaseSerial || 0) + 1;
+  },
+  StatecraftShareInvalidate__deps: ["$StatecraftInvalidateShareAttempt"],
+  StatecraftShareInvalidate: function () { StatecraftInvalidateShareAttempt(); },
+  StatecraftShareArmTicket: function () { return window.statecraftReleaseArm ? window.statecraftReleaseArm.id : 0; },
+  StatecraftShareCancelArm: function (ticket) {
+    if (window.statecraftReleaseArm && window.statecraftReleaseArm.id === ticket) window.statecraftReleaseArm.cancel();
+  },
   // Shared by Copy and copy-then-open. Kept PNG means clipboard.write starts in this very release event.
   $StatecraftCopySharePicture: function (text, serial, site) {
     var done = function (result) { if (serial === window.statecraftShareCopySerial) window.statecraftShareCopied = result; };
@@ -68,7 +85,9 @@ mergeInto(LibraryManager.library, {
     catch (e) { copyText(); }
   },
 
+  StatecraftShareKeep__deps: ["$StatecraftInvalidateShareAttempt"],
   StatecraftShareKeep: function (pngPtr, length, namePtr) {
+    StatecraftInvalidateShareAttempt();
     // A late rejected write from an old panel must not download after a new capture replaced its picture.
     window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
     window.statecraftShareCopied = 0;
@@ -80,20 +99,30 @@ mergeInto(LibraryManager.library, {
     try { return file && navigator.canShare && navigator.canShare({ files: [file] }) ? 1 : 0; } catch (e) { return 0; }
   },
   StatecraftShareFailed: function () { return window.statecraftShareFailed ? 1 : 0; },
+  StatecraftShareOnRelease__deps: ["$StatecraftBeginReleaseArm"],
   StatecraftShareOnRelease: function (textPtr) {
     var text = UTF8ToString(textPtr);   // both links are already in the post; no separate URL (#1653)
     if (typeof window === "undefined") return;
-    if (window.statecraftShareDisarm) window.statecraftShareDisarm();
+    var id = StatecraftBeginReleaseArm();
     var canvas = document.querySelector("#unity-canvas") || document;
     var timer;
     var disarm = function () {
       clearTimeout(timer);
       canvas.removeEventListener("pointerup", go);
       canvas.removeEventListener("pointerdown", disarm);
+      canvas.removeEventListener("pointercancel", disarm);
       document.removeEventListener("keyup", go);
-      window.statecraftShareDisarm = null;
+      document.removeEventListener("keydown", escape);
+      document.removeEventListener("visibilitychange", disarm);
+      window.removeEventListener("blur", disarm);
+      window.removeEventListener("resize", disarm);
+      if (window.statecraftReleaseArm && window.statecraftReleaseArm.id === id) window.statecraftReleaseArm = null;
     };
+    var attempt = window.statecraftShareAttempt;
+    var escape = function (e) { if (e.key === "Escape") disarm(); };
     var download = function (file) {
+      if (attempt !== window.statecraftShareAttempt) return;
+      window.statecraftShareFailed = true; // publish BEFORE requesting the fallback, including canShare false
       var link = document.createElement("a");
       link.href = URL.createObjectURL(file);
       link.download = file.name;
@@ -102,8 +131,12 @@ mergeInto(LibraryManager.library, {
       link.remove();
       setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
     };
-    var go = function () {
-      disarm();
+    var go = function (e) {
+      if (e.type === "keyup") {
+        if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      }
+      if (!window.statecraftReleaseArm || window.statecraftReleaseArm.id !== id) return;
+      disarm(); // consume only the release ticket; the native result still owns its attempt token
       var file = window.statecraftShareFile;
       if (!file) return;
       var canShare = false;
@@ -113,8 +146,7 @@ mergeInto(LibraryManager.library, {
       // that fails) downloads the picture instead, and StatecraftShareFailed tells the panel to show the share links.
       navigator.share({ files: [file], text: text }).catch(function (e) {
         if (e && e.name === "AbortError") return;
-        window.statecraftShareFailed = true;
-        download(file);
+        download(file); // download checks the captured token before either side effect
       });
     };
     // Reset here, not on the release: the panel asks StatecraftShareFailed after this press, and after an earlier
@@ -122,33 +154,55 @@ mergeInto(LibraryManager.library, {
     window.statecraftShareFailed = false;
     canvas.addEventListener("pointerup", go);
     canvas.addEventListener("pointerdown", disarm);
+    canvas.addEventListener("pointercancel", disarm);
     document.addEventListener("keyup", go);
-    window.statecraftShareDisarm = disarm;
+    document.addEventListener("keydown", escape);
+    document.addEventListener("visibilitychange", disarm);
+    window.addEventListener("blur", disarm);
+    window.addEventListener("resize", disarm);
+    window.statecraftReleaseArm = { id: id, cancel: disarm };
     timer = setTimeout(disarm, 1500);
   },
   StatecraftShareCopied: function () { return window.statecraftShareCopied || 0; },
-  StatecraftShareCopyOnRelease__deps: ["$StatecraftCopySharePicture"],
+  StatecraftShareCopyOnRelease__deps: ["$StatecraftCopySharePicture", "$StatecraftBeginReleaseArm"],
   StatecraftShareCopyOnRelease: function (textPtr) {
     var text = UTF8ToString(textPtr);
     if (typeof window === "undefined") return;
-    if (window.statecraftShareDisarm) window.statecraftShareDisarm();
+    var id = StatecraftBeginReleaseArm();
     var canvas = document.querySelector("#unity-canvas") || document;
     var timer;
     var disarm = function () {
       clearTimeout(timer);
       canvas.removeEventListener("pointerup", go);
       canvas.removeEventListener("pointerdown", disarm);
+      canvas.removeEventListener("pointercancel", disarm);
       document.removeEventListener("keyup", go);
-      window.statecraftShareDisarm = null;
+      document.removeEventListener("keydown", escape);
+      document.removeEventListener("visibilitychange", disarm);
+      window.removeEventListener("blur", disarm);
+      window.removeEventListener("resize", disarm);
+      if (window.statecraftReleaseArm && window.statecraftReleaseArm.id === id) window.statecraftReleaseArm = null;
     };
     var serial = window.statecraftShareCopySerial = (window.statecraftShareCopySerial || 0) + 1;
-    var go = function () { disarm(); StatecraftCopySharePicture(text, serial); };
+    var escape = function (e) { if (e.key === "Escape") disarm(); };
+    var go = function (e) {
+      if (e.type === "keyup") {
+        if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      }
+      if (!window.statecraftReleaseArm || window.statecraftReleaseArm.id !== id) return;
+      disarm(); StatecraftCopySharePicture(text, serial);
+    };
     // Reset on the press, as statecraftShareFailed is: the panel starts asking right after it.
     window.statecraftShareCopied = 0;
     canvas.addEventListener("pointerup", go);
     canvas.addEventListener("pointerdown", disarm);
+    canvas.addEventListener("pointercancel", disarm);
     document.addEventListener("keyup", go);
-    window.statecraftShareDisarm = disarm;
+    document.addEventListener("keydown", escape);
+    document.addEventListener("visibilitychange", disarm);
+    window.addEventListener("blur", disarm);
+    window.addEventListener("resize", disarm);
+    window.statecraftReleaseArm = { id: id, cancel: disarm };
     timer = setTimeout(disarm, 1500);
   },
 });
