@@ -177,12 +177,10 @@ namespace Statecraft.Game.UI
                 // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
                 // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
                 // reopens the screen only after Begin returns, so at construction no screen is open yet.
-                if (session.Chain.Step >= 0)
+                if (InChain)
                     layer.schedule.Execute(() =>
                     {
-                        if (disposed || session.Chain.Step < 0) return;
-                        // The chain, not InChain: the popup hides under the covering screen (RenderChain's Hide), and
-                        // IsOpen's false then must not skip the arm, or the close finds nothing armed (#1915).
+                        if (disposed || !InChain) return;
                         if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
                         Debug.Log("[#1915] arm check: screenOpen=" + ScreenOpen() + " armed=" + focusNextWhenUncovered + " isOpen=" + IsOpen);
                     });
@@ -562,21 +560,25 @@ namespace Statecraft.Game.UI
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
         }
 
-        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). The close still settles
-        /// around the hand-off (the screen's own hide, the panels it covered re-enabling, the focus the screen's contents
-        /// held going nowhere), and a bare Focus() during that can be lost, so the hand-off tries again on the following
-        /// frames while the focus is nowhere; a control that takes it meanwhile keeps it.</summary>
-        void FocusNextOnceUncovered(int attempts = 5)
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). The popup may still be
+        /// coming back from its hide under the screen (styles not resolved, Place not run yet), and a Focus() then does
+        /// nothing, so the hand-off tries again on the following frames while the focus is nowhere; once Next has it the
+        /// retries stop, and a control that takes it meanwhile keeps it.</summary>
+        void FocusNextOnceUncovered(int attempts = 6)
         {
-            Debug.Log("[#1915] hand-off: attempts=" + attempts + " disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen() + " focused=" + (layer.focusController?.focusedElement is VisualElement f ? f.name : "null"));
+            var focused = layer.focusController?.focusedElement as VisualElement;
+            Debug.Log("[#1915] hand-off: attempts=" + attempts
+                + " disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen()
+                + " focused=" + (focused != null ? focused.name : "null")
+                + " canGrab=" + gotIt.canGrabFocus + " enabled=" + gotIt.enabledInHierarchy
+                + " display=" + popup.resolvedStyle.display + " visibility=" + popup.resolvedStyle.visibility
+                + " opacity=" + popup.resolvedStyle.opacity + " closing=" + popup.ClassListContains(ScreenNav.ClosingClass));
             if (disposed || !InChain || ScreenOpen()) return;
+            if (focused == gotIt) return;                                   // landed
+            if (focused != null && attempts < 6) return;                    // a retry: another control took it meanwhile
             gotIt.Focus();
-            if (attempts <= 1) return;
-            layer.schedule.Execute(() =>
-            {
-                if (disposed || !InChain || ScreenOpen()) return;
-                if (layer.focusController?.focusedElement == null) FocusNextOnceUncovered(attempts - 1);
-            });
+            Debug.Log("[#1915] hand-off after Focus: focused=" + (layer.focusController?.focusedElement is VisualElement g ? g.name : "null"));
+            if (attempts > 1) layer.schedule.Execute(() => FocusNextOnceUncovered(attempts - 1));
         }
 
         void ShowMe()
