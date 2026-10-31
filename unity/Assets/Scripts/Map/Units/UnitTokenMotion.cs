@@ -17,6 +17,8 @@ namespace Statecraft.Game.Map.Units
         {
             elapsed = 0f; Moving = offset.sqrMagnitude > .001f;
             start = Moving ? offset : Vector3.zero;
+            // Token roots stay at world origin; map positions are baked into their child geometry.
+            // This position is a presentation offset from that geometry, not a map destination.
             transform.position = start;
         }
         public void Advance(float seconds)
@@ -32,7 +34,7 @@ namespace Statecraft.Game.Map.Units
         {
             animators.Clear(); transform.GetComponentsInChildren(true, animators);
             foreach (var animator in animators)
-                UnitFigureMotion.Play(animator, attackRemaining > 0f ? "attack" : Moving ? UnitFigureMotion.Walk : UnitFigureMotion.Idle);
+                UnitFigureMotion.Play(animator, attackRemaining > 0f ? UnitFigureMotion.Attack : Moving ? UnitFigureMotion.Walk : UnitFigureMotion.Idle);
         }
         public bool PlayAttack()
         {
@@ -40,8 +42,8 @@ namespace Statecraft.Game.Map.Units
             float duration = 0f;
             foreach (var animator in animators)
             {
-                if (!UnitFigureMotion.Play(animator, "attack")) continue;
-                animator.Play("Base Layer.attack", 0, 0f);
+                if (!UnitFigureMotion.Play(animator, UnitFigureMotion.Attack)) continue;
+                animator.Play(UnitFigureMotion.AttackHash, 0, 0f);
                 foreach (var clip in animator.runtimeAnimatorController.animationClips)
                     if (clip.name.EndsWith("|fire", System.StringComparison.OrdinalIgnoreCase) || clip.name == "fire")
                         duration = Mathf.Max(duration, clip.length);
