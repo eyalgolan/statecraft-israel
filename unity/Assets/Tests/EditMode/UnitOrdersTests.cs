@@ -395,7 +395,7 @@ public class UnitOrdersTests
     public void ReinforceQueuesTheMissingStrengthFromTheCityTheUnitStandsIn()
     {
         var he = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text, "strings.he.yaml");
-        foreach (var (t, label) in new[] { (Text, "Reinforce +"), (he, "תגבור +") })
+        foreach (var (t, label, arms) in new[] { (Text, "Reinforce +", "not enough Arms"), (he, "תגבור +", "אין די כלי נשק") })
         {
             using var ui = new UiTestKit();
             var g = GameSession.New(C, GoldenRun.Seed, Mode.Historical);
@@ -414,7 +414,7 @@ public class UnitOrdersTests
             g.State.Arms = 0;
             info.ShowUnit();
             Assert.AreEqual(DisplayStyle.None, button.style.display.value, "no Arms, no Reinforce");
-            StringAssert.Contains("not enough Arms", ui.Q<Label>("info-reason").text, "the sim's reason shows");
+            StringAssert.Contains(arms, ui.Q<Label>("info-reason").text, "the sim's reason shows, in the UI's language (#2072)");
 
             g.State.Arms = 100;
             info.ShowUnit();

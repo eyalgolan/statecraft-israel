@@ -90,6 +90,25 @@ public class HebrewUiTests
         }
     }
 
+    // #2072: every Combat.Check and Training.Reinforce refusal (their Refused* constants; a format filled with "7"s) has a
+    // string in both files: the English is the sim's own text, the Hebrew is Hebrew with no Latin letter left.
+    [TestCase(typeof(Statecraft.Sim.Combat))]
+    [TestCase(typeof(Statecraft.Sim.Training))]
+    public void EveryAttackAndReinforceRefusalHasAStringInBothLanguages(System.Type check)
+    {
+        var refusals = check.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.Name.StartsWith("Refused"))
+            .Select(f => string.Format((string)f.GetRawConstantValue(), "7", "7", "7", "7")).ToList();
+        Assert.That(refusals, Is.Not.Empty, check.Name + " has no Refused* constants");
+        foreach (var reason in refusals)
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason);
+            StringAssert.IsMatch("[\u05D0-\u05EA]", he, "no Hebrew string for: " + reason);
+            StringAssert.DoesNotMatch("[A-Za-z]", he, reason);
+        }
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {

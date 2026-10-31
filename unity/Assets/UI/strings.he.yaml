@@ -1027,6 +1027,30 @@ unit.order_refused.not_yours: "היחידה אינה שלך"
 unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
 unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
 
+# #2072 Attack and Reinforce refusals (Combat.Check, Training.Reinforce), shown on the unit card and in the toast. A
+# settlement in {0}/{1} opens the line as its label or follows a prefix, so no verb agrees with its gender (HE-15).
+# For the native reviewer (#564).
+unit.attack_refused.no_hex: "יש לבחור משושה להתקפה"
+unit.attack_refused.truce: "הפוגה בתוקף"
+unit.attack_refused.out_of_range: "המשושה מחוץ לטווח של היחידה"
+unit.attack_refused.not_adjacent: "המשושה אינו סמוך ליחידה"
+unit.attack_refused.no_enemy: "אין יחידת אויב במשושה הזה"
+unit.attack_refused.no_points: "ליחידה לא נותרו נקודות תנועה בתור הזה"
+unit.attack_refused.arms: "להתקפה נדרשים {0} כלי נשק ובמלאי יש {1}"
+unit.reinforce_refused.no_city: "אין עיר כזאת"
+unit.reinforce_refused.not_in_city: "יחידה {0} אינה ב{1}"
+unit.reinforce_refused.no_course: "יחידה {0} אינה יכולה לקבל תגבורת"
+unit.reinforce_refused.no_losses: "ליחידה {0} אין אבדות להשלים"
+unit.reinforce_refused.room_one: "יחידה {0} יכולה לקבל עוד קבוצות: {1}"
+unit.reinforce_refused.room_many: "יחידה {0} יכולה לקבל עוד קבוצות: {1}"
+unit.reinforce_refused.no_training: "אין אימון כזה"
+unit.reinforce_refused.count: "יש לאמן לפחות קבוצה אחת"
+unit.reinforce_refused.no_camp: "{0}: אין מחנה צבאי"
+unit.reinforce_refused.no_industry: "{0}: אין מיזם תעשייה שהושלם"
+unit.reinforce_refused.no_hakhshara: "{0}: אין מחנה הכשרה"
+unit.reinforce_refused.idle: "{0}: אין די אזרחים ללא עבודה (יש {1})"
+unit.reinforce_refused.arms: "{0}: אין די כלי נשק ל{1} (נדרשים {2}, יש {3})"
+
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564).
 # SENSITIVE: capture, displacement, Deport, annexation and occupation also await sensitivity review.
 why.cause.workers_assigned: "{0}: קבוצות בעבודה: {1}"
