@@ -17,8 +17,9 @@ namespace Statecraft.Game.Map.Units
     /// read, and the badge and flag). It fails open: until a model arrives, and for ever when its bundle is missing or
     /// damaged, the code-built figure stays. An Arab force's token has no code-built figure at all (owner, 17 October 2026,
     /// #740: "Nothing is drawn with IDF figures, and there is no placeholder art"): the roster draws it only once its model
-    /// has arrived (<see cref="Arrived"/>). A vehicle has no code-built model either: it appears when it arrives. A model
-    /// that has arrived once is put on new tokens at once (a roster change rebuilds them), so a rebuild never shows the
+    /// has arrived (<see cref="Arrived"/>), or, when its model failed to load (<see cref="Failed"/>), with the plain built-in
+    /// figure (owner, 31 October 2026: "Yes, fallback in v0.3.2"). A vehicle has no code-built model either: it appears
+    /// when it arrives. A model that has arrived once is put on new tokens at once (a roster change rebuilds them), so a rebuild never shows the
     /// code-built figures for a frame. Up close (<see cref="UnitFigureDetail"/>), each figure whose model has an idle clip
     /// shows its skinned near model playing it instead.</summary>
     public static class UnitFigures
@@ -137,6 +138,9 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The models that have arrived, by id, and the ids asked for and not yet answered.</summary>
         static readonly Dictionary<string, GameObject> arrived = new Dictionary<string, GameObject>(StringComparer.Ordinal);
         static readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>The side figures answered with nothing (<see cref="Failed"/>), and those already logged this session.</summary>
+        static readonly HashSet<string> failed = new HashSet<string>(StringComparer.Ordinal);
+        static readonly HashSet<string> warnedFailed = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The figures and vehicles waiting for each asked-for model.</summary>
         static readonly Dictionary<string, List<Transform>> waiting = new Dictionary<string, List<Transform>>(StringComparer.Ordinal);
         /// <summary>The near prefabs answered (null: missing or damaged, so the far model stays), and the callers waiting for
@@ -206,7 +210,7 @@ namespace Statecraft.Game.Map.Units
                 if (lastDetailOwner)
                 {
                     if (detail == CollectionDetail.Near) { near.Remove(id); nearWaiting.Remove(id); }
-                    else { if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); }
+                    else { if (arrived.Remove(id) | failed.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); }
                 }
             }
         }
@@ -229,9 +233,10 @@ namespace Statecraft.Game.Map.Units
             if (detail == CollectionDetail.Near) near[id] = prefab;
             else if (prefab != null)
             {
-                bool first = !arrived.ContainsKey(id); arrived[id] = prefab;
+                bool first = !arrived.ContainsKey(id); arrived[id] = prefab; failed.Remove(id);
                 if (first) { AvailabilityVersion++; ModelArrived?.Invoke(id); }
             }
+            else Fail(id);
         }
 
         /// <summary>Forgets every model and request (tests, and a change of <see cref="Source"/>).</summary>
@@ -245,10 +250,29 @@ namespace Statecraft.Game.Map.Units
         {
             if (owned.Count == 0) ownedDetails.Clear();
             externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear();
+            failed.Clear(); warnedFailed.Clear();
         }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;
+
+        /// <summary>True when Arab side figure <paramref name="id"/> (<see cref="BySide"/>) was answered with nothing: its
+        /// bundle is missing or damaged. The unit layer then draws that side's tokens with the plain built-in figure (owner,
+        /// 31 October 2026: "Yes, fallback in v0.3.2", the one exception to #740's "no placeholder art"). A figure still
+        /// loading is not failed, so a normal start never flashes the built-in figure. Cleared when the model arrives, when
+        /// its last owner lets it go (a later demand asks again), and by <see cref="Forget"/>.</summary>
+        public static bool Failed(string id) => failed.Contains(id);
+
+        /// <summary>Marks a side figure's failed load: the layer draws again (<see cref="AvailabilityVersion"/>), and the first
+        /// failure of each side's figure in a session is logged once. Other models fail open as before.</summary>
+        static void Fail(string id)
+        {
+            if (!BySide.Values.Contains(id) || !failed.Add(id)) return;
+            AvailabilityVersion++;
+            if (!warnedFailed.Add(id)) return;
+            foreach (var side in BySide.Where(kv => kv.Value == id).Select(kv => kv.Key))
+                Debug.LogWarning($"UNITS figures: {side}'s figure {id} did not load; its tokens are drawn with the plain built-in figure.");
+        }
 
         /// <summary>Asks for model <paramref name="id"/> once, without a figure to put it on (an Arab force's token waits for it).</summary>
         public static void Prefetch(string id) => Ask(id);
@@ -309,9 +333,9 @@ namespace Statecraft.Game.Map.Units
                 asked.Remove(id);
                 var pieces = waiting.TryGetValue(id, out var l) ? l : null;
                 waiting.Remove(id);
-                if (prefab == null) return;   // fail open: the code-built figure stays (the stream has warned once)
+                if (prefab == null) { Fail(id); return; }   // fail open: the code-built figure stays (the stream has warned once)
                 if (arrived.Count == 0 && Application.isPlaying) Debug.Log("UNITS figures: the Collection's figures streamed in");
-                arrived[id] = prefab;
+                arrived[id] = prefab; failed.Remove(id);
                 if (pieces != null) foreach (var p in pieces) if (p != null) Swap(p, id, prefab);   // a token rebuilt meanwhile is gone
                 ModelArrived?.Invoke(id);
             });

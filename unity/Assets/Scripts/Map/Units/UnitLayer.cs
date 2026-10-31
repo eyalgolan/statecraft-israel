@@ -340,7 +340,9 @@ namespace Statecraft.Game.Map.Units
                 ? UnitRoster.FromState(units, content, state, _ => true, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
                 : UnitRoster.Build(units, content, state, _ => true);
             PrefetchFigures(now);
-            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
+            // An Arab force's token waits while its figure loads, and is drawn with the plain built-in figure if it failed.
+            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)
+                || UnitFigures.Failed(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
             if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
             roster = now;
             PlaceMoved(now);
@@ -636,6 +638,9 @@ namespace Statecraft.Game.Map.Units
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
                         bool israel = t.Unit.Side == UnitData.Israel;
+                        // Owner, 31 October 2026 ("Yes, fallback in v0.3.2"): an Arab force whose figure failed to load stands
+                        // with the plain built-in rifleman (steel helmet), the Israeli fail-open figure; only for that failure.
+                        bool builtIn = !israel && !UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!);
                         int vehicles = Mathf.Min(t.Vehicles.Count, VehicleSlots.Length);
                         figures = new (Transform, Vector3, float)[offsets.Length + vehicles];
                         for (int i = 0; i < offsets.Length; i++)
@@ -651,6 +656,13 @@ namespace Statecraft.Game.Map.Units
                                 var hat = Hat(t.Headgear[i]);
                                 var type = UnitRoster.RiflemanType(t.Headgear[i]);
                                 figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
+                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
+                            }
+                            else if (builtIn)
+                            {
+                                var type = UnitRoster.RiflemanType(UnitData.SteelHelmet);
+                                figure = UnitShowcase.Piece(go.transform, $"Figure{i}", type, () => MeshFor($"{type}/{pose}",
+                                    () => UnitModels.Rifleman(UnitModels.Headgear.SteelHelmet, pose, faded, type)),
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
