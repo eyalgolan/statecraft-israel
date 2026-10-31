@@ -90,6 +90,10 @@ namespace Statecraft.Game.UI
         /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
         /// the focus once, instead of every cover change (a resize, a meter's width) moving it.</summary>
         bool focusNextWhenUncovered;
+        /// <summary>Set when the screen over a resumed tour closes while the popup is still coming back from its hide
+        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on Hide,
+        /// on a screen opening again and on CloseChain.</summary>
+        bool focusNextOnPlace;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
@@ -343,6 +347,7 @@ namespace Statecraft.Game.UI
             StopWatching();
             if (hidden) return;
             hidden = true;
+            focusNextOnPlace = false;
             ring.style.display = DisplayStyle.None;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
@@ -370,7 +375,7 @@ namespace Statecraft.Game.UI
             {
                 RenderChain();
                 Debug.Log("[#1915] cover change: armed=" + focusNextWhenUncovered + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
-                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnceUncovered(); }   // a screen closed over a resumed tour (#1915)
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnPlace(); }   // a screen closed over a resumed tour (#1915)
                 return;
             }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
@@ -560,25 +565,19 @@ namespace Statecraft.Game.UI
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
         }
 
-        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). The popup may still be
-        /// coming back from its hide under the screen (styles not resolved, Place not run yet), and a Focus() then does
-        /// nothing, so the hand-off tries again on the following frames while the focus is nowhere; once Next has it the
-        /// retries stop, and a control that takes it meanwhile keeps it.</summary>
-        void FocusNextOnceUncovered(int attempts = 6)
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). While the popup is
+        /// still coming back from its hide under the screen (display and visibility not restored yet) a Focus() does
+        /// nothing - the gate log read canGrabFocus=false, display=None, visibility=Hidden - so the hand-off waits for
+        /// Place() to make the popup visible again. A popup still on screen takes the focus at once.</summary>
+        void FocusNextOnPlace()
         {
-            var focused = layer.focusController?.focusedElement as VisualElement;
-            Debug.Log("[#1915] hand-off: attempts=" + attempts
-                + " disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen()
-                + " focused=" + (focused != null ? focused.name : "null")
-                + " canGrab=" + gotIt.canGrabFocus + " enabled=" + gotIt.enabledInHierarchy
-                + " display=" + popup.resolvedStyle.display + " visibility=" + popup.resolvedStyle.visibility
-                + " opacity=" + popup.resolvedStyle.opacity + " closing=" + popup.ClassListContains(ScreenNav.ClosingClass));
+            Debug.Log("[#1915] hand-off: disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen()
+                + " visibility=" + popup.resolvedStyle.visibility + " display=" + popup.resolvedStyle.display
+                + " canTake=" + FocusReturn.CanTakeFocus(gotIt)
+                + " focused=" + (layer.focusController?.focusedElement is VisualElement f ? f.name : "null"));
             if (disposed || !InChain || ScreenOpen()) return;
-            if (focused == gotIt) return;                                   // landed
-            if (focused != null && attempts < 6) return;                    // a retry: another control took it meanwhile
-            gotIt.Focus();
-            Debug.Log("[#1915] hand-off after Focus: focused=" + (layer.focusController?.focusedElement is VisualElement g ? g.name : "null"));
-            if (attempts > 1) layer.schedule.Execute(() => FocusNextOnceUncovered(attempts - 1));
+            if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
+            focusNextOnPlace = true;
         }
 
         void ShowMe()
@@ -761,6 +760,13 @@ namespace Statecraft.Game.UI
             popup.style.left = at.xMin; popup.style.top = at.yMin;
             popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
             popup.style.visibility = Visibility.Visible;
+            Debug.Log("[#1915] place: visible, focusNextOnPlace=" + focusNextOnPlace + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
+            if (focusNextOnPlace && InChain && !ScreenOpen())
+            {
+                focusNextOnPlace = false;
+                gotIt.Focus();
+                gotIt.schedule.Execute(() => { if (!disposed && InChain && layer.focusController?.focusedElement == null) gotIt.Focus(); });
+            }
             return at;
         }
 
