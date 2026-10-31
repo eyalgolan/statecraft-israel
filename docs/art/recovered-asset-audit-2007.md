@@ -46,6 +46,6 @@ Static source inspection found no named attack stack for figure-ala-infantry-194
 
 ## Admission gates
 
-Use [the asset workflow](hex-asset-workflow.md), [contribution terms](../../CONTRIBUTING.md), [licensing map](../../LICENSING.md) and [asset manifest](../../ASSETS.yaml). The current HexTiles/Props record preserves a CC BY-NC-ND ruling and unresolved provider/account release questions. An old CC0 offer or a similarly named historical derivative does not establish a grant for current bytes. Recovered archival images are not cleared merely because they exist locally.
+Use [the hex-tile workflow](../hex-tiles/README.md), [contribution terms](../../CONTRIBUTING.md), [licensing map](../../LICENSING.md) and [asset manifest](../../ASSETS.yaml). The current HexTiles/Props record preserves a CC BY-NC-ND ruling and unresolved provider/account release questions. An old CC0 offer or a similarly named historical derivative does not establish a grant for current bytes. Recovered archival images are not cleared merely because they exist locally.
 
 Before any binary contribution: resolve the exact source and permitted contribution licence for each file, document third-party/provider permissions, record reference credit separately, add the required asset/provenance entries, and obtain design/period decisions independently. Building delivery also needs a registered composition, shared ground, placement settings and matching actual-map evidence. These checks were not performed by this inventory.
