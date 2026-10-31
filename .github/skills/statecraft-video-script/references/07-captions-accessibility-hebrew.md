@@ -15,7 +15,7 @@ What this means for a script: write the narration so it carries the important in
 
 ## The existing pattern
 
-The trailer's caption files already note "[Music]" and repeat the on-screen text, in English and Hebrew (`site/public/media/promo-trailer.en.vtt` and `.he.vtt`). Keep that pattern, and for a narrated video add the spoken words, with the speaker named. [V]
+The trailer's caption files already note "[Music]" and repeat the on-screen text, in English and Hebrew (`site/public/media/promo-trailer.en.vtt` and `.he.vtt`, removed with the website on 31 Oct 2026; read them with `git show ddc77b826:site/public/media/promo-trailer.en.vtt`). Keep that pattern, and for a narrated video add the spoken words, with the speaker named. [V]
 
 ## Caption files
 

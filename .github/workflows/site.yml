@@ -1,92 +1,103 @@
 name: Site
 
-# Builds the website (site/, issue #393) and checks it: both languages for every page, a label on every image and video,
-# nothing loaded from another origin (site/scripts/check-site.mjs). Pull requests only build. Deploying to GitHub Pages
-# runs on main only once the owner has enabled Pages and set the repository variable SITE_DEPLOY to "true"; until then
-# the deploy job is skipped. With a custom domain, set the variables SITE_URL (https://<domain>) and SITE_BASE (/) and
-# add site/public/CNAME (site/README.md). No secret is used; dependencies install with --ignore-scripts.
+# Publishes the playable demo on GitHub Pages: the latest release's *-web-pages.zip unpacked at /demo/
+# (https://eyalgolan.github.io/statecraft-israel/demo/), and a root page that redirects to it. The website that used to
+# be built here (site/, Astro) was removed on 31 Oct 2026; this file keeps its name because the nightly release job
+# dispatches it by file name (tools/nightly_publish.py). Pull requests that change this file only build and check the
+# pages. Deploying runs on main only (the github-pages environment allows main only), so a published release starts a
+# run on main instead of deploying from its tag. The demo never comes from git: it is a release asset (docs/RELEASING.md,
+# step 5). No secret is used.
 
 on:
   push:
     branches: [main]
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "unity/ProjectSettings/ProjectSettings.asset", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
+    paths: [".github/workflows/site.yml"]
   pull_request:
-    paths: ["site/**", "content/**", "docs/images/**", "docs/sources/**", "promo/final/**", "unity/Assets/UI/EventImages/**", "unity/Assets/UI/Portraits/**", "unity/ProjectSettings/ProjectSettings.asset", "ASSETS.yaml", "ASSETS.portraits.yaml", "README.md", "README.he.md", ".github/workflows/site.yml"]
+    paths: [".github/workflows/site.yml"]
+  release:
+    types: [published]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: site-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  on-release:
+    name: Site (start a deploy on main for the release)
+    if: github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Run this workflow on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site.yml --repo "$GITHUB_REPOSITORY" --ref main
+
   build:
-    name: Site (astro build)
+    name: Site (demo pages)
+    if: github.event_name != 'release'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: site/package-lock.json
-      - name: Install
-        working-directory: site
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Test
-        working-directory: site
-        run: node --test tests/*.test.mjs
-      - name: Build and check
-        working-directory: site
+      - name: Unpack the latest release's Pages build at /demo/
         env:
-          ASTRO_TELEMETRY_DISABLED: "1"
-          SITE_URL: ${{ vars.SITE_URL }}
-          SITE_BASE: ${{ vars.SITE_BASE }}
-        run: npm run build
-      - name: Add the playable demo, when the latest release has a Pages build
-        # The demo is the release's *-web-pages.zip (Build.Web -decompressionFallback; docs/RELEASING.md, step 5),
-        # unpacked at /demo/. It never comes from git (the Play page explains why). No such asset yet: the site
-        # deploys without it.
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SITE_DEPLOY == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Lookup failures (auth, network, rate limit) must fail the step, not deploy without the demo: no
-          # error swallowing. Only two quiet skips: no releases at all, and a latest release without the zip.
-          # Historic prereleases and normal nightly releases can both carry the demo, so read the newest
-          # published tag from the list and pass it explicitly to both view and download.
-          tag="$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // empty')"
+          # Every failure stops the run, so Pages keeps serving the last good deploy: no release, no
+          # *-web-pages.zip in it, an empty or incomplete zip, or a lookup error never deploys an empty site.
+          # `gh release view/download` without a tag resolve the latest non-prerelease, so read the newest
+          # published (non-draft) release's tag from the list and pass it to both calls.
+          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName // empty')"
           if [ -z "$tag" ]; then
-            echo "No releases yet: deploying without the demo."
-            exit 0
+            echo "::error::No published release: nothing to deploy."
+            exit 1
           fi
-          asset="$(gh release view "$tag" --json assets --jq '[.assets[].name | select(endswith("-web-pages.zip"))] | first // empty')"
+          asset="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith("-web-pages.zip"))] | first // empty')"
           if [ -z "$asset" ]; then
-            echo "No *-web-pages.zip in the latest release ($tag): deploying without the demo."
-            exit 0
+            echo "::error::No *-web-pages.zip in the latest release ($tag): nothing to deploy."
+            exit 1
           fi
-          mkdir -p /tmp/web-pages site/dist/demo
-          gh release download "$tag" --pattern "$asset" --dir /tmp/web-pages --clobber
-          unzip -q -o "/tmp/web-pages/$asset" -d site/dist/demo
-          test -f site/dist/demo/index.html
-          jq -e '.shareable == true' site/dist/demo/event-photos.json > /dev/null
-          echo "Demo at /demo/ from $asset"
-      - name: Keep the built site for deploying
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SITE_DEPLOY == 'true'
+          mkdir -p "$RUNNER_TEMP/web-pages" dist/demo
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir "$RUNNER_TEMP/web-pages" --clobber
+          unzip -q -o "$RUNNER_TEMP/web-pages/$asset" -d dist/demo
+          test -f dist/demo/index.html
+          jq -e '.shareable == true' dist/demo/event-photos.json > /dev/null
+          echo "Demo at /demo/ from $asset ($tag)"
+      - name: Write the root page, a redirect to /demo/
+        run: |
+          set -euo pipefail
+          cat > dist/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=./demo/">
+          <title>Statecraft: Israel</title>
+          </head>
+          <body>
+          <p><a href="./demo/">Play Statecraft: Israel</a></p>
+          </body>
+          </html>
+          HTML
+          grep -q 'url=./demo/' dist/index.html
+      - name: Keep the pages for deploying
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: site/dist
+          path: dist
 
   deploy:
     name: Site (deploy to GitHub Pages)
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.SITE_DEPLOY == 'true'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
