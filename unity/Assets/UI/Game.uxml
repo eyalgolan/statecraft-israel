@@ -33,6 +33,7 @@
                     <ui:Label name="turn" class="muted" />
                     <ui:Label name="date" class="muted" />
                 </ui:VisualElement>
+                <ui:Label name="exhausted" class="muted" />
                 <Statecraft.Game.UI.UiFrame shadow="false" filigree="true" />
             </ui:VisualElement>
             <!-- Meter captions are the content display names as written, in sentence case (#622) (Money and

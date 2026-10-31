@@ -93,6 +93,8 @@ Button:disabled { color: var(--ink-dim); border-color: rgba(120, 120, 120, 0.4);
 /* The year, and the GDD loop's score at the line's far end (#380): the year line has the room the date line lacks. */
 .year-row { flex-direction: row; justify-content: space-between; align-items: center; }
 #score { font-size: 17px; flex-shrink: 0; }
+/* The exhausted-turn count (R-END-002) takes a line of its own under the date, only while it is above 0. */
+#exhausted { font-size: 13px; }   /* "turn" widens the line to fit the 196 px plate only at 13 px; wrapping runs it into the frame */
 .date-row Label { font-size: 15px; margin-right: 8px; }
 .year { -unity-font-definition: url("project://database/Assets/UI/Fonts/EBGaramond-SemiBold.ttf"); font-size: 27px; color: var(--ink); }
 .meters { flex-direction: row; flex-grow: 1; align-items: center; }

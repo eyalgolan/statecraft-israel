@@ -11,6 +11,7 @@ hud.attention: "Attention {0:0.0} of {1:0.0}"
 hud.people: "{0:N0}"
 hud.level: "Level {0} of 5"
 hud.score: "Score {0:N0}"
+hud.exhausted: "Money and Food ran out: turn {0} of {1}"
 hud.delta_people: "{0:+#,##0;-#,##0}"
 # A top-bar meter in words, kept as its tooltip for a later accessibility layer (HudModel.Spoken): {0} the caption, {1}
 # the value, {2} the change without its sign. Money: {0} the sign and the currency prefix from content ("IL ", "-IL ",
@@ -422,6 +423,7 @@ report.unit: "Force {0}"
 end.title: "The game has ended"
 end.outcome.mvp_ended: "The game has reached its last turn."
 end.outcome.defeat_economy: "Money and Food ran out."
+end.reference_score: "Completing every objective on its historical date scores {0:N0}."
 end.objective_done: "{0}: completed on {1}; historically {2}"
 end.objective_open: "{0}: not completed; historically {1}"
 end.parameter: "{0}: {1}"
@@ -914,6 +916,14 @@ report.stock_change: "{0}: {1} ({2})"
 unit.artillery_move_missing: "Artillery cannot move yet: its movement points have not been set"
 unit.fire_ready: "Fire available"
 unit.fire_spent: "Fired this turn"
+
+# #2045 standing-order refusals (Orders.Check), shown on the unit card.
+unit.order_refused.unknown_order: "That order is not known"
+unit.order_refused.no_unit: "There is no such unit"
+unit.order_refused.not_military: "Only a military unit takes that order"
+unit.order_refused.not_yours: "That unit is not yours"
+unit.order_refused.artillery_hold: "Artillery does not hold ground"
+unit.order_refused.already: "That unit already has that order"
 
 # #1682 remaining Cause producers. English report wording preserved.
 why.cause.workers_assigned: "{0}: {1} groups in work"

@@ -139,12 +139,20 @@ namespace Statecraft.Game.UI
         /// plate grows.</summary>
         readonly List<Label> plateText;
         readonly VisualElement? dateRow, captionRow;
+        /// <summary>The exhausted-turn line under the date (Statecraft.uss #exhausted, 13 px, #812): floored like the date, but from
+        /// its own stylesheet size, since 13 px is already under the floor at the scales where 15 px is not (ExhaustedPx).</summary>
+        readonly Label? exhaustedLine;
+        public const float ExhaustedPx = 13f;
+        float exhaustedSize = ExhaustedPx;
         /// <summary>The plate's padding while the floor raises its text (the stylesheet's is 2 px top and bottom, 10-12 at the
         /// sides): PlateSidePx at both sides keeps every line at least 0 px from the 18 px corner zones (TopBarTests), each the
         /// corner scrolls' reach (about 14 px in) plus 4, and PlateEdgePx at the top and bottom keeps it inside the frame's
         /// inner rule (7 px in). The plate grows to
         /// hold them (its height is a minimum), rather than shift its lines.</summary>
         public const float PlateSidePx = 18f, PlateEdgePx = 9f;
+        /// <summary>The stylesheet's side padding of the plate (12 + 10 px, either language); the clearance that replaces it widens
+        /// the plate by the difference, so the turn and the date keep their one row at the 15 px size.</summary>
+        const float StylesheetPlatePadPx = 22f;
         readonly VisualElement turnBox;
         readonly IVisualElementScheduledItem floorCheck;
         readonly EventCallback<GeometryChangedEvent> onRootGeometry;
@@ -238,6 +246,7 @@ namespace Statecraft.Game.UI
             dateRow = bar.Q<VisualElement>(className: "date-row");
             captionRow = bar.Q(className: "meter-caption-row");
             plateText = dateRow?.Query<Label>().ToList() ?? new List<Label>();
+            exhaustedLine = root.Q<Label>("exhausted");
             dateRow?.parent?.RegisterCallback<GeometryChangedEvent>(OnPlateGeometry);   // a wider raised plate needs room in the bar
             ApplyTextFloor();
             floorCheck = root.schedule.Execute(ApplyTextFloor).Every(500);
@@ -261,6 +270,8 @@ namespace Statecraft.Game.UI
             foreach (var e in underBar) e.style.marginTop = StyleKeyword.Null;
             bar.style.height = StyleKeyword.Null;
             foreach (var l in plateText) { l.style.fontSize = StyleKeyword.Null; l.style.whiteSpace = StyleKeyword.Null; }
+            exhaustedSize = ExhaustedPx;   // so PadPlate below clears the plate's width
+            if (exhaustedLine != null) { exhaustedLine.style.fontSize = StyleKeyword.Null; exhaustedLine.style.whiteSpace = StyleKeyword.Null; }
             if (dateRow != null) { dateRow.style.flexDirection = StyleKeyword.Null; if (dateRow.parent != null) PadPlate(dateRow.parent, false); }
             bridge.Changed -= Render; endTurn.clicked -= onEndTurn; endTurn.generateVisualContent -= PaintHourglass;
             bar.UnregisterCallback<GeometryChangedEvent>(OnBarGeometry);
@@ -339,9 +350,12 @@ namespace Statecraft.Game.UI
         {
             var p = root.panel;
             if (p == null) return;
-            var size = SmallTextSize(ScreenPxPerPanelPx(p));
-            if (size == smallTextSize) return;
+            var scale = ScreenPxPerPanelPx(p);
+            var size = SmallTextSize(scale);
+            var exhausted = FlooredTextSize(ExhaustedPx, scale);
+            if (size == smallTextSize && exhausted == exhaustedSize) return;
             smallTextSize = size;
+            exhaustedSize = exhausted;
             SetCompact(bar.layout.width);
         }
 
@@ -408,6 +422,12 @@ namespace Statecraft.Game.UI
                 // One line each; the plate widens for them (PadPlate).
                 l.style.whiteSpace = raised ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
             }
+            if (exhaustedLine != null)
+            {
+                var up = exhaustedSize > ExhaustedPx;
+                exhaustedLine.style.fontSize = up ? new StyleLength(exhaustedSize) : new StyleLength(StyleKeyword.Null);
+                exhaustedLine.style.whiteSpace = up ? new StyleEnum<WhiteSpace>(WhiteSpace.NoWrap) : new StyleEnum<WhiteSpace>(StyleKeyword.Null);
+            }
             // Raised, the turn and the date take a line each (a raised date squeezed beside the turn was clipped in Hebrew),
             // and the plate's padding keeps every line inside its gilt frame's inner rule and at least 0 px from the 18 px corner
             // zones, which keep 4 px clear of the scrolls (PlateSidePx, PlateEdgePx; reviews of #624 in WebGL); the plate grows
@@ -425,12 +445,16 @@ namespace Statecraft.Game.UI
         void PadPlate(VisualElement plate, bool raised)
         {
             // Raised, the plate sizes to its widest line (the turn and the date, a line each, never wrapped), at least 230 px.
-            plate.style.width = raised ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
+            // The raised exhausted line (#812) is never wrapped either, so it too lets the plate size to it, but only while it
+            // shows (Render): a hidden line leaves the plate as it was (review of #1961).
+            var lineUp = exhaustedSize > ExhaustedPx && exhaustedLine != null && exhaustedLine.style.display == DisplayStyle.Flex;
+            plate.style.width = raised || lineUp ? new StyleLength(StyleKeyword.Auto) : new StyleLength(StyleKeyword.Null);
             // At least the widest date line too, so the plate keeps its width when the month changes (PromoHudTests): at 25 px
             // (a phone upright, #642) the Hebrew 31 October 1956 is about 196 px, wider than 230 px less the padding.
             plate.style.minWidth = raised ? new StyleLength(UnityEngine.Mathf.Max(PlateWidthPx, DateLinePerPx * smallTextSize + 2f * PlateSidePx + 2f))
-                                          : new StyleLength(StyleKeyword.Null);
-            StyleLength Px(float v) => raised ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
+                                          : lineUp ? new StyleLength(PlateWidthPx + 2f * PlateSidePx - StylesheetPlatePadPx) : new StyleLength(StyleKeyword.Null);
+            // The frame clearance holds when either the 15 px text or the 13 px exhausted line is raised (they floor at different scales).
+            StyleLength Px(float v) => raised || lineUp ? new StyleLength(v) : new StyleLength(StyleKeyword.Null);
             plate.style.paddingTop = Px(PlateEdgePx); plate.style.paddingBottom = Px(PlateEdgePx);
             plate.style.paddingLeft = Px(PlateSidePx); plate.style.paddingRight = Px(PlateSidePx);
         }
@@ -711,6 +735,11 @@ namespace Statecraft.Game.UI
             var score = root.Q<Label>("score");   // the GDD loop only (#380): hidden when HudModel gives none
             score.text = m.Score;
             score.style.display = m.Score.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            var exhausted = root.Q<Label>("exhausted");   // hidden while ExhaustedTurns is 0 (R-END-002)
+            exhausted.text = m.Exhausted;
+            var wasShown = exhausted.style.display == DisplayStyle.Flex;
+            exhausted.style.display = m.Exhausted.Length == 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            if (wasShown != m.Exhausted.Length > 0) SetCompact(bar.layout.width);   // the plate's raised layout follows the line (PadPlate)
             Set("treasury", m.Treasury); Set("immigration", m.Immigration); Set("security", m.Security);
             Set("support", m.Support); Set("standing", m.Standing); Set("fx", m.Fx);
             // Social cohesion: the GDD loop only (#380), as the score; a hidden meter takes no room in the bar.

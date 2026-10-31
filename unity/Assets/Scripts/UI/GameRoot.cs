@@ -342,14 +342,16 @@ namespace Statecraft.Game.UI
             // From their runtime forms when they match the YAML (issue #321: boot time), the sub-districts as the map read them.
             var regions = new MapRegions(map.SubdistrictsFor(inputs.Map.RegionsTsv, inputs.Map.RegionsYaml, Debug.LogWarning),
                 string.IsNullOrWhiteSpace(inputs.Map.ArmisticeYaml) ? null : Armistice1949.ReadRuntimeOrYaml(inputs.Map.ArmisticeTsv, inputs.Map.ArmisticeYaml, Debug.LogWarning),
-                map.Control);   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+                map.Control, MapRegionNames.Parse(inputs.Map.RegionNamesYaml));   // the map's read, with the map editor's control overrides (#1009); the road vehicles use it too (#725)
+            if (regions.Names.Stale.Count > 0)
+                Debug.LogWarning($"{MapRegionNames.FileName}: English changed since the Hebrew was supplied, showing English for: {string.Join(", ", regions.Names.Stale)}");
             Regions = regions;
             var layerLabel = root.Q<Label>("map-layer");
             Action onDate = () =>
             {
                 regions.Apply(bridge.State.Date);
                 layerLabel.text = regions.ControlLabel(bridge.State.Date, k => text[k])
-                    ?? regions.Label(bridge.State.Date, text.Format);
+                    ?? regions.Label(bridge.State.Date, text.Format, text["ui.lang"] == UiLanguage.Hebrew);
                 ShowLayerLabel();
             };
             // The caption names the borders while they are drawn: by date, and not while the minimap's button hides them.
@@ -881,6 +883,8 @@ namespace Statecraft.Game.UI
             // Dated routes (the Burma Road from June 1948); in the GDD loop the corridors by their built segments (#792).
             Statecraft.Game.Map.Routes.RouteLayer.ShowAt(map, Bridge.State.Date,
                 Bridge.Content.IsGdd ? Statecraft.Game.Map.Routes.RouteLayer.BuiltSegments(Bridge.Content, Bridge.State) : null);
+            // The true armistice lines (#237, the "armisticelines" map mode), each from its own date; nothing without the mode.
+            ArmisticeLines.ShowAt(map, Bridge.State.Date);
             // Tal Heuberger's whole-town models on their towns far off (#663, "Whole model far, buildings near"), streamed after the first frame; the ma'abara from its date.
             // The camps and housing built as city projects bring theirs too, as the placement layer draws them (#1275).
             Statecraft.Game.Map.Collection.TownLandmarks.ShowAt(map, Bridge.State.Date,
