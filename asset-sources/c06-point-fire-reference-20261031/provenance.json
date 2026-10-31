@@ -22,7 +22,10 @@
     "route": "offline original-rig coordinated point-fire authoring from preserved V2; Blender5.2.2 GUI FBX compatibility conversion; no new provider rig",
     "no_artist_iteration_during_export": true,
     "export": "selected rig/body/fixed-rifle only; no helper markers; one named stack,97frames at24fps;-Zforward,Yup; no leaf bones; no deform-only bone pruning; no simplification; mesh modifiers disabled; textures embedded",
-    "privacy_edit": "Ten metadata string path prefixes replaced with basenames; raw numeric/array and embedded texture records byte-exact, and bone/rest/bind/weights/clip fingerprints exact. Original local export untouched. Independent reparse and full97frame GUI reimport verified."
+    "privacy_edit": "Ten metadata string path prefixes replaced with basenames; raw numeric/array and embedded texture records byte-exact, and bone/rest/bind/weights/clip fingerprints exact. Original local export untouched. Independent reparse and full97frame GUI reimport verified.",
+    "privacy_edit_source_filename": "C06-POINT-FIRE-PROVISIONAL-CLEAN.fbx",
+    "privacy_edit_source_sha256": "3002af88339079b363f102a82d6cc925d7a9a78b04a0846303151002194fb485",
+    "privacy_edit_output_filename": "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx"
   },
   "provider_sources": [
     "https://www.tripo3d.ai/terms",
