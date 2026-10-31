@@ -132,6 +132,65 @@ public class EndScreenTests
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
     }
 
+    /// <summary>A cause's history note (Q-DEF-4 (b)) sits right under its line when the strings carry one, and nowhere else.
+    /// The armistice note is held out of the strings until the person's check is recorded, so a fixture string stands in.</summary>
+    [Test]
+    public void AWarLossShowsItsHistoryNoteUnderItsLineAndOtherOutcomesShowNone()
+    {
+        var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.defeat_war: \"Fixture note.\"\n");
+        using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-score" }, names.Take(3), "the note follows the outcome line");
+        Assert.AreEqual("Fixture note.", k.Line("note"));
+        Assert.IsTrue(k.Ui.Q<Label>("end-screen-note").ClassListContains("end-screen-note"));
+        using var ended = new Kit(withNote, Ended);
+        Assert.IsFalse(ended.Ui.Q<ScrollView>("end-screen-rows").Children().Any(x => x.name == "end-screen-note"), "no note for the MVP end");
+    }
+
+    /// <summary>A regression guard (it passes without the note change too): with no note in the strings (the shipped EN and HE
+    /// files, until the person's check), a war loss goes straight from its line to the score: no note row, no empty gap.
+    /// Adding the note string back means updating this test too.</summary>
+    [Test]
+    public void AWarLossWithNoNoteStringGoesStraightFromItsLineToTheScore()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            using var k = new Kit(text, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
+            var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the outcome line");
+            CollectionAssert.DoesNotContain(names, "end-screen-note");
+        }
+    }
+
+    /// <summary>A note follows only its own cause's line: an outcome with no line of its own (a legacy code, shown as the
+    /// generic game-over line) gets no note even when the strings carry one for it.</summary>
+    [Test]
+    public void ANoteNeverFollowsTheGenericGameOverLine()
+    {
+        var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.coalition_collapse: \"Fixture note.\"\n");
+        Assert.IsFalse(withNote.Has("end.outcome." + GameOverCodes.CoalitionCollapse), "precondition: the legacy code has no outcome line");
+        using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.CoalitionCollapse; });
+        Assert.AreEqual(withNote["order.game_over"], k.Line("outcome"), "precondition: the generic line shows");
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the generic line");
+        CollectionAssert.DoesNotContain(names, "end-screen-note");
+    }
+
+    // Q-END-3: the prisoners returned, worded as Defence words them, only when some went home (no zero row).
+    [Test]
+    public void ShowsThePrisonersReturnedOnlyWhenSomeWentHome()
+    {
+        using (var none = new Kit(En, Ended))
+            CollectionAssert.DoesNotContain(none.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name), "end-screen-prisoners");
+        using var k = new Kit(En, s => { Ended(s); s.PrisonersReturned["lebanon"] = 4; });
+        Assert.AreEqual("Prisoners returned: 4,000", k.Line("prisoners"));
+        Assert.AreEqual("שבויים שהוחזרו: \u200e4,000\u200e", EndScreenPresenter.Lines(C, k.Bridge.State, He).Single(l => l.Name == "prisoners").Text);
+        // The same count as the Defence screen shows over the same state.
+        k.Q("screen-defence").style.display = DisplayStyle.Flex;   // open, as ScreenNav opens it (a hidden screen does not re-render)
+        using (new DefencePresenter(k.Ui.Root, k.Bridge, En))
+            Assert.AreEqual(k.Ui.Q<Label>("prisoners-returned").text, k.Line("prisoners"));
+    }
+
     [Test]
     public void CloseRebuildAndTheFirstNewGamePressKeepTheStateAndTheSave()
     {

@@ -28,6 +28,8 @@ Tags, one per fact:
 - **[S] single source**: one source, or several that plainly copy one another.
 - **[C] conflicting**: sources disagree. The conflict and the sources on each side are stated.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ### Sources not reached
 
 - **NLI historical press (JPress), `www.nli.org.il/he/newspapers/...`**: HTTP 403 with a "Checking your browser"

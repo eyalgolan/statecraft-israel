@@ -39,11 +39,47 @@ public class UnitFiguresTests
         "figure-c04-sabra-pioneer-v3", "figure-c05-pioneer-veteran-v2", "figure-c06-young-recruit-v2", "figure-c07-veteran-fighter-v2",
         "figure-c12f-palmach-scout-v2", "figure-c08-arab-legion-v2",
         "figure-syrian-infantry-1948-v1", "figure-c09-irregular-v2", "figure-iraqi-infantry-1948-v1", "figure-egyptian-infantry-1948-v1",
-        "figure-ala-infantry-1948-v1",
+        "figure-ala-infantry-1948-v1", "figure-lebanese-regular-1948-v1",
         "figure-vehicle-napoleonchik-65mm-1948-v2", "figure-vehicle-willys-jeep-1948-v2",
         "figure-vehicle-sandwich-convoy-1948-v2",
         "figure-soldier-1948-v1",
     };
+
+    [Test]
+    public void SwapAndResidencyClearRefreshBoundsAtTheSameCameraPose()
+    {
+        var map = BuildMap();
+        var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        prefab.transform.position = Vector3.down * 1000000f;
+        prefab.transform.localScale = new Vector3(50f, 1f, 1f);
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, StateAt(May20, 0.8));
+            var figure = Tokens(map).Find("kiryati").Find("Rifleman0");
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "no original before the actual Swap");
+            var owner = figure.GetComponent<UnitFigureResidency>();
+            Assert.IsNotNull(owner, "actual per-consumer residency owns the model child");
+            int index = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Id == "kiryati");
+            Assert.GreaterOrEqual(index, 0);
+            Assert.AreEqual(2, layer.KeepClear[index].Length);
+            var camera = Camera.main;
+            layer.FaceCamera(camera);
+            var before = layer.KeepClear[index][1];
+            UnitFigures.Swap(figure, UnitFigures.PioneerVeteran, prefab);
+            var model = figure.Find(UnitFigures.ModelName).GetComponentInChildren<MeshRenderer>();
+            Assert.IsNotNull(model, "actual Swap instantiates the replacement");
+            var tip = model.bounds.center + Vector3.right * model.bounds.extents.x * 0.9f;
+            Assert.IsFalse(before.Contains(tip), "replacement extends past the old keep-clear box");
+            layer.FaceCamera(camera);
+            Assert.IsTrue(layer.KeepClear[index][1].Contains(tip), "same-pose Swap refreshes bounds without a dead cached filter");
+            owner.enabled = false;   // actual OnDisable -> Refresh(false) -> Clear
+            Assert.IsNull(figure.Find(UnitFigures.ModelName), "actual residency Clear retires the model");
+            layer.FaceCamera(camera);
+            Assert.IsFalse(layer.KeepClear[index][1].Contains(tip), "same-pose retirement removes the old bounds");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(prefab); }
+    }
 
     [SetUp] public void Fresh() { UnitFigures.Source = null; UnitFigures.Forget(); }
     [TearDown] public void Restore() { UnitFigures.Source = null; UnitFigures.Forget(); }
@@ -170,7 +206,8 @@ public class UnitFiguresTests
         CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.ArabLegion, 3), Trio("arab_legion"));
         CollectionAssert.AreEqual(new[] { UnitFigures.Irregular, UnitFigures.Irregular, UnitFigures.AlaInfantry }, Trio("arab_liberation_army"),
             "two C09 and Tal Heuberger's ALA infantry third (owner, 27 October 2026: \"Third figure (Recommended)\")");
-        Assert.IsNull(UnitFigures.SideFigure("lebanon"), "Lebanese art remains review-only and its row stays hidden");
+        CollectionAssert.AreEqual(Enumerable.Repeat(UnitFigures.LebaneseRegular, 3), Trio("lebanese_army"),
+            "Tal Heuberger's Lebanese regular, three of it (owner, 27 October 2026: \"Map-only token (Recommended)\")");
         // The vehicles from their sourced days.
         CollectionAssert.IsEmpty(UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 5, 31)));
         CollectionAssert.AreEqual(new[] { UnitFigures.WillysJeep }, UnitFigures.VehiclesAt(units["harel"], new DateTime(1948, 6, 1)), "the Burma Road jeeps");

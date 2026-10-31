@@ -1,0 +1,820 @@
+# Inactive schema adaptation. Null boundaries are represented by empty member_hexes.
+# Candidate marker hexes in the evidence ledger are not region extents.
+player_regions:
+- id: galilee
+  capital_location: safed
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: 7, r: 6 }
+  - { q: 7, r: 7 }
+  - { q: 8, r: 4 }
+  - { q: 8, r: 5 }
+  - { q: 8, r: 6 }
+  - { q: 8, r: 7 }
+  - { q: 8, r: 8 }
+  - { q: 9, r: 4 }
+  - { q: 9, r: 5 }
+  - { q: 9, r: 6 }
+  - { q: 9, r: 7 }
+  - { q: 10, r: 4 }
+  - { q: 10, r: 5 }
+  - { q: 10, r: 6 }
+  - { q: 11, r: 5 }
+  - { q: 11, r: 6 }
+  - { q: 12, r: 4 }
+  - { q: 12, r: 5 }
+  - { q: 12, r: 6 }
+  - { q: 13, r: 4 }
+  - { q: 13, r: 5 }
+  - { q: 14, r: 2 }
+  - { q: 14, r: 3 }
+  - { q: 15, r: 1 }
+  - { q: 15, r: 2 }
+  member_locations:
+  - acre
+  - safed
+  - rosh_pinna
+  - hanita
+  - tarshiha
+  - al_bassa
+  - sakhnin
+  - az_zeeb
+  - al_khalisa
+  - tamra
+  - arraba
+  - shaab
+  - rameh
+  - hunin
+  - al_kabri
+  - al_salihiyya
+  - beit_jann
+  - yarka
+  - al_birwa
+  - nahariya
+  - kafr_yasif
+  - majd_al_krum
+  - nahef
+  - al_damun
+  - dayr_al_qassi
+  - al_naima
+  - amka
+  - al_jauna
+  - sasa
+  - suhmata
+  - deir_al_asad
+  - jish
+  - al_manshiyya_acre
+  - saliha
+  - al_zuq_al_tahtani
+  - fassuta
+  - kuwaykat
+  - tarbikha
+  - kiryat_shmona
+  - kiryat_shmona_field
+  - hula
+  - hula_field
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: galilee']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: valleys
+  capital_location: tiberias
+  capital_approval: APPROVED
+  member_hexes:
+  - { q: 6, r: 10 }
+  - { q: 6, r: 11 }
+  - { q: 7, r: 9 }
+  - { q: 7, r: 10 }
+  - { q: 7, r: 11 }
+  - { q: 7, r: 12 }
+  - { q: 8, r: 9 }
+  - { q: 8, r: 10 }
+  - { q: 8, r: 11 }
+  - { q: 8, r: 12 }
+  - { q: 8, r: 13 }
+  - { q: 9, r: 8 }
+  - { q: 9, r: 9 }
+  - { q: 9, r: 10 }
+  - { q: 9, r: 11 }
+  - { q: 9, r: 12 }
+  - { q: 10, r: 7 }
+  - { q: 10, r: 8 }
+  - { q: 10, r: 9 }
+  - { q: 10, r: 10 }
+  - { q: 11, r: 7 }
+  - { q: 12, r: 8 }
+  member_locations:
+  - tiberias
+  - nazareth
+  - degania_alef
+  - ein_harod
+  - nahalal
+  - beit_shean
+  - sepphoris
+  - samakh
+  - lubya
+  - afula
+  - maghar
+  - kafr_kanna
+  - al_mujaydil
+  - turan
+  - daburiyya
+  - reineh
+  - kafr_manda
+  - ghuwayr_abu_shusha
+  - hittin
+  - iksal
+  - yafa_an_naseriyye
+  - ein_mahil
+  - al_ghazzawiyya
+  - ashdot_yaakov
+  - gesher
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: valleys', 'owner 27 Oct 2026: APPROVED "Tiberias"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: haifa_sharon
+  capital_location: haifa
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: -1, r: 16 }
+  - { q: -1, r: 18 }
+  - { q: 0, r: 15 }
+  - { q: 0, r: 16 }
+  - { q: 0, r: 17 }
+  - { q: 0, r: 18 }
+  - { q: 1, r: 13 }
+  - { q: 1, r: 14 }
+  - { q: 1, r: 15 }
+  - { q: 1, r: 16 }
+  - { q: 1, r: 17 }
+  - { q: 2, r: 12 }
+  - { q: 2, r: 13 }
+  - { q: 2, r: 14 }
+  - { q: 2, r: 15 }
+  - { q: 2, r: 16 }
+  - { q: 3, r: 10 }
+  - { q: 3, r: 11 }
+  - { q: 3, r: 12 }
+  - { q: 3, r: 13 }
+  - { q: 3, r: 14 }
+  - { q: 4, r: 9 }
+  - { q: 4, r: 10 }
+  - { q: 4, r: 11 }
+  - { q: 5, r: 8 }
+  - { q: 5, r: 9 }
+  - { q: 5, r: 10 }
+  - { q: 5, r: 11 }
+  - { q: 6, r: 8 }
+  - { q: 6, r: 9 }
+  - { q: 7, r: 8 }
+  member_locations:
+  - haifa
+  - zikhron_yaakov
+  - hadera
+  - netanya
+  - tulkarm
+  - qalqilya
+  - pardes_hanna_karkur
+  - al_tira_haifa
+  - taibe_2
+  - balad_al_sheikh
+  - shefa_amr
+  - tira
+  - anabta
+  - ijzim
+  - deir_al_ghusun
+  - nesher
+  - attil
+  - shwiaka_tulkarm
+  - arara
+  - baqa_al_gharbiyye
+  - bala
+  - ayn_ghazal
+  - daliyat_al_karmel
+  - qaqun
+  - isfiya
+  - zeita_tulkarm
+  - sabbarin
+  - kiryat_ata
+  - ibillin
+  - kafr_zibad
+  - qaffin
+  - qalansawe
+  - binyamina
+  - kafr_qara
+  - tantura
+  - umm_az_zinat
+  - kafr_qasim
+  - ilar
+  - wadi_al_hawarith
+  - kafr_thulth
+  - kfar_saba_2
+  - al_sindiyana
+  - yagur
+  - al_mansi
+  - azzoun
+  - jaba
+  - caesarea
+  - jatt
+  - irtah
+  - shaar_haaliyah
+  - camp_80
+  - mishmar_haemek
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: haifa_sharon', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: tel_aviv_jaffa
+  capital_location: tel_aviv
+  capital_approval: APPROVED
+  member_hexes:
+  - { q: -4, r: 20 }
+  - { q: -3, r: 19 }
+  - { q: -3, r: 20 }
+  - { q: -2, r: 18 }
+  - { q: -2, r: 19 }
+  - { q: -1, r: 17 }
+  member_locations:
+  - tel_aviv
+  - jaffa
+  - petah_tikva
+  - ramat_gan
+  - salama_jaffa
+  - al_abbasiyya
+  - givatayim
+  - bnei_brak
+  - herzliya
+  - kfar_saba
+  - yazur
+  - bayt_dajan_jaffa
+  - raanana
+  - holon
+  - al_safiriyya
+  - kafr_ana
+  - bat_yam
+  - al_shaykh_muwannis
+  - abu_kishk
+  - kfar_ganim
+  - fajja
+  - ramatayim
+  - al_khayriyya
+  - magdiel
+  - saqiya
+  - al_jammasin_al_gharbi
+  - rosh_haayin_camp
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: tel_aviv_jaffa', 'owner 27 Oct 2026: APPROVED "Tel Aviv"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: central_plain
+  capital_location: rishon_lezion
+  capital_approval: APPROVED
+  member_hexes:
+  - { q: -5, r: 21 }
+  - { q: -5, r: 22 }
+  - { q: -5, r: 23 }
+  - { q: -4, r: 21 }
+  - { q: -4, r: 22 }
+  - { q: -4, r: 23 }
+  - { q: -3, r: 21 }
+  - { q: -3, r: 22 }
+  - { q: -3, r: 23 }
+  - { q: -2, r: 20 }
+  - { q: -2, r: 21 }
+  - { q: -2, r: 22 }
+  - { q: -1, r: 19 }
+  - { q: -1, r: 20 }
+  member_locations:
+  - lod
+  - ramla
+  - rishon_lezion
+  - rehovot
+  - yibna
+  - aqir
+  - zarnuqa
+  - bayt_nabala
+  - naana
+  - al_qubab
+  - sarafand_al_amar
+  - ness_ziona
+  - dayr_tarif
+  - al_maghar
+  - al_qubayba_ramla
+  - bashshit
+  - wadi_hunayn
+  - majdal_yaba
+  - jimzu
+  - imwas
+  - innaba
+  - nabi_rubin
+  - nilin
+  - al_tira
+  - rantis
+  - qibya
+  - bayt_nuba
+  - yalo
+  - qatra
+  - al_muzayria
+  - sarafand_al_kharab
+  - givat_brenner
+  - qula
+  - tzrifin
+  - hulda
+  - latrun_fort
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: central_plain', 'owner 27 Oct 2026: APPROVED "Rishon LeZion"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: jerusalem_hills
+  capital_location: jerusalem
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: -7, r: 28 }
+  - { q: -6, r: 26 }
+  - { q: -6, r: 27 }
+  - { q: -6, r: 28 }
+  - { q: -6, r: 29 }
+  - { q: -6, r: 30 }
+  - { q: -5, r: 24 }
+  - { q: -5, r: 25 }
+  - { q: -5, r: 26 }
+  - { q: -5, r: 27 }
+  - { q: -5, r: 28 }
+  - { q: -5, r: 29 }
+  - { q: -5, r: 30 }
+  - { q: -4, r: 24 }
+  - { q: -4, r: 25 }
+  - { q: -4, r: 26 }
+  - { q: -4, r: 27 }
+  - { q: -4, r: 28 }
+  - { q: -4, r: 29 }
+  - { q: -4, r: 30 }
+  - { q: -4, r: 31 }
+  - { q: -3, r: 24 }
+  - { q: -3, r: 25 }
+  - { q: -3, r: 26 }
+  - { q: -3, r: 27 }
+  - { q: -3, r: 28 }
+  - { q: -3, r: 29 }
+  - { q: -3, r: 30 }
+  - { q: -3, r: 31 }
+  - { q: -2, r: 23 }
+  - { q: -2, r: 24 }
+  - { q: -2, r: 25 }
+  - { q: -2, r: 26 }
+  - { q: -2, r: 27 }
+  - { q: -2, r: 28 }
+  - { q: -2, r: 29 }
+  - { q: -2, r: 30 }
+  - { q: -1, r: 21 }
+  - { q: -1, r: 22 }
+  - { q: -1, r: 23 }
+  - { q: -1, r: 24 }
+  - { q: -1, r: 25 }
+  - { q: -1, r: 26 }
+  - { q: -1, r: 27 }
+  - { q: -1, r: 28 }
+  - { q: 0, r: 20 }
+  - { q: 0, r: 21 }
+  - { q: 0, r: 22 }
+  - { q: 0, r: 23 }
+  - { q: 0, r: 24 }
+  - { q: 0, r: 25 }
+  - { q: 0, r: 26 }
+  - { q: 1, r: 19 }
+  - { q: 1, r: 20 }
+  - { q: 1, r: 21 }
+  - { q: 1, r: 22 }
+  - { q: 1, r: 23 }
+  - { q: 1, r: 24 }
+  - { q: 1, r: 25 }
+  - { q: 2, r: 20 }
+  - { q: 2, r: 21 }
+  - { q: 2, r: 22 }
+  - { q: 2, r: 23 }
+  - { q: 3, r: 20 }
+  - { q: 3, r: 21 }
+  - { q: 3, r: 22 }
+  - { q: 3, r: 23 }
+  - { q: 4, r: 21 }
+  member_locations:
+  - jerusalem
+  - hebron
+  - dura_hebron
+  - bethlehem
+  - yatta
+  - ramallah
+  - silwan
+  - al_dahiriya
+  - ajjur
+  - al_dawayima
+  - beit_yala
+  - halhul
+  - ein_karem
+  - jericho
+  - al_bireh
+  - at_tur
+  - beit_sahour
+  - sair
+  - lifta
+  - as_samu
+  - sur_bahir
+  - bayt_jibrin
+  - bayt_mahsir
+  - idna
+  - surif
+  - bani_naim
+  - bayt_nattif
+  - dayr_aban
+  - deir_dibwan
+  - abu_dis
+  - malha
+  - silwad
+  - beit_ummar
+  - al_walaja
+  - beit_hanina
+  - birzeit
+  - tarqumiyah
+  - beitunia
+  - beit_fajjar
+  - beit_iksa
+  - beit_safafa
+  - al_mazraa_ash_sharqiya
+  - taybeh_ramallah
+  - sinjil
+  - beit_ula
+  - tell_es_safi
+  - ash_shuyukh
+  - az_zakariyya
+  - qatanna
+  - al_khader
+  - kafr_malik
+  - aboud
+  - deir_jarir
+  - al_eizariya
+  - al_qubayba_hebron
+  - battir
+  - beit_liqya
+  - shaar_hagai
+  - east_jerusalem_old_city
+  - beit_shemesh
+  - beit_shemesh_field
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: jerusalem_hills', 'owner 27 Oct 2026: APPROVED extent "Keep as proposed"; all six choices approved as proposed; the nine-region draft was separately approved by name on 27 October 2026 (owner ruling, 27 October 2026)']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: northern_hills
+  capital_location: nablus
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: 0, r: 19 }
+  - { q: 1, r: 18 }
+  - { q: 2, r: 17 }
+  - { q: 2, r: 18 }
+  - { q: 2, r: 19 }
+  - { q: 3, r: 15 }
+  - { q: 3, r: 16 }
+  - { q: 3, r: 17 }
+  - { q: 3, r: 18 }
+  - { q: 3, r: 19 }
+  - { q: 4, r: 12 }
+  - { q: 4, r: 13 }
+  - { q: 4, r: 14 }
+  - { q: 4, r: 15 }
+  - { q: 4, r: 16 }
+  - { q: 4, r: 17 }
+  - { q: 4, r: 18 }
+  - { q: 4, r: 19 }
+  - { q: 4, r: 20 }
+  - { q: 5, r: 12 }
+  - { q: 5, r: 13 }
+  - { q: 5, r: 14 }
+  - { q: 5, r: 15 }
+  - { q: 5, r: 16 }
+  - { q: 5, r: 17 }
+  - { q: 5, r: 18 }
+  - { q: 5, r: 19 }
+  - { q: 6, r: 12 }
+  - { q: 6, r: 13 }
+  - { q: 6, r: 14 }
+  - { q: 6, r: 15 }
+  - { q: 6, r: 16 }
+  - { q: 6, r: 17 }
+  - { q: 7, r: 13 }
+  - { q: 7, r: 14 }
+  - { q: 7, r: 15 }
+  member_locations:
+  - nablus
+  - tubas
+  - umm_al_fahm
+  - jenin
+  - arraba_2
+  - qabatiya
+  - yabad
+  - silat_adh_dhahr
+  - burqa_nablus
+  - al_yamun
+  - kafr_rai
+  - jaba_2
+  - tammun
+  - aqraba
+  - asira_ash_shamaliya
+  - silat_al_harithiya
+  - salfit
+  - talluza
+  - beita
+  - burqin
+  - awarta
+  - zirin
+  - biddya
+  - meithalun
+  - qabalan
+  - huwara
+  - beit_furik
+  - jammain
+  - kafr_qaddum
+  - burin
+  - deir_istiya
+  - qusra
+  - tell_nablus
+  - sanur_jenin
+  - sebastia
+  - bartaa
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: northern_hills']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: southern_coast
+  capital_location: gaza
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: -15, r: 31 }
+  - { q: -14, r: 30 }
+  - { q: -13, r: 29 }
+  - { q: -12, r: 28 }
+  - { q: -11, r: 27 }
+  - { q: -11, r: 28 }
+  - { q: -10, r: 27 }
+  - { q: -10, r: 28 }
+  - { q: -9, r: 26 }
+  - { q: -9, r: 27 }
+  - { q: -8, r: 25 }
+  - { q: -8, r: 26 }
+  - { q: -7, r: 24 }
+  - { q: -7, r: 25 }
+  - { q: -7, r: 26 }
+  - { q: -6, r: 23 }
+  - { q: -6, r: 24 }
+  - { q: -6, r: 25 }
+  member_locations:
+  - gaza
+  - yad_mordechai
+  - khan_yunis
+  - al_majdal
+  - hamama
+  - isdud
+  - al_faluja
+  - jabalia
+  - bani_suheila
+  - bayt_daras
+  - burayr
+  - deir_al_balah
+  - al_masmiyya_al_kabira
+  - al_jura
+  - barbara_gaza
+  - hiribya
+  - abasan_al_kabira
+  - iraq_al_manshiyya
+  - rafah
+  - beit_hanoun
+  - beit_lahia
+  - karatiyya
+  - simsim_gaza
+  - nazla
+  - niilya
+  - al_jiyya
+  - jusayr
+  - yasur
+  - bayt_tima
+  - al_sawafir_al_gharbiyya
+  - julis_2
+  - negba
+  - nir_am
+  - iraq_suwaydan_fort
+  - ad_halom_bridge
+  - mefalsim
+  - mefalsim_field
+  - nitzanim
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: southern_coast']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }
+- id: negev
+  capital_location: beersheba
+  capital_approval: NEEDS-RESEARCH
+  member_hexes:
+  - { q: -20, r: 56 }
+  - { q: -19, r: 52 }
+  - { q: -19, r: 53 }
+  - { q: -19, r: 54 }
+  - { q: -19, r: 55 }
+  - { q: -18, r: 47 }
+  - { q: -18, r: 48 }
+  - { q: -18, r: 49 }
+  - { q: -18, r: 50 }
+  - { q: -18, r: 51 }
+  - { q: -18, r: 52 }
+  - { q: -18, r: 53 }
+  - { q: -18, r: 54 }
+  - { q: -17, r: 41 }
+  - { q: -17, r: 42 }
+  - { q: -17, r: 43 }
+  - { q: -17, r: 44 }
+  - { q: -17, r: 45 }
+  - { q: -17, r: 46 }
+  - { q: -17, r: 47 }
+  - { q: -17, r: 48 }
+  - { q: -17, r: 49 }
+  - { q: -17, r: 50 }
+  - { q: -17, r: 51 }
+  - { q: -17, r: 52 }
+  - { q: -16, r: 36 }
+  - { q: -16, r: 37 }
+  - { q: -16, r: 38 }
+  - { q: -16, r: 39 }
+  - { q: -16, r: 40 }
+  - { q: -16, r: 41 }
+  - { q: -16, r: 42 }
+  - { q: -16, r: 43 }
+  - { q: -16, r: 44 }
+  - { q: -16, r: 45 }
+  - { q: -16, r: 46 }
+  - { q: -16, r: 47 }
+  - { q: -16, r: 48 }
+  - { q: -16, r: 49 }
+  - { q: -16, r: 50 }
+  - { q: -15, r: 32 }
+  - { q: -15, r: 33 }
+  - { q: -15, r: 34 }
+  - { q: -15, r: 35 }
+  - { q: -15, r: 36 }
+  - { q: -15, r: 37 }
+  - { q: -15, r: 38 }
+  - { q: -15, r: 39 }
+  - { q: -15, r: 40 }
+  - { q: -15, r: 41 }
+  - { q: -15, r: 42 }
+  - { q: -15, r: 43 }
+  - { q: -15, r: 44 }
+  - { q: -15, r: 45 }
+  - { q: -15, r: 46 }
+  - { q: -15, r: 47 }
+  - { q: -15, r: 48 }
+  - { q: -15, r: 49 }
+  - { q: -14, r: 31 }
+  - { q: -14, r: 32 }
+  - { q: -14, r: 33 }
+  - { q: -14, r: 34 }
+  - { q: -14, r: 35 }
+  - { q: -14, r: 36 }
+  - { q: -14, r: 37 }
+  - { q: -14, r: 38 }
+  - { q: -14, r: 39 }
+  - { q: -14, r: 40 }
+  - { q: -14, r: 41 }
+  - { q: -14, r: 42 }
+  - { q: -14, r: 43 }
+  - { q: -14, r: 44 }
+  - { q: -14, r: 45 }
+  - { q: -14, r: 46 }
+  - { q: -14, r: 47 }
+  - { q: -14, r: 48 }
+  - { q: -13, r: 30 }
+  - { q: -13, r: 31 }
+  - { q: -13, r: 32 }
+  - { q: -13, r: 33 }
+  - { q: -13, r: 34 }
+  - { q: -13, r: 35 }
+  - { q: -13, r: 36 }
+  - { q: -13, r: 37 }
+  - { q: -13, r: 38 }
+  - { q: -13, r: 39 }
+  - { q: -13, r: 40 }
+  - { q: -13, r: 41 }
+  - { q: -13, r: 42 }
+  - { q: -13, r: 43 }
+  - { q: -13, r: 44 }
+  - { q: -13, r: 45 }
+  - { q: -13, r: 46 }
+  - { q: -13, r: 47 }
+  - { q: -12, r: 29 }
+  - { q: -12, r: 30 }
+  - { q: -12, r: 31 }
+  - { q: -12, r: 32 }
+  - { q: -12, r: 33 }
+  - { q: -12, r: 34 }
+  - { q: -12, r: 35 }
+  - { q: -12, r: 36 }
+  - { q: -12, r: 37 }
+  - { q: -12, r: 38 }
+  - { q: -12, r: 39 }
+  - { q: -12, r: 40 }
+  - { q: -12, r: 41 }
+  - { q: -12, r: 42 }
+  - { q: -12, r: 43 }
+  - { q: -12, r: 44 }
+  - { q: -12, r: 45 }
+  - { q: -11, r: 29 }
+  - { q: -11, r: 30 }
+  - { q: -11, r: 31 }
+  - { q: -11, r: 32 }
+  - { q: -11, r: 33 }
+  - { q: -11, r: 34 }
+  - { q: -11, r: 35 }
+  - { q: -11, r: 36 }
+  - { q: -11, r: 37 }
+  - { q: -11, r: 38 }
+  - { q: -11, r: 39 }
+  - { q: -11, r: 40 }
+  - { q: -11, r: 41 }
+  - { q: -11, r: 42 }
+  - { q: -11, r: 43 }
+  - { q: -10, r: 29 }
+  - { q: -10, r: 30 }
+  - { q: -10, r: 31 }
+  - { q: -10, r: 32 }
+  - { q: -10, r: 33 }
+  - { q: -10, r: 34 }
+  - { q: -10, r: 35 }
+  - { q: -10, r: 36 }
+  - { q: -10, r: 37 }
+  - { q: -10, r: 38 }
+  - { q: -10, r: 39 }
+  - { q: -10, r: 40 }
+  - { q: -10, r: 41 }
+  - { q: -9, r: 28 }
+  - { q: -9, r: 29 }
+  - { q: -9, r: 30 }
+  - { q: -9, r: 31 }
+  - { q: -9, r: 32 }
+  - { q: -9, r: 33 }
+  - { q: -9, r: 34 }
+  - { q: -9, r: 35 }
+  - { q: -9, r: 36 }
+  - { q: -9, r: 37 }
+  - { q: -9, r: 38 }
+  - { q: -9, r: 39 }
+  - { q: -9, r: 40 }
+  - { q: -8, r: 27 }
+  - { q: -8, r: 28 }
+  - { q: -8, r: 29 }
+  - { q: -8, r: 30 }
+  - { q: -8, r: 31 }
+  - { q: -8, r: 32 }
+  - { q: -8, r: 33 }
+  - { q: -8, r: 34 }
+  - { q: -8, r: 35 }
+  - { q: -8, r: 36 }
+  - { q: -8, r: 37 }
+  - { q: -8, r: 38 }
+  - { q: -8, r: 39 }
+  - { q: -7, r: 27 }
+  - { q: -7, r: 29 }
+  - { q: -7, r: 30 }
+  - { q: -7, r: 31 }
+  - { q: -7, r: 32 }
+  - { q: -7, r: 33 }
+  - { q: -7, r: 34 }
+  - { q: -7, r: 35 }
+  - { q: -7, r: 36 }
+  - { q: -7, r: 37 }
+  - { q: -7, r: 38 }
+  - { q: -6, r: 31 }
+  - { q: -6, r: 32 }
+  - { q: -6, r: 33 }
+  - { q: -6, r: 34 }
+  - { q: -6, r: 35 }
+  - { q: -6, r: 36 }
+  - { q: -5, r: 31 }
+  - { q: -5, r: 32 }
+  - { q: -5, r: 33 }
+  - { q: -5, r: 34 }
+  - { q: -5, r: 35 }
+  - { q: -4, r: 32 }
+  - { q: -4, r: 33 }
+  - { q: -4, r: 34 }
+  member_locations:
+  - beersheba
+  - revivim
+  - beit_kama
+  - beit_kama_field
+  - reim
+  - reim_field
+  - gilat
+  - gilat_field
+  - umm_rashrash
+  design_note: 'design value, not a historical boundary'
+  sources: ['research_notes/gdd03-regions-capitals-fields.yaml: negev']
+  binding_status: NEEDS-RESEARCH
+  opening_control: { status: NEEDS-RESEARCH, value: null }

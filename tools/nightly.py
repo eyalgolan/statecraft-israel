@@ -19,6 +19,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -31,9 +32,9 @@ import nightly_checks
 import unity_postmerge
 from nightly_publish import (GitHub, Itch, demo_serves, itch_frame_url, release_notes, sha256_lines, sha256_of,
                              unzip_to)
-from nightly_state import (JOB, TZ, Config, Missed, Published, Refused, Runner, Skipped, State, Stop, base_version,
+from nightly_state import (JOB, TZ, Config, LatestRecovery, Missed, Published, Refused, Runner, Skipped, State, Stop,
                            enable_itch, late_start, load_config, load_state, log_line, missed_days, night_of,
-                           nightly_version, notify, record, run_lock, save_state, tag_for)
+                           notify, record, run_lock, save_state, tag_for)
 from web_check import find_chrome
 
 HOLDER_ENV = unity_postmerge.machine_lock.HOLDER_ENV
@@ -49,7 +50,8 @@ class ProcRunner(Runner):
         self.grace = grace
 
     def run(self, cmd: list[str], *, cwd: Path, log: Path, deadline: float,
-            env: dict[str, str] | None = None, holder: Path | None = None) -> int:
+            env: dict[str, str] | None = None, holder: Path | None = None,
+            stop_on_interrupt: bool = False) -> int:
         full = dict(os.environ if env is None else env)
         if holder is not None:
             holder.unlink(missing_ok=True)
@@ -62,6 +64,14 @@ class ProcRunner(Runner):
                 return proc.wait(timeout=max(0.0, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 pass
+            except BaseException as primary:
+                # Managed phases already hold the lock. Default callers may still be waiting for one.
+                if stop_on_interrupt:
+                    try:
+                        self._stop_group(proc)
+                    except BaseException as cleanup:
+                        primary.add_note(f"managed child cleanup raised {type(cleanup).__name__}: {cleanup}")
+                raise
             if holder is not None:
                 self._stop_holder(holder)
             self._stop_group(proc)
@@ -86,18 +96,20 @@ class ProcRunner(Runner):
 
     def _stop_group(self, proc: subprocess.Popen) -> None:
         try:
-            os.killpg(proc.pid, signal.SIGTERM)
-            proc.wait(timeout=self.grace)
-        except (ProcessLookupError, subprocess.TimeoutExpired):
-            pass
-        try:   # always: a member that ignores SIGTERM (a build's grandchild) must not outlive the deadline
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        try:
-            proc.wait(timeout=self.grace + 5)
-        except subprocess.TimeoutExpired:
-            pass
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+                proc.wait(timeout=self.grace)
+            except (ProcessLookupError, subprocess.TimeoutExpired):
+                pass
+        finally:   # a second interrupt during the grace period must not skip the final kill and reap
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.wait(timeout=self.grace + 5)
+            except subprocess.TimeoutExpired:
+                pass
 
     def capture(self, cmd: list[str], *, cwd: Path, timeout: float = 300) -> str:
         try:
@@ -189,16 +201,14 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
         raise Refused("unity-editor", f"{editor} is missing")
     if not cfg.unity_slots.is_file():
         raise Refused("unity-slots", f"{cfg.unity_slots} is missing")
-    base = base_version((clone / "sim/Statecraft.Sim/SimInfo.cs").read_text(encoding="utf-8"))
-    version = nightly_version(base, day)
+    version = gh.next_version()
     tag = tag_for(version)
-    release = gh.release_state(tag)
-    if release == "draft" and state.open_draft == tag:
+    if gh.release_state(tag) == "draft" and state.open_draft == tag:
         if not no_publish:   # --no-publish makes no store write, not even this cleanup
-            gh.delete_draft(tag)   # this job's own draft from an earlier run tonight
+            gh.delete_draft(tag, state.open_draft_id)   # refuses old state with no ID, or a replacement draft
             state.open_draft = None
-    elif release is not None:
-        raise Refused("tag-exists", f"a {release} release already has the tag {tag}")
+            state.open_draft_id = None
+    gh.ensure_tag_available(tag)
     run_dir = job / "runs" / f"{now.astimezone(TZ):%Y%m%d-%H%M%S}"
     manifest = (clone / "sim/Statecraft.Sim.Tests/golden/manifest.txt").read_text(encoding="utf-8")
     return Night(now, day, sha, version, tag, run_dir, time.monotonic() + cfg.deadline_hours * 3600, job, cfg,
@@ -215,35 +225,79 @@ def _limit(night: Night, minutes: float) -> float:
 
 
 def _step(night: Night, runner: Runner, name: str, cmd: list[str], minutes: float,
-          env: dict[str, str] | None = None) -> tuple[int, str]:
+          env: dict[str, str] | None = None, *, stop_on_interrupt: bool = False) -> tuple[int, str]:
     log = night.run_dir / f"{name}.log"
-    code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env)
+    kwargs = {"stop_on_interrupt": True} if stop_on_interrupt else {}
+    code = runner.run(cmd, cwd=night.cfg.clone, log=log, deadline=_limit(night, minutes), env=env, **kwargs)
     return code, log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
 
 
 def run_gates(night: Night, runner: Runner) -> None:
-    clone = night.cfg.clone
-    code, _ = _step(night, runner, "build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
-    if code != 0:
-        raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}")
-    code, text = _step(night, runner, "check", ["bash", "scripts/check.sh", "origin/main"], 45)
-    why = nightly_checks.check_sh_verdict(text, code)
-    if why:
-        raise Refused("check", "timed out" if code == 124 else why)
-    code, text = _step(night, runner, "release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
-    why = nightly_checks.release_gate_verdict(text, code)
-    if why:
-        raise Refused("release-gate", "timed out" if code == 124 else why)
-    for locale in ("he_IL", "en_US"):
-        lang = f"{locale}.UTF-8"
-        env = {**os.environ, "LANG": lang, "LC_ALL": lang}
-        code, text = _step(night, runner, f"sim-{locale}",
-                           ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo"], 30, env)
-        failed, total = nightly_checks.dotnet_totals(text)
-        if code == 124:
-            raise Refused(f"sim-{locale}", "timed out")
-        if code != 0 or failed or total == 0:
-            raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+    base_env = {**os.environ, "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0",
+                "UseSharedCompilation": "false"}
+
+    def admitted():
+        check_window(night)
+        if time.monotonic() >= night.deadline:
+            raise Refused("managed-deadline", "work deadline expired before a managed command could start")
+
+    def step(name, cmd, minutes, env=None):
+        admitted()
+        return _step(night, runner, name, cmd, minutes, base_env if env is None else env, stop_on_interrupt=True)
+
+    check_window(night)
+    with unity_postmerge.machine_lock.hold():
+        # A long acquisition must drain normally; expired work starts no child after it gets the lock.
+        admitted()
+        pending = None
+        try:
+            clone = night.cfg.clone
+            code, _ = step("build-sim", ["uv", "run", str(clone / "tools/build_sim_for_unity.py")], 15)
+            if code != 0:
+                raise Refused("build-sim", "timed out" if code == 124 else f"build_sim_for_unity exited {code}")
+            code, text = step("check", ["bash", "scripts/check.sh", "origin/main"], 45)
+            why = nightly_checks.check_sh_verdict(text, code)
+            if why:
+                raise Refused("check", "timed out" if code == 124 else why)
+            code, text = step("release-gate", ["bash", "scripts/oss/release_gate.sh"], 60)
+            why = nightly_checks.release_gate_verdict(text, code)
+            if why:
+                raise Refused("release-gate", "timed out" if code == 124 else why)
+            for locale in ("he_IL", "en_US"):
+                lang = f"{locale}.UTF-8"
+                env = {**base_env, "LANG": lang, "LC_ALL": lang}
+                code, text = step(f"sim-{locale}",
+                                   ["dotnet", "test", "sim/Statecraft.sln", "-c", "Release", "--nologo",
+                                    "-nodeReuse:false", "-p:UseSharedCompilation=false"], 30, env)
+                failed, total = nightly_checks.dotnet_totals(text)
+                if code == 124:
+                    raise Refused(f"sim-{locale}", "timed out")
+                if code != 0 or failed or total == 0:
+                    raise Refused(f"sim-{locale}", f"dotnet test exited {code}: {failed} failed of {total} tests")
+        except BaseException as primary:
+            pending = primary
+            raise
+        finally:
+            # Preserve only this invocation's primary failure, never an exception handled by its caller.
+            shutdown_failure = None
+            try:
+                code = runner.run(["dotnet", "build-server", "shutdown"], cwd=night.cfg.clone,
+                                  log=night.run_dir / "build-server-shutdown.log",
+                                  deadline=time.monotonic() + 120, env=base_env, stop_on_interrupt=True)
+                if code != 0:
+                    shutdown_failure = f"compiler server shutdown exited {code}"
+            except BaseException as error:
+                if pending is None and not isinstance(error, (OSError, subprocess.SubprocessError)):
+                    raise
+                shutdown_failure = f"compiler server shutdown raised {type(error).__name__}: {error}"
+            if shutdown_failure is not None:
+                if pending is None:
+                    raise Refused("build-server-shutdown", shutdown_failure)
+                night.notes.append(shutdown_failure)
+                try:
+                    (night.run_dir / "build-server-shutdown.note").write_text(shutdown_failure + "\n", encoding="utf-8")
+                except OSError:
+                    print(shutdown_failure, file=sys.stderr)
 
 
 def unity_argv(night: Night, unity_args: list[str], *, webgl: bool) -> list[str]:
@@ -516,12 +570,15 @@ def previous_build(night: Night, state: State, gh: GitHub, runner: Runner) -> tu
 
 def _drop_draft(night: Night, state: State, gh: GitHub) -> None:
     """Delete tonight's draft if it is still one. A failure here never replaces the refusal that caused it."""
+    if state.open_draft != night.tag:
+        return
     try:
         present = gh.release_state(night.tag)
         if present == "draft":
-            gh.delete_draft(night.tag)
+            gh.delete_draft(night.tag, state.open_draft_id)
         if present != "published":
             state.open_draft = None
+            state.open_draft_id = None
     except Exception as e:
         print(f"could not delete the draft {night.tag}: {e}", file=sys.stderr)   # open_draft stays, so a rerun cleans it
 
@@ -548,8 +605,58 @@ def _itch_rollback(night: Night, itch, folder: Path, version: str) -> str:
         return note
 
 
+def _recover_latest(state: State, gh: GitHub, failed: str, previous: str | None,
+                    save: Callable[[], bool | None]) -> tuple[bool, str]:
+    """Checkpoint recovery before trying it. Only a verified result clears it; every outcome is reported."""
+    target = f"previous Latest {previous}" if previous is not None else "no previous Latest"
+    state.latest_recovery_pending = LatestRecovery(failed, previous)
+    try:
+        checkpoint_saved = save() is not False
+    except Exception as e:
+        checkpoint_saved = False
+        print(f"could not checkpoint Latest recovery: {_detail(e)}", file=sys.stderr)
+    recovered = False
+    try:
+        acted, current = gh.restore_latest(previous, failed)
+        if acted:
+            note = (f"restored {target}" if previous is not None else
+                    "no previous Latest; removed the failed release's Latest mark")
+        elif current is None:
+            note = f"there is no Latest now, so {failed} is not Latest: left alone"
+        elif current == previous:
+            note = f"{target} still stands; left alone"
+        else:
+            note = f"Latest is now {current}, not {failed}: left alone"
+        state.latest_recovery_pending = None
+        recovered = True
+    except Exception as e:
+        note = f"Latest recovery failed ({target}): {_detail(e)}; check by hand"
+    try:
+        result_saved = save() is not False
+    except Exception as e:
+        result_saved = False
+        print(f"could not save Latest recovery result: {_detail(e)}", file=sys.stderr)
+    if not checkpoint_saved or not result_saved:
+        note += "; recovery state could not be saved; check by hand"
+        recovered = False
+    note = f"{failed} ({target}): {note}"
+    print(note, file=sys.stderr)
+    notify("Nightly Latest recovery", note[:200])
+    return recovered, note
+
+
+def _restore_latest(night: Night, state: State, gh: GitHub, previous: str | None,
+                    save: Callable[[], bool | None]) -> str:
+    _, note = _recover_latest(state, gh, night.tag, previous, save)
+    try:
+        (night.run_dir / "latest-rollback.log").write_text(note + "\n", encoding="utf-8")
+    except OSError as e:
+        print(f"could not write Latest recovery log: {e}", file=sys.stderr)
+    return "; " + note
+
+
 def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path, Path], sizes: dict[str, int],
-                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], None],
+                  boot: float, *, previous: tuple[str, str | None], save: Callable[[], bool | None],
                   runner: Runner) -> None:
     """Draft first, so nothing public changes until the draft's bytes match: draft, verify, publish, then the site.
     `save` persists the state; it runs right after the draft exists and right after the release is public, so a
@@ -564,10 +671,15 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
     notes = night.run_dir / "release-notes.md"
     notes.write_text(release_notes(version=night.version, sha=night.sha, since=since, subjects=subjects,
                                    sha256_lines=sha256_lines(list(zips))), encoding="utf-8")
-    state.open_draft = night.tag   # set first: a half-made draft is then recognised and cleaned by a rerun
+    gh.ensure_tag_available(night.tag)   # again just before create: a release made since preflight is never ours
+    def created(release_id: int) -> None:
+        state.open_draft = night.tag
+        state.open_draft_id = release_id
+        if save() is False:
+            raise Refused("github-draft", f"could not persist ownership of {night.tag} (release ID {release_id}) before upload; check by hand")
+
     try:
-        gh.create_draft(night.tag, night.sha, notes, list(zips))
-        save()
+        gh.create_draft(night.tag, night.sha, notes, list(zips), created=created)
         gh.verify_draft(night.tag, list(zips), night.run_dir / "draft-download")
     except Exception as e:
         _drop_draft(night, state, gh)
@@ -605,46 +717,55 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
                 _itch_rollback(night, itch, rollback_folder, rollback_version)
             _drop_draft(night, state, gh)
             raise
+    previous_latest = None
+    publish_started = verified = False
     try:
+        previous_latest = gh.latest_tag()
+        (night.run_dir / "latest-before-publish.txt").write_text(
+            previous_latest + "\n" if previous_latest is not None else "no previous Latest\n", encoding="utf-8")
+        publish_started = True   # an edit can reach GitHub even if the command then fails
         gh.publish(night.tag, night.sha)
-    except Exception as e:
+        verified = True
+        state.open_draft = None
+        state.open_draft_id = None
+        state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
+        if len(state.boot_baseline) < BASELINE_NIGHTS:
+            state.boot_baseline.append(boot)
+        state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
+        save()
+        if not use_itch:
+            skip = "itch: skipped (save test not passed)"
+            print(skip)
+            night.notes.append(skip)
+        failure = "no attempt"
+        for _ in range(2):   # the release is public already, so retry the site once before restoring Latest
+            try:
+                gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
+                demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
+                state.site_pending = None
+                return
+            except Exception as e:
+                failure = _detail(e)
+        raise Refused("site", f"{night.tag} is public and the demo is unchanged: {failure}")
+    except BaseException as e:
         detail = _detail(e)
-        if rollback_folder is not None:   # itch must not keep a build the release does not have
-            detail += _itch_rollback(night, itch, rollback_folder, rollback_version)
-        try:
-            now_state = gh.release_state(night.tag)
-        except Exception:
-            now_state = "unknown"
-        if now_state == "draft":
-            _drop_draft(night, state, gh)
-        elif now_state in ("published", "unknown"):
-            detail += f" (the release may be public: check {night.tag} by hand)"
-        raise Refused("github-publish", detail) from e
-    except BaseException:   # an interrupt: the same cleanup, then on with the interrupt
-        if rollback_folder is not None:
-            _itch_rollback(night, itch, rollback_folder, rollback_version)
-        _drop_draft(night, state, gh)
+        if publish_started:
+            detail += _restore_latest(night, state, gh, previous_latest, save)
+        if not verified:
+            if rollback_folder is not None:   # itch must not keep a build the release does not have
+                detail += _itch_rollback(night, itch, rollback_folder, rollback_version)
+            try:
+                now_state = gh.release_state(night.tag)
+            except Exception:
+                now_state = "unknown"
+            if now_state == "draft":
+                _drop_draft(night, state, gh)
+            elif now_state in ("published", "unknown"):
+                detail += f" (the release may be public: check {night.tag} by hand)"
+        if isinstance(e, Exception):
+            raise Refused(e.gate if isinstance(e, Stop) else "github-publish", detail) from e
+        night.notes.append(detail)   # run_night records recovery even when it re-raises an interrupt
         raise
-    state.open_draft = None
-    state.last_published = Published(night.tag, night.sha, night.version, sizes, boot)
-    if len(state.boot_baseline) < BASELINE_NIGHTS:
-        state.boot_baseline.append(boot)
-    state.site_pending = night.version   # until the demo serves this version, a later night retries the deploy
-    save()
-    if not use_itch:
-        skip = "itch: skipped (save test not passed)"
-        print(skip)
-        night.notes.append(skip)
-    failure = "no attempt"
-    for _ in range(2):   # the release is public already, so one more try before the demo is left on the old build
-        try:
-            gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
-            demo_serves(night.cfg.site_demo_url, night.version, deadline=time.monotonic() + SITE_WAIT_SECONDS)
-            state.site_pending = None
-            return
-        except Exception as e:   # any error here leaves the release public, so it must end as a site refusal
-            failure = e.detail if isinstance(e, Stop) else f"{type(e).__name__}: {e}"
-    raise Refused("site", f"{night.tag} is public and the demo is unchanged: {failure}")
 
 
 # --- the night --------------------------------------------------------------------------------------------------
@@ -654,6 +775,10 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
     whether the settings came back."""
     try:
         gz = build_web(night, runner, pages=False, free_gb=free_gb)
+        # Bee may retire the previous player's files while building Pages. Keep the exact first player outside its outputs.
+        saved_gz = night.run_dir / "Web-gzip"
+        shutil.copytree(gz, saved_gz)   # refuse a collision or incomplete copy; never reuse older run evidence
+        gz = saved_gz
         pages = build_web(night, runner, pages=True, free_gb=free_gb)
     except BaseException:
         try:
@@ -669,7 +794,7 @@ def _build_both(night: Night, runner: Runner, free_gb: Callable[[Path], float]) 
 
 def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, no_publish: bool,
                free_gb: Callable[[Path], float] = lambda p: shutil.disk_usage(p).free / 1e9,
-               save: Callable[[], None] = lambda: None) -> bool:
+               save: Callable[[], bool | None] = lambda: None) -> bool:
     """Every gate, then (unless no_publish) the publish. True when published, False when stopped before any store."""
     run_gates(night, runner)
     run_editmode(night, runner)
@@ -693,12 +818,14 @@ def run_stages(night: Night, state: State, runner: Runner, gh: GitHub, itch, *, 
     return True
 
 
-def _try_save(state_path: Path, state: State) -> None:
+def _try_save(state_path: Path, state: State) -> bool:
     try:
         save_state(state_path, state)
+        return True
     except OSError as e:   # never costs the night its record, and the final save tries again
         print(f"could not save state: {e}", file=sys.stderr)
         notify("Nightly state not saved", f"{e}"[:200])   # a published release with unsaved state must not be silent
+        return False
 
 
 def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitHub | None, itch, *, now: datetime,
@@ -707,6 +834,7 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
     outcome, gate, detail = "REFUSED", "internal", ""
     state: State | None = None
     night: Night | None = None
+    recovery_note = ""
     day = night_of(now)
     try:
         try:
@@ -718,6 +846,14 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
                            log_line(stamp, "MISSED", tag=None, sha=None, gate="-", log=None))
             if client_error is not None or gh is None:   # the record names the step, not "internal"
                 raise client_error or Refused("github-client", "no GitHub client")
+            pending = state.latest_recovery_pending
+            if pending is not None:
+                if no_publish:
+                    raise Refused("github-latest", "Latest recovery is pending; --no-publish leaves it alone")
+                recovered, recovery_note = _recover_latest(state, gh, pending.failed, pending.previous,
+                                                            lambda: _try_save(state_path, state))
+                if not recovered:
+                    raise Refused("github-latest", recovery_note)
             night = preflight(cfg, state, runner, gh, job=job, now=now, manual=manual, free_gb=free_gb,
                               no_publish=no_publish)
             published = run_stages(night, state, runner, gh, itch, no_publish=no_publish, free_gb=free_gb,
@@ -735,6 +871,8 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
             outcome, gate, detail = "REFUSED", "internal", f"{type(e).__name__}: {e}"
     finally:
         if not no_publish:
+            if recovery_note and recovery_note not in detail:
+                detail = " ".join(filter(None, [detail, recovery_note]))
             if night is not None and night.notes:
                 detail = " ".join(filter(None, [detail, *night.notes]))
             line = log_line(now, outcome, tag=night.tag if night else None, sha=night.sha if night else None,
@@ -751,8 +889,15 @@ def run_night(cfg: Config, state_path: Path, job: Path, runner: Runner, gh: GitH
 # --- the itch.io save test --------------------------------------------------------------------------------------------
 
 PERSIST_SAVED = re.compile(r"^PERSISTENCE saved (\d{4}-\d{2}-\d{2}) turn (\d+) hash ([0-9a-f]+)$", re.M)
-SAVETEST_FRAME_TRIES = 20      # the page names a new upload's frame a little after butler shows the build live
+# The page names a new upload's frame only after itch has unpacked it; until then it carries just a JSON load_url
+# ({"status":"extracting"}). Unpacking the web build took about 17 minutes on 28 October 2026, longer than the old
+# 10-minute wait, so the save test now waits up to 40 minutes.
+# While it waited for the second upload that day, itch answered 429 Too Many Requests; a 429 now slows the polling
+# down (Retry-After, bounded) instead of ending the test, within the same 40 minutes.
+SAVETEST_FRAME_TRIES = 80
 SAVETEST_FRAME_SLEEP = 30
+SAVETEST_RATE_LIMIT_SLEEP = 120   # after an HTTP 429 without a usable Retry-After
+SAVETEST_RATE_LIMIT_MAX = 300   # a longer Retry-After is capped; the total wait stays within the frame budget
 SAVETEST_RUN_MINUTES = 10
 TOOLS = Path(__file__).resolve().parent
 
@@ -765,17 +910,43 @@ def _page_text(fetch, url: str) -> str:
         raise Refused("savetest", f"cannot read {url}: {type(e).__name__}: {e}") from e
 
 
+def _rate_limit_pause(e: Refused) -> int | None:
+    """Seconds to wait after itch answered HTTP 429 (its Retry-After, kept within bounds), or None for any other error."""
+    cause = e.__cause__
+    if not isinstance(cause, urllib.error.HTTPError) or cause.code != 429:
+        return None
+    try:
+        asked = int((cause.headers or {}).get("Retry-After", ""))
+    except ValueError:
+        asked = SAVETEST_RATE_LIMIT_SLEEP
+    return min(max(asked, SAVETEST_FRAME_SLEEP), SAVETEST_RATE_LIMIT_MAX)
+
+
 def _frame_url(fetch, sleep, page_url: str, other: str | None = None) -> str | None:
     """The game-frame URL the itch page embeds. With `other` it waits for a frame that is not that one; the last
-    frame seen (or None) comes back when the tries run out."""
-    found = None
-    for attempt in range(SAVETEST_FRAME_TRIES):
-        found = itch_frame_url(_page_text(fetch, page_url))
-        if found is not None and found != other:
+    frame seen (or None) comes back when the wait budget runs out. A 429 from itch only slows the polling down; if
+    itch still refuses when the budget runs out, that refusal is raised."""
+    found, limited = None, None
+    waited, budget = 0, SAVETEST_FRAME_TRIES * SAVETEST_FRAME_SLEEP
+    while True:
+        try:
+            found, limited = itch_frame_url(_page_text(fetch, page_url)), None
+            pause = SAVETEST_FRAME_SLEEP
+        except Refused as e:
+            pause = _rate_limit_pause(e)
+            if pause is None:
+                raise
+            limited = e
+            print(f"savetest: itch answered 429, waiting {pause} s", file=sys.stderr)
+        else:
+            if found is not None and found != other:
+                return found
+        if waited + pause > budget:
+            if limited is not None:
+                raise limited
             return found
-        if attempt + 1 < SAVETEST_FRAME_TRIES:
-            sleep(SAVETEST_FRAME_SLEEP)
-    return found
+        sleep(pause)
+        waited += pause
 
 
 def _frame_parts(url: str) -> tuple[str, str, str]:
@@ -799,10 +970,11 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     """The two-upload save test of docs/m3-release.md: upload A, play a turn and let the autosave commit; upload B
     (the same content, a new upload URL on the same frame origin); B must load that date, turn and state hash twice.
     "PASS" turns the itch push on (enable_itch); "INCONCLUSIVE" (the test could not be run or proves nothing) and
-    "FAIL" leave it off. It pushes to the PUBLIC itch page twice, so only the owner starts it."""
+    "FAIL" leave it off. It pushes twice to the separate test page in savetest_itch_target, never to the public page:
+    each upload hides the game while itch unpacks it (up to an hour on 28 October 2026). Only the owner starts it."""
     stamp = datetime.now(TZ).strftime("%Y%m%d-%H%M%S")
     work = Path(job) / "savetest" / stamp
-    evidence: dict = {"tag": tag, "page_url": cfg.itch_page_url, "target": cfg.itch_target}
+    evidence: dict = {"tag": tag, "page_url": cfg.savetest_itch_page_url, "target": cfg.savetest_itch_target}
     result, detail = "INCONCLUSIVE", ""
     try:
         result, detail = _savetest(cfg, work, runner, gh, itch, tag, evidence, fetch, sleep)
@@ -819,11 +991,38 @@ def savetest(cfg: Config, config_path: Path, job: Path, runner: Runner, gh: GitH
     return result
 
 
+def _itch_project(target: str) -> str:
+    """`user/project` of a butler target, without its channel: every channel of a project uploads to its one page."""
+    return target.partition(":")[0].lower()
+
+
+def _page_key(url: str) -> tuple[str, str]:
+    parts = urllib.parse.urlsplit(url.strip())
+    return parts.netloc.lower(), parts.path.rstrip("/").lower()
+
+
+def _test_page_problem(cfg: Config) -> str | None:
+    """Why the save test may not push, or None: it needs its own test project, distinct from the public one."""
+    if not cfg.savetest_itch_target or not cfg.savetest_itch_page_url:
+        return "savetest_itch_target and savetest_itch_page_url must name a separate test page in the job's config"
+    if _itch_project(cfg.savetest_itch_target) == _itch_project(cfg.itch_target):
+        return "the save test's test page must not be the public itch project (any channel of it uploads to its page)"
+    try:
+        test_page = _page_key(cfg.savetest_itch_page_url)
+        public_page = _page_key(cfg.itch_page_url) if cfg.itch_page_url else None
+    except ValueError as e:
+        return f"the save test's test page URL or the public page URL is not usable: {e}"
+    if test_page == public_page:
+        return "the save test's test page must not be the public itch page"
+    return None
+
+
 def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, tag: str, evidence: dict, fetch,
               sleep) -> tuple[str, str]:
     """(result, detail) of the test; a Refused or OSError out of it is the caller's INCONCLUSIVE."""
-    if not cfg.itch_page_url:
-        return "INCONCLUSIVE", "itch_page_url is not set in the job's config"
+    reason = _test_page_problem(cfg)
+    if reason:
+        return "INCONCLUSIVE", reason
     state = gh.release_state(tag)
     if state != "published":
         return "INCONCLUSIVE", f"{tag} is {state or 'not a release'}, the save test needs a published nightly"
@@ -837,7 +1036,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-a")
     itch.wait_live(f"{version}-savetest-a", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_a = _frame_url(fetch, sleep, cfg.itch_page_url)
+    frame_a = _frame_url(fetch, sleep, cfg.savetest_itch_page_url)
     evidence.update(upload_a={"build_id": itch.live_build_id(), "frame_url": frame_a})
     if frame_a is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload A"
@@ -850,7 +1049,7 @@ def _savetest(cfg: Config, work: Path, runner: Runner, gh: GitHub, itch: Itch, t
 
     itch.push(folder, f"{version}-savetest-b")
     itch.wait_live(f"{version}-savetest-b", time.monotonic() + ITCH_WAIT_SECONDS)
-    frame_b = _frame_url(fetch, sleep, cfg.itch_page_url, other=frame_a)
+    frame_b = _frame_url(fetch, sleep, cfg.savetest_itch_page_url, other=frame_a)
     evidence.update(upload_b={"build_id": itch.live_build_id(), "frame_url": frame_b})
     if frame_b is None:
         return "INCONCLUSIVE", "the itch page names no game frame after upload B"
@@ -897,8 +1096,11 @@ def run_savetest(cfg: Config, job: Path, tag: str) -> int:
             raise Refused("github-client", "gh is not on PATH")
         if not Path(cfg.butler).is_file():
             raise Refused("itch-client", f"{cfg.butler} is missing")
+        problem = _test_page_problem(cfg)
+        if problem:
+            raise Refused("savetest", problem)
         runner = ProcRunner()
-        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.itch_target)
+        gh, itch = GitHub(runner, cfg.repo_slug, cfg.clone), Itch(runner, cfg.butler, cfg.savetest_itch_target)
     except Refused as e:
         print(e, file=sys.stderr)
         return 1
@@ -913,7 +1115,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("run")
     run.add_argument("--manual", action="store_true")
     run.add_argument("--no-publish", action="store_true")
-    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes to the PUBLIC itch page twice")
+    test = sub.add_parser("savetest", help="the two-upload itch.io save test: pushes twice to the separate test page, never the public one")
     test.add_argument("--tag", required=True, help="a published nightly release tag")
     args = parser.parse_args(argv)
     job = JOB

@@ -55,7 +55,7 @@ namespace Statecraft.Game.Map.Units
         bool observed;
         internal void Choose(ScriptableRenderContext _, Camera camera)
         {
-            if (!initialized || view == null || camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
+            if (this == null || !initialized || view == null || camera.cameraType == CameraType.Preview || camera.cameraType == CameraType.Reflection) return;
             bool first = !observed; observed = true; var before = view.Keys;
             view.Observe(camera, new[] { (id, transform.position, 0f) }, Time.frameCount);
             if (first || !before.SetEquals(view.Keys)) Schedule(view.Keys.Contains(id));
@@ -74,6 +74,7 @@ namespace Statecraft.Game.Map.Units
                 UnitFigureDetail.Of(transform).Remove(holder);
                 var original = holder.gameObject; gone.Add(original);
                 if (Application.isPlaying) { holder.SetParent(null); Destroy(original); } else DestroyImmediate(original);
+                UnitFigures.GeometryChanged();
             }
             // The mesh, plate, badge, flag and every other child are owned by the token, never by this source lease.
             if (TryGetComponent<MeshRenderer>(out var code)) code.enabled = true;

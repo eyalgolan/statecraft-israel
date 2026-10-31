@@ -3,12 +3,16 @@
 # PR deleted, in about 2 seconds and with no Unity licence. scripts/check.sh runs it only where the project's editor
 # and a unity/Library exist. It does not run any test: the EditMode suite still needs Unity.
 #
-# Usage: scripts/unity_compile/compile.sh <path to Unity.app/Contents>
+# Usage: scripts/unity_compile/compile.sh <path to Unity.app/Contents, or to Editor/Data on Linux and Windows>
 # Writes nothing into the checkout: the project files, the published sim DLLs and the output go to a temp folder.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 contents="${1:?usage: compile.sh <Unity.app/Contents>}"
 here=scripts/unity_compile
+# macOS keeps its managed DLLs under <Contents>/Resources/Scripting; the Linux and Windows editors have the same folders
+# directly under Editor/Data.
+scripting="$contents/Resources/Scripting"
+[ -d "$scripting" ] || scripting="$contents"
 version="$(sed -n 's/^m_EditorVersion: //p' unity/ProjectSettings/ProjectVersion.txt)"
 pinned="$(sed -n 's:.*<UnityVersion>\(.*\)</UnityVersion>.*:\1:p' "$here/Common.props")"
 if [ "$version" != "$pinned" ]; then
@@ -18,8 +22,8 @@ if [ "$version" != "$pinned" ]; then
 fi
 # A Library without these (never opened in Unity, or an import that failed) is an error here, not a skip.
 lib=unity/Library
-for f in "$contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.CoreModule.dll" \
-         "$contents/Resources/Scripting/NetStandard/ref/2.1.0/netstandard.dll" \
+for f in "$scripting/Managed/UnityEngine/UnityEngine.CoreModule.dll" \
+         "$scripting/NetStandard/ref/2.1.0/netstandard.dll" \
          "$lib"/ScriptAssemblies/{Unity.RenderPipelines.Core.Runtime,Unity.RenderPipelines.Universal.Runtime}.dll \
          "$lib"/ScriptAssemblies/{Unity.InputSystem,Unity.InputSystem.TestFramework,UnityEngine.TestRunner,UnityEditor.TestRunner}.dll; do
   [ -f "$f" ] || { echo "missing: $f (open the project in Unity once so it builds its Library)"; exit 1; }
@@ -30,7 +34,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 cp "$here"/Common.props "$here"/Game.csproj "$here"/Tests.csproj "$tmp/"
 dotnet publish sim/Statecraft.Sim -c Release -o "$tmp/sim" --nologo -v q
-if ! dotnet build "$tmp/Tests.csproj" --nologo -v q -p:Editor="$contents" -p:Lib="$PWD/unity/Library" \
+if ! dotnet build "$tmp/Tests.csproj" --nologo -v q -p:Scripting="$scripting" -p:Lib="$PWD/unity/Library" \
     -p:Src="$PWD/unity" -p:Sim="$tmp/sim" -p:OutputPath="$tmp/bin/"; then
   echo "unity/ does not compile. If the error names a package type (URP, Input System, the test framework),"
   echo "unity/Library may be older than unity/Packages: open the project in Unity once and run this again."

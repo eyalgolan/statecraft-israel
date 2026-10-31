@@ -5,7 +5,7 @@
     <DefineConstants>$(UnityDefines);NET_STANDARD;NET_STANDARD_2_0;NET_STANDARD_2_1;NETSTANDARD;NETSTANDARD2_1</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="$(Editor)/Resources/Scripting/NetStandard/ref/2.1.0/netstandard.dll" Private="false" />
+    <Reference Include="$(Scripting)/NetStandard/ref/2.1.0/netstandard.dll" Private="false" />
     <Compile Include="$(Src)/Assets/Scripts/**/*.cs" />
   </ItemGroup>
 </Project>

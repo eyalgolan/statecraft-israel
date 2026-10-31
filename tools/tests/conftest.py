@@ -45,7 +45,7 @@ class FakeRunner(Runner):
                 return code, out, effect
         raise AssertionError(f"unexpected command {cmd}")
 
-    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None):
+    def run(self, cmd, *, cwd, log, deadline, env=None, holder=None, stop_on_interrupt=False):
         code, out, effect = self._match(cmd)
         Path(log).parent.mkdir(parents=True, exist_ok=True)
         Path(log).write_text(out, encoding="utf-8")

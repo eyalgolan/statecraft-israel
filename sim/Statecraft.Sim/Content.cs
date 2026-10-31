@@ -1264,8 +1264,13 @@ namespace Statecraft.Sim
         internal int RequirePopulationInteger(string key)
         {
             if (!UsesPopulationLedger) throw new InvalidOperationException("Population catalogue access requires gdd-0.3.");
-            if (Gdd03Balance == null || Gdd03Balance.Values == null || Gdd03Balance.Ruleset != SaveGame.Gdd03Ruleset
-                || !Gdd03Balance.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
+            return RequirePopulationInteger(Gdd03Balance, key);
+        }
+        // Shared catalogue reader; synthetic consumers retain the same positive Agreed Int32 contract.
+        internal static int RequirePopulationInteger(Gdd03BalanceCatalogue? catalogue, string key)
+        {
+            if (catalogue == null || catalogue.Values == null || catalogue.Ruleset != SaveGame.Gdd03Ruleset
+                || !catalogue.Values.TryGetValue(key, out var row) || row == null || row.Basis != "Agreed"
                 || row.Values == null || row.Values.Count != 1 || row.Parts == null || row.Parts.Count != 0
                 || !string.IsNullOrEmpty(row.Expression) || row.Values[0] <= 0 || row.Values[0] > int.MaxValue
                 || decimal.Truncate(row.Values[0]) != row.Values[0])
@@ -1330,6 +1335,8 @@ namespace Statecraft.Sim
         public List<AliyahPeriod> Aliyah = new List<AliyahPeriod>();
         /// <summary>Origin groups of the aliyah series, with display names (aliyah.yaml regions).</summary>
         public List<Region> Regions = new List<Region>();
+        /// <summary>Authored gameplay geography, separate from immigrant origins and historical overlays.</summary>
+        public PlayerRegionCatalogue PlayerRegions { get; internal set; } = PlayerRegionCatalogue.Empty;
         /// <summary>Display names and currency prefixes of the treasury, debt and foreign currency reserves (model.yaml money).</summary>
         public List<MoneyAccount> Money = new List<MoneyAccount>();
         public List<PopulationAnchor> PopulationAnchors = new List<PopulationAnchor>();

@@ -1,5 +1,6 @@
 import hashlib
 import io
+import inspect
 import json
 import zipfile
 from pathlib import Path
@@ -13,8 +14,8 @@ from nightly_state import Refused
 SLUG = "eyalgolan/statecraft-israel"
 SHA = "a" * 40
 OTHER = "c" * 40
-TAG = "v0.3.1-nightly.20261028"
-VERSION = "0.3.1-nightly.20261028"
+TAG = "v0.3.2"
+VERSION = "0.3.2"
 DEMO = "https://example.invalid/demo/"
 NOTICES = ("LICENSE", "NOTICE", "THIRD-PARTY-NOTICES.md", "OFL-EBGaramond.txt", "OFL-FrankRuhlLibre.txt")
 
@@ -65,12 +66,24 @@ def zips(tmp_path):
             make_zip(tmp_path / f"statecraft-israel-v{VERSION}-web-pages.zip", extra=b"pages")]
 
 
-def view_json(*, draft=True, pre=True, names=()):
+def view_json(*, draft=True, pre=False, names=()):
     return json.dumps({"isDraft": draft, "isPrerelease": pre, "assets": [{"name": n} for n in names]})
 
 
 def not_found():
     return Refused("command", "gh release view exited 1: release not found")
+
+
+def create_draft(gh, notes, zips, saved):
+    # Exercise main's create path too; do not turn a missing callback into the regression signal.
+    kwargs = {"created": saved.append} if "created" in inspect.signature(gh.create_draft).parameters else {}
+    return gh.create_draft(TAG, SHA, notes, zips, **kwargs)
+
+
+def delete_draft(gh, release_id):
+    # Only adapt the call shape. The real client still chooses the lookup and DELETE commands.
+    args = (release_id,) if "release_id" in inspect.signature(gh.delete_draft).parameters else ()
+    return gh.delete_draft(TAG, *args)
 
 
 # --- release state ---------------------------------------------------------------------------------------------------
@@ -99,12 +112,75 @@ def test_release_state_refuses_on_any_other_error_or_garbage(gh, runner):
 
 # --- create, verify, publish, delete --------------------------------------------------------------------------------
 
-def test_the_draft_is_a_prerelease_never_latest_targeting_the_commit(gh, runner, tmp_path, zips):
+def test_next_version_reads_all_release_pages_through_the_runner(gh, runner):
+    cmd = ["gh", "api", f"repos/{SLUG}/releases?per_page=100", "--paginate", "--slurp"]
+    runner.on(cmd, json.dumps([
+        [{"tag_name": "v0.9.9", "draft": False}, {"tag_name": "v99.0.0", "draft": True}],
+        [{"tag_name": "v0.10.0", "draft": False},
+         {"tag_name": "v99.0.0-nightly.20261028", "draft": False}],
+    ]))
+    assert gh.next_version() == "0.10.1"
+    assert runner.calls == [cmd]
+
+
+@pytest.mark.parametrize("answer", ["not json", "{}", "[{}]", "[[{}]]", "[]"])
+def test_next_version_refuses_unknown_release_data(gh, runner, answer):
+    runner.on(["gh", "api"], answer)
+    with pytest.raises(Refused) as e:
+        gh.next_version()
+    assert e.value.gate == "version"
+
+
+@pytest.mark.parametrize("release", ["draft", "published"])
+def test_existing_release_refuses_without_deletion_even_without_a_git_tag(gh, runner, release):
+    runner.on(["gh", "release", "view"], json.dumps({"isDraft": release == "draft"}))
+    with pytest.raises(Refused, match="already has the tag") as e:
+        gh.ensure_tag_available(TAG)
+    assert e.value.gate == "tag-exists"
+    assert len(runner.calls) == 1
+
+
+@pytest.mark.parametrize("local,remote", [(TAG + "\n", ""), ("", f"{SHA}\trefs/tags/{TAG}\n"),
+                                         ("", f"{SHA}\trefs/tags/{TAG}^{{}}\n"), ("", "")])
+def test_tag_collision_checks_local_and_remote_tags(gh, runner, tmp_path, local, remote):
+    runner.on(["gh", "release", "view"], not_found())
+    runner.on(["git", "-C", str(tmp_path), "tag", "--list", TAG], local)
+    runner.on(["git", "-C", str(tmp_path), "ls-remote", "origin", f"refs/tags/{TAG}",
+               f"refs/tags/{TAG}^{{}}"], remote)
+    if local or remote:
+        with pytest.raises(Refused, match="git tag.*already exists") as e:
+            gh.ensure_tag_available(TAG)
+        assert e.value.gate == "tag-exists"
+    else:
+        gh.ensure_tag_available(TAG)
+    assert not any(c[:3] in (["gh", "release", "delete"], ["gh", "release", "edit"]) for c in runner.calls)
+
+
+def test_tag_lookup_error_refuses_instead_of_assuming_absence(gh, runner):
+    runner.on(["gh", "release", "view"], not_found())
+    runner.on(["git", "-C"], Refused("command", "cannot read tags"))
+    with pytest.raises(Refused) as e:
+        gh.ensure_tag_available(TAG)
+    assert e.value.gate == "tag-exists"
+
+
+def test_the_draft_is_normal_latest_targeting_the_commit(gh, runner, tmp_path, zips):
+    # Mutation: recover an ID by tag instead of using the response to this run's create.
+    runner.on(["gh", "api"], json.dumps({"id": 101, "tag_name": TAG, "draft": True}))
     runner.on(["gh", "release", "create"], "")
-    gh.create_draft(TAG, SHA, tmp_path / "notes.md", zips)
-    assert runner.calls[-1] == ["gh", "release", "create", TAG, "--repo", SLUG, "--draft", "--prerelease",
-                                "--latest=false", "--target", SHA, "--title", f"{TAG} (nightly)",
-                                "--notes-file", str(tmp_path / "notes.md"), str(zips[0]), str(zips[1])]
+    saved = []
+
+    def upload(cmd):
+        assert saved == [101]   # a failed upload must already have an ownership checkpoint
+        return ""
+    runner.on(["gh", "release", "upload"], upload)
+    assert gh.create_draft(TAG, SHA, tmp_path / "notes.md", zips, created=saved.append) == 101
+    assert runner.calls[0] == ["gh", "api", f"repos/{SLUG}/releases", "--method", "POST",
+                               "--raw-field", f"tag_name={TAG}", "--raw-field", f"target_commitish={SHA}",
+                               "--raw-field", f"name={TAG} (nightly)", "--field", f"body=@{tmp_path / 'notes.md'}",
+                               "--field", "draft=true", "--field", "prerelease=false",
+                               "--raw-field", "make_latest=true"]
+    assert runner.calls[1] == ["gh", "release", "upload", TAG, "--repo", SLUG, str(zips[0]), str(zips[1])]
 
 
 def draft_script(runner, zips, tmp_path, *, view=None, downloaded=None):
@@ -148,47 +224,99 @@ def test_verify_draft_refuses_a_zip_without_the_licence(gh, runner, zips, tmp_pa
     assert e.value.gate == "github-draft" and "LICENSE" in e.value.detail
 
 
-@pytest.mark.parametrize("view", [view_json(draft=False, names=["a"]), view_json(pre=False, names=["a"]),
-                                  view_json(names=["only-one.zip"]), "{}", "[]"])
-def test_verify_draft_refuses_a_wrong_state_or_asset_list(gh, runner, zips, tmp_path, view):
+@pytest.mark.parametrize("flags", [dict(draft=False), dict(pre=True), dict(draft="true"), dict(pre="false")])
+def test_verify_draft_refuses_wrong_flags_with_valid_matching_assets(gh, runner, zips, tmp_path, flags):
     names = [z.name for z in zips]
-    if "a" in view:
-        view = view.replace('"a"', json.dumps(names[0])).replace("]}", f", {json.dumps(names[1])}]}}")
+    view = view_json(names=names, **flags)
     draft_script(runner, zips, tmp_path, view=view)
     with pytest.raises(Refused) as e:
         gh.verify_draft(TAG, zips, tmp_path / "dl")
-    assert e.value.gate == "github-draft"
+    assert e.value.gate == "github-draft" and "not a normal draft release" in e.value.detail
+    assert not any(c[:3] == ["gh", "release", "download"] for c in runner.calls)
 
 
-def publish_script(runner, *, draft=False, pre=True, latest="v0.3.1", remote=SHA):
+@pytest.mark.parametrize("view,why", [
+    (view_json(names=["only-one.zip"]), "the draft's assets are"),
+    ("{}", "not a normal draft release"),
+    ("[]", "JSON of the wrong shape"),
+    (json.dumps({"isDraft": True, "isPrerelease": False, "assets": {"name": "a"}}), "no usable asset list")])
+def test_verify_draft_refuses_a_wrong_state_or_asset_list(gh, runner, zips, tmp_path, view, why):
+    draft_script(runner, zips, tmp_path, view=view)
+    with pytest.raises(Refused) as e:
+        gh.verify_draft(TAG, zips, tmp_path / "dl")
+    assert e.value.gate == "github-draft" and why in e.value.detail   # each case reaches its own guard
+
+
+def test_latest_tag_reads_through_the_runner_and_only_404_means_none(gh, runner):
+    cmd = ["gh", "api", f"repos/{SLUG}/releases/latest", "--jq", ".tag_name"]
+    runner.on(cmd, "v0.3.1\n", Refused("command", "HTTP 404: Not Found"),
+              Refused("command", "HTTP 403: Forbidden"))
+    assert gh.latest_tag() == "v0.3.1"
+    assert gh.latest_tag() is None
+    with pytest.raises(Refused) as e:
+        gh.latest_tag()
+    assert e.value.gate == "github-latest" and runner.calls == [cmd, cmd, cmd]
+
+
+@pytest.mark.parametrize("previous,observed", [("v0.3.1", "v0.3.1"), (None, "v0.2.0")])
+def test_restore_latest_edits_the_saved_tag_and_verifies_it(gh, runner, previous, observed):
+    cmd = ["gh", "release", "edit", previous if previous is not None else TAG, "--repo", SLUG,
+           "--latest" if previous is not None else "--latest=false"]
+    latest = ["gh", "api", f"repos/{SLUG}/releases/latest", "--jq", ".tag_name"]
+    runner.on(cmd, "")
+    runner.on(["gh", "api"], TAG + "\n", observed + "\n")
+    assert gh.restore_latest(previous, TAG) == (True, observed)
+    assert runner.calls == [latest, cmd, latest]
+
+
+@pytest.mark.parametrize("current", ["v0.4.0", "v0.3.1"])
+def test_restore_latest_leaves_a_latest_that_is_not_the_failed_release_alone(gh, runner, current):
+    runner.on(["gh", "api"], current + "\n")
+    assert gh.restore_latest("v0.3.1", TAG) == (False, current)
+    assert not any(c[:3] == ["gh", "release", "edit"] for c in runner.calls)
+
+
+@pytest.mark.parametrize("previous", ["v0.3.1", None])
+def test_restore_latest_refuses_if_the_failed_release_stays_latest(gh, runner, previous):
+    runner.on(["gh", "release", "edit"], "")
+    runner.on(["gh", "api"], TAG + "\n", TAG + "\n")
+    with pytest.raises(Refused, match="recovery did not take effect"):
+        gh.restore_latest(previous, TAG)
+
+
+def publish_script(runner, *, draft=False, pre=False, latest=TAG, remote=SHA):
     runner.on(["gh", "release", "edit"], "")
     runner.on(["gh", "release", "view"], json.dumps({"isDraft": draft, "isPrerelease": pre}))
     runner.on(["gh", "api", f"repos/{SLUG}/releases/latest"], latest + "\n")
     runner.on(["git", "-C"], f"{remote}\trefs/tags/{TAG}\n" if remote else "")
 
 
-def test_publish_checks_draft_off_prerelease_on_latest_unchanged_and_tag_at_sha(gh, runner, tmp_path):
+def test_publish_checks_draft_off_prerelease_off_latest_and_tag_at_sha(gh, runner, tmp_path):
     publish_script(runner)
     gh.publish(TAG, SHA)
-    assert runner.calls[0] == ["gh", "release", "edit", TAG, "--repo", SLUG, "--draft=false", "--latest=false"]
+    assert runner.calls[0] == ["gh", "release", "edit", TAG, "--repo", SLUG, "--draft=false", "--latest"]
     assert ["gh", "api", f"repos/{SLUG}/releases/latest", "--jq", ".tag_name"] in runner.calls
     assert ["git", "-C", str(tmp_path), "ls-remote", "origin", f"refs/tags/{TAG}"] in runner.calls
 
 
-@pytest.mark.parametrize("kw", [dict(draft=True), dict(pre=False), dict(latest=TAG), dict(remote=OTHER),
-                                dict(remote="")])
-def test_publish_refuses_any_mismatch(gh, runner, kw):
-    publish_script(runner, **kw)
+@pytest.mark.parametrize("kw,why", [
+    (dict(draft=True), "is not a public normal release"),
+    (dict(pre=True), "is not a public normal release"),
+    (dict(latest="v0.3.1"), "is not the Latest release"),
+    (dict(remote=OTHER), f"points at {OTHER}, not at {SHA}"),
+    (dict(remote=""), f"points at None, not at {SHA}")])
+def test_publish_refuses_any_mismatch(gh, runner, kw, why):
+    publish_script(runner, **kw)   # every other field valid, so each case reaches its own guard
     with pytest.raises(Refused) as e:
         gh.publish(TAG, SHA)
-    assert e.value.gate == "github-publish"
+    assert e.value.gate == "github-publish" and why in e.value.detail
 
 
-def test_a_latest_nightly_is_named_as_such_and_needs_a_manual_fix(gh, runner):
-    publish_script(runner, latest=TAG)
+def test_a_nightly_that_is_not_latest_is_refused(gh, runner):
+    publish_script(runner, latest="v0.3.1")
     with pytest.raises(Refused) as e:
         gh.publish(TAG, SHA)
-    assert "now the Latest release" in e.value.detail and "manual fix" in e.value.detail
+    assert "is not the Latest release" in e.value.detail
 
 
 def test_demo_serves_survives_a_broken_http_response():
@@ -199,7 +327,7 @@ def test_demo_serves_survives_a_broken_http_response():
         calls.append(u)
         if len(calls) == 1:
             raise http.client.IncompleteRead(b"x")
-        return io.BytesIO(b'productVersion: "0.3.1-nightly.20261028"')
+        return io.BytesIO(b'productVersion: "0.3.2"')
     gp.demo_serves(DEMO, VERSION, deadline=100, fetch=fetch, sleep=lambda s: None,
                    now=iter(range(0, 1000, 30)).__next__)
     assert len(calls) == 2
@@ -220,26 +348,29 @@ def test_a_failing_gh_edit_is_a_publish_refusal(gh, runner):
 
 
 def test_delete_draft_removes_a_draft_and_never_cleans_tags(gh, runner):
-    runner.on(["gh", "release", "view"], '{"isDraft": true}')
+    # Mutation: use a tag-addressed DELETE after an ownership check, risking a replacement release.
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": true}')
+    runner.on(["gh", "api"], "")
     runner.on(["gh", "release", "delete"], "")
-    gh.delete_draft(TAG)
-    assert runner.calls[-1] == ["gh", "release", "delete", TAG, "--repo", SLUG, "--yes"]
+    delete_draft(gh, 101)
+    assert runner.calls == [["gh", "release", "view", TAG, "--repo", SLUG, "--json", "databaseId,isDraft"],
+                            ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]]
     assert all("--cleanup-tag" not in c for c in runner.calls)
 
 
 def test_delete_draft_refuses_a_published_release_and_never_cleans_tags(gh, runner):
-    runner.on(["gh", "release", "view"], '{"isDraft": false}')
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": false}')
     with pytest.raises(Refused):
-        gh.delete_draft(TAG)
-    assert not any(c[:3] == ["gh", "release", "delete"] for c in runner.calls)
+        delete_draft(gh, 101)
+    assert len(runner.calls) == 1
     assert all("--cleanup-tag" not in c for c in runner.calls)
 
 
 def test_delete_draft_refuses_when_the_state_is_unknown(gh, runner):
     runner.on(["gh", "release", "view"], "garbage")
     with pytest.raises(Refused):
-        gh.delete_draft(TAG)
-    assert not any(c[:3] == ["gh", "release", "delete"] for c in runner.calls)
+        delete_draft(gh, 101)
+    assert len(runner.calls) == 1
 
 
 # --- previous build, download -----------------------------------------------------------------------------------------
@@ -372,7 +503,7 @@ def test_a_failed_dispatch_is_a_site_refusal(gh, runner):
 
 
 def test_demo_serves_polls_until_the_version_appears():
-    pages = iter([b'productVersion: "0.3.1"', b'productVersion: "0.3.1-nightly.20261028"'])
+    pages = iter([b'productVersion: "0.3.1"', b'productVersion: "0.3.2"'])
     urls = []
 
     def fetch(u, timeout):
@@ -400,7 +531,8 @@ def test_demo_serves_refuses_at_the_deadline_and_survives_fetch_errors():
 def test_release_notes_list_commits_and_hashes_and_say_nightly():
     text = gp.release_notes(version=VERSION, sha=SHA, since="b" * 40, subjects=["Fix a thing", "Add a thing"],
                             sha256_lines=["abc  one.zip", "def  two.zip"])
-    assert f"Automated nightly build of `main` at {SHA[:12]}. A pre-release, not a versioned release." in text
+    assert f"Automated nightly build of `main` at {SHA[:12]}." in text
+    assert "pre-release" not in text
     assert "- Fix a thing\n- Add a thing" in text and "abc  one.zip\ndef  two.zip" in text
     assert VERSION in text and ("b" * 12) in text and ("b" * 40) not in text
     assert "\u2014" not in text
@@ -648,3 +780,63 @@ def test_the_frame_url_is_read_from_the_page():
 
 def test_a_frame_of_another_host_is_not_a_game_frame():
     assert gp.itch_frame_url('data-iframe="&lt;iframe src=&quot;https://evil.example/html/1-2/index.html&quot;') is None
+
+
+@pytest.mark.parametrize("release_id", [None, 202, True, "101"])
+def test_delete_refuses_missing_or_foreign_id(gh, runner, release_id):
+    # Mutation: skip ID validation or compare only the tag and draft flag.
+    runner.on(["gh", "release", "view"], '{"databaseId": 101, "isDraft": true}')
+    runner.on(["gh", "release", "delete"], "")
+    with pytest.raises(Refused, match="check by hand"):
+        delete_draft(gh, release_id)
+    assert all("DELETE" not in c and c[:3] != ["gh", "release", "delete"] for c in runner.calls)
+
+
+def test_delete_by_id_preserves_same_tag_replacement_after_the_check(gh, runner):
+    # Mutation: delete by tag after checking the ID, which would delete the new same-tag draft.
+    releases = [(TAG, 101, True), ("v0.4.0", 303, False)]
+
+    def view(cmd):
+        # Another actor retargets the owned draft, then creates the replacement at our tag.
+        releases[0] = (TAG + "-replaced", 101, True)
+        releases.append((TAG, 202, True))
+        return json.dumps({"databaseId": 101, "isDraft": True})
+
+    def delete(cmd):
+        if cmd[:3] == ["gh", "release", "delete"]:
+            row = next(r for r in releases if r[0] == TAG)
+        else:
+            assert cmd == ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]
+            row = next(r for r in releases if r[1] == int(cmd[2].rsplit("/", 1)[1]))
+        releases.remove(row)
+        return ""
+    runner.on(["gh", "release", "view"], view)
+    runner.on(["gh", "api"], delete)
+    runner.on(["gh", "release", "delete"], delete)
+    delete_draft(gh, 101)
+    assert releases == [("v0.4.0", 303, False), (TAG, 202, True)]
+    assert runner.calls[-1] == ["gh", "api", f"repos/{SLUG}/releases/101", "--method", "DELETE"]
+
+
+@pytest.mark.parametrize("response", [{"id": True, "tag_name": TAG, "draft": True},
+                                      {"id": 101, "tag_name": "v0.4.0", "draft": True},
+                                      {"id": 101, "tag_name": TAG, "draft": False}, {}])
+def test_create_with_unusable_response_never_claims_or_uploads(gh, runner, tmp_path, zips, response):
+    # Mutation: guess an owned ID after create returned unknown data or a release for another tag.
+    runner.on(["gh", "api"], json.dumps(response))
+    runner.on(["gh", "release", "create"], "")
+    saved = []
+    with pytest.raises(Refused, match="check by hand"):
+        create_draft(gh, tmp_path / "notes.md", zips, saved)
+    assert saved == [] and len(runner.calls) == 1
+
+
+def test_failed_upload_has_already_checkpointed_create_id(gh, runner, tmp_path, zips):
+    # Mutation: checkpoint only after uploads, losing ownership when an upload fails.
+    runner.on(["gh", "api"], json.dumps({"id": 101, "tag_name": TAG, "draft": True}))
+    runner.on(["gh", "release", "upload"], Refused("command", "upload failed"))
+    runner.on(["gh", "release", "create"], Refused("command", "upload failed"))
+    saved = []
+    with pytest.raises(Refused, match="upload failed"):
+        create_draft(gh, tmp_path / "notes.md", zips, saved)
+    assert saved == [101]

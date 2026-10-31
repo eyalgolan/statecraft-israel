@@ -67,6 +67,8 @@ namespace Statecraft.Game.UI
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
+        /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
+        bool keptResumed = true;
         AdvisorPresenter? advisor;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -227,12 +229,16 @@ namespace Statecraft.Game.UI
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
-            bool resumed = true;
+            bool resumed = keep == null || keptResumed;   // a language switch offers Continue as the start screen it rebuilds did
+            keptResumed = true;
             var session = keep?.Session ?? (smoke > 0
                 ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed, fresh: true)
                 : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
             DiagLog.BootPhase($"session started (turn {session.State.Turn}, replayed)");
             var bridge = Bridge = new SimBridge(session, text);
+            var oldFixedNorth = cameraController.FixedNorth;
+            ConfigureCameraHeading(cameraController, bridge.Content.Ruleset);
+            owned.Add(new Undo(() => cameraController.SetFixedNorth(oldFixedNorth)));
             if (keep != null) foreach (var order in keep.Queued) bridge.Queue(order);   // in their order: each was within the attention left
             if (keep != null) foreach (var unit in keep.Skipped) bridge.Skip(unit);      // this turn's skips too: no reload, no new turn
             if (Statecraft.HexTiles.HexTilesLook.Requested())   // opt-in hex-tile map (docs/hex-tiles/README.md); presentation only
@@ -301,7 +307,8 @@ namespace Statecraft.Game.UI
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
+            Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
+            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -371,6 +378,11 @@ namespace Statecraft.Game.UI
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
             DiagLog.BootPhase("units layer built");
+            // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
+            var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
+            var turnReport = report!;
+            turnReport.Showing += underAttack.Show;
+            owned.Add(new Undo(() => { turnReport.Showing -= underAttack.Show; underAttack.Clear(); }));
             var localitiesAt = LocalitiesAt(map);
             var townNamesHe = map.SettlementsFor(inputs.Map.SettlementsYaml).ToDictionary(s => s.Id, s => s.NameHe);
             var info = this.info = Own(new InfoPanelPresenter(root, bridge, text, names, nav: nav,
@@ -512,7 +524,7 @@ namespace Statecraft.Game.UI
                 {
                     if (cam != null) cam.enabled = !shown;
                     if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
-                }, recording, text));
+                }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
             }
             // It shows by itself only where the start screen does (never in the automated runs, nor under ?firstcard, which
@@ -624,19 +636,23 @@ namespace Statecraft.Game.UI
             else if (Application.isPlaying && VisualShots.Requested()) StartCoroutine(VisualShots.Run(camRig, map.Frame, Debug.Log));
         }
 
-        /// <summary>Settings' language switch (#1036): every screen again in <paramref name="language"/> at once, no reload,
-        /// over the same game with this turn's orders (Begin's keep), and Settings open again with the focus on the choice
-        /// just made (for a mouse press too: the rebuilt UI has no focus to keep). Not in a smoke run (smokeRun).</summary>
+        /// <summary>The language switch of Settings (#1036) and of the start screen (#2054): every screen again in
+        /// <paramref name="language"/> at once, no reload, over the same game with this turn's orders (Begin's keep), and the
+        /// place it was pressed in open again with the focus on the choice just made (for a mouse press too: the rebuilt UI
+        /// has no focus to keep): the start screen, offering Continue only if it did, or else Settings. Not in a smoke run
+        /// (smokeRun).</summary>
         void SwitchLanguage(GameInputs inputs, string language)
         {
             if (Bridge == null || smokeRun) return;
             Language = language;
             endClosed = end != null && !end.IsOpen;   // read before Begin disposes it
-            Begin(inputs, 0, keep: Bridge);
-            nav?.Open("settings");
+            bool fromStart = start?.IsOpen == true;
+            keptResumed = start?.Resumed ?? true;
+            Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
+            if (!fromStart) nav?.Open("settings");
             // Focus the choice again a frame later: a screen shown this same tick cannot take the focus until its
             // styles resolve, and a bare Focus() then leaves it wherever it was (#1915's tour test read end-turn).
-            if (document.rootVisualElement.Q<Button>("settings-language-" + language) is Button choice)
+            if (document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language) is Button choice)
             {
                 choice.Focus();
                 choice.schedule.Execute(() => { if (choice.panel != null) choice.Focus(); });
@@ -785,6 +801,10 @@ namespace Statecraft.Game.UI
 #else
         static void HandCursor(bool on) { }   // the game ships as the browser build; the editor keeps its own cursor
 #endif
+
+        // R-CAMERA-001: exact ruleset identity; gdd-0.1 retains orbit.
+        internal static void ConfigureCameraHeading(CameraController controller, string ruleset) =>
+            controller.SetFixedNorth(CameraHeadingPolicy.IsFixedNorth(ruleset));
 
         /// <summary>Disposes every presenter, the autosave and the camera/pointer hooks (newest first). Safe to call twice.</summary>
         void Shutdown()

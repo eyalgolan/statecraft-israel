@@ -79,6 +79,8 @@ still pending, and no row below was moved to [V] by this update; everything adde
 - A row with an earlier group or camp but one agreed CBS and Gvati year is [V] and the earlier date is
   written out in part 2; where he.wiki gives an earlier or later founding year for the same row it is [C].
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## What counts as the valleys here
 
 There is no single boundary, so this note states its rule.

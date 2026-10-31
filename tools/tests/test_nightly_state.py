@@ -12,11 +12,38 @@ from conftest import FakeRunner  # noqa: E402
 
 
 def test_version_and_tag_follow_the_spec():
-    assert ns.base_version('public const string Version = "0.3.1";') == "0.3.1"
-    assert ns.nightly_version("0.3.1", date(2026, 10, 28)) == "0.3.1-nightly.20261028"
-    assert ns.tag_for("0.3.1-nightly.20261028") == "v0.3.1-nightly.20261028"
-    with pytest.raises(ValueError):
-        ns.base_version('Version = "0.3"')
+    assert ns.next_version([{"tag_name": "v0.3.1", "draft": False}]) == "0.3.2"
+    assert ns.tag_for("0.3.2") == "v0.3.2"
+
+
+@pytest.mark.parametrize("tags,expected", [
+    (["v0.3.9", "v0.3.1"], "0.3.10"),
+    (["v0.9.9", "v0.10.0"], "0.10.1"),
+    (["v0.03.1"], "0.3.2"),
+    (["v0.03.1", "v0.3.1"], "0.3.2"),
+    (["v0.3.1", "v0.03.1"], "0.3.2"),
+    (["v9.99.99", "v10.12.19"], "10.12.20"),
+    (["v0.3.1", "v99.0.0-nightly.20261028", "0.9.9", "v1.2.3-extra", "v9.9.9\n"], "0.3.2"),
+])
+def test_next_version_compares_only_exact_release_tags_numerically(tags, expected):
+    rows = [{"tag_name": tag, "draft": False} for tag in tags]
+    rows.append({"tag_name": "v99.99.99", "draft": True})
+    assert ns.next_version(rows) == expected
+
+
+@pytest.mark.parametrize("rows", [[], [{"tag_name": "v0.3.1-nightly.20261028", "draft": False}],
+                                   [{"tag_name": "v0.3.1", "draft": True}]])
+def test_next_version_refuses_without_a_published_exact_tag(rows):
+    with pytest.raises(ns.Refused, match="no published vX.Y.Z release"):
+        ns.next_version(rows)
+
+
+@pytest.mark.parametrize("row", [{}, {"draft": False}, {"tag_name": 3, "draft": False},
+                                 {"tag_name": "v0.3.1", "draft": "false"}, None])
+def test_next_version_refuses_malformed_release_rows(row):
+    with pytest.raises(ns.Refused) as e:
+        ns.next_version([row])
+    assert e.value.gate == "version"
 
 
 def test_the_night_is_the_jerusalem_date():
@@ -170,3 +197,38 @@ def test_notify_default_run_is_looked_up_when_called(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda a, **k: calls.append(a))
     ns.notify("Statecraft nightly", "msg")
     assert calls and calls[0][:2] == ["osascript", "-e"]
+
+
+def test_old_state_without_ownership_or_recovery_fields_loads(tmp_path):
+    # Mutation: require the new fields in state files written before this change.
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps({"open_draft": "v0.3.2", "site_pending": "0.3.1", "boot_baseline": []}))
+    state = ns.load_state(path)
+    assert state.open_draft == "v0.3.2" and getattr(state, "open_draft_id", None) is None
+    assert state.site_pending == "0.3.1" and getattr(state, "latest_recovery_pending", None) is None
+
+
+def test_ownership_and_pending_recovery_round_trip(tmp_path):
+    # Mutation: omit the ID or pending record from serialization, including a null previous Latest.
+    state = ns.State(open_draft="v0.3.2", open_draft_id=101,
+                     latest_recovery_pending=ns.LatestRecovery("v0.3.2", None))
+    path = tmp_path / "state.json"
+    ns.save_state(path, state)
+    assert ns.load_state(path) == state
+
+
+@pytest.mark.parametrize("extra", [{"open_draft_id": True}, {"open_draft_id": "101"}, {"open_draft_id": 0},
+                                   {"latest_recovery_pending": {}},
+                                   {"latest_recovery_pending": {"failed": 1, "previous": None}},
+                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": False}},
+                                   {"latest_recovery_pending": {"failed": "v0.3.2", "previous": ""}}])
+def test_invalid_ownership_or_pending_record_refuses(tmp_path, extra):
+    # Mutation: accept a malformed ownership ID or recovery target and guess a public action.
+    # Value-validation guard: first prove the same keys are supported with valid values.
+    path = tmp_path / "state.json"
+    valid = {"open_draft_id": 101, "latest_recovery_pending": {"failed": "v0.3.2", "previous": None}}
+    path.write_text(json.dumps(valid))
+    assert ns.load_state(path).open_draft_id == 101
+    path.write_text(json.dumps({**valid, **extra}))
+    with pytest.raises(ns.Refused):
+        ns.load_state(path)

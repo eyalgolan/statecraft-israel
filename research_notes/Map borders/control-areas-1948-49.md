@@ -24,6 +24,8 @@ observers recorded. The colours mean **military control on a date**, nothing els
 - All requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
   Nothing was logged into or submitted. Downloaded scans stayed in the session scratchpad and are not in the repository.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. Summary of findings
 
 1. **The best single source found is an Israeli government map**: Israel State Archives (ISA), Prime Minister's Office,
