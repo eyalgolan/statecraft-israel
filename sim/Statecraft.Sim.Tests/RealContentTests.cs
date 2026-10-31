@@ -102,6 +102,63 @@ public class RealContentTests
             targets.Where(enemyHeld.Contains).OrderBy(x => x, StringComparer.Ordinal));
     }
 
+    // Owner on #1796 (26 October 2026, "Contested + move target"): at 4.4 km (#1183) Ramla and Rehovot share hex (-4, 24), so
+    // Ramla's capture target is the neighbour nearest Ramla's point, (-3, 24). A unit standing on Rehovot's hex alone does not
+    // capture Ramla; one on (-3, 24) does.
+    [Fact]
+    public void AUnitAloneOnRehovotsHexDoesNotCaptureRamla()
+    {
+        Assert.Equal((-4, 24), C.SettlementHexes.Where(h => h.Id == "ramla" || h.Id == "rehovot").Select(h => (h.Q, h.R)).Distinct().Single());
+        GameState Held(int q, int r)
+        {
+            var s = Simulation.NewGame(C, 42, Mode.Historical);
+            s.Units.Clear();
+            s.Units.Add(1, new Unit(1, "recruit", q, r, side: Movement.PlayerSide, strength: 2));
+            SettlementControl.Capture(C, s, s.Date.AddDays(7), new List<Cause>());
+            return s;
+        }
+        Assert.False(Held(-4, 24).Settlements.ContainsKey("ramla"));
+        Assert.Equal(Movement.PlayerSide, Held(-3, 24).Settlements["ramla"].Owner);
+    }
+
+    // R-CTRL-020 with Ramla's moved target (#1796): a depopulated Ramla closes its capture hex (-3, 24), not Rehovot's (-4, 24).
+    [Fact]
+    public void ADepopulatedRamlaClosesItsTargetHexNotRehovots()
+    {
+        const string closed = "Units may not enter an enemy-held locality before its capture is possible";
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        s.Units.Clear();
+        s.Units.Add(1, new Unit(1, "recruit", -4, 25, side: Movement.PlayerSide, strength: 2));   // next to both hexes
+        s.Settlements["ramla"] = new SettlementControl(depopulated: true);
+        string? Move(int q, int r) => Movement.Move(C, s, 1, q, r, new Dictionary<int, int>(), new List<Cause>());
+        Assert.Equal(closed, Move(-3, 24));
+        Assert.NotEqual(closed, Move(-4, 24));
+    }
+
+    // R-ENEMY-001 at 4.4 km (owner review of #1796, 27 October): Rehovot shares Ramla's hex (-4, 24), and Ramla being enemy-held
+    // must not open Rehovot's hex to an enemy move.
+    [Fact]
+    public void NoEnemyMoveEndsOnRehovotsHexItSharesWithRamla()
+    {
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        var e = s.Units.Values.First(u => u.Side != Movement.PlayerSide);
+        s.Units.Clear();
+        s.Units.Add(1, new Unit(1, e.Type, -4, 25, side: e.Side, strength: 2));   // next to (-4, 24)
+        Assert.Contains((-4, 24), Movement.NoEntry(C, s, true));
+        Assert.Equal("Units may not enter an enemy-held locality before its capture is possible",
+            Movement.Move(C, s, 1, -4, 24, new Dictionary<int, int>(), new List<Cause>(), enemy: true));
+    }
+
+    // R-MOVE-005 for the player at 4.4 km (owner review of #1796, 31 October): an enemy-held Ramla closes its target hex (-3, 24)
+    // to a retreat or a Raid's withdrawal, not Rehovot's (-4, 24), which it shares with Ramla.
+    [Fact]
+    public void AnEnemyHeldRamlaClosesItsTargetHexNotRehovotsToThePlayer()
+    {
+        var s = Simulation.NewGame(C, 42, Mode.Historical);
+        Assert.Contains((-3, 24), Movement.NoEntry(C, s));
+        Assert.DoesNotContain((-4, 24), Movement.NoEntry(C, s));
+    }
+
     [Fact]
     public void MaimonBirthUsesHebrewBiographyDateAndSource()
     {

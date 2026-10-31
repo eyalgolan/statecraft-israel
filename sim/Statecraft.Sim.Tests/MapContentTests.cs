@@ -152,11 +152,11 @@ public class MapContentTests
     }
 
     [Fact]
-    public void TheRealMapHas1102HexesAndEvery1948Settlement()
+    public void TheRealMapHas1419HexesAndEvery1948Settlement()
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
-        Assert.Equal(1102, c.Hexes.Count);
-        Assert.Equal(870, c.Hexes.Count(h => h.Land));
+        Assert.Equal(1419, c.Hexes.Count);
+        Assert.Equal(1118, c.Hexes.Count(h => h.Land));
         Assert.Equal(25, c.SettlementHexes.Count);
         Assert.Equal(10, c.MapLocations.Count);
         Assert.Contains(c.SettlementHexes, s => s.Id == "tiberias");

@@ -41,20 +41,20 @@ public class StartingForcesTests
     {
         Assert.Equal(new[]
         {
-            ("golani", "Yavne'el", "veteran_soldier", "israel", 4, 10, 9),
-            ("carmeli", "Haifa", "veteran_soldier", "israel", 2, 5, 8),
-            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 4, 0, 15),
-            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 3, -3, 19),
-            ("givati", "Gedera", "veteran_soldier", "israel", 3, -5, 23),
-            ("etzioni", "Jerusalem", "veteran_soldier", "israel", 3, 0, 23),
-            ("harel", "Sha'ar HaGai", "veteran_soldier", "israel", 1, -2, 23),
-            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 1, -9, 27),
-            ("egyptian_expeditionary_force", "Gaza", "egyptian_army", "egypt", 10, -11, 27),
-            ("arab_legion", "Ramallah", "arab_legion", "jordan", 5, 0, 22),
-            ("syrian_army", "South of Lake Tiberias, before Samakh", "syrian_army", "syria", 3, 10, 10),
-            ("iraqi_expeditionary_force", "The high ground over Gesher", "iraqi_army", "iraq", 3, 9, 11),
-            ("arab_liberation_army", "al-Malikiyya", "arab_liberation_army", "ala", 4, 12, 4),
-            ("brigade_7", "Hulda (headquarters for the Latrun attacks)", "veteran_soldier", "israel", 2, -4, 23),   // arrives (R-UNIT-009)
+            ("golani", "Yavne'el", "veteran_soldier", "israel", 4, 11, 11),
+            ("carmeli", "Haifa", "veteran_soldier", "israel", 2, 6, 9),
+            ("alexandroni", "Netanya (Camp Dora)", "veteran_soldier", "israel", 4, 0, 17),
+            ("kiryati", "Tel Aviv", "veteran_soldier", "israel", 3, -3, 21),
+            ("givati", "Gedera", "veteran_soldier", "israel", 3, -6, 26),
+            ("etzioni", "Jerusalem", "veteran_soldier", "israel", 3, 0, 26),
+            ("harel", "Sha'ar HaGai", "veteran_soldier", "israel", 1, -3, 26),
+            ("negev", "Nir Am (Mekorot camp)", "veteran_soldier", "israel", 1, -11, 31),
+            ("egyptian_expeditionary_force", "Gaza", "egyptian_army", "egypt", 10, -12, 31),
+            ("arab_legion", "Ramallah", "arab_legion", "jordan", 5, 0, 25),
+            ("syrian_army", "South of Lake Tiberias, before Samakh", "syrian_army", "syria", 3, 13, 10),
+            ("iraqi_expeditionary_force", "The high ground over Gesher", "iraqi_army", "iraq", 3, 11, 12),
+            ("arab_liberation_army", "al-Malikiyya", "arab_liberation_army", "ala", 4, 14, 4),
+            ("brigade_7", "Hulda (headquarters for the Latrun attacks)", "veteran_soldier", "israel", 2, -4, 25),   // arrives (R-UNIT-009)
         }, Real.StartingForces.Select(f => (f.Row, f.Anchor, f.Type, f.Side, f.Strength, f.Q, f.R)));
         Assert.Equal(new DateTime?[] { new DateTime(1948, 5, 24) }, Real.StartingForces.Where(f => f.Arrives != null).Select(f => f.Arrives));
         var s = Simulation.NewGame(Real, GoldenRun.Seed, Mode.Historical);
@@ -144,9 +144,9 @@ public class StartingForcesTests
     public void TheRealStartingHexesArePinned() =>
         Assert.Equal(new[]
         {
-            ("golani", 10, 9), ("carmeli", 5, 8), ("alexandroni", 0, 15), ("kiryati", -3, 19), ("givati", -5, 23), ("etzioni", 0, 23), ("harel", -2, 23),
-            ("negev", -9, 27), ("egyptian_expeditionary_force", -11, 27), ("arab_legion", 0, 22), ("syrian_army", 10, 10),
-            ("iraqi_expeditionary_force", 9, 11), ("arab_liberation_army", 12, 4), ("brigade_7", -4, 23),
+            ("golani", 11, 11), ("carmeli", 6, 9), ("alexandroni", 0, 17), ("kiryati", -3, 21), ("givati", -6, 26), ("etzioni", 0, 26), ("harel", -3, 26),
+            ("negev", -11, 31), ("egyptian_expeditionary_force", -12, 31), ("arab_legion", 0, 25), ("syrian_army", 13, 10),
+            ("iraqi_expeditionary_force", 11, 12), ("arab_liberation_army", 14, 4), ("brigade_7", -4, 25),
         }, Real.StartingForces.Select(f => (f.Row, f.Q, f.R)));
 
     // A starting anchor with no hex row, a row for an anchor that does not exist, a repeated row and a q that is not a whole

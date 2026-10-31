@@ -43,7 +43,7 @@ public class SitesContentTests
     {
         var c = ContentLoader.Load(RealContentTests.ContentRoot());
         var site = Assert.Single(c.Sites, x => x.Id == "mefalsim");
-        Assert.Equal(("mefalsim", "Mefalsim", "מפלסים", -10, 27), (site.Id, site.Name, site.NameHe, site.Q, site.R));
+        Assert.Equal(("mefalsim", "Mefalsim", "מפלסים", -11, 31), (site.Id, site.Name, site.NameHe, site.Q, site.R));
         Assert.Equal(new[] { "yishuv" }, site.Kinds);
         Assert.Equal(new DateTime(1949, 6, 12), site.Founded);
         Assert.Equal("fact-checked", site.Status);
@@ -90,12 +90,12 @@ public class SitesContentTests
         // Each hex is the one tools/hexgrid.py gives for the row's sourced point (the CBS point for the two that joined, rows 7
         // and 16 of the settlements note), so moving a row to another hex is a content change a test sees.
         var hexes = yishuvim.ToDictionary(x => x.Id, x => (x.Q, x.R));
-        Assert.Equal((-8, 28), hexes["beit_kama"]);
-        Assert.Equal((-3, 24), hexes["beit_shemesh"]);
-        Assert.Equal((-10, 30), hexes["gilat"]);
-        Assert.Equal((14, 2), hexes["kiryat_shmona"]);
-        Assert.Equal((-10, 27), hexes["mefalsim"]);
-        Assert.Equal((-12, 29), hexes["reim"]);
+        Assert.Equal((-9, 32), hexes["beit_kama"]);
+        Assert.Equal((-4, 27), hexes["beit_shemesh"]);
+        Assert.Equal((-11, 34), hexes["gilat"]);
+        Assert.Equal((16, 2), hexes["kiryat_shmona"]);
+        Assert.Equal((-11, 31), hexes["mefalsim"]);
+        Assert.Equal((-13, 33), hexes["reim"]);
         Assert.All(yishuvim, x => Assert.True(x.Sources.Count(s => s.Checked != default) >= 2, x.Id));
     }
 
@@ -110,7 +110,7 @@ public class SitesContentTests
     }
 
     /// <summary>R-CAMP-002 (owner, 17 October 2026, #927): a camp site's city is the MVP city nearest by hex distance, and a tie
-    /// goes to the nearest by km. Camp 80 has one city a hex away, Hadera. Tzrifin has four, and Rishon LeZion, about 3.9 km
+    /// goes to the nearest by km. Camp 80 has one city a hex away, Hadera. Tzrifin has three MVP cities a hex away (4.4 km hexes, #1183), and Rishon LeZion, about 3.9 km
     /// away, is the nearest of them.</summary>
     // R-CAMP-002
     [Fact]
@@ -139,7 +139,7 @@ public class SitesContentTests
             Assert.Equal(tied.OrderBy(x => Km(sitePoints[site.Id], cityPoints[x])).First(), site.City);
         }
         Assert.Equal(new[] { "hadera" }, nearest["camp_80"]);
-        Assert.Equal(new[] { "petah_tikva", "rehovot", "rishon_lezion", "tel_aviv" }, nearest["tzrifin"]);
+        Assert.Equal(new[] { "petah_tikva", "rishon_lezion", "tel_aviv" }, nearest["tzrifin"]);
     }
 
     /// <summary>Q-FIELD-1 and Q-SITE-3 (#782): each yishuv site has one field site in its own hex, and no other site shares a

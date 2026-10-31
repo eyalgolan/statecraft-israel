@@ -242,7 +242,7 @@ public class MapLabelTests
     }
 
     /// <summary>Issue #1008: two locations in one hex stay two readable pills. Negba and the Iraq Suwaydan police fort share
-    /// hex (-7, 25), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 23). Close up,
+    /// hex (-8, 28), and West Jerusalem (the jerusalem settlement's pill) and East Jerusalem / Old City share (0, 26). Close up,
     /// in English and in Hebrew, both pills of each pair are shown, and no two shown pills overlap.</summary>
     [UnityTest]
     public IEnumerator LocationsSharingAHexAreBothNamedAndNeverOverlap()
@@ -882,7 +882,9 @@ public class MapLabelTests
             labels.Refresh(); yield return null;
             var home = tlv.Q<Label>().worldBound;
             TestContext.WriteLine($"units off: Tel Aviv pill {home}, kit {kit}");
-            Assert.Greater(home.yMax, pill.yMax + 20f, $"the pill {home} came back down from {pill}");
+            // #1183: 4.4 km hexes, values scale with HexM: the denser grid leaves Tel Aviv's pill clear of Kiryati without a lift (0 px measured), so it only
+            // must not stand higher than it did with the units on.
+            Assert.GreaterOrEqual(home.yMax, pill.yMax, $"the pill {home} came back down from {pill}");
             Assert.That(kit.yMin - home.yMax, Is.InRange(MapLabelsPresenter.LiftPx - 1f, 30f), $"back just above its kit: pill {home}, kit {kit}");
             // And on again: it goes back above the brigade.
             VisualToggles.Set(Statecraft.Game.Map.Units.UnitLayer.ToggleName, true);

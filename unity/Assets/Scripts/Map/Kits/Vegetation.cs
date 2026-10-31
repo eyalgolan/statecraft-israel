@@ -150,7 +150,16 @@ namespace Statecraft.Game.Map.Kits
                 if (ground.OnLot(x, z, crown) || ground.OnRoute(new Vector2(x, z), crown) || nearSand && SeaWithin(x, z, BeachBands.FullSandAt(ground.Frame, x, z, reaches) + crown)) return;
                 float y = ground.Y(x, z);
                 float yaw = float.IsNaN(yawDeg) ? spin : yawDeg;
-                trees.Add((k, Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch * squash, scale))));
+                var tree = Matrix4x4.TRS(new Vector3(x, y, z), Quaternion.Euler(0, yaw, 0), new Vector3(scale, scale * stretch * squash, scale));
+                // A patch's four trees at its own scale: the groves check them at the largest scale, but a shore is not convex, so
+                // a smaller patch's tree can stand in water the larger one clears (#1183: two did on 4.4 km hexes, KitTests).
+                if (k == TreeKind.CitrusPatch)
+                    for (int i4 = 0; i4 < 4; i4++)
+                    {
+                        var corner = tree.MultiplyPoint3x4(new Vector3((i4 & 1) == 0 ? -0.5f * GroveStepM : 0.5f * GroveStepM, 0, (i4 & 2) == 0 ? -0.5f * GroveStepM : 0.5f * GroveStepM));
+                        if (ground.Water(corner.x, corner.z)) return;
+                    }
+                trees.Add((k, tree));
             }
 
             // Citrus groves round the coastal-plain towns: rectangular blocks of rows, each grove on its own angle. Each grove's

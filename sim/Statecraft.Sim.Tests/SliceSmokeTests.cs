@@ -267,8 +267,9 @@ public class SliceSmokeTests
         var move = GoldenRun.SmokeMove(Real, start);
         var reach = Movement.Reachable(Real, start, move.Unit).Keys;
         var places = Movement.NoEntry(Real, start);
-        Assert.Contains(reach.First(), places);   // the first lit hex, Nazareth, is a place (#1304) ...
-        Assert.Equal(reach.First(h => !places.Contains(h)), (move.Q, move.R));   // ... so the move skips it
+        // At 5 km the first lit hex was Nazareth's, a place (#1304) the move skipped; at 4.4 km (#1183) it is (8, 12), no place.
+        Assert.DoesNotContain(reach.First(), places);
+        Assert.Equal(reach.First(h => !places.Contains(h)), (move.Q, move.R));   // the move takes the first lit hex that is no place
         var end = GoldenRun.PlaySmokeOrders(Real);
         var expected = GoldenManifest.Expected("smoke-orders");   // read before an update rewrites the manifest
         if (GoldenManifest.UpdateRequested) GoldenManifest.Update("smoke-orders", end.Hash());

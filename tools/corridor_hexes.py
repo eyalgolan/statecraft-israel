@@ -35,7 +35,7 @@ ROUTES = ROOT / "content" / "map" / "routes_1948.yaml"
 PATHS = ROOT / "content" / "map" / "route_paths_1948.yaml"
 HEXES = ROOT / "content" / "map" / "hexes.json"
 
-# A tenth of a kilometre against hexes 8.7 km apart: no hex the line crosses is stepped over.
+# A tenth of a kilometre against hexes 7.6 km apart (4.4 km hexes, #1183): no hex the line crosses is stepped over.
 SAMPLE_KM = 0.1
 SEGMENT_LINE = re.compile(r"^(\s*- \{ to: )(?P<to>[^,]+)(, hexes: )\[.*\]( \})\s*$")
 

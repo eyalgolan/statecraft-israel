@@ -29,8 +29,8 @@ sites:
     # present site about a year later, in 1950, because of fire from Gaza (Yad Ben-Zvi). No coordinates were found for the
     # 1949 site (#378, question 3). The hex is an Egypt-Israel armistice line hex in map/armistice_hexes_1949.yaml (display
     # only); a site may sit on one (#378, question 2).
-    q: -10
-    r: 27
+    q: -11
+    r: 31
     kinds: [yishuv]
     # The ceremony of going onto the land, 12 June 1949 (#378, question 5). Gvati's list gives 12.6.49; the Yad Ben-Zvi page
     # gives the ceremony on Jewish National Fund land on 12 June 1949. An advance party arrived on 8 June 1949 (one source,
@@ -52,8 +52,8 @@ sites:
     name_he: שדות מפלסים
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's. No new place and no new
     # fact: the source is Mefalsim's hex.
-    q: -10
-    r: 27
+    q: -11
+    r: 31
     kinds: [field]
     sources:
       - { url: "https://www.wikidata.org/wiki/Q2890190", checked: 2026-10-14 }
@@ -63,8 +63,8 @@ sites:
     name_he: בית קמה
     # Hex from the Central Bureau of Statistics point 31.44853 N, 34.76108 E (tools/hexgrid.py; Hebrew Wikipedia 39 m away).
     # No 1948 settlement, line hex or 1948 locality within one hex (settlements note, row 22).
-    q: -8
-    r: 28
+    q: -9
+    r: 32
     kinds: [yishuv]
     # Going onto the land of Tel Maliha on 19 Nisan 5709, 18 April 1949, by the Hashomer Hatzair group then called Sefiah
     # (renamed Beit Kama in June 1951, per the Beit Kama archive page). Gvati gives 18.4.49, and English Wikipedia agrees.
@@ -90,8 +90,8 @@ sites:
     # For the native reviewer (#564): "the fields of Beit Kama".
     name_he: שדות בית קמה
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
-    q: -8
-    r: 28
+    q: -9
+    r: 32
     kinds: [field]
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
@@ -102,8 +102,8 @@ sites:
     # Hex from the Central Bureau of Statistics point 31.38552 N, 34.45932 E (tools/hexgrid.py; Hebrew Wikipedia 7 m away).
     # Next to the Egypt line hexes shown from 22 February 1950 in map/armistice_hexes_1949.yaml (display only; a site may sit
     # by a line, #378, question 2). No 1948 locality within one hex (settlements note, row 25).
-    q: -12
-    r: 29
+    q: -13
+    r: 33
     kinds: [yishuv]
     # Founded 20 October 1949 as a lookout settlement on Tel Jemmeh, by the Hebrew Scouts garin Vav from the Na'an hachshara,
     # first called Tel Re'im. Gvati gives 20.10.49, and two Palmach database entries the same day. The record covers the
@@ -125,8 +125,8 @@ sites:
     # For the native reviewer (#564): "the fields of Re'im".
     name_he: שדות רעים
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
-    q: -12
-    r: 29
+    q: -13
+    r: 33
     kinds: [field]
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
@@ -140,7 +140,7 @@ sites:
     # (Yad Ben-Zvi), al-Khalisa, abandoned in 1948 (Hebrew Wikipedia; "depopulated", English Wikipedia; settlements
     # note, row 7). The owner signed off on the site (#782, Q-SENS-1); any text that names the village goes through
     # D-F1 review.
-    q: 14
+    q: 16
     r: 2
     kinds: [yishuv]
     # 18 July 1949, the first families and the start of the settlement (owner, #785): 14 families of immigrants from
@@ -173,7 +173,7 @@ sites:
     # For the native reviewer (#564): "the fields of Kiryat Shmona".
     name_he: שדות קריית שמונה
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
-    q: 14
+    q: 16
     r: 2
     kinds: [field]
     sources:
@@ -185,8 +185,8 @@ sites:
     # Hex from the Central Bureau of Statistics point 31.73178 N, 34.98828 E (tools/hexgrid.py; Hebrew Wikipedia 562 m
     # away, the same hex). No 1948 settlement in the hex; next to the Jordan line hexes jordan_adl_a_latrun and
     # jordan_adl_bc_south (display only). No source read places it on a village (settlements note, row 16).
-    q: -3
-    r: 24
+    q: -4
+    r: 27
     kinds: [yishuv]
     # December 1950, when the transit camp Ma'abarat Har-Tuv was set up (National Library), the town's start. The owner
     # accepted the month (#785): under the monthly turn the founding is the 15th, 15 December 1950. The Ministry of
@@ -211,8 +211,8 @@ sites:
     # For the native reviewer (#564): "the fields of Beit Shemesh".
     name_he: שדות בית שמש
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
-    q: -3
-    r: 24
+    q: -4
+    r: 27
     kinds: [field]
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
@@ -222,8 +222,8 @@ sites:
     name_he: גילת
     # Hex from the Central Bureau of Statistics point 31.32798 N, 34.65203 E (tools/hexgrid.py; Hebrew Wikipedia 3 m away).
     # Tifrah's hex too (designated-site-1.md), which is not a site; no line hex or 1948 locality within one hex (row 23).
-    q: -10
-    r: 30
+    q: -11
+    r: 34
     kinds: [yishuv]
     # Going onto the land on 13 Kislev 5710, 4 December 1949, by immigrants from Tunisia (a moshav of Tnuat HaMoshavim).
     # Gvati gives 4.12.49, and Hebrew Wikipedia the Hebrew date.
@@ -241,8 +241,8 @@ sites:
     # For the native reviewer (#564): "the fields of Gilat".
     name_he: שדות גילת
     # Design placement (Q-FIELD-1, owner, #782), not a historical field: the hex is the yishuv's.
-    q: -10
-    r: 30
+    q: -11
+    r: 34
     kinds: [field]
     sources:
       - { url: "https://www.cbs.gov.il/he/publications/doclib/2019/ishuvim/bycode2024.xlsx", checked: 2026-10-14 }
@@ -254,7 +254,7 @@ sites:
     # Hex from the Hebrew Wikipedia point 32.4628 N, 34.9866 E (the Camp 80 article, today Bahad Dotan; tools/hexgrid.py),
     # at the north-east entrance to Pardes Hanna-Karkur. No 1948 settlement in the hex.
     q: 2
-    r: 13
+    r: 15
     # A military training camp (owner, "Both military", 17 October 2026, #927): Gshur describes Gadna training there, which
     # included five settlement nuclei that became part of the Nahal's first intake (research on #785).
     kinds: [military_camp]
@@ -282,15 +282,17 @@ sites:
   - id: tzrifin
     name: Tzrifin
     name_he: צריפין
-    # Hex from the Hebrew Wikipedia point 31.9587 N, 34.8395 E (the Tzrifin article; tools/hexgrid.py), a modern point, not
+    # From the Hebrew Wikipedia point 31.9587 N, 34.8395 E (the Tzrifin article; tools/hexgrid.py), a modern point, not
     # the 1948-51 camp's position. The only source-given point is the 2016 survey's Compound 1 (ITM 185821, 651281, about
-    # 31.9541 N, 34.8487 E), the south-east compound of today's camp; it falls in the same hex (#785,
-    # issuecomment-6237625295). [GAP] A coordinate for the 1948-51 camp. No 1948 settlement in the hex.
+    # 31.9541 N, 34.8487 E), the south-east compound of today's camp (#785, issuecomment-6237625295). [GAP] A coordinate
+    # for the 1948-51 camp. At 4.4 km (#1183) the point falls in Rishon LeZion's hex (-4, 23), so the site stands on that
+    # hex's nearest free neighbour (owner, 22 October 2026, #1183 issuecomment-6340227456), whose centre is 8.6 km from the
+    # point. No 1948 settlement in the hex.
     q: -3
-    r: 20
+    r: 22
     kinds: [military_camp]
-    # Q-CAMP-1, R-CAMP-002: Rishon LeZion, about 3.9 km away. Petah Tikva, Rehovot and Tel Aviv are also one hex away; the
-    # tie goes to the nearest by km, Rishon LeZion (owner, 17 October 2026, #927; research note row C4).
+    # Q-CAMP-1, R-CAMP-002: Rishon LeZion, about 3.9 km away. Petah Tikva, Tel Aviv, Jaffa and Lod are also one hex away
+    # (4.4 km hexes, #1183); the tie goes to the nearest by km, Rishon LeZion (owner, 17 October 2026, #927; research note row C4).
     city: rishon_lezion
     # In the window: taken by the Givati Brigade on 18-19 May 1948 and an IDF camp from then; from 1949 Bahad 4, the IDF's
     # recruit training base, until 1967. SENSITIVE, owner review (#785): research note row C4 records a sensitivity
@@ -314,11 +316,12 @@ sites:
     # target (Q-SWAMP-3).
     name_he: ביצות החולה
     # The swamp hex: in the 1946 Survey of Palestine 1:250,000 map the marsh fills the valley north of Lake Hula, with "Hula
-    # Conces. Area" printed in it, and (14, 3) is the one hex it makes mostly wet; the lake itself is about a fifth of a hex
+    # Conces. Area" printed in it, and (14, 3) was the one hex of the 5 km grid it makes mostly wet (at 4.4 km, #1183, the site
+    # is the hex holding that hex's centre, (16, 3), not re-checked against the map); the lake itself is about a fifth of a hex
     # (research_notes/Map/historical-water-1948.md, findings 6 and 7, and section 2.5). No 1948 settlement in the hex. No
     # yishuv site may share it: a yishuv there would also gate hula_field (Projects.YishuvToBuildFirst). The one site stands
     # for the concession's works, of which the 1951 DMZ dispute was the Jordan work below the lake.
-    q: 14
+    q: 16
     r: 3
     kinds: [swamp]
     # Q-SWAMP-1: one swamp site, the Hula, sourced to the hula_drainage event's own sources, which date the works to 1951 and
@@ -342,7 +345,7 @@ sites:
     # Design placement (Q-SWAMP-1, Q-FIELD-1, owner, #782), not a historical field: drained, the Hula becomes one field site,
     # in the swamp's hex, ready once the swamp is drained (R-SWAMP-001). No new place and no new fact: the source is the
     # swamp site's.
-    q: 14
+    q: 16
     r: 3
     kinds: [field]
     sources:

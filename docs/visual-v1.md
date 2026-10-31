@@ -1208,7 +1208,9 @@ D-C (owner-verify).
   VI.3's bounds, the land within 3 km of that stretch on its Israeli side left without colour (the Strip itself stays
   Egypt's: Gaza, Deir al-Balah, Khan Yunis and Rafah read Egypt in every period, pinned by `test_control.py`).
 - *Pinned towns* (`pinned_towns`; the bake gives the town's hex the sourced side, as D-B's rule 5 does for Gazette places):
-  Mishmar HaYarden, Syria's from June 1948 to 20 July 1949 (en.wiki), whose bridgehead is narrower than the map's accuracy;
+  Mishmar HaYarden, Syria's from June 1948 to 20 July 1949 (en.wiki), whose bridgehead is narrower than the map's accuracy
+  (at 4.4 km its point falls in Rosh Pinna's hex, so the pin goes on the free neighbour nearest it, (15, 5): owner on #1796,
+  27 October 2026, "Move the pin");
   Qalqilya, on the Jordanian side from 3 April 1949 (en.wiki quotes Hadawi, who argues that the 1949 lines severed its groves
   in favour of Israel, which implies the town stayed on the Jordanian side: an inference; on the UNISPAL copy of map 1 the pen line runs along the town's western edge, which 51 m a pixel cannot settle),
   which the low-accuracy Jordan trace puts 2 km to the Israeli side; Huleiqat, Egypt's from 8 July to 19 October 1948 (en.wiki: retaken by the

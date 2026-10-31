@@ -31,7 +31,7 @@ The map is drawn hex by hex, the way Civilization draws it:
 
 `central_israel` (108 hexes, Hadera to Jerusalem, coast to the Judean hills) is what the game shows behind `?hex-tiles`.
 Name another board to show it instead: `?hex-tiles=tel_aviv_crop` (desktop `-hex-tiles tel_aviv_crop`). `tel_aviv_crop` is
-the Tel Aviv crop that sets the look: about 30 play hexes inside an environment ring. Ring hexes (`"env": true`) carry no
+the Tel Aviv crop that sets the look: about 40 play hexes inside an environment ring (`--around tel_aviv --radius 4 --env 3` on the 4.4 km grid, #1183). Ring hexes (`"env": true`) carry no
 tiles. They are one continuous landscape of noise-placed woods and meandering ground (HexEnvironment), with no hex lines.
 It is generated from the game's own hexes and 1948 settlements:
 

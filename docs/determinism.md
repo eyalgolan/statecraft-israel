@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `74fbe989d84a987728ba983a263714dcbe05abc2768033c15c3aed212cf34b63` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `d74296940a6a6c8346b38679d80ed25ef0b537d2e709048eb4989ad46a259a66` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995`.
+ministers): `SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+  --expect "SMOKE OK 5 turns 1948-10-15 9255f2bcda06ed50e38b9f77927998be5f3aef1f7206733dadaf2e2de29509c6"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -91,14 +91,14 @@ uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5
 hex of the unit `GoldenRun.SmokeMove` names (the lowest-id unit `Movement.Reachable` has a hex for: unit 0, Golani, on
 10,9), presses the unit card's Move button, clicks the first lit hex in `Reachable`'s (q, r) order that is no enemy-held
 place (7,11; it skips Nazareth's 7,10, so the run captures nothing) and presses End Turn:
-`SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b`.
+`SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78`.
 `GoldenRun.PlaySmokeOrders` plays the same turn with that one `Move`, so the value is in the manifest (`SliceSmokeTests.TheSmokeOrdersRunMovesOneUnitAndEndsOnTheGolden`) and the player's golden check
 prints it as `GOLDEN OK smoke-orders`. Re-record it when the sim or the order path on the card changes; the fortify, hold and
 attack slices can add their orders to it. Check a WebGL build with:
 
 ```
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "smoke-orders" \
-  --expect "SMOKE ORDERS OK 1948-06-15 bf0b41cce7efc8ad9f1f518b0f2c26736b5c9a25d477afc075a7f69dfbcad42b"
+  --expect "SMOKE ORDERS OK 1948-06-15 08d9800eda4462ef165cc7ea6285fad059c030c0f87ad563e35c9789cc352d78"
 ```
 
 **When a golden moves.** The test fails with the lines that changed, grouped by section (`[ind]`, `[pol]`, `[bud]`,
@@ -450,3 +450,14 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | hash1950 | `74fbe989` | every unit and the reference player's Tel Aviv housing on its 4.4 km hex (`veteran_halutz`/`housing@tel_aviv,-3,19` becomes `-3,21`); debt IL 0.1m higher: the opening fights differ on the new grid (Golani's 15 May attack goes to the Iraqi unit next to it at (11, 12), the Syrian start anchor being two hexes away, `ReferencePlayerTests`). **A behaviour change, not only coordinates: the 7th Brigade (unit 13) is cut to strength 1.** Its 24 May anchor, Hulda, falls in hex (-4, 25), which now neighbours the Arab Legion's Latrun hex (-3, 25) (on 5 km Hulda's hex (-4, 23) was two hexes from the Legion's (-2, 22)). The enemy AI's Legion attacks it on 15 October 1948 (the Legion loses 1,000) and 15 November (the 7th loses 1,000 and retreats to (-4, 24), Rehovot's hex, where it stands to the end: `13:veteran_soldier@-4,24\|side=israel\|strength=1\|full=2`); on main `hash1950` has `13:veteran_soldier@-4,23\|side=israel\|strength=2`. Its retreat skips (-3, 24) because that hex is now Ramla's capture target (owner on #1796, 26 October 2026, "Contested + move target"; a retreat never ends on an enemy-held target, R-CTRL-001); before that move it retreated there and was destroyed on 15 December. It then takes (-4, 24), which Rehovot shares with Ramla's settlement: since the target move, `Movement.NoEntry` closes Ramla's target hex, not its settlement hex, for the player as `Closed` does (owner review of #1796, 31 October 2026); before that fix it went on to (-5, 25) and stood there at strength 1. No rule or value changed beyond that target (was `8578966e`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | hash1952 | `d7429694` | same run as hash1950 to the end, the 7th Brigade at strength 1 on (-4, 24) (see hash1950); debt IL 0.1m higher (was `385ba3b5`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | smoke5 | `9255f2bc` | the first-option run on the new grid's positions (was `7bdf646a`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | smoke-orders | `08d9800e` | the one move goes to the first lit hex, (8, 12), which is no place at 4.4 km (at 5 km it skipped Nazareth's, `SliceSmokeTests`) (was `bf0b41cc`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-reckless | `63cab812` | unit positions on the 4.4 km grid; debt IL 0.05m lower. The 7th Brigade is lost to the Arab Legion (attacks on 15 October, 15 November and 15 December 1948: here it holds (-4, 25) after the second, where in hash1950 it retreats to (-4, 24) and survives), and here the Legion loses 1,000 in two of them, so it ends at strength 3, not 4; the owner accepted the loss with no special case (#1796, 27 October 2026, "Accept it") (was `a2ca9626`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-cautious | `e7ad49bf` | same as reckless, the 7th Brigade lost and the Legion at strength 3 included (was `c06d89f0`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-absorb-first | `b589c9dc` | its project hexes re-keyed to the new grid (each city's new hex plus the old offset; Rehovot's (-4, 20) offset lands on Rishon LeZion's hex, so (-3, 24)); debt IL 0.5m lower; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9c98ae51`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | mvp-end | `d7429694` | same run as hash1952 (was `385ba3b5`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-defeat | `9e2afc15` | unit positions on the 4.4 km grid; the run's late indicators differ (housing, morale, standing) with the different fights; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `b7d3848d`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-occupy-cost | `0bc59565` | Golani's unit is 5 movement points from Nazareth at 4.4 km, so the scenario moves it on 15 May to (9, 11) and onto Nazareth on 15 June, answers Occupy on 15 July and runs to 15 January 1949 (`since=1948-07-15`); as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `9fcc7bae`) |
+| #1183: the 4.4 km hex bake (owner, 21 Oct 2026; one re-pin, alone in its merge slot) | scenario-mvp-annex-nazareth | `b6df4284` | `mvp-occupy-cost`'s steps one turn later, then `end_occupation nazareth annex` on 15 January 1949, run to 15 February 1949; as in reckless, the 7th Brigade is gone and the Legion ends at strength 3 (the snapshots) (was `8fe6d129`) |

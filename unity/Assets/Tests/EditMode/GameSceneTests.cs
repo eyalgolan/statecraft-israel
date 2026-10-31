@@ -362,7 +362,11 @@ public class GameSceneTests
             // name pill does), so the click can only be the land's.
             int Room((int q, int r) h) => bridge.State.Units.Values.Select(u => MapActions.Distance(u.Q, u.R, h.q, h.r))
                 .Concat(c.SettlementHexes.Select(x => MapActions.Distance(x.Q, x.R, h.q, h.r))).Min();
-            var lit = Movement.Reachable(c, bridge.State, id).Keys.Select(k => (k.Q, k.R)).OrderByDescending(Room).First();
+            // Among the hexes that leave Golani points: a move that spends them all hands the selection to the next unit
+            // (FocusNextUnit), whose own pick then opens, so the pick would not end on Golani's card (4.4 km hexes).
+            var points = c.UnitTypes.Single(t => t.Id == bridge.State.Units[id].Type).MovementPoints;
+            var lit = Movement.Reachable(c, bridge.State, id).Where(k => k.Value < points).Select(k => (k.Key.Q, k.Key.R))
+                .OrderByDescending(Room).First();
             Assert.GreaterOrEqual(Room(lit), 1, "precondition: no unit or settlement on the lit hex");
 
             // Lay the card over the lit hex: the probe is the card's title, over the hex's middle.

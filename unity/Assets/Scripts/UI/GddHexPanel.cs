@@ -68,16 +68,19 @@ namespace Statecraft.Game.UI
                     Site(part, bridge, text, site, Work(site)!.Value, selectPioneer);
                 }
                 // #792: each corridor segment through the hex (corridors.yaml; a hex where two segments meet is in both). Not on a
-                // city's own hex, whose column is full (InfoPanelLayoutTests): every segment has another hex.
-                if (!cityHere)
-                    foreach (var d in c.Corridors)
-                        for (int i = 0; i < d.Segments.Count; i++)
-                            if (d.Segments[i].Hexes.Any(h => h[0] == q && h[1] == r))
-                            {
-                                var part = new VisualElement { name = $"corridor-part-{d.Id}-{i + 1}" };
-                                host.Add(part);
-                                Segment(part, bridge, text, d, i, selectPioneer);
-                            }
+                // city's own hex, whose column is full (InfoPanelLayoutTests), for a segment that has another hex; a segment whose
+                // every hex is a city's (the Yarkon rail link, Petah Tikva to Tel Aviv, on 4.4 km hexes) shows on its first hex
+                // only, so it can still be built where it ran and Tel Aviv's column stays as it was (owner, 26 October 2026, #1183).
+                foreach (var d in c.Corridors)
+                    for (int i = 0; i < d.Segments.Count; i++)
+                        if (d.Segments[i].Hexes.Any(h => h[0] == q && h[1] == r) && (!cityHere
+                            || (d.Segments[i].Hexes[0][0] == q && d.Segments[i].Hexes[0][1] == r
+                                && d.Segments[i].Hexes.All(h => c.SettlementHexes.Any(x => x.Q == h[0] && x.R == h[1] && s.Cities.ContainsKey(x.Id))))))
+                        {
+                            var part = new VisualElement { name = $"corridor-part-{d.Id}-{i + 1}" };
+                            host.Add(part);
+                            Segment(part, bridge, text, d, i, selectPioneer);
+                        }
                 CityProjects(projects, bridge, text, q, r, townName, cityHere);
             }
             host.style.display = host.childCount > 0 ? DisplayStyle.Flex : DisplayStyle.None;

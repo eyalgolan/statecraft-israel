@@ -224,7 +224,10 @@ units:
       sources:
       - {url: 'https://he.wikipedia.org/wiki/%D7%9E%D7%91%D7%A6%D7%A2_%D7%91%D7%A8%D7%95%D7%A9', checked: '2026-10-15'}
       - {url: 'https://en.wikipedia.org/wiki/Rosh_Pinna', checked: '2026-10-15'}
-    place_hex: [12, 6]
+    # #1183 (owner, 26 October 2026): at 4.4 km the bridgehead token stands on (15, 6); (14, 7) is the Israeli-held hex
+    # next to it (I in every period, control_hexes_1948_49.yaml) nearer the toward point, Rosh Pinna (about 7 km; the other,
+    # (15, 5), is about 11 km), so the token faces the bridgehead from Brosh's headquarters side, as the note says.
+    place_hex: [14, 7]
     sources:
     # Organisation of Haganah Heritage, Lexicon, "Brigade 2 Carmeli": the brigade's HQ and most of its forces in Operation Brosh (July 1948) against the Syrian bridgehead at Mishmar HaYarden.
     - {url: 'https://hahagana.org.il/lexicon/lexiconpage/?itemId=47620', checked: '2026-10-15'}
@@ -527,6 +530,17 @@ units:
     end_basis: source
     end_note: "Operation Bin Nun Alef (24-25 May) and Bin Nun Bet (30-31 May; IDF, Mishpat VeTzava 20, the row's source); he.wiki: in June 1948 the brigade moved north."
     note: "The brigade attacked Latrun from the Israeli headquarters at Hulda (Battles of Latrun); Shlomo Shamir led both attacks. Anchored at Hulda, not Latrun: the Arab Legion held Latrun and the ridge behind it (Yalu, Beit Nuba), and the ground between was contested until the area of Beit Jiz and Beit Susin was cleared on 28 May; Sar'a was taken only on 13-14 July."
+    # #1183: on 4.4 km hexes Hulda's own hex has no clear full-size spot and the nearest clear centre is 5.5 km off, so the
+    # token takes a compact spot inside Hulda's hex (UnitsInPlayTests: the 7th stands by Hulda).
+    place_hex: [-4, 25]
+    toward:
+      place: Hulda
+      lon: 34.88333
+      lat: 31.83222
+      note: "The brigade's headquarters for both Latrun attacks (Battles of Latrun); Israeli-held throughout."
+      sources:
+      - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-11'}
+      - {url: 'https://en.wikipedia.org/wiki/Hulda,_Israel', checked: '2026-10-12'}
     sources:
     - {url: 'https://en.wikipedia.org/wiki/Battles_of_Latrun_(1948)', checked: '2026-10-11'}
     - {url: 'https://en.wikipedia.org/wiki/Hulda,_Israel', checked: '2026-10-12'}
@@ -678,7 +692,7 @@ units:
     end_basis: source
     end_note: Operation Horev, from 22 December 1948, in the south; no place is given for the brigade there.
     note: "One place picked from the sector: the source names the Jerusalem corridor as the sector and Sha'ar HaGai as the end of the road the brigade opened (and as a battalion's name). The Ministry of Defence memorial site (Izkor, Harel memorial rock): the brigade was the mobile strike force of the Jerusalem area, and the rock stands on the narrow stretch between Sha'ar HaGai and Saris where convoys to Jerusalem passed under its battalions' escort."
-    place_hex: [-2, 23]
+    place_hex: [-2, 26]
     toward:
       place: Saris
       lon: 35.07389
@@ -1157,6 +1171,17 @@ units:
     end_basis: source
     end_note: "en.wiki 1948 Arab-Israeli War: the first truce ran from 11 June to 8 July 1948. Dupuy p. 73: the four weeks of truce expired on 8 July."
     note: "al-Tall pp. 180-181: the 4th Battalion held Latrun to the truce; Dupuy p. 65: the 2nd and 4th held it by early June; the joint headquarters' line names it (AP, 13 June). No date before 17 May is used: Latrun on 15 May rests on al-Tall alone (the note, section 8)."
+    # #1183 (owner, 26 October 2026): Latrun's hex is pinned Jordan-held (control_digitise.PINNED); its centre is not clear
+    # of the fort's kit and roads at 4.4 km, so the token takes a compact spot inside it rather than the Israeli-held hex south.
+    place_hex: [-3, 25]
+    toward:
+      place: Latrun police fort
+      lon: 34.98036
+      lat: 31.8381
+      note: "The fort the British handed to the Arab Legion on their withdrawal, which remained a salient under Jordanian control after the 1949 armistice (en.wiki, Latrun)."
+      sources:
+      - {url: 'https://en.wikipedia.org/wiki/Latrun', checked: '2026-10-26'}
+      - {url: 'https://www.wikidata.org/wiki/Q16129570', checked: '2026-10-18'}
     sources:
     - {url: 'https://archive.org/details/elshandawily9575', checked: '2026-10-13'}
     - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
@@ -1276,6 +1301,20 @@ units:
     end_basis: source
     end_note: "Dupuy p. 51 has the force attacking Gesher the next afternoon (16 May) and again the next day (17 May), and Ben-Gurion's diary of 16 May has the Iraqi army attacking farms in the Jordan Valley. The window keeps 15 May only, by the owner's decision (17 October 2026, on #860)."
     note: "Dupuy p. 51: the main force forded the Jordan near the pipeline south of Ma'ad and took the high ground over Gesher. Ben-Gurion's diary, 16 May: attacks on the Jordan valley farms from the direction of Naharayim. The coordinates are Gesher's."
+    # #1183: at 4.4 km Gesher's hex (11, 12) and every west-bank neighbour are Israeli-held (control_hexes_1948_49.yaml).
+    # Dupuy p. 51 ("occupied the high ground overlooking the settlement of Gesher") names no bank or spot, so no hex is
+    # sourced: by the owner's nearest-free-neighbour rule the token takes the non-Israeli neighbour nearest Gesher's point,
+    # (11, 13) on the east bank (about 7.1 km; (12, 12) is about 8.7 km), placed toward Naharayim, the diary's direction.
+    place_hex: [11, 13]
+    toward:
+      place: Naharayim
+      lon: 35.57285
+      lat: 32.6444
+      note: "Ben-Gurion's diary, 16 May 1948: the Iraqi attacks on the Jordan valley farms came from the direction of Naharayim, on the Transjordan side of the river (en.wiki, Naharayim)."
+      sources:
+      # Ben-Gurion's diary, 16 May 1948.
+      - {url: 'https://bengurionarchive.bgu.ac.il/en/node/12540', checked: '2026-10-13'}
+      - {url: 'https://en.wikipedia.org/wiki/Naharayim', checked: '2026-10-26'}
     sources:
     - {url: 'https://web.stanford.edu/group/tomzgroup/pmwiki/uploads/1793-1978-Dupuy-a-CLH.pdf', checked: '2026-10-13'}
     # Ben-Gurion's diary, 16 May 1948.

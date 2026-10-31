@@ -1,10 +1,10 @@
 {
  "id": "tel_aviv",
- "title": "Tel Aviv prototype board (radius 3, game q/r)",
+ "title": "Tel Aviv prototype board (radius 3, game q/r, centred on Tel Aviv's 4.4 km hex (-3, 21), #1183)",
  "hexes": [
   {
    "q": -3,
-   "r": 16,
+   "r": 18,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -14,7 +14,7 @@
   },
   {
    "q": -2,
-   "r": 16,
+   "r": 18,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -24,7 +24,7 @@
   },
   {
    "q": -1,
-   "r": 16,
+   "r": 18,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -34,7 +34,7 @@
   },
   {
    "q": 0,
-   "r": 16,
+   "r": 18,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "grazing_land",
@@ -44,7 +44,7 @@
   },
   {
    "q": -4,
-   "r": 17,
+   "r": 19,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -54,7 +54,7 @@
   },
   {
    "q": -3,
-   "r": 17,
+   "r": 19,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -64,7 +64,7 @@
   },
   {
    "q": -2,
-   "r": 17,
+   "r": 19,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -74,7 +74,7 @@
   },
   {
    "q": -1,
-   "r": 17,
+   "r": 19,
    "terrain": "flat",
    "ground": "beach",
    "prototype": "coastal_dunes",
@@ -84,7 +84,7 @@
   },
   {
    "q": 0,
-   "r": 17,
+   "r": 19,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "grazing_land",
@@ -94,7 +94,7 @@
   },
   {
    "q": -5,
-   "r": 18,
+   "r": 20,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -104,7 +104,7 @@
   },
   {
    "q": -4,
-   "r": 18,
+   "r": 20,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -114,7 +114,7 @@
   },
   {
    "q": -3,
-   "r": 18,
+   "r": 20,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -124,7 +124,7 @@
   },
   {
    "q": -2,
-   "r": 18,
+   "r": 20,
    "terrain": "flat",
    "ground": "plains",
    "prototype": "wheat_fields",
@@ -134,7 +134,7 @@
   },
   {
    "q": -1,
-   "r": 18,
+   "r": 20,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -144,7 +144,7 @@
   },
   {
    "q": 0,
-   "r": 18,
+   "r": 20,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "grazing_land",
@@ -154,7 +154,7 @@
   },
   {
    "q": -6,
-   "r": 19,
+   "r": 21,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -164,7 +164,7 @@
   },
   {
    "q": -5,
-   "r": 19,
+   "r": 21,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -174,7 +174,7 @@
   },
   {
    "q": -4,
-   "r": 19,
+   "r": 21,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -184,7 +184,7 @@
   },
   {
    "q": -3,
-   "r": 19,
+   "r": 21,
    "terrain": "flat",
    "ground": "plains",
    "prototype": "tel_aviv_city",
@@ -194,7 +194,7 @@
   },
   {
    "q": -2,
-   "r": 19,
+   "r": 21,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -204,7 +204,7 @@
   },
   {
    "q": -1,
-   "r": 19,
+   "r": 21,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -214,7 +214,7 @@
   },
   {
    "q": 0,
-   "r": 19,
+   "r": 21,
    "terrain": "hills",
    "ground": "grass",
    "prototype": "grazing_land",
@@ -224,7 +224,7 @@
   },
   {
    "q": -6,
-   "r": 20,
+   "r": 22,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -234,7 +234,7 @@
   },
   {
    "q": -5,
-   "r": 20,
+   "r": 22,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -244,7 +244,7 @@
   },
   {
    "q": -4,
-   "r": 20,
+   "r": 22,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -254,7 +254,7 @@
   },
   {
    "q": -3,
-   "r": 20,
+   "r": 22,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "citrus_orchard",
@@ -264,7 +264,7 @@
   },
   {
    "q": -2,
-   "r": 20,
+   "r": 22,
    "terrain": "hills",
    "ground": "hills",
    "prototype": "arab_village",
@@ -274,7 +274,7 @@
   },
   {
    "q": -1,
-   "r": 20,
+   "r": 22,
    "terrain": "hills",
    "ground": "grass",
    "prototype": "pine_forest",
@@ -284,7 +284,7 @@
   },
   {
    "q": -6,
-   "r": 21,
+   "r": 23,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -294,7 +294,7 @@
   },
   {
    "q": -5,
-   "r": 21,
+   "r": 23,
    "terrain": "flat",
    "ground": "beach",
    "prototype": "coastal_dunes",
@@ -304,7 +304,7 @@
   },
   {
    "q": -4,
-   "r": 21,
+   "r": 23,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -314,7 +314,7 @@
   },
   {
    "q": -3,
-   "r": 21,
+   "r": 23,
    "terrain": "flat",
    "ground": "plains",
    "prototype": "moshava_village",
@@ -324,7 +324,7 @@
   },
   {
    "q": -2,
-   "r": 21,
+   "r": 23,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -334,7 +334,7 @@
   },
   {
    "q": -6,
-   "r": 22,
+   "r": 24,
    "terrain": "water",
    "ground": "seabed",
    "prototype": "",
@@ -344,7 +344,7 @@
   },
   {
    "q": -5,
-   "r": 22,
+   "r": 24,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -354,7 +354,7 @@
   },
   {
    "q": -4,
-   "r": 22,
+   "r": 24,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "wheat_fields",
@@ -364,7 +364,7 @@
   },
   {
    "q": -3,
-   "r": 22,
+   "r": 24,
    "terrain": "flat",
    "ground": "grass",
    "prototype": "grazing_land",
@@ -378,31 +378,31 @@
    "note": "The Yarkon, along the north edges of the Tel Aviv row, out to the sea",
    "corners": [
     -4,
-    19,
+    21,
     0,
     -3,
-    19,
+    21,
     5,
     -3,
-    19,
+    21,
     0,
     -3,
-    19,
+    21,
     1,
     -2,
-    19,
+    21,
     0,
     -2,
-    19,
+    21,
     1,
     -1,
-    19,
+    21,
     0,
     -1,
-    19,
+    21,
     1,
     0,
-    19,
+    21,
     0
    ]
   }
@@ -412,44 +412,44 @@
    "note": "Tel Aviv to the Jerusalem road",
    "hexes": [
     -3,
-    19,
+    21,
     -2,
-    19,
+    21,
     -1,
-    19,
+    21,
     0,
-    19
+    21
    ]
   },
   {
    "note": "Tel Aviv south to the moshava",
    "hexes": [
     -3,
-    19,
+    21,
     -3,
-    20,
+    22,
     -3,
-    21
+    23
    ]
   },
   {
    "note": "To the hill village",
    "hexes": [
     -3,
-    20,
+    22,
     -2,
-    20
+    22
    ]
   },
   {
    "note": "North across the Yarkon",
    "hexes": [
     -3,
-    19,
+    21,
     -2,
-    18,
+    20,
     -1,
-    17
+    19
    ]
   }
  ]

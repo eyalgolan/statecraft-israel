@@ -73,7 +73,14 @@ public class UnitsFromStateTests
         foreach (var u in drawn)
         {
             var t = army.Single(x => x.Unit.Id == C.StartingForces[u.Id].Row);
-            Assert.AreEqual((u.Q, u.R), HexPicker.FromLonLat(t.Anchor.Lon, t.Anchor.Lat, hexes.bounds, hexes.hex_size_km), $"{t}: the sim hex");
+            var picked = HexPicker.FromLonLat(t.Anchor.Lon, t.Anchor.Lat, hexes.bounds, hexes.hex_size_km);
+            // tools/unit_anchor_hexes.py moves two kinds of anchor to a land neighbour (#1183): one in a water hex (Haifa's
+            // point on the 4.4 km grid, hexgrid.settlement_hex) and an enemy's on a settlement's hex (the Syrian Army's start
+            // on Degania Alef's, the owner's nearest-free-neighbour rule).
+            if ((u.Q, u.R) != picked)
+                Assert.IsTrue((!hexes.hexes.Single(h => (h.q, h.r) == picked).land || (u.Side != "israel" && C.SettlementHexes.Any(x => (x.Q, x.R) == picked)))
+                    && MapActions.Distance(u.Q, u.R, picked.q, picked.r) == 1 && hexes.hexes.Single(h => (h.q, h.r) == (u.Q, u.R)).land,
+                    $"{t}: the sim hex: {(u.Q, u.R)} is a land neighbour of the anchor's water or settlement hex {picked}");
             Assert.AreEqual(C.StartingForces[u.Id].Anchor, t.Anchor.Place, $"{t}: unmoved, it stands on its starting anchor");
         }
         Assert.IsEmpty(moved.Made, "no unit moved, so no moved anchor");

@@ -170,7 +170,10 @@ public class GradeTests
         {
             VisualToggles.Set("tiltshift", false);
             BorderProof.Show(map);
-            foreach (var (biome, lon, lat) in new[] { ("coastal_plain", PromoPose.Gameplay03.Lon, PromoPose.Gameplay03.Lat), ("desert", 34.80, 30.90) })
+            // #1183: the coastal plain's proof edge by (-5, 25), 7 km south-east of gameplay03's point. On 4.4 km hexes the edge nearest gameplay03,
+            // (-5, 24)-(-4, 24), has a railway drawn over the band at its fifth point (no band pixel there: blue-orange 5.6 under
+            // deuteranopia, against 15); on (-5, 25)'s edge every bar holds by 10.5 or more (measured).
+            foreach (var (biome, lon, lat) in new[] { ("coastal_plain", 34.80, 31.86), ("desert", 34.80, 30.90) })
             {
                 var (inner, outer) = BorderTests.ProofEdge(map, lon, lat, biome);
                 BorderTests.LookAtEdge(map, rig, inner);
