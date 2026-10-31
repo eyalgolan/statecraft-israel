@@ -8,7 +8,281 @@ checks this (see `CONTRIBUTING.md`).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-31
+
+### Added
 - Add the two owner-approved follow-up cards for the Jerusalem demilitarisation and Rafah roads, in English and Hebrew; both remain drafts pending human review (Refs #939).
+- The HUD holds at the Settings screen's 125% and 150% UI scales (#40): below the smallest window the 100% layout is
+  tested at (HudPresenter's new hud-tight, set from the panel's logical size; small phone windows reach it too) the
+  bar's rows, the icon column and the panels tighten; on the tight three-row window the icon column becomes a row of the
+  phone's 60 px discs under the bar (at least 24 px on screen down to 375x667) and a screen takes the window like a
+  mobile modal, with the card's backdrop leaving the row's discs clear. The decision card starts right of the tight
+  column; the info panel is a scrolling panel capped clear of the bar and the column, and on a phone at 125% or 150% it
+  stands above the minimap at the window's width; the Cabinet's side column slims so
+  the seats list keeps its room; and the small text keeps its 12 px on-screen floor at every size. The seven layout
+  suites that failed at 125%/150% now run at all three scales.
+- At 150% on short windows the Cabinet scroll shows seat cards before the house and legend; on phones at 150% the
+  half circle fits its column. Desktop half circles and the 100%/125% Cabinet order keep their existing layout.
+- The decision card's body scrolls as one (#1853): the text and the options with their effect lines sit in one scroll
+  between the pinned head and the pinned foot, so Hide stays inside the card at 150%. A card that fits shows no scroll
+  bar, Tab onto an option scrolls it into view, and a new card opens at the top of its text.
+- The unit card's subtitle now shows a sourced Hebrew number line beside the English one (#1219 item 2): the 12
+  Israeli brigades ("חטיבה 1" … "חטיבה 12", the Palmach trio marked "הפלמ״ח"), the 101 fighter squadron, INS
+  Haganah and INS Wedgwood ("קורבטה, הוכנסה לשירות ב־1948") and the five other armies each carry a `number_he`
+  line from a checked he.wiki source (agent-checked 2026-10-26, quoted in the file). Two rows are skipped with
+  reasons: `iraqi` (he.wiki composition conflict) and `lebanese` (English phrasing rests on an unread Glubb
+  snippet). The new strings join the native-speaker queue in `docs/review-queue.md` (#564). Goldens did not move.
+- Select pioneer groups from a hex list or project link to see their track, location and work, and return idle groups to civilian life. Existing project and city row actions remain available.
+- A hard event card, `reparations_vote` (#1564): the Knesset's vote of 9 January 1952 on direct talks with West
+  Germany over reparations, tagged `holocaust`. It reaches the player on 15 December 1951, with three options, the
+  historical vote to negotiate and two debated alternatives (reject any talks; a referendum first), each with a small
+  design cost. Its header photograph is Benno Rothenberg's police barriers near the Knesset, January 1952 (CC BY 4.0,
+  sensitive). The owner approved the card and options, the photograph and the costs on 25 October 2026 ("Approve all
+  three"), so it is sensitivity-reviewed (refs #1564, #1575).
+  `Hash1952`, `mvp-end` and `scenario-mvp-defeat` move.
+- New event card: the defence of Degania and where the guns go, 19-20 May 1948 (the recorded choice: the 65 mm
+  mountain guns to the Jordan Valley), with Moshe Marlin Levin's frame from Degania Alef (catalogue-dated 20 May 1948, CC BY 4.0,
+  sensitive: true; the vehicle's identification is flagged for review). The owner approved the card and its
+  photograph on 24 October 2026, so it is sensitivity-reviewed (refs #1565, #1568, #28).
+- Events: an optional `order` (default 0) decides between the cards of the same date on one turn, before the id
+  (R-EVT-006). `degania_defence` has `order: 1`, so One Army still opens the game and Degania comes second (owner,
+  24 October 2026, #1568: "One Army first").
+- A language offered to the player must name itself: `Translations.CheckDeclaredLanguage` refuses a
+  `translations/<lang>/ui.yaml` with no `ui.lang`, and one whose `ui.lang` names a different language from its
+  directory (#1606). The second is the case worth the check — a `ui.yaml` copied from another language with its code
+  left behind passes every shape check, and `ui.lang` is what the player reads to pick the Hebrew face and the
+  language branches in `EventCardPresenter` and `SharePresenter`, so the failure is silently the wrong language
+  rather than an error. Documented in `docs/translations.md`; no player code changes yet.
+- A fast one finger swipe now pans the map once by its travel past the tap threshold, even if it ends before the next frame. Ella's tap fix already keeps the swipe from selecting anything. A swipe that goes out past the threshold and back before the next frame is a pan too, and selects nothing.
+- A confirm step for ordering a unit onto a friendly unit or a city by touch or keyboard (#1661, owner's ruling of
+  26 October 2026). With a unit selected, picking a hex that holds another of your units, or a city, still selects it
+  as before, and also offers "Send <unit> to <place>" for the unit you had selected; taking it moves that unit. The
+  offer goes away once it is stale: another selection, a new turn, or a screen opening. Mouse right-click ordering is
+  unchanged. The Hebrew wording is native-review-pending.
+- Left-button map drags now use the camera's per-press 30 px onset and UI-origin latch, matching right-button drags without replaying held travel (#1661, #998). This builds on Ella Sharakanski's left-drag support in #1791.
+- Skip the Attention lesson in the gdd-0.3 opening tour while preserving its remaining steps and the full legacy/gdd-0.1 tour.
+- Add the gdd-0.3 population identity foundation: immutable records, a validated ledger, identity-aware scale, canonical state and synthetic fixture initialization. Production population, Food and command/replay integration remain held; legacy and gdd-0.1 behavior and shipped content are unchanged.
+- Add the gdd-0.3 gameplay-region geography contract, effective-map validation and immutable regional fixture pools using the existing population ledger. Keep production initialization inactive and preserve the legacy/gdd-0.1 content boundary. Regional commands, replay and production authoring remain separate work.
+- Add isolated population fixture assignments with atomic capacity checks and typed Industry rate quotations.
+- Refs #1693: add internal, fixture-only civilian profession helpers for actual-work XP, next-turn promotion, matching-course preservation and Agreed catalogue quotes. Production integration and payments remain held; legacy/gdd-0.1 behavior and content are unchanged.
+- Add typed farming rates and a detached synthetic staffed-field output evaluator for GDD 0.3 groundwork.
+- Add a synthetic immigration manifest model and content validation contract for GDD 0.3 fixtures.
+- Refuse synthetic reception evaluation when the supplied duration differs from the initialized population ledger, including civilian eligibility checks.
+- Add isolated synthetic reception fixtures for dedicated bed allocation, ordinary progress and civilian eligibility.
+- Refs #1697: add an internal, fixture-only gdd-0.3 training centre course lifecycle (start, counted course turns, cancel) on the population ledger. Graduation timing and the other open design points are refused as Deferred; no real centre, payment or game caller is added, and legacy/gdd-0.1 behaviour and content are unchanged.
+- Add isolated GDD 0.3 craftsman catalogue and course/work tick arithmetic for synthetic fixtures.
+- Add a typed military balance catalogue contract and a synthetic equipment-conservation specification for GDD 0.3.
+- Add a typed GDD 0.3 catalogue view for settled city project costs, work, effects and upkeep, isolated from gameplay.
+- Add an isolated synthetic arms workshop cycle contract with catalogue pricing and explicit reservations.
+- Add isolated housing formula arithmetic with explicit resident, condition and upkeep inputs for GDD 0.3 synthetic fixtures.
+- Refs #1704: add an internal pure Food arithmetic foundation with synthetic unit tests. No shipping call site or turn integration; existing Food paths remain unchanged.
+- Add inactive synthetic combat catalogue validation and contract fixtures for #1706 (slices 0/1 only). No strength calculation or combat activation; runtime rules and shipped content remain unchanged.
+- Add an isolated synthetic captivity identity and surrender-provenance record contract.
+- Add an inactive synthetic absorption boundary contract using catalogue thresholds and explicit settled facts.
+- Add an internal synthetic monthly-context contract for #1716; no game activation or resolver integration.
+- Add isolated gdd-0.3 map authoring schema, source document and blocking diagnostics infrastructure (refs #1721). Domain integration and canonical export remain unavailable; legacy map files are unchanged.
+- The default map shows the calm "under attack" look (grey smoke, a low fire glow, a slowly pulsing red border) on every
+  hex the turn's attacks hit, for as long as the turn report is open (#1878). It reads the sim's engagement lines and
+  changes nothing in the rules.
+- The start screen offers the language before you play: "English" and "עברית", each in its own language, with the one
+  in use marked. A choice switches the game at once, keeps the start screen up and is the same choice Settings shows and
+  keeps; "?lang=he" still wins for that visit (#2054).
+- Keep the top bar as main; show Arms in Defence and Food/Arms stocks, turn changes and existing causes in the report and Why. Preserve queued Arms purchases. Refs #731.
+- The two alternate cards from #939, `jerusalem_demilitarisation_guard` and `rafah_force_pressure`, are signed off by the
+  owner (`reviewed_by`, 28 October 2026), so the release gate no longer refuses them. Their status stays `draft`; native
+  Hebrew approval is not asserted. No text, effect or date changed.
+- Dragging the map with the left mouse button pans it, the way map apps do (#998; owner's ruling of 22 October 2026).
+  A plain left click still selects the hex and gives its orders. The pan starts only once the press leaves the click's
+  30 px slop, so a click never nudges the map, and a drag selects nothing. The click is decided on the release rather
+  than the press — a press cannot be known to be a drag until it moves — and is still queued once per physical press,
+  so each click acts exactly once. Right-drag, the touch gestures and the keyboard are unchanged.
+- Ignore a camera-render callback retained after its unit flag has been destroyed.
+- Add fixture regression coverage for workshop worker identity across paid cycles and the unresolved housing-repair parent gate; live rules stay unchanged.
+- Generate the nine inactive GDD 0.3 design-region hex lists deterministically from their approved Mandate sub-district coverage, while retaining unresolved place bindings for human review.
+- Added synthetic monthly-context regressions rejecting captured and transit pre-arrival residents while preserving constructible opening records.
+- Props for the opt-in hex-tile map, still presentation only and off by default: 20 AI-made 3D props by Tal Heuberger
+  (Higgsfield, Tripo H3.1) fill the stand-ins of the Arab village (minaret, prickly pear), Jaffa (clock tower, sea
+  minaret, belfry), the coastal dunes (scrub), the desert edge (Bedouin tent) and the Judean highlands (garrigue), and
+  three new tiles use the rest: a railway halt with a packing house, coastal ruins with a landing stage, and a village
+  mill with threshing floors and terraces. The props stream after the first frame from a bundle of their own, only
+  with `?hex-tiles` on, so the default download does not grow. `HexSandboxImport.RunHiggsfield` imports a manifest of
+  such props (refs #18).
+- Each option on an event card lists what it does under its label, in English and Hebrew: one line per effect, from the
+  simulation's preview (#1125, Refs #811). The option's label, price and selection are unchanged.
+- The end report carries the score's parts (objective points, timing bonuses, prisoner points) beside the total, read from the final state; no screen shows them yet (Refs #812).
+- The end screen can show a cause's sourced history note under its line (Q-DEF-4 (b)); a cause without a note goes
+  straight from its line to the score. The armistice note for a war loss is held out of the strings until the person's
+  check of the history note is recorded, so no ending shows a note yet (Refs #812).
+- The end screen shows the prisoners returned (Q-END-3): one line, "Prisoners returned:" and the count in people as the
+  Defence screen counts them, only when some prisoners went home. The end report carries the count (#812).
+- Keep nightly managed gates and compiler shutdown under the shared machine lock, with node reuse and shared
+  compilation disabled.
+- Record the nightly draft release ID before uploads, refuse cleanup of a different release, and retry a recorded failed Latest recovery before the next run proceeds.
+- Nightly builds: every night at 03:00 (Israel time) the newest `main` is built, checked against the build that is live
+  and, only if every check passes, published as a GitHub pre-release that the website's demo serves (`docs/RELEASING.md`,
+  "Nightly builds"). itch.io uploads follow once the automated save test passes.
+- Preserve the completed gzip player before Unity builds the Pages variant, so Bee cannot retire files needed by packaging and browser gates. Existing release, source-cleanliness and publication gates remain in place.
+- Record the approved regional design associations and capital choices separately from historical evidence. Retain unresolved geometry, control and camp-footprint checks; stage schema adaptation and named-place acceptance fixtures while regional activation remains off under gdd-0.3.
+- Add production-command regression coverage for qualification localization keys and arguments; game behavior is unchanged.
+- The Arab Liberation Army's token shows Tal Heuberger's ALA infantry as its third figure, beside two of the original
+  irregulars (C09), as the owner chose on 27 October 2026 after signing off all 19 of Tal Heuberger's generated models
+  (#756). The figure streams after the first frame in a bundle of its own, opened after the people's; the token still
+  waits only for C09, and keeps two figures if the new bundle is missing. Goldens did not move.
+- Tal Heuberger's Bedouin civilian and enclosed striped Bedouin tent stand in the Bedouin camp areas (the owner signed
+  off all 19 of Tal Heuberger's generated models on 27 October 2026, #756): the figure at up to three of the camels'
+  served camp areas, the tent at up to three Bedouin-area anchors on clear ground apart from the code-built camps'
+  plots, whose tents stay as they are. Both models stream after the first frame, each in a bundle of its own. Goldens
+  did not move.
+- The Egyptian Expeditionary Force is on the map, wearing Tal Heuberger's Egyptian infantry figure (the owner signed
+  off all 19 of Tal Heuberger's generated models on 27 October 2026, #756). It is one token: in the normal game the
+  force's sim unit, from Gaza on 15 May 1948; in the legacy loop its row's dated anchors, at the first truce the forward
+  base at Isdud (the rear base at Majdal stays in the row and on the card). The figure streams after the first frame in
+  a bundle of its own, opened after the people's, so the first download does not grow. Goldens did not move.
+- The Lebanese army is on the map at al-Malikiyya from 6 June to 8 July 1948, drawn with Tal Heuberger's Lebanese regular
+  (owner, 28 October 2026: "6 Jun to 8 Jul (Recommended)"; sources: Dupuy p. 47 and the JTA bulletins of 7 and 8 June).
+  It has no sim unit: its token is map-only in both loops (owner, 27 October 2026: "Map-only token (Recommended)") and
+  never moves or fights. The figure streams after the first frame in a bundle of its own. Goldens did not move.
+- Keep internal decision references out of the Lebanese unit card in English and Hebrew; retain the source and unresolved checks in its data record.
+- Refresh unit figure keep-clear bounds after model streaming or retirement, including when the camera stays still, and avoid reading retired mesh components.
+- Hebrew wording: a captured place that Israel holds reads "מוחזק" and "תקופת ההחזקה" in the Why panel and the turn
+  report, never כיבוש or שחרור, as the strings file's own rule says; the Jerusalem demilitarisation and Rafah cards ask
+  "על {prime_minister} להחליט" like the other cards; a finished city project reads "סיום"; the pioneer card says
+  "משושה" like every other hex string; and the Degania card writes מ״מ with gershayim.
+
+### Fixed
+- Stream Tal Heuberger’s original models for the map views that need them, retire generated consumers before releasing sources, and reacquire on a revisit. Preserve fallback while loading and retained shared road, train, wildlife and hex-board ownership. (Refs #1273)
+- Use explicit owner-approved production policy with diagnostics off by default; keep the existing unit appearance rules and correct large-coordinate ground-focus projection without widening admission distances.
+- Restore 73 Tal original FBX files and their JPEGs with source-hash provenance (54 FBX contain only owner-approved same-length author-path blanking). Keep fresh-main generated Syrian/Iraqi figures and people-first download ordering intact.
+- Keep the sea and air craft out of residency (owner ruling, 26 October 2026): they are asked for once in view and show at the 60 km gameplay view, as before.
+- Tiberias, Safed and Hanita are no longer coloured Arab-held in 1948, and the city panel's "Held by" line agrees
+  (#1659). A mapped settlement's hex now takes the control at the settlement's own point rather than at the hex's
+  centre, which could sit the other side of the traced line; Tiberias is placed on a substitute hex whose own hex is
+  lake, so its centre said nothing about the town. Rosh Pinna gains the Hula valley's contested opening (15 May to
+  11 June 1948) for the same reason, its point falling inside that cited overlay where its hex centre did not. Four of
+  the 410 hexes change in all. The contested, pin and Jerusalem rules still apply on top, and two settlements sharing
+  a hex must agree about its control or the bake fails rather than picking a winner. Display only: the sim never reads
+  the control layer. Owner's rulings of 25 October 2026 (option (a)) and 26 October 2026 ("as Ella built it").
+- A very fast one-finger swipe no longer selects a hex (#1661 item 4; owner's ruling of 26 October 2026). A finger is
+  sampled once a frame, so a press, a long travel and a lift inside one input update left the press and the sample at
+  the same point: the slop saw nothing move, however far the finger went, and the swipe came back as a tap at the
+  release point. The press now also carries the finger's travel within the frame, so the slop sees it and the gesture
+  is a drag. The mouse's right button is stepped from its action callbacks and reports no travel, so right-click
+  ordering is unchanged.
+- Key the remaining 68 report Cause producers for Hebrew rendering while preserving English messages and simulation rules.
+  Hebrew drafts await native review; sensitive capture and displacement wording awaits sensitivity review (#1682, #564).
+- How to play omits Attention and uses ruleset-specific event, top-bar and End-turn help under gdd-0.3. Earlier rulesets keep their original guide. New Hebrew help is a draft pending native review. (Refs #1688)
+- Under gdd-0.3, an enemy holding a city no longer ends the game. Economic and dated ends still apply; legacy and gdd-0.1 keep their existing rules. (Refs #1711)
+- The empty map panel's English and Hebrew hints say to drag to move the map,
+  covering either mouse button and one-finger touch panning.
+- The Hebrew city panel no longer shows "a winery" and "vineyards" in English inside a Hebrew line (#1781). The
+  `winery` project kind gets a `name_he` like its three siblings, and the resource it requires is named by a
+  `city.resource.<id>` UI string in both languages. The resource's name lives in the strings rather than in
+  `content/`, because a resource is a record nested inside a city and the translation contract binds only a
+  `<file>#<list>.<id>.<field>` key (`HebrewOverlay.Bindings`). Both wordings are `agent-checked`, for the native read
+  under #564.
+- The city panel's Jobs line ("Jobs: 106 of 106 filled") stays on one line at 1024x768 in English (#1789). Layout
+  could round its box one raster pixel narrower than its text, so "filled" dropped onto the Refugees line below.
+  The paired counts (Jobs and Craftsmen, Refugees waiting and Overflow) no longer break across two lines.
+- A very fast pinch no longer pans the map or selects a hex: a second finger that touches and lifts between two
+  input samples is now counted.
+- Hex map: a unit or placed figure whose model carries its own root rotation (the Collection vehicles' import fix) keeps
+  it when it turns, so the Willys jeep, the Sandwich truck, the horse wagon and the citrus truck will stand on their
+  wheels instead of lying on their side. Players see it once the alias rows that draw those vehicles land (#1955) (#2006).
+- A Hebrew locality tooltip no longer repeats the pill's own name (#2022): where the Hebrew today name is the Hebrew
+  1948 name (Umm el Fahm and Umm al-Fahm are both אום אל-פחם - 48 rows), `Localities.TodayName` returns no today name
+  in Hebrew, so the tooltip the pill already gives is not restated. The info panel's Hebrew line is unchanged (it
+  already dropped the repeat) and English tooltips keep the today name.
+- `tools/advisor_clips.py ingest` now checks the new picture in a temporary folder before it replaces the shipped clip, so a
+  picture that fails the checks leaves the old one in place, and `--lang he` refuses a picture that differs from the
+  shared `<message>.mp4`.
+- Region borders no longer stop in mid-air where they meet land the 1948 lines leave without colour. On the south
+  coast at the game's start, Shoval's blue hex drew a lone edge against the Hebron hills, and the 9 July front ended
+  abruptly at the uncoloured Gaza sub-district. Land without colour now works like the land beyond the frontier: it
+  draws no band of its own, and each side's band runs along its edge. Every pinned settlement hex (Negba, Yad
+  Mordechai, Nir Am, Shoval and the rest) now gets a closed blue ring, and every front closes, in every period from
+  15 May 1948 to the 1949 armistice lines. Display only: the sim never reads the control layer. Owner's ruling of
+  27 October 2026 ("Close the borders").
+- Restored each Collection category's v0.3.1 map-wide representation (including Near specials and road vehicles), kept added Near detail camera-gated, and retired streamed originals by key without blinking unrelated models.
+- Keep rostered unit figures and vehicles visible at strategic zoom and when their token's placement is outside the
+  camera-residency footprint, while continuing to unload close-detail models on leave.
+- Keep detailed town models visible when the camera is centred on the town label or kit footprint, retain the previous town
+  only while it owns the focus or remains in its instance-bounds exit band, and match the game-town generator's footprint
+  ownership while preserving instance-bounds fallback for malformed or non-covering detailed footprints.
+- The detached GDD 0.3 assignment fixture refuses a reception-completion catalogue limit that differs from its initialized population ledger, matching the reception fixture. Refusal preserves the state. Shipping rules, catalogue values and save formats are unchanged.
+- Bound synthetic GDD 0.3 Industry and Workshop assignments by their initialized regional job pools, preserving atomic refusals and independent work kinds. The fixture remains internal with no playable or production hookup.
+- Refuse a detached GDD 0.3 training fixture whose reception duration disagrees with its initialized population ledger, before any course action or state change.
+- `scripts/check.sh`'s Unity compile step now finds a Linux editor (`~/Unity/Hub/Editor/<version>/Editor/Data`), and
+  `scripts/unity_compile/compile.sh` accepts that layout, so the check no longer always skips on Linux. macOS is unchanged.
+- A trackpad pinch zooms the map in the macOS player, as it does in the browser: the player passed the pinch to
+  nothing, so it did not zoom at all. The wheel, a two-finger scroll and the zoom keys already zoomed there.
+- Preserve earlier rejected autosaves when another unreadable autosave or temporary save is set aside, keeping each file for diagnosis.
+- An enemy token whose side figure fails to load (a missing or damaged Collection bundle) is now drawn anyway, on its
+  plinth under its side's flag with the plain built-in rifleman, at the same anchor and figure count, and the failure is
+  logged once per side (owner, 31 October 2026: "Yes, fallback in v0.3.2"; the only exception to #740's "no placeholder
+  art"). Before, no enemy unit appeared for the whole session (seen on a CrazyGames-hosted v0.3.1). While a figure is
+  still loading the token waits as before; loaded figures and Israeli tokens are unchanged.
+- Villages and neighbouring towns at 12-30 km show Tal Heuberger's building models again, as in v0.3.1, instead of
+  large plain kit houses, and Nazareth no longer shows its one oversized whole-town house up close. Below 40 km the
+  building models of every town and village in view (+3 km) load, nearest first, and unload when you zoom out (owner
+  ruling, 31 Oct 2026, "Load all in view").
+
+### Changed
+- The objective 3 railway card, `railway_complete`, is `fact-checked` (#1410): a person read its two newspaper pages
+  (HaBoker, 14 September 1949; Maariv, 22 September 1949) and the Israel Railways booklet, and all three claims hold.
+- A map drag still starts only past 30 px, and now pans only by the distance beyond it, with no catch-up jump (#1661,
+  owner's ruling of 26 October 2026). Each press measures from where it landed, so a quick release and a new press
+  between two frames can no longer pan inside the 30 px.
+- Apply the owner's Hebrew review of the remaining report Cause strings (27 October 2026; #1682, #564). The Hebrew
+  occupation countdown now reads "תורות שחרור שנותרו", and a capture left undecided at the end now says the game ended,
+  in English ("before the game ended") and Hebrew ("עד סוף המשחק"). The per-string native-review markers are removed;
+  sensitivity review of the capture and displacement wording is still open.
+- Under the separate gdd-0.3 identity, use catalogue infantry/armour movement allowances and terrain costs, and additive permanent-fort defence from existing fort locations. Keep legacy/gdd-0.1 rules and content unchanged. Artillery movement remains blocked pending approved values; existing fire rules remain unchanged. Refs #1708 (bounded slice; full cutover and release gates remain).
+- Under the gdd-0.3 ruleset, keep eight event cards legacy-only through an explicit availability manifest,
+  and reject retired event targets and unaccounted structured effects. Preserve shared event records and
+  legacy/gdd-0.1 loading; explicit Money costs retain borrowing.
+- Keep the gdd-0.3 gameplay camera facing north while retaining pan and the existing 6 to 250 km zoom. Legacy and gdd-0.1 retain orbit.
+- An EditMode guard that the capture dialog does not stay in its invisible start state (#1728). `ScreenNav.Show`
+  opens a window in `window-opening`, which pins `opacity: 0` and `scale: 0.8`, and that class is taken off in one
+  place only — on a `GeometryChangedEvent` — so a dialog that never gets one sits in the layout taking every press
+  while invisible. `HudTests` covers the screens and the decision card this way; the capture dialog was not covered,
+  and edit mode leaves `ScreenNav.Moves` off, so no test entered the transition path for it at all. No player code
+  changes.
+- Two EditMode guards for the Hebrew decision-card path (#1728): answering one card, and answering two in sequence,
+  must leave the backdrop gone, `event-open` off the root, and the info panel's area pickable. The existing coverage
+  only collapsed the card with Hide, and only in English. No player code changes.
+- `?navlog` now also prints each modal card's own classes, resolved opacity, box and enabled state on a pointer down
+  (#1728). Neither the capture dialog nor the decision card is an ancestor of the backdrop, so the pressed element's
+  ancestor chain cannot show them: a press outside a card lands on the scrim, and the chain above the scrim says
+  nothing about the card the scrim is protecting. A card held in `window-opening` stays in the layout and takes
+  presses at `opacity: 0`, which is a modal the player cannot see; the class and the opacity together say whether
+  that is what happened. Diagnostic only, behind the existing flag.
+- `?navlog` now prints the pressed element and every ancestor above it, each with its classes, on every UI pointer
+  down (#1728). A press that lands on an element nobody expected is usually a full-screen layer in front of the
+  panels, and the rules that show those layers are descendant selectors, so the class that displays one can sit on
+  any ancestor rather than only the HUD root. Diagnostic only, behind the existing flag.
+- One spelling for the Hebrew terms in English text (#1760): **ma'abara** and **ma'abarot** with a straight
+  apostrophe, by the owner's ruling of 26 October 2026, now written down in `docs/WRITING_GUIDE.md` section 10 with
+  the spellings observed in the game for the terms the owner has not ruled on (yishuv, halutz, aliyah, hakhshara
+  with kh, Knesset), marked as observed rather than ruled. The glossary's
+  `transliteration` convention moves from `decision-needed` to `preferred`. An identifier is not display text, so ids,
+  YAML keys, filenames and C# names keep their apostrophe-free spelling, and a quoted source form or a URL keeps what
+  it prints.
+- Region borders are stronger and more Civ-like (refs #196; owner ruling 27 Oct 2026, "A2: stronger bands
+  (Recommended)"): the bands keep their weight when the camera pulls out (floors of 6 px colour, 1 px light, 12 px
+  wash), both sides wash alike at 0.45 to a quarter of the hex, a light territory tint grows from 0.12 up close to
+  0.25 at the overview, and the neutral dashes stay at least 8 px. The earlier look stays selectable with
+  `bordervariant=legacy` in the WebGL URL (or `-bordervariant legacy` on desktop), and the prototype's other variants
+  with `a`, `b`, `c`, `b2` or `c2`: B adds a dark outer rim, C an Okabe-Ito blue, and A is the lighter tier of A2.
+- The detached GDD 0.3 assignment fixture reports a same-job assignment as a no-op, matching the adopted owner ruling, instead of calling its already unchanged state Deferred.
+- `QualitySettings.asset` and `URPProjectSettings.asset` are saved in the format the Unity 6000.3.25f1 editor writes,
+  so a Unity run no longer leaves them changed in the working tree. The game looks and plays the same.
+
+### Docs
+- Record the owner's 30 Oct 2026 play-time ruling: a full session targets 120 minutes, matching `gdd03-balance.yaml` (#1687).
+
+### Tests
+- Cover invariant economic cause arguments, political cause argument ordering and IDs, and map-editor digest validation boundaries.
+
 ## [0.3.1] - 2026-10-26
 
 ### Added

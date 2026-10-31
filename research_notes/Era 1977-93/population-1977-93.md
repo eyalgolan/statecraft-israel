@@ -36,6 +36,8 @@ value is given and one is named. The design also asks how CBS classifies the Asi
   "our translation". Readings of a misprint or an unclear cell are marked "our reading". Dashes in quotes (Tolts's
   en dashes) are written here as hyphens.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources
 
 | Key | Source | Where read |

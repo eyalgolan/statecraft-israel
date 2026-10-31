@@ -1,1 +1,0 @@
-- Add isolated housing formula arithmetic with explicit resident, condition and upkeep inputs for GDD 0.3 synthetic fixtures.

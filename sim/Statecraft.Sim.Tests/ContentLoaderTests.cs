@@ -346,6 +346,21 @@ targets:
         Assert.EndsWith("required", ex.Message);
     }
 
+    // #2029: a map entry written with no value (`housing:`) deserialises to null; it must be a load error naming the
+    // entry, not a NullReferenceException later in validation.
+    [Theory]
+    [InlineData("  housing: { cost: 8, housing: 0.08, morale: 0.01, name: a housing project }", "  housing:", "map_actions.housing")]
+    [InlineData("map_actions_per_turn: 2\n", "map_actions_per_turn: 2\nbudget_owners:\n  finance_minister:\n", "budget_owners.finance_minister")]
+    public void EmptyMapEntryIsAContentError(string original, string empty, string field)
+    {
+        var bad = Fixture.Files["rules.yaml"].Replace(original, empty);
+        Assert.NotEqual(Fixture.Files["rules.yaml"], bad);
+        var ex = Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(new Dictionary<string, string> { ["rules.yaml"] = bad })));
+        Assert.Equal("rules.yaml", ex.File);
+        Assert.Equal(field, ex.Field);
+        Assert.EndsWith("empty entry", ex.Message);
+    }
+
     [Theory]
     [InlineData("office:")]
     [InlineData("office: ''")]

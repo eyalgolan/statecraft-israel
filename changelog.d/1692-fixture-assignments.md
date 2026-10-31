@@ -1,1 +1,0 @@
-- Add isolated population fixture assignments with atomic capacity checks and typed Industry rate quotations.

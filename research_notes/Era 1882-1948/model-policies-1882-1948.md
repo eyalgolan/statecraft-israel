@@ -35,7 +35,7 @@ sections 4, 6 and 8.
 - **Every page opened for this note was opened by an agent on 24 October 2026; a person's check is pending.**
 - (Second pass, 27 October 2026, added line; the line above stays as written.) Every page opened in the second pass (section 13) was opened by an agent on 27 October 2026. Every [V] added then reads `[V, agent read 27 October; a person's check pending]`.
 
-Every [V] in this note was an agent's reading on 2026-10-24; a person's check is pending for all of them.
+Every [V] in this note was an agent's reading on 2026-10-24, unless the tag gives a later date; a person's check is pending for all of them.
 
 ## Sources
 

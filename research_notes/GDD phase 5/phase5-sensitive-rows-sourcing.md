@@ -14,6 +14,8 @@ This note is research, not a design. It adds no event text and changes no conten
 - Casualty, capture and strength figures are given only as a source gives them, with the version named. No quotation is reconstructed. Quoted wording below was read on the cited page.
 - The prisoner and capture figures touch people who were held in wartime camps, and the war-loss figure counts the dead. Framing follows `docs/CONTENT_POLICY.md` section 1; any card text built from this note goes through D-F1 review.
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. Prisoner returns, per front (Q-POW-3)
 
 The player's soldiers coming home, per front, with the counts both ways. Main source: the Jewish Virtual Library's "Prisoners-of-War and Captive Soldiers Exchanges" page [S, consolidated secondary], https://jewishvirtuallibrary.org/prisoners-of-war-and-captive-soldiers-exchanges, read 2026-10-15. The Israeli official source under CONTENT_POLICY section 1 is the MFA page "Background on Israeli POWs and MIAs" (26 January 2004; read via the Wayback capture of 22 November 2023, as the live page refuses scripts); JVL's text closely follows it, and where they differ both versions are [C] below. A note on the per-front "captured" totals: they mix soldiers and civilians (Jordan's 673, for example, includes the mostly-civilian Old City returnees, per he-Wikipedia citing the 1949 Hebrew press) - Q-POW-1 counts combatants only.

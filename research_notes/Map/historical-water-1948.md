@@ -18,6 +18,8 @@ regenerated: every hex figure below comes from read-only scripts run in memory o
 - Every request was made with the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
   Sources are listed at the end with the check date.
 
+Every [V] in this note was an agent's reading on 2026-10-14, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Summary
 
 1. **Dead Sea level.** The Survey of Palestine 1:250,000 map of 1946 prints the Dead Sea at **−392 m (mean water level
