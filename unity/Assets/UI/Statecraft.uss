@@ -1232,3 +1232,19 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he #arms-count { flex-direction: row-reverse; }
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
+/* #530: a still opening in the existing event-card frame. Keep its actions outside the scrolling prose, so Skip
+   remains reachable in a short window. The English historical text stays English and left-aligned in the Hebrew UI (in the
+   Hebrew face, as all text there) until its own review. */
+.opening-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: var(--navy-deep); }
+.opening-layer > .opening-card { display: flex; height: 100%; max-height: 100%; padding: 12px 24px; }
+.opening-replay { display: none; }
+.opening-preview, .opening-count { white-space: normal; flex-shrink: 0; margin: 2px 0; }
+.opening-photo { height: 240px; max-height: 32%; min-height: 80px; flex-shrink: 1; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; }
+.opening-scroll { flex-shrink: 1; min-height: 48px; }
+.opening-text { font-size: 22px; white-space: normal; margin: 8px 0; }
+.opening-arrivals { font-size: 18px; white-space: normal; margin: 8px 0; }
+.opening-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.opening-actions > Button { min-height: 44px; margin: 4px 6px; }
+.opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
+.opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
+.loading .opening-layer { display: none; }
