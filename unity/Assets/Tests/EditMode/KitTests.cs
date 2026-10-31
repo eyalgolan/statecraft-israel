@@ -845,6 +845,54 @@ public class KitTests
         }
     }
 
+    /// <summary>A real render callback in edit mode (a Scene or Game view camera) never instantiates or destroys the khaki tent
+    /// models mid-render: coming close or leaving only marks the camp, and the models come and go at the next LateUpdate
+    /// (AdvanceCameraFrame), as in play mode.</summary>
+    [Test]
+    public void AnEditModeRenderCallbackDefersTheTentModelsToLateUpdate()
+    {
+        var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
+        var root = new GameObject("deferred tent fixture");
+        var camGo = new GameObject("deferred tent camera", typeof(Camera));
+        try
+        {
+            Assert.IsFalse(Application.isPlaying, "the edit-mode render path");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
+                Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            int acquired = 0, released = 0;
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = (_, __, done) => { acquired++; done(prefab); return new FakeLease(() => released++); };
+            var kit = GameObject.CreatePrimitive(PrimitiveType.Cube); kit.transform.SetParent(root.transform, false);
+            var layer = Statecraft.Game.Map.Collection.CampTentModels.Attach(kit,
+                new[] { new SettlementKits.KhakiTent(Vector2.zero, 0f, 0f, 60f, 40f) }, Statecraft.Game.Map.Collection.ProductionResidency.Approved().Special);
+            var cam = camGo.GetComponent<Camera>();
+            camGo.transform.SetPositionAndRotation(new Vector3(0f, 10000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+
+            layer.Choose(default, cam, inRender: true);
+            Assert.IsTrue(layer.Demanded, "the close camera demands the model");
+            Assert.AreEqual(0, acquired, "but nothing is acquired inside the render callback");
+            Assert.AreEqual(0, layer.ModelCount, "and nothing is instantiated there");
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "the kit's tents draw until the models stand");
+            layer.AdvanceCameraFrame(Time.frameCount);
+            Assert.AreEqual(1, acquired, "LateUpdate acquires the model");
+            Assert.AreEqual(1, layer.ModelCount, "and places it");
+
+            camGo.transform.position = new Vector3(0f, 60000f, 0f);
+            layer.Choose(default, cam, inRender: true);
+            Assert.IsFalse(layer.Demanded, "the far camera no longer demands it");
+            Assert.AreEqual(0, released, "but nothing is released inside the render callback");
+            Assert.AreEqual(1, layer.ModelCount, "and nothing is destroyed there");
+            layer.AdvanceCameraFrame(Time.frameCount);
+            Assert.AreEqual(1, released, "LateUpdate releases the lease");
+            Assert.AreEqual(0, layer.ModelCount, "and destroys the models");
+            Assert.IsFalse(kit.GetComponent<Renderer>().forceRenderingOff, "the kit's tents are back");
+        }
+        finally
+        {
+            Statecraft.Game.Map.Collection.CampTentModels.Acquire = saved;
+            Object.DestroyImmediate(root); Object.DestroyImmediate(camGo);
+        }
+    }
+
     [Test]
     public void ADeadTentCameraIsPrunedWhileAnotherCameraKeepsTheCampResident()
     {

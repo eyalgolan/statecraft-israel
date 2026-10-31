@@ -145,6 +145,26 @@ namespace Statecraft.Game.Map.Collection
             return null;
         }
 
+        /// <summary>The world box of the kit meshes drawn for <paramref name="id"/> (its kit and its close kit, KitLayer), or null
+        /// when it has none. It is taken from the meshes, not from their renderers: the "kits" toggle disables the renderers, and
+        /// a disabled or inactive renderer can report an empty box at the origin.</summary>
+        internal static Bounds? KitBounds(Transform kits, string id)
+        {
+            Bounds? box = null;
+            foreach (Transform t in kits)
+            {
+                if (t.name != id && t.name != id + Kits.KitLayer.CloseSuffix) continue;
+                if (!t.TryGetComponent<MeshFilter>(out var filter) || filter.sharedMesh == null) continue;
+                var local = filter.sharedMesh.bounds; var m = t.localToWorldMatrix;
+                var b = new Bounds(m.MultiplyPoint3x4(local.center), Vector3.zero);
+                for (int corner = 0; corner < 8; corner++)
+                    b.Encapsulate(m.MultiplyPoint3x4(local.center + Vector3.Scale(local.extents,
+                        new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f))));
+                if (box is Bounds sofar) { sofar.Encapsulate(b); box = sofar; } else box = b;
+            }
+            return box;
+        }
+
         public static Quaternion Rotation(Quaternion prefabRotation, float yaw) =>
             Quaternion.AngleAxis(yaw, Vector3.up) * prefabRotation;
 
@@ -310,14 +330,10 @@ namespace Statecraft.Game.Map.Collection
                 Vector2? at = null;
                 if (w.Key == "degania_r35" && kits != null)
                 {
-                    var rs = kits.Cast<Transform>().Where(t => t.name == "degania_alef" || t.name == "degania_alef" + Kits.KitLayer.CloseSuffix)
-                        .Select(t => t.GetComponent<Renderer>()).OfType<Renderer>().ToArray();
+                    var village = KitBounds(kits, "degania_alef");
                     var footprint = map.KitFootprints.FirstOrDefault(f => f.id == "degania_alef");
-                    if (rs.Length > 0 && footprint.id != null)   // no kit or no footprint: the seeded spot below
-                    {
-                        var village = rs[0].bounds; for (int i = 1; i < rs.Length; i++) village.Encapsulate(rs[i].bounds);
-                        at = RouteFacingEdgeSpot(footprint.centre, village, clearance, map.KitRouteCorridors, Free);
-                    }
+                    if (village is Bounds drawn && footprint.id != null)   // no kit or no footprint: the seeded spot below
+                        at = RouteFacingEdgeSpot(footprint.centre, drawn, clearance, map.KitRouteCorridors, Free);
                 }
                 if (at == null)
                 {

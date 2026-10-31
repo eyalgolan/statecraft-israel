@@ -186,8 +186,13 @@ namespace Statecraft.Game.Tests
             Assert.IsTrue(layer.GetComponentsInChildren<Renderer>(true).All(x => x.forceRenderingOff), "hidden beyond the close zoom's exit");
         }
 
-        [Test]
-        public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide()
+        /// <summary>The R35 stands just outside Degania Alef's drawn kit, on the side facing the nearest mapped route: its centre
+        /// is on the kit's box widened by one model-clearance on each side (one clearance out from a side, up to the square root
+        /// of two clearances off a corner). The same spot with the "kits" toggle off when it is placed: the box comes from the
+        /// kit meshes, not from their (then disabled) renderers.</summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public void DeganiaTankStandsJustOutsideEveryVillageKitBoundAtTheTransportSide(bool kitsShown)
         {
             var map = OpenMap();
             // Placement runs inside the fixture; record what it logs so a seeded fallback cannot pass unnoticed.
@@ -195,8 +200,9 @@ namespace Statecraft.Game.Tests
             Application.LogCallback watch = (message, stack, type) => logged.Add(message);
             Application.logMessageReceived += watch;
             SpecialBuildingModels layer;
+            if (!kitsShown) VisualToggles.Set("kits", false);
             try { layer = CollectionGeometryFixture.Special(map, new DateTime(1948, 5, 20))!; AnswerAll(); }
-            finally { Application.logMessageReceived -= watch; }
+            finally { Application.logMessageReceived -= watch; if (!kitsShown) VisualToggles.Set("kits", true); }
             Assert.IsFalse(logged.Any(m => m.Contains("route-facing spot unavailable for degania_r35")),
                 "the R35 took its route-facing village spot, not the seeded fallback");
             var tank = layer.Placed.Single(p => p.Key == "degania_r35");
@@ -206,11 +212,16 @@ namespace Statecraft.Game.Tests
                 .Select(t => t.GetComponent<Renderer>().bounds).ToArray();
             Assert.IsNotEmpty(bounds, "Degania's far and close kit meshes define its drawn village bounds");
             var at = tank.At; float clearance = SpecialBuildingModels.ClearanceOf(tank.Model);
-            foreach (var b in bounds) Assert.Greater(b.SqrDistance(at), 0f, "the R35 centre lies outside " + b);
+            // A box's gaps to the R35's centre on the ground plane, x and z (the tank's height is the terrain's, not the kit box's).
+            (float x, float z) Gaps(Bounds b) => (Mathf.Max(b.min.x - at.x, at.x - b.max.x, 0f), Mathf.Max(b.min.z - at.z, at.z - b.max.z, 0f));
+            foreach (var b in bounds) Assert.Greater(Mathf.Max(Gaps(b).x, Gaps(b).z), 0f, "the R35 centre lies outside " + b);
             var village = bounds[0]; for (int i = 1; i < bounds.Length; i++) village.Encapsulate(bounds[i]);
-            float edgeDistance = Mathf.Sqrt(village.SqrDistance(at));
-            const float FloatSlackM = 1e-3f;   // the spot is computed on the expanded bounds' edge; 1 mm absorbs float rounding
-            Assert.That(edgeDistance, Is.InRange(clearance - FloatSlackM, clearance + 1f), "the R35 is its own clearance beyond the village edge");
+            const float FloatSlackM = 1e-3f;   // the spot is computed on the widened box's edge; 1 mm absorbs float rounding
+            // On the widened box's edge: its larger axis gap to the village box (x or z) is exactly one clearance.
+            var (gapX, gapZ) = Gaps(village);
+            Assert.AreEqual(clearance, Mathf.Max(gapX, gapZ), FloatSlackM, "the R35's centre is on the village box widened by its clearance");
+            Assert.That(Mathf.Sqrt(gapX * gapX + gapZ * gapZ), Is.InRange(clearance - FloatSlackM, Mathf.Sqrt(2f) * clearance + FloatSlackM),
+                "one clearance beyond a side of the village, up to the square root of two clearances beyond a corner");
             var footprint = map.KitFootprints.Single(f => f.id == "degania_alef");
             Vector2 nearest = Vector2.zero; float best = float.MaxValue;
             foreach (var (line, _) in map.KitRouteCorridors)
@@ -219,9 +230,11 @@ namespace Statecraft.Game.Tests
                     var a = line[i]; var ab = line[i + 1] - a;
                     float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(footprint.centre - a, ab) / ab.sqrMagnitude) : 0f;
                     var q = a + ab * t; float d = (q - footprint.centre).sqrMagnitude;
-                    if (d < best) { best = d; nearest = q; }
+                    // As the placement does: a segment through the centre gives no bearing.
+                    if (d < best && d > 1e-4f) { best = d; nearest = q; }
                 }
-            Assert.Greater(Vector2.Dot(new Vector2(at.x, at.z) - footprint.centre, nearest - footprint.centre), 0f,
+            // The candidates sweep the facing half-plane, its +/-90 degree edges included.
+            Assert.GreaterOrEqual(Vector2.Dot((new Vector2(at.x, at.z) - footprint.centre).normalized, (nearest - footprint.centre).normalized), -1e-4f,
                 "the chosen village edge is on the side facing the nearest mapped transport segment");
         }
 

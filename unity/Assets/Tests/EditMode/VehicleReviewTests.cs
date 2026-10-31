@@ -110,7 +110,11 @@ public class VehicleReviewTests
         // The placed R35 streams compressed like the other placed generated models (no Crunch, full size); review candidates stay uncompressed.
         Assert.AreEqual(CollectionCatalog.IsGeneratedProp(id) ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed,
             texture.textureCompression); Assert.IsFalse(texture.crunchedCompression);
-        if (CollectionCatalog.IsGeneratedProp(id)) Assert.AreEqual(4096, texture.maxTextureSize, "the placed R35's colour map stays at its full 4096 px");
+        if (CollectionCatalog.IsGeneratedProp(id))
+        {
+            Assert.AreEqual(4096, texture.maxTextureSize, "the placed R35's colour map stays at its full 4096 px");
+            Assert.AreEqual(100, texture.compressionQuality, "at quality 100, as the placed generated tents and houses");
+        }
         foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" })
             Assert.IsFalse(texture.GetPlatformTextureSettings(platform).overridden, platform);
         var image = AssetDatabase.LoadAssetAtPath<Texture2D>(map); Assert.AreEqual(width, image.width); Assert.AreEqual(height, image.height);

@@ -44,6 +44,8 @@ namespace Statecraft.Game.EditorTools
                 texture.GetSourceTextureWidthAndHeight(out int width, out int height);
                 texture.maxTextureSize = Mathf.NextPowerOfTwo(Mathf.Max(width, height));
                 texture.textureCompression = placed ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed; texture.crunchedCompression = false;
+                // At quality 100, as the placed generated tents' and houses' colour maps (Unity's default is 50).
+                if (placed) texture.compressionQuality = 100;
                 foreach (string platform in new[] { "Standalone", "WebGL", "Android", "iPhone" }) texture.ClearPlatformTextureSettings(platform);
                 texture.assetBundleName = ""; texture.SaveAndReimport();
                 var material = AssetDatabase.LoadAssetAtPath<Material>(dir + "/" + id + ".mat");

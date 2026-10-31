@@ -151,10 +151,10 @@ namespace Statecraft.Game.Map.Collection
             return b;
         }
 
-        void OnEnable() => RenderPipelineManager.beginCameraRendering += Choose;
+        void OnEnable() => RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
         void OnDisable()
         {
-            RenderPipelineManager.beginCameraRendering -= Choose;
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
             closeFor.Clear(); LastClose = false;
             view?.Clear();
             residency?.Replace(Array.Empty<(string, CollectionDetail)>());
@@ -168,14 +168,30 @@ namespace Statecraft.Game.Map.Collection
             if (dirty) { dirty = false; Refresh(); }
         }
 
+        /// <summary>The render callback. A change of demand never instantiates or destroys models while a camera renders, in
+        /// edit mode either (a Scene or Game view camera): it waits for LateUpdate, as in play mode.</summary>
+        void OnBeginCameraRendering(ScriptableRenderContext context, Camera cam) => Choose(context, cam, inRender: true);
+
         /// <summary>The per-camera step: the camera's demand for the model (residency), then the switch, the models up close
-        /// once they have arrived, the kit's tents otherwise.</summary>
-        internal void Choose(ScriptableRenderContext context, Camera cam)
+        /// once they have arrived, the kit's tents otherwise. A direct call in edit mode (<paramref name="inRender"/> false:
+        /// tests and editor tools, outside any render) applies a change of demand at once.</summary>
+        internal void Choose(ScriptableRenderContext context, Camera cam, bool inRender = false)
         {
             if (cam.cameraType == CameraType.Preview || cam.cameraType == CameraType.Reflection || view == null) return;
             bool before = Demanded;
             view.Observe(cam, new[] { (Key, centre, extent) }, Time.frameCount);
-            if (before != Demanded) { if (Application.isPlaying) dirty = true; else Refresh(); }
+            if (before != Demanded)
+            {
+                if (Application.isPlaying || inRender)
+                {
+                    dirty = true;
+#if UNITY_EDITOR
+                    // Edit mode runs LateUpdate only when something asks for a player-loop update.
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+                else Refresh();
+            }
             int id = cam.GetInstanceID();
             bool close = SpecialBuildingModels.CloseAt(TownLandmarks.ViewDistance(cam), closeFor.TryGetValue(id, out var was) ? was : (bool?)null);
             closeFor[id] = close; LastClose = close;

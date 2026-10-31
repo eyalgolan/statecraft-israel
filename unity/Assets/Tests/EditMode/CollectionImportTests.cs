@@ -407,8 +407,13 @@ public class CollectionImportTests
         Assert.IsNotNull(t, "CollectionImport");
         var builds = (AssetBundleBuild[])t!.GetMethod("Builds")!.Invoke(null, null)!;
         CollectionAssert.AreEqual(CollectionCatalog.Bundles.Select(b => b.Bundle), builds.Select(b => b.assetBundleName));
+        // Each model's source file, written out here rather than read from CollectionCatalog.SourceModelPath (which Builds
+        // uses): a town building's <id>.fbx in the buildings' folder, the R35's compatibility FBX, every other model's
+        // <id>.fbx in its own Collection folder (never a -near.fbx or -far.fbx).
+        string Source(string id) => CollectionCatalog.IsBuilding(id) ? $"{CollectionCatalog.BuildingsFolder}/{id}/{id}.fbx"
+            : id == CollectionCatalog.SyrianR35 ? $"{Dir(id)}/{id}-compatibility.fbx" : Model(id);
         foreach (var (b, (bundle, ids)) in builds.Zip(CollectionCatalog.Bundles, (b, c) => (b, c)))
-            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), CollectionCatalog.SourceModelPath(id) }).Distinct(),
+            CollectionAssert.AreEquivalent(ids.SelectMany(id => new[] { CollectionCatalog.PrefabPath(id, CollectionDetail.Far), CollectionCatalog.PrefabPath(id, CollectionDetail.Near), Source(id) }).Distinct(),
                 b.assetNames, bundle);
         // A strict bundle build fails on a name with no asset behind it, and the map above would not see it: every name is a file.
         var missing = builds.SelectMany(b => b.assetNames.Where(n => !System.IO.File.Exists(n) || string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(n))).Select(n => b.assetBundleName + ": " + n)).ToList();
