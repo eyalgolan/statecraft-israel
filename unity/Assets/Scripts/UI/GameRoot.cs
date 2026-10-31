@@ -67,6 +67,8 @@ namespace Statecraft.Game.UI
         EndScreenPresenter? end;
         /// <summary>Set by SwitchLanguage for its Begin: the player had closed the end screen, so the rebuilt one stays closed.</summary>
         bool endClosed;
+        /// <summary>Set by SwitchLanguage for its Begin (#2054): whether the start screen it rebuilds offered Continue.</summary>
+        bool keptResumed = true;
         AdvisorPresenter? advisor;
         /// <summary>Tests supply an in-memory approval copy for Hebrew layout; the shipped review fields are unchanged.</summary>
         internal AdvisorCatalog? AdvisorCatalogForTests { get; set; }
@@ -227,7 +229,8 @@ namespace Statecraft.Game.UI
             var store = Store ?? SaveStore.ForPlatform();
             var notes = new List<string>();
             // A smoke run is reproducible: a fresh game with the golden seed, never the player's autosave.
-            bool resumed = true;
+            bool resumed = keep == null || keptResumed;   // a language switch offers Continue as the start screen it rebuilds did
+            keptResumed = true;
             var session = keep?.Session ?? (smoke > 0
                 ? GameStart.Begin(inputs.Content, store, () => GoldenRun.Seed, notes, text, out resumed, fresh: true)
                 : GameStart.Begin(inputs.Content, store, GameStart.NewSeed, notes, text, out resumed));
@@ -304,7 +307,8 @@ namespace Statecraft.Game.UI
             // Presentation only (#40): never the sim or the save. Outside Play mode (EditMode tests) no file: the developer's
             // own settings must not leak into a test. Each Begin (New Game too) reads the file again.
             // The language switch (#1036) builds every screen again in the new language over this game (SwitchLanguage).
-            Own(new SettingsPresenter(root, text, SettingsFile(), language => SwitchLanguage(inputs, language), panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
+            Action<string> switchLanguage = language => SwitchLanguage(inputs, language);   // the start screen's too (#2054)
+            Own(new SettingsPresenter(root, text, SettingsFile(), switchLanguage, panel: document.panelSettings, audio: audio, advisors: AdvisorSession.Settings));
             // "Report a bug or idea" (#1169), from Settings and the start screen: the version line names the content GameBoot logged.
             feedback = Own(new FeedbackPresenter(root, text, ReportLinks.Version(Application.version, inputs.Content.Hash)));
             var feedbackPanel = feedback;
@@ -520,7 +524,7 @@ namespace Statecraft.Game.UI
                 {
                     if (cam != null) cam.enabled = !shown;
                     if (!shown) { if (start?.Resumed == false) advisor?.NewGame(); else advisor?.Resume(); }
-                }, recording, text));
+                }, recording, text, SettingsFile(), switchLanguage));
                 start.Show();
             }
             // It shows by itself only where the start screen does (never in the automated runs, nor under ?firstcard, which
@@ -632,17 +636,21 @@ namespace Statecraft.Game.UI
             else if (Application.isPlaying && VisualShots.Requested()) StartCoroutine(VisualShots.Run(camRig, map.Frame, Debug.Log));
         }
 
-        /// <summary>Settings' language switch (#1036): every screen again in <paramref name="language"/> at once, no reload,
-        /// over the same game with this turn's orders (Begin's keep), and Settings open again with the focus on the choice
-        /// just made (for a mouse press too: the rebuilt UI has no focus to keep). Not in a smoke run (smokeRun).</summary>
+        /// <summary>The language switch of Settings (#1036) and of the start screen (#2054): every screen again in
+        /// <paramref name="language"/> at once, no reload, over the same game with this turn's orders (Begin's keep), and the
+        /// place it was pressed in open again with the focus on the choice just made (for a mouse press too: the rebuilt UI
+        /// has no focus to keep): the start screen, offering Continue only if it did, or else Settings. Not in a smoke run
+        /// (smokeRun).</summary>
         void SwitchLanguage(GameInputs inputs, string language)
         {
             if (Bridge == null || smokeRun) return;
             Language = language;
             endClosed = end != null && !end.IsOpen;   // read before Begin disposes it
-            Begin(inputs, 0, keep: Bridge);
-            nav?.Open("settings");
-            document.rootVisualElement.Q<Button>("settings-language-" + language)?.Focus();
+            bool fromStart = start?.IsOpen == true;
+            keptResumed = start?.Resumed ?? true;
+            Begin(inputs, 0, startScreen: fromStart, keep: Bridge);
+            if (!fromStart) nav?.Open("settings");
+            document.rootVisualElement.Q<Button>((fromStart ? "start-language-" : "settings-language-") + language)?.Focus();
         }
 
         /// <summary>The 1948 localities in a hex (by the hex their point lies in, as the map picks hexes), for the info panel.</summary>

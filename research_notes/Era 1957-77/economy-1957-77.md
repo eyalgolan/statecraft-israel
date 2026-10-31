@@ -14,7 +14,7 @@ Researched 2026-10-23. All URLs were opened on that date. Research only, for iss
 - Nothing is estimated here. A figure "computed here" is plain arithmetic on the cited figures and is marked as such. "Our reading" marks an interpretation that the source does not state.
 - Page numbers are the printed page numbers of the report. "PDF p." is the page of the chapter file, where it helps to find a table.
 
-Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
 
 **Sources opened** (Bank of Israel, *Annual Report*, English edition, one PDF per chapter)
 - **BoI 1957**, chapter I: https://boi.org.il/boi_files/BankIsraelAnnualReport/Annual%20Report%201957/part%20one/pe_1.pdf

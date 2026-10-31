@@ -28,7 +28,7 @@ Soviet aliyah total and for Operation Yachin.
   "our translation". Readings of a misprint or an unclear cell are marked "our reading". Dashes in quotes (Bachi's
   year ranges, Tolts's en dashes) are written here as hyphens.
 
-Every [V] in this note was an agent's reading on 2026-10-23; a person's check is pending for all of them.
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
 
 ## Sources
 

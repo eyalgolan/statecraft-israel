@@ -12,6 +12,8 @@ Researched 2026-10-11. All URLs were checked on that date. Follow-up pass 2026-1
 - No quotes are invented. Speeches are paraphrased; the few short phrases in quotation marks are translated from the cited text.
 - **JTA dates.** A JTA bulletin is dated the day after the dispatches it carries. Each item has its own dateline, such as "JERUSALEM, Feb. 20", and "today" and "last night" refer to that dateline, not to the bulletin date. I checked this on the scanned originals of the bulletins of 21 Feb 1952, 10 Jun 1952, 12 Jun 1952 and 26 Mar 1953 (downloaded from pdfs.jta.org and read page by page). The web text of JTA's archive pages drops the datelines, so use the scans for dates.
 
+Every [V] in this note was an agent's reading on 2026-10-11, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Source caveat.** The primary text opened is Ben-Gurion's Knesset speech of 13 Feb 1952 as printed in *Hazon VaDerekh* vol. 3 (Mapai, 1951/2) and reproduced by the Ben-Yehuda Project. It is the speech as published, not the Divrei HaKnesset record. The vote comes from a JTA bulletin. The Knesset record of the debate was not opened.
 
 ---

@@ -20,6 +20,8 @@ threshold, the seats per list, and the faction changes during each term, with Ka
 - Dates are written 17 May 1977 style. Hebrew faction names are copied from the Knesset's database and glossed in
   English. No quotation is used.
 
+Every [V] in this note was an agent's reading on 2026-10-13, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources and how they were read
 
 Every request used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.

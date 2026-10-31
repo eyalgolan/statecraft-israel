@@ -18,7 +18,8 @@ namespace Statecraft.Game.UI
     /// press never wipes the save (#175, B6). Continue and Escape withdraw an open request.
     /// While it shows, the root has OpenClass (Statecraft.uss hides the HUD under it, so Tab reaches only these buttons)
     /// and <c>shownChanged</c> is told, so GameRoot can stop the camera keys. The panel's source line says the painting is
-    /// AI-generated. Beside New game, "Star on GitHub" opens the repository in a new tab (#1168, ExternalLink). Under ?navlog it
+    /// AI-generated. Beside New game, "Star on GitHub" opens the repository in a new tab (#1168, ExternalLink). At the foot,
+    /// the UI's language can be chosen before playing (#2054) with Settings' own buttons (LanguageButtons). Under ?navlog it
     /// logs where its buttons are (ButtonCentres), so tools/web_check.py clicks them wherever the layout puts them.</summary>
     public sealed class StartScreenPresenter : IDisposable
     {
@@ -57,6 +58,7 @@ namespace Statecraft.Game.UI
         readonly Button starButton;
         readonly EventCallback<GeometryChangedEvent> onLaidOut;
         readonly VisualElement[] laidOut;
+        readonly LanguageButtons languages;
         string? loggedCentres;
 
         /// <summary>The buttons ButtonCentres reports, by name.</summary>
@@ -72,8 +74,11 @@ namespace Statecraft.Game.UI
         /// <param name="text">The UI's strings for the source line and the two buttons (#193); null keeps Game.uxml's English
         /// (tests). The title is the game's name and the English lines are the Declaration's official translation: neither
         /// is translated.</param>
+        /// <param name="settings">Where the language choice is kept (Settings' file); null keeps nothing.</param>
+        /// <param name="switchLanguage">Settings' language switch (GameRoot.SwitchLanguage); null changes nothing but the
+        /// stored choice.</param>
         public StartScreenPresenter(VisualElement root, NewGamePresenter newGame, bool resumed, Action<bool>? shownChanged = null,
-            DeclarationRecording? recording = null, UiText? text = null)
+            DeclarationRecording? recording = null, UiText? text = null, SettingsStore? settings = null, Action<string>? switchLanguage = null)
         {
             this.recording = recording;
             this.newGame = newGame; this.shownChanged = shownChanged; Resumed = resumed;
@@ -93,6 +98,7 @@ namespace Statecraft.Game.UI
             starButton = screen.Q<Button>("start-star");
             unbindStar = ExternalLink.Bind(starButton, ExternalLink.Repository);   // #1168
             starButton.generateVisualContent += PaintStarSigns;
+            languages = new LanguageButtons(screen, "start-language-", text?["ui.lang"] ?? UiLanguage.English, settings, switchLanguage);
             onContinue = Continue; onNewGame = NewGame; onStarted = Started;
             continueButton.clicked += onContinue;
             newGameButton.clicked += onNewGame;
@@ -263,6 +269,7 @@ namespace Statecraft.Game.UI
             newGame.Started -= onStarted;
             unbindStar();
             starButton.generateVisualContent -= PaintStarSigns;
+            languages.Dispose();
             screen.UnregisterCallback(onCancel);
             screen.UnregisterCallback(onGeometry);
             panel.UnregisterCallback(onGeometry);

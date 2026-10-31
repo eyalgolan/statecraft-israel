@@ -19,6 +19,8 @@ Tiers: **[V]** a contemporary document read here; **[S]** a secondary source rea
 a search result, not read. Claude read every source on 2026-10-20. The "Checked by a person" column is left empty on
 purpose: a person fills it in with the date they read the source.
 
+Every [V] in this note was an agent's reading on 2026-10-20, unless the tag gives a later date; a person's check is pending for all of them.
+
 | # | Claim | Sources | Tier | Agreement and caveats | Checked by a person |
 |---|---|---|---|---|---|
 | 1 | Wells at Nir Am (and Gvar'am) were the source of the first Negev water line | he.wiki "ניר עם" ("קידוחים באזור ניר עם שימשו מקור לקו המים שהונח בשנת 1947", citing *Mishmar*, 10 April 1947, "צנור המים בנגב"); he.wiki "מקורות" (Mekorot drilled about 15 wells around Gvar'am and Nir Am; no footnote); Encyclopaedia Judaica, 2nd ed., "Nir Am" (Orni and Gilboa, via encyclopedia.com: groundwater found soon after 1943 "supported a pipeline to Negev outposts in 1947") | [S] | Agree | |

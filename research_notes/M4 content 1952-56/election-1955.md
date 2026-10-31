@@ -15,6 +15,8 @@ Fix the facts for the hard anchor event around the election of 26 July 1955 and 
 - JTA bulletins are dated one day after the dispatch dateline. Cited as "JTA bulletin of <date>, item datelined X".
 - JTA scans: `http://pdfs.jta.org/1955/1955-MM-DD_<issue>.pdf`. JTA web text: `https://www.jta.org/archive/<slug>`.
 
+Every [V] in this note was an agent's reading on 2026-10-11, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Source caveat
 
 The Knesset site (knesset.gov.il) did not open (fetch error, bot challenge), so no Knesset, CBS or Divrei HaKnesset page was read. Results come from the Israel Democracy Institute (IDI) election pages. Ministers come from the gov.il government pages (Hebrew), which opened by fetch only. JTA is a news agency and is a contemporary report, not an official record. Wikipedia appears only as [S]. Some JTA scans could not be re-read once the image budget ran out; those items are marked [S].

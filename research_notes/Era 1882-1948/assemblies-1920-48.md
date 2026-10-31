@@ -33,7 +33,7 @@ The heads of the Vaad Leumi (presidium, chairman, president) and its departments
   not a source.
 - Dates are written 19 April 1920 style. Quotes from Hebrew sources are this note's translation.
 
-Every [V] in this note was an agent's reading on 2026-10-22; a person's check is pending for all of them.
+Every [V] in this note was an agent's reading on 2026-10-22, unless the tag gives a later date; a person's check is pending for all of them.
 
 ## Sources
 
