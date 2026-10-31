@@ -135,7 +135,9 @@ public sealed class OriginalResidencyPlayerTests
         Choose(towns, camera, focus.At, true);
         yield return Until(() => asks.Any(a => a.detail == CollectionDetail.Near), "near requested");
         Assert.IsTrue(asks.Any(a => a.detail == CollectionDetail.Near), "Map.Build player path must acquire Near originals");
-        Assert.IsFalse(asks.Any(a => a.id == focus.Model), "no duplicate whole-town acquisition while Near loads");
+        // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns are requested map-wide; only near detail is camera-gated.
+        Assert.AreEqual(1, asks.Count(a => a.id == focus.Model && a.detail == CollectionDetail.Far), "the one map-wide whole-town request");
+        Assert.AreEqual(1, asks.Count(a => a.id == focus.Model), "no duplicate whole-town acquisition while Near loads");
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
         yield return Until(() => { towns.Choose(default, camera); return (bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!; }, "near ready: " + focus.Key);
         var near = asks.Where(a => a.detail == CollectionDetail.Near).Select(a => CollectionCatalog.BundleOf(a.id)!).ToHashSet();
@@ -172,12 +174,21 @@ public sealed class OriginalResidencyPlayerTests
         Assert.IsNotEmpty(nearIds, "failure proof requires actual Near requests");
         foreach (var _ in nearIds)
             LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("Collection: bundle .* has no .*"));
-        yield return Until(() => nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!)));
+        // Owner ruling 29 (30 Oct 2026): "Far models map-wide (Recommended)": whole towns are requested map-wide; only near detail is camera-gated.
+        // The map-wide whole-town loads now queue ahead of the Near load: keep the close camera rendering while waiting, as a
+        // player's camera does every frame, or its admission expires (grace frames) and the Near request is withdrawn.
+        yield return Until(() => { towns.Choose(default, camera); return nearIds.All(id => source.CompletedLoads.Contains(CollectionCatalog.BundleOf(id)!)); });
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "ReadyForTown", focus.Key, camera)!);
         Assert.IsFalse((bool)Call(layer, typeof(TownModelLayer), "WantsWholeTown", focus.Key, camera)!);
-        Assert.IsFalse(asks.Any(a => a.id == focus.Model));
+        // The failed Near acquires no replacement: the focus town's whole-town Far stays its one map-wide request.
+        Assert.AreEqual(1, asks.Count(a => a.id == focus.Model), "exactly one whole-town request, the map-wide Far");
+        Assert.IsTrue(asks.Where(a => a.id == focus.Model).All(a => a.detail == CollectionDetail.Far));
+        yield return Until(() => { towns.Choose(default, camera); return towns.Seats.ContainsKey(focus.Key); }, "whole town drawn: " + focus.Key);
+        towns.Choose(default, camera);   // this camera's choice, read before any render callback restores it
+        Assert.IsFalse(towns.transform.Find(focus.Key).GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+            "with no detailed buildings the whole town stays drawn for the close camera");
         var ids = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", Flags)!.GetValue(layer)!;
-        foreach (var pair in ids) if (pair.Value == focus.Key) Assert.IsFalse(pair.Key.forceRenderingOff);
+        foreach (var pair in ids) if (pair.Value == focus.Key) Assert.IsTrue(pair.Key.forceRenderingOff, "the whole-town original replaces the kit houses");
     }
     [UnityTest]
     public IEnumerator HexPlayerTeardownWaitsForGeneratedObjectsAndTheirRendererReferences()

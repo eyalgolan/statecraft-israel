@@ -73,6 +73,23 @@ public class HebrewUiTests
 
     static VisualElement Ui => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
+    // #2045: every Orders.Check refusal (its Refused* constants) has a string in both files, and the Hebrew one is Hebrew,
+    // not the sim's English. A missing key throws in UiText's lookup.
+    [Test]
+    public void EveryStandingOrderRefusalHasAStringInBothLanguages()
+    {
+        var refusals = typeof(Statecraft.Sim.Orders).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.Name.StartsWith("Refused")).Select(f => (string)f.GetRawConstantValue()).ToList();
+        Assert.That(refusals, Is.Not.Empty);
+        foreach (var reason in refusals)
+        {
+            Assert.AreEqual(reason, SimBridge.ReasonText(En, reason), "the English string is the sim's own");
+            var he = SimBridge.ReasonText(He, reason);
+            Assert.AreNotEqual(reason, he, "no Hebrew string for: " + reason);
+            StringAssert.IsMatch("[\u05D0-\u05EA]", he, reason);
+        }
+    }
+
     [Test]
     public void TheGameIsEnglishUnlessHebrewIsAskedFor()
     {

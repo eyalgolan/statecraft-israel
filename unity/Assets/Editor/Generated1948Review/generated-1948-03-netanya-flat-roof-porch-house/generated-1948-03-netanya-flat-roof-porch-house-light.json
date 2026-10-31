@@ -1,0 +1,11 @@
+{
+    "tool": "HexHouseLevels",
+    "source": "Assets/Editor/Generated1948Review/generated-1948-03-netanya-flat-roof-porch-house/generated-1948-03-netanya-flat-roof-porch-house.fbx",
+    "source_sha256": "27c837e0c8a884860799e6af6c78c4ed0312cecca1791ca200329c3525b2d753",
+    "source_triangles": 9261,
+    "triangles": 8133,
+    "uv_tolerance_texels": 1.0,
+    "edge_tolerance": 0.0020000000949949028,
+    "max_error": 0.004999999888241291,
+    "provenance": "Derived from Tal Heuberger's original (the source FBX above) by HexHouseLevels. Same licence, CC BY-NC-ND 4.0, credit Tal Heuberger, with Tal's permission for these lighter derived meshes (30 October 2026, recorded by the owner in PR #1994)."
+}

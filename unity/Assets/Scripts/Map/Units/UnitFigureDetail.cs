@@ -43,11 +43,18 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>The switch of the unit layer or showcase that <paramref name="piece"/> stands in (the root that owns its
         /// runtime assets, so it goes with the layer), made on first use.</summary>
-        internal static UnitFigureDetail Of(Transform piece)
+        internal static UnitFigureDetail Of(Transform piece) => Existing(piece) ?? RootOf(piece).AddComponent<UnitFigureDetail>();
+
+        /// <summary>The switch <paramref name="piece"/> stands in, if one exists; never made. Teardown uses this: a token the
+        /// unit layer has detached for destruction is its own root, and Unity refuses a component on an object being destroyed.
+        /// A figure left registered in its layer's switch is pruned once its holder is destroyed (<see cref="Gone"/>).</summary>
+        internal static UnitFigureDetail? Existing(Transform piece) =>
+            RootOf(piece).TryGetComponent<UnitFigureDetail>(out var detail) ? detail : null;
+
+        static GameObject RootOf(Transform piece)
         {
             var assets = piece.GetComponentInParent<MapRuntimeAssets>(true);
-            var root = assets != null ? assets.gameObject : piece.root.gameObject;
-            return root.TryGetComponent<UnitFigureDetail>(out var detail) ? detail : root.AddComponent<UnitFigureDetail>();
+            return assets != null ? assets.gameObject : piece.root.gameObject;
         }
 
         /// <summary>A figure whose far model <paramref name="holder"/> now holds (its first child), with an idle clip.</summary>
@@ -97,6 +104,29 @@ namespace Statecraft.Game.Map.Units
         {
             figures.RemoveAll(f => f.Holder == null || f.Holder == holder);
             nearAsked.RemoveWhere(id => !figures.Exists(f => f.Id == id));
+        }
+
+        /// <summary>Stops using and destroys only a holder's camera-gated near clone. The independently owned far model
+        /// remains registered and visible while the near source lease completes its deferred retirement.</summary>
+        internal static IReadOnlyList<UnityEngine.Object> RetireNear(Transform piece)
+        {
+            var holder = piece.Find(UnitFigures.ModelName);
+            if (holder == null) return Array.Empty<UnityEngine.Object>();
+            var figure = Existing(piece)?.figures.Find(f => f.Holder == holder);
+            var near = holder.Find(NearName);
+            if (figure != null)
+            {
+                foreach (var renderer in figure.FarRenderers) if (renderer != null) renderer.forceRenderingOff = false;
+                foreach (var renderer in figure.NearRenderers) if (renderer != null) renderer.forceRenderingOff = true;
+                foreach (var animator in figure.Animators) if (animator != null) animator.enabled = false;
+                figure.NearRenderers = Array.Empty<Renderer>();
+                figure.Animators = Array.Empty<Animator>();
+            }
+            if (near == null) return Array.Empty<UnityEngine.Object>();
+            var original = near.gameObject;
+            if (Application.isPlaying) { near.SetParent(null); Destroy(original); } else DestroyImmediate(original);
+            UnitFigures.GeometryChanged();
+            return new UnityEngine.Object[] { original };
         }
 
         void Arrived(string id)

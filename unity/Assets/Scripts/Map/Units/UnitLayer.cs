@@ -42,7 +42,10 @@ namespace Statecraft.Game.Map.Units
         readonly List<Mesh> tokenMeshes = new List<Mesh>();
         List<UnitToken>? roster;
         readonly Dictionary<string, UnitFigureResidency> figurePrefetch = new Dictionary<string, UnitFigureResidency>();
-        bool updatingPrefetch;
+        readonly HashSet<string> wantedFigurePrefetch = new HashSet<string>(StringComparer.Ordinal);
+        internal int FigurePrefetchCount => figurePrefetch.Count;
+        bool updatingPrefetch, prefetchRetirementDirty;
+        string? prefetchRetirementId;
         int seenAvailability = -1;
         int seenGeometry = -1;
         static readonly Predicate<MeshFilter> MissingMesh = mesh => mesh == null;
@@ -51,34 +54,59 @@ namespace Statecraft.Game.Map.Units
             updatingPrefetch = true;
             try
             {
-                var needed = new HashSet<string>();
-                foreach (var token in candidates)
+                var rosterGateModels = new HashSet<string>(candidates.Where(token => token.Unit.Side != UnitData.Israel)
+                    .Select(token => UnitFigures.SideFigure(token.Unit.Side)).Where(id => id != null)
+                    .Select(id => id!), StringComparer.Ordinal);
+                wantedFigurePrefetch.Clear(); wantedFigurePrefetch.UnionWith(rosterGateModels);
+                foreach (var id in rosterGateModels)
                 {
-                    var ids = Enumerable.Range(0, token.Figures).Select(i => UnitFigures.FigureFor(token.Unit, i,
-                        token.Unit.Side == UnitData.Israel ? token.Headgear[i] : null))
-                        .Concat(token.Vehicles).Where(id => id != null).Distinct();
-                    foreach (var id in ids)
+                    // A foreign token cannot create its own figure holders until this side model passes Show's roster
+                    // gate. Keep one temporary owner per missing side model, never N+1 permanent owners beside the
+                    // roster figures; RetireSatisfiedPrefetch transfers ownership after Rebuild has drawn the token.
+                    if (!UnitFigures.Arrived(id) && !figurePrefetch.TryGetValue(id, out var owner))
                     {
-                        string key = token.Unit.Id + "|" + id; needed.Add(key);
-                        if (!figurePrefetch.TryGetValue(key, out var owner))
-                        {
-                            var holder = new GameObject("Original demand " + key); holder.transform.SetParent(transform, false);
-                            owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[key] = owner;
-                            holder.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
-                            owner.Initialize(id!, map.Residency.Units, null, draw: false);
-                        }
-                        owner.transform.position = map.Frame.ToWorld(token.Anchor.Lon, token.Anchor.Lat, 0);
+                        var holder = new GameObject("Roster gate demand " + id); holder.transform.SetParent(transform, false);
+                        owner = holder.AddComponent<UnitFigureResidency>(); figurePrefetch[id] = owner;
+                        owner.Initialize(id, map.Residency.Units, null, draw: false, retainFar: true);
                     }
                 }
-                foreach (string key in figurePrefetch.Keys.ToArray()) if (!needed.Contains(key))
-                {
-                    var old = figurePrefetch[key]; figurePrefetch.Remove(key);
-                    old.gameObject.SetActive(false);
-                    if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
-                }
+                if (figurePrefetch.Keys.Any(key => !rosterGateModels.Contains(key))) ScheduleSatisfiedPrefetchRetirement();
             }
             finally { updatingPrefetch = false; }
         }
+        internal void ScheduleSatisfiedPrefetchRetirement(string id)
+        {
+            if (figurePrefetch.Count == 0 || !figurePrefetch.ContainsKey(id)) return;
+            if (!prefetchRetirementDirty) prefetchRetirementId = id;
+            else if (prefetchRetirementId != id) prefetchRetirementId = null;
+            prefetchRetirementDirty = true;
+        }
+        void ScheduleSatisfiedPrefetchRetirement()
+        {
+            if (figurePrefetch.Count == 0) return;
+            prefetchRetirementId = null; prefetchRetirementDirty = true;
+        }
+        void RetireSatisfiedPrefetch(string? onlyId = null)
+        {
+            if (figurePrefetch.Count == 0) { prefetchRetirementDirty = false; prefetchRetirementId = null; return; }
+            if (onlyId != null && !figurePrefetch.ContainsKey(onlyId))
+            { prefetchRetirementDirty = false; prefetchRetirementId = null; return; }
+            var heldByFigures = new HashSet<string>(tokensRoot.GetComponentsInChildren<UnitFigureResidency>(true)
+                .Where(owner => owner.ActiveAnsweredFar).Select(owner => owner.ModelId), StringComparer.Ordinal);
+            var candidates = onlyId == null ? figurePrefetch.Keys.ToArray() : new[] { onlyId };
+            foreach (string id in candidates.Where(id => !wantedFigurePrefetch.Contains(id) || heldByFigures.Contains(id)))
+            {
+                var old = figurePrefetch[id]; figurePrefetch.Remove(id);
+                old.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(old.gameObject); else DestroyImmediate(old.gameObject);
+            }
+            prefetchRetirementDirty = false; prefetchRetirementId = null;
+        }
+        /// <summary>Runs the deferred roster-gate ownership handoff. Production calls it from <see cref="LateUpdate"/>;
+        /// EditMode tests call it explicitly because they do not advance a player frame.</summary>
+        internal void FlushPrefetchRetirement()
+        { if (prefetchRetirementDirty) RetireSatisfiedPrefetch(prefetchRetirementId); }
+        void LateUpdate() => FlushPrefetchRetirement();
         /// <summary>What <see cref="Show"/> last drew from, so a Collection model's arrival can draw the tokens that waited for
         /// it (an Arab force's, issue #665).</summary>
         Content? shownContent;
@@ -319,12 +347,15 @@ namespace Statecraft.Game.Map.Units
                 ? UnitRoster.FromState(units, content, state, _ => true, (row, start, q, r) => MovedAnchor(content, row, start, q, r))
                 : UnitRoster.Build(units, content, state, _ => true);
             PrefetchFigures(now);
-            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
+            // An Arab force's token waits while its figure loads, and is drawn with the plain built-in figure if it failed.
+            now = now.Where(t => t.Unit.Side == UnitData.Israel || UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!)
+                || UnitFigures.Failed(UnitFigures.SideFigure(t.Unit.Side)!)).ToList();
             if (roster != null && roster.SequenceEqual(now)) { seenAvailability = UnitFigures.AvailabilityVersion; return false; }
             roster = now;
             PlaceMoved(now);
             placed = UnitPlacer.Place(now, drawSpots ?? DisplaySpots);
             Rebuild();
+            ScheduleSatisfiedPrefetchRetirement();
             if (Selected != null && !placed.Any(p => p.Token.Unit.Id == Selected)) Select(null); else Select(Selected);
             seenAvailability = UnitFigures.AvailabilityVersion;
             return true;
@@ -514,7 +545,15 @@ namespace Statecraft.Game.Map.Units
         /// <summary>Selects a drawn unit by id (the ring goes round it), or clears the selection (null).</summary>
         public void Select(string? id)
         {
-            if (ring != null) { ring.transform.SetParent(null); if (Application.isPlaying) Destroy(ring); else DestroyImmediate(ring); ring = null; }
+            if (ring != null)
+            {
+                // Each ring has its own mesh (UnitShowcase.Ring), owned by the layer's assets until teardown: free it with
+                // the ring, or every selection keeps one more alive for the session (#2043).
+                var mesh = ring.GetComponent<MeshFilter>().sharedMesh;
+                ring.transform.SetParent(null);
+                if (Application.isPlaying) { Destroy(ring); Destroy(mesh); } else { DestroyImmediate(ring); DestroyImmediate(mesh); }
+                ring = null;
+            }
             var hit = placed.FirstOrDefault(p => p.Token.Unit.Id == id);
             Selected = id != null && hit.Token != null ? id : null;
             if (Selected == null) return;
@@ -568,12 +607,25 @@ namespace Statecraft.Game.Map.Units
 
         void Rebuild()
         {
+            var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
                 var old = tokensRoot.GetChild(i).gameObject;
+                // Roster holders retain Far through deactivation and release it only on destruction. Deactivate before
+                // deferred Destroy so these outgoing holders are never considered a live prefetch handoff target.
+                old.SetActive(false);
                 old.transform.SetParent(null);
-                if (Application.isPlaying) Destroy(old); else DestroyImmediate(old);
+                outgoing.Add(old);
             }
+            // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
+            // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
+            // source again for a request still in flight (or release an arrived model) only to re-acquire it.
+            try { BuildTokens(); }
+            finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
+        }
+
+        void BuildTokens()
+        {
             FreeTokenMeshes();
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
@@ -601,6 +653,9 @@ namespace Statecraft.Game.Map.Units
                         var offsets = UnitShowcase.FigureOffsets(t.Figures);
                         float highest = foot.y;   // the badge clears the highest figure (on a slope the uphill one stands higher)
                         bool israel = t.Unit.Side == UnitData.Israel;
+                        // Owner, 31 October 2026 ("Yes, fallback in v0.3.2"): an Arab force whose figure failed to load stands
+                        // with the plain built-in rifleman (steel helmet), the Israeli fail-open figure; only for that failure.
+                        bool builtIn = !israel && !UnitFigures.Arrived(UnitFigures.SideFigure(t.Unit.Side)!);
                         int vehicles = Mathf.Min(t.Vehicles.Count, VehicleSlots.Length);
                         figures = new (Transform, Vector3, float)[offsets.Length + vehicles];
                         for (int i = 0; i < offsets.Length; i++)
@@ -618,8 +673,16 @@ namespace Statecraft.Game.Map.Units
                                 figure = UnitShowcase.Piece(go.transform, $"Rifleman{i}", type, () => MeshFor($"{type}/{pose}", () => UnitModels.Rifleman(hat, pose, faded, type)),
                                     paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
                             }
+                            else if (builtIn)
+                            {
+                                var type = UnitRoster.RiflemanType(UnitData.SteelHelmet);
+                                figure = UnitShowcase.Piece(go.transform, $"Figure{i}", type, () => MeshFor($"{type}/{pose}",
+                                    () => UnitModels.Rifleman(UnitModels.Headgear.SteelHelmet, pose, faded, type)),
+                                    paint, at, Quaternion.Euler(0, heading, 0), UnitShowcase.FigureScale, out _).transform;
+                            }
                             else figure = EmptyPiece(go.transform, $"Figure{i}", at, heading);   // no code-built figure for another side (#740)
-                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null), map.Residency.Units);   // the Collection's figure, once streamed (#665)
+                            UnitFigures.Dress(figure, UnitFigures.FigureFor(t.Unit, i, israel ? t.Headgear[i] : null),
+                                map.Residency.Units, retainFar: true);   // the Collection's figure, held while its roster token lives (#665)
                             figures[i] = (figure, new Vector3(offsets[i].x, 0, offsets[i].y) * k, heading);
                         }
                         for (int j = 0; j < vehicles; j++)
@@ -629,7 +692,8 @@ namespace Statecraft.Game.Map.Units
                             var at = centre + offset;
                             at.y = UnitPlinth.FigureY(map, plinth, at.x, at.z);
                             var vehicle = EmptyPiece(go.transform, $"Vehicle{j}", at, heading);
-                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units);   // the gun or the jeep: drawn only once streamed (#665)
+                            UnitFigures.Dress(vehicle, t.Vehicles[j], map.Residency.Units,
+                                retainFar: true);   // the gun or the jeep: held while its roster token lives (#665)
                             figures[offsets.Length + j] = (vehicle, offset, heading);
                         }
                         foot.y = highest;
