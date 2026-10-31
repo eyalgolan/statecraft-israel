@@ -2,7 +2,7 @@
 
 Refs [#1866](https://github.com/eyalgolan/statecraft-israel/issues/1866), [#1867](https://github.com/eyalgolan/statecraft-israel/issues/1867), [#2007](https://github.com/eyalgolan/statecraft-israel/issues/2007).
 
-Tal's latest direction permits the local C06 + K98k experiment as a guide and provisional in-game fallback where no better existing clip exists. This document does not install or enable it. Compare the existing C06 fire/shoot clips before choosing a fallback; do not blanket-replace other characters' clips.
+Tal Heuberger’s latest direction supports the local C06 + K98k experiment as a guide and proposed provisional fallback where no better existing clip exists. Provisional in-game use still requires the project owner’s decision; Tal’s art preference is not project-owner acceptance. This document does not install or enable it. Compare the existing C06 fire/shoot clips before choosing a fallback; do not blanket-replace other characters' clips.
 
 The saved review uses the original 67-bone binding, rest mesh and weights. It has 97 frames at 24 fps, with carrying endpoints, supported point-fire and two recoil beats. Local sampled static checks passed 54/54; full-cycle relative checks passed 872/873. These relative thresholds are not anatomy, nonpenetration, art or runtime acceptance.
 

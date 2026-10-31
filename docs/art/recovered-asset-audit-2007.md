@@ -32,6 +32,8 @@ All 21 files exist and match the recorded hashes, totalling 273,465,420 bytes. N
 | `statecraft-sten-approved-textured-bc6b06c8_basecolor.jpg` | 1267214 | `c5ba4fbddd345bbf5da58be295b330981650f52b9e15f0d285e8fe5425b0d270` |
 | `statecraft-k98k-original-64e8aded.glb` | 63014240 | `320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8` |
 
+Four high-detail `-original` GLBs exceed the repository’s 10 MiB per-file limit: Netanya (60,575,748 bytes), Safed (59,382,140), Tiberias (59,533,508) and K98k (63,014,240). Git LFS is ruled out. Preserve these unmodified originals locally until the owner approves a size/storage plan; do not compress, decimate or push oversized blobs to bypass the gate. Any renamed deliverable must retain its original filename and source hash in provenance. Smaller eligible files can be reviewed independently.
+
 Tiberias, Safed and Netanya are whole-town assets associated with #1288; they do not automatically supply the modular pieces requested by #1947/#1948. Ramla White Tower needs tower/base separability review. Jaffa lighthouse does not fill #1942's St Peter church body. Weapon scale, orientation, hand contact and faction/date use remain unverified.
 
 ## Recovered vegetation and existing reuse
