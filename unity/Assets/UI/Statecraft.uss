@@ -941,6 +941,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The language choice (#2054) beside it, as quiet, with Settings' gold mark on the language in use
    (.settings-choice-selected). In the same row, so the panel keeps its height (StartScreenTests.ItFitsEveryWindowSize). */
 .start-language { margin-left: 8px; }
+/* In Hebrew the row mirrors like the rest of the UI (the owner, 31 Oct 2026): the pair left of Report, the gap on Report's side. */
+.lang-he .start-language { margin-left: 0; margin-right: 8px; }
 .start-language-button { font-size: 18px; min-width: 96px; padding: 4px 16px; margin: 2px 4px; -unity-text-align: middle-center; }
 /* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
    window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
@@ -987,7 +989,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
-.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
+.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container, .lang-he .start-recording,
+.lang-he .start-actions, .lang-he .start-community { flex-direction: row-reverse; }
 .lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
 .lang-he .turn-box { align-items: flex-start; }
 .lang-he .top-bar { padding: 0 8px 0 14px; }
@@ -1232,3 +1235,19 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he #arms-count { flex-direction: row-reverse; }
 #arms-count .unity-base-field__input { background-color: var(--navy-deep); color: var(--ink); border-width: 1px; border-color: var(--gold-dim); }
 #arms-count:focus .unity-base-field__input { border-color: var(--gold); }
+/* #530: a still opening in the existing event-card frame. Keep its actions outside the scrolling prose, so Skip
+   remains reachable in a short window. The English historical text stays English and left-aligned in the Hebrew UI (in the
+   Hebrew face, as all text there) until its own review. */
+.opening-layer { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; padding: 16px; background-color: var(--navy-deep); }
+.opening-layer > .opening-card { display: flex; height: 100%; max-height: 100%; padding: 12px 24px; }
+.opening-replay { display: none; }
+.opening-preview, .opening-count { white-space: normal; flex-shrink: 0; margin: 2px 0; }
+.opening-photo { height: 240px; max-height: 32%; min-height: 80px; flex-shrink: 1; background-size: contain; background-position-x: center; background-position-y: center; background-repeat: no-repeat; }
+.opening-scroll { flex-shrink: 1; min-height: 48px; }
+.opening-text { font-size: 22px; white-space: normal; margin: 8px 0; }
+.opening-arrivals { font-size: 18px; white-space: normal; margin: 8px 0; }
+.opening-actions { flex-wrap: wrap; justify-content: center; flex-shrink: 0; }
+.opening-actions > Button { min-height: 44px; margin: 4px 6px; }
+.opening-source-en, .lang-he .opening-source-en { -unity-text-align: upper-left; white-space: normal; }
+.opening-open .top-bar, .opening-open .left-column, .opening-open .community-column, .opening-open .right-column, .opening-open .event-layer, .opening-open .info-panel, .opening-open .screen, .opening-open .map-labels, .opening-open .start-screen, .opening-open .advisor-layer { display: none; }
+.loading .opening-layer { display: none; }

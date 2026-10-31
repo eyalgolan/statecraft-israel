@@ -611,6 +611,7 @@
                     <ui:VisualElement name="start-actions" class="start-actions">
                         <ui:Button name="start-continue" text="Continue" class="start-button" />
                         <ui:Button name="start-new-game" text="New game" class="start-button" />
+                        <ui:Button name="start-opening-replay" class="start-button opening-replay" />
                         <!-- Community (#1168): "Star on GitHub", New game's size beside it, opens the repository in a new tab
                              (ExternalLink); its star and GitHub mark are painted in by StartScreenPresenter. -->
                         <ui:Button name="start-star" text="Star on GitHub" class="start-button start-star" />
@@ -633,6 +634,28 @@
                     </ui:VisualElement>
                     <Statecraft.Game.UI.UiFrame />
                 </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- #530: the event-card frame, three sourced stills and a closing line. Editor drafts are labelled; the
+             ordinary player path remains unavailable until the text and its sources have human review. -->
+        <ui:VisualElement name="opening-layer" class="opening-layer">
+            <ui:VisualElement name="opening-card" class="panel event-card opening-card">
+                <ui:Label name="opening-preview" class="muted opening-preview" />
+                <ui:Label name="opening-count" class="muted opening-count" />
+                <ui:Label name="opening-title" class="title opening-source-en" />
+                <ui:VisualElement name="opening-photo" class="opening-photo" />
+                <ui:Label name="opening-credit" class="event-photo-credit opening-source-en" />
+                <ui:ScrollView name="opening-scroll" class="opening-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
+                    <ui:Label name="opening-text" class="opening-text opening-source-en" />
+                    <ui:Label name="opening-arrivals" class="muted opening-arrivals opening-source-en" />
+                    <ui:Label name="opening-closing" class="opening-text opening-source-en" />
+                </ui:ScrollView>
+                <ui:VisualElement class="row opening-actions">
+                    <ui:Button name="opening-back" />
+                    <ui:Button name="opening-next" />
+                    <ui:Button name="opening-skip" />
+                </ui:VisualElement>
+                <Statecraft.Game.UI.UiFrame />
             </ui:VisualElement>
         </ui:VisualElement>
         <!-- "Report a bug or idea" (#1169, FeedbackPresenter): over everything, the start screen too, with what each GitHub

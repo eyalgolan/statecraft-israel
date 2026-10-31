@@ -1030,3 +1030,13 @@ why.cause.ending.defeat_economy: "Money and Food ran out"
 why.cause.ending.defeat_war: "The enemy holds a city"
 
 unit.confirm_move: "Send {0} to {1}"
+
+# The opening's controls (#530). The historical prose stays in opening.yaml.
+opening.replay: "Replay the opening"
+opening.back: "Back"
+opening.next: "Next"
+opening.skip: "Skip the opening"
+opening.begin: "Continue to the map"
+opening.return: "Return to the start screen"
+opening.count: "Step {0} of {1}"
+opening.preview: "Editor preview: draft text; human source checks pending."
