@@ -36,6 +36,8 @@ namespace Statecraft.Game.Map.Units
         }
         public bool PlayAttack()
         {
+            // Hidden/disabled tokens do not tick their timer. Do not retain a combat event until they reappear.
+            if (!isActiveAndEnabled) return false;
             animators.Clear(); transform.GetComponentsInChildren(true, animators);
             float duration = 0f;
             foreach (var animator in animators)

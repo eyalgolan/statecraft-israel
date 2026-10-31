@@ -1,0 +1,1 @@
+- Refs #2007 and #1867: connect fresh resolved engagements to live compatible attacker playback, including supporting guns, without replaying instant orders at End Turn or changing simulation rules. Hidden/disabled token components reject combat without retaining a timer; missing or destroyed visuals are skipped; animation asset coverage and Unity acceptance remain pending.

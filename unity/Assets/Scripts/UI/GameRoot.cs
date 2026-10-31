@@ -373,6 +373,7 @@ namespace Statecraft.Game.UI
             bridge.Changed += showUnits;
             owned.Add(new Undo(() => bridge.Changed -= showUnits));
             showUnits();
+            owned.Add(new UnitAttackPresenter(bridge, unitLayer.PlayAttack));
             DiagLog.BootPhase("units layer built");
             // #1878: the turn report is up, the hexes the turn attacked show the under-attack look; closing it clears them.
             var underAttack = new Statecraft.Game.Map.UnderAttackLayer(map);
