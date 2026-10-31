@@ -874,10 +874,13 @@ public class KitTests
         }
     }
 
-    /// <summary>The khaki tent model keeps its size whatever the tent's yaw: tents of one length at 0, 45 and 90 degrees get the
-    /// same scale, turn by their yaw differences, and stand centred on their plots on the ground.</summary>
+    /// <summary>The khaki tent model's ridge follows the kit tent's ridge whatever the tent's yaw: the model's ridge (its own x
+    /// once it stands up, measured on the mesh's top vertices, not on the bounds that the guy lines widen) lies along the kit
+    /// tent's length, (cos yaw, sin yaw) in x-z, as the kit's RidgeTent and its door props and washing line lay it. Tents of one
+    /// length at 0, 45 and 90 degrees get the same scale, the model's full length along the ridge is the kit tent's length,
+    /// and they stand centred on their plots on the ground.</summary>
     [Test]
-    public void TheKhakiTentModelKeepsItsSizeAtEveryYaw()
+    public void TheKhakiTentModelsRidgeFollowsTheKitTentAtEveryYaw()
     {
         var saved = Statecraft.Game.Map.Collection.CampTentModels.Acquire;
         var root = new GameObject("camp tents yaw fixture");
@@ -886,6 +889,17 @@ public class KitTests
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Statecraft.Game.Map.Collection.CollectionCatalog.PrefabPath(
                 Statecraft.Game.Map.Collection.CampTentModels.Model, Statecraft.Game.Map.Collection.CollectionDetail.Near));
+            Assert.IsNotNull(prefab, "the khaki tent prefab");
+            // The premise: the ridge runs along the model's own x once it stands up. The top 5% of the mesh's vertices by height
+            // (the ridge line) span x and hardly z; the whole bounds are widest in z only because of the guy lines.
+            var standUp = prefab!.transform.localRotation;
+            var up = prefab.GetComponentsInChildren<MeshFilter>(true).SelectMany(f => f.sharedMesh.vertices.Select(v => f.transform.localToWorldMatrix.MultiplyPoint3x4(v))).ToList();
+            Assert.Greater(up.Count, 0, "the model's vertices");
+            float yMin = up.Min(v => v.y), yMax = up.Max(v => v.y);
+            var ridgeLine = up.Where(v => v.y > yMax - 0.05f * (yMax - yMin)).ToList();
+            float spanX = ridgeLine.Max(v => v.x) - ridgeLine.Min(v => v.x), spanZ = ridgeLine.Max(v => v.z) - ridgeLine.Min(v => v.z);
+            Assert.Greater(spanX, 10f * spanZ, $"the ridge runs along the model's x (top vertices span x {spanX}, z {spanZ})");
+
             Statecraft.Game.Map.Collection.CampTentModels.Acquire = (id, d, done) => { done(prefab); return new FakeLease(() => { }); };
             var yaws = new[] { 0f, 45f, 90f };
             var tents = yaws.Select((yaw, i) => new SettlementKits.KhakiTent(new Vector2(200f * i, 0f), 5f, yaw, 60f, 40f)).ToArray();
@@ -896,29 +910,25 @@ public class KitTests
             var models = Enumerable.Range(0, kit.transform.childCount).Select(i => kit.transform.GetChild(i))
                 .Where(c => c.name == Statecraft.Game.Map.Collection.CampTentModels.Model).ToList();
             Assert.AreEqual(tents.Length, models.Count);
-            Assert.AreEqual(60.0293f, models[0].localScale.x, 1e-3f,
-                "the shipped 60 m kit tent divided by the prefab's 0.999512 m top-down edge");
-            // The premise of the turn: the model's long side seen from above lies along its own z once it stands up.
-            var alone = Object.Instantiate(prefab);
-            try
-            {
-                var own = alone.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
-                Assert.Greater(own.size.z, own.size.x, "the model's long side lies along z");
-            }
-            finally { Object.DestroyImmediate(alone); }
+            Bounds Of(Transform t) => t.GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+            // The model's full length along the ridge (guy lines and end pegs included) is the kit tent's length: at yaw 0 the
+            // ridge lies along world x, at 90 along world z.
+            Assert.AreEqual(tents[0].W, Of(models[0]).size.x, 0.01f, "yaw 0: the model's length along the ridge is the kit tent's");
+            Assert.AreEqual(tents[2].W, Of(models[2]).size.z, 0.01f, "yaw 90: the model's length along the ridge is the kit tent's");
             for (int i = 0; i < models.Count; i++)
             {
-                // Its long side runs along the kit tent's ridge: (cos yaw, sin yaw) in x-z.
-                var ridge = (models[i].rotation * Quaternion.Inverse(prefab!.transform.localRotation)) * Vector3.forward;
+                // Its ridge runs along the kit tent's: (cos yaw, sin yaw) in x-z (RidgeTent's u axis, SettlementKits.Maabara.cs).
+                var ridge = (models[i].rotation * Quaternion.Inverse(standUp)) * Vector3.right;
                 float yawRad = yaws[i] * Mathf.Deg2Rad;
-                Assert.AreEqual(Mathf.Cos(yawRad), ridge.x, 1e-3f, $"yaw {yaws[i]}: along the ridge"); Assert.AreEqual(Mathf.Sin(yawRad), ridge.z, 1e-3f, $"yaw {yaws[i]}");
+                Assert.AreEqual(Mathf.Cos(yawRad), ridge.x, 1e-3f, $"yaw {yaws[i]}: the model's ridge along the kit's ridge (x)");
+                Assert.AreEqual(Mathf.Sin(yawRad), ridge.z, 1e-3f, $"yaw {yaws[i]}: the model's ridge along the kit's ridge (z)");
                 Assert.AreEqual(models[0].localScale.x, models[i].localScale.x, 1e-4f, $"yaw {yaws[i]}: the same scale");
                 Assert.AreEqual(models[0].localScale.y, models[i].localScale.y, 1e-4f, $"yaw {yaws[i]}: the same height scale");
                 Assert.AreEqual(models[0].localScale.z, models[i].localScale.z, 1e-4f, $"yaw {yaws[i]}: the same depth scale");
                 // A pure turn about y by the yaw difference, signed: the kit's yaw is counter-clockwise in x-z, Unity's y turn clockwise.
                 float turn = Mathf.DeltaAngle(0f, (models[i].rotation * Quaternion.Inverse(models[0].rotation)).eulerAngles.y);
                 Assert.AreEqual(-(yaws[i] - yaws[0]), turn, 0.01f, $"yaw {yaws[i]}: turned by its yaw, the right way");
-                var b = models[i].GetComponentsInChildren<Renderer>(true).Select(r => r.bounds).Aggregate((x, y) => { x.Encapsulate(y); return x; });
+                var b = Of(models[i]);
                 Assert.AreEqual(tents[i].C.x, b.center.x, 0.01f, $"yaw {yaws[i]}: centred"); Assert.AreEqual(tents[i].C.y, b.center.z, 0.01f);
                 Assert.AreEqual(tents[i].Y, b.min.y, 0.01f, $"yaw {yaws[i]}: on the ground");
             }

@@ -122,13 +122,15 @@ namespace Statecraft.Game.Map.Collection
                 // and the fallback kit is hidden even though the replacement tent cannot draw. It is activated before it is
                 // measured because an inactive renderer reports empty bounds; the whole placement runs before the next frame.
                 go.SetActive(true);
-                // Sized in the model's own frame first, so its size does not depend on the yaw: its long side seen from above
-                // becomes the kit tent's length.
-                var b = Bounds(go); float edge = Mathf.Max(b.size.x, b.size.z);
+                // Sized in the model's own frame first, so its size does not depend on the yaw: its length along the ridge
+                // (the prefab's x once it stands up, end guy lines included) becomes the kit tent's length. Its longest side
+                // seen from above is across the ridge, where the guy lines reach out, so that is not the ridge.
+                var b = Bounds(go); float edge = b.size.x;
                 if (edge > 1e-4f) go.transform.localScale *= t.W / edge;
-                // The model's long side lies along the prefab's z once it stands up; the kit's ridge runs along the tent's
-                // length at its yaw (counter-clockwise in x-z), so a turn of 90 - yaw about y lays it along the ridge.
-                go.transform.localRotation = Quaternion.Euler(0f, 90f - t.Yaw, 0f) * prefab.transform.localRotation;
+                // The model's ridge lies along the prefab's x; the kit's ridge runs along the tent's length at its yaw,
+                // (cos yaw, sin yaw) in x-z (counter-clockwise), and Unity's turn about y is clockwise, so a turn of -yaw
+                // lays it along the ridge, with the kit's door props and washing line where the kit tent has them.
+                go.transform.localRotation = Quaternion.Euler(0f, -t.Yaw, 0f) * prefab.transform.localRotation;
                 b = Bounds(go);
                 go.transform.position += new Vector3(t.C.x - b.center.x, t.Y - b.min.y, t.C.y - b.center.z);
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
