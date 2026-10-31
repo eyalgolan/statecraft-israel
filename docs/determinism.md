@@ -61,9 +61,9 @@ final `GameState.Hash()` is pinned:
 
 | Run | Ends | Hash |
 |---|---|---|
-| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `8578966e171c213fbc314ab87c8292817ff9a94790e372b4e4792c00e1708f61` |
-| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
-| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `385ba3b58a15d15f88bb27c9cc0620a7e7af011e51037f00fea70177644b3e83` |
+| to 1950-01-01 (`Hash1950`) | 1950-01-15, turn 20 | `3bd6bb0fa18b66c8532ece882d7dc1c53c12f2befa1774d09f3e9b2c6b134ccf` |
+| to 1952-01-01 (`Hash1952`) | 1952-01-15, turn 44 (the game's end) | `2052aeca78d1815797c244946cf232e1f87e223d8f37b906d63cc4225f754cfd` |
+| to the game's end (`mvp-end`) | 1952-01-15, turn 44 | `2052aeca78d1815797c244946cf232e1f87e223d8f37b906d63cc4225f754cfd` |
 
 `hash1952` stops at the first turn on or after 1 January 1952, which is the game's last turn, so it is the same run as
 `mvp-end` (`DeterminismTests.TheWholeGameToItsEndIsFixed`). Both names are kept (spec 2026-10-12 section 3 step 6): a
@@ -72,7 +72,7 @@ player check enumerate the manifest, so it and every scenario are checked withou
 
 A further value is pinned for the browser smoke run (`?smoke=5`: the golden seed, five turns played through the UI's own
 buttons, answering each event with its first option while the turn's Attention pays for it, the rest left to their
-ministers): `SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995`.
+ministers): `SMOKE OK 5 turns 1948-10-15 9c666a1da0cef5e8bb78c033872829ce6ec3ee180405cc73323595996d2b3bf0`.
 It depends on the UI path as well as the sim (which option is first, the turn grid), so re-record it when either changes.
 Check every WebGL build with every manifest entry (plus the UI-path smoke line) with:
 
@@ -83,7 +83,7 @@ while read -r name hash; do
   golden_expect+=(--expect "GOLDEN OK $name $hash")
 done < sim/Statecraft.Sim.Tests/golden/manifest.txt
 uv run tools/web_check.py unity/Builds/Web-<compression> --query "golden&smoke=5" "${golden_expect[@]}" \
-  --expect "SMOKE OK 5 turns 1948-10-15 7bdf646a3c36cf480d4972098dd1c3ebb568d309796c8a639d18bb54f671f995"
+  --expect "SMOKE OK 5 turns 1948-10-15 9c666a1da0cef5e8bb78c033872829ce6ec3ee180405cc73323595996d2b3bf0"
 ```
 
 `smoke-orders` (GDD Phase 5 PR 15, #754) is the same kind of browser run for the unit orders (`?smoke-orders`, desktop
@@ -450,3 +450,13 @@ The hash reads the state keys, so it never sees a record outside its window. An 
 | #1575 + #1568 combined: the `reparations_vote` card (#1564) on top of `degania_defence` (#1565) and #939 Task 12 (#1545) | hash1952 | `385ba3b5` | re-pinned on the merged tree: the reference player answers `reparations_vote` `negotiate` on 15 December 1951 (morale -0.02, stability -0.0015 through it), as on #1575's own branch; `degania_defence`'s changes stay (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | mvp-end | `385ba3b5` | same run as hash1952 (was `5bfeb265`) |
 | #1575 + #1568 combined: as above | scenario-mvp-defeat | `b7d3848d` | the card fires in the scenario's run too and, left unanswered, resolves to `negotiate` (morale -0.02; was `d5bc68f9`). No other golden moves: hash1950, smoke5, smoke-orders and the other five scenarios end before 15 December 1951 |
+| #749 part 2: the operation cards' unit orders (R-ENEMY-005; owner, 31 Oct 2026: "GDD 0.1 only", "Sourced anchors only") | hash1950 | `3bd6bb0f` | the reference player answers `ten_days` `central_front` on 15 July 1948, so Carmeli (unit 1) goes to its Brosh anchor and arrives on 15 October 1948; it answers `operation_horev` `launch` on 15 December 1948, so Golani (unit 0) goes to the Julis camp, passing Nazareth (captured; the reference player resolves it on 15 January 1949, returning it to enemy control), arrives on 15 June 1949, is attacked there by the Egyptian unit and retreats to -6,24 with strength 3 of 4 (was `8578966e`) |
+| #749 part 2: as above | hash1952 | `2052aeca` | same orders as hash1950; Golani stays at -6,24 (was `385ba3b5`) |
+| #749 part 2: as above | mvp-end | `2052aeca` | same run as hash1952 (was `385ba3b5`) |
+| #749 part 2: as above | smoke5 | `9c666a1d` | the smoke run's first option of `ten_days` sends Carmeli toward its Brosh anchor; no snapshot is kept for this run (was `7bdf646a`) |
+| #749 part 2: as above | scenario-reckless | `4ce6ddcc` | Horev's delegated order takes Golani through Nazareth, which awaits the capture choice from 15 January 1949; Golani is on its way at 0,17 when the run ends (was `a2ca9626`) |
+| #749 part 2: as above | scenario-cautious | `b3d9974f` | as reckless, and `ten_days` sends Carmeli to its Brosh anchor (was `c06d89f0`) |
+| #749 part 2: as above | scenario-mvp-absorb-first | `e61b04bc` | both orders; Nazareth awaits the capture choice, and Golani at Julis is attacked by the Egyptian unit, ending at strength 1 of 4 with the Egyptians at 9 (was `9c98ae51`) |
+| #749 part 2: as above | scenario-mvp-defeat | `4ba713af` | both orders and the fighting at Julis as in absorb-first; the extra engagements draw from the RNG, so the delegated `frumkin_commission` and `iraqi_exodus` resolve to `dismiss` and `airlift`, with Housing, International Support and Social cohesion following; the defeat is unchanged (was `b7d3848d`) |
+| #749 part 2: as above | scenario-mvp-occupy-cost | `61322280` | Carmeli goes to its Brosh anchor; Nazareth's capture and Occupy are unchanged (was `9fcc7bae`) |
+| #749 part 2: as above | scenario-mvp-annex-nazareth | `8a0ca38d` | both orders: Golani leaves Nazareth for Julis and is on its way at 5,12 when the run ends; the annexation is unchanged (was `8fe6d129`) |

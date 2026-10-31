@@ -47,8 +47,9 @@ namespace Statecraft.Sim
                 return new StepResult(s, why, rejected);
             }
 
-            RunOrders(c, s, commands, new Dictionary<int, int>(), new Dictionary<int, (int Q, int R)>(), why, rejected);
-            EventSystem.Delegate(c, s, why);
+            var spent = new Dictionary<int, int>();
+            RunOrders(c, s, commands, spent, new Dictionary<int, (int Q, int R)>(), why, rejected);
+            EventSystem.Delegate(c, s, why, spent);   // a delegated card's unit orders share the turn's movement (R-ENEMY-005)
 
             var len = SecuritySystem.TurnLengthFor(c, s.Date, s.Rung);
             // The next era's start, or the game's end (the last era's end, or mvp.end in the GDD loop, R-LOOP-004), is a
@@ -208,7 +209,7 @@ namespace Statecraft.Sim
                     return null;
                 }
                 case ChooseEventOption e:
-                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why);
+                    return EventSystem.Choose(c, s, e.EventId, e.OptionId, why, spent);
                 case SetMobilization m:
                     return SecuritySystem.SetMobilization(c, s, m.Level, why);
                 case Appoint a:

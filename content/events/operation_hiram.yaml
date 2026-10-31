@@ -26,6 +26,8 @@ office: defense_minister
 # decision before the operation.
 from: 1948-10-31
 to: 1948-11-16
+# No unit orders on either option (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only): no source in the repo
+# places a unit at a dated position inside this window, so none is given until one is found.
 options:
   - id: stop_at_ceasefire
     text: Stop at the cease-fire and hold the Upper Galilee

@@ -158,6 +158,20 @@
               "else": { "properties": { "delta": { "type": "integer", "minimum": -2147483647, "maximum": 2147483647 } } }
             }
           },
+          "unit_orders": {
+            "type": "array",
+            "description": "R-ENEMY-005 (GDD loop only, applied under gdd-0.1 only): go-to orders for the unit of a map/units_1948.yaml row, toward one of that row's anchor hexes in map/unit_anchor_hexes.yaml, through the player's own go-to.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["unit", "q", "r"],
+              "properties": {
+                "unit": { "type": "string", "minLength": 1 },
+                "q": { "type": "integer" },
+                "r": { "type": "integer" }
+              }
+            }
+          },
           "unlock_projects": {
             "type": "array",
             "description": "R-EFX-008 (GDD loop only): projects.yaml ids of locked kinds this option makes available to StartProject. A sensitive event may not unlock (R-EFX-005).",

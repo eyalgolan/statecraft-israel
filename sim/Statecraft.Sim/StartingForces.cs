@@ -53,6 +53,7 @@ namespace Statecraft.Sim
         {
             var rows = Rows(readFile, FileName, "units");
             var hexes = Hexes(readFile, rows);
+            c.UnitAnchorHexes = hexes;   // R-ENEMY-005: the operation cards' orders name these
             var start = c.Rules.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var ppu = c.RulesAt(c.Rules.Start).Mvp!.PeoplePerUnit;   // the start day's rules, as Cities.Init reads them
             var list = new List<StartingForce>();

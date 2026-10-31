@@ -29,6 +29,11 @@ options:
     set_rung: 5
     effects:
       - { target: security, delta: 0.02 }
+    # Unit orders (R-ENEMY-005; owner, 31 October 2026, #749: sourced anchors only): Golani to the Julis camp, from
+    # December 1948, map/units_1948.yaml line 135 (golani's anchor "Julis camp"); research_notes/M4 war mode/war-1948.md
+    # section 3, the Horev row (line 149). The hex is the anchor's own (map/unit_anchor_hexes.yaml).
+    unit_orders:
+      - { unit: golani, q: -7, r: 24 }
   - id: hold
     # Game assumption: the notes give no alternative to launching; this one names no advocate.
     text: Hold the lines and wait for talks with Egypt
@@ -36,6 +41,7 @@ options:
     alternative: { basis: design }
     effects:
       - { target: security, delta: -0.01 }
+    # No unit orders: no source places a unit for this alternative (R-ENEMY-005, #749), until one is found.
 sources:
   - { url: "https://www.jewishvirtuallibrary.org/jsource/History/horev.html", checked: 2026-10-10 }
   # IDF and Defence Establishment Archives (Ministry of Defence), "Operation Horev - Operation Ayin", 5 January 2015:

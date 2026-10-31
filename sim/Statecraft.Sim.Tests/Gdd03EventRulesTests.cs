@@ -335,9 +335,9 @@ public class Gdd03EventRulesTests
         "law_of_return:d9453c9d4645bfe7b8bd715bbc4aae6d2f5156b72c717317bd6990184b8e61e4",
         "maabarot_policy:de29ffa17fbc70aa7283b833e546a219b449c8b3e0d712e3d158ed18169d592b",
         "ministry_supply_crisis:000d54fdc5198b105f101bfa7816a152e2c7682f01a97da67e97988e5ef141db",
-        "operation_hiram:77657ee082201710acf8d1ab25979ddb5571261452e3a8c9ccc5d33e783177b7",
-        "operation_horev:72fb22533fc52e5507502fdce6e84c59cbb0649118b00a1701e5e9b522437678",
-        "operation_yoav:418ea425c461986c0ad2bcf9d493941adc9e22082877506c867b6aab4cf75250",
+        "operation_hiram:9ae584856ced7d5e19df5ed76ab8ddaba4fa360f5399da67ccaced3208519ec3", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "operation_horev:c8af1bd03a3dc6ce1f4c60e5874b731911d12559f3b7d523f193de7b2ac46bb1", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
+        "operation_yoav:72cf6baf45ca30a6629a6d152e37d6e995edd348e6a9c4bbfd1b50ee08f226ab", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
         "rafah_force_pressure:658b99340f0cf7dbf042e64d131509b87cec48f4374b16a1337fd0f831dbd28d", // re-pinned for #2020 (owner-approved Hebrew wording, owner re-review bc139d5eb)
         "railway_complete:2108338a93d663ec9cb06bcb474c1f1211cfff480f9ef0acaec9c758a4854a7c", // re-pinned for #1676 (person's fact-check of #1410, status draft -> fact-checked)
         "reparations_claim:b9982aae12edd0f6e2d9f8e4e3273d865d2e9106480fae5824728524edfa4139",
@@ -345,8 +345,24 @@ public class Gdd03EventRulesTests
         "rhodes_talks:9ff18db85e108157ab4ff3753fbf42f9933bedb5f021310979d05fae1b731d1c",
         "second_truce:56c2259ad9af32b4d6d43d22044908611e6b43f2836211350beb125e864b1611",
         "sinai_withdrawal:29854edb31218257e99417f86f23a6dde91c07a9e66230fa1a1b4a0248b15ac5",
-        "ten_days:805500e569a78c2debd27df872614a153730bdba2360ff94b2edb74ea76c56cb",
+        "ten_days:c43a3f2dad418f07e1ef3e0c1dc79579b5b5a076263780e3fa42286ac29334a4", // re-pinned for #749 part 2 (R-ENEMY-005 unit orders; owner ruling, 31 October 2026; review status unchanged)
     };
+    // R-ENEMY-005 (owner, 31 October 2026, #749: "GDD 0.1 only"): the operation cards' unit orders apply under gdd-0.1; under
+    // gdd-0.3 the cards stay effect-free for units until a 0.3 accounting contract exists (R-EFX-001/005).
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OperationCardOrdersApplyUnderGdd01Only(bool modern)
+    {
+        var c = Real(modern);
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal("golani", c.StartingForces[0].Row);
+        var before = s.Units[0];
+        s.PendingEvents.Add("operation_horev");
+        Assert.Null(EventSystem.Choose(c, s, "operation_horev", "launch", new List<Cause>()));
+        var after = s.Units[0];
+        Assert.Equal(modern ? (before.Order, before.OrderTarget) : (Movement.GoTo, "-7,24"), (after.Order, after.OrderTarget));
+    }
     [Fact]
     public void AllThirtyNineSourceRecordsIncludingReviewsAndHebrewAreUnchanged()
     {

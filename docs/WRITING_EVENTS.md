@@ -225,6 +225,7 @@ Each option has:
 | `grant_units` | no | GDD loop only. A list of `{ type, n, at }`: see "grant_units and city_effects". |
 | `city_effects` | no | GDD loop only. A list of `{ city, field, delta }`: see "grant_units and city_effects". |
 | `unlock_projects` | no | GDD loop only. A list of `projects.yaml` ids: see "grant_units and city_effects". |
+| `unit_orders` | no | GDD loop only, applied under gdd-0.1 only. A list of `{ unit, q, r }`: see "unit_orders". |
 | `alternative` | on every option that did not happen, in an event with a historical option | Who put it forward, on what record. See below. |
 | `rejoin` | no | Consequence cards only. The id of the event whose road the card follows; choosing this option returns later cards to the recorded course (R-ALT-009). See "kind". |
 
@@ -292,6 +293,15 @@ These act on the GDD records, so only content whose `eras.yaml` sets `systems.lo
   of the game (R-EFX-008). Naming a kind that is not locked is an error, since it would do nothing.
 
 An event with a sensitive tag may carry no grant, no positive `city_effects` delta and no unlock; a cut is allowed (R-EFX-005).
+
+### unit_orders
+
+- `unit_orders: [{ unit: golani, q: -7, r: 24 }]` gives the unit of a `map/units_1948.yaml` row a go-to order toward
+  hex (`q`, `r`) when the option is chosen or delegated (R-ENEMY-005). The hex must be one of that row's own anchor
+  hexes in `map/unit_anchor_hexes.yaml`, so a card never sends a unit where no source puts it; cite the anchor's line in
+  a comment. The order goes through the player's own go-to: one the player could not give changes nothing.
+- It applies under gdd-0.1 only. Under gdd-0.3 the loader still checks it and the unit gets no order; the legacy loop
+  ignores it.
 
 ### sources
 

@@ -390,7 +390,9 @@ public class EnemyAITests
             foreach (var u in s.Units.Values.Where(IsEnemy))
                 if ((u.Q, u.R) != start[u.Id]) Assert.DoesNotContain((u.Q, u.R), players);
         }
-        Assert.Empty(s.Settlements);
+        // No enemy capture. The one capture is the player's: Horev's delegated go-to (R-ENEMY-005) takes Golani through
+        // Nazareth, an open enemy-held target (R-MOVE-005, #1304), on the 15 December 1948 turn.
+        Assert.Equal(new[] { ("nazareth", Movement.PlayerSide) }, s.Settlements.Select(x => (x.Key, x.Value.Owner)));
     }
 
     // R-ENEMY-001: what the enemy does is named on its cause (Cause.EnemyOrder), for the turn report (#1293): a scripted
@@ -435,5 +437,70 @@ public class EnemyAITests
             Assert.Equal(new[] { 2 }, attack.EnemyAttackers);
             s = r.State;
         }
+    }
+    // R-ENEMY-005 (Q-ENEMY-5; owner, 31 October 2026, #749): an operation card's option gives a go-to order to a unit of a
+    // units_1948.yaml row, toward one of that row's own anchor hexes, through the player's own go-to (Movement.GiveGoTo).
+    // The loader refuses a row it does not know, and a hex that is not one of the row's anchors; a card's
+    // order that breaks a movement rule is refused like the player's and changes nothing. Fixture values: one brigade row
+    // starting on (0, 0), with a second anchor on (4, 0).
+    [Fact]
+    public void OperationCardOrdersAreValidated()
+    {
+        const string Rows = "units:\n- id: brig\n  service: army\n  side: israel\n  status: draft\n"
+            + "  strength: { value: 30, as_of: '1948-05-15' }\n  anchors:\n"
+            + "  - { place: Here, lon: 34.29, lat: 33.35, from: '1948-05-15', to: '1949-01-01' }\n"
+            + "  - { place: There, lon: 34.30, lat: 33.35, from: '1948-06-01', to: '1949-01-01' }\n";
+        const string Hexes = "anchors:\n  - { id: brig, anchor: 0, q: 0, r: 0 }\n  - { id: brig, anchor: 1, q: 4, r: 0 }\n";
+        static string Card(string order) => "id: probe\ntitle: Fixture\ntext: Fixture.\nfrom: 1948-05-15\noptions:\n"
+            + "  - id: ok\n    text: Accept\n    historical: true\n    unit_orders: [" + order + "]\n";
+        static Dictionary<string, string> Files() => Fixture.Gdd(new Dictionary<string, string>
+        {
+            ["unit_types.yaml"] = Types, ["map/hexes.json"] = MovementTests.Board(), ["corridors.yaml"] = "corridors: []\n",
+            ["map/units_1948.yaml"] = Rows, ["map/unit_anchor_hexes.yaml"] = Hexes,
+        });
+        static ContentException Refused(Dictionary<string, string> files, string order) =>
+            Assert.Throws<ContentException>(() => ContentLoader.Load(Fixture.Write(files, new() { ["probe.yaml"] = Card(order) })));
+
+        var unknown = Refused(Files(), "{ unit: nobody, q: 4, r: 0 }");
+        Assert.Equal(("events/probe.yaml", "events[probe].options[ok].unit_orders[0].unit"), (unknown.File, unknown.Field));
+        var invented = Refused(Files(), "{ unit: brig, q: 3, r: 0 }");
+        Assert.Equal("events[probe].options[ok].unit_orders[0]", invented.Field);
+        Assert.Contains("not an anchor", invented.Message);
+        // The legacy loop reads the shared cards too: the order does not stop it loading, and it has no units to order.
+        Assert.Empty(ContentLoader.Load(Fixture.Write(null, new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") })).StartingForces);
+
+        var c = ContentLoader.Load(Fixture.Write(Files(), new() { ["probe.yaml"] = Card("{ unit: brig, q: 4, r: 0 }") }));
+        var s = Simulation.NewGame(c, 1, Mode.Historical);
+        Assert.Equal(("brig", (0, 0)), (c.StartingForces[0].Row, (s.Units[0].Q, s.Units[0].R)));
+        Assert.Contains("probe", s.PendingEvents);
+        // The card's order is the player's go-to, with the movement points the turn's orders have already spent.
+        var card = Simulation.Preview(c, s, new Command[] { new Move(0, 1, 0), new ChooseEventOption("probe", "ok") });
+        var mine = Simulation.Preview(c, s, new Command[] { new Move(0, 1, 0), new UnitOrder(0, Movement.GoTo, 4, 0) });
+        Assert.Empty(card.Rejected);
+        Assert.Equal((Movement.GoTo, "4,0", 3, 0), (card.State.Units[0].Order, card.State.Units[0].OrderTarget, card.State.Units[0].Q, card.State.Units[0].R));
+        Assert.Equal((mine.State.Units[0].Q, mine.State.Units[0].R, mine.State.Units[0].Order), (card.State.Units[0].Q, card.State.Units[0].R, card.State.Units[0].Order));
+        // Left to the cabinet at End turn, the card gives the same order.
+        var left = Simulation.Step(c, s, Array.Empty<Command>()).State.Units[0];
+        Assert.Equal((Movement.GoTo, "4,0"), (left.Order, left.OrderTarget));
+        // An enemy unit holds the anchor: the player's go-to is refused, and the card's order changes nothing.
+        s.Units.Add(9, Enemy(9, 4, 0, 1));
+        var held = Simulation.Preview(c, s, new Command[] { new ChooseEventOption("probe", "ok") });
+        Assert.Empty(held.Rejected);
+        Assert.Equal(("", 0, 0), (held.State.Units[0].Order, held.State.Units[0].Q, held.State.Units[0].R));
+        Assert.Equal("An enemy unit holds that hex", Assert.Single(Simulation.Preview(c, s, new Command[] { new UnitOrder(0, Movement.GoTo, 4, 0) }).Rejected).Reason);
+    }
+
+    // R-ENEMY-005 (owner, 31 October 2026, #749: "Sourced anchors only"): only the three sourced anchors receive orders, each
+    // from its card's historical option. Yoav, Hiram and every alternative option give none until sources are found.
+    [Fact]
+    public void OnlyTheThreeSourcedAnchorsReceiveCardOrders()
+    {
+        var orders = Real.Events.SelectMany(e => e.Options.SelectMany(o => o.UnitOrders.Select(x => (e.Id, o.Id, o.Historical, x.Unit, x.Q, x.R))));
+        Assert.Equal(new[]
+        {
+            ("operation_horev", "launch", true, "golani", -7, 24),      // Julis camp, units_1948.yaml golani anchors[1]
+            ("ten_days", "central_front", true, "yiftach", -3, 21),     // Lydda, yiftach anchors[0]
+            ("ten_days", "central_front", true, "carmeli", 13, 5),      // facing the Syrian bridgehead, carmeli anchors[1]
+        }, orders.OrderBy(x => x.Item1, StringComparer.Ordinal));
     }
 }

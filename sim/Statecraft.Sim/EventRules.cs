@@ -123,7 +123,28 @@ namespace Statecraft.Sim
         {
             foreach (var e in c.Events)
                 foreach (var o in e.Options)
+                {
                     CheckStructured(c, e, o, e.Tags.Any(SensitiveTags.Contains), field => $"events[{e.Id}].{field}");
+                    CheckOrders(c, e, o, field => $"events[{e.Id}].{field}");
+                }
+        }
+
+        /// <summary>R-ENEMY-005 (Q-ENEMY-5): an option's go-to orders name a map/units_1948.yaml row and one of that row's own
+        /// anchor hexes, so a card never sends a unit to a position no source gives it (owner, 31 October 2026, #749: sourced
+        /// anchors only). They are checked under gdd-0.3 too, where EventSystem does not apply them. The legacy loop reads the
+        /// same real cards but no units file, so it has nothing to check them against and no unit to order.</summary>
+        static void CheckOrders(Content c, GameEvent e, EventOption o, Func<string, string> F)
+        {
+            if (!c.IsGdd) return;
+            for (int i = 0; i < o.UnitOrders.Count; i++)
+            {
+                var x = o.UnitOrders[i];
+                var at = F(FormattableString.Invariant($"options[{o.Id}].unit_orders[{i}]"));
+                if (!c.UnitAnchorHexes.Keys.Any(k => k.Row == x.Unit))
+                    throw new ContentException(e.File, at + ".unit", $"unknown unit row '{x.Unit}' ({StartingForces.FileName})");
+                if (!c.UnitAnchorHexes.Any(k => k.Key.Row == x.Unit && k.Value == (x.Q, x.R)))
+                    throw new ContentException(e.File, at, FormattableString.Invariant($"hex q={x.Q} r={x.R} is not an anchor of '{x.Unit}' in {StartingForces.HexesFileName}"));
+            }
         }
 
         static void CheckStructured(Content c, GameEvent e, EventOption o, bool sensitive, Func<string, string> F)

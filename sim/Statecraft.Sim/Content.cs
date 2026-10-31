@@ -1016,6 +1016,8 @@ namespace Statecraft.Sim
         public List<CityEffect> CityEffects { get; set; } = new List<CityEffect>();
         /// <summary>R-EFX-008: locked projects.yaml kinds this option makes available, in list order (D-H2, Q-HFX-1).</summary>
         public List<string> UnlockProjects { get; set; } = new List<string>();
+        /// <summary>R-ENEMY-005: go-to orders this option gives to units of map/units_1948.yaml rows, in list order (Q-ENEMY-5).</summary>
+        public List<UnitOrderEffect> UnitOrders { get; set; } = new List<UnitOrderEffect>();
         /// <summary>Who put this non-historical option forward, and on what record (R-ALT-003). Null when absent.</summary>
         public OptionAlternative? Alternative { get; set; }
         /// <summary>The event whose historical course this consequence option rejoins (R-ALT-009), or empty.</summary>
@@ -1030,6 +1032,15 @@ namespace Statecraft.Sim
         public string Type { get; set; } = "";
         public int N { get; set; }
         public string At { get; set; } = "";
+    }
+
+    /// <summary>An option's go-to order (R-ENEMY-005) for the unit of the map/units_1948.yaml row <see cref="Unit"/>, toward
+    /// hex (<see cref="Q"/>, <see cref="R"/>), which must be one of that row's anchor hexes (map/unit_anchor_hexes.yaml).</summary>
+    public sealed class UnitOrderEffect
+    {
+        public string Unit { get; set; } = "";
+        public int Q { get; set; }
+        public int R { get; set; }
     }
 
     /// <summary>An option's change to one field of a city (R-EFX-004): housing_capacity or job_slots by whole units, or the
@@ -1373,6 +1384,9 @@ namespace Statecraft.Sim
         /// <summary>The forces a Historical game starts with (map/units_1948.yaml; R-UNIT-006), in file order: the unit with id i
         /// of a new game is the i-th. Empty in the legacy loop.</summary>
         public List<StartingForce> StartingForces = new List<StartingForce>();
+        /// <summary>Every anchor's hex of map/unit_anchor_hexes.yaml by (row id, anchor index), the only hexes an operation
+        /// card may order a row's unit to (R-ENEMY-005). Empty in the legacy loop.</summary>
+        public Dictionary<(string Row, int Anchor), (int Q, int R)> UnitAnchorHexes = new Dictionary<(string Row, int Anchor), (int Q, int R)>();
         /// <summary>The GDD designated sites (sites.yaml), in file order. Empty in the legacy loop.</summary>
         public List<Site> Sites = new List<Site>();
         /// <summary>The GDD city project kinds (projects.yaml), in file order. Empty in the legacy loop.</summary>
