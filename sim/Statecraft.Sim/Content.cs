@@ -1341,6 +1341,9 @@ namespace Statecraft.Sim
         public List<MoneyAccount> Money = new List<MoneyAccount>();
         public List<PopulationAnchor> PopulationAnchors = new List<PopulationAnchor>();
         public List<GameEvent> Events = new List<GameEvent>();
+        /// <summary>The languages in translations/ (#1618, docs/translations.md), by code, each checked against this content.
+        /// Display text only: outside <see cref="Hash"/>. Hebrew is still shown from the inline fields.</summary>
+        public List<TranslationSet> Translations = new List<TranslationSet>();
         List<MapHex> _hexes = new List<MapHex>();
         Dictionary<(int, int), MapHex> _hexIndex = new Dictionary<(int, int), MapHex>();
 

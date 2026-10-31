@@ -3,7 +3,8 @@ using Statecraft.Cli;
 using Statecraft.Sim;
 
 // Text front end for the headless sim.
-//   dotnet run --project Statecraft.Cli -- [--content DIR] [--seed N] [--auto historical --turns N]
+//   dotnet run --project Statecraft.Cli -- [--content DIR] [--translations DIR] [--seed N] [--auto historical --turns N]
+//       --translations: the translations folder (#1618; default: the translations/ beside a folder named content)
 //   dotnet run --project Statecraft.Cli -- --preview [--until YYYY-MM-DD] [--set key=value]... [--show id,id] [--every N]
 //       writer preview: the historical run with some rules.yaml values changed in memory, against the real content
 //   dotnet run --project Statecraft.Cli -- --release-gate [--content DIR]   (exit 0 when shareable, 3 when not)
@@ -14,7 +15,7 @@ CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
 string? Arg(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
-foreach (var flag in new[] { "--content", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every" })
+foreach (var flag in new[] { "--content", "--translations", "--seed", "--turns", "--auto", "--until", "--set", "--show", "--every" })
 {
     var at = Array.IndexOf(args, flag);
     if (at >= 0 && (at + 1 >= args.Length || args[at + 1].StartsWith("--", StringComparison.Ordinal)))
@@ -56,7 +57,14 @@ if (Array.IndexOf(args, "--preview") >= 0)
 }
 
 Content content;
-try { content = ContentLoader.Load(Arg("--content") ?? FindContent()); }
+try
+{
+    var contentDir = Arg("--content") ?? FindContent();
+    var translationsDir = Arg("--translations");
+    if (translationsDir != null && !Directory.Exists(translationsDir))
+    { Console.Error.WriteLine($"Content error: translations directory not found: {translationsDir}"); return 2; }
+    content = ContentLoader.Load(contentDir, translationsDir ?? TranslationLoader.Beside(contentDir));
+}
 catch (DirectoryNotFoundException) { Console.Error.WriteLine("Content error: content directory not found (use --content <path>)"); return 2; }
 catch (ContentException e) { Console.Error.WriteLine($"Content error: {e.Message}"); return 2; }
 

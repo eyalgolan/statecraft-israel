@@ -309,12 +309,33 @@ namespace Statecraft.Sim
         /// ("people.yaml", "events/x.yaml") and returns the file's text, or null when it is missing. This is the
         /// entry point for platforms without a file system (a WebGL build reads StreamingAssets through a URL).
         /// <paramref name="eventFiles"/> are the event files, relative to the content root; they load in ordinal order.</summary>
-        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles)
+        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles) =>
+            Load(readFile, eventFiles, rel => null, Enumerable.Empty<string>());
+
+        /// <summary>Loads content as <see cref="Load(Func{string, string?}, IEnumerable{string})"/> does, with the
+        /// translations of <paramref name="translationFiles"/> ("&lt;lang&gt;/ui.yaml" and so on, as
+        /// <see cref="TranslationLoader.Collect"/> lists them), which <paramref name="readTranslation"/> reads relative to
+        /// the translations folder (#1618, step 2). They are checked against the content and kept in
+        /// <see cref="Content.Translations"/>, outside the content hash.</summary>
+        public static Content Load(Func<string, string?> readFile, IEnumerable<string> eventFiles,
+            Func<string, string?> readTranslation, IEnumerable<string> translationFiles)
         {
             if (readFile == null) throw new ArgumentNullException(nameof(readFile));
             if (eventFiles == null) throw new ArgumentNullException(nameof(eventFiles));
+            if (readTranslation == null) throw new ArgumentNullException(nameof(readTranslation));
+            if (translationFiles == null) throw new ArgumentNullException(nameof(translationFiles));
             var read = new List<(string rel, string text)>();
             var inner = readFile;
+            // Reads a content file for the translation checks without adding it to the hash: a translation can name a file
+            // the sim never reads (map/units_1948.yaml), and translations are display text.
+            Func<string, string?> unhashed = rel =>
+            {
+                string? text;
+                try { text = inner(rel); }
+                catch (IOException e) { throw new ContentException(rel, "(file)", e.Message); }
+                catch (UnauthorizedAccessException e) { throw new ContentException(rel, "(file)", e.Message); }
+                return text != null && text.Length > 0 && text[0] == '\uFEFF' ? text.Substring(1) : text;
+            };
             readFile = rel =>
             {
                 var text = inner(rel);
@@ -382,6 +403,7 @@ namespace Statecraft.Sim
             // set without objectives has no file.
             // In the file's order, not sorted: it is the order objectives record and their cards fire in (R-OBJ-007, Q-CARD-2).
             c.Objectives = ReadOptional<ObjectivesFile>(readFile, ObjectivesFileName)?.Objectives ?? new List<Objective>();
+            var parsedEvents = c.Events.ToList();   // a translation may name an event a ruleset leaves out
             // Leave malformed legacy era records to the original validation path (Ruleset needs Systems).
             if (c.Eras.Count > 0 && c.Eras[0].Systems != null && c.Ruleset == SaveGame.Gdd03Ruleset)
             {
@@ -417,6 +439,7 @@ namespace Statecraft.Sim
             EventRules.ValidateStructured(c);   // R-EFX-006: after the GDD records it names are read
             c.BuildWindows();
             c.Hash = HashOf(read);
+            c.Translations = TranslationLoader.Load(c, parsedEvents, unhashed, readTranslation, translationFiles);
             return c;
         }
 
@@ -493,8 +516,13 @@ namespace Statecraft.Sim
             return string.Concat(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString())).Select(b => b.ToString("x2", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
-        /// <summary>Loads content from a directory: every events/*.yaml file is an event.</summary>
-        public static Content Load(string contentRoot)
+        /// <summary>Loads content from a directory: every events/*.yaml file is an event. The translations come from the
+        /// folder beside it (<see cref="TranslationLoader.Beside"/>) when there is one.</summary>
+        public static Content Load(string contentRoot) => Load(contentRoot, TranslationLoader.Beside(contentRoot));
+
+        /// <summary>Loads content from a directory with the translations of <paramref name="translationsRoot"/> (none when it
+        /// is null or missing).</summary>
+        public static Content Load(string contentRoot, string? translationsRoot)
         {
             var eventsDir = Path.Combine(contentRoot, "events");
             var eventFiles = Directory.Exists(eventsDir)
@@ -504,7 +532,11 @@ namespace Statecraft.Sim
             {
                 var path = Path.Combine(contentRoot, rel);
                 return File.Exists(path) ? File.ReadAllText(path) : null;
-            }, eventFiles);
+            }, eventFiles, rel =>
+            {
+                var path = Path.Combine(translationsRoot!, rel);
+                return File.Exists(path) ? File.ReadAllText(path) : null;
+            }, TranslationLoader.Collect(translationsRoot));
             // Only this overload can list the directory. The readFile overload (WebGL) cannot, so a misnamed file is caught
             // here and by RealContentTests before anything ships.
             var rulesDir = Path.Combine(contentRoot, "rules");

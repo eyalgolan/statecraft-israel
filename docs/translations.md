@@ -5,10 +5,10 @@ it doesnt cause any bugs, degregations or gaps"). English stays the source of re
 `unity/Assets/UI/strings.en.yaml`. This page fixes the files, their keys and their order, so the tools, the sim and Unity
 read and write them the same way.
 
-**Status (step 1 of #1618):** the contract and its tests only. The game still reads Hebrew from the inline `*_he` fields
-and `strings.he.yaml`; nothing has moved. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files,
-and the tests prove every value comes back unchanged. The tools' side (`tools/translate.py`, from #1604) joins the same
-fixture check once #1604 has merged.
+**Status (steps 1 and 2 of #1618):** the contract, and the transport that brings `translations/` to the sim, the CLI and
+every player (below, "Loading"). The game still shows Hebrew from the inline `*_he` fields and `strings.he.yaml`;
+nothing has moved. `Translations.InlineHebrew` (sim) reads today's inline Hebrew as these files, and the tests prove every
+value comes back unchanged. The tools' side (`tools/translate.py`) joins the same fixture check in a follow-up.
 
 ## The files
 
@@ -60,10 +60,11 @@ These fields are facts about the record or its Hebrew, so they are never keys an
 
 ## Not keyed yet
 
-`content/map/subdistricts_1948.geojson` (`name_he`, `district_he`) and `content/map/control_1948_49.geojson`
-(`legend_he`) hold Hebrew map labels that their digitisers write as a sourced set, next to the Arabic
-(`tools/borders_digitise.py`, `tools/control_digitise.py`). Whether they stay in place or get keys is the owner's
-decision on #1618; until then `TranslationsTests` names them, and fails if any other non-YAML content file has Hebrew.
+`content/map/subdistricts_1948.geojson` (`name_he`, `district_he`) stays as it is: the owner ruled "Keep in place,
+document it" (25 October 2026, #1618), since its Hebrew names are sourced together with the Arabic to the Palestine
+Gazette, No. 1415 (`tools/borders_digitise.py`). `content/map/control_1948_49.geojson` (`legend_he`, written by
+`tools/control_digitise.py`) is the same kind of file; the ruling names only the sub-districts, so it stays unkeyed until
+the owner rules on it too. `TranslationsTests` names both, and fails if any other non-YAML content file has Hebrew.
 
 ## Order and format
 
@@ -95,9 +96,40 @@ the check: a `ui.yaml` copied from another language with its code left behind pa
 `Parse` itself does not require the key, because it is also used to read a file's shape in isolation — the check is a
 separate call, made where a language is adopted.
 
+## Loading
+
+`ContentLoader.Load` reads `translations/` with the content (#1618, step 2). The Hebrew the game shows still comes from
+the inline fields; the translations are checked and kept in `Content.Translations`, for the language picker of #1606 and
+the later steps of #1618.
+
+- **Where:** the `translations/` folder beside a folder named `content` (`TranslationLoader.Beside`): the repository's
+  in the editor and the CLI, `StreamingAssets/translations` in a desktop player. A content folder with another name (a
+  test fixture) has none. The CLI takes `--translations DIR` to name another.
+- **Players:** `ContentSync` copies `translations/` into `StreamingAssets/translations` before every player build, and
+  `ContentManifest` lists its files in `manifest.json` and packs their texts into `bundle.json` beside the content. The
+  web boot reads them from that one bundle, so it makes no extra request. `ContentManifest.Verify` checks the copy and
+  the bundle against the source, file by file and byte for byte.
+- **The folder:** a language folder holds only `ui.yaml`, `events.yaml` and `content.yaml`; any other file or folder
+  there, or a folder that is not a language code, is an error rather than something skipped. Files at the top
+  (`README.md`) are not languages. Dot-prefixed files and folders (such as `.DS_Store` and `.cache`) are ignored.
+- **The checks:** every language is parsed, must name itself (`CheckDeclaredLanguage`), may not translate the advisors or
+  How to play unless it is Hebrew, translates only events that exist and every option of each, and keys only fields
+  `Fields` offers. An event that a ruleset leaves out still counts as existing.
+- **Hebrew:** a `translations/he/` that is present must match the inline Hebrew exactly: the same events, texts, options
+  and review flags, and the same content fields and flags, none missing and none extra.
+- **Files a player does not ship:** `map/localities_1948.yaml` is a tool input; players get its baked TSV. A key into it is
+  checked where the file can be read (the editor, the CLI and the build gate), and skipped in a player.
+- **The hash:** translations are display text, so they stay outside `Content.Hash`: a save, the goldens and the replay
+  hashes are the same with or without them.
+
+The UI strings still come from `strings.en.yaml` and `strings.he.yaml`. Which catalogue the UI shows, and when, is #1606's
+(`GameRoot.Strings()`).
+
 ## The implementations and their tests
 
 - `sim/Statecraft.Sim/Translations.cs`: keys, parsing, writing, `Resolve` and `InlineHebrew`.
+- `sim/Statecraft.Sim/TranslationLoader.cs`: finds, lists and checks `translations/` (above, "Loading").
+  `TranslationLoaderTests` covers it, and `GameInputsTests` (Unity EditMode) the copy, the bundle and the web boot.
 - `sim/Statecraft.Sim/HebrewOverlay.cs`: puts a Hebrew set on the sim's typed `*He` properties. Unity reads the Hebrew of
   `map/localities_1948.yaml`, `map/settlements_1948.yaml` and `map/units_1948.yaml` itself
   (`HebrewOverlay.UnityReads`).

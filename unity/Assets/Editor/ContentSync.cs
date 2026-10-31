@@ -8,7 +8,8 @@ namespace Statecraft.Game.EditorTools
 {
     /// <summary>Copies the repository's content/ into Assets/StreamingAssets/content with a manifest.json and a bundle.json
     /// (every text in one file, which the web boot fetches: #1054) before every player build (git-ignored output), so
-    /// players read the same content the editor reads from the repo.
+    /// players read the same content the editor reads from the repo. translations/ goes to
+    /// Assets/StreamingAssets/translations and into the same bundle (#1618 step 2).
     /// Run alone: Unity -batchmode -CI false -GITHUB_ACTIONS false -TF_BUILD false -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.ContentSync.Sync</summary>
     public sealed class ContentSync : IPreprocessBuildWithReport
     {
@@ -21,10 +22,14 @@ namespace Statecraft.Game.EditorTools
 
         public static void Sync()
         {
-            var files = ContentManifest.Copy(Paths.Content, Target);
-            try { ContentManifest.Verify(Paths.Content, Target); }
+            try
+            {
+                var files = ContentManifest.Copy(Paths.Content, Target);
+                ContentManifest.Verify(Paths.Content, Target);
+                UnityEngine.Debug.Log($"ContentSync: {files.Count} files to {Target}, {ContentManifest.CollectTranslations(Paths.Content).Count} translation files beside it");
+            }
             catch (InvalidDataException e) { throw new BuildFailedException("ContentSync: " + e.Message); }
-            UnityEngine.Debug.Log($"ContentSync: {files.Count} files to {Target}");
+            catch (global::Statecraft.Sim.ContentException e) { throw new BuildFailedException("ContentSync: " + e.Message); }
             var source = Path.Combine(Paths.RepoRoot, "sim", "Statecraft.Sim.Tests");
             if (Directory.Exists(GoldenTarget)) Directory.Delete(GoldenTarget, true);
             Directory.CreateDirectory(Path.Combine(GoldenTarget, "scenarios"));
