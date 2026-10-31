@@ -368,7 +368,7 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0)
             {
                 RenderChain();
-                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; TakeFocusFromTheCard(); }   // a screen closed over a resumed tour (#1915)
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnceUncovered(); }   // a screen closed over a resumed tour (#1915)
                 return;
             }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
@@ -556,6 +556,22 @@ namespace Statecraft.Game.UI
         {
             FocusReturn.To(gotIt);
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
+        }
+
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). The close still settles
+        /// around the hand-off (the screen's own hide, the panels it covered re-enabling, the focus the screen's contents
+        /// held going nowhere), and a bare Focus() during that can be lost, so the hand-off tries again on the following
+        /// frames while the focus is nowhere; a control that takes it meanwhile keeps it.</summary>
+        void FocusNextOnceUncovered(int attempts = 5)
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            gotIt.Focus();
+            if (attempts <= 1) return;
+            layer.schedule.Execute(() =>
+            {
+                if (disposed || !InChain || ScreenOpen()) return;
+                if (layer.focusController?.focusedElement == null) FocusNextOnceUncovered(attempts - 1);
+            });
         }
 
         void ShowMe()
