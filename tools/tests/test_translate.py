@@ -283,8 +283,9 @@ def test_http_refuses_a_bad_language(server, code):
     assert status == 400 and b"language code" in body
 
 
-def test_advisors_and_how_to_play_stay_english_or_hebrew(langs):
-    """Owner, 24 October 2026, on #1604: "Advisors + How to play" stay English or Hebrew only, for now."""
+def test_advisors_and_encyclopedia_stay_english_or_hebrew(langs):
+    """Owner, 24 October 2026, on #1604: "Advisors + How to play" stay English or Hebrew only, for now; the advisors'
+    encyclopedia replaced How to play (#1519)."""
     kept = ("ui:advisor.", "ui:encyclopedia.")
     for lang in ("he", "en"):
         keys = [r["key"] for r in translate.catalog_for("en", lang)["rows"]]

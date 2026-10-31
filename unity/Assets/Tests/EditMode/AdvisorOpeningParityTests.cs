@@ -1100,7 +1100,7 @@ public class AdvisorOpeningEventIdentityTests
     {
         var yaml = File.ReadAllText(AdvisorCatalog.Path).Replace("he_review: pending", "he_review: approved")
             .Replace("requires: [opening.move]", "requires: [opening.detour]")
-            .Replace("pages: []", "  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages: []");
+            .Replace("\npages:\n", "\n  - { id: opening.detour, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 99 } }\n\npages:\n");
         using var rig = new AdvisorTour1688Fixture.Rig(catalog: AdvisorCatalog.Parse(yaml));
         rig.Advisor.OpenChain();
         for (int i = 0; i < 4; i++) rig.Advisor.NextStep();

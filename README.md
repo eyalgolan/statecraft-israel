@@ -76,7 +76,7 @@ It is an early, honest prototype.
 - The Budget screen.
 - The Defence screen, which shows the escalation ladder and the reserve call-up as the events set them.
 - Sourced historical events from the 1948 war through the 1951 foreign-currency crisis, most with an archival photograph.
-- The "Why?" panel, a turn report after End turn, a short How to play screen, and the advisors David Ben-Gurion, Golda Meyerson and Moshe Dayan, who walk you through the first turn.
+- The "Why?" panel, a turn report after End turn, and the advisors David Ben-Gurion, Golda Meyerson and Moshe Dayan, who walk you through the first turn and explain each mechanic in their encyclopedia.
 - A Timeline screen that sets your course beside the historical record.
 - An end screen with the outcome, the score and the date you met each objective beside the historical date.
 - Share: a screenshot of your game for X, Facebook, Instagram, WhatsApp, Telegram or LinkedIn.

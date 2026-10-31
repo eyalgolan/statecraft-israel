@@ -137,6 +137,31 @@ public class EncyclopediaScreenTests
         Assert.AreEqual(En["advisor.page.attention.text"], ui.Q<Label>("encyclopedia-page-text").text);
     }
 
+    /// <summary>The turns page keeps How to play's End turn guidance (#1688): a unit that needs orders is selected first, in
+    /// both languages and both rulesets.</summary>
+    [Test]
+    public void TheTurnsPageKeepsNeedsOrdersGuidance([Values(false, true)] bool hebrew, [Values(SaveGame.GddRuleset, SaveGame.Gdd03Ruleset)] string ruleset)
+    {
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var pedia = new EncyclopediaPresenter(ui.Root, hebrew ? He : En, Approved(), nav, null, ruleset);
+        pedia.Open("turns");
+        var line = ui.Q<Label>("encyclopedia-page-text").text;
+        foreach (var phrase in hebrew ? new[] { "ממתינה להוראות", "סיום התור בוחר בה" } : new[] { "needs orders", "End turn selects it" })
+            StringAssert.Contains(phrase, line);
+    }
+
+    /// <summary>Under gdd-0.3 a lost city alone does not end the game (R-END-003, #1668): the defeat page says so.</summary>
+    [Test]
+    public void Gdd03DefeatPageHasNoWarLoss()
+    {
+        using var ui = new UiTestKit();
+        using var nav = new ScreenNav(ui.Root);
+        using var pedia = new EncyclopediaPresenter(ui.Root, En, AdvisorCatalog.Load(), nav, null, SaveGame.Gdd03Ruleset);
+        pedia.Open("defeat");
+        Assert.AreEqual(En["advisor.page.defeat.gdd03.text"], ui.Q<Label>("encyclopedia-page-text").text);
+    }
+
     static void AssertNoAttention(string all)
     {
         StringAssert.DoesNotContain("Attention", all);
