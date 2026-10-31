@@ -177,11 +177,14 @@ namespace Statecraft.Game.UI
                 // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
                 // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
                 // reopens the screen only after Begin returns, so at construction no screen is open yet.
-                if (InChain)
+                if (session.Chain.Step >= 0)
                     layer.schedule.Execute(() =>
                     {
-                        if (disposed || !InChain) return;
+                        if (disposed || session.Chain.Step < 0) return;
+                        // The chain, not InChain: the popup hides under the covering screen (RenderChain's Hide), and
+                        // IsOpen's false then must not skip the arm, or the close finds nothing armed (#1915).
                         if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
+                        Debug.Log("[#1915] arm check: screenOpen=" + ScreenOpen() + " armed=" + focusNextWhenUncovered + " isOpen=" + IsOpen);
                     });
             }
         }
@@ -368,6 +371,7 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0)
             {
                 RenderChain();
+                Debug.Log("[#1915] cover change: armed=" + focusNextWhenUncovered + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
                 if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnceUncovered(); }   // a screen closed over a resumed tour (#1915)
                 return;
             }
@@ -564,6 +568,7 @@ namespace Statecraft.Game.UI
         /// frames while the focus is nowhere; a control that takes it meanwhile keeps it.</summary>
         void FocusNextOnceUncovered(int attempts = 5)
         {
+            Debug.Log("[#1915] hand-off: attempts=" + attempts + " disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen() + " focused=" + (layer.focusController?.focusedElement is VisualElement f ? f.name : "null"));
             if (disposed || !InChain || ScreenOpen()) return;
             gotIt.Focus();
             if (attempts <= 1) return;
