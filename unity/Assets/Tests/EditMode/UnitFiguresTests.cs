@@ -492,7 +492,7 @@ public class UnitFiguresTests
     }
 
     /// <summary>The Arab forces are drawn only once their own figure has arrived, three of it on
-    /// a base under their side's flag (the ALA's under the neutral pennant), never an IDF figure, and on ground no Israeli force held on the window's first day
+    /// a base under the neutral pennant, never an IDF figure, and on ground no Israeli force held on the window's first day
     /// (#226, ruling 9). A figure that never comes (null: a missing or damaged bundle) draws nothing, and warns nothing more.</summary>
     [Test]
     public void TheArabForcesAreDrawnOnlyWithTheirOwnFiguresOnceTheyArrive()
