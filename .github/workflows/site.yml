@@ -1,12 +1,12 @@
 name: Site
 
 # Publishes the playable demo on GitHub Pages: the latest release's *-web-pages.zip unpacked at /demo/
-# (https://eyalgolan.github.io/statecraft-israel/demo/), and a root page that redirects to it. The website that used to
-# be built here (site/, Astro) was removed on 31 Oct 2026; this file keeps its name because the nightly release job
-# dispatches it by file name (tools/nightly_publish.py). Pull requests that change this file only build and check the
-# pages. Deploying runs on main only (the github-pages environment allows main only), so a published release starts a
-# run on main instead of deploying from its tag. The demo never comes from git: it is a release asset (docs/RELEASING.md,
-# step 5). No secret is used.
+# (https://eyalgolan.github.io/statecraft-israel/demo/), with a root page and a 404 page that redirect to it. The
+# website that used to be built here (site/, Astro) was removed on 31 Oct 2026; this file keeps its name because the
+# nightly release job dispatches it by file name (tools/nightly_publish.py). Pull requests that change this file only
+# build and check the pages. Deploying runs on main only (the github-pages environment allows main only), so a
+# published release starts a run on main instead of deploying from its tag. The demo never comes from git: it is a
+# release asset (docs/RELEASING.md, step 5). No secret is used.
 
 on:
   push:
@@ -88,6 +88,28 @@ jobs:
           </html>
           HTML
           grep -q 'url=./demo/' dist/index.html
+      - name: Write the 404 page, a redirect to /demo/ for every missing path
+        # Pages serves 404.html at any depth (old /en/..., /he/..., /media/... links), so it names the absolute path.
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          [[ "$REPO_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "::error::Unexpected repository name: $REPO_NAME"; exit 1; }
+          demo="/$REPO_NAME/demo/"
+          cat > dist/404.html <<HTML
+          <!doctype html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <meta http-equiv="refresh" content="0; url=$demo">
+          <title>Statecraft: Israel</title>
+          </head>
+          <body>
+          <p><a href="$demo">Play Statecraft: Israel</a></p>
+          </body>
+          </html>
+          HTML
+          grep -q "url=$demo\"" dist/404.html
       - name: Keep the pages for deploying
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
