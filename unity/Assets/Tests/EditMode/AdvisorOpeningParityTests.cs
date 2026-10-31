@@ -1235,4 +1235,38 @@ public class AdvisorOpeningNoAttentionGameRootTests
             }
         }
     }
+
+    // #1915: a mid-tour language switch rebuilds the UI and resumes the tour; Next keeps the focus, so Enter goes on
+    // and its gold focus fill shows. Red-first: the rebuilt presenter resumed the chain without giving Next the focus
+    // back, and the button stayed dark for the rest of the tour.
+    [UnityTest]
+    public IEnumerator SettingsSwitchToHebrewKeepsTheTourNextFocused()
+    {
+        var inputs = new GameInputs { Content = AdvisorTour1688Fixture.Content(),
+            Map = GameInputs.MapFromDisk(Paths.Content, Paths.StreamingMap), Goldens = new GoldenData() };
+        var settings = new SettingsStore(TempDir());
+        var game = AdvisorGameTests.OpenScene(new SaveStore(TempDir()), settings);
+        game.Language = UiLanguage.English;
+        game.AdvisorCatalogForTests = AdvisorCatalog.Parse(File.ReadAllText(AdvisorCatalog.Path)
+            .Replace("he_review: pending", "he_review: approved"));
+        game.Begin(inputs, 0, startScreen: true);
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        game.Advisor!.OpenChain();
+        Assert.IsTrue(game.Advisor.InChain);
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass));
+        Assert.IsTrue(game.Advisor!.InChain, "the rebuilt presenter resumes the tour");
+        for (int i = 0; i < 3; i++) yield return null;
+        Assert.IsTrue(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass), "Settings reopens over the resumed tour (#1036)");
+        Assert.AreSame(Ui.Q<Button>("settings-language-" + UiLanguage.Hebrew), Ui.Q("root").focusController.focusedElement,
+            "Next does not steal Settings' focus while the screen is open (#1915)");
+
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));               // Settings closes over the resumed tour
+        for (int i = 0; i < 3; i++) yield return null;               // the scheduled Focus runs
+        Assert.IsFalse(Ui.Q("root").ClassListContains(ScreenNav.ScreenOpenClass));
+        Assert.AreSame(Ui.Q<Button>("advisor-got-it"), Ui.Q("root").focusController.focusedElement,
+            "once no screen is open Next has the focus: Enter goes on, and its gold focus fill shows (#1915)");
+    }
 }

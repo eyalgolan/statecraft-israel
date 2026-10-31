@@ -87,6 +87,13 @@ namespace Statecraft.Game.UI
         IVisualElementScheduledItem? fading;
         float flooredFor;
         bool disposed, hidden = true;
+        /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
+        /// the focus once, instead of every cover change (a resize, a meter's width) moving it.</summary>
+        bool focusNextWhenUncovered;
+        /// <summary>Set when the screen over a resumed tour closes while the popup is still coming back from its hide
+        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on Hide,
+        /// on a screen opening again and on CloseChain.</summary>
+        bool focusNextOnPlace;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
         /// <summary>The message a layer covered, to show again or drop when the layer closes (spec 4.2).</summary>
@@ -170,8 +177,23 @@ namespace Statecraft.Game.UI
                 if (chain[session.Chain.Step].ApprovedIn(hebrew) && this.hooks.Card?.Shown != null && !this.hooks.Card.Collapsed)
                     this.hooks.Card.Collapse(takeFocus: false);
                 RenderChain();
+                // A rebuild (a language switch) resumes the chain with Settings still open over it (#1036 reopens the
+                // screen): Next takes the focus only once no screen is open, so Enter goes on (spec 16) and its gold
+                // focus fill shows, without stealing the screen's focus (#1915). The check waits a frame: SwitchLanguage
+                // reopens the screen only after Begin returns, so at construction no screen is open yet.
+                if (InChain)
+                    layer.schedule.Execute(() =>
+                    {
+                        if (disposed || !InChain) return;
+                        if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
+                        Debug.Log("[#1915] arm check: screenOpen=" + ScreenOpen() + " armed=" + focusNextWhenUncovered + " isOpen=" + IsOpen);
+                    });
             }
         }
+
+        /// <summary>A screen is open over the tour. On the one-row HUD a side screen does not mark the HUD covered, so
+        /// Covered(hudRoot) alone misses Settings, and Next's focus would steal the screen's own (#1915).</summary>
+        bool ScreenOpen() => Covered(hudRoot) || hudRoot.ClassListContains(ScreenNav.ScreenOpenClass);
 
         /// <summary>A modal layer is open (spec 4.2): the start screen, the open decision card, the capture dialog, the turn
         /// report, an outcome clip, the end screen; and, on the two-row HUD, any side screen (it takes the full width).</summary>
@@ -325,6 +347,7 @@ namespace Statecraft.Game.UI
             StopWatching();
             if (hidden) return;
             hidden = true;
+            focusNextOnPlace = false;
             ring.style.display = DisplayStyle.None;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
@@ -348,7 +371,13 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             if (Media?.Playing == true && (HardMediaCover() || CurrentScreens() != watchScreens)) StopWatching();
             if (hudRoot.ClassListContains(OverlayOpenClass)) return;
-            if (session.Chain.Step >= 0) { RenderChain(); return; }
+            if (session.Chain.Step >= 0)
+            {
+                RenderChain();
+                Debug.Log("[#1915] cover change: armed=" + focusNextWhenUncovered + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
+                if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnPlace(); }   // a screen closed over a resumed tour (#1915)
+                return;
+            }
             if (Covered(hudRoot)) { if (Shown != null) covered = Shown; Hide(); return; }
             if (covered is AdvisorCatalog.Message m)
             {
@@ -536,6 +565,21 @@ namespace Statecraft.Game.UI
             gotIt.schedule.Execute(() => { if (!disposed && InChain) gotIt.Focus(); });
         }
 
+        /// <summary>The screen over a resumed tour just closed and Next takes the focus (#1915). While the popup is
+        /// still coming back from its hide under the screen (display and visibility not restored yet) a Focus() does
+        /// nothing - the gate log read canGrabFocus=false, display=None, visibility=Hidden - so the hand-off waits for
+        /// Place() to make the popup visible again. A popup still on screen takes the focus at once.</summary>
+        void FocusNextOnPlace()
+        {
+            Debug.Log("[#1915] hand-off: disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen()
+                + " visibility=" + popup.resolvedStyle.visibility + " display=" + popup.resolvedStyle.display
+                + " canTake=" + FocusReturn.CanTakeFocus(gotIt)
+                + " focused=" + (layer.focusController?.focusedElement is VisualElement f ? f.name : "null"));
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
+            focusNextOnPlace = true;
+        }
+
         void ShowMe()
         {
             StopWatching();
@@ -716,6 +760,13 @@ namespace Statecraft.Game.UI
             popup.style.left = at.xMin; popup.style.top = at.yMin;
             popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
             popup.style.visibility = Visibility.Visible;
+            Debug.Log("[#1915] place: visible, focusNextOnPlace=" + focusNextOnPlace + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
+            if (focusNextOnPlace && InChain && !ScreenOpen())
+            {
+                focusNextOnPlace = false;
+                gotIt.Focus();
+                gotIt.schedule.Execute(() => { if (!disposed && InChain && layer.focusController?.focusedElement == null) gotIt.Focus(); });
+            }
             return at;
         }
 
