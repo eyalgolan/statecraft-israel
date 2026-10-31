@@ -27,6 +27,14 @@ namespace Statecraft.Game.Map.Units
         public const float ParkedHeightM = 1.4f;
         public const float ParkedHeadingDegrees = 200f;
 
+        readonly List<UnitTokenMotion> motions = new List<UnitTokenMotion>();
+        public bool PlayAttack(int unitId)
+        {
+            foreach (var motion in motions)
+                if (motion != null && motion.Identity == "sim:" + unitId) return motion.PlayAttack();
+            return false;
+        }
+
         MapScene map = null!;
         IReadOnlyList<UnitEntry> units = Array.Empty<UnitEntry>();
         /// <summary>The unit data the layer draws from (read only; MapScene.UnitEntries when it read the same file).</summary>
@@ -272,6 +280,10 @@ namespace Statecraft.Game.Map.Units
                 facedFor = null;
             }
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
+            bool moving = false;
+            for (int i = 0; i < motions.Count; i++)
+                if (motions[i] != null && motions[i].Moving) { moving = true; break; }
+            if (moving) facedFor = null;   // child pieces translate with the token; its draped yaw is still valid
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
             facedFor = (eye, rotation);
             var away = cam.transform.forward; away.y = 0f;
@@ -289,6 +301,7 @@ namespace Statecraft.Game.Map.Units
             for (int i = 0; i < badges.Count; i++)
             {
                 var b = badges[i]; if (b == null) continue;
+                var motionOffset = b.parent.position;
                 var (home, back, pole, flag, standing) = badgeHomes[i];
                 var (centre, radius, lift, figures, meshes) = trios[i];
                 if (turn && figures.Length > 0)
@@ -299,7 +312,7 @@ namespace Statecraft.Game.Map.Units
                         var p = centre + turning * offset;
                         p.y = UnitPlinth.FigureY(map, radius, p.x, p.z);
                         highest = Mathf.Max(highest, p.y);
-                        figure.SetPositionAndRotation(p, Quaternion.Euler(0f, yaw + heading, 0f));
+                        figure.SetPositionAndRotation(p + motionOffset, Quaternion.Euler(0f, yaw + heading, 0f));
                     }
                     home.y = highest + lift;   // the badge clears the highest figure, wherever the turn set it
                     badgeHomes[i] = (home, back, pole, flag, standing);
@@ -307,17 +320,18 @@ namespace Statecraft.Game.Map.Units
                     {
                         var foot = centre + turning * pole;
                         foot.y = UnitPlinth.FigureY(map, radius, foot.x, foot.z);
-                        flag.transform.position = foot;
+                        flag.transform.position = foot + motionOffset;
                     }
                 }
                 if (figures.Length > 0) pole = turning * pole;   // where the pole stands now, for the badge's side
                 var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
-                var at = home + away * back + aside;
+                var at = home + away * back + aside + motionOffset;
                 b.SetPositionAndRotation(at, rotation);
                 var boxes = keepClear[i];
                 boxes[0] = new Bounds(at, Vector3.one * UnitBadge.SizeM);
-                if ((flag != null || meshes.Length > 0) && standing is Bounds s)
+                if (standing is Bounds s)
                 {
+                    s.center += motionOffset;   // stored standing bounds are at the destination; hit only the visible token
                     if (flag != null)
                     {
                         UnitFlagFacing.Face(flag.transform, eye);   // as it will turn for this camera
@@ -600,6 +614,13 @@ namespace Statecraft.Game.Map.Units
 
         void Rebuild()
         {
+            var previous = new Dictionary<string, Vector3>(StringComparer.Ordinal);
+            for (int i = 0; i < tokensRoot.childCount && i < trios.Count; i++)
+                {
+                    var child = tokensRoot.GetChild(i);
+                    var motion = child.GetComponent<UnitTokenMotion>();
+                    if (motion != null) previous[motion.Identity] = trios[i].Item1 + child.position;
+                }
             var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
@@ -613,13 +634,14 @@ namespace Statecraft.Game.Map.Units
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(); }
+            try { BuildTokens(previous); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
         }
 
-        void BuildTokens()
+        void BuildTokens(IReadOnlyDictionary<string, Vector3> previous)
         {
             FreeTokenMeshes();
+            motions.Clear();
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
             treeHoles.Clear();
@@ -731,6 +753,17 @@ namespace Statecraft.Game.Map.Units
             }
             FaceCamera(Camera.main);   // the badges as the main camera sees them until a render turns them
             HideTrees();
+            if (Application.isPlaying)
+                for (int i = 0; i < tokensRoot.childCount && i < trios.Count; i++)
+                {
+                    var token = tokensRoot.GetChild(i);
+                    var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+                    motions.Add(motion);
+                    var stateUnit = placed[i].Token.StateUnit;
+                    motion.Identity = stateUnit != null ? "sim:" + stateUnit.Id : "row:" + token.name;
+                    motion.Changed = () => facedFor = null;
+                    if (previous.TryGetValue(motion.Identity, out var old)) motion.Begin(old - trios[i].Item1);
+                }
         }
 
         /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not

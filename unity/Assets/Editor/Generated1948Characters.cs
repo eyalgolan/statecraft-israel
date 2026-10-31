@@ -144,12 +144,26 @@ namespace Statecraft.Game.EditorTools
             string path = $"{Dir(id)}/{id}.controller";
             var clip = Clip(id, "near");
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
-            if (controller == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
-            if (controller.layers.Length != 1 || controller.layers[0].stateMachine.states.Length != 1)
-                throw new InvalidOperationException(id + ": expected an owned one-state idle controller");
-            controller.layers[0].stateMachine.defaultState.motion = clip;
-            EditorUtility.SetDirty(controller);
+            if (controller == null) controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+            ConfigureController(controller, clip, Model(id, "original"));
             return controller;
+        }
+
+        internal static void ConfigureController(AnimatorController controller, AnimationClip clip, string model)
+        {
+            if (controller.layers.Length != 1)
+                throw new InvalidOperationException("Expected one owned layer");
+            var machine = controller.layers[0].stateMachine;
+            var states = machine.states.Select(s => s.state).ToArray();
+            if (states.Length == 0 || states.Any(s => s == null || (s.name != "idle" && s.name != "walk" && s.name != "attack"))
+                || states.Select(s => s.name).Distinct().Count() != states.Length
+                || !states.Any(s => s.name == "idle") || machine.defaultState == null
+                || !states.Contains(machine.defaultState) || machine.defaultState.name != "idle")
+                throw new InvalidOperationException("Expected unique idle, walk or attack states with an owned idle default");
+            // Validate the entire authored graph before changing motions or adding migration states.
+            machine.defaultState.motion = clip;
+            CollectionImport.AddWalkState(controller, model);
+            EditorUtility.SetDirty(controller);
         }
 
         static void MakePrefab(string id, string level, Material mat, AnimatorController controller)
