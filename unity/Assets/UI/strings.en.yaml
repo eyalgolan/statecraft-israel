@@ -925,6 +925,11 @@ unit.order_refused.not_yours: "That unit is not yours"
 unit.order_refused.artillery_hold: "Artillery does not hold ground"
 unit.order_refused.already: "That unit already has that order"
 
+# #2072 attack refusals (Combat.Check), shown on the unit card.
+unit.refused.truce: "A truce is in force"
+unit.refused.no_movement: "That unit has no movement points left this turn"
+unit.refused.arms: "An attack needs {0} Arms and the stock has {1}"
+
 # #1682 remaining Cause producers. English report wording preserved.
 why.cause.workers_assigned: "{0}: {1} groups in work"
 why.cause.wages_paid: "{0}: jobs paid {1}"

@@ -82,6 +82,13 @@ namespace Statecraft.Sim
         static List<Unit> Defenders(GameState s, Unit attacker, int q, int r) =>
             s.Units.Values.Where(x => x.Q == q && x.R == r && Military(x) && Player(x) != Player(attacker)).ToList();
 
+        /// <summary><see cref="Check"/>'s refusals a unit card shows (#2072): the UI maps each to its own string (SimBridge.ReasonText).
+        /// The English is the reason a turn's Rejected list and a save carry, so it does not change. The Arms one takes the Arms
+        /// the attack needs and the stock has.</summary>
+        public const string RefusedTruce = "A truce is in force";
+        public const string RefusedNoMovementPoints = "That unit has no movement points left this turn";
+        public const string RefusedArms = "An attack needs {0} Arms and the stock has {1}";
+
         /// <summary>R-COMBAT-001's refusals: null when the player may strike (q, r), else the reason shown to the player.
         /// Changes nothing: the unit card asks it for each enemy hex before it offers that hex (#754). Refused for an unknown
         /// unit, a halutz, an enemy unit, no hex, a hex not next to it (artillery: beyond its range), a hex with no enemy unit,
@@ -95,7 +102,7 @@ namespace Statecraft.Sim
             if (!Military(u)) return "Only a military unit takes that order";
             if (Player(u) == enemy) return "That unit is not yours";
             if (q == null || r == null) return "An attack names a hex";
-            if (!enemy && TruceInForce(s)) return "A truce is in force";   // R-COMBAT-009
+            if (!enemy && TruceInForce(s)) return RefusedTruce;   // R-COMBAT-009
             var target = Hex(q.Value, r.Value);
             if (enemy && u.Order == Attack && u.OrderTarget == target) return "That unit already has that order";
             if (!InReach(c, u, q.Value, r.Value)) return Guns(c, u) ? "That hex is beyond the unit's range" : "That hex is not next to the unit";
@@ -103,11 +110,11 @@ namespace Statecraft.Sim
             if (!enemy && spent != null && (Gdd03Military.Applies(c) && Guns(c, u)
                 ? Movement.AttackPoints(c, u) <= (spent.TryGetValue(unitId, out var used) ? used : 0)
                 : Movement.PointsLeft(c, s, unitId, spent) == 0))
-                return "That unit has no movement points left this turn";
+                return RefusedNoMovementPoints;
             if (enemy || !SpendsArms(c)) return null; // before Need, so gdd-0.3 never reads a price
             var mvp = c.RulesAt(s.Date).Mvp!;
             var need = Need(c, mvp, u);
-            return s.Arms < need ? FormattableString.Invariant($"An attack needs {need} Arms and the stock has {s.Arms}") : null;
+            return s.Arms < need ? string.Format(CultureInfo.InvariantCulture, RefusedArms, need, s.Arms) : null;
         }
 
         /// <summary>R-ENEMY-001: gives the enemy AI's military unit a standing attack on (q, r) for resolver step 2, replacing

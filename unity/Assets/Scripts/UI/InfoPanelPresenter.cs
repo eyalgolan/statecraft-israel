@@ -767,7 +767,7 @@ namespace Statecraft.Game.UI
             // Attack (#754): offered where the sim's Combat.Check takes some hex; its refusals in reach show as the others'.
             var attacks = AttackTargets();
             attackButton.style.display = attacks is { } at && at.hexes.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
-            foreach (var why in attacks?.refused ?? new List<string>()) if (own && !refusals.Contains(why)) refusals.Add(why);
+            foreach (var why in attacks?.refused ?? new List<string>()) if (own && SimBridge.ReasonText(text, why) is var said && !refusals.Contains(said)) refusals.Add(said);
             // Send home (#1309): Demobilization.Check is the complete eligibility rule. A refusal hides the order and adds
             // no card copy; the player sees it only after the relevant armistice makes the order available.
             var sendHomeWhy = orderUnit is int du ? Demobilization.Check(c, s, du, bridge.Session.Now.Attacked) : null;
@@ -784,7 +784,7 @@ namespace Statecraft.Game.UI
                 var n = System.Math.Max(1, System.Math.Min(Training.Room(s, formation), Training.Available(s, home.Id, bridge.Queued)));
                 var why = Training.Reinforce(c, s.Clone(), ru, home.Id, n, new List<Cause>());
                 if (why == null) reinforce = new Reinforce(ru, home.Id, n);
-                else if (!refusals.Contains(why)) refusals.Add(why);
+                else if (SimBridge.ReasonText(text, why) is var said && !refusals.Contains(said)) refusals.Add(said);
             }
             reinforceButton.style.display = reinforce != null ? DisplayStyle.Flex : DisplayStyle.None;
             if (reinforce is Reinforce offer) reinforceButton.text = text.Format("unit.order.reinforce", offer.Count);

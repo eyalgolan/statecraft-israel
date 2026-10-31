@@ -938,4 +938,23 @@ public class InfoPanelLayoutTests
         },text:text,hebrew:hebrew,unit:()=>f.token);
     }
 
+    // #2072: the Attack refusal on the Hebrew card reads in Hebrew, once. An accepted truce refuses the attack (Combat.Check).
+    [UnityTest]
+    public IEnumerator HebrewCardSaysWhyAttackIsRefusedOnce()
+    {
+        var f=MilitaryFixture("infantry");var g=f.session;var c=g.Content;
+        g.State.Units[9000]=new Unit(9000,c.UnitTypes.First(t=>t.Side!=""&&t.Side!=Movement.PlayerSide&&t.Class=="infantry").Id,2,1,side:"egypt",strength:6);
+        g.State.ChosenOptions["first_truce"]="accept";
+        var he=UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.StringsHebrew).text,"strings.he.yaml");
+        var why=Combat.Check(c,g.State,f.id,2,1);
+        Assert.AreEqual("A truce is in force",why);
+        var line=SimBridge.ReasonText(he,why!);
+        Assert.IsFalse(line.Any(ch=>ch<128&&char.IsLetter(ch)),$"the Hebrew reason has Latin letters: {line}");
+        yield return Rendered(1512,982,g,(root,info)=>info.ShowUnit(),root=> {
+            var reason=root.Q<Label>("info-reason").text;
+            Assert.AreEqual(1,reason.Split('\n').Count(x=>x==line),$"the card's refusals: {reason}");
+            StringAssert.DoesNotContain("truce",reason);
+        },text:he,hebrew:true,unit:()=>f.token);
+    }
+
 }

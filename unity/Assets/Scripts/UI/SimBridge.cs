@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Statecraft.Sim;
 
 namespace Statecraft.Game.UI
@@ -223,11 +224,27 @@ namespace Statecraft.Game.UI
             [Orders.RefusedNotYours] = "unit.order_refused.not_yours",
             [Orders.RefusedArtilleryHold] = "unit.order_refused.artillery_hold",
             [Orders.RefusedAlready] = "unit.order_refused.already",
+            [Combat.RefusedTruce] = "unit.refused.truce",
+            [Combat.RefusedNoMovementPoints] = "unit.refused.no_movement",
         };
 
-        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>), else the sim's English as
-        /// given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's (ToastPresenter) go through it.</summary>
-        public static string ReasonText(UiText text, string reason) => ReasonKeys.TryGetValue(reason, out var key) ? text[key] : reason;
+        /// <summary>The sim's refusals with numbers in them (#2072): each pattern reads the numbers of its English (in order)
+        /// and passes them to its string.</summary>
+        static readonly (Regex pattern, string key)[] ReasonTemplates = { (Template(Combat.RefusedArms), "unit.refused.arms") };
+
+        /// <summary>A regular expression for a sim English with numbers: "{0}" and "{1}" read any digits.</summary>
+        static Regex Template(string english) => new Regex("^" + Regex.Replace(Regex.Escape(english), @"\\\{\d\}", @"(\d+)") + "$");
+
+        /// <summary>A sim refusal in the UI's language where it has a string (<see cref="ReasonKeys"/>, <see cref="ReasonTemplates"/>),
+        /// else the sim's English as given. The queue's refusals, the unit card's (InfoPanelPresenter) and the end of turn's
+        /// (ToastPresenter) go through it.</summary>
+        public static string ReasonText(UiText text, string reason)
+        {
+            if (ReasonKeys.TryGetValue(reason, out var key)) return text[key];
+            foreach (var (pattern, templateKey) in ReasonTemplates)
+                if (pattern.Match(reason) is { Success: true } m) return text.Format(templateKey, m.Groups[1].Value, m.Groups[2].Value);
+            return reason;
+        }
 
         string? Refuse(string reason) { reason = ReasonText(text, reason); Refused?.Invoke(reason); return reason; }
 

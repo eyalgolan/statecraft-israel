@@ -1028,6 +1028,11 @@ unit.order_refused.not_yours: "היחידה אינה שלך"
 unit.order_refused.artillery_hold: "ארטילריה אינה מחזיקה בשטח"
 unit.order_refused.already: "היחידה כבר קיבלה פקודה זו"
 
+# #2072 attack refusals (Combat.Check), shown on the unit card. For the native reviewer (#564).
+unit.refused.truce: "הפוגה בתוקף"
+unit.refused.no_movement: "ליחידה לא נותרו נקודות תנועה בתור הזה"
+unit.refused.arms: "ההתקפה דורשת {0} כלי נשק; במלאי יש {1}"
+
 # #1682 remaining Cause producers. Agent-drafted Hebrew: native-review-pending (#564).
 # SENSITIVE: capture, displacement, Deport, annexation and occupation also await sensitivity review.
 why.cause.workers_assigned: "{0}: קבוצות בעבודה: {1}"
