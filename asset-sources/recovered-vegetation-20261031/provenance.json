@@ -1,0 +1,91 @@
+{
+  "status": "DRAFT SOURCE RECOVERY; NOT REGISTERED OR ENGINE VALIDATED",
+  "creator": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "credit": "Tal Heuberger",
+  "licence_url": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+  "consent": {
+    "date": "2026-10-31",
+    "scope": "Tal authorized public redistribution of recovered papyrus/tamarisk and approved export conversions under CC BY-NC-ND 4.0 with his credit; confirmed own paid generation account. This is the recorded author statement, not independent legal verification."
+  },
+  "generation": {
+    "date": "2026-10-19",
+    "route": "Tripo H3.1 image-to-3D through Higgsfield on Tal own paid account, from text-prompt-generated concepts",
+    "external_reference_photographs_included_or_used_as_model_input_in_saved_ledger": false,
+    "source_of_route": "saved generation ledger and prepared-file manifest; author account confirmation"
+  },
+  "provider_review": {
+    "checked": "2026-10-31",
+    "sources": [
+      "https://higgsfield.ai/terms-of-use-agreement",
+      "https://www.tripo3d.ai/terms",
+      "https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially"
+    ],
+    "summary": "Higgsfield4.4 allows transfer/sublicensing of generated/exported output;8 preserves upstream acceptable-use terms. Tripo5.2.2 grants paid-user distribution/licensing and official guide permits asset packs. No blanket repository ban found. Input rights, third-party restrictions, AI-training restrictions and provenance obligations remain; the CC grant does not cancel provider terms or guarantee copyright."
+  },
+  "triangles": {
+    "g25_papyrus": 2260,
+    "hf_tamarisk": 7306
+  },
+  "texture_roles": {
+    "albedo.jpg": "base colour",
+    "normal.jpg": "normal map; retained as a source dependency"
+  },
+  "validation": {
+    "byte_identity": "SHA-256 verified against recovered prepared originals",
+    "unity": "not run; kept closed",
+    "registration": "none",
+    "current_hula_swamp_prefab": "not supplied; archived hula_marsh references are historical only",
+    "rights_historical_fitness": "author contribution permission is distinct from ecological/period/placement approval"
+  },
+  "files": [
+    {
+      "path": "g25_papyrus/g25_papyrus.obj",
+      "bytes": 208519,
+      "sha256": "8adf0838554e68bca68019a75bcea12316926a1ddc8cd88550570a09e6be0506",
+      "tripo_task_id": "51c2996d-960a-432a-af49-c688c4e06baa",
+      "concept_generator": "GPT Image 2.5 Flare",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    },
+    {
+      "path": "g25_papyrus/albedo.jpg",
+      "bytes": 634608,
+      "sha256": "97307421442321d3a8e1fa2fd479fa49c755a775e485fffff9f67a1004dfcfd8",
+      "tripo_task_id": "51c2996d-960a-432a-af49-c688c4e06baa",
+      "concept_generator": "GPT Image 2.5 Flare",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    },
+    {
+      "path": "g25_papyrus/normal.jpg",
+      "bytes": 311290,
+      "sha256": "641d6f6d0ea6eee7ff3eb2cb19f7ccbadfba044b68c5a2be261e51ffe56746a3",
+      "tripo_task_id": "51c2996d-960a-432a-af49-c688c4e06baa",
+      "concept_generator": "GPT Image 2.5 Flare",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    },
+    {
+      "path": "hf_tamarisk/hf_tamarisk.obj",
+      "bytes": 667745,
+      "sha256": "3a8c9979fa0db9600f3a1c97b96c6bcf6092e76fdbdc80c51351ead85aedeccf",
+      "tripo_task_id": "a63d0f4f-9746-491d-9b85-038cde625dd2",
+      "concept_generator": "Nano Banana Pro",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    },
+    {
+      "path": "hf_tamarisk/albedo.jpg",
+      "bytes": 1111944,
+      "sha256": "077ecbef3f2ee64eb76d2e11789f41d385587af024b0903a19df9ca0558c0e72",
+      "tripo_task_id": "a63d0f4f-9746-491d-9b85-038cde625dd2",
+      "concept_generator": "Nano Banana Pro",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    },
+    {
+      "path": "hf_tamarisk/normal.jpg",
+      "bytes": 809295,
+      "sha256": "1488db247a20ea6a18af5a4f2cda01fc25b3f85ce2a5818c026bcaa9b9c06235",
+      "tripo_task_id": "a63d0f4f-9746-491d-9b85-038cde625dd2",
+      "concept_generator": "Nano Banana Pro",
+      "operation": "byte-preserved recovery of previously prepared output; no new generation or geometry edit"
+    }
+  ]
+}
