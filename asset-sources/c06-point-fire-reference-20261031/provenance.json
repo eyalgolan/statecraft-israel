@@ -1,0 +1,74 @@
+{
+  "status": "DRAFT SOURCE/REFERENCE; NOT ENABLED; NOT PRODUCTION ACCEPTED",
+  "creator_credit": "Tal Heuberger",
+  "licence": "CC-BY-NC-ND-4.0",
+  "licence_url": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+  "author_permission": {
+    "date": "2026-10-31",
+    "scope": "Tal approved redistribution of C06 animation derivative and approved animation/export conversions under CC BY-NC-ND 4.0,with his credit; own paid generation account confirmed. No general code licence or personal AI-review attestation inferred."
+  },
+  "inputs": {
+    "native_source_filename": "C06-POINT-FIRE-MOTION-REVIEW.blend",
+    "native_source_sha256": "43325685beb1e4a9e9767bb0f58ac0d37772f30f143bbd9bfed75826fab3d17f",
+    "character": "original C06 67bone binding; source audit identity preserved in local records",
+    "existing_c06_source": "unity/Assets/Art/Collection/figure-c06-young-recruit-v2/figure-c06-young-recruit-v2.fbx",
+    "existing_c06_source_sha256": "369d5c0924a9e0ce808f958972351ba441e6a889254c9a39a89f97ca16f84819",
+    "weapon_source_filename": "statecraft-k98k-approved-textured-b48a435f.glb",
+    "weapon_source_sha256": "325d86cb42490ad95ed8c367e2c7511fc3bb9c676d6a797074a6ba74a01c7da5",
+    "weapon_source_pr": "https://github.com/eyalgolan/statecraft-israel/pull/2083",
+    "native_storage": "NativeBLEND retained unmodified locally; exceeds10MiB and requires owner-approved storage plan. Not compressed/decimated or pushed."
+  },
+  "derivation": {
+    "route": "offline original-rig coordinated point-fire authoring from preserved V2; Blender5.2.2 GUI FBX compatibility conversion; no new provider rig",
+    "no_artist_iteration_during_export": true,
+    "export": "selected rig/body/fixed-rifle only; no helper markers; one named stack,97frames at24fps;-Zforward,Yup; no leaf bones; no deform-only bone pruning; no simplification; mesh modifiers disabled; textures embedded",
+    "privacy_edit": "Ten metadata string path prefixes replaced with basenames; raw numeric/array and embedded texture records byte-exact, and bone/rest/bind/weights/clip fingerprints exact. Original local export untouched. Independent reparse and full97frame GUI reimport verified."
+  },
+  "provider_sources": [
+    "https://www.tripo3d.ai/terms",
+    "https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially",
+    "https://higgsfield.ai/terms-of-use-agreement"
+  ],
+  "provider_caveat": "Scoped author statement and reviewed output rights support this draft; input rights/provider acceptable-use/provenance restrictions remain independently applicable. No copyright/legal certainty asserted.",
+  "clip": {
+    "stack": "C06_POINT_FIRE_PROVISIONAL_REVIEW_97F",
+    "frames": [
+      1,
+      97
+    ],
+    "fps": 24,
+    "fbx_time_span_seconds": [
+      0.041666666666666664,
+      4.041666666666667
+    ],
+    "roundtrip_import_animation_offset": 0
+  },
+  "known_limits": [
+    "Approximate point-fire; cheek-stock weld and strict sight alignment unresolved",
+    "Prior relative full-cycle validation872/873;frame17right-hand/rifle triangle pairs279baseline->280candidate;severity inconclusive without pair/location/depth;baseline contact not certified clean",
+    "Elbow steps18-20and73-74remain playback review flags",
+    "Existing fire37frames and shoot218frames retained;candidate fallback necessity not established",
+    "Project owner decision required for any provisional in-game use;no runtime hook or default replacement",
+    "Unity/avatar/material/runtime/transition/player/load/stream gates unrun;Unity kept closed"
+  ],
+  "files": [
+    {
+      "path": "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx",
+      "original_filename": "C06-POINT-FIRE-PROVISIONAL-PUBLIC.fbx",
+      "bytes": 10167581,
+      "sha256": "9a7c8b59eb6dbf5138ee9fe1b8cb6296e430cda105b98cecae9c3a93bfdd3868"
+    },
+    {
+      "path": "C06-POINT-FIRE-FULL-REVIEW.mp4",
+      "original_filename": "C06-POINT-FIRE-FULL-REVIEW.mp4",
+      "bytes": 195282,
+      "sha256": "d586018b48584d9370acf3bc8e0d7c8ed565fad56e47f9470f071a33b5f2bfd6"
+    },
+    {
+      "path": "C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png",
+      "original_filename": "C06-POINT-FIRE-REVIEW-CONTACT-SHEET.png",
+      "bytes": 329807,
+      "sha256": "63582547042ce40cf926afaa7e58ff35f662cb1de389ce2ab0732dad6cabe017"
+    }
+  ]
+}
