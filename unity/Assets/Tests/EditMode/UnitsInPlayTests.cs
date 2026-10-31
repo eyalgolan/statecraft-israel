@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
+using UnityEngine.TestTools;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using UnityEngine.TestTools.Constraints;
+using Is = UnityEngine.TestTools.Constraints.Is;
 using Statecraft.Game;
 using Statecraft.Game.Map;
 using Statecraft.Game.Map.Units;
@@ -423,6 +427,56 @@ public class UnitsInPlayTests
             File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
         map.Build();
         return map;
+    }
+
+    [UnityTest]
+    public IEnumerator ShowRebuildCreatesAndAdvancesLiveMotion()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        yield return new EnterPlayMode();
+        yield return LiveRebuildMotion();
+        yield return new ExitPlayMode();
+    }
+
+    static IEnumerator LiveRebuildMotion()
+    {
+        Assert.IsTrue(Application.isPlaying, "exercise the production play-mode guard");
+        int captureRate = Time.captureFramerate;
+        Time.captureFramerate = 60;
+        var map = new GameObject("LiveMotionMap").AddComponent<MapScene>();
+        try
+        {
+            map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+            Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+                File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+            map.Build();
+            var state = Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical);
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, state);
+            var root = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens");
+            var original = root.GetComponentsInChildren<UnitTokenMotion>().First(m => m.Identity == "sim:0");
+            Assert.IsFalse(original.Moving);
+            var next = state.Clone();
+            var unit = next.Units[0];
+            // A presentation fixture only: this known adjacent destination changes the visual clearing.
+            next.Units[unit.Id] = new Unit(unit.Id, unit.Type, 9, 9, unit.Service, unit.Side,
+                unit.Strength, unit.Order, unit.OrderTarget, unit.HomeCity, unit.Full);
+            string hash = next.Hash();
+            Assert.IsTrue(layer.Show(C, next));
+            var motion = root.GetComponentsInChildren<UnitTokenMotion>().Single(m => m.Identity == "sim:0");
+            Assert.AreNotSame(original, motion, "Show rebuilt and wired the new token");
+            Assert.IsTrue(motion.Moving, "Rebuild called Begin using the prior presented centre");
+            float start = motion.transform.position.magnitude;
+            Assert.Greater(start, 1f);
+            for (int frame = 0; frame < 10; frame++) yield return null;
+            Assert.IsTrue(motion.Moving);
+            Assert.Less(motion.transform.position.magnitude, start, "normal LateUpdate advances the offset");
+            for (int frame = 0; frame < 60; frame++) yield return null;
+            Assert.IsFalse(motion.Moving);
+            Assert.AreEqual(Vector3.zero, motion.transform.position);
+            Assert.AreEqual(hash, next.Hash(), "presentation never changes simulation state");
+        }
+        finally { Time.captureFramerate = captureRate; UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
@@ -881,6 +935,101 @@ public class UnitsInPlayTests
             if (originalCamera != null) originalCamera.transform.SetPositionAndRotation(originalPosition, originalRotation);
             UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(replacement);
         }
+    }
+
+    [Test]
+    public void MovingPreviewKeepsTheMainCamerasTurn()
+    {
+        var map = BuildMap();
+        var preview = new GameObject("MovingPreview").AddComponent<Camera>();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            var camera = Camera.main;
+            camera.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 90f, 0f);
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(0);
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            motion.Begin(Vector3.right * 10000f);
+            layer.FaceCamera(camera);
+            preview.transform.SetPositionAndRotation(camera.transform.position, camera.transform.rotation);
+            layer.FaceCamera(preview);
+            var turn = typeof(UnitLayer).GetField("turnedFor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.AreEqual(90f, (float)turn.GetValue(layer), 1e-3f, "a preview must keep the game camera's draped yaw while moving");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(preview.gameObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [Test]
+    public void FacingAMovingTokenDoesNotAllocateManagedMemory()
+    {
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(0);
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            motion.Begin(Vector3.right * 10000f);
+            var camera = Camera.main;
+            for (int i = 0; i < 20; i++) layer.FaceCamera(camera);
+            Assert.That(() =>
+            {
+                for (int i = 0; i < 100; i++) layer.FaceCamera(camera);
+            }, Is.Not.AllocatingGCMemory(), "FaceCamera runs on every camera and pointer hover");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    [TestCase(UnitData.Army)]
+    [TestCase(UnitData.Navy)]
+    public void MovingTokenHitBoundsFollowVisiblePiecesInsteadOfEmptyDestinationOrPath(string service)
+    {
+        var map = BuildMap();
+        var cameraObject = new GameObject("MotionHitCamera");
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(SimBridgeGddTests.Legacy, StateAt(new DateTime(1948, 5, 29), 5, .8));
+            int index = layer.Tokens.ToList().FindIndex(t => t.Token.Unit.Service == service);
+            Assert.GreaterOrEqual(index, 0, "non-vacuous service fixture");
+            var token = map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").GetChild(index);
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true; camera.orthographicSize = 1200000f;
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 2000000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            camera.farClipPlane = 4000000f;
+            layer.FaceCamera(camera);
+            var destinationBox = layer.KeepClear[index][1];
+            var destination = destinationBox.center;
+            var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+            var field = typeof(UnitLayer).GetField("motions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ((List<UnitTokenMotion>)field.GetValue(layer)).Add(motion);
+            var offset = Vector3.right * 1000000f;
+            motion.Begin(offset); motion.Advance(UnitTokenMotion.Duration / 2f);
+            var visible = destination + offset / 2f;
+            var hit = layer.TokenAtScreen(camera, camera.WorldToScreenPoint(visible));
+            Assert.IsTrue(hit.HasValue && hit.Value.Equals(layer.Tokens[index]), "midpoint visible standing pieces select their token");
+            Assert.IsFalse(layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination)) is PlacedToken atDestination
+                && atDestination.Equals(layer.Tokens[index]), "empty destination must not select moving token");
+            Assert.IsFalse(layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination + offset / 4f)) is PlacedToken alongPath
+                && alongPath.Equals(layer.Tokens[index]), "empty path must not select moving token");
+            var movedBox = layer.KeepClear[index][1];
+            // The army flag faces the eye from its new position, so its tight box can change shape.
+            Assert.Less(Vector3.Distance(movedBox.center, visible), destinationBox.size.magnitude,
+                "standing bounds stay around the visible token, allowing the flag to turn");
+            Assert.Less(movedBox.size.magnitude, destinationBox.size.magnitude * 2f,
+                "standing bounds must not grow to span the empty path");
+            motion.Advance(UnitTokenMotion.Duration);
+            // Advance invalidation is wired by Rebuild in play; force a different camera pose for this EditMode fixture.
+            camera.transform.position += Vector3.up;
+            var arrived = layer.TokenAtScreen(camera, camera.WorldToScreenPoint(destination));
+            Assert.IsTrue(arrived.HasValue && arrived.Value.Equals(layer.Tokens[index]), "destination selects after arrival");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(cameraObject); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
     [Test]

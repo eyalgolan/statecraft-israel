@@ -46,6 +46,9 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
+        /// <summary>Freshly resolved engagements, after Changed rebuilt the map. End Turn excludes the
+        /// deterministic RunOrders prefix already shown by instant commits (including restored open orders).</summary>
+        public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -263,7 +266,9 @@ namespace Statecraft.Game.UI
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
                 Notify(Changed);
-                Notify(Committed, Session.Now.Why.Skip(before).ToList());
+                var fresh = Session.Now.Why.Skip(before).ToList();
+                Notify(Committed, fresh);
+                Notify(CombatResolved, fresh.Where(x => x.Key == WhyKeys.Engagement).ToList());
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
@@ -293,6 +298,8 @@ namespace Statecraft.Game.UI
         public StepResult EndTurn()
         {
             StepResult r;
+            // Preview and Step both begin with RunOrders; the open-order causes are replay, not fresh effects.
+            int replayedCauses = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
@@ -312,6 +319,7 @@ namespace Statecraft.Game.UI
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
             Notify(Changed);
+            Notify(CombatResolved, r.Why.Skip(replayedCauses).Where(x => x.Key == WhyKeys.Engagement).ToList());
             Notify(TurnEnded, r.Rejected);
             return r;
         }
