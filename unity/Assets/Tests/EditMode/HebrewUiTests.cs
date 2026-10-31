@@ -185,6 +185,86 @@ public class HebrewUiTests
         Assert.AreEqual(UiLanguage.English, UiLanguage.AtStart(UiLanguage.Hebrew, null, new[] { "-lang", "en" }, webgl: false));
     }
 
+    // --- The start screen's language choice (#2054) ------------------------------------------------------------------
+
+    GameRoot BootWithStartScreen(SettingsStore settings, string? language)
+    {
+        EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+        Object.FindFirstObjectByType<MapScene>().Build(Inputs.Map);
+        var game = Object.FindFirstObjectByType<GameRoot>();
+        game.Store = new SaveStore(saveDir);
+        game.Settings = settings;
+        game.Language = language;
+        game.Begin(Inputs, 0, startScreen: true);
+        return game;
+    }
+
+    static bool StartOpen => Ui.Q("root").ClassListContains(StartScreenPresenter.OpenClass);
+    static bool Marked(string name) => Ui.Q<Button>(name).ClassListContains(SettingsPresenter.SelectedClass);
+
+    /// <summary>The start screen offers the same two languages as Settings, each named in itself, with the one in use
+    /// marked, in both languages.</summary>
+    [Test]
+    public void TheStartScreenOffersBothLanguagesWithTheOneInUseMarked()
+    {
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        BootWithStartScreen(settings, null);                           // no file and no flag: English
+        Assert.IsTrue(StartOpen, "precondition: the start screen shows");
+        Assert.AreEqual("English", Ui.Q<Button>("start-language-en").text);
+        Assert.AreEqual("עברית", Ui.Q<Button>("start-language-he").text, "each language is named in itself");
+        Assert.IsTrue(Marked("start-language-en"), "English is marked");
+        Assert.IsFalse(Marked("start-language-he"));
+
+        BootWithStartScreen(settings, UiLanguage.Hebrew);
+        Assert.IsTrue(StartOpen);
+        Assert.AreEqual("English", Ui.Q<Button>("start-language-en").text, "not translated");
+        Assert.AreEqual("עברית", Ui.Q<Button>("start-language-he").text);
+        Assert.IsTrue(Marked("start-language-he"), "Hebrew is marked");
+        Assert.IsFalse(Marked("start-language-en"));
+    }
+
+    /// <summary>A choice on the start screen goes through Settings' own switch: the UI changes at once over the same game,
+    /// the start screen stays up (Continue still only with a save) with the focus on the choice, the choice is kept under
+    /// Settings' key, and Settings shows it. The other way round, a choice in Settings is what the next start screen
+    /// shows: the two can never disagree.</summary>
+    [Test]
+    public void TheStartScreenAndSettingsShareOneLanguageChoice()
+    {
+        var settings = new SettingsStore(Path.Combine(saveDir, "settings"));
+        var game = BootWithStartScreen(settings, null);
+        var session = game.Bridge!.Session;
+        Assert.AreEqual(DisplayStyle.None, Ui.Q<Button>("start-continue").style.display.value, "precondition: no save, no Continue");
+
+        UiTestKit.Press(Ui.Q<Button>("start-language-he"));
+        Assert.IsTrue(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "Hebrew at once, no reload");
+        Assert.AreEqual(He.Format("hud.turn", game.Bridge!.State.Turn), Ui.Q<Label>("turn").text);
+        Assert.AreSame(session, game.Bridge.Session, "the same game goes on");
+        Assert.IsTrue(StartOpen, "the start screen stays up");
+        Assert.IsFalse(ScreenNav.IsOpen(Ui.Q("screen-settings")), "Settings does not open over it");
+        Assert.AreEqual(DisplayStyle.None, Ui.Q<Button>("start-continue").style.display.value, "still no save to continue");
+        Assert.AreEqual(He["start.new_game"], Ui.Q<Button>("start-new-game").text);
+        Assert.AreSame(Ui.Q<Button>("start-language-he"), Ui.focusController?.focusedElement, "the focus stays on the choice");
+        Assert.IsTrue(Marked("start-language-he"), "Hebrew is marked on the start screen");
+        Assert.IsFalse(Marked("start-language-en"));
+        Assert.AreEqual(UiLanguage.Hebrew, settings.Read(SettingsPresenter.LanguageKey), "kept under Settings' key");
+        Assert.IsTrue(Marked("settings-language-he"), "and Settings shows Hebrew");
+        Assert.IsFalse(Marked("settings-language-en"));
+
+        // The other way: New game (no save) closes the screen; English in Settings is what the next start screen shows.
+        UiTestKit.Press(Ui.Q<Button>("start-new-game"));
+        Assert.IsFalse(StartOpen, "precondition: on the map");
+        UiTestKit.Press(Ui.Q<Button>("nav-settings"));
+        UiTestKit.Press(Ui.Q<Button>("settings-language-en"));
+        Assert.IsFalse(Ui.Q("root").ClassListContains(UiLanguage.HebrewClass), "English at once");
+        Assert.IsFalse(StartOpen, "a switch in Settings brings no start screen back");
+        Assert.AreEqual(UiLanguage.English, settings.Read(SettingsPresenter.LanguageKey));
+        game.Language = null;                                          // a reload: only the file remains
+        game.Begin(Inputs, 0, startScreen: true);
+        Assert.IsTrue(StartOpen);
+        Assert.IsTrue(Marked("start-language-en"), "the start screen shows Settings' choice");
+        Assert.IsFalse(Marked("start-language-he"));
+    }
+
     static void TheDeclarationStaysRightToLeft(string after)
     {
         var lines = Ui.Query<TextElement>(className: "start-he").ToList();
@@ -649,13 +729,16 @@ public class HebrewUiTests
                 root.Add(l);
             }
             // The start screen's Hebrew lines are Hebrew in both languages (the Declaration's own text), and so is Settings'
-            // button that names Hebrew in Hebrew (#1036).
-            var texts = root.Query<TextElement>().ToList().Where(e => !e.ClassListContains("start-he") && e.name != "settings-language-he").ToList();
+            // button that names Hebrew in Hebrew (#1036), and the start screen's (#2054).
+            var texts = root.Query<TextElement>().ToList().Where(e => !e.ClassListContains("start-he") && e.name != "settings-language-he" && e.name != "start-language-he").ToList();
             Assert.Greater(texts.Count, 30, "Game.uxml's labels and buttons");
             for (int i = 0; i < 3; i++) yield return null;             // resolved styles need a style pass
             foreach (var e in texts)
                 Assert.AreNotSame(hebrew, FontOf(e), $"English: '{e.name}' ({string.Join(" ", e.GetClasses())})");
             Assert.AreSame(hebrew, FontOf(root.Q<TextElement>("settings-language-he")), "English: 'עברית' has the Hebrew face");
+            Assert.AreSame(hebrew, FontOf(root.Q<TextElement>("start-language-he")), "English: the start screen's 'עברית' has the Hebrew face");
+            Assert.AreEqual("Advanced", root.Q<TextElement>("start-language-he").resolvedStyle.unityTextGenerator.ToString(),
+                "English: the start screen's 'עברית' is laid out right to left");
             root.AddToClassList(UiLanguage.HebrewClass);
             for (int i = 0; i < 3; i++) yield return null;
             foreach (var e in texts)

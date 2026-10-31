@@ -616,9 +616,16 @@
                         <ui:Button name="start-star" text="Star on GitHub" class="start-button start-star" />
                     </ui:VisualElement>
                     <!-- "Report a bug or idea" (#1169, FeedbackPresenter): a quiet button under the actions that opens the
-                         report panel. -->
+                         report panel, and the language choice (#2054). -->
                     <ui:VisualElement name="start-community" class="start-community">
                         <ui:Button name="start-report" text="Report a bug or idea" class="start-report" />
+                        <!-- The UI's language (#2054), chosen before playing, beside it (the panel keeps its height): Settings'
+                             own buttons (LanguageButtons), each language named in itself, the one in use carrying
+                             .settings-choice-selected. A row, so the pair mirrors in Hebrew as in Settings. -->
+                        <ui:VisualElement name="start-language" class="row start-language">
+                            <ui:Button name="start-language-en" class="start-language-button" />
+                            <ui:Button name="start-language-he" class="start-language-button" />
+                        </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:VisualElement name="start-caption" class="start-caption" picking-mode="Ignore">
                         <ui:Label name="start-caption-he" text="…אנו מכריזים בזאת על הקמת מדינה יהודית בארץ־ישראל, היא מדינת ישראל." class="start-he start-caption-he" language-direction="RTL" picking-mode="Ignore" />
