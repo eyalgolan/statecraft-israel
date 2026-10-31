@@ -18,12 +18,12 @@ messages:
 # 25 Oct 2026 (recommendations page, item 3).
   - { id: opening.greeting, advisor: ben_gurion, signal: opening, level: new, he_review: approved, media: { picture: opening.greeting.mp4, narration: { en: opening.greeting.en.wav }, cues: { en: [0.00, 4.31, 6.64] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
 # opening.attention and opening.event: copy-fix wording approved by the owner in chat, 24 October 2026, 04:14 UTC: "Approve all 8".
-  - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.greeting], actions: [{ show_me: attention }], media: { picture: opening.attention.mp4, narration: { en: opening.attention.en.wav }, cues: { en: [0.00, 4.44] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
-  - { id: opening.city, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.attention], actions: [{ show_me: city_housing }], media: { picture: opening.city.mp4, narration: { en: opening.city.en.wav }, cues: { en: [0.00, 4.81] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
-  - { id: opening.training, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.city], actions: [{ show_me: city_training }], media: { picture: opening.training.mp4, narration: { en: opening.training.en.wav }, cues: { en: [0.00, 4.52, 8.30] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
-  - { id: opening.move, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.training], actions: [{ show_me: unit_move }], media: { picture: opening.move.mp4, narration: { en: opening.move.en.wav }, cues: { en: [0.00, 5.77] }, label: advisor.media_label, credit: advisor.credit.dayan } }
+  - { id: opening.attention, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.greeting], actions: [{ show_me: attention }, { encyclopedia: attention }], media: { picture: opening.attention.mp4, narration: { en: opening.attention.en.wav }, cues: { en: [0.00, 4.44] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
+  - { id: opening.city, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.attention], actions: [{ show_me: city_housing }, { encyclopedia: cities }], media: { picture: opening.city.mp4, narration: { en: opening.city.en.wav }, cues: { en: [0.00, 4.81] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
+  - { id: opening.training, advisor: meyerson, signal: opening, level: new, he_review: approved, requires: [opening.city], actions: [{ show_me: city_training }, { encyclopedia: training }], media: { picture: opening.training.mp4, narration: { en: opening.training.en.wav }, cues: { en: [0.00, 4.52, 8.30] }, label: advisor.media_label, credit: advisor.credit.meyerson } }
+  - { id: opening.move, advisor: dayan, signal: opening, level: new, he_review: approved, requires: [opening.training], actions: [{ show_me: unit_move }, { encyclopedia: units_movement }], media: { picture: opening.move.mp4, narration: { en: opening.move.en.wav }, cues: { en: [0.00, 5.77] }, label: advisor.media_label, credit: advisor.credit.dayan } }
   - { id: opening.event, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.move], when: { cards_waiting_at_least: 1 }, actions: [{ show_me: decision_waiting }, { open_card: true }], media: { picture: opening.event.mp4, narration: { en: opening.event.en.wav }, cues: { en: [0.00, 5.38] }, label: advisor.media_label, credit: advisor.credit.ben_gurion } }
-  - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.event], actions: [{ show_me: nav_objectives }] }
+  - { id: opening.objectives, advisor: ben_gurion, signal: opening, level: new, he_review: approved, requires: [opening.event], actions: [{ show_me: nav_objectives }, { encyclopedia: objectives }] }
 
 # Spec 6's critical warnings (shown at every help level, Off included) and the defeat lines. Their words and speakers are the
 # recorded clips' (owner, 24 October 2026: "Adopt clip words"; talking-v3/lines.csv): dayan.city_at_risk is
@@ -49,4 +49,33 @@ messages:
   - { id: meyerson.budget_unsubmitted, advisor: meyerson, signal: budget_unsubmitted, level: warnings, he_review: approved, repeat: every, cooldown_turns: 1, actions: [{ open_screen: budget }] }
   - { id: dayan.arms_out, advisor: dayan, signal: arms_low, level: warnings, he_review: approved, repeat: every, cooldown_turns: 3, actions: [{ open_screen: defence }], media: { picture: dayan.arms_out.mp4, narration: { en: dayan.arms_out.en.wav }, cues: { en: [0.00, 4.59] }, label: advisor.media_label, credit: advisor.credit.dayan } }
 
-pages: []
+# The encyclopedia's pages (spec 10, plan Task 13): one per mechanic, grouped by advisor as spec 3.1 splits them, with the
+# Show me target each names. Their text is advisor.page.<id>.title and .text (and .gdd03.text where gdd-0.3 differs). All
+# Hebrew is pending its native review (OQ-4), so no page shows in Hebrew yet. The opening steps' Tell me more opens the
+# page of what each step points at (plan Task 13).
+pages:
+  - { id: turns, advisor: ben_gurion, he_review: pending }
+  - { id: attention, advisor: ben_gurion, show_me: attention, he_review: pending }
+  - { id: events, advisor: ben_gurion, show_me: decision_waiting, he_review: pending }
+  - { id: objectives, advisor: ben_gurion, show_me: nav_objectives, he_review: pending }
+  - { id: defeat, advisor: ben_gurion, he_review: pending }
+  - { id: top_bar, advisor: ben_gurion, show_me: attention, he_review: pending }
+  - { id: why, advisor: ben_gurion, show_me: nav_why, he_review: pending }
+  - { id: cities, advisor: meyerson, show_me: city_housing, he_review: pending }
+  - { id: immigration, advisor: meyerson, show_me: city_housing, he_review: pending }
+  - { id: training, advisor: meyerson, show_me: city_training, he_review: pending }
+  - { id: projects, advisor: meyerson, he_review: pending }
+  - { id: pioneer_work, advisor: meyerson, he_review: pending }
+  - { id: corridors, advisor: meyerson, he_review: pending }
+  - { id: money_debt, advisor: meyerson, show_me: nav_budget, he_review: pending }
+  - { id: budget, advisor: meyerson, show_me: nav_budget, he_review: pending }
+  - { id: cabinet, advisor: meyerson, show_me: nav_cabinet, he_review: pending }
+  - { id: food, advisor: meyerson, he_review: pending }
+  - { id: national_meters, advisor: meyerson, he_review: pending }
+  - { id: units_movement, advisor: dayan, show_me: unit_move, he_review: pending }
+  - { id: standing_orders, advisor: dayan, he_review: pending }
+  - { id: combat, advisor: dayan, show_me: nav_defence, he_review: pending }
+  - { id: arms, advisor: dayan, show_me: nav_defence, he_review: pending }
+  - { id: truces, advisor: dayan, he_review: pending }
+  - { id: capture, advisor: dayan, he_review: pending }
+  - { id: enemy_phase, advisor: dayan, he_review: pending }
