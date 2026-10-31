@@ -67,8 +67,8 @@ namespace Statecraft.Game.Map.Units
     /// - Lebanon: the Constitution of 23 May 1926, Art. 5 as amended by the Constitutional Law of 7 December 1943 (Arabic
     ///   text, https://ar.wikisource.org/wiki/دستور_لبنان; English, https://www.wipo.int/wipolex/en/text/565753): red, white,
     ///   red, horizontal, the white as broad as both reds together; in the middle of the white a green cedar touching both
-    ///   reds, its width a third of the flag's length (reading "one third" as the French text's "largeur")
-    ///   (<see cref="BuildLebanon"/>). The 2:3 cloth is practice, not law (Britannica, FOTW). The law gives no outline: the
+    ///   reds, and "one third" in size (<see cref="BuildLebanon"/>). Which measure that third applies to is not settled by the
+    ///   texts, so the cedar's size, a third of the flag's length wide, follows the drawings: a deliberate choice. The 2:3 cloth is practice, not law (Britannica, FOTW). The law gives no outline: the
     ///   cedar is traced from Wikimedia Commons' File:Flag_of_Lebanon.svg (public domain; revision of 21 August 2026; itself
     ///   traced from the CIA World Factbook), its row-by-row outline simplified to 24 levels, the gaps in its foliage left out.
     ///   The cedar's colour in 1948 is in conflict (the 1943 Arabic text and FOTW say green; English Wikipedia says the
@@ -104,6 +104,10 @@ namespace Statecraft.Game.Map.Units
 
         public static bool Has(string? side) => side != null && Sourced.Contains(side);
 
+        /// <summary>Test seam (internal; the tests see it through InternalsVisibleTo): the sides with a sourced flag, so a test
+        /// can check each has its own builder and colours without keeping a second list.</summary>
+        internal static IReadOnlyCollection<string> SourcedSides => Sourced;
+
         /// <summary>True when <paramref name="side"/>'s tokens fly the neutral pennant: a side the map draws with no sourced flag.</summary>
         public static bool HasPennant(string? side) => side != null && !Has(side) && UnitFigures.SideFigure(side) != null;
 
@@ -135,6 +139,8 @@ namespace Statecraft.Game.Map.Units
                 case Iraq: return BuildIraq();
                 case Syria: return BuildSyria();
                 case Lebanon: return BuildLebanon();
+                case UnitData.Israel: break;
+                default: throw new InvalidOperationException($"UnitFlags: '{side}' is sourced but has no builder");   // never Israel's flag on another side
             }
             var m = Pole();
             Vector2 F(float xCm, float yCm) => new Vector2(FlagLeft + xCm * FlagWidth / 220f, FlagBottom + yCm * FlagWidth / 220f);
@@ -344,7 +350,8 @@ namespace Statecraft.Game.Map.Units
             Egypt => new[] { GreenColour, WhiteColour },
             Syria => new[] { GreenColour, WhiteColour, BlackColour, RedColour },
             Lebanon => new[] { RedColour, WhiteColour, LebanonCedarColour },
-            _ => new[] { WhiteColour, BlueColour },
+            UnitData.Israel => new[] { WhiteColour, BlueColour },
+            _ => throw new ArgumentException($"UnitFlags: '{side}' has no sourced flag, so no cloth colours", nameof(side)),
         };
 
         /// <summary>The unlit cloth materials for <paramref name="side"/>'s flag, one per <see cref="Colours"/>, each drawn after

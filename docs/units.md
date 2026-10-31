@@ -569,7 +569,7 @@ figures tall standing at the base's back edge. `UnitPlinth` and `UnitFlags` draw
 - **Flag:** by the unit's `side` in `units_1948.yaml`. Israel, Transjordan, Egypt, Iraq, Syria and Lebanon fly their
   sourced 1948 flags (below); the Arab Liberation Army, the one force the map draws with no sourced flag, flies the
   neutral pennant (Q-ART-1, owner, 15 October 2026: "a neutral pennant now, replaced by a sourced emblem when one is
-  found"; never its dagger emblem, #226 ruling 8): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). The cloth is 0.52 of a figure's height tall and 0.72 wide, on a pole 1.5 tall at 0.9 of the base's
+  found"; never its dagger emblem, #226 ruling 8): a plain grey triangle, in no side's colours and not white (`UnitFlags.BuildPennant`). Every flag's cloth is 0.72 of a figure's height wide, its height its own law's proportion (Israel's 0.52, the others below; the pennant 0.36 at the pole), on a pole 1.5 tall at 0.9 of the base's
   radius, behind the trio and east of the badge (`TheFlagIsAboutHalfAFigureTallOnTheBasesEdge`). The cloth is drawn
   unlit (white, and a blue standing for the proclamation's "dark sky-blue"), so it reads white under the map's light and
   grade as T29's. Owner ruling (2026-10-15): the flag turns about its pole to face the camera (`UnitFlagFacing`), so it

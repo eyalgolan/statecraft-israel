@@ -333,6 +333,36 @@ public class UnitPlinthTests
     /// <summary>The sides with a sourced flag.</summary>
     static readonly string[] Flagged = { UnitData.Israel, UnitFlags.Jordan, UnitFlags.Egypt, UnitFlags.Iraq, UnitFlags.Syria, UnitFlags.Lebanon };
 
+    /// <summary>The flag sides' keys are the data's own: each Arab flag side is a side the unit file names (<see cref="UnitData.Sides"/>
+    /// and a row of the committed units_1948.yaml) and has a figure the map draws (<see cref="UnitFigures.SideFigure"/>), so a
+    /// misspelled key fails here. And every side in the class's own sourced set has its own builder and colours: one missing
+    /// from <see cref="UnitFlags.Build"/>'s or <see cref="UnitFlags.Colours"/>'s switch throws rather than drawing Israel's flag.</summary>
+    [Test]
+    public void EveryFlagSideIsADrawnSideWithItsOwnBuilder()
+    {
+        var rows = UnitData.Parse(CommittedYaml);
+        foreach (var side in new[] { UnitFlags.Jordan, UnitFlags.Egypt, UnitFlags.Iraq, UnitFlags.Syria, UnitFlags.Lebanon })
+        {
+            CollectionAssert.Contains(UnitData.Sides, side, $"{side}: a side the unit file allows");
+            Assert.IsTrue(rows.Any(u => u.Side == side), $"{side}: a row of units_1948.yaml");
+            Assert.IsNotNull(UnitFigures.SideFigure(side), $"{side}: a figure the map draws");
+        }
+        CollectionAssert.IsNotEmpty(UnitFlags.SourcedSides);
+        CollectionAssert.AreEquivalent(UnitFlags.SourcedSides, UnitData.Sides.Where(UnitFlags.Has), "the sourced set is the data's sides with a flag");
+        var names = new HashSet<string>();
+        foreach (var side in UnitFlags.SourcedSides)
+        {
+            var m = UnitFlags.Build(side);
+            Assert.IsNotNull(m, side);
+            Assert.AreEqual(UnitFlags.MeshName(side), m!.name, $"{side}: built by its own builder");
+            Assert.AreEqual(1 + UnitFlags.Colours(side).Count, m.subMeshCount, $"{side}: its own colours");
+            names.Add(string.Join(",", UnitFlags.Colours(side)) + "/" + m.vertexCount);
+            UnityEngine.Object.DestroyImmediate(m);
+        }
+        Assert.AreEqual(UnitFlags.SourcedSides.Count, names.Count, "no two sides share one flag's colours and mesh (no fall-through)");
+        Assert.Throws<ArgumentException>(() => UnitFlags.Colours("ala"), "a side with no flag has no cloth colours");
+    }
+
     /// <summary>Every sourced flag: the pole, then one non-empty submesh per cloth colour; <see cref="UnitFlags.FlagWidth"/>
     /// long from the pole and topped at <see cref="UnitFlags.FlagTop"/>, its height its law's proportion of that length.</summary>
     [Test]
