@@ -10,6 +10,8 @@ Refs #756. PR #1378 keeps three candidates as **editor-only review art** until a
 
 These are candidate labels. Paint, markings and exact subtype are unverified; the review environment asserts no geographic location, date, formation or historical deployment. Current [unit data](../content/map/units_1948.yaml), [UnitData](../unity/Assets/Scripts/Map/Units/UnitData.cs) and [SeaAirCollection](../unity/Assets/Scripts/Map/Collection/SeaAirCollection.cs) supply no supported deployment for them. Existing Israeli aircraft, C54, armor and scenario rows are unchanged.
 
+Since #1932 the Spitfire (13) is in the game: moved with `git mv` to `unity/Assets/Art/Collection/generated-1948-13-egyptian-spitfire/` (its FBX renamed to `generated-1948-13-egyptian-spitfire.fbx`, same bytes), streamed in a bundle of its own and drawn only in flight near the western board edge (30 km in) toward el-Arish (`SeaAirCollection`). The review still shows it from there (`VehicleReviewCatalog.DirOf`).
+
 ## Original files and provenance
 
 The two original delivered ZIPs are preserved byte-for-byte in [asset-sources/generated-1948/vehicles](../asset-sources/generated-1948/vehicles/). They contain the original textured GLBs with embedded colour maps; they contain **no provider FBX**. [sources.json](../asset-sources/generated-1948/vehicles/sources.json) records archive/member hashes, provider model IDs, geometry counts and round-trip checks. Per-model provenance beside each editor asset records the same identity. Original archives and backup commit `623ca73c` are preserved.

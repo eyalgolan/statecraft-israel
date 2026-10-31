@@ -26,6 +26,7 @@ GENERATED_FIGURES = [
 ]
 GENERATED_PROPS = [
     "generated-1948-06-bedouin-b-enclosed-striped-tent",
+    "generated-1948-13-egyptian-spitfire",
 ]
 
 
