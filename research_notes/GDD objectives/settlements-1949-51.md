@@ -728,12 +728,17 @@ sources read, not a gazetteer check.
   - The kibbutz site also says the group was sent "about eight months after the capture of the area" (our translation; the capture is
     dated there 19 Tishrei 5709; our reading, Hebcal converts that to 22 October 1948, while Hebrew Wikipedia's article gives 27 October 1948) as part of a Kibbutz HaMeuhad operation to settle 11 places.
 - **Not read.** No contemporary newspaper: nli.org.il returns HTTP 403 from here and no Wayback copy of a JPress page
-  was found. Hebrew Wikipedia's kibbutz article gives no day and cites no newspaper. The Israel Land Authority's 2016
-  conservation survey of Beit Guvrin
-  (https://apps.land.gov.il/IturTabotData/nispachim/jerus/1052288/12.pdf) is said by a search summary to describe the
-  ceremony; the PDF was fetched through Wayback but not read (no PDF text tool here), so it is not counted. Yad
+  was found. Hebrew Wikipedia's kibbutz article gives no day and cites no newspaper. Yad
   Ben-Zvi: no page for the kibbutz found. Gap: the Davar, Al HaMishmar or HaTzofe report of 2 or 3 June 1949, and
   whoever wrote the Palmach database's 23 May date.
+- **Survey source. [S; agent read 28 October 2026; a person's check pending].** The May 2016 preservation survey
+  (https://apps.land.gov.il/IturTabotData/nispachim/jerus/1052288/12.pdf) was read as page images, printed pp. 9, 10 and 89.
+  Page 9 says "הקיבוץ עלה על הקרקע" and dates going onto the land and the ceremony to 2 June 1949.
+  Page 10 says "כמה שבועות לאחר העלייה על הקרקע" when describing Shalhevet joining Yetzivim.
+  Page 89 lists "אתר האינטרנט" of the kibbutz and interviews among its sources, without a pinpoint citation for the date paragraph.
+  The survey's independence from the existing accounts is not established. These pages do not explain the Palmach entry's 23 May date or
+  resolve [C]. The person's check in the issue's Done-when remains open.
+
 - **Founders. [V]** Three Palmach hachsharot, "Yetzivim", "Shalhevet" and "Bnei Horin" (Palmach database, both
   entries); former Palmach members (English Wikipedia).
 - **Location and hex.** CBS 31.61302, 34.89595 (Hebrew Wikipedia 8 m). Hex (-5, 26), hills.
