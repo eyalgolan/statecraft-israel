@@ -122,7 +122,25 @@ def test_tal_original_licensing_matches_manifest_exactly():
     for path in originals:
         assert sum(r["glob"] == path and r["licence"] == "CC-BY-NC-ND-4.0" for r in rules) == 1, path
     independent = [r for r in rules if r["licence"] == "CC-BY-NC-ND-4.0" and r["glob"] not in originals]
-    assert len(independent) == 50  # 146 originals + 50 independent grants (with the hex-tile props row and the #1901 -light meshes) = 196 total
+    # The scoped 31 October contribution adds only these exact files; retain all 50 prior grants.
+    added_grants = {
+        'asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137.glb',
+        'asset-sources/prepared-towns-20261031/netanya/statecraft-netanya-approved-textured-4350a137_basecolor.jpg',
+        'asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f.glb',
+        'asset-sources/prepared-towns-20261031/ramla/statecraft-ramla-approved-textured-aaf2619f_basecolor.jpg',
+        'asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59.glb',
+        'asset-sources/prepared-towns-20261031/safed/statecraft-safed-approved-textured-1e2b8e59_basecolor.jpg',
+        'asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-original-086ad55f.glb',
+        'asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f.glb',
+        'asset-sources/prepared-towns-20261031/tiberias/statecraft-tiberias-smartmesh-textured-086ad55f_basecolor.jpg',
+    }
+    assert len(added_grants) == 9
+    added_rows = [r for r in independent if r["glob"] in added_grants]
+    assert len(added_rows) == 9
+    assert {r["glob"] for r in added_rows} == added_grants
+    assert all(r["artist"] == "Tal Heuberger" for r in added_rows)
+    assert len([r for r in independent if r["glob"] not in added_grants]) == 50
+    assert len(independent) == 59  # 146 pinned originals + 59 independent rules
     for row in selected:
         assert row["licence"] == "CC-BY-NC-ND-4.0"
         assert row["artist"] == "Tal Heuberger"
