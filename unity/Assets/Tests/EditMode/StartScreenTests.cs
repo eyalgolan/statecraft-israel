@@ -623,6 +623,87 @@ public class StartScreenTests
         }
     }
 
+    /// <summary>The Hebrew screen mirrors like the rest of the Hebrew UI (UI-12; the owner, 31 Oct 2026): New game right of
+    /// Star on GitHub, Report right of the language pair and the recording's button right of its credit, the other way
+    /// round in English, with the same gap between Report and the pair, and the panel settles. Compared only where the
+    /// two share a line (a phone held upright wraps Star under New game); at 1920x1080 they must.</summary>
+    [UnityTest]
+    public IEnumerator InHebrewTheButtonRowsMirror()
+    {
+        var gaps = new Dictionary<(int, int), float>();
+        foreach (var hebrew in new[] { false, true })
+        foreach (var (w, h) in new[] { (1920, 1080), (1366, 768), (390, 844) })
+        {
+            var rt = new RenderTexture(w, h, 0);
+            var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
+            ps.targetTexture = rt;
+            var go = new GameObject("StartMirror");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = ps;
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UiPaths.GameUxml);
+            go.SetActive(true);
+            var root = doc.rootVisualElement;
+            var store = WithSave(TempStore(), 1);
+            var bridge = new SimBridge(GameStart.Begin(C, store, () => 4UL, new List<string>(), Text, out var resumed), Text);
+            var toast = new ToastPresenter(root, bridge, Text);
+            var newGame = new NewGamePresenter(root, bridge, store, toast, Text, () => 5UL);
+            var start = new StartScreenPresenter(root, newGame, resumed);
+            try
+            {
+                root.Q("root").RemoveFromClassList("loading");
+                root.Q("root").EnableInClassList(UiLanguage.HebrewClass, hebrew);   // as GameRoot
+                start.Show();
+                for (int i = 0; i < 20 && (float.IsNaN(root.Q("start-panel").worldBound.width) || root.Q("start-panel").worldBound.width <= 0); i++) yield return null;
+                for (int i = 0; i < 4; i++) yield return null;      // the band height is set from the first layout
+                Rect R(string name) => root.Q(name).worldBound;
+                bool OneLine(Rect a, Rect b) => a.yMin < b.yMax - 0.5f && b.yMin < a.yMax - 0.5f;
+                string at = $"{(hebrew ? "Hebrew" : "English")} {w}x{h}";
+                // The layout settles (#1168): mirrored rows keep their whole-pixel heights, so the band layout
+                // (StartScreenPresenter.Fit) does not round the panel back and forth.
+                var settled = R("start-panel");
+                for (int i = 0; i < 10; i++) yield return null;
+                Assert.AreEqual(settled, R("start-panel"), $"{at}: the panel settles");
+
+                var (newGameR, star) = (R("start-new-game"), R("start-star"));
+                if (w == 1920) Assert.IsTrue(OneLine(newGameR, star), $"{at}: Star on GitHub {star} is beside New game {newGameR}");
+                if (OneLine(newGameR, star))
+                {
+                    if (hebrew) Assert.GreaterOrEqual(newGameR.xMin, star.xMax - 0.5f, $"{at}: New game {newGameR} is right of Star on GitHub {star}");
+                    else Assert.LessOrEqual(newGameR.xMax, star.xMin + 0.5f, $"{at}: New game {newGameR} is left of Star on GitHub {star}");
+                }
+
+                // The recording's button and its credit, when the row shows.
+                if (root.Q("start-recording").resolvedStyle.display == DisplayStyle.Flex && OneLine(R("start-listen"), R("start-recording-credit")))
+                {
+                    var (listen, credit) = (R("start-listen"), R("start-recording-credit"));
+                    if (hebrew) Assert.GreaterOrEqual(listen.xMin, credit.xMax - 0.5f, $"{at}: the recording's button {listen} is right of its credit {credit}");
+                    else Assert.LessOrEqual(listen.xMax, credit.xMin + 0.5f, $"{at}: the recording's button {listen} is left of its credit {credit}");
+                }
+
+                var (report, pair) = (R("start-report"), R("start-language"));
+                if (w == 1920) Assert.IsTrue(OneLine(report, pair), $"{at}: the languages {pair} are beside Report {report}");
+                if (OneLine(report, pair))
+                {
+                    if (hebrew) Assert.GreaterOrEqual(report.xMin, pair.xMax - 0.5f, $"{at}: Report {report} is right of the languages {pair}");
+                    else Assert.LessOrEqual(report.xMax, pair.xMin + 0.5f, $"{at}: Report {report} is left of the languages {pair}");
+                    // The gap between Report's edge and the nearer language button's, the same in both languages.
+                    var near = hebrew ? R("start-language-en").xMax : R("start-language-en").xMin;
+                    gaps[(w, hebrew ? 1 : 0)] = hebrew ? report.xMin - near : near - report.xMax;
+                }
+            }
+            finally
+            {
+                start.Dispose(); newGame.Dispose(); toast.Dispose();
+                Object.DestroyImmediate(go); Object.DestroyImmediate(ps); rt.Release(); Object.DestroyImmediate(rt);
+            }
+        }
+        foreach (var w in new[] { 1920, 1366, 390 })
+            if (gaps.TryGetValue((w, 0), out var en) && gaps.TryGetValue((w, 1), out var he))
+                Assert.AreEqual(en, he, 1f, $"{w}: the gap between Report and the languages is the same in Hebrew ({he:0.0}) as in English ({en:0.0})");
+        Assert.IsTrue(gaps.ContainsKey((1920, 0)) && gaps.ContainsKey((1920, 1)), "the gap was measured at 1920x1080");
+    }
+
     /// <summary>tools/web_check.py clicks the screen's buttons where ?navlog says they are (--startscreen, --persistence):
     /// the NAV line names every shown button (Continue only with a save; the recording's button once its row shows), each
     /// at its own centre to half a pixel as a fraction of the window; the last line logged is the current layout; and

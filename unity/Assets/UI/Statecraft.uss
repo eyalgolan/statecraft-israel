@@ -941,6 +941,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 /* The language choice (#2054) beside it, as quiet, with Settings' gold mark on the language in use
    (.settings-choice-selected). In the same row, so the panel keeps its height (StartScreenTests.ItFitsEveryWindowSize). */
 .start-language { margin-left: 8px; }
+/* In Hebrew the row mirrors like the rest of the UI (the owner, 31 Oct 2026): the pair left of Report, the gap on Report's side. */
+.lang-he .start-language { margin-left: 0; margin-right: 8px; }
 .start-language-button { font-size: 18px; min-width: 96px; padding: 4px 16px; margin: 2px 4px; -unity-text-align: middle-center; }
 /* Star on GitHub (#1168): a .start-button, New game's size, beside it (the row wraps it under New game in a narrow
    window). Its star and GitHub mark are painted into the left padding (the right in Hebrew; StartScreenPresenter
@@ -987,7 +989,8 @@ Button.settings-choice-selected { -unity-font-definition: url("project://databas
 .lang-he .top-bar, .lang-he .year-row, .lang-he .date-row, .lang-he .meters, .lang-he .meter, .lang-he .meter-row, .lang-he .nav, .lang-he .row,
 .lang-he .event-foot, .lang-he .event-head, .lang-he .info-panel, .lang-he .info-row, .lang-he .card-stat, .lang-he .pm-offices,
 .lang-he .cabinet-house, .lang-he .party-group, .lang-he .party-chip, .lang-he .defence-row, .lang-he .leaders, .lang-he .rung,
-.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container { flex-direction: row-reverse; }
+.lang-he .defence-budget, .lang-he #cabinet-seats .unity-scroll-view__content-container, .lang-he .start-recording,
+.lang-he .start-actions, .lang-he .start-community { flex-direction: row-reverse; }
 .lang-he.hud-narrow .meter-row { flex-direction: column; align-items: flex-end; }
 .lang-he .turn-box { align-items: flex-start; }
 .lang-he .top-bar { padding: 0 8px 0 14px; }
