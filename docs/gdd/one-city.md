@@ -3,6 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want to put Tel Aviv's people to work and house the immigrants who arrive, so that the city earns Money and its people hold together (GDD objective 2, "Absorb immigrants" [S1]; decisions D-A4, D-A5 [S2]).
+I inspect a retained managed city and assign people under its existing rules.
 
 ## Rules
 
@@ -13,6 +14,11 @@ As a player of the MVP, I want to put Tel Aviv's people to work and house the im
 - Arrivals: the CBS series in `content/aliyah.yaml` arrives as refugees, in whole units, counted cumulatively so that no unit is lost or counted twice (R-CITY-003, D-A5 [S2]). With twelve cities they are spread over all of them: see `cities.md`.
 - Housing: every refugee becomes a civilian, without a job, on the housing step, with no hard cap; the people beyond the city's housing capacity are its overflow and lower its housing condition (R-CITY-004, R-HOUSE-001 to R-HOUSE-004, D-D1 decided 15 October 2026 [S2]). With twelve cities: see `cities.md`.
 - Social cohesion: a share from 0% to 100%, the weighted housed share and employed share over all cities (R-CITY-005). At first no other system read it; the top bar shows it as a resource meter, in the GDD loop only (the owner's ruling of 15 October 2026 [S4]). It is now the `morale` indicator (R-NAT-001), which approval and the `low_cohesion` situation read; the employed share is one of its effect-web sources and housing reaches it through the `housing` indicator.
+This is a handoff, not another city rulebook. [Cities](cities.md) owns assignments, housing and retained projects [S6]; [training](training.md) owns people and conversion; [resources](cutover-resource-layer.md) owns stocks; [balance](balance.md) owns accepted amounts.
+
+Do not independently round every town or create an urban-only population total. Explicit fixture overrides are not production balance. **Amir's proposal, declined by the owner on 30 October 2026 [S5]:** the playable start would distribute farmers across multiple regions.
+
+The retained next-housing-step refugee conversion remains authoritative. Amir's proposal to replace city recruit counts and passive city tax was not ruled on by the owner's 30 October 2026 conflict review; the operative main rules are `R-HOUSE-003` and `R-CITY-002` (`docs/rules/mvp.md:135` and `:95`) [S5]. Its removal of Attention agrees with the retained `gdd-0.3` rule (no Attention resource, `R-GOV-002`).
 
 ## Data touched
 
@@ -20,16 +26,21 @@ As a player of the MVP, I want to put Tel Aviv's people to work and house the im
 - `GameState`: `Cities` (counts), `Cohesion` (hashed as `coh=` when the state has cities; since removed: folded into `morale`, R-NAT-001), `Treasury`.
 - Save files: the `work CITY ROLE N` line. Scenarios: `assign_workers` (and `content: mvp` until the cutover).
 - `sim/Statecraft.Sim.Tests/golden/manifest.txt`: `mvp-slice` moved (retired at the cutover); `scenario-mvp-absorb-first` was new.
+- Assignment commands, capacity summaries and migration tests. Proposed regional fixtures are non-operative [S5].
+- No independent constants belong here.
 
 ## Done when
 
 - `dotnet test sim/Statecraft.sln` passes, including `CitiesContentTests`, `CitiesTests` and `ReferencePlayerTests`.
 - `hash1950`, `hash1952`, `smoke5`, `scenario-cautious` and `scenario-reckless` do not move.
+- The slice uses canonical owners and shared sim helpers.
+- Assignment/housing/conversion cannot create or lose people.
 
 ## Out of scope
 
 - Training, sites, the objective card and the score (PRs 4 to 6), and any display (PRs 7 and 8).
 - Housing condition (D-D2), overflow beyond capacity (D-D1), craftsmen (D-D4) and Social cohesion's effects (D-C1).
+A second city ruleset, hidden fixture balance and another population ledger.
 
 ## Sources
 
@@ -37,7 +48,10 @@ As a player of the MVP, I want to put Tel Aviv's people to work and house the im
 - [S2] GDD v0.1 impact analysis and phased plan, section 5, docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md
 - [S3] GDD Phase 1 implementation plan, PR 3, docs/superpowers/plans/2026-10-12-gdd-phase-1.md
 - [S4] The owner's ruling on showing Social cohesion, 15 October 2026, https://github.com/eyalgolan/statecraft-israel/issues/380, checked 2026-10-16
+- [S5] Authority, docs/GDD.md.
+- [S6] City owner, docs/gdd/cities.md.
 
 ## Open questions
 
 - The placeholder values (city start values, people per unit, income per job, the cohesion weights, the Attention cost) wait for the owner.
+See the single [deferred-decision register](../GDD.md#deferred-decisions). Implementation must not silently decide its open principles.

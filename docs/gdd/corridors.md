@@ -3,6 +3,7 @@
 ## Player story
 
 As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railway and the road corridors segment by segment over several turns, so that the new yishuvim are connected and the infrastructure objective's railway part can be completed (GDD "MVP scope" [S1]; plan Phase 4 [S2]).
+I build transport links segment by segment, with visible map progress and sourced historical completion cards.
 
 ## Rules
 
@@ -18,6 +19,15 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - The Burma Road corridor to Jerusalem is the Burma Road part of the third objective: the owner decided on 14 October 2026 that it is in the MVP (G1 [S5], GDD "MVP scope" [S1]). Its completion card's reference date is the opening of the Road of Valour, which replaced the Burma Road track, on 7 December 1948 [S4].
 - Nir Am's infrastructure-protection rule is part of the third objective: the Negev water line that began there must stay in Israeli hands until the armistice with Egypt on 24 February 1949. Its card tells the pipeline's 1947–48 history from sources, with `checked:` dates and a person's fact check. Its points are a labelled design value for the balance pass; no value is selected here. **Then decided (owner, 18 Oct 2026, "Part of objective 3"; [#1006](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583))** [S11]. (unitless)
 - One military camp and one Hakhshara exist at the start, and pioneers build further camps (D-D5 [S2]); building a camp is one of the GDD's pioneer actions (GDD "Pioneer work" [S1]).
+The simulation registry owns corridor ids, kind and ordered segments; [routes](../routes.md) owns evidence, waypoints and drawing geometry [S12]. A line is not automatically buildable. Charge a segment between consecutive sourced waypoints, not per crossed hex.
+
+Approved rail construction is the Haifa–Tel Aviv link via Rosh HaAyin: the Yarkon link and west-of-Tulkarm bypass only with sourced alignment [S13]. Existing track remains existing. The historical card describes restored service on 20 September 1949, not the later coastal line [S3]. Without bypass evidence, only the Yarkon link is buildable.
+
+Approved roads are Burma Road and Tel Aviv–Netanya coastal road. Burma uses existing `burma_road` waypoints; its card describes the separate Road of Valour opening on 7 December 1948 without identifying them as the same road [S4]. Coastal-road dates remain in research. [Objectives](objective-card.md) alone defines required group membership.
+
+**Amir's proposal [S1]:** corridor work would require on-site pioneers and use the proposed payment/pause/cancel rules in the catalogue [S14]. The owner's 30 October 2026 conflict review did not rule on this; the operative main rules are `R-COR-001`, `R-COR-003` and `R-MONEY-003` (`docs/rules/mvp.md:263`, `:267` and `:399`): work from where the unit stands, borrowing and StopWork.
+
+Complete a corridor when all segments are built. Completed segments reduce [movement cost](military-combat.md#movement-and-orders) before the whole link is finished, without directly granting resources. A route touching a locality does not capture it. Geometry and ids survive editor moves/regeneration.
 
 ## Data touched
 
@@ -25,15 +35,23 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - `Corridors.cs` (new) and `Projects.cs`: the orders, step 5's progress after the sites, and `StopWork`.
 - `content/map/routes_1948.yaml`: the new `yarkon_rail_link` route and the `tlv_netanya_road` route (`trace: straight`, drawn as straight lines between its waypoints), traced into `route_paths_1948.yaml` and baked into the `.tsv` and the route ribbons; `tools/corridor_hexes.py` derives the segment hexes from the traced line.
 - `RouteLayer` (Unity): drawing by progress comes with Phase 4 PR 8; until then the new route draws by its `from` date, as every route does.
+- Intended simulation corridor registry plus existing route geometry/evidence.
+- Segment assignment, paid work and completion state; built-hex effects reference the same ids.
+- Editor dependency checks cover segment/route bindings.
 
 ## Done when
 
 - This file passes `uv run scripts/oss/gdd_lint.py`.
 - Every rule above names its source: a decided row of #375, the GDD, the plan, or a sourced historical date.
+- Segment boundaries use sourced waypoints rather than per-hex cost multiplication.
+- Parallel work does not double-assign pioneers.
+- Partial completion affects movement while objectives wait for the required whole.
+- Railway cards do not substitute an out-of-window coastal line.
 
 ## Out of scope
 
 - Drawing corridors from progress (Phase 4 PR 8), the objective's railway and Burma Road parts and their cards (Phase 4 PR 7), and road and rail effects on movement (Phase 5, D-G2).
+Later coastal railway, invented alignments, per-hex upkeep and revenue merely from drawing routes.
 
 ## Sources
 
@@ -48,6 +66,9 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - [S9] Research note, the 1949 rail link and the Tulkarm bypass, research_notes/gdd-phase-4-sourcing.md, section 2
 - [S10] Owner decision of 18 October 2026, Q-COR-3 (b): "the Tel Aviv–Netanya line is drawn as straight draft lines between the five sourced places", https://github.com/eyalgolan/statecraft-israel/issues/786#issuecomment-6249500143 , checked 2026-10-18; its waypoints, research_notes/gdd-phase-4-sourcing.md, section 3
 - [S11] [Owner decision on Nir Am's objective](https://github.com/eyalgolan/statecraft-israel/issues/1006#issuecomment-6254333583), 18 October 2026, checked 2026-10-18.
+- [S12] Corridor evidence, research_notes/GDD phase 4/corridors-1948-51.md.
+- [S13] Approved historical answers, docs/superpowers/plans/2026-10-15-gdd-phase-4.md.
+- [S14] Catalogue, docs/gdd/balance.md.
 
 ## Open questions
 
@@ -56,3 +77,4 @@ As a player of the MVP, I want my pioneer units to lay the Tel Aviv-Haifa railwa
 - Decided (owner, 17 Oct 2026, #782): one segment between each pair of consecutive sourced waypoints. A road segment costs IL 2m and takes 6 turns; a rail segment costs IL 4m and takes 6 turns. The numbers are labelled design values (D-D7).
 - Decided (owner, 15 Oct 2026, "Take all recommendations", #375; Phase 5 plan Q-MOVE-2): "Roads and rail cheaper", and "Only the corridors Phase 4 builds count" (D-G2). Phase 4 Q-COR-7 (owner, 17 Oct 2026, #782) adds that a built road or railway counts for movement in Phase 5.
 - Decided (owner, 18 Oct 2026, #786, Q-COR-3 (b)): the Tel Aviv-Netanya road is drawn as straight draft lines between the five sourced places, with no source for its 1950 line; its segments' hexes are derived from those lines [S10].
+Unresolved principle and authoring decisions are maintained only in [the GDD](../GDD.md#deferred-decisions).
