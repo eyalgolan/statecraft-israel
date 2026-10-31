@@ -777,10 +777,13 @@ public class TownLandmarksTests
                 "disable retires every map-wide whole-town lease, each after its consumers"); f.AssertConsumerCleared();
         }
     }
+    /// <summary>A merged locality tile is one renderer for many villages, never one named town. Owner ruling, 31 Oct 2026,
+    /// "Load all in view (Recommended)": it swaps as one, once every village in it with building models has them ready,
+    /// and keeps its fallback otherwise.</summary>
     [Test]
     public void ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown()
     {
-        using (var f = new ResidencyFixture(saved))
+        using (var f = new ResidencyFixture(saved, approved: true))
         {
             var identity = (IDictionary<Renderer, string>)typeof(TownModelLayer).GetField("swapIds", ResidencyFlags)!.GetValue(f.buildings)!;
             var settlementIds = f.map.Settlements.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
@@ -789,8 +792,47 @@ public class TownLandmarksTests
             var swaps = (IEnumerable<(Renderer kit, Renderer? close)>)typeof(TownModelLayer).GetField("swaps", ResidencyFlags)!.GetValue(f.buildings)!;
             var mixed = swaps.Where(pair => !identity.ContainsKey(pair.kit)).ToList();
             Assert.IsNotEmpty(mixed, "Map.Build must include grouped localities/camps for this fixture");
+            var villages = (IDictionary<Renderer, string[]>)typeof(TownModelLayer).GetField("tileIds", ResidencyFlags)!.GetValue(f.buildings)!;
+            f.camera.nearClipPlane = 50f; f.camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes: the view reaches the ground
             f.Choose(close: true);
-            foreach (var pair in mixed) Assert.IsFalse(pair.kit.forceRenderingOff, "an atomic mixed tile keeps its fallback");
+            int swapped = 0;
+            foreach (var pair in mixed)
+            {
+                var ids = villages.TryGetValue(pair.kit, out var v) ? v : Array.Empty<string>();
+                foreach (var id in ids) Assert.IsFalse(settlementIds.Contains(id), pair.kit.name + ": " + id + " is a locality, not a game town");
+                bool ready = ids.Length > 0 && ids.All(id => f.buildings.ReadyForTown(id, f.camera));
+                Assert.AreEqual(ready, pair.kit.forceRenderingOff, pair.kit.name + ": the tile swaps only as one, once every village in it is ready");
+                if (ready) swapped++;
+            }
+            Assert.Greater(swapped, 0, "a mixed tile in view swaps once its villages are ready");
+        }
+    }
+
+    /// <summary>Nazareth's whole-town model (stone-village-v1, the town's Far model) stands in for the town only above the
+    /// close band. At 12 km with Nazareth in view but not under the screen centre (the minimap jump lands beside it), the
+    /// town's building models are admitted and its whole-town model hides, as in v0.3.1.</summary>
+    [Test]
+    public void NazarethWholeTownModelHidesAtTwelveKmWhenInViewBesideTheFocus()
+    {
+        using (var f = new ResidencyFixture(saved, approved: true))
+        {
+            f.Choose(); f.Arrive();
+            var nazareth = f.map.KitFootprints.Single(p => p.id == "nazareth");
+            Assert.Greater(f.buildings.CountFor("nazareth"), 0, "Nazareth has building models");
+            var whole = f.towns.transform.Find("nazareth");
+            Assert.IsNotNull(whole, "Nazareth's whole-town model stands map-wide (ruling 29)");
+            var lookAt = new Vector3(nazareth.centre.x, 0f, nazareth.centre.y - (nazareth.radius + 1000f));
+            f.camera.transform.rotation = Quaternion.Euler(CameraRig.Pitch, 0f, 0f);
+            f.camera.transform.position = lookAt - f.camera.transform.forward * 11_775f;
+            f.camera.fieldOfView = CameraRig.Fov; f.camera.aspect = 16f / 9f;
+            f.camera.nearClipPlane = 50f; f.camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes
+            Assert.IsTrue(CollectionResidencyView.TryGroundFocus(f.camera, out var focus));
+            Assert.Greater(Vector2.Distance(new Vector2(focus.x, focus.z), nazareth.centre), nazareth.radius,
+                "precondition: the screen centre is outside Nazareth's footprint");
+            f.towns.Choose(default, f.camera);
+            Assert.IsTrue(f.buildings.ReadyForTown("nazareth", f.camera), "Nazareth in view at 12 km: building models");
+            Assert.IsTrue(whole!.GetComponentsInChildren<Renderer>(true).All(r => r.forceRenderingOff),
+                "Nazareth's whole-town model hides while its building models stand");
         }
     }
 

@@ -142,8 +142,9 @@ public class TownModelResidencyTests
             var map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
             var layer = map.GetComponentInChildren<TownModelLayer>(true);
             layer.EdgeAllowance = null;
-            // Pan targets are the game's towns (map.Settlements, from content). 1948 localities also have model instances
-            // (CountFor > 0) but stand in merged locality tiles and are never admitted as a town (#1800 design; see
+            // Pan targets are the game's towns (map.Settlements, from content): the focus partition is theirs. 1948 localities
+            // also have model instances (CountFor > 0) but stand in merged locality tiles, which load with every place in view
+            // and swap as one tile (owner ruling, 31 Oct 2026, "Load all in view"; see
             // TownLandmarksTests.ProductionKitWiringNeverTreatsAMixedRendererAsOneNamedTown), so they are not pan targets.
             var gameTowns = map.Settlements.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
             var detailed = map.KitFootprints.Where(f => layer.CountFor(f.id) > 0 && gameTowns.Contains(f.id))
@@ -799,5 +800,174 @@ public class TownModelResidencyTests
             Call(f.layer, "ConfigureResidency", 1000f, 2000f, 1000f, 0, ""));
         Assert.IsInstanceOf<ArgumentException>(error!.InnerException);
         Assert.IsFalse((bool)typeof(TownModelLayer).GetProperty("SpatialPolicyConfigured", Flags)!.GetValue(f.layer)!);
+    }
+
+    /// <summary>Owner ruling, 31 Oct 2026, "Load all in view (Recommended)": below 40 km the building models of every town
+    /// AND village in the camera's view (+3 km) load, nearest first, and unload on zoom-out. The real map in the player's
+    /// streaming path: no editor model list, every original kind acquired through the ModelAcquire seam.</summary>
+    sealed class StreamedMap : IDisposable
+    {
+        readonly FieldInfo acquire;
+        readonly object? previousAcquire;
+        readonly GameObject prefab;
+        readonly Material material;
+        readonly List<Camera> cameras = new List<Camera>();
+        public readonly MapScene map;
+        public readonly TownModelLayer layer;
+        public readonly Transform kits;
+        readonly CameraRig rig;
+        public readonly List<string> RequestOrder = new List<string>();
+        readonly Dictionary<string, Action<GameObject?>> answers = new Dictionary<string, Action<GameObject?>>();
+        public int Released;
+        public StreamedMap()
+        {
+            EditorSceneManager.OpenScene("Assets/Map.unity", OpenSceneMode.Single);
+            map = UnityEngine.Object.FindFirstObjectByType<MapScene>(); map.Build();
+            layer = map.GetComponentInChildren<TownModelLayer>(true);
+            layer.EdgeAllowance = null;
+            kits = map.transform.Find(KitLayer.RootName);
+            rig = UnityEngine.Object.FindFirstObjectByType<CameraRig>();
+            prefab = GameObject.CreatePrimitive(PrimitiveType.Cube); prefab.name = "stub original";
+            // Submit draws with Graphics.RenderMeshInstanced, which needs an instancing material (as the originals' are).
+            var renderer = prefab.GetComponent<MeshRenderer>();
+            material = new Material(renderer.sharedMaterial) { enableInstancing = true }; renderer.sharedMaterial = material;
+            acquire = typeof(TownModelLayer).GetField("ModelAcquire", Flags)!;
+            previousAcquire = acquire.GetValue(null);
+            acquire.SetValue(null, new Func<string, CollectionDetail, Action<GameObject?>, IDisposable>((id, _, done) =>
+            {
+                RequestOrder.Add(id); answers[id] = done;
+                return new Release(() => Released++);
+            }));
+            // The player's path: no editor model list; each original kind streams on demand.
+            typeof(TownModelLayer).GetField("set", Flags)!.SetValue(layer, null);
+            typeof(TownModelLayer).GetField("streaming", Flags)!.SetValue(layer, true);
+        }
+        public (Vector2 centre, float radius, string id) Footprint(string id) => map.KitFootprints.Single(f => f.id == id);
+        /// <summary>The production rig's pose (50 degree pitch, 35 degree FOV, 16:9) looking at <paramref name="at"/>.</summary>
+        public Camera Camera(Vector2 at, float distanceM)
+        {
+            var camera = new GameObject("in-view residency camera").AddComponent<Camera>(); cameras.Add(camera);
+            Pose(camera, at, distanceM);
+            return camera;
+        }
+        public void Pose(Camera camera, Vector2 at, float distanceM)
+        {
+            rig.LookAt = new Vector3(at.x, 0f, at.y); rig.Distance = distanceM; rig.Yaw = 0f; rig.TopInset = 0f; rig.Apply();
+            var source = rig.GetComponent<Camera>();
+            camera.CopyFrom(source); camera.ResetProjectionMatrix();
+            camera.fieldOfView = CameraRig.Fov; camera.aspect = 16f / 9f;
+            camera.nearClipPlane = 50f; camera.farClipPlane = 1_000_000f;   // CameraRig.Init's planes
+            camera.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+        }
+        /// <summary>Prepares the camera, answers every request with a stub original, and prepares it again.</summary>
+        public void Settle(Camera camera)
+        {
+            layer.PrepareCamera(camera);
+            foreach (var answer in answers.Values.ToList()) answer(prefab);
+            layer.PrepareCamera(camera);
+        }
+        public void Submit(Camera camera) =>
+            typeof(TownModelLayer).GetMethod("Submit", Flags)!.Invoke(layer, new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), camera });
+        /// <summary>The merged locality tile renderer (and its close mesh) that holds a place's ground point.</summary>
+        public (MeshRenderer kit, MeshRenderer close) Tile(Vector2 at)
+        {
+            string name = $"Localities {Mathf.FloorToInt(at.x / SettlementKits.TileM)},{Mathf.FloorToInt(at.y / SettlementKits.TileM)}";
+            var kit = kits.Find(name)?.GetComponent<MeshRenderer>();
+            var close = kits.Find(name + KitLayer.CloseSuffix)?.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(kit, name + ": the merged locality tile"); Assert.IsNotNull(close, name + ": its close mesh");
+            return (kit!, close!);
+        }
+        public void Dispose()
+        {
+            acquire.SetValue(null, previousAcquire);
+            foreach (var camera in cameras) if (camera != null) UnityEngine.Object.DestroyImmediate(camera.gameObject);
+            UnityEngine.Object.DestroyImmediate(prefab); UnityEngine.Object.DestroyImmediate(material);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            VisualToggles.Clear();
+        }
+    }
+
+    const float TwelveKmM = 11_775f, ThirtyKmM = 30_394f, GameplayM = 60_000f;
+
+    /// <summary>The v0.3.2 blocker (white 100x kit houses where v0.3.1 drew Tal Heuberger's building models): Imwas's merged
+    /// locality tile swaps to its building models at 12 km and at 30 km, and the models draw.</summary>
+    [Test]
+    public void ImwasVillageTileSwapsToBuildingModelsAtTwelveAndThirtyKm()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        Assert.Greater(s.layer.CountFor("imwas"), 0, "Imwas has building models");
+        var (kit, close) = s.Tile(imwas.centre);
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
+        {
+            var camera = s.Camera(imwas.centre, d);
+            string at = FormattableString.Invariant($"Imwas at {d / 1000f} km");
+            s.Settle(camera);
+            Assert.IsTrue(s.layer.ReadyForTown("imwas", camera), at + ": building models admitted and ready");
+            Assert.IsTrue(kit.forceRenderingOff, at + ": the 100x kit tile gives way");
+            Assert.IsFalse(close.forceRenderingOff, at + ": the tile's close mesh (ground, plinths) draws");
+            s.Submit(camera);
+            Assert.Greater(s.layer.LastDrawn, 0, at + ": the building models draw");
+        }
+    }
+
+    /// <summary>The Latrun front, where no game town is under the screen centre: every village there (Imwas, Yalu, Beit Nuba)
+    /// is admitted at 12 km and at 30 km.</summary>
+    [Test]
+    public void EveryLatrunVillageInViewIsAdmitted()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        foreach (float d in new[] { TwelveKmM, ThirtyKmM })
+        {
+            var camera = s.Camera(imwas.centre, d);
+            s.Settle(camera);
+            foreach (var id in new[] { "imwas", "yalo", "bayt_nuba" })
+            {
+                Assert.Greater(s.layer.CountFor(id), 0, id + " has building models");
+                Assert.IsTrue(s.layer.ReadyForTown(id, camera), FormattableString.Invariant($"{id} at {d / 1000f} km: admitted and ready"));
+            }
+        }
+    }
+
+    /// <summary>A town's neighbours in view load too, not only the town under the screen centre; the focused town's kinds
+    /// are asked first (nearest first).</summary>
+    [Test]
+    public void NeighbouringTownsOfTheFocusLoadToo()
+    {
+        using var s = new StreamedMap();
+        var telAviv = s.Footprint("tel_aviv");
+        var camera = s.Camera(telAviv.centre, ThirtyKmM);
+        s.Settle(camera);
+        foreach (var id in new[] { "tel_aviv", "jaffa", "petah_tikva" })
+        {
+            Assert.Greater(s.layer.CountFor(id), 0, id + " has building models");
+            Assert.IsTrue(s.layer.ReadyForTown(id, camera), id + " at 30 km over Tel Aviv: admitted and ready");
+        }
+        var telAvivKinds = s.layer.InstancesOf("tel_aviv").Select(m => TownModels.Ids[(int)m.Model]).ToHashSet(StringComparer.Ordinal);
+        CollectionAssert.Contains(telAvivKinds, s.RequestOrder[0], "the focused town's kinds are asked first");
+        var jaffa = s.Footprint("jaffa");
+        s.Pose(camera, jaffa.centre, TwelveKmM); s.Settle(camera);
+        Assert.IsTrue(s.layer.ReadyForTown("jaffa", camera), "Jaffa at 12 km");
+        Assert.IsTrue(s.layer.ReadyForTown("tel_aviv", camera), "Tel Aviv beside Jaffa at 12 km");
+    }
+
+    /// <summary>The 1.5 GB guard: zooming out to the 60 km gameplay view releases every building-model lease and the kits
+    /// draw again.</summary>
+    [Test]
+    public void BuildingModelsUnloadAtSixtyKm()
+    {
+        using var s = new StreamedMap();
+        var imwas = s.Footprint("imwas");
+        var (kit, _) = s.Tile(imwas.centre);
+        var camera = s.Camera(imwas.centre, ThirtyKmM);
+        s.Settle(camera);
+        Assert.IsTrue(s.layer.ReadyForTown("imwas", camera), "precondition: Imwas ready at 30 km");
+        Assert.IsNotEmpty(s.RequestOrder);
+        s.Pose(camera, imwas.centre, GameplayM);
+        s.layer.PrepareCamera(camera); s.layer.RetireReleasedModels();
+        Assert.AreEqual(s.RequestOrder.Count, s.Released, "every building-model lease is released at 60 km");
+        Assert.IsFalse(s.layer.ReadyForTown("imwas", camera), "no building models at 60 km");
+        Assert.IsFalse(kit.forceRenderingOff, "the kit tile draws again at 60 km");
     }
 }

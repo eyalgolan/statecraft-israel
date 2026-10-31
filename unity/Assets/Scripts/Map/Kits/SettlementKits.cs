@@ -148,6 +148,9 @@ namespace Statecraft.Game.Map.Kits
             /// mesh without the buildings and with the models' plinths (KitMesh.ToCloseMesh), by the kit mesh's name; none
             /// where nothing would be left.</summary>
             public Dictionary<string, Mesh> Close = new Dictionary<string, Mesh>();
+            /// <summary>The 1948 localities merged into each tile mesh, by the tile's name in <see cref="Tiles"/> (ordinal
+            /// order): TownModelLayer swaps a tile only when every one of them has its building models ready.</summary>
+            public Dictionary<string, List<string>> TileIds = new Dictionary<string, List<string>>();
             /// <summary>Issue #1032: every kit landmark as the close mesh draws it, at the models' world scale
             /// (SettlementKits.AtWorldScale): its kind, its anchor, and its copy's box (width along x, depth along z, height
             /// over its ground level Y), in placement order.</summary>
@@ -289,12 +292,21 @@ namespace Statecraft.Game.Map.Kits
                     foreach (var (km, from, to) in kv.Value) km.Positions(from, to, pts);
                     if (pts.Count > 0) columns[kv.Key] = KitMesh.Columns(pts);
                 }
+            static string TileName((int x, int z) key) => $"Localities {key.x},{key.z}";
             foreach (var kv in tiles)
             {
                 var mesh = kv.Value.ToMesh($"localities_{kv.Key.Item1}_{kv.Key.Item2}");
                 if (kv.Value.ToCloseMesh(mesh.name + "_close") is Mesh close) result.Close[mesh.name] = close;
-                result.Tiles.Add(($"Localities {kv.Key.Item1},{kv.Key.Item2}", mesh));
+                result.Tiles.Add((TileName(kv.Key), mesh));
             }
+            foreach (var id in spans.Keys)
+            {
+                var c = centres[id];
+                string name = TileName((Mathf.FloorToInt(c.x / TileM), Mathf.FloorToInt(c.y / TileM)));
+                if (!result.TileIds.TryGetValue(name, out var ids)) result.TileIds[name] = ids = new List<string>();
+                ids.Add(id);
+            }
+            foreach (var ids in result.TileIds.Values) ids.Sort(string.CompareOrdinal);
             result.Claimed = lots.List.ConvertAll(l => (centre: l.c, radius: l.r, id: l.id));
             result.KibbutzHalls = kibbutzHalls; result.FarmSheds = farmSheds;
             return result;
