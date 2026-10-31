@@ -4,9 +4,9 @@
   "licence": "CC-BY-NC-ND-4.0",
   "permission": {
     "date": "2026-10-31",
-    "scope": "Public redistribution of exact prepared21filebatch,including approved export conversions,under CC BY-NC-ND 4.0withTalcredit;ownpaid generation account confirmed. No blanketcode or personalAI-review attestation."
+    "scope": "Tal authorized public redistribution of the exact prepared 21-file batch, including approved export conversions, under CC BY-NC-ND 4.0 with Tal’s credit, and confirmed his own paid generation account. No blanket code or personal AI-review attestation is inferred."
   },
-  "generation_route": "Tripo Studio approved AI concept images -> Smart Mesh P2.0 geometry -> texture; saved task/input ledger records. Tiberias configured6000target/actual5002; later masters5000target/actuals recorded. No new generation in this recovery.",
+  "generation_route": "Tripo Studio approved AI concept images -> Smart Mesh P2.0 geometry -> texture; saved task/input ledger records. Tiberias configured for a target of 6,000 triangles and an actual count of 5,002; later masters used a target of 5,000 triangles, with actual counts recorded. No new generation in this recovery.",
   "input_chain": {
     "style": {
       "creator": "Tal Heuberger",
@@ -19,23 +19,23 @@
       "geometry_task_id": "086ad55f-8641-48ad-a381-44a4d85ffaf5",
       "reference_url": "https://commons.wikimedia.org/wiki/File:View_of_Tiberias_from_the_Tiberias_Hotel._1934-1939._Matson.jpg",
       "creator_credit": "American Colony (Jerusalem), Photo Department / Library of Congress Matson Collection, matpc.03694",
-      "basis": "Commons records public domain and Matson no-known-copyright-restrictions; monochrome, not excluded colour lantern slide; page checked31 October 2026",
+      "basis": "Commons records public domain and Matson no-known-copyright-restrictions; monochrome, not excluded colour lantern slide; page checked 31 October 2026",
       "reference_sha256": "bc96c692b43f1f94e6e6197a06591685e670a6e19e4873e1e8686d8ba44982cc",
-      "role": "Earlier period architectural forms plus Haifa style; no exact15May1948 reconstruction or landmark-condition acceptance"
+      "role": "Earlier period architectural forms plus Haifa style; no exact 15 May 1948 reconstruction or landmark-condition acceptance"
     },
     "safed": {
       "concept_id": "967ea7df-2b21-471c-8c75-5060f3e114b1",
       "concept_sha256": "ca4563dee0144e49e5380e6a90e806f1e174f2d0a52d4233ba610ca2c01513f3",
       "geometry_task_id": "1e2b8e59-dba9-4d42-b6ed-889cdb81cb76",
       "actual_input_chain": "approved Tiberias concept for style plus text period brief; saved ledger expressly says no Safed archival photograph uploaded",
-      "limitation": "Whole-town approximate hill massing; not surveyed1948building inventory or a separate dome/drum asset"
+      "limitation": "Whole-town approximate hill massing; not surveyed 1948 building inventory or a separate dome/drum asset"
     },
     "netanya": {
       "concept_id": "cb5561e9-df00-4ed6-9243-5687632a73c6",
       "concept_sha256": "ee0174069d5824a9d44a3efb94c276c99570c2637a7619d8624969a481502f14",
       "geometry_task_id": "4350a137-26d4-44e8-b177-a58dacd33fae",
-      "actual_input_chain": "approved Tiberias style plus text brief; saved production ledger says no period raster uploaded;JNF025863 research photograph was not an input",
-      "limitation": "Symbolic whole-town candidate,not exact1948inventory;no standalone Netanya requirement in2007"
+      "actual_input_chain": "approved Tiberias style plus text brief; saved production ledger says no period raster uploaded; JNF025863 research photograph was not an input",
+      "limitation": "Symbolic whole-town candidate, not an exact 1948 inventory; no standalone Netanya requirement in #2007"
     },
     "ramla": {
       "concept_id": "16e47846-2a0a-4796-804f-15ddcc351573",
@@ -43,48 +43,48 @@
       "geometry_task_id": "aaf2619f-1d10-4b41-bd15-4b2f3afed10f",
       "reference_url": "https://commons.wikimedia.org/wiki/File:Toren,_plaatselijk_bekend_onder_de_naam_de_Witte_toren,_Bestanddeelnr_255-0161.jpg",
       "archive_url": "https://hdl.handle.net/10648/aed278e4-d0b4-102d-bcf8-003048976d84",
-      "credit": "Willem van de Poll / Nationaal Archief,255-0161",
-      "basis": "Exact saved ledger reference255-0161 matches Commons metadata:1948,Ramle,CC0; page checked31 October 2026",
+      "credit": "Willem van de Poll / Nationaal Archief, 255-0161",
+      "basis": "Exact saved ledger reference 255-0161 matches Commons metadata: 1948, Ramle, CC0; page checked 31 October 2026",
       "role": "Geometry reference plus approved Tiberias style; no photograph included. Tower/base separation and modular fit unverified"
     }
   },
-  "underlying_reference_rights": "Tal output grant does not relicense underlying photographs or waive provider restrictions. References are linked/credited only,not bundled. PD/CC0 input bases remain separate; exact1948historical fit is not asserted.",
+  "underlying_reference_rights": "Tal output grant does not relicense underlying photographs or waive provider restrictions. References are linked/credited only, not bundled. PD/CC0 input bases remain separate; exact 1948 historical fit is not asserted.",
   "provider_sources": [
     "https://www.tripo3d.ai/terms",
     "https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially"
   ],
-  "provider_limits": "Paid output distribution/licensing basis per5.2.2 and official guide;input rights,competing-service restrictions and provenance obligations remain. No legal/copyright certainty asserted.",
+  "provider_limits": "Paid output distribution/licensing basis per section 5.2.2 and official guide; input rights, competing-service restrictions and provenance obligations remain. No legal/copyright certainty asserted.",
   "held_files": [
     {
       "filename": "statecraft-netanya-original-76df2d06.glb",
       "bytes": 60575748,
       "sha256": "801ffc2d15b782671c4eaa180a9938063a37efba22f04de85e0f9516a950efd5",
-      "reason": "Above10MiB;unmodified original retained locally;owner-approved size/storage plan required;LFS ruledout"
+      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
     },
     {
       "filename": "statecraft-safed-original-6707144a.glb",
       "bytes": 59382140,
       "sha256": "4f389ce9fbff53fd577074804954581434aee0ae12a06d84df99168677535303",
-      "reason": "Above10MiB;unmodified original retained locally;owner-approved size/storage plan required;LFS ruledout"
+      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
     },
     {
       "filename": "statecraft-tiberias-original-d6c8293a.glb",
       "bytes": 59533508,
       "sha256": "3d5227a620198c50a134f1e9174e37cdc2d99f6bb57c2a2df4c462efc711de87",
-      "reason": "Above10MiB;unmodified original retained locally;owner-approved size/storage plan required;LFS ruledout"
+      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
     },
     {
       "filename": "statecraft-k98k-original-64e8aded.glb",
       "bytes": 63014240,
       "sha256": "320fd59ec86068936dc3cfd9c23e3549ca7926facdf357ea24c40b08360cffc8",
-      "reason": "Above10MiB;unmodified original retained locally;owner-approved size/storage plan required;LFS ruledout"
+      "reason": "The file exceeds 10 MiB. The unmodified original is retained locally pending an owner-approved size/storage plan; LFS is ruled out."
     }
   ],
-  "excluded_jaffa": "Separate two-file candidate held until exact chosen Rothenberg/NLI reference identity is matched to saved input;1954date is accuracy caveat,not by itself redistribution blocker. Getty was evidence-only,not uploaded.",
+  "excluded_jaffa": "Separate two-file candidate held until exact chosen Rothenberg/NLI reference identity is matched to saved input; the 1954 date is an accuracy caveat, not by itself a redistribution blocker. Getty was evidence-only, not uploaded.",
   "known_limits": [
     "Whole towns do not replace modular pieces",
-    "#1947Ramla tower/base fit unverified",
-    "One-hex/actual-map composition,containment,clearance,stream/load/runtime and Unity checks unrun",
+    "#1947 Ramla tower/base fit unverified",
+    "One-hex/actual-map composition, containment, clearance, stream/load/runtime and Unity checks unrun",
     "Project-owner art/historical acceptance not inferred from Tal concept approval or source licence grant"
   ],
   "files": [
