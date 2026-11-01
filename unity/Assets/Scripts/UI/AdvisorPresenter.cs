@@ -88,11 +88,12 @@ namespace Statecraft.Game.UI
         float flooredFor;
         bool disposed, hidden = true;
         /// <summary>Set when a rebuild resumes a tour while a screen is open (#1915): the next uncover hands Next
-        /// the focus once, instead of every cover change (a resize, a meter's width) moving it.</summary>
+        /// the focus once, instead of every cover change (a resize, a meter's width) moving it. Cleared when it fires
+        /// and when the chain opens or closes, so a finished tour cannot hand its pending focus to the next one.</summary>
         bool focusNextWhenUncovered;
         /// <summary>Set when the screen over a resumed tour closes while the popup is still coming back from its hide
-        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on Hide,
-        /// on a screen opening again and on CloseChain.</summary>
+        /// (#1915): Place() hands Next the focus once the popup is visible again. Cleared on Place's hand-off, on any
+        /// Hide (a screen opening again hides), and when the chain opens or closes.</summary>
         bool focusNextOnPlace;
         /// <summary>The frame Escape closed it in (FeedbackPresenter's pattern): GameRoot's poll then knows the key is used.</summary>
         int escapedAt = -1;
@@ -186,7 +187,6 @@ namespace Statecraft.Game.UI
                     {
                         if (disposed || !InChain) return;
                         if (ScreenOpen()) focusNextWhenUncovered = true; else TakeFocusFromTheCard();
-                        Debug.Log("[#1915] arm check: screenOpen=" + ScreenOpen() + " armed=" + focusNextWhenUncovered + " isOpen=" + IsOpen);
                     });
             }
         }
@@ -345,9 +345,9 @@ namespace Statecraft.Game.UI
         void Hide()
         {
             StopWatching();
+            focusNextOnPlace = false;                   // even when already hidden: a screen opening again cancels a pending hand-off (#1915)
             if (hidden) return;
             hidden = true;
-            focusNextOnPlace = false;
             ring.style.display = DisplayStyle.None;
             follow.Pause();
             layer.UnregisterCallback(onLaidOut);
@@ -374,7 +374,6 @@ namespace Statecraft.Game.UI
             if (session.Chain.Step >= 0)
             {
                 RenderChain();
-                Debug.Log("[#1915] cover change: armed=" + focusNextWhenUncovered + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
                 if (focusNextWhenUncovered && InChain && !ScreenOpen()) { focusNextWhenUncovered = false; FocusNextOnPlace(); }   // a screen closed over a resumed tour (#1915)
                 return;
             }
@@ -474,6 +473,7 @@ namespace Statecraft.Game.UI
             if (disposed) return;
             var first = NextChainStep(-1);
             if (first < 0) return;                         // no unreviewed Hebrew, even when explicitly asked
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a reopened tour starts without a stale pending hand-off (#1915)
             hooks.CloseScreens?.Invoke();
             openingGame = bridge.Session;
             if (session.Chain.Step < 0)
@@ -503,6 +503,7 @@ namespace Statecraft.Game.UI
         {
             if (disposed || session.Chain.Step < 0) return;
             session.Chain.Step = -1; session.Chain.PutBack = null; adopted = null;
+            focusNextWhenUncovered = false; focusNextOnPlace = false;   // a tour ending cancels a pending Next hand-off (#1915)
             Shown = null; covered = null;
             ClearTarget();
             Hide();
@@ -571,13 +572,21 @@ namespace Statecraft.Game.UI
         /// Place() to make the popup visible again. A popup still on screen takes the focus at once.</summary>
         void FocusNextOnPlace()
         {
-            Debug.Log("[#1915] hand-off: disposed=" + disposed + " inChain=" + InChain + " screenOpen=" + ScreenOpen()
-                + " visibility=" + popup.resolvedStyle.visibility + " display=" + popup.resolvedStyle.display
-                + " canTake=" + FocusReturn.CanTakeFocus(gotIt)
-                + " focused=" + (layer.focusController?.focusedElement is VisualElement f ? f.name : "null"));
             if (disposed || !InChain || ScreenOpen()) return;
             if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
             focusNextOnPlace = true;
+        }
+
+        /// <summary>Place() just restored the popup's visibility for the deferred Next hand-off (#1915), but an inline
+        /// style resolves only on the next style pass - the gate log read the focus still null after a bare Focus() in the
+        /// same call, for the same reason the hand-off had read canTake=false. The hand-off waits the style pass out: a few
+        /// ticks until the popup reads visible and Next can take the focus, then hands it over once.</summary>
+        void FocusNextWhenPlaced(int ticksLeft = 10)
+        {
+            if (disposed || !InChain || ScreenOpen()) return;
+            if (popup.resolvedStyle.visibility == Visibility.Visible && FocusReturn.CanTakeFocus(gotIt)) { FocusReturn.To(gotIt); return; }
+            if (ticksLeft <= 0) return;
+            gotIt.schedule.Execute(() => FocusNextWhenPlaced(ticksLeft - 1));
         }
 
         void ShowMe()
@@ -760,12 +769,10 @@ namespace Statecraft.Game.UI
             popup.style.left = at.xMin; popup.style.top = at.yMin;
             popup.style.width = Mathf.Max(0f, at.width); popup.style.maxHeight = Mathf.Max(0f, slot.height);
             popup.style.visibility = Visibility.Visible;
-            Debug.Log("[#1915] place: visible, focusNextOnPlace=" + focusNextOnPlace + " inChain=" + InChain + " screenOpen=" + ScreenOpen());
             if (focusNextOnPlace && InChain && !ScreenOpen())
             {
                 focusNextOnPlace = false;
-                gotIt.Focus();
-                gotIt.schedule.Execute(() => { if (!disposed && InChain && layer.focusController?.focusedElement == null) gotIt.Focus(); });
+                FocusNextWhenPlaced();
             }
             return at;
         }
