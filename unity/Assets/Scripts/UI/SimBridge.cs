@@ -46,6 +46,10 @@ namespace Statecraft.Game.UI
         public event Action<IReadOnlyList<Rejection>>? TurnEnded;
         /// <summary>Raised after a move or unit order is committed, with the Why lines it added (an attack's result).</summary>
         public event Action<IReadOnlyList<Cause>>? Committed;
+        /// <summary>The engagements the player has just seen resolve, raised after <see cref="Changed"/> has redrawn the map
+        /// (UnitAttackPresenter plays them, #1867): an attack order's at once, and at End Turn only the turn's new ones, not
+        /// the open turn's attack orders, which the turn runs again first. Never on a load or a refused turn.</summary>
+        public event Action<IReadOnlyList<Cause>>? CombatResolved;
         /// <summary>Raised when Queue refuses an order, with the player-facing reason.</summary>
         public event Action<string>? Refused;
         /// <summary>A validated order was refused specifically for Attention; presentation-only advice signal.</summary>
@@ -231,6 +235,8 @@ namespace Statecraft.Game.UI
 
         string? Refuse(string reason) { reason = ReasonText(text, reason); Refused?.Invoke(reason); return reason; }
 
+        static IReadOnlyList<Cause> Engagements(IEnumerable<Cause> why) => why.Where(x => x.Key == WhyKeys.Engagement).ToList();
+
         static void Notify(Action? handlers)
         {
             if (handlers == null) return;
@@ -263,7 +269,9 @@ namespace Statecraft.Game.UI
                 var refused = Session.Commit(c);
                 if (refused != null) return Refuse(refused);
                 Notify(Changed);
-                Notify(Committed, Session.Now.Why.Skip(before).ToList());
+                var added = Session.Now.Why.Skip(before).ToList();
+                Notify(Committed, added);
+                Notify(CombatResolved, Engagements(added));
                 return null;
             }
             if (c is AllocateBudget ab) c = new AllocateBudget(new Dictionary<string, double>(ab.Shares));   // a snapshot: later edits to the caller's dictionary must not change the order
@@ -293,6 +301,9 @@ namespace Statecraft.Game.UI
         public StepResult EndTurn()
         {
             StepResult r;
+            // The turn runs the open turn's orders first, as the open turn did (Simulation.Step and Preview share RunOrders),
+            // so its first causes are the open turn's, already played when each order was given (#1867).
+            int replayed = Session.Now.Why.Count;
             var batch = Session.Committed.Concat(deferred).ToList();
             var date = TurnStart.Date;
             try { r = step(Session, deferred.ToList()); }   // a snapshot: the queue is cleared below
@@ -312,6 +323,7 @@ namespace Statecraft.Game.UI
             LastBatch = batch; LastBatchDate = date;
             deferred.Clear(); skipped.Clear();
             Notify(Changed);
+            Notify(CombatResolved, Engagements(r.Why.Skip(replayed)));
             Notify(TurnEnded, r.Rejected);
             return r;
         }
