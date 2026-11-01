@@ -1,7 +1,8 @@
 # Steamworks integration: design (owner request, 1 November 2026)
 
-- **Date:** 1 November 2026. **Status: PROPOSED.** The open choices are owner questions (section 6), each with a
-  recommendation. Nothing here has been bought, signed up for, uploaded or configured on Steamworks.
+- **Date:** 1 November 2026. **Status: DECIDED (design); not built.** The owner answered Q1-Q10 on 1 November 2026
+  (#2150; section 6 quotes the chosen option labels). Nothing here has been bought, signed up for, uploaded or configured
+  on Steamworks.
 - **Request (owner, verbatim):** "in parralel to everything else, I've downloaded the steamworks sdk as we will need to
   upload the game there in the future. therefore in parralel to everything else create a plan using the superpowers for
   the steamworks integration work and create issues for this."
@@ -101,19 +102,27 @@ read 1 November 2026). It matches SDK 1.65.
 
 - **`Statecraft.Game` stays Steam-free.** A small seam, `unity/Assets/Scripts/Platform/`, holds the interface
   `IPlatformServices` and a static `PlatformServices.Current` that defaults to a no-op implementation. Everything the game
-  asks of a store goes through it. Pure logic that decides *what* to report (which achievements are earned, which UI
-  language a Steam language means) lives here too, so EditMode and the dotnet compile check test it with no Steam.
+  asks of a store goes through it. Pure logic that decides *what* to do (which achievements are earned, whether a Steam
+  build may call Steam at start) lives here too, so EditMode and the dotnet compile check test it with no Steam.
 - **`Statecraft.Steam` is a separate assembly** in `unity/Assets/Steam/` (outside `Assets/Scripts/`, so
   `scripts/unity_compile/Game.csproj:9` never compiles it), with `"defineConstraints": ["STEAM"]` and Standalone plus Editor
   platforms. Without the `STEAM` define Unity does not compile it at all, so the WebGL build, itch.io, the nightly and every
   contributor's editor are unchanged. With it, a `RuntimeInitializeOnLoadMethod` bootstrap starts Steam, sets
   `PlatformServices.Current`, pumps `SteamAPI.RunCallbacks()` each frame and calls `SteamAPI.Shutdown()` on quit.
 - **The `STEAM` define is set only by the build**, never committed: `Build.Mac`, `Build.LinuxMono` and `Build.WindowsMono`
-  take a `-steam` flag that adds it for the build and restores the committed (empty) list after, the way `StandaloneMono`
-  restores the backend (`Build.cs:279-289`).
+  take a `-steam` flag, and `Run` (`Build.cs:301-318`) passes it as `BuildPlayerOptions.extraScriptingDefines`, which
+  applies to that player build only and never writes `ProjectSettings.asset` (review of #2148, C9).
+- **Valve's native library is excluded at build time from non-Steam players.** Steamworks.NET's managed assembly compiles
+  into every desktop player (its asmdef has no define constraint), but a non-Steam build excludes its native plugins with
+  `PluginImporter.SetIncludeInBuildDelegate`, so there is nothing to strip afterwards and a later macOS signature is never
+  broken by a deletion (review C6). The release script still refuses an archive that lists one, as a backstop.
+- **A golden check never calls Steam.** With `-golden` on the command line the Steam bootstrap calls neither
+  `RestartAppIfNecessary` nor `Init`. Valve: `RestartAppIfNecessary` returns true, and the game must quit, whenever the
+  game was not started by the Steam client and no `steam_appid.txt` is present (steam_api page, read 1 Nov 2026). Without
+  this rule, a Steam player could never run the player golden check (review C1).
 - **The sim is untouched.** Steam reads the game state; it never feeds the sim. No golden hash moves.
 
-### 4.2 The SDK and the licence (recommended answer to Q2)
+### 4.2 The SDK and the licence (Q2: "Never commit; UPM wrapper (Recommended)")
 
 - Never commit the SDK, its headers, its tools or any Valve binary. The scratch unzip lives outside the repository.
 - Steamworks.NET comes in through UPM as a git dependency pinned to the tag *and* checked by the commit in
@@ -123,8 +132,9 @@ read 1 November 2026). It matches SDK 1.65.
 - Only Steam builds may carry `steam_api*`: the release script deletes the Steamworks.NET native plugins from a non-Steam
   player folder before archiving and refuses an archive that still lists one (GitHub Releases and itch.io stay free of
   Valve files).
-- `THIRD-PARTY-NOTICES.md` "Builds" (`THIRD-PARTY-NOTICES.md:44-52`) gains Steamworks.NET (MIT, its copyright line) and a
-  line that Steam builds carry Valve's `steam_api` redistributable under the Steamworks SDK Access Agreement.
+- `THIRD-PARTY-NOTICES.md` "Builds" (`THIRD-PARTY-NOTICES.md:44-52`) gains Steamworks.NET (MIT, "Copyright (c) 2013-2022
+  Riley Labrecque", its LICENSE.md at the pinned commit), whose managed assembly is in every desktop build, and a line that
+  Steam builds also carry Valve's `steam_api` redistributable under the Steamworks SDK Access Agreement.
   `LICENSING.md` needs no row: nothing Valve's is in the tree.
 
 ### 4.3 Steam builds and channels
@@ -136,37 +146,102 @@ read 1 November 2026). It matches SDK 1.65.
   services (a Steam build must never refuse to start because Steam is slow).
 - The app ID and depot IDs are public numbers, committed in `steam/steam.json` once the owner has them; `null` until
   then, and every Steam step refuses while they are `null`. `steam_appid.txt` is a development aid only and is never
-  shipped (the release script refuses a Steam folder containing it).
+  shipped (the release script refuses a Steam folder containing it). Before an app ID exists, a maintainer can exercise
+  the Steam path with a `--dev --steam` player and a local `steam_appid.txt` holding Valve's test app 480 beside it,
+  with the Steam client running; that file is never committed and never reaches a release folder.
+- **macOS Steam builds** need the entitlements `com.apple.security.cs.disable-library-validation` (to load the Steamworks
+  library and the overlay) and `com.apple.security.cs.allow-dyld-environment-variables` (to inject the overlay), and never
+  the App Sandbox (Valve, Platforms page, read 1 Nov 2026). The signing step of #905 adds them for Steam builds only, and
+  the owner ticks "App Bundles Are Notarized" in Steamworks. Notarisation stays required for Steam: "Steam will require
+  all new macOS Applications to be 64-bit and notarized by Apple" (same page).
 - **Depots:** one per OS (Windows x64, macOS Universal, Linux x64), each with its OS set in App Admin (owner).
-- **Branches (recommended answer to Q7):** a release tag `vX.Y.Z` is uploaded to a password-protected `beta` branch with
-  `SetLive`; the owner tests it and sets it live on `default` by hand in App Admin (Valve does not allow scripting the
-  default branch; 14 Oct spec section 5.4). Nightlies are not uploaded.
-- **Upload (recommended answer to Q8):** `tools/steam_upload.py` renders the VDF scripts from templates in `steam/` and the
-  IDs, then, only when the owner runs it with `--upload` from an interactive terminal, runs the owner's own `steamcmd` with
-  `+login <builder account> +run_app_build <vdf> +quit`. It never takes, stores or prints a password; steamcmd asks for it
-  and for Steam Guard itself. It refuses without a TTY, so no agent or CI job can start an upload.
+- **Branches (Q7: "Also nightlies").** A release tag `vX.Y.Z` goes to a password-protected `beta` branch, and every
+  published nightly also goes to a password-protected `nightly` branch, each with `SetLive`. The owner tests a `beta` build
+  and sets it live on `default` by hand in App Admin; Valve does not allow scripting the default branch (14 Oct spec
+  section 5.4). A nightly never touches `beta` or `default`.
+- **Nightly (Q7).** Today the nightly builds and publishes the web only (`docs/RELEASING.md:192-224`). A new last stage,
+  `steam`, runs only after the web nightly is published. It builds the three Steam players with
+  `release_build.py --steam --nightly-version X.Y.Z` (the nightly's stamped, uncommitted version; `tools/nightly.py:397-406`),
+  checks the macOS golden, stages them and starts the CI upload to `nightly`. A failure there is logged as `steam=failed` on
+  the night's LOG line and notified; it never unpublishes or refuses the web nightly. It adds three desktop builds to every
+  night, so its time is measured on the first runs and capped like the other stages.
+
+#### 4.3.1 The upload runs in GitHub Actions (Q8: "GitHub Actions")
+
+Unity still builds only on the owner's Mac (O7: a Personal licence cannot run on CI), so CI uploads the players the Mac
+built; it never builds them.
+
+1. **Hand-over.** `tools/steam_upload.py stage --out <release folder> --tag <tag>` (on the owner's Mac, by the release
+   steps or the nightly) zips each `steam/<platform>/` as `steam-<tag>-<platform>.zip`, writes `steam-record.json` (tag,
+   commit, target branch, each zip's SHA-256 and size) and attaches them to a **draft** release named `steam-<tag>` that is
+   never published. Draft releases are visible only to people with write access, so Valve's library never becomes a
+   public download. It then runs `gh workflow run steam-upload.yml -f tag=<tag> -f branch=<beta|nightly>` with the owner's
+   own `gh` login.
+2. **`.github/workflows/steam-upload.yml`** runs only on `workflow_dispatch`, never on a pull request or a fork. The job
+   uses the environment `steam`, whose secrets GitHub gives only to runs from `main`. It has
+   `permissions: contents: write`, needed to read and then delete the draft; confirm before wiring that the default token
+   lists draft releases (**re-check**, GitHub docs). Its steps:
+   1. Download the draft's assets and check every SHA-256 against `steam-record.json`.
+   2. Refuse a `null` ID in `steam/steam.json`, a `branch` other than `beta` or `nightly`, a record whose branch differs
+      from the input, and a record whose commit is not on `main`.
+   3. Render the VDFs with `steam_upload.py render`.
+   4. Install steamcmd from Valve's official Linux download (URL **re-check**), and log the SHA-256 of what it fetched.
+   5. Write the login cache from the secret into steamcmd's config folder, run
+      `steamcmd +@NoPromptForPassword 1 +login "$STEAM_BUILDER_USERNAME" +run_app_build <vdf> +quit`, and delete the cache
+      in an `always()` step.
+   6. On success, delete the draft release.
+   Every action is pinned to a full SHA (`scripts/oss/pin_actions.py`). No step prints a secret: no `set -x`, and the
+   secrets are masked.
+3. **Steam Guard in CI.** steamcmd keeps a login token after one interactive login with Steam Guard. The job restores that
+   cache, so it never needs the password or a Steam Guard code. When the token expires or Valve rejects the machine, the job
+   fails at login with no prompt, and the owner re-provisions the secret. If a cached login turns out not to transfer to
+   GitHub's machines (**re-check** with Valve's SteamCMD page before relying on it), the fallback is the builder account's
+   Steam Guard mobile-authenticator secret stored as a third secret, used to generate the code in the job. Choosing it is a
+   new owner decision.
+4. **What the owner sets up (agents never create, read or print any of it).**
+   1. Create the builder account with only the upload permissions.
+   2. On the owner's own machine, run steamcmd once interactively from a new temporary folder: `+login <builder account>`
+      with the password and the Steam Guard code, then `+quit`. Use a temporary folder because agents work on that Mac
+      too, and a cached login left there would let any process upload without a password (review C2).
+   3. In the repository's settings, create the environment `steam` with deployment branches limited to `main`.
+   4. Add two environment secrets: `STEAM_BUILDER_USERNAME`, and `STEAM_CONFIG_VDF`, the base64 of steamcmd's
+      `config/config.vdf` from step 2. Pipe it straight in, for example
+      `base64 < <steamcmd folder>/config/config.vdf | gh secret set STEAM_CONFIG_VDF --env steam`, so it is never shown.
+      The exact config path depends on where steamcmd was installed (**re-check**). Then delete the temporary steamcmd
+      folder, so no cached builder login stays on the machine.
+   5. Re-run steps 2 and 4 whenever the job reports a login failure.
+
+The local `--upload` mode with a TTY check in the first draft of this design is dropped: CI is the only upload path.
 
 ### 4.4 Features
 
 | Feature | Design | Owner question |
 | --- | --- | --- |
-| Init and shutdown | Section 4.1; guarded; WebGL and non-Steam builds unaffected | Q3 |
-| Languages | Store: English (interface, subtitles, full audio) and Hebrew (interface) if Steamworks lists Hebrew (**re-check**; if it does not, the store lists English and the description says the game has a Hebrew interface). In game: on the first start of a Steam build with no stored `lang`, `SteamApps.GetCurrentGameLanguage()` picks the UI language (`"hebrew"` to `he`, anything else to `en`); a stored choice or `-lang` always wins | none |
+| Init and shutdown | Section 4.1; guarded; WebGL and non-Steam builds unaffected | Q1, Q3 |
+| Languages | Valve lists Hebrew only under "Game Support Only": "These languages are not supported in Steamworks APIs", with no API code (Languages page, read 1 Nov 2026). So the store lists English (interface, subtitles, full audio) and Hebrew (interface) as a game-support-only language; achievement names and descriptions are English only; and the game never reads Steam's language (it could never be Hebrew). The in-game choice and `-lang` stay as they are (`UiLanguage.cs:27-37`). The first draft's Steam-language seeding is dropped (review C3) | none |
 | Steam Cloud | Auto-Cloud (App Admin, no code) for `saves/autosave.txt` only; settings stay per machine (quality and UI scale depend on the screen) | Q6 |
 | Achievements | Five, read from the game state after each change: one per objective (the four ids above) and one for reaching the last turn (`mvp_ended`). Unlocked through `SteamUserStats.SetAchievement` and `StoreStats`; never from the sim | Q5 |
-| Overlay | Works with no code. Shift+Tab is the overlay's default and the game's focus-back key: documented on the store page and in the test checklist; no rebinding | none |
-| Steam Deck and controllers | No controller support and no Deck claim at launch; one smoke test of the Linux build on a Deck or under Proton before release | Q10 |
+| Overlay | Works with no code (macOS: the entitlements in 4.3). Shift+Tab is the overlay's default and the game's focus-back key: documented on the store page and in the test checklist; an alternative in-game key is a UX follow-up for the keyboard map, not part of this plan | none |
+| Steam Deck and controllers | No controller support and no Deck claim at launch; one smoke test on a Deck before release. With a native Linux depot, a Deck runs the Linux build (in the Steam Linux Runtime), not the Windows build under Proton, so the test is of the Linux depot (review C4) | Q10 |
 | Rich presence, stats, leaderboards, workshop, DRM, inventory, microtransactions | Not planned (YAGNI; microtransactions and paid items are ruled out) | none |
 | Quit | A desktop "Quit" button (Settings and start screen), hidden on WebGL; Steam review and Deck need a way out of a full-screen game (14 Oct spec section 2.5) | none |
 
-**Steam Cloud roots (re-check on the Steam Cloud page before configuring).** Unity's `persistentDataPath`:
-Windows `%userprofile%\AppData\LocalLow\Statecraft\Statecraft Israel`, macOS
-`~/Library/Application Support/unity.Statecraft.Statecraft Israel` (14 Oct spec section 2.6), Linux
-`~/.config/unity3d/Statecraft/Statecraft Israel` (Unity Scripting API, **re-check**). Auto-Cloud: root
-`WinAppDataLocalLow`, subdirectory `Statecraft/Statecraft Israel/saves`, pattern `autosave.txt`, with root overrides for
-macOS (`MacAppSupport`, `unity.Statecraft.Statecraft Israel/saves`) and Linux (the root Valve lists for `~/.config`;
-**re-check** its exact name). Renaming `companyName` or `productName` after launch strands both local saves and the cloud
-mapping, so they stay frozen.
+**Steam Cloud roots** (Unity's `persistentDataPath` page for 6000.3 and Valve's Steam Cloud page, both read 1 Nov 2026).
+Unity: Windows `%userprofile%\AppData\LocalLow\<companyname>\<productname>`; macOS
+`~/Library/Application Support/unity.company name.product name`, "but uses the Editor path if that directory already
+exists"; Linux `$XDG_CONFIG_HOME/unity3d/Company/ProjectName`, `~/.config` by default. Valve's roots include
+`WinAppDataLocalLow`, `MacAppSupport` and `LinuxHome`; there is no XDG config root (only `LinuxXdgDataHome`). So
+Auto-Cloud is:
+- the Root OS set to `[Cross-Platform]`, as Valve requires when using Root Overrides;
+- root `WinAppDataLocalLow`, subdirectory `Statecraft/Statecraft Israel/saves`, pattern `autosave.txt`;
+- an override for macOS to `MacAppSupport`, `unity.Statecraft.Statecraft Israel/saves`;
+- an override for Linux to `LinuxHome`, `.config/unity3d/Statecraft/Statecraft Israel/saves`. This assumes the default
+  `XDG_CONFIG_HOME`; a player who moved it is not synced.
+- Valve: the "Byte quota per user" and "Number of files allowed per user" must be set before it works. One small file;
+  1 MB and 2 files leave room.
+
+Log `Application.persistentDataPath` from each first Steam player before configuring (the macOS editor-path caveat).
+Renaming `companyName` or `productName` after launch strands both local saves and the cloud mapping, so they stay frozen.
 
 ### 4.5 Store page, content and privacy
 
@@ -181,74 +256,68 @@ mapping, so they stay frozen.
 ### 4.6 Testing
 
 - **EditMode, no Steam:** the seam's no-op default, the achievement rules (from real content and synthetic states), the
-  language mapping, the quit button's visibility, and the build define helper. The Steam assembly itself has no logic to
+  start rule (no app ID or `-golden` never calls Steam), the quit button's visibility, and the build helpers (the extra
+  defines and the native-plugin include rule). The Steam assembly itself has no logic to
   test beyond calling Steamworks.NET.
 - **pytest (in CI):** `release_build.py --steam` folder layout and refusals, the native-plugin strip and refusal for
-  non-Steam archives, `steam_upload.py` VDF rendering, the `null`-ID refusal and the no-TTY refusal. No test runs steamcmd.
-- **Player golden:** every Steam content folder passes the same `-golden` check as today's archives; Steam init failing
-  (no client on the runner) must not change it.
-- **Manual, with the Steam client (owner, on a `beta` branch):** a checklist in `docs/steam/test-checklist.md`.
+  non-Steam archives, `steam_upload.py` VDF rendering, staging records and their refusals, and the workflow's shape: it
+  runs on `workflow_dispatch` only, uses the `steam` environment, pins every action, restricts `branch` to `beta` and
+  `nightly`, and names the two Steam secrets in its login step only. `scripts/oss/tests/test_github_config.py`'s rule that
+  workflows use no secret (`test_ci_uses_no_secret_but_the_read_only_token`) gets one named exception for this file. No
+  test runs steamcmd.
+- **Player golden:** every Steam content folder passes the same `-golden` check as today's archives, macOS on both
+  slices (arm64, and x86_64 under Rosetta, as `player-golden.yml` does for the archives); `-golden` never calls Steam.
+- **Manual, with the Steam client (owner, on the `beta` branch):** a checklist in `docs/steam/test-checklist.md`.
 
 ## 5. Owner-only actions (never an agent)
 
 Steamworks signup as an individual (O5); the Steam Direct fee (US$100 per app, not recouped by a free game; **re-check**
 before paying); identity, tax and bank forms; creating the app as a free product (gives the app ID and depot IDs); a
-dedicated builder account with only upload permissions and its Steam Guard; App Admin configuration (depots and their OS,
-packages including Dev Comp, the `beta` branch and its password, Auto-Cloud, achievements and their icons, supported
-languages); the store page, the Content Survey and the review submissions; setting a build live on `default`; the Apple
-notarisation for the macOS depot (#905); asking licensors for written confirmations (Q9).
+dedicated builder account with only upload permissions and its Steam Guard; the CI setup of section 4.3.1 item 4 (the
+`steam` environment and its two secrets, and re-provisioning them); App Admin configuration (depots and their OS, packages
+including Dev Comp, the `beta` and `nightly` branches and their passwords, Auto-Cloud, achievements and their icons,
+supported languages); the store page, the Content Survey and the review submissions; setting a build live on `default`;
+the Apple notarisation for the macOS depot (#905) and "App Bundles Are Notarized"; one launch option per OS
+(`Statecraft.exe`, `Statecraft.app`, `Statecraft.x86_64`: the player names in `tools/release_build.py:102-109`); the
+Steam Cloud quota and file count; system requirements; the release calendar: the 30-day wait after the fee, at least two
+weeks of a public Coming Soon page, and separate store-page and build reviews of 3-5 business days each, with 7 asked
+for (14 Oct spec section 5.1). Store art and achievement icons must not be adapted from Tal Heuberger's CC BY-NC-ND
+models (no derivatives); their source gets an `ASSETS.yaml` row like any asset.
 
-## 6. Owner questions
+## 6. Owner answers (1 November 2026, #2150)
 
-Each has options and a recommendation; the plan assumes the recommendation until the owner answers, and every task that
-depends on an answer names it.
+The owner chose one option per question; the quoted text is the option label as chosen. The questions, options and
+reasoning are in #2150; the answers are recorded in `docs/oss/DECISIONS.md:98-113`.
 
-- **Q1 When does Steam code start?** (a) Now, in parallel: only the inert repository work (the seam, the `STEAM`-gated
-  assembly, the scripts, the docs), none of which changes the web build; builds and uploads still wait for the MVP and
-  #905. (b) Everything after the MVP, as `docs/mvp-checklist.md:178` says today. **Recommended: (a)**, which matches "in
-  parallel to everything else".
-- **Q2 How does the repository handle Valve's SDK?** (a) Section 4.2: never commit the SDK or a Valve binary; Steamworks.NET
-  by UPM pinned to `2025.165.0` and its commit; Valve's redistributable only in Steam builds. (b) Vendor Steamworks.NET
-  into `unity/Packages/` (commits Valve's binaries to a public repository; the SDK agreement does not clearly allow it).
-  (c) No wrapper: copy the redistributable from the owner's SDK zip at build time and write our own bindings (more code
-  to own). **Recommended: (a).**
-- **Q3 One desktop build or a Steam flavour?** (a) A separate Steam flavour (`--steam`), as in 4.3; GitHub and itch.io
-  archives carry no Steam code or Valve file. (b) One build everywhere with Steam always compiled in and failing soft off
-  Steam (simpler, but every GitHub archive ships Valve's library and cannot use `RestartAppIfNecessary`).
-  **Recommended: (a).**
-- **Q4 Which OSes on the first Steam release?** (a) Windows, macOS and Linux together (O1), so the release waits for macOS
-  notarisation (#905). (b) Windows and Linux first, macOS when notarised. **Recommended: (a)**, falling back to (b) only if
-  notarisation is the last thing blocking a ready release. Valve requires every listed OS to launch.
-- **Q5 Achievements?** (a) None at launch (O10 named no Steam-only feature). (b) Five: the four objectives and finishing
-  the campaign. (c) More (for example early completions, no defeat). **Recommended: (b)**: small, read from existing
-  state, no sim change; (c) can follow once the GDD's balance settles. Each needs a name, a description in both languages
-  and two 256x256 icons (owner approves the art).
-- **Q6 Steam Cloud?** (a) None. (b) Auto-Cloud for the autosave only (no code). (c) Auto-Cloud for the autosave and
-  settings. (d) The `ISteamRemoteStorage` API. **Recommended: (b).**
-- **Q7 Which builds go to Steam?** (a) Release tags to a password `beta` branch, the owner sets `default` live by hand;
-  nightlies are not uploaded. (b) Also every nightly to a `nightly` branch (needs the builder login cached on the Mac for
-  unattended runs). **Recommended: (a)**; revisit (b) after launch.
-- **Q8 Who uploads, from where?** (a) The owner, on their Mac, with `tools/steam_upload.py --upload` (builds are made there
-  anyway, O7). (b) A GitHub Actions job with owner-created secrets (the builder login would sit on GitHub's machines).
-  **Recommended: (a).**
-- **Q9 Non-commercial licences on Steam.** Steam is a commercial storefront even for a free game. Tal Heuberger's models
-  are CC BY-NC-ND 4.0 (`LICENSING.md:16`, 196 rows in `ASSETS.yaml`); the ElevenLabs permission covers "publishing these
-  files in this repo" (`docs/oss/DECISIONS.md:88`); the 1948 recording's English terms say "except commercial" (14 Oct
-  spec section 5.3). (a) The owner asks Tal and checks the ElevenLabs permission for written confirmation that the free
-  Steam build is covered, recorded in `docs/oss/DECISIONS.md` before the first upload. (b) Treat a free Steam listing as
-  non-commercial use without asking. **Recommended: (a)** (not legal advice).
-- **Q10 Steam Deck and controllers?** (a) No claim and no controller work at launch; one Deck or Proton smoke test.
-  (b) Controller support and a Deck Verified review before launch (a separate project). **Recommended: (a).**
+| Question | Owner's choice | What it means here |
+| --- | --- | --- |
+| Q1 When does Steam code start? | "Inert repo work now (Recommended)" | Plan Tasks 1-9 may start now; builds and uploads wait for the MVP and #905 |
+| Q2 How does the repository handle Valve's SDK? | "Never commit; UPM wrapper (Recommended)" | Section 4.2 |
+| Q3 One desktop build or a Steam flavour? | "Separate --steam build (Recommended)" | Section 4.3 |
+| Q4 Which OSes on the first Steam release? | "Win + Mac + Linux (Recommended)" | The first release waits for macOS notarisation (#905) |
+| Q5 Achievements? | "Five (Recommended)" | Section 4.4 |
+| Q6 Steam Cloud? | "Auto-Cloud autosave (Recommended)" | Section 4.4 |
+| Q7 Which builds go to Steam? | "Also nightlies" | Release tags to `beta`, every published nightly to `nightly` (section 4.3) |
+| Q8 Who uploads, from where? | "GitHub Actions" | Section 4.3.1; secrets created only by the owner |
+| Q9 Non-commercial licences on Steam | "Treat free as non-commercial" | No written confirmations are sought before the first upload |
+| Q10 Steam Deck and controllers? | "No claim + one smoke test (Recommended)" | Section 4.4 |
 
 ## 7. Risks
 
 | Risk | Mitigation |
 | --- | --- |
-| The `STEAM` define leaks into a committed `ProjectSettings.asset` | The build restores it in `finally`; `release_build.py` already restores `unity/ProjectSettings` after each run (`tools/release_build.py:24-26`); an EditMode test pins `scriptingDefineSymbols` empty |
+| The `STEAM` define leaks into a committed `ProjectSettings.asset` | It is passed only as `extraScriptingDefines`, which never writes the settings; `release_build.py` already restores `unity/ProjectSettings` after each run (`tools/release_build.py:24-26`); a pytest in CI reads the committed `ProjectSettings.asset` and fails on any `STEAM` define |
 | `SteamAPI.Init` fails on a player's machine | Fail soft to the no-op services; the game never depends on Steam |
 | Valve's library ends up in a GitHub or itch.io archive | The strip-and-refuse step in `release_build.py`, tested |
-| A credential reaches the repository, CI or an agent | No password parameter anywhere; `--upload` needs a TTY; steamcmd's own prompt and Steam Guard |
+| A credential reaches the repository or an agent | No password parameter anywhere; the only credentials are the two environment secrets, which the owner creates and only the upload step reads |
+| The Steam secrets are used by a run the owner did not intend | `workflow_dispatch` only (write access required); the `steam` environment releases its secrets only to `main`; never on pull requests or forks; the builder account can only upload, and only `beta` and `nightly` can be set live |
+| The CI login stops working (token expired, machine rejected) | The job fails at login without prompting; the owner re-provisions the secret (4.3.1 item 4); the fallback is a new owner decision |
+| Valve's library is exposed through the hand-over | A draft release that is never published, visible only to people with write access, and deleted after a successful upload |
+| The nightly's Steam stage breaks the web nightly | It runs after the web publish and only logs `steam=failed` |
+| A cloud save from a newer `nightly` or `beta` build is opened by an older `default` build | Today's loader already handles it: a content-hash change warns (`AGENTS.md:98`), and an unreadable autosave is set aside as `autosave.bad.txt` (`SaveStore.cs:54-65`) and a new game starts; the checklist covers it once |
+| A cached builder login on the owner's Mac | Provisioned in a temporary steamcmd folder that is deleted afterwards (4.3.1 item 4) |
 | Shift+Tab opens the overlay instead of moving focus | Documented; players can change the overlay key in Steam |
-| Hebrew is not a Steam store language | The store lists English and says the interface is also in Hebrew |
+| Hebrew has no Steamworks API code | Listed as a game-support-only store language; achievements English only; no Steam-language logic in the game |
 | A rename moves the save folder | `companyName` and `productName` frozen |
 | Steamworks.NET 2025.165.0 is three days old on 1 Nov | Pin the exact commit; the first Steam build is weeks away, so any fix release can replace it then |
+| Q9: the free Steam build is treated as non-commercial use of the CC BY-NC-ND models and the "in this repo" ElevenLabs permission | The owner's decision ("Treat free as non-commercial"), recorded in `docs/oss/DECISIONS.md:112`; not legal advice. The same reading already covers itch.io. Valve's distribution agreement also covers store and marketing use, so no store art or icon is adapted from the ND models. Code: contributions come in under MIT to the maintainer (`docs/oss/DECISIONS.md:19`), so the owner can grant Valve what the agreement needs |
