@@ -34,8 +34,16 @@ namespace Statecraft.Sim
         /// <summary>The language files under <paramref name="translationsRoot"/>, as "ro/ui.yaml", in ordinal order (none when
         /// it is null or missing). Files at the top (README.md) are not languages, and hidden names (.DS_Store) are system
         /// metadata, so both are passed over. Anything else that is not a language's ui.yaml, events.yaml or content.yaml
-        /// is refused rather than skipped, so a misnamed file cannot drop out unnoticed.</summary>
+        /// is refused rather than skipped, so a misnamed file cannot drop out unnoticed. A folder that cannot be listed is a
+        /// <see cref="ContentException"/> too, so it is reported as a content error.</summary>
         public static List<string> Collect(string? translationsRoot)
+        {
+            try { return CollectFiles(translationsRoot); }
+            catch (IOException e) { throw new ContentException(Folder, "(folder)", e.Message); }
+            catch (UnauthorizedAccessException e) { throw new ContentException(Folder, "(folder)", e.Message); }
+        }
+
+        static List<string> CollectFiles(string? translationsRoot)
         {
             var files = new List<string>();
             if (translationsRoot == null || !Directory.Exists(translationsRoot)) return files;

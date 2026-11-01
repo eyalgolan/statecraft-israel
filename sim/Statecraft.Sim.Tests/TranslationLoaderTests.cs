@@ -133,6 +133,30 @@ public class TranslationLoaderTests
         finally { Directory.Delete(dir, true); }
     }
 
+    [Fact]
+    public void AFolderThatCannotBeListedIsAContentError()
+    {
+        // A language folder that cannot be listed is reported as a content error naming the folder (the CLI's exit 2,
+        // ContentSync's BuildFailedException), not an unhandled exception (review C4).
+        if (OperatingSystem.IsWindows()) return;
+        var dir = Folder(new Dictionary<string, string> { ["ro/ui.yaml"] = Ro });
+        var ro = Path.Combine(dir, "ro");
+        File.SetUnixFileMode(ro, UnixFileMode.None);
+        try
+        {
+            try { Directory.GetFiles(ro); return; }   // a superuser lists it anyway: nothing to test
+            catch (UnauthorizedAccessException) { }
+            var e = Assert.Throws<ContentException>(() => TranslationLoader.Collect(dir));
+            Assert.Equal(("translations", "(folder)"), (e.File, e.Field));
+            Assert.Contains(ro, e.Message);
+        }
+        finally
+        {
+            File.SetUnixFileMode(ro, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            Directory.Delete(dir, true);
+        }
+    }
+
     // ---- each language's checks ----
 
     [Fact]
@@ -244,6 +268,21 @@ public class TranslationLoaderTests
         var compared = new HashSet<string>(HebrewOverlay.Files.Concat(HebrewOverlay.UnityReads), StringComparer.Ordinal);
         var withHebrew = InlineHe().Content.Select(t => ContentKey.TryParse(t.Key)!.File).Distinct();
         Assert.All(withHebrew, f => Assert.Contains(f, compared));
+    }
+
+    [Fact]
+    public void AHebrewSetMissingAFileUnityReadsIsRefused()
+    {
+        // A file whose Hebrew Unity reads itself (HebrewOverlay.UnityReads, not a sim binding), with every key into it
+        // dropped from he/: the comparison must still walk the file and find its fields missing (review C7).
+        var he = InlineHe();
+        var file = HebrewOverlay.UnityReads.Except(HebrewOverlay.Files)
+            .First(f => he.Content.Any(t => ContentKey.TryParse(t.Key)!.File == f));
+        var first = he.Content.First(t => ContentKey.TryParse(t.Key)!.File == file).Key;
+        he.Content.RemoveAll(t => ContentKey.TryParse(t.Key)!.File == file);
+        var e = Refused(Files(he));
+        Assert.Equal(("translations/he/content.yaml", first), (e.File, e.Field));
+        Assert.Contains("missing", e.Message);
     }
 
     [Fact]
