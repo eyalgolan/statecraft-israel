@@ -386,5 +386,248 @@ public class UnitsFromStateTests
         finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnitFigures.Source = savedSource; }
     }
 
+    static MapScene BuildMap()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        var map = new GameObject("MapScene").AddComponent<MapScene>();
+        map.Configure(Load("Terrain"), Load("SettlementMarker"), Load("HexSelection"), Load("Sea"), Load("MapFrame"));
+        Statecraft.Game.Map.Kits.KitPopulation.Use(Statecraft.Game.Map.Kits.KitPopulation.Parse(
+            File.ReadAllText(Path.Combine(Paths.Content, "map", Statecraft.Game.Map.Kits.KitPopulation.FileName))));
+        map.Build();
+        return map;
+    }
+
+    static Transform TokenOf(MapScene map, string row) => map.Terrain.transform.Find(UnitLayer.RootName).Find("Tokens").Find(row);
+    static Vector2 SpotOf(UnitLayer layer, string row)
+    {
+        var spot = layer.Tokens.Single(p => p.Token.Unit.Id == row).Spot;
+        return new Vector2((float)spot.X, (float)spot.Z);
+    }
+    static Vector2 XZ(Vector3 v) => new Vector2(v.x, v.z);
+
+    /// <summary>#1866 (design by Tal Heuberger, #1900): a moved unit's token slides from where it was drawn to its new spot
+    /// and stops there; a second move mid-slide starts from where the token is drawn then; every other token stands still,
+    /// with nothing running per frame. Presentation only: the state is not touched.</summary>
+    [Test]
+    public void AMovedTokenSlidesFromWhereItWasDrawnAndStops()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var unit = s.Units.Values.First(u => u.Side == "israel");
+            string row = C.StartingForces[unit.Id].Row;
+            var first = SpotOf(layer, row);
+            var to = FreeNeighbour(s, unit.Q, unit.R);
+            MoveTo(s, unit.Id, to.q, to.r);
+            Assert.IsTrue(layer.Show(C, s));
+            var second = SpotOf(layer, row);
+            Assert.Greater((first - second).magnitude, 1000f, "a real move, not a nudge");
+            var token = TokenOf(map, row);
+            var motion = token.GetComponent<UnitTokenMotion>();
+            Assert.AreEqual(unit.Id, motion.SimId);
+            Assert.IsTrue(motion.Moving && motion.enabled);
+            Assert.Less((XZ(token.position) - (first - second)).magnitude, 1f, "it starts where it was drawn");
+            foreach (var other in map.Terrain.transform.Find(UnitLayer.RootName).GetComponentsInChildren<UnitTokenMotion>(true).Where(m => m != motion))
+            {
+                Assert.IsFalse(other.Moving, other.name);
+                Assert.IsFalse(other.enabled, other.name + ": an idle token runs nothing per frame");
+                Assert.AreEqual(Vector3.zero, other.transform.position, other.name);
+            }
+
+            motion.Tick(UnitTokenMotion.Duration / 2f);
+            var drawn = second + XZ(token.position);   // halfway along
+            Assert.Less((drawn - (first + second) / 2f).magnitude, 1f);
+            var next = FreeNeighbour(s, to.q, to.r);
+            MoveTo(s, unit.Id, next.q, next.r);
+            Assert.IsTrue(layer.Show(C, s));
+            var third = SpotOf(layer, row);
+            token = TokenOf(map, row);
+            motion = token.GetComponent<UnitTokenMotion>();
+            Assert.Less((XZ(token.position) - (drawn - third)).magnitude, 1f, "a second move starts from where the token is drawn");
+
+            motion.Tick(UnitTokenMotion.Duration);
+            Assert.AreEqual(Vector3.zero, token.position, "it ends on its spot");
+            Assert.IsFalse(motion.Moving); Assert.IsFalse(motion.enabled);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Another unit's order rebuilds every token (review of #2177, 3): a unit whose figures were firing goes on
+    /// firing on its new token, from where it was.</summary>
+    [Test]
+    public void ARebuildForAnotherUnitsOrderKeepsAnAttackPlaying()
+    {
+        var map = BuildMap();
+        var controller = new UnityEditor.Animations.AnimatorController(); controller.AddLayer("Base Layer");
+        var fire = new AnimationClip { name = "fire" };
+        fire.SetCurve("", typeof(Transform), "localScale.x", AnimationCurve.Linear(0f, 1f, 1f, 1f));
+        try
+        {
+            var machine = controller.layers[0].stateMachine;
+            machine.defaultState = machine.AddState("idle"); machine.AddState("attack").motion = fire;
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var israel = s.Units.Values.Where(u => u.Side == "israel").Take(2).ToArray();
+            string firing = C.StartingForces[israel[0].Id].Row;
+            var figure = new GameObject("test figure").transform; figure.SetParent(TokenOf(map, firing), false);
+            var animator = figure.gameObject.AddComponent<Animator>(); animator.runtimeAnimatorController = controller;
+            animator.Rebind(); animator.Update(0f);
+            Assert.IsTrue(layer.PlayAttack(israel[0].Id), "fixture: the token plays the attack");
+            TokenOf(map, firing).GetComponent<UnitTokenMotion>().Tick(0.3f);
+            var to = FreeNeighbour(s, israel[1].Q, israel[1].R);
+            MoveTo(s, israel[1].Id, to.q, to.r);
+            Assert.IsTrue(layer.Show(C, s), "another unit's move rebuilds the tokens");
+            var successor = TokenOf(map, firing).GetComponent<UnitTokenMotion>();
+            Assert.IsTrue(successor.Attacking, "the attack goes on on the new token");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); UnityEngine.Object.DestroyImmediate(controller); UnityEngine.Object.DestroyImmediate(fire); }
+    }
+
+    /// <summary>New Game (SimBridge.Replace) shows another game whose sim ids are the old game's (review of #2176, H4): its
+    /// tokens are drawn where they stand, with no slide from where the old game's units were.</summary>
+    [Test]
+    public void AnotherGamesTokensDoNotSlideFromTheOldGames()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            var unit = s.Units.Values.First(u => u.Side == "israel");
+            var to = FreeNeighbour(s, unit.Q, unit.R);
+            MoveTo(s, unit.Id, to.q, to.r);
+            layer.Show(C, s);
+            Assert.IsTrue(layer.Show(C, NewGame(), slide: false), "the new game's roster differs, so the tokens are rebuilt");
+            var motions = map.Terrain.transform.Find(UnitLayer.RootName).GetComponentsInChildren<UnitTokenMotion>(true);
+            Assert.IsNotEmpty(motions);
+            foreach (var m in motions) { Assert.IsFalse(m.Moving, m.name); Assert.AreEqual(Vector3.zero, m.transform.position, m.name); }
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>With the "units" toggle off, a move does not slide: the token would play its slide only when shown again,
+    /// from where it stood when hidden (review of #1900).</summary>
+    [Test]
+    public void AMoveWhileTheUnitsAreHiddenDoesNotSlideLater()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            var unit = s.Units.Values.First(u => u.Side == "israel");
+            string row = C.StartingForces[unit.Id].Row;
+            VisualToggles.Set(UnitLayer.ToggleName, false);
+            var to = FreeNeighbour(s, unit.Q, unit.R);
+            MoveTo(s, unit.Id, to.q, to.r);
+            Assert.IsTrue(layer.Show(C, s));
+            VisualToggles.Set(UnitLayer.ToggleName, true);
+            var motion = TokenOf(map, row).GetComponent<UnitTokenMotion>();
+            Assert.IsFalse(motion.Moving);
+            Assert.AreEqual(Vector3.zero, motion.transform.position);
+        }
+        finally { VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Mid-slide, a click and the map's names find the token where it is drawn, not on its empty spot or on the path
+    /// (#1900): the badge's box is the plate as drawn, at the size #2077 caps it to up close, and the box of the still pieces
+    /// moves with the token, for an army token (flag and figures) and a ship (neither).</summary>
+    [TestCase(UnitData.Army, false)]
+    [TestCase(UnitData.Army, true)]
+    [TestCase(UnitData.Navy, false)]
+    public void MidSlideTheHitBoxesAreWhereTheTokenIsDrawn(string service, bool perspective)
+    {
+        var map = BuildMap();
+        var eye = new GameObject("SlideCamera");
+        var target = new RenderTexture(512, 512, 16);
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.AnimateMoves = true;
+            layer.Show(C, s);
+            int i = layer.Tokens.ToList().FindIndex(p => p.Token.Unit.Service == service);
+            Assert.GreaterOrEqual(i, 0, "the new game draws such a token");
+            var token = TokenOf(map, layer.Tokens[i].Token.Unit.Id);
+            var spot = SpotOf(layer, layer.Tokens[i].Token.Unit.Id);
+            var slide = new Vector3(30000f, 0f, 0f);   // halfway through a slide from 60 km east of the spot
+            var cam = eye.AddComponent<Camera>();
+            cam.targetTexture = target; cam.farClipPlane = 1e6f;
+            if (perspective)
+            {
+                // Close over the drawn token: #2077 caps the plate below its full size.
+                cam.fieldOfView = 30f;
+                cam.transform.SetPositionAndRotation(new Vector3(spot.x, 0f, spot.y) + slide + new Vector3(0f, 6000f, -6000f),
+                    Quaternion.Euler(45f, 0f, 0f));
+            }
+            else
+            {
+                // Top-down over the spot and the drawn token alike, for the clicks.
+                cam.orthographic = true; cam.orthographicSize = 40000f;
+                cam.transform.SetPositionAndRotation(new Vector3(spot.x, 100000f, spot.y) + slide / 2f, Quaternion.Euler(90f, 0f, 0f));
+            }
+            layer.FaceCamera(cam);
+            var rest = layer.KeepClear[i].ToArray();
+            var motion = token.GetComponent<UnitTokenMotion>();
+            motion.Begin(slide * 2f);
+            motion.Tick(UnitTokenMotion.Duration / 2f);
+            Assert.Less((token.position - slide).magnitude, 1f);
+            layer.FaceCamera(cam);
+            var boxes = layer.KeepClear[i];
+            var badge = token.Find("Badge");
+            Assert.Less((boxes[0].center - badge.position).magnitude, 1e-2f, "the badge's box is the plate as drawn");
+            Assert.AreEqual(badge.localScale.x, boxes[0].size.x, 1e-3f, "at the plate's drawn size");
+            if (perspective) Assert.Less(badge.localScale.x, UnitBadge.SizeM, "the close camera caps the plate (#2077)");
+            Assert.Less((XZ(boxes[0].center) - XZ(rest[0].center + slide)).magnitude, UnitBadge.SizeM, "the badge moved with its token");
+            Assert.Less((boxes[1].center - (rest[1].center + slide)).magnitude, rest[1].extents.magnitude / 2f, "the pieces' box moved with it");
+            Assert.Less(boxes[1].size.magnitude, rest[1].size.magnitude * 1.5f, "and does not stretch along the path");
+            if (perspective) return;   // the clicks below need the spot and the drawn token in one view
+            var hit = layer.TokenAtScreen(cam, cam.WorldToScreenPoint(rest[1].center + slide));
+            Assert.AreEqual(layer.Tokens[i].Token.Unit.Id, hit?.Token.Unit.Id, "a click on the drawn token selects it");
+            var empty = layer.TokenAtScreen(cam, cam.WorldToScreenPoint(rest[1].center));
+            Assert.AreNotEqual(layer.Tokens[i].Token.Unit.Id, empty?.Token.Unit.Id, "its empty spot does not");
+            motion.Tick(UnitTokenMotion.Duration);
+            Assert.AreEqual(layer.Tokens[i].Token.Unit.Id, layer.TokenAtScreen(cam, cam.WorldToScreenPoint(rest[1].center))?.Token.Unit.Id,
+                "arrived, the spot selects it again");
+            Assert.Less((layer.KeepClear[i][1].center - rest[1].center).magnitude, 1f);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(eye); UnityEngine.Object.DestroyImmediate(target); UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>An edit-mode build (promo captures) draws every token still; no token there can attack (#1867).</summary>
+    [Test]
+    public void AnEditModeBuildDrawsTokensStillAndAttacksNothing()
+    {
+        var map = BuildMap();
+        try
+        {
+            var s = NewGame();
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            Assert.IsFalse(layer.AnimateMoves, "only a playing game animates");
+            layer.Show(C, s);
+            var unit = s.Units.Values.First(u => u.Side == "israel");
+            var to = FreeNeighbour(s, unit.Q, unit.R);
+            MoveTo(s, unit.Id, to.q, to.r);
+            Assert.IsTrue(layer.Show(C, s));
+            Assert.IsEmpty(map.Terrain.transform.Find(UnitLayer.RootName).GetComponentsInChildren<UnitTokenMotion>(true));
+            Assert.IsFalse(layer.PlayAttack(unit.Id));
+            layer.AnimateMoves = true;
+            MoveTo(s, unit.Id, unit.Q, unit.R);
+            Assert.IsTrue(layer.Show(C, s));
+            Assert.IsFalse(layer.PlayAttack(unit.Id), "no near Animator is on in an edit-mode map (nothing has rendered)");
+            Assert.IsFalse(layer.PlayAttack(-5), "no such unit");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+    }
+
     static Material Load(string name) => AssetDatabase.LoadAssetAtPath<Material>($"Assets/Materials/{name}.mat");
 }
