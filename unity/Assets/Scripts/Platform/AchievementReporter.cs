@@ -17,7 +17,8 @@ namespace Statecraft.Game
         readonly Func<IPlatformServices> services;
         readonly HashSet<string> reported = new HashSet<string>(StringComparer.Ordinal);
 
-        /// <param name="services">Asked on every report, so a store set after the game starts is used.</param>
+        /// <param name="services">Asked on every report, so a store set after the game starts is used and gets everything earned
+        /// so far (nothing counts as reported to the no-op store).</param>
         public AchievementReporter(SimBridge bridge, Func<IPlatformServices> services)
         {
             this.bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
@@ -32,7 +33,9 @@ namespace Statecraft.Game
             if (fresh.Count == 0) return;
             try
             {
-                services().Unlock(fresh);
+                var store = services();
+                if (store is NullPlatformServices) return;   // nothing takes them: offer them to a store set later
+                store.Unlock(fresh);
                 reported.UnionWith(fresh);
             }
             catch (Exception e) { UnityEngine.Debug.LogException(e); }

@@ -131,6 +131,8 @@ public class AchievementRulesTests
         public void Unlock(System.Collections.Generic.IReadOnlyCollection<string> achievementIds) => throw new InvalidOperationException("store offline");
     }
 
+    /// <summary>A store set after the game started (a late Steam start) still gets what was earned before it: the no-op
+    /// store takes nothing, so nothing counts as reported to it.</summary>
     [Test] public void The_reporter_asks_for_the_current_services_each_time()
     {
         var fake = new FakePlatform();
@@ -142,6 +144,6 @@ public class AchievementRulesTests
             bridge.Replace(Finished("railway", "burma_road"));
         }
         Assert.AreEqual(1, fake.Unlocks.Count);
-        CollectionAssert.AreEqual(new[] { "OBJ_BURMA_ROAD" }, fake.Unlocks[0]);
+        CollectionAssert.AreEqual(new[] { "CAMPAIGN_DONE", "OBJ_BURMA_ROAD", "OBJ_RAILWAY" }, fake.Unlocks[0]);
     }
 }
