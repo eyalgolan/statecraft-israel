@@ -456,7 +456,18 @@ namespace Statecraft.Game.Map.Kits
                 choice.towns.Clear(); foreach (var id in next) choice.towns.Add(id); changed = true;
             }
             changed |= AdmitInView(choice, cam);
-            if (changed) { if (Application.isPlaying) reconcileDirty = true; else ReconcileModels(); }
+            if (changed)
+            {
+                if (Application.isPlaying || inRender)
+                {
+                    reconcileDirty = true;
+#if UNITY_EDITOR
+                    // Edit mode runs LateUpdate only when something asks for a player-loop update.
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+                else ReconcileModels();
+            }
             villagesReady.Clear();
             foreach (var (kit, close) in swaps)
             {

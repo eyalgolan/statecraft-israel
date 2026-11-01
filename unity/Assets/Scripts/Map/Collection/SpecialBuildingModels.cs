@@ -263,7 +263,17 @@ namespace Statecraft.Game.Map.Collection
             var before = residencyView!.Keys;
             residencyView.Observe(camera, Anchors(), Time.frameCount);
             if (!before.SetEquals(residencyView.Keys))
-            { if (Application.isPlaying) residencyDirty = true; else RefreshResidencyCore(false); }
+            {
+                if (Application.isPlaying || inRender)
+                {
+                    residencyDirty = true;
+#if UNITY_EDITOR
+                    // Edit mode runs LateUpdate only when something asks for a player-loop update.
+                    if (!Application.isPlaying) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+                }
+                else RefreshResidencyCore(false);
+            }
         }
         void LateUpdate()
         {

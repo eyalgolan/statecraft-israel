@@ -658,9 +658,15 @@ namespace Statecraft.Game.Map.Collection
             RestoreRenderers();
             var layer = Layer(); LastHidden = false;
             // Do not depend on which beginCameraRendering subscriber was enabled first.
-            layer?.PrepareCamera(cam);
-            if (!Application.isPlaying) RefreshWanted();
-            layer?.PrepareCamera(cam); // synchronous editor/fake arrivals may have made a whole seat ready
+            layer?.PrepareCameraCore(cam, inRender);
+            if (!Application.isPlaying && !inRender) RefreshWanted();
+#if UNITY_EDITOR
+            // In a render, LateUpdate refreshes instead; edit mode runs it only when something asks for a player-loop update,
+            // so ask only when RefreshWanted has work (a request every render would keep the editor updating).
+            if (inRender && !Application.isPlaying && (dirty || retiring.Count != 0 || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key))
+                || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model)))) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+#endif
+            layer?.PrepareCameraCore(cam, inRender); // synchronous editor/fake arrivals may have made a whole seat ready
             foreach (var renderer in renderers)
             {
                 if (renderer == null) continue;
