@@ -582,8 +582,18 @@ def test_safed_is_israeli_from_the_start():
     assert set(codes) == {"I"}, codes
 
 
+def test_rosh_pinna_is_israeli_from_the_start():
+    """Owner ruling of 1 November 2026 on #1659, "Yes, Rosh Pinna too (Recommended)": the police building and Camp Filon
+    were in Jewish hands from 26-28 April 1948 (research_notes/Map/regions-1948-opening-control-p2a.md, gdd03-0017), so
+    Rosh Pinna's hex is Israeli in every period, the opening included, like Safed's."""
+    rosh_pinna = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "rosh_pinna")
+    codes = CODES[hg.settlement_hex(rosh_pinna["lon"], rosh_pinna["lat"], HEXES)]
+    assert set(codes) == {"I"}, codes
+
+
 def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
-    """#1659 (1 November 2026): only Safed leaves the Hula loop; every other hex the overlay greys stays grey. The set is
+    """#1659 (1 November 2026): only the exempt settlements (Safed, Rosh Pinna) leave the Hula loop; every other hex the
+    overlay greys stays grey. The set is
     what the bake changes when the overlay is dropped from the opening period, so it follows the GeoJSON and the grid."""
     elev, meta = bb.load_elevation()
     water = bb.water_mask(elev, meta)
@@ -594,10 +604,11 @@ def test_the_hula_loop_still_greys_its_other_hexes_in_the_opening_period():
     loop = {qr for qr, c in CODES.items() if c[OPEN] != without[qr][OPEN]}
     assert len(loop) >= 5, sorted(loop)
     assert {CODES[qr][OPEN] for qr in loop} == {"c"}, sorted((qr, CODES[qr]) for qr in loop)
-    safed = next(x for x in SETTLEMENTS["settlements"] if x["id"] == "safed")
     hula = next(f for f in SOURCE["features"] if f["properties"]["id"] == "contested_opening_hula")
-    assert bb.contains(bb.rings(hula["geometry"]), safed["lon"], safed["lat"]), "the exemption must still be needed"
-    assert hg.settlement_hex(safed["lon"], safed["lat"], HEXES) not in loop
+    for sid in ("safed", "rosh_pinna"):
+        s = next(x for x in SETTLEMENTS["settlements"] if x["id"] == sid)
+        assert bb.contains(bb.rings(hula["geometry"]), s["lon"], s["lat"]), f"{sid}: the exemption must still be needed"
+        assert hg.settlement_hex(s["lon"], s["lat"], HEXES) not in loop, sid
 
 
 def test_an_overlay_exemption_that_exempts_nothing_fails_the_bake(monkeypatch):
