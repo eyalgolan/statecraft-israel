@@ -42,8 +42,8 @@ namespace Statecraft.Game.Boot
         /// <summary>content/map/control_hexes_1948_49.yaml: who held which areas, 1948-49, by period (display only; "" when
         /// absent: the older drawing, sub-districts with the armistice zones over them).</summary>
         public string ControlYaml = "";
-        /// <summary>content/map/armistice_lines_1949.geojson: the true armistice lines, drawn as polylines in the
-        /// "armisticelines" map mode (ArmisticeLines, #237; display only; "" when absent: no overlay).</summary>
+        /// <summary>content/map/armistice_lines_1949.geojson: the true armistice lines, drawn as polylines unless the run
+        /// turns them off with "noarmisticelines" (ArmisticeLines, #237, #196; display only; "" when absent: no overlay).</summary>
         public string ArmisticeLinesGeojson = "";
         /// <summary>heightmap.r16z as read: packed (HeightmapCodec); HeightmapLoader decodes it when the map is built.</summary>
         public byte[] HeightmapR16z = new byte[0];

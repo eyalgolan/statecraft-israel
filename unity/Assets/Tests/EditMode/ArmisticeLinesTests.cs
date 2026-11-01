@@ -24,6 +24,12 @@ public class ArmisticeLinesTests
     /// <summary>The feature ids, read off the file with a pattern rather than the parser under test.</summary>
     static List<string> FileIds => Regex.Matches(GeoText, "\"properties\":\\s*\\{\\s*\"id\":\\s*\"([a-z0-9_]+)\"").Select(m => m.Groups[1].Value).ToList();
     static readonly DateTime After = new DateTime(1951, 1, 1);
+    /// <summary>The 11 features the owner signed off on 23 October 2026 (#196, #1444; docs/m3-release.md, "Map lines") and
+    /// the five flagged then, by id: a player's map draws exactly the first list.</summary>
+    static readonly string[] SignedOff = { "lebanon_adl", "syria_dmz_north", "syria_dmz_central", "syria_dmz_south", "egypt_el_auja_dmz",
+        "jordan_adl_iraqi_a_triangle", "jordan_adl_iraqi_b_wadi_ara", "jordan_adl_iraqi_c_east", "jordan_adl_iraqi_c_south",
+        "jordan_adl_bc_south", "jordan_adl_d_arava" };
+    static readonly string[] Drafts = { "egypt_adl_gaza", "egypt_mv1950_demarcation", "egypt_mv1950_zone_lines", "jordan_adl_a_latrun", "syria_adl" };
 
     static MapScene? map;
     static MapScene Map => map != null ? map : map = RouteTests.BuildMap();
@@ -116,7 +122,7 @@ public class ArmisticeLinesTests
         Assert.AreEqual(ArmisticeLines.DashM * ArmisticeLines.DashOn, first, 1f, "a full dash, measured along the bend");
     }
 
-    /// <summary>Owner, 1 November 2026 (#2195): "Restyle Jordan lines (Recommended)". The low-accuracy lines are drawn
+    /// <summary>Owner, 2 November 2026 (#2195): "Restyle Jordan lines (Recommended)". The low-accuracy lines are drawn
     /// dotted: each mark no longer than the line is wide, the gaps at least as long, and a mark a quarter or less of the
     /// bands' grey dash for no-man's land and the demilitarized zones (MapBorders.NeutralDashM, NeutralDashOn), so the
     /// legend's "No-man's land or demilitarized zone: grey, dashed" stays true of the dashes alone.</summary>
@@ -129,7 +135,7 @@ public class ArmisticeLinesTests
         Assert.LessOrEqual(mark, MapBorders.NeutralDashM * MapBorders.NeutralDashOn / 4f, "a quarter of the neutral dash or less");
     }
 
-    /// <summary>Owner, 1 November 2026 (#2195): "Tie to Borders button (Recommended)". The minimap's Borders button hides
+    /// <summary>Owner, 2 November 2026 (#2195): "Tie to Borders button (Recommended)". The minimap's Borders button hides
     /// the true lines with the bands, and pressing it again shows them.</summary>
     [Test]
     public void TheMinimapBordersButtonHidesTheLinesAndShowsThemAgain()
@@ -320,9 +326,9 @@ public class ArmisticeLinesTests
     public void APlayersMapDrawsTheSignedOffLinesByDefaultAndNoDraft()
     {
         var all = ArmisticeLines.Parse(GeoText);
-        var signedOff = all.Where(f => f.Reviewed).Select(f => f.Id).ToList();
-        var drafts = all.Where(f => !f.Reviewed).Select(f => f.Id).ToList();
-        Assert.AreEqual(11, signedOff.Count); Assert.AreEqual(5, drafts.Count);
+        CollectionAssert.AreEquivalent(SignedOff, all.Where(f => f.Reviewed).Select(f => f.Id).ToList(), "the file's signed-off features");
+        CollectionAssert.AreEquivalent(Drafts, all.Where(f => !f.Reviewed).Select(f => f.Id).ToList(), "the file's drafts");
+        var signedOff = SignedOff; var drafts = Drafts;
         var target = Path.Combine(Path.GetTempPath(), "statecraft-armlines-player-" + Guid.NewGuid().ToString("N"));
         try
         {

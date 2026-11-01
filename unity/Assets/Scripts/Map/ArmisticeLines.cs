@@ -17,12 +17,12 @@ namespace Statecraft.Game.Map
     /// hex-snapped bands (<see cref="Armistice1949"/>), which stay as they are. On unless turned off (owner, 1
     /// November 2026: "On by default (Recommended)"; #196): "noarmisticelines" in the WebGL page URL, -noarmisticelines on
     /// desktop and in the editor, builds nothing, and the "armisticelines" visual toggle hides a built overlay (the
-    /// minimap's Borders button works it with the bands: owner, 1 November 2026, "Tie to Borders button (Recommended)"). A release build draws only the features the owner has signed off
+    /// minimap's Borders button works it with the bands: owner, 2 November 2026, "Tie to Borders button (Recommended)"). A release build draws only the features the owner has signed off
     /// (<see cref="ForBuild"/>) and ships only those (<see cref="ReleaseText"/>). Zoomed out past the gameplay zoom the lines
     /// widen with the distance (<see cref="WidthScale"/>). Each feature shows from its own shown_from date, as the bands do. Features traced
     /// from the low-resolution scan (source_quality: low_res_scan, the Jordan lines) are drawn dotted and a step lighter, so
     /// they read as low accuracy without a legend and without colour alone, and apart from the bands' grey dash for
-    /// no-man's land and the demilitarized zones (owner, 1 November 2026: "Restyle Jordan lines (Recommended)"). Zones (the Demilitarized Zones, including the
+    /// no-man's land and the demilitarized zones (owner, 2 November 2026: "Restyle Jordan lines (Recommended)"). Zones (the Demilitarized Zones, including the
     /// two Syrian parts too narrow to hold a hex centre) are drawn as their closed outlines. Reuses the route ribbons'
     /// draping (<see cref="RouteLayer.Geometry"/>) and the selected hex's unlit material (HexSelection.mat, copied per
     /// style). Display only: the sim never reads the file, and this changes no sim state and no other map layer.</summary>
