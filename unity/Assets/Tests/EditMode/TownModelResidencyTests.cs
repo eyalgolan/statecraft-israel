@@ -1140,9 +1140,10 @@ public class TownModelResidencyTests
         Assert.AreEqual(1, f.Requests[kind], "no new request outside the admission margin");
     }
 
-    /// <summary>#2099, as #2046 for the camp tents: an edit-mode render callback (Submit) never acquires or retires building
-    /// models mid-render. A change of demand only marks the layer, and LateUpdate reconciles it, as in play mode; a direct
-    /// PrepareCamera (no render) still reconciles at once.</summary>
+    /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (Submit, the beginCameraRendering handler
+    /// itself) never acquires or retires building models mid-render. A change of demand only marks the layer, and LateUpdate
+    /// reconciles it, as in play mode; once settled, the next render marks nothing. A direct PrepareCamera (no render) still
+    /// reconciles at once.</summary>
     [Test]
     public void AnEditModeRenderCallbackDefersTheTownModelsToLateUpdate()
     {
@@ -1152,17 +1153,21 @@ public class TownModelResidencyTests
             Array.Empty<(string, string[])>());
         string kind = TownModels.Ids[(int)TownModel.B01WhiteCity];
         var lateUpdate = typeof(TownModelLayer).GetMethod("LateUpdate", Flags)!;
+        var dirty = typeof(TownModelLayer).GetField("reconcileDirty", Flags)!;
         var camera = f.Camera(new Vector3(0f, HeightM, 0f), Quaternion.LookRotation(Vector3.down, Vector3.forward));
 
-        f.layer.PrepareCameraCore(camera, inRender: true);
+        f.Submit(camera);
         Assert.IsTrue(f.layer.AdmitsTown("p", camera), "the close camera admits the place");
         Assert.IsFalse(f.Requests.ContainsKey(kind), "but nothing is acquired inside the render callback");
+        Assert.IsTrue((bool)dirty.GetValue(f.layer)!, "the render marks the change for LateUpdate");
         lateUpdate.Invoke(f.layer, null);
         Assert.AreEqual(1, f.Requests[kind], "LateUpdate acquires the kind");
+        f.Submit(camera);
+        Assert.IsFalse((bool)dirty.GetValue(f.layer)!, "settled: the next render marks nothing (no update request every render)");
 
         // 7.5 km beyond the view's right edge: past the 6 km keep (AViewAdmittedPlaceStaysToSixKmOutsideTheViewAndNotBeyond).
         camera.transform.position = new Vector3(-HalfM - HeightM * Mathf.Tan(30f * Mathf.Deg2Rad) - 7500f, HeightM, 0f);
-        f.layer.PrepareCameraCore(camera, inRender: true); f.layer.RetireReleasedModels();
+        f.Submit(camera); f.layer.RetireReleasedModels();
         Assert.IsFalse(f.layer.AdmitsTown("p", camera), "the camera no longer admits the place");
         Assert.IsFalse(f.Releases.ContainsKey(kind), "but nothing is released inside the render callback");
         lateUpdate.Invoke(f.layer, null); f.layer.RetireReleasedModels();
@@ -1171,5 +1176,13 @@ public class TownModelResidencyTests
         camera.transform.position = new Vector3(0f, HeightM, 0f);
         f.layer.PrepareCamera(camera);
         Assert.AreEqual(2, f.Requests[kind], "a direct call (no render) acquires at once");
+    }
+
+    /// <summary>#2099: the deferred change is applied in LateUpdate, which edit mode runs only for an [ExecuteAlways] layer.</summary>
+    [Test]
+    public void TheDeferringLayersRunInEditMode()
+    {
+        foreach (var type in new[] { typeof(TownModelLayer), typeof(TownLandmarks), typeof(SpecialBuildingModels) })
+            Assert.IsTrue(type.IsDefined(typeof(ExecuteAlways), false), type.Name + " is [ExecuteAlways]");
     }
 }

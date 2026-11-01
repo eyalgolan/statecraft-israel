@@ -524,9 +524,10 @@ public class TownLandmarksTests
         CollectionAssert.Contains(t.Missing, "tel_aviv");
     }
 
-    /// <summary>#2099, as #2046 for the camp tents: an edit-mode render callback never acquires, instantiates or destroys the
-    /// whole-town landmarks mid-render. A change (here the Towns.Enabled kill switch) waits for LateUpdate, as in play mode; a
-    /// direct Choose (no render) still applies it at once.</summary>
+    /// <summary>#2099, as #2046 for the camp tents: the edit-mode render callback (the beginCameraRendering handler itself)
+    /// never acquires, instantiates or destroys the whole-town landmarks mid-render. A change (here the Towns.Enabled kill
+    /// switch) waits for LateUpdate, as in play mode, and once applied the next render finds nothing pending (it asks for no
+    /// further player-loop update); a direct Choose (no render) still applies a change at once.</summary>
     [Test]
     public void AnEditModeRenderCallbackDefersTheWholeTownsToLateUpdate()
     {
@@ -542,23 +543,59 @@ public class TownLandmarksTests
             Assert.Greater(t.Placed.Count, 0, "precondition: the whole towns stand");
             var first = t.transform.GetChild(0).gameObject;
             camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "precondition: settled, a render finds nothing pending");
             var enabled = typeof(ProductionResidency.TownPolicy).GetField("Enabled", ResidencyFlags)!;
 
             enabled.SetValue(map.Residency.Towns, false);
-            t.ChooseCore(camera, inRender: true);
+            Render(t, camera);
             Assert.IsTrue(first != null, "nothing is destroyed inside the render callback");
             Assert.Greater(t.Placed.Count, 0, "the whole towns still stand");
+            Assert.IsTrue(t.RefreshPending, "the change waits for LateUpdate");
             ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
             Assert.IsTrue(first == null, "LateUpdate retires the whole towns");
             Assert.AreEqual(0, t.Placed.Count, "and none stands");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "once applied, the next render finds nothing pending");
 
             enabled.SetValue(map.Residency.Towns, true); int before = asked.Count;
             t.Choose(default, camera);
             Assert.Greater(asked.Count, before, "a direct call (no render) requests at once");
             Assert.Greater(t.Placed.Count, 0, "and places them at once");
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "and leaves nothing pending");
         }
         finally { Object.DestroyImmediate(camera.gameObject); Object.DestroyImmediate(prefab); }
     }
+
+    /// <summary>#2099: a model that does not stream (its request answers null) is still a settled state: render, LateUpdate and
+    /// render again find nothing pending, so an edit-mode render never asks for a player-loop update on every frame.</summary>
+    [Test]
+    public void AMissingWholeTownLeavesNothingPendingAfterARender()
+    {
+        var map = OpenMap();
+        var camera = new GameObject("missing whole-town camera").AddComponent<Camera>();
+        try
+        {
+            TownLandmarks.Request = (id, detail, done) => { asked.Add((id, detail, done)); done(null); };
+            var t = TownLandmarks.ShowAt(map, new DateTime(1949, 1, 1), Array.Empty<Placement>(), ContentLoader.Load(Statecraft.Game.Paths.Content))!;
+            Assert.Greater(asked.Count, 0, "precondition: the models were asked for");
+            Assert.AreEqual(0, t.Placed.Count, "precondition: none streamed");
+            CollectionAssert.IsNotEmpty(t.Missing, "precondition: the towns are listed as not drawn");
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 60000f, 0f), Quaternion.Euler(90f, 0f, 0f));
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "a render finds nothing pending");
+            ResidencyCall(t, typeof(TownLandmarks), "LateUpdate");
+            int count = asked.Count;
+            Render(t, camera);
+            Assert.IsFalse(t.RefreshPending, "nor after LateUpdate");
+            Assert.AreEqual(count, asked.Count, "and nothing is asked for again");
+        }
+        finally { Object.DestroyImmediate(camera.gameObject); }
+    }
+
+    static void Render(TownLandmarks t, Camera camera) => ResidencyCall(t, typeof(TownLandmarks), "OnBeginCameraRendering",
+        default(UnityEngine.Rendering.ScriptableRenderContext), camera);
 
     const System.Reflection.BindingFlags ResidencyFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
     static object? ResidencyCall(object? owner, Type type, string method, params object?[] args)

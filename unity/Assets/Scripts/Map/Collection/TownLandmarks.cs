@@ -362,8 +362,15 @@ namespace Statecraft.Game.Map.Collection
             dirty = true; RefreshWanted();
         }
 
+        /// <summary>Whether <see cref="RefreshWanted"/> has work: a redraw, a lease to retire, or a change of the admitted towns
+        /// or of the models asked for. RefreshWanted returns at once without it, and the edit-mode render callback asks for a
+        /// player-loop update only with it, so a settled layer never keeps the editor updating (#2099).</summary>
+        internal bool RefreshPending => dirty || retiring.Count != 0
+            || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key)) || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model));
+
         void RefreshWanted()
         {
+            if (!RefreshPending) return;
             var keep = new HashSet<string>(StringComparer.Ordinal);
             var keys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var want in wants) if (Allowed(want)) { keep.Add(want.Model); keys.Add(want.Key); }
@@ -663,8 +670,7 @@ namespace Statecraft.Game.Map.Collection
 #if UNITY_EDITOR
             // In a render, LateUpdate refreshes instead; edit mode runs it only when something asks for a player-loop update,
             // so ask only when RefreshWanted has work (a request every render would keep the editor updating).
-            if (inRender && !Application.isPlaying && (dirty || retiring.Count != 0 || !admittedKeys.SetEquals(wants.Where(Allowed).Select(w => w.Key))
-                || !asked.SetEquals(wants.Where(Allowed).Select(w => w.Model)))) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
+            if (inRender && !Application.isPlaying && RefreshPending) UnityEditor.EditorApplication.QueuePlayerLoopUpdate();
 #endif
             layer?.PrepareCameraCore(cam, inRender); // synchronous editor/fake arrivals may have made a whole seat ready
             foreach (var renderer in renderers)
