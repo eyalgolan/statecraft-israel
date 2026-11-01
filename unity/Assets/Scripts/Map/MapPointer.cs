@@ -32,14 +32,19 @@ namespace Statecraft.Game.Map
         /// one input update, and then <c>position</c> and <c>start</c> are the same sample: the distance test below
         /// sees nothing moved however far it went. The frame's own travel does see it. Callers with no travel to
         /// report (the mouse's right button, which is stepped from its action callbacks) pass none, so their rule is
-        /// unchanged.</para></summary>
-        public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown, Vector2 travel = default)
+        /// unchanged.</para>
+        /// <para><paramref name="strayed"/> is true when the press left the slop at one of its own input events, even
+        /// if it came back before the frame sampled it (#1929 review): a path out past the slop and back inside one
+        /// update has no net travel, yet the camera pans by it, so it must not also be a tap.</para></summary>
+        public Vector2? Step(bool pressed, bool released, Vector2 position, bool otherFingerDown, Vector2 travel = default,
+            bool strayed = false)
         {
             if (pressed) { start = position; down = true; moved = false; pinched = false; }
             if (!down) return null;
             if (otherFingerDown) pinched = true;                       // a pinch is never a tap, even a still thumb
             if ((position - start).sqrMagnitude > SlopPixels * SlopPixels) moved = true;   // latched: coming back helps not
             if (travel.sqrMagnitude > SlopPixels * SlopPixels) moved = true;               // a whole flick inside one frame
+            if (strayed) moved = true;                                                     // out and back inside one frame
             if (!released) return null;
             down = false;
             return moved || pinched ? (Vector2?)null : start;
@@ -82,9 +87,14 @@ namespace Statecraft.Game.Map
         // Right clicks, as presses are: the right button's press, every pointer move while it is held and its release are
         // each stepped at their own event's position, so a drag out and back inside one slow frame is still a drag.
         readonly Queue<Vector2> rightClicks = new Queue<Vector2>();
-        InputAction? press, leftMove, rightPress, rightMove;
+        InputAction? press, leftMove, rightPress, rightMove, touchPress, touchMove;
 
         TapPress tap, rightTap, leftTap;
+        // The primary finger's slop at its own events (#1929 review), as CameraController.PressDrag records it: same
+        // controls, same origin (the press event's position) and the same strict test, so the tap and the camera's
+        // lifted pan agree on a path that leaves the slop and comes back inside one input update.
+        Vector2 touchFrom;
+        bool touchDown, touchStrayed;
 
         /// <summary>True while the right button's press could still end as a right click (TapPress.TapCandidate): the
         /// camera holds its right-drag pan until it is false.</summary>
@@ -111,6 +121,13 @@ namespace Statecraft.Game.Map
             rightMove = new InputAction("map-right-move", InputActionType.PassThrough, "<Mouse>/position");
             rightMove.performed += OnRightMoved;
             rightMove.Enable();
+            touchPress = new InputAction("map-touch-press", InputActionType.Button, "<Touchscreen>/primaryTouch/press");
+            touchPress.performed += OnTouchPressed;
+            touchPress.canceled += OnTouchReleased;
+            touchPress.Enable();
+            touchMove = new InputAction("map-touch-move", InputActionType.PassThrough, "<Touchscreen>/primaryTouch/position");
+            touchMove.performed += OnTouchMoved;
+            touchMove.Enable();
         }
 
         void OnDisable()
@@ -119,8 +136,30 @@ namespace Statecraft.Game.Map
             if (leftMove != null) { leftMove.performed -= OnLeftMoved; leftMove.Dispose(); leftMove = null; }
             if (rightPress != null) { rightPress.performed -= OnRightPressed; rightPress.canceled -= OnRightReleased; rightPress.Dispose(); rightPress = null; }
             if (rightMove != null) { rightMove.performed -= OnRightMoved; rightMove.Dispose(); rightMove = null; }
+            if (touchPress != null) { touchPress.performed -= OnTouchPressed; touchPress.canceled -= OnTouchReleased; touchPress.Dispose(); touchPress = null; }
+            if (touchMove != null) { touchMove.performed -= OnTouchMoved; touchMove.Dispose(); touchMove = null; }
             presses.Clear(); rightClicks.Clear();
             rightTap = default; leftTap = default;
+            touchDown = touchStrayed = false;
+        }
+
+        void OnTouchPressed(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is not Touchscreen ts) return;
+            touchFrom = ts.primaryTouch.position.ReadValue(); touchDown = true; touchStrayed = false;
+        }
+
+        void OnTouchMoved(InputAction.CallbackContext ctx) => TouchMoved(ctx.ReadValue<Vector2>());
+
+        void OnTouchReleased(InputAction.CallbackContext ctx)
+        {
+            if (ctx.control.device is Touchscreen ts) TouchMoved(ts.primaryTouch.position.ReadValue());
+            touchDown = false;
+        }
+
+        void TouchMoved(Vector2 at)
+        {
+            if (touchDown && (at - touchFrom).sqrMagnitude > TapPress.SlopPixels * TapPress.SlopPixels) touchStrayed = true;
         }
 
         void OnRightPressed(InputAction.CallbackContext ctx)
@@ -183,7 +222,8 @@ namespace Statecraft.Game.Map
                 if (CameraController.DownThisUpdate(touch)) pressed++;   // counts a finger that already lifted this update (#1792)
             // any other finger down cancels the tap (TapPress): a releasing pinch's thumb is inside the slop, yet must not select
             var tapAt = tap.Step(t.press.wasPressedThisFrame, t.press.wasReleasedThisFrame,
-                t.position.ReadValue(), pressed > (CameraController.DownThisUpdate(t) ? 1 : 0), t.delta.ReadValue());
+                t.position.ReadValue(), pressed > (CameraController.DownThisUpdate(t) ? 1 : 0), t.delta.ReadValue(),
+                touchStrayed);
             if (tapAt.HasValue) OnPress(tapAt.Value);   // a tap selects where the finger landed, like a click
         }
 

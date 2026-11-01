@@ -588,6 +588,18 @@ namespace Statecraft.Game.Map
             Routes.RouteLayer.Build(Terrain, Frame, routes, Routes.RouteLayer.ModeForThisRun(), RouteDate ?? Routes.RouteLayer.DefaultDate,
                 Routes.RouteRibbonFile.Source.Of(heights, inputs.HeightmapJson, inputs.RoutesYaml), this);
             DiagLog.BootPhase("routes built");
+            // The 1949 armistice lines as their true polylines (#237), only in the map mode asked for with the
+            // "armisticelines" flag; a missing or malformed file means no overlay and a warning. Display only.
+            if (ArmisticeLines.Wanted() && inputs.ArmisticeLinesGeojson == "") Debug.LogWarning($"ARMISTICE LINES: {ArmisticeLines.FileName} is missing; no overlay");
+            else if (ArmisticeLines.Wanted())
+            {
+                try
+                {
+                    var lines = ArmisticeLines.ForBuild(ArmisticeLines.Parse(inputs.ArmisticeLinesGeojson), Application.isEditor || Debug.isDebugBuild);
+                    ArmisticeLines.Build(Terrain, Frame, lines, selectionMaterial, RouteDate ?? Routes.RouteLayer.DefaultDate);
+                }
+                catch (InvalidDataException e) { Debug.LogWarning($"ARMISTICE LINES: {e.Message}; no overlay"); }
+            }
 
             if (!cam.TryGetComponent(out CameraRig rig)) rig = cam.gameObject.AddComponent<CameraRig>();
             rig.LookAt = Frame.ToWorld(34.95, 31.95, 0); rig.Init(); // central Israel: Tel Aviv–Jerusalem corridor

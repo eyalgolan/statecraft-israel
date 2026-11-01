@@ -163,16 +163,18 @@ namespace Statecraft.Sim
         /// <summary>The outcome bands of combat_table row <paramref name="row"/> (Q-UI-1: the card shows them beside Preview's
         /// ratio): the row's faces with the same outcome taken together, in the order each first appears, each with how many
         /// faces of <c>Of</c> give it, the people the attackers and the defenders lose (population units times
-        /// mvp.people_per_unit, as the engagement's report counts them) and whether the defenders retreat.</summary>
-        public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row)
+        /// mvp.people_per_unit, as the engagement's report counts them) and whether the defenders retreat. When <paramref name="unitId"/>
+        /// names an artillery unit its attackers lose nothing (R-COMBAT-007, as <c>Engage</c> counts it: #2040).</summary>
+        public static IReadOnlyList<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)> Outcomes(Content c, GameState s, int row, int? unitId = null)
         {
             PopulationLedger.RefuseAggregate(s);
             var mvp = c.RulesAt(s.Date).Mvp!;
             var t = mvp.CombatTable[row];
+            var guns = unitId is int id && s.Units.TryGetValue(id, out var u) && Guns(c, u);
             var bands = new List<(int Faces, int Of, int AttackersLose, int DefendersLose, bool Retreat)>();
             for (int i = 0; i < t.AttackerLoss.Count; i++)
             {
-                var face = (t.AttackerLoss[i] * mvp.PeoplePerUnit, t.DefenderLoss[i] * mvp.PeoplePerUnit, t.DefenderRetreats[i] == 1);
+                var face = ((guns ? 0 : t.AttackerLoss[i]) * mvp.PeoplePerUnit, t.DefenderLoss[i] * mvp.PeoplePerUnit, t.DefenderRetreats[i] == 1);
                 var k = bands.FindIndex(b => (b.AttackersLose, b.DefendersLose, b.Retreat) == face);
                 if (k >= 0) bands[k] = (bands[k].Faces + 1, bands[k].Of, bands[k].AttackersLose, bands[k].DefendersLose, bands[k].Retreat);
                 else bands.Add((1, t.AttackerLoss.Count, face.Item1, face.Item2, face.Item3));

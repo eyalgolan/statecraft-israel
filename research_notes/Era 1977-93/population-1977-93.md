@@ -1,6 +1,6 @@
 # Immigration, emigration and population, 1977-1993
 
-Researched 23 October 2026. Every URL below not marked "(opened 24 Oct)" was opened on 23 October. Research note for issue #147 (1977-93, the
+Researched 23 October 2026. Every URL below was opened on 23 October unless its row gives another date. Research note for issue #147 (1977-93, the
 research part only, opened by the owner's ruling of 22 October 2026 on #49). Research only: nothing here is drafted
 for the game, and no file in `content/` is changed. The `aliyah.yaml` rows, #102's emigration rows and the calibration
 checkpoints stay paused.
@@ -35,6 +35,8 @@ value is given and one is named. The design also asks how CBS classifies the Asi
 - No quote is invented. The short quotes below are copied from the cited page. Translations from Hebrew are marked
   "our translation". Readings of a misprint or an unclear cell are marked "our reading". Dashes in quotes (Tolts's
   en dashes) are written here as hyphens.
+
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
 
 ## Sources
 
@@ -74,6 +76,10 @@ value is given and one is named. The design also asks how CBS classifies the Asi
 | CBS SA 2012 ch. 4 list | *Statistical Abstract of Israel 2012*, chapter 4 "Immigration and emigration" table list (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2012/4.%20shnatonimmigration/st04_00.pdf |
 | CBS SA 2018 ch. 4 list | *Statistical Abstract of Israel 2018*, chapter 4 table list (opened 24 Oct) | https://www.cbs.gov.il/he/publications/doclib/2018/4.%20shnatonimmigration/st04_00.pdf |
 | JPR Staetsky | Daniel Staetsky, *Israelis abroad: The transformation of the Jewish Diaspora?*, Jewish Policy Research, March 2025, 35 pages (opened 24 Oct) | https://www.jpr.org.uk/sites/default/files/attachments/Israelis%20abrod%20-%20transformation%20of%20the%20Jewish%20Diaspora_0.pdf |
+| CBS SA 2019 ch. 2 | *Statistical Abstract of Israel 2019*, chapter 2 "Population", explanatory notes, page 3 (PDF p. 3); read from the PDF text layer, opened 30 Oct | https://www.cbs.gov.il/he/publications/doclib/2019/2.shnatonpopulation/st_02eng.pdf |
+| JTA 1985-02-08 | JTA daily news bulletin, "Jerusalem outstrips Tel Aviv as Israel's largest city", bulletin date 8 February 1985; archive page text, original bulletin PDF not opened (opened 30 Oct) | https://www.jta.org/1985/02/08/archive/jerusalem-outstrips-tel-aviv-as-israels-largest-city |
+| JTA 1984-12-03 | JTA daily news bulletin, 3 December 1984, "Chief Rabbis Agree to Modify Symbolic Rituals for Falashas"; archive page text, original bulletin PDF not opened (opened 30 Oct) | https://www.jta.org/archive/chief-rabbis-agree-to-modify-symbolic-rituals-for-falashas |
+| JTA 1984-12-06 | JTA daily news bulletin, 6 December 1984, "16 North American Jewish Leaders Complete 10-day Mission to Ethiopia"; archive page text, original bulletin PDF not opened (opened 30 Oct) | https://www.jta.org/archive/16-north-american-jewish-leaders-complete-10-day-mission-to-ethiopia |
 | CIA Reading Room | "In Ethiopians' Exodus, Moses Was American" (a reprint of a Los Angeles Times piece of 30 March 1985; record CIA-RDP90-00965R000605190003-1) (tried, not readable: the site returned a maintenance page on 24 Oct) | https://www.cia.gov/readingroom/node/1868581 |
 | JVL Operation Moses | Jewish Virtual Library, "Operation Moses" (tried, not readable: the text loads by script and the page returned no body on 24 Oct) | https://www.jewishvirtuallibrary.org/operation-moses |
 | ISA catalogue | Israel State Archives, "The immigration of the Jews of Ethiopia to Israel, 1948-1985" (tried, not readable: HTTP 403 on 24 Oct) | https://catalog.archives.gov.il/site/en/publication/the-immigration-of-the-jews-of-ethiopia-to-israel-1948-1985/ |
@@ -418,6 +424,7 @@ Last country of residence, persons:
   catalogue entry for "The immigration of the Jews of Ethiopia to Israel 1948-1985" (HTTP 403).
 - The number: about 8,000, and CBS's own "over 8,000" agrees; the contemporaneous JTA reports range from about 8,000
   to about 10,000. It fits inside CBS's 12,579 Ethiopian arrivals of 1980-1984 and inside the 8,327 of 1984 above.
+- Third pass, 30 Oct: the first-flight date stays [GAP]. Searched again, JTA wp-json archive search `https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=1984-11-15T00:00:00&before=1984-12-10T00:00:00&per_page=50`, run 30 Oct: "Ethiopian" 15 items, "Ethiopia" 15, "Falashas" 5, "Khartoum" 0. Opened two of them on the archive page (text only, original bulletin PDFs not opened): 1984-12-03 "Chief rabbis agree to modify symbolic rituals for Falashas" (https://www.jta.org/archive/chief-rabbis-agree-to-modify-symbolic-rituals-for-falashas) and 1984-12-06 "16 North American Jewish leaders complete 10-day mission to Ethiopia" (https://www.jta.org/archive/16-north-american-jewish-leaders-complete-10-day-mission-to-ethiopia). Neither gives a flight date or an arrival count; the second says nothing about arrivals in Israel. The other items (famine aid, federation gifts, the 15-16 November General Assembly protest) were read by title only and are not counted as read.
 
 **Operation Joshua**
 
@@ -618,6 +625,7 @@ table (page 86): "Until 1995, before publication of the Census results "Arabs" a
   on the end-1995 figure of the 1990-1995 period); the next census basis is 1995's.
 - The 1983 census day and its raw count against the running estimate (the analogue of Bachi's table for 1961 and
   1972 in the 1957-77 note) are [GAP]: no source read gives them.
+- Third pass, 30 Oct: the census day is found, the raw count is not. [V, agent read 30 Oct; a person's check pending] CBS SA 2019, chapter 2, page 3 (PDF text layer): "From 1983 through 1994 (incl. the average population in 1995), estimates are based on the results of the Census of Population and Housing held on June 4, 1983." The same paragraph gives "May 20, 1972" for the earlier census. So the census day is **4 June 1983**. [V, agent read 30 Oct; a person's check pending] (press) JTA 1985-02-08, reporting the CBS: the census of population and housing was "conducted in the summer of 1983", and "the population of the country as a whole increased by 28 percent" since the 1972 census (a growth rate against the 1972 count, not a count). The raw census total and its difference from the running estimate stay [GAP]: (30 Oct) the web searches "Israel 1983 census 4 June 1983 population count Central Bureau of Statistics census results total" and "Statistical Abstract of Israel 1985 pdf census of population 1983 enumerated population June 4 1983" (built-in WebSearch, no Tavily key on this box) returned catalogue pages for the IPUMS microdata (the ghdx.healthdata.org page returned HTTP 403 to WebFetch) and no 1983-84 Abstract; the 1983 Abstract in the Oregon Digital catalogue was not opened and in any case pre-dates the census.
 
 ---
 
@@ -721,3 +729,4 @@ Still open:
 - A government or archive record of the first flight of Operation Moses (18, 20 or 21 November 1984, 2b), and primary
   counts for Moses, Joshua and Solomon; this pass added contemporaneous press only.
 - The 1983 census day and its count against the running estimate.
+  (third pass, 30 Oct: the day is found, 4 June 1983, see 4b; the count is still open.)

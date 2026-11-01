@@ -556,6 +556,47 @@ def test_a_settlement_hex_takes_the_code_at_its_own_point():
     assert checked > 200, checked
 
 
+def test_hex_with_a_codeless_settlement_fails_closed_naming_hex_and_ids(monkeypatch):
+    """#2028: a settlement outside every snapshot and overlay codes as None; sorting the disagreeing keys must not
+    compare it with a code. test-in sits in a 200 m snapshot square, test-out 150 m east of it in the same hex."""
+    lon_a, lat_a = 34.336715993, 30.975938320
+    lon_b = 34.338287596
+    square = [
+        [34.335668258, 30.975033915],
+        [34.337763728, 30.975033915],
+        [34.337763728, 30.976842724],
+        [34.335668258, 30.976842724],
+        [34.335668258, 30.975033915],
+    ]
+    source = {
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"kind": "area", "snapshot": "s1", "holder": "israel"},
+                "geometry": {"type": "Polygon", "coordinates": [square]},
+            }
+        ],
+        "statecraft": {
+            "periods": [{"id": "p1", "snapshot": "s1", "overlays": []}],
+            "pinned_towns": [],
+            "contested_places": [],
+        },
+    }
+    settlements = {
+        "settlements": [
+            {"id": "test-in", "lon": lon_a, "lat": lat_a},
+            {"id": "test-out", "lon": lon_b, "lat": lat_a},
+        ]
+    }
+    real_load_path = yaml12.load_path
+    monkeypatch.setattr(cb.yaml12, "load_path", lambda p: settlements if p == cb.SETTLEMENTS else real_load_path(p))
+    with pytest.raises(SystemExit) as exc:
+        cb.bake(source, HEXES, None, None)
+    text = str(exc.value)
+    assert text.startswith("settlements in hex (-16, 35) disagree about its control ("), text
+    assert "test-in" in text and "test-out" in text, text
+
+
 def test_the_three_places_of_1659_are_held_by_israel_from_the_start():
     """The player-visible claim of #1659, pinned by name so a bake change cannot quietly undo it: the map and the city
     panel's "Held by" line. Tiberias was taken on 18 April 1948 and Safed on 10-11 May, both before the game's start on

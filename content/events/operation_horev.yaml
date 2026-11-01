@@ -6,7 +6,6 @@ text: '{defense_minister} proposes an offensive against the Egyptian army in the
 # (https://he.wikipedia.org/wiki/מבצע_חורב).
 title_he: מבצע חורב
 text_he: 'הצעת {defense_minister} היא לפתוח במתקפה נגד הצבא המצרי בדרום, בפיקוד יגאל אלון ובהשתתפות חמש חטיבות.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security, war-casualties]
 office: defense_minister

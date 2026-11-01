@@ -22,6 +22,8 @@ and `people.yaml` can be filled later without new research. It also answers the 
   terms in `people.yaml` are.
 - "en.wiki" means the English Wikipedia pages named in Sources, read as raw wikitext on 13 October 2026.
 
+Every [V] in this note was an agent's reading on 2026-10-13, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources
 
 Primary:

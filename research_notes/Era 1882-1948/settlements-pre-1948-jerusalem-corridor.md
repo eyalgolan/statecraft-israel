@@ -70,6 +70,8 @@ Searched again and not found. Read: ..." and the list of what was read.
 - **computed here** is arithmetic or a conversion done for this note, not a printed figure.
 - **our reading** marks an interpretation and is not attributed to a source.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## What counts as Jerusalem and its corridor here
 
 There is no single boundary, so this note states its rule.

@@ -6,7 +6,6 @@ text: '{prime_minister} proposes to the cabinet that the IDF break the truce to 
 # (https://he.wikipedia.org/wiki/קרבות_לטרון).
 title_he: לטרון
 text_he: 'הצעת {prime_minister} לממשלה היא שצה״ל יפר את ההפוגה כדי לתקוף ולכבוש את לטרון. רוב השרים, ובהם {finance_minister}, {justice_minister} ו־{immigration_minister}, מתנגדים.'
-text_he_review: agent-checked
 anchor: hard
 tags: [security]
 office: prime_minister

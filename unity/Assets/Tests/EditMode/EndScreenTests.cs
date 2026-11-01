@@ -111,12 +111,15 @@ public class EndScreenTests
         Assert.IsTrue(k.End.IsOpen, "a loaded ended game opens on its end screen");
         var s = k.Bridge.State; var r = EndReport.For(C, s);
         var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
-        var expected = new[] { "outcome", "score" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
+        var expected = new[] { "outcome", "score", "score-reference" }.Concat(r.Objectives.Select(o => "objective-" + o.Id))
             .Concat(new[] { "cohesion", "standing", "population" }).Select(n => "end-screen-" + n);
         CollectionAssert.AreEqual(expected, names, "the report's parts, in order");
         Assert.AreEqual(En["end.outcome.mvp_ended"], k.Line("outcome"));
         Assert.AreEqual(En.Format("hud.score", s.Score), k.Line("score"));
         Assert.Greater(s.Score, 0);
+        Assert.AreEqual(200, r.ReferenceScore, "the reference is the sim's number (Q-SCORE-2)");
+        Assert.AreEqual(En.Format("end.reference_score", r.ReferenceScore), k.Line("score-reference"));
+        StringAssert.Contains("200", k.Line("score-reference"));
         // The first objective: the card's title, the player's date and the historical date (Q-END-1).
         var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");   // by id: the first in id order, as before R-OBJ-007
         string Date(System.DateTime d) => En.Format("date.day_month_year", d.Day, En["date.month_" + d.Month], d.Year);
@@ -130,6 +133,50 @@ public class EndScreenTests
         var anchor = r.PopulationHistory!;
         Assert.AreEqual(En.Format("end.population_history", r.Population.ToString("N0", System.Globalization.CultureInfo.InvariantCulture),
             Date(anchor.Date), anchor.Jews.ToString("N0", System.Globalization.CultureInfo.InvariantCulture)), k.Line("population"));
+    }
+
+    /// <summary>A cause's history note (Q-DEF-4 (b)) sits right under its line when the strings carry one, and nowhere else.
+    /// The armistice note is held out of the strings until the person's check is recorded, so a fixture string stands in.</summary>
+    [Test]
+    public void AWarLossShowsItsHistoryNoteUnderItsLineAndOtherOutcomesShowNone()
+    {
+        var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.defeat_war: \"Fixture note.\"\n");
+        using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-note", "end-screen-score" }, names.Take(3), "the note follows the outcome line");
+        Assert.AreEqual("Fixture note.", k.Line("note"));
+        Assert.IsTrue(k.Ui.Q<Label>("end-screen-note").ClassListContains("end-screen-note"));
+        using var ended = new Kit(withNote, Ended);
+        Assert.IsFalse(ended.Ui.Q<ScrollView>("end-screen-rows").Children().Any(x => x.name == "end-screen-note"), "no note for the MVP end");
+    }
+
+    /// <summary>A regression guard (it passes without the note change too): with no note in the strings (the shipped EN and HE
+    /// files, until the person's check), a war loss goes straight from its line to the score: no note row, no empty gap.
+    /// Adding the note string back means updating this test too.</summary>
+    [Test]
+    public void AWarLossWithNoNoteStringGoesStraightFromItsLineToTheScore()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            using var k = new Kit(text, s => { s.Date = C.End; s.GameOver = GameOverCodes.DefeatWar; });
+            var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+            CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the outcome line");
+            CollectionAssert.DoesNotContain(names, "end-screen-note");
+        }
+    }
+
+    /// <summary>A note follows only its own cause's line: an outcome with no line of its own (a legacy code, shown as the
+    /// generic game-over line) gets no note even when the strings carry one for it.</summary>
+    [Test]
+    public void ANoteNeverFollowsTheGenericGameOverLine()
+    {
+        var withNote = UiText.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(UiPaths.Strings).text + "\nend.note.coalition_collapse: \"Fixture note.\"\n");
+        Assert.IsFalse(withNote.Has("end.outcome." + GameOverCodes.CoalitionCollapse), "precondition: the legacy code has no outcome line");
+        using var k = new Kit(withNote, s => { s.Date = C.End; s.GameOver = GameOverCodes.CoalitionCollapse; });
+        Assert.AreEqual(withNote["order.game_over"], k.Line("outcome"), "precondition: the generic line shows");
+        var names = k.Ui.Q<ScrollView>("end-screen-rows").Children().Select(x => x.name).ToList();
+        CollectionAssert.AreEqual(new[] { "end-screen-outcome", "end-screen-score" }, names.Take(2), "the score follows the generic line");
+        CollectionAssert.DoesNotContain(names, "end-screen-note");
     }
 
     // Q-END-3: the prisoners returned, worded as Defence words them, only when some went home (no zero row).
@@ -217,6 +264,28 @@ public class EndScreenTests
         k.Dispose_End_Reload(En);   // the kit disposes it once more at the end
     }
 
+    /// <summary>#2041: in Hebrew an objective's line titles it as its decision card does - the Hebrew title_he where
+    /// there is no variant title, the English otherwise (EventCardPresenter's pick). English is unchanged, pinned by
+    /// ShowsEveryPartOfTheReportAndNothingElse. Red-first: Lines used the English EventSystem.Title in every language.
+    /// </summary>
+    [Test]
+    public void HebrewTitlesTheObjectivesAsTheirCardsDo()
+    {
+        using var k = new Kit(He, Ended);
+        var s = k.Bridge.State;
+        var lines = EndScreenPresenter.Lines(C, s, He);
+        foreach (var o in C.Objectives)
+        {
+            var card = C.Events.First(e => e.Id == o.Card);
+            var variant = Timeline.Variant(C, s, card);
+            Assert.IsTrue(variant == null || variant.Title == "", o.Id + " precondition: no variant title");
+            Assert.AreNotEqual("", card.TitleHe, o.Id + " precondition: the card has a Hebrew title");
+            var line = lines.Single(l => l.Name == "objective-" + o.Id).Text;
+            StringAssert.Contains(card.TitleHe, line, o.Id + ": the Hebrew line shows the card's Hebrew title");
+            StringAssert.DoesNotContain(EventSystem.Title(C, s, card), line, o.Id + ": not the English title");
+        }
+    }
+
     [Test]
     public void HebrewShowsTheHebrewWords()
     {
@@ -227,4 +296,32 @@ public class EndScreenTests
         Assert.AreEqual(He["hud.new_game"], k.Ui.Q<Button>("end-screen-new-game").text);
         StringAssert.StartsWith(He["hud.caption.cohesion"] + ":", k.Line("cohesion"));
     }
+
+    /// <summary>#2060: in Hebrew each date an end-screen line inserts sits between RLE and PDF (U+202B, U+202C), so it
+    /// reads as one unit right after "ב־" ("20 בספטמבר 1949") even in a line laid out left to right, instead of the bidi
+    /// rules pulling its day onto the next word and its year to the line's far end. The lines are compared ordinally, so
+    /// every direction mark counts. The titles are read back from the lines: #2041 decides which title shows, this test
+    /// pins the dates around it.</summary>
+    [Test]
+    public void HebrewIsolatesEachDateItInserts()
+    {
+        using var k = new Kit(He, Ended);
+        var first = C.Objectives.Single(o => o.Id == "absorb_immigrants");
+        const char Lrm = '\u200E', Rle = '\u202B', Pdf = '\u202C';
+        string Date(System.DateTime d) => $"{Rle}{Lrm}{d.Day}{Lrm} ב{He["date.month_" + d.Month]} {Lrm}{d.Year}{Lrm}{Pdf}";
+        var line = k.Line("objective-" + first.Id);
+        var title = line.Substring("יעד ".Length, line.IndexOf(": הושלם", System.StringComparison.Ordinal) - "יעד ".Length);
+        var expected = "יעד " + title + ": הושלם ב־" + Date(first.ReferenceDate.AddMonths(-1)) + "; בהיסטוריה ב־" + Date(first.ReferenceDate);
+        Assert.IsTrue(string.Equals(expected, line, System.StringComparison.Ordinal), "expected\n" + Escape(expected) + "\nbut was\n" + Escape(line));
+        var open = C.Objectives.First(o => o.Id != first.Id);   // Ended completes only the first
+        var openLine = k.Line("objective-" + open.Id);
+        var openTitle = openLine.Substring("יעד ".Length, openLine.IndexOf(": לא הושלם", System.StringComparison.Ordinal) - "יעד ".Length);
+        var openExpected = "יעד " + openTitle + ": לא הושלם; בהיסטוריה ב־" + Date(open.ReferenceDate);
+        Assert.IsTrue(string.Equals(openExpected, openLine, System.StringComparison.Ordinal), "expected\n" + Escape(openExpected) + "\nbut was\n" + Escape(openLine));
+        var anchor = EndReport.For(C, k.Bridge.State).PopulationHistory!;
+        Assert.GreaterOrEqual(k.Line("population").IndexOf(Date(anchor.Date), System.StringComparison.Ordinal), 0, "the population line's date too: " + Escape(k.Line("population")));
+    }
+
+    /// <summary>The line with its invisible marks spelled out, for a failure message.</summary>
+    static string Escape(string s) => string.Concat(s.Select(c => c < 0x2000 || c > 0x206F ? c.ToString() : $"<U+{(int)c:X4}>"));
 }

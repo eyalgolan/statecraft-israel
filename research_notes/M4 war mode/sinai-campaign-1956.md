@@ -11,6 +11,8 @@ Researched 2026-10-11 and re-checked 2026-10-15. Draft for issue #103 (1956 half
 - A secondary source (JVL, Wikipedia) never makes a fact [V], even where it agrees with an official page. No figure, unit or name below was filled from memory.
 - Second pass, 28 Oct 2026 (issue #1907): everything added is marked "(second pass, 28 Oct: ...)" and the first-pass text before it is unchanged. A [V] added in the second pass reads [V, agent read 28 Oct; a person's check pending]. Additions and corrections made after review are marked "after review". New sources: FRUS 1955-57 vol XVI as TEI text (raw.githubusercontent.com/HistoryAtState/frus/6170e4b32c1224002db2fe0c5d8d910597cddc2e/volumes/frus1955-57v16.xml, document ids d420 to d640, 221 documents, searched as text); JTA Daily News Bulletin PDFs on pdfs.jta.org with the dateline read on the page image (the event date is the dateline, not the bulletin date); UN peacekeeping facts page. JTA searches used `https://www.jta.org/wp-json/wp/v2/archive?search=<word>&after=<date>&before=<date>`, fetched directly, 28 Oct. No Tavily or WebSearch was used.
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Source caveat.**
 - gov.il "Selected Documents" (1947 to 1974, section IX) are Israeli government texts. They give Israeli claims, so they are [V] for what Israel said, not for the facts themselves.
 - Wikipedia "Operation Kadesh" was fetched once. It is [S] throughout; its operational text cites Varble 2003 (Osprey), not opened here.

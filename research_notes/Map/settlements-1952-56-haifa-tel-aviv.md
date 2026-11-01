@@ -88,6 +88,8 @@ Tags, one per fact, as in `settlements-1949-51.md`:
 CBS year plus Gvati day agreeing on the year counts as [V] for the year; the day stays [S] unless a second source
 gives the same day.
 
+Every [V] in this note was an agent's reading on 2026-10-23, unless the tag gives a later date; a person's check is pending for all of them.
+
 ### Sources not reached
 
 - **Not tried, known blocked** (`settlements-1949-51.md`): the NLI historical press (JPress) and the Israel State

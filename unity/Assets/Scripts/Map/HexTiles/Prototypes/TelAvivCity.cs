@@ -10,7 +10,8 @@ namespace Statecraft.HexTiles.Prototypes
     /// townspeople on the square, a horse wagon on an avenue, and a palm promenade along the shore. Models are the
     /// 13 October Tripo set (local, pending rights); every piece has a stand-in.
     /// Budget: this showcase tile is drawn at full quality (about 150k triangles with the shipped b*-v2 buildings at full
-    /// detail); a lighter level that keeps its UV seams comes before any map rollout.</summary>
+    /// detail); a lighter level that keeps its UV seams comes before any map rollout (HexHouseLevels makes one for Tal
+    /// Heuberger's generated town houses, #1901; these b*-v2 buildings still draw full).</summary>
     [HexPrototype("tel_aviv_city", Kind = "city")]
     public class TelAvivCity : IHexPrototype
     {

@@ -6,7 +6,6 @@ text: 'Talks in Rhodes have produced an armistice agreement with Egypt. {prime_m
 # https://he.wikipedia.org/wiki/הסכמי_שביתת_הנשק_בתום_מלחמת_העצמאות
 title_he: שביתת הנשק עם מצרים
 text_he: 'השיחות ברודוס הניבו הסכם שביתת נשק עם מצרים. על {prime_minister} להחליט אם ישראל תחתום עליו.'
-text_he_review: agent-checked
 anchor: hard
 office: prime_minister
 from: 1949-02-24

@@ -591,6 +591,28 @@ public class UnitsInPlayTests
         finally { if (VisualToggles.Names.Contains(UnitLayer.ToggleName)) VisualToggles.Set(UnitLayer.ToggleName, true); UnityEngine.Object.DestroyImmediate(map.gameObject); }
     }
 
+    /// <summary>#2043: selecting, re-selecting and deselecting a unit many times leaves at most one live selection-ring
+    /// mesh (each replaced ring frees its own), and tearing the layer down frees that one too.</summary>
+    [Test]
+    public void SelectingAgainAndAgainKeepsOneRingMesh()
+    {
+        static int Rings() => Resources.FindObjectsOfTypeAll<Mesh>().Count(m => m.name == "UnitSelectionRing");
+        int before = Rings();
+        var map = BuildMap();
+        try
+        {
+            var layer = UnitLayer.Create(map, Units, C.Hexes, still: true);
+            layer.Show(C, Simulation.NewGame(C, GoldenRun.Seed, Mode.Historical));
+            string id = layer.Tokens[0].Token.Unit.Id;
+            for (int i = 0; i < 10; i++) { layer.Select(id); layer.Select(id); layer.Select(null); }
+            layer.Select(id);
+            Assert.AreEqual(id, layer.Selected);
+            Assert.AreEqual(1, Rings() - before, "one live ring mesh after 21 selections");
+        }
+        finally { UnityEngine.Object.DestroyImmediate(map.gameObject); }
+        Assert.AreEqual(0, Rings() - before, "the layer's teardown frees the live ring's mesh");
+    }
+
     /// <summary>The same on the map's real hills: every rifleman of every army anchor of the war stands on its token's draped
     /// base at its own point, and the ground under its boots rises at most a tenth of its height over its feet.</summary>
     [Test]

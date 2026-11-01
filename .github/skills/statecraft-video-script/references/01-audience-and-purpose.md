@@ -19,7 +19,7 @@ Status: DRAFT. The segments below are working hypotheses built from what the rep
 | 2 | History-minded players and readers who care about sourcing | "Every historical fact comes with a source"; a "Report a historical error" issue form. [V] | Proof that the facts are checkable. Real dates, real offices, archival images, no invented speeches. |
 | 3 | Hebrew readers in Israel and abroad | `README.he.md`, Hebrew UI, bilingual captions on the trailer. [V] | Hebrew that reads as natural Hebrew, with the right names and terms. Not a translation of an English script. |
 | 4 | Contributors (historians, Unity developers, translators, content writers) | `CONTRIBUTING.md`, "Before you start, comment here" on issues. [V] | What is built, what is open, and how to help. A concrete next step. |
-| 5 | Press, curators and store visitors | The existing [press page](../../../../site/src/content/en/press.md) and its downloads (#1026 closed #417), Steam Coming Soon page work (#424). [V] | A clear one-line description, honest labelling of what is real footage and what is not. |
+| 5 | Press, curators and store visitors | Steam Coming Soon page work (#424). The website's press page (#1026 closed #417) was removed with the website on 31 Oct 2026 (last at `ddc77b826:site/src/content/en/press.md`). [V] | A clear one-line description, honest labelling of what is real footage and what is not. |
 | 6 | Teachers and students | No evidence in the repo. [H] | Do not write for this segment until the maintainer confirms it. |
 
 ## The viewer who disagrees
