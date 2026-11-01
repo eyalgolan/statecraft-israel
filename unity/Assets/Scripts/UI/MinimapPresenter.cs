@@ -102,6 +102,8 @@ namespace Statecraft.Game.UI
         {
             BordersShown = !BordersShown;
             Switch(MapBorders.ToggleName, BordersShown, borders);
+            // The true armistice lines go with the borders (owner, 1 November 2026: "Tie to Borders button (Recommended)").
+            if (VisualToggles.Names.Contains(ArmisticeLines.ToggleName)) VisualToggles.Set(ArmisticeLines.ToggleName, BordersShown);
             BordersChanged?.Invoke();
         }
 

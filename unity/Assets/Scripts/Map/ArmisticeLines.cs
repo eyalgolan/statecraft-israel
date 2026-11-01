@@ -16,11 +16,13 @@ namespace Statecraft.Game.Map
     /// every feature of content/map/armistice_lines_1949.geojson drawn as a thin dark line draped on the ground, over the
     /// hex-snapped bands (<see cref="Armistice1949"/>), which stay as they are. On unless turned off (owner, 1
     /// November 2026: "On by default (Recommended)"; #196): "noarmisticelines" in the WebGL page URL, -noarmisticelines on
-    /// desktop and in the editor, builds nothing, and the "armisticelines" visual toggle hides a built overlay. A release build draws only the features the owner has signed off
+    /// desktop and in the editor, builds nothing, and the "armisticelines" visual toggle hides a built overlay (the
+    /// minimap's Borders button works it with the bands: owner, 1 November 2026, "Tie to Borders button (Recommended)"). A release build draws only the features the owner has signed off
     /// (<see cref="ForBuild"/>) and ships only those (<see cref="ReleaseText"/>). Zoomed out past the gameplay zoom the lines
     /// widen with the distance (<see cref="WidthScale"/>). Each feature shows from its own shown_from date, as the bands do. Features traced
-    /// from the low-resolution scan (source_quality: low_res_scan, the Jordan lines) are drawn dashed and a step lighter, so
-    /// they read as low accuracy without a legend and without colour alone. Zones (the Demilitarized Zones, including the
+    /// from the low-resolution scan (source_quality: low_res_scan, the Jordan lines) are drawn dotted and a step lighter, so
+    /// they read as low accuracy without a legend and without colour alone, and apart from the bands' grey dash for
+    /// no-man's land and the demilitarized zones (owner, 1 November 2026: "Restyle Jordan lines (Recommended)"). Zones (the Demilitarized Zones, including the
     /// two Syrian parts too narrow to hold a hex centre) are drawn as their closed outlines. Reuses the route ribbons'
     /// draping (<see cref="RouteLayer.Geometry"/>) and the selected hex's unlit material (HexSelection.mat, copied per
     /// style). Display only: the sim never reads the file, and this changes no sim state and no other map layer.</summary>
@@ -38,9 +40,9 @@ namespace Statecraft.Game.Map
         /// about 52 m a pixel at 1080 px). Farther out the lines widen with the distance (<see cref="WidthScale"/>), since a
         /// fixed ground width thins to about a pixel at the full-map zoom (owner review of #2012).</summary>
         public const float WidthsSetAtM = 90000f;
-        /// <summary>The low-accuracy dashes: a DashM period, DashOn of it drawn (1 km dashes, 0.6 km gaps; about 19 and 12 px
-        /// at the gameplay zoom).</summary>
-        public const float DashM = 1600f, DashOn = 0.625f;
+        /// <summary>The low-accuracy dots: a DashM period, DashOn of it drawn (300 m marks, as long as the line is wide, and
+        /// 450 m gaps; about 6 and 9 px at the gameplay zoom), a pattern apart from MapBorders' neutral dash (1.3 km).</summary>
+        public const float DashM = 750f, DashOn = 0.4f;
         /// <summary>sRGB. Firm: a near-black ink that stands out on the gold and olive ground and on both sides' bands.
         /// Low accuracy: a dark grey, a step lighter, so the dashes read as the weaker line (a mid grey was lost on the hills'
         /// ground in the captures).</summary>
