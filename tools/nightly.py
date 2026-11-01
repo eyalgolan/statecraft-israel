@@ -180,6 +180,11 @@ def preflight(cfg: Config, state: State, runner: Runner, gh: GitHub, *, job: Pat
         detail = f"main unchanged since {last.tag}"
         if state.site_pending and not no_publish:   # a deploy is a public change, so --no-publish never starts one
             try:
+                latest = gh.latest_tag()
+                if latest is None:
+                    raise Refused("site", "no Latest target; pending demo verification remains open")
+                # The workflow follows Latest, including after recovery; never wait for a rolled-back version.
+                state.site_pending = latest[1:] if latest.startswith("v") else latest
                 gh.dispatch_site(time.monotonic() + SITE_WAIT_SECONDS)
                 demo_serves(cfg.site_demo_url, state.site_pending,
                             deadline=time.monotonic() + SITE_WAIT_SECONDS)
@@ -746,7 +751,8 @@ def publish_night(night: Night, state: State, gh: GitHub, itch, zips: tuple[Path
                 return
             except Exception as e:
                 failure = _detail(e)
-        raise Refused("site", f"{night.tag} is public and the demo is unchanged: {failure}")
+        raise Refused("site", f"{night.tag} is public; the demo was not verified to serve {night.version} "
+                              f"and may have changed (unverified): {failure}")
     except BaseException as e:
         detail = _detail(e)
         if publish_started:

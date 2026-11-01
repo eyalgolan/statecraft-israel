@@ -136,7 +136,7 @@ Israeli figures are fairly consistent per war. Cumulative "fallen" totals differ
 
 ### Cited Findings (Israeli deaths, military/civilian) — [Wikipedia: Israeli casualties of war](https://en.wikipedia.org/wiki/Israeli_casualties_of_war) unless noted
 - 1920 Nebi Musa riots 5. 1921 Jaffa riots 47. 1929 riots 133. 1936–39 Arab revolt 415+ civilians. 1947–48 civil war 895 military plus about 408 civilians.
-- 1948 war: about 6,400 (4,000 military, 2,400 civilian). JVL's IDF table gives 6,373 killed for 1947–49. — [JVL casualty table](https://www.jewishvirtuallibrary.org/jsource/History/casualty_table.html)
+- 1948 war: about 6,400 (4,000 military, 2,400 civilian), the split from Garfinkle, *Politics and Society in Modern Israel* (2000), p. 61, as cited on English Wikipedia ("Israeli casualties of war"; book not opened). JVL's IDF table gives only 6,373 killed for 1947–49. — [JVL casualty table](https://www.jewishvirtuallibrary.org/jsource/History/casualty_table.html)
 - 1956 Sinai: 172. 1967: 776 military plus 20 civilian. War of Attrition: 1,424 military plus 227 civilian.
 - **1973: 2,656** (Wikipedia) vs **2,688** (JVL IDF table). This is a minor discrepancy, probably a different cutoff. — [JVL](https://www.jewishvirtuallibrary.org/jsource/History/casualty_table.html)
 - 1982–85 Lebanon: 657 military plus 10 civilian (Wikipedia) vs 1,216 for 1982–85 in the JVL table, which likely counts all causes. The 1985–2000 security zone saw 256 military deaths.

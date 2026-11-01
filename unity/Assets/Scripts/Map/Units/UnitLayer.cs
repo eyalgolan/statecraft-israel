@@ -274,6 +274,7 @@ namespace Statecraft.Game.Map.Units
             var eye = cam.transform.position; var rotation = cam.transform.rotation;
             if (facedFor is { } last && last.eye == eye && last.rotation == rotation) return;   // nothing moved since the last turn
             facedFor = (eye, rotation);
+            Vector3 forward = cam.transform.forward, up = cam.transform.up; float m11 = cam.projectionMatrix[1, 1];
             var away = cam.transform.forward; away.y = 0f;
             away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
             var right = cam.transform.right; right.y = 0f;
@@ -313,9 +314,15 @@ namespace Statecraft.Game.Map.Units
                 if (figures.Length > 0) pole = turning * pole;   // where the pole stands now, for the badge's side
                 var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
                 var at = home + away * back + aside;
+                // Owner, 31 October 2026 ("Shrink up close"): a near camera draws the plate no taller than a 30 km view does.
+                // It shrinks about its lower edge (the plate faces the camera, so its edges run along the camera's up), which
+                // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
+                float size = UnitBadge.SizeFor(Vector3.Dot(at - eye, forward), m11, cam.orthographic);
+                at -= up * (0.5f * (UnitBadge.SizeM - size));
                 b.SetPositionAndRotation(at, rotation);
+                b.localScale = Vector3.one * size;
                 var boxes = keepClear[i];
-                boxes[0] = new Bounds(at, Vector3.one * UnitBadge.SizeM);
+                boxes[0] = new Bounds(at, Vector3.one * size);   // the click and the names follow the plate as drawn
                 if ((flag != null || meshes.Length > 0) && standing is Bounds s)
                 {
                     if (flag != null)

@@ -85,9 +85,37 @@ public class HexHouseLevelTests
     [TestCaseSource(nameof(Houses))]
     public void TheLighterLevelKeepsTheSeamsAndTheTexture(string id)
     {
-        var source = SourceMesh(id);
         var light = AssetDatabase.LoadAssetAtPath<Mesh>(Light(id) + ".asset");
         Assert.IsNotNull(light, id + ": no lighter level");
+        KeepsTheSeamsAndTheTexture(id, SourceMesh(id), light);
+
+        // No new see-through (the hex tiles' wholeness check, HexModelMeshTests).
+        var full = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + "-stream.prefab"));
+        var lighter = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Light(id) + ".prefab"));
+        TestContext.WriteLine($"{id}: full {full}; light {lighter}");
+        Assert.That(lighter.SeeThroughShare, Is.LessThanOrEqualTo(full.SeeThroughShare + 0.0005f), id);
+        Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"),
+            AssetDatabase.LoadAssetAtPath<GameObject>(Light(id) + ".prefab").GetComponentInChildren<MeshRenderer>().sharedMaterial, id + ": Tal's material");
+    }
+
+    /// <summary>The checks above test the committed -light files, so a broken HexHouseLevels.Simplify would only show at the
+    /// next rebuild (owner, PR #1994, 30 October 2026). This runs it on house 04, the one the Tiberias boards draw, with
+    /// Build's settings, and holds the fresh mesh to the same seam and texture promises.</summary>
+    [Test]
+    public void TheSimplifierKeepsTheSeamsAndTheTextureOfHouse04()
+    {
+        const string id = "generated-1948-04-dark-basalt-house";
+        var source = SourceMesh(id);
+        int texels = AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat").mainTexture.width;
+        var light = HexHouseLevels.Simplify(source, HexHouseLevels.UvToleranceTexels / texels, HexHouseLevels.EdgeTolerance, HexHouseLevels.MaxError);
+        try { KeepsTheSeamsAndTheTexture(id, source, light); }
+        finally { UnityEngine.Object.DestroyImmediate(light); }
+    }
+
+    /// <summary>The lighter mesh's promises that need no prefab: fewer triangles, every vertex one of the source's, no seam
+    /// or edge opened, the chart corners kept, the texture border within the tolerances.</summary>
+    static void KeepsTheSeamsAndTheTexture(string id, Mesh source, Mesh light)
+    {
         int sourceTris = source.triangles.Length / 3, lightTris = light.triangles.Length / 3;
         Assert.That(lightTris, Is.LessThan(sourceTris), id);
 
@@ -131,14 +159,6 @@ public class HexHouseLevelTests
                 $"{id}: removed seam vertex {i} lies off the border left behind (nearest in UV {seams.Min(s => Off(suv[i], s.ua, s.ub)) * texels:F2} texels, in 3D {seams.Min(s => Off(sv[i], s.pa, s.pb)) / size:P3})");
         }
         TestContext.WriteLine($"{id}: {removed} seam corners removed, each within the tolerances of a kept seam segment");
-
-        // No new see-through (the hex tiles' wholeness check, HexModelMeshTests).
-        var full = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Stem(id) + "-stream.prefab"));
-        var lighter = HexMeshCheck.Of(AssetDatabase.LoadAssetAtPath<GameObject>(Light(id) + ".prefab"));
-        TestContext.WriteLine($"{id}: full {full}; light {lighter}");
-        Assert.That(lighter.SeeThroughShare, Is.LessThanOrEqualTo(full.SeeThroughShare + 0.0005f), id);
-        Assert.AreEqual(AssetDatabase.LoadAssetAtPath<Material>(Stem(id) + ".mat"),
-            AssetDatabase.LoadAssetAtPath<GameObject>(Light(id) + ".prefab").GetComponentInChildren<MeshRenderer>().sharedMaterial, id + ": Tal's material");
     }
 
     /// <summary>Open (one face) and non-manifold (three or more) edges after welding by position, and the positions on them.</summary>
