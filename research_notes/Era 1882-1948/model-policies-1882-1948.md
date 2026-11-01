@@ -157,8 +157,8 @@ Transfers from Arabs to non-Arabs that the High Commissioner approved, in dunums
   Land Transfer Ordinance of 1920 and its 1933 amendment (named in Survey I, ch. VIII, but not read for this note), and
   for the Hope-Simpson Report's land findings.
   (Second pass, 27 October 2026: the Land Transfer Ordinance of 1920 and the Hope Simpson findings as the Peel Report reports them are now read; the "1933 amendment" is a separate Ordinance. See section 13, item 2. Private-purchase flows by year stay [GAP].)
-- [GAP] JNF land in 1948 (also a gap in the national-funds note; open under #91).
   (Third pass, 1 November 2026: the by-year series of Jewish purchases of all kinds, 1920 to 1945, and the 650,000-dunum stock before October 1920 are now read, see section 14.)
+- [GAP] JNF land in 1948 (also a gap in the national-funds note; open under #91).
 
 ## 3. `settlement_drive`
 
@@ -633,6 +633,7 @@ Both page images were viewed; the figures below were read from the images and ag
 | Jewish-owned land before October 1920 | "The assumption that they owned 650,000 dunums prior to October, 1920, is generally accepted"; Table 1 prints "Area owned before 1920 (estimated)" 650,000 | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243; Table 1, p. 244 |
 | Net area bought and registered by Jews, October 1920 to 31 December 1945 | 938,365 dunums | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243 |
 | The total the Survey puts on it | "about 1,588,000 dunums"; it "does not, however, include lands which are occupied by Jews, as legal tenants or otherwise, but of which the ownership is not registered" in their names; Table 1 total 1,588,365 | [V, agent read 1 November; a person's check pending] | Survey I, ch. VIII para 52, p. 243; Table 1, p. 244 |
+| [C] The Survey's two tables give different totals of Jewish land | 1922: Table 4 (ch. IX, p. 376) gives 594,000 dunums; Table 1 (ch. VIII, p. 244) gives at least 781,192 by the end of 1922 (derived: 650,000 + 1,048 + 90,785 + 39,359). 1944: Table 4 gives 1,731,300, of which 1,556,700 was "acquired by Jews by purchase" (para 170) and 174,600 came from concessions (1,556,700 + 174,600 = 1,731,300, derived); Table 1 gives 1,577,365 by the end of 1944 (derived: 1,588,365 - 11,000, the printed 1945 estimate). Both values stay; no preferred value is named, because the Survey gives no reason for the difference in the paragraphs read | [C]; derived values marked; Table 4 and para 170 viewed as page image (agent read 1 November; a person's check pending) | Survey I, ch. IX Table 4 and para 170, p. 376 (PDF p. 381); ch. VIII Table 1, p. 244 |
 
 Table 1, "Areas purchased by Jews, 1920-1945", in dunums, all Jewish buyers (not only the JNF), by the year the table prints. The
 1945 figure is printed "(estimated)". [V, agent read 1 November; a person's check pending]
@@ -655,5 +656,8 @@ Table 1, "Areas purchased by Jews, 1920-1945", in dunums, all Jewish buyers (not
   registries opened in October 1920), so no 1918 value can be derived from it.
 - The JNF's own holding at the end of 1918 (about 16,000 dunums) is in `national-funds-1882-1948.md`, section 2a; it is
   part of the Jewish-owned land, and the Survey does not say whether the 650,000 includes it.
-- Still [GAP]: Jewish-owned land in 1882 (the Survey's chapter has no 1882 figure; none was read elsewhere), a
-  1918 stock, and the share of each year's purchases that was the JNF's.
+- Jewish-owned land in 1882 is not a gap: Survey I, ch. IX, Table 4, p. 376 (PDF p. 381; page image viewed 1 November
+  2026, agent read; a person's check pending) gives 1882: 25,000 dunums, all of it "P.I.C.A. and private individuals"
+  (the J.N.F. column prints a dash). The same row is in `national-funds-1882-1948.md`, section 2a.
+- Still [GAP]: a 1918 stock. The same Table 4 has no 1918 row; the rows on either side of it are 1914 (420,600
+  dunums) and 1922 (594,000 dunums). The share of each year's purchases that was the JNF's is also still [GAP].
