@@ -140,6 +140,11 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The camera pose <see cref="FaceCamera"/> last turned the badges and flags to; a call from the same pose
         /// changes nothing and returns at once (GameRoot calls it every frame). Cleared when the tokens are rebuilt.</summary>
         (Vector3 eye, Quaternion rotation)? facedFor;
+        /// <summary>Each token's move and attack (#1866, #1867), in the order of <see cref="badges"/>; null where the layer
+        /// does not animate (an edit-mode build, such as the promo captures, whose tokens stand still at their places).</summary>
+        readonly List<UnitTokenMotion?> motions = new List<UnitTokenMotion?>();
+        /// <summary>A rebuild slides a moved unit's token from where it was drawn (true in play; tests set it).</summary>
+        internal bool AnimateMoves;
 
         /// <summary>The GDD loop's anchors for units that moved off their starting hex (UnitRoster.FromState), one per row and
         /// sim hex, and their spots: placed once, the first time a unit stands there, so a rebuild after a move places only
@@ -198,6 +203,7 @@ namespace Statecraft.Game.Map.Units
             root.transform.position = Vector3.zero;   // children are placed in world space
             var layer = root.AddComponent<UnitLayer>();
             layer.map = map; layer.units = units; layer.still = still;
+            layer.AnimateMoves = Application.isPlaying;
             // The same ground and the same placement as MapScene's (which keeps the kits off a token in a town).
             layer.ground = Ground(map, hexes);
             // The map's own spots when it placed these units on these hexes (issue #321: the same ground, so the same spots;
@@ -290,6 +296,9 @@ namespace Statecraft.Game.Map.Units
             for (int i = 0; i < badges.Count; i++)
             {
                 var b = badges[i]; if (b == null) continue;
+                // A moving token's root stands off the origin by its slide (UnitTokenMotion); its pieces are placed in the
+                // world here, so they take the same offset, and the boxes follow the token as drawn, not its destination.
+                var slide = b.parent.position;
                 var (home, back, pole, flag, standing) = badgeHomes[i];
                 var (centre, radius, lift, figures, meshes) = trios[i];
                 if (turn && figures.Length > 0)
@@ -300,7 +309,7 @@ namespace Statecraft.Game.Map.Units
                         var p = centre + turning * offset;
                         p.y = UnitPlinth.FigureY(map, radius, p.x, p.z);
                         highest = Mathf.Max(highest, p.y);
-                        figure.SetPositionAndRotation(p, Quaternion.Euler(0f, yaw + heading, 0f));
+                        figure.SetPositionAndRotation(p + slide, Quaternion.Euler(0f, yaw + heading, 0f));
                     }
                     home.y = highest + lift;   // the badge clears the highest figure, wherever the turn set it
                     badgeHomes[i] = (home, back, pole, flag, standing);
@@ -308,12 +317,12 @@ namespace Statecraft.Game.Map.Units
                     {
                         var foot = centre + turning * pole;
                         foot.y = UnitPlinth.FigureY(map, radius, foot.x, foot.z);
-                        flag.transform.position = foot;
+                        flag.transform.position = foot + slide;
                     }
                 }
                 if (figures.Length > 0) pole = turning * pole;   // where the pole stands now, for the badge's side
                 var aside = pole == Vector3.zero ? Vector3.zero : (Vector3.Dot(pole, right) > 0f ? -right : right) * BadgeAsideM;
-                var at = home + away * back + aside;
+                var at = home + away * back + aside + slide;
                 // Owner, 31 October 2026 ("Shrink up close"): a near camera draws the plate no taller than a 30 km view does.
                 // It shrinks about its lower edge (the plate faces the camera, so its edges run along the camera's up), which
                 // stays where the full plate's is, clear of the flag and the figures; that move keeps the plate's depth.
@@ -323,8 +332,9 @@ namespace Statecraft.Game.Map.Units
                 b.localScale = Vector3.one * size;
                 var boxes = keepClear[i];
                 boxes[0] = new Bounds(at, Vector3.one * size);   // the click and the names follow the plate as drawn
-                if ((flag != null || meshes.Length > 0) && standing is Bounds s)
+                if (standing is Bounds s)
                 {
+                    s.center += slide;   // the still pieces' box was taken at the unit's place; the flag and figures are where drawn
                     if (flag != null)
                     {
                         UnitFlagFacing.Face(flag.transform, eye);   // as it will turn for this camera
@@ -607,6 +617,14 @@ namespace Statecraft.Game.Map.Units
 
         void Rebuild()
         {
+            // Where each unit's token is drawn now (its place plus any slide under way), before the old tokens go: a unit
+            // drawn somewhere else after the rebuild slides from there (#1866). Keyed by the sim unit, else by the row.
+            var drawnAt = new Dictionary<(int sim, string row), Vector3>();
+            for (int i = 0; i < motions.Count && i < trios.Count; i++)
+            {
+                var m = motions[i];
+                if (m != null) drawnAt[Key(m.SimId, m.name)] = trios[i].centre + m.transform.position;
+            }
             var outgoing = new List<GameObject>();
             for (int i = tokensRoot.childCount - 1; i >= 0; i--)
             {
@@ -620,13 +638,16 @@ namespace Statecraft.Game.Map.Units
             // The outgoing holders are destroyed only after the new tokens have acquired their models, as the player's
             // deferred Destroy already does: an edit-mode rebuild must not drop a model's last owner in between and ask the
             // source again for a request still in flight (or release an arrived model) only to re-acquire it.
-            try { BuildTokens(); }
+            try { BuildTokens(drawnAt); }
             finally { foreach (var old in outgoing) if (Application.isPlaying) Destroy(old); else DestroyImmediate(old); }
         }
 
-        void BuildTokens()
+        static (int sim, string row) Key(int simId, string row) => simId >= 0 ? (simId, "") : (-1, row);
+
+        void BuildTokens(IReadOnlyDictionary<(int sim, string row), Vector3> drawnAt)
         {
             FreeTokenMeshes();
+            motions.Clear();
             badges.Clear(); badgeHomes.Clear(); facedFor = null;
             trios.Clear(); turnedFor = null;   // the new figures stand as at yaw 0
             treeHoles.Clear();
@@ -738,6 +759,28 @@ namespace Statecraft.Game.Map.Units
             }
             FaceCamera(Camera.main);   // the badges as the main camera sees them until a render turns them
             HideTrees();
+            for (int i = 0; i < placed.Count; i++)
+            {
+                if (!AnimateMoves) { motions.Add(null); continue; }
+                var token = tokensRoot.GetChild(i);
+                var motion = token.gameObject.AddComponent<UnitTokenMotion>();
+                motion.enabled = false;   // runs only while it moves or attacks
+                motion.SimId = placed[i].Token.StateUnit?.Id ?? -1;
+                motion.Changed = () => facedFor = null;   // FaceCamera sets the badge and the boxes where the token is drawn
+                motions.Add(motion);
+                // With the units hidden the token cannot be seen, and it would slide only once they are shown again.
+                if (tokensRoot.gameObject.activeInHierarchy && drawnAt.TryGetValue(Key(motion.SimId, token.name), out var was))
+                    motion.Begin(was - trios[i].centre);
+            }
+        }
+
+        /// <summary>Plays the attack take of sim unit <paramref name="simId"/>'s figures (#1867). False when no token draws
+        /// that unit or none of its figures can play one now (a far zoom, the units hidden, or no fire take).</summary>
+        public bool PlayAttack(int simId)
+        {
+            foreach (var motion in motions)
+                if (motion != null && motion.SimId == simId) return motion.PlayAttack();
+            return false;
         }
 
         /// <summary>The world box of a mesh's bounds through its transform. From the mesh and the transform, not

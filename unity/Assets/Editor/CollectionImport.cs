@@ -1,8 +1,10 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Statecraft.Game.Map.Collection;
+using Statecraft.Game.Map.Units;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -135,10 +137,62 @@ namespace Statecraft.Game.EditorTools
                 .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).OrderBy(c => c.name.IndexOf(id == "figure-c05-pioneer-veteran-v2" ? "walk" : "idle", StringComparison.OrdinalIgnoreCase) < 0 ? 1 : 0).ThenBy(c => c.name, StringComparer.Ordinal).First();
             var path = Controller(id);
             var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
-            if (ctrl == null) return AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
+            if (ctrl == null) ctrl = AnimatorController.CreateAnimatorControllerAtPathWithClip(path, clip);
             var state = ctrl.layers[0].stateMachine.defaultState;
             if (state.motion != clip) { state.motion = clip; EditorUtility.SetDirty(ctrl); }
+            if (TokenFigures.Contains(id)) AddMotionStates(ctrl, Model(id, CollectionDetail.Near));
             return ctrl;
+        }
+
+        /// <summary>The models that stand on unit tokens (UnitFigures) and have a rig: their controllers also get the
+        /// walk and attack states a token's move and attack play (#1866, #1867; design by Tal Heuberger, #1900).</summary>
+        public static readonly IReadOnlyCollection<string> TokenFigures = new HashSet<string>(StringComparer.Ordinal)
+        {
+            UnitFigures.SabraPioneer, UnitFigures.PioneerVeteran, UnitFigures.YoungRecruit, UnitFigures.VeteranFighter,
+            UnitFigures.PalmachScout, UnitFigures.ArabLegion, UnitFigures.Irregular,
+            UnitFigures.SyrianInfantry, UnitFigures.IraqiInfantry, UnitFigures.EgyptianInfantry, UnitFigures.AlaInfantry,
+            UnitFigures.LebaneseRegular,
+        };
+
+        /// <summary>Adds the token figures' walk and attack states to their existing controllers, from the takes already in
+        /// each figure's own FBX. Reimports nothing: no model, texture, clip or prefab changes. Idempotent.
+        /// Headless: Unity -batchmode -quit -projectPath unity -executeMethod Statecraft.Game.EditorTools.CollectionImport.PrepareTokenFigureControllers</summary>
+        [MenuItem("Statecraft/Collection/Add token figure walk and attack states")]
+        public static void PrepareTokenFigureControllers()
+        {
+            foreach (var id in TokenFigures)
+            {
+                if (CollectionCatalog.IsFullQualityGeneratedInfantry(id)) { Generated1948Characters.Controller(id); continue; }
+                var ctrl = AssetDatabase.LoadAssetAtPath<AnimatorController>(Controller(id))
+                    ?? throw new InvalidOperationException(id + ": no controller (run CollectionImport.Run first)");
+                AddMotionStates(ctrl, Model(id, CollectionDetail.Near));
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Sets <paramref name="controller"/>'s walk state to the model's walk take and its attack state to its
+        /// fire take, adding each state the first time; a take the model lacks adds no state (C04 has no fire).</summary>
+        internal static void AddMotionStates(AnimatorController controller, string model)
+        {
+            var clips = AssetDatabase.LoadAllAssetsAtPath(model).OfType<AnimationClip>()
+                .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
+            SetState(controller, UnitFigureMotion.WalkState, WalkTake(clips));
+            SetState(controller, UnitFigureMotion.AttackState, clips.FirstOrDefault(c => UnitTokenMotion.CollectionFireTake(c.name)));
+        }
+
+        /// <summary>The walk take: a take named walk first, else C05's idle_walk (his only walk), whatever the takes' order.</summary>
+        internal static AnimationClip? WalkTake(IReadOnlyList<AnimationClip> clips) =>
+            clips.FirstOrDefault(c => c.name == "walk" || c.name.EndsWith("|walk", StringComparison.OrdinalIgnoreCase))
+            ?? clips.FirstOrDefault(c => c.name.EndsWith("|idle_walk", StringComparison.OrdinalIgnoreCase));
+
+        static void SetState(AnimatorController controller, string name, AnimationClip? clip)
+        {
+            if (clip == null) return;
+            var machine = controller.layers[0].stateMachine;
+            var state = machine.states.Select(s => s.state).FirstOrDefault(s => s != null && s.name == name) ?? machine.AddState(name);
+            if (state.motion == clip) return;
+            state.motion = clip;
+            EditorUtility.SetDirty(controller);
         }
 
         static void MakePrefab(string id, CollectionDetail detail, Material mat, AnimatorController? idle)
