@@ -23,6 +23,8 @@ owner ruling 2026-10-14). Not sovereignty, ownership or population.
   Nothing was logged into or submitted.
 - Wikipedia is cited by article and the revision read (en.wiki API, `prop=extracts|revisions`, 2026-10-15).
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## 1. Summary of findings
 
 1. **The best line source found for the opening weeks is a CIA map series, not an Israeli one.** The CIA's Near

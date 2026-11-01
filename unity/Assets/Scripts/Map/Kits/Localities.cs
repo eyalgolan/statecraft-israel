@@ -44,12 +44,15 @@ namespace Statecraft.Game.Map.Kits
 
         /// <summary>The one "living place carries on" rule (owner ruling 2026-10-12), shared by the label tooltip and the info
         /// panel: the name to show as today's name, in Hebrew when asked and one is recorded; null when no living place carries
-        /// on (<see cref="Place.Today"/> is null) or when today's name is the 1948 name itself (Nablus is Nablus). It shows
-        /// only what the file records.</summary>
+        /// on (<see cref="Place.Today"/> is null) or when today's name is the 1948 name itself (Nablus is Nablus). In Hebrew it is
+        /// also null when the Hebrew today name is the Hebrew 1948 name (#2022: Umm el Fahm and Umm al-Fahm are both
+        /// אום אל-פחם - the pill already says it, so a tooltip or "(today: ...)" repeating it reads as a glitch). English is
+        /// unchanged. It shows only what the file records.</summary>
         public static string? TodayName(Place p, bool hebrew)
         {
             if (p.Today == null || SameName(p.Today, p.Settlement.Name)) return null;
-            return hebrew && !string.IsNullOrEmpty(p.TodayHe) ? p.TodayHe : p.Today;
+            if (hebrew && !string.IsNullOrEmpty(p.TodayHe)) return p.TodayHe == p.NameHe ? null : p.TodayHe;
+            return p.Today;
         }
 
         static bool SameName(string a, string b)

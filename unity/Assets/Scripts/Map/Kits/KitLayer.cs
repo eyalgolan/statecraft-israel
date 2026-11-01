@@ -74,17 +74,25 @@ namespace Statecraft.Game.Map.Kits
             // its buildings, with the models' plinths), which TownModelLayer swaps in when the camera is close.
             var swaps = new List<(Renderer kit, Renderer? close)>();
             var rendererTownIds = new Dictionary<Renderer, string>();
-            void AddKit(string name, Mesh mesh, string? townId = null)
+            var rendererTileIds = new Dictionary<Renderer, string[]>();
+            Renderer AddKit(string name, Mesh mesh, string? townId = null)
             {
                 var kit = Add(name, mesh);
                 Renderer? close = null;
                 if (built.Close.TryGetValue(mesh.name, out var cm)) { close = Add(name + CloseSuffix, cm, count: false); st.CloseVertices += cm.vertexCount; }
                 swaps.Add((kit, close));
                 if (townId != null) rendererTownIds[kit] = townId;
+                return kit;
             }
             var nearTowns = new List<string>();
             foreach (var (s, mesh, n) in built.Towns) { AddKit(s.Id, mesh, s.Id); nearTowns.Add(s.Id); stats.Buildings += n; }
-            foreach (var (name, mesh) in built.Tiles) AddKit(name, mesh);
+            // A merged tile is no named town: it carries its villages, and swaps once all of them are ready (owner ruling,
+            // 31 Oct 2026, "Load all in view (Recommended)").
+            foreach (var (name, mesh) in built.Tiles)
+            {
+                var kit = AddKit(name, mesh);
+                if (built.TileIds.TryGetValue(name, out var ids)) rendererTileIds[kit] = ids.ToArray();
+            }
             // The boats (SeaCraft): off the coast and moored in the harbours the kits recorded.
             var crafts = SeaCraft.Place(ground, placed);
             if (crafts.Count > 0)
@@ -103,7 +111,10 @@ namespace Statecraft.Game.Map.Kits
             var towns = townGo.AddComponent<TownModelLayer>();
             if (residency == null) throw new System.ArgumentNullException(nameof(residency));
             towns.ConfigureProduction(residency.Towns);
-            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds);
+            towns.Init(built.Models, townModels, swaps, nearTowns, rendererTownIds, rendererTileIds);
+            var localityIds = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var locality in localities) localityIds.Add(locality.Id);
+            towns.ConfigureTownFootprints(stats.Footprints, localityIds);
             stats.Models = built.Models.Count;
             stats.Localities = localities.Count; stats.LocalityBuildings = built.LocalityBuildings; stats.Camps = built.Camps; stats.Tents = built.Tents;
             stats.Buildings += built.LocalityBuildings + built.Tents;

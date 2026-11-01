@@ -1,8 +1,0 @@
-Web fonts for the website, subset to WOFF2 with pyftsubset (fonttools 4.60.1) on 2026-10-13. Records: ASSETS.yaml.
-EB Garamond (OFL-EBGaramond.txt): from unity/Assets/UI/Fonts/EBGaramond-Regular.ttf and -SemiBold.ttf
-  (https://github.com/octaviopardo/EBGaramond12 @ 106a4a6d377987459ae5e68673a4570f13b957fb). Latin range.
-Frank Ruhl Libre (OFL-FrankRuhlLibre.txt), by Yanek Iontef: https://github.com/fontef/frankruhllibre
-  @ 2372d1998e51dc011f86554c0d23f1ccf44afddf, fonts/ttf/FrankRuhlLibre-Regular.ttf
-  (sha256 20d7b981d876c9ddb0f9109c409b4e495b84f486457f6f220307de3afcf70e04) and -Medium.ttf
-  (sha256 73b01157af9e1ff5d4a2690a23a7c14cb746fa71d8b0b72d07d980df6a60d0ea). Hebrew and Latin ranges.
-The subsets are modified versions under the OFL. Neither licence names a Reserved Font Name.

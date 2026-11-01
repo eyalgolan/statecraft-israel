@@ -106,6 +106,7 @@ namespace Statecraft.Sim
         SortedDictionary<int, string> losses = new SortedDictionary<int, string>();
         PopulationBindings? bindings;
         int receptionLimit;
+        internal int ReceptionLimit { get { RequireInitialized(); return receptionLimit; } }
         int peoplePerUnit;
         public bool IsInitialized { get; private set; }
         public int NextPopulationId { get; private set; }

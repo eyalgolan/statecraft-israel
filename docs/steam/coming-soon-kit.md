@@ -276,8 +276,8 @@ real-build rule"), so no AI trailer goes on the page.
 **Items to check before ticking (RELEASING.md):**
 
 - Compare `docs/ai-disclosure.md` with the build that actually ships. The web build's tab icon
-  (`unity/Assets/WebGLTemplates/Statecraft/favicon.ico`, AI-assisted drawing) is not in a desktop build; the website's
-  files (`site/`) and `promo/` are not in any build.
+  (`unity/Assets/WebGLTemplates/Statecraft/favicon.ico`, AI-assisted drawing) is not in a desktop build; `promo/` is not in any
+  build.
 - An `owner-verify` row is not cleared by appearing here. Today no row in `docs/ai-disclosure.md` is `owner-verify`.
 - README.md's "AI use" still says "Sound: no AI sound" (README.md:179). The three sound effects make that line out of
   date; it should change before the page goes up.

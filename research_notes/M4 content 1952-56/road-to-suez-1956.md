@@ -14,6 +14,8 @@ This note is research, not a design. It adds no event text and changes no conten
 - No quote is invented. The few short phrases in quotation marks are copied from the cited text; everything else is paraphrased. Wikipedia is never [V].
 - **JTA dates.** A JTA bulletin is dated the day after its dispatches (see `new-economic-policy-1952.md`). The JTA web text drops datelines and the 1956 scans would not open here, so a JTA "today" is not pinned to a day unless another source confirms it.
 
+Every [V] in this note was an agent's reading on 2026-10-15, unless the tag gives a later date; a person's check is pending for all of them.
+
 **Source caveat.** No Knesset debate record, Israeli cabinet protocol or Israel State Archives file was opened. The cabinet protocols are the key primary source for section 4 and are a [GAP]. The strongest sources opened on 2026-10-15 are FRUS 1955-57 vol XVI (documents 1, 373, 413, 414, 521 and 525), the Israel MoD (IDF and Defence Establishment) Archive exhibition page, the gov.il Seventh Government and Sinai Campaign pages, the Knesset open data record for ministers' posts, the UK National Archives page on the Dean memorandum (Wayback copy), the Hansard page for 30 Oct 1956 and two JTA bulletins. The gov.il chronology ("Highlights of main events 1947 to 1974") returned HTTP 403 on 2026-10-15 and a Wayback copy did not load, so every row that rests only on it is tagged [S] and says so.
 
 ---

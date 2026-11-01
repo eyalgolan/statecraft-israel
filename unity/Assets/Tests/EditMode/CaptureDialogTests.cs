@@ -25,20 +25,28 @@ public class CaptureDialogTests
 {
     const string Operation = "Fixture operation (a test value, not a source)";
 
-    /// <summary>The real content with Lydda and Ramle as targets; <paramref name="price"/> sets attention_cost.resolve_capture
-    /// and <paramref name="endPrice"/> attention_cost.end_occupation (0 in the content), so the sim's Attention preview has a
-    /// number to show.</summary>
-    static Content Targets(double price = 0, double endPrice = 0)
+    /// <summary>The real content with Lydda and Ramle as targets, plus each of <paramref name="extra"/> as a further target;
+    /// <paramref name="price"/> sets attention_cost.resolve_capture and <paramref name="endPrice"/> attention_cost.end_occupation
+    /// (0 in the content), so the sim's Attention preview has a number to show.</summary>
+    static Content Targets(double price = 0, double endPrice = 0, params string[] extra)
     {
         var dir = Paths.Content;
         var events = Directory.GetFiles(Path.Combine(dir, "events"), "*.yaml").Select(f => "events/" + Path.GetFileName(f)).ToList();
-        string Row(string id) => $"  - {{ id: {id}, q: -3, r: 21, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
+        // Each target at its own hex in the map (ContentLoader.ValidateSettlementTargets checks it): Lydda and Ramle share
+        // (-3, 21), Jaffa is (-3, 19); read from the owning file so a re-grid (#1796) cannot stale the fixture.
+        var hexes = File.ReadAllText(Path.Combine(dir, "map", "settlement_hexes.yaml"));
+        string Row(string id)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(hexes, @"\{ id: " + id + @", q: (-?\d+), r: (-?\d+) \}");
+            Assert.IsTrue(m.Success, id + " has a hex in map/settlement_hexes.yaml");
+            return $"  - {{ id: {id}, q: {m.Groups[1].Value}, r: {m.Groups[2].Value}, operation: \"{Operation}\", sources: [{{ url: \"https://example.org/{id}\", checked: 2026-10-21 }}], residents: stayed, residents_sources: [{{ url: \"https://example.org/{id}/residents\", checked: 2026-10-21 }}], annexation: {{ people: {{ value: 60, status: sourced, date: 1948-11-08, sources: [{{ url: \"https://example.org/{id}/people\", checked: 2026-10-21 }}] }}, employed_share: {{ value: 0.5, status: design }} }}, status: draft }}\n";   // stayed, so the dialog's lines are the ones it tests (#799)
+        }
         return ContentLoader.Load(rel =>
         {
             var path = Path.Combine(dir, rel);
             if (!File.Exists(path)) return null;
             var text = File.ReadAllText(path);
-            if (rel == "settlement_targets.yaml") return "targets:\n" + Row("lod") + Row("ramla");
+            if (rel == "settlement_targets.yaml") return "targets:\n" + Row("lod") + Row("ramla") + string.Concat(extra.Select(Row));
             if (rel == "rules.yaml" && price != 0)
             {
                 Assert.IsTrue(text.Contains("  resolve_capture: 0 "), "rules.yaml prices resolve_capture at 0");
@@ -415,7 +423,7 @@ public class CaptureDialogTests
         using var r = new Rig(Awaiting(C, "ramla", "lod"));
         yield return Frames(4);
         Assert.AreEqual("lod", r.Dialog.Shown, "the first in the sim's order");
-        Assert.AreEqual(En.Format("event.more", 1), r.Root.Q<Label>("capture-count").text);
+        Assert.AreEqual(En.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "one more waiting is the singular line (#2023)");
         Press(r.Root.Q<Button>("capture-option-raid"));
         yield return Frames(3);
         var queued = r.Bridge.Queued.OfType<ResolveCapture>().ToList();
@@ -431,6 +439,27 @@ public class CaptureDialogTests
         var result = r.Bridge.EndTurn();
         Assert.IsEmpty(result.Rejected.Where(x => x.Command is ResolveCapture), "the sim takes both");
         Assert.IsFalse(r.Bridge.State.Settlements.ContainsKey("lod") || r.Bridge.State.Settlements.ContainsKey("ramla"), "Raid ended both records");
+    }
+
+    /// <summary>#2023: exactly one more decision waiting is the singular line in both languages (event.more_one, the pick
+    /// the decision card already makes); two or more is the plural. Red-first: the dialog always used the plural form.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator TheCountLineIsSingularForOneMoreAndPluralAfter()
+    {
+        foreach (var text in new[] { En, He })
+        {
+            using (var r = new Rig(Awaiting(C, "ramla", "lod"), text))
+            {
+                yield return Frames(4);
+                Assert.AreEqual(text.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "one more waiting (" + text["ui.lang"] + ")");
+            }
+            using (var r = new Rig(Awaiting(Targets(extra: new[] { "jaffa" }), "ramla", "lod", "jaffa"), text))   // a waiting place must be a capture target: CaptureOptions reads SettlementTargets
+            {
+                yield return Frames(4);
+                Assert.AreEqual(text.Format("event.more", 2), r.Root.Q<Label>("capture-count").text, "two more waiting (" + text["ui.lang"] + ")");
+            }
+        }
     }
 
     // ---- Escape does not choose ----
@@ -757,7 +786,7 @@ public class CaptureDialogTests
             using var r = new Rig(g, options: Helper(new[] { "raid", "occupy" }), endOptions: Helper(EndOrder));
             yield return Frames(4);
             Assert.AreEqual(("lod", lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "Lydda first (ordinal), with its own decision");
-            Assert.AreEqual(En.Format("event.more", 1), r.Root.Q<Label>("capture-count").text, "both kinds count");
+            Assert.AreEqual(En.Format("event.more_one", 1), r.Root.Q<Label>("capture-count").text, "both kinds count, one more waiting is the singular line (#2023)");
             Press(r.Options[0]);
             yield return Frames(3);
             Assert.AreEqual(("ramla", !lodEnds), (r.Dialog.Shown, r.Dialog.Ending), "then Ramle, with its own");

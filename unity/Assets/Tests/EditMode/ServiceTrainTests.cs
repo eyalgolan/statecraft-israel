@@ -281,7 +281,7 @@ public class ServiceTrainTests
         {
             var (start, end) = train.Stretch;
             Assert.Less((Flat(train.At(start)) - W(map, TelAvivSouth)).magnitude, 1000f, "from Tel Aviv South");
-            Assert.Less((Flat(train.At(end)) - W(map, Jerusalem)).magnitude, 1000f, "to Jerusalem");
+            Assert.Less((Flat(train.At(end)) - W(map, Jerusalem)).magnitude, 1400f, "to Jerusalem (the wall gap, about 1.3 km short of the station: #2021)");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }
@@ -307,7 +307,7 @@ public class ServiceTrainTests
             var line = RouteLayer.World(map.Frame, BootRoutes().Single(r => r.Id == RouteLayer.TrainRoute));
             var (start, end) = train.Stretch;
             Assert.Less((Flat(train.At(start)) - W(map, Lod)).magnitude, 1000f, "it starts at Lod");
-            Assert.Less((Flat(train.At(end)) - W(map, Jerusalem)).magnitude, 1000f, "and ends at Jerusalem");
+            Assert.Less((Flat(train.At(end)) - W(map, Jerusalem)).magnitude, 1400f, "and ends at Jerusalem (the wall gap, about 1.3 km short of the station: #2021)");
             Assert.That(end - start, Is.InRange(50000f, 80000f), "Lod to Jerusalem by the Sorek valley, about 65 km of the line");
             Assert.AreEqual(RouteTrain.ModelRealLengthM * RouteTrain.Scale * ServiceTrain.ModelSize, train.Length, 1f, "the showcase's locomotive and tender, at ModelSize");
 
@@ -326,6 +326,33 @@ public class ServiceTrainTests
             Assert.Greater(samples, 200);
             Assert.Less(worst, 60f, "on the railway (to the 50 m table)");
             Assert.Less(nearLod, train.Length, "it reaches Lod");
+        }
+        finally { Object.DestroyImmediate(map.gameObject); }
+    }
+
+    /// <summary>Issue #2021: the train runs on the line the map draws (RouteLayer.Drawn, cut at the symbolic Old City's
+    /// walls), not the uncut trace, so it stops at the wall gap and never runs on through the walls to the station inside
+    /// the square; the Lod end, far outside the square, is where it was.</summary>
+    [Test]
+    public void TheTrainStopsAtTheWallGapAndItsLodEndIsUnchanged()
+    {
+        var (map, train) = RunningTrain();
+        try
+        {
+            var route = BootRoutes().Single(r => r.Id == RouteLayer.TrainRoute);
+            var world = RouteLayer.World(map.Frame, route);
+            var drawn = RouteLayer.Drawn(map.Frame, route);
+            var (centre, half) = Statecraft.Game.Map.Kits.SettlementKits.OldCityWalls(map.Frame);
+            bool Inside(Vector2 p) => Mathf.Abs(p.x - centre.x) < half - 1f && Mathf.Abs(p.y - centre.y) < half - 1f;
+            Assert.IsTrue(Inside(W(map, Jerusalem)), "non-vacuous: the station is inside the walled square");
+            Assert.IsTrue(Inside(world[world.Count - 1]), "and the traced line runs on to it");
+            var (start, end) = train.Stretch;
+            var stop = Flat(train.At(end));
+            TestContext.WriteLine($"the train stops {(stop - drawn[drawn.Count - 1]).magnitude:0} m from the drawn rail's end, {(stop - W(map, Jerusalem)).magnitude:0} m from the station");
+            Assert.IsFalse(Inside(stop), "the train stops at the walls, not inside them");
+            Assert.Less((stop - drawn[drawn.Count - 1]).magnitude, 60f, "at the drawn rail's end, the wall gap");
+            float lodOff = DistanceToLine(W(map, Lod), world);
+            Assert.AreEqual(lodOff, (Flat(train.At(start)) - W(map, Lod)).magnitude, 60f, "the Lod end is the traced line's point nearest Lod, as before");
         }
         finally { Object.DestroyImmediate(map.gameObject); }
     }

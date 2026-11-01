@@ -43,6 +43,8 @@ for R-TURN-003 if the historical run is in that situation on that turn. This not
 - Requests used the User-Agent `statecraft-israel-research/1.0 (+https://github.com/eyalgolan/statecraft-israel)`.
   No Tavily key on this machine: searches used the built-in web search; Wikipedia only as a pointer.
 
+Every [V] in this note was an agent's reading on 2026-10-16, unless the tag gives a later date; a person's check is pending for all of them.
+
 ## Sources used
 
 Primary and official:

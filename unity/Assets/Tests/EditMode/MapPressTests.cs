@@ -100,7 +100,7 @@ public class MapPressTests
 /// CameraController.Tick, wired as GameRoot wires them (HoldsMouseDrag = RightTapCandidate || LeftTapCandidate). The UI
 /// recorder stands in for the map: it is asked once per click or order. Edit mode sends no OnEnable, so the test sends
 /// it.</summary>
-public class RightClickOrPanTests : InputTestFixture
+public class RightClickOrPanTests : SharedCameraActionsFixture
 {
     static void Send(Object o, string message) =>
         o.GetType().GetMethod(message, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(o, null);

@@ -70,3 +70,34 @@ def test_check_names_an_orphan_and_a_missing_record(tmp_path):
     found = ac.check(out=out)
     assert any("stray.mp4: no media row uses it" in f for f in found)
     assert any("no ASSETS.yaml row" in f for f in found), "files outside the repository have no ASSETS.yaml rows"
+
+
+def _stub_encoder(monkeypatch, problems_of):
+    """Stands in for ffmpeg/ffprobe: problems() is read from the file's text, encode_command() writes a marker file."""
+    monkeypatch.setattr(ev, "problems", problems_of)
+    monkeypatch.setattr(ev, "encode_command", lambda src, dst, row=None: ["cp", str(src), str(dst)])
+
+
+def test_a_picture_that_fails_the_checks_leaves_the_shipped_clip_untouched(tmp_path, monkeypatch):
+    _stub_encoder(monkeypatch, lambda p: ["not 960x540"])
+    out = tmp_path / "advisors"; out.mkdir()
+    (out / "x.msg.mp4").write_bytes(b"shipped")
+    (tmp_path / "bad.mp4").write_bytes(b"bad take")
+    with pytest.raises(ValueError):
+        ac.ingest("x.msg", tmp_path / "bad.mp4", _wav(tmp_path / "v.wav"), out=out)
+    assert (out / "x.msg.mp4").read_bytes() == b"shipped"
+    assert sorted(f.name for f in out.iterdir()) == ["x.msg.mp4"], "no wav, meta or temp file left behind"
+
+
+def test_another_language_may_not_replace_the_shared_picture(tmp_path, monkeypatch):
+    _stub_encoder(monkeypatch, lambda p: [])
+    out = tmp_path / "advisors"; out.mkdir()
+    (out / "x.msg.mp4").write_bytes(b"shipped")
+    (tmp_path / "other.mp4").write_bytes(b"another picture")
+    with pytest.raises(ValueError, match="shared by both languages"):
+        ac.ingest("x.msg", tmp_path / "other.mp4", _wav(tmp_path / "v.wav"), lang="he", out=out)
+    assert (out / "x.msg.mp4").read_bytes() == b"shipped"
+    assert not (out / "x.msg.he.wav").exists()
+    (tmp_path / "same.mp4").write_bytes(b"shipped")
+    ac.ingest("x.msg", tmp_path / "same.mp4", _wav(tmp_path / "v.wav"), lang="he", out=out)
+    assert (out / "x.msg.he.wav").is_file(), "the identical picture is accepted: only the voice is added"

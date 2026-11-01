@@ -17,8 +17,9 @@ namespace Statecraft.Game.Map.Units
     /// read, and the badge and flag). It fails open: until a model arrives, and for ever when its bundle is missing or
     /// damaged, the code-built figure stays. An Arab force's token has no code-built figure at all (owner, 17 October 2026,
     /// #740: "Nothing is drawn with IDF figures, and there is no placeholder art"): the roster draws it only once its model
-    /// has arrived (<see cref="Arrived"/>). A vehicle has no code-built model either: it appears when it arrives. A model
-    /// that has arrived once is put on new tokens at once (a roster change rebuilds them), so a rebuild never shows the
+    /// has arrived (<see cref="Arrived"/>), or, when its model failed to load (<see cref="Failed"/>), with the plain built-in
+    /// figure (owner, 31 October 2026: "Yes, fallback in v0.3.2"). A vehicle has no code-built model either: it appears
+    /// when it arrives. A model that has arrived once is put on new tokens at once (a roster change rebuilds them), so a rebuild never shows the
     /// code-built figures for a frame. Up close (<see cref="UnitFigureDetail"/>), each figure whose model has an idle clip
     /// shows its skinned near model playing it instead.</summary>
     public static class UnitFigures
@@ -34,7 +35,7 @@ namespace Statecraft.Game.Map.Units
 
         public const string SyrianInfantry = "figure-syrian-infantry-1948-v1",
             AlaInfantry = CollectionCatalog.AlaInfantry, IraqiInfantry = "figure-iraqi-infantry-1948-v1",
-            EgyptianInfantry = CollectionCatalog.EgyptianInfantry;
+            EgyptianInfantry = CollectionCatalog.EgyptianInfantry, LebaneseRegular = CollectionCatalog.LebaneseRegular;
 
         /// <summary>An Israeli rifleman's figure by his headgear (the sourced <see cref="UnitEntry.Headgear"/>, or the uniform
         /// default), as Tal Heuberger's figures wear them and #507 paired them: the bush (slouch) hat is the sabra pioneer (C04), the
@@ -70,8 +71,9 @@ namespace Statecraft.Game.Map.Units
 
         /// <summary>An Arab force's own figure, by side. The generated 1948 infantry have separate Syrian, Egyptian, ALA and
         /// Iraqi identities; C08 stays with Jordan and C09 stays on the existing ALA tokens, with the new ALA infantry as their third figure
-        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's hidden row remains off the map
-        /// (<see cref="UnitRoster.OnMap"/>).
+        /// (<see cref="ThirdBySide"/>). No local-force row is authored here. Lebanon's army is drawn with Tal Heuberger's Lebanese
+        /// regular as a map-only token at al-Malikiyya from 6 June to 8 July 1948 (owner, 27 October 2026: "Map-only token
+        /// (Recommended)"; 28 October 2026: "6 Jun to 8 Jul (Recommended)"); it has no sim unit (<see cref="UnitRoster.MapOnly"/>).
         /// Egypt is drawn as one token (owner, 27 October 2026: "One token"): in the GDD loop the one sim unit of its row,
         /// in the legacy loop its row's first anchor whose window holds the date (<see cref="UnitRoster.AnchorAt"/>), so at
         /// the first truce the forward base at Isdud; the rear base at Majdal stays in the row and on the unit card.
@@ -80,7 +82,7 @@ namespace Statecraft.Game.Map.Units
         public static readonly IReadOnlyDictionary<string, string> BySide = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["jordan"] = ArabLegion, ["ala"] = Irregular,
-            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry,
+            ["syria"] = SyrianInfantry, ["iraq"] = IraqiInfantry, ["egypt"] = EgyptianInfantry, ["lebanon"] = LebaneseRegular,
         };
 
         /// <summary>The third figure of an Arab force's token, by side, in place of its side figure: the ALA's is Tal Heuberger's ALA
@@ -136,6 +138,9 @@ namespace Statecraft.Game.Map.Units
         /// <summary>The models that have arrived, by id, and the ids asked for and not yet answered.</summary>
         static readonly Dictionary<string, GameObject> arrived = new Dictionary<string, GameObject>(StringComparer.Ordinal);
         static readonly HashSet<string> asked = new HashSet<string>(StringComparer.Ordinal);
+        /// <summary>The side figures answered with nothing (<see cref="Failed"/>), and those already logged this session.</summary>
+        static readonly HashSet<string> failed = new HashSet<string>(StringComparer.Ordinal);
+        static readonly HashSet<string> warnedFailed = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>The figures and vehicles waiting for each asked-for model.</summary>
         static readonly Dictionary<string, List<Transform>> waiting = new Dictionary<string, List<Transform>>(StringComparer.Ordinal);
         /// <summary>The near prefabs answered (null: missing or damaged, so the far model stays), and the callers waiting for
@@ -147,7 +152,14 @@ namespace Statecraft.Game.Map.Units
         public static event Action<string>? ModelArrived;
 
         internal static int AvailabilityVersion { get; private set; }
+        // Per-consumer model children can change while the roster and shared availability stay the same.
+        internal static int GeometryVersion { get; private set; }
+        internal static void GeometryChanged() => GeometryVersion++;
         static readonly Dictionary<string, int> owned = new Dictionary<string, int>(StringComparer.Ordinal);
+        static readonly Dictionary<(string id, CollectionDetail detail), int> ownedDetails =
+            new Dictionary<(string, CollectionDetail), int>();
+        internal static int OwnedRefCount => owned.Values.Sum();
+        internal static int OwnedDetailRefCount => ownedDetails.Values.Sum();
         static readonly HashSet<string> legacyPinned = new HashSet<string>(StringComparer.Ordinal);
         internal static CollectionResidencyMetrics.Category ResidencyCaches() => CollectionResidencyMetrics.Row("units", 0, 0,
             arrived.Keys.Concat(near.Keys).Concat(asked).Concat(waiting.Keys).Concat(nearWaiting.Keys), 0, asked.Count + nearWaiting.Count,
@@ -167,7 +179,7 @@ namespace Statecraft.Game.Map.Units
             callbacks.Add(answer);
             if (callbacks.Count == 1) Source(id, detail, prefab =>
             {
-                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !owned.ContainsKey(id)) return;
+                if (!externalPending.TryGetValue(key, out var current) || current != callbacks || !ownedDetails.ContainsKey(key)) return;
                 externalPending.Remove(key);
                 AnswerOwned(id, detail, prefab);
                 foreach (var done in callbacks.ToArray()) done(prefab);
@@ -176,47 +188,91 @@ namespace Statecraft.Game.Map.Units
         }
         sealed class Owner : IDisposable
         {
-            readonly string id; IDisposable? lease;
-            internal Owner(string id, IDisposable lease) { this.id = id; this.lease = lease; }
+            readonly string id; readonly CollectionDetail detail; IDisposable? lease;
+            internal Owner(string id, CollectionDetail detail, IDisposable lease) { this.id = id; this.detail = detail; this.lease = lease; }
             public void Dispose()
             {
                 if (lease == null) return;
                 lease.Dispose(); lease = null;
-                if (--owned[id] != 0) return;
-                owned.Remove(id); externalPending.Remove((id, CollectionDetail.Far)); externalPending.Remove((id, CollectionDetail.Near));
+                var key = (id, detail);
+                bool lastDetailOwner = --ownedDetails[key] == 0;
+                if (lastDetailOwner) ownedDetails.Remove(key);
+                bool lastModelOwner = --owned[id] == 0;
+                if (lastModelOwner) owned.Remove(id);
+                if (lastDetailOwner) externalPending.Remove(key);
+                if (lastModelOwner)
+                {
+                    externalPending.Remove((id, CollectionDetail.Far));
+                    externalPending.Remove((id, CollectionDetail.Near));
+                }
                 // A permanent legacy caller is an explicit retained blocker; never erase its still-live source cache.
                 if (legacyPinned.Contains(id)) return;
-                if (arrived.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); near.Remove(id); nearWaiting.Remove(id);
+                if (lastDetailOwner)
+                {
+                    if (detail == CollectionDetail.Near) { near.Remove(id); nearWaiting.Remove(id); }
+                    else { if (arrived.Remove(id) | failed.Remove(id)) AvailabilityVersion++; asked.Remove(id); waiting.Remove(id); }
+                }
             }
         }
         internal static IDisposable AcquireOwned(string id, CollectionDetail detail, Action<GameObject?> answer,
             Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire)
         {
             owned.TryGetValue(id, out int count); owned[id] = count + 1;
-            try { return new Owner(id, (acquire ?? AcquireSource)(id, detail, answer)); }
-            catch { if (--owned[id] == 0) owned.Remove(id); throw; }
+            var key = (id, detail);
+            ownedDetails.TryGetValue(key, out int detailCount); ownedDetails[key] = detailCount + 1;
+            try { return new Owner(id, detail, (acquire ?? AcquireSource)(id, detail, answer)); }
+            catch
+            {
+                if (--owned[id] == 0) owned.Remove(id);
+                if (--ownedDetails[key] == 0) ownedDetails.Remove(key);
+                throw;
+            }
         }
         internal static void AnswerOwned(string id, CollectionDetail detail, GameObject? prefab)
         {
             if (detail == CollectionDetail.Near) near[id] = prefab;
             else if (prefab != null)
             {
-                bool first = !arrived.ContainsKey(id); arrived[id] = prefab;
+                bool first = !arrived.ContainsKey(id); arrived[id] = prefab; failed.Remove(id);
                 if (first) { AvailabilityVersion++; ModelArrived?.Invoke(id); }
             }
+            else Fail(id);
         }
 
         /// <summary>Forgets every model and request (tests, and a change of <see cref="Source"/>).</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetSession()
         {
-            if (owned.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
+            if (owned.Count != 0 || ownedDetails.Count != 0) throw new InvalidOperationException("Unit original owners must retire before session reset.");
             Forget(); Source = null; ModelArrived = null;
         }
-        public static void Forget() { externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear(); }
+        public static void Forget()
+        {
+            if (owned.Count == 0) ownedDetails.Clear();
+            externalPending.Clear(); arrived.Clear(); asked.Clear(); waiting.Clear(); near.Clear(); nearWaiting.Clear(); legacyPinned.Clear();
+            failed.Clear(); warnedFailed.Clear();
+        }
 
         /// <summary>True when model <paramref name="id"/> has arrived (and its prefab still exists).</summary>
         public static bool Arrived(string id) => arrived.TryGetValue(id, out var p) && p != null;
+
+        /// <summary>True when Arab side figure <paramref name="id"/> (<see cref="BySide"/>) was answered with nothing: its
+        /// bundle is missing or damaged. The unit layer then draws that side's tokens with the plain built-in figure (owner,
+        /// 31 October 2026: "Yes, fallback in v0.3.2", the one exception to #740's "no placeholder art"). A figure still
+        /// loading is not failed, so a normal start never flashes the built-in figure. Cleared when the model arrives, when
+        /// its last owner lets it go (a later demand asks again), and by <see cref="Forget"/>.</summary>
+        public static bool Failed(string id) => failed.Contains(id);
+
+        /// <summary>Marks a side figure's failed load: the layer draws again (<see cref="AvailabilityVersion"/>), and the first
+        /// failure of each side's figure in a session is logged once. Other models fail open as before.</summary>
+        static void Fail(string id)
+        {
+            if (!BySide.Values.Contains(id) || !failed.Add(id)) return;
+            AvailabilityVersion++;
+            if (!warnedFailed.Add(id)) return;
+            foreach (var side in BySide.Where(kv => kv.Value == id).Select(kv => kv.Key))
+                Debug.LogWarning($"UNITS figures: {side}'s figure {id} did not load; its tokens are drawn with the plain built-in figure.");
+        }
 
         /// <summary>Asks for model <paramref name="id"/> once, without a figure to put it on (an Arab force's token waits for it).</summary>
         public static void Prefetch(string id) => Ask(id);
@@ -225,13 +281,13 @@ namespace Statecraft.Game.Map.Units
         /// scaled by <see cref="UnitShowcase.FigureScale"/>): at once when it has arrived, else when it arrives. Nothing for a
         /// null id.</summary>
         internal static void Dress(Transform piece, string? id, CollectionResidencyPolicy policy,
-            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null)
+            Func<string, CollectionDetail, Action<GameObject?>, IDisposable>? acquire = null, bool retainFar = false)
         {
             if (policy == null) throw new ArgumentNullException(nameof(policy));
             if (id == null || piece == null) return;
             // The sandwich original remains explicitly pinned by the road consumer in this first production slice.
             var owner = piece.GetComponent<UnitFigureResidency>() ?? piece.gameObject.AddComponent<UnitFigureResidency>();
-            owner.Initialize(id, policy, acquire);
+            owner.Initialize(id, policy, acquire, retainFar: retainFar);
         }
 
         public static void Dress(Transform piece, string? id)
@@ -277,9 +333,9 @@ namespace Statecraft.Game.Map.Units
                 asked.Remove(id);
                 var pieces = waiting.TryGetValue(id, out var l) ? l : null;
                 waiting.Remove(id);
-                if (prefab == null) return;   // fail open: the code-built figure stays (the stream has warned once)
+                if (prefab == null) { Fail(id); return; }   // fail open: the code-built figure stays (the stream has warned once)
                 if (arrived.Count == 0 && Application.isPlaying) Debug.Log("UNITS figures: the Collection's figures streamed in");
-                arrived[id] = prefab;
+                arrived[id] = prefab; failed.Remove(id);
                 if (pieces != null) foreach (var p in pieces) if (p != null) Swap(p, id, prefab);   // a token rebuilt meanwhile is gone
                 ModelArrived?.Invoke(id);
             });
@@ -337,6 +393,7 @@ namespace Statecraft.Game.Map.Units
             }
             if (code != null) code.enabled = false;
             if (CollectionCatalog.Animated.Contains(id) && !CollectionCatalog.IsFullQualityGeneratedInfantry(id)) UnitFigureDetail.Of(piece).Add(holder, id);   // C05 has no idle: he stays far
+            GeometryChanged();
         }
 
         /// <summary>The box of <paramref name="model"/>'s meshes in <paramref name="frame"/>'s space, from each mesh's own

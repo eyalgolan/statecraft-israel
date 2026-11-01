@@ -233,9 +233,13 @@ namespace Statecraft.Sim
         {
             if (!map.Children.TryGetValue(new YamlScalarNode("review"), out var v)) return "";
             var text = v is YamlScalarNode s ? s.Value : null;
-            if (text != HebrewReview.AgentChecked)
-                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked}, or left out once a native speaker has read the text (#564)");
-            return text;
+            // The sourced region-name catalogue uses this pending marker.
+            // Keep every other content/event review contract strict; this grants no human sign-off.
+            var regionPending = field.StartsWith("map/region_names_he.yaml#names.", StringComparison.Ordinal)
+                && field.EndsWith(".name", StringComparison.Ordinal) && text == "native-review-pending";
+            if (text != HebrewReview.AgentChecked && !regionPending)
+                throw new ContentException(file, field + ".review", $"must be {HebrewReview.AgentChecked} (or native-review-pending for the region-name catalogue), or left out once a native speaker has read the text (#564)");
+            return regionPending ? "native-review-pending" : HebrewReview.AgentChecked;
         }
 
         static List<Source> Sources(YamlNode node, string file, string field)

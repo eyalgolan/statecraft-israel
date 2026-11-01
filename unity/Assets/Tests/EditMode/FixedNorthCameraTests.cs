@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 // R-CAMERA-001: owner ruling, 27 October 2026, #1720.
-public class FixedNorthCameraTests : InputTestFixture
+public class FixedNorthCameraTests : SharedCameraActionsFixture
 {
     GameObject go = null!;
     CameraRig rig = null!;
@@ -56,6 +56,8 @@ public class FixedNorthCameraTests : InputTestFixture
         {
             Assert.AreEqual(0f, rig.Yaw, "entering gameplay resets an inherited heading immediately");
             Press(clockwise ? keyboard.eKey : keyboard.qKey);
+            Assert.AreEqual(clockwise ? 1f : -1f, actions.FindAction("Camera/Orbit", true).ReadValue<float>(),
+                "the key reaches the shipped orbit binding, so a north yaw below is the policy, not a lost key");
             for (int i = 0; i < 10; i++) controller.Tick(0.1f);
             Assert.AreEqual(0f, rig.Yaw);
         }
@@ -120,6 +122,37 @@ public class FixedNorthCameraTests : InputTestFixture
             MoveTouch(2, new Vector2(460, 470)); controller.Tick(0.016f);
             Assert.AreEqual(before * Mathf.Pow(0.9f, 0.2f), rig.Distance, 1f);
             Assert.AreEqual(0f, rig.Yaw);
+        }
+        finally { Close(); }
+    }
+
+    /// <summary>#1661 ruling 3 under the fixed-north policy: a gated one-update flick (press, 200 px and release before
+    /// the camera's frame) pans once by its 170 px beyond the slop. Under gdd-0.3 a yaw disturbed before the frame is
+    /// repaired first, so the pan runs due west; the older rulesets keep their yaw and the pan turns with it.</summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    public void AGatedFlickPansOnceAlongTheRulesetsHeading(bool gdd03)
+    {
+        InputSystem.AddDevice<Touchscreen>();
+        Open(gdd03 ? SaveGame.Gdd03Ruleset : SaveGame.LegacyRuleset);
+        try
+        {
+            controller.HoldsTouchDrag = () => false;   // gated, and no tap candidate holds the drag
+            controller.Tick(0.016f);
+            var from = new Vector2(400, 400);
+            BeginTouch(1, from, queueEventOnly: true);
+            MoveTouch(1, from + new Vector2(200, 0), queueEventOnly: true);
+            EndTouch(1, from + new Vector2(200, 0));
+            if (gdd03) rig.Yaw = 77f;   // a heading set outside the camera's input
+            var yaw = gdd03 ? 0f : 37f;
+            var expected = new Vector3(500000, 0, 500000) + Quaternion.Euler(0, yaw, 0) * new Vector3(-170 * 120f, 0, 0);
+            controller.Tick(0.016f);
+            Assert.AreEqual(yaw, rig.Yaw, 0.001f);
+            Assert.AreEqual(expected.x, rig.LookAt.x, 0.1f, "the flick pans by its travel beyond the 30 px slop");
+            Assert.AreEqual(expected.z, rig.LookAt.z, 0.1f);
+            controller.Tick(0.016f);
+            Assert.AreEqual(expected.x, rig.LookAt.x, 0.1f, "the lift pans once");
+            Assert.AreEqual(expected.z, rig.LookAt.z, 0.1f);
         }
         finally { Close(); }
     }
