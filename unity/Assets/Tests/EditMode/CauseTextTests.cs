@@ -293,8 +293,9 @@ public class CauseTextTests
     public void ActualResidentRowsRenderAfterSettlementRecordsAreRemoved(bool fled)
     {
         // Existing CaptureDialog fixture pattern: real rules/map, synthetic capture eligibility and resident facts.
+        // Deport's cards (#801) name acre and nazareth, which this fixture's target list leaves out (R-EVT-007), so they stay out too.
         var events = System.IO.Directory.GetFiles(System.IO.Path.Combine(Paths.Content, "events"), "*.yaml")
-            .Select(f => "events/" + System.IO.Path.GetFileName(f));
+            .Select(f => "events/" + System.IO.Path.GetFileName(f)).Where(f => !f.StartsWith("events/deport_", StringComparison.Ordinal));
         var c = ContentLoader.Load(rel => {
             var path = System.IO.Path.Combine(Paths.Content, rel);
             if (!System.IO.File.Exists(path)) return null;

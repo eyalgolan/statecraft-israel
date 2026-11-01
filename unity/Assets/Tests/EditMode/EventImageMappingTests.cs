@@ -21,9 +21,10 @@ public class EventImageMappingTests
 
     /// <summary>Cards without a wired photograph (docs/event-images.md). The railway card and #939's alternate follow-ups
     /// are not wired yet; the seven other fallbacks had no suitable photograph found.
-    /// Cards without an office have no portrait plate either.</summary>
+    /// Cards without an office have no portrait plate either. Deport's two cards (#801) never carry a picture (Q-CARD-3 (a))
+    /// and have no office, so they show no image at all.</summary>
     static readonly string[] Fallback = { "armistice_lebanon", "armistice_syria", "education_registration_1951", "forex_crisis_1951", "reparations_claim", "sinai_withdrawal", "rhodes_talks", "railway_complete",
-        "jerusalem_demilitarisation_guard", "rafah_force_pressure" };
+        "jerusalem_demilitarisation_guard", "rafah_force_pressure", "deport_acre", "deport_nazareth" };
     /// <summary>Photographs whose ASSETS.yaml row waits for the owner's sign-off (#380, "What needs maintainer sign-off"). When the
     /// owner signs one off, its row becomes verified and its name leaves this list.</summary>
     static readonly string[] AwaitingSignOff = { };   // first_new_yishuv signed off 17 Oct 2026 ("Approve both", #879; #913); absorb_immigrants (#739, #1268) and burma_road_complete (#1226, #791) by the owner on 21 Oct 2026; degania_defence (#1568) on 24 Oct 2026; reparations_vote (#1575) on 25 Oct 2026

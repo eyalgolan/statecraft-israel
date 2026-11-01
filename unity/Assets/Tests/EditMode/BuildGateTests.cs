@@ -161,7 +161,12 @@ public class BuildGateTests
     public void AShareableBuildWaitsForTheSensitivityReview()
     {
         var c = Checked();
-        Assert.IsNull(Refusal(c), "every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791)");
+        // Every shipped sensitive event is reviewed (burma_road_complete: owner, 21 Oct 2026, #791) except Deport's two draft
+        // cards (#801), which wait for the owner's review, so the gate names exactly them (R-GATE-001).
+        var drafts = Refusal(c);
+        Assert.IsNotNull(drafts);
+        CollectionAssert.AreEqual(new[] { "deport_acre", "deport_nazareth" }, ReleaseGate.SensitiveUnreviewed(c));
+        foreach (var id in ReleaseGate.SensitiveUnreviewed(c)) StringAssert.Contains(id, drafts);
         foreach (var e in c.Events) if (ReleaseGate.SensitiveEvents(c).Contains(e.Id)) e.Status = "fact-checked";   // as before the sign-off
         var refusal = Refusal(c);
         Assert.IsNotNull(refusal, "an unreviewed sensitive event blocks a shareable build");
@@ -178,6 +183,9 @@ public class BuildGateTests
         var t = Type.GetType("Statecraft.Game.EditorTools.Build, Assembly-CSharp-Editor")!;
         var gate = t.GetMethod("GateRefusal", BindingFlags.Public | BindingFlags.Static)!;
         var c = Checked();
+        // TEST-ONLY: Deport's two draft cards (#801) as the owner's review would leave them; their refusal is
+        // AShareableBuildWaitsForTheSensitivityReview's.
+        foreach (var e in c.Events) if (e.Id == "deport_acre" || e.Id == "deport_nazareth") e.Status = ReleaseGate.ReviewedStatus;
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-executeMethod", "Statecraft.Game.EditorTools.Build.Mac" }, c, null, false, null, null, ReviewedSettlementControlStrings() }), "a dev build is not gated");
         Assert.AreEqual(ReleaseGate.ReviewedStatus, c.Events.Single(e => e.Id == "burma_road_complete").Status, "the owner's review of 21 Oct 2026 (#791)");
         Assert.IsNull(gate.Invoke(null, new object?[] { new[] { "Unity", "-shareable" }, c, null, false, null, null, ReviewedSettlementControlStrings() }));
