@@ -40,24 +40,24 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
 
 ## What it looks like today
 
 <p align="center">
   <img src="docs/images/build-gameplay.webp" alt="Real gameplay, 15 May to 15 June 1948: a zoom and pan across Tel Aviv, Jaffa and the coastal plain, a click on Tel Aviv that opens its city panel, the One Army and Defence of Degania decisions, End turn selecting each unit that needs orders for a Skip (the Golani and Carmeli Brigades, then after a cut the Negev Brigade), and the date moving to 15 June, with the turn report and the First Truce card" width="820">
-  <br><em>Real gameplay, main at 230042c, 2026-10-27. One hard cut leaves out five of the eight units End turn selects.</em>
+  <br><em>Real gameplay, main at f57bd39, 2026-11-01. One hard cut leaves out five of the eight units End turn selects.</em>
 </p>
 <p align="center">
   <img src="docs/images/build-m3-map.jpg" alt="Current build, 15 May 1948: the One Army event card with an archival photograph over the map of the coast, with the top bar, the left icon column and the minimap" width="820">
 </p>
 <p align="center">
-  <img src="docs/images/build-m3-start.jpg" alt="Current build: the start screen, two lines of the Declaration of Independence in Hebrew and English and the New game button, over an AI-generated painting of the 14 May 1948 ceremony" width="405">
+  <img src="docs/images/build-m3-start.jpg" alt="Current build: the start screen, two lines of the Declaration of Independence in Hebrew and English, the New game button and the English and Hebrew language choice, over an AI-generated painting of the 14 May 1948 ceremony" width="405">
   <img src="docs/images/build-m3-city.jpg" alt="Current build: a closer look at Tel Aviv, Jaffa, Lydda, Petah Tikva and Rishon LeZion, with groves, railways, roads and the front lines, and Tel Aviv's city panel with its housing, jobs and training" width="405">
   <br>
   <img src="docs/images/build-m3-cabinet.jpg" alt="Current build: the Cabinet screen with the Provisional State Council as a half circle of seats and the ministers' portrait cards" width="405">
   <img src="docs/images/build-m3-why.jpg" alt="Current build: the Why panel after the first turn, listing each change and its cause" width="405">
-  <br><em>Real screenshots, main at 1dca7e0, 2026-10-27. The start screen's painting is AI-generated.</em>
+  <br><em>Real screenshots, main at a256c49, 2026-10-31. The start screen's painting is AI-generated.</em>
 </p>
 
 ## Is this any good?
@@ -66,8 +66,8 @@ It is an early, honest prototype.
 
 **What works now (M3, 1948–1951):**
 - Monthly turns from 15 May 1948 to 15 January 1952.
-- The start screen.
-- English and Hebrew, with a language switch in Settings. The Hebrew event cards wait for a native speaker's review.
+- The start screen, and an opening after New game: three sourced stills that you can skip, or replay from the start screen.
+- English and Hebrew: you choose the language on the start screen, and can switch it in Settings. The Hebrew event cards wait for a native speaker's review.
 - The 1948 map: towns, villages and Bedouin camps, railways and roads, and the 1949 armistice zones and lines from each agreement's date.
 - The 1948 brigades, 101 Squadron and the first navy ships as tokens at their sourced positions. A brigade's card can order it to move, attack, fortify or hold, and shows the odds before an attack. The Arab forces move and attack on their own, and the turn report lists what they did.
 - The twelve cities, with housing, jobs and training.
@@ -132,7 +132,7 @@ flowchart LR
 
 <iframe frameborder="0" src="https://itch.io/embed/5179460" width="552" height="167"><a href="https://eyalgolan.itch.io/statecraft-israel">Statecraft: Israel by eyalgolan</a></iframe>
 
-Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (the latest is [v0.3.1](https://github.com/eyalgolan/statecraft-israel/releases/tag/v0.3.1)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
+Play it in your browser on [itch.io](https://eyalgolan.itch.io/statecraft-israel). Each [release](https://github.com/eyalgolan/statecraft-israel/releases) (see [the latest](https://github.com/eyalgolan/statecraft-israel/releases/latest)) has the browser build as a zip; [docs/m3-release.md](docs/m3-release.md) says how to serve it. To build and run it locally:
 
 1. Install the tools in [docs/dev-setup.md](docs/dev-setup.md): .NET 10, Unity 6000.3.25f1 with Web Build Support, and `uv`.
 2. Run `uv run tools/build_sim_for_unity.py`.

@@ -3,6 +3,7 @@
 ## Player story
 
 As the player, I want a captured settlement to present a sober choice between leaving and holding it, with the consequences stated before I act, so that control of territory is part of the war without turning harm to residents into a reward (GDD [S1]; owner rulings [S3]-[S7]).
+I can recover from losing a region and understand controlling an enemy town without making its residents assignable workers.
 
 ## Rules
 
@@ -20,6 +21,10 @@ As the player, I want a captured settlement to present a sober choice between le
 - On capture, the residents of a target place are recorded as having fled, unless highly credible Israeli sources, such as an official or state-archive history, say otherwise for that place (in the owner's words, "default is fled, unless you have super credible israeli sources that say otherwise"). Every place's outcome is recorded in its reviewed target row. Where the residents stayed, annexation joins them to the player's population with their housing and jobs (`Q-ANNEX-1` / `D-F4`; planned R-CTRL-016; owner rulings [S6], [S7]).
 - A place emptied by flight grants territory only. Annexation of it grants no housing, jobs or score (`Q-ANNEX-1` follow-up; planned R-CTRL-016; owner ruling [S7]).
 - **Then decided (owner, 24 Oct 2026, in the coordinator session; [#799](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6374876433)):** annexing a stayed town (Acre, Nazareth) adds one city by the starting-city rule, from a sourced resident count the owner approves (R-CTRL-016); a fled town's residents are recorded as fled at capture, and the record stays after any return to enemy control (R-CTRL-003 to R-CTRL-005, R-CTRL-010); an annexed town stays Israeli for good, with no upkeep and no unit that has to stay (R-CTRL-016). Deport of a town whose residents fled at capture stays listed third and is refused, with its reason on the button (OWNER QUESTION 4 (a), "Hide it, button explains (Recommended)"; R-CTRL-018; owner ruling [S12]). (unitless)
+
+The owner answers for plan #1520 are catalogued in [S11].
+
+*Considered and declined (owner, 30 Oct 2026; Regional pooling conflict, option A; [conflict decision](../GDD.md#30-october-2026-conflict-decisions)): Amir's #1668 proposed keeping annexed residents outside the player workforce. For Amir's tax, garrison, upkeep and International Support values for occupation and annexation, the review did not rule; `R-CTRL-011` to `R-CTRL-016` (`docs/rules/mvp.md:55`) stay operative. On 1 November 2026 the owner made regime taxes and puppet regimes post-MVP (Q28 to Q33) and set the occupation to 3 turns ("3 turns (27 Oct)").* [S1] [S16]
 - After Deport, the depopulated place offers neither puppet regime nor annexation; Deport ends the occupation permanently (`Q-ANNEX-2`; planned R-CTRL-017; owner ruling [S6]).
 - Deport follows impact-plan §4.1 items 1, 2, 3, 5 and 6 as written, with the two clerical fixes. It affects every resident the state holds and records only `DisplacedByPlayer`, with no destination on the board (`Q-DEP-1` to `Q-DEP-3`; owner ruling [S8]). (unitless)
 - Deportation and razing are separate rules, with no razing option in the MVP (`Q-DEP-4` / `D-F3`; owner ruling [S8]).
@@ -33,6 +38,29 @@ As the player, I want a captured settlement to present a sober choice between le
 - The release gate covers `displacement` events, target rows, English and Hebrew strings for both settlement-control dialogs, and map-state labels and tooltips (`Q-GATE-1`; planned R-GATE-001 and R-GATE-002; owner ruling [S4]).
 - Phase six balance numbers live in `content/` as labelled design values and are listed by the design-values test. The owner sets the numbers (`Q-GEN-1`; owner ruling [S3]).
 - The planned rule-ID areas are R-CTRL for settlement control, R-GATE for the release gate and the existing R-EFX area for the `displacement` no-gain rule. These IDs remain planned until their implementation PR defines each one with its citing test (`Q-TECH-6`; owner ruling [S3]).
+### Player regions and automatic evacuation
+
+**Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** capturing a regional capital would transfer pooled regional capacity. These regional mechanics are non-operative. Automatic evacuation through reception, port queues and transit was not ruled on by the 30 October 2026 conflict review; on 1 November 2026 the owner made it post-MVP ("30 Oct wins for the MVP (Recommended)") and set the MVP rule for a held city (D6) [S16]: while an enemy unit holds an Israeli city's hex, the city's jobs pay nothing and its Food production and projects pause, its people stay in place, and on retaking everything resumes and nothing is deleted. Civilians are not automatically casualties, captives or enemy workers; the existing content-policy and review protections remain authoritative. Campaign defeat follows the retained exhausted-resource (economic) rule; under `gdd-0.3` losing a city or region alone does not end the game, and there is no generic region-loss rule.
+
+### Enemy towns and cities
+
+Each enemy town/city has individual control. Capturing it does not transfer a surrounding region or every nearby locality. Preserve the curated capture-target list separately from the [map roster](../locations.md); inclusion grants no capture permission. Shared-hex markers keep separate ids rather than merged resident/administration records.
+
+Capture requires a curated target, friendly ground unit at its hex and no defending enemy unit. Combat may clear defenders without automatically executing a civilian-control action. Change only the selected locality. Preview eligibility and control consequences before confirmation; refuse unavailable/review-gated outcomes.
+
+### Occupation and annexation proposal
+
+The retained `R-CTRL-011` rule requires an Israeli military unit on the place's hex for Occupy—the one unit that stays—and moves no unit [S14]. **Amir's proposal [S1]:** occupation would add proposed tax rules. The owner's 30 October 2026 conflict review did not rule on this; `R-CTRL-011` to `R-CTRL-013` (`docs/rules/mvp.md:55`) stay operative and add no tax; regime taxes are post-MVP (owner, 1 November 2026, Q28 to Q31) [S16]. Every occupation lasts 3 turns (owner, 1 November 2026, "3 turns (27 Oct)") [S16]; main's `mvp.occupation_turns` still reads 6 turns (`R-CTRL-012`) until a separate pull request changes it.
+
+The retained ruling has no puppet-regime outcome [S6]. **Amir's proposal, declined by the owner on 30 October 2026 (Annexation conflict, option A) [S1]:** town/city regime taxes would be added; that addition is non-operative. For an annexation cost, the 30 October 2026 conflict review did not rule; `R-CTRL-016` (`docs/rules/mvp.md:65`) stays operative. Puppet regimes and regime taxes are post-MVP design (owner, 1 November 2026, Q28 to Q33): an annexed town that stayed earns ordinary city income, and a fled place pays nothing [S16].
+
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** enemy recapture would clear annexation. The retained ruling says an annexed town stays Israeli for good [S11].
+
+**Amir's proposal, declined by the owner on 30 October 2026 [S1]:** residents would remain outside the player's civilian systems and produce regime taxes. The retained rule adds residents of stayed towns under the starting-city rule [S11].
+
+### Civilian protection and review boundaries
+
+Old references to Raid, Occupy and Deport do not approve every sensitive outcome. Only occupation/regime rules above are completed here. Do not infer displacement, razing, civilian capture, forced labour or rewards from suffering. [CONTENT_POLICY](../CONTENT_POLICY.md) and curator/sensitivity gates remain [S15]. Prisoners of war are combatants under a separate system.
 
 ## Data touched
 
@@ -42,6 +70,8 @@ As the player, I want a captured settlement to present a sober choice between le
 - `content/events/*.yaml` and the event schema — cards tagged `displacement` and their no-gain rule (`Q-DEP-6`, owner ruling [S4]).
 - Unity — the capture and end-of-occupation dialogs, plus map-state labels and tooltips; rules remain in the simulation (`Q-GATE-1`, `Q-TECH-5`, owner rulings [S3], [S4]).
 - `docs/rules/mvp.md` — planned R-CTRL, R-GATE and R-EFX definitions land only with their implementation and citing tests (`Q-TECH-6`, owner ruling [S3]).
+- **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** region/capital membership would be added. That data change is non-operative. Automatic evacuation state is post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)"); a held Israeli city pauses under D6 [S16]. Per-locality control, target allow-list, occupation progress and annexation remain.
+- Capture commands/events require migration and review; this edit does not add capture targets or change review status.
 
 ## Done when
 
@@ -51,6 +81,10 @@ As the player, I want a captured settlement to present a sober choice between le
 - The dominance test clones each sampled capture state for every offered outcome, compares every resource, parameter, score and objective at turn end and MVP end, and covers the MVP goldens plus full-strength and minimum-strength fixture states (`Q-TECH-4`, owner ruling [S3]).
 - `uv run scripts/oss/rule_ids.py` passes without defining any planned Phase six ID in this docs-only change.
 - `uv run scripts/oss/check_repo.py` passes.
+- **Amir's proposal, declined by the owner on 30 October 2026 (Regional pooling conflict, option A) [S13]:** capital capture would disable a region. That criterion is non-operative. Route-blocked evacuation is post-MVP (owner, 1 November 2026: "30 Oct wins for the MVP (Recommended)") [S16]. While an enemy unit holds an Israeli city's hex, its jobs, Food production and projects pause, and they resume on retaking with nothing deleted (D6) [S16].
+- Pre-annexation withdrawal becomes a Raid; after annexation the town stays Israeli for good, with no unit that has to stay [S11].
+- The proposal's resident treatment is not implemented unless the owner supersedes R-CTRL-016.
+- Unreviewed outcomes remain unavailable and shared-hex identities stay distinct.
 
 ## Out of scope
 
@@ -59,6 +93,7 @@ As the player, I want a captured settlement to present a sober choice between le
 - Ministers' roles in occupation or military government; those belong to Phase 7 [S2].
 - Any balance number not set by the owner. X and upkeep remain labelled design values, not values invented here [S3], [S5], [S6].
 - Definitions in `docs/rules/mvp.md`; each planned ID lands with the implementation PR and its citing test [S2], [S3].
+All historical civilian fates, capture eligibility for every marker, civilian labour and final terminal-defeat conditions.
 
 ## Sources
 
@@ -74,6 +109,10 @@ As the player, I want a captured settlement to present a sober choice between le
 - [S10] [Owner decision, "Counts as Raid"](https://github.com/eyalgolan/statecraft-israel/issues/797#issuecomment-6254333420), 18 October 2026, checked 2026-10-18.
 - [S11] [Owner's answers to plan #1520](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6374876433), 24 October 2026, checked 2026-10-23.
 - [S12] [Owner ruling on OWNER QUESTION 4, "Hide it, button explains (Recommended)"](https://github.com/eyalgolan/statecraft-israel/issues/799#issuecomment-6375591758), 24 October 2026, checked 2026-10-24.
+- [S13] Region/control interview decisions, docs/GDD.md.
+- [S14] Retained Occupy garrison rule, `docs/rules/mvp.md` (`R-CTRL-011`).
+- [S15] Sensitive-content constraints, docs/CONTENT_POLICY.md.
+- [S16] Owner's 1 November 2026 answers, [GDD 1 November 2026 answers](../GDD.md#1-november-2026-answers).
 
 ## Open questions
 
@@ -83,3 +122,4 @@ As the player, I want a captured settlement to present a sober choice between le
 - `Q-CARD-1` to `Q-CARD-3` and `Q-SENS-1b` — card coverage, the M3 Lydda and Ramle ruling, images and wording about abandoned housing. **Then decided (owner, 18 Oct 2026, "Accept all 16 drafts"; [#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6254310676)):** Q-CARD-1 (c), Q-CARD-2 (a), Q-CARD-3 (a) and Q-SENS-1b (a); every card still needs a person's source check and sensitivity review before it ships.
 - `Q-UI-1` to `Q-UI-4` — option text, preview contents, map treatment and display of `DisplacedByPlayer`. **Then decided (owner, 18 Oct 2026, "Accept all 16 drafts"; [#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6254310676)):** Q-UI-1 (b), Q-UI-2 (a), Q-UI-3 (a) and Q-UI-4 (a).
 - `Q-STORE-1` — how the shipped system is described on the store page. **Then decided (owner, 18 Oct 2026, "Accept all 16 drafts"; [#783](https://github.com/eyalgolan/statecraft-israel/issues/783#issuecomment-6254310676)):** (a), add the drafted sentence when Phase 6 ships.
+Unresolved principle and authoring decisions are maintained only in [the GDD](../GDD.md#deferred-decisions).
