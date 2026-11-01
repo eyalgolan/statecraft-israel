@@ -137,8 +137,9 @@ public class EncyclopediaScreenTests
         Assert.AreEqual(En["advisor.page.attention.text"], ui.Q<Label>("encyclopedia-page-text").text);
     }
 
-    /// <summary>The turns page keeps How to play's End turn guidance (#1688): a unit that needs orders is selected first, in
-    /// both languages and both rulesets.</summary>
+    /// <summary>The turns page keeps How to play's End turn guidance (#1688): a unit that needs orders is selected instead,
+    /// with its remedies, in both languages and both rulesets; and it states R-TURN-004: every unit order but Send home is
+    /// immediate and final, not only moves and attacks (#2095 review).</summary>
     [Test]
     public void TheTurnsPageKeepsNeedsOrdersGuidance([Values(false, true)] bool hebrew, [Values(SaveGame.GddRuleset, SaveGame.Gdd03Ruleset)] string ruleset)
     {
@@ -147,7 +148,8 @@ public class EncyclopediaScreenTests
         using var pedia = new EncyclopediaPresenter(ui.Root, hebrew ? He : En, Approved(), nav, null, ruleset);
         pedia.Open("turns");
         var line = ui.Q<Label>("encyclopedia-page-text").text;
-        foreach (var phrase in hebrew ? new[] { "ממתינה להוראות", "סיום התור בוחר בה" } : new[] { "needs orders", "End turn selects it" })
+        foreach (var phrase in hebrew ? new[] { "ממתינה להוראות", "בוחר בה במקום זאת", "ביצור", "לדלג", "(התקפה, ביצור, החזקה) מתבצעות מיד", "שליחה הביתה" }
+                     : new[] { "needs orders", "selects it instead", "fortify", "skip it", "unit orders (attack, fortify, hold) happen at once", "Send home" })
             StringAssert.Contains(phrase, line);
     }
 
@@ -170,16 +172,43 @@ public class EncyclopediaScreenTests
     }
 
     [UnityTest]
-    public IEnumerator TheEncyclopediaFitsLaptopAndPhoneInBothLanguages()
+    public IEnumerator TheEncyclopediaFitsLaptopAndPhoneInBothLanguages([Values(SaveGame.GddRuleset, SaveGame.Gdd03Ruleset)] string ruleset)
     {
         var problems = new List<string>();
         foreach (var hebrew in new[] { false, true })
             foreach (var size in new[] { new Vector2Int(1280, 720), new Vector2Int(390, 844) })
-                yield return Rendered(size.x, size.y, hebrew, (root, pedia) => Fits(root, problems, $"{(hebrew ? "he" : "en")} {size.x}x{size.y}", pedia));
+                yield return Rendered(size.x, size.y, hebrew, (root, pedia) => Fits(root, problems, $"{ruleset} {(hebrew ? "he" : "en")} {size.x}x{size.y}", pedia, ruleset), ruleset);
         Assert.IsEmpty(problems, string.Join("\n", problems));
     }
 
-    static IEnumerable Fits(VisualElement root, List<string> problems, string at, EncyclopediaPresenter pedia)
+    /// <summary>Keyboard focus (#2095 review): from an entry the page takes it on Back, and Back hands it to the entry just
+    /// read, so it never sits on a hidden or removed element; the opening button belongs to the list and hides on a page.</summary>
+    [UnityTest]
+    public IEnumerator FocusGoesFromTheEntryToBackAndBackToTheEntry()
+    {
+        yield return Rendered(1280, 720, false, (root, pedia) => EntryPageBack(root));
+    }
+
+    static IEnumerable EntryPageBack(VisualElement root)
+    {
+        VisualElement? Focused() => root.panel.focusController.focusedElement as VisualElement;
+        var opening = root.Q<Button>("encyclopedia-opening");
+        Assert.AreEqual(DisplayStyle.Flex, opening.style.display.value, "precondition: the list offers the opening advice");
+        var entry = root.Q<Button>("encyclopedia-page-cities");
+        entry.Focus();
+        yield return null;
+        Assert.AreSame(entry, Focused(), "precondition: the entry has the focus");
+        UiTestKit.Press(entry);
+        for (int i = 0; i < 2; i++) yield return null;
+        Assert.AreSame(root.Q<Button>("encyclopedia-back"), Focused(), "the page: Back has the focus");
+        Assert.AreEqual(DisplayStyle.None, opening.style.display.value, "a page shows only Back and Show me");
+        UiTestKit.Press(root.Q<Button>("encyclopedia-back"));
+        for (int i = 0; i < 2; i++) yield return null;
+        Assert.AreSame(root.Q<Button>("encyclopedia-page-cities"), Focused(), "Back: the entry just read has the focus");
+        Assert.AreEqual(DisplayStyle.Flex, opening.style.display.value, "the list offers it again");
+    }
+
+    static IEnumerable Fits(VisualElement root, List<string> problems, string at, EncyclopediaPresenter pedia, string ruleset)
     {
         var window = root.worldBound;
         void Inside(string what, Rect r, Rect outer)
@@ -195,8 +224,9 @@ public class EncyclopediaScreenTests
         foreach (var entry in list.contentContainer.Children())
             if (entry.worldBound.xMin < list.worldBound.xMin - 1 || entry.worldBound.xMax > list.worldBound.xMax + 1)
                 problems.Add($"{at}: {entry.name} {entry.worldBound} overflows the list {list.worldBound}");
-        pedia.Open("attention");
+        pedia.Open(ruleset == SaveGame.Gdd03Ruleset ? "cities" : "attention");   // a page with a Show me; gdd-0.3 has no Attention
         for (int i = 0; i < 3; i++) yield return null;
+        if (root.Q("encyclopedia-opening").style.display.value != DisplayStyle.None) problems.Add($"{at}: the opening button shows on a page");
         var body = root.Q<ScrollView>("encyclopedia-page-body").worldBound;
         var words = root.Q<Label>("encyclopedia-page-text").worldBound;   // it may scroll down, never sideways
         if (!(words.width > 0) || words.xMin < body.xMin - 1 || words.xMax > body.xMax + 1) problems.Add($"{at}: page text {words} overflows {body}");
@@ -213,7 +243,8 @@ public class EncyclopediaScreenTests
 
     /// <summary>The whole HUD as the game lays it out, the encyclopedia open on its list, with an advisor so Show me shows.
     /// The Hebrew is the test's approved copy (the shipped pages wait for their native review).</summary>
-    static IEnumerator Rendered(int width, int height, bool hebrew, System.Func<VisualElement, EncyclopediaPresenter, IEnumerable> check)
+    static IEnumerator Rendered(int width, int height, bool hebrew, System.Func<VisualElement, EncyclopediaPresenter, IEnumerable> check,
+        string ruleset = SaveGame.GddRuleset)
     {
         var rt = new RenderTexture(width, height, 0);
         var ps = Object.Instantiate(AssetDatabase.LoadAssetAtPath<PanelSettings>(UiPaths.Panel));
@@ -232,7 +263,7 @@ public class EncyclopediaScreenTests
         var hud = new HudPresenter(root, bridge, text);
         var nav = new ScreenNav(root);
         var advisor = new AdvisorPresenter(root, bridge, text, new AdvisorSession(Approved(), new AdvisorSettings(null), false));
-        var pedia = new EncyclopediaPresenter(root, text, Approved(), nav, advisor);
+        var pedia = new EncyclopediaPresenter(root, text, Approved(), nav, advisor, ruleset);
         nav.Open("encyclopedia");
         try
         {

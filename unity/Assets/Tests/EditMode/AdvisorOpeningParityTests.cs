@@ -824,11 +824,11 @@ public class AdvisorOpeningParityTests
         var queued = bridge.Queued.Count;
 
         void Next(int times) { for (int i = 0; i < times; i++) UiTestKit.Press(Ui.Q<Button>("advisor-got-it")); }
-        void FromHowToPlay() { UiTestKit.Press(Ui.Q<Button>("nav-encyclopedia")); UiTestKit.Press(Ui.Q<Button>("encyclopedia-opening")); }
+        void FromTheEncyclopedia() { UiTestKit.Press(Ui.Q<Button>("nav-encyclopedia")); UiTestKit.Press(Ui.Q<Button>("encyclopedia-opening")); }
         Next(Steps.Length);                     // the advisor that opened by itself, to Done
         Assert.IsFalse(game.Advisor.InChain);
-        FromHowToPlay(); Next(2); UiTestKit.Press(Ui.Q<Button>("advisor-close"));
-        FromHowToPlay(); Next(3); yield return null; Ui.Q<Button>("advisor-got-it").Focus(); Assert.IsTrue(game.Advisor.Escape());
+        FromTheEncyclopedia(); Next(2); UiTestKit.Press(Ui.Q<Button>("advisor-close"));
+        FromTheEncyclopedia(); Next(3); yield return null; Ui.Q<Button>("advisor-got-it").Focus(); Assert.IsTrue(game.Advisor.Escape());
         Assert.IsFalse(game.Advisor.InChain);
         Assert.AreSame(session, bridge.Session, "the same game");
         Assert.AreEqual(hash, bridge.State.Hash(), "the state hash");

@@ -16,7 +16,7 @@ namespace Statecraft.Game.UI
         readonly Label pageTitle, pageText;
         readonly Button back, showMe, opening;
         readonly UiText text; readonly AdvisorCatalog catalog; readonly ScreenNav nav; readonly AdvisorPresenter? advisor;
-        readonly bool hebrew, gdd03;
+        readonly bool hebrew, gdd03, openingShown;
         readonly System.Action onBack, onShowMe, onOpening;
 
         /// <summary>The page on show, or null while the list shows.</summary>
@@ -36,7 +36,13 @@ namespace Statecraft.Game.UI
             back = screen.Q<Button>("encyclopedia-back"); showMe = screen.Q<Button>("encyclopedia-show-me");
             opening = screen.Q<Button>("encyclopedia-opening");
             back.text = text["encyclopedia.back"]; showMe.text = text["advisor.show_me"]; opening.text = text["encyclopedia.opening"];
-            onBack = Render;
+            // Back hands the focus to the entry just read, which Render has just rebuilt (#2095 review).
+            onBack = () =>
+            {
+                var read = ShowingPage; var had = FocusInside();
+                Render();
+                if (had) FocusReturn.To(list.Q<Button>("encyclopedia-page-" + read));
+            };
             onShowMe = () =>
             {
                 var target = ShowingPage == null ? "" : catalog.FindPage(ShowingPage)?.ShowMe ?? "";
@@ -48,7 +54,7 @@ namespace Statecraft.Game.UI
             // every opening line is pending in Hebrew the chain cannot open (OQ-4).
             onOpening = () => { nav.Close(); advisor?.OpenChain(); };
             back.clicked += onBack; showMe.clicked += onShowMe; opening.clicked += onOpening;
-            Display(opening, advisor != null && advisor.Chain.Any(m => m.ApprovedIn(hebrew)));
+            openingShown = advisor != null && advisor.Chain.Any(m => m.ApprovedIn(hebrew));
             ScreenNav.OnOpened(screen, Render);   // each open starts at the list
             Render();
         }
@@ -76,7 +82,7 @@ namespace Statecraft.Game.UI
                     list.Add(button);
                 }
             }
-            Display(list, true); Display(pagePane, false);
+            Display(list, true); Display(pagePane, false); Display(opening, openingShown);
         }
 
         /// <summary>Opens the screen on <paramref name="pageId"/> (an advisor's Tell me more); on the list when that page is not
@@ -96,8 +102,16 @@ namespace Statecraft.Game.UI
             pageTitle.text = text[key + ".title"];
             pageText.text = text[gdd03 && text.Has(key + ".gdd03.text") ? key + ".gdd03.text" : key + ".text"];
             Display(showMe, advisor != null && p.ShowMe != "" && !(gdd03 && p.ShowMe == "attention"));
-            Display(list, false); Display(pagePane, true);
+            // A page shows only Back and Show me; the opening button belongs to the list. Back takes the focus when it was in
+            // the screen, since the list that held it is hidden now (#2095 review).
+            var had = FocusInside();
+            Display(list, false); Display(pagePane, true); Display(opening, false);
+            if (had) FocusReturn.To(back);
         }
+
+        /// <summary>Whether the focus is in this screen: as ScreenNav hands it in only on a keyboard open, a page and Back move
+        /// it only from inside, and a mouse press elsewhere (Tell me more) keeps it where it is.</summary>
+        bool FocusInside() => screen.focusController?.focusedElement is VisualElement f && screen.Contains(f);
 
         static void Display(VisualElement e, bool shown) => e.style.display = shown ? DisplayStyle.Flex : DisplayStyle.None;
 
