@@ -295,8 +295,7 @@ public class Gdd03TrainingCentreFixtureTests
         Unchanged(idle, () => new Gdd03TrainingCentreFixture(c, idle, Centres()), typeof(NotSupportedException), "Deferred: #1668 Q42");
     }
 
-    // R-TRAIN-008: #1668 Q43 stays open: the enrolment month is not counted, and a participant released from a course
-    // by a cancel cannot start again that month.
+    // R-TRAIN-008: #1668 Q43(a) is not built in this fixture: the enrolment month is not counted.
     [Fact] public void CourseTurnBoundariesStayDeferred()
     {
         var c = Catalogue(); var s = State(c);
@@ -304,12 +303,121 @@ public class Gdd03TrainingCentreFixtureTests
         var enrolment = Month(s, 0);
         f.Start(1, 0, CentreA, enrolment);
         Unchanged(s, () => f.Advance(1, enrolment), typeof(NotSupportedException), "Deferred: #1668 Q43");
+    }
 
+    // #1716 Q43(b) release, R-TRAIN-007, R-TRAIN-008 (owner-approved answer, 1 Nov 2026, #1668 Q43(b): "Cancellation: they
+    // are released at once, as civilians without a job."). A course held at the month's opening is cancelled this turn:
+    // this month's snapshot already shows pupil and teacher off the course and without a job, and a job given to them this
+    // turn is in the same snapshot. Characterisation: Cancel and the work fixture already behaved so before #1716's
+    // follow-up; this pins it as the ruled behaviour (the restart test below is the one that fails without the change).
+    [Fact] public void ACancelReleasesPupilAndTeacherAtOnceInThisMonthsSnapshot()
+    {
+        var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var work = new Gdd03AssignmentFixture(c, s, new[] { new Gdd03FixtureSlot(Field, Gdd03FixtureWork.Farm, 2, "fixture") });
+        f.Start(1, 0, CentreA, Month(s, 0));
+        Assert.Contains(1, Month(s, 1).CourseEligibleIds);
+
+        f.Cancel(1);
+        var month = Month(s, 1);
+        foreach (var id in new[] { 0, 1 })
+        {
+            var p = month.OpeningPeople.Single(x => x.Id == id);
+            Assert.Equal(PopulationStatus.FreeCivilian, p.Status);
+            Assert.Equal(PopulationAssignmentKind.Unassigned, p.Assignment.Kind);
+            Assert.DoesNotContain(id, month.CourseEligibleIds); Assert.DoesNotContain(id, month.WorkEligibleIds);
+        }
+
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(1, Field));
+        Assert.Equal(Gdd03FixtureAssignmentResult.Applied, work.Assign(0, Field));
+        var working = Month(s, 1);
+        Assert.Contains(0, working.WorkEligibleIds); Assert.Contains(1, working.WorkEligibleIds);
+    }
+
+    // #1716 Q43(b) release, R-TRAIN-005, R-TRAIN-007, R-TRAIN-008 (owner-approved answer, 1 Nov 2026, #1668 Q43(b):
+    // "Cancellation: they are released at once"). Both people of a course held at the month's opening and cancelled this
+    // turn may start a new course in the same month: the pupil restarts as a full new course with another teacher, and the
+    // teacher takes another pupil at another centre. The restart's own enrolment month is still not counted (Q43(a)).
+    [Fact] public void PeopleReleasedByACancelMayStartAnotherCourseThatMonth()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        f.Start(1, 0, CentreA, Month(s, 0));
         var opening = Month(s, 1);
         f.Cancel(1);
+
+        f.Start(1, 4, CentreA, opening);
+        f.Start(5, 0, CentreB, opening);
+        foreach (var (pupil, teacher, centre) in new[] { (1, 4, CentreA), (5, 0, CentreB) })
+        {
+            var p = l.Get(pupil);
+            Assert.Equal(PopulationStatus.Trainee, p.Status); Assert.Equal(PopulationAssignmentKind.Course, p.Assignment.Kind);
+            Assert.Equal(centre, p.Assignment.Target); Assert.Equal(teacher, p.Assignment.TeacherId); Assert.Equal(0, p.Assignment.ProgressTicks);
+            Assert.Equal(PopulationAssignmentKind.Teaching, l.Get(teacher).Assignment.Kind); Assert.Equal(centre, l.Get(teacher).Assignment.Target);
+        }
+        var month = Month(s, 1);
+        Assert.Contains(1, month.CourseEligibleIds); Assert.Contains(5, month.CourseEligibleIds);
+        Unchanged(s, () => f.Advance(1, month), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        f.Advance(1, Month(s, 2));
+        Assert.Equal(1, l.Get(1).Assignment.ProgressTicks);
+    }
+
+    // #1716 Q43(b) release, R-TRAIN-006, R-TRAIN-007: the same pupil restarts with the same teacher at the same centre in
+    // the month of the cancel. It is a full new course, and its enrolment month is still not counted (Q43(a)), even with
+    // the month snapshot taken before the cancel, which still shows the old course.
+    [Fact] public void TheSamePupilAndTeacherRestartAtTheSameCentreAfterACancel()
+    {
+        var c = Catalogue(); var s = State(c); var l = s.PopulationLedger; var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        f.Start(1, 0, CentreA, Month(s, 0));
+        var opening = Month(s, 1);
+        f.Cancel(1);
+        var tools = l.Get(1).Equipment;
+        f.Start(1, 0, CentreA, opening);
+        var p = l.Get(1);
+        Assert.Equal(PopulationStatus.Trainee, p.Status); Assert.Equal(CentreA, p.Assignment.Target);
+        Assert.Equal(0, p.Assignment.TeacherId); Assert.Equal(0, p.Assignment.ProgressTicks);
+        Assert.Equal(tools, p.Equipment);
+        Unchanged(s, () => f.Advance(1, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+    }
+
+    // R-TRAIN-005, R-TRAIN-007: only a cancel ends a course here. A teacher still teaching and a pupil still on a course
+    // cannot start another course, and the work fixture refuses both.
+    [Fact] public void PeopleStillOnACourseCannotStartAnotherOrTakeAJob()
+    {
+        var c = Catalogue(); var s = State(c); var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        var work = new Gdd03AssignmentFixture(c, s, new[] { new Gdd03FixtureSlot(Field, Gdd03FixtureWork.Farm, 2, "fixture") });
+        f.Start(1, 0, CentreA, Month(s, 0));
+        var month = Month(s, 1);
+        Unchanged(s, () => f.Start(5, 0, CentreB, month), typeof(ArgumentException));
+        Unchanged(s, () => f.Start(1, 4, CentreB, month), typeof(ArgumentException));
+        Unchanged(s, () => work.Assign(1, Field), typeof(ArgumentException));
+        Unchanged(s, () => work.Assign(0, Field), typeof(ArgumentException));
+    }
+
+    // R-TRAIN-008, #1716 Q43(b): a bed freed after the month's opening, here by a cancel, is not reused that month. The
+    // month's new courses in a camp fit only in the beds free at its opening. Two pupils per teacher is a synthetic value
+    // (the catalogue's is 1), so that one centre can take two starts in a month.
+    [Fact] public void ABedFreedByACancelIsNotReusedThatMonth()
+    {
+        var c = Catalogue("profession.trainees_per_teacher", Agreed(2)); var s = State(c, Refugee(CampA));
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        f.Start(1, 0, CentreA, Month(s, 0));
+        var opening = Month(s, 1);   // camp A: pupil 1 and refugee 6 hold 2 of its 3 beds
+        f.Cancel(1);
+        f.Start(1, 0, CentreA, opening);   // the one bed free at the opening
+        Unchanged(s, () => f.Start(5, 0, CentreA, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+    }
+
+    // R-TRAIN-008, #1716 Q43(b): with the camp full at the month's opening, a cancelled pupil's own bed waits for the
+    // next month too, so the restart is refused that month and allowed in the next.
+    [Fact] public void ARestartInACampFullAtTheOpeningWaitsForTheNextMonth()
+    {
+        var c = Catalogue(); var s = State(c, Refugee(CampA), Refugee(CampA));
+        var f = new Gdd03TrainingCentreFixture(c, s, Centres());
+        f.Start(1, 0, CentreA, Month(s, 0));
+        var opening = Month(s, 1);   // camp A: pupil 1 and refugees 6 and 7 hold all 3 beds
+        f.Cancel(1);
         Unchanged(s, () => f.Start(1, 0, CentreA, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
-        // A teacher released by that cancel cannot teach at another centre in the same month.
-        Unchanged(s, () => f.Start(5, 0, CentreB, opening), typeof(NotSupportedException), "Deferred: #1668 Q43");
+        f.Start(1, 0, CentreA, Month(s, 2));
+        Assert.Equal(PopulationStatus.Trainee, s.PopulationLedger.Get(1).Status);
     }
 
     // #1716 month snapshot, R-CITY-001/002 (owner-relayed Q34, 28 Oct 2026: a job change takes effect at once and the
