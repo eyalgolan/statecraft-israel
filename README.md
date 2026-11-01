@@ -40,7 +40,7 @@ You sit in the prime minister's chair from the founding of the state. Each turn 
 
 A deterministic C# simulation runs underneath. The same choices always give the same result, and a saved game is the seed plus the list of commands. Unity draws a real terrain map of the country built from elevation and climate data.
 
-The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.2, 17 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
+The game design of record is now [docs/GDD.md](docs/GDD.md) (v0.3, 30 October 2026): monthly turns in which you build and defend Israel from 1948 to 1951 with units, cities and construction, and choose your ministers. The list above is the game you can play today. The monthly turns, Attention, the cities, training, the pioneers' building and the unit orders, attacks included, are in. Settlement control is only partly in: your units can capture a target town, and a dialog then offers Raid and withdraw or Occupy; when an occupation ends, you choose Annex or Withdraw. The [build plan](docs/superpowers/specs/2026-10-12-gdd-v0.1-impact-and-plan.md) brings the rest in phases.
 
 ## What it looks like today
 
