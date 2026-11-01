@@ -149,7 +149,12 @@ namespace Statecraft.Sim
             var traineeOpening = Opening(month, trainee.Id); var teacherOpening = Opening(month, teacher.Id);
             bool teacherOpenedHere = teacherOpening.Assignment.Kind == PopulationAssignmentKind.Teaching && teachingHere
                 && string.Equals(teacherOpening.Assignment.Target, centre.Id, StringComparison.Ordinal);
-            if (traineeOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
+            // #1716 month snapshot (owner-relayed Q43(a) and Q34, 28 Oct 2026): a course occupies the pupil from the turn it
+            // starts and a job change is immediate, so a pupil who worked at the opening and was released this turn may start,
+            // and this month's work/course snapshot shows the course. A pupil who held a course at the opening was released
+            // by a cancel: when that frees them is Q43(b), still open.
+            if ((traineeOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned
+                    && traineeOpening.Assignment.Kind != PopulationAssignmentKind.Work)
                 || (teacherOpening.Assignment.Kind != PopulationAssignmentKind.Unassigned && !teacherOpenedHere))
                 throw Deferred(Q43);
             // A bed freed after the month's opening (for example by a cancel) is not reused that month: Q43(b), Q41.
